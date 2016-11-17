@@ -2477,39 +2477,42 @@ public class KVMHost extends HostBase implements Host {
                 @Override
                 public void setup() {
                     if (info.isNewAdded()) {
-                        flow(new NoRollbackFlow() {
-                            String __name__ = "ping-DNS-check-list";
 
-                            @Override
-                            public void run(FlowTrigger trigger, Map data) {
-                                String checkList = KVMGlobalConfig.HOST_DNS_CHECK_LIST.value();
+                        if ( (! AnsibleGlobalProperty.ZSTACK_REPO.contains("zstack-mn")) && ( ! AnsibleGlobalProperty.ZSTACK_REPO.equals("false"))) {
+                            flow(new NoRollbackFlow() {
+                                String __name__ = "ping-DNS-check-list";
 
-                                new Log(self.getUuid()).log(KVMHostLabel.ADD_HOST_CHECK_DNS, checkList);
+                                @Override
+                                public void run(FlowTrigger trigger, Map data) {
+                                    String checkList = KVMGlobalConfig.HOST_DNS_CHECK_LIST.value();
 
-                                checkList = checkList.replaceAll(",", " ");
+                                    new Log(self.getUuid()).log(KVMHostLabel.ADD_HOST_CHECK_DNS, checkList);
 
-                                SshShell sshShell = new SshShell();
-                                sshShell.setHostname(getSelf().getManagementIp());
-                                sshShell.setUsername(getSelf().getUsername());
-                                sshShell.setPassword(getSelf().getPassword());
-                                sshShell.setPort(getSelf().getPort());
-                                SshResult ret = sshShell.runScriptWithToken("scripts/check-public-dns-name.sh",
-                                        map(e("dnsCheckList", checkList)));
+                                    checkList = checkList.replaceAll(",", " ");
 
-                                if (ret.isSshFailure()) {
-                                    trigger.fail(errf.stringToOperationError(
-                                            String.format("unable to connect to KVM[ip:%s, username:%s, sshPort: %d, ] to do DNS check, please check if username/password is wrong; %s", self.getManagementIp(), getSelf().getUsername(), getSelf().getPort(), ret.getExitErrorMessage())
-                                    ));
-                                } else if (ret.getReturnCode() != 0) {
-                                    trigger.fail(errf.stringToOperationError(
-                                            String.format("failed to ping all DNS/IP in %s; please check /etc/resolv.conf to make sure your host is able to reach public internet, or change host.DNSCheckList if you have some special network setup",
-                                                    KVMGlobalConfig.HOST_DNS_CHECK_LIST.value())
-                                    ));
-                                } else {
-                                    trigger.next();
+                                    SshShell sshShell = new SshShell();
+                                    sshShell.setHostname(getSelf().getManagementIp());
+                                    sshShell.setUsername(getSelf().getUsername());
+                                    sshShell.setPassword(getSelf().getPassword());
+                                    sshShell.setPort(getSelf().getPort());
+                                    SshResult ret = sshShell.runScriptWithToken("scripts/check-public-dns-name.sh",
+                                            map(e("dnsCheckList", checkList)));
+
+                                    if (ret.isSshFailure()) {
+                                        trigger.fail(errf.stringToOperationError(
+                                                String.format("unable to connect to KVM[ip:%s, username:%s, sshPort: %d, ] to do DNS check, please check if username/password is wrong; %s", self.getManagementIp(), getSelf().getUsername(), getSelf().getPort(), ret.getExitErrorMessage())
+                                        ));
+                                    } else if (ret.getReturnCode() != 0) {
+                                        trigger.fail(errf.stringToOperationError(
+                                                String.format("failed to ping all DNS/IP in %s; please check /etc/resolv.conf to make sure your host is able to reach public internet, or change host.DNSCheckList if you have some special network setup",
+                                                        KVMGlobalConfig.HOST_DNS_CHECK_LIST.value())
+                                        ));
+                                    } else {
+                                        trigger.next();
+                                    }
                                 }
-                            }
-                        });
+                            });
+                        }
                     }
 
                     flow(new NoRollbackFlow() {
