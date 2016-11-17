@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.DeadlockAutoRestart;
 import org.zstack.header.allocator.HostCapacityVO;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -97,6 +98,7 @@ public class HostCapacityUpdater {
     }
 
     @Transactional
+    @DeadlockAutoRestart
     public boolean run(HostCapacityUpdaterRunnable runnable) {
         if (!lockCapacity()) {
             logDeletedHost();

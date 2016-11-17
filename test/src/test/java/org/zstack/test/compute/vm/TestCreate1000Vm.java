@@ -1,6 +1,5 @@
 package org.zstack.test.compute.vm;
 
-import junit.framework.Assert;
 import org.apache.commons.lang.time.StopWatch;
 import org.junit.Before;
 import org.junit.Test;
@@ -9,9 +8,6 @@ import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.SyncThread;
 import org.zstack.core.thread.ThreadGlobalProperty;
 import org.zstack.header.cluster.ClusterInventory;
@@ -22,7 +18,8 @@ import org.zstack.header.image.ImageInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.simulator.storage.primary.SimulatorPrimaryStorageConstant;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.zone.ZoneInventory;
 import org.zstack.identity.IdentityGlobalConfig;
 import org.zstack.test.Api;
@@ -53,9 +50,9 @@ public class TestCreate1000Vm {
     List<Long> timeCost = new ArrayList<Long>();
     ClusterInventory cluster;
     ZoneInventory zone;
-    int hostNum = 50;
+    int hostNum = 1;
     CountDownLatch hostLatch = new CountDownLatch(hostNum);
-    int psNum = 50;
+    int psNum = 1;
     CountDownLatch psLatch = new CountDownLatch(psNum);
 
     @Before
@@ -63,6 +60,7 @@ public class TestCreate1000Vm {
         DBUtil.reDeployDB();
         WebBeanConstructor con = new WebBeanConstructor();
         deployer = new Deployer("deployerXml/vm/CreateVm1000.xml", con);
+        ThreadGlobalProperty.MAX_THREAD_NUM = 2000;
         deployer.build();
         api = deployer.getApi();
         loader = deployer.getComponentLoader();
@@ -91,7 +89,7 @@ public class TestCreate1000Vm {
             host.setName("simulator-" + index);
             host.setClusterUuid(cluster.getUuid());
             host.setManagementIp(NetworkUtils.longToIpv4String(ip));
-            host.setAvailableCpuCapacity(10L);
+            host.setAvailableCpuCapacity(100000L);
             host.setAvailableMemoryCapacity(SizeUnit.TERABYTE.toByte(32));
             api.addHostByFullConfig(host);
         } catch (Throwable t) {

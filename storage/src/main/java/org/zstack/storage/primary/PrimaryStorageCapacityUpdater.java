@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.DeadlockAutoRestart;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -139,6 +140,7 @@ public class PrimaryStorageCapacityUpdater {
     }
 
     @Transactional
+    @DeadlockAutoRestart
     private boolean _updateAvailablePhysicalCapacity(long avail) {
         if (!lockCapacity()) {
             logDeletedPrimaryStorage();
@@ -158,6 +160,7 @@ public class PrimaryStorageCapacityUpdater {
     }
 
     @Transactional
+    @DeadlockAutoRestart
     private boolean _increaseAvailableCapacity(long size) {
         if (!lockCapacity()) {
             logDeletedPrimaryStorage();
@@ -182,6 +185,7 @@ public class PrimaryStorageCapacityUpdater {
     }
 
     @Transactional
+    @DeadlockAutoRestart
     private boolean _decreaseAvailableCapacity(long size) {
         if (!lockCapacity()) {
             logDeletedPrimaryStorage();
@@ -200,6 +204,7 @@ public class PrimaryStorageCapacityUpdater {
     }
 
     @Transactional
+    @DeadlockAutoRestart
     private boolean _update(Long total, Long avail, Long physicalTotal, Long physicalAvail) {
         if (!lockCapacity()) {
             logDeletedPrimaryStorage();
@@ -234,6 +239,7 @@ public class PrimaryStorageCapacityUpdater {
     }
 
     @Transactional
+    @DeadlockAutoRestart
     private boolean _run(PrimaryStorageCapacityUpdaterRunnable runnable) {
         if (!lockCapacity()) {
             logDeletedPrimaryStorage();
@@ -260,6 +266,7 @@ public class PrimaryStorageCapacityUpdater {
     }
 
     @Transactional
+    @DeadlockAutoRestart
     public boolean reserve(long size, boolean exceptionOnFailure) {
         if (!lockCapacity()) {
             logDeletedPrimaryStorage();
