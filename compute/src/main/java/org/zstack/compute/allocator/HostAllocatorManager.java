@@ -15,5 +15,5 @@ public interface HostAllocatorManager {
 
     List<String> getBackupStorageTypesByPrimaryStorageTypeFromMetrics(String psType);
 
-    void returnCapacity(String uuid, long cpu, long memory);
+    void returnComputeResourceCapacity(String uuid, long cpu, long memory);
 }

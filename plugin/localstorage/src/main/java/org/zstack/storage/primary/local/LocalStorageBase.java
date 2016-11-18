@@ -362,7 +362,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
-                        returnCapacityToHost(msg.getDestHostUuid(), requiredSize);
+                        returnStorageCapacityToHost(msg.getDestHostUuid(), requiredSize);
                         trigger.rollback();
                     }
                 });
@@ -398,7 +398,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        returnCapacityToHost(ref.getHostUuid(), requiredSize);
+                        returnStorageCapacityToHost(ref.getHostUuid(), requiredSize);
                         trigger.next();
                     }
                 });
@@ -606,7 +606,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
     private void handle(LocalStorageReturnHostCapacityMsg msg) {
         LocalStorageReturnHostCapacityReply reply = new LocalStorageReturnHostCapacityReply();
         long size = msg.isNoOverProvisioning() ? msg.getSize() : ratioMgr.calculateByRatio(self.getUuid(), msg.getSize());
-        returnCapacityToHost(msg.getHostUuid(), size);
+        returnStorageCapacityToHost(msg.getHostUuid(), size);
         bus.reply(msg, reply);
     }
 
@@ -884,7 +884,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
                         if (size != null) {
-                            returnCapacityToHost(hostUuid, size);
+                            returnStorageCapacityToHost(hostUuid, size);
                         }
 
                         trigger.rollback();
@@ -1014,7 +1014,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        returnCapacityToHost(hostUuid, msg.getSnapshot().getSize());
+                        returnStorageCapacityToHost(hostUuid, msg.getSnapshot().getSize());
                         trigger.next();
                     }
                 });
@@ -1253,7 +1253,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
     }
 
     @Transactional
-    protected void returnCapacityToHost(String hostUuid, long size) {
+    protected void returnStorageCapacityToHost(String hostUuid, long size) {
         String sql = "select ref from LocalStorageHostRefVO ref where ref.hostUuid = :huuid";
         TypedQuery<LocalStorageHostRefVO> q = dbf.getEntityManager().createQuery(sql, LocalStorageHostRefVO.class);
         q.setParameter("huuid", hostUuid);
@@ -1283,7 +1283,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
     }
 
     @Transactional
-    protected void returnCapacityToHostByResourceUuid(String resUuid) {
+    protected void returnStorageCapacityToHostByResourceUuid(String resUuid) {
         String sql = "select href, rref" +
                 " from LocalStorageHostRefVO href, LocalStorageResourceRefVO rref" +
                 " where href.hostUuid = rref.hostUuid" +
@@ -1348,7 +1348,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
                         if (reservedSize != 0) {
-                            returnCapacityToHost(finalHostUuid, reservedSize);
+                            returnStorageCapacityToHost(finalHostUuid, reservedSize);
                         }
                         trigger.rollback();
                     }
@@ -1462,7 +1462,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        returnCapacityToHostByResourceUuid(msg.getVolume().getUuid());
+                        returnStorageCapacityToHostByResourceUuid(msg.getVolume().getUuid());
                         trigger.next();
                     }
                 });
@@ -1523,7 +1523,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
-                        returnCapacityToHost(msg.getHostUuid(), requiredSize);
+                        returnStorageCapacityToHost(msg.getHostUuid(), requiredSize);
                         trigger.rollback();
                     }
                 });
@@ -1606,7 +1606,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        returnCapacityToHostByResourceUuid(msg.getBitsUuid());
+                        returnStorageCapacityToHostByResourceUuid(msg.getBitsUuid());
                         trigger.next();
                     }
                 });
@@ -1652,7 +1652,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
-                        returnCapacityToHost(msg.getDestHostUuid(), msg.getIsoSpec().getInventory().getActualSize());
+                        returnStorageCapacityToHost(msg.getDestHostUuid(), msg.getIsoSpec().getInventory().getActualSize());
                         trigger.rollback();
                     }
                 });
@@ -1746,7 +1746,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        returnCapacityToHostByResourceUuid(msg.getIsoSpec().getInventory().getUuid());
+                        returnStorageCapacityToHostByResourceUuid(msg.getIsoSpec().getInventory().getUuid());
                         trigger.next();
                     }
                 });

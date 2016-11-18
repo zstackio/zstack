@@ -233,7 +233,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
     }
 
     private void handle(ReturnHostCapacityMsg msg) {
-        returnCapacity(msg.getHostUuid(), msg.getCpuCapacity(), msg.getMemoryCapacity());
+        returnComputeResourceCapacity(msg.getHostUuid(), msg.getCpuCapacity(), msg.getMemoryCapacity());
     }
 
     private void handle(ReportHostCapacityMessage msg) {
@@ -491,7 +491,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
     }
 
     @Override
-    public void returnCapacity(final String hostUuid, final long cpu, final long memory) {
+    public void returnComputeResourceCapacity(final String hostUuid, final long cpu, final long memory) {
         new HostCapacityUpdater(hostUuid).run(new HostCapacityUpdaterRunnable() {
             @Override
             public HostCapacityVO call(HostCapacityVO cap) {
@@ -569,7 +569,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
 
             private void vmStoppedOnTheSameHost(FlowTrigger trigger) {
                 // return the capacity to the current host
-                returnCapacity(struct.getCurrentHostUuid());
+                returnComputeCapacity(struct.getCurrentHostUuid());
                 rollback = new Runnable() {
                     @Override
                     public void run() {
@@ -581,7 +581,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
                 trigger.next();
             }
 
-            private void returnCapacity(String hostUuid) {
+            private void returnComputeCapacity(String hostUuid) {
                 ReturnHostCapacityMsg msg = new ReturnHostCapacityMsg();
                 msg.setCpuCapacity(struct.getVmInstance().getCpuNum());
                 msg.setMemoryCapacity(struct.getVmInstance().getMemorySize());
@@ -603,12 +603,12 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
                     final long cpu = struct.getVmInstance().getCpuNum();
                     new HostAllocatorChain().reserveCapacity(
                             struct.getCurrentHostUuid(), cpu, struct.getVmInstance().getMemorySize());
-                    returnCapacity(struct.getOriginalHostUuid());
+                    returnComputeCapacity(struct.getOriginalHostUuid());
 
                     rollback = new Runnable() {
                         @Override
                         public void run() {
-                            returnCapacity(struct.getCurrentHostUuid());
+                            returnComputeCapacity(struct.getCurrentHostUuid());
                             new HostAllocatorChain().reserveCapacity(
                                     struct.getOriginalHostUuid(), cpu, struct.getVmInstance().getMemorySize());
                         }
@@ -630,7 +630,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
                     rollback = new Runnable() {
                         @Override
                         public void run() {
-                            returnCapacity(struct.getCurrentHostUuid());
+                            returnComputeCapacity(struct.getCurrentHostUuid());
                         }
                     };
 

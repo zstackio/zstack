@@ -243,7 +243,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                                 return;
                             }
 
-                            reserveCapacityOnHost(dstHostUuid, ref.getPrimaryStorageUuid(), backingImage.size, new Completion(trigger) {
+                            reserveStorageCapacityOnHost(dstHostUuid, ref.getPrimaryStorageUuid(), backingImage.size, new Completion(trigger) {
                                 @Override
                                 public void success() {
                                     s = true;
@@ -260,7 +260,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                         @Override
                         public void rollback(final FlowRollback trigger, Map data) {
                             if (s) {
-                                returnCapacityToHost(dstHostUuid, ref.getPrimaryStorageUuid(), backingImage.size);
+                                returnStorageCapacityToHost(dstHostUuid, ref.getPrimaryStorageUuid(), backingImage.size);
                             }
 
                             trigger.rollback();
@@ -458,7 +458,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        reserveCapacityOnHost(dstHostUuid, ref.getPrimaryStorageUuid(), requiredSize, new Completion(trigger) {
+                        reserveStorageCapacityOnHost(dstHostUuid, ref.getPrimaryStorageUuid(), requiredSize, new Completion(trigger) {
                             @Override
                             public void success() {
                                 s = true;
@@ -475,7 +475,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
                         if (s) {
-                            returnCapacityToHost(dstHostUuid, ref.getPrimaryStorageUuid(), requiredSize);
+                            returnStorageCapacityToHost(dstHostUuid, ref.getPrimaryStorageUuid(), requiredSize);
                         }
 
                         trigger.rollback();
@@ -742,7 +742,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
         }).start();
     }
 
-    private void returnCapacityToHost(final String dstHostUuid, final String primaryStorageUuid, final Long size) {
+    private void returnStorageCapacityToHost(final String dstHostUuid, final String primaryStorageUuid, final Long size) {
         LocalStorageReturnHostCapacityMsg msg = new LocalStorageReturnHostCapacityMsg();
         msg.setHostUuid(dstHostUuid);
         msg.setSize(size);
@@ -760,7 +760,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
         });
     }
 
-    private void reserveCapacityOnHost(String dstHostUuid, String psUuid, Long size, final Completion completion) {
+    private void reserveStorageCapacityOnHost(String dstHostUuid, String psUuid, Long size, final Completion completion) {
         LocalStorageReserveHostCapacityMsg msg = new LocalStorageReserveHostCapacityMsg();
         msg.setHostUuid(dstHostUuid);
         msg.setSize(size);
