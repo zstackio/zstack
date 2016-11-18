@@ -49,13 +49,9 @@ public class TestChangeVmPassword {
         Assert.assertEquals("root", account.getUserAccount());
         Assert.assertEquals("test1234", account.getAccountPassword());
 
-        // password can't contain the characters which not in A-Z,a-z,0-9,_
-        try {
-            account = api.changeVmPassword(new VmAccountPerference(
+        account = api.changeVmPassword(new VmAccountPerference(
                     inv.getUuid(), "root", "||||||"));
-        } catch(ApiSenderException e){
-            Assert.assertTrue(e.getMessage().indexOf("valid regex value") != -1);
-        }
+        Assert.assertNotNull(account);
         Assert.assertEquals(inv.getUuid(), account.getVmUuid());
         Assert.assertEquals("root", account.getUserAccount());
         Assert.assertEquals("test1234", account.getAccountPassword());
