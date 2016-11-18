@@ -453,8 +453,8 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
             handle((APIGetVolumeSnapshotTreeMsg) msg);
         } else if (msg instanceof APICreateVolumeSnapshotSchedulerMsg) {
             handle((APICreateVolumeSnapshotSchedulerMsg) msg);
-        } else if (msg instanceof APIReInitVmInstanceMsg) {
-            handle((APIReInitVmInstanceMsg) msg);
+        } else if (msg instanceof APIReimageVmInstanceMsg) {
+            handle((APIReimageVmInstanceMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -707,8 +707,8 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         return list(quota);
     }
 
-    private void handle(final APIReInitVmInstanceMsg msg) {
-        final APIReInitVmInstanceEvent evt = new APIReInitVmInstanceEvent(msg.getId());
+    private void handle(final APIReimageVmInstanceMsg msg) {
+        final APIReimageVmInstanceEvent evt = new APIReimageVmInstanceEvent(msg.getId());
 
         VmInstanceVO vmInstanceVO = dbf.findByUuid(msg.getVmInstanceUuid(), VmInstanceVO.class);
         VolumeVO rootVolume = dbf.findByUuid(vmInstanceVO.getRootVolumeUuid(), VolumeVO.class);

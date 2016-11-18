@@ -9,7 +9,7 @@ import org.zstack.header.vm.VmInstanceVO;
  * Created by miao on 11/3/16.
  */
 @Action(category = VolumeSnapshotConstant.ACTION_CATEGORY)
-public class APIReInitVmInstanceMsg extends APIMessage {
+public class APIReimageVmInstanceMsg extends APIMessage {
     public String getVmInstanceUuid() {
         return vmInstanceUuid;
     }
