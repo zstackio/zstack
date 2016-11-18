@@ -2952,6 +2952,14 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         if (self.getState() == VmInstanceState.Stopped) {
             changeInstanceOfferingForStoppedVm(exts, newOfferingVO, vm, inv, evt);
+            return;
+        } else {
+            if (self.getState() != VmInstanceState.Running) {
+                throw new OperationFailureException(errf.stringToOperationError(
+                        String.format("The state of vm[uuid:%s] is %s. Only these state[%s] is allowed.",
+                                self.getUuid(), self.getState(),
+                                StringUtils.join(list(VmInstanceState.Running, VmInstanceState.Stopped), ","))));
+            }
         }
 
         String instanceOfferingOnlineChange = VmSystemTags.INSTANCEOFFERING_ONLIECHANGE
