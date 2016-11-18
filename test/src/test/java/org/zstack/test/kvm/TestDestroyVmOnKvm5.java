@@ -13,23 +13,18 @@ import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.identity.SessionInventory;
-import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
 import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.volume.VolumeInventory;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.simulator.storage.primary.nfs.NfsPrimaryStorageSimulatorConfig;
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageGlobalProperty;
-import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackendCommands.DeleteCmd;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.test.storage.backup.sftp.TestSftpBackupStorageDeleteImage2;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.List;
@@ -39,11 +34,11 @@ import java.util.concurrent.TimeUnit;
  * 1. stop the vm
  * 2. make the host disconnected
  * 3. destroy the vm
- *
+ * <p>
  * confirm the vm destroyed successfully
- *
+ * <p>
  * 4. change the host to connected
- *
+ * <p>
  * confirm the vm is GCed
  */
 public class TestDestroyVmOnKvm5 {
@@ -72,12 +67,12 @@ public class TestDestroyVmOnKvm5 {
         nconfig = loader.getComponent(NfsPrimaryStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicy.Direct.toString());
         NfsPrimaryStorageGlobalProperty.BITS_DELETION_GC_INTERVAL = 1;
-	    VmInstanceInventory vm = deployer.vms.get("TestVm");
+        VmInstanceInventory vm = deployer.vms.get("TestVm");
 
         HostInventory host = deployer.hosts.get("host1");
 
@@ -85,7 +80,7 @@ public class TestDestroyVmOnKvm5 {
         hvo.setStatus(HostStatus.Disconnected);
         dbf.update(hvo);
 
-	    api.destroyVmInstance(vm.getUuid());
+        api.destroyVmInstance(vm.getUuid());
 
         Assert.assertNull(config.destroyedVmUuid);
 
@@ -99,5 +94,5 @@ public class TestDestroyVmOnKvm5 {
         for (GarbageCollectorVO vo : vos) {
             org.junit.Assert.assertEquals(GCStatus.Done, vo.getStatus());
         }
-	}
+    }
 }
