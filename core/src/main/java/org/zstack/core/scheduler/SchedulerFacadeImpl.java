@@ -189,16 +189,8 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
         q2.select(SchedulerVO_.jobGroup);
         q2.add(SchedulerVO_.uuid, SimpleQuery.Op.EQ, uuid);
         String jobGroup = q2.findValue();
-        //q.select(SchedulerVO_.triggerName);
-        //q.add(SchedulerVO_.uuid, SimpleQuery.Op.EQ, uuid);
-        //String triggerName= q.findValue();
-        //SimpleQuery<SchedulerVO> q2 = dbf.createQuery(SchedulerVO.class);
-        //q2.select(SchedulerVO_.triggerGroup);
-        //q2.add(SchedulerVO_.uuid, SimpleQuery.Op.EQ, uuid);
-        //String triggerGroup= q2.findValue();
         try {
             scheduler.pauseJob(jobKey(jobName, jobGroup));
-            //scheduler.pauseTrigger(TriggerKey.triggerKey(triggerName, triggerGroup));
             updateSchedulerStatus(uuid, SchedulerState.Disabled.toString());
             self = dbf.findByUuid(uuid, SchedulerVO.class);
         } catch (SchedulerException e) {
@@ -220,16 +212,8 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
             q2.select(SchedulerVO_.jobGroup);
             q2.add(SchedulerVO_.uuid, SimpleQuery.Op.EQ, uuid);
             String jobGroup = q2.findValue();
-            //q.select(SchedulerVO_.triggerName);
-            //q.add(SchedulerVO_.uuid, SimpleQuery.Op.EQ, uuid);
-            //String triggerName= q.findValue();
-            //SimpleQuery<SchedulerVO> q2 = dbf.createQuery(SchedulerVO.class);
-            //q2.select(SchedulerVO_.triggerGroup);
-            //q2.add(SchedulerVO_.uuid, SimpleQuery.Op.EQ, uuid);
-            //String triggerGroup= q2.findValue();
             try {
                 scheduler.resumeJob(jobKey(jobName, jobGroup));
-                //scheduler.resumeTrigger(TriggerKey.triggerKey(triggerName, triggerGroup));
                 updateSchedulerStatus(uuid, SchedulerState.Enabled.toString());
                 self = dbf.findByUuid(uuid, SchedulerVO.class);
             } catch (SchedulerException e) {
@@ -599,16 +583,6 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
     }
 
     public void afterRecoverVm(VmInstanceInventory vm) {
-        logger.debug(String.format("will resume scheduler after recover vm %s", vm.getUuid()));
-        SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
-        q.add(SchedulerVO_.targetResourceUuid, SimpleQuery.Op.EQ, vm.getUuid());
-        logger.debug(String.format("target resource uuid is %s", vm.getUuid()));
-        q.select(SchedulerVO_.uuid);
-        List<String> uuids = q.listValue();
-        for (String uuid : uuids) {
-            logger.debug(String.format("scheduler uuid is %s", uuid));
-            resumeSchedulerJob(uuid);
-        }
 
     }
 
