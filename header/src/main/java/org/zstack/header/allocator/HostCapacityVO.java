@@ -13,18 +13,18 @@ import javax.persistence.Table;
 @Entity
 @Table
 public class HostCapacityVO {
-	@Id
-	@Column
+    @Id
+    @Column
     @ForeignKey(parentEntityClass = HostEO.class, onDeleteAction = ReferenceOption.CASCADE)
-	private String uuid;
-	
-	@Column
+    private String uuid;
+
+    @Column
     @Index
-	private long totalMemory;
-	
-	@Column
+    private long totalMemory;
+
+    @Column
     @Index
-	private long totalCpu;
+    private long totalCpu;
 
     @Column
     @Index
@@ -46,8 +46,8 @@ public class HostCapacityVO {
     @Index
     private long availablePhysicalMemory;
 
-	public HostCapacityVO() {
-	}
+    public HostCapacityVO() {
+    }
 
     public int getCpuNum() {
         return cpuNum;
@@ -90,35 +90,35 @@ public class HostCapacityVO {
     }
 
     public String getUuid() {
-    	return uuid;
+        return uuid;
     }
 
-	public void setUuid(String uuid) {
-    	this.uuid = uuid;
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
     }
 
-	public long getTotalMemory() {
-    	return totalMemory;
+    public long getTotalMemory() {
+        return totalMemory;
     }
 
-	public void setTotalMemory(long totalMemory) {
-    	this.totalMemory = totalMemory;
+    public void setTotalMemory(long totalMemory) {
+        this.totalMemory = totalMemory;
     }
 
-	public long getTotalCpu() {
-    	return totalCpu;
+    public long getTotalCpu() {
+        return totalCpu;
     }
 
-	public void setTotalCpu(long totalCpu) {
-    	this.totalCpu = totalCpu;
+    public void setTotalCpu(long totalCpu) {
+        this.totalCpu = totalCpu;
     }
 
-	public long getUsedMemory() {
-    	return totalMemory - availableMemory;
+    public long getUsedMemory() {
+        return totalMemory - availableMemory;
     }
 
-	public long getUsedCpu() {
-    	return totalCpu - availableCpu;
+    public long getUsedCpu() {
+        return totalCpu - availableCpu;
     }
 
     public long getUsedPhysicalMemory() {

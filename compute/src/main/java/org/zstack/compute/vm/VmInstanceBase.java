@@ -266,12 +266,14 @@ public class VmInstanceBase extends AbstractVmInstance {
         return vmMgr.getDetachIsoWorkFlowChain(inv);
     }
 
-    protected FlowChain getSuspendVmWorkFlowChain(VmInstanceInventory inv){
-         return vmMgr.getSuspendWorkFlowChain(inv);
+    protected FlowChain getSuspendVmWorkFlowChain(VmInstanceInventory inv) {
+        return vmMgr.getSuspendWorkFlowChain(inv);
     }
-    protected FlowChain getResumeVmWorkFlowChain(VmInstanceInventory inv){
+
+    protected FlowChain getResumeVmWorkFlowChain(VmInstanceInventory inv) {
         return vmMgr.getResumeVmWorkFlowChain(inv);
     }
+
     protected VmInstanceVO changeVmStateInDb(VmInstanceStateEvent stateEvent) {
         VmInstanceState bs = self.getState();
         final VmInstanceState state = self.getState().nextState(stateEvent);
@@ -2010,7 +2012,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APIDeleteVmSshKeyMsg) msg);
         } else if (msg instanceof APIGetCandidateIsoForAttachingVmMsg) {
             handle((APIGetCandidateIsoForAttachingVmMsg) msg);
-        }else if (msg instanceof APISuspendVmInstanceMsg) {
+        } else if (msg instanceof APISuspendVmInstanceMsg) {
             handle((APISuspendVmInstanceMsg) msg);
         } else if (msg instanceof APIResumeVmInstanceMsg) {
             handle((APIResumeVmInstanceMsg) msg);
@@ -2931,9 +2933,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             return;
         }
 
-        InstanceOfferingVO iovo = dbf.findByUuid(msg.getInstanceOfferingUuid(), InstanceOfferingVO.class);
-
-        final InstanceOfferingInventory inv = InstanceOfferingInventory.valueOf(iovo);
+        final InstanceOfferingVO newOfferingVO = dbf.findByUuid(msg.getInstanceOfferingUuid(), InstanceOfferingVO.class);
+        final InstanceOfferingInventory inv = InstanceOfferingInventory.valueOf(newOfferingVO);
         final VmInstanceInventory vm = getSelfInventory();
 
         List<ChangeInstanceOfferingExtensionPoint> exts = pluginRgty.getExtensionList(ChangeInstanceOfferingExtensionPoint.class);
@@ -2948,84 +2949,105 @@ public class VmInstanceBase extends AbstractVmInstance {
             }
         });
 
+
         if (self.getState() == VmInstanceState.Stopped) {
-            self.setInstanceOfferingUuid(iovo.getUuid());
-            self.setCpuNum(iovo.getCpuNum());
-            self.setCpuSpeed(iovo.getCpuSpeed());
-            self.setMemorySize(iovo.getMemorySize());
-            self = dbf.updateAndRefresh(self);
-
-            CollectionUtils.safeForEach(exts, new ForEachFunction<ChangeInstanceOfferingExtensionPoint>() {
-                @Override
-                public void run(ChangeInstanceOfferingExtensionPoint arg) {
-                    arg.afterChangeInstanceOffering(vm, inv);
-                }
-            });
-
-            evt.setInventory(getSelfInventory());
-            bus.publish(evt);
-            return;
+            changeInstanceOfferingForStoppedVm(exts, newOfferingVO, vm, inv, evt);
         }
-        // if instanceOfferingOnlineChange is true and  the new instanceOffering is bigger than existing instanceOffering
-        // create a local message , OnlineChangeVmCpuMemoryMsg
-        String instanceOfferingOnlineChange = VmSystemTags.INSTANCEOFFERING_ONLIECHANGE.
-                getTokenByResourceUuid(self.getUuid(), VmSystemTags.INSTANCEOFFERING_ONLINECHANGE_TOKEN);
-        if ((instanceOfferingOnlineChange != null &&
-                instanceOfferingOnlineChange.equals("true")) &&
-                (self.getCpuNum() <= iovo.getCpuNum() && self.getMemorySize() <= iovo.getMemorySize())) {
-            OnlineChangeVmCpuMemoryMsg hmsg = new OnlineChangeVmCpuMemoryMsg();
-            hmsg.setVmInstanceUuid(self.getUuid());
-            hmsg.setHostUuid(self.getHostUuid());
-            hmsg.setInstanceOfferingInventory(inv);
-            bus.makeTargetServiceIdByResourceUuid(hmsg, HostConstant.SERVICE_ID, self.getHostUuid());
-            bus.send(hmsg, new CloudBusCallBack(msg) {
-                @Override
-                public void run(MessageReply reply) {
-                    if (!reply.isSuccess()) {
-                        evt.setErrorCode(reply.getError());
-                    } else {
-                        OnlineChangeVmCpuMemoryReply hr = reply.castReply();
-                        self.setInstanceOfferingUuid(iovo.getUuid());
-                        self.setCpuNum(hr.getInstanceOfferingInventory().getCpuNum());
-                        self.setMemorySize(hr.getInstanceOfferingInventory().getMemorySize());
-                        self = dbf.updateAndRefresh(self);
 
-                        CollectionUtils.safeForEach(exts, new ForEachFunction<ChangeInstanceOfferingExtensionPoint>() {
-                            @Override
-                            public void run(ChangeInstanceOfferingExtensionPoint arg) {
-                                arg.afterChangeInstanceOffering(vm, inv);
-                            }
-                        });
-                        evt.setInventory(getSelfInventory());
-                    }
-                    bus.publish(evt);
-                }
-            });
+        String instanceOfferingOnlineChange = VmSystemTags.INSTANCEOFFERING_ONLIECHANGE
+                .getTokenByResourceUuid(self.getUuid(), VmSystemTags.INSTANCEOFFERING_ONLINECHANGE_TOKEN);
+
+        if ((instanceOfferingOnlineChange != null
+                && instanceOfferingOnlineChange.equals("true"))
+                && self.getCpuNum() <= newOfferingVO.getCpuNum()
+                && self.getMemorySize() <= newOfferingVO.getMemorySize()) {
+            stretchInstanceOfferingForRunningVm(exts, newOfferingVO, vm, inv, evt);
         } else {
-            // the vm is running and onlinechangeInstanceOffering is not allowed, make the capacity change pending, which will take effect the next
-            // the vm starts
-            Map m = new HashMap();
-            m.put(VmSystemTags.PENDING_CAPACITY_CHNAGE_CPU_NUM_TOKEN, iovo.getCpuNum());
-            m.put(VmSystemTags.PENDING_CAPACITY_CHNAGE_CPU_SPEED_TOKEN, iovo.getCpuSpeed());
-            m.put(VmSystemTags.PENDING_CAPACITY_CHNAGE_MEMORY_TOKEN, iovo.getMemorySize());
-            VmSystemTags.PENDING_CAPACITY_CHANGE.recreateInherentTag(self.getUuid(), m);
-
-            self.setInstanceOfferingUuid(iovo.getUuid());
-            self = dbf.updateAndRefresh(self);
-
-            CollectionUtils.safeForEach(exts, new ForEachFunction<ChangeInstanceOfferingExtensionPoint>() {
-                @Override
-                public void run(ChangeInstanceOfferingExtensionPoint arg) {
-                    arg.afterChangeInstanceOffering(vm, inv);
-                }
-            });
-
-            evt.setInventory(getSelfInventory());
-            bus.publish(evt);
-            return;
+            pendingChangeInstanceOfferingForRunningVmNextStart(exts, newOfferingVO, vm, inv, evt);
         }
     }
 
+    private void pendingChangeInstanceOfferingForRunningVmNextStart(List<ChangeInstanceOfferingExtensionPoint> exts,
+                                                                    final InstanceOfferingVO newOfferingVO,
+                                                                    final VmInstanceInventory vm,
+                                                                    final InstanceOfferingInventory inv,
+                                                                    APIChangeInstanceOfferingEvent evt) {
+        Map m = new HashMap();
+        m.put(VmSystemTags.PENDING_CAPACITY_CHNAGE_CPU_NUM_TOKEN, newOfferingVO.getCpuNum());
+        m.put(VmSystemTags.PENDING_CAPACITY_CHNAGE_CPU_SPEED_TOKEN, newOfferingVO.getCpuSpeed());
+        m.put(VmSystemTags.PENDING_CAPACITY_CHNAGE_MEMORY_TOKEN, newOfferingVO.getMemorySize());
+        VmSystemTags.PENDING_CAPACITY_CHANGE.recreateInherentTag(self.getUuid(), m);
+
+        self.setInstanceOfferingUuid(newOfferingVO.getUuid());
+        self = dbf.updateAndRefresh(self);
+
+        CollectionUtils.safeForEach(exts, new ForEachFunction<ChangeInstanceOfferingExtensionPoint>() {
+            @Override
+            public void run(ChangeInstanceOfferingExtensionPoint arg) {
+                arg.afterChangeInstanceOffering(vm, inv);
+            }
+        });
+
+        evt.setInventory(getSelfInventory());
+        bus.publish(evt);
+    }
+
+    private void changeInstanceOfferingForStoppedVm(List<ChangeInstanceOfferingExtensionPoint> exts,
+                                                    final InstanceOfferingVO newOfferingVO,
+                                                    final VmInstanceInventory vm,
+                                                    final InstanceOfferingInventory inv,
+                                                    APIChangeInstanceOfferingEvent evt) {
+        self.setInstanceOfferingUuid(newOfferingVO.getUuid());
+        self.setCpuNum(newOfferingVO.getCpuNum());
+        self.setCpuSpeed(newOfferingVO.getCpuSpeed());
+        self.setMemorySize(newOfferingVO.getMemorySize());
+        self = dbf.updateAndRefresh(self);
+
+        CollectionUtils.safeForEach(exts, new ForEachFunction<ChangeInstanceOfferingExtensionPoint>() {
+            @Override
+            public void run(ChangeInstanceOfferingExtensionPoint arg) {
+                arg.afterChangeInstanceOffering(vm, inv);
+            }
+        });
+
+        evt.setInventory(getSelfInventory());
+        bus.publish(evt);
+    }
+
+    private void stretchInstanceOfferingForRunningVm(List<ChangeInstanceOfferingExtensionPoint> exts,
+                                                     final InstanceOfferingVO newOfferingVO,
+                                                     final VmInstanceInventory vm,
+                                                     final InstanceOfferingInventory inv,
+                                                     APIChangeInstanceOfferingEvent evt) {
+        OnlineChangeVmCpuMemoryMsg hmsg = new OnlineChangeVmCpuMemoryMsg();
+        hmsg.setVmInstanceUuid(self.getUuid());
+        hmsg.setHostUuid(self.getHostUuid());
+        hmsg.setInstanceOfferingInventory(inv);
+        bus.makeTargetServiceIdByResourceUuid(hmsg, HostConstant.SERVICE_ID, self.getHostUuid());
+        bus.send(hmsg, new CloudBusCallBack() {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    evt.setErrorCode(reply.getError());
+                } else {
+                    OnlineChangeVmCpuMemoryReply hr = reply.castReply();
+                    self.setInstanceOfferingUuid(newOfferingVO.getUuid());
+                    self.setCpuNum(hr.getInstanceOfferingInventory().getCpuNum());
+                    self.setMemorySize(hr.getInstanceOfferingInventory().getMemorySize());
+                    self = dbf.updateAndRefresh(self);
+
+                    CollectionUtils.safeForEach(exts, new ForEachFunction<ChangeInstanceOfferingExtensionPoint>() {
+                        @Override
+                        public void run(ChangeInstanceOfferingExtensionPoint arg) {
+                            arg.afterChangeInstanceOffering(vm, inv);
+                        }
+                    });
+                    evt.setInventory(getSelfInventory());
+                }
+                bus.publish(evt);
+            }
+        });
+    }
 
     private void handle(final APIUpdateVmInstanceMsg msg) {
         thdf.chainSubmit(new ChainTask(msg) {
@@ -3655,7 +3677,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         FlowChain chain = getCreateVmWorkFlowChain(inv);
         setFlowMarshaller(chain);
         // add user-defined root password
-        if(struct.getRootPassword() != null) {
+        if (struct.getRootPassword() != null) {
             spec.setAccountPerference(new VmAccountPerference(self.getUuid(), "root", struct.getRootPassword()));
         }
 
@@ -4215,7 +4237,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         bus.publish(evt);
     }
 
-    protected void suspendVm(final APISuspendVmInstanceMsg msg, final SyncTaskChain taskChain ){
+    protected void suspendVm(final APISuspendVmInstanceMsg msg, final SyncTaskChain taskChain) {
         suspendVm(msg, new Completion(taskChain) {
             @Override
             public void success() {
@@ -4236,19 +4258,19 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 
-    protected void suspendVm(final Message msg, Completion completion){
+    protected void suspendVm(final Message msg, Completion completion) {
         refreshVO();
-        ErrorCode allowed = validateOperationByState(msg,self.getState(),null);
-        if(allowed != null) {
+        ErrorCode allowed = validateOperationByState(msg, self.getState(), null);
+        if (allowed != null) {
             completion.fail(allowed);
             return;
         }
-        if (self.getState() == VmInstanceState.Suspended){
+        if (self.getState() == VmInstanceState.Suspended) {
             completion.success();
             return;
         }
         VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
-        final VmInstanceSpec spec = buildSpecFromInventory(inv,VmOperation.Suspend);
+        final VmInstanceSpec spec = buildSpecFromInventory(inv, VmOperation.Suspend);
         spec.setMessage(msg);
         final VmInstanceState originState = self.getState();
         changeVmStateInDb(VmInstanceStateEvent.suspending);
@@ -4256,8 +4278,8 @@ public class VmInstanceBase extends AbstractVmInstance {
         FlowChain chain = getSuspendVmWorkFlowChain(inv);
         setFlowMarshaller(chain);
 
-        chain.setName(String.format("suspend-vm-%s",self.getUuid()));
-        chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(),spec);
+        chain.setName(String.format("suspend-vm-%s", self.getUuid()));
+        chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
         chain.done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map Data) {
@@ -4274,7 +4296,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         }).start();
     }
 
-    protected void handle(final APISuspendVmInstanceMsg msg){
+    protected void handle(final APISuspendVmInstanceMsg msg) {
         thdf.chainSubmit(new ChainTask(msg) {
 
             @Override
@@ -4284,17 +4306,17 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             @Override
             public void run(SyncTaskChain chain) {
-                suspendVm(msg,chain);
+                suspendVm(msg, chain);
             }
 
             @Override
             public String getName() {
-                return String.format("suspend-vm-%s",msg.getVmInstanceUuid());
+                return String.format("suspend-vm-%s", msg.getVmInstanceUuid());
             }
         });
     }
 
-    protected void resumeVm(final APIResumeVmInstanceMsg msg, final SyncTaskChain taskChain ){
+    protected void resumeVm(final APIResumeVmInstanceMsg msg, final SyncTaskChain taskChain) {
         resumeVm(msg, new Completion(taskChain) {
             @Override
             public void success() {
@@ -4315,23 +4337,23 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 
-    protected void resumeVm(final Message msg, Completion completion){
+    protected void resumeVm(final Message msg, Completion completion) {
         refreshVO();
-        ErrorCode allowed = validateOperationByState(msg,self.getState(),null);
-        if(allowed != null) {
+        ErrorCode allowed = validateOperationByState(msg, self.getState(), null);
+        if (allowed != null) {
             completion.fail(allowed);
             return;
         }
         VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
-        final VmInstanceSpec spec = buildSpecFromInventory(inv,VmOperation.Suspend);
+        final VmInstanceSpec spec = buildSpecFromInventory(inv, VmOperation.Suspend);
         spec.setMessage(msg);
         final VmInstanceState originState = self.getState();
         changeVmStateInDb(VmInstanceStateEvent.resuming);
         FlowChain chain = getResumeVmWorkFlowChain(inv);
         setFlowMarshaller(chain);
 
-        chain.setName(String.format("resume-vm-%s",self.getUuid()));
-        chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(),spec);
+        chain.setName(String.format("resume-vm-%s", self.getUuid()));
+        chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
         chain.done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map Data) {
@@ -4348,7 +4370,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         }).start();
     }
 
-    protected void handle(final APIResumeVmInstanceMsg msg){
+    protected void handle(final APIResumeVmInstanceMsg msg) {
         thdf.chainSubmit(new ChainTask(msg) {
 
             @Override
@@ -4358,12 +4380,12 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             @Override
             public void run(SyncTaskChain chain) {
-                resumeVm(msg,chain);
+                resumeVm(msg, chain);
             }
 
             @Override
             public String getName() {
-                return String.format("resume-vm-%s",msg.getVmInstanceUuid());
+                return String.format("resume-vm-%s", msg.getVmInstanceUuid());
             }
         });
     }

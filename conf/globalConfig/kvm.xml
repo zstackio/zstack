@@ -18,7 +18,7 @@
     <config>
         <category>kvm</category>
         <name>reservedMemory</name>
-        <description>The memory capacity reserved on all KVM hosts. ZStack KVM agent is a python web server that needs some memory capacity to run. this value reserves a portion of memory for the agent as well as other host applications. The value can be overriden by system tag on individual host, cluster and zone level</description>
+        <description>The memory capacity reserved on all KVM hosts. ZStack KVM agent is a python web server that needs some memory capacity to run. this value reserves a portion of memory for the agent as well as other host applications. The value can be overridden by system tag on individual host, cluster and zone level</description>
         <defaultValue>512M</defaultValue>
     </config>
 
