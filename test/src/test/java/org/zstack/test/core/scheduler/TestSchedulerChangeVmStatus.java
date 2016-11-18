@@ -65,13 +65,12 @@ public class TestSchedulerChangeVmStatus {
         Assert.assertEquals(SchedulerState.Disabled.toString(), scheduler.getState());
         // recover vm
         inv = api.recoverVm(inv.getUuid(), null);
-        TimeUnit.SECONDS.sleep(5);
         VmInstanceVO vm2 = dbf.findByUuid(uuid, VmInstanceVO.class);
         Assert.assertNotNull(vm2);
-        Assert.assertEquals(VmInstanceState.Running, vm2.getState());
+        Assert.assertEquals(VmInstanceState.Stopped, vm2.getState());
         SchedulerVO scheduler2 = dbf.findByUuid(firstRecord.getUuid(), SchedulerVO.class);
         Assert.assertNotNull(scheduler2);
-        Assert.assertEquals(SchedulerState.Enabled.toString(), scheduler2.getState());
+        Assert.assertEquals(SchedulerState.Disabled.toString(), scheduler2.getState());
         // expunge vm
         api.destroyVmInstance(inv.getUuid(), null);
         TimeUnit.SECONDS.sleep(2);

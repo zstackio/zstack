@@ -731,14 +731,6 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
     }
 
     public void afterRecoverDataVolume(VolumeInventory volume) {
-        logger.debug(String.format("will resume scheduler after recover volume %s", volume.getUuid()));
-        SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
-        q.add(SchedulerVO_.targetResourceUuid, Op.EQ, volume.getUuid());
-        q.select(SchedulerVO_.uuid);
-        List<String> uuids = q.listValue();
-        for (String uuid : uuids) {
-            schedulerFacade.resumeSchedulerJob(uuid);
-        }
     }
 
 
