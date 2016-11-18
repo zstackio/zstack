@@ -83,7 +83,7 @@ public class TestVyosIPsec2 {
         Assert.assertEquals(String.format("different ikeAuthAlgorithm[%s, %s]",
                 inv1.getIkeAuthAlgorithm(), inv2.ikeAuthAlgorithm), inv1.getIkeAuthAlgorithm(), inv2.ikeAuthAlgorithm);
         Assert.assertEquals(String.format("different ikeEncryptionAlgorithm[%s, %s]",
-                inv1.getIkeEncryptionAlgorithm(), inv2.ikeEncryptionAlgorithm), inv1.getIkeEncryptionAlgorithm(), inv2.ikeEncryptionAlgorithm);
+                inv1.getIkeEncryptionAlgorithm().replaceAll("-", ""), inv2.ikeEncryptionAlgorithm), inv1.getIkeEncryptionAlgorithm().replaceAll("-", ""), inv2.ikeEncryptionAlgorithm);
         Assert.assertEquals(String.format("different ikeDhGroup[%s, %s]",
                 inv1.getIkeDhGroup(), inv2.ikeDhGroup), inv1.getIkeDhGroup().intValue(), inv2.ikeDhGroup);
         Assert.assertEquals(String.format("different policyAuthAlgorithm[%s, %s]",
@@ -120,8 +120,8 @@ public class TestVyosIPsec2 {
         inv.setIkeEncryptionAlgorithm("aes-256");
         inv.setIkeDhGroup(3);
         inv.setPolicyAuthAlgorithm("sha1");
-        inv.setPolicyEncryptionAlgorithm("aes-192");
-        inv.setPfs("hs");
+        inv.setPolicyEncryptionAlgorithm("aes-128");
+        inv.setPfs("dh-group19");
         inv.setPolicyMode("tunnel");
 
         List<String> peerCidrs = asList("10.2.1.0/24", "10.3.1.0/24");

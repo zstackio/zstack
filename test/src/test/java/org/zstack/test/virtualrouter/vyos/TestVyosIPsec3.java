@@ -14,6 +14,7 @@ import org.zstack.ipsec.vyos.VyosIPsecBackend.SyncIPsecConnectionCmd;
 import org.zstack.ipsec.vyos.VyosIPsecSimulatorConfig;
 import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.vip.VipVO;
+import org.zstack.network.service.virtualrouter.VirtualRouterCommands;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmVO;
 import org.zstack.simulator.appliancevm.ApplianceVmSimulatorConfig;
 import org.zstack.simulator.virtualrouter.VirtualRouterSimulatorConfig;
@@ -23,6 +24,7 @@ import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.utils.DebugUtils;
+import org.zstack.utils.gson.JSONObjectUtil;
 
 import java.util.List;
 
@@ -41,6 +43,7 @@ public class TestVyosIPsec3 {
     VirtualRouterSimulatorConfig vconfig;
     ApplianceVmSimulatorConfig aconfig;
     VyosIPsecSimulatorConfig iconfig;
+    VirtualRouterSimulatorConfig vrconfig;
 
     @Before
     public void setUp() throws Exception {
@@ -62,6 +65,7 @@ public class TestVyosIPsec3 {
         aconfig = loader.getComponent(ApplianceVmSimulatorConfig.class);
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
+        vrconfig = loader.getComponent(VirtualRouterSimulatorConfig.class);
         iconfig = loader.getComponent(VyosIPsecSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
@@ -121,11 +125,13 @@ public class TestVyosIPsec3 {
         Assert.assertEquals(String.format("different ikeAuthAlgorithm[%s, %s]",
                 inv1.getIkeAuthAlgorithm(), inv2.ikeAuthAlgorithm), inv1.getIkeAuthAlgorithm(), inv2.ikeAuthAlgorithm);
         Assert.assertEquals(String.format("different ikeEncryptionAlgorithm[%s, %s]",
-                inv1.getIkeEncryptionAlgorithm(), inv2.ikeEncryptionAlgorithm), inv1.getIkeEncryptionAlgorithm(), inv2.ikeEncryptionAlgorithm);
+                inv1.getIkeEncryptionAlgorithm().replaceAll("-", ""), inv2.ikeEncryptionAlgorithm), inv1.getIkeEncryptionAlgorithm().replaceAll("-", ""), inv2.ikeEncryptionAlgorithm);
         Assert.assertEquals(String.format("different ikeDhGroup[%s, %s]",
                 inv1.getIkeDhGroup(), inv2.ikeDhGroup), inv1.getIkeDhGroup().intValue(), inv2.ikeDhGroup);
         Assert.assertEquals(String.format("different policyAuthAlgorithm[%s, %s]",
                 inv1.getPolicyAuthAlgorithm(), inv2.policyAuthAlgorithm), inv1.getPolicyAuthAlgorithm(), inv2.policyAuthAlgorithm);
+        Assert.assertEquals(String.format("different policyEncryptionAlgorithm[%s, %s]",
+                inv1.getPolicyEncryptionAlgorithm().replaceAll("-", ""), inv2.policyEncryptionAlgorithm), inv1.getPolicyEncryptionAlgorithm().replaceAll("-", ""), inv2.policyEncryptionAlgorithm);
         Assert.assertEquals(String.format("different pfs[%s, %s]",
                 inv1.getPfs(), inv2.pfs), inv1.getPfs(), inv2.pfs);
         Assert.assertEquals(String.format("different policyMode[%s, %s]",
@@ -158,8 +164,8 @@ public class TestVyosIPsec3 {
         inv.setIkeEncryptionAlgorithm("aes-256");
         inv.setIkeDhGroup(3);
         inv.setPolicyAuthAlgorithm("sha1");
-        inv.setPolicyEncryptionAlgorithm("aes-192");
-        inv.setPfs("hs");
+        inv.setPolicyEncryptionAlgorithm("aes-256");
+        inv.setPfs("dh-group19");
         inv.setPolicyMode("tunnel");
 
         List<String> peerCidrs = asList("10.2.1.0/24", "10.3.1.0/24");
@@ -167,6 +173,7 @@ public class TestVyosIPsec3 {
         compare(inv, ipsec, false);
 
         iconfig.syncIPsecConnectionCmds.clear();
+        vrconfig.vips.clear();
         VirtualRouterVmVO vr = dbf.listAll(VirtualRouterVmVO.class).get(0);
         api.stopVmInstance(vr.getUuid());
         api.startVmInstance(vr.getUuid());
@@ -174,19 +181,31 @@ public class TestVyosIPsec3 {
         SyncIPsecConnectionCmd cmd = iconfig.syncIPsecConnectionCmds.get(0);
         Assert.assertEquals(1, cmd.infos.size());
         compare(ipsec, cmd.infos.get(0));
+        System.out.println(String.format("xxxxxxxxxxxxxxxxxxxxxxx %s", JSONObjectUtil.toJsonString(vrconfig.vips)));
+        Assert.assertEquals(1, vrconfig.vips.size());
+        VirtualRouterCommands.VipTO vipto = vrconfig.vips.get(0);
+        Assert.assertEquals(vip.getIp(), vipto.getIp());
 
         iconfig.syncIPsecConnectionCmds.clear();
+        vrconfig.vips.clear();
         api.rebootVmInstance(vr.getUuid());
         Assert.assertEquals(1, iconfig.syncIPsecConnectionCmds.size());
         cmd = iconfig.syncIPsecConnectionCmds.get(0);
         Assert.assertEquals(1, cmd.infos.size());
         compare(ipsec, cmd.infos.get(0));
+        Assert.assertEquals(1, vrconfig.vips.size());
+        vipto = vrconfig.vips.get(0);
+        Assert.assertEquals(vip.getIp(), vipto.getIp());
 
         iconfig.syncIPsecConnectionCmds.clear();
+        vrconfig.vips.clear();
         api.reconnectVirtualRouter(vr.getUuid());
         Assert.assertEquals(1, iconfig.syncIPsecConnectionCmds.size());
         cmd = iconfig.syncIPsecConnectionCmds.get(0);
         Assert.assertEquals(1, cmd.infos.size());
         compare(ipsec, cmd.infos.get(0));
+        Assert.assertEquals(1, vrconfig.vips.size());
+        vipto = vrconfig.vips.get(0);
+        Assert.assertEquals(vip.getIp(), vipto.getIp());
     }
 }

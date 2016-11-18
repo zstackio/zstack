@@ -18,6 +18,7 @@ import org.zstack.network.service.vip.VipVO_;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmInventory;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -44,6 +45,22 @@ public class VirtualRouterSyncVipFlow implements Flow {
         vipExt.createVipOnVirtualRouterVm(vr, invs, new Completion(chain) {
             @Override
             public void success() {
+                //TODO: remove this, we need to remove VirtualRouterVipVO table
+                List<VirtualRouterVipVO> vrvips = new ArrayList<>();
+                for (VipVO vip : vips) {
+                    VirtualRouterVipVO vo = dbf.findByUuid(vip.getUuid(), VirtualRouterVipVO.class);
+                    if (vo == null) {
+                        vo = new VirtualRouterVipVO();
+                        vo.setUuid(vip.getUuid());
+                        vo.setVirtualRouterVmUuid(vr.getUuid());
+                        vrvips.add(vo);
+                    }
+                }
+
+                if (!vrvips.isEmpty()) {
+                    dbf.persistCollection(vrvips);
+                }
+
                 chain.next();
             }
 
