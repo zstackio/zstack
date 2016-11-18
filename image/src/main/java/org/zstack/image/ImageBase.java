@@ -535,6 +535,7 @@ public class ImageBase implements Image {
 
     private void gcImage(List<ExpungeImageMsg> expungeImageMsgs) {
         TimeBasedGCEphemeralContext<Void> context = new TimeBasedGCEphemeralContext<>();
+        context.setName("gc-image-msgs");
         context.setInterval(10);
         context.setTimeUnit(TimeUnit.SECONDS);
         context.setRunner(new GCRunner() {
