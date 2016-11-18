@@ -43,6 +43,6 @@
     </message>
 
     <message>
-        <name>org.zstack.header.storage.snapshot.APIReInitVmInstanceMsg</name>
+        <name>org.zstack.header.storage.snapshot.APIReimageVmInstanceMsg</name>
     </message>
 </service>

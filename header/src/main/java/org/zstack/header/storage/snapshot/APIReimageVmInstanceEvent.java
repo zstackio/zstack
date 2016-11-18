@@ -5,12 +5,12 @@ import org.zstack.header.message.APIEvent;
 /**
  * Created by miao on 11/3/16.
  */
-public class APIReInitVmInstanceEvent extends APIEvent {
-    public APIReInitVmInstanceEvent(String apiId) {
+public class APIReimageVmInstanceEvent extends APIEvent {
+    public APIReimageVmInstanceEvent(String apiId) {
         super(apiId);
     }
 
-    public APIReInitVmInstanceEvent() {
+    public APIReimageVmInstanceEvent() {
         super(null);
     }
 }

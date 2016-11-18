@@ -9,8 +9,8 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.identity.SessionInventory;
-import org.zstack.header.storage.snapshot.APIReInitVmInstanceEvent;
-import org.zstack.header.storage.snapshot.APIReInitVmInstanceMsg;
+import org.zstack.header.storage.snapshot.APIReimageVmInstanceEvent;
+import org.zstack.header.storage.snapshot.APIReimageVmInstanceMsg;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.test.*;
 import org.zstack.test.deployer.Deployer;
@@ -57,17 +57,17 @@ public class TestReInitVMOnKvmWithFileBasedPS {
         String volUuid = vm.getRootVolumeUuid();
         String rootVolumeInstallPath_before = vm.getRootVolume().getInstallPath();
         //
-        APIReInitVmInstanceMsg msg = new APIReInitVmInstanceMsg();
+        APIReimageVmInstanceMsg msg = new APIReimageVmInstanceMsg();
         msg.setVmInstanceUuid(vm.getUuid());
         msg.setSession(session);
 
         ApiSender sender = api.getApiSender();
         thrown.expect(ApiSenderException.class);
         thrown.expectMessage("is not in Stopped state");
-        sender.send(msg, APIReInitVmInstanceEvent.class);
+        sender.send(msg, APIReimageVmInstanceEvent.class);
 
         api.stopVmInstance(vm.getUuid());
-        sender.send(msg, APIReInitVmInstanceEvent.class);
+        sender.send(msg, APIReimageVmInstanceEvent.class);
         //
         String rootVolumeInstallPath_after = vm.getRootVolume().getInstallPath();
         Assert.assertTrue(!rootVolumeInstallPath_before.equals(rootVolumeInstallPath_after));
