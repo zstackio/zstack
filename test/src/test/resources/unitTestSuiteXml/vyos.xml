@@ -7,4 +7,5 @@
     <TestCase class="org.zstack.test.virtualrouter.vyos.TestVyosIPsec1" />
     <TestCase class="org.zstack.test.virtualrouter.vyos.TestVyosIPsec2" />
     <TestCase class="org.zstack.test.virtualrouter.vyos.TestVyosIPsec3" />
+    <TestCase class="org.zstack.test.virtualrouter.vyos.TestVyosIPsec4" />
 </UnitTestSuiteConfig>

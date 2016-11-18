@@ -89,6 +89,10 @@ public class TagManagerImpl extends AbstractService implements TagManager,
                     f.set(null, ptag);
                     systemTags.add(ptag);
                     stag = ptag;
+                } else if (EphemeralSystemTag.class.isAssignableFrom(f.getType())) {
+                    // pass
+                    // ephemeral tag is not needed to inject and validate
+                    systemTags.add(stag);
                 } else {
                     SystemTag sstag = new SystemTag(stag.getTagFormat(), stag.getResourceClass());
                     sstag.setValidators(stag.getValidators());
@@ -300,6 +304,10 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     public void createTagsFromAPICreateMessage(APICreateMessage msg, String resourceUuid, String resourceType) {
         if (msg.getSystemTags() != null && !msg.getSystemTags().isEmpty()) {
             for (String sysTag : msg.getSystemTags()) {
+                if (TagConstant.isEphemeralTag(sysTag)) {
+                    continue;
+                }
+
                 createNonInherentSystemTag(resourceUuid, sysTag, resourceType);
             }
         }
@@ -694,11 +702,28 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         return InterceptorPosition.FRONT;
     }
 
+    private boolean isCheckSystemTags(APIMessage msg) {
+        if (msg.getSystemTags() == null) {
+            return false;
+        }
+
+        if (msg.getSystemTags().isEmpty()) {
+            return false;
+        }
+
+        for (String s : msg.getSystemTags()) {
+            if (!TagConstant.isEphemeralTag(s)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     @Override
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
         APICreateMessage cmsg = (APICreateMessage) msg;
-        if (cmsg.getSystemTags() != null && !cmsg.getSystemTags().isEmpty()) {
+        if (isCheckSystemTags(msg)) {
             cmsg.setSystemTags(removeDuplicateFromList(cmsg.getSystemTags()));
 
             for (String tag : cmsg.getSystemTags()) {
