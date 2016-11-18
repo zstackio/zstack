@@ -4572,6 +4572,7 @@ public class Api implements CloudBusEventListener {
         msg.setPolicyAuthAlgorithm(inv.getPolicyAuthAlgorithm());
         msg.setVipUuid(inv.getVipUuid());
         msg.setTransformProtocol(inv.getTransformProtocol());
+        msg.setSystemTags(asList(VipSystemTags.DELETE_ON_FAILURE.getTagFormat()));
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APICreateIPsecConnectionEvent evt = sender.send(msg, APICreateIPsecConnectionEvent.class);

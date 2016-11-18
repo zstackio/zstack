@@ -3,7 +3,13 @@ package org.zstack.header.tag;
 /**
  */
 public interface TagConstant {
-    public static String SERVICE_ID = "tag";
+    String SERVICE_ID = "tag";
 
-    public static String ACTION_CATEGORY = "tag";
+    String ACTION_CATEGORY = "tag";
+
+    String EPHEMERAL_TAG_PREFIX = "ephemeral";
+
+    static boolean isEphemeralTag(String tag) {
+        return tag.startsWith(String.format("%s::", EPHEMERAL_TAG_PREFIX));
+    }
 }
