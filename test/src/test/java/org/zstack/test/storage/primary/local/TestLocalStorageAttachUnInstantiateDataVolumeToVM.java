@@ -95,7 +95,13 @@ public class TestLocalStorageAttachUnInstantiateDataVolumeToVM {
         Assert.assertEquals(href2.getTotalPhysicalCapacity(), totalSize);
 
         VmInstanceInventory vm = deployer.vms.get("TestVm");
-        DiskOfferingInventory diskOfferingInventory = deployer.diskOfferings.get("TestDiskOffering1");
+        DiskOfferingInventory diskOfferingInventory1 = deployer.diskOfferings.get("TestDiskOffering1");
+        DiskOfferingInventory diskOfferingInventory2 = deployer.diskOfferings.get("TestDiskOffering2");
+
+        // create volume without instantiate it, should be successful
+        VolumeInventory volumeInventory2 = api.createDataVolume("2", diskOfferingInventory2.getUuid());
+        api.attachVolumeToVm(vm.getUuid(), volumeInventory2.getUuid());
+
         // create volume and instantiate it
 //        thrown.expect(ApiSenderException.class);
 //        thrown.expectMessage("required local primary storage");
@@ -105,10 +111,11 @@ public class TestLocalStorageAttachUnInstantiateDataVolumeToVM {
 //                local.getUuid(),
 //                host1.getUuid(),
 //                session);
-        // create volume without instantiate it
+
+        // create volume without instantiate it, expect an exception
         thrown.expect(ApiSenderException.class);
         thrown.expectMessage("Unable to attach data volume to a vm");
-        VolumeInventory volumeInventory = api.createDataVolume("1", diskOfferingInventory.getUuid());
+        VolumeInventory volumeInventory = api.createDataVolume("1", diskOfferingInventory1.getUuid());
         api.attachVolumeToVm(vm.getUuid(), volumeInventory.getUuid());
 
     }

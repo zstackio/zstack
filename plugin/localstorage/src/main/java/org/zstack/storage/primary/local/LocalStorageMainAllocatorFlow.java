@@ -20,6 +20,7 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created by frank on 7/1/2015.
@@ -192,9 +193,10 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
             if (PrimaryStorageAllocationPurpose.CreateNewVm.toString().equals(spec.getPurpose())) {
                 candidates.addAll(considerImageCache(spec, candidateHosts));
             } else {
-                for (LocalStorageHostRefVO ref : candidateHosts) {
-                    candidates.add(ref.getPrimaryStorageUuid());
-                }
+                candidates.addAll(candidateHosts.stream()
+                        .map(LocalStorageHostRefVO::getPrimaryStorageUuid)
+                        .collect(Collectors.toList())
+                );
             }
         }
 
