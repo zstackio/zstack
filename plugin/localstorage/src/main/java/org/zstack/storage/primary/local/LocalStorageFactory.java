@@ -271,7 +271,8 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
                 String key = makeMediatorKey(hvType, m.getSupportedBackupStorageType().toString());
                 LocalStorageBackupStorageMediator old = backupStorageMediatorMap.get(key);
                 if (old != null) {
-                    throw new CloudRuntimeException(String.format("duplicate LocalStorageBackupStorageMediator[%s, %s] for hypervisor type[%s] and backup storage type[%s]",
+                    throw new CloudRuntimeException(String.format("duplicate LocalStorageBackupStorageMediator[%s, %s]" +
+                                    " for hypervisor type[%s] and backup storage type[%s]",
                             m, old, hvType, m.getSupportedBackupStorageType()));
                 }
 
@@ -317,7 +318,8 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
             }
         } else if (spec.getCurrentVmOperation() == VmOperation.AttachVolume) {
             VolumeInventory volume = spec.getDestDataVolumes().get(0);
-            if (VolumeStatus.NotInstantiated.toString().equals(volume.getStatus()) && VmAllocatePrimaryStorageForAttachingDiskFlow.class.getName().equals(nextFlowName)) {
+            if (VolumeStatus.NotInstantiated.toString().equals(volume.getStatus())
+                    && VmAllocatePrimaryStorageForAttachingDiskFlow.class.getName().equals(nextFlowName)) {
                 if (isRootVolumeOnLocalStorage(spec.getVmInventory().getRootVolumeUuid())) {
                     return new LocalStorageAllocateCapacityForAttachingVolumeFlow();
                 }
@@ -506,9 +508,13 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
 
         if (!rootHost.equals(dataHost)) {
             throw new OperationFailureException(errf.stringToOperationError(
-                    String.format("cannot attach the data volume[uuid:%s] to the vm[uuid:%s]. Both vm's root volume and the data volume are" +
-                            " on local primary storage, but they are on different hosts. The root volume[uuid:%s] is on the host[uuid:%s] but the data volume[uuid: %s]" +
-                            " is on the host[uuid: %s]", volume.getUuid(), vm.getUuid(), vm.getRootVolumeUuid(), rootHost, volume.getUuid(), dataHost)
+                    String.format("cannot attach the data volume[uuid:%s] to the vm[uuid:%s]." +
+                            " Both vm's root volume and the data volume are" +
+                            " on local primary storage, but they are on different hosts." +
+                            " The root volume[uuid:%s] is on the host[uuid:%s] but the data volume[uuid: %s]" +
+                            " is on the host[uuid: %s]",
+                            volume.getUuid(), vm.getUuid(), vm.getRootVolumeUuid(),
+                            rootHost, volume.getUuid(), dataHost)
             ));
         }
     }
@@ -825,7 +831,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
             if (hostUuid == null) {
                 throw new OperationFailureException(errf.stringToInvalidArgumentError(
                         String.format("To create data volume on the local primary storage, you must specify the host that" +
-                                " the data volume is going to be created using the system tag [%s]",
+                                        " the data volume is going to be created using the system tag [%s]",
                                 LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME.getTagFormat())
                 ));
             }

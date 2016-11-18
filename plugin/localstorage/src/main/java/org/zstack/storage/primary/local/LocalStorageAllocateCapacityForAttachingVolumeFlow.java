@@ -23,6 +23,7 @@ import org.zstack.header.volume.VolumeInventory;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -69,7 +70,13 @@ public class LocalStorageAllocateCapacityForAttachingVolumeFlow implements Flow 
         if (isThereNetworkSharedStorageForTheHost(hostUuid, priUuid)) {
             // use network-shared primary storage
             msg.addExcludeAllocatorStrategy(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY);
-            msg.addExcludePrimaryStorageUuid(priUuid);
+
+            SimpleQuery<LocalStorageHostRefVO> sq = dbf.createQuery(LocalStorageHostRefVO.class);
+            sq.add(LocalStorageHostRefVO_.hostUuid, Op.EQ, hostUuid);
+            List<LocalStorageHostRefVO> localStorageHostRefVOList = sq.list();
+            if (localStorageHostRefVOList != null && !localStorageHostRefVOList.isEmpty()) {
+                localStorageHostRefVOList.forEach(r -> msg.addExcludePrimaryStorageUuid(r.getPrimaryStorageUuid()));
+            }
         } else {
             msg.setAllocationStrategy(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY);
             msg.setRequiredPrimaryStorageUuid(spec.getVmInventory().getRootVolume().getPrimaryStorageUuid());
@@ -102,7 +109,8 @@ public class LocalStorageAllocateCapacityForAttachingVolumeFlow implements Flow 
     public void rollback(FlowRollback trigger, Map data) {
         Long size = (Long) data.get(LocalStorageAllocateCapacityForAttachingVolumeFlow.class);
         if (size != null) {
-            PrimaryStorageInventory pri = (PrimaryStorageInventory) data.get(VmInstanceConstant.Params.DestPrimaryStorageInventoryForAttachingVolume.toString());
+            PrimaryStorageInventory pri = (PrimaryStorageInventory) data.get(
+                    VmInstanceConstant.Params.DestPrimaryStorageInventoryForAttachingVolume.toString());
             ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
             rmsg.setPrimaryStorageUuid(pri.getUuid());
             rmsg.setDiskSize(size);

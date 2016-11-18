@@ -1225,7 +1225,8 @@ public class LocalStorageBase extends PrimaryStorageBase {
         physicalCapacityMgr.checkCapacityByRatio(
                 self.getUuid(),
                 ref.getTotalPhysicalCapacity(),
-                ref.getAvailablePhysicalCapacity());
+                ref.getAvailablePhysicalCapacity()
+        );
 
         LocalStorageHostCapacityStruct s = new LocalStorageHostCapacityStruct();
         s.setLocalStorage(getSelfInventory());
@@ -1335,16 +1336,20 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     String __name__ = "allocate-capacity-on-host";
 
                     long requiredSize = ratioMgr.calculateByRatio(self.getUuid(), msg.getVolume().getSize());
+                    long reservedSize;
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         reserveCapacityOnHost(finalHostUuid, requiredSize);
+                        reservedSize = requiredSize;
                         trigger.next();
                     }
 
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
-                        returnCapacityToHost(finalHostUuid, requiredSize);
+                        if (reservedSize != 0) {
+                            returnCapacityToHost(finalHostUuid, reservedSize);
+                        }
                         trigger.rollback();
                     }
                 });
