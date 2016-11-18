@@ -9,7 +9,6 @@ import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.network.l3.L3NetworkVO;
-import org.zstack.header.storage.primary.PrimaryStorage;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.tag.TagResourceType;
 import org.zstack.header.zone.ZoneVO;
@@ -139,7 +138,7 @@ public class APICreateVmInstanceMsg extends APICreateMessage {
      * @desc user-defined root password
      * @optional
      */
-    @APIParam(required = false, maxLength = 32, checkAccount = true)
+    @APIParam(required = false, maxLength = 32, checkAccount = true, validRegexValues = VmInstanceConstant.USER_VM_REGEX_PASSWORD)
     private String rootPassword;
 
     private String defaultL3NetworkUuid;
