@@ -951,10 +951,6 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                     ref.setStatus(ImageStatus.Ready);
                                     ref.setInstallPath(re.getInstallPath());
                                     dbf.update(ref);
-                                    if(re.isInjected()) {
-                                        logger.debug(String.format("ImageSystemTags.IMAGE_INJECT_QEMUGA.getTagFormat() is: %s", ImageSystemTags.IMAGE_INJECT_QEMUGA.getTagFormat()));
-                                        new ImageAgentOperate().attachAgentToImage(dmsg.getImageInventory().getUuid(), ImageSystemTags.IMAGE_INJECT_QEMUGA.getTagFormat());
-                                    }
 
                                     if (success.compareAndSet(false, true)) {
                                         ivo.setMd5Sum(re.getMd5sum());
