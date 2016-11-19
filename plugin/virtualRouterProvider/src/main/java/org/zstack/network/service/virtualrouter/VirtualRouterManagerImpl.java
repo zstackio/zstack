@@ -598,7 +598,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         SimpleQuery<NetworkServiceL3NetworkRefVO> q = dbf.createQuery(NetworkServiceL3NetworkRefVO.class);
         q.add(NetworkServiceL3NetworkRefVO_.l3NetworkUuid, Op.EQ, l3Uuid);
         q.add(NetworkServiceL3NetworkRefVO_.networkServiceType, Op.EQ, nsType);
-        q.add(NetworkServiceL3NetworkRefVO_.networkServiceProviderUuid, Op.EQ, getVirtualRouterProvider().getUuid());
+        // no need to specify provider type, L3 networks identified by candidates are served by virtual router or vyos
         return q.isExists();
     }
 

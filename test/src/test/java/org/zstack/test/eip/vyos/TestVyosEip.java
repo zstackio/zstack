@@ -77,10 +77,12 @@ public class TestVyosEip {
         vconfig.dhcpInfoMap.clear();
         vconfig.dnsInfo.clear();
         vconfig.snatInfos.clear();
+        vconfig.eips.clear();
         VirtualRouterVmVO vr = dbf.listAll(VirtualRouterVmVO.class).get(0);
         api.rebootVmInstance(vr.getUuid());
         Assert.assertFalse(vconfig.dhcpInfoMap.isEmpty());
         Assert.assertFalse(vconfig.dnsInfo.isEmpty());
         Assert.assertFalse(vconfig.snatInfos.isEmpty());
+        Assert.assertFalse(vconfig.eips.isEmpty());
     }
 }
