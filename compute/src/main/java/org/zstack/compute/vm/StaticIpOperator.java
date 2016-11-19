@@ -9,6 +9,7 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.TagUtils;
 
 import java.util.HashMap;
@@ -50,10 +51,12 @@ public class StaticIpOperator {
         final String tagUuid = q.findValue();
 
         if (tagUuid == null) {
-            VmSystemTags.STATIC_IP.createTag(vmUuid, map(
+            SystemTagCreator creator = VmSystemTags.STATIC_IP.newSystemTagCreator(vmUuid);
+            creator.setTagByTokens(map(
                     e(VmSystemTags.STATIC_IP_L3_UUID_TOKEN, l3Uuid),
                     e(VmSystemTags.STATIC_IP_TOKEN, ip)
             ));
+            creator.create();
         } else {
             VmSystemTags.STATIC_IP.updateByTagUuid(tagUuid, VmSystemTags.STATIC_IP.instantiateTag(map(
                     e(VmSystemTags.STATIC_IP_L3_UUID_TOKEN, l3Uuid),

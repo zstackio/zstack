@@ -70,6 +70,7 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
 
     private Map<String, VipReleaseExtensionPoint> vipReleaseExts = new HashMap<String, VipReleaseExtensionPoint>();
     private Map<String, VipBackend> vipBackends = new HashMap<String, VipBackend>();
+    private Map<String, VipFactory> factories = new HashMap<>();
 
     private List<String> releaseVipByApiFlowNames;
     private FlowChainBuilder releaseVipByApiFlowChainBuilder;
@@ -96,6 +97,16 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
             }
             vipBackends.put(extp.getServiceProviderTypeForVip(), extp);
         }
+
+        for (VipFactory ext : pluginRgty.getExtensionList(VipFactory.class)) {
+            VipFactory old = factories.get(ext.getNetworkServiceProviderType());
+            if (old != null) {
+                throw new CloudRuntimeException(String.format("duplicate VipFactory[%s, %s] for the network service provider type[%s]",
+                        old.getClass(), ext.getClass(), ext.getNetworkServiceProviderType()));
+            }
+
+            factories.put(ext.getNetworkServiceProviderType(), ext);
+        }
     }
 
     public VipReleaseExtensionPoint getVipReleaseExtensionPoint(String use) {
@@ -108,194 +119,51 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
     }
 
     @Override
+    public FlowChain getReleaseVipChain() {
+        return releaseVipByApiFlowChainBuilder.build();
+    }
+
+    @Override
+    public VipFactory getVipFactory(String networkServiceProviderType) {
+        VipFactory f = factories.get(networkServiceProviderType);
+        DebugUtils.Assert(f != null, String.format("cannot find the VipFactory for the network service provider type[%s]", networkServiceProviderType));
+        return f;
+    }
+
+    @Override
     @MessageSafe
     public void handleMessage(Message msg) {
-        if (msg instanceof APIMessage) {
+        if (msg instanceof VipMessage) {
+            passThrough((VipMessage) msg);
+        } else if (msg instanceof APIMessage) {
             handleApiMessage((APIMessage) msg);
         } else {
             handleLocalMessage(msg);
         }
     }
 
-    private void handleLocalMessage(Message msg) {
-        if (msg instanceof VipDeletionMsg) {
-            handle((VipDeletionMsg) msg);
-        } else {
-            bus.dealWithUnknownMessage(msg);
+    private void passThrough(VipMessage msg) {
+        VipVO vip = dbf.findByUuid(msg.getVipUuid(), VipVO.class);
+        if (vip == null) {
+            throw new OperationFailureException(errf.instantiateErrorCode(SysErrors.RESOURCE_NOT_FOUND,
+                    String.format("cannot find the vip[uuid:%s], it may have been deleted", msg.getVipUuid())
+            ));
         }
+
+        VipBase v = new VipBase(vip);
+        v.handleMessage((Message) msg);
     }
 
-    private void handle(final VipDeletionMsg msg) {
-        final VipDeletionReply reply = new VipDeletionReply();
-        final VipVO vip = dbf.findByUuid(msg.getVipUuid(), VipVO.class);
-
-        if (vip.getUseFor() == null) {
-            returnVip(VipInventory.valueOf(vip));
-            dbf.removeByPrimaryKey(vip.getUuid(), VipVO.class);
-            logger.debug(String.format("released vip[uuid:%s, ip:%s] on l3Network[uuid:%s]", vip.getUuid(), vip.getIp(), vip.getL3NetworkUuid()));
-            bus.reply(msg, reply);
-            return;
-        }
-
-        final VipInventory vipinv = VipInventory.valueOf(vip);
-        FlowChain chain = releaseVipByApiFlowChainBuilder.build();
-        chain.setName(String.format("api-release-vip-uuid-%s-ip-%s-name-%s", vipinv.getUuid(), vipinv.getIp(), vipinv.getName()));
-        chain.getData().put(VipConstant.Params.VIP.toString(), vipinv);
-        chain.done(new FlowDoneHandler(msg) {
-            @Override
-            public void handle(Map data) {
-                returnVip(vipinv);
-                dbf.removeByPrimaryKey(vip.getUuid(), VipVO.class);
-                bus.reply(msg, reply);
-            }
-        }).error(new FlowErrorHandler(msg) {
-            @Override
-            public void handle(ErrorCode errCode, Map data) {
-                reply.setError(errCode);
-                bus.reply(msg, reply);
-            }
-        }).start();
+    private void handleLocalMessage(Message msg) {
+        bus.dealWithUnknownMessage(msg);
     }
 
     private void handleApiMessage(APIMessage msg) {
         if (msg instanceof APICreateVipMsg) {
             handle((APICreateVipMsg) msg);
-        } else if (msg instanceof APIDeleteVipMsg) {
-            handle((APIDeleteVipMsg) msg);
-        } else if (msg instanceof APIChangeVipStateMsg) {
-            handle((APIChangeVipStateMsg) msg);
-        } else if (msg instanceof APIUpdateVipMsg) {
-            handle((APIUpdateVipMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
-    }
-
-    private void handle(APIUpdateVipMsg msg) {
-        VipVO vo = dbf.findByUuid(msg.getUuid(), VipVO.class);
-        boolean update = false;
-        if (msg.getName() != null) {
-            vo.setName(msg.getName());
-            update = true;
-        }
-        if (msg.getDescription() != null) {
-            vo.setDescription(msg.getDescription());
-            update = true;
-        }
-        if (update) {
-            vo = dbf.updateAndRefresh(vo);
-        }
-
-        APIUpdateVipEvent evt = new APIUpdateVipEvent(msg.getId());
-        evt.setInventory(VipInventory.valueOf(vo));
-        bus.publish(evt);
-    }
-
-    private void handle(APIChangeVipStateMsg msg) {
-        VipVO vip = dbf.findByUuid(msg.getUuid(), VipVO.class);
-        VipStateEvent sevt = VipStateEvent.valueOf(msg.getStateEvent());
-        vip.setState(vip.getState().nextState(sevt));
-        vip = dbf.updateAndRefresh(vip);
-
-        APIChangeVipStateEvent evt = new APIChangeVipStateEvent(msg.getId());
-        evt.setInventory(VipInventory.valueOf(vip));
-        bus.publish(evt);
-    }
-
-    private void returnVip(VipInventory vip) {
-        ReturnIpMsg msg = new ReturnIpMsg();
-        msg.setL3NetworkUuid(vip.getL3NetworkUuid());
-        msg.setUsedIpUuid(vip.getUsedIpUuid());
-        bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, vip.getL3NetworkUuid());
-        bus.send(msg);
-    }
-
-    private void handle(final APIDeleteVipMsg msg) {
-        final VipVO vip = dbf.findByUuid(msg.getUuid(), VipVO.class);
-        final APIDeleteVipEvent evt = new APIDeleteVipEvent(msg.getId());
-        final String issuer = VipVO.class.getSimpleName();
-        final List<VipInventory> ctx = Arrays.asList(VipInventory.valueOf(vip));
-        FlowChain chain = FlowChainBuilder.newShareFlowChain();
-        chain.setName(String.format("delete-vip-%s", vip.getUuid()));
-        chain.then(new ShareFlow() {
-            @Override
-            public void setup() {
-                if (msg.getDeletionMode() == DeletionMode.Permissive) {
-                    flow(new NoRollbackFlow() {
-                        String __name__ = String.format("delete-vip-permissive-check");
-
-                        @Override
-                        public void run(final FlowTrigger trigger, Map data) {
-                            casf.asyncCascade(CascadeConstant.DELETION_CHECK_CODE, issuer, ctx, new Completion(trigger) {
-                                @Override
-                                public void success() {
-                                    trigger.next();
-                                }
-
-                                @Override
-                                public void fail(ErrorCode errorCode) {
-                                    trigger.fail(errorCode);
-                                }
-                            });
-                        }
-                    });
-
-                    flow(new NoRollbackFlow() {
-                        String __name__ = String.format("delete-vip-permissive-delete");
-
-                        @Override
-                        public void run(final FlowTrigger trigger, Map data) {
-                            casf.asyncCascade(CascadeConstant.DELETION_DELETE_CODE, issuer, ctx, new Completion(trigger) {
-                                @Override
-                                public void success() {
-                                    trigger.next();
-                                }
-
-                                @Override
-                                public void fail(ErrorCode errorCode) {
-                                    trigger.fail(errorCode);
-                                }
-                            });
-                        }
-                    });
-                } else {
-                    flow(new NoRollbackFlow() {
-                        String __name__ = String.format("delete-vip-force-delete");
-
-                        @Override
-                        public void run(final FlowTrigger trigger, Map data) {
-                            casf.asyncCascade(CascadeConstant.DELETION_FORCE_DELETE_CODE, issuer, ctx, new Completion(trigger) {
-                                @Override
-                                public void success() {
-                                    trigger.next();
-                                }
-
-                                @Override
-                                public void fail(ErrorCode errorCode) {
-                                    trigger.fail(errorCode);
-                                }
-                            });
-                        }
-                    });
-                }
-
-                done(new FlowDoneHandler(msg) {
-                    @Override
-                    public void handle(Map data) {
-                        casf.asyncCascadeFull(CascadeConstant.DELETION_CLEANUP_CODE, issuer, ctx, new NopeCompletion());
-                        bus.publish(evt);
-                    }
-                });
-
-                error(new FlowErrorHandler(msg) {
-                    @Override
-                    public void handle(ErrorCode errCode, Map data) {
-                        evt.setErrorCode(errf.instantiateErrorCode(SysErrors.DELETE_RESOURCE_ERROR, errCode));
-                        bus.publish(evt);
-                    }
-                });
-            }
-        }).start();
     }
 
     private void handle(final APICreateVipMsg msg) {
@@ -429,157 +297,6 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
     @Override
     public boolean stop() {
         return true;
-    }
-
-    @Override
-    public VipBackend getVipBackend(String providerType) {
-        VipBackend backend = vipBackends.get(providerType);
-        DebugUtils.Assert(backend != null, String.format("cannot find VipBackend for provider type[%s]", providerType));
-        return backend;
-    }
-
-    @Override
-    public void saveVipInfo(String vipUuid, String networkServiceType, String peerL3NetworkUuid) {
-        VipVO vo = dbf.findByUuid(vipUuid, VipVO.class);
-        vo.setServiceProvider(networkServiceType);
-        if (vo.getPeerL3NetworkUuid() == null) {
-            vo.setPeerL3NetworkUuid(peerL3NetworkUuid);
-        }
-        dbf.update(vo);
-    }
-
-    @Override
-    public void lockAndAcquireVip(VipInventory vip, L3NetworkInventory peerL3Network, String networkServiceType, String networkServiceProviderType, Completion completion) {
-        lockVip(vip, networkServiceType);
-        acquireVip(vip, peerL3Network, networkServiceProviderType, completion);
-    }
-
-    @Override
-    public void releaseAndUnlockVip(VipInventory vip, Completion completion) {
-        releaseAndUnlockVip(vip, true, completion);
-    }
-
-    @Override
-    public void releaseAndUnlockVip(final VipInventory vip, boolean releasePeerL3Network, final Completion completion) {
-        releaseVip(vip, releasePeerL3Network, new Completion(completion) {
-            @Override
-            public void success() {
-                unlockVip(vip);
-                completion.success();
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                completion.fail(errorCode);
-            }
-        });
-    }
-
-    @Override
-    public void acquireVip(final VipInventory vip, final L3NetworkInventory peerL3Network, final String networkServiceProviderType, final Completion completion) {
-        if (vip.getPeerL3NetworkUuid() != null && !vip.getPeerL3NetworkUuid().equals(peerL3Network.getUuid())) {
-            completion.fail(
-                    errf.stringToOperationError(String.format("vip[uuid:%s, name:%s] has been serving l3Network[name:%s, uuid:%s], can't serve l3Network[name:%s, uuid:%s]",
-                            vip.getUuid(), vip.getName(), vip.getName(), vip.getPeerL3NetworkUuid(), peerL3Network.getName(), peerL3Network.getUuid()))
-            );
-            return;
-        }
-
-        VipBackend bkd = getVipBackend(networkServiceProviderType);
-        bkd.acquireVip(vip, peerL3Network, new Completion(completion) {
-            @Override
-            public void success() {
-                saveVipInfo(vip.getUuid(), networkServiceProviderType, peerL3Network.getUuid());
-
-                logger.debug(String.format("successfully acquired vip[uuid:%s, name:%s, ip:%s] on service[%s]",
-                        vip.getUuid(), vip.getName(), vip.getIp(), networkServiceProviderType));
-                completion.success();
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                completion.fail(errorCode);
-            }
-        });
-    }
-
-    @Override
-    public void releaseVip(final VipInventory vip, final boolean releasePeerL3Network, final Completion completion) {
-        if (vip.getServiceProvider() == null) {
-            // the vip has been released by other descendant network service
-            completion.success();
-            return;
-        }
-
-        VipBackend bkd = getVipBackend(vip.getServiceProvider());
-        // service provider should ensure vip always release successfully,
-        // use its garbage collector on failure
-        bkd.releaseVip(vip, new Completion() {
-            @Override
-            public void success() {
-                logger.debug(String.format("successfully released vip[uuid:%s, name:%s, ip:%s] on service[%s]",
-                        vip.getUuid(), vip.getName(), vip.getIp(), vip.getServiceProvider()));
-                VipVO vo = dbf.findByUuid(vip.getUuid(), VipVO.class);
-                vo.setServiceProvider(null);
-                if (releasePeerL3Network) {
-                    vo.setPeerL3NetworkUuid(null);
-                }
-                dbf.update(vo);
-                completion.success();
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                logger.warn(String.format("failed to release vip[uuid:%s, name:%s, ip:%s] on service[%s], its garbage collector should" +
-                        " handle this", vip.getUuid(), vip.getName(), vip.getIp(), vip.getServiceProvider()));
-                completion.fail(errorCode);
-            }
-        });
-    }
-
-    @Override
-    public void releaseVip(final VipInventory vip, Completion completion) {
-        releaseVip(vip, true, completion);
-    }
-
-    @Override
-    public void unlockVip(VipInventory vip) {
-        VipVO vo = dbf.findByUuid(vip.getUuid(), VipVO.class);
-
-        vo.setUseFor(null);
-        dbf.update(vo);
-        logger.debug(String.format("successfully unlocked vip[uuid:%s, name:%s, ip:%s]",
-                vip.getUuid(), vip.getName(), vip.getIp()));
-    }
-
-    @Override
-    public void lockVip(VipInventory vip, String networkServiceType) {
-        SimpleQuery<VipVO> q = dbf.createQuery(VipVO.class);
-        q.add(VipVO_.uuid, SimpleQuery.Op.EQ, vip.getUuid());
-        VipVO vipvo = q.find();
-
-        if (vipvo == null) {
-            throw new OperationFailureException(
-                    errf.stringToOperationError(String.format("no vip[uuid:%s, name:%s, ip:%s] found for lock", vip.getUuid(), vip.getName(), vip.getIp()))
-            );
-        }
-
-        if ((vipvo.getUseFor() != null && !vipvo.getUseFor().equals(networkServiceType))) {
-            throw new OperationFailureException(
-                    errf.stringToOperationError(String.format("vip[uuid:%s, name:%s, ip:%s] has been occupied by usage[%s]",
-                            vipvo.getUuid(), vipvo.getName(), vipvo.getIp(), vipvo.getUseFor()))
-            );
-        }
-
-        if (networkServiceType.equals(vipvo.getUseFor())) {
-            return;
-        }
-
-        vipvo.setUseFor(networkServiceType);
-        dbf.update(vipvo);
-
-        logger.debug(String.format("successfully locked vip[uuid:%s, name:%s, ip:%s] for %s",
-                vip.getUuid(), vip.getName(), vip.getIp(), networkServiceType));
     }
 
     public void setReleaseVipByApiFlowNames(List<String> releaseVipByApiFlowNames) {

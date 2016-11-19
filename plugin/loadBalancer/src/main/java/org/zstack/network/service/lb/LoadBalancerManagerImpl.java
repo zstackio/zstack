@@ -7,19 +7,21 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
+import org.zstack.header.core.Completion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.identity.*;
+import org.zstack.header.identity.IdentityErrors;
+import org.zstack.header.identity.Quota;
 import org.zstack.header.identity.Quota.QuotaOperator;
 import org.zstack.header.identity.Quota.QuotaPair;
+import org.zstack.header.identity.ReportQuotaExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.NeedQuotaCheckMessage;
@@ -32,10 +34,12 @@ import org.zstack.header.tag.SystemTagValidator;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
+import org.zstack.network.service.vip.Vip;
 import org.zstack.network.service.vip.VipInventory;
-import org.zstack.network.service.vip.VipManager;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.tag.TagManager;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
@@ -50,6 +54,8 @@ import static org.zstack.utils.CollectionDSL.list;
  */
 public class LoadBalancerManagerImpl extends AbstractService implements LoadBalancerManager,
         AddExpandedQueryExtensionPoint, ReportQuotaExtensionPoint {
+    private static final CLogger logger = Utils.getLogger(LoadBalancerManagerImpl.class);
+
     @Autowired
     private CloudBus bus;
     @Autowired
@@ -62,8 +68,6 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
     private PluginRegistry pluginRgty;
     @Autowired
     private TagManager tagMgr;
-    @Autowired
-    private VipManager vipMgr;
 
     private Map<String, LoadBalancerBackend> backends = new HashMap<String, LoadBalancerBackend>();
 
@@ -113,18 +117,48 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
             @Override
             public void setup() {
                 flow(new Flow() {
-                    String __name__ = "lock-vip";
+                    String __name__ = "acquire-vip";
+
+                    boolean s = false;
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        vipMgr.lockVip(vip, LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
-                        trigger.next();
+                        Vip v = new Vip(vip.getUuid());
+                        v.setUseFor(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
+                        v.acquire(false, new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                s = true;
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
                     }
 
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
-                        vipMgr.unlockVip(vip);
-                        trigger.rollback();
+                        if (!s) {
+                            trigger.rollback();
+                            return;
+                        }
+
+                        new Vip(vip.getUuid()).release(false, new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.rollback();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                //TODO
+                                logger.warn(errorCode.toString());
+                                trigger.rollback();
+                            }
+                        });
                     }
                 });
 

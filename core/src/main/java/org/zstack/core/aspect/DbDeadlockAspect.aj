@@ -5,6 +5,7 @@ import org.zstack.core.db.DatabaseGlobalProperty;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+import java.util.concurrent.TimeUnit;
 
 /**
  */
@@ -25,6 +26,12 @@ public aspect DbDeadlockAspect {
                 Throwable root = DebugUtils.getRootCause(re);
                 if (root instanceof MySQLTransactionRollbackException && root.getMessage().contains("Deadlock")) {
                     logger.warn("deadlock happened, retry");
+
+                    try {
+                        TimeUnit.SECONDS.sleep(1);
+                    } catch (InterruptedException e) {
+                        logger.warn(e.getMessage(), e);
+                    }
                 } else {
                     throw re;
                 }

@@ -17,6 +17,7 @@ import org.zstack.header.tag.TagInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.zone.ZoneInventory;
 import org.zstack.kvm.KVMGlobalConfig;
+import org.zstack.tag.SystemTagCreator;
 import org.zstack.test.*;
 import org.zstack.test.deployer.Deployer;
 
@@ -56,9 +57,17 @@ public class TestReservedHostCapacity7 {
         HostInventory host = deployer.hosts.values().iterator().next();
 
         KVMGlobalConfig.RESERVED_CPU_CAPACITY.updateValue(1);
-        TagInventory ztag = ZoneSystemTags.HOST_RESERVED_CPU_CAPACITY.createTag(zone.getUuid(), map(e("capacity", 1)));
-        TagInventory ctag = ClusterSystemTags.HOST_RESERVED_CPU_CAPACITY.createTag(cluster.getUuid(), map(e("capacity", 1)));
-        TagInventory htag = HostSystemTags.RESERVED_CPU_CAPACITY.createTag(host.getUuid(), map(e("capacity", 1)));
+        SystemTagCreator sc = ZoneSystemTags.HOST_RESERVED_CPU_CAPACITY.newSystemTagCreator(zone.getUuid());
+        sc.setTagByTokens(map(e("capacity", 1)));
+        TagInventory ztag = sc.create();
+
+        sc = ClusterSystemTags.HOST_RESERVED_CPU_CAPACITY.newSystemTagCreator(cluster.getUuid());
+        sc.setTagByTokens(map(e("capacity", 1)));
+        TagInventory ctag = sc.create();
+
+        sc = HostSystemTags.RESERVED_CPU_CAPACITY.newSystemTagCreator(host.getUuid());
+        sc.setTagByTokens(map(e("capacity", 1)));
+        TagInventory htag = sc.create();
 
         L3NetworkInventory l3 = deployer.l3Networks.get("TestL3Network1");
         InstanceOfferingInventory instanceOffering = deployer.instanceOfferings.get("TestInstanceOffering");

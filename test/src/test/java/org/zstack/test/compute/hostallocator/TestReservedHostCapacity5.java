@@ -18,6 +18,7 @@ import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.tag.TagInventory;
 import org.zstack.header.zone.ZoneInventory;
 import org.zstack.kvm.KVMGlobalConfig;
+import org.zstack.tag.SystemTagCreator;
 import org.zstack.test.*;
 import org.zstack.test.deployer.Deployer;
 
@@ -61,11 +62,19 @@ public class TestReservedHostCapacity5 {
         // set kvm global reserved capacity to 0 that can create vm
         KVMGlobalConfig.RESERVED_CPU_CAPACITY.updateValue(0);
         // set zone reserved capacity to big value that cannot create vm
-        TagInventory ztag = ZoneSystemTags.HOST_RESERVED_CPU_CAPACITY.createTag(zone.getUuid(), map(e("capacity", 10 * 2600L)));
+        SystemTagCreator sc = ZoneSystemTags.HOST_RESERVED_CPU_CAPACITY.newSystemTagCreator(zone.getUuid());
+        sc.setTagByTokens(map(e("capacity", 10*2600L)));
+        TagInventory ztag = sc.create();
+
         // set cluster reserved capacity to 0 that can create vm
-        TagInventory ctag = ClusterSystemTags.HOST_RESERVED_CPU_CAPACITY.createTag(cluster.getUuid(), map(e("capacity", 0L)));
+        sc = ClusterSystemTags.HOST_RESERVED_CPU_CAPACITY.newSystemTagCreator(cluster.getUuid());
+        sc.setTagByTokens(map(e("capacity", 0L)));
+        TagInventory ctag = sc.create();
         // set host reserved capacity to big value that cannot create vm
-        TagInventory htag = HostSystemTags.RESERVED_CPU_CAPACITY.createTag(host.getUuid(), map(e("capacity", 10 * 2600L)));
+
+        sc = HostSystemTags.RESERVED_CPU_CAPACITY.newSystemTagCreator(host.getUuid());
+        sc.setTagByTokens(map(e("capacity", 10*2600L)));
+        TagInventory htag = sc.create();
 
         L3NetworkInventory l3 = deployer.l3Networks.get("TestL3Network1");
         InstanceOfferingInventory instanceOffering = deployer.instanceOfferings.get("TestInstanceOffering");

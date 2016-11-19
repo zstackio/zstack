@@ -496,6 +496,7 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
     }
 
     @Override
+    @DeadlockAutoRestart
     public void remove(Object entity) {
         getEntityInfo(entity.getClass()).remove(entity);
     }

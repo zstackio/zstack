@@ -63,6 +63,7 @@ import org.zstack.network.service.virtualrouter.portforwarding.VirtualRouterPort
 import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipInventory;
 import org.zstack.search.GetQuery;
 import org.zstack.search.SearchQuery;
+import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
@@ -329,11 +330,14 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                     @Override
                     public void success(ApplianceVmInventory apvm) {
                         String paraDegree = VirtualRouterSystemTags.VR_OFFERING_PARALLELISM_DEGREE.getTokenByResourceUuid(offering.getUuid(), VirtualRouterSystemTags.PARALLELISM_DEGREE_TOKEN);
+
                         if (paraDegree != null) {
-                            VirtualRouterSystemTags.VR_PARALLELISM_DEGREE.createTag(apvm.getUuid(), map(e(
+                            SystemTagCreator creator = VirtualRouterSystemTags.VR_PARALLELISM_DEGREE.newSystemTagCreator(apvm.getUuid());
+                            creator.setTagByTokens(map(e(
                                     VirtualRouterSystemTags.PARALLELISM_DEGREE_TOKEN,
                                     paraDegree
                             )));
+                            creator.create();
                         }
 
                         reply.setInventory(VirtualRouterVmInventory.valueOf(dbf.findByUuid(apvm.getUuid(), VirtualRouterVmVO.class)));

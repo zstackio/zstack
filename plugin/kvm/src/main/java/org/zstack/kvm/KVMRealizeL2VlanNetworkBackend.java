@@ -18,6 +18,7 @@ import org.zstack.kvm.KVMAgentCommands.CheckVlanBridgeResponse;
 import org.zstack.kvm.KVMAgentCommands.CreateVlanBridgeCmd;
 import org.zstack.kvm.KVMAgentCommands.CreateVlanBridgeResponse;
 import org.zstack.kvm.KVMAgentCommands.NicTO;
+import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -79,19 +80,11 @@ public class KVMRealizeL2VlanNetworkBackend implements L2NetworkRealizationExten
                                 .getBridgeName(), l2Network.getUuid(), l2Network.getType(), l2vlan.getVlan(), hostUuid);
                 logger.debug(info);
 
-                // concurrently adding host may cause duplicate bridge tags to be created,
-                // and mysql doesn't have a way to do 'insert if not exist', so we use
-                // a global lock here
-                GLock lock = new GLock(String.format("create-bridge-name-system-tag-for-l2-%s", l2Network.getUuid()), 300);
-                lock.lock();
-                try {
-                    if (!KVMSystemTags.L2_BRIDGE_NAME.hasTag(l2Network.getUuid())) {
-                        KVMSystemTags.L2_BRIDGE_NAME.createInherentTag(l2Network.getUuid(),
-                                map(e(KVMSystemTags.L2_BRIDGE_NAME_TOKEN, cmd.getBridgeName())));
-                    }
-                } finally {
-                    lock.unlock();
-                }
+                SystemTagCreator creator = KVMSystemTags.L2_BRIDGE_NAME.newSystemTagCreator(l2Network.getUuid());
+                creator.inherent = true;
+                creator.ignoreIfExisting = true;
+                creator.setTagByTokens(map(e(KVMSystemTags.L2_BRIDGE_NAME_TOKEN, cmd.getBridgeName())));
+                creator.create();
 
                 completion.success();
             }

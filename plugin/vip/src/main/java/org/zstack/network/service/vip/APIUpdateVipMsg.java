@@ -8,7 +8,7 @@ import org.zstack.header.message.APIParam;
  * Created by frank on 6/15/2015.
  */
 @Action(category = VipConstant.ACTION_CATEGORY)
-public class APIUpdateVipMsg extends APIMessage {
+public class APIUpdateVipMsg extends APIMessage implements VipMessage {
     @APIParam(resourceType = VipVO.class, checkAccount = true, operationTarget = true)
     private String uuid;
     @APIParam(maxLength = 255, required = false)
@@ -38,5 +38,10 @@ public class APIUpdateVipMsg extends APIMessage {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    @Override
+    public String getVipUuid() {
+        return uuid;
     }
 }

@@ -1,5 +1,7 @@
 package org.zstack.network.service.virtualrouter;
 
+import org.zstack.tag.SystemTagCreator;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -8,39 +10,39 @@ import java.util.List;
  */
 public class VirtualRouterRoleManager {
     public void makeDhcpRole(String vrUuid) {
-        if (!VirtualRouterSystemTags.VR_DHCP_ROLE.hasTag(vrUuid)) {
-            VirtualRouterSystemTags.VR_DHCP_ROLE.createInherentTag(vrUuid);
-        }
+        SystemTagCreator creator = VirtualRouterSystemTags.VR_DHCP_ROLE.newSystemTagCreator(vrUuid);
+        creator.ignoreIfExisting = true;
+        creator.create();
     }
 
     public void makeDnsRole(String vrUuid) {
-        if (!VirtualRouterSystemTags.VR_DNS_ROLE.hasTag(vrUuid)) {
-            VirtualRouterSystemTags.VR_DNS_ROLE.createInherentTag(vrUuid);
-        }
+        SystemTagCreator creator = VirtualRouterSystemTags.VR_DNS_ROLE.newSystemTagCreator(vrUuid);
+        creator.ignoreIfExisting = true;
+        creator.create();
     }
 
     public void makeSnatRole(String vrUuid) {
-        if (!VirtualRouterSystemTags.VR_SNAT_ROLE.hasTag(vrUuid)) {
-            VirtualRouterSystemTags.VR_SNAT_ROLE.createInherentTag(vrUuid);
-        }
+        SystemTagCreator creator = VirtualRouterSystemTags.VR_SNAT_ROLE.newSystemTagCreator(vrUuid);
+        creator.ignoreIfExisting = true;
+        creator.create();
     }
 
     public void makeEipRole(String vrUuid) {
-        if (!VirtualRouterSystemTags.VR_EIP_ROLE.hasTag(vrUuid)) {
-            VirtualRouterSystemTags.VR_EIP_ROLE.createInherentTag(vrUuid);
-        }
+        SystemTagCreator creator = VirtualRouterSystemTags.VR_EIP_ROLE.newSystemTagCreator(vrUuid);
+        creator.ignoreIfExisting = true;
+        creator.create();
     }
 
     public void makePortForwardingRole(String vrUuid) {
-        if (!VirtualRouterSystemTags.VR_PORT_FORWARDING_ROLE.hasTag(vrUuid)) {
-            VirtualRouterSystemTags.VR_PORT_FORWARDING_ROLE.createInherentTag(vrUuid);
-        }
+        SystemTagCreator creator = VirtualRouterSystemTags.VR_PORT_FORWARDING_ROLE.newSystemTagCreator(vrUuid);
+        creator.ignoreIfExisting = true;
+        creator.create();
     }
 
     public void makeLoadBalancerRole(String vrUuid) {
-        if (!VirtualRouterSystemTags.VR_LB_ROLE.hasTag(vrUuid)) {
-            VirtualRouterSystemTags.VR_LB_ROLE.createInherentTag(vrUuid);
-        }
+        SystemTagCreator creator = VirtualRouterSystemTags.VR_LB_ROLE.newSystemTagCreator(vrUuid);
+        creator.ignoreIfExisting = true;
+        creator.create();
     }
 
     public List<String> getAllRoles(String vrUuid) {

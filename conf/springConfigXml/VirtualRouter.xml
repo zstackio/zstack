@@ -191,4 +191,10 @@
             <zstack:extension interface="org.zstack.network.service.lb.LoadBalancerBackend" />
         </zstack:plugin>
     </bean>
+
+    <bean id="VirtualRouterVipFactory" class="org.zstack.network.service.virtualrouter.vip.VirtualRouterVipFactory">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.network.service.vip.VipFactory" />
+        </zstack:plugin>
+    </bean>
 </beans>

@@ -15,6 +15,7 @@ import org.zstack.header.zone.APIQueryZoneReply;
 import org.zstack.header.zone.ZoneInventory;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.tag.SystemTag;
+import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagSubQueryExtension;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
@@ -65,5 +66,20 @@ public class TestSystemTag {
 
         SystemTagVO tvo = dbf.findByUuid(inv.getUuid(), SystemTagVO.class);
         Assert.assertNull(tvo);
+
+        SystemTagCreator creator = TestSystemTags.big.newSystemTagCreator(zone1.getUuid());
+        SystemTagInventory sinv = creator.create();
+        Assert.assertTrue(dbf.isExist(sinv.getUuid(), SystemTagVO.class));
+
+        creator.ignoreIfExisting = true;
+        SystemTagInventory sinv1 = creator.create();
+        Assert.assertNull(sinv1);
+        Assert.assertTrue(dbf.isExist(sinv.getUuid(), SystemTagVO.class));
+
+        creator.ignoreIfExisting = false;
+        creator.recreate = true;
+        SystemTagInventory sinv2 = creator.create();
+        Assert.assertTrue(dbf.isExist(sinv2.getUuid(), SystemTagVO.class));
+        Assert.assertEquals(1, dbf.count(SystemTagVO.class));
     }
 }

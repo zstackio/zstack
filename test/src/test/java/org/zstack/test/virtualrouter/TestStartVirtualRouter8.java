@@ -18,6 +18,7 @@ import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.network.service.virtualrouter.VirtualRouterSystemTags;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.simulator.virtualrouter.VirtualRouterSimulatorConfig;
+import org.zstack.tag.SystemTagCreator;
 import org.zstack.test.*;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.utils.Utils;
@@ -67,9 +68,11 @@ public class TestStartVirtualRouter8 {
         InstanceOfferingInventory ioinv = deployer.instanceOfferings.get("TestInstanceOffering");
         L3NetworkInventory l3inv = deployer.l3Networks.get("TestL3Network2");
         InstanceOfferingInventory vroffering = deployer.instanceOfferings.get("virtualRouterOffering");
-        VirtualRouterSystemTags.VR_OFFERING_PARALLELISM_DEGREE.createTag(vroffering.getUuid(), map(
+        SystemTagCreator creator = VirtualRouterSystemTags.VR_OFFERING_PARALLELISM_DEGREE.newSystemTagCreator(vroffering.getUuid());
+        creator.setTagByTokens(map(
                 e(VirtualRouterSystemTags.PARALLELISM_DEGREE_TOKEN, 1000)
         ));
+        creator.create();
 
         APICreateVmInstanceMsg msg = new APICreateVmInstanceMsg();
         msg.setImageUuid(iminv.getUuid());

@@ -1,5 +1,7 @@
 package org.zstack.compute.vm;
 
+import org.zstack.tag.SystemTagCreator;
+
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
@@ -12,7 +14,10 @@ public class IsoOperator {
     }
 
     public void attachIsoToVm(String vmUuid, String isoUuid) {
-        VmSystemTags.ISO.createInherentTag(vmUuid, map(e(VmSystemTags.ISO_TOKEN, isoUuid)));
+        SystemTagCreator creator = VmSystemTags.ISO.newSystemTagCreator(vmUuid);
+        creator.setTagByTokens(map(e(VmSystemTags.ISO_TOKEN, isoUuid)));
+        creator.inherent = true;
+        creator.create();
     }
 
     public void detachIsoFromVm(String vmUuid) {

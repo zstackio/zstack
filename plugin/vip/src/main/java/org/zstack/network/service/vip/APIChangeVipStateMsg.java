@@ -7,7 +7,7 @@ import org.zstack.header.message.APIParam;
 /**
  */
 @Action(category = VipConstant.ACTION_CATEGORY)
-public class APIChangeVipStateMsg extends APIMessage {
+public class APIChangeVipStateMsg extends APIMessage implements VipMessage {
     @APIParam(resourceType = VipVO.class, checkAccount = true, operationTarget = true)
     private String uuid;
     @APIParam(validValues = {"enable", "disable"})
@@ -27,5 +27,10 @@ public class APIChangeVipStateMsg extends APIMessage {
 
     public void setStateEvent(String stateEvent) {
         this.stateEvent = stateEvent;
+    }
+
+    @Override
+    public String getVipUuid() {
+        return uuid;
     }
 }

@@ -19,6 +19,7 @@ import org.zstack.kvm.KVMAgentCommands.CheckBridgeResponse;
 import org.zstack.kvm.KVMAgentCommands.CreateBridgeCmd;
 import org.zstack.kvm.KVMAgentCommands.CreateBridgeResponse;
 import org.zstack.kvm.KVMAgentCommands.NicTO;
+import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -74,10 +75,13 @@ public class KVMRealizeL2NoVlanNetworkBackend implements L2NetworkRealizationExt
                         "successfully realize bridge[%s] for l2Network[uuid:%s, type:%s] on kvm host[uuid:%s]", cmd
                                 .getBridgeName(), l2Network.getUuid(), l2Network.getType(), hostUuid);
                 logger.debug(info);
-                if (!KVMSystemTags.L2_BRIDGE_NAME.hasTag(l2Network.getUuid())) {
-                    KVMSystemTags.L2_BRIDGE_NAME.createInherentTag(l2Network.getUuid(),
-                            map(e(KVMSystemTags.L2_BRIDGE_NAME_TOKEN, cmd.getBridgeName())));
-                }
+
+                SystemTagCreator creator = KVMSystemTags.L2_BRIDGE_NAME.newSystemTagCreator(l2Network.getUuid());
+                creator.inherent = true;
+                creator.ignoreIfExisting = true;
+                creator.setTagByTokens(map(e(KVMSystemTags.L2_BRIDGE_NAME_TOKEN, cmd.getBridgeName())));
+                creator.create();
+
                 completion.success();
             }
         });

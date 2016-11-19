@@ -9,6 +9,7 @@ import org.zstack.header.simulator.APIAddSimulatorHostMsg;
 import org.zstack.header.simulator.SimulatorConstant;
 import org.zstack.header.simulator.SimulatorHostVO;
 import org.zstack.header.volume.VolumeFormat;
+import org.zstack.tag.SystemTagCreator;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -33,9 +34,22 @@ public class SimulatorFactory implements HypervisorFactory {
         svo.setMemoryCapacity(smsg.getMemoryCapacity());
         svo.setCpuCapacity(smsg.getCpuCapacity());
         svo.setUuid(vo.getUuid());
-        HostSystemTags.OS_DISTRIBUTION.createInherentTag(vo.getUuid(), map(e(HostSystemTags.OS_DISTRIBUTION_TOKEN, "zstack")));
-        HostSystemTags.OS_RELEASE.createInherentTag(vo.getUuid(), map(e(HostSystemTags.OS_RELEASE_TOKEN, "simulator")));
-        HostSystemTags.OS_VERSION.createInherentTag(vo.getUuid(), map(e(HostSystemTags.OS_VERSION_TOKEN, "0.1")));
+
+        SystemTagCreator creator = HostSystemTags.OS_DISTRIBUTION.newSystemTagCreator(vo.getUuid());
+        creator.setTagByTokens(map(e(HostSystemTags.OS_DISTRIBUTION_TOKEN, "zstack")));
+        creator.inherent = true;
+        creator.create();
+
+        creator = HostSystemTags.OS_RELEASE.newSystemTagCreator(vo.getUuid());
+        creator.setTagByTokens(map(e(HostSystemTags.OS_RELEASE_TOKEN, "simulator")));
+        creator.inherent = true;
+        creator.create();
+
+        creator = HostSystemTags.OS_VERSION.newSystemTagCreator(vo.getUuid());
+        creator.setTagByTokens(map(e(HostSystemTags.OS_VERSION_TOKEN, "0.1")));
+        creator.inherent = true;
+        creator.create();
+
         svo = dbf.persistAndRefresh(svo);
         return svo;
     }

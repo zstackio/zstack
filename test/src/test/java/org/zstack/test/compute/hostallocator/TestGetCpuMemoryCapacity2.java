@@ -15,6 +15,7 @@ import org.zstack.header.host.HostInventory;
 import org.zstack.header.tag.TagInventory;
 import org.zstack.header.zone.ZoneInventory;
 import org.zstack.kvm.KVMGlobalConfig;
+import org.zstack.tag.SystemTagCreator;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
@@ -59,9 +60,17 @@ public class TestGetCpuMemoryCapacity2 {
         HostInventory host = deployer.hosts.values().iterator().next();
 
         KVMGlobalConfig.RESERVED_CPU_CAPACITY.updateValue(1);
-        TagInventory ztag = ZoneSystemTags.HOST_RESERVED_CPU_CAPACITY.createTag(zone.getUuid(), map(e("capacity", 10)));
-        TagInventory ctag = ClusterSystemTags.HOST_RESERVED_CPU_CAPACITY.createTag(cluster.getUuid(), map(e("capacity", 100)));
-        TagInventory htag = HostSystemTags.RESERVED_CPU_CAPACITY.createTag(host.getUuid(), map(e("capacity", 1000)));
+        SystemTagCreator creator = ZoneSystemTags.HOST_RESERVED_CPU_CAPACITY.newSystemTagCreator(zone.getUuid());
+        creator.setTagByTokens(map(e("capacity", 10)));
+        TagInventory ztag = creator.create();
+
+        creator = ClusterSystemTags.HOST_RESERVED_CPU_CAPACITY.newSystemTagCreator(cluster.getUuid());
+        creator.setTagByTokens(map(e("capacity", 100)));
+        TagInventory ctag = creator.create();
+
+        creator = HostSystemTags.RESERVED_CPU_CAPACITY.newSystemTagCreator(host.getUuid());
+        creator.setTagByTokens(map(e("capacity", 1000)));
+        TagInventory htag = creator.create();
 
         // host tag takes effect
         APIGetCpuMemoryCapacityReply reply = api.retrieveHostCapacity(Arrays.asList(zone.getUuid()), null, null);

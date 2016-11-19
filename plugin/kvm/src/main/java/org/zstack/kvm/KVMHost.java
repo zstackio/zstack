@@ -43,11 +43,13 @@ import org.zstack.header.network.l2.*;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
+import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.vm.*;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.kvm.KVMAgentCommands.*;
 import org.zstack.kvm.KVMConstant.KvmVmState;
+import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.*;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -1388,11 +1390,14 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private String setVolumeWwn(String volumeUUid) {
-        if (!KVMSystemTags.VOLUME_WWN.hasTag(volumeUUid)) {
-            KVMSystemTags.VOLUME_WWN.createTag(volumeUUid, VolumeVO.class,
-                    map(e(KVMSystemTags.VOLUME_WWN_TOKEN, new WwnUtils().getRandomWwn())));
-        }
-        String wwn = KVMSystemTags.VOLUME_WWN.getTokenByResourceUuid(volumeUUid, KVMSystemTags.VOLUME_WWN_TOKEN);
+        SystemTagCreator creator = KVMSystemTags.VOLUME_WWN.newSystemTagCreator(volumeUUid);
+        creator.ignoreIfExisting = true;
+        creator.inherent = true;
+        creator.setTagByTokens(map(e(KVMSystemTags.VOLUME_WWN_TOKEN, new WwnUtils().getRandomWwn())));
+        SystemTagInventory inv = creator.create();
+
+        String tag = inv != null ? inv.getTag() : KVMSystemTags.VOLUME_WWN.getTag(volumeUUid);
+        String wwn = KVMSystemTags.VOLUME_WWN.getTokenByTag(tag, KVMSystemTags.VOLUME_WWN_TOKEN);
         DebugUtils.Assert(new WwnUtils().isValidWwn(wwn), String.format("Not a valid wwn[%s] for volume[uuid:%s]", wwn, volumeUUid));
         return wwn;
     }
@@ -2330,7 +2335,10 @@ public class KVMHost extends HostBase implements Host {
                 if (liveSnapshot) {
                     logger.debug(String.format("kvm host[OS:%s, uuid:%s, name:%s, ip:%s] supports live snapshot with libvirt[version:%s], qemu[version:%s]",
                             hostOS, self.getUuid(), self.getName(), self.getManagementIp(), rsp.getLibvirtVersion(), rsp.getQemuVersion()));
-                    HostSystemTags.LIVE_SNAPSHOT.reCreateInherentTag(self.getUuid());
+
+                    SystemTagCreator creator = HostSystemTags.LIVE_SNAPSHOT.newSystemTagCreator(self.getUuid());
+                    creator.recreate = true;
+                    creator.create();
                 } else {
                     HostSystemTags.LIVE_SNAPSHOT.deleteInherentTag(self.getUuid());
                 }
@@ -2383,10 +2391,20 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private void createHostVersionSystemTags(String distro, String release, String version) {
-        HostSystemTags.OS_DISTRIBUTION.createInherentTag(self.getUuid(),
-                map(e(HostSystemTags.OS_DISTRIBUTION_TOKEN, distro)));
-        HostSystemTags.OS_RELEASE.createInherentTag(self.getUuid(), map(e(HostSystemTags.OS_RELEASE_TOKEN, release)));
-        HostSystemTags.OS_VERSION.createInherentTag(self.getUuid(), map(e(HostSystemTags.OS_VERSION_TOKEN, version)));
+        SystemTagCreator creator = HostSystemTags.OS_DISTRIBUTION.newSystemTagCreator(self.getUuid());
+        creator.inherent = true;
+        creator.setTagByTokens(map(e(HostSystemTags.OS_DISTRIBUTION_TOKEN, distro)));
+        creator.create();
+
+        creator = HostSystemTags.OS_RELEASE.newSystemTagCreator(self.getUuid());
+        creator.inherent = true;
+        creator.setTagByTokens(map(e(HostSystemTags.OS_RELEASE_TOKEN, release)));
+        creator.create();
+
+        creator = HostSystemTags.OS_VERSION.newSystemTagCreator(self.getUuid());
+        creator.inherent = true;
+        creator.setTagByTokens(map(e(HostSystemTags.OS_VERSION_TOKEN, version)));
+        creator.create();
     }
 
     @Override
@@ -2394,10 +2412,15 @@ public class KVMHost extends HostBase implements Host {
         if (CoreGlobalProperty.UNIT_TEST_ON) {
             if (info.isNewAdded()) {
                 createHostVersionSystemTags("zstack", "kvmSimulator", "0.1");
-                KVMSystemTags.LIBVIRT_VERSION.createInherentTag(self.getUuid(),
-                        map(e(KVMSystemTags.LIBVIRT_VERSION_TOKEN, "1.2.9")));
-                KVMSystemTags.QEMU_IMG_VERSION.createInherentTag(self.getUuid(),
-                        map(e(KVMSystemTags.QEMU_IMG_VERSION_TOKEN, "2.0.0")));
+                SystemTagCreator creator = KVMSystemTags.LIBVIRT_VERSION.newSystemTagCreator(self.getUuid());
+                creator.inherent = true;
+                creator.setTagByTokens(map(e(KVMSystemTags.LIBVIRT_VERSION_TOKEN, "1.2.9")));
+                creator.create();
+
+                creator = KVMSystemTags.QEMU_IMG_VERSION.newSystemTagCreator(self.getUuid());
+                creator.inherent = true;
+                creator.setTagByTokens(map(e(KVMSystemTags.QEMU_IMG_VERSION_TOKEN, "2.0.0")));
+                creator.create();
             }
 
             continueConnect(info.isNewAdded(), complete);
@@ -2617,12 +2640,25 @@ public class KVMHost extends HostBase implements Host {
                                         return;
                                     }
 
-                                    KVMSystemTags.QEMU_IMG_VERSION.recreateTag(self.getUuid(), map(e(KVMSystemTags.QEMU_IMG_VERSION_TOKEN, ret.getQemuImgVersion())));
-                                    KVMSystemTags.LIBVIRT_VERSION.recreateTag(self.getUuid(), map(e(KVMSystemTags.LIBVIRT_VERSION_TOKEN, ret.getLibvirtVersion())));
-                                    KVMSystemTags.HVM_CPU_FLAG.recreateTag(self.getUuid(), map(e(KVMSystemTags.HVM_CPU_FLAG_TOKEN, ret.getHvmCpuFlag())));
+                                    SystemTagCreator creator = KVMSystemTags.QEMU_IMG_VERSION.newSystemTagCreator(self.getUuid());
+                                    creator.setTagByTokens(map(e(KVMSystemTags.QEMU_IMG_VERSION_TOKEN, ret.getQemuImgVersion())));
+                                    creator.recreate = true;
+                                    creator.create();
+
+                                    creator = KVMSystemTags.LIBVIRT_VERSION.newSystemTagCreator(self.getUuid());
+                                    creator.setTagByTokens(map(e(KVMSystemTags.LIBVIRT_VERSION_TOKEN, ret.getLibvirtVersion())));
+                                    creator.recreate = true;
+                                    creator.create();
+
+                                    creator = KVMSystemTags.HVM_CPU_FLAG.newSystemTagCreator(self.getUuid());
+                                    creator.setTagByTokens(map(e(KVMSystemTags.HVM_CPU_FLAG_TOKEN, ret.getHvmCpuFlag())));
+                                    creator.recreate = true;
+                                    creator.create();
 
                                     if (ret.getLibvirtVersion().compareTo(KVMConstant.MIN_LIBVIRT_VIRTIO_SCSI_VERSION) >= 0) {
-                                        KVMSystemTags.VIRTIO_SCSI.reCreateInherentTag(self.getUuid());
+                                        creator = KVMSystemTags.VIRTIO_SCSI.newSystemTagCreator(self.getUuid());
+                                        creator.recreate = true;
+                                        creator.create();
                                     }
 
                                     trigger.next();

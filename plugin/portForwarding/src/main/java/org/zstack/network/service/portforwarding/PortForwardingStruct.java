@@ -14,6 +14,15 @@ public class PortForwardingStruct {
     private PortForwardingRuleInventory rule;
     private boolean snatInboundTraffic;
     private boolean releaseVmNicInfoWhenDetaching;
+    private boolean releaseVip;
+
+    public boolean isReleaseVip() {
+        return releaseVip;
+    }
+
+    public void setReleaseVip(boolean releaseVip) {
+        this.releaseVip = releaseVip;
+    }
 
     public boolean isReleaseVmNicInfoWhenDetaching() {
         return releaseVmNicInfoWhenDetaching;

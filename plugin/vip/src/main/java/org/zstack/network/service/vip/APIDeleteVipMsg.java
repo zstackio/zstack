@@ -42,7 +42,7 @@ import org.zstack.header.rest.APINoSee;
  * @result
  */
 @Action(category = VipConstant.ACTION_CATEGORY)
-public class APIDeleteVipMsg extends APIDeleteMessage implements L3NetworkMessage {
+public class APIDeleteVipMsg extends APIDeleteMessage implements L3NetworkMessage, VipMessage {
     /**
      * @ignore
      */
@@ -69,5 +69,10 @@ public class APIDeleteVipMsg extends APIDeleteMessage implements L3NetworkMessag
 
     public void setL3NetworkUuid(String l3NetworkUuid) {
         this.l3NetworkUuid = l3NetworkUuid;
+    }
+
+    @Override
+    public String getVipUuid() {
+        return uuid;
     }
 }

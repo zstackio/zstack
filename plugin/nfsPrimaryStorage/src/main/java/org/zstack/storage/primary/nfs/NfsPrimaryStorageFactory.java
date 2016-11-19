@@ -26,6 +26,7 @@ import org.zstack.kvm.KVMConstant;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.primary.PrimaryStorageSystemTags;
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackendCommands.NfsPrimaryStorageAgentResponse;
+import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.path.PathUtil;
 
@@ -80,9 +81,12 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
         vo.setMountPath(mountPath);
         vo = dbf.persistAndRefresh(vo);
 
-        PrimaryStorageSystemTags.CAPABILITY_HYPERVISOR_SNAPSHOT.createTag(vo.getUuid(), map(
+        SystemTagCreator creator = PrimaryStorageSystemTags.CAPABILITY_HYPERVISOR_SNAPSHOT.newSystemTagCreator(vo.getUuid());
+        creator.setTagByTokens(map(
                 e(PrimaryStorageSystemTags.CAPABILITY_HYPERVISOR_SNAPSHOT_TOKEN, KVMConstant.KVM_HYPERVISOR_TYPE)
         ));
+        creator.create();
+
         return PrimaryStorageInventory.valueOf(vo);
     }
 

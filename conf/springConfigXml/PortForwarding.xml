@@ -20,46 +20,6 @@
 			<zstack:extension interface="org.zstack.header.query.AddExpandedQueryExtensionPoint" />
 			<zstack:extension interface="org.zstack.header.identity.ReportQuotaExtensionPoint" />
 		</zstack:plugin>
-
-		<property name="createPortForwardingFlowNames">
-            <list>
-                <value>org.zstack.network.service.portforwarding.PortForwardingPrepareVipFlow</value>
-                <value>org.zstack.network.service.portforwarding.AttachPortFowardingFlow</value>
-            </list>
-        </property>
-
-		<property name="removePortForwardingFlowNames">
-            <list>
-                <value>org.zstack.network.service.portforwarding.DetachPortForwardingFlow</value>
-            </list>
-        </property>
-
-		<property name="removePortForwardingAndVipFlowNames">
-            <list>
-                <value>org.zstack.network.service.portforwarding.DetachPortForwardingFlow</value>
-                <value>org.zstack.network.service.portforwarding.PortForwardingReturnVipFlow</value>
-            </list>
-        </property>
-
-		<property name="attachPortForwardingFlowNames">
-            <list>
-                <value>org.zstack.network.service.portforwarding.PortForwardingPrepareVipFlow</value>
-                <value>org.zstack.network.service.portforwarding.AttachPortFowardingFlow</value>
-            </list>
-        </property>
-
-		<property name="detachPortForwardingFlowNames">
-            <list>
-                <value>org.zstack.network.service.portforwarding.DetachPortForwardingFlow</value>
-            </list>
-        </property>
-
-		<property name="detachPortForwardingAndReleaseVipFlowNames">
-            <list>
-                <value>org.zstack.network.service.portforwarding.DetachPortForwardingFlow</value>
-                <value>org.zstack.network.service.portforwarding.PortForwardingReturnVipFlow</value>
-            </list>
-        </property>
 	</bean>
 
 	<bean id="PortForwardingApiInterceptor" class="org.zstack.network.service.portforwarding.PortForwardingApiInterceptor">

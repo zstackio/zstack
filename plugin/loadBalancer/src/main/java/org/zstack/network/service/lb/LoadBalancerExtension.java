@@ -234,8 +234,8 @@ public class LoadBalancerExtension extends AbstractNetworkServiceExtension imple
             return;
         }
 
-        DeleteLoadBalancerMsg msg = new DeleteLoadBalancerMsg();
-        msg.setUuid(lbUuid);
+        DeleteLoadBalancerOnlyMsg msg = new DeleteLoadBalancerOnlyMsg();
+        msg.setLoadBalancerUuid(lbUuid);
         bus.makeTargetServiceIdByResourceUuid(msg, LoadBalancerConstants.SERVICE_ID, lbUuid);
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override

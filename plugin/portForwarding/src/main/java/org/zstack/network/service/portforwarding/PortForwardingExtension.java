@@ -72,6 +72,7 @@ public class PortForwardingExtension extends AbstractNetworkServiceExtension {
             struct.setSnatInboundTraffic(PortForwardingGlobalConfig.SNAT_INBOUND_TRAFFIC.value(Boolean.class));
             struct.setVipL3Network(L3NetworkInventory.valueOf(l3vo));
             struct.setReleaseVmNicInfoWhenDetaching(releaseVmNicInfo);
+            struct.setReleaseVip(false);
             rules.add(struct);
         }
 

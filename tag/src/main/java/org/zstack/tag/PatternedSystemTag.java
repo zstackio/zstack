@@ -119,18 +119,6 @@ public class PatternedSystemTag extends SystemTag {
         return s(tagFormat).formatByMap(tokens);
     }
 
-    private SystemTagInventory createTag(String resourceUuid, Class resourceClass, Map tokens, boolean inherent, boolean recreate) {
-        if (recreate) {
-            tagMgr.deleteSystemTagUseLike(useTagFormat(), resourceUuid, resourceClass.getSimpleName(), inherent);
-        }
-
-        if (inherent) {
-            return (SystemTagInventory) tagMgr.createSysTag(resourceUuid, instantiateTag(tokens), resourceClass.getSimpleName());
-        } else {
-            return tagMgr.createNonInherentSystemTag(resourceUuid, instantiateTag(tokens), resourceClass.getSimpleName());
-        }
-    }
-
     public SystemTagInventory getTagInventory(String resourceUuid) {
         SimpleQuery<SystemTagVO> q = dbf.createQuery(SystemTagVO.class);
         q.add(SystemTagVO_.resourceUuid, Op.EQ, resourceUuid);
@@ -139,41 +127,4 @@ public class PatternedSystemTag extends SystemTag {
         SystemTagVO vo = q.find();
         return  vo == null ? null : SystemTagInventory.valueOf(vo);
     }
-
-    public SystemTagInventory recreateTag(String resourceUuid, Class resourceClass, Map tokens) {
-        return createTag(resourceUuid, resourceClass, tokens, false, true);
-    }
-
-    public SystemTagInventory recreateTag(String resourceUuid, Map tokens) {
-        return createTag(resourceUuid, resourceClass, tokens, false, true);
-    }
-
-    public SystemTagInventory recreateInherentTag(String resourceUuid, Class resourceClass, Map tokens) {
-        return createTag(resourceUuid, resourceClass, tokens, true, true);
-    }
-
-    public SystemTagInventory recreateInherentTag(String resourceUuid, Map tokens) {
-        return createTag(resourceUuid, resourceClass, tokens, true, true);
-    }
-
-    public SystemTagInventory createTag(String resourceUuid, Class resourceClass, Map tokens) {
-        return createTag(resourceUuid, resourceClass, tokens, false, false);
-    }
-
-    public SystemTagInventory createTag(String resourceUuid, Map tokens) {
-        return createTag(resourceUuid, resourceClass, tokens, false, false);
-    }
-
-    public SystemTagInventory createTag(String resourceUuid, String tag) {
-        return createTag(resourceUuid, getTokensByTag(tag));
-    }
-
-    public SystemTagInventory createInherentTag(String resourceUuid, Class resourceClass, Map tokens) {
-        return createTag(resourceUuid, resourceClass, tokens, true, false);
-    }
-
-    public SystemTagInventory createInherentTag(String resourceUuid, Map tokens) {
-        return createTag(resourceUuid, resourceClass, tokens, true, false);
-    }
 }
-

@@ -10,6 +10,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.Component;
 import org.zstack.header.storage.backup.*;
 import org.zstack.storage.ceph.*;
+import org.zstack.tag.SystemTagCreator;
 
 import javax.persistence.LockModeType;
 import javax.persistence.TypedQuery;
@@ -62,7 +63,9 @@ public class CephBackupStorageFactory implements BackupStorageFactory, CephCapac
         dbf.getEntityManager().persist(cvo);
 
         if (cmsg.getPoolName() != null) {
-            CephSystemTags.PREDEFINED_BACKUP_STORAGE_POOL.createInherentTag(cvo.getUuid());
+            SystemTagCreator creator = CephSystemTags.PREDEFINED_BACKUP_STORAGE_POOL.newSystemTagCreator(cvo.getUuid());
+            creator.ignoreIfExisting = true;
+            creator.create();
         }
 
         for (String url : cmsg.getMonUrls()) {

@@ -60,6 +60,7 @@ import org.zstack.header.vm.VmInstanceSpec.HostName;
 import org.zstack.header.vm.VmInstanceSpec.IsoSpec;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
+import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.ObjectUtils;
@@ -2202,9 +2203,11 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     private void handle(APISetVmHostnameMsg msg) {
         if (!VmSystemTags.HOSTNAME.hasTag(self.getUuid())) {
-            VmSystemTags.HOSTNAME.createTag(self.getUuid(), map(
+            SystemTagCreator creator = VmSystemTags.HOSTNAME.newSystemTagCreator(self.getUuid());
+            creator.setTagByTokens(map(
                     e(VmSystemTags.HOSTNAME_TOKEN, msg.getHostname())
             ));
+            creator.create();
         } else {
             VmSystemTags.HOSTNAME.update(self.getUuid(), VmSystemTags.HOSTNAME.instantiateTag(
                     map(e(VmSystemTags.HOSTNAME_TOKEN, msg.getHostname()))
@@ -2257,8 +2260,11 @@ public class VmInstanceBase extends AbstractVmInstance {
     private void handle(APISetVmBootOrderMsg msg) {
         APISetVmBootOrderEvent evt = new APISetVmBootOrderEvent(msg.getId());
         if (msg.getBootOrder() != null) {
-            VmSystemTags.BOOT_ORDER.recreateInherentTag(self.getUuid(),
-                    map(e(VmSystemTags.BOOT_ORDER_TOKEN, StringUtils.join(msg.getBootOrder(), ","))));
+            SystemTagCreator creator = VmSystemTags.BOOT_ORDER.newSystemTagCreator(self.getUuid());
+            creator.inherent = true;
+            creator.recreate = true;
+            creator.setTagByTokens(map(e(VmSystemTags.BOOT_ORDER_TOKEN, StringUtils.join(msg.getBootOrder(), ","))));
+            creator.create();
         } else {
             VmSystemTags.BOOT_ORDER.deleteInherentTag(self.getUuid());
         }
@@ -2268,8 +2274,10 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     private void handle(APISetVmConsolePasswordMsg msg) {
         APISetVmConsolePasswordEvent evt = new APISetVmConsolePasswordEvent(msg.getId());
-        VmSystemTags.CONSOLE_PASSWORD.recreateTag(self.getUuid(),
-                map(e(VmSystemTags.CONSOLE_PASSWORD_TOKEN, msg.getConsolePassword())));
+        SystemTagCreator creator = VmSystemTags.CONSOLE_PASSWORD.newSystemTagCreator(self.getUuid());
+        creator.setTagByTokens(map(e(VmSystemTags.CONSOLE_PASSWORD_TOKEN, msg.getConsolePassword())));
+        creator.recreate = true;
+        creator.create();
         evt.setInventory(getSelfInventory());
         bus.publish(evt);
     }
@@ -2291,7 +2299,10 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     private void handle(APISetVmSshKeyMsg msg) {
         APISetVmSshKeyEvent evt = new APISetVmSshKeyEvent(msg.getId());
-        VmSystemTags.SSHKEY.recreateTag(self.getUuid(), map(e(VmSystemTags.SSHKEY_TOKEN, msg.getSshKey())));
+        SystemTagCreator creator = VmSystemTags.SSHKEY.newSystemTagCreator(self.getUuid());
+        creator.setTagByTokens(map(e(VmSystemTags.SSHKEY_TOKEN, msg.getSshKey())));
+        creator.recreate = true;
+        creator.create();
         evt.setInventory(getSelfInventory());
         bus.publish(evt);
     }
@@ -3000,7 +3011,11 @@ public class VmInstanceBase extends AbstractVmInstance {
         m.put(VmSystemTags.PENDING_CAPACITY_CHNAGE_CPU_NUM_TOKEN, newOfferingVO.getCpuNum());
         m.put(VmSystemTags.PENDING_CAPACITY_CHNAGE_CPU_SPEED_TOKEN, newOfferingVO.getCpuSpeed());
         m.put(VmSystemTags.PENDING_CAPACITY_CHNAGE_MEMORY_TOKEN, newOfferingVO.getMemorySize());
-        VmSystemTags.PENDING_CAPACITY_CHANGE.recreateInherentTag(self.getUuid(), m);
+        SystemTagCreator creator = VmSystemTags.PENDING_CAPACITY_CHANGE.newSystemTagCreator(self.getUuid());
+        creator.inherent = true;
+        creator.recreate = true;
+        creator.setTagByTokens(m);
+        creator.create();
 
         self.setInstanceOfferingUuid(newOfferingVO.getUuid());
         self = dbf.updateAndRefresh(self);

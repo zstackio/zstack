@@ -474,7 +474,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         deleteSystemTag(tag, resourceUuid, resourceType, inherit, true);
     }
 
-    private void fireTagDeleted(List<SystemTagInventory> tags) {
+    void fireTagDeleted(List<SystemTagInventory> tags) {
         for (SystemTagInventory tag : tags) {
             List<SystemTagLifeCycleExtension> exts = lifeCycleExtensions.get(tag.getResourceType());
             if (exts != null) {
@@ -489,7 +489,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         }
     }
 
-    private void fireTagCreated(List<SystemTagInventory> tags) {
+    void fireTagCreated(List<SystemTagInventory> tags) {
         for (SystemTagInventory tag : tags) {
             List<SystemTagLifeCycleExtension> exts = lifeCycleExtensions.get(tag.getResourceType());
             if (exts != null) {
@@ -772,7 +772,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         return lst;
     }
 
-    private void preTagCreated(SystemTagInventory tag) {
+    void preTagCreated(SystemTagInventory tag) {
         List<SystemTag> tags = resourceTypeSystemTagMap.get(tag.getResourceType());
         if (tags != null) {
             for (SystemTag stag : tags) {
@@ -795,7 +795,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         }
     }
 
-    private void preTagDeleted(SystemTagInventory tag) {
+    void preTagDeleted(SystemTagInventory tag) {
         List<SystemTag> tags = resourceTypeSystemTagMap.get(tag.getResourceType());
         if (tags != null) {
             for (SystemTag stag : tags) {

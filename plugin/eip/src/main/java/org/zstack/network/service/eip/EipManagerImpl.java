@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
@@ -13,6 +14,7 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.FlowChain;
 import org.zstack.header.core.workflow.FlowChainProcessor;
 import org.zstack.header.core.workflow.FlowDoneHandler;
@@ -25,6 +27,7 @@ import org.zstack.header.identity.Quota.QuotaOperator;
 import org.zstack.header.identity.Quota.QuotaPair;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
+import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedQuotaCheckMessage;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
@@ -48,6 +51,7 @@ import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
 
+import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
@@ -298,11 +302,23 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         VipInventory vipInventory = VipInventory.valueOf(vipvo);
 
         if (vo.getVmNicUuid() == null) {
-            vipMgr.unlockVip(vipInventory);
-            dbf.remove(vo);
-            bus.publish(evt);
+            new Vip(vipvo.getUuid()).release(new Completion(msg) {
+                @Override
+                public void success() {
+                    dbf.remove(vo);
+                    bus.publish(evt);
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    evt.setErrorCode(errorCode);
+                    bus.publish(evt);
+                }
+            });
+
             return;
         }
+
         VmNicVO nicvo = dbf.findByUuid(vo.getVmNicUuid(), VmNicVO.class);
         VmNicInventory nicInventory = VmNicInventory.valueOf(nicvo);
 
@@ -367,11 +383,25 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         final VipInventory vipInventory = VipInventory.valueOf(vipvo);
 
         if (vo.getVmNicUuid() == null) {
-            vipMgr.lockVip(vipInventory, EipConstant.EIP_NETWORK_SERVICE_TYPE);
-            evt.setInventory(EipInventory.valueOf(vo));
-            logger.debug(String.format("successfully created eip[uuid:%s, name:%s] on vip[uuid:%s, ip:%s]",
-                    vo.getUuid(), vo.getName(), vipInventory.getUuid(), vipInventory.getIp()));
-            bus.publish(evt);
+            EipVO finalVo = vo;
+            Vip vip = new Vip(vipvo.getUuid());
+            vip.setUseFor(EipConstant.EIP_NETWORK_SERVICE_TYPE);
+            vip.acquire(false, new Completion(msg) {
+                @Override
+                public void success() {
+                    evt.setInventory(EipInventory.valueOf(finalVo));
+                    logger.debug(String.format("successfully created eip[uuid:%s, name:%s] on vip[uuid:%s, ip:%s]",
+                            finalVo.getUuid(), finalVo.getName(), vipInventory.getUuid(), vipInventory.getIp()));
+                    bus.publish(evt);
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    evt.setErrorCode(errorCode);
+                    bus.publish(evt);
+                }
+            });
+
             return;
         }
 
@@ -388,12 +418,25 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         q.select(VmInstanceVO_.state);
         q.add(VmInstanceVO_.uuid, SimpleQuery.Op.EQ, nicvo.getVmInstanceUuid());
         VmInstanceState state = q.findValue();
+
         if (state != VmInstanceState.Running) {
-            vipMgr.lockVip(vipInventory, EipConstant.EIP_NETWORK_SERVICE_TYPE);
-            evt.setInventory(retinv);
-            logger.debug(String.format("successfully created eip[uuid:%s, name:%s] on vip[uuid:%s, ip:%s]",
-                    retinv.getUuid(), retinv.getName(), vipInventory.getUuid(), vipInventory.getIp()));
-            bus.publish(evt);
+            EipVO finalVo = vo;
+            new Vip(vipvo.getUuid()).acquire(false, new Completion(msg) {
+                @Override
+                public void success() {
+                    evt.setInventory(EipInventory.valueOf(finalVo));
+                    logger.debug(String.format("successfully created eip[uuid:%s, name:%s] on vip[uuid:%s, ip:%s]",
+                            finalVo.getUuid(), finalVo.getName(), vipInventory.getUuid(), vipInventory.getIp()));
+                    bus.publish(evt);
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    evt.setErrorCode(errorCode);
+                    bus.publish(evt);
+                }
+            });
+
             return;
         }
 

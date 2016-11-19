@@ -47,6 +47,7 @@ import org.zstack.kvm.*;
 import org.zstack.kvm.KvmCommandSender.SteppingSendCallback;
 import org.zstack.network.service.NetworkProviderFinder;
 import org.zstack.network.service.NetworkServiceProviderLookup;
+import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.TagUtils;
@@ -315,13 +316,15 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         AllocateIpReply r = reply.castReply();
         ip = r.getIpInventory();
 
-        FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.createInherentTag(
-                l3Uuid,
+        SystemTagCreator creator = FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.newSystemTagCreator(l3Uuid);
+        creator.inherent = true;
+        creator.setTagByTokens(
                 map(
                         e(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_TOKEN, ip.getIp()),
                         e(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_UUID_TOKEN, ip.getUuid())
                 )
         );
+        creator.create();
 
         l3NetworkDhcpServerIp.put(l3Uuid, ip);
         logger.debug(String.format("allocate DHCP server IP[ip:%s, uuid:%s] for l3 network[uuid:%s]", ip.getIp(), ip.getUuid(), ip.getL3NetworkUuid()));

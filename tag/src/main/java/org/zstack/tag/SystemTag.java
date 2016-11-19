@@ -1,21 +1,32 @@
 package org.zstack.tag;
 
+import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.springframework.orm.jpa.JpaSystemException;
+import org.springframework.transaction.TransactionSystemException;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.Platform;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.tag.*;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import javax.persistence.EntityTransaction;
 import javax.persistence.Tuple;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import javax.persistence.TypedQuery;
+import java.util.*;
+import java.util.concurrent.Callable;
+
+import static java.util.Arrays.asList;
+import static org.zstack.utils.StringDSL.s;
 
 /**
  */
@@ -27,7 +38,7 @@ public class SystemTag {
     protected DatabaseFacade dbf;
 
     // TagManager must be explicitly set. use @Autowired will cause circular dependency
-    protected TagManager tagMgr;
+    protected TagManagerImpl tagMgr;
 
     protected String tagFormat;
     protected Class resourceClass;
@@ -203,52 +214,127 @@ public class SystemTag {
         tagMgr.deleteSystemTag(tagFormat, resourceUuid, resourceClass.getSimpleName(), true);
     }
 
-    private SystemTagInventory createTag(String resourceUuid, Class resourceClass, boolean inherent, boolean recreate) {
-        if (recreate) {
-            if (inherent) {
-                deleteInherentTag(resourceUuid, resourceClass);
-            } else {
-                delete(resourceUuid, resourceClass);
+    public String instantiateTag(Map tokens) {
+        return tagFormat;
+    }
+
+    public SystemTagCreator newSystemTagCreator(String resUuid) {
+        SystemTag self = this;
+
+        return new SystemTagCreator() {
+            private boolean exceptionCanBeIgnored;
+
+            @Override
+            public SystemTagInventory create() {
+                try {
+                    return doCreate();
+                } catch (TransactionSystemException e) {
+                    if (exceptionCanBeIgnored) {
+                        return null;
+                    } else {
+                        throw e;
+                    }
+                }
             }
-        }
 
-        if (inherent) {
-            return (SystemTagInventory) tagMgr.createSysTag(resourceUuid, tagFormat, resourceClass.getSimpleName());
-        } else {
-            return tagMgr.createNonInherentSystemTag(resourceUuid, tagFormat, resourceClass.getSimpleName());
-        }
-    }
+            @Override
+            public void setTagByTokens(Map tokens) {
+                tag = instantiateTag(tokens);
+            }
 
-    public SystemTagInventory createTag(String resourceUuid, Class resourceClass) {
-        return createTag(resourceUuid, resourceClass, false, false);
-    }
+            @Transactional
+            private SystemTagInventory doCreate() {
+                build();
 
-    public SystemTagInventory createTag(String resourceUuid) {
-        return createTag(resourceUuid, resourceClass, false, false);
-    }
+                tagMgr.validateSystemTag(resourceUuid, resourceClass.getSimpleName(), tag);
 
-    public SystemTagInventory createInherentTag(String resourceUuid, Class resourceClass) {
-        return createTag(resourceUuid, resourceClass, true, false);
-    }
+                if (recreate) {
+                    String sql;
+                    if (useOp() == Op.LIKE) {
+                        sql = "select t from SystemTagVO t where t.tag like :tag" +
+                                " and t.resourceUuid = :resUuid and t.inherent = :inherent" +
+                                " and t.resourceType = :resType";
+                    } else {
+                        sql = "select t from SystemTagVO t where t.tag = :tag" +
+                                " and t.resourceUuid = :resUuid and t.inherent = :inherent" +
+                                " and t.resourceType = :resType";
+                    }
 
-    public SystemTagInventory createInherentTag(String resourceUuid) {
-        return createTag(resourceUuid, resourceClass, true, false);
-    }
+                    TypedQuery<SystemTagVO> q = dbf.getEntityManager().createQuery(sql, SystemTagVO.class);
+                    q.setParameter("resUuid", resourceUuid);
+                    q.setParameter("tag", useTagFormat());
+                    q.setParameter("inherent", inherent);
+                    q.setParameter("resType", resourceClass.getSimpleName());
+                    List<SystemTagVO> vos = q.getResultList();
 
-    public SystemTagInventory reCreateTag(String resourceUuid, Class resourceClass) {
-        return createTag(resourceUuid, resourceClass, false, true);
-    }
+                    List<SystemTagInventory> invs = SystemTagInventory.valueOf(vos);
+                    for (SystemTagInventory inv : invs) {
+                        tagMgr.preTagDeleted(inv);
+                    }
 
-    public SystemTagInventory reCreateTag(String resourceUuid) {
-        return createTag(resourceUuid, resourceClass, false, true);
-    }
+                    for (SystemTagVO vo : vos) {
+                        dbf.getEntityManager().remove(vo);
+                    }
 
-    public SystemTagInventory reCreateInherentTag(String resourceUuid, Class resourceClass) {
-        return createTag(resourceUuid, resourceClass, true, true);
-    }
+                    dbf.getEntityManager().flush();
 
-    public SystemTagInventory reCreateInherentTag(String resourceUuid) {
-        return createTag(resourceUuid, resourceClass, true, true);
+                    tagMgr.fireTagDeleted(invs);
+                }
+
+                String uuid;
+                if (unique) {
+                    String key = String.format("%s-%s-%s", resourceUuid, resourceClass.getSimpleName(), tag);
+                    uuid = UUID.nameUUIDFromBytes(key.getBytes()).toString().replaceAll("-", "");
+                } else {
+                    uuid = Platform.getUuid();
+                }
+
+                SystemTagVO vo = new SystemTagVO();
+                vo.setResourceType(resourceClass.getSimpleName());
+                vo.setUuid(uuid);
+                vo.setResourceUuid(resourceUuid);
+                vo.setInherent(inherent);
+                vo.setTag(tag);
+                vo.setType(TagType.System);
+
+                tagMgr.preTagCreated(SystemTagInventory.valueOf(vo));
+
+                try {
+                    dbf.getEntityManager().persist(vo);
+                    dbf.getEntityManager().flush();
+                    dbf.getEntityManager().refresh(vo);
+                } catch (JpaSystemException e) {
+                    if (e.getRootCause() instanceof MySQLIntegrityConstraintViolationException &&
+                            e.getRootCause().getMessage().contains("Duplicate entry")) {
+
+                        // tag exists
+                        if (!ignoreIfExisting) {
+                            throw new CloudRuntimeException(String.format("duplicate system tag[resourceUuid: %s," +
+                                    "resourceType: %s, tag: %s", resourceUuid, resourceClass.getSimpleName(), tag), e);
+                        } else {
+                            exceptionCanBeIgnored = true;
+                            return null;
+                        }
+                    }
+                }
+
+                SystemTagInventory inv = SystemTagInventory.valueOf(vo);
+                tagMgr.fireTagCreated(asList(inv));
+
+                return inv;
+            }
+
+            private void build() {
+                resourceUuid = resUuid;
+                if (resourceClass == null) {
+                    resourceClass = self.resourceClass;
+                }
+
+                if (tag == null) {
+                    tag = getTagFormat();
+                }
+            }
+        };
     }
 
     public SystemTag installValidator(SystemTagValidator validator) {
@@ -285,7 +371,7 @@ public class SystemTag {
     }
 
     void setTagMgr(TagManager tagMgr) {
-        this.tagMgr = tagMgr;
+        this.tagMgr = (TagManagerImpl) tagMgr;
     }
 
     public List<SystemTagValidator> getValidators() {

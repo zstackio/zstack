@@ -38,6 +38,7 @@ import org.zstack.kvm.*;
 import org.zstack.storage.fusionstor.*;
 import org.zstack.storage.fusionstor.primary.KVMFusionstorVolumeTO.MonInfo;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
+import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -119,13 +120,19 @@ public class FusionstorPrimaryStorageFactory implements PrimaryStorageFactory, F
         dbf.getEntityManager().persist(cvo);
 
         if (cmsg.getImageCachePoolName() != null) {
-            FusionstorSystemTags.PREDEFINED_PRIMARY_STORAGE_IMAGE_CACHE_POOL.createInherentTag(cvo.getUuid());
+            SystemTagCreator creator = FusionstorSystemTags.PREDEFINED_PRIMARY_STORAGE_IMAGE_CACHE_POOL.newSystemTagCreator(cvo.getUuid());
+            creator.ignoreIfExisting = true;
+            creator.create();
         }
         if (cmsg.getRootVolumePoolName() != null) {
-            FusionstorSystemTags.PREDEFINED_PRIMARY_STORAGE_ROOT_VOLUME_POOL.createInherentTag(cvo.getUuid());
+            SystemTagCreator creator = FusionstorSystemTags.PREDEFINED_PRIMARY_STORAGE_ROOT_VOLUME_POOL.newSystemTagCreator(cvo.getUuid());
+            creator.ignoreIfExisting = true;
+            creator.create();
         }
         if (cmsg.getDataVolumePoolName() != null) {
-            FusionstorSystemTags.PREDEFINED_PRIMARY_STORAGE_DATA_VOLUME_POOL.createInherentTag(cvo.getUuid());
+            SystemTagCreator creator = FusionstorSystemTags.PREDEFINED_PRIMARY_STORAGE_DATA_VOLUME_POOL.newSystemTagCreator(cvo.getUuid());
+            creator.ignoreIfExisting = true;
+            creator.create();
         }
 
         for (String url : cmsg.getMonUrls()) {
@@ -142,9 +149,11 @@ public class FusionstorPrimaryStorageFactory implements PrimaryStorageFactory, F
             dbf.getEntityManager().persist(mvo);
         }
 
-        FusionstorSystemTags.KVM_SECRET_UUID.recreateInherentTag(vo.getUuid(), PrimaryStorageVO.class,
-                map(e(FusionstorSystemTags.KVM_SECRET_UUID_TOKEN, UUID.randomUUID().toString()))
-        );
+        SystemTagCreator creator = FusionstorSystemTags.KVM_SECRET_UUID.newSystemTagCreator(vo.getUuid());
+        creator.inherent = true;
+        creator.recreate = true;
+        creator.setTagByTokens(map(e(FusionstorSystemTags.KVM_SECRET_UUID_TOKEN, UUID.randomUUID().toString())));
+        creator.create();
 
         return PrimaryStorageInventory.valueOf(cvo);
     }
