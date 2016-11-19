@@ -589,7 +589,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         q.select(NetworkServiceL3NetworkRefVO_.l3NetworkUuid);
         q.add(NetworkServiceL3NetworkRefVO_.l3NetworkUuid, Op.IN, candidate);
         q.add(NetworkServiceL3NetworkRefVO_.networkServiceType, Op.EQ, nsType.toString());
-        q.add(NetworkServiceL3NetworkRefVO_.networkServiceProviderUuid, Op.EQ, getVirtualRouterProvider().getUuid());
+        // no need to specify provider type, L3 networks identified by candidates are served by virtual router or vyos
         return q.listValue();
     }
 
