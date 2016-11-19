@@ -1639,17 +1639,17 @@ public class Api implements CloudBusEventListener {
         return new VmAccountPerference(evt.getVmUuid(), evt.getUserAccount(), "******");
     }
 
-    public VmInstanceInventory suspendVmInstance(String uuid) throws ApiSenderException {
-        return suspendVmInstance(uuid, null);
+    public VmInstanceInventory pauseVmInstance(String uuid) throws ApiSenderException {
+        return pauseVmInstance(uuid, null);
     }
 
-    public VmInstanceInventory suspendVmInstance(String uuid, SessionInventory session) throws ApiSenderException {
-        APISuspendVmInstanceMsg msg = new APISuspendVmInstanceMsg();
+    public VmInstanceInventory pauseVmInstance(String uuid, SessionInventory session) throws ApiSenderException {
+        APIPauseVmInstanceMsg msg = new APIPauseVmInstanceMsg();
         msg.setSession(session == null ? adminSession : session);
         msg.setUuid(uuid);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
-        APISuspendVmInstanceEvent evt = sender.send(msg, APISuspendVmInstanceEvent.class);
+        APIPauseVmInstanceEvent evt = sender.send(msg, APIPauseVmInstanceEvent.class);
         return evt.getInventory();
     }
 

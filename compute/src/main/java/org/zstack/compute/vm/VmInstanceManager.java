@@ -28,7 +28,7 @@ public interface VmInstanceManager {
 
     FlowChain getExpungeVmWorkFlowChain(VmInstanceInventory inv);
 
-    FlowChain getSuspendWorkFlowChain(VmInstanceInventory inv);
+    FlowChain getPauseWorkFlowChain(VmInstanceInventory inv);
 
     FlowChain getResumeVmWorkFlowChain(VmInstanceInventory inv);
 

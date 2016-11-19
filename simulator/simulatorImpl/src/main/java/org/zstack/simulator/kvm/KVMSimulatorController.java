@@ -557,7 +557,7 @@ public class KVMSimulatorController {
     	replyer.reply(entity, rsp);
     }
 
-    @RequestMapping(value = KVMConstant.KVM_SUSPEND_VM_PATH, method = RequestMethod.POST)
+    @RequestMapping(value = KVMConstant.KVM_PAUSE_VM_PATH, method = RequestMethod.POST)
     private @ResponseBody String suspendVm(HttpServletRequest req) throws InterruptedException{
         HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
         suspendVm(entity);
@@ -565,14 +565,14 @@ public class KVMSimulatorController {
     }
 
     private void suspendVm(HttpEntity<String> entity) {
-        SuspendVmCmd cmd = JSONObjectUtil.toObject(entity.getBody(), SuspendVmCmd.class);
-        SuspendVmResponse rsp = new SuspendVmResponse();
-        if (config.suspendVmSuccess) {
+        PauseVmCmd cmd = JSONObjectUtil.toObject(entity.getBody(), PauseVmCmd.class);
+        PauseVmResponse rsp = new PauseVmResponse();
+        if (config.pauseVmSuccess) {
             logger.debug(String.format("successfully suspend  vm on kvm host, %s", entity.getBody()));
             synchronized (config) {
                 config.vms.put(cmd.getUuid(), KvmVmState.Suspended);
             }
-            config.suspendVmCmds.add(cmd);
+            config.pauseVmCmds.add(cmd);
         } else {
             String err = "fail suspend vm on purpose";
             rsp.setError(err);

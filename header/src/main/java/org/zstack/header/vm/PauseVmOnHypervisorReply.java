@@ -5,7 +5,7 @@ import org.zstack.header.message.MessageReply;
 /**
  * Created by root on 10/29/16.
  */
-public class SuspendVmOnHypervisorReply extends MessageReply {
+public class PauseVmOnHypervisorReply extends MessageReply {
 
 }
 

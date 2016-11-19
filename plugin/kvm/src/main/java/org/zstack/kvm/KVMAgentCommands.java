@@ -1037,7 +1037,7 @@ public class KVMAgentCommands {
     public static class StopVmResponse extends AgentResponse {
     }
 
-    public static class SuspendVmCmd extends AgentCommand{
+    public static class PauseVmCmd extends AgentCommand{
         private String uuid;
         private long timeout;
 
@@ -1055,7 +1055,7 @@ public class KVMAgentCommands {
         }
     }
 
-    public static class SuspendVmResponse extends AgentResponse{
+    public static class PauseVmResponse extends AgentResponse{
 
     }
 

@@ -12,7 +12,7 @@ import org.zstack.header.host.HostConstant;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.OverriddenApiParam;
-import org.zstack.header.vm.SuspendVmOnHypervisorMsg;
+import org.zstack.header.vm.PauseVmOnHypervisorMsg;
 import org.zstack.header.vm.VmInstance;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
@@ -23,7 +23,7 @@ import java.util.Map;
  * Created by luchukun on 10/29/16.
  */
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
-public class SuspengVmOnHypervisorFlow extends NoRollbackFlow{
+public class PauseVmOnHypervisorFlow extends NoRollbackFlow{
     @Autowired
     protected CloudBus bus;
     @Autowired
@@ -32,7 +32,7 @@ public class SuspengVmOnHypervisorFlow extends NoRollbackFlow{
     @Override
     public void run(final FlowTrigger chain, Map data){
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
-        SuspendVmOnHypervisorMsg msg = new SuspendVmOnHypervisorMsg();
+        PauseVmOnHypervisorMsg msg = new PauseVmOnHypervisorMsg();
         msg.setVmInventory(spec.getVmInventory());
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID,spec.getVmInventory().getHostUuid());
         bus.send(msg, new CloudBusCallBack(chain) {

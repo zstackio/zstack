@@ -47,7 +47,7 @@ public abstract class AbstractVmInstance implements VmInstance {
                 APIDetachIsoFromVmInstanceMsg.class.getName(),
                 APIGetVmConsoleAddressMsg.class.getName(),
                 APIDeleteVmStaticIpMsg.class.getName(),
-                APISuspendVmInstanceMsg.class.getName()
+                APIPauseVmInstanceMsg.class.getName()
         );
 
         allowedOperations.addState(VmInstanceState.Stopped,
@@ -101,14 +101,30 @@ public abstract class AbstractVmInstance implements VmInstance {
                 APIExpungeVmInstanceMsg.class.getName(),
                 APIRecoverVmInstanceMsg.class.getName());
 
-        allowedOperations.addState(VmInstanceState.Suspended,
+        allowedOperations.addState(VmInstanceState.Paused,
                 APIResumeVmInstanceMsg.class.getName(),
                 APIStopVmInstanceMsg.class.getName(),
                 StopVmInstanceMsg.class.getName(),
                 APIDestroyVmInstanceMsg.class.getName(),
-                DestroyVmInstanceMsg.class.getName());
+                DestroyVmInstanceMsg.class.getName(),
+                APIMigrateVmMsg.class.getName(),
+                MigrateVmMsg.class.getName(),
+                AttachDataVolumeToVmMsg.class.getName(),
+                DetachDataVolumeFromVmMsg.class.getName(),
+                AttachNicToVmMsg.class.getName(),
+                VmAttachNicMsg.class.getName(),
+                APIAttachL3NetworkToVmMsg.class.getName(),
+                GetVmMigrationTargetHostMsg.class.getName(),
+                APIChangeInstanceOfferingMsg.class.getName(),
+                APIGetVmMigrationCandidateHostsMsg.class.getName(),
+                APIDetachL3NetworkFromVmMsg.class.getName(),
+                DetachNicFromVmMsg.class.getName(),
+                APIAttachIsoToVmInstanceMsg.class.getName(),
+                APIDetachIsoFromVmInstanceMsg.class.getName(),
+                APIGetVmConsoleAddressMsg.class.getName(),
+                APIDeleteVmStaticIpMsg.class.getName());
 
-        allowedOperations.addState(VmInstanceState.Suspending,
+        allowedOperations.addState(VmInstanceState.Pausing,
                 APIDestroyVmInstanceMsg.class.getName(),
                 DestroyVmInstanceMsg.class.getName());
 

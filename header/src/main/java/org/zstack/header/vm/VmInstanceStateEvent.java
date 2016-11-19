@@ -10,7 +10,7 @@ public enum VmInstanceStateEvent {
     rebooting,
     destroyed,
     expunging,
-    suspending,
+    pausing,
     resuming,
     
     /* Below events are from zstack internal logic */
@@ -19,5 +19,5 @@ public enum VmInstanceStateEvent {
     /* Below event are from result of user operation or vm state reported by full sync */
     running,
     stopped,
-    suspended,
+    paused,
 }
