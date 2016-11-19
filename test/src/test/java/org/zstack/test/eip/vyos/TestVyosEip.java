@@ -10,6 +10,7 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.network.service.eip.EipInventory;
 import org.zstack.network.service.vip.VipVO;
+import org.zstack.network.service.virtualrouter.VirtualRouterVmVO;
 import org.zstack.network.service.virtualrouter.eip.EipTO;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.simulator.virtualrouter.VirtualRouterSimulatorConfig;
@@ -71,5 +72,15 @@ public class TestVyosEip {
         Assert.assertEquals(vipvo.getIp(), to.getVipIp());
         Assert.assertEquals(vipvo.getIp(), eip.getVipIp());
         Assert.assertEquals(nicvo.getIp(), eip.getGuestIp());
+
+        // test rules are synced after the vyos vr reboots
+        vconfig.dhcpInfoMap.clear();
+        vconfig.dnsInfo.clear();
+        vconfig.snatInfos.clear();
+        VirtualRouterVmVO vr = dbf.listAll(VirtualRouterVmVO.class).get(0);
+        api.rebootVmInstance(vr.getUuid());
+        Assert.assertFalse(vconfig.dhcpInfoMap.isEmpty());
+        Assert.assertFalse(vconfig.dnsInfo.isEmpty());
+        Assert.assertFalse(vconfig.snatInfos.isEmpty());
     }
 }
