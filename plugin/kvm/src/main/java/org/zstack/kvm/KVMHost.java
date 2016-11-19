@@ -276,10 +276,10 @@ public class KVMHost extends HostBase implements Host {
         } else if (msg instanceof SetRootPasswordMsg) {
             handle((SetRootPasswordMsg) msg);
         } else if (msg instanceof SuspendVmOnHypervisorMsg) {
-        handle((SuspendVmOnHypervisorMsg) msg);
+            handle((SuspendVmOnHypervisorMsg) msg);
         } else if (msg instanceof ResumeVmOnHypervisorMsg) {
-        handle((ResumeVmOnHypervisorMsg) msg);
-        }else {
+            handle((ResumeVmOnHypervisorMsg) msg);
+        } else {
             super.handleLocalMessage(msg);
         }
     }
@@ -356,7 +356,7 @@ public class KVMHost extends HostBase implements Host {
         if (result.isSshFailure()) {
             reply.setError(errf.stringToOperationError(
                     String.format("unable to connect to KVM[ip:%s, username:%s, sshPort:%d ] to do DNS check," +
-                            " please check if username/password is wrong; %s",
+                                    " please check if username/password is wrong; %s",
                             self.getManagementIp(), getSelf().getUsername(),
                             getSelf().getPort(), result.getExitErrorMessage())
             ));
@@ -1955,7 +1955,8 @@ public class KVMHost extends HostBase implements Host {
         try {
             extEmitter.beforeStartVmOnKvm(khinv, spec, cmd);
         } catch (KVMException e) {
-            String err = String.format("failed to start vm[uuid:%s name:%s] on kvm host[uuid:%s, ip:%s], because %s", spec.getVmInventory().getUuid(), spec.getVmInventory().getName(),
+            String err = String.format("failed to start vm[uuid:%s name:%s] on kvm host[uuid:%s, ip:%s], because %s",
+                    spec.getVmInventory().getUuid(), spec.getVmInventory().getName(),
                     self.getUuid(), self.getManagementIp(), e.getMessage());
             logger.warn(err, e);
             throw new OperationFailureException(errf.stringToOperationError(err));
@@ -1978,12 +1979,14 @@ public class KVMHost extends HostBase implements Host {
             public void success(StartVmResponse ret) {
                 StartVmOnHypervisorReply reply = new StartVmOnHypervisorReply();
                 if (ret.isSuccess()) {
-                    String info = String.format("successfully start vm[uuid:%s name:%s] on kvm host[uuid:%s, ip:%s]", spec.getVmInventory().getUuid(), spec.getVmInventory().getName(),
+                    String info = String.format("successfully start vm[uuid:%s name:%s] on kvm host[uuid:%s, ip:%s]",
+                            spec.getVmInventory().getUuid(), spec.getVmInventory().getName(),
                             self.getUuid(), self.getManagementIp());
                     logger.debug(info);
                     extEmitter.startVmOnKvmSuccess(KVMHostInventory.valueOf(getSelf()), spec);
                 } else {
-                    String err = String.format("failed to start vm[uuid:%s name:%s] on kvm host[uuid:%s, ip:%s], because %s", spec.getVmInventory().getUuid(), spec.getVmInventory().getName(),
+                    String err = String.format("failed to start vm[uuid:%s name:%s] on kvm host[uuid:%s, ip:%s], because %s",
+                            spec.getVmInventory().getUuid(), spec.getVmInventory().getName(),
                             self.getUuid(), self.getManagementIp(), ret.getError());
                     reply.setError(errf.instantiateErrorCode(HostErrors.FAILED_TO_START_VM_ON_HYPERVISOR, err));
                     logger.warn(err);
@@ -2000,7 +2003,7 @@ public class KVMHost extends HostBase implements Host {
         });
     }
 
-    private void addons(final VmInstanceSpec spec, StartVmCmd cmd){
+    private void addons(final VmInstanceSpec spec, StartVmCmd cmd) {
         KVMAddons.Channel chan = new KVMAddons.Channel();
         chan.setSocketPath(makeChannelSocketPath(spec.getVmInventory().getUuid()));
         chan.setTargetName(String.format("org.qemu.guest_agent.0"));
@@ -2071,42 +2074,42 @@ public class KVMHost extends HostBase implements Host {
         });
     }
 
-    private void suspendVm(final SuspendVmOnHypervisorMsg msg,final NoErrorCompletion completion) {
+    private void suspendVm(final SuspendVmOnHypervisorMsg msg, final NoErrorCompletion completion) {
         checkStatus();
         final VmInstanceInventory vminv = msg.getVmInventory();
         SuspendVmOnHypervisorReply reply = new SuspendVmOnHypervisorReply();
         SuspendVmCmd cmd = new SuspendVmCmd();
         cmd.setUuid(vminv.getUuid());
         cmd.setTimeout(120);
-        restf.asyncJsonPost(suspendVmPath, cmd, new JsonAsyncRESTCallback<SuspendVmResponse>(msg,completion) {
+        restf.asyncJsonPost(suspendVmPath, cmd, new JsonAsyncRESTCallback<SuspendVmResponse>(msg, completion) {
             @Override
             public void fail(ErrorCode err) {
                 reply.setError(err);
-                bus.reply(msg,reply);
+                bus.reply(msg, reply);
                 completion.done();
             }
 
             @Override
             public void success(SuspendVmResponse ret) {
-                if(!ret.isSuccess()) {
+                if (!ret.isSuccess()) {
                     String err = String.format("unable to suspend vm[uuid:%s,  name:%s] on kvm host[uuid:%s, ip:%s], because %s", vminv.getUuid(),
                             vminv.getName(), self.getUuid(), self.getManagementIp(), ret.getError());
                     reply.setError(errf.instantiateErrorCode(HostErrors.FAILED_TO_STOP_VM_ON_HYPERVISOR, err));
                     logger.warn(err);
                 }
-                bus.reply(msg,reply);
+                bus.reply(msg, reply);
                 completion.done();
             }
 
             @Override
             public Class<SuspendVmResponse> getReturnClass() {
-                return SuspendVmResponse.class ;
+                return SuspendVmResponse.class;
             }
         });
 
     }
 
-    private void handle(final ResumeVmOnHypervisorMsg msg){
+    private void handle(final ResumeVmOnHypervisorMsg msg) {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
@@ -2114,8 +2117,8 @@ public class KVMHost extends HostBase implements Host {
             }
 
             @Override
-            public void run(final SyncTaskChain chain){
-                resumeVm(msg,new NoErrorCompletion(chain){
+            public void run(final SyncTaskChain chain) {
+                resumeVm(msg, new NoErrorCompletion(chain) {
                     @Override
                     public void done() {
                         chain.next();
@@ -2124,53 +2127,53 @@ public class KVMHost extends HostBase implements Host {
             }
 
             @Override
-            public String getName(){
-                return String.format("resume-vm-%s-on-host-%s",msg.getVmInventory().getUuid(),self.getUuid());
+            public String getName() {
+                return String.format("resume-vm-%s-on-host-%s", msg.getVmInventory().getUuid(), self.getUuid());
             }
 
             @Override
-            protected int getSyncLevel(){
+            protected int getSyncLevel() {
                 return getHostSyncLevel();
             }
         });
     }
 
-    private void resumeVm(final ResumeVmOnHypervisorMsg msg,final NoErrorCompletion completion) {
+    private void resumeVm(final ResumeVmOnHypervisorMsg msg, final NoErrorCompletion completion) {
         checkStatus();
         final VmInstanceInventory vminv = msg.getVmInventory();
         ResumeVmOnHypervisorReply reply = new ResumeVmOnHypervisorReply();
         ResumeVmCmd cmd = new ResumeVmCmd();
         cmd.setUuid(vminv.getUuid());
         cmd.setTimeout(120);
-        restf.asyncJsonPost(resumeVmPath, cmd, new JsonAsyncRESTCallback<ResumeVmResponse>(msg,completion) {
+        restf.asyncJsonPost(resumeVmPath, cmd, new JsonAsyncRESTCallback<ResumeVmResponse>(msg, completion) {
             @Override
             public void fail(ErrorCode err) {
                 reply.setError(err);
-                bus.reply(msg,reply);
+                bus.reply(msg, reply);
                 completion.done();
             }
 
             @Override
             public void success(ResumeVmResponse ret) {
-                if(!ret.isSuccess()) {
+                if (!ret.isSuccess()) {
                     String err = String.format("unable to resume vm[uuid:%s,  name:%s] on kvm host[uuid:%s, ip:%s], because %s", vminv.getUuid(),
                             vminv.getName(), self.getUuid(), self.getManagementIp(), ret.getError());
                     reply.setError(errf.instantiateErrorCode(HostErrors.FAILED_TO_STOP_VM_ON_HYPERVISOR, err));
                     logger.warn(err);
                 }
-                bus.reply(msg,reply);
+                bus.reply(msg, reply);
                 completion.done();
             }
 
             @Override
             public Class<ResumeVmResponse> getReturnClass() {
-                return ResumeVmResponse.class ;
+                return ResumeVmResponse.class;
             }
         });
 
     }
 
-    private void handle(final SuspendVmOnHypervisorMsg msg){
+    private void handle(final SuspendVmOnHypervisorMsg msg) {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
@@ -2178,8 +2181,8 @@ public class KVMHost extends HostBase implements Host {
             }
 
             @Override
-            public void run(final SyncTaskChain chain){
-                suspendVm(msg,new NoErrorCompletion(chain){
+            public void run(final SyncTaskChain chain) {
+                suspendVm(msg, new NoErrorCompletion(chain) {
                     @Override
                     public void done() {
                         chain.next();
@@ -2188,12 +2191,12 @@ public class KVMHost extends HostBase implements Host {
             }
 
             @Override
-            public String getName(){
-                return String.format("suspend-vm-%s-on-host-%s",msg.getVmInventory().getUuid(),self.getUuid());
+            public String getName() {
+                return String.format("suspend-vm-%s-on-host-%s", msg.getVmInventory().getUuid(), self.getUuid());
             }
 
             @Override
-            protected int getSyncLevel(){
+            protected int getSyncLevel() {
                 return getHostSyncLevel();
             }
         });
@@ -2481,7 +2484,7 @@ public class KVMHost extends HostBase implements Host {
                 public void setup() {
                     if (info.isNewAdded()) {
 
-                        if ( (! AnsibleGlobalProperty.ZSTACK_REPO.contains("zstack-mn")) && ( ! AnsibleGlobalProperty.ZSTACK_REPO.equals("false"))) {
+                        if ((!AnsibleGlobalProperty.ZSTACK_REPO.contains("zstack-mn")) && (!AnsibleGlobalProperty.ZSTACK_REPO.equals("false"))) {
                             flow(new NoRollbackFlow() {
                                 String __name__ = "ping-DNS-check-list";
 

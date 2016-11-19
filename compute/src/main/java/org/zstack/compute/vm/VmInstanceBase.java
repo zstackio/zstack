@@ -4001,8 +4001,6 @@ public class VmInstanceBase extends AbstractVmInstance {
             return;
         }
 
-        applyPendingCapacityChangeIfNeed();
-
         VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
         ErrorCode preReboot = extEmitter.preRebootVm(inv);
         if (preReboot != null) {
