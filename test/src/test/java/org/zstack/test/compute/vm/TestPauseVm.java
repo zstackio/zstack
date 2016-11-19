@@ -18,7 +18,7 @@ import org.zstack.test.deployer.Deployer;
 /**
  * Created by root on 11/3/16.
  */
-public class TestSuspendVm {
+public class TestPauseVm {
     Deployer deployer;
     Api api;
     ComponentLoader loader;
@@ -43,11 +43,11 @@ public class TestSuspendVm {
     @Test
     public void test() throws ApiSenderException {
         VmInstanceInventory inv = deployer.vms.get("TestVm");
-        inv = api.suspendVmInstance(inv.getUuid());
-        Assert.assertEquals(VmInstanceState.Suspended.toString(), inv.getState());
+        inv = api.pauseVmInstance(inv.getUuid());
+        Assert.assertEquals(VmInstanceState.Paused.toString(), inv.getState());
         VmInstanceVO vm = dbf.findByUuid(inv.getUuid(), VmInstanceVO.class);
         Assert.assertNotNull(vm);
-        Assert.assertEquals(VmInstanceState.Suspended, vm.getState());
+        Assert.assertEquals(VmInstanceState.Paused, vm.getState());
         Assert.assertNotNull(vm.getHostUuid());
         //stop a suspended vm
         inv = api.stopVmInstance(inv.getUuid());

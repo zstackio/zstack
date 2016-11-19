@@ -8,7 +8,7 @@ import org.zstack.header.message.APIParam;
  * Created by root on 10/29/16.
  */
 @Action(category = VmInstanceConstant.ACTION_CATEGORY)
-public class APISuspendVmInstanceMsg extends APIMessage implements VmInstanceMessage{
+public class APIPauseVmInstanceMsg extends APIMessage implements VmInstanceMessage{
     @APIParam(resourceType = VmInstanceVO.class,checkAccount = true,operationTarget = true)
     private String uuid;
 

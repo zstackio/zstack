@@ -150,7 +150,7 @@
         <name>org.zstack.header.vm.APIGetCandidateIsoForAttachingVmMsg</name>
     </message>
     <message>
-        <name>org.zstack.header.vm.APISuspendVmInstanceMsg</name>
+        <name>org.zstack.header.vm.APIPauseVmInstanceMsg</name>
     </message>
     <message>
         <name>org.zstack.header.vm.APIResumeVmInstanceMsg</name>

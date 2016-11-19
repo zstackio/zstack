@@ -24,7 +24,7 @@ public interface KVMConstant {
     String KVM_DETACH_ISO_PATH = "/vm/iso/detach";
     String KVM_START_VM_PATH = "/vm/start";
     String KVM_STOP_VM_PATH = "/vm/stop";
-    String KVM_SUSPEND_VM_PATH = "/vm/suspend";
+    String KVM_PAUSE_VM_PATH = "/vm/pause";
     String KVM_RESUME_VM_PATH = "/vm/resume";
     String KVM_REBOOT_VM_PATH = "/vm/reboot";
     String KVM_DESTROY_VM_PATH = "/vm/destroy";

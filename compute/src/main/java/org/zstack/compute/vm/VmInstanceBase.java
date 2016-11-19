@@ -266,8 +266,8 @@ public class VmInstanceBase extends AbstractVmInstance {
         return vmMgr.getDetachIsoWorkFlowChain(inv);
     }
 
-    protected FlowChain getSuspendVmWorkFlowChain(VmInstanceInventory inv) {
-        return vmMgr.getSuspendWorkFlowChain(inv);
+    protected FlowChain getPauseVmWorkFlowChain(VmInstanceInventory inv) {
+        return vmMgr.getPauseWorkFlowChain(inv);
     }
 
     protected FlowChain getResumeVmWorkFlowChain(VmInstanceInventory inv) {
@@ -2030,8 +2030,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APIDeleteVmSshKeyMsg) msg);
         } else if (msg instanceof APIGetCandidateIsoForAttachingVmMsg) {
             handle((APIGetCandidateIsoForAttachingVmMsg) msg);
-        } else if (msg instanceof APISuspendVmInstanceMsg) {
-            handle((APISuspendVmInstanceMsg) msg);
+        } else if (msg instanceof APIPauseVmInstanceMsg) {
+            handle((APIPauseVmInstanceMsg) msg);
         } else if (msg instanceof APIResumeVmInstanceMsg) {
             handle((APIResumeVmInstanceMsg) msg);
         } else {
@@ -3350,11 +3350,9 @@ public class VmInstanceBase extends AbstractVmInstance {
     protected void attachDataVolume(final AttachDataVolumeToVmMsg msg, final NoErrorCompletion completion) {
         final AttachDataVolumeToVmReply reply = new AttachDataVolumeToVmReply();
         refreshVO();
-        ErrorCode allowed = validateOperationByState(msg, self.getState(), VmErrors.ATTACH_VOLUME_ERROR);
-        if (allowed != null) {
-            reply.setError(allowed);
-            bus.reply(msg, reply);
-            return;
+        ErrorCode err = validateOperationByState(msg, self.getState(), VmErrors.ATTACH_VOLUME_ERROR);
+        if (err != null) {
+            throw new OperationFailureException(err);
         }
 
         final VolumeInventory volume = msg.getVolume();
@@ -4244,11 +4242,11 @@ public class VmInstanceBase extends AbstractVmInstance {
         bus.publish(evt);
     }
 
-    protected void suspendVm(final APISuspendVmInstanceMsg msg, final SyncTaskChain taskChain) {
-        suspendVm(msg, new Completion(taskChain) {
+    protected void pauseVm(final APIPauseVmInstanceMsg msg, final SyncTaskChain taskChain) {
+        pauseVm(msg, new Completion(taskChain) {
             @Override
             public void success() {
-                APISuspendVmInstanceEvent evt = new APISuspendVmInstanceEvent(msg.getId());
+                APIPauseVmInstanceEvent evt = new APIPauseVmInstanceEvent(msg.getId());
                 VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
                 evt.setInventory(inv);
                 bus.publish(evt);
@@ -4257,7 +4255,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                APISuspendVmInstanceEvent evt = new APISuspendVmInstanceEvent(msg.getId());
+                APIPauseVmInstanceEvent evt = new APIPauseVmInstanceEvent(msg.getId());
                 evt.setErrorCode(errf.instantiateErrorCode(VmErrors.SUSPEND_ERROR, errorCode));
                 bus.publish(evt);
                 taskChain.next();
@@ -4265,32 +4263,32 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 
-    protected void suspendVm(final Message msg, Completion completion) {
+    protected void pauseVm(final Message msg, Completion completion) {
         refreshVO();
         ErrorCode allowed = validateOperationByState(msg, self.getState(), null);
         if (allowed != null) {
             completion.fail(allowed);
             return;
         }
-        if (self.getState() == VmInstanceState.Suspended) {
+        if (self.getState() == VmInstanceState.Paused) {
             completion.success();
             return;
         }
         VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
-        final VmInstanceSpec spec = buildSpecFromInventory(inv, VmOperation.Suspend);
+        final VmInstanceSpec spec = buildSpecFromInventory(inv, VmOperation.Pause);
         spec.setMessage(msg);
         final VmInstanceState originState = self.getState();
-        changeVmStateInDb(VmInstanceStateEvent.suspending);
+        changeVmStateInDb(VmInstanceStateEvent.pausing);
 
-        FlowChain chain = getSuspendVmWorkFlowChain(inv);
+        FlowChain chain = getPauseVmWorkFlowChain(inv);
         setFlowMarshaller(chain);
 
-        chain.setName(String.format("suspend-vm-%s", self.getUuid()));
+        chain.setName(String.format("pause-vm-%s", self.getUuid()));
         chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
         chain.done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map Data) {
-                self = changeVmStateInDb(VmInstanceStateEvent.suspended);
+                self = changeVmStateInDb(VmInstanceStateEvent.paused);
                 completion.success();
             }
         }).error(new FlowErrorHandler(completion) {
@@ -4303,7 +4301,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         }).start();
     }
 
-    protected void handle(final APISuspendVmInstanceMsg msg) {
+    protected void handle(final APIPauseVmInstanceMsg msg) {
         thdf.chainSubmit(new ChainTask(msg) {
 
             @Override
@@ -4313,12 +4311,12 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             @Override
             public void run(SyncTaskChain chain) {
-                suspendVm(msg, chain);
+                pauseVm(msg, chain);
             }
 
             @Override
             public String getName() {
-                return String.format("suspend-vm-%s", msg.getVmInstanceUuid());
+                return String.format("pause-vm-%s", msg.getVmInstanceUuid());
             }
         });
     }
@@ -4352,7 +4350,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             return;
         }
         VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
-        final VmInstanceSpec spec = buildSpecFromInventory(inv, VmOperation.Suspend);
+        final VmInstanceSpec spec = buildSpecFromInventory(inv, VmOperation.Resume);
         spec.setMessage(msg);
         final VmInstanceState originState = self.getState();
         changeVmStateInDb(VmInstanceStateEvent.resuming);

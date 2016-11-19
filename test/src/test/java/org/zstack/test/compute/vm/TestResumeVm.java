@@ -43,7 +43,7 @@ public class TestResumeVm {
     @Test
     public void test() throws ApiSenderException {
         VmInstanceInventory inv = deployer.vms.get("TestVm");
-        inv = api.suspendVmInstance(inv.getUuid());
+        inv = api.pauseVmInstance(inv.getUuid());
         inv = api.resumeVmInstance(inv.getUuid());
         Assert.assertEquals(VmInstanceState.Running.toString(), inv.getState());
         VmInstanceVO vm = dbf.findByUuid(inv.getUuid(), VmInstanceVO.class);

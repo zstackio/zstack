@@ -115,7 +115,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
     private List<String> detachIsoWorkFlowElements;
     private List<String> attachVolumeWorkFlowElements;
     private List<String> expungeVmWorkFlowElements;
-    private List<String> suspendVmWorkFlowElements;
+    private List<String> pauseVmWorkFlowElements;
     private List<String> resumeVmWorkFlowElements;
     private FlowChainBuilder createVmFlowBuilder;
     private FlowChainBuilder stopVmFlowBuilder;
@@ -127,7 +127,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
     private FlowChainBuilder attachIsoFlowBuilder;
     private FlowChainBuilder detachIsoFlowBuilder;
     private FlowChainBuilder expungeVmFlowBuilder;
-    private FlowChainBuilder suspendVmFlowBuilder;
+    private FlowChainBuilder pauseVmFlowBuilder;
     private FlowChainBuilder resumeVmFlowBuilder;
     private static final Set<Class> allowedMessageAfterSoftDeletion = new HashSet<>();
     private Future<Void> expungeVmTask;
@@ -786,7 +786,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         attachIsoFlowBuilder = FlowChainBuilder.newBuilder().setFlowClassNames(attachIsoWorkFlowElements).construct();
         detachIsoFlowBuilder = FlowChainBuilder.newBuilder().setFlowClassNames(detachIsoWorkFlowElements).construct();
         expungeVmFlowBuilder = FlowChainBuilder.newBuilder().setFlowClassNames(expungeVmWorkFlowElements).construct();
-        suspendVmFlowBuilder = FlowChainBuilder.newBuilder().setFlowClassNames(suspendVmWorkFlowElements).construct();
+        pauseVmFlowBuilder = FlowChainBuilder.newBuilder().setFlowClassNames(pauseVmWorkFlowElements).construct();
         resumeVmFlowBuilder = FlowChainBuilder.newBuilder().setFlowClassNames(resumeVmWorkFlowElements).construct();
     }
 
@@ -1108,8 +1108,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
         return expungeVmFlowBuilder.build();
     }
 
-    public FlowChain getSuspendWorkFlowChain(VmInstanceInventory inv){
-        return suspendVmFlowBuilder.build();
+    public FlowChain getPauseWorkFlowChain(VmInstanceInventory inv){
+        return pauseVmFlowBuilder.build();
     }
 
     public FlowChain getResumeVmWorkFlowChain(VmInstanceInventory inv){
@@ -1156,8 +1156,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
         this.expungeVmWorkFlowElements = expungeVmWorkFlowElements;
     }
 
-    public void setSuspendVmWorkFlowElements(List<String> suspendVmWorkFlowElements){
-        this.suspendVmWorkFlowElements = suspendVmWorkFlowElements;
+    public void setPauseVmWorkFlowElements(List<String> pauseVmWorkFlowElements){
+        this.pauseVmWorkFlowElements = pauseVmWorkFlowElements;
     }
 
     public void setResumeVmWorkFlowElements(List<String> resumeVmWorkFlowElements){

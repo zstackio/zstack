@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <UnitTestSuiteConfig xmlns="http://zstack.org/schema/zstack" timeout="600">
+<<<<<<< HEAD
     <TestCase class="org.zstack.test.compute.vm.TestVmAllocateNicFlow"/>
     <TestCase class="org.zstack.test.compute.vm.TestVmCreateOnHypervisorFlow"/>
     <TestCase class="org.zstack.test.compute.vm.TestCreateVm"/>
@@ -9,7 +10,7 @@
     <TestCase class="org.zstack.test.compute.vm.TestRebootVmFailure"/>
     <TestCase class="org.zstack.test.compute.vm.TestStopVm"/>
     <TestCase class="org.zstack.test.compute.vm.TestStartVm"/>
-    <TestCase class="org.zstack.test.compute.vm.TestSuspendVm"/>
+    <TestCase class="org.zstack.test.compute.vm.TestPauseVm"/>
     <TestCase class="org.zstack.test.compute.vm.TestResumeVm"/>
     <TestCase class="org.zstack.test.compute.vm.TestStartCreatedVmExtensionPoint"/>
     <TestCase class="org.zstack.test.compute.vm.TestDestroyVmExtensionPoint"/>

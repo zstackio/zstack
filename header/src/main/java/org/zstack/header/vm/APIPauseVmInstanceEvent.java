@@ -5,15 +5,15 @@ import org.zstack.header.message.APIEvent;
 /**
  * Created by luchkun on 10/29/16.
  */
-public class APISuspendVmInstanceEvent extends APIEvent{
+public class APIPauseVmInstanceEvent extends APIEvent{
 
     private VmInstanceInventory inventory;
 
-    public APISuspendVmInstanceEvent() {
+    public APIPauseVmInstanceEvent() {
         super(null);
     }
 
-    public APISuspendVmInstanceEvent(String apiId){
+    public APIPauseVmInstanceEvent(String apiId){
         super(apiId);
     }
 

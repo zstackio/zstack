@@ -7,7 +7,7 @@ import org.zstack.header.vm.VmInstanceInventory;
 /**
  * Created by luchukun on 11/2/16.
  */
-public class SuspendVmOnHypervisorMsg extends NeedReplyMessage implements HostMessage{
+public class PauseVmOnHypervisorMsg extends NeedReplyMessage implements HostMessage{
     private VmInstanceInventory vmInventory;
 
     public VmInstanceInventory getVmInventory() {
