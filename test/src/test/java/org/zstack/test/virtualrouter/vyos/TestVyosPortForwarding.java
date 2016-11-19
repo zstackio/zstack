@@ -12,6 +12,7 @@ import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.network.service.portforwarding.PortForwardingProtocolType;
 import org.zstack.network.service.portforwarding.PortForwardingRuleInventory;
 import org.zstack.network.service.vip.VipInventory;
+import org.zstack.network.service.virtualrouter.VirtualRouterVmVO;
 import org.zstack.network.service.virtualrouter.portforwarding.PortForwardingRuleTO;
 import org.zstack.simulator.appliancevm.ApplianceVmSimulatorConfig;
 import org.zstack.simulator.virtualrouter.VirtualRouterSimulatorConfig;
@@ -90,5 +91,11 @@ public class TestVyosPortForwarding {
         PortForwardingRuleTO to = vconfig.portForwardingRules.get(0);
         PortForwardingRuleTestValidator validator = new PortForwardingRuleTestValidator();
         Assert.assertTrue(validator.compare(to, rule));
+
+        // test rules are synced after the vyos vr reboots
+        vconfig.portForwardingRules.clear();
+        VirtualRouterVmVO vr = dbf.listAll(VirtualRouterVmVO.class).get(0);
+        api.rebootVmInstance(vr.getUuid());
+        Assert.assertFalse(vconfig.portForwardingRules.isEmpty());
     }
 }
