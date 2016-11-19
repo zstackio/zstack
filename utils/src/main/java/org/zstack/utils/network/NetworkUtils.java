@@ -1,6 +1,8 @@
 package org.zstack.utils.network;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.net.util.SubnetUtils;
+import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.Pair;
 import org.zstack.utils.logging.CLogger;
@@ -433,4 +435,18 @@ public class NetworkUtils {
             throw new RuntimeException(e);
         }
     }
+
+    public static boolean isCidrOverlap(String cidr1, String cidr2) {
+        DebugUtils.Assert(isCidr(cidr1), String.format("%s is not a cidr", cidr1));
+        DebugUtils.Assert(isCidr(cidr2), String.format("%s is not a cidr", cidr2));
+
+        SubnetUtils su1 = new SubnetUtils(cidr1);
+        SubnetUtils su2 = new SubnetUtils(cidr2);
+
+        SubnetUtils.SubnetInfo info1 = su1.getInfo();
+        SubnetUtils.SubnetInfo info2 = su2.getInfo();
+
+        return isIpv4RangeOverlap(info1.getLowAddress(), info1.getHighAddress(), info2.getLowAddress(), info2.getHighAddress());
+    }
 }
+
