@@ -75,5 +75,7 @@ public class TestEval {
         String testJson = "[\"files/kvm/libvirtd.conf\",\"/etc/libvirt/libvirtd.conf\"]";
         List collection = JSONObjectUtil.toCollection(testJson, ArrayList.class, String.class);
         System.out.println(collection);
+
+        Assert.assertTrue(NetworkUtils.isCidrOverlap("192.168.0.1/24", "192.168.1.0/16"));
     }
 }

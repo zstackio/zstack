@@ -1,5 +1,6 @@
 package org.zstack.header.network.l3;
 
+import org.apache.commons.net.util.SubnetUtils;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 import org.zstack.header.vo.Index;
@@ -58,7 +59,12 @@ public class IpRangeAO {
     }
 
     public String getNetworkCidr() {
-        return networkCidr;
+        if (networkCidr != null) {
+            return networkCidr;
+        }
+
+        SubnetUtils su = new SubnetUtils(gateway, netmask);
+        return su.getInfo().getCidrSignature();
     }
 
     public void setNetworkCidr(String networkCidr) {
