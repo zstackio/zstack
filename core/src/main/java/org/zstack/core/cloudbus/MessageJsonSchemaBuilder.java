@@ -58,6 +58,10 @@ public class MessageJsonSchemaBuilder {
     }
 
     private static void buildSchema(Object obj, Map<String, List<String>> schema, Stack<String> trace, Stack<Object> paths) throws IllegalAccessException {
+        if (obj == null) {
+            return;
+        }
+
         List<Field> fs = FieldUtils.getAllFields(obj.getClass());
         for (Field f : fs) {
             if (isSkip(f)) {
