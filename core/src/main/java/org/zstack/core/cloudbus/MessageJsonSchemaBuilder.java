@@ -167,7 +167,7 @@ public class MessageJsonSchemaBuilder {
     }
 
     private static boolean isObjectNeedSchema(Object obj) {
-        return obj.getClass().isAnnotationPresent(Inventory.class) || obj.getClass().isAnnotationPresent(NeedJsonSchema.class);
+        return obj != null && (obj.getClass().isAnnotationPresent(Inventory.class) || obj.getClass().isAnnotationPresent(NeedJsonSchema.class));
     }
 
     private static void schemaMap(Field f, Object obj, Map<String, List<String>> schema, Stack<String> trace, Stack<Object> paths) throws IllegalAccessException {
