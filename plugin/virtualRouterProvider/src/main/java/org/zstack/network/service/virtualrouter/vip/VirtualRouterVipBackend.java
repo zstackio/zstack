@@ -288,8 +288,7 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
                 logger.warn(String.format("failed to release vip[uuid:%s, name:%s, ip:%s] on virtual router vm[uuid:%s], because %s",
                         vip.getUuid(), vip.getName(), vip.getIp(),
                         vrvo.getUuid(), errorCode));
-                //TODO: garbage collector
-                completion.success();
+                completion.fail(errorCode);
             }
         });
     }
