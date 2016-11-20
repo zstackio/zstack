@@ -450,7 +450,6 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                                 }
                             });
                         }
-
                         @Override
                         public void rollback(final FlowRollback trigger, Map data) {
                             if (vr == null) {
