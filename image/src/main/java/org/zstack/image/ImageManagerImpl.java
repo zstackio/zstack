@@ -1343,32 +1343,6 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
     @Override
     @Transactional(readOnly = true)
     public void resourceOwnerPreChange(AccountResourceRefInventory ref, String newOwnerUuid) {
-        String resourceUuid = ref.getResourceUuid();
-        // skip for admin
-        if (new QuotaUtil().isAdminAccount(newOwnerUuid)) {
-            return;
-        }
 
-        SimpleQuery<AccountResourceRefVO> sq = dbf.createQuery(AccountResourceRefVO.class);
-        sq.add(AccountResourceRefVO_.resourceUuid, Op.EQ, resourceUuid);
-        AccountResourceRefVO accResRefVO = sq.find();
-        // skip if not vm instance
-        if (!accResRefVO.getResourceType().equals(VmInstanceVO.class.getSimpleName())) {
-            return;
-        }
-        // image
-        VmInstanceVO vmInstanceVO = dbf.findByUuid(resourceUuid, VmInstanceVO.class);
-        String isoUuid = VmSystemTags.ISO.getTokenByResourceUuid(resourceUuid, VmSystemTags.ISO_TOKEN);
-        if (isoUuid == null || isoUuid.equals("")) {
-            return;
-        }
-        if (vmInstanceVO.getImageUuid() != null && !vmInstanceVO.getImageUuid().equals("")) {
-            throw new ApiMessageInterceptionException(errf.stringToOperationError(
-                    String.format("unable to change owner for vmInstance[uuid:%s]." +
-                                    "ISO[uuid:%s] is not accessible to target account[uuid:%s]." +
-                                    "You'd better share the image to target account or unmount it before change",
-                            resourceUuid, isoUuid, newOwnerUuid)
-            ));
-        }
     }
 }
