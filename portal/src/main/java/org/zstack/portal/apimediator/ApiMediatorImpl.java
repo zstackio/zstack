@@ -14,10 +14,7 @@ import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.*;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.managementnode.*;
-import org.zstack.header.message.APICreateMessage;
-import org.zstack.header.message.APIMessage;
-import org.zstack.header.message.Message;
-import org.zstack.header.message.MessageReply;
+import org.zstack.header.message.*;
 import org.zstack.utils.StringDSL;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -82,7 +79,19 @@ public class ApiMediatorImpl extends AbstractService implements ApiMediator, Glo
             return;
         }
 
-        bus.route(msg);
+        if (!msg.hasSystemTag(PortalSystemTags.VALIDATION_ONLY.getTagFormat())) {
+            bus.route(msg);
+            return;
+        }
+
+        // this call is only for validate the API parameters
+        if (msg instanceof APISyncCallMessage) {
+            APIReply reply = new APIReply();
+            bus.reply(msg, reply);
+        } else {
+            APIEvent evt = new APIEvent(msg.getId());
+            bus.publish(evt);
+        }
     }
 
 
