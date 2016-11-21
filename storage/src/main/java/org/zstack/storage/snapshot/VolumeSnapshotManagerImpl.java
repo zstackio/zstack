@@ -24,13 +24,11 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.identity.*;
-import org.zstack.header.message.APIMessage;
-import org.zstack.header.message.Message;
-import org.zstack.header.message.MessageReply;
-import org.zstack.header.message.NeedQuotaCheckMessage;
+import org.zstack.header.message.*;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
 import org.zstack.header.storage.snapshot.*;
+import org.zstack.header.vm.StartVmInstanceMsg;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
@@ -475,6 +473,27 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                     }
                 });
 
+        bus.installBeforeDeliveryMessageInterceptor(new AbstractBeforeDeliveryMessageInterceptor() {
+            @Override
+            public void intercept(Message msg) {
+                if (msg instanceof NeedQuotaCheckMessage) {
+                    if (((NeedQuotaCheckMessage) msg).getAccountUuid() == null ||
+                            ((NeedQuotaCheckMessage) msg).getAccountUuid().equals("")) {
+                        // skip admin scheduler
+                        return;
+                    }
+                    List<Quota> quotas = acntMgr.getMessageQuotaMap().get(msg.getClass());
+                    if (quotas == null || quotas.size() == 0) {
+                        return;
+                    }
+                    Map<String, Quota.QuotaPair> pairs = new QuotaUtil().
+                            makeQuotaPairs(((NeedQuotaCheckMessage) msg).getAccountUuid());
+                    for (Quota quota : quotas) {
+                        quota.getOperator().checkQuota((NeedQuotaCheckMessage) msg, pairs);
+                    }
+                }
+            }
+        }, VolumeCreateSnapshotMsg.class);
         return true;
     }
 
