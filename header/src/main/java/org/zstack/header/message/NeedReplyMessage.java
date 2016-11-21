@@ -41,6 +41,14 @@ public abstract class NeedReplyMessage extends Message {
         return String.format("Message[%s] timeout after %s seconds", this.getClass().getName(), TimeUnit.MILLISECONDS.toSeconds(getTimeout()));
     }
 
+    public boolean hasSystemTag(String tag) {
+        if (systemTags == null) {
+            return false;
+        }
+
+        return systemTags.contains(tag);
+    }
+
     public long getTimeout() {
         return timeout;
     }

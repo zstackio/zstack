@@ -28,6 +28,11 @@
             <artifactId>search</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.zstack</groupId>
+            <artifactId>tag</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
             <dependency>
                 <groupId>javax.servlet</groupId>

@@ -8,13 +8,10 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.db.UpdateQuery;
-import org.zstack.header.zone.ZoneInventory;
-import org.zstack.header.zone.ZoneVO;
-import org.zstack.header.zone.ZoneVO_;
-import org.zstack.test.Api;
-import org.zstack.test.ApiSenderException;
-import org.zstack.test.BeanConstructor;
-import org.zstack.test.DBUtil;
+import org.zstack.header.message.APIEvent;
+import org.zstack.header.zone.*;
+import org.zstack.portal.apimediator.PortalSystemTags;
+import org.zstack.test.*;
 
 import java.util.List;
 
@@ -53,5 +50,13 @@ public class TestCreateZone {
         q = UpdateQuery.New();
         q.entity(ZoneVO.class).condAnd(ZoneVO_.uuid, Op.EQ, inv.getUuid()).delete();
         Assert.assertFalse(dbf.isExist(inv.getUuid(), ZoneVO.class));
+
+        APICreateZoneMsg msg = new APICreateZoneMsg();
+        msg.setName("zone");
+        msg.addSystemTag(PortalSystemTags.VALIDATION_ONLY.getTagFormat());
+        msg.setSession(api.getAdminSession());
+        ApiSender sender = new ApiSender();
+        APIEvent evt = sender.send(msg, APIEvent.class);
+        Assert.assertTrue(evt.isSuccess());
     }
 }
