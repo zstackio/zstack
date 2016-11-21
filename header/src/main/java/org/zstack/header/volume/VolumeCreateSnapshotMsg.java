@@ -1,13 +1,14 @@
 package org.zstack.header.volume;
 
 import org.zstack.header.core.ApiTimeout;
+import org.zstack.header.message.NeedQuotaCheckMessage;
 import org.zstack.header.message.NeedReplyMessage;
 
 /**
  * Created by david on 10/7/16.
  */
 @ApiTimeout(apiClasses = {APICreateVolumeSnapshotMsg.class})
-public class VolumeCreateSnapshotMsg extends NeedReplyMessage implements VolumeMessage {
+public class VolumeCreateSnapshotMsg extends NeedReplyMessage implements VolumeMessage, NeedQuotaCheckMessage {
     private String accountUuid;
     private String resourceUuid;
     private String name;
