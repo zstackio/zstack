@@ -29,6 +29,8 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.concurrent.TimeUnit;
 
+import static org.zstack.utils.CollectionDSL.list;
+
 /**
  * after changing owner, the billing of the old owner should not increase
  */
@@ -113,6 +115,7 @@ public class TestBilling14 {
 
         IdentityCreator identityCreator = new IdentityCreator(api);
         AccountInventory account = identityCreator.createAccount("root", "password");
+        api.shareResource(list(vm.getDefaultL3NetworkUuid()), null, true);
         api.changeResourceOwner(vm.getUuid(), account.getUuid());
 
         TimeUnit.SECONDS.sleep(2);
