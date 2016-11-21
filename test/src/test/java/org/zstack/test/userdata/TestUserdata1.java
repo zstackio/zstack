@@ -1,5 +1,6 @@
 package org.zstack.test.userdata;
 
+import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.zstack.compute.vm.VmSystemTags;
@@ -12,7 +13,9 @@ import org.zstack.header.image.ImageInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
+import org.zstack.network.service.flat.BridgeNameFinder;
 import org.zstack.network.service.flat.FlatNetworkServiceSimulatorConfig;
+import org.zstack.network.service.flat.FlatUserdataBackend;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 import org.zstack.test.*;
@@ -31,6 +34,10 @@ import static org.zstack.utils.CollectionDSL.map;
  * confirm the user data applied on the new l3 network
  *
  * bug: https://github.com/zxwing/premium/issues/113
+ *
+ * 3. delete the l3
+ *
+ * confirm the userdat cleaned up
  *
  */
 public class TestUserdata1 {
@@ -98,5 +105,11 @@ public class TestUserdata1 {
         });
 
         api.detachNic(nic.getUuid());
+
+        String brName = new BridgeNameFinder().findByL3Uuid(l3.getUuid());
+        api.deleteL3Network(l3.getUuid());
+        Assert.assertEquals(1, fconfig.cleanupUserdataCmds.size());
+        FlatUserdataBackend.CleanupUserdataCmd cmd = fconfig.cleanupUserdataCmds.get(0);
+        Assert.assertEquals(brName, cmd.bridgeName);
     }
 }

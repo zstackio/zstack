@@ -23,6 +23,7 @@ public class FlatNetworkServiceSimulatorConfig {
     public List<PrepareDhcpCmd> prepareDhcpCmdList = new ArrayList<PrepareDhcpCmd>();
     public List<ApplyUserdataCmd> applyUserdataCmds = new ArrayList<ApplyUserdataCmd>();
     public List<ReleaseUserdataCmd> releaseUserdataCmds = new ArrayList<ReleaseUserdataCmd>();
+    public List<FlatUserdataBackend.CleanupUserdataCmd> cleanupUserdataCmds = new ArrayList<>();
     public List<FlatDhcpBackend.ConnectCmd> connectCmds = new ArrayList<FlatDhcpBackend.ConnectCmd>();
     public List<ApplyEipCmd> applyEipCmds = new ArrayList<ApplyEipCmd>();
     public List<DeleteEipCmd> deleteEipCmds = new ArrayList<DeleteEipCmd>();

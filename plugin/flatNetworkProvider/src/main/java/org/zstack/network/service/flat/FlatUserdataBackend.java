@@ -3,21 +3,28 @@ package org.zstack.network.service.flat;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.vm.UserdataBuilder;
+import org.zstack.core.asyncbatch.AsyncBatchRunner;
+import org.zstack.core.asyncbatch.LoopAsyncBatch;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.logging.Log;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.service.NetworkServiceProviderType;
+import org.zstack.header.network.l3.L3NetworkDeleteExtensionPoint;
+import org.zstack.header.network.l3.L3NetworkException;
+import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.network.service.*;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.kvm.*;
@@ -28,17 +35,22 @@ import org.zstack.network.service.userdata.UserdataConstant;
 import org.zstack.network.service.userdata.UserdataGlobalProperty;
 import org.zstack.network.service.userdata.UserdataStruct;
 import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
+import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
 /**
  * Created by frank on 10/13/2015.
  */
-public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExtensionPoint {
+public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExtensionPoint, L3NetworkDeleteExtensionPoint {
+    private static final CLogger logger = Utils.getLogger(FlatUserdataBackend.class);
+
     @Autowired
     private CloudBus bus;
     @Autowired
@@ -53,6 +65,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
     public static final String APPLY_USER_DATA = "/flatnetworkprovider/userdata/apply";
     public static final String BATCH_APPLY_USER_DATA = "/flatnetworkprovider/userdata/batchapply";
     public static final String RELEASE_USER_DATA = "/flatnetworkprovider/userdata/release";
+    public static final String CLEANUP_USER_DATA = "/flatnetworkprovider/userdata/cleanup";
 
     @Override
     public Flow createKvmHostConnectingFlow(final KVMHostConnectedContext context) {
@@ -193,6 +206,70 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
         };
     }
 
+    @Override
+    public String preDeleteL3Network(L3NetworkInventory inventory) throws L3NetworkException {
+        return null;
+    }
+
+    @Override
+    public void beforeDeleteL3Network(L3NetworkInventory inventory) {
+    }
+
+    @Override
+    public void afterDeleteL3Network(L3NetworkInventory l3) {
+        Optional<NetworkServiceL3NetworkRefInventory> o = l3.getNetworkServices().stream().filter(n -> n.getNetworkServiceType().equals(UserdataConstant.USERDATA_TYPE_STRING)).findAny();
+        if (!o.isPresent()) {
+            return;
+        }
+
+        NetworkServiceL3NetworkRefInventory ref = o.get();
+        if (!dbf.isExist(ref.getNetworkServiceProviderUuid(), NetworkServiceProviderVO.class)) {
+            return;
+        }
+
+        List<String> hostUuids = new Callable<List<String>>() {
+            @Override
+            @Transactional(readOnly = true)
+            public List<String> call() {
+                String sql = "select h.uuid from HostVO h, L2NetworkClusterRefVO ref where h.clusterUuid = ref.clusterUuid" +
+                        " and ref.l2NetworkUuid = :l2Uuid and h.hypervisorType = :hvType";
+                TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
+                q.setParameter("l2Uuid", l3.getL2NetworkUuid());
+                q.setParameter("hvType", KVMConstant.KVM_HYPERVISOR_TYPE);
+                return q.getResultList();
+            }
+        }.call();
+
+        if (hostUuids.isEmpty()) {
+            return;
+        }
+
+        CleanupUserdataCmd cmd = new CleanupUserdataCmd();
+        cmd.bridgeName = new BridgeNameFinder().findByL3Uuid(l3.getUuid());
+
+        for (String huuid : hostUuids) {
+            new KvmCommandSender(huuid).send(cmd, CLEANUP_USER_DATA, new KvmCommandFailureChecker() {
+                @Override
+                public ErrorCode getError(KvmResponseWrapper w) {
+                    CleanupUserdataRsp rsp = w.getResponse(CleanupUserdataRsp.class);
+                    return rsp.isSuccess() ? null : errf.stringToOperationError(rsp.getError());
+                }
+            }, new ReturnValueCompletion<KvmResponseWrapper>() {
+                @Override
+                public void success(KvmResponseWrapper w) {
+                    logger.debug(String.format("successfully cleanup userdata service on the host[uuid:%s] for the deleted L3 network[uuid:%s, name:%s]",
+                            huuid, l3.getUuid(), l3.getName()));
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    //TODO: Add GC
+                    logger.warn(errorCode.toString());
+                }
+            });
+        }
+    }
+
     public static class UserdataTO {
         public MetadataTO metadata;
         public String userdata;
@@ -205,6 +282,14 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
 
     public static class MetadataTO {
         public String vmUuid;
+    }
+
+    public static class CleanupUserdataCmd extends KVMAgentCommands.AgentCommand {
+        public String bridgeName;
+    }
+
+    public static class CleanupUserdataRsp extends KVMAgentCommands.AgentResponse {
+
     }
 
     public static class BatchApplyUserdataCmd extends KVMAgentCommands.AgentCommand {

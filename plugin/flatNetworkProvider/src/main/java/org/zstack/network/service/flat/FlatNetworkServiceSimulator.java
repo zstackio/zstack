@@ -124,6 +124,15 @@ public class FlatNetworkServiceSimulator {
         return null;
     }
 
+    @RequestMapping(value = FlatUserdataBackend.CLEANUP_USER_DATA, method = RequestMethod.POST)
+    public @ResponseBody String cleanupUserdata(HttpEntity<String> entity) {
+        CleanupUserdataCmd cmd = JSONObjectUtil.toObject(entity.getBody(), CleanupUserdataCmd.class);
+        config.cleanupUserdataCmds.add(cmd);
+        CleanupUserdataRsp rsp = new CleanupUserdataRsp();
+        reply(entity, rsp);
+        return null;
+    }
+
     @RequestMapping(value = FlatDhcpBackend.DHCP_CONNECT_PATH, method = RequestMethod.POST)
     public @ResponseBody String connect(HttpEntity<String> entity) {
         ConnectCmd cmd = JSONObjectUtil.toObject(entity.getBody(), ConnectCmd.class);
