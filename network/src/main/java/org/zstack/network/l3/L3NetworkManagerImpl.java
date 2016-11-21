@@ -27,7 +27,6 @@ import org.zstack.header.message.NeedQuotaCheckMessage;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l2.L2NetworkVO_;
 import org.zstack.header.network.l3.*;
-import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.search.GetQuery;
@@ -454,71 +453,6 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
     @Override
     @Transactional(readOnly = true)
     public void resourceOwnerPreChange(AccountResourceRefInventory ref, String newOwnerUuid) {
-        String resourceUuid = ref.getResourceUuid();
-        // skip for admin
-        if (new QuotaUtil().isAdminAccount(newOwnerUuid)) {
-            return;
-        }
-
-        SimpleQuery<AccountResourceRefVO> sq = dbf.createQuery(AccountResourceRefVO.class);
-        sq.add(AccountResourceRefVO_.resourceUuid, Op.EQ, resourceUuid);
-        AccountResourceRefVO accResRefVO = sq.find();
-        // skip if not vm instance
-        if (!accResRefVO.getResourceType().equals(VmInstanceVO.class.getSimpleName())) {
-            return;
-        }
-
-        // l3network
-        VmInstanceVO vmInstanceVO = dbf.findByUuid(resourceUuid, VmInstanceVO.class);
-        String sql = "select vmnic.l3NetworkUuid" +
-                " from VmNicVO vmnic" +
-                " where vmnic.vmInstanceUuid = :vmInstanceUuid" +
-                " group by vmnic.l3NetworkUuid";
-        TypedQuery<String> queryL3Network = dbf.getEntityManager().createQuery(sql, String.class);
-        queryL3Network.setParameter("vmInstanceUuid", resourceUuid);
-        List<String> l3NetworkUuids = queryL3Network.getResultList();
-        if (l3NetworkUuids != null && !l3NetworkUuids.isEmpty()) {
-            for (String l3networkUuid : l3NetworkUuids) {
-                if (!checkResourceAccessPermission(newOwnerUuid, l3networkUuid)) {
-                    throw new ApiMessageInterceptionException(errf.stringToOperationError(
-                            String.format("unable to change owner for vmInstance[uuid:%s]." +
-                                            "L3Network[uuid:%s] is not accessible to target account[uuid:%s]",
-                                    resourceUuid, l3networkUuid, newOwnerUuid)
-                    ));
-                }
-            }
-        }
-    }
-
-    @Transactional(readOnly = true)
-    private boolean checkResourceAccessPermission(String accountUuid, String resourceUuid) {
-        // check if resource is shared to specified account
-        SimpleQuery<SharedResourceVO> sq = dbf.createQuery(SharedResourceVO.class);
-        sq.add(SharedResourceVO_.resourceUuid, Op.EQ, resourceUuid);
-        sq.add(SharedResourceVO_.receiverAccountUuid, Op.EQ, accountUuid);
-        if (sq.find() != null) {
-            return true;
-        }
-
-        // check if resource is shared publicly
-        SimpleQuery<SharedResourceVO> sq2 = dbf.createQuery(SharedResourceVO.class);
-        sq2.add(SharedResourceVO_.resourceUuid, Op.EQ, resourceUuid);
-        sq2.add(SharedResourceVO_.toPublic, Op.EQ, 1);
-        List<SharedResourceVO> l = sq2.list();
-        if (l != null && !l.isEmpty()) {
-            return true;
-        }
-
-        // check if resource is owned by the account
-        SimpleQuery<AccountResourceRefVO> sq3 = dbf.createQuery(AccountResourceRefVO.class);
-        sq3.add(AccountResourceRefVO_.resourceUuid, Op.EQ, resourceUuid);
-        sq3.add(AccountResourceRefVO_.accountUuid, Op.EQ, accountUuid);
-        if (sq3.find() != null) {
-            return true;
-        }
-
-        // else
-        return false;
     }
 
 }
