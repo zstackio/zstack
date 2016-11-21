@@ -113,30 +113,30 @@ public class EipApiInterceptor implements ApiMessageInterceptor {
         String vipIp = t.get(2, String.class);
         isVipInVmNicSubnet(vipIp, msg.getVmNicUuid());
 
-        String vipL3Uuid = new Callable<String>() {
+        VipVO vip = new Callable<VipVO>() {
             @Override
             @Transactional(readOnly = true)
-            public String call() {
-                String sql = "select vip.uuid" +
+            public VipVO call() {
+                String sql = "select vip" +
                         " from VipVO vip, EipVO eip" +
                         " where vip.uuid = eip.vipUuid" +
                         " and eip.uuid = :eipUuid";
-                TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
+                TypedQuery<VipVO> q = dbf.getEntityManager().createQuery(sql, VipVO.class);
                 q.setParameter("eipUuid", msg.getEipUuid());
                 return q.getSingleResult();
             }
         }.call();
 
-        SimpleQuery<VmNicVO> vq = dbf.createQuery(VmNicVO.class);
-        vq.select(VmNicVO_.l3NetworkUuid);
-        vq.add(VmNicVO_.uuid, Op.EQ, msg.getVmNicUuid());
-        String guestL3Uuid = vq.findValue();
-        if (guestL3Uuid.equals(vipL3Uuid)) {
+        VmNicVO nic = dbf.findByUuid(msg.getVmNicUuid(), VmNicVO.class);
+        if (nic.getL3NetworkUuid().equals(vip.getL3NetworkUuid())) {
             throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
                     String.format("guest l3Network of vm nic[uuid:%s] and vip l3Network of EIP[uuid:%s] are the same network",
                             msg.getVmNicUuid(), msg.getEipUuid())
             ));
         }
+
+        // check if the vm already has a network where the vip comes
+        checkIfVmAlreadyHasVipNetwork(nic.getVmInstanceUuid(), vip);
     }
 
     private void validate(APIDetachEipMsg msg) {
@@ -187,6 +187,22 @@ public class EipApiInterceptor implements ApiMessageInterceptor {
         }
     }
 
+    @Transactional(readOnly = true)
+    private void checkIfVmAlreadyHasVipNetwork(String vmUuid, VipVO vip) {
+        String sql = "select count(*) from VmNicVO nic, VmInstanceVO vm where nic.vmInstanceUuid = vm.uuid" +
+                " and vm.uuid = :vmUuid and nic.l3NetworkUuid = :vipL3Uuid";
+        TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
+        q.setParameter("vmUuid", vmUuid);
+        q.setParameter("vipL3Uuid", vip.getL3NetworkUuid());
+        Long c = q.getSingleResult();
+        if (c > 0) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("the vm[uuid:%s] that the EIP is about to attach is already on the public network[uuid:%s] from which" +
+                            " the vip[uuid:%s, name:%s, ip:%s] comes", vmUuid, vip.getL3NetworkUuid(), vip.getUuid(), vip.getName(), vip.getIp())
+            ));
+        }
+    }
+
     private void validate(APICreateEipMsg msg) {
         if (msg.getVmNicUuid() != null) {
             isVmNicUsed(msg.getVmNicUuid());
@@ -209,14 +225,16 @@ public class EipApiInterceptor implements ApiMessageInterceptor {
             isVipInVmNicSubnet(vip.getIp(), msg.getVmNicUuid());
 
             SimpleQuery<VmNicVO> nicq = dbf.createQuery(VmNicVO.class);
-            nicq.select(VmNicVO_.l3NetworkUuid);
             nicq.add(VmNicVO_.uuid, Op.EQ, msg.getVmNicUuid());
-            String nicL3Uuid = nicq.findValue();
-            if (nicL3Uuid.equals(vip.getL3NetworkUuid())) {
+            VmNicVO nic = nicq.find();
+            if (nic.getL3NetworkUuid().equals(vip.getL3NetworkUuid())) {
                 throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
                         String.format("guest l3Network of vm nic[uuid:%s] and vip l3Network of vip[uuid: %s] are the same network", msg.getVmNicUuid(), msg.getVipUuid())
                 ));
             }
+
+            // check if the vm already has a network where the vip comes
+            checkIfVmAlreadyHasVipNetwork(nic.getVmInstanceUuid(), vip);
         }
     }
 }

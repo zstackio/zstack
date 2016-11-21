@@ -32,6 +32,7 @@
     <TestCase class="org.zstack.test.eip.TestVirtualRouterEip29"/>
     <TestCase class="org.zstack.test.eip.TestVirtualRouterEip30"/>
     <TestCase class="org.zstack.test.eip.TestVirtualRouterEip31"/>
+    <TestCase class="org.zstack.test.eip.TestVirtualRouterEip32"/>
     <TestCase class="org.zstack.test.eip.TestQueryEip1"/>
     <TestCase class="org.zstack.test.eip.TestEipPortForwardingAttachableNic"/>
     <TestCase class="org.zstack.test.eip.TestUpdateVirtualRouterEip"/>
