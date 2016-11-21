@@ -34,6 +34,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import static org.zstack.utils.CollectionDSL.list;
+
 /**
 
  */
@@ -86,9 +88,9 @@ public class TestBilling13 {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         api.stopVmInstance(vm.getUuid());
 
@@ -121,6 +123,7 @@ public class TestBilling13 {
 
         IdentityCreator identityCreator = new IdentityCreator(api);
         identityCreator.createAccount("test", "test");
+        api.shareResource(list(vm.getDefaultL3NetworkUuid()), null, true);
         api.changeResourceOwner(vm.getUuid(), identityCreator.getAccountSession().getAccountUuid());
 
         long during = 2;
@@ -135,8 +138,8 @@ public class TestBilling13 {
         double volPrice = volSizeInM * 9d * during;
 
         // for 2s error margin
-        double cpuPriceErrorMargin = vm.getCpuNum() * 100d  * 2;
-        double memPriceErrorMargin = vm.getMemorySize() * 100d  * 2;
+        double cpuPriceErrorMargin = vm.getCpuNum() * 100d * 2;
+        double memPriceErrorMargin = vm.getMemorySize() * 100d * 2;
         double volPriceErrorMargin = volSizeInM * 9d * 2;
         double errorMargin = cpuPriceErrorMargin + memPriceErrorMargin + volPriceErrorMargin;
 
