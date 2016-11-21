@@ -194,14 +194,14 @@ public class TestMevoco21 {
                 AccountConstant.StatementEffect.Allow);
         validate(ps, "VM.CONSOLE-PASSWORD.DELETE", "instance:APIDeleteVmConsolePasswordMsg",
                 AccountConstant.StatementEffect.Allow);
-
-        validate(ps, "SCHEDULER.CREATE", "scheduler:APICreateRebootVmInstanceSchedulerMsg",
+        
+        validate(ps, "SCHEDULER.CREATE", "instance:APICreateRebootVmInstanceSchedulerMsg",
                 AccountConstant.StatementEffect.Allow);
-        validate(ps, "SCHEDULER.CREATE", "scheduler:APICreateStartVmInstanceSchedulerMsg",
+        validate(ps, "SCHEDULER.CREATE", "instance:APICreateStartVmInstanceSchedulerMsg",
                 AccountConstant.StatementEffect.Allow);
-        validate(ps, "SCHEDULER.CREATE", "scheduler:APICreateStopVmInstanceSchedulerMsg",
+        validate(ps, "SCHEDULER.CREATE", "instance:APICreateStopVmInstanceSchedulerMsg",
                 AccountConstant.StatementEffect.Allow);
-        validate(ps, "SCHEDULER.CREATE", "scheduler:APICreateVolumeSnapshotSchedulerMsg",
+        validate(ps, "SCHEDULER.CREATE", "volume:APICreateVolumeSnapshotSchedulerMsg",
                 AccountConstant.StatementEffect.Allow);
 
         validate(ps, "SCHEDULER.DELETE", "scheduler:APIDeleteSchedulerMsg",
