@@ -13,6 +13,7 @@ import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -236,13 +237,19 @@ public class VirtualRouter extends ApplianceVmBase {
 
             @Override
             public void run(final SyncTaskChain chain) {
+                refreshVO();
+
                 final VirtualRouterAsyncHttpCallReply reply = new VirtualRouterAsyncHttpCallReply();
+                if (msg.isCheckStatus() && getSelf().getState() != VmInstanceState.Running) {
+                    throw new OperationFailureException(errf.stringToOperationError(
+                            String.format("the virtual router[name:%s, uuid:%s, current state:%s] is not running," +
+                                    "and cannot perform required operation. Please retry your operation later once it is running", self.getName(), self.getUuid(), self.getState())
+                    ));
+                }
+
                 if (msg.isCheckStatus() && getSelf().getStatus() != ApplianceVmStatus.Connected) {
-                    reply.setError(errf.stringToOperationError(String.format("virtual router[uuid:%s] is in status of %s that cannot make http call to %s",
+                    throw new OperationFailureException(errf.stringToOperationError(String.format("virtual router[uuid:%s] is in status of %s that cannot make http call to %s",
                             self.getUuid(), getSelf().getStatus(), msg.getPath())));
-                    bus.reply(msg, reply);
-                    chain.next();
-                    return;
                 }
 
                 restf.asyncJsonPost(buildUrl(vr.getManagementNic().getIp(), msg.getPath()), msg.getCommand(), new JsonAsyncRESTCallback<LinkedHashMap>(msg, chain) {
