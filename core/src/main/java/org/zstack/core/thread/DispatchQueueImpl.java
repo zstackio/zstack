@@ -8,6 +8,7 @@ import org.zstack.core.debug.DebugManager;
 import org.zstack.core.debug.DebugSignal;
 import org.zstack.core.debug.DebugSignalHandler;
 import org.zstack.header.core.AsyncBackup;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.message.Message;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
@@ -270,7 +271,10 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
                 });
             } catch (Throwable t) {
                 try {
-                    _logger.warn(String.format("unhandled exception happened when calling %s", task.getClass().getName()), t);
+                    if (!(t instanceof OperationFailureException)) {
+                        _logger.warn(String.format("unhandled exception happened when calling %s", task.getClass().getName()), t);
+                    }
+
                     done();
                 } finally {
                     callNext(chain);
