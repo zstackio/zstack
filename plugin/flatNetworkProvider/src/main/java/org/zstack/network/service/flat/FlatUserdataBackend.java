@@ -33,6 +33,7 @@ import org.zstack.utils.function.Function;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created by frank on 10/13/2015.
@@ -119,6 +120,12 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
 
                 Map<String, VmIpL3Uuid> vmipl3 = getVmIpL3Uuid(vmUuids);
                 if (vmipl3.isEmpty()) {
+                    return null;
+                }
+
+                // filter out vm that not using flat network provider
+                vmUuids = vmUuids.stream().filter(vmipl3::containsKey).collect(Collectors.toList());
+                if (vmUuids.isEmpty()) {
                     return null;
                 }
 
