@@ -26,6 +26,7 @@ import org.zstack.header.query.QueryOp;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.utils.ShellResult;
 import org.zstack.utils.ShellUtils;
+import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.Tuple;
 import java.util.List;
@@ -170,6 +171,12 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor {
             throw new ApiMessageInterceptionException(errf.stringToOperationError(
                     String.format("the management network[uuid:%s] doesn't have any IP range", managementNetworkUuid)
             ));
+        }
+
+        String startIp = iprs.get(0).getStartIp();
+        if (!NetworkUtils.isIpRoutedByDefaultGateway(startIp)) {
+            // the mgmt server is in the same subnet of the mgmt network
+            return;
         }
 
         String gateway = iprs.get(0).getGateway();

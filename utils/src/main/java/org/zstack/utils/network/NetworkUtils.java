@@ -3,6 +3,8 @@ package org.zstack.utils.network;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.net.util.SubnetUtils;
 import org.zstack.utils.DebugUtils;
+import org.zstack.utils.ShellResult;
+import org.zstack.utils.ShellUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.Pair;
 import org.zstack.utils.logging.CLogger;
@@ -447,6 +449,11 @@ public class NetworkUtils {
         SubnetUtils.SubnetInfo info2 = su2.getInfo();
 
         return isIpv4RangeOverlap(info1.getLowAddress(), info1.getHighAddress(), info2.getLowAddress(), info2.getHighAddress());
+    }
+
+    public static boolean isIpRoutedByDefaultGateway(String ip) {
+        ShellResult res = ShellUtils.runAndReturn(String.format("ip route get %s | grep -q \"via $(ip route | awk '/default/ {print $3}')\"", ip));
+        return res.isReturnCode(0);
     }
 }
 
