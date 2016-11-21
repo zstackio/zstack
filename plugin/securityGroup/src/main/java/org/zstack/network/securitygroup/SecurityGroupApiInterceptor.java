@@ -119,7 +119,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
         SimpleQuery<NetworkServiceL3NetworkRefVO> nq = dbf.createQuery(NetworkServiceL3NetworkRefVO.class);
         nq.add(NetworkServiceL3NetworkRefVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
         nq.add(NetworkServiceL3NetworkRefVO_.networkServiceType, Op.EQ, SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE);
-        if (!q.isExists()) {
+        if (!nq.isExists()) {
             throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
                     String.format("the L3 network[uuid:%s] doesn't have the network service type[%s] enabled", msg.getL3NetworkUuid(), SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE)
             ));
