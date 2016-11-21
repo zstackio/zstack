@@ -37,6 +37,7 @@ import org.zstack.storage.ceph.*;
 import org.zstack.storage.ceph.primary.KVMCephVolumeTO.MonInfo;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
@@ -249,6 +250,8 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
             @Override
             public MonInfo call(Tuple t) {
                 String hostname = t.get(0, String.class);
+                DebugUtils.Assert(hostname != null, "hostname cannot be null");
+
                 int port = t.get(1, Integer.class);
 
                 MonInfo info = new MonInfo();
