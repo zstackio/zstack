@@ -127,12 +127,14 @@ public class KVMSimulatorController {
     private void doDetachNic(HttpEntity<String> entity) {
         DetachNicCommand cmd = JSONObjectUtil.toObject(entity.getBody(), DetachNicCommand.class);
 
+        DetachNicRsp rsp = new DetachNicRsp();
         if (!config.detachNicSuccess) {
-            throw new RuntimeException("on purpose");
+            rsp.setError("on purpose");
+            rsp.setSuccess(false);
+        } else {
+            config.detachNicCommands.add(cmd);
         }
 
-        DetachNicRsp rsp = new DetachNicRsp();
-        config.detachNicCommands.add(cmd);
         replyer.reply(entity, rsp);
     }
 
