@@ -337,16 +337,19 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
 
     private void removePortforwardingRule(String ruleUuid, final Completion complete) {
         final PortForwardingRuleVO vo = dbf.findByUuid(ruleUuid, PortForwardingRuleVO.class);
+        final PortForwardingRuleInventory inv = PortForwardingRuleInventory.valueOf(vo);
+
         if (vo.getVmNicUuid() == null) {
-            VipVO vipvo = dbf.findByUuid(vo.getVipUuid(), VipVO.class);
-            VipInventory vipInventory = VipInventory.valueOf(vipvo);
-            vipMgr.unlockVip(vipInventory);
             dbf.remove(vo);
+
+            if (isNeedRemoveVip(inv)) {
+                VipVO vipvo = dbf.findByUuid(vo.getVipUuid(), VipVO.class);
+                vipMgr.unlockVip(VipInventory.valueOf(vipvo));
+            }
+
             complete.success();
             return;
         }
-
-        final PortForwardingRuleInventory inv = PortForwardingRuleInventory.valueOf(vo);
 
         final PortForwardingStruct struct = makePortForwardingStruct(inv);
         final NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(struct.getGuestL3Network().getUuid(),
