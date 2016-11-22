@@ -110,6 +110,14 @@ public class EipApiInterceptor implements ApiMessageInterceptor {
             ));
         }
 
+        q = dbf.createQuery(EipVO.class);
+        q.add(EipVO_.vmNicUuid, Op.EQ, msg.getVmNicUuid());
+        if (q.isExists()) {
+            throw new ApiMessageInterceptionException(errf.stringToOperationError(
+                    String.format("the VM nic[uuid:%s] already has another EIP attached", msg.getVmNicUuid())
+            ));
+        }
+
         String vipIp = t.get(2, String.class);
         isVipInVmNicSubnet(vipIp, msg.getVmNicUuid());
 
@@ -222,6 +230,14 @@ public class EipApiInterceptor implements ApiMessageInterceptor {
         }
 
         if (msg.getVmNicUuid() != null) {
+            SimpleQuery<EipVO> q = dbf.createQuery(EipVO.class);
+            q.add(EipVO_.vmNicUuid, Op.EQ, msg.getVmNicUuid());
+            if (q.isExists()) {
+                throw new ApiMessageInterceptionException(errf.stringToOperationError(
+                        String.format("the VM nic[uuid:%s] already has another EIP attached", msg.getVmNicUuid())
+                ));
+            }
+
             isVipInVmNicSubnet(vip.getIp(), msg.getVmNicUuid());
 
             SimpleQuery<VmNicVO> nicq = dbf.createQuery(VmNicVO.class);
