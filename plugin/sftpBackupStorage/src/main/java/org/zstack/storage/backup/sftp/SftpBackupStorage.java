@@ -1,6 +1,7 @@
 package org.zstack.storage.backup.sftp;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.ansible.AnsibleFacade;
@@ -178,6 +179,7 @@ public class SftpBackupStorage extends BackupStorageBase {
     }
 
     @Override
+    @Transactional
     protected void handle(final DownloadImageMsg msg) {
         final DownloadImageReply reply = new DownloadImageReply();
         final ImageInventory iinv = msg.getImageInventory();
