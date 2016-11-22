@@ -334,7 +334,7 @@ public class FusionstorBackupStorageBase extends BackupStorageBase {
         cmd.imageUuid = msg.getImageInventory().getUuid();
 
         ImageBackupStorageRefVO ref = new ImageBackupStorageRefVO();
-        ref.setInstallPath(cmd.imageUuid);
+        ref.setInstallPath(cmd.installPath);
         ref.setBackupStorageUuid(msg.getBackupStorageUuid());
         ref.setImageUuid(msg.getImageInventory().getUuid());
         dbf.update(ref);

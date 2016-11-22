@@ -369,7 +369,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
         cmd.inject = msg.isInject();
 
         ImageBackupStorageRefVO ref = new ImageBackupStorageRefVO();
-        ref.setInstallPath(cmd.imageUuid);
+        ref.setInstallPath(cmd.installPath);
         ref.setBackupStorageUuid(msg.getBackupStorageUuid());
         ref.setImageUuid(msg.getImageInventory().getUuid());
         dbf.update(ref);
