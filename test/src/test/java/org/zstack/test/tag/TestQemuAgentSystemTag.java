@@ -93,9 +93,6 @@ public class TestQemuAgentSystemTag {
 
         SystemTagVO tvo = dbf.findByUuid(inv.getUuid(), SystemTagVO.class);
         Assert.assertNull(tvo);
-
-//        inv =  api.createSystemTag(image1.getUuid(), TestSystemTags.qemu_failed.getTagFormat(), ImageVO.class);
-//        Assert.assertNull(inv);
     }
 
     VmInstanceInventory createVmFromImage(VmInstanceInventory vm) throws ApiSenderException {
