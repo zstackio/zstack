@@ -182,8 +182,8 @@
         <property name="allocatorFlowNames">
             <list>
                 <value>org.zstack.compute.allocator.AttachedL2NetworkAllocatorFlow</value>
-                <value>org.zstack.compute.allocator.BackupStorageSelectPrimaryStorageAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.HostStateAndHypervisorAllocatorFlow</value>
+                <value>org.zstack.compute.allocator.BackupStorageSelectPrimaryStorageAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.HostCapacityAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.AttachedVolumePrimaryStorageAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.DesignatedHostAllocatorFlow</value>

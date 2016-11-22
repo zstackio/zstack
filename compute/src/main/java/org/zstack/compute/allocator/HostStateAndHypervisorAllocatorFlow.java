@@ -18,42 +18,43 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
 import java.util.List;
+
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class HostStateAndHypervisorAllocatorFlow extends AbstractHostAllocatorFlow {
-	private static final CLogger logger = Utils.getLogger(HostStateAndHypervisorAllocatorFlow.class);
+    private static final CLogger logger = Utils.getLogger(HostStateAndHypervisorAllocatorFlow.class);
 
     @Autowired
     private DatabaseFacade dbf;
 
-	private List<HostVO> allocate(String hypervisorType) {
-		SimpleQuery<HostVO> query = dbf.createQuery(HostVO.class);
-		query.add(HostVO_.state, Op.EQ, HostState.Enabled);
-		query.add(HostVO_.status, Op.EQ, HostStatus.Connected);
-	    if (hypervisorType != null) {
-	        query.add(HostVO_.hypervisorType, Op.EQ, hypervisorType);
-	    }
+    private List<HostVO> allocate(String hypervisorType) {
+        SimpleQuery<HostVO> query = dbf.createQuery(HostVO.class);
+        query.add(HostVO_.state, Op.EQ, HostState.Enabled);
+        query.add(HostVO_.status, Op.EQ, HostStatus.Connected);
+        if (hypervisorType != null) {
+            query.add(HostVO_.hypervisorType, Op.EQ, hypervisorType);
+        }
 
         if (usePagination()) {
             query.setStart(paginationInfo.getOffset());
             query.setLimit(paginationInfo.getLimit());
         }
 
-		return query.list();
-	}
+        return query.list();
+    }
 
-	private List<HostVO> allocate(List<HostVO> vos, String hypervisorType) {
-		List<HostVO> lst = new ArrayList<HostVO>(vos.size());
-		for (HostVO vo : vos) {
-		    if (hypervisorType != null && !hypervisorType.equals(vo.getHypervisorType())) {
-		        continue;
-		    }
-		    
-			if (vo.getState() == HostState.Enabled && vo.getStatus() == HostStatus.Connected) {
-			    lst.add(vo);
-			}
-		}
-		return lst;
-	}
+    private List<HostVO> allocate(List<HostVO> vos, String hypervisorType) {
+        List<HostVO> lst = new ArrayList<HostVO>(vos.size());
+        for (HostVO vo : vos) {
+            if (hypervisorType != null && !hypervisorType.equals(vo.getHypervisorType())) {
+                continue;
+            }
+
+            if (vo.getState() == HostState.Enabled && vo.getStatus() == HostStatus.Connected) {
+                lst.add(vo);
+            }
+        }
+        return lst;
+    }
 
     private boolean isNoEnabledHost() {
         return !candidates.stream().anyMatch(vo -> HostState.Enabled == vo.getState());
