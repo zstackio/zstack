@@ -362,6 +362,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
     }
 
     @Override
+    @Transactional
     protected void handle(final DownloadImageMsg msg) {
         final DownloadCmd cmd = new DownloadCmd();
         cmd.url = msg.getImageInventory().getUrl();

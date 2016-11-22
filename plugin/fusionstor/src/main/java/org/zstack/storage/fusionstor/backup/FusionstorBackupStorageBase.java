@@ -18,7 +18,6 @@ import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.image.APIAddImageMsg;
 import org.zstack.header.image.ImageBackupStorageRefInventory;
-import org.zstack.header.image.ImageBackupStorageRefVO;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.rest.RESTFacade;
@@ -27,8 +26,8 @@ import org.zstack.storage.backup.BackupStorageBase;
 import org.zstack.storage.fusionstor.*;
 import org.zstack.storage.fusionstor.FusionstorMonBase.PingResult;
 import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.Utils;
 import org.zstack.utils.DebugUtils;
+import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -328,6 +327,7 @@ public class FusionstorBackupStorageBase extends BackupStorageBase {
     }
 
     @Override
+    @Transactional
     protected void handle(final DownloadImageMsg msg) {
         final DownloadCmd cmd = new DownloadCmd();
         cmd.url = msg.getImageInventory().getUrl();
