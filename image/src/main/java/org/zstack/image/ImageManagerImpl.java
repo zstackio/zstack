@@ -946,7 +946,6 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                         ref.setStatus(ImageStatus.Downloading);
                         dbf.persist(ref);
 
-                        logger.debug(String.format("handle dmsg, dmsg.isInject() is: %s", String.valueOf(dmsg.isInject())));
                         bus.send(dmsg, new CloudBusCallBack(completion) {
                             @Override
                             public void run(MessageReply reply) {
