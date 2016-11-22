@@ -33,6 +33,7 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
+import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -333,11 +334,13 @@ public class FusionstorBackupStorageBase extends BackupStorageBase {
         cmd.installPath = makeImageInstallPath(msg.getImageInventory().getUuid());
         cmd.imageUuid = msg.getImageInventory().getUuid();
 
-        ImageBackupStorageRefVO ref = new ImageBackupStorageRefVO();
-        ref.setInstallPath(cmd.installPath);
-        ref.setBackupStorageUuid(msg.getBackupStorageUuid());
-        ref.setImageUuid(msg.getImageInventory().getUuid());
-        dbf.update(ref);
+        String sql = "update ImageBackupStorageRefVO set installPath = :installPath " +
+                "where backupStorageUuid = :bsUuid and imageUuid = :imageUuid";
+        Query q = dbf.getEntityManager().createQuery(sql);
+        q.setParameter("installPath", cmd.installPath);
+        q.setParameter("bsUuid", msg.getBackupStorageUuid());
+        q.setParameter("imageUuid", msg.getImageInventory().getUuid());
+        q.executeUpdate();
 
         final DownloadImageReply reply = new DownloadImageReply();
         httpCall(DOWNLOAD_IMAGE_PATH, cmd, DownloadRsp.class, new ReturnValueCompletion<DownloadRsp>(msg) {
