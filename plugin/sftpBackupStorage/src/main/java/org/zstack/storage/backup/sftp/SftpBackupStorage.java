@@ -16,7 +16,6 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.image.ImageBackupStorageRefInventory;
-import org.zstack.header.image.ImageBackupStorageRefVO;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -33,6 +32,7 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
+import javax.persistence.Query;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
@@ -183,11 +183,13 @@ public class SftpBackupStorage extends BackupStorageBase {
         final ImageInventory iinv = msg.getImageInventory();
         final String installPath = PathUtil.join(getSelf().getUrl(), BackupStoragePathMaker.makeImageInstallPath(iinv));
 
-        ImageBackupStorageRefVO ref = new ImageBackupStorageRefVO();
-        ref.setInstallPath(installPath);
-        ref.setBackupStorageUuid(msg.getBackupStorageUuid());
-        ref.setImageUuid(msg.getImageInventory().getUuid());
-        dbf.update(ref);
+        String sql = "update ImageBackupStorageRefVO set installPath = :installPath " +
+                "where backupStorageUuid = :bsUuid and imageUuid = :imageUuid";
+        Query q = dbf.getEntityManager().createQuery(sql);
+        q.setParameter("installPath", installPath);
+        q.setParameter("bsUuid", msg.getBackupStorageUuid());
+        q.setParameter("imageUuid", msg.getImageInventory().getUuid());
+        q.executeUpdate();
 
         download(iinv.getUrl(), installPath, iinv.getUuid(), msg.isInject(), new ReturnValueCompletion<DownloadResult>(msg) {
             @Override
