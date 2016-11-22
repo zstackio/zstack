@@ -35,6 +35,10 @@ public class TagUtils {
         List<String> t = new ArrayList<String>();
         Collections.addAll(t, fmt.split("::"));
 
+        if (fmt.indexOf("::") == -1) {
+            return fmt.equals(tag);
+        }
+
         if (origins.size() != t.size()) {
             return false;
         }

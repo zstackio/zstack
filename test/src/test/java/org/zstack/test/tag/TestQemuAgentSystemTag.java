@@ -43,8 +43,8 @@ public class TestQemuAgentSystemTag {
 
     @TagDefinition
     public static class TestSystemTags {
-        public static SystemTag qemu = new SystemTag("qemu", ImageVO.class);
-        public static SystemTag qemu_failed = new SystemTag("qemu::", ImageVO.class);
+        public static SystemTag qemu = new SystemTag("qemuga", ImageVO.class);
+        public static SystemTag qemu_failed = new SystemTag("qemuga::", ImageVO.class);
     }
 
     @Before
@@ -90,6 +90,9 @@ public class TestQemuAgentSystemTag {
 
         SystemTagVO tvo = dbf.findByUuid(inv.getUuid(), SystemTagVO.class);
         Assert.assertNull(tvo);
+
+//        inv =  api.createSystemTag(image1.getUuid(), TestSystemTags.qemu_failed.getTagFormat(), ImageVO.class);
+//        Assert.assertNull(inv);
     }
 
     VmInstanceInventory createVmFromImage(VmInstanceInventory vm) throws ApiSenderException {
