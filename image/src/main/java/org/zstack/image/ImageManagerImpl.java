@@ -25,6 +25,7 @@ import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.*;
@@ -864,6 +865,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         } else {
             vo.setUuid(Platform.getUuid());
         }
+
         vo.setName(msg.getName());
         vo.setDescription(msg.getDescription());
         if (msg.getFormat().equals(ImageConstant.ISO_FORMAT_STRING)) {
@@ -903,10 +905,8 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                         enableInject = ImageGlobalConfig.ENABLE_QEMUGA.value(Boolean.class);
                         if (enableInject) {
                             if (ImageConstant.QCOW2_FORMAT_STRING.equals(msg.getFormat()) == false) {
-                                APIAddImageEvent evt = new APIAddImageEvent(msg.getId());
                                 final ErrorCode err = errf.instantiateErrorCode(ImageErrors.INJECT_QEMUGA_ERROR, "Inject image can only support qcow2 format.");
-                                evt.setErrorCode(err);
-                                bus.publish(evt);
+                                throw new OperationFailureException(err);
                             }
                         }
                     }
