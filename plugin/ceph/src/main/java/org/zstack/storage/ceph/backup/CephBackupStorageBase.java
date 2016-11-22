@@ -16,9 +16,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.image.APIAddImageMsg;
-import org.zstack.header.image.ImageBackupStorageRefInventory;
-import org.zstack.header.image.ImageInventory;
+import org.zstack.header.image.*;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.backup.*;
@@ -369,6 +367,12 @@ public class CephBackupStorageBase extends BackupStorageBase {
         cmd.installPath = makeImageInstallPath(msg.getImageInventory().getUuid());
         cmd.imageUuid = msg.getImageInventory().getUuid();
         cmd.inject = msg.isInject();
+
+        ImageBackupStorageRefVO ref = new ImageBackupStorageRefVO();
+        ref.setInstallPath(cmd.imageUuid);
+        ref.setBackupStorageUuid(msg.getBackupStorageUuid());
+        ref.setImageUuid(msg.getImageInventory().getUuid());
+        dbf.update(ref);
 
         final DownloadImageReply reply = new DownloadImageReply();
         httpCall(DOWNLOAD_IMAGE_PATH, cmd, DownloadRsp.class, new ReturnValueCompletion<DownloadRsp>(msg) {

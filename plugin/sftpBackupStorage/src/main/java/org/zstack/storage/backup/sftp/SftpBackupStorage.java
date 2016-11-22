@@ -16,6 +16,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.image.ImageBackupStorageRefInventory;
+import org.zstack.header.image.ImageBackupStorageRefVO;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -179,6 +180,13 @@ public class SftpBackupStorage extends BackupStorageBase {
         final DownloadImageReply reply = new DownloadImageReply();
         final ImageInventory iinv = msg.getImageInventory();
         final String installPath = PathUtil.join(getSelf().getUrl(), BackupStoragePathMaker.makeImageInstallPath(iinv));
+
+        ImageBackupStorageRefVO ref = new ImageBackupStorageRefVO();
+        ref.setInstallPath(installPath);
+        ref.setBackupStorageUuid(msg.getBackupStorageUuid());
+        ref.setImageUuid(msg.getImageInventory().getUuid());
+        dbf.update(ref);
+
         download(iinv.getUrl(), installPath, iinv.getUuid(), msg.isInject(), new ReturnValueCompletion<DownloadResult>(msg) {
             @Override
             public void success(DownloadResult res) {
