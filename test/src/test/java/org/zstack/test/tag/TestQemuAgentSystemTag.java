@@ -6,6 +6,7 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.image.APIQueryImageMsg;
 import org.zstack.header.image.APIQueryImageReply;
@@ -14,10 +15,9 @@ import org.zstack.header.image.ImageVO;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.query.QueryOp;
 import org.zstack.header.tag.SystemTagVO;
+import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.tag.TagDefinition;
 import org.zstack.header.tag.TagInventory;
-import org.zstack.header.vm.APIQueryVmInstanceMsg;
-import org.zstack.header.vm.APIQueryVmInstanceReply;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.tag.SystemTag;
 import org.zstack.tag.TagSubQueryExtension;
@@ -74,25 +74,25 @@ public class TestQemuAgentSystemTag {
 
         // make sure vm and image have the same system-tags
         VmInstanceInventory testvm = createVmFromImage(deployer.vms.get("Vm_1"));
-        APIQueryVmInstanceMsg vmsg = new APIQueryVmInstanceMsg();
-        vmsg.addQueryCondition(TagSubQueryExtension.SYS_TAG_NAME, QueryOp.EQ, TestSystemTags.qemu.getTagFormat());
-        APIQueryVmInstanceReply vreply = api.query(vmsg, APIQueryVmInstanceReply.class);
-        List<VmInstanceInventory> vms = vreply.getInventories();
-        Assert.assertEquals(1, vms.size());
-        VmInstanceInventory vinv = vms.get(0);
-        Assert.assertEquals(testvm.getUuid(), vinv.getUuid());
+        SimpleQuery<SystemTagVO> pq = dbf.createQuery(SystemTagVO.class);
+        pq.select(SystemTagVO_.tag);
+        pq.add(SystemTagVO_.resourceUuid, SimpleQuery.Op.EQ, testvm.getUuid());
+        String tag = pq.findValue();
+        Assert.assertEquals(tag, TestSystemTags.qemu.getTagFormat());
 
-        // make sure vm take the SystemTags while clone
-//        VmInstanceInventory clonevm = createVmFromImage();
+        // make sure vm carry off the SystemTags while clone vm
+        VmInstanceInventory clonevm = createVmFromClone(deployer.vms.get("Vm_1"));
+        pq = dbf.createQuery(SystemTagVO.class);
+        pq.select(SystemTagVO_.tag);
+        pq.add(SystemTagVO_.resourceUuid, SimpleQuery.Op.EQ, clonevm.getUuid());
+        tag = pq.findValue();
+        Assert.assertEquals(tag, TestSystemTags.qemu.getTagFormat());
 
 
         api.deleteTag(inv.getUuid());
 
         SystemTagVO tvo = dbf.findByUuid(inv.getUuid(), SystemTagVO.class);
         Assert.assertNull(tvo);
-
-//        inv =  api.createSystemTag(image1.getUuid(), TestSystemTags.qemu_failed.getTagFormat(), ImageVO.class);
-//        Assert.assertNull(inv);
     }
 
     VmInstanceInventory createVmFromImage(VmInstanceInventory vm) throws ApiSenderException {
@@ -108,5 +108,9 @@ public class TestQemuAgentSystemTag {
         Assert.assertNotNull(disks.get(0));
         VmInstanceInventory testvm = api.createVmByFullConfig(vm, dinvs.get(0).getUuid(), nws, disks);
         return testvm;
+    }
+
+    VmInstanceInventory createVmFromClone(VmInstanceInventory vm) throws ApiSenderException {
+        return api.createVmFromClone(vm);
     }
 }

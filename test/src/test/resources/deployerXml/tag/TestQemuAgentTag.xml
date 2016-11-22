@@ -39,7 +39,7 @@
 			<cluster name="TestCluster" description="Test">
 				<hosts>
 					<simulatorHost name="TestHost1" description="Test"
-						   managementIp="10.0.0.11" memoryCapacity="8G" cpuNum="4" cpuSpeed="2600" />
+						   managementIp="10.0.0.11" memoryCapacity="16G" cpuNum="4" cpuSpeed="2600" />
 				</hosts>
 				<primaryStorageRef>TestPrimaryStorage</primaryStorageRef>
 				<l2NetworkRef>TestL2Network</l2NetworkRef>
