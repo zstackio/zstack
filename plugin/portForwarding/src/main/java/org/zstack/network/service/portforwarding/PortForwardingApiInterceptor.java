@@ -174,7 +174,7 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
         List<PortForwardingRuleVO> vos = q.list();
         for (PortForwardingRuleVO vo : vos) {
             if (vo.getProtocolType().toString().equals(msg.getProtocolType())) {
-                if (rangeOverlap(vipStart, vipEnd, vo.getVipPortStart(), vo.getPrivatePortEnd())) {
+                if (rangeOverlap(vipStart, vipEnd, vo.getVipPortStart(), vo.getVipPortEnd())) {
                     throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
                             String.format("vip port range[vipStartPort:%s, vipEndPort:%s] overlaps with rule[uuid:%s, vipStartPort:%s, vipEndPort:%s]",
                                     vipStart, vipEnd, vo.getUuid(), vo.getVipPortStart(), vo.getVipPortEnd())
