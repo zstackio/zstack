@@ -33,34 +33,34 @@ public class VmReturnReleaseNicFlow extends NoRollbackFlow {
             return;
         }
 
-            List<ReturnIpMsg> msgs = new ArrayList<ReturnIpMsg>(spec.getVmInventory().getVmNics().size());
-            for (VmNicInventory nic : spec.getVmInventory().getVmNics()) {
-                if (nic.getUsedIpUuid() != null) {
-                    ReturnIpMsg msg = new ReturnIpMsg();
-                    msg.setL3NetworkUuid(nic.getL3NetworkUuid());
-                    msg.setUsedIpUuid(nic.getUsedIpUuid());
-                    bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, nic.getL3NetworkUuid());
-                    msgs.add(msg);
-                }
-
-                VmNicVO vo = dbf.findByUuid(nic.getUuid(), VmNicVO.class);
-                if (VmInstanceConstant.USER_VM_TYPE.equals(spec.getVmInventory().getType())) {
-                    VmInstanceDeletionPolicy deletionPolicy = deletionPolicyMgr.getDeletionPolicy(spec.getVmInventory().getUuid());
-                    if (deletionPolicy == VmInstanceDeletionPolicy.Direct) {
-                        dbf.remove(vo);
-                    } else {
-                        vo.setUsedIpUuid(null);
-                        vo.setIp(null);
-                        vo.setGateway(null);
-                        vo.setNetmask(null);
-                        dbf.update(vo);
-                    }
-                } else {
-                    dbf.remove(vo);
-                }
+        List<ReturnIpMsg> msgs = new ArrayList<ReturnIpMsg>(spec.getVmInventory().getVmNics().size());
+        for (VmNicInventory nic : spec.getVmInventory().getVmNics()) {
+            if (nic.getUsedIpUuid() != null) {
+                ReturnIpMsg msg = new ReturnIpMsg();
+                msg.setL3NetworkUuid(nic.getL3NetworkUuid());
+                msg.setUsedIpUuid(nic.getUsedIpUuid());
+                bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, nic.getL3NetworkUuid());
+                msgs.add(msg);
             }
 
-            bus.send(msgs);
+            VmNicVO vo = dbf.findByUuid(nic.getUuid(), VmNicVO.class);
+            if (VmInstanceConstant.USER_VM_TYPE.equals(spec.getVmInventory().getType())) {
+                VmInstanceDeletionPolicy deletionPolicy = deletionPolicyMgr.getDeletionPolicy(spec.getVmInventory().getUuid());
+                if (deletionPolicy == VmInstanceDeletionPolicy.Direct) {
+                    dbf.remove(vo);
+                } else {
+                    vo.setUsedIpUuid(null);
+                    vo.setIp(null);
+                    vo.setGateway(null);
+                    vo.setNetmask(null);
+                    dbf.update(vo);
+                }
+            } else {
+                dbf.remove(vo);
+            }
+        }
+
+        bus.send(msgs);
 
         chain.next();
     }
