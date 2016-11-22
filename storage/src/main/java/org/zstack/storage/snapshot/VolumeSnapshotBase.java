@@ -250,7 +250,8 @@ public class VolumeSnapshotBase implements VolumeSnapshot {
                             @Override
                             public void run(MessageReply reply) {
                                 if (reply.isSuccess()) {
-                                    trigger.setError(reply.getError());
+                                    trigger.fail(reply.getError());
+                                    return;
                                 }
 
                                 trigger.next();
@@ -287,7 +288,9 @@ public class VolumeSnapshotBase implements VolumeSnapshot {
                         // TODO
                         logger.warn(String.format("failed to delete snapshot[uuid:%s, name:%s] on primary storage[uuid:%s], the primary storage should cleanup",
                                 self.getUuid(), self.getName(), self.getPrimaryStorageUuid()));
-                        finish();
+                        VolumeSnapshotPrimaryStorageDeletionReply dreply = new VolumeSnapshotPrimaryStorageDeletionReply();
+                        dreply.setError(errCode);
+                        bus.reply(msg, dreply);
                     }
                 });
             }
