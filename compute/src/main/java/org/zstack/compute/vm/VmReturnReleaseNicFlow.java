@@ -28,7 +28,11 @@ public class VmReturnReleaseNicFlow extends NoRollbackFlow {
     @Override
     public void run(FlowTrigger chain, Map data) {
         VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
-        if (!spec.getVmInventory().getVmNics().isEmpty()) {
+        if (spec.getVmInventory().getVmNics().isEmpty()) {
+            chain.next();
+            return;
+        }
+
             List<ReturnIpMsg> msgs = new ArrayList<ReturnIpMsg>(spec.getVmInventory().getVmNics().size());
             for (VmNicInventory nic : spec.getVmInventory().getVmNics()) {
                 if (nic.getUsedIpUuid() != null) {
@@ -57,7 +61,6 @@ public class VmReturnReleaseNicFlow extends NoRollbackFlow {
             }
 
             bus.send(msgs);
-        }
 
         chain.next();
     }
