@@ -2,7 +2,6 @@ package org.zstack.image;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
-import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.AsyncBatchRunner;
 import org.zstack.core.asyncbatch.LoopAsyncBatch;
@@ -21,7 +20,6 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
-import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.AsyncLatch;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.*;
@@ -48,7 +46,6 @@ import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.vm.CreateTemplateFromVmRootVolumeMsg;
 import org.zstack.header.vm.CreateTemplateFromVmRootVolumeReply;
 import org.zstack.header.vm.VmInstanceConstant;
-import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
@@ -901,9 +898,19 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
             @Override
             public DownloadImageMsg call(String arg) {
                 boolean enableInject = false;
-                if(msg.getSystemTags() != null)
-                    if (msg.getSystemTags().contains(ImageSystemTags.IMAGE_INJECT_QEMUGA.getTagFormat()) == true)
+                if(msg.getSystemTags() != null) {
+                    if (msg.getSystemTags().contains(ImageSystemTags.IMAGE_INJECT_QEMUGA.getTagFormat()) == true) {
                         enableInject = ImageGlobalConfig.ENABLE_QEMUGA.value(Boolean.class);
+                        if (enableInject) {
+                            if (ImageConstant.QCOW2_FORMAT_STRING.equals(msg.getFormat()) == false) {
+                                APIAddImageEvent evt = new APIAddImageEvent(msg.getId());
+                                final ErrorCode err = errf.instantiateErrorCode(ImageErrors.INJECT_QEMUGA_ERROR, "Inject image can only support qcow2 format.");
+                                evt.setErrorCode(err);
+                                bus.publish(evt);
+                            }
+                        }
+                    }
+                }
                 DownloadImageMsg dmsg = new DownloadImageMsg(inv, enableInject);
                 dmsg.setBackupStorageUuid(arg);
                 dmsg.setFormat(msg.getFormat());

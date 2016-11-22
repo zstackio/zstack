@@ -2,6 +2,7 @@
 <UnitTestSuiteConfig xmlns="http://zstack.org/schema/zstack" timeout="600">
     <TestCase class="org.zstack.test.tag.TestQueryTag"/>
     <TestCase class="org.zstack.test.tag.TestUserTag"/>
+    <TestCase class="org.zstack.test.tag.TestQemuAgentSystemTag"/>
     <TestCase class="org.zstack.test.tag.TestSystemTag"/>
     <TestCase class="org.zstack.test.tag.TestSystemTag1"/>
     <TestCase class="org.zstack.test.tag.TestSystemTag2"/>

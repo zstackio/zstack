@@ -3,7 +3,8 @@ package org.zstack.header.image;
 /**
  */
 public enum ImageErrors {
-    CREATE_IMAGE_FROM_VOLUME_ERROR(1000);
+    CREATE_IMAGE_FROM_VOLUME_ERROR(1000),
+    INJECT_QEMUGA_ERROR(1001);
 
     private String code;
 
