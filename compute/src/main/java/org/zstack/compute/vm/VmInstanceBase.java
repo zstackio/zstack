@@ -1522,27 +1522,45 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     private void handle(final VmInstanceDeletionMsg msg) {
-        final VmInstanceDeletionReply r = new VmInstanceDeletionReply();
-        self = dbf.findByUuid(self.getUuid(), VmInstanceVO.class);
-        if (self == null || self.getState() == VmInstanceState.Destroyed) {
-            // the vm has been destroyed, most likely by rollback
-            bus.reply(msg, r);
-            return;
-        }
-
-        final VmInstanceDeletionPolicy deletionPolicy = msg.getDeletionPolicy() == null ?
-                deletionPolicyMgr.getDeletionPolicy(self.getUuid()) : VmInstanceDeletionPolicy.valueOf(msg.getDeletionPolicy());
-
-        destroyHook(deletionPolicy, new Completion(msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
             @Override
-            public void success() {
-                bus.reply(msg, r);
+            public String getSyncSignature() {
+                return syncThreadName;
             }
 
             @Override
-            public void fail(ErrorCode errorCode) {
-                r.setError(errorCode);
-                bus.reply(msg, r);
+            public void run(SyncTaskChain chain) {
+                final VmInstanceDeletionReply r = new VmInstanceDeletionReply();
+                self = dbf.findByUuid(self.getUuid(), VmInstanceVO.class);
+                if (self == null || self.getState() == VmInstanceState.Destroyed) {
+                    // the vm has been destroyed, most likely by rollback
+                    bus.reply(msg, r);
+                    chain.next();
+                    return;
+                }
+
+                final VmInstanceDeletionPolicy deletionPolicy = msg.getDeletionPolicy() == null ?
+                        deletionPolicyMgr.getDeletionPolicy(self.getUuid()) : VmInstanceDeletionPolicy.valueOf(msg.getDeletionPolicy());
+
+                destroyHook(deletionPolicy, new Completion(msg, chain) {
+                    @Override
+                    public void success() {
+                        bus.reply(msg, r);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        r.setError(errorCode);
+                        bus.reply(msg, r);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return "delete-vm";
             }
         });
     }
@@ -3782,34 +3800,17 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     protected void handle(final APIDestroyVmInstanceMsg msg) {
-        thdf.chainSubmit(new ChainTask(msg) {
+        final APIDestroyVmInstanceEvent evt = new APIDestroyVmInstanceEvent(msg.getId());
+        destroyVm(msg, new Completion() {
             @Override
-            public String getName() {
-                return String.format("destroy-vm-%s", self.getUuid());
+            public void success() {
+                bus.publish(evt);
             }
 
             @Override
-            public String getSyncSignature() {
-                return syncThreadName;
-            }
-
-            @Override
-            public void run(final SyncTaskChain chain) {
-                final APIDestroyVmInstanceEvent evt = new APIDestroyVmInstanceEvent(msg.getId());
-                destroyVm(msg, new Completion(chain) {
-                    @Override
-                    public void success() {
-                        bus.publish(evt);
-                        chain.next();
-                    }
-
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        evt.setErrorCode(errorCode);
-                        bus.publish(evt);
-                        chain.next();
-                    }
-                });
+            public void fail(ErrorCode errorCode) {
+                evt.setErrorCode(errorCode);
+                bus.publish(evt);
             }
         });
     }
