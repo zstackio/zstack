@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.GLock;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.Completion;
@@ -77,10 +78,21 @@ public class KVMRealizeL2VlanNetworkBackend implements L2NetworkRealizationExten
                         "successfully realize bridge[%s] for l2Network[uuid:%s, type:%s, vlan:%s] on kvm host[uuid:%s]", cmd
                                 .getBridgeName(), l2Network.getUuid(), l2Network.getType(), l2vlan.getVlan(), hostUuid);
                 logger.debug(info);
-                if (!KVMSystemTags.L2_BRIDGE_NAME.hasTag(l2Network.getUuid())) {
-                    KVMSystemTags.L2_BRIDGE_NAME.createInherentTag(l2Network.getUuid(),
-                            map(e(KVMSystemTags.L2_BRIDGE_NAME_TOKEN, cmd.getBridgeName())));
+
+                // concurrently adding host may cause duplicate bridge tags to be created,
+                // and mysql doesn't have a way to do 'insert if not exist', so we use
+                // a global lock here
+                GLock lock = new GLock(String.format("create-bridge-name-system-tag-for-l2-%s", l2Network.getUuid()), 300);
+                lock.lock();
+                try {
+                    if (!KVMSystemTags.L2_BRIDGE_NAME.hasTag(l2Network.getUuid())) {
+                        KVMSystemTags.L2_BRIDGE_NAME.createInherentTag(l2Network.getUuid(),
+                                map(e(KVMSystemTags.L2_BRIDGE_NAME_TOKEN, cmd.getBridgeName())));
+                    }
+                } finally {
+                    lock.unlock();
                 }
+
                 completion.success();
             }
         });
