@@ -10,15 +10,15 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeVO;
+import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.simulator.kvm.VolumeSnapshotKvmSimulator;
+import org.zstack.simulator.storage.primary.nfs.NfsPrimaryStorageSimulatorConfig;
 import org.zstack.storage.snapshot.VolumeSnapshotGlobalConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.simulator.kvm.KVMSimulatorConfig;
-import org.zstack.simulator.storage.primary.nfs.NfsPrimaryStorageSimulatorConfig;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -59,13 +59,13 @@ public class TestSnapshotOnKvm4 {
         VolumeSnapshotGlobalConfig.MAX_INCREMENTAL_SNAPSHOT_NUM.updateValue(2);
     }
 
-    private void fullSnapshot(VolumeSnapshotInventory inv, int distance) {
+    private void fullSnapshot(VolumeSnapshotInventory inv, int distance, boolean isFullSnapshot) {
         Assert.assertEquals(VolumeSnapshotState.Enabled.toString(), inv.getState());
         Assert.assertEquals(VolumeSnapshotStatus.Ready.toString(), inv.getStatus());
         VolumeVO vol = dbf.findByUuid(inv.getVolumeUuid(), VolumeVO.class);
         VolumeSnapshotVO svo = dbf.findByUuid(inv.getUuid(), VolumeSnapshotVO.class);
         Assert.assertNotNull(svo);
-        Assert.assertFalse(svo.isFullSnapshot());
+        Assert.assertEquals(svo.isFullSnapshot(), isFullSnapshot);
         Assert.assertTrue(svo.isLatest());
         Assert.assertNull(svo.getParentUuid());
         Assert.assertEquals(distance, svo.getDistance());
@@ -100,7 +100,8 @@ public class TestSnapshotOnKvm4 {
         String volUuid = vm.getRootVolumeUuid();
         VolumeSnapshotInventory inv = api.createSnapshot(volUuid);
         VolumeSnapshotInventory root = inv;
-        fullSnapshot(inv, 0);
+        // We don't take full snapshot for the first time (c.f. #794)
+        fullSnapshot(inv, 0, false);
 
         inv = api.createSnapshot(volUuid);
         deltaSnapshot(inv, 1);
@@ -109,7 +110,7 @@ public class TestSnapshotOnKvm4 {
         deltaSnapshot(inv, 2);
 
         inv = api.createSnapshot(volUuid);
-        fullSnapshot(inv, 0);
+        fullSnapshot(inv, 0, true);
 
         VolumeSnapshotInventory inv2 = api.createSnapshot(volUuid);
         deltaSnapshot(inv2, 1);
