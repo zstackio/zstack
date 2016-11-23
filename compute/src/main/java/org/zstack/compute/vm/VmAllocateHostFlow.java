@@ -120,6 +120,7 @@ public class VmAllocateHostFlow implements Flow {
                     // update the vm's host uuid and hypervisor type so even if the management node died later and the vm's state
                     // is stuck in Starting, we know which host it's created on and can check its state on the host
                     VmInstanceVO vmvo = dbf.findByUuid(spec.getVmInventory().getUuid(), VmInstanceVO.class);
+                    vmvo.setClusterUuid(spec.getDestHost().getClusterUuid());
                     vmvo.setHostUuid(spec.getDestHost().getUuid());
                     vmvo.setHypervisorType(spec.getDestHost().getHypervisorType());
                     dbf.update(vmvo);
