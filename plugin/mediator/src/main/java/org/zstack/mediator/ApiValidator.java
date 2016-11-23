@@ -1,6 +1,8 @@
 package org.zstack.mediator;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -8,6 +10,7 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.message.APIMessage;
+import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.network.service.eip.APIAttachEipMsg;
 import org.zstack.network.service.eip.APICreateEipMsg;
 import org.zstack.network.service.eip.EipVO;
@@ -17,8 +20,10 @@ import org.zstack.network.service.portforwarding.APICreatePortForwardingRuleMsg;
 import org.zstack.network.service.portforwarding.PortForwardingRuleVO;
 import org.zstack.network.service.portforwarding.PortForwardingRuleVO_;
 
+import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  */
@@ -68,28 +73,48 @@ public class ApiValidator implements GlobalApiMessageInterceptor {
         }
     }
 
+    @Transactional(readOnly = true)
     private void isVmNicUsedByPortForwarding(String vmNicUuid) {
-        SimpleQuery<PortForwardingRuleVO> q = dbf.createQuery(PortForwardingRuleVO.class);
-        q.select(PortForwardingRuleVO_.uuid);
-        q.add(PortForwardingRuleVO_.vmNicUuid, Op.EQ, vmNicUuid);
-        List<String> uuids = q.listValue();
-        if (!uuids.isEmpty()) {
+        String sql = "select pf from PortForwardingRuleVO pf, VmInstanceVO vm, VmNicVO nic where pf.vmNicUuid = nic.uuid" +
+                " and nic.vmInstanceUuid = vm.uuid and vm.uuid = (select n.vmInstanceUuid from VmNicVO n where n.uuid = :nicUuid)";
+        TypedQuery<PortForwardingRuleVO> q = dbf.getEntityManager().createQuery(sql, PortForwardingRuleVO.class);
+        q.setParameter("nicUuid", vmNicUuid);
+        List<PortForwardingRuleVO> pfs = q.getResultList();
+
+        if (!pfs.isEmpty()) {
+            sql = "select vm from VmInstanceVO vm, VmNicVO nic where vm.uuid = nic.vmInstanceUuid and nic.uuid = :nicUuid";
+            TypedQuery<VmInstanceVO> vq = dbf.getEntityManager().createQuery(sql, VmInstanceVO.class);
+            vq.setParameter("nicUuid", vmNicUuid);
+            VmInstanceVO vm = vq.getSingleResult();
+
+            List<String> pfStr = pfs.stream().map(pf -> String.format("(name:%s, ip:%s)", pf.getName(), pf.getVipIp())).collect(Collectors.toList());
+
             throw new ApiMessageInterceptionException(errf.stringToOperationError(
-                    String.format("there are already some port forwarding rules[uuids: %s] attached to vm nic[uuid:%s], cannot attach eip",
-                            uuids, vmNicUuid)
+                    String.format("the vm[name:%s, uuid:%s] already has some port forwarding rules%s attached", vm.getName(), vm.getUuid(),
+                            StringUtils.join(pfStr, ","))
             ));
         }
     }
 
+    @Transactional(readOnly = true)
     private void isVmNicUsedByEip(String vmNicUuid) {
-        SimpleQuery<EipVO> q = dbf.createQuery(EipVO.class);
-        q.select(EipVO_.uuid);
-        q.add(EipVO_.vmNicUuid, Op.EQ, vmNicUuid);
-        String eipUuid = q.findValue();
-        if (eipUuid != null) {
+        String sql = "select eip from EipVO eip, VmInstanceVO vm, VmNicVO nic where eip.vmNicUuid = nic.uuid" +
+                " and nic.vmInstanceUuid = vm.uuid and vm.uuid = (select n.vmInstanceUuid from VmNicVO n where n.uuid = :nicUuid)";
+        TypedQuery<EipVO> q = dbf.getEntityManager().createQuery(sql, EipVO.class);
+        q.setParameter("nicUuid", vmNicUuid);
+        List<EipVO> eips = q.getResultList();
+
+        if (!eips.isEmpty()) {
+            sql = "select vm from VmInstanceVO vm, VmNicVO nic where vm.uuid = nic.vmInstanceUuid and nic.uuid = :nicUuid";
+            TypedQuery<VmInstanceVO> vq = dbf.getEntityManager().createQuery(sql, VmInstanceVO.class);
+            vq.setParameter("nicUuid", vmNicUuid);
+            VmInstanceVO vm = vq.getSingleResult();
+
+            List<String> eipStr = eips.stream().map(eip -> String.format("(name:%s, ip:%s)", eip.getName(), eip.getVipIp())).collect(Collectors.toList());
+
             throw new ApiMessageInterceptionException(errf.stringToOperationError(
-                    String.format("there are already an eip[uuid:%s] attached to vm nic[uuid:%s], cannot attach port forwarding rule",
-                            eipUuid, vmNicUuid)
+                    String.format("the vm[name:%s, uuid:%s] already has some EIPs%s attached", vm.getName(), vm.getUuid(),
+                            StringUtils.join(eipStr, ","))
             ));
         }
     }
