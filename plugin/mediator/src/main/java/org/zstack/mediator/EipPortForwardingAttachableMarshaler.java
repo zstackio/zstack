@@ -14,6 +14,7 @@ import org.zstack.utils.function.Function;
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  */
@@ -44,27 +45,14 @@ public class EipPortForwardingAttachableMarshaler implements ReplyMessagePreSend
             return;
         }
 
-        List<String> nicUuids = CollectionUtils.transformToList(msg.getInventories(), new Function<String, VmNicInventory>() {
-            @Override
-            public String call(VmNicInventory arg) {
-                return arg.getUuid();
-            }
-        });
-
-        String sql = "select nic.uuid from VmNicVO nic, EipVO eip where nic.uuid in (:nicUuids) and eip.vmNicUuid = nic.uuid";
+        List<String> nicUuids = msg.getInventories().stream().map(VmNicInventory::getUuid).collect(Collectors.toList());
+        String sql = "select nic.uuid from VmNicVO nic where nic.uuid in (:nicUuids)" +
+                " and nic.vmInstanceUuid not in (select vm.uuid from VmNicVO n, VmInstanceVO vm, EipVO eip where n.vmInstanceUuid = vm.uuid" +
+                " and n.uuid = eip.vmNicUuid)";
         TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
         q.setParameter("nicUuids", nicUuids);
         List<String> uuids = q.getResultList();
-        if (!uuids.isEmpty()) {
-            List<VmNicInventory> ret = new ArrayList<VmNicInventory>(msg.getInventories().size());
-            for (VmNicInventory nic : msg.getInventories()) {
-                if (uuids.contains(nic.getUuid())) {
-                    continue;
-                }
-                ret.add(nic);
-            }
-            msg.setInventories(ret);
-        }
+        msg.setInventories(msg.getInventories().stream().filter(n -> uuids.contains(n.getUuid())).collect(Collectors.toList()));
     }
 
     @Transactional(readOnly = true)
@@ -73,26 +61,15 @@ public class EipPortForwardingAttachableMarshaler implements ReplyMessagePreSend
             return;
         }
 
-        List<String> nicUuids = CollectionUtils.transformToList(msg.getInventories(), new Function<String, VmNicInventory>() {
-            @Override
-            public String call(VmNicInventory arg) {
-                return arg.getUuid();
-            }
-        });
+        List<String> nicUuids = msg.getInventories().stream().map(VmNicInventory::getUuid).collect(Collectors.toList());
 
-        String sql = "select nic.uuid from VmNicVO nic, PortForwardingRuleVO pf where nic.uuid in (:nicUuids) and pf.vmNicUuid = nic.uuid";
+        String sql = "select nic.uuid from VmNicVO nic where nic.uuid in (:nicUuids)" +
+                " and nic.vmInstanceUuid not in (select vm.uuid from VmNicVO n, VmInstanceVO vm, PortForwardingRuleVO pf where n.vmInstanceUuid = vm.uuid" +
+                " and n.uuid = pf.vmNicUuid)";
         TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
         q.setParameter("nicUuids", nicUuids);
         List<String> uuids = q.getResultList();
-        if (!uuids.isEmpty()) {
-            List<VmNicInventory> ret = new ArrayList<VmNicInventory>(msg.getInventories().size());
-            for (VmNicInventory nic : msg.getInventories()) {
-                if (uuids.contains(nic.getUuid())) {
-                    continue;
-                }
-                ret.add(nic);
-            }
-            msg.setInventories(ret);
-        }
+        msg.setInventories(msg.getInventories().stream().filter(n -> uuids.contains(n.getUuid())).collect(Collectors.toList()));
+
     }
 }
