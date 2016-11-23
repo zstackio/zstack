@@ -1,5 +1,6 @@
 package org.zstack.test.storage.snapshot;
 
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
@@ -66,7 +67,16 @@ public class TestSnapshotOnKvm49 {
         api.changeResourceOwner(vm.getUuid(), creator.getAccountSession().getAccountUuid());
         api.deleteSnapshot(inv.getUuid(), creator.getAccountSession());
 
-        api.changeResourceOwner(data.getUuid(), creator.getAccountSession().getAccountUuid());
+        boolean hasException = false;
+        try {
+            api.changeResourceOwner(data.getUuid(), creator.getAccountSession().getAccountUuid());
+        } catch (ApiSenderException ex) {
+            hasException = true;
+            logger.warn("changeResourceOwner failed: ", ex);
+        }
+
+        Assert.assertTrue("expected change resource owner exception", hasException);
+
         api.deleteSnapshot(dataSP.getUuid(), creator.getAccountSession());
     }
 }

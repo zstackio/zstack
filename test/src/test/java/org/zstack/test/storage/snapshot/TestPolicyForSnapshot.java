@@ -38,7 +38,7 @@ import java.util.ArrayList;
  * <p>
  * confirm the user can do those operations
  * <p>
- * 3. assign permissions of allow deny of creating/updating/changing/reverting/deleting snapshots to the user
+ * 3. assign permissions of deny of creating/updating/changing/reverting/deleting snapshots to the user
  * <p>
  * confirm the user cannot do those operations
  * <p>

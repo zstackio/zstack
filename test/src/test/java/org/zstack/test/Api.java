@@ -253,7 +253,7 @@ public class Api implements CloudBusEventListener {
     }
 
     public ImageInventory createTemplateFromSnapshot(String snapshotUuid, String bsUuid, SessionInventory session) throws ApiSenderException {
-        return createTemplateFromSnapshot(snapshotUuid, asList(bsUuid), session);
+        return createTemplateFromSnapshot(snapshotUuid, Collections.singletonList(bsUuid), session);
     }
 
     public ImageInventory createTemplateFromSnapshot(String snapshotUuid, List<String> backupStorageUuids, SessionInventory session) throws ApiSenderException {
