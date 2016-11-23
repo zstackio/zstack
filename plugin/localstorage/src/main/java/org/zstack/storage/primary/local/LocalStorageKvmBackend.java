@@ -1814,13 +1814,14 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         List<Flow> flows = new ArrayList<Flow>();
 
         SimpleQuery<KVMHostVO> q = dbf.createQuery(KVMHostVO.class);
-        q.select(KVMHostVO_.managementIp, KVMHostVO_.username, KVMHostVO_.password);
+        q.select(KVMHostVO_.managementIp, KVMHostVO_.username, KVMHostVO_.password, KVMHostVO_.port);
         q.add(KVMHostVO_.uuid, Op.EQ, struct.getDestHostUuid());
         Tuple t = q.findTuple();
 
         final String mgmtIp = t.get(0, String.class);
         final String username = t.get(1, String.class);
         final String password = t.get(2, String.class);
+        final int port = t.get(3, Integer.class);
 
         class Context {
             GetMd5Rsp getMd5Rsp;
@@ -1963,6 +1964,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                 cmd.dstIp = mgmtIp;
                                 cmd.dstUsername = username;
                                 cmd.dstPassword = password;
+                                cmd.dstPort = port;
                                 cmd.paths = list(context.backingFilePath);
 
                                 httpCall(LocalStorageKvmMigrateVmFlow.COPY_TO_REMOTE_BITS_PATH, struct.getSrcHostUuid(), cmd, false,
@@ -2135,6 +2137,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 cmd.dstIp = mgmtIp;
                 cmd.dstUsername = username;
                 cmd.dstPassword = password;
+                cmd.dstPort = port;
                 cmd.paths = CollectionUtils.transformToList(struct.getInfos(), new Function<String, ResourceInfo>() {
                     @Override
                     public String call(ResourceInfo arg) {
