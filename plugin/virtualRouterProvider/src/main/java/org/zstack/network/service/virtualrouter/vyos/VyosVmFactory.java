@@ -1,12 +1,12 @@
 package org.zstack.network.service.virtualrouter.vyos;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.zstack.appliancevm.ApplianceVm;
-import org.zstack.appliancevm.ApplianceVmType;
-import org.zstack.appliancevm.ApplianceVmVO;
+import org.zstack.appliancevm.*;
 import org.zstack.core.Platform;
 import org.zstack.core.ansible.AnsibleFacade;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.config.GlobalConfigException;
+import org.zstack.core.config.GlobalConfigValidatorExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -14,6 +14,7 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.Component;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
 import org.zstack.header.network.NetworkException;
 import org.zstack.header.network.l2.APICreateL2NetworkMsg;
@@ -24,22 +25,25 @@ import org.zstack.header.network.service.NetworkServiceProviderL2NetworkRefVO;
 import org.zstack.header.network.service.NetworkServiceProviderVO;
 import org.zstack.header.network.service.NetworkServiceProviderVO_;
 import org.zstack.header.network.service.NetworkServiceType;
+import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.network.service.eip.EipConstant;
 import org.zstack.network.service.lb.LoadBalancerConstants;
 import org.zstack.network.service.virtualrouter.VirtualRouterApplianceVmFactory;
+import org.zstack.network.service.virtualrouter.VirtualRouterGlobalConfig;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmVO;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
  * Created by xing5 on 2016/10/31.
  */
 public class VyosVmFactory extends VirtualRouterApplianceVmFactory implements Component,
-        PrepareDbInitialValueExtensionPoint, L2NetworkCreateExtensionPoint {
+        PrepareDbInitialValueExtensionPoint, L2NetworkCreateExtensionPoint, ApplianceVmPrepareBootstrapInfoExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VyosVmFactory.class);
     public static ApplianceVmType type = new ApplianceVmType(VyosConstants.VYOS_VM_TYPE);
 
@@ -163,6 +167,16 @@ public class VyosVmFactory extends VirtualRouterApplianceVmFactory implements Co
     public boolean start() {
         buildWorkFlowBuilder();
         populateExtensions();
+
+        VirtualRouterGlobalConfig.VYOS_PASSWORD.installValidateExtension(new GlobalConfigValidatorExtensionPoint() {
+            @Override
+            public void validateGlobalConfig(String category, String name, String oldValue, String newValue) throws GlobalConfigException {
+                if (newValue.isEmpty()) {
+                    throw new GlobalConfigException("the vyos password cannot be an empty string");
+                }
+            }
+        });
+
         return true;
     }
 
@@ -226,5 +240,17 @@ public class VyosVmFactory extends VirtualRouterApplianceVmFactory implements Co
 
     public String getNetworkServiceProviderUuid() {
         return providerVO.getUuid();
+    }
+
+    @Override
+    public void applianceVmPrepareBootstrapInfo(VmInstanceSpec spec, Map<String, Object> info) {
+        SimpleQuery<ApplianceVmVO> q = dbf.createQuery(ApplianceVmVO.class);
+        q.add(ApplianceVmVO_.applianceVmType, Op.EQ, VyosConstants.VYOS_VM_TYPE);
+        q.add(ApplianceVmVO_.uuid, Op.EQ, spec.getVmInventory().getUuid());
+        if (!q.isExists()) {
+            return;
+        }
+
+        info.put(VyosConstants.BootstrapInfoKey.vyosPassword.toString(), VirtualRouterGlobalConfig.VYOS_PASSWORD.value());
     }
 }

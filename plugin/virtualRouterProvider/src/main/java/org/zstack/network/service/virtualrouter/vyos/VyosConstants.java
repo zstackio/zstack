@@ -13,4 +13,8 @@ public interface VyosConstants {
     String ANSIBLE_MODULE_PATH = "ansible/zvr";
 
     NetworkServiceProviderType PROVIDER_TYPE = new NetworkServiceProviderType(VyosConstants.VYOS_ROUTER_PROVIDER_TYPE);
+
+    enum BootstrapInfoKey {
+        vyosPassword
+    }
 }
