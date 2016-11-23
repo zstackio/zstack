@@ -7,6 +7,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.UpdateQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.allocator.*;
 import org.zstack.header.core.workflow.Flow;
@@ -15,9 +17,7 @@ import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.vm.VmInstanceConstant;
-import org.zstack.header.vm.VmInstanceSpec;
-import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.*;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
@@ -65,19 +65,19 @@ public class VmAllocateHostForStoppedVmFlow implements Flow {
         amsg = msg;
 
         bus.send(amsg, new CloudBusCallBack(chain) {
-            @Transactional
-            private void setVmHostUuid(String huuid) {
-                VmInstanceVO vo = dbf.getEntityManager().find(VmInstanceVO.class, spec.getVmInventory().getUuid());
-                vo.setHostUuid(huuid);
-                dbf.getEntityManager().merge(vo);
-            }
-
             @Override
             public void run(MessageReply reply) {
                 if (reply.isSuccess()) {
                     AllocateHostReply areply = (AllocateHostReply) reply;
                     spec.setDestHost(areply.getHost());
-                    setVmHostUuid(areply.getHost().getUuid());
+
+                    UpdateQuery q = UpdateQuery.New();
+                    q.entity(VmInstanceVO.class);
+                    q.condAnd(VmInstanceVO_.uuid, SimpleQuery.Op.EQ, spec.getVmInventory().getUuid());
+                    q.set(VmInstanceVO_.hostUuid, areply.getHost().getUuid());
+                    q.set(VmInstanceVO_.clusterUuid, areply.getHost().getClusterUuid());
+                    q.update();
+
                     data.put(SUCCESS, true);
                     chain.next();
                 } else {
