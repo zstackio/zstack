@@ -405,10 +405,10 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                     dhchip.getIp(), dhchip.getL3NetworkUuid()));
         }
 
-        deleteNameSpace(inventory);
+        deleteNameSpace(inventory, dhchip);
     }
 
-    private void deleteNameSpace(L3NetworkInventory inventory) {
+    private void deleteNameSpace(L3NetworkInventory inventory, UsedIpInventory dhchip) {
         List<String> huuids = new Callable<List<String>>() {
             @Override
             @Transactional(readOnly = true)
@@ -429,6 +429,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         DeleteNamespaceCmd cmd = new DeleteNamespaceCmd();
         cmd.bridgeName = brName;
         cmd.namespaceName = makeNamespaceName(brName, inventory.getUuid());
+        cmd.dhcpIp = dhchip == null ? null : dhchip.getIp();
 
         new KvmCommandSender(huuids).send(cmd, DHCP_DELETE_NAMESPACE_PATH, wrapper -> {
             DeleteNamespaceRsp rsp = wrapper.getResponse(DeleteNamespaceRsp.class);
@@ -972,6 +973,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     public static class DeleteNamespaceCmd extends KVMAgentCommands.AgentCommand {
         public String bridgeName;
         public String namespaceName;
+        public String dhcpIp;
     }
 
     public static class DeleteNamespaceRsp extends KVMAgentCommands.AgentResponse {
