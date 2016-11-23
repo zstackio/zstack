@@ -24,4 +24,6 @@ public class VirtualRouterGlobalConfig {
     public static GlobalConfig SSH_USERNAME = new GlobalConfig(CATEGORY, "ssh.username");
     @GlobalConfigValidation
     public static GlobalConfig SSH_PORT = new GlobalConfig(CATEGORY, "ssh.port");
+    @GlobalConfigValidation
+    public static GlobalConfig VYOS_PASSWORD = new GlobalConfig(CATEGORY, "vyos.password");
 }
