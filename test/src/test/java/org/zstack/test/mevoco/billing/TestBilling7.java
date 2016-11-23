@@ -38,7 +38,7 @@ import java.util.concurrent.TimeUnit;
  * 1. start a vm
  * 2. create prices
  * 3. reboot the vm and let it run a while
- *
+ * <p>
  * confirm the billing is correct
  */
 public class TestBilling7 {
@@ -55,17 +55,13 @@ public class TestBilling7 {
     PrimaryStorageOverProvisioningManager psRatioMgr;
     HostCapacityOverProvisioningManager hostRatioMgr;
     long totalSize = SizeUnit.GIGABYTE.toByte(100);
-    CassandraFacade cassf;
-    CassandraOperator ops;
 
     @Before
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
-        DBUtil.reDeployCassandra(BillingConstants.CASSANDRA_KEYSPACE);
         WebBeanConstructor con = new WebBeanConstructor();
         deployer = new Deployer("deployerXml/mevoco/TestMevoco.xml", con);
         deployer.addSpringConfig("mevocoRelated.xml");
-        deployer.addSpringConfig("cassandra.xml");
         deployer.addSpringConfig("billing.xml");
         deployer.load();
 
@@ -77,8 +73,6 @@ public class TestBilling7 {
         kconfig = loader.getComponent(KVMSimulatorConfig.class);
         psRatioMgr = loader.getComponent(PrimaryStorageOverProvisioningManager.class);
         hostRatioMgr = loader.getComponent(HostCapacityOverProvisioningManager.class);
-        cassf = loader.getComponent(CassandraFacade.class);
-        ops = cassf.getOperator(BillingConstants.CASSANDRA_KEYSPACE);
 
         Capacity c = new Capacity();
         c.total = totalSize;
@@ -90,9 +84,9 @@ public class TestBilling7 {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         VolumeInventory rootVolume = vm.getRootVolume();
 
@@ -128,8 +122,8 @@ public class TestBilling7 {
         double volPrice = volSizeInM * 9d * during;
 
         // for 2s error margin
-        double cpuPriceErrorMargin = vm.getCpuNum() * 100d  * 2;
-        double memPriceErrorMargin = vm.getMemorySize() * 100d  * 2;
+        double cpuPriceErrorMargin = vm.getCpuNum() * 100d * 2;
+        double memPriceErrorMargin = vm.getMemorySize() * 100d * 2;
         double volPriceErrorMargin = volSizeInM * 9d * 2;
         double errorMargin = cpuPriceErrorMargin + memPriceErrorMargin + volPriceErrorMargin;
 
