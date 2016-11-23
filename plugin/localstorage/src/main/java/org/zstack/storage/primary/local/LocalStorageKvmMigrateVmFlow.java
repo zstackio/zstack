@@ -96,6 +96,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
         public String dstIp;
         public String dstPassword;
         public String dstUsername;
+        public Integer dstPort = 22;
     }
 
     class BackingImage {
@@ -318,6 +319,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                                     cmd.dstIp = dstHost.getManagementIp();
                                     cmd.dstUsername = dstHost.getUsername();
                                     cmd.dstPassword = dstHost.getPassword();
+                                    cmd.dstPort = dstHost.getPort();
                                     cmd.paths = list(backingImage.path);
 
                                     callKvmHost(srcHostUuid, ref.getPrimaryStorageUuid(), COPY_TO_REMOTE_BITS_PATH, cmd, AgentResponse.class,
@@ -958,6 +960,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                     cmd.dstIp = dstHost.getManagementIp();
                     cmd.dstPassword = dstHost.getPassword();
                     cmd.dstUsername = dstHost.getUsername();
+                    cmd.dstPort = dstHost.getPort();
                     callKvmHost(srcHostUuid, p.volume.getPrimaryStorageUuid(), COPY_TO_REMOTE_BITS_PATH, cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
                         @Override
                         public void success(AgentResponse returnValue) {
