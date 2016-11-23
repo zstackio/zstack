@@ -78,9 +78,9 @@ public class TestBilling {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         BillingGlobalConfig.SAMPLING_INTERVAL.updateValue(1);
 
         VmInstanceInventory vm = deployer.vms.get("TestVm");
@@ -126,8 +126,8 @@ public class TestBilling {
         float volPrice = volSizeInM * 9f * during;
 
         // for 2s error margin
-        float cpuPriceErrorMargin = vm.getCpuNum() * 100f  * 2;
-        float memPriceErrorMargin = vm.getMemorySize() * 100f  * 2;
+        float cpuPriceErrorMargin = vm.getCpuNum() * 100f * 2;
+        float memPriceErrorMargin = vm.getMemorySize() * 100f * 2;
         float volPriceErrorMargin = volSizeInM * 9f * 2;
         float errorMargin = cpuPriceErrorMargin + memPriceErrorMargin + volPriceErrorMargin;
 

@@ -4,8 +4,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.zstack.billing.*;
-import org.zstack.cassandra.CassandraFacade;
-import org.zstack.cassandra.CassandraOperator;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
@@ -31,11 +29,11 @@ import java.util.Date;
 /**
  * 1. start two vms and run for a while
  * 2. create prices with date = 1970
- *
+ * <p>
  * confirm the billing is correct
- *
+ * <p>
  * 3. delete the prices
- *
+ * <p>
  * confirm the billing is zero
  */
 @Deprecated
@@ -53,8 +51,6 @@ public class TestBilling10 {
     PrimaryStorageOverProvisioningManager psRatioMgr;
     HostCapacityOverProvisioningManager hostRatioMgr;
     long totalSize = SizeUnit.GIGABYTE.toByte(100);
-    CassandraFacade cassf;
-    CassandraOperator ops;
 
     String rawData = "a000f4b61ad648d1bb69d6c227f246c7,1464236991107,Running\n" +
             "a000f4b61ad648d1bb69d6c227f246c7,1464296814355,Stopped\n" +
@@ -237,11 +233,9 @@ public class TestBilling10 {
     @Before
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
-        DBUtil.reDeployCassandra(BillingConstants.CASSANDRA_KEYSPACE);
         WebBeanConstructor con = new WebBeanConstructor();
         deployer = new Deployer("deployerXml/billing/TestBilling10.xml", con);
         deployer.addSpringConfig("mevocoRelated.xml");
-        deployer.addSpringConfig("cassandra.xml");
         deployer.addSpringConfig("billing.xml");
         deployer.load();
 
@@ -253,8 +247,6 @@ public class TestBilling10 {
         kconfig = loader.getComponent(KVMSimulatorConfig.class);
         psRatioMgr = loader.getComponent(PrimaryStorageOverProvisioningManager.class);
         hostRatioMgr = loader.getComponent(HostCapacityOverProvisioningManager.class);
-        cassf = loader.getComponent(CassandraFacade.class);
-        ops = cassf.getOperator(BillingConstants.CASSANDRA_KEYSPACE);
 
         Capacity c = new Capacity();
         c.total = totalSize;
@@ -266,9 +258,9 @@ public class TestBilling10 {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         class CreatePrice {
             void create(String vmUuid, String vmState, long date) {
                 VmUsageVO u = new VmUsageVO();

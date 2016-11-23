@@ -56,17 +56,13 @@ public class TestBilling11 {
     PrimaryStorageOverProvisioningManager psRatioMgr;
     HostCapacityOverProvisioningManager hostRatioMgr;
     long totalSize = SizeUnit.GIGABYTE.toByte(100);
-    CassandraFacade cassf;
-    CassandraOperator ops;
 
     @Before
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
-        DBUtil.reDeployCassandra(BillingConstants.CASSANDRA_KEYSPACE);
         WebBeanConstructor con = new WebBeanConstructor();
         deployer = new Deployer("deployerXml/OnlyOneZone.xml", con);
         deployer.addSpringConfig("mevocoRelated.xml");
-        deployer.addSpringConfig("cassandra.xml");
         deployer.addSpringConfig("billing.xml");
         deployer.load();
 
@@ -78,8 +74,6 @@ public class TestBilling11 {
         kconfig = loader.getComponent(KVMSimulatorConfig.class);
         psRatioMgr = loader.getComponent(PrimaryStorageOverProvisioningManager.class);
         hostRatioMgr = loader.getComponent(HostCapacityOverProvisioningManager.class);
-        cassf = loader.getComponent(CassandraFacade.class);
-        ops = cassf.getOperator(BillingConstants.CASSANDRA_KEYSPACE);
 
         Capacity c = new Capacity();
         c.total = totalSize;
@@ -100,9 +94,9 @@ public class TestBilling11 {
         loggerConfig.setLevel(Level.DEBUG);
         ctx.updateLoggers();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException, IOException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException, IOException {
         closeBillingLog();
         File dataFile = PathUtil.findFileOnClassPath("data/billing/TestBilling11");
         String rawData = FileUtils.readFileToString(dataFile);

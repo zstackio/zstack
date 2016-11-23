@@ -47,17 +47,13 @@ public class TestBilling4 {
     PrimaryStorageOverProvisioningManager psRatioMgr;
     HostCapacityOverProvisioningManager hostRatioMgr;
     long totalSize = SizeUnit.GIGABYTE.toByte(100);
-    CassandraFacade cassf;
-    CassandraOperator ops;
 
     @Before
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
-        DBUtil.reDeployCassandra(BillingConstants.CASSANDRA_KEYSPACE);
         WebBeanConstructor con = new WebBeanConstructor();
         deployer = new Deployer("deployerXml/mevoco/TestMevoco.xml", con);
         deployer.addSpringConfig("mevocoRelated.xml");
-        deployer.addSpringConfig("cassandra.xml");
         deployer.addSpringConfig("billing.xml");
         deployer.load();
 
@@ -69,8 +65,6 @@ public class TestBilling4 {
         kconfig = loader.getComponent(KVMSimulatorConfig.class);
         psRatioMgr = loader.getComponent(PrimaryStorageOverProvisioningManager.class);
         hostRatioMgr = loader.getComponent(HostCapacityOverProvisioningManager.class);
-        cassf = loader.getComponent(CassandraFacade.class);
-        ops = cassf.getOperator(BillingConstants.CASSANDRA_KEYSPACE);
 
         Capacity c = new Capacity();
         c.total = totalSize;
@@ -82,9 +76,9 @@ public class TestBilling4 {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         api.stopVmInstance(vm.getUuid());
         APICreateResourcePriceMsg msg = new APICreateResourcePriceMsg();

@@ -38,7 +38,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * R: running
  * S: stopped
- *
+ * <p>
  * usage state: R -> S -> S -> R -> S
  */
 public class TestBilling2 {
@@ -55,17 +55,13 @@ public class TestBilling2 {
     PrimaryStorageOverProvisioningManager psRatioMgr;
     HostCapacityOverProvisioningManager hostRatioMgr;
     long totalSize = SizeUnit.GIGABYTE.toByte(100);
-    CassandraFacade cassf;
-    CassandraOperator ops;
 
     @Before
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
-        DBUtil.reDeployCassandra(BillingConstants.CASSANDRA_KEYSPACE);
         WebBeanConstructor con = new WebBeanConstructor();
         deployer = new Deployer("deployerXml/mevoco/TestMevoco.xml", con);
         deployer.addSpringConfig("mevocoRelated.xml");
-        deployer.addSpringConfig("cassandra.xml");
         deployer.addSpringConfig("billing.xml");
         deployer.load();
 
@@ -77,8 +73,6 @@ public class TestBilling2 {
         kconfig = loader.getComponent(KVMSimulatorConfig.class);
         psRatioMgr = loader.getComponent(PrimaryStorageOverProvisioningManager.class);
         hostRatioMgr = loader.getComponent(HostCapacityOverProvisioningManager.class);
-        cassf = loader.getComponent(CassandraFacade.class);
-        ops = cassf.getOperator(BillingConstants.CASSANDRA_KEYSPACE);
 
         Capacity c = new Capacity();
         c.total = totalSize;
@@ -102,9 +96,9 @@ public class TestBilling2 {
         double memSpending = (double) vmSpending.memoryInventory.stream().mapToDouble(i -> i.spending).sum();
         Assert.assertEquals(memPrice, memSpending, 0.02);
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         final VmInstanceInventory vm = deployer.vms.get("TestVm");
         api.stopVmInstance(vm.getUuid());
 

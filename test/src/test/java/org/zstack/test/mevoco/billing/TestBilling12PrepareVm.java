@@ -39,9 +39,9 @@ public class TestBilling12PrepareVm {
         config = loader.getComponent(SftpBackupStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() {
-	}
+
+    @Test
+    public void test() {
+    }
 
 }

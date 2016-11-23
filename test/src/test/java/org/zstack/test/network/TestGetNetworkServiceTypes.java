@@ -23,7 +23,7 @@ public class TestGetNetworkServiceTypes {
     @Before
     public void setUp() throws Exception {
         BeanConstructor con = new BeanConstructor();
-        loader = con.addAllConfigInZstackXml().excludeXml("cassandra.xml").build();
+        loader = con.addAllConfigInZstackXml().build();
         api = new Api();
         api.startServer();
     }

@@ -51,17 +51,13 @@ public class TestBilling5 {
     PrimaryStorageOverProvisioningManager psRatioMgr;
     HostCapacityOverProvisioningManager hostRatioMgr;
     long totalSize = SizeUnit.GIGABYTE.toByte(100);
-    CassandraFacade cassf;
-    CassandraOperator ops;
 
     @Before
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
-        DBUtil.reDeployCassandra(BillingConstants.CASSANDRA_KEYSPACE);
         WebBeanConstructor con = new WebBeanConstructor();
         deployer = new Deployer("deployerXml/billing/TestBilling5.xml", con);
         deployer.addSpringConfig("mevocoRelated.xml");
-        deployer.addSpringConfig("cassandra.xml");
         deployer.addSpringConfig("billing.xml");
         deployer.load();
 
@@ -73,8 +69,6 @@ public class TestBilling5 {
         kconfig = loader.getComponent(KVMSimulatorConfig.class);
         psRatioMgr = loader.getComponent(PrimaryStorageOverProvisioningManager.class);
         hostRatioMgr = loader.getComponent(HostCapacityOverProvisioningManager.class);
-        cassf = loader.getComponent(CassandraFacade.class);
-        ops = cassf.getOperator(BillingConstants.CASSANDRA_KEYSPACE);
 
         Capacity c = new Capacity();
         c.total = totalSize;
@@ -86,9 +80,9 @@ public class TestBilling5 {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         DiskOfferingInventory doffering = deployer.diskOfferings.get("DataDiskOffering");
         VolumeInventory vol = api.createDataVolume("data", doffering.getUuid());
 
@@ -106,7 +100,7 @@ public class TestBilling5 {
         TimeUnit.SECONDS.sleep(5);
 
         api.deleteDataVolume(vol.getUuid());
-        VolumeVO volvo  = dbf.findByUuid(vol.getUuid(), VolumeVO.class);
+        VolumeVO volvo = dbf.findByUuid(vol.getUuid(), VolumeVO.class);
         long during = TimeUnit.MILLISECONDS.toSeconds(volvo.getLastOpDate().getTime() - vol.getLastOpDate().getTime());
 
         logger.debug(String.format("duration: %s s", during));

@@ -61,6 +61,7 @@ public class DBUtil {
         }
     }
 
+    @Deprecated
     public static void reDeployCassandra(String...keyspaces) {
         // initializing platform causes zstack.properties to be load
         Platform.getUuid();
