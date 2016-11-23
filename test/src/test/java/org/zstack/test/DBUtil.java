@@ -1,7 +1,6 @@
 package org.zstack.test;
 
 import org.apache.commons.io.FileUtils;
-import org.zstack.cassandra.CassandraGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.utils.ShellResult;
@@ -65,8 +64,6 @@ public class DBUtil {
     public static void reDeployCassandra(String...keyspaces) {
         // initializing platform causes zstack.properties to be load
         Platform.getUuid();
-
-        CassandraGlobalProperty.NEED_CONNECT_FOR_UNIT_TEST = true;
 
         logger.info("Redeploying cassandra");
         String cqlsh = System.getProperty("Cassandra.cqlsh");

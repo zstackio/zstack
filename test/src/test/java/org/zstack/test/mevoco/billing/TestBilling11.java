@@ -13,8 +13,6 @@ import org.zstack.billing.APICalculateAccountSpendingReply;
 import org.zstack.billing.APICreateResourcePriceMsg;
 import org.zstack.billing.BillingConstants;
 import org.zstack.billing.DataVolumeUsageVO;
-import org.zstack.cassandra.CassandraFacade;
-import org.zstack.cassandra.CassandraOperator;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;

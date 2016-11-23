@@ -1,6 +1,5 @@
 package org.zstack.test;
 
-import com.sun.org.apache.xerces.internal.xs.StringList;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -10,7 +9,6 @@ import org.zstack.appliancevm.APIListApplianceVmMsg;
 import org.zstack.appliancevm.APIListApplianceVmReply;
 import org.zstack.appliancevm.ApplianceVmInventory;
 import org.zstack.billing.*;
-import org.zstack.cassandra.APIQueryCassandraMsg;
 import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
@@ -24,7 +22,6 @@ import org.zstack.core.debug.APIDebugSignalEvent;
 import org.zstack.core.debug.APIDebugSignalMsg;
 import org.zstack.core.debug.DebugSignal;
 import org.zstack.core.scheduler.*;
-import org.zstack.header.vm.APIChangeVmPasswordMsg;
 import org.zstack.ha.APIDeleteVmInstanceHaLevelMsg;
 import org.zstack.ha.APISetVmInstanceHaLevelEvent;
 import org.zstack.ha.APISetVmInstanceHaLevelMsg;
@@ -47,7 +44,10 @@ import org.zstack.header.identity.*;
 import org.zstack.header.identity.PolicyInventory.Statement;
 import org.zstack.header.image.*;
 import org.zstack.header.managementnode.*;
-import org.zstack.header.message.*;
+import org.zstack.header.message.APIMessage;
+import org.zstack.header.message.APIReply;
+import org.zstack.header.message.APISyncCallMessage;
+import org.zstack.header.message.Event;
 import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.network.service.*;
@@ -63,15 +63,6 @@ import org.zstack.header.simulator.storage.backup.SimulatorBackupStorageDetails;
 import org.zstack.header.simulator.storage.primary.APIAddSimulatorPrimaryStorageMsg;
 import org.zstack.header.simulator.storage.primary.SimulatorPrimaryStorageConstant;
 import org.zstack.header.simulator.storage.primary.SimulatorPrimaryStorageDetails;
-import org.zstack.ipsec.*;
-import org.zstack.storage.ceph.backup.*;
-import org.zstack.storage.ceph.primary.*;
-import org.zstack.storage.primary.local.*;
-import org.zstack.network.service.eip.*;
-import org.zstack.network.service.lb.*;
-import org.zstack.network.service.portforwarding.*;
-import org.zstack.network.service.vip.*;
-import org.zstack.network.service.virtualrouter.*;
 import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.*;
@@ -80,6 +71,7 @@ import org.zstack.header.vm.*;
 import org.zstack.header.volume.*;
 import org.zstack.header.volume.APIGetVolumeFormatReply.VolumeFormatReplyStruct;
 import org.zstack.header.zone.*;
+import org.zstack.ipsec.*;
 import org.zstack.kvm.APIAddKVMHostMsg;
 import org.zstack.kvm.APIUpdateKVMHostMsg;
 import org.zstack.kvm.KVMHostInventory;
@@ -88,12 +80,19 @@ import org.zstack.logging.APIDeleteLogEvent;
 import org.zstack.logging.APIDeleteLogMsg;
 import org.zstack.network.securitygroup.*;
 import org.zstack.network.securitygroup.APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO;
+import org.zstack.network.service.eip.*;
+import org.zstack.network.service.lb.*;
+import org.zstack.network.service.portforwarding.*;
+import org.zstack.network.service.vip.*;
+import org.zstack.network.service.virtualrouter.*;
 import org.zstack.portal.managementnode.ManagementNodeManager;
 import org.zstack.storage.backup.sftp.APIReconnectSftpBackupStorageEvent;
 import org.zstack.storage.backup.sftp.APIReconnectSftpBackupStorageMsg;
 import org.zstack.storage.backup.sftp.APIUpdateSftpBackupStorageMsg;
 import org.zstack.storage.backup.sftp.SftpBackupStorageInventory;
-import org.zstack.header.vm.APIChangeVmPasswordEvent;
+import org.zstack.storage.ceph.backup.*;
+import org.zstack.storage.ceph.primary.*;
+import org.zstack.storage.primary.local.*;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.TimeUtils;
 import org.zstack.utils.Utils;
@@ -106,7 +105,6 @@ import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import static org.codehaus.groovy.runtime.InvokerHelper.asList;
 import static org.zstack.utils.CollectionDSL.list;
@@ -4295,14 +4293,6 @@ public class Api implements CloudBusEventListener {
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         sender.send(msg, APICleanUpImageCacheOnPrimaryStorageEvent.class);
-    }
-
-    public <T extends MessageReply> T queryCassandra(APIQueryCassandraMsg msg, Class<T> clz) throws ApiSenderException {
-        ApiSender sender = new ApiSender();
-        msg.setSession(adminSession);
-        sender.setTimeout(timeout);
-        T reply = sender.call(msg, clz);
-        return reply;
     }
 
     public Map<String, Object> getVmCapabilities(String vmUuid, SessionInventory session) throws ApiSenderException {
