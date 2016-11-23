@@ -52,11 +52,14 @@ import java.util.List;
                 foreignKey = "uuid", expandedInventoryKey = "clusterUuid"),
         @ExpandedQuery(expandedField = "l2NetworkRef", inventoryClass = L2NetworkClusterRefInventory.class,
                 foreignKey = "uuid", expandedInventoryKey = "clusterUuid", hidden = true),
+		@ExpandedQuery(expandedField = "l2VlanNetworkRef", inventoryClass = L2NetworkClusterRefInventory.class,
+				foreignKey = "uuid", expandedInventoryKey = "clusterUuid", hidden = true),
         @ExpandedQuery(expandedField = "primaryStorageRef", inventoryClass = PrimaryStorageClusterRefInventory.class,
                 foreignKey = "uuid", expandedInventoryKey = "clusterUuid", hidden = true),
 })
 @ExpandedQueryAliases({
         @ExpandedQueryAlias(alias = "l2Network", expandedField = "l2NetworkRef.l2Network"),
+		@ExpandedQueryAlias(alias = "l2VlanNetwork", expandedField = "l2VlanNetworkRef.l2Network"),
         @ExpandedQueryAlias(alias = "primaryStorage", expandedField = "primaryStorageRef.primaryStorage"),
 })
 public class ClusterInventory implements Serializable{
