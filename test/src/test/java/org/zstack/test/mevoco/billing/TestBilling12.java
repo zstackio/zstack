@@ -27,8 +27,6 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.concurrent.TimeUnit;
-
 /**
  * test tapResourcesForBilling
  */
