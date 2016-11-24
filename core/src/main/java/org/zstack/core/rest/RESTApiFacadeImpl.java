@@ -16,6 +16,7 @@ import org.zstack.header.rest.RestAPIVO;
 import org.zstack.header.search.APISearchMessage;
 import org.zstack.utils.ExceptionDSL;
 import org.zstack.utils.Utils;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.EntityManager;
@@ -170,6 +171,7 @@ public class RESTApiFacadeImpl implements RESTApiFacade, CloudBusEventListener {
         try {
             if (e instanceof APIEvent) {
                 APIEvent ae = (APIEvent) e;
+                logger.debug(String.format("Received an API event[%s], updating RestAPIVO", JSONObjectUtil.toJsonString(e)));
                 if (processingRequests.contains(ae.getApiId())) {
                     boolean ret = update(ae);
                     processingRequests.remove(ae.getApiId());
