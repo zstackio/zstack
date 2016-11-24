@@ -39,6 +39,7 @@ import org.zstack.utils.function.Function;
 
 import javax.persistence.TypedQuery;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created by frank on 8/8/2015.
@@ -708,12 +709,22 @@ public class LoadBalancerBase {
         List<VmNicVO> vos = q.list();
         List<VmNicInventory> nics = VmNicInventory.valueOf(vos);
 
+        List<String> listenerUuids = self.getListeners().stream().filter(l -> {
+            for (LoadBalancerListenerVmNicRefVO ref : l.getVmNicRefs()) {
+                if (vmNicUuids.contains(ref.getVmNicUuid())) {
+                    return true;
+                }
+            }
+            return false;
+        }).map(LoadBalancerListenerVO::getUuid).collect(Collectors.toList());
+
         LoadBalancerBackend bkd = getBackend();
         bkd.removeVmNics(removeNicStruct(vmNicUuids), nics, new Completion(completion) {
             @Override
             public void success() {
                 SimpleQuery<LoadBalancerListenerVmNicRefVO> q = dbf.createQuery(LoadBalancerListenerVmNicRefVO.class);
                 q.add(LoadBalancerListenerVmNicRefVO_.vmNicUuid, Op.IN, vmNicUuids);
+                q.add(LoadBalancerListenerVmNicRefVO_.listenerUuid, Op.IN, listenerUuids);
                 List<LoadBalancerListenerVmNicRefVO> refs = q.list();
                 dbf.removeCollection(refs, LoadBalancerListenerVmNicRefVO.class);
                 completion.success();
