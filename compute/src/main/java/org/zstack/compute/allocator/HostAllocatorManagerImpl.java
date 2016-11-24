@@ -500,7 +500,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
                     availCpu = availCpu > cap.getTotalCpu() ? cap.getTotalCpu() : availCpu;
                 /*
                 if (availCpu > cap.getTotalCpu()) {
-                    throw new CloudRuntimeException(String.format("invalid cpu capcity of the host[uuid:%s], available cpu[%s]" +
+                    throw new CloudRuntimeException(String.format("invalid cpu capacity of the host[uuid:%s], available cpu[%s]" +
                             " is larger than the total cpu[%s]", hostUuid, availCpu, cap.getTotalCpu()));
                 }
                 */
