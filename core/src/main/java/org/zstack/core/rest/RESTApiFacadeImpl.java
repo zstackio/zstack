@@ -79,7 +79,7 @@ public class RESTApiFacadeImpl implements RESTApiFacade, CloudBusEventListener {
             ExceptionDSL.exceptionSafe(tran::rollback);
             throw new CloudRuntimeException(e);
         } finally {
-            ExceptionDSL.exceptionSafe(mgr::clear);
+            ExceptionDSL.exceptionSafe(mgr::close);
         }
     }
 
@@ -171,7 +171,6 @@ public class RESTApiFacadeImpl implements RESTApiFacade, CloudBusEventListener {
         try {
             if (e instanceof APIEvent) {
                 APIEvent ae = (APIEvent) e;
-                logger.debug(String.format("Received an API event[%s], updating RestAPIVO", JSONObjectUtil.toJsonString(e)));
                 if (processingRequests.contains(ae.getApiId())) {
                     boolean ret = update(ae);
                     processingRequests.remove(ae.getApiId());
