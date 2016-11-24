@@ -14,6 +14,7 @@ import org.zstack.header.rest.RestAPIResponse;
 import org.zstack.header.rest.RestAPIState;
 import org.zstack.header.rest.RestAPIVO;
 import org.zstack.header.search.APISearchMessage;
+import org.zstack.utils.ExceptionDSL;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -74,10 +75,10 @@ public class RESTApiFacadeImpl implements RESTApiFacade, CloudBusEventListener {
             tran.commit();
             return vo;
         } catch (Exception e) {
-            tran.rollback();
+            ExceptionDSL.exceptionSafe(tran::rollback);
             throw new CloudRuntimeException(e);
         } finally {
-            mgr.close();
+            ExceptionDSL.exceptionSafe(mgr::clear);
         }
     }
 
