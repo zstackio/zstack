@@ -66,7 +66,10 @@ public class UnitTestSuite {
 
         private void parseUnitTestSuiteConfig(String configPath) throws JAXBException {
             Unmarshaller unmarshaller = context.createUnmarshaller();
-            UnitTestSuiteConfig config = (UnitTestSuiteConfig) unmarshaller.unmarshal(PathUtil.findFileOnClassPath(configPath, true));
+            //UnitTestSuiteConfig config = (UnitTestSuiteConfig) unmarshaller.unmarshal(PathUtil.findFileOnClassPath(configPath, true));
+            logger.debug(String.format("parsing unit test suite configuration[%s]", configPath));
+            File f = PathUtil.findFileOnClassPath(configPath, true);
+            UnitTestSuiteConfig config = (UnitTestSuiteConfig) unmarshaller.unmarshal(f);
             suiteConfigs.add(config);
             for (Import imp : config.getImport()) {
                 parseUnitTestSuiteConfig(imp.getResource());
