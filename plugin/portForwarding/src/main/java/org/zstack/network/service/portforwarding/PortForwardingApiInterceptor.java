@@ -12,6 +12,7 @@ import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.message.APIMessage;
+import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
 import org.zstack.network.service.vip.VipVO;
@@ -85,7 +86,7 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(final APIAttachPortForwardingRuleMsg msg) {
         SimpleQuery<PortForwardingRuleVO> q = dbf.createQuery(PortForwardingRuleVO.class);
-        q.select(PortForwardingRuleVO_.vmNicUuid, PortForwardingRuleVO_.state);
+        q.select(PortForwardingRuleVO_.vmNicUuid, PortForwardingRuleVO_.state, PortForwardingRuleVO_.vipUuid);
         q.add(PortForwardingRuleVO_.uuid, Op.EQ, msg.getRuleUuid());
         Tuple t = q.findTuple();
 
@@ -107,7 +108,7 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
             @Override
             @Transactional(readOnly = true)
             public String call() {
-                String sql = "select vip.uuid from VipVO vip, PortForwardingRuleVO pf where vip.uuid = pf.vipUuid and pf.uuid = :pfUuid";
+                String sql = "select vip.l3NetworkUuid from VipVO vip, PortForwardingRuleVO pf where vip.uuid = pf.vipUuid and pf.uuid = :pfUuid";
                 TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
                 q.setParameter("pfUuid", msg.getRuleUuid());
                 return q.getSingleResult();
@@ -124,6 +125,9 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
                             msg.getVmNicUuid(), msg.getRuleUuid())
             ));
         }
+
+        String vipUuid = t.get(2, String.class);
+        checkIfAnotherVip(vipUuid, vmNicUuid);
     }
 
     private boolean rangeOverlap(int s1, int e1, int s2, int e2) {
@@ -198,6 +202,35 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
                         String.format("guest l3Network of vm nic[uuid:%s] and vip l3Network of vip[uuid: %s] are the same network", msg.getVmNicUuid(), msg.getVipUuid())
                 ));
             }
+
+            checkIfAnotherVip(msg.getVipUuid(), msg.getVmNicUuid());
+        }
+    }
+
+    @Transactional(readOnly = true)
+    private void checkIfAnotherVip(String vipUuid, String vmNicUuid) {
+        String sql = "select nic.uuid from VmNicVO nic where nic.vmInstanceUuid = (select n.vmInstanceUuid from VmNicVO n where" +
+                " n.uuid = :nicUuid)";
+        TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
+        q.setParameter("nicUuid", vmNicUuid);
+        List<String> nicUuids = q.getResultList();
+
+        sql = "select count(*) from VmNicVO nic, PortForwardingRuleVO pf where nic.uuid = pf.vmNicUuid and pf.vipUuid != :vipUuid and nic.uuid in (:nicUuids)";
+        TypedQuery<Long> lq = dbf.getEntityManager().createQuery(sql, Long.class);
+        lq.setParameter("vipUuid", vipUuid);
+        lq.setParameter("nicUuids", nicUuids);
+        long count = lq.getSingleResult();
+
+        if (count > 0) {
+            sql = "select vm from VmInstanceVO vm, VmNicVO nic where vm.uuid = nic.vmInstanceUuid and nic.uuid = :nicUuid";
+            TypedQuery<VmInstanceVO> vq = dbf.getEntityManager().createQuery(sql, VmInstanceVO.class);
+            vq.setParameter("nicUuid", vmNicUuid);
+            VmInstanceVO vm = vq.getSingleResult();
+
+            throw new ApiMessageInterceptionException(errf.stringToOperationError(
+                    String.format("the VM[name:%s uuid:%s] already has port forwarding rules that have different VIPs than the one[uuid:%s]",
+                            vm.getName(), vm.getUuid(), vipUuid)
+            ));
         }
     }
 
