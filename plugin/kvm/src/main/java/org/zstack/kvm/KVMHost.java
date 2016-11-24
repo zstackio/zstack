@@ -2532,6 +2532,7 @@ public class KVMHost extends HostBase implements Host {
                             sshShell.setUsername(getSelf().getUsername());
                             sshShell.setPassword(getSelf().getPassword());
                             sshShell.setPort(getSelf().getPort());
+                            ShellUtils.run(String.format("arp -d %s", getSelf().getManagementIp()));
                             SshResult ret = sshShell.runCommand(String.format("curl --connect-timeout 10 %s", restf.getCallbackUrl()));
 
                             if (ret.isSshFailure()) {
