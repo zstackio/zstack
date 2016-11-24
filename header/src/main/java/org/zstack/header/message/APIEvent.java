@@ -30,7 +30,6 @@ public class APIEvent extends Event {
      * @desc indicate the reason of api failure. It presents only if success = false
      * @nullable
      */
-    @NoJsonSchema
     protected ErrorCode error;
 
     @Override
