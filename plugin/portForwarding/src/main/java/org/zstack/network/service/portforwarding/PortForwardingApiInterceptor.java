@@ -127,7 +127,7 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
         }
 
         String vipUuid = t.get(2, String.class);
-        checkIfAnotherVip(vipUuid, vmNicUuid);
+        checkIfAnotherVip(vipUuid, msg.getVmNicUuid());
     }
 
     private boolean rangeOverlap(int s1, int e1, int s2, int e2) {
