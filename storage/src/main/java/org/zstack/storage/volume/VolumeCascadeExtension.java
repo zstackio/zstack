@@ -8,11 +8,14 @@ import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.db.UpdateQuery;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.configuration.DiskOfferingVO;
 import org.zstack.header.core.Completion;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.AccountInventory;
+import org.zstack.header.identity.AccountResourceRefVO;
+import org.zstack.header.identity.AccountResourceRefVO_;
 import org.zstack.header.identity.AccountVO;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
@@ -30,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 
 /**
  */
@@ -208,6 +212,18 @@ public class VolumeCascadeExtension extends AbstractAsyncCascadeExtension {
                             return;
                         }
                     }
+                }
+
+                if (action.getParentIssuer().equals(PrimaryStorageVO.class.getSimpleName())) {
+                    // when deleting the primary storage, the foreign key of VolumeVO to PrimaryStorageVO
+                    // will cause VolumeVO to be deleted but left AccountResourceRefVO of the volume left
+
+                    List<String> volUuids = volumes.stream().map(s -> s.getInventory().getUuid()).collect(Collectors.toList());
+                    UpdateQuery q = UpdateQuery.New();
+                    q.entity(AccountResourceRefVO.class);
+                    q.condAnd(AccountResourceRefVO_.resourceUuid, Op.IN, volUuids);
+                    q.condAnd(AccountResourceRefVO_.resourceType, Op.EQ, VolumeVO.class.getSimpleName());
+                    q.delete();
                 }
 
                 completion.success();
