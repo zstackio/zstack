@@ -10,11 +10,16 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.allocator.AbstractHostAllocatorFlow;
+import org.zstack.header.allocator.HostAllocatorError;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.storage.backup.BackupStorageType;
 import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.storage.backup.BackupStorageVO_;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
 import java.util.List;
@@ -24,6 +29,8 @@ import java.util.List;
  */
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class BackupStorageSelectPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
+    private static final CLogger logger = Utils.getLogger(BackupStorageSelectPrimaryStorageAllocatorFlow.class);
+
     @Autowired
     private DatabaseFacade dbf;
     @Autowired
@@ -33,7 +40,15 @@ public class BackupStorageSelectPrimaryStorageAllocatorFlow extends AbstractHost
 
     @Override
     public void allocate() {
-        throwExceptionIfIAmTheFirstFlow();
+        try {
+            throwExceptionIfIAmTheFirstFlow();
+        } catch (CloudRuntimeException e) {
+            logger.warn(e.getMessage());
+            ErrorCode errorCode = new ErrorCode();
+            errorCode.setCode(HostAllocatorError.NO_AVAILABLE_NIC.toString());
+            errorCode.setDetails("host cannot be allocated without L2Networks");
+            throw new OperationFailureException(errorCode);
+        }
 
         if (spec.getRequiredBackupStorageUuid() == null) {
             next(candidates);
