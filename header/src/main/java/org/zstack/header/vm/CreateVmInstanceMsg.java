@@ -30,7 +30,6 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
     private String defaultL3NetworkUuid;
     private String allocatorStrategy;
     private String strategy;
-    private String rootPassword;
 
     public String getStrategy() {
         return strategy;
@@ -201,15 +200,6 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
         this.resourceUuid = resourceUuid;
     }
 
-    @Override
-    public String getRootPassword() {
-        return rootPassword;
-    }
-
-    public void setRootPassword(String rootPassword) {
-        this.rootPassword = rootPassword;
-    }
-
     public static CreateVmInstanceMsg valueOf(final APICreateVmInstanceMsg msg) {
         CreateVmInstanceMsg cmsg = new CreateVmInstanceMsg();
 
@@ -227,7 +217,6 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
         cmsg.setDescription(msg.getDescription());
         cmsg.setResourceUuid(msg.getResourceUuid());
         cmsg.setDefaultL3NetworkUuid(msg.getDefaultL3NetworkUuid());
-        cmsg.setRootPassword(msg.getRootPassword());
         return cmsg;
     }
 

@@ -13,7 +13,6 @@ public class StartVmFromNewCreatedStruct {
     private List<String> l3NetworkUuids;
     private String rootDiskOfferingUuid;
     private String primaryStorageUuidForRootVolume;
-    private String rootPassword;
 
     public static String makeLabelKey(String vmUuid) {
         return String.format("not-start-vm-%s", vmUuid);
@@ -43,21 +42,12 @@ public class StartVmFromNewCreatedStruct {
         this.rootDiskOfferingUuid = rootDiskOfferingUuid;
     }
 
-    public String getRootPassword() {
-        return rootPassword;
-    }
-
-    public void setRootPassword(String rootPassword) {
-        this.rootPassword = rootPassword;
-    }
-
     public static StartVmFromNewCreatedStruct fromMessage(StartNewCreatedVmInstanceMsg msg) {
         StartVmFromNewCreatedStruct struct = new StartVmFromNewCreatedStruct();
         struct.setDataDiskOfferingUuids(msg.getDataDiskOfferingUuids());
         struct.setL3NetworkUuids(msg.getL3NetworkUuids());
         struct.setRootDiskOfferingUuid(msg.getRootDiskOfferingUuid());
         struct.setPrimaryStorageUuidForRootVolume(msg.getPrimaryStorageUuidForRootVolume());
-        struct.setRootPassword(msg.getRootPassword());
         return struct;
     }
 
@@ -67,7 +57,6 @@ public class StartVmFromNewCreatedStruct {
         struct.setL3NetworkUuids(msg.getL3NetworkUuids());
         struct.setRootDiskOfferingUuid(msg.getRootDiskOfferingUuid());
         struct.setPrimaryStorageUuidForRootVolume(msg.getPrimaryStorageUuidForRootVolume());
-        struct.setRootPassword(msg.getRootPassword());
         return struct;
     }
 

@@ -16,7 +16,6 @@ import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.core.*;
-import org.zstack.header.core.validation.Validation;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -2301,8 +2300,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             handle((DeleteImageCacheOnPrimaryStorageMsg) msg);
         } else if (msg instanceof ReInitRootVolumeFromTemplateOnPrimaryStorageMsg) {
             handle((ReInitRootVolumeFromTemplateOnPrimaryStorageMsg) msg);
-        } else if (msg instanceof SetRootPasswordMsg) {
-            handle((SetRootPasswordMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -2320,41 +2317,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         public String vmUuid;
         public String account;
         public String password;
-    }
-
-    private void handle(SetRootPasswordMsg msg) {
-        final SetRootPasswordReply reply = new SetRootPasswordReply();
-        CephVolumeOperate cephvo = new CephVolumeOperate();
-        SimpleQuery<CephPrimaryStorageMonVO> q = dbf.createQuery(CephPrimaryStorageMonVO.class);
-        q.add(CephPrimaryStorageMonVO_.primaryStorageUuid, SimpleQuery.Op.EQ, msg.getPrimaryStorageUuid());
-        Set<CephPrimaryStorageMonVO> monVos = new HashSet(q.list());
-        cephvo.setMonsSet(monVos);
-        CephPrimaryStorageMonBase monBase = cephvo.chooseTargetVmUuid();
-
-        SetPasswordCmd setPasswordCmd = new SetPasswordCmd();
-        setPasswordCmd.cephInstallPath = msg.getQcowFile();
-        setPasswordCmd.vmUuid = msg.getVmAccountPerference().getVmUuid();
-        setPasswordCmd.account = msg.getVmAccountPerference().getUserAccount();
-        setPasswordCmd.password = msg.getVmAccountPerference().getAccountPassword();
-
-        logger.debug(String.format("set root password, send http to %s", monBase.getSelf().getHostname()));
-        monBase.httpCall(SET_ROOT_PASSWORD, setPasswordCmd, SetPasswordRsp.class, new ReturnValueCompletion<SetPasswordRsp>(reply) {
-            @Override
-            public void success(SetPasswordRsp rsp) {
-                if (!rsp.isSuccess()) {
-                    reply.setError(errf.stringToOperationError(rsp.getError()));
-                }
-                reply.setQcowFile(rsp.cephInstallPath);
-                reply.setVmAccountPerference(new VmAccountPerference(rsp.vmUuid, rsp.account, rsp.password));
-                bus.reply(msg, reply);
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                reply.setError(errorCode);
-                bus.reply(msg, reply);
-            }
-        });
     }
 
     private void handle(DeleteImageCacheOnPrimaryStorageMsg msg) {
