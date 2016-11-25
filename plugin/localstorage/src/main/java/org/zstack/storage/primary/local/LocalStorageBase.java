@@ -34,13 +34,8 @@ import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
-import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
-import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
-import org.zstack.header.storage.snapshot.VolumeSnapshotVO_;
-import org.zstack.header.volume.VolumeConstant;
-import org.zstack.header.volume.VolumeInventory;
-import org.zstack.header.volume.VolumeVO;
-import org.zstack.header.volume.VolumeVO_;
+import org.zstack.header.storage.snapshot.*;
+import org.zstack.header.volume.*;
 import org.zstack.storage.primary.PrimaryStorageBase;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManager;
@@ -1909,11 +1904,120 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
     @Override
     protected void connectHook(final ConnectParam param, final Completion completion) {
-        RecalculatePrimaryStorageCapacityMsg rmsg = new RecalculatePrimaryStorageCapacityMsg();
-        rmsg.setPrimaryStorageUuid(self.getUuid());
-        bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
-        bus.send(rmsg);
-        completion.success();
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("sync-capacity-of-local-storage-primary-storage-%s", self.getUuid()));
+        chain.then(new ShareFlow() {
+            Long totalPhysicalSize;
+            Long availablePhysicalSize;
+            Long volumeUsage;
+            Long snapshotUsage;
+
+            @Override
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "sync-capacity-used-by-volumes";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        VolumeReportPrimaryStorageCapacityUsageMsg msg = new VolumeReportPrimaryStorageCapacityUsageMsg();
+                        msg.setPrimaryStorageUuid(self.getUuid());
+                        bus.makeLocalServiceId(msg, VolumeConstant.SERVICE_ID);
+                        bus.send(msg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    trigger.fail(reply.getError());
+                                    return;
+                                }
+
+                                VolumeReportPrimaryStorageCapacityUsageReply r = reply.castReply();
+                                volumeUsage = r.getUsedCapacity();
+                                volumeUsage = ratioMgr.calculateByRatio(self.getUuid(), volumeUsage);
+                                trigger.next();
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "sync-capacity-used-by-volume-snapshots";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        VolumeSnapshotReportPrimaryStorageCapacityUsageMsg msg = new VolumeSnapshotReportPrimaryStorageCapacityUsageMsg();
+                        msg.setPrimaryStorageUuid(self.getUuid());
+                        bus.makeLocalServiceId(msg, VolumeSnapshotConstant.SERVICE_ID);
+                        bus.send(msg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    trigger.fail(reply.getError());
+                                    return;
+                                }
+
+                                // note: snapshot size is physical size,
+                                // don't calculate over-provisioning here
+                                VolumeSnapshotReportPrimaryStorageCapacityUsageReply r = reply.castReply();
+                                snapshotUsage = r.getUsedSize();
+                                trigger.next();
+                            }
+                        });
+                    }
+                });
+                flow(new NoRollbackFlow() {
+                    String __name__ = "sync-physical-capacity";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        syncPhysicalCapacity(new ReturnValueCompletion<PhysicalCapacityUsage>(trigger) {
+                            @Override
+                            public void success(PhysicalCapacityUsage returnValue) {
+                                totalPhysicalSize = returnValue.totalPhysicalSize;
+                                availablePhysicalSize = returnValue.availablePhysicalSize;
+                                availablePhysicalSize = availablePhysicalSize < 0 ? 0 : availablePhysicalSize;
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
+                done(new FlowDoneHandler() {
+                    @Override
+                    public void handle(Map data) {
+                        PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(self.getUuid());
+                        updater.run(new PrimaryStorageCapacityUpdaterRunnable() {
+                            @Override
+                            public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
+                                long avail = cap.getTotalCapacity() - volumeUsage - snapshotUsage;
+                                cap.setAvailableCapacity(avail);
+                                cap.setAvailablePhysicalCapacity(availablePhysicalSize);
+                                cap.setTotalPhysicalCapacity(totalPhysicalSize);
+                                return cap;
+                            }
+                        });
+
+                        RecalculatePrimaryStorageCapacityMsg rmsg = new RecalculatePrimaryStorageCapacityMsg();
+                        rmsg.setPrimaryStorageUuid(self.getUuid());
+                        bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
+                        bus.send(rmsg);
+                        completion.success();
+                    }
+                });
+
+                error(new FlowErrorHandler(completion) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        completion.fail(errCode);
+                    }
+                });
+            }
+        });
+        chain.start();
     }
 
     @Override
