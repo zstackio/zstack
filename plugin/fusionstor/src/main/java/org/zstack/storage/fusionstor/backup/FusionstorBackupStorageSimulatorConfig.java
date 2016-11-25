@@ -35,5 +35,4 @@ public class FusionstorBackupStorageSimulatorConfig {
     public Map<String, Boolean> pingCmdOperationFailure = new HashMap<String, Boolean>();
     public List<GetFactsCmd> getFactsCmds = new ArrayList<GetFactsCmd>();
     public Map<String, String> getFactsCmdFsid = new HashMap<String, String>();
-    public volatile String format = "qcow2";
 }

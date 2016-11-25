@@ -963,7 +963,6 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                         ivo.setSize(re.getSize());
                                         ivo.setActualSize(re.getActualSize());
                                         ivo.setStatus(ImageStatus.Ready);
-                                        ivo.setFormat(re.getFormat());
                                         dbf.update(ivo);
                                     }
 
