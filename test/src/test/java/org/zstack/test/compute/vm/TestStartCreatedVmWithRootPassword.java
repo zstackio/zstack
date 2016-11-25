@@ -10,7 +10,6 @@ import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.test.Api;
@@ -54,7 +53,6 @@ public class TestStartCreatedVmWithRootPassword {
         List<String> nws = new ArrayList<String>();
         nws.add(ninv.getUuid());
 
-        api.setRootPassword("test1234");
         vm = api.createVmByFullConfig(vm, dinv.getUuid(), nws, null);
         Assert.assertNotNull(vm);
         Assert.assertEquals(VmInstanceState.Running.toString(), vm.getState());
