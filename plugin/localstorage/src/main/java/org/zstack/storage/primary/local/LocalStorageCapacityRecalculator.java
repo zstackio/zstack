@@ -5,7 +5,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.storage.primary.PrimaryStorageCapacityUpdaterRunnable;
 import org.zstack.header.storage.primary.PrimaryStorageCapacityVO;
 import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
@@ -115,16 +114,13 @@ public class LocalStorageCapacityRecalculator {
 
     @Transactional
     public LocalStorageCapacityRecalculator calculateByPrimaryStorageUuid(String psUuid) {
-        // hmm, in some case, the mysql returns duplicate hostUuid
-        // which I didn't figure out how. So use a groupby to remove the duplicates
         String sql = "select ref.hostUuid" +
                 " from LocalStorageHostRefVO ref" +
-                " where ref.primaryStorageUuid = :psUuid" +
-                " group by ref.hostUuid";
+                " where ref.primaryStorageUuid = :psUuid";
         TypedQuery<String> hq = dbf.getEntityManager().createQuery(sql, String.class);
         hq.setParameter("psUuid", psUuid);
         List<String> huuids = hq.getResultList();
-        if (!huuids.isEmpty()) {
+        if (huuids != null && !huuids.isEmpty()) {
             calculateByHostUuids(psUuid, huuids);
         }
         return this;
