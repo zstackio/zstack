@@ -81,7 +81,6 @@ public class SftpBackupStorageSimulator {
             rsp.setSize(size == null ? 0 : size);
             rsp.setActualSize(asize == null ? 0 : asize);
             rsp.setMd5Sum(config.imageMd5sum);
-            rsp.setFormat(config.format);
             rsp.setTotalCapacity(config.totalCapacity);
             long usedSize = 0;
             for (Long s : config.imageSizes.values()) {

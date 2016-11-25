@@ -150,7 +150,6 @@ public class CephBackupStorageSimulator {
         rsp.setSize(size == null ? 0 : size);
         Long asize = config.imageActualSize.get(cmd.imageUuid);
         rsp.setActualSize(asize == null ? 0 : asize);
-        rsp.setFormat(config.format);
 
         reply(entity, rsp);
         return null;
