@@ -273,8 +273,6 @@ public class KVMHost extends HostBase implements Host {
             handle((OnlineChangeVmCpuMemoryMsg) msg);
         } else if (msg instanceof ChangeVmPasswordMsg) {
             handle((ChangeVmPasswordMsg) msg);
-        } else if (msg instanceof SetRootPasswordMsg) {
-            handle((SetRootPasswordMsg) msg);
         } else if (msg instanceof PauseVmOnHypervisorMsg) {
             handle((PauseVmOnHypervisorMsg) msg);
         } else if (msg instanceof ResumeVmOnHypervisorMsg) {
@@ -367,40 +365,6 @@ public class KVMHost extends HostBase implements Host {
         }
 
         bus.reply(msg, reply);
-    }
-
-    private void handle(final SetRootPasswordMsg msg) {
-        final SetRootPasswordReply reply = new SetRootPasswordReply();
-        ChangeVmPasswordCmd cmd = new ChangeVmPasswordCmd();
-        cmd.setAccountPerference(msg.getVmAccountPerference());
-        cmd.setQcowFile(msg.getQcowFile());
-        cmd.setTimeout(msg.getTimeout());
-
-        restf.asyncJsonPost(setRootPasswordPath, cmd, new JsonAsyncRESTCallback<ChangeVmPasswordResponse>(msg) {
-            @Override
-            public void fail(ErrorCode err) {
-                reply.setError(err);
-                bus.reply(msg, reply);
-            }
-
-            @Override
-            public void success(ChangeVmPasswordResponse ret) {
-                if (!ret.isSuccess()) {
-                    reply.setError(errf.stringToOperationError(ret.getError()));
-                } else {
-                    reply.setVmAccountPerference(ret.getVmAccountPerference());
-                    reply.setQcowFile(ret.getQcowFile());
-                }
-                bus.reply(msg, reply);
-            }
-
-            @Override
-            public Class<ChangeVmPasswordResponse> getReturnClass() {
-                return ChangeVmPasswordResponse.class;
-            }
-        });
-
-
     }
 
     private void handle(final ChangeVmPasswordMsg msg) {

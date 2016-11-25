@@ -115,7 +115,6 @@ public class Api implements CloudBusEventListener {
     private static ComponentLoader loader;
     private ManagementNodeManager mgr;
     private SessionInventory adminSession;
-    private String rootPassword;
     private int timeout = 15;
 
     @Autowired
@@ -134,7 +133,6 @@ public class Api implements CloudBusEventListener {
     public void prepare() {
         try {
             adminSession = this.loginAsAdmin();
-            rootPassword = null;
         } catch (ApiSenderException e1) {
             throw new CloudRuntimeException(e1);
         }
@@ -1535,10 +1533,6 @@ public class Api implements CloudBusEventListener {
         return evt.getInventory();
     }
 
-    public void setRootPassword(String rootPassword) {
-        this.rootPassword = rootPassword;
-    }
-
     public VmInstanceInventory createVmByFullConfig(VmInstanceInventory inv, String rootDiskOfferingUuid, List<String> l3NetworkUuids,
                                                     List<String> diskOfferingUuids, SessionInventory session) throws ApiSenderException {
         APICreateVmInstanceMsg msg = new APICreateVmInstanceMsg();
@@ -1559,9 +1553,6 @@ public class Api implements CloudBusEventListener {
         msg.setClusterUuid(inv.getClusterUuid());
         msg.setRootDiskOfferingUuid(rootDiskOfferingUuid);
         msg.setDefaultL3NetworkUuid(inv.getDefaultL3NetworkUuid());
-        if (rootPassword != null) {
-            msg.setRootPassword(rootPassword);
-        }
         if (msg.getL3NetworkUuids().size() > 1 && msg.getDefaultL3NetworkUuid() == null) {
             msg.setDefaultL3NetworkUuid(msg.getL3NetworkUuids().get(0));
         }
