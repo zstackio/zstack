@@ -34,6 +34,7 @@ import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
+import org.zstack.header.storage.snapshot.APIDeleteVolumeSnapshotMsg;
 import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.vm.APICreateVmInstanceMsg;
@@ -226,6 +227,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static class CreateEmptyVolumeRsp extends AgentResponse {
     }
 
+    @ApiTimeout(apiClasses = {APIDeleteVolumeSnapshotMsg.class})
     public static class DeleteCmd extends AgentCommand {
         String installPath;
 

@@ -2,6 +2,7 @@ package org.zstack.storage.backup.sftp;
 
 import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.image.APIAddImageMsg;
+import org.zstack.header.storage.snapshot.APIDeleteVolumeSnapshotMsg;
 
 public class SftpBackupStorageCommands {
     public static class AgentCommand {
@@ -158,7 +159,8 @@ public class SftpBackupStorageCommands {
             this.size = size;
         }
     }
-    
+
+    @ApiTimeout(apiClasses = {APIDeleteVolumeSnapshotMsg.class})
     public static class DeleteCmd extends AgentCommand {
         private String installUrl;
         public String getInstallUrl() {
@@ -169,6 +171,7 @@ public class SftpBackupStorageCommands {
             this.installUrl = installUrl;
         }
     }
+
     public static class DeleteResponse extends AgentResponse {
     }
     
