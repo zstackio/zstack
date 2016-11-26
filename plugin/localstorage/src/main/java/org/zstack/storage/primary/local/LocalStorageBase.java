@@ -3,6 +3,7 @@ package org.zstack.storage.primary.local;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -24,18 +25,20 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.host.HostInventory;
-import org.zstack.header.host.HostStatus;
-import org.zstack.header.host.HostVO;
-import org.zstack.header.host.HostVO_;
+import org.zstack.header.host.*;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
-import org.zstack.header.storage.snapshot.*;
-import org.zstack.header.volume.*;
+import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO_;
+import org.zstack.header.volume.VolumeConstant;
+import org.zstack.header.volume.VolumeInventory;
+import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.volume.VolumeVO_;
 import org.zstack.storage.primary.PrimaryStorageBase;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManager;
@@ -1915,72 +1918,42 @@ public class LocalStorageBase extends PrimaryStorageBase {
             @Override
             public void setup() {
                 flow(new NoRollbackFlow() {
-                    String __name__ = "sync-capacity-used-by-volumes";
+                    String __name__ = "reconnect-all-host-related-to-specified-local-storage";
 
                     @Override
-                    public void run(final FlowTrigger trigger, Map data) {
-                        VolumeReportPrimaryStorageCapacityUsageMsg msg = new VolumeReportPrimaryStorageCapacityUsageMsg();
-                        msg.setPrimaryStorageUuid(self.getUuid());
-                        bus.makeLocalServiceId(msg, VolumeConstant.SERVICE_ID);
-                        bus.send(msg, new CloudBusCallBack(trigger) {
-                            @Override
-                            public void run(MessageReply reply) {
-                                if (!reply.isSuccess()) {
-                                    trigger.fail(reply.getError());
-                                    return;
-                                }
+                    public void run(FlowTrigger trigger, Map data) {
+                        List<String> hostUuids;
+                        SimpleQuery<LocalStorageHostRefVO> q = dbf.createQuery(LocalStorageHostRefVO.class);
+                        q.select(LocalStorageHostRefVO_.hostUuid);
+                        q.add(LocalStorageHostRefVO_.primaryStorageUuid, Op.EQ, self.getUuid());
+                        hostUuids = q.listValue();
+                        if (hostUuids == null || hostUuids.isEmpty()) {
+                            trigger.next();
+                            return;
+                        }
 
-                                VolumeReportPrimaryStorageCapacityUsageReply r = reply.castReply();
-                                volumeUsage = r.getUsedCapacity();
-                                volumeUsage = ratioMgr.calculateByRatio(self.getUuid(), volumeUsage);
-                                trigger.next();
+                        List<ReconnectHostMsg> rmsgs = CollectionUtils.transformToList(hostUuids, new Function<ReconnectHostMsg, String>() {
+                            @Override
+                            public ReconnectHostMsg call(String hostUuid) {
+                                ReconnectHostMsg rmsg = new ReconnectHostMsg();
+                                rmsg.setHostUuid(hostUuid);
+                                bus.makeTargetServiceIdByResourceUuid(rmsg, HostConstant.SERVICE_ID, hostUuid);
+                                return rmsg;
                             }
                         });
-                    }
-                });
 
-                flow(new NoRollbackFlow() {
-                    String __name__ = "sync-capacity-used-by-volume-snapshots";
 
-                    @Override
-                    public void run(final FlowTrigger trigger, Map data) {
-                        VolumeSnapshotReportPrimaryStorageCapacityUsageMsg msg = new VolumeSnapshotReportPrimaryStorageCapacityUsageMsg();
-                        msg.setPrimaryStorageUuid(self.getUuid());
-                        bus.makeLocalServiceId(msg, VolumeSnapshotConstant.SERVICE_ID);
-                        bus.send(msg, new CloudBusCallBack(trigger) {
+                        bus.send(rmsgs, new CloudBusListCallBack(trigger) {
                             @Override
-                            public void run(MessageReply reply) {
-                                if (!reply.isSuccess()) {
-                                    trigger.fail(reply.getError());
-                                    return;
+                            public void run(List<MessageReply> replies) {
+                                for (MessageReply reply : replies) {
+                                    if (!reply.isSuccess()) {
+                                        logger.debug(String.format("failed to reconnect host[uuid:%s] because %s", self.getUuid(), reply.getError()));
+                                        trigger.fail(errf.instantiateErrorCode(HostErrors.UNABLE_TO_RECONNECT_HOST, reply.getError()));
+                                    }
                                 }
 
-                                // note: snapshot size is physical size,
-                                // don't calculate over-provisioning here
-                                VolumeSnapshotReportPrimaryStorageCapacityUsageReply r = reply.castReply();
-                                snapshotUsage = r.getUsedSize();
                                 trigger.next();
-                            }
-                        });
-                    }
-                });
-                flow(new NoRollbackFlow() {
-                    String __name__ = "sync-physical-capacity";
-
-                    @Override
-                    public void run(final FlowTrigger trigger, Map data) {
-                        syncPhysicalCapacity(new ReturnValueCompletion<PhysicalCapacityUsage>(trigger) {
-                            @Override
-                            public void success(PhysicalCapacityUsage returnValue) {
-                                totalPhysicalSize = returnValue.totalPhysicalSize;
-                                availablePhysicalSize = returnValue.availablePhysicalSize;
-                                availablePhysicalSize = availablePhysicalSize < 0 ? 0 : availablePhysicalSize;
-                                trigger.next();
-                            }
-
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                trigger.fail(errorCode);
                             }
                         });
                     }
@@ -1989,18 +1962,6 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 done(new FlowDoneHandler() {
                     @Override
                     public void handle(Map data) {
-                        PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(self.getUuid());
-                        updater.run(new PrimaryStorageCapacityUpdaterRunnable() {
-                            @Override
-                            public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
-                                long avail = cap.getTotalCapacity() - volumeUsage - snapshotUsage;
-                                cap.setAvailableCapacity(avail);
-                                cap.setAvailablePhysicalCapacity(availablePhysicalSize);
-                                cap.setTotalPhysicalCapacity(totalPhysicalSize);
-                                return cap;
-                            }
-                        });
-
                         RecalculatePrimaryStorageCapacityMsg rmsg = new RecalculatePrimaryStorageCapacityMsg();
                         rmsg.setPrimaryStorageUuid(self.getUuid());
                         bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
