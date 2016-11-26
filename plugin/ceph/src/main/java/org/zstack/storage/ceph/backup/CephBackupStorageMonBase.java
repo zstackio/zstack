@@ -296,7 +296,7 @@ public class CephBackupStorageMonBase extends CephMonBase {
 
         PingCmd cmd = new PingCmd();
         cmd.monAddr = String.format("%s:%s", getSelf().getMonAddr(), getSelf().getMonPort());
-        cmd.testImagePath = String.format("%s/%s-this-is-a-test-image-with-long-name", poolName, Platform.getUuid());
+        cmd.testImagePath = String.format("%s/%s-this-is-a-test-image-with-long-name", poolName, self.getUuid());
         cmd.monUuid = getSelf().getUuid();
         cmd.backupStorageUuid = getSelf().getBackupStorageUuid();
 
