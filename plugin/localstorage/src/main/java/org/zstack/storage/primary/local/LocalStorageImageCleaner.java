@@ -2,6 +2,7 @@ package org.zstack.storage.primary.local;
 
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.thread.SyncTask;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.ImageCacheShadowVO;
@@ -101,8 +102,7 @@ public class LocalStorageImageCleaner extends ImageCacheCleaner implements Manag
         return sq.getResultList();
     }
 
-    @Override
-    public void cleanup(String psUuid) {
+    protected void doCleanup(String psUuid) {
         List<ImageCacheShadowVO> shadowVOs = createShadowImageCacheVOs(psUuid);
         if (shadowVOs == null || shadowVOs.isEmpty()) {
             return;
@@ -138,5 +138,32 @@ public class LocalStorageImageCleaner extends ImageCacheCleaner implements Manag
                 }
             });
         }
+    }
+
+    @Override
+    public void cleanup(String psUuid) {
+        ImageCacheCleaner self = this;
+        thdf.syncSubmit(new SyncTask<Void>() {
+            @Override
+            public Void call() throws Exception {
+                doCleanup(psUuid);
+                return null;
+            }
+
+            @Override
+            public String getName() {
+                return getSyncSignature();
+            }
+
+            @Override
+            public String getSyncSignature() {
+                return self.getClass().getName();
+            }
+
+            @Override
+            public int getSyncLevel() {
+                return 1;
+            }
+        });
     }
 }

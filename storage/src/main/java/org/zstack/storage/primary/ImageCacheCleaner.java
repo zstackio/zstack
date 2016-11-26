@@ -9,6 +9,7 @@ import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.thread.PeriodicTask;
+import org.zstack.core.thread.SyncTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.DeleteImageCacheOnPrimaryStorageMsg;
@@ -67,6 +68,32 @@ public abstract class ImageCacheCleaner {
     }
 
     public void cleanup(String psUuid) {
+        ImageCacheCleaner self = this;
+        thdf.syncSubmit(new SyncTask<Void>() {
+            @Override
+            public Void call() throws Exception {
+                doCleanup(psUuid);
+                return null;
+            }
+
+            @Override
+            public String getName() {
+                return getSyncSignature();
+            }
+
+            @Override
+            public String getSyncSignature() {
+                return self.getClass().getName();
+            }
+
+            @Override
+            public int getSyncLevel() {
+                return 1;
+            }
+        });
+    }
+
+    protected void doCleanup(String psUuid) {
         List<ImageCacheShadowVO> shadowVOs = createShadowImageCacheVOs(psUuid);
         if (shadowVOs == null || shadowVOs.isEmpty()) {
             return;
