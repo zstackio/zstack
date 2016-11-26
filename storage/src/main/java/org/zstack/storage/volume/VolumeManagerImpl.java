@@ -377,7 +377,6 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                             rmsg.setDiskSize(template.getSize());
                             rmsg.setPrimaryStorageUuid(targetPrimaryStorage.getUuid());
                             bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, targetPrimaryStorage.getUuid());
-                            ;
                             bus.send(rmsg);
                         }
                         trigger.rollback();

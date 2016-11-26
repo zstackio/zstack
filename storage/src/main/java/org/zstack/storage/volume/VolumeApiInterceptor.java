@@ -103,7 +103,7 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
     private void validate(APICreateDataVolumeFromVolumeTemplateMsg msg) {
         ImageVO img = dbf.findByUuid(msg.getImageUuid(), ImageVO.class);
         ImageMediaType type = img.getMediaType();
-        if (ImageMediaType.DataVolumeTemplate != type && ImageMediaType.RootVolumeTemplate != type) {
+        if (ImageMediaType.DataVolumeTemplate != type) {
             throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
                     String.format("image[uuid:%s] is not %s, it's %s", msg.getImageUuid(), ImageMediaType.DataVolumeTemplate, type)
             ));
