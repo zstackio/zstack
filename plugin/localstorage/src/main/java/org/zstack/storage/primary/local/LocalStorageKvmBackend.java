@@ -336,6 +336,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         }
     }
 
+    @ApiTimeout(apiClasses = {APIDeleteVolumeSnapshotMsg.class})
     public static class MergeSnapshotCmd extends AgentCommand {
         private String volumeUuid;
         private String snapshotInstallPath;
