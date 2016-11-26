@@ -1949,7 +1949,6 @@ public class LocalStorageBase extends PrimaryStorageBase {
                                 for (MessageReply reply : replies) {
                                     if (!reply.isSuccess()) {
                                         logger.debug(String.format("failed to reconnect host[uuid:%s] because %s", self.getUuid(), reply.getError()));
-                                        trigger.fail(errf.instantiateErrorCode(HostErrors.UNABLE_TO_RECONNECT_HOST, reply.getError()));
                                     }
                                 }
 
