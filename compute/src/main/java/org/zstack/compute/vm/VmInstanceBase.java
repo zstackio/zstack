@@ -1162,7 +1162,10 @@ public class VmInstanceBase extends AbstractVmInstance {
             completion.fail(allowed);
             return;
         }
-
+        if (self.getVmNics().size() == 0) {
+            completion.fail(errf.stringToOperationError("cannot get target migration host without any nics on vm"));
+            return;
+        }
         final DesignatedAllocateHostMsg amsg = new DesignatedAllocateHostMsg();
         amsg.setCpuCapacity(self.getCpuNum());
         amsg.setMemoryCapacity(self.getMemorySize());
