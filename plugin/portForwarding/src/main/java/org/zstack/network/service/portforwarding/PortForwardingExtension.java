@@ -200,7 +200,7 @@ public class PortForwardingExtension extends AbstractNetworkServiceExtension {
             List<PortForwardingStruct> lst = new ArrayList<PortForwardingStruct>();
 
             for (L3NetworkInventory l3 : e.getValue()) {
-                lst.addAll(makePortForwardingStruct(spec.getDestNics(), spec.getCurrentVmOperation() == VmOperation.Destroy, l3));
+                lst.addAll(makePortForwardingStruct(spec.getDestNics(), spec.getCurrentVmOperation() == VmOperation.Destroy || spec.getCurrentVmOperation() == VmOperation.DetachNic, l3));
             }
 
             map.put(ptype.toString(), lst);
