@@ -822,6 +822,11 @@ public class VmInstanceBase extends AbstractVmInstance {
             return VmAbnormalLifeCycleOperation.VmStoppedFromIntermediateState;
         }
 
+        if (originalState == VmInstanceState.Unknown && currentState == VmInstanceState.Paused &&
+                currentHostUuid.equals(originalHostUuid)){
+            return VmAbnormalLifeCycleOperation.VmPausedFromUnknownStateHostNotChanged;
+        }
+
         if (originalState == VmInstanceState.Unknown && currentState == VmInstanceState.Running &&
                 currentHostUuid.equals(originalHostUuid)) {
             return VmAbnormalLifeCycleOperation.VmRunningFromUnknownStateHostNotChanged;
@@ -935,6 +940,13 @@ public class VmInstanceBase extends AbstractVmInstance {
             bus.reply(msg, reply);
             completion.done();
             return;
+        } else if (operation == VmAbnormalLifeCycleOperation.VmPausedFromUnknownStateHostNotChanged) {
+            //some reason led vm to unknown state and the paused vm are detected on the host again
+            self.setHostUuid(msg.getHostUuid());
+            changeVmStateInDb(VmInstanceStateEvent.paused);
+            fireEvent.run();
+            bus.reply(msg, reply);
+            completion.done();
         }
 
         List<VmAbnormalLifeCycleExtensionPoint> exts = pluginRgty.getExtensionList(VmAbnormalLifeCycleExtensionPoint.class);

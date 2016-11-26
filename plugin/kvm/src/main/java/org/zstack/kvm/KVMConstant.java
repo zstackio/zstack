@@ -73,6 +73,8 @@ public interface KVMConstant {
                 return VmInstanceState.Running;
             } else if (this == Shutdown) {
                 return VmInstanceState.Stopped;
+            } else if (this == Paused) {
+                return VmInstanceState.Paused;
             } else {
                 return VmInstanceState.Unknown;
             }

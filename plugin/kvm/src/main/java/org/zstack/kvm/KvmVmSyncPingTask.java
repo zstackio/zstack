@@ -77,7 +77,7 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
                     Map<String, VmInstanceState> states = new HashMap<String, VmInstanceState>(ret.getStates().size());
                     for (Map.Entry<String, String> e : ret.getStates().entrySet()) {
                         VmInstanceState state = KvmVmState.valueOf(e.getValue()).toVmInstanceState();
-                        if (state == VmInstanceState.Running || state == VmInstanceState.Unknown) {
+                        if (state == VmInstanceState.Running || state == VmInstanceState.Paused || state == VmInstanceState.Unknown) {
                             states.put(e.getKey(), state);
                         }
                     }
