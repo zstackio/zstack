@@ -121,6 +121,7 @@ public class VmAllocateHostFlow implements Flow {
                     // is stuck in Starting, we know which host it's created on and can check its state on the host
                     VmInstanceVO vmvo = dbf.findByUuid(spec.getVmInventory().getUuid(), VmInstanceVO.class);
                     vmvo.setClusterUuid(spec.getDestHost().getClusterUuid());
+                    vmvo.setLastHostUuid(vmvo.getHostUuid());
                     vmvo.setHostUuid(spec.getDestHost().getUuid());
                     vmvo.setHypervisorType(spec.getDestHost().getHypervisorType());
                     dbf.update(vmvo);
