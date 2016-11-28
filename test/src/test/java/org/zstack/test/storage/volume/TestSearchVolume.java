@@ -41,7 +41,7 @@ public class TestSearchVolume {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         TimeUnit.SECONDS.sleep(1);
@@ -51,17 +51,17 @@ public class TestSearchVolume {
         tl.setOp(SearchOp.AND_EQ.toString());
         tl.setVal(VolumeType.Data.toString());
         msg.getNameOpValueTriples().add(tl);
-        
+
         NOVTriple t = new NOVTriple();
         t.setName("size");
         t.setOp(SearchOp.AND_LT.toString());
         t.setVal(String.valueOf(SizeUnit.GIGABYTE.toByte(120)));
         msg.getNameOpValueTriples().add(t);
-        
+
         String res = api.search(msg);
         List<VolumeInventory> invs = JSONObjectUtil.toCollection(res, ArrayList.class, VolumeInventory.class);
         Assert.assertEquals(1, invs.size());
-        
+
         VolumeInventory inv0 = invs.get(0);
         APIGetVolumeMsg gmsg = new APIGetVolumeMsg();
         gmsg.setUuid(inv0.getUuid());

@@ -26,7 +26,7 @@ import java.util.List;
 /**
  * 1. detach backup storage
  * 2. don't specify backup storage uuid
- *
+ * <p>
  * confirm creating image fails
  */
 public class TestCreateTemplateFromRootVolumeFailure3 {
@@ -53,23 +53,23 @@ public class TestCreateTemplateFromRootVolumeFailure3 {
         config = loader.getComponent(NfsPrimaryStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test(expected = ApiSenderException.class)
-	public void test() throws ApiSenderException {
-	    VmInstanceInventory vm = deployer.vms.get("TestVm");
-	    api.stopVmInstance(vm.getUuid());
-	    String rootVolumeUuid = vm.getRootVolumeUuid();
+
+    @Test(expected = ApiSenderException.class)
+    public void test() throws ApiSenderException {
+        VmInstanceInventory vm = deployer.vms.get("TestVm");
+        api.stopVmInstance(vm.getUuid());
+        String rootVolumeUuid = vm.getRootVolumeUuid();
 
         ZoneInventory zone = deployer.zones.get("Zone1");
-	    BackupStorageInventory sftp = deployer.backupStorages.get("sftp");
+        BackupStorageInventory sftp = deployer.backupStorages.get("sftp");
         api.detachBackupStorage(sftp.getUuid(), zone.getUuid());
-	    try {
-	        api.createTemplateFromRootVolume("testImage", rootVolumeUuid, (List)null);
-	    } catch (ApiSenderException e) {
+        try {
+            api.createTemplateFromRootVolume("testImage", rootVolumeUuid, (List) null);
+        } catch (ApiSenderException e) {
             long count = dbf.count(ImageVO.class);
             Assert.assertEquals(1, count);
             throw e;
-	    }
-	}
+        }
+    }
 
 }

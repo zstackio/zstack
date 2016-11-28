@@ -22,10 +22,9 @@ import org.zstack.test.deployer.Deployer;
 import org.zstack.utils.network.NetworkUtils;
 
 /**
- * 
  * 1. create a vm with an eip
  * 2. change the vm's private ip
- *
+ * <p>
  * confirm the guest ip of the eip changed to the new one
  */
 public class TestVirtualRouterEip31 {
@@ -57,7 +56,7 @@ public class TestVirtualRouterEip31 {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         EipInventory eip = deployer.eips.get("eip");

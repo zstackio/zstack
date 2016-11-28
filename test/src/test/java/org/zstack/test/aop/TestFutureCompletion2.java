@@ -47,7 +47,7 @@ public class TestFutureCompletion2 {
             @Override
             @AsyncThread
             public void run() {
-                for (int i=0; i<3; i++) {
+                for (int i = 0; i < 3; i++) {
                     logger.debug("index: " + i);
                     try {
                         TimeUnit.SECONDS.sleep(1);

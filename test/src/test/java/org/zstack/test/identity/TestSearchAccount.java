@@ -40,9 +40,9 @@ public class TestSearchAccount {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
-    public void test() throws InterruptedException,ApiSenderException {
+    public void test() throws InterruptedException, ApiSenderException {
         TimeUnit.SECONDS.sleep(5);
         APISearchAccountMsg msg = new APISearchAccountMsg();
         NOVTriple t = new NOVTriple();

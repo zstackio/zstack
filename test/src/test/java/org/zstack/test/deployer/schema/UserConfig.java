@@ -1,19 +1,18 @@
-
 package org.zstack.test.deployer.schema;
 
-import java.util.ArrayList;
-import java.util.List;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlType;
+import java.util.ArrayList;
+import java.util.List;
 
 
 /**
  * <p>Java class for UserConfig complex type.
- * 
+ * <p>
  * <p>The following schema fragment specifies the expected content contained within this class.
- * 
+ * <p>
  * <pre>
  * &lt;complexType name="UserConfig">
  *   &lt;complexContent>
@@ -28,13 +27,11 @@ import javax.xml.bind.annotation.XmlType;
  *   &lt;/complexContent>
  * &lt;/complexType>
  * </pre>
- * 
- * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "UserConfig", propOrder = {
-    "policyRef",
-    "groupRef"
+        "policyRef",
+        "groupRef"
 })
 public class UserConfig {
 
@@ -47,25 +44,23 @@ public class UserConfig {
 
     /**
      * Gets the value of the policyRef property.
-     * 
+     * <p>
      * <p>
      * This accessor method returns a reference to the live list,
      * not a snapshot. Therefore any modification you make to the
      * returned list will be present inside the JAXB object.
      * This is why there is not a <CODE>set</CODE> method for the policyRef property.
-     * 
+     * <p>
      * <p>
      * For example, to add a new item, do as follows:
      * <pre>
      *    getPolicyRef().add(newItem);
      * </pre>
-     * 
-     * 
+     * <p>
+     * <p>
      * <p>
      * Objects of the following type(s) are allowed in the list
      * {@link String }
-     * 
-     * 
      */
     public List<String> getPolicyRef() {
         if (policyRef == null) {
@@ -76,25 +71,23 @@ public class UserConfig {
 
     /**
      * Gets the value of the groupRef property.
-     * 
+     * <p>
      * <p>
      * This accessor method returns a reference to the live list,
      * not a snapshot. Therefore any modification you make to the
      * returned list will be present inside the JAXB object.
      * This is why there is not a <CODE>set</CODE> method for the groupRef property.
-     * 
+     * <p>
      * <p>
      * For example, to add a new item, do as follows:
      * <pre>
      *    getGroupRef().add(newItem);
      * </pre>
-     * 
-     * 
+     * <p>
+     * <p>
      * <p>
      * Objects of the following type(s) are allowed in the list
      * {@link String }
-     * 
-     * 
      */
     public List<String> getGroupRef() {
         if (groupRef == null) {
@@ -105,11 +98,9 @@ public class UserConfig {
 
     /**
      * Gets the value of the name property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getName() {
         return name;
@@ -117,11 +108,9 @@ public class UserConfig {
 
     /**
      * Sets the value of the name property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setName(String value) {
         this.name = value;
@@ -129,11 +118,9 @@ public class UserConfig {
 
     /**
      * Gets the value of the password property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getPassword() {
         return password;
@@ -141,11 +128,9 @@ public class UserConfig {
 
     /**
      * Sets the value of the password property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setPassword(String value) {
         this.password = value;

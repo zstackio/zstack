@@ -28,28 +28,27 @@ import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 
 /**
- * 
  * @author frank
- * 
- * 1. create a lb
- *
- * confirm lb are created successfully
- *
- * 2. delete the lb
- *
- * confirm all related resources deleted
- *
- * 3. create a new lb
- *
- * confirm the vip is locked
- *
- * 4. delete the new lb
- *
- * confirm the vip is unlocked
- *
- * 5. query the vr
- *
- * confirm the result is right
+ *         <p>
+ *         1. create a lb
+ *         <p>
+ *         confirm lb are created successfully
+ *         <p>
+ *         2. delete the lb
+ *         <p>
+ *         confirm all related resources deleted
+ *         <p>
+ *         3. create a new lb
+ *         <p>
+ *         confirm the vip is locked
+ *         <p>
+ *         4. delete the new lb
+ *         <p>
+ *         confirm the vip is unlocked
+ *         <p>
+ *         5. query the vr
+ *         <p>
+ *         confirm the result is right
  */
 public class TestVirtualRouterLb {
     Deployer deployer;
@@ -80,7 +79,7 @@ public class TestVirtualRouterLb {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         LoadBalancerInventory lb = deployer.loadBalancers.get("lb");

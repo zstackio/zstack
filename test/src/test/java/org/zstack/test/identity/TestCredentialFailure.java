@@ -24,8 +24,8 @@ public class TestCredentialFailure {
         api = new Api();
         api.startServer();
     }
-    
-    @Test(expected=ApiSenderException.class)
+
+    @Test(expected = ApiSenderException.class)
     public void test() throws ApiSenderException {
         api.loginByAccount("Wrong account", "Wrong password");
     }

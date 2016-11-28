@@ -53,15 +53,15 @@ import java.util.Map;
 
 /**
  * 1. create a vm with mevoco setting
- *
+ * <p>
  * confirm the vm created successfully
  * confirm the qos set
  * confirm the flat dhcp works
  * confirm the over-provisioning works
- *
+ * <p>
  * 2. attach a data volume
  * confirm the qos set
- *
+ * <p>
  * 3. add DNS
  * confirm the DNS added successfully
  */
@@ -108,9 +108,9 @@ public class TestMevoco {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, IOException {
+
+    @Test
+    public void test() throws ApiSenderException, IOException {
         L2NetworkInventory l2 = deployer.l2Networks.get("TestL2Network");
         Assert.assertTrue(KVMSystemTags.L2_BRIDGE_NAME.hasTag(l2.getUuid()));
 

@@ -7,16 +7,9 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.identity.*;
-import org.zstack.header.identity.AccountConstant.StatementEffect;
-import org.zstack.header.identity.PolicyInventory.Statement;
-import org.zstack.header.network.l3.L3NetworkConstant;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.query.QueryCondition;
-import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.vm.VmNicInventory;
-import org.zstack.network.service.eip.*;
-import org.zstack.network.service.vip.APICreateVipMsg;
-import org.zstack.network.service.vip.VipConstant;
+import org.zstack.network.service.eip.EipConstant;
+import org.zstack.network.service.eip.EipInventory;
 import org.zstack.network.service.vip.VipInventory;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.simulator.virtualrouter.VirtualRouterSimulatorConfig;
@@ -29,7 +22,6 @@ import org.zstack.test.identity.IdentityCreator;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**

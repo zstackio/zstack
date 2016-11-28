@@ -53,7 +53,7 @@ public class TestChangeVmPassword {
         Assert.assertEquals("******", account.getAccountPassword());
 
         account = api.changeVmPassword(new VmAccountPerference(
-                    inv.getUuid(), "root", "||||||"));
+                inv.getUuid(), "root", "||||||"));
         Assert.assertNotNull(account);
         Assert.assertEquals(inv.getUuid(), account.getVmUuid());
         Assert.assertEquals("root", account.getUserAccount());

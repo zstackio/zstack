@@ -26,7 +26,7 @@ public class TestPauseVm {
     DatabaseFacade dbf;
 
     @Before
-    public void setUp() throws Exception{
+    public void setUp() throws Exception {
         WebBeanConstructor con = new WebBeanConstructor();
         DBUtil.reDeployDB();
 
@@ -55,6 +55,6 @@ public class TestPauseVm {
         vm = dbf.findByUuid(inv.getUuid(), VmInstanceVO.class);
         Assert.assertNotNull(vm);
         Assert.assertEquals(VmInstanceState.Stopped, vm.getState());
-        Assert.assertEquals(null,vm.getHostUuid());
+        Assert.assertEquals(null, vm.getHostUuid());
     }
 }

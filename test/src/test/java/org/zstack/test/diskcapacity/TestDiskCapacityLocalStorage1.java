@@ -41,7 +41,7 @@ import static org.zstack.utils.CollectionDSL.list;
  * 1. use local storage
  * 2. add an image
  * 3. create a vm from the image
- *
+ * <p>
  * confirm the size of image/volume are correct
  * confirm the local storage capacity correct
  */
@@ -139,8 +139,8 @@ public class TestDiskCapacityLocalStorage1 {
         }
     }
 
-	@Test
-	public void test() throws ApiSenderException {
+    @Test
+    public void test() throws ApiSenderException {
         AddImage addImage = new AddImage();
         addImage.size = SizeUnit.GIGABYTE.toByte(10);
         addImage.actualSize = SizeUnit.GIGABYTE.toByte(1);
@@ -177,5 +177,5 @@ public class TestDiskCapacityLocalStorage1 {
         VolumeInventory vol = api.syncVolumeSize(root.getUuid(), null);
         Assert.assertEquals(volumeActualSize, vol.getActualSize().longValue());
         Assert.assertEquals(volumeSize, vol.getSize());
-	}
+    }
 }

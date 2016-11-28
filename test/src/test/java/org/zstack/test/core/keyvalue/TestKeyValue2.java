@@ -33,7 +33,7 @@ public class TestKeyValue2 {
         e.list2 = new ArrayList<KeyValueTestEntity>();
         e.list2.add(new KeyValueTestEntity());
         e.list2.add(new KeyValueTestEntity());
-        for (int i=0; i<1000; i++) {
+        for (int i = 0; i < 1000; i++) {
             e.list2.add(new KeyValueTestEntity());
         }
         StopWatch w = new StopWatch();

@@ -60,9 +60,9 @@ public class TestStartVmOnTargetHost {
             return evt.getInventory();
         }
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         ClusterInventory cluster1 = deployer.clusters.get("Cluster1");
         HostInventory host1 = deployer.hosts.get("host1");
@@ -107,6 +107,6 @@ public class TestStartVmOnTargetHost {
         vm = starter.start();
         Assert.assertEquals(cluster2.getUuid(), vm.getClusterUuid());
         Assert.assertEquals(host2.getUuid(), vm.getHostUuid());
-	}
+    }
 
 }

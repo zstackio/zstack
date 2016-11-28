@@ -29,7 +29,7 @@ import java.util.Map;
 /**
  * 1. create a vm
  * 2. set vm operations of start, stop, reboot, migrate all to fail
- *
+ * <p>
  * confirm after each failure, the vm's state is checked
  */
 public class TestKvmFailureCheckState {
@@ -56,9 +56,9 @@ public class TestKvmFailureCheckState {
         config = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() {
+
+    @Test
+    public void test() {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         String hostUuid = vm.getHostUuid();
         HostInventory host2 = deployer.hosts.get("host2");

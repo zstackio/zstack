@@ -12,7 +12,7 @@ public class BackupStorageAttachExtension implements BackupStorageAttachExtensio
     boolean afterCalled = false;
     String expectedBackupStorageUuid;
     String expectedZoneUuid;
-    
+
     @Override
     public String preAttachBackupStorage(BackupStorageInventory inventory, String zoneUuid) {
         if (preventAttach) {
@@ -21,6 +21,7 @@ public class BackupStorageAttachExtension implements BackupStorageAttachExtensio
             return null;
         }
     }
+
     @Override
     public void beforeAttachBackupStorage(BackupStorageInventory inventory, String zoneUuid) {
         if (inventory.getUuid().equals(expectedBackupStorageUuid) && zoneUuid.equals(expectedZoneUuid)) {
@@ -30,10 +31,12 @@ public class BackupStorageAttachExtension implements BackupStorageAttachExtensio
             logger.warn(err);
         }
     }
+
     @Override
     public void failToAttachBackupStorage(BackupStorageInventory inventory, String zoneUuid) {
-        
+
     }
+
     @Override
     public void afterAttachBackupStorage(BackupStorageInventory inventory, String zoneUuid) {
         if (inventory.getUuid().equals(expectedBackupStorageUuid) && zoneUuid.equals(expectedZoneUuid)) {
@@ -43,33 +46,43 @@ public class BackupStorageAttachExtension implements BackupStorageAttachExtensio
             logger.warn(err);
         }
     }
+
     public boolean isPreventAttach() {
         return preventAttach;
     }
+
     public void setPreventAttach(boolean preventAttach) {
         this.preventAttach = preventAttach;
     }
+
     public boolean isBeforeCalled() {
         return beforeCalled;
     }
+
     public void setBeforeCalled(boolean beforeCalled) {
         this.beforeCalled = beforeCalled;
     }
+
     public boolean isAfterCalled() {
         return afterCalled;
     }
+
     public void setAfterCalled(boolean afterCalled) {
         this.afterCalled = afterCalled;
     }
+
     public String getExpectedBackupStorageUuid() {
         return expectedBackupStorageUuid;
     }
+
     public void setExpectedBackupStorageUuid(String expectedBackupStorageUuid) {
         this.expectedBackupStorageUuid = expectedBackupStorageUuid;
     }
+
     public String getExpectedZoneUuid() {
         return expectedZoneUuid;
     }
+
     public void setExpectedZoneUuid(String expectedZoneUuid) {
         this.expectedZoneUuid = expectedZoneUuid;
     }

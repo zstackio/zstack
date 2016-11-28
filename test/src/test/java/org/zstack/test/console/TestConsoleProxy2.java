@@ -8,12 +8,12 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.simulator.consoleproxy.ConsoleProxySimulatorConfig;
+import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -22,7 +22,7 @@ import org.zstack.utils.logging.CLogger;
  * User: frank
  * Time: 10:00 PM
  * To change this template use File | Settings | File Templates.
- *
+ * <p>
  * 1. start a vm
  * 2. request console
  * 3. set checking console availability success to false in simulator

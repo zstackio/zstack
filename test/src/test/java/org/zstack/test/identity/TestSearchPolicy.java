@@ -37,9 +37,9 @@ public class TestSearchPolicy {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
-    public void test() throws InterruptedException,ApiSenderException {
+    public void test() throws InterruptedException, ApiSenderException {
         TimeUnit.SECONDS.sleep(5);
         APISearchAccountMsg amsg = new APISearchAccountMsg();
         NOVTriple t = new NOVTriple();
@@ -49,14 +49,14 @@ public class TestSearchPolicy {
         amsg.getNameOpValueTriples().add(t);
         String content = api.search(amsg);
         AccountInventory ainv = (AccountInventory) JSONObjectUtil.toCollection(content, ArrayList.class, AccountInventory.class).get(0);
-        
+
         SessionInventory session = api.loginByAccount(ainv.getName(), "password");
         APISearchPolicyMsg msg = new APISearchPolicyMsg();
         msg.setSession(session);
         content = api.search(msg);
         List<PolicyInventory> pinvs = JSONObjectUtil.toCollection(content, ArrayList.class, PolicyInventory.class);
         Assert.assertEquals(3, pinvs.size());
-        
+
         PolicyInventory pinv0 = pinvs.get(0);
         APIGetPolicyMsg gmsg = new APIGetPolicyMsg();
         gmsg.setUuid(pinv0.getUuid());

@@ -20,17 +20,12 @@ import org.zstack.utils.logging.CLogger;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 
  * @author frank
- * 
- * @condition
- * 1. create two security groups: sg1, sg2
+ * @condition 1. create two security groups: sg1, sg2
  * 2. create vm1
  * 3. add vm1 to sg1, sg2
  * 4. remove sg2
- *
- * @test
- * confirm rules of sg1 are still on vm1
+ * @test confirm rules of sg1 are still on vm1
  */
 public class TestSecurityGroupRuleInTwoGroup4 {
     static CLogger logger = Utils.getLogger(TestSecurityGroupRuleInTwoGroup4.class);
@@ -51,7 +46,7 @@ public class TestSecurityGroupRuleInTwoGroup4 {
         dbf = loader.getComponent(DatabaseFacade.class);
         sbkd = loader.getComponent(SimulatorSecurityGroupBackend.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         SecurityGroupInventory scinv = deployer.securityGroups.get("test");
@@ -59,13 +54,13 @@ public class TestSecurityGroupRuleInTwoGroup4 {
         VmNicInventory vm1Nic = vm1.getVmNics().get(0);
 
         api.addVmNicToSecurityGroup(scinv.getUuid(), vm1Nic.getUuid());
-        
+
         SecurityGroupInventory scinv2 = deployer.securityGroups.get("test1");
-        
+
         api.addVmNicToSecurityGroup(scinv2.getUuid(), vm1Nic.getUuid());
-        
+
         TimeUnit.MILLISECONDS.sleep(500);
-        
+
         api.deleteSecurityGroup(scinv2.getUuid());
         TimeUnit.MILLISECONDS.sleep(500);
         SecurityGroupRuleTO tovm1 = sbkd.getRulesOnHost(vm1.getHostUuid(), vm1Nic.getInternalName());

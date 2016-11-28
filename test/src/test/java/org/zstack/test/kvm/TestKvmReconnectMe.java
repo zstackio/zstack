@@ -29,10 +29,9 @@ import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
 /**
- *  1. send ReconnectMe command
- *
- *  confirm the reconnect happens
- *
+ * 1. send ReconnectMe command
+ * <p>
+ * confirm the reconnect happens
  */
 public class TestKvmReconnectMe {
     CLogger logger = Utils.getLogger(TestKvmReconnectMe.class);
@@ -60,9 +59,9 @@ public class TestKvmReconnectMe {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws InterruptedException {
+
+    @Test
+    public void test() throws InterruptedException {
         config.connectCmds.clear();
 
         UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(restf.getBaseUrl());
@@ -70,12 +69,12 @@ public class TestKvmReconnectMe {
         String url = ub.build().toUriString();
         Map<String, String> header = map(e(RESTConstant.COMMAND_PATH, KVMConstant.KVM_RECONNECT_ME));
 
-	    HostInventory host = deployer.hosts.get("host1");
+        HostInventory host = deployer.hosts.get("host1");
         ReconnectMeCmd cmd = new ReconnectMeCmd();
         cmd.hostUuid = host.getUuid();
         cmd.reason = "on purpose";
         restf.syncJsonPost(url, JSONObjectUtil.toJsonString(cmd), header, String.class);
         TimeUnit.SECONDS.sleep(3);
         Assert.assertEquals(1, config.connectCmds.size());
-	}
+    }
 }

@@ -25,27 +25,23 @@ import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 
 /**
- * 
  * @author frank
- * 
- * @condition
- * 1. create a vm
+ * @condition 1. create a vm
  * 2. set eip
- *
+ * <p>
  * confirm eip works
- *
+ * <p>
  * 3. detach the eip
- *
+ * <p>
  * confirm eip detached
- *
+ * <p>
  * 4. attach the eip
- *
+ * <p>
  * confirm the eip attached
- *
+ * <p>
  * 5. delete the eip
- *
+ * <p>
  * confirm the eip deleted
- *
  */
 public class TestFlatNetworkEip2 {
     Deployer deployer;
@@ -77,7 +73,7 @@ public class TestFlatNetworkEip2 {
         session = api.loginAsAdmin();
     }
 
-    private String getBridgeName(String l3uuid)  {
+    private String getBridgeName(String l3uuid) {
         L3NetworkVO l3 = dbf.findByUuid(l3uuid, L3NetworkVO.class);
         return KVMSystemTags.L2_BRIDGE_NAME.getTokenByResourceUuid(l3.getL2NetworkUuid(), KVMSystemTags.L2_BRIDGE_NAME_TOKEN);
     }

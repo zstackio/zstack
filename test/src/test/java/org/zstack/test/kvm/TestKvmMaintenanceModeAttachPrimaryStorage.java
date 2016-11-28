@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit;
  * 2. put host1 into maintenance mode
  * 3. attach primary storage to cluster
  * 4. enable host1
- *
+ * <p>
  * confirm after host gets out of maintenance mode, primary storage mounts on it
  */
 public class TestKvmMaintenanceModeAttachPrimaryStorage {
@@ -54,9 +54,9 @@ public class TestKvmMaintenanceModeAttachPrimaryStorage {
         config = loader.getComponent(NfsPrimaryStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         HostInventory host1 = deployer.hosts.get("host1");
         api.maintainHost(host1.getUuid());
         PrimaryStorageInventory nfs = deployer.primaryStorages.get("nfs");
@@ -67,5 +67,5 @@ public class TestKvmMaintenanceModeAttachPrimaryStorage {
         // wait for host reconnect
         TimeUnit.SECONDS.sleep(5);
         Assert.assertEquals(1, config.remountCmds.size());
-	}
+    }
 }

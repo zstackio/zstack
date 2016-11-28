@@ -119,8 +119,8 @@ public class TestDiskCapacityNfs3 {
         }
     }
 
-	@Test
-	public void test() throws ApiSenderException {
+    @Test
+    public void test() throws ApiSenderException {
         AddImage addImage = new AddImage();
         addImage.size = SizeUnit.GIGABYTE.toByte(1);
         addImage.actualSize = SizeUnit.GIGABYTE.toByte(10);
@@ -169,5 +169,5 @@ public class TestDiskCapacityNfs3 {
         PrimaryStorageCapacityVO pscap3 = dbf.findByUuid(nfs.getUuid(), PrimaryStorageCapacityVO.class);
         avail = pscap3.getTotalCapacity() - used;
         Assert.assertEquals(avail, pscap3.getAvailableCapacity());
-	}
+    }
 }

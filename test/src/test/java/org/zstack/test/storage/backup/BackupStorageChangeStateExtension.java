@@ -13,7 +13,7 @@ public class BackupStorageChangeStateExtension implements BackupStorageChangeSta
     BackupStorageState expectedCurrent;
     BackupStorageState expectedNext;
     String expectedBackupStorageUuid;
-    
+
     @Override
     public void preChangeSecondaryStorageState(BackupStorageInventory inv, BackupStorageStateEvent evt, BackupStorageState nextState) throws BackupStorageException {
         if (preventChange) {

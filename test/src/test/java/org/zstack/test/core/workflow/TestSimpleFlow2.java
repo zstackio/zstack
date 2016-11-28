@@ -2,11 +2,11 @@ package org.zstack.test.core.workflow;
 
 import junit.framework.Assert;
 import org.junit.Test;
+import org.zstack.core.workflow.SimpleFlowChain;
+import org.zstack.core.workflow.WorkFlowException;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
-import org.zstack.core.workflow.SimpleFlowChain;
-import org.zstack.core.workflow.WorkFlowException;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -29,26 +29,26 @@ public class TestSimpleFlow2 {
                 .then(new Flow() {
                     @Override
                     public void run(FlowTrigger chain, Map data) {
-                        count[0] ++;
+                        count[0]++;
                         chain.next();
                     }
 
                     @Override
                     public void rollback(FlowRollback chain, Map data) {
-                        count[0] --;
+                        count[0]--;
                         chain.rollback();
                     }
                 })
                 .then(new Flow() {
                     @Override
                     public void run(FlowTrigger chain, Map data) {
-                        count[0] ++;
+                        count[0]++;
                         chain.next();
                     }
 
                     @Override
                     public void rollback(FlowRollback chain, Map data) {
-                        count[0] --;
+                        count[0]--;
                         chain.rollback();
                     }
                 })
@@ -60,7 +60,7 @@ public class TestSimpleFlow2 {
 
                     @Override
                     public void rollback(FlowRollback chain, Map data) {
-                        count[0] --;
+                        count[0]--;
                         chain.rollback();
                     }
                 })

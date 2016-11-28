@@ -16,7 +16,6 @@ import org.zstack.network.service.lb.LoadBalancerInventory;
 import org.zstack.network.service.lb.LoadBalancerListenerInventory;
 import org.zstack.network.service.lb.LoadBalancerListenerVO;
 import org.zstack.network.service.lb.LoadBalancerVO;
-import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.VipTO;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmVO;
@@ -31,24 +30,23 @@ import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 
 /**
- * 
  * @author frank
- * 
- * 1. create a lb
- * 2. stop the vm
- * 3. delete the vr
- * 4. start the vm
- *
- * confirm lb synced on the vr
- *
- * 5. stop the vr
- * 6. start the vr
- *
- * confirm lb synced on the vr
- *
- * 7. reboot the vr
- *
- * confirm lb synced on the vr
+ *         <p>
+ *         1. create a lb
+ *         2. stop the vm
+ *         3. delete the vr
+ *         4. start the vm
+ *         <p>
+ *         confirm lb synced on the vr
+ *         <p>
+ *         5. stop the vr
+ *         6. start the vr
+ *         <p>
+ *         confirm lb synced on the vr
+ *         <p>
+ *         7. reboot the vr
+ *         <p>
+ *         confirm lb synced on the vr
  */
 public class TestVirtualRouterLb14 {
     Deployer deployer;
@@ -114,7 +112,7 @@ public class TestVirtualRouterLb14 {
         String nicIp = to.getNicIps().get(0);
         Assert.assertEquals(nic.getIp(), nicIp);
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");

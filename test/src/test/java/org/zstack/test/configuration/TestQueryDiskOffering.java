@@ -31,7 +31,7 @@ public class TestQueryDiskOffering {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         DiskOfferingInventory inv = deployer.diskOfferings.values().iterator().next();

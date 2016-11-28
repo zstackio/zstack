@@ -1,18 +1,17 @@
-
 package org.zstack.test.deployer.schema;
 
-import java.util.ArrayList;
-import java.util.List;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlType;
+import java.util.ArrayList;
+import java.util.List;
 
 
 /**
  * <p>Java class for L2NetworkUnion complex type.
- * 
+ * <p>
  * <p>The following schema fragment specifies the expected content contained within this class.
- * 
+ * <p>
  * <pre>
  * &lt;complexType name="L2NetworkUnion">
  *   &lt;complexContent>
@@ -25,13 +24,11 @@ import javax.xml.bind.annotation.XmlType;
  *   &lt;/complexContent>
  * &lt;/complexType>
  * </pre>
- * 
- * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "L2NetworkUnion", propOrder = {
-    "l2NoVlanNetwork",
-    "l2VlanNetwork"
+        "l2NoVlanNetwork",
+        "l2VlanNetwork"
 })
 public class L2NetworkUnion {
 
@@ -40,25 +37,23 @@ public class L2NetworkUnion {
 
     /**
      * Gets the value of the l2NoVlanNetwork property.
-     * 
+     * <p>
      * <p>
      * This accessor method returns a reference to the live list,
      * not a snapshot. Therefore any modification you make to the
      * returned list will be present inside the JAXB object.
      * This is why there is not a <CODE>set</CODE> method for the l2NoVlanNetwork property.
-     * 
+     * <p>
      * <p>
      * For example, to add a new item, do as follows:
      * <pre>
      *    getL2NoVlanNetwork().add(newItem);
      * </pre>
-     * 
-     * 
+     * <p>
+     * <p>
      * <p>
      * Objects of the following type(s) are allowed in the list
      * {@link L2NoVlanNetworkConfig }
-     * 
-     * 
      */
     public List<L2NoVlanNetworkConfig> getL2NoVlanNetwork() {
         if (l2NoVlanNetwork == null) {
@@ -69,25 +64,23 @@ public class L2NetworkUnion {
 
     /**
      * Gets the value of the l2VlanNetwork property.
-     * 
+     * <p>
      * <p>
      * This accessor method returns a reference to the live list,
      * not a snapshot. Therefore any modification you make to the
      * returned list will be present inside the JAXB object.
      * This is why there is not a <CODE>set</CODE> method for the l2VlanNetwork property.
-     * 
+     * <p>
      * <p>
      * For example, to add a new item, do as follows:
      * <pre>
      *    getL2VlanNetwork().add(newItem);
      * </pre>
-     * 
-     * 
+     * <p>
+     * <p>
      * <p>
      * Objects of the following type(s) are allowed in the list
      * {@link L2VlanNetworkConfig }
-     * 
-     * 
      */
     public List<L2VlanNetworkConfig> getL2VlanNetwork() {
         if (l2VlanNetwork == null) {

@@ -4,12 +4,16 @@ import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.zstack.core.Platform;
-import org.zstack.core.cloudbus.*;
+import org.zstack.core.cloudbus.AutoOffEventCallback;
+import org.zstack.core.cloudbus.CloudBusIN;
+import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.header.AbstractService;
 import org.zstack.header.Service;
 import org.zstack.header.managementnode.ManagementNodeInventory;
-import org.zstack.header.message.*;
+import org.zstack.header.message.LockResourceMessage;
+import org.zstack.header.message.LockResourceReply;
+import org.zstack.header.message.Message;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.BeanConstructor;
@@ -26,11 +30,10 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
- *
  * 1. start 2 nodes
  * 2. instruct node0 to send lock message to node1
  * 3. stop node0
- *
+ * <p>
  * confirm node1 receives unlock message
  */
 public class TestMultipleNode12 {
@@ -68,7 +71,7 @@ public class TestMultipleNode12 {
                 @Override
                 public void handleMessage(Message msg) {
                     if (msg instanceof SilentLockResourceMsg) {
-                        final SilentLockResourceMsg dmsg = (SilentLockResourceMsg)msg;
+                        final SilentLockResourceMsg dmsg = (SilentLockResourceMsg) msg;
                         locked = true;
                         evtf.on(LockResourceMessage.UNLOCK_CANONICAL_EVENT_PATH, new AutoOffEventCallback() {
                             @Override

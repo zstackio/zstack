@@ -1,4 +1,3 @@
-
 package org.zstack.test.deployer.schema;
 
 import javax.xml.bind.annotation.XmlAccessType;
@@ -9,9 +8,9 @@ import javax.xml.bind.annotation.XmlType;
 
 /**
  * <p>Java class for DiskOfferingConfig complex type.
- * 
+ * <p>
  * <p>The following schema fragment specifies the expected content contained within this class.
- * 
+ * <p>
  * <pre>
  * &lt;complexType name="DiskOfferingConfig">
  *   &lt;complexContent>
@@ -27,12 +26,10 @@ import javax.xml.bind.annotation.XmlType;
  *   &lt;/complexContent>
  * &lt;/complexType>
  * </pre>
- * 
- * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "DiskOfferingConfig", propOrder = {
-    "accountRef"
+        "accountRef"
 })
 public class DiskOfferingConfig {
 
@@ -48,11 +45,9 @@ public class DiskOfferingConfig {
 
     /**
      * Gets the value of the accountRef property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getAccountRef() {
         return accountRef;
@@ -60,11 +55,9 @@ public class DiskOfferingConfig {
 
     /**
      * Sets the value of the accountRef property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setAccountRef(String value) {
         this.accountRef = value;
@@ -72,11 +65,9 @@ public class DiskOfferingConfig {
 
     /**
      * Gets the value of the name property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getName() {
         return name;
@@ -84,11 +75,9 @@ public class DiskOfferingConfig {
 
     /**
      * Sets the value of the name property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setName(String value) {
         this.name = value;
@@ -96,11 +85,9 @@ public class DiskOfferingConfig {
 
     /**
      * Gets the value of the description property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getDescription() {
         return description;
@@ -108,11 +95,9 @@ public class DiskOfferingConfig {
 
     /**
      * Sets the value of the description property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setDescription(String value) {
         this.description = value;
@@ -120,11 +105,9 @@ public class DiskOfferingConfig {
 
     /**
      * Gets the value of the diskSize property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getDiskSize() {
         if (diskSize == null) {
@@ -136,11 +119,9 @@ public class DiskOfferingConfig {
 
     /**
      * Sets the value of the diskSize property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setDiskSize(String value) {
         this.diskSize = value;
@@ -148,11 +129,9 @@ public class DiskOfferingConfig {
 
     /**
      * Gets the value of the allocatorStrategy property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getAllocatorStrategy() {
         return allocatorStrategy;
@@ -160,11 +139,9 @@ public class DiskOfferingConfig {
 
     /**
      * Sets the value of the allocatorStrategy property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setAllocatorStrategy(String value) {
         this.allocatorStrategy = value;

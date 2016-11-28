@@ -9,14 +9,14 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.cluster.ClusterInventory;
-import org.zstack.header.query.QueryOp;
-import org.zstack.header.storage.primary.*;
+import org.zstack.header.storage.primary.APIGetPrimaryStorageCapacityReply;
+import org.zstack.header.storage.primary.PrimaryStorageVO;
+import org.zstack.header.storage.primary.PrimaryStorageVO_;
 import org.zstack.header.zone.ZoneInventory;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.test.search.QueryTestValidator;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -41,9 +41,9 @@ public class TestGetPrimaryStorageCapacity {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         ZoneInventory zone = deployer.zones.get("TestZone");
         ClusterInventory cluster = deployer.clusters.get("cluster1");
 
@@ -74,5 +74,5 @@ public class TestGetPrimaryStorageCapacity {
         reply = api.getPrimaryStorageCapacity(null, null, Arrays.asList(vo1.getUuid()));
         Assert.assertEquals(vo1.getCapacity().getTotalCapacity(), reply.getTotalCapacity());
         Assert.assertEquals(vo1.getCapacity().getAvailableCapacity(), reply.getAvailableCapacity());
-	}
+    }
 }

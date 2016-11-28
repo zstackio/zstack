@@ -21,11 +21,8 @@ import org.zstack.utils.logging.CLogger;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 
  * @author frank
- * 
- * @condition
- * 1. create a security group: sg
+ * @condition 1. create a security group: sg
  * 2. attach sg to two l3Networks: l3nw1, l3nw2
  * 3. create vm1 with two nics: vm1Nic1(l3nw1), vm1Nic2(l3nw2)
  * 4. add vm1Nic1, vm1Nic2 to sg
@@ -33,10 +30,7 @@ import java.util.concurrent.TimeUnit;
  * 6. add vm2Nic1 to sg
  * 7. reboot vm2
  * 8. reboot vm1
- * 
- * @test
- * confirm rules on vm1Nic1, vm1Nic2, vm2Nic1 are correct
- *
+ * @test confirm rules on vm1Nic1, vm1Nic2, vm2Nic1 are correct
  */
 public class TestSecurityGroupOnMultipleNetworks8 {
     static CLogger logger = Utils.getLogger(TestSecurityGroupOnMultipleNetworks8.class);
@@ -57,7 +51,7 @@ public class TestSecurityGroupOnMultipleNetworks8 {
         dbf = loader.getComponent(DatabaseFacade.class);
         sbkd = loader.getComponent(SimulatorSecurityGroupBackend.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         SecurityGroupInventory scinv = deployer.securityGroups.get("test");
@@ -66,14 +60,14 @@ public class TestSecurityGroupOnMultipleNetworks8 {
         L3NetworkInventory l3nw2 = deployer.l3Networks.get("TestL3Network2");
         VmNicInventory vm1Nic1 = SecurityGroupTestValidator.getVmNicOnSpecificL3Network(vm1.getVmNics(), l3nw1.getUuid());
         VmNicInventory vm1Nic2 = SecurityGroupTestValidator.getVmNicOnSpecificL3Network(vm1.getVmNics(), l3nw2.getUuid());
-        
+
         VmInstanceInventory vm2 = deployer.vms.get("TestVm1");
         VmNicInventory vm2Nic1 = SecurityGroupTestValidator.getVmNicOnSpecificL3Network(vm2.getVmNics(), l3nw1.getUuid());
 
         api.addVmNicToSecurityGroup(scinv.getUuid(), vm1Nic1.getUuid());
         api.addVmNicToSecurityGroup(scinv.getUuid(), vm1Nic2.getUuid());
         api.addVmNicToSecurityGroup(scinv.getUuid(), vm2Nic1.getUuid());
-        
+
         TimeUnit.MILLISECONDS.sleep(500);
         vm1 = api.rebootVmInstance(vm1.getUuid());
         vm2 = api.rebootVmInstance(vm2.getUuid());
@@ -81,7 +75,7 @@ public class TestSecurityGroupOnMultipleNetworks8 {
         vm1Nic1 = SecurityGroupTestValidator.getVmNicOnSpecificL3Network(vm1.getVmNics(), l3nw1.getUuid());
         vm1Nic2 = SecurityGroupTestValidator.getVmNicOnSpecificL3Network(vm1.getVmNics(), l3nw2.getUuid());
         vm2Nic1 = SecurityGroupTestValidator.getVmNicOnSpecificL3Network(vm2.getVmNics(), l3nw1.getUuid());
-        
+
         SecurityGroupRuleTO vm1Nic1TO = sbkd.getRulesOnHost(vm1.getHostUuid(), vm1Nic1.getInternalName());
         SecurityGroupTestValidator.validateInternalIpIn(vm1Nic1TO, vm2Nic1.getIp(), scinv.getRules());
         SecurityGroupRuleTO vm1Nic2TO = sbkd.getRulesOnHost(vm1.getHostUuid(), vm1Nic2.getInternalName());

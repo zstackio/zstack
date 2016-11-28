@@ -29,12 +29,12 @@ public class TestAsyncBatch {
         new AsyncBatch() {
             @Override
             protected void setup() {
-                for (int i=0; i<num; i++) {
+                for (int i = 0; i < num; i++) {
                     batch(new AsyncBatchRunner() {
                         @Override
                         @AsyncThread
                         public void run(NoErrorCompletion completion) {
-                            count ++;
+                            count++;
                             completion.done();
                         }
                     });
@@ -56,12 +56,12 @@ public class TestAsyncBatch {
         new AsyncBatch() {
             @Override
             protected void setup() {
-                for (int i=0; i<num; i++) {
+                for (int i = 0; i < num; i++) {
                     batch(new AsyncBatchRunner() {
                         @Override
                         public void run(NoErrorCompletion completion) {
-                            count ++;
-                            if (count %  2 == 0) {
+                            count++;
+                            if (count % 2 == 0) {
                                 throw new RuntimeException("on purpose");
                             } else {
                                 completion.done();
@@ -85,7 +85,7 @@ public class TestAsyncBatch {
         new AsyncBatch(completion2) {
             @Override
             protected void setup() {
-                for (int i=0; i<num; i++) {
+                for (int i = 0; i < num; i++) {
                     batch(new AsyncBatchRunner() {
                         @Override
                         public void run(NoErrorCompletion completion) {

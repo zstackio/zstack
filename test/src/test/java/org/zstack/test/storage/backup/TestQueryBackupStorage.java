@@ -40,27 +40,27 @@ public class TestQueryBackupStorage {
         dbf = loader.getComponent(DatabaseFacade.class);
     }
 
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
-	    BackupStorageInventory bsinv = deployer.backupStorages.get("backup1");
-	    QueryTestValidator.validateEQ(new APIQueryBackupStorageMsg(), api, APIQueryBackupStorageReply.class, bsinv);
-	    QueryTestValidator.validateRandomEQConjunction(new APIQueryBackupStorageMsg(), api, APIQueryBackupStorageReply.class, bsinv, 2);
-	    
-	    ZoneInventory zone2 = deployer.zones.get("Zone2");
-	    APIQueryBackupStorageMsg msg = new APIQueryBackupStorageMsg();
-	    msg.addQueryCondition("attachedZoneUuids", QueryOp.EQ, zone2.getUuid());
-	    APIQueryBackupStorageReply reply = api.query(msg, APIQueryBackupStorageReply.class);
-	    Assert.assertEquals(2, reply.getInventories().size());
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
+        BackupStorageInventory bsinv = deployer.backupStorages.get("backup1");
+        QueryTestValidator.validateEQ(new APIQueryBackupStorageMsg(), api, APIQueryBackupStorageReply.class, bsinv);
+        QueryTestValidator.validateRandomEQConjunction(new APIQueryBackupStorageMsg(), api, APIQueryBackupStorageReply.class, bsinv, 2);
 
-	    ZoneInventory zone1 = deployer.zones.get("Zone1");
-	    msg = new APIQueryBackupStorageMsg();
-	    msg.addQueryCondition("attachedZoneUuids", QueryOp.NOT_IN, zone1.getUuid());
-	    reply = api.query(msg, APIQueryBackupStorageReply.class);
-	    Assert.assertEquals(2, reply.getInventories().size());
+        ZoneInventory zone2 = deployer.zones.get("Zone2");
+        APIQueryBackupStorageMsg msg = new APIQueryBackupStorageMsg();
+        msg.addQueryCondition("attachedZoneUuids", QueryOp.EQ, zone2.getUuid());
+        APIQueryBackupStorageReply reply = api.query(msg, APIQueryBackupStorageReply.class);
+        Assert.assertEquals(2, reply.getInventories().size());
 
-	    msg = new APIQueryBackupStorageMsg();
-	    msg.addQueryCondition("attachedZoneUuids", QueryOp.IN, zone2.getUuid(), zone1.getUuid());
-	    reply = api.query(msg, APIQueryBackupStorageReply.class);
-	    Assert.assertEquals(2, reply.getInventories().size());
-	}
+        ZoneInventory zone1 = deployer.zones.get("Zone1");
+        msg = new APIQueryBackupStorageMsg();
+        msg.addQueryCondition("attachedZoneUuids", QueryOp.NOT_IN, zone1.getUuid());
+        reply = api.query(msg, APIQueryBackupStorageReply.class);
+        Assert.assertEquals(2, reply.getInventories().size());
+
+        msg = new APIQueryBackupStorageMsg();
+        msg.addQueryCondition("attachedZoneUuids", QueryOp.IN, zone2.getUuid(), zone1.getUuid());
+        reply = api.query(msg, APIQueryBackupStorageReply.class);
+        Assert.assertEquals(2, reply.getInventories().size());
+    }
 }

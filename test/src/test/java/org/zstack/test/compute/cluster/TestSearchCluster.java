@@ -45,9 +45,9 @@ public class TestSearchCluster {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
-    public void test() throws InterruptedException,ApiSenderException, JSONException {
+    public void test() throws InterruptedException, ApiSenderException, JSONException {
         TimeUnit.SECONDS.sleep(2);
         APISearchClusterMsg msg = new APISearchClusterMsg();
         NOVTriple t = new NOVTriple();
@@ -56,10 +56,10 @@ public class TestSearchCluster {
         t.setVal("Cluster1");
         msg.getNameOpValueTriples().add(t);
         String content = api.search(msg);
-        
+
         List<ClusterInventory> invs = JSONObjectUtil.toCollection(content, ArrayList.class, ClusterInventory.class);
         Assert.assertEquals(4, invs.size());
-        
+
         APISearchClusterMsg msg1 = new APISearchClusterMsg();
         msg1.getFields().add("name");
         msg1.getFields().add("state");
@@ -74,7 +74,7 @@ public class TestSearchCluster {
         JSONObject jobj = jarr.getJSONObject(0);
         Assert.assertEquals("Cluster2", jobj.getString("name"));
         Assert.assertEquals("Enabled", jobj.getString("state"));
-        
+
         APIGetClusterMsg gmsg = new APIGetClusterMsg();
         gmsg.setUuid(jobj.getString("uuid"));
         String cres = api.getInventory(gmsg);

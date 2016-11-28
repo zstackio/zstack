@@ -6,16 +6,12 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.volume.VolumeInventory;
 import org.zstack.kvm.KVMAgentCommands;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
-import org.zstack.simulator.storage.backup.sftp.SftpBackupStorageSimulatorConfig;
 import org.zstack.test.*;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.test.storage.backup.sftp.TestSftpBackupStorageDeleteImage2;
@@ -24,7 +20,7 @@ import org.zstack.utils.logging.CLogger;
 
 /**
  * 1 create a vm from a data volume template
- *
+ * <p>
  * confirm the vm failed to create
  */
 public class TestVmSocketOnKvm {
@@ -51,9 +47,9 @@ public class TestVmSocketOnKvm {
         config = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         // windows
         ImageInventory img1 = deployer.images.get("TestImage1");
         // windows virtio

@@ -13,18 +13,16 @@ import org.zstack.network.service.eip.APIQueryEipMsg;
 import org.zstack.network.service.eip.APIQueryEipReply;
 import org.zstack.network.service.eip.EipInventory;
 import org.zstack.network.service.vip.VipVO;
+import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.simulator.virtualrouter.VirtualRouterSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.simulator.kvm.KVMSimulatorConfig;
 
 /**
- * 
  * test expanded query
- * 
  */
 public class TestQueryEip1 {
     Deployer deployer;
@@ -55,7 +53,7 @@ public class TestQueryEip1 {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         EipInventory eip = deployer.eips.get("eip");
@@ -68,7 +66,7 @@ public class TestQueryEip1 {
         Assert.assertEquals(1, reply.getInventories().size());
         EipInventory qeip = reply.getInventories().get(0);
         Assert.assertEquals(eip.getUuid(), qeip.getUuid());
-        Assert.assertEquals(1L, (long)reply.getTotal());
+        Assert.assertEquals(1L, (long) reply.getTotal());
 
         VmNicVO nic = dbf.findByUuid(eip.getVmNicUuid(), VmNicVO.class);
         msg = new APIQueryEipMsg();
@@ -78,7 +76,7 @@ public class TestQueryEip1 {
         Assert.assertEquals(1, reply.getInventories().size());
         qeip = reply.getInventories().get(0);
         Assert.assertEquals(eip.getUuid(), qeip.getUuid());
-        Assert.assertEquals(1L, (long)reply.getTotal());
+        Assert.assertEquals(1L, (long) reply.getTotal());
 
         msg = new APIQueryEipMsg();
         msg.setReplyWithCount(true);
@@ -88,13 +86,13 @@ public class TestQueryEip1 {
         Assert.assertEquals(1, reply.getInventories().size());
         qeip = reply.getInventories().get(0);
         Assert.assertEquals(eip.getUuid(), qeip.getUuid());
-        Assert.assertEquals(1L, (long)reply.getTotal());
+        Assert.assertEquals(1L, (long) reply.getTotal());
 
         msg = new APIQueryEipMsg();
         msg.setReplyWithCount(true);
         msg.addQueryCondition("vmNic.ip", QueryOp.NOT_EQ, nic.getIp());
         reply = api.query(msg, APIQueryEipReply.class);
         Assert.assertEquals(0, reply.getInventories().size());
-        Assert.assertEquals(0L, (long)reply.getTotal());
+        Assert.assertEquals(0L, (long) reply.getTotal());
     }
 }

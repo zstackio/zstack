@@ -24,7 +24,6 @@ import org.zstack.test.DBUtil;
 import org.zstack.test.deployer.Deployer;
 
 /**
- *
  * delete instance offering
  */
 public class TestCascadeDeletion14 {

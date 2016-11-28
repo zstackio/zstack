@@ -71,7 +71,7 @@ public class TestFirstAvailableConcurrentAllocateAndReturnIp {
                     logger.warn(reply.getError().toString());
                     return;
                 } else {
-                    AllocateIpReply ar = (AllocateIpReply)reply;
+                    AllocateIpReply ar = (AllocateIpReply) reply;
                     ReturnIpMsg rmsg = new ReturnIpMsg();
                     rmsg.setL3NetworkUuid(l3inv.getUuid());
                     rmsg.setUsedIpUuid(ar.getIpInventory().getUuid());

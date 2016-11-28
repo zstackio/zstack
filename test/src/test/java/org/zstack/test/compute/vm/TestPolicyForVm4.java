@@ -6,28 +6,19 @@ import org.junit.Test;
 import org.zstack.compute.vm.VmGlobalConfig;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
-import org.zstack.core.config.GlobalConfigVO;
-import org.zstack.core.config.GlobalConfigVO_;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.configuration.DiskOfferingVO;
 import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.configuration.InstanceOfferingVO;
-import org.zstack.header.host.HostInventory;
-import org.zstack.header.identity.*;
+import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.image.ImageDeletionPolicyManager.ImageDeletionPolicy;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
-import org.zstack.header.query.QueryOp;
-import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
-import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceVO;
-import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeDeletionPolicyManager.VolumeDeletionPolicy;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.image.ImageGlobalConfig;
@@ -38,14 +29,10 @@ import org.zstack.test.DBUtil;
 import org.zstack.test.VmCreator;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.test.identity.IdentityCreator;
-import org.zstack.test.search.QueryTestValidator;
-import org.zstack.utils.data.SizeUnit;
-
-import java.util.List;
 
 /**
  * 1. delete the account
- *
+ * <p>
  * confirm resources created by the account are deleted
  */
 public class TestPolicyForVm4 {

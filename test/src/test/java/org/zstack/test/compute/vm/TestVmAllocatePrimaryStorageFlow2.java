@@ -9,14 +9,14 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.header.core.workflow.FlowChain;
 import org.zstack.core.workflow.FlowChainBuilder;
-import org.zstack.header.core.workflow.FlowDoneHandler;
-import org.zstack.header.core.workflow.FlowErrorHandler;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.configuration.DiskOfferingVO;
 import org.zstack.header.configuration.DiskOfferingVO_;
 import org.zstack.header.configuration.InstanceOfferingInventory;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
@@ -61,7 +61,7 @@ public class TestVmAllocatePrimaryStorageFlow2 {
     }
 
     @Test
-    public void test() throws InterruptedException,ApiSenderException {
+    public void test() throws InterruptedException, ApiSenderException {
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain().then(new VmAllocatePrimaryStorageFlow());
 
         SimpleQuery<HostVO> query = dbf.createQuery(HostVO.class);
@@ -136,19 +136,19 @@ public class TestVmAllocatePrimaryStorageFlow2 {
                             /* data disk */
                             if (vspec.getSize() == dinv1.getDiskSize()) {
                                 Assert.assertEquals(pvo1.getUuid(), vspec.getPrimaryStorageInventory().getUuid());
-                                long availSize  = pvo1.getCapacity().getAvailableCapacity();
+                                long availSize = pvo1.getCapacity().getAvailableCapacity();
                                 PrimaryStorageVO ppvo1 = dbf.findByUuid(pvo1.getUuid(), PrimaryStorageVO.class);
                                 Assert.assertEquals(vspec.getSize(), availSize - ppvo1.getCapacity().getAvailableCapacity());
                             }
                             if (vspec.getSize() == dinv2.getDiskSize()) {
                                 Assert.assertEquals(pvo2.getUuid(), vspec.getPrimaryStorageInventory().getUuid());
-                                long availSize  = pvo2.getCapacity().getAvailableCapacity();
+                                long availSize = pvo2.getCapacity().getAvailableCapacity();
                                 PrimaryStorageVO ppvo2 = dbf.findByUuid(pvo2.getUuid(), PrimaryStorageVO.class);
                                 Assert.assertEquals(vspec.getSize(), availSize - ppvo2.getCapacity().getAvailableCapacity());
                             }
                             if (vspec.getSize() == dinv3.getDiskSize()) {
                                 Assert.assertEquals(pvo3.getUuid(), vspec.getPrimaryStorageInventory().getUuid());
-                                long availSize  = pvo3.getCapacity().getAvailableCapacity();
+                                long availSize = pvo3.getCapacity().getAvailableCapacity();
                                 PrimaryStorageVO ppvo3 = dbf.findByUuid(pvo3.getUuid(), PrimaryStorageVO.class);
                                 Assert.assertEquals(vspec.getSize(), availSize - ppvo3.getCapacity().getAvailableCapacity());
                             }

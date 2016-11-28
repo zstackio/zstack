@@ -1,18 +1,17 @@
-
 package org.zstack.test.deployer.schema;
 
-import java.util.ArrayList;
-import java.util.List;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlType;
+import java.util.ArrayList;
+import java.util.List;
 
 
 /**
  * <p>Java class for InstanceOfferingUnion complex type.
- * 
+ * <p>
  * <p>The following schema fragment specifies the expected content contained within this class.
- * 
+ * <p>
  * <pre>
  * &lt;complexType name="InstanceOfferingUnion">
  *   &lt;complexContent>
@@ -26,14 +25,12 @@ import javax.xml.bind.annotation.XmlType;
  *   &lt;/complexContent>
  * &lt;/complexType>
  * </pre>
- * 
- * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "InstanceOfferingUnion", propOrder = {
-    "instanceOffering",
-    "virtualRouterOffering",
-    "convergedOffering"
+        "instanceOffering",
+        "virtualRouterOffering",
+        "convergedOffering"
 })
 public class InstanceOfferingUnion {
 
@@ -43,25 +40,23 @@ public class InstanceOfferingUnion {
 
     /**
      * Gets the value of the instanceOffering property.
-     * 
+     * <p>
      * <p>
      * This accessor method returns a reference to the live list,
      * not a snapshot. Therefore any modification you make to the
      * returned list will be present inside the JAXB object.
      * This is why there is not a <CODE>set</CODE> method for the instanceOffering property.
-     * 
+     * <p>
      * <p>
      * For example, to add a new item, do as follows:
      * <pre>
      *    getInstanceOffering().add(newItem);
      * </pre>
-     * 
-     * 
+     * <p>
+     * <p>
      * <p>
      * Objects of the following type(s) are allowed in the list
      * {@link InstanceOfferingConfig }
-     * 
-     * 
      */
     public List<InstanceOfferingConfig> getInstanceOffering() {
         if (instanceOffering == null) {
@@ -72,25 +67,23 @@ public class InstanceOfferingUnion {
 
     /**
      * Gets the value of the virtualRouterOffering property.
-     * 
+     * <p>
      * <p>
      * This accessor method returns a reference to the live list,
      * not a snapshot. Therefore any modification you make to the
      * returned list will be present inside the JAXB object.
      * This is why there is not a <CODE>set</CODE> method for the virtualRouterOffering property.
-     * 
+     * <p>
      * <p>
      * For example, to add a new item, do as follows:
      * <pre>
      *    getVirtualRouterOffering().add(newItem);
      * </pre>
-     * 
-     * 
+     * <p>
+     * <p>
      * <p>
      * Objects of the following type(s) are allowed in the list
      * {@link VirtualRouterOfferingConfig }
-     * 
-     * 
      */
     public List<VirtualRouterOfferingConfig> getVirtualRouterOffering() {
         if (virtualRouterOffering == null) {
@@ -101,25 +94,23 @@ public class InstanceOfferingUnion {
 
     /**
      * Gets the value of the convergedOffering property.
-     * 
+     * <p>
      * <p>
      * This accessor method returns a reference to the live list,
      * not a snapshot. Therefore any modification you make to the
      * returned list will be present inside the JAXB object.
      * This is why there is not a <CODE>set</CODE> method for the convergedOffering property.
-     * 
+     * <p>
      * <p>
      * For example, to add a new item, do as follows:
      * <pre>
      *    getConvergedOffering().add(newItem);
      * </pre>
-     * 
-     * 
+     * <p>
+     * <p>
      * <p>
      * Objects of the following type(s) are allowed in the list
      * {@link ConvergedOfferingConfig }
-     * 
-     * 
      */
     public List<ConvergedOfferingConfig> getConvergedOffering() {
         if (convergedOffering == null) {

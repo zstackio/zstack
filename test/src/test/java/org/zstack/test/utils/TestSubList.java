@@ -3,7 +3,6 @@ package org.zstack.test.utils;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**

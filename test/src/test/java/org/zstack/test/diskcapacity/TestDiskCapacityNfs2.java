@@ -138,8 +138,8 @@ public class TestDiskCapacityNfs2 {
         }
     }
 
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         AddImage addImage = new AddImage();
         addImage.size = SizeUnit.GIGABYTE.toByte(10);
         addImage.actualSize = SizeUnit.GIGABYTE.toByte(1);
@@ -151,13 +151,13 @@ public class TestDiskCapacityNfs2 {
         Assert.assertEquals(image.getActualSize().longValue(), addImage.actualSize);
 
         int destroyed = 0;
-        for (int i=0; i<num; i++) {
+        for (int i = 0; i < num; i++) {
             CreateVm createVm = new CreateVm();
             createVm.imageUuid = image.getUuid();
             createVm.rootVolumeActualSize = addImage.actualSize;
             createVm.destroy = new Random().nextBoolean();
             if (createVm.destroy) {
-                destroyed ++;
+                destroyed++;
             }
             VmInstanceInventory vm = createVm.create();
         }
@@ -171,5 +171,5 @@ public class TestDiskCapacityNfs2 {
         long used = addImage.actualSize + (num - destroyed) * addImage.size;
         long avail = pscap.getTotalCapacity() - used;
         Assert.assertEquals(avail, pscap.getAvailableCapacity());
-	}
+    }
 }

@@ -25,12 +25,12 @@ import java.util.List;
 @Deprecated
 public class TestGetCpuMemoryCapacity {
     Deployer deployer;
-    Api api; 
+    Api api;
     ComponentLoader loader;
     CloudBus bus;
     DatabaseFacade dbf;
     HostCpuOverProvisioningManager cpuMgr;
-    
+
     @Before
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
@@ -42,7 +42,7 @@ public class TestGetCpuMemoryCapacity {
         dbf = loader.getComponent(DatabaseFacade.class);
         cpuMgr = loader.getComponent(HostCpuOverProvisioningManager.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         ZoneInventory zone = api.listZones(null).get(0);
@@ -62,17 +62,17 @@ public class TestGetCpuMemoryCapacity {
                 return arg.getUuid();
             }
         });
-        
+
         long totalMemory = SizeUnit.GIGABYTE.toByte(12);
-        
+
         APIGetCpuMemoryCapacityReply reply = api.retrieveHostCapacity(Arrays.asList(zone.getUuid()), null, null);
         Assert.assertEquals(totalMemory, reply.getTotalMemory());
         Assert.assertEquals(totalMemory, reply.getAvailableMemory());
-        
+
         reply = api.retrieveHostCapacity(null, Arrays.asList(cluster.getUuid()), null);
         Assert.assertEquals(totalMemory, reply.getTotalMemory());
         Assert.assertEquals(totalMemory, reply.getAvailableMemory());
-        
+
         reply = api.retrieveHostCapacity(null, null, Arrays.asList(host.getUuid()));
         Assert.assertEquals(cpuMgr.calculateByRatio(host.getUuid(), 4), reply.getTotalCpu());
         Assert.assertEquals(SizeUnit.GIGABYTE.toByte(8), reply.getTotalMemory());

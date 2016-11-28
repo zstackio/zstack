@@ -22,7 +22,7 @@ import org.zstack.test.deployer.Deployer;
  * 2. create a vm with virtual router
  * 2. detach primary storage to another cluster that vr is not running
  * 3. detach primary storage from cluster vr is running
- *
+ * <p>
  * confirm vr is stopped
  */
 public class TestCascadeDeletion33 {
@@ -52,7 +52,7 @@ public class TestCascadeDeletion33 {
         ClusterInventory cluster1 = deployer.clusters.get("Cluster1");
         ClusterInventory cluster2 = deployer.clusters.get("Cluster2");
         PrimaryStorageInventory ps = deployer.primaryStorages.get("nfs");
-        ApplianceVmVO  vr = dbf.listAll(ApplianceVmVO.class).get(0);
+        ApplianceVmVO vr = dbf.listAll(ApplianceVmVO.class).get(0);
         String lastClusterUuid = vr.getClusterUuid();
         String targetClusterUuid = cluster1.getUuid().equals(lastClusterUuid) ? cluster2.getUuid() : cluster1.getUuid();
         api.detachPrimaryStorage(ps.getUuid(), targetClusterUuid);

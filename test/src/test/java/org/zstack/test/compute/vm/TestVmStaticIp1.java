@@ -21,7 +21,7 @@ import static org.zstack.utils.CollectionDSL.map;
 
 /**
  * 1 create vm with a wrong static IP
- *
+ * <p>
  * confirm vm fails to be created
  */
 public class TestVmStaticIp1 {
@@ -41,7 +41,7 @@ public class TestVmStaticIp1 {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test(expected = ApiSenderException.class)
     public void test() throws ApiSenderException, InterruptedException {
         InstanceOfferingInventory ioinv = deployer.instanceOfferings.get("TestInstanceOffering");

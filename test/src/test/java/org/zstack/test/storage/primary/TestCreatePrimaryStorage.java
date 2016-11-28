@@ -15,6 +15,7 @@ import org.zstack.test.ApiSenderException;
 import org.zstack.test.BeanConstructor;
 import org.zstack.test.DBUtil;
 import org.zstack.utils.data.SizeUnit;
+
 public class TestCreatePrimaryStorage {
     Api api;
     ComponentLoader loader;
@@ -43,7 +44,7 @@ public class TestCreatePrimaryStorage {
         sp.setTotalCapacity(SizeUnit.TERABYTE.toByte(10));
         sp.setAvailableCapacity(sp.getTotalCapacity());
         sp.setUrl("nfs://simulator/primary/");
-    	ZoneInventory zone = api.createZones(1).get(0);
+        ZoneInventory zone = api.createZones(1).get(0);
         sp.setZoneUuid(zone.getUuid());
         PrimaryStorageInventory inv = api.createSimulatoPrimaryStorage(1, sp).get(0);
         PrimaryStorageVO vo = dbf.findByUuid(inv.getUuid(), PrimaryStorageVO.class);

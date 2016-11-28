@@ -14,6 +14,7 @@ import org.zstack.test.DBUtil;
 
 import java.util.ArrayList;
 import java.util.List;
+
 public class TestListCluster {
     Api api;
     ComponentLoader loader;
@@ -30,24 +31,24 @@ public class TestListCluster {
         api.startServer();
     }
 
-	@Test
-	public void test() throws ApiSenderException {
+    @Test
+    public void test() throws ApiSenderException {
         try {
             ZoneInventory zone = api.createZones(1).get(0);
             api.createClusters(10, zone.getUuid());
             List<ClusterInventory> invs = api.listClusters(null);
             Assert.assertEquals(10, invs.size());
             List<String> uuids = new ArrayList<String>(5);
-            for (int i=0; i<uuids.size(); i++) {
+            for (int i = 0; i < uuids.size(); i++) {
                 uuids.add(invs.get(i).getUuid());
             }
             invs = api.listClusters(uuids);
-            for (int i=0; i<uuids.size(); i++) {
+            for (int i = 0; i < uuids.size(); i++) {
                 Assert.assertEquals(uuids.get(i), invs.get(i).getUuid());
             }
         } finally {
             api.stopServer();
         }
-	}
+    }
 
 }

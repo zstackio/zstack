@@ -9,8 +9,6 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.volume.VolumeInventory;
-import org.zstack.header.volume.VolumeStatus;
-import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
@@ -24,7 +22,7 @@ import org.zstack.utils.logging.CLogger;
  * 1. create a disk offering
  * 2. create a data volume from the disk offering
  * 3. delete the disk offering
- *
+ * <p>
  * confirm the volume's disk offering column is set to null
  */
 public class TestDeleteDiskOffering2 {

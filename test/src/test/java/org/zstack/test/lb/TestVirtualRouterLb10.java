@@ -10,7 +10,6 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
-import org.zstack.network.service.lb.LoadBalancerInventory;
 import org.zstack.network.service.lb.LoadBalancerListenerInventory;
 import org.zstack.network.service.virtualrouter.VirtualRouterRoleManager;
 import org.zstack.network.service.virtualrouter.VirtualRouterSystemTags;
@@ -27,18 +26,13 @@ import org.zstack.test.deployer.Deployer;
 import java.util.List;
 
 /**
- * 
  * @author frank
- * 
- * @condition
- * 1. create a lb
+ * @condition 1. create a lb
  * 2. use separate vr
  * 3. stop the vm
  * 4. destroy the separate vr
  * 5, start the vm
- *
- * @test
- * confirm the separate vr is re-created
+ * @test confirm the separate vr is re-created
  */
 public class TestVirtualRouterLb10 {
     Deployer deployer;
@@ -69,7 +63,7 @@ public class TestVirtualRouterLb10 {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         L3NetworkInventory gnw = deployer.l3Networks.get("GuestNetwork");

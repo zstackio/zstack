@@ -7,8 +7,8 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.identity.*;
 import org.zstack.header.identity.AccountConstant.StatementEffect;
+import org.zstack.header.identity.*;
 import org.zstack.header.identity.PolicyInventory.Statement;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.query.QueryCondition;
@@ -31,14 +31,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 
  * @author frank
- * 
- * @condition
- * 1. create a lb
- *
- * @test
- * confirm lb are created successfully
+ * @condition 1. create a lb
+ * @test confirm lb are created successfully
  */
 public class TestVirtualRouterLbPolicy {
     Deployer deployer;
@@ -69,7 +64,7 @@ public class TestVirtualRouterLbPolicy {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         IdentityCreator identityCreator = new IdentityCreator(api);

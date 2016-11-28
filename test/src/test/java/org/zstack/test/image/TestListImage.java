@@ -65,10 +65,10 @@ public class TestListImage {
             iinv.setUrl(String.format("http://zstack.org/download/%s/win7.qcow2", i));
             api.addImage(iinv, inv.getUuid());
         }
-        
+
         List<ImageInventory> images = api.listImage(null);
         Assert.assertEquals(testNum, images.size());
-        
+
         List<String> uuids = CollectionUtils.transformToList(images, new Function<String, ImageInventory>() {
             @Override
             public String call(ImageInventory arg) {
@@ -76,7 +76,7 @@ public class TestListImage {
             }
         });
         images = api.listImage(uuids);
-        for (int i=0; i<testNum; i++) {
+        for (int i = 0; i < testNum; i++) {
             Assert.assertEquals(uuids.get(i), images.get(i).getUuid());
         }
     }

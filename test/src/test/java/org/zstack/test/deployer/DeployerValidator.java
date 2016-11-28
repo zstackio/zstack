@@ -17,11 +17,11 @@ import java.util.Collection;
 public class DeployerValidator {
     private static final CLogger logger = Utils.getLogger(DeployerValidator.class);
     private DeployerConfig config;
-    
+
     DeployerValidator(DeployerConfig config) {
         this.config = config;
     }
-    
+
     private void validateCollection(Field f, Object obj) throws IllegalArgumentException, IllegalAccessException {
         XmlType xtype = obj.getClass().getAnnotation(XmlType.class);
         if (xtype == null) {
@@ -29,7 +29,7 @@ public class DeployerValidator {
         }
         String elementName = xtype.name();
         logger.debug(String.format("validating %s->%s", elementName, f.getName()));
-        
+
         Collection l = (Collection) f.get(obj);
         XmlElement eat = f.getAnnotation(XmlElement.class);
         if (eat != null && (eat.required() && (l == null || l.isEmpty()))) {
@@ -39,7 +39,7 @@ public class DeployerValidator {
         if (aat != null && (aat.required() && (l == null || l.isEmpty()))) {
             throw new IllegalArgumentException(String.format("field[%s] of element[%s] is mandatory, cannot be missed", aat.name(), elementName));
         }
-        
+
         if (l != null) {
             Object val = l.iterator().next();
             if (val != null) {
@@ -53,26 +53,26 @@ public class DeployerValidator {
         if (xtype == null) {
             return;
         }
-        
+
         Object val = f.get(obj);
         String elementName = xtype.name();
         logger.debug(String.format("validating %s->%s", elementName, f.getName()));
-        
+
         XmlElement eat = f.getAnnotation(XmlElement.class);
         if (eat != null && eat.required() && val == null) {
             throw new IllegalArgumentException(String.format("field[%s] of element[%s] is mandatory, cannot be missed", f.getName(), elementName));
         }
-        
+
         XmlAttribute aat = f.getAnnotation(XmlAttribute.class);
         if (aat != null && aat.required() && val == null) {
             throw new IllegalArgumentException(String.format("field[%s] of element[%s] is mandatory, cannot be missed", aat.name(), elementName));
         }
-        
+
         if (val != null) {
             validateObject(val);
         }
     }
-    
+
     private void validateObject(Object obj) throws IllegalArgumentException, IllegalAccessException {
         for (Field f : obj.getClass().getDeclaredFields()) {
             f.setAccessible(true);
@@ -83,7 +83,7 @@ public class DeployerValidator {
             }
         }
     }
-    
+
     void vaildate() {
         try {
             validateObject(config);

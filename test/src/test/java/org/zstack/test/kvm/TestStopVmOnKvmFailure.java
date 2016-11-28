@@ -41,12 +41,12 @@ public class TestStopVmOnKvmFailure {
         config = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test(expected=ApiSenderException.class)
-	public void test() throws ApiSenderException {
-	    config.stopVmSuccess = false;
-	    VmInstanceInventory vm = deployer.vms.get("TestVm");
-	    api.stopVmInstance(vm.getUuid());
-	}
+
+    @Test(expected = ApiSenderException.class)
+    public void test() throws ApiSenderException {
+        config.stopVmSuccess = false;
+        VmInstanceInventory vm = deployer.vms.get("TestVm");
+        api.stopVmInstance(vm.getUuid());
+    }
 
 }

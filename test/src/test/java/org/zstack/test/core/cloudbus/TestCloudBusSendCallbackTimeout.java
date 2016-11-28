@@ -6,9 +6,9 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusIN;
 import org.zstack.core.componentloader.ComponentLoader;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.AbstractService;
 import org.zstack.header.Service;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedReplyMessage;
@@ -26,7 +26,7 @@ public class TestCloudBusSendCallbackTimeout {
     CountDownLatch latch = new CountDownLatch(1);
     boolean isSuccess = false;
     Service serv;
-    
+
     public static class HelloWorldMsg extends NeedReplyMessage {
         private String greet;
 
@@ -37,8 +37,9 @@ public class TestCloudBusSendCallbackTimeout {
         public void setGreet(String greet) {
             this.greet = greet;
         }
-        
+
     }
+
     public static class HelloWorldReply extends MessageReply {
         private String greet;
 
@@ -50,7 +51,7 @@ public class TestCloudBusSendCallbackTimeout {
             this.greet = greet;
         }
     }
-    
+
     class FakeService extends AbstractService {
         @Override
         public boolean start() {
@@ -77,9 +78,9 @@ public class TestCloudBusSendCallbackTimeout {
         public String getId() {
             return this.getClass().getCanonicalName();
         }
-        
+
     }
-    
+
     @Before
     public void setUp() throws Exception {
         BeanConstructor con = new BeanConstructor();

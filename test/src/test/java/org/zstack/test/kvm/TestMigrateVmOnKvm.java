@@ -50,11 +50,11 @@ public class TestMigrateVmOnKvm {
         dbf = loader.getComponent(DatabaseFacade.class);
         config = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
-}
-    
-	@Test
-	public void test() throws ApiSenderException {
-	    final VmInstanceInventory vm = deployer.vms.get("TestVm");
+    }
+
+    @Test
+    public void test() throws ApiSenderException {
+        final VmInstanceInventory vm = deployer.vms.get("TestVm");
         HostInventory target = CollectionUtils.find(deployer.hosts.values(), new Function<HostInventory, HostInventory>() {
             @Override
             public HostInventory call(HostInventory arg) {
@@ -90,5 +90,5 @@ public class TestMigrateVmOnKvm {
         Assert.assertEquals(vmvo.getInternalId(), dcmd.vmInternalId.longValue());
         Assert.assertEquals(vmvo.getUuid(), dcmd.vmUuid);
         Assert.assertEquals(lastHost.getManagementIp(), dcmd.hostManagementIp);
-	}
+    }
 }

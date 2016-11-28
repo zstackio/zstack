@@ -54,9 +54,9 @@ public class TestKvmMaintenanceMode {
         config = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         HostInventory host1 = deployer.hosts.get("host1");
         HostInventory host2 = deployer.hosts.get("host2");
         api.maintainHost(host1.getUuid());
@@ -69,5 +69,5 @@ public class TestKvmMaintenanceMode {
         }
         host1 = api.listHosts(Arrays.asList(host1.getUuid())).get(0);
         Assert.assertEquals(HostState.Maintenance.toString(), host1.getState());
-	}
+    }
 }

@@ -43,48 +43,48 @@ public class TestSearchPrimaryStorage {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
-		TimeUnit.SECONDS.sleep(1);
-		APISearchPrimaryStorageMsg msg = new APISearchPrimaryStorageMsg();
-		NOVTriple t = new NOVTriple();
-		t.setName("totalCapacity");
-		t.setOp(SearchOp.AND_GT.toString());
-		t.setVal(String.valueOf(SizeUnit.TERABYTE.toByte(1)));
-		msg.getNameOpValueTriples().add(t);
-		
-		String content = api.search(msg);
-		List<PrimaryStorageInventory> invs = JSONObjectUtil.toCollection(content, ArrayList.class, PrimaryStorageInventory.class);
-		Assert.assertEquals(2, invs.size());
-		
-		PrimaryStorageInventory inv = null;
-		for (PrimaryStorageInventory i : invs) {
-			if (i.getName().equals("TestPrimaryStorage2")) {
-				inv = i;
-				break;
-			}
-		}
-		
-		Assert.assertFalse(inv.getAttachedClusterUuids().isEmpty());
-		api.detachPrimaryStorage(inv.getUuid(), inv.getAttachedClusterUuids().iterator().next());
-		TimeUnit.SECONDS.sleep(1);
-		
-		msg = new APISearchPrimaryStorageMsg();
-		t = new NOVTriple();
-		t.setName("name");
-		t.setOp(SearchOp.AND_GT.toString());
-		t.setVal("TestPrimaryStorage2");
-		msg.getNameOpValueTriples().add(t);
-		content = api.search(msg);
-		invs = JSONObjectUtil.toCollection(content, ArrayList.class, PrimaryStorageInventory.class);
-		inv = invs.get(0);
-		Assert.assertTrue(inv.getAttachedClusterUuids().isEmpty());
-		
-		APIGetPrimaryStorageMsg gmsg = new APIGetPrimaryStorageMsg();
-		gmsg.setUuid(inv.getUuid());
-		String res = api.getInventory(gmsg);
-		PrimaryStorageInventory pinv = JSONObjectUtil.toObject(res, PrimaryStorageInventory.class);
-		Assert.assertEquals(inv.getName(), pinv.getName());
-	}
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
+        TimeUnit.SECONDS.sleep(1);
+        APISearchPrimaryStorageMsg msg = new APISearchPrimaryStorageMsg();
+        NOVTriple t = new NOVTriple();
+        t.setName("totalCapacity");
+        t.setOp(SearchOp.AND_GT.toString());
+        t.setVal(String.valueOf(SizeUnit.TERABYTE.toByte(1)));
+        msg.getNameOpValueTriples().add(t);
+
+        String content = api.search(msg);
+        List<PrimaryStorageInventory> invs = JSONObjectUtil.toCollection(content, ArrayList.class, PrimaryStorageInventory.class);
+        Assert.assertEquals(2, invs.size());
+
+        PrimaryStorageInventory inv = null;
+        for (PrimaryStorageInventory i : invs) {
+            if (i.getName().equals("TestPrimaryStorage2")) {
+                inv = i;
+                break;
+            }
+        }
+
+        Assert.assertFalse(inv.getAttachedClusterUuids().isEmpty());
+        api.detachPrimaryStorage(inv.getUuid(), inv.getAttachedClusterUuids().iterator().next());
+        TimeUnit.SECONDS.sleep(1);
+
+        msg = new APISearchPrimaryStorageMsg();
+        t = new NOVTriple();
+        t.setName("name");
+        t.setOp(SearchOp.AND_GT.toString());
+        t.setVal("TestPrimaryStorage2");
+        msg.getNameOpValueTriples().add(t);
+        content = api.search(msg);
+        invs = JSONObjectUtil.toCollection(content, ArrayList.class, PrimaryStorageInventory.class);
+        inv = invs.get(0);
+        Assert.assertTrue(inv.getAttachedClusterUuids().isEmpty());
+
+        APIGetPrimaryStorageMsg gmsg = new APIGetPrimaryStorageMsg();
+        gmsg.setUuid(inv.getUuid());
+        String res = api.getInventory(gmsg);
+        PrimaryStorageInventory pinv = JSONObjectUtil.toObject(res, PrimaryStorageInventory.class);
+        Assert.assertEquals(inv.getName(), pinv.getName());
+    }
 }

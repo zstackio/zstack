@@ -7,11 +7,8 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.identity.SessionInventory;
-import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.lb.*;
-import org.zstack.network.service.vip.VipVO;
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.LbTO;
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.RefreshLbCmd;
 import org.zstack.simulator.appliancevm.ApplianceVmSimulatorConfig;
@@ -25,27 +22,23 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 
-import static org.zstack.utils.CollectionDSL.e;
-import static org.zstack.utils.CollectionDSL.list;
-import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.CollectionDSL.*;
 
 /**
- * 
  * @author frank
- * 
- * 1. create a lb
- * 2. add a listener with a nic
- *
- * confirm the system tags are created as default
- *
- * 3. remove the listener
- *
- * confirm the system tags are removed
- *
- * 4. add the listener again with system tags specified with a nic
- *
- * confirm the system tags are created as specified
- *
+ *         <p>
+ *         1. create a lb
+ *         2. add a listener with a nic
+ *         <p>
+ *         confirm the system tags are created as default
+ *         <p>
+ *         3. remove the listener
+ *         <p>
+ *         confirm the system tags are removed
+ *         <p>
+ *         4. add the listener again with system tags specified with a nic
+ *         <p>
+ *         confirm the system tags are created as specified
  */
 public class TestVirtualRouterLb13 {
     Deployer deployer;
@@ -76,7 +69,7 @@ public class TestVirtualRouterLb13 {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         LoadBalancerInventory lb = deployer.loadBalancers.get("lb");

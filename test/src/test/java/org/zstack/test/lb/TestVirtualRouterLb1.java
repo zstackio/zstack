@@ -10,7 +10,6 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
-import org.zstack.network.service.lb.LoadBalancerInventory;
 import org.zstack.network.service.lb.LoadBalancerListenerInventory;
 import org.zstack.network.service.lb.LoadBalancerListenerVmNicRefVO;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmVO;
@@ -24,16 +23,11 @@ import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 
 /**
- * 
  * @author frank
- * 
- * @condition
- * 1. create a lb without adding nic
+ * @condition 1. create a lb without adding nic
  * 2. add a nic
  * 3. make the adding nic fail
- *
- * @test
- * confirm lb are created successfully
+ * @test confirm lb are created successfully
  */
 public class TestVirtualRouterLb1 {
     Deployer deployer;
@@ -64,7 +58,7 @@ public class TestVirtualRouterLb1 {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         L3NetworkInventory gnw = deployer.l3Networks.get("GuestNetwork");

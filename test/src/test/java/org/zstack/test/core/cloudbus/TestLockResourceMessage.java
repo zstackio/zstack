@@ -50,7 +50,7 @@ public class TestLockResourceMessage {
         bus = loader.getComponent(CloudBusIN.class);
         thdf = loader.getComponent(ThreadFacade.class);
         evtf = loader.getComponent(EventFacade.class);
-        ((Component)evtf).start();
+        ((Component) evtf).start();
     }
 
     @Test
@@ -62,9 +62,9 @@ public class TestLockResourceMessage {
             @Override
             public void handleMessage(Message msg) {
                 if (msg instanceof TestLockMsg) {
-                    handle((TestLockMsg)msg);
+                    handle((TestLockMsg) msg);
                 } else if (msg instanceof TestMsg) {
-                    handle((TestMsg)msg);
+                    handle((TestMsg) msg);
                 }
             }
 
@@ -77,7 +77,7 @@ public class TestLockResourceMessage {
 
                     @Override
                     public void run(SyncTaskChain chain) {
-                        MessageReply r  = new MessageReply();
+                        MessageReply r = new MessageReply();
                         bus.reply(msg, r);
                         chain.next();
                     }

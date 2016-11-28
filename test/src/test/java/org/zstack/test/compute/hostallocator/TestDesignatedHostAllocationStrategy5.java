@@ -36,7 +36,7 @@ import static org.zstack.utils.CollectionDSL.map;
 /**
  * 1. specify primary storage uuid in instance offering
  * 2. create 3 vms
- *
+ * <p>
  * confirm 3 vms' root volume are on primary storage specified
  */
 public class TestDesignatedHostAllocationStrategy5 {
@@ -97,7 +97,7 @@ public class TestDesignatedHostAllocationStrategy5 {
 
     @Test
     public void test() throws ApiSenderException {
-        L3NetworkInventory l3  = deployer.l3Networks.get("l3Network1");
+        L3NetworkInventory l3 = deployer.l3Networks.get("l3Network1");
         ImageInventory imageInventory = deployer.images.get("image1");
         InstanceOfferingInventory instanceOffering = deployer.instanceOfferings.get("instanceOffering512M512HZ");
         PrimaryStorageInventory ps1 = deployer.primaryStorages.get("primaryStorage1");

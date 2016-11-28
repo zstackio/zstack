@@ -1,4 +1,3 @@
-
 package org.zstack.test.deployer.schema;
 
 import javax.xml.bind.annotation.XmlAccessType;
@@ -9,9 +8,9 @@ import javax.xml.bind.annotation.XmlType;
 
 /**
  * <p>Java class for IpRangeConfig complex type.
- * 
+ * <p>
  * <p>The following schema fragment specifies the expected content contained within this class.
- * 
+ * <p>
  * <pre>
  * &lt;complexType name="IpRangeConfig">
  *   &lt;complexContent>
@@ -27,8 +26,6 @@ import javax.xml.bind.annotation.XmlType;
  *   &lt;/complexContent>
  * &lt;/complexType>
  * </pre>
- * 
- * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "IpRangeConfig")
@@ -51,11 +48,9 @@ public class IpRangeConfig {
 
     /**
      * Gets the value of the name property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getName() {
         return name;
@@ -63,11 +58,9 @@ public class IpRangeConfig {
 
     /**
      * Sets the value of the name property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setName(String value) {
         this.name = value;
@@ -75,11 +68,9 @@ public class IpRangeConfig {
 
     /**
      * Gets the value of the description property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getDescription() {
         return description;
@@ -87,11 +78,9 @@ public class IpRangeConfig {
 
     /**
      * Sets the value of the description property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setDescription(String value) {
         this.description = value;
@@ -99,11 +88,9 @@ public class IpRangeConfig {
 
     /**
      * Gets the value of the startIp property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getStartIp() {
         return startIp;
@@ -111,11 +98,9 @@ public class IpRangeConfig {
 
     /**
      * Sets the value of the startIp property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setStartIp(String value) {
         this.startIp = value;
@@ -123,11 +108,9 @@ public class IpRangeConfig {
 
     /**
      * Gets the value of the endIp property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getEndIp() {
         return endIp;
@@ -135,11 +118,9 @@ public class IpRangeConfig {
 
     /**
      * Sets the value of the endIp property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setEndIp(String value) {
         this.endIp = value;
@@ -147,11 +128,9 @@ public class IpRangeConfig {
 
     /**
      * Gets the value of the netmask property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getNetmask() {
         return netmask;
@@ -159,11 +138,9 @@ public class IpRangeConfig {
 
     /**
      * Sets the value of the netmask property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setNetmask(String value) {
         this.netmask = value;
@@ -171,11 +148,9 @@ public class IpRangeConfig {
 
     /**
      * Gets the value of the gateway property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getGateway() {
         return gateway;
@@ -183,11 +158,9 @@ public class IpRangeConfig {
 
     /**
      * Sets the value of the gateway property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setGateway(String value) {
         this.gateway = value;
@@ -195,11 +168,9 @@ public class IpRangeConfig {
 
     /**
      * Gets the value of the type property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getType() {
         if (type == null) {
@@ -211,11 +182,9 @@ public class IpRangeConfig {
 
     /**
      * Sets the value of the type property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setType(String value) {
         this.type = value;

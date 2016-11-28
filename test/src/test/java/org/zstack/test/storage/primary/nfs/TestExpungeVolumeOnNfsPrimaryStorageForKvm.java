@@ -21,8 +21,6 @@ import org.zstack.test.storage.backup.sftp.TestSftpBackupStorageDeleteImage2;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.concurrent.TimeUnit;
-
 public class TestExpungeVolumeOnNfsPrimaryStorageForKvm {
     CLogger logger = Utils.getLogger(TestSftpBackupStorageDeleteImage2.class);
     Deployer deployer;
@@ -49,12 +47,12 @@ public class TestExpungeVolumeOnNfsPrimaryStorageForKvm {
         gcf = loader.getComponent(GlobalConfigFacade.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicy.Direct.toString());
-	    VmInstanceInventory vm = deployer.vms.get("TestVm");
-	    api.destroyVmInstance(vm.getUuid());
+        VmInstanceInventory vm = deployer.vms.get("TestVm");
+        api.destroyVmInstance(vm.getUuid());
         Assert.assertFalse(config.deleteCmds.isEmpty());
-	}
+    }
 }

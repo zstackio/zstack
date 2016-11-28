@@ -29,7 +29,7 @@ import static org.zstack.utils.CollectionDSL.map;
  * 1. specify primary storage user tag as not required in instance offering
  * 2. don't create user tag on primary storage
  * 2. create vm
- *
+ * <p>
  * confirm creating vm successfully
  */
 public class TestDesignatedHostAllocationStrategy9 {
@@ -90,7 +90,7 @@ public class TestDesignatedHostAllocationStrategy9 {
 
     @Test
     public void test() throws ApiSenderException {
-        L3NetworkInventory l3  = deployer.l3Networks.get("l3Network1");
+        L3NetworkInventory l3 = deployer.l3Networks.get("l3Network1");
         ImageInventory imageInventory = deployer.images.get("image1");
         InstanceOfferingInventory instanceOffering = deployer.instanceOfferings.get("instanceOffering512M512HZ");
         String itag = PrimaryStorageSystemTags.PRIMARY_STORAGE_ALLOCATOR_USERTAG_TAG.instantiateTag(map(e("tag", "ps1")));

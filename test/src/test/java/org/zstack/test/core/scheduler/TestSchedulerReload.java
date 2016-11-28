@@ -59,7 +59,7 @@ public class TestSchedulerReload {
         TimeUnit.SECONDS.sleep(5);
         List<SchedulerVO> vos = dbf.listAll(SchedulerVO.class);
         long record = dbf.count(VolumeSnapshotVO.class);
-        Assert.assertEquals(4,record);
+        Assert.assertEquals(4, record);
 
     }
 }

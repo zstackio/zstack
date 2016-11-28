@@ -34,7 +34,7 @@ public class TestAddImage1 {
     }
 
     @Test
-    public void test() throws InterruptedException,ApiSenderException {
+    public void test() throws InterruptedException, ApiSenderException {
         BackupStorageInventory bs1 = deployer.backupStorages.get("TestBackupStorage");
         BackupStorageInventory bs2 = deployer.backupStorages.get("TestBackupStorage1");
 

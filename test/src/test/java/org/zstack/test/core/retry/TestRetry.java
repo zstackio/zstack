@@ -14,7 +14,7 @@ public class TestRetry {
         if (successAfter == 0) {
             return "hello";
         } else {
-            successAfter --;
+            successAfter--;
             throw new RuntimeException("on purpose");
         }
     }

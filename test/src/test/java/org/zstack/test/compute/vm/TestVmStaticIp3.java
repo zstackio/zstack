@@ -30,20 +30,20 @@ import static org.zstack.utils.CollectionDSL.map;
  * 1 create vm with 1 static IP
  * 2. delete the static IP, create a new one
  * 3. stop/start the vm
- *
+ * <p>
  * confirm the new IP is allocated
- *
+ * <p>
  * 4. update the static IP to a new one
- *
+ * <p>
  * confirm the new IP is allocated
- *
+ * <p>
  * 5. delete the static IP
  * 6. stop/start the vm
- *
+ * <p>
  * confirm a new IP is allocated
- *
+ * <p>
  * 7. change the static IP to a wrong one
- *
+ * <p>
  * confirm the operation failed
  */
 public class TestVmStaticIp3 {
@@ -63,7 +63,7 @@ public class TestVmStaticIp3 {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         InstanceOfferingInventory ioinv = deployer.instanceOfferings.get("TestInstanceOffering");

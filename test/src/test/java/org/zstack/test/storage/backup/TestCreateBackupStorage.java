@@ -18,7 +18,7 @@ import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.logging.CLogger;
 
 public class TestCreateBackupStorage {
-	CLogger logger = Utils.getLogger(TestCreateBackupStorage.class);
+    CLogger logger = Utils.getLogger(TestCreateBackupStorage.class);
     Api api;
     ComponentLoader loader;
     DatabaseFacade dbf;
@@ -33,21 +33,21 @@ public class TestCreateBackupStorage {
         api = new Api();
         api.startServer();
     }
-    
+
     @After
     public void tearDown() throws Exception {
         api.stopServer();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
-	    SimulatorBackupStorageDetails ss = new SimulatorBackupStorageDetails();
-	    ss.setTotalCapacity(SizeUnit.GIGABYTE.toByte(100));
-	    ss.setUsedCapacity(0);
-	    ss.setUrl("nfs://simulator/backupstorage/");
-	    BackupStorageInventory inv = api.createSimulatorBackupStorage(1, ss).get(0);
-	    BackupStorageVO vo = dbf.findByUuid(inv.getUuid(), BackupStorageVO.class);
-	    Assert.assertNotNull(vo);
-	}
+
+    @Test
+    public void test() throws ApiSenderException {
+        SimulatorBackupStorageDetails ss = new SimulatorBackupStorageDetails();
+        ss.setTotalCapacity(SizeUnit.GIGABYTE.toByte(100));
+        ss.setUsedCapacity(0);
+        ss.setUrl("nfs://simulator/backupstorage/");
+        BackupStorageInventory inv = api.createSimulatorBackupStorage(1, ss).get(0);
+        BackupStorageVO vo = dbf.findByUuid(inv.getUuid(), BackupStorageVO.class);
+        Assert.assertNotNull(vo);
+    }
 
 }

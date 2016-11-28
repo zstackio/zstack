@@ -15,7 +15,10 @@ import org.zstack.header.host.HostInventory;
 import org.zstack.header.tag.TagInventory;
 import org.zstack.header.zone.ZoneInventory;
 import org.zstack.kvm.KVMGlobalConfig;
-import org.zstack.test.*;
+import org.zstack.test.Api;
+import org.zstack.test.ApiSenderException;
+import org.zstack.test.DBUtil;
+import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.utils.SizeUtils;
 
@@ -26,12 +29,12 @@ import static org.zstack.utils.CollectionDSL.map;
 
 /**
  * 1. set ZoneTag.HOST_RESERVED_MEMORY_CAPACITY, ClusterTag.HOST_RESERVED_MEMORY_CAPACITY, HostTag.RESERVED_MEMORY_CAPACITY, KvmGlobalConfig.RESERVED_MEMORY_CAPACITY
- *
+ * <p>
  * confirm getCpuMemoryCapacity returns right capacity
  */
 public class TestGetCpuMemoryCapacity1 {
     Deployer deployer;
-    Api api; 
+    Api api;
     ComponentLoader loader;
     CloudBus bus;
     DatabaseFacade dbf;

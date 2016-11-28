@@ -24,7 +24,7 @@ import org.zstack.utils.logging.CLogger;
  * 1. attach a nic to vm
  * 2. stop the vm
  * 3. detach the nic
- *
+ * <p>
  * confirm the nic detached successfully
  */
 public class TestDetachNicOnKvm1 {
@@ -51,9 +51,9 @@ public class TestDetachNicOnKvm1 {
         config = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         final L3NetworkInventory l3 = deployer.l3Networks.get("TestL3Network4");
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         vm = api.attachNic(vm.getUuid(), l3.getUuid());

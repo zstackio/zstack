@@ -32,15 +32,15 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * use local storage
- *
+ * <p>
  * 1. stop the vm
  * 2. make the host disconnected
  * 3. destroy the vm
- *
+ * <p>
  * confirm the vm destroyed successfully
- *
+ * <p>
  * 4. deleted the primary storage
- *
+ * <p>
  * confirm the GC job done
  */
 public class TestDestroyVmOnKvm4 {
@@ -78,9 +78,9 @@ public class TestDestroyVmOnKvm4 {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicy.Direct.toString());
         PrimaryStorageInventory local = deployer.primaryStorages.get("local");
         HostInventory host = deployer.hosts.get("host1");

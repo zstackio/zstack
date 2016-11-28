@@ -6,9 +6,9 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBusIN;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.componentloader.ComponentLoader;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.AbstractService;
 import org.zstack.header.Service;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedReplyMessage;
@@ -27,10 +27,10 @@ public class TestCloudBusSendMultiMsg4 {
     Service serv;
     int msgNum = 10;
     int timeoutMsg = 2;
-    
+
     public static class HelloWorldMsg extends NeedReplyMessage {
     }
-    
+
     class FakeService extends AbstractService {
         int count = 0;
 
@@ -53,16 +53,16 @@ public class TestCloudBusSendMultiMsg4 {
             if (msg.getClass() == HelloWorldMsg.class && timeoutMsg != count) {
                 bus.reply(msg, new MessageReply());
             }
-            count ++;
+            count++;
         }
 
         @Override
         public String getId() {
             return this.getClass().getCanonicalName();
         }
-        
+
     }
-    
+
     @Before
     public void setUp() throws Exception {
         BeanConstructor con = new BeanConstructor();
@@ -75,7 +75,7 @@ public class TestCloudBusSendMultiMsg4 {
     @Test
     public void test() throws InterruptedException, ClassNotFoundException {
         List<HelloWorldMsg> msgs = new ArrayList<HelloWorldMsg>(msgNum);
-        for (int i=0; i<msgNum; i++) {
+        for (int i = 0; i < msgNum; i++) {
             HelloWorldMsg msg = new HelloWorldMsg();
             msg.setServiceId(FakeService.class.getCanonicalName());
             msg.setTimeout(TimeUnit.SECONDS.toMillis(2));

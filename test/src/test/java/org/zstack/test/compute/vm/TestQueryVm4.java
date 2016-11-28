@@ -7,7 +7,6 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.host.HostVO;
-import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.query.QueryOp;
 import org.zstack.header.vm.APIQueryVmInstanceMsg;
 import org.zstack.header.vm.APIQueryVmInstanceReply;
@@ -16,21 +15,14 @@ import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.test.search.QueryTestValidator;
 
 import java.util.List;
 
 /**
- * 
  * @author Frank
- * 
- * @condition
- * 
- * 1. deploy a vm using non-admin account
+ * @condition 1. deploy a vm using non-admin account
  * 2. set a user tag on host
- * 
- * @test
- * query vm using user tag on host
+ * @test query vm using user tag on host
  */
 public class TestQueryVm4 {
     Deployer deployer;
@@ -49,7 +41,7 @@ public class TestQueryVm4 {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");

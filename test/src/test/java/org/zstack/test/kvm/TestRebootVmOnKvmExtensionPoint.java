@@ -45,13 +45,13 @@ public class TestRebootVmOnKvmExtensionPoint {
         ext = loader.getComponent(KVMRebootVmExtension.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
-	    VmInstanceInventory vm = deployer.vms.get("TestVm");
-	    api.rebootVmInstance(vm.getUuid());
-	    Assert.assertTrue(ext.beforeCalled);
-	    Assert.assertTrue(ext.successCalled);
-	    Assert.assertFalse(ext.failCalled);
-	}
+
+    @Test
+    public void test() throws ApiSenderException {
+        VmInstanceInventory vm = deployer.vms.get("TestVm");
+        api.rebootVmInstance(vm.getUuid());
+        Assert.assertTrue(ext.beforeCalled);
+        Assert.assertTrue(ext.successCalled);
+        Assert.assertFalse(ext.failCalled);
+    }
 }

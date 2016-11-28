@@ -6,8 +6,8 @@ import org.junit.Test;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.core.thread.AsyncThread;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.managementnode.ManagementNodeInventory;
 import org.zstack.header.message.MessageReply;
 import org.zstack.test.Api;
@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
- *
  * start 2 nodes, call silent message to the node0 which won't reply
  * stop node0, we should receive error message which indicates node0 is unavailable
  */

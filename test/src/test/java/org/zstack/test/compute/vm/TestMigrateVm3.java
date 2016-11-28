@@ -8,7 +8,10 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.allocator.HostCapacityVO;
 import org.zstack.header.host.HostInventory;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.GetVmMigrationTargetHostMsg;
+import org.zstack.header.vm.GetVmMigrationTargetHostReply;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
@@ -34,7 +37,7 @@ public class TestMigrateVm3 {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");

@@ -13,13 +13,12 @@ import org.zstack.test.DBUtil;
 import org.zstack.test.deployer.Deployer;
 
 /**
- *
  * 1. delete image
  * 2. stop vm
  * 3. start vm
  * 4. reboot vm
  * 5. destroy vm
- *
+ * <p>
  * confirm all operations success
  */
 public class TestCascadeDeletion36 {

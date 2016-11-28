@@ -29,7 +29,7 @@ public class TestValidateSession {
         api = new Api();
         api.startServer();
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         SessionInventory session = api.loginAsAdmin();

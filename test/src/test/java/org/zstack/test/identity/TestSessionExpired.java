@@ -32,11 +32,11 @@ public class TestSessionExpired {
         loader = con.addXml("PortalForUnitTest.xml").addXml("AccountManager.xml").build();
         dbf = loader.getComponent(DatabaseFacade.class);
         gcf = loader.getComponent(GlobalConfigFacade.class);
-        api = new Api();    
+        api = new Api();
         api.startServer();
     }
-    
-    
+
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         IdentityGlobalConfig.SESSION_TIMEOUT.updateValue(1);
@@ -71,6 +71,6 @@ public class TestSessionExpired {
             s = true;
         }
         Assert.assertTrue(s);
-   }
+    }
 
 }

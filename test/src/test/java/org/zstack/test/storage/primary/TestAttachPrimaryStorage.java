@@ -20,6 +20,7 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
 import java.util.List;
+
 public class TestAttachPrimaryStorage {
     CLogger logger = Utils.getLogger(TestCreatePrimaryStorage.class);
     Api api;

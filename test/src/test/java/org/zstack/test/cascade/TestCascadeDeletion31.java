@@ -7,7 +7,6 @@ import org.zstack.appliancevm.ApplianceVmVO;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
@@ -22,7 +21,7 @@ import org.zstack.test.deployer.Deployer;
  * 2. create a vm with virtual router
  * 3. make vr nowhere to migrate(in deploy configuration)
  * 4. detach l2 which vr has l3 on
- *
+ * <p>
  * confirm vr is stopped
  */
 public class TestCascadeDeletion31 {
@@ -49,7 +48,7 @@ public class TestCascadeDeletion31 {
 
     @Test
     public void test() throws ApiSenderException, InterruptedException {
-        ApplianceVmVO  vr = dbf.listAll(ApplianceVmVO.class).get(0);
+        ApplianceVmVO vr = dbf.listAll(ApplianceVmVO.class).get(0);
         L2NetworkInventory l2 = deployer.l2Networks.get("TestL2Network");
         api.detachL2NetworkFromCluster(l2.getUuid(), vr.getClusterUuid());
 

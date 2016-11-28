@@ -12,7 +12,10 @@ import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.allocator.HostCapacityVO;
 import org.zstack.header.host.HostInventory;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmTracerCanonicalEvents;
 import org.zstack.header.vm.VmTracerCanonicalEvents.VmStateChangedOnHostData;
 import org.zstack.simulator.SimulatorController;
 import org.zstack.simulator.SimulatorVmSyncPingTask;
@@ -27,7 +30,7 @@ import java.util.concurrent.TimeUnit;
  * 1. create a vm
  * 2. remove the vm from its current host
  * 3. put the vm to a new host
- *
+ * <p>
  * confirm the vm changed to the new host
  * confirm the capacity of the old host returned and of hte new host allocated
  * confirm the VmStateChangedOnHostData issued
@@ -56,11 +59,11 @@ public class TestVmStateTracer4 {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
         evtf = loader.getComponent(EventFacade.class);
-        
+
         deployer.build();
         api = deployer.getApi();
     }
-    
+
     @Test
     public void test() throws InterruptedException {
         final HostInventory host2 = deployer.hosts.get("TestHost2");

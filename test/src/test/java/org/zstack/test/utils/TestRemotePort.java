@@ -2,11 +2,8 @@ package org.zstack.test.utils;
 
 import junit.framework.Assert;
 import org.junit.Test;
-import org.zstack.utils.data.ArrayHelper;
 import org.zstack.utils.network.NetworkUtils;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class TestRemotePort {

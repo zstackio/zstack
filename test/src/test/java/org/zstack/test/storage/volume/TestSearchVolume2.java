@@ -42,12 +42,12 @@ public class TestSearchVolume2 {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         DiskOfferingInventory dinv = deployer.diskOfferings.get("TestRootDiskOffering");
         api.createDataVolume("testData", dinv.getUuid());
-        
+
         TimeUnit.SECONDS.sleep(1);
         APISearchVolumeMsg msg = new APISearchVolumeMsg();
         NOVTriple tl = new NOVTriple();
@@ -55,18 +55,18 @@ public class TestSearchVolume2 {
         tl.setOp(SearchOp.AND_EQ.toString());
         tl.setVal(VolumeStatus.NotInstantiated.toString());
         msg.getNameOpValueTriples().add(tl);
-        
+
         String res = api.search(msg);
         List<VolumeInventory> invs = JSONObjectUtil.toCollection(res, ArrayList.class, VolumeInventory.class);
         Assert.assertEquals(1, invs.size());
-        
+
         VolumeInventory inv0 = invs.get(0);
         APIGetVolumeMsg gmsg = new APIGetVolumeMsg();
         gmsg.setUuid(inv0.getUuid());
         res = api.getInventory(gmsg);
         VolumeInventory vinv = JSONObjectUtil.toObject(res, VolumeInventory.class);
         Assert.assertEquals(inv0.getName(), vinv.getName());
-        
+
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         api.attachVolumeToVm(vm.getUuid(), inv0.getUuid());
         TimeUnit.MILLISECONDS.sleep(500);

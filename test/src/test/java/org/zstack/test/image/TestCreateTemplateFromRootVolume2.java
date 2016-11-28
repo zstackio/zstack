@@ -31,7 +31,7 @@ import java.util.List;
 
 /**
  * 1. create image from root volume on two backup storage
- *
+ * <p>
  * confirm creation succeeds
  */
 public class TestCreateTemplateFromRootVolume2 {
@@ -58,20 +58,20 @@ public class TestCreateTemplateFromRootVolume2 {
         config = loader.getComponent(SftpBackupStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
-	    VmInstanceInventory vm = deployer.vms.get("TestVm");
-	    api.stopVmInstance(vm.getUuid());
-	    String rootVolumeUuid = vm.getRootVolumeUuid();
-	    VolumeVO vol = dbf.findByUuid(rootVolumeUuid, VolumeVO.class);
-	    
-	    BackupStorageInventory sftp = deployer.backupStorages.get("sftp");
+
+    @Test
+    public void test() throws ApiSenderException {
+        VmInstanceInventory vm = deployer.vms.get("TestVm");
+        api.stopVmInstance(vm.getUuid());
+        String rootVolumeUuid = vm.getRootVolumeUuid();
+        VolumeVO vol = dbf.findByUuid(rootVolumeUuid, VolumeVO.class);
+
+        BackupStorageInventory sftp = deployer.backupStorages.get("sftp");
         BackupStorageInventory sftp1 = deployer.backupStorages.get("sftp1");
-	    ImageInventory image = api.createTemplateFromRootVolume("testImage", rootVolumeUuid, Arrays.asList(sftp.getUuid(), sftp1.getUuid()));
+        ImageInventory image = api.createTemplateFromRootVolume("testImage", rootVolumeUuid, Arrays.asList(sftp.getUuid(), sftp1.getUuid()));
         Assert.assertEquals(2, image.getBackupStorageRefs().size());
-	    Assert.assertEquals(ImageStatus.Ready.toString(), image.getStatus());
-	    Assert.assertEquals(vol.getSize(), image.getSize());
+        Assert.assertEquals(ImageStatus.Ready.toString(), image.getStatus());
+        Assert.assertEquals(vol.getSize(), image.getSize());
         Assert.assertEquals(String.format("volume://%s", vol.getUuid()), image.getUrl());
 
         List<String> bsUuids = CollectionUtils.transformToList(image.getBackupStorageRefs(), new Function<String, ImageBackupStorageRefInventory>() {
@@ -83,8 +83,8 @@ public class TestCreateTemplateFromRootVolume2 {
 
         Assert.assertTrue(bsUuids.containsAll(Arrays.asList(sftp.getUuid(), sftp1.getUuid())));
 
-	    ImageVO ivo = dbf.findByUuid(image.getUuid(), ImageVO.class);
-	    Assert.assertNotNull(ivo);
-	}
+        ImageVO ivo = dbf.findByUuid(image.getUuid(), ImageVO.class);
+        Assert.assertNotNull(ivo);
+    }
 
 }

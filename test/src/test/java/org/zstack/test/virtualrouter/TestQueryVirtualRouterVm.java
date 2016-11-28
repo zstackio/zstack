@@ -15,7 +15,10 @@ import org.zstack.header.vm.APIQueryVmInstanceMsg;
 import org.zstack.header.vm.APIQueryVmInstanceReply;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicVO;
-import org.zstack.network.service.virtualrouter.*;
+import org.zstack.network.service.virtualrouter.APIQueryVirtualRouterVmMsg;
+import org.zstack.network.service.virtualrouter.APIQueryVirtualRouterVmReply;
+import org.zstack.network.service.virtualrouter.VirtualRouterVmInventory;
+import org.zstack.network.service.virtualrouter.VirtualRouterVmVO;
 import org.zstack.simulator.appliancevm.ApplianceVmSimulatorConfig;
 import org.zstack.simulator.virtualrouter.VirtualRouterSimulatorConfig;
 import org.zstack.test.Api;
@@ -55,7 +58,7 @@ public class TestQueryVirtualRouterVm {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         VirtualRouterVmVO vr = dbf.listAll(VirtualRouterVmVO.class).get(0);

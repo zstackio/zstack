@@ -22,15 +22,11 @@ import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 
 /**
- * 
  * @author frank
- * 
- * @condition
- * 1. create a vm
+ * @condition 1. create a vm
  * 2. delete the ip range of the guest L3 network
- *
+ * <p>
  * confirm the eip is deleted
- *
  */
 public class TestFlatNetworkEip10 {
     Deployer deployer;

@@ -12,7 +12,7 @@ public class ClusteChangeStateExtension implements ClusterChangeStateExtensionPo
     private boolean isBeforeSuccess = false;
     private boolean isAfterSuccess = false;
     private boolean preventChange = false;
-    
+
     @Override
     public void preChangeClusterState(ClusterInventory inventory, ClusterStateEvent event, ClusterState nextState) throws ClusterException {
         if (this.preventChange) {

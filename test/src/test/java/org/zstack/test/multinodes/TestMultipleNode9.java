@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
- *
  * start restartable jobs on one node0, jobs are set to not run
  * change jobs workNodeManagementId to current node
  * stop node0, allow job to run
@@ -99,7 +98,7 @@ public class TestMultipleNode9 {
             }
             FileUtils.forceMkdir(passFolder);
 
-            for (String uuid: retUuids) {
+            for (String uuid : retUuids) {
                 File f = new File(PathUtil.join(passFolder.getAbsolutePath(), uuid));
                 f.createNewFile();
                 logger.debug(String.format("create pass file %s", f.getAbsolutePath()));

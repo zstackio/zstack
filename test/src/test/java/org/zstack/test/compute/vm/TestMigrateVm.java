@@ -32,12 +32,12 @@ public class TestMigrateVm {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         VmInstanceInventory inv = api.listVmInstances(null).get(0);
         String srcHost = inv.getHostUuid();
-        
+
         inv = api.migrateVmInstance(inv.getUuid(), null);
         Assert.assertEquals(VmInstanceState.Running.toString(), inv.getState());
         VmInstanceVO vm = dbf.findByUuid(inv.getUuid(), VmInstanceVO.class);

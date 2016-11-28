@@ -45,17 +45,17 @@ public class TestMaxDataVolumeNumberOnKvm {
         config = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test(expected = ApiSenderException.class)
-	public void test() throws ApiSenderException {
+
+    @Test(expected = ApiSenderException.class)
+    public void test() throws ApiSenderException {
         KVMGlobalConfig.MAX_DATA_VOLUME_NUM.updateValue(1);
-	    VmInstanceInventory vm = deployer.vms.get("TestVm");
-	    DiskOfferingInventory dinv = deployer.diskOfferings.get("DataOffering");
-	    VolumeInventory vol = api.createDataVolume("d1", dinv.getUuid());
-	    vol = api.attachVolumeToVm(vm.getUuid(), vol.getUuid());
-	    Assert.assertEquals(true, vol.isAttached());
+        VmInstanceInventory vm = deployer.vms.get("TestVm");
+        DiskOfferingInventory dinv = deployer.diskOfferings.get("DataOffering");
+        VolumeInventory vol = api.createDataVolume("d1", dinv.getUuid());
+        vol = api.attachVolumeToVm(vm.getUuid(), vol.getUuid());
+        Assert.assertEquals(true, vol.isAttached());
 
         vol = api.createDataVolume("d2", dinv.getUuid());
         api.attachVolumeToVm(vm.getUuid(), vol.getUuid());
-	}
+    }
 }

@@ -42,7 +42,7 @@ public class TestVmGetAttachableL3Networks {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         VmInstanceInventory cvm = deployer.vms.get("TestVm");

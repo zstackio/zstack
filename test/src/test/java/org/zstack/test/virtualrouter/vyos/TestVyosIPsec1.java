@@ -37,7 +37,7 @@ import java.util.List;
 import static java.util.Arrays.asList;
 
 /**
- *  test create ipsec connection
+ * test create ipsec connection
  */
 public class TestVyosIPsec1 {
     Deployer deployer;
@@ -85,7 +85,7 @@ public class TestVyosIPsec1 {
         Assert.assertEquals(String.format("different peerAddress[%s, %s]",
                 inv1.getPeerAddress(), inv2.getPeerAddress()), inv1.getPeerAddress(), inv2.getPeerAddress());
         Assert.assertEquals(String.format("different authMode[%s, %s]",
-               inv1.getAuthMode(), inv2.getAuthMode()), inv1.getAuthMode(), inv2.getAuthMode());
+                inv1.getAuthMode(), inv2.getAuthMode()), inv1.getAuthMode(), inv2.getAuthMode());
         Assert.assertEquals(String.format("different authKey[%s, %s]",
                 inv1.getAuthKey(), inv2.getAuthKey()), inv1.getAuthKey(), inv2.getAuthKey());
         Assert.assertEquals(String.format("different vipUuid[%s, %s]",
@@ -110,7 +110,7 @@ public class TestVyosIPsec1 {
             List<String> peerCidrs2 = inv2.getPeerCidrSignatures();
             Assert.assertEquals("different peerCirs amount[%s, %s]", peerCidrs1.size(), peerCidrs2.size());
             for (String c : peerCidrs1) {
-               DebugUtils.Assert(peerCidrs2.contains(c), String.format("peer cidr[%s] missing", c));
+                DebugUtils.Assert(peerCidrs2.contains(c), String.format("peer cidr[%s] missing", c));
             }
         }
     }

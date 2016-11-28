@@ -59,7 +59,7 @@ public class TestApplianceVmRemoveFirewall {
         apvmf = loader.getComponent(ApplianceVmFacade.class);
         config = loader.getComponent(ApplianceVmSimulatorConfig.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         ApplianceVmSpec spec = new ApplianceVmSpec();

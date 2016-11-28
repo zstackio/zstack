@@ -28,17 +28,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 
  * @author frank
- * 
- * @condition
- * 1. create a vm
+ * @condition 1. create a vm
  * 2. acquire a vip
  * 3. use the vip for two port forwarding rules
  * 4. revoke all rules
- *
- * @test
- * confirm all rules and vip are removed
+ * @test confirm all rules and vip are removed
  */
 public class TestVirtualRouterPortForwarding11 {
     Deployer deployer;
@@ -79,7 +74,7 @@ public class TestVirtualRouterPortForwarding11 {
         VmNicInventory nic = vm.getVmNics().get(0);
         L3NetworkInventory vipNw = deployer.l3Networks.get("PublicNetwork");
         VipInventory vip = api.acquireIp(vipNw.getUuid());
-        
+
         rule1.setName("pfRule1");
         rule1.setVipUuid(vip.getUuid());
         rule1.setVmNicUuid(nic.getUuid());
@@ -89,7 +84,7 @@ public class TestVirtualRouterPortForwarding11 {
         rule1.setPrivatePortEnd(100);
         rule1.setProtocolType(PortForwardingProtocolType.TCP.toString());
         rule1 = api.createPortForwardingRuleByFullConfig(rule1);
-        
+
         rule2.setName("pfRule2");
         rule2.setVipUuid(vip.getUuid());
         rule2.setVmNicUuid(nic.getUuid());
@@ -99,10 +94,10 @@ public class TestVirtualRouterPortForwarding11 {
         rule2.setPrivatePortEnd(2000);
         rule2.setProtocolType(PortForwardingProtocolType.TCP.toString());
         rule2 = api.createPortForwardingRuleByFullConfig(rule2);
-        
+
         PortForwardingRuleTestValidator validator = new PortForwardingRuleTestValidator();
         validator.validate(vconfig.portForwardingRules, deployer.portForwardingRules.values());
-        
+
         api.revokePortForwardingRule(rule1.getUuid());
         api.revokePortForwardingRule(rule2.getUuid());
         Assert.assertEquals(2, vconfig.removedPortForwardingRules.size());

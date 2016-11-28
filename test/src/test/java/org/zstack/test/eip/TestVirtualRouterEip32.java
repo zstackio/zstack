@@ -12,8 +12,6 @@ import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.eip.EipInventory;
 import org.zstack.network.service.vip.VipInventory;
-import org.zstack.network.service.vip.VipVO;
-import org.zstack.network.service.virtualrouter.eip.EipTO;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.simulator.virtualrouter.VirtualRouterSimulatorConfig;
 import org.zstack.test.Api;
@@ -23,10 +21,9 @@ import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 
 /**
- * 
  * @author frank
- *
- * test EIP cannot be attached to a VM on the network from which EIP comes
+ *         <p>
+ *         test EIP cannot be attached to a VM on the network from which EIP comes
  */
 public class TestVirtualRouterEip32 {
     Deployer deployer;
@@ -57,7 +54,7 @@ public class TestVirtualRouterEip32 {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         L3NetworkInventory publicL3 = deployer.l3Networks.get("PublicNetwork");

@@ -28,16 +28,15 @@ import org.zstack.utils.logging.CLogger;
 import java.util.concurrent.TimeUnit;
 
 /**
- *
  * use KVMPingAgentExtensionForTest
  * set host ping interval to 1s
- *
+ * <p>
  * 1. set KVMPingAgentExtensionForTest.success = true;
- *
+ * <p>
  * confirm the host is connected
- *
+ * <p>
  * 2. set KVMPingAgentExtensionForTest.success = false
- *
+ * <p>
  * confirm the host is disconnected
  */
 public class TestKvmPingAgentExtension {
@@ -67,9 +66,9 @@ public class TestKvmPingAgentExtension {
         ext = loader.getComponent(KVMPingAgentExtensionForTest.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         HostInventory host = deployer.hosts.get("host1");
         VmInstanceInventory vm = deployer.vms.get("TestVm");
 

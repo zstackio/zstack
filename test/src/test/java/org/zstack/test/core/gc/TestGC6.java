@@ -43,7 +43,7 @@ public class TestGC6 {
 
         @Override
         public void run(GCContext context, GCCompletion completion) {
-            logger.debug((String)context.getContext());
+            logger.debug((String) context.getContext());
             success = true;
             completion.success();
         }

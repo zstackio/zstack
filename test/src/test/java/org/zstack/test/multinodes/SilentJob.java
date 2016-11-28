@@ -2,14 +2,10 @@ package org.zstack.test.multinodes;
 
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowire;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.cloudbus.CloudBusEventListener;
 import org.zstack.core.job.Job;
 import org.zstack.core.job.JobContext;
 import org.zstack.header.core.ReturnValueCompletion;
-import org.zstack.header.message.Event;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
@@ -76,7 +72,7 @@ public class SilentJob implements Job {
                 e.printStackTrace();
             }
 
-            count ++;
+            count++;
         }
     }
 

@@ -55,7 +55,7 @@ public class TestSftpBackupStoragePingFailure3 {
         session = api.loginAsAdmin();
         BackupStorageGlobalConfig.PING_INTERVAL.updateValue(1);
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         bus.installBeforeDeliveryMessageInterceptor(new BeforeDeliveryMessageInterceptor() {

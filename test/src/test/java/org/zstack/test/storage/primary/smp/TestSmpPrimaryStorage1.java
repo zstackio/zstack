@@ -22,7 +22,7 @@ import org.zstack.test.deployer.Deployer;
 /**
  * 1. use smp storage
  * 2. create a vm
- *
+ * <p>
  * confirm the vm created successfully
  */
 public class TestSmpPrimaryStorage1 {
@@ -52,9 +52,9 @@ public class TestSmpPrimaryStorage1 {
         config = loader.getComponent(SMPPrimaryStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         Assert.assertEquals(2, config.connectCmds.size());
         Assert.assertEquals(1, config.downloadBitsCmds.size());
         Assert.assertEquals(1, config.createVolumeFromCacheCmds.size());

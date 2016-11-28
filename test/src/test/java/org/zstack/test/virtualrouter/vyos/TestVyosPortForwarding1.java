@@ -24,16 +24,10 @@ import org.zstack.utils.data.SizeUnit;
 import static java.util.Arrays.asList;
 
 /**
- * 
  * @author frank
- * 
- * @condition
- * use vyos provider
+ * @condition use vyos provider
  * 1. specify offering with vyos system tag
- *
- *
- * @test
- * confirm the vr is created from the vyos offering
+ * @test confirm the vr is created from the vyos offering
  */
 public class TestVyosPortForwarding1 {
     Deployer deployer;
@@ -65,7 +59,7 @@ public class TestVyosPortForwarding1 {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         L3NetworkInventory publicNw = deployer.l3Networks.get("PublicNetwork");

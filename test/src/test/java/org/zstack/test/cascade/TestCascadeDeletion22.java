@@ -19,7 +19,7 @@ import org.zstack.test.deployer.Deployer;
  * 1. have two clusters
  * 2. create a vm with virtual router
  * 3. delete cluster that vr is running
- *
+ * <p>
  * confirm vr is migrated to another cluster
  */
 public class TestCascadeDeletion22 {
@@ -46,7 +46,7 @@ public class TestCascadeDeletion22 {
 
     @Test
     public void test() throws ApiSenderException, InterruptedException {
-        ApplianceVmVO  vr = dbf.listAll(ApplianceVmVO.class).get(0);
+        ApplianceVmVO vr = dbf.listAll(ApplianceVmVO.class).get(0);
         String lastClusterUuid = vr.getClusterUuid();
         api.deleteCluster(lastClusterUuid);
         vr = dbf.listAll(ApplianceVmVO.class).get(0);

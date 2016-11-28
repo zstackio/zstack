@@ -12,6 +12,7 @@ import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.BeanConstructor;
 import org.zstack.test.DBUtil;
+
 public class TestDeleteCluster {
     Api api;
     ComponentLoader loader;
@@ -27,9 +28,9 @@ public class TestDeleteCluster {
         api = new Api();
         api.startServer();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         try {
             ZoneInventory zone = api.createZones(1).get(0);
             ClusterInventory cluster = api.createClusters(1, zone.getUuid()).get(0);
@@ -39,6 +40,6 @@ public class TestDeleteCluster {
         } finally {
             api.stopServer();
         }
-	}
+    }
 
 }

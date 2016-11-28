@@ -32,12 +32,12 @@ public class TestCompletionCallOnce1 {
         ReturnValueCompletion<Void> completion = new ReturnValueCompletion<Void>() {
             @Override
             public void success(Void returnValue) {
-                success ++;
+                success++;
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
-                fail ++;
+                fail++;
             }
         };
 

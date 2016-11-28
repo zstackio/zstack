@@ -21,16 +21,11 @@ import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 
 /**
- * 
  * @author frank
- * 
- * @condition
- * 1. create a vm with port forwarding rule
+ * @condition 1. create a vm with port forwarding rule
  * 2. detach the rule
  * 3. delete rule
- *
- * @test
- * confirm port forwarding rule deleted
+ * @test confirm port forwarding rule deleted
  */
 public class TestVirtualRouterPortForwarding24 {
     Deployer deployer;
@@ -61,7 +56,7 @@ public class TestVirtualRouterPortForwarding24 {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         PortForwardingRuleInventory pfRule1 = deployer.portForwardingRules.get("pfRule1");

@@ -3,10 +3,8 @@ package org.zstack.test.multinodes;
 import org.junit.Before;
 import org.junit.Test;
 import org.zstack.core.Platform;
-import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusIN;
 import org.zstack.core.componentloader.ComponentLoader;
-import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.AbstractService;
 import org.zstack.header.Service;
 import org.zstack.header.message.Message;
@@ -84,7 +82,7 @@ public class ManagementNodeTester {
         Service serv = new AbstractService() {
             @Override
             public void handleMessage(Message msg) {
-                MultiNodeTestMsg nmsg = (MultiNodeTestMsg)msg;
+                MultiNodeTestMsg nmsg = (MultiNodeTestMsg) msg;
                 if (nmsg.isCode(nmsg.EXIT)) {
                     MultiNodeTestReply reply = new MultiNodeTestReply();
                     bus.reply(msg, reply);

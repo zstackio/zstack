@@ -1,21 +1,15 @@
-
 package org.zstack.test.deployer.schema;
 
+import javax.xml.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.List;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlSchemaType;
-import javax.xml.bind.annotation.XmlType;
 
 
 /**
  * <p>Java class for ImageConfig complex type.
- * 
+ * <p>
  * <p>The following schema fragment specifies the expected content contained within this class.
- * 
+ * <p>
  * <pre>
  * &lt;complexType name="ImageConfig">
  *   &lt;complexContent>
@@ -39,13 +33,11 @@ import javax.xml.bind.annotation.XmlType;
  *   &lt;/complexContent>
  * &lt;/complexType>
  * </pre>
- * 
- * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "ImageConfig", propOrder = {
-    "backupStorageRef",
-    "accountRef"
+        "backupStorageRef",
+        "accountRef"
 })
 public class ImageConfig {
 
@@ -78,25 +70,23 @@ public class ImageConfig {
 
     /**
      * Gets the value of the backupStorageRef property.
-     * 
+     * <p>
      * <p>
      * This accessor method returns a reference to the live list,
      * not a snapshot. Therefore any modification you make to the
      * returned list will be present inside the JAXB object.
      * This is why there is not a <CODE>set</CODE> method for the backupStorageRef property.
-     * 
+     * <p>
      * <p>
      * For example, to add a new item, do as follows:
      * <pre>
      *    getBackupStorageRef().add(newItem);
      * </pre>
-     * 
-     * 
+     * <p>
+     * <p>
      * <p>
      * Objects of the following type(s) are allowed in the list
      * {@link String }
-     * 
-     * 
      */
     public List<String> getBackupStorageRef() {
         if (backupStorageRef == null) {
@@ -107,11 +97,9 @@ public class ImageConfig {
 
     /**
      * Gets the value of the accountRef property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getAccountRef() {
         return accountRef;
@@ -119,11 +107,9 @@ public class ImageConfig {
 
     /**
      * Sets the value of the accountRef property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setAccountRef(String value) {
         this.accountRef = value;
@@ -131,11 +117,9 @@ public class ImageConfig {
 
     /**
      * Gets the value of the name property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getName() {
         return name;
@@ -143,11 +127,9 @@ public class ImageConfig {
 
     /**
      * Sets the value of the name property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setName(String value) {
         this.name = value;
@@ -155,11 +137,9 @@ public class ImageConfig {
 
     /**
      * Gets the value of the description property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getDescription() {
         return description;
@@ -167,11 +147,9 @@ public class ImageConfig {
 
     /**
      * Sets the value of the description property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setDescription(String value) {
         this.description = value;
@@ -179,11 +157,9 @@ public class ImageConfig {
 
     /**
      * Gets the value of the size property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getSize() {
         return size;
@@ -191,11 +167,9 @@ public class ImageConfig {
 
     /**
      * Sets the value of the size property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setSize(String value) {
         this.size = value;
@@ -203,11 +177,9 @@ public class ImageConfig {
 
     /**
      * Gets the value of the actualSize property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getActualSize() {
         return actualSize;
@@ -215,11 +187,9 @@ public class ImageConfig {
 
     /**
      * Sets the value of the actualSize property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setActualSize(String value) {
         this.actualSize = value;
@@ -227,11 +197,9 @@ public class ImageConfig {
 
     /**
      * Gets the value of the md5Sum property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getMd5Sum() {
         return md5Sum;
@@ -239,11 +207,9 @@ public class ImageConfig {
 
     /**
      * Sets the value of the md5Sum property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setMd5Sum(String value) {
         this.md5Sum = value;
@@ -251,15 +217,13 @@ public class ImageConfig {
 
     /**
      * Gets the value of the bits property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link Integer }
-     *     
+     *
+     * @return possible object is
+     * {@link Integer }
      */
     public int getBits() {
         if (bits == null) {
-            return  64;
+            return 64;
         } else {
             return bits;
         }
@@ -267,11 +231,9 @@ public class ImageConfig {
 
     /**
      * Sets the value of the bits property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link Integer }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link Integer }
      */
     public void setBits(Integer value) {
         this.bits = value;
@@ -279,11 +241,9 @@ public class ImageConfig {
 
     /**
      * Gets the value of the url property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getUrl() {
         if (url == null) {
@@ -295,11 +255,9 @@ public class ImageConfig {
 
     /**
      * Sets the value of the url property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setUrl(String value) {
         this.url = value;
@@ -307,11 +265,9 @@ public class ImageConfig {
 
     /**
      * Gets the value of the mediaType property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getMediaType() {
         if (mediaType == null) {
@@ -323,11 +279,9 @@ public class ImageConfig {
 
     /**
      * Sets the value of the mediaType property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setMediaType(String value) {
         this.mediaType = value;
@@ -335,11 +289,9 @@ public class ImageConfig {
 
     /**
      * Gets the value of the platform property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getPlatform() {
         if (platform == null) {
@@ -351,11 +303,9 @@ public class ImageConfig {
 
     /**
      * Sets the value of the platform property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setPlatform(String value) {
         this.platform = value;
@@ -363,11 +313,9 @@ public class ImageConfig {
 
     /**
      * Gets the value of the format property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getFormat() {
         if (format == null) {
@@ -379,11 +327,9 @@ public class ImageConfig {
 
     /**
      * Sets the value of the format property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setFormat(String value) {
         this.format = value;
@@ -391,11 +337,9 @@ public class ImageConfig {
 
     /**
      * Gets the value of the guestOsType property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getGuestOsType() {
         if (guestOsType == null) {
@@ -407,11 +351,9 @@ public class ImageConfig {
 
     /**
      * Sets the value of the guestOsType property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setGuestOsType(String value) {
         this.guestOsType = value;

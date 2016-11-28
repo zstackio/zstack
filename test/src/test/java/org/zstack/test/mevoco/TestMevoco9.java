@@ -27,7 +27,7 @@ import java.util.concurrent.CountDownLatch;
  * 1. set creating vm failure chance to 0.5
  * 2. set api retry times to 10
  * 3. create the vm
- *
+ * <p>
  * confirm the vm created successfully
  */
 @Deprecated
@@ -73,8 +73,8 @@ public class TestMevoco9 {
         session = api.loginAsAdmin();
     }
 
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         api.setTimeout(100000);
         MevocoGlobalConfig.VM_API_RETRY.updateValue(10);
         kconfig.startVmFailureChance = 0.5;

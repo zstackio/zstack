@@ -14,7 +14,7 @@ import org.zstack.utils.logging.CLogger;
 
 public class TestAsyncSafe {
     private static final CLogger logger = Utils.getLogger(TestAsyncSafe.class);
-    
+
     private boolean called = false;
 
     ComponentLoader loader;
@@ -30,10 +30,10 @@ public class TestAsyncSafe {
     private void throwError(Completion complete) {
         throw new CloudRuntimeException("on purpose");
     }
-    
+
     @Test
     public void test() {
-        throwError(new Completion () {
+        throwError(new Completion() {
             @Override
             public void success() {
             }
@@ -44,7 +44,7 @@ public class TestAsyncSafe {
                 called = true;
             }
         });
-        
+
         Assert.assertTrue(called);
     }
 

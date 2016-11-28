@@ -20,9 +20,9 @@ public class TestThreadFacadeCancel {
     ThreadFacade thdf;
     int threadNum = 5;
     volatile int count = 0;
-    CountDownLatch latch = new CountDownLatch(threadNum-1);
-    
-    class Tester implements Task<Void>{
+    CountDownLatch latch = new CountDownLatch(threadNum - 1);
+
+    class Tester implements Task<Void> {
         int index;
 
         Tester(int index) {
@@ -47,7 +47,7 @@ public class TestThreadFacadeCancel {
             return "Tester";
         }
     }
-    
+
     @Before
     public void setUp() throws Exception {
         BeanConstructor con = new BeanConstructor();
@@ -60,11 +60,11 @@ public class TestThreadFacadeCancel {
         for (int i = 0; i < threadNum; i++) {
             Tester worker = new Tester(i);
             Future<Void> f = thdf.submit(worker);
-            if (i == threadNum-1) {
-               f.cancel(true); 
+            if (i == threadNum - 1) {
+                f.cancel(true);
             }
         }
         latch.await(10, TimeUnit.SECONDS);
-        Assert.assertEquals(threadNum-1, this.count);
+        Assert.assertEquals(threadNum - 1, this.count);
     }
 }

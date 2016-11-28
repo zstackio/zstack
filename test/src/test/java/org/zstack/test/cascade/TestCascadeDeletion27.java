@@ -21,11 +21,10 @@ import org.zstack.test.VmCreator;
 import org.zstack.test.deployer.Deployer;
 
 /**
- *
  * 1. two l2Networks
  * 2. create vm which has two l3 on two l2
  * 3. detach one l2
- *
+ * <p>
  * confirm vm stopped
  */
 public class TestCascadeDeletion27 {

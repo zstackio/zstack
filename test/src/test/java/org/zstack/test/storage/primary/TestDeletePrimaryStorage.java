@@ -17,8 +17,9 @@ import org.zstack.test.DBUtil;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.logging.CLogger;
+
 public class TestDeletePrimaryStorage {
-	CLogger logger = Utils.getLogger(TestDeletePrimaryStorage.class);
+    CLogger logger = Utils.getLogger(TestDeletePrimaryStorage.class);
     Api api;
     ComponentLoader loader;
     DatabaseFacade dbf;
@@ -47,7 +48,7 @@ public class TestDeletePrimaryStorage {
         sp.setTotalCapacity(SizeUnit.TERABYTE.toByte(10));
         sp.setAvailableCapacity(sp.getTotalCapacity());
         sp.setUrl("nfs://simulator/primary/");
-    	ZoneInventory zone = api.createZones(1).get(0);
+        ZoneInventory zone = api.createZones(1).get(0);
         sp.setZoneUuid(zone.getUuid());
         PrimaryStorageInventory inv = api.createSimulatoPrimaryStorage(1, sp).get(0);
         PrimaryStorageVO vo = dbf.findByUuid(inv.getUuid(), PrimaryStorageVO.class);

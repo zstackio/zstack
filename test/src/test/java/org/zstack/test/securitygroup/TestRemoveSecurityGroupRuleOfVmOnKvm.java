@@ -9,12 +9,12 @@ import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.securitygroup.SecurityGroupInventory;
 import org.zstack.network.securitygroup.SecurityGroupRuleInventory;
 import org.zstack.network.securitygroup.SecurityGroupRuleTO;
+import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -25,16 +25,11 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 
  * @author frank
- *
- * @condition
- * 1. create a security group with some rules
+ * @condition 1. create a security group with some rules
  * 2. create a vm and add one nic in security group
  * 3. remove a rule from security group
- * 
- * @test
- * confirm the rule was removed from vm
+ * @test confirm the rule was removed from vm
  */
 public class TestRemoveSecurityGroupRuleOfVmOnKvm {
     static CLogger logger = Utils.getLogger(TestRemoveSecurityGroupRuleOfVmOnKvm.class);
@@ -56,7 +51,7 @@ public class TestRemoveSecurityGroupRuleOfVmOnKvm {
         dbf = loader.getComponent(DatabaseFacade.class);
         config = loader.getComponent(KVMSimulatorConfig.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         SecurityGroupInventory scinv = deployer.securityGroups.get("test");
@@ -71,7 +66,7 @@ public class TestRemoveSecurityGroupRuleOfVmOnKvm {
         config.securityGroupSuccess = true;
         api.addVmNicToSecurityGroup(scinv.getUuid(), nic.getUuid());
         TimeUnit.MILLISECONDS.sleep(500);
-        
+
         SecurityGroupRuleInventory ruleToRemove = scinv.getRules().get(0);
         List<String> rsUuid = new ArrayList<String>(1);
         rsUuid.add(ruleToRemove.getUuid());

@@ -21,7 +21,7 @@ public class TestCloudBusCall {
     ComponentLoader loader;
     CloudBusIN bus;
     Service serv;
-    
+
     public static class HelloWorldMsg extends NeedReplyMessage {
         private String greet;
 
@@ -32,8 +32,9 @@ public class TestCloudBusCall {
         public void setGreet(String greet) {
             this.greet = greet;
         }
-        
+
     }
+
     public static class HelloWorldReply extends MessageReply {
         private String greet;
 
@@ -45,7 +46,7 @@ public class TestCloudBusCall {
             this.greet = greet;
         }
     }
-    
+
     class FakeService extends AbstractService {
         @Override
         public boolean start() {
@@ -64,7 +65,7 @@ public class TestCloudBusCall {
         @Override
         public void handleMessage(Message msg) {
             if (msg.getClass() == HelloWorldMsg.class) {
-                HelloWorldMsg hmsg = (HelloWorldMsg)msg;
+                HelloWorldMsg hmsg = (HelloWorldMsg) msg;
                 HelloWorldReply r = new HelloWorldReply();
                 r.setGreet(hmsg.getGreet());
                 bus.reply(msg, r);
@@ -75,9 +76,9 @@ public class TestCloudBusCall {
         public String getId() {
             return this.getClass().getCanonicalName();
         }
-        
+
     }
-    
+
     @Before
     public void setUp() throws Exception {
         BeanConstructor con = new BeanConstructor();

@@ -15,6 +15,7 @@ import org.zstack.test.ApiSenderException;
 import org.zstack.test.BeanConstructor;
 import org.zstack.test.DBUtil;
 import org.zstack.utils.data.SizeUnit;
+
 public class TestPrimaryStorageAttachExtensionPoint {
     Api api;
     ComponentLoader loader;
@@ -55,7 +56,7 @@ public class TestPrimaryStorageAttachExtensionPoint {
             api.attachPrimaryStorage(cluster.getUuid(), inv.getUuid());
         } catch (ApiSenderException e) {
         }
-        
+
         ext.setPreventAttach(false);
         ext.setExpectedClusterUuid(cluster.getUuid());
         ext.setExpectedPrimaryStorageUuid(inv.getUuid());

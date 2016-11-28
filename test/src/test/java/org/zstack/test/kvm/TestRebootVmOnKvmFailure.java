@@ -42,11 +42,11 @@ public class TestRebootVmOnKvmFailure {
         config = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test(expected=ApiSenderException.class)
-	public void test() throws ApiSenderException {
-	    config.rebootVmSuccess = false;
-	    VmInstanceInventory vm = deployer.vms.get("TestVm");
-	    api.rebootVmInstance(vm.getUuid());
-	}
+
+    @Test(expected = ApiSenderException.class)
+    public void test() throws ApiSenderException {
+        config.rebootVmSuccess = false;
+        VmInstanceInventory vm = deployer.vms.get("TestVm");
+        api.rebootVmInstance(vm.getUuid());
+    }
 }

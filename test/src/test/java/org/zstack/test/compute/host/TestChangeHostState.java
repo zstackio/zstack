@@ -22,6 +22,7 @@ import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.TimeUnit;
+
 public class TestChangeHostState {
     CLogger logger = Utils.getLogger(TestChangeHostState.class);
     Api api;
@@ -54,7 +55,7 @@ public class TestChangeHostState {
     void enableHost(HostInventory host) throws InterruptedException, BrokenBarrierException, ApiSenderException {
         barrier.await();
         try {
-            for (int i=0; i<testNum; i++) {
+            for (int i = 0; i < testNum; i++) {
                 HostInventory h = api.changeHostState(host.getUuid(), HostStateEvent.enable);
                 if (!h.getState().equals(HostState.Enabled.toString())) {
                     return;
@@ -70,7 +71,7 @@ public class TestChangeHostState {
     void disableHost(HostInventory host) throws InterruptedException, BrokenBarrierException, ApiSenderException {
         barrier.await();
         try {
-            for (int i=0; i<testNum; i++) {
+            for (int i = 0; i < testNum; i++) {
                 HostInventory h = api.changeHostState(host.getUuid(), HostStateEvent.disable);
                 if (!h.getState().equals(HostState.Disabled.toString())) {
                     return;

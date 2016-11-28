@@ -25,21 +25,21 @@ import java.util.Set;
 
 /**
  * 1. detach all nic
- *
+ * <p>
  * confirm the default L3 is null
- *
+ * <p>
  * 2. attach a nic
- *
+ * <p>
  * confirm the default L3 is set
- *
+ * <p>
  * 3. attach more nics
  * 4. update the default L3
- *
+ * <p>
  * confirm the default L3 is updated
- *
+ * <p>
  * 5. detach a nic
  * 6. attach the nic back
- *
+ * <p>
  * confirm no duplicate deviceId
  */
 public class TestDetachNicOnKvm7 {
@@ -66,9 +66,9 @@ public class TestDetachNicOnKvm7 {
         config = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         final L3NetworkInventory l3 = deployer.l3Networks.get("TestL3Network4");
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         for (VmNicInventory nic : vm.getVmNics()) {

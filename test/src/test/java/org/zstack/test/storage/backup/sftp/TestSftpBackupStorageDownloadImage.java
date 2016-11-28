@@ -51,7 +51,7 @@ public class TestSftpBackupStorageDownloadImage {
         config = loader.getComponent(SftpBackupStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         SftpBackupStorageTestHelper helper = new SftpBackupStorageTestHelper();

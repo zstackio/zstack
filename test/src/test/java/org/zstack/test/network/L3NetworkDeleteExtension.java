@@ -12,7 +12,7 @@ public class L3NetworkDeleteExtension implements L3NetworkDeleteExtensionPoint {
     boolean beforeCalled = false;
     boolean afterCalled = false;
     String excpectedUuid;
-    
+
     @Override
     public String preDeleteL3Network(L3NetworkInventory inventory) throws L3NetworkException {
         if (preventDelete) {

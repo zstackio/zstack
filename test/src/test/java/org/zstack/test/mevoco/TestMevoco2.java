@@ -39,11 +39,11 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * 1. concurrently add image and create vm
- *
+ * <p>
  * confirm 50 vms created successfully
- *
+ * <p>
  * 2. reconnect the host
- *
+ * <p>
  * confirm all DHCP setup for vms
  */
 public class TestMevoco2 {
@@ -139,8 +139,8 @@ public class TestMevoco2 {
         Assert.assertTrue(target.dns.containsAll(dns));
     }
 
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         final BackupStorageInventory sftp = deployer.backupStorages.get("sftp");
         final ImageInventory img = new ImageInventory();
         img.setName("image");
@@ -149,7 +149,7 @@ public class TestMevoco2 {
         img.setFormat("qcow2");
         img.setUrl("http://test.img");
 
-        for (int i=0; i<num; i++) {
+        for (int i = 0; i < num; i++) {
             createVm(img, sftp.getUuid());
         }
 
@@ -162,7 +162,7 @@ public class TestMevoco2 {
         api.reconnectHost(host.getUuid());
         Assert.assertFalse(fconfig.applyDhcpCmdList.isEmpty());
         ApplyDhcpCmd cmd = fconfig.applyDhcpCmdList.get(0);
-        Assert.assertEquals(num+1, cmd.dhcp.size());
+        Assert.assertEquals(num + 1, cmd.dhcp.size());
 
         List<VmInstanceVO> vms = dbf.listAll(VmInstanceVO.class);
         for (VmInstanceVO vm : vms) {

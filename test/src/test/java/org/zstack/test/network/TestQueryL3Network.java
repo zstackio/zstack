@@ -21,12 +21,12 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 public class TestQueryL3Network {
-	CLogger logger = Utils.getLogger(TestQueryL3Network.class);
-	Deployer deployer;
-	Api api;
-	ComponentLoader loader;
-	CloudBus bus;
-	DatabaseFacade dbf;
+    CLogger logger = Utils.getLogger(TestQueryL3Network.class);
+    Deployer deployer;
+    Api api;
+    ComponentLoader loader;
+    CloudBus bus;
+    DatabaseFacade dbf;
 
     @Before
     public void setUp() throws Exception {
@@ -41,21 +41,21 @@ public class TestQueryL3Network {
         dbf = loader.getComponent(DatabaseFacade.class);
     }
 
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
-	    SessionInventory session = api.loginByAccount("TestAccount", "password");
-	    L3NetworkInventory l3inv = deployer.l3Networks.get("TestL3Network2");
-	    QueryTestValidator.validateEQ(new APIQueryL3NetworkMsg(), api, APIQueryL3NetworkReply.class, l3inv, session);
-	    QueryTestValidator.validateRandomEQConjunction(new APIQueryL3NetworkMsg(), api, APIQueryL3NetworkReply.class, l3inv, session, 2);
-	    
-	    APIQueryL3NetworkMsg msg = new APIQueryL3NetworkMsg();
-	    QueryCondition qc = new QueryCondition();
-	    qc.setName("dns");
-	    qc.setOp(QueryOp.EQ.toString());
-	    qc.setValue("9.9.9.9");
-	    msg.getConditions().add(qc);
-	    APIQueryL3NetworkReply reply = api.query(msg, APIQueryL3NetworkReply.class);
-	    Assert.assertEquals(1, reply.getInventories().size());
-	}
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
+        SessionInventory session = api.loginByAccount("TestAccount", "password");
+        L3NetworkInventory l3inv = deployer.l3Networks.get("TestL3Network2");
+        QueryTestValidator.validateEQ(new APIQueryL3NetworkMsg(), api, APIQueryL3NetworkReply.class, l3inv, session);
+        QueryTestValidator.validateRandomEQConjunction(new APIQueryL3NetworkMsg(), api, APIQueryL3NetworkReply.class, l3inv, session, 2);
+
+        APIQueryL3NetworkMsg msg = new APIQueryL3NetworkMsg();
+        QueryCondition qc = new QueryCondition();
+        qc.setName("dns");
+        qc.setOp(QueryOp.EQ.toString());
+        qc.setValue("9.9.9.9");
+        msg.getConditions().add(qc);
+        APIQueryL3NetworkReply reply = api.query(msg, APIQueryL3NetworkReply.class);
+        Assert.assertEquals(1, reply.getInventories().size());
+    }
 
 }

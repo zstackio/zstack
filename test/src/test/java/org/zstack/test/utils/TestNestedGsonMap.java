@@ -17,7 +17,7 @@ public class TestNestedGsonMap {
     public void test() throws InterruptedException {
         Map obj = map(e("a",
                 map(e("b",
-                                map(e("c", 10))),
+                        map(e("c", 10))),
                         e("d", map(e("h", 100)
                         ))
                 )));

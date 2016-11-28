@@ -36,14 +36,14 @@ public class TestAttachVolumeToVm {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         SimpleQuery<DiskOfferingVO> dq = dbf.createQuery(DiskOfferingVO.class);
         dq.add(DiskOfferingVO_.name, Op.EQ, "TestDataDiskOffering");
         DiskOfferingVO dvo = dq.find();
         VolumeInventory vinv = api.createDataVolume("TestData", dvo.getUuid());
-        
+
         VmInstanceInventory vminv = api.listVmInstances(null).get(0);
         vinv = api.attachVolumeToVm(vminv.getUuid(), vinv.getUuid());
         Assert.assertEquals(Integer.valueOf(2), vinv.getDeviceId());

@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.header.storage.primary.APIAddPrimaryStorageEvent;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.zone.ZoneInventory;
-import org.zstack.storage.primary.nfs.APIAddNfsPrimaryStorageMsg;
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageConstant;
 import org.zstack.storage.primary.smp.APIAddSharedMountPointPrimaryStorageMsg;
 import org.zstack.storage.primary.smp.SMPPrimaryStorageSimulatorConfig;
@@ -22,7 +21,7 @@ import java.util.List;
 public class SMPPrimaryStorageDeployer implements PrimaryStorageDeployer<SharedMountPointPrimaryStorageConfig> {
     @Autowired
     private SMPPrimaryStorageSimulatorConfig simulatorConfig;
-    
+
     @Override
     public Class<SharedMountPointPrimaryStorageConfig> getSupportedDeployerClassType() {
         return SharedMountPointPrimaryStorageConfig.class;
@@ -43,7 +42,7 @@ public class SMPPrimaryStorageDeployer implements PrimaryStorageDeployer<SharedM
             msg.setZoneUuid(zone.getUuid());
             ApiSender sender = api.getApiSender();
             APIAddPrimaryStorageEvent evt = sender.send(msg, APIAddPrimaryStorageEvent.class);
-            PrimaryStorageInventory inv = evt.getInventory(); 
+            PrimaryStorageInventory inv = evt.getInventory();
             deployer.primaryStorages.put(nc.getName(), inv);
         }
     }

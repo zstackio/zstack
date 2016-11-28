@@ -27,11 +27,9 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.Arrays;
-
 /**
  * 1. create a data volume template from data volume, not specifying backup storage uuid
- *
+ * <p>
  * confirm volume template created successfully
  */
 public class TestCreateDataVolumeTemplate6 {
@@ -60,9 +58,9 @@ public class TestCreateDataVolumeTemplate6 {
         kvmConfig = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         api.stopVmInstance(vm.getUuid());
         VolumeInventory dataVolume = CollectionUtils.find(vm.getAllVolumes(), new Function<VolumeInventory, VolumeInventory>() {
@@ -80,5 +78,5 @@ public class TestCreateDataVolumeTemplate6 {
         Assert.assertEquals(ImageMediaType.DataVolumeTemplate.toString(), template.getMediaType());
         Assert.assertEquals(1, template.getBackupStorageRefs().size());
         Assert.assertEquals(sftp.getUuid(), template.getBackupStorageRefs().get(0).getBackupStorageUuid());
-	}
+    }
 }

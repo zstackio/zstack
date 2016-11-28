@@ -84,7 +84,7 @@ public class TestVirtualRouterAttachNetworkService {
         boolean s = false;
         try {
             api.attachNetworkServiceToL3Network(l3.getUuid(), vrp.getUuid(), list(EipConstant.EIP_NETWORK_SERVICE_TYPE, LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING));
-        } catch (ApiSenderException e)  {
+        } catch (ApiSenderException e) {
             s = true;
         }
         Assert.assertTrue(s);

@@ -1,19 +1,18 @@
-
 package org.zstack.test.deployer.schema;
 
-import java.util.ArrayList;
-import java.util.List;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlType;
+import java.util.ArrayList;
+import java.util.List;
 
 
 /**
  * <p>Java class for SecurityGroupConfig complex type.
- * 
+ * <p>
  * <p>The following schema fragment specifies the expected content contained within this class.
- * 
+ * <p>
  * <pre>
  * &lt;complexType name="SecurityGroupConfig">
  *   &lt;complexContent>
@@ -29,14 +28,12 @@ import javax.xml.bind.annotation.XmlType;
  *   &lt;/complexContent>
  * &lt;/complexType>
  * </pre>
- * 
- * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "SecurityGroupConfig", propOrder = {
-    "l3NetworkRef",
-    "accountRef",
-    "rule"
+        "l3NetworkRef",
+        "accountRef",
+        "rule"
 })
 public class SecurityGroupConfig {
 
@@ -50,25 +47,23 @@ public class SecurityGroupConfig {
 
     /**
      * Gets the value of the l3NetworkRef property.
-     * 
+     * <p>
      * <p>
      * This accessor method returns a reference to the live list,
      * not a snapshot. Therefore any modification you make to the
      * returned list will be present inside the JAXB object.
      * This is why there is not a <CODE>set</CODE> method for the l3NetworkRef property.
-     * 
+     * <p>
      * <p>
      * For example, to add a new item, do as follows:
      * <pre>
      *    getL3NetworkRef().add(newItem);
      * </pre>
-     * 
-     * 
+     * <p>
+     * <p>
      * <p>
      * Objects of the following type(s) are allowed in the list
      * {@link String }
-     * 
-     * 
      */
     public List<String> getL3NetworkRef() {
         if (l3NetworkRef == null) {
@@ -79,11 +74,9 @@ public class SecurityGroupConfig {
 
     /**
      * Gets the value of the accountRef property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getAccountRef() {
         return accountRef;
@@ -91,11 +84,9 @@ public class SecurityGroupConfig {
 
     /**
      * Sets the value of the accountRef property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setAccountRef(String value) {
         this.accountRef = value;
@@ -103,25 +94,23 @@ public class SecurityGroupConfig {
 
     /**
      * Gets the value of the rule property.
-     * 
+     * <p>
      * <p>
      * This accessor method returns a reference to the live list,
      * not a snapshot. Therefore any modification you make to the
      * returned list will be present inside the JAXB object.
      * This is why there is not a <CODE>set</CODE> method for the rule property.
-     * 
+     * <p>
      * <p>
      * For example, to add a new item, do as follows:
      * <pre>
      *    getRule().add(newItem);
      * </pre>
-     * 
-     * 
+     * <p>
+     * <p>
      * <p>
      * Objects of the following type(s) are allowed in the list
      * {@link SecurityGroupRuleConfig }
-     * 
-     * 
      */
     public List<SecurityGroupRuleConfig> getRule() {
         if (rule == null) {
@@ -132,11 +121,9 @@ public class SecurityGroupConfig {
 
     /**
      * Gets the value of the name property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getName() {
         return name;
@@ -144,11 +131,9 @@ public class SecurityGroupConfig {
 
     /**
      * Sets the value of the name property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setName(String value) {
         this.name = value;
@@ -156,11 +141,9 @@ public class SecurityGroupConfig {
 
     /**
      * Gets the value of the description property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getDescription() {
         return description;
@@ -168,11 +151,9 @@ public class SecurityGroupConfig {
 
     /**
      * Sets the value of the description property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setDescription(String value) {
         this.description = value;

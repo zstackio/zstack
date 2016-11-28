@@ -33,8 +33,8 @@ public class TestSessionExpiredCleanUp {
         api = new Api();
         api.startServer();
     }
-    
-    
+
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         IdentityGlobalConfig.SESSION_TIMEOUT.updateValue(1);

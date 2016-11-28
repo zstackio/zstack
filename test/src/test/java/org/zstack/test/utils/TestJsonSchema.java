@@ -14,7 +14,6 @@ import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.header.zone.ZoneInventory;
 import org.zstack.storage.backup.sftp.SftpBackupStorageInventory;
-import org.zstack.utils.gson.JSONObjectUtil;
 
 import java.io.Serializable;
 import java.util.*;

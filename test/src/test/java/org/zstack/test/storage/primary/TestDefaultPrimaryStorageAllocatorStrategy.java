@@ -20,6 +20,7 @@ import org.zstack.test.DBUtil;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.logging.CLogger;
+
 public class TestDefaultPrimaryStorageAllocatorStrategy {
     CLogger logger = Utils.getLogger(TestDefaultPrimaryStorageAllocatorStrategy.class);
     Api api;
@@ -66,7 +67,7 @@ public class TestDefaultPrimaryStorageAllocatorStrategy {
         ClusterInventory cluster = api.createClusters(1, zone.getUuid()).get(0);
         HostInventory host = api.createHost(1, cluster.getUuid()).get(0);
         api.attachPrimaryStorage(cluster.getUuid(), pinv.getUuid());
-        
+
         AllocatePrimaryStorageMsg msg = new AllocatePrimaryStorageMsg();
         msg.setSize(requiredSize);
         msg.setRequiredHostUuid(host.getUuid());
@@ -77,7 +78,7 @@ public class TestDefaultPrimaryStorageAllocatorStrategy {
         Assert.assertTrue(reply.isSuccess());
         AllocatePrimaryStorageReply ar = reply.castReply();
         Assert.assertEquals(pinv.getUuid(), ar.getPrimaryStorageInventory().getUuid());
-        
+
         PrimaryStorageVO pvo = dbf.findByUuid(pinv.getUuid(), PrimaryStorageVO.class);
         Assert.assertEquals(requiredSize, pvo.getCapacity().getTotalCapacity() - pvo.getCapacity().getAvailableCapacity());
     }

@@ -11,7 +11,6 @@ import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageStatus;
 import org.zstack.header.storage.backup.BackupStorageInventory;
-import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
@@ -31,7 +30,7 @@ import java.util.Arrays;
 
 /**
  * 1. create data volume template on two backup storage
- *
+ * <p>
  * confirm template created successfully on two backup storage
  */
 public class TestCreateDataVolumeTemplate1 {
@@ -58,9 +57,9 @@ public class TestCreateDataVolumeTemplate1 {
         config = loader.getComponent(NfsPrimaryStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         api.stopVmInstance(vm.getUuid());
         VolumeInventory dataVolume = CollectionUtils.find(vm.getAllVolumes(), new Function<VolumeInventory, VolumeInventory>() {
@@ -78,5 +77,5 @@ public class TestCreateDataVolumeTemplate1 {
         Assert.assertEquals(2, config.uploadToSftpCmds.size());
         Assert.assertEquals(ImageMediaType.DataVolumeTemplate.toString(), template.getMediaType());
         Assert.assertEquals(2, template.getBackupStorageRefs().size());
-	}
+    }
 }

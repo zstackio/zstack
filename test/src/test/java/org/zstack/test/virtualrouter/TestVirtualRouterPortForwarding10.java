@@ -16,26 +16,21 @@ import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.virtualrouter.portforwarding.PortForwardingRuleTO;
 import org.zstack.network.service.virtualrouter.portforwarding.VirtualRouterPortForwardingRuleRefVO;
 import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipVO;
+import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.simulator.virtualrouter.VirtualRouterSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.simulator.kvm.KVMSimulatorConfig;
 
 /**
- * 
  * @author frank
- * 
- * @condition
- * 1. create a vm
+ * @condition 1. create a vm
  * 2. acquire a vip
  * 3. use the vip for two port forwarding rules
  * 4. revoke one rule
- *
- * @test
- * confirm still one port forwarding rule on virtual router
+ * @test confirm still one port forwarding rule on virtual router
  */
 public class TestVirtualRouterPortForwarding10 {
     Deployer deployer;
@@ -66,7 +61,7 @@ public class TestVirtualRouterPortForwarding10 {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         PortForwardingRuleInventory rule1 = new PortForwardingRuleInventory();
@@ -75,7 +70,7 @@ public class TestVirtualRouterPortForwarding10 {
         VmNicInventory nic = vm.getVmNics().get(0);
         L3NetworkInventory vipNw = deployer.l3Networks.get("PublicNetwork");
         VipInventory vip = api.acquireIp(vipNw.getUuid());
-        
+
         rule1.setName("pfRule1");
         rule1.setVipUuid(vip.getUuid());
         rule1.setVmNicUuid(nic.getUuid());
@@ -85,7 +80,7 @@ public class TestVirtualRouterPortForwarding10 {
         rule1.setPrivatePortEnd(100);
         rule1.setProtocolType(PortForwardingProtocolType.TCP.toString());
         rule1 = api.createPortForwardingRuleByFullConfig(rule1);
-        
+
         rule2.setName("pfRule2");
         rule2.setVipUuid(vip.getUuid());
         rule2.setVmNicUuid(nic.getUuid());
@@ -95,10 +90,10 @@ public class TestVirtualRouterPortForwarding10 {
         rule2.setPrivatePortEnd(2000);
         rule2.setProtocolType(PortForwardingProtocolType.TCP.toString());
         rule2 = api.createPortForwardingRuleByFullConfig(rule2);
-        
+
         PortForwardingRuleTestValidator validator = new PortForwardingRuleTestValidator();
         validator.validate(vconfig.portForwardingRules, deployer.portForwardingRules.values());
-        
+
         api.revokePortForwardingRule(rule1.getUuid());
         Assert.assertEquals(1, vconfig.removedPortForwardingRules.size());
         PortForwardingRuleTO to = vconfig.removedPortForwardingRules.get(0);

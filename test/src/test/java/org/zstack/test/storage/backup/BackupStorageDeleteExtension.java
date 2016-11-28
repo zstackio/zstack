@@ -12,7 +12,7 @@ public class BackupStorageDeleteExtension implements BackupStorageDeleteExtensio
     boolean beforeCalled = false;
     boolean afterCalled = false;
     String expectedBackupStorageUuid;
-    
+
     @Override
     public void preDeleteSecondaryStorage(BackupStorageInventory inv) throws BackupStorageException {
         if (preventDelete) {

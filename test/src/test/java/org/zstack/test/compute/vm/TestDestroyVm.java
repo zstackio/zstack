@@ -9,11 +9,9 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.header.allocator.HostCapacityVO;
 import org.zstack.header.network.l3.APIGetIpAddressCapacityReply;
-import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
+import org.zstack.header.vm.*;
 import org.zstack.header.volume.VolumeStatus;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.volume.VolumeVO_;
@@ -28,42 +26,42 @@ import java.util.concurrent.TimeUnit;
 /**
  * 1. create 3 vm
  * 2. delete vm1
- *
+ * <p>
  * confirm the vm1 changed to Destroyed state
- *
+ * <p>
  * 3. recover vm1
- *
+ * <p>
  * confirm the vm1 recover to state Stopped
- *
+ * <p>
  * 4. attach a l3 to vm1 and start it
- *
+ * <p>
  * confirm the vm1 starts successfully
- *
+ * <p>
  * 5. destroy vm1
  * 6. update expunge interval and period to 1s
- *
+ * <p>
  * confirm the vm1 is deleted
- *
+ * <p>
  * 7. update vm deletion policy to Direct
  * 8. delete vm2
- *
+ * <p>
  * confirm the vm2 is deleted
- *
+ * <p>
  * 9. update vm deletion policy to Never
  * 10. delete vm3
- *
+ * <p>
  * confirm vm3 changed to Destroyed state
- *
+ * <p>
  * 11. sleep 3s
- *
+ * <p>
  * confirm vm3 is still there
- *
+ * <p>
  * 12. update volume expunge interval and period to 1s
- *
+ * <p>
  * confirm root volume of the vm3 is still there
- *
+ * <p>
  * 13. delete and expunge the vm4
- *
+ * <p>
  * confirm the vm4 is expunged
  */
 public class TestDestroyVm {
@@ -83,7 +81,7 @@ public class TestDestroyVm {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         VmInstanceInventory vm1 = deployer.vms.get("TestVm");

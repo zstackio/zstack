@@ -55,7 +55,7 @@ public class TestQueryZone {
         msg.getConditions().add(cond1);
         APIQueryZoneReply reply = api.query(msg, APIQueryZoneReply.class);
         Assert.assertEquals(1, reply.getInventories().size());
-        
+
         msg = new APIQueryZoneMsg();
         QueryCondition cond2 = new QueryCondition();
         cond2.setName("name");
@@ -72,7 +72,7 @@ public class TestQueryZone {
         reply = api.query(msg, APIQueryZoneReply.class);
         List<ZoneInventory> invs = reply.getInventories();
         ZoneInventory first = invs.get(0);
-        ZoneInventory last = invs.get(invs.size()-1);
+        ZoneInventory last = invs.get(invs.size() - 1);
         Assert.assertEquals("Zone5", first.getName());
         Assert.assertEquals("Zone1", last.getName());
 

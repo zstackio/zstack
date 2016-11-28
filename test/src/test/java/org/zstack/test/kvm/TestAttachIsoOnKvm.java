@@ -32,32 +32,32 @@ import java.util.List;
 /**
  * 1. create a vm
  * 2. attach an iso to the vm
- *
+ * <p>
  * confirm the iso attached successfully
- *
+ * <p>
  * 3. detach the iso
- *
+ * <p>
  * confirm the iso detached successfully
- *
+ * <p>
  * 4. stop the vm
  * 5. attach the iso
- *
+ * <p>
  * confirm the iso attached successfully
- *
+ * <p>
  * 6. start the vm
- *
+ * <p>
  * confirm the iso is attached
- *
+ * <p>
  * 7. stop the vm
  * 8. detach the iso
- *
+ * <p>
  * confirm the iso detached successfully
- *
+ * <p>
  * 9. start the vm
  * 10. attach the iso
  * 11. delete the iso
  * 12. detach the iso
- *
+ * <p>
  * confirm the iso detached successfully
  */
 public class TestAttachIsoOnKvm {
@@ -88,9 +88,9 @@ public class TestAttachIsoOnKvm {
         config = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         ImageInventory iso = deployer.images.get("TestIso");
         VmInstanceInventory vm = deployer.vms.get("TestVm");
 

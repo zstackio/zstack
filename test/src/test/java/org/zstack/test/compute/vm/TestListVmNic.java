@@ -31,7 +31,7 @@ public class TestListVmNic {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         List<VmNicInventory> nics = api.listVmNic(null);

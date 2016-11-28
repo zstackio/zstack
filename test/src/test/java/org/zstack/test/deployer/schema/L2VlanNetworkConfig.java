@@ -1,18 +1,13 @@
-
 package org.zstack.test.deployer.schema;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlSchemaType;
-import javax.xml.bind.annotation.XmlType;
+import javax.xml.bind.annotation.*;
 
 
 /**
  * <p>Java class for L2VlanNetworkConfig complex type.
- * 
+ * <p>
  * <p>The following schema fragment specifies the expected content contained within this class.
- * 
+ * <p>
  * <pre>
  * &lt;complexType name="L2VlanNetworkConfig">
  *   &lt;complexContent>
@@ -22,14 +17,11 @@ import javax.xml.bind.annotation.XmlType;
  *   &lt;/complexContent>
  * &lt;/complexType>
  * </pre>
- * 
- * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "L2VlanNetworkConfig")
 public class L2VlanNetworkConfig
-    extends L2NoVlanNetworkConfig
-{
+        extends L2NoVlanNetworkConfig {
 
     @XmlAttribute(name = "vlan", required = true)
     @XmlSchemaType(name = "unsignedInt")
@@ -37,7 +29,6 @@ public class L2VlanNetworkConfig
 
     /**
      * Gets the value of the vlan property.
-     * 
      */
     public long getVlan() {
         return vlan;
@@ -45,7 +36,6 @@ public class L2VlanNetworkConfig
 
     /**
      * Sets the value of the vlan property.
-     * 
      */
     public void setVlan(long value) {
         this.vlan = value;

@@ -1,7 +1,6 @@
 package org.zstack.test.storage.volume;
 
 import junit.framework.Assert;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
@@ -9,8 +8,6 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.volume.VolumeInventory;
-import org.zstack.header.volume.VolumeStatus;
-import org.zstack.header.volume.VolumeType;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.BeanConstructor;

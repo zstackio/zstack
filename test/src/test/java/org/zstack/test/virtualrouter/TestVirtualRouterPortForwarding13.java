@@ -17,28 +17,23 @@ import org.zstack.network.service.portforwarding.PortForwardingRuleVO;
 import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.network.service.virtualrouter.portforwarding.PortForwardingRuleTO;
+import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.simulator.virtualrouter.VirtualRouterSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.simulator.kvm.KVMSimulatorConfig;
 
 import java.util.List;
 
 /**
- * 
  * @author frank
- * 
- * @condition
- * 1. create a vm
+ * @condition 1. create a vm
  * 2. acquire a public ip: pub1
  * 3. set port forwarding to vm using pub1
  * 4. destroy vm
- *
- * @test
- * confirm rule has been removed
+ * @test confirm rule has been removed
  */
 public class TestVirtualRouterPortForwarding13 {
     Deployer deployer;
@@ -71,7 +66,7 @@ public class TestVirtualRouterPortForwarding13 {
         gcf = loader.getComponent(GlobalConfigFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         L3NetworkInventory publicNw = deployer.l3Networks.get("PublicNetwork");

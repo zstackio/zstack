@@ -15,7 +15,7 @@ import org.zstack.utils.logging.CLogger;
 
 /* called by other test cases */
 public class CreateHost {
-	CLogger logger = Utils.getLogger(CreateHost.class);
+    CLogger logger = Utils.getLogger(CreateHost.class);
     Api api;
     ComponentLoader loader;
     DatabaseFacade dbf;
@@ -37,16 +37,16 @@ public class CreateHost {
         api.startServer();
     }
 
-	@Test
-	public void test() throws ApiSenderException {
-	    try {
-	        int hostNum = Integer.valueOf(System.getProperty("host.num"));
+    @Test
+    public void test() throws ApiSenderException {
+        try {
+            int hostNum = Integer.valueOf(System.getProperty("host.num"));
             ZoneInventory zone = api.createZones(1).get(0);
             ClusterInventory cluster = api.createClusters(1, zone.getUuid()).get(0);
-	        api.createHost(hostNum, cluster.getUuid());
-	    } finally {
-	        api.stopServer();
-	    }
-	}
+            api.createHost(hostNum, cluster.getUuid());
+        } finally {
+            api.stopServer();
+        }
+    }
 
 }

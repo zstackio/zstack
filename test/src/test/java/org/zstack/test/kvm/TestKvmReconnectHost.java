@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit;
  * 1. create a vm
  * 2. mark vm as destroyed
  * 3. reconnect the host
- *
+ * <p>
  * confirm the host capacity not used
  */
 public class TestKvmReconnectHost {
@@ -54,9 +54,9 @@ public class TestKvmReconnectHost {
         config = loader.getComponent(SftpBackupStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         VmInstanceVO vmvo = dbf.findByUuid(vm.getUuid(), VmInstanceVO.class);
         vmvo.setState(VmInstanceState.Destroyed);

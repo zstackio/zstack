@@ -17,24 +17,25 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.List;
+
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VipTestValidator {
     private static final CLogger logger = Utils.getLogger(VipTestValidator.class);
 
     @Autowired
     private DatabaseFacade dbf;
-    
+
     public static boolean compareWithoutCheckOwnerEthernetMac(VipTO to, VipInventory inv) {
         return (to.getGateway().equals(inv.getGateway()) && to.getIp().equals(inv.getIp()) && to.getNetmask().equals(inv.getNetmask()));
     }
-    
+
     public static void validateWithoutCheckOwnerEthernetMac(List<VipTO> actual, VipInventory expected) {
         for (VipTO to : actual) {
             if (compareWithoutCheckOwnerEthernetMac(to, expected)) {
                 return;
             }
         }
-        
+
         StringBuilder sb = new StringBuilder();
         sb.append("\n========================== Can't find VIP =====================");
         sb.append(String.format("\nexpected: \n%s", JSONObjectUtil.toJsonString(expected)));
@@ -56,14 +57,14 @@ public class VipTestValidator {
 
         return (to.getGateway().equals(inv.getGateway()) && to.getIp().equals(inv.getIp()) && to.getNetmask().equals(inv.getNetmask()) && mac.equals(to.getOwnerEthernetMac()));
     }
-    
+
     public void validate(List<VipTO> actual, VipInventory expected) {
         for (VipTO to : actual) {
             if (compare(to, expected)) {
                 return;
             }
         }
-        
+
         StringBuilder sb = new StringBuilder();
         sb.append("\n========================== Can't find VIP =====================");
         sb.append(String.format("\nexpected: \n%s", JSONObjectUtil.toJsonString(expected)));

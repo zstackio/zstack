@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Map;
 
 /**
- *
  * test stop cascading by return null from createActionForChildResource
  */
 public class TestAsyncCascade2 {

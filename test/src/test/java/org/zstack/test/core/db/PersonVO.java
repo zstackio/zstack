@@ -6,13 +6,13 @@ import javax.persistence.*;
 import java.util.Date;
 
 @Entity
-@Table(name="person")
+@Table(name = "person")
 public class PersonVO {
     public static enum Sex {
         MALE,
         FEMALE,
     }
-    
+
     /**
      * @param id
      * @param name
@@ -34,39 +34,39 @@ public class PersonVO {
         this.title = title;
         this.date = date;
     }
-    
+
     public PersonVO() {
     }
-    
+
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
-    
-    @Column(name="name")
+
+    @Column(name = "name")
     private String name;
-    
-    @Column(name="uuid")
+
+    @Column(name = "uuid")
     @Uuid
     private String uuid;
-    
-    @Column(name="description")
+
+    @Column(name = "description")
     private String description;
-    
-    @Column(name="age")
+
+    @Column(name = "age")
     private int age;
-    
-    @Column(name="sex")
+
+    @Column(name = "sex")
     @Enumerated(EnumType.STRING)
     private Sex sex;
-    
-    @Column(name="marriage")
+
+    @Column(name = "marriage")
     private boolean marriage;
-    
-    @Column(name="title")
+
+    @Column(name = "title")
     private String title;
-    
-    @Column(name="date")
+
+    @Column(name = "date")
     private Date date;
 
     public long getId() {
@@ -140,5 +140,5 @@ public class PersonVO {
     public void setDate(Date date) {
         this.date = date;
     }
-    
+
 }

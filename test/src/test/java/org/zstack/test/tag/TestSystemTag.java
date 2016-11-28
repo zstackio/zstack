@@ -51,7 +51,7 @@ public class TestSystemTag {
     @Test
     public void test() throws ApiSenderException {
         ZoneInventory zone1 = deployer.zones.get("Zone1");
-        TagInventory inv =  api.createSystemTag(zone1.getUuid(), "big", ZoneVO.class);
+        TagInventory inv = api.createSystemTag(zone1.getUuid(), "big", ZoneVO.class);
 
         APIQueryZoneMsg msg = new APIQueryZoneMsg();
         msg.addQueryCondition(TagSubQueryExtension.SYS_TAG_NAME, QueryOp.IN, "big");

@@ -43,7 +43,7 @@ public class TestKvmAttachL2Network2 {
         config = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         ClusterInventory cinv = deployer.clusters.get("TestCluster");

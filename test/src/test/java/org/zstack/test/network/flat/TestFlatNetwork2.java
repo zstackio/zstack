@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * 1. make the host disconnected
  * 2. delete a flat network
- *
+ * <p>
  * confirm the GC works
  * confirm the namespace is deleted
  */
@@ -73,8 +73,8 @@ public class TestFlatNetwork2 {
         session = api.loginAsAdmin();
     }
 
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         final L3NetworkInventory l3 = deployer.l3Networks.get("TestL3Network1");
         String brName = new BridgeNameFinder().findByL3Uuid(l3.getUuid());
         HostInventory host = deployer.hosts.get("host1");

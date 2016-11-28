@@ -10,7 +10,6 @@ import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.BeanConstructor;
 import org.zstack.test.DBUtil;
-import org.zstack.test.search.QueryTestValidator;
 
 /**
  * test update identity
@@ -30,7 +29,7 @@ public class TestIdentity10 {
         api = new Api();
         api.startServer();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         IdentityCreator creator = new IdentityCreator(api);

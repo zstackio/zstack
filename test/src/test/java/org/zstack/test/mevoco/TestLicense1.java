@@ -69,7 +69,7 @@ public class TestLicense1 {
         config = loader.getComponent(LocalStorageSimulatorConfig.class);
         fconfig = loader.getComponent(FlatNetworkServiceSimulatorConfig.class);
         kconfig = loader.getComponent(KVMSimulatorConfig.class);
-        licMgr  = loader.getComponent(MockLicenseManagerImpl.class);
+        licMgr = loader.getComponent(MockLicenseManagerImpl.class);
 
         Capacity c = new Capacity();
         c.total = totalSize;
@@ -103,7 +103,7 @@ public class TestLicense1 {
         licInfo.setLicenseType(LicenseType.Paid);
         licInfo.setHostNum(2);
         MockLicenseManagerImpl.mockLicenseInfo = licInfo;
-        KVMHostInventory host =  api.addKvmHost("host2", "127.0.0.1", cluster.getUuid());
+        KVMHostInventory host = api.addKvmHost("host2", "127.0.0.1", cluster.getUuid());
         api.deleteHost(host.getUuid());
 
         // can add host with prepaid license
@@ -111,7 +111,7 @@ public class TestLicense1 {
         licInfo.setLicenseType(LicenseType.OEM);
         licInfo.setHostNum(2);
         MockLicenseManagerImpl.mockLicenseInfo = licInfo;
-        host =  api.addKvmHost("host2", "127.0.0.1", cluster.getUuid());
+        host = api.addKvmHost("host2", "127.0.0.1", cluster.getUuid());
         api.deleteHost(host.getUuid());
 
         // no operation with expired license

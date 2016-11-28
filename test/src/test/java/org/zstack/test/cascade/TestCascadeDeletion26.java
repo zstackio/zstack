@@ -29,13 +29,12 @@ import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
 /**
- *
  * 1. two primary storage
  * 2. create vm whose root volume and data volume are on different primary storage
  * 3. detach primary storage ps1 where vm's data volume is on
  * 4. attach ps1 to another cluster(TestCluster1)
  * 5. start vm
- *
+ * <p>
  * confirm vm started in TestCluster1
  */
 public class TestCascadeDeletion26 {
@@ -82,7 +81,6 @@ public class TestCascadeDeletion26 {
         L2NetworkInventory l21 = deployer.l2Networks.get("TestL2Network1");
 
         ClusterInventory cluster = deployer.clusters.get("TestCluster");
-
 
 
         api.detachPrimaryStorage(ps1.getUuid(), cluster.getUuid());

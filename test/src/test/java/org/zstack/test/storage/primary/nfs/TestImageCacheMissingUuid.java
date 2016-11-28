@@ -50,9 +50,9 @@ public class TestImageCacheMissingUuid {
         imgUpgradeExtension = loader.getComponent(ImageUpgradeExtension.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         ImageInventory image = deployer.images.get("TestImage");
         SimpleQuery<ImageCacheVO> q = dbf.createQuery(ImageCacheVO.class);
         q.add(ImageCacheVO_.imageUuid, Op.EQ, image.getUuid());

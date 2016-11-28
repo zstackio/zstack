@@ -32,7 +32,7 @@ public class TestGroupPolicyDeny {
         loader = deployer.getComponentLoader();
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test(expected = ApiSenderException.class)
     public void test() throws ApiSenderException {
         SimpleQuery<UserVO> query = dbf.createQuery(UserVO.class);

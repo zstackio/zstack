@@ -21,7 +21,7 @@ import java.util.List;
 public class ImageStoreBackupStorageDeployer implements BackupStorageDeployer<ImageStoreBackupStorageConfig> {
     @Autowired
     private ImageStoreBackupStorageSimulatorConfig simulatorConfig;
-    
+
     @Override
     public Class<ImageStoreBackupStorageConfig> getSupportedDeployerClassType() {
         return ImageStoreBackupStorageConfig.class;

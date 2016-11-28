@@ -46,8 +46,8 @@ public class TestAddSftpBackupStorageFailure {
         config = loader.getComponent(SftpBackupStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-    @Test(expected=ApiSenderException.class)
+
+    @Test(expected = ApiSenderException.class)
     public void test() throws ApiSenderException {
         config.connectSuccess = false;
         config.totalCapacity = SizeUnit.GIGABYTE.toByte(100);

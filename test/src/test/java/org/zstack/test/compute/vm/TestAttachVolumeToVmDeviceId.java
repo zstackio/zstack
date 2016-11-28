@@ -35,40 +35,40 @@ public class TestAttachVolumeToVmDeviceId {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         SimpleQuery<DiskOfferingVO> dq = dbf.createQuery(DiskOfferingVO.class);
         dq.add(DiskOfferingVO_.name, Op.EQ, "DataOffering1");
         DiskOfferingVO dvo1 = dq.find();
-        
+
         dq = dbf.createQuery(DiskOfferingVO.class);
         dq.add(DiskOfferingVO_.name, Op.EQ, "DataOffering2");
         DiskOfferingVO dvo2 = dq.find();
-        
+
         VolumeInventory dinv1 = api.createDataVolume("d1", dvo1.getUuid());
         VolumeInventory dinv2 = api.createDataVolume("d2", dvo2.getUuid());
         Assert.assertNull(dinv1.getDeviceId());
         Assert.assertNull(dinv2.getDeviceId());
-        
+
         SimpleQuery<VmInstanceVO> vq = dbf.createQuery(VmInstanceVO.class);
         vq.add(VmInstanceVO_.name, Op.EQ, "vm1");
         VmInstanceVO vm1 = vq.find();
-        
+
         vq = dbf.createQuery(VmInstanceVO.class);
         vq.add(VmInstanceVO_.name, Op.EQ, "vm2");
         VmInstanceVO vm2 = vq.find();
-        
+
         dinv1 = api.attachVolumeToVm(vm1.getUuid(), dinv1.getUuid());
         Assert.assertEquals(Integer.valueOf(2), dinv1.getDeviceId());
-        
+
         dinv2 = api.attachVolumeToVm(vm1.getUuid(), dinv2.getUuid());
         Assert.assertEquals(Integer.valueOf(3), dinv2.getDeviceId());
-        
+
         dinv1 = api.detachVolumeFromVm(dinv1.getUuid());
         dinv1 = api.attachVolumeToVm(vm2.getUuid(), dinv1.getUuid());
         Assert.assertEquals(Integer.valueOf(2), dinv1.getDeviceId());
-        
+
         VolumeInventory dinv3 = api.createDataVolume("d1", dvo1.getUuid());
         dinv3 = api.attachVolumeToVm(vm1.getUuid(), dinv3.getUuid());
         Assert.assertEquals(Integer.valueOf(2), dinv3.getDeviceId());

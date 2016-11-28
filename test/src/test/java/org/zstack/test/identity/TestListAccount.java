@@ -28,7 +28,7 @@ public class TestListAccount {
         api = new Api();
         api.startServer();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         api.createAccount("Test", "Test");

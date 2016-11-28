@@ -12,24 +12,24 @@ import org.zstack.test.DBUtil;
 import org.zstack.test.search.QueryTestValidator;
 
 public class TestQueryGlobalConfig {
-	GlobalConfigFacade gcf;
-	ComponentLoader loader;
+    GlobalConfigFacade gcf;
+    ComponentLoader loader;
     DatabaseFacade dbf;
-	Api api;
-	
-	@Before
-	public void setUp() throws Exception {
-	    DBUtil.reDeployDB();
+    Api api;
+
+    @Before
+    public void setUp() throws Exception {
+        DBUtil.reDeployDB();
         BeanConstructor con = new BeanConstructor();
         loader = con.addAllConfigInZstackXml().build();
-		gcf = loader.getComponent(GlobalConfigFacade.class);
+        gcf = loader.getComponent(GlobalConfigFacade.class);
         dbf = loader.getComponent(DatabaseFacade.class);
-		api = new Api();
-		api.startServer();
-	}
+        api = new Api();
+        api.startServer();
+    }
 
-	@Test
-	public void test() throws InterruptedException, ApiSenderException, GlobalConfigException {
+    @Test
+    public void test() throws InterruptedException, ApiSenderException, GlobalConfigException {
         String category = "Test";
         String name = "Test";
         GlobalConfigInventory inv = null;
@@ -41,5 +41,5 @@ public class TestQueryGlobalConfig {
         }
         QueryTestValidator.validateEQ(new APIQueryGlobalConfigMsg(), api, APIQueryGlobalConfigReply.class, inv, api.getAdminSession());
         QueryTestValidator.validateRandomEQConjunction(new APIQueryGlobalConfigMsg(), api, APIQueryGlobalConfigReply.class, inv, api.getAdminSession(), 2);
-	}
+    }
 }

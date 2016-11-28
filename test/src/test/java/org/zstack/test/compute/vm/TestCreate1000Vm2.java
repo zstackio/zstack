@@ -64,7 +64,7 @@ public class TestCreate1000Vm2 {
             latch.countDown();
         }
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         CoreGlobalProperty.VM_TRACER_ON = false;
@@ -101,7 +101,7 @@ public class TestCreate1000Vm2 {
                 TimeUnit.MILLISECONDS.toSeconds(totalTime),
                 TimeUnit.MILLISECONDS.toSeconds(minTime),
                 TimeUnit.MILLISECONDS.toSeconds(maxTime),
-                TimeUnit.MILLISECONDS.toSeconds(totalTime/timeCost.size())
+                TimeUnit.MILLISECONDS.toSeconds(totalTime / timeCost.size())
         ));
 
         /*

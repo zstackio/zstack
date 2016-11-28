@@ -32,7 +32,7 @@ public class TestRebootVmExtensionPoint {
         dbf = loader.getComponent(DatabaseFacade.class);
         ext = loader.getComponent(VmRebootExtesnion.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         VmInstanceInventory inv = api.listVmInstances(null).get(0);
@@ -41,7 +41,7 @@ public class TestRebootVmExtensionPoint {
             api.rebootVmInstance(inv.getUuid());
         } catch (ApiSenderException e) {
         }
-        
+
         ext.setPreventReboot(false);
         ext.setExpectedUuid(inv.getUuid());
         api.rebootVmInstance(inv.getUuid());

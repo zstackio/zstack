@@ -3,8 +3,8 @@ package org.zstack.test.core.defer;
 import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.zstack.core.defer.Deferred;
 import org.zstack.core.defer.Defer;
+import org.zstack.core.defer.Deferred;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -17,10 +17,10 @@ public class TestDefer1 {
     public void setUp() throws Exception {
     }
 
-    
+
     @Deferred
     private void case1() {
-        count ++;
+        count++;
         Defer.guard(new Runnable() {
             @Override
             public void run() {
@@ -29,8 +29,8 @@ public class TestDefer1 {
         });
         throw new CloudRuntimeException("Roll back count");
     }
-    
-    @Test(expected=CloudRuntimeException.class)
+
+    @Test(expected = CloudRuntimeException.class)
     public void test() {
         case1();
         Assert.assertEquals(0, count);

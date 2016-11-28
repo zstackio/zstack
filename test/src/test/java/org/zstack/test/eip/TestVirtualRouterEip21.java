@@ -9,24 +9,19 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.eip.EipInventory;
+import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.simulator.virtualrouter.VirtualRouterSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.simulator.kvm.KVMSimulatorConfig;
 
 /**
- * 
  * @author frank
- * 
- * @condition
- * 1. create vm1 with eip1
+ * @condition 1. create vm1 with eip1
  * 2. use the same vip that eip1 uses to create eip2 for vm2
- *
- * @test
- * confirm the operation should fail
+ * @test confirm the operation should fail
  */
 public class TestVirtualRouterEip21 {
     Deployer deployer;
@@ -57,7 +52,7 @@ public class TestVirtualRouterEip21 {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test(expected = ApiSenderException.class)
     public void test() throws ApiSenderException {
         EipInventory eip1 = deployer.eips.get("eip1");

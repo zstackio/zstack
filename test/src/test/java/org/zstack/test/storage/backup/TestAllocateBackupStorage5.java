@@ -46,9 +46,9 @@ public class TestAllocateBackupStorage5 {
         dbf = loader.getComponent(DatabaseFacade.class);
     }
 
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
-	    BackupStorageInventory bsinv = deployer.backupStorages.get("backup1");
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
+        BackupStorageInventory bsinv = deployer.backupStorages.get("backup1");
         ZoneInventory zone = deployer.zones.get("Zone1");
 
         long size = SizeUnit.MEGABYTE.toByte(500);
@@ -62,5 +62,5 @@ public class TestAllocateBackupStorage5 {
         Assert.assertEquals(bsinv.getUuid(), bs.getUuid());
         BackupStorageVO vo = dbf.findByUuid(bs.getUuid(), BackupStorageVO.class);
         Assert.assertEquals(bsinv.getTotalCapacity() - size, vo.getAvailableCapacity());
-	}
+    }
 }

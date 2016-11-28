@@ -25,33 +25,30 @@ import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 
 /**
- * 
  * @author frank
- * 
- * @condition
- * 1. create a vm
+ * @condition 1. create a vm
  * 2. set eip
  * 3. set the vm as stopped
- *
+ * <p>
  * confirm the eip is removed
- *
+ * <p>
  * 4. set the vm as running
- *
+ * <p>
  * confirm the eip is set
- *
+ * <p>
  * 5. set vm unknown on the host2
  * 6. set the vm running on host1
- *
+ * <p>
  * confirm the eip is set on the host1 and removed from the host2
- *
+ * <p>
  * 9. set the vm running on the host1
  * 10. set the vm running on the host2
- *
+ * <p>
  * confirm the eip is set on the host2 and removed from the host1
- *
+ * <p>
  * 11. set the vm starting on the host1
  * 8. set the vm running on host1
- *
+ * <p>
  * confirm the eip is set on the host1
  */
 public class TestFlatNetworkEip5 {
@@ -84,13 +81,13 @@ public class TestFlatNetworkEip5 {
         session = api.loginAsAdmin();
     }
 
-    private String getBridgeName(String l3uuid)  {
+    private String getBridgeName(String l3uuid) {
         L3NetworkVO l3 = dbf.findByUuid(l3uuid, L3NetworkVO.class);
         return KVMSystemTags.L2_BRIDGE_NAME.getTokenByResourceUuid(l3.getL2NetworkUuid(), KVMSystemTags.L2_BRIDGE_NAME_TOKEN);
     }
 
     private void changeVmState(VmInstanceInventory vm, VmInstanceState state) {
-        VmStateChangedOnHostMsg msg =new VmStateChangedOnHostMsg();
+        VmStateChangedOnHostMsg msg = new VmStateChangedOnHostMsg();
         msg.setVmInstanceUuid(vm.getUuid());
         msg.setHostUuid(vm.getHostUuid());
         msg.setStateOnHost(state);

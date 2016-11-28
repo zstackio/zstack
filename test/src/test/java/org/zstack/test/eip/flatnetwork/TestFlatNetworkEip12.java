@@ -10,13 +10,10 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
-import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.kvm.KVMSystemTags;
 import org.zstack.network.service.eip.EipInventory;
-import org.zstack.network.service.flat.FlatEipBackend.BatchApplyEipCmd;
 import org.zstack.network.service.flat.FlatEipBackend.BatchDeleteEipCmd;
-import org.zstack.network.service.flat.FlatEipBackend.DeleteEipCmd;
 import org.zstack.network.service.flat.FlatEipBackend.EipTO;
 import org.zstack.network.service.flat.FlatNetworkServiceSimulatorConfig;
 import org.zstack.network.service.vip.VipVO;
@@ -30,20 +27,16 @@ import org.zstack.test.deployer.Deployer;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 
  * @author frank
- * 
- * @condition
- * 1. create a vm
+ * @condition 1. create a vm
  * 2. set the host disconnected
  * 3. delete the eip
- *
+ * <p>
  * confirm the eip deleted
- *
+ * <p>
  * 4. reconnect the host
- *
+ * <p>
  * confirm the eip is deleted by GC
- *
  */
 public class TestFlatNetworkEip12 {
     Deployer deployer;
@@ -75,7 +68,7 @@ public class TestFlatNetworkEip12 {
         session = api.loginAsAdmin();
     }
 
-    private String getBridgeName(String l3uuid)  {
+    private String getBridgeName(String l3uuid) {
         L3NetworkVO l3 = dbf.findByUuid(l3uuid, L3NetworkVO.class);
         return KVMSystemTags.L2_BRIDGE_NAME.getTokenByResourceUuid(l3.getL2NetworkUuid(), KVMSystemTags.L2_BRIDGE_NAME_TOKEN);
     }

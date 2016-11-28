@@ -23,7 +23,7 @@ public class TestRestAsyncCallbackFail {
     String url;
     CountDownLatch latch = new CountDownLatch(1);
     boolean success = false;
-    
+
     @Before
     public void setUp() throws Exception {
         wbean = new WebBeanConstructor();
@@ -57,12 +57,12 @@ public class TestRestAsyncCallbackFail {
             public Class<String> getReturnClass() {
                 return String.class;
             }
-            
+
         }, TimeUnit.SECONDS, 10);
         latch.await(1, TimeUnit.MINUTES);
         Assert.assertTrue(success);
     }
-    
+
     @After
     public void tearDown() {
         wbean.stopJetty();

@@ -57,7 +57,7 @@ public class TestRandomIpAllocatorStrategy1 {
 
         long len = NetworkUtils.ipv4StringToLong(endIp) - NetworkUtils.ipv4StringToLong(startIp) + 1;
 
-        for (long i=0; i<len; i++) {
+        for (long i = 0; i < len; i++) {
             AllocateIpMsg msg = new AllocateIpMsg();
             msg.setL3NetworkUuid(l3inv.getUuid());
             msg.setServiceId(bus.makeLocalServiceId(L3NetworkConstant.SERVICE_ID));

@@ -52,7 +52,7 @@ public class TestBackupStorageDetachExtensionPoint {
         BackupStorageVO vo = dbf.findByUuid(inv.getUuid(), BackupStorageVO.class);
         Assert.assertEquals(zone.getUuid(), vo.getAttachedZoneRefs().iterator().next().getZoneUuid());
         Assert.assertEquals(zone.getUuid(), inv.getAttachedZoneUuids().iterator().next());
-        
+
         ext.setPreventChange(true);
         try {
             api.detachBackupStorage(inv.getUuid(), zone.getUuid());
@@ -60,7 +60,7 @@ public class TestBackupStorageDetachExtensionPoint {
         }
         vo = dbf.findByUuid(inv.getUuid(), BackupStorageVO.class);
         Assert.assertEquals(1, vo.getAttachedZoneRefs().size());
-        
+
         ext.setPreventChange(false);
         ext.setExpectedBackStorageUuid(inv.getUuid());
         ext.setExpectedZoneUuid(zone.getUuid());

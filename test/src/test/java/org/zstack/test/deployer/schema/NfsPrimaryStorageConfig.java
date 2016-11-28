@@ -1,4 +1,3 @@
-
 package org.zstack.test.deployer.schema;
 
 import javax.xml.bind.annotation.XmlAccessType;
@@ -9,9 +8,9 @@ import javax.xml.bind.annotation.XmlType;
 
 /**
  * <p>Java class for NfsPrimaryStorageConfig complex type.
- * 
+ * <p>
  * <p>The following schema fragment specifies the expected content contained within this class.
- * 
+ * <p>
  * <pre>
  * &lt;complexType name="NfsPrimaryStorageConfig">
  *   &lt;complexContent>
@@ -22,14 +21,11 @@ import javax.xml.bind.annotation.XmlType;
  *   &lt;/complexContent>
  * &lt;/complexType>
  * </pre>
- * 
- * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "NfsPrimaryStorageConfig")
 public class NfsPrimaryStorageConfig
-    extends PrimaryStorageConfigBase
-{
+        extends PrimaryStorageConfigBase {
 
     @XmlAttribute(name = "placeHolder")
     protected String placeHolder;
@@ -38,11 +34,9 @@ public class NfsPrimaryStorageConfig
 
     /**
      * Gets the value of the placeHolder property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getPlaceHolder() {
         return placeHolder;
@@ -50,11 +44,9 @@ public class NfsPrimaryStorageConfig
 
     /**
      * Sets the value of the placeHolder property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setPlaceHolder(String value) {
         this.placeHolder = value;
@@ -62,11 +54,9 @@ public class NfsPrimaryStorageConfig
 
     /**
      * Gets the value of the options property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getOptions() {
         return options;
@@ -74,11 +64,9 @@ public class NfsPrimaryStorageConfig
 
     /**
      * Sets the value of the options property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setOptions(String value) {
         this.options = value;

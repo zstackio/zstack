@@ -3,7 +3,6 @@ package org.zstack.test.utils;
 import org.junit.Test;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
-import org.zstack.utils.StringDSL.*;
 
 import static org.zstack.utils.StringDSL.s;
 
@@ -23,6 +22,6 @@ public class TestStringDSL {
         logger.debug(ret);
 
         String str = "123M";
-        logger.debug(str.substring(0, str.length()-1));
+        logger.debug(str.substring(0, str.length() - 1));
     }
 }

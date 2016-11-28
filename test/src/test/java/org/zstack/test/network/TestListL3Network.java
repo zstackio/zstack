@@ -44,7 +44,7 @@ public class TestListL3Network {
         int testNum = 10;
         ZoneInventory zone = api.createZones(1).get(0);
         L2NetworkInventory linv = api.createNoVlanL2Network(zone.getUuid(), "eth0");
-        for (int i=0; i<testNum; i++) {
+        for (int i = 0; i < testNum; i++) {
             api.createL3BasicNetwork(linv.getUuid());
         }
         List<L3NetworkInventory> iinvs = api.listL3Network(null);
@@ -56,7 +56,7 @@ public class TestListL3Network {
             }
         });
         iinvs = api.listL3Network(uuids);
-        for (int i=0; i<testNum; i++) {
+        for (int i = 0; i < testNum; i++) {
             Assert.assertEquals(uuids.get(i), iinvs.get(i).getUuid());
         }
     }

@@ -17,7 +17,7 @@ public class WarBuilder {
         war.addAsWebInfResource(new File("src/test/resources/webapp/WEB-INF/zstack-servlet-context.xml"), "classes/zstack-servlet-context.xml");
         new ZipExporterImpl(war).exportTo(new File(Utils.getPathUtil().join(warExportedToPath, war.getName())), true);
     }
-    
+
     public String getSpringConfigPath() {
         return springConfigPath;
     }

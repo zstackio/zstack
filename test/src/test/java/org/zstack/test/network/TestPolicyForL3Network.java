@@ -30,12 +30,12 @@ import java.util.ArrayList;
 import static org.zstack.utils.CollectionDSL.list;
 
 public class TestPolicyForL3Network {
-	CLogger logger = Utils.getLogger(TestPolicyForL3Network.class);
-	Deployer deployer;
-	Api api;
-	ComponentLoader loader;
-	CloudBus bus;
-	DatabaseFacade dbf;
+    CLogger logger = Utils.getLogger(TestPolicyForL3Network.class);
+    Deployer deployer;
+    Api api;
+    ComponentLoader loader;
+    CloudBus bus;
+    DatabaseFacade dbf;
 
     @Before
     public void setUp() throws Exception {
@@ -58,8 +58,8 @@ public class TestPolicyForL3Network {
         return api.addIpRangeByCidr(l3Uuid, cidr, session);
     }
 
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         L2NetworkInventory l2 = deployer.l2Networks.get("TestL2Network");
 
         IdentityCreator identityCreator = new IdentityCreator(api);

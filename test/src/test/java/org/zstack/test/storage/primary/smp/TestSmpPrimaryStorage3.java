@@ -24,7 +24,7 @@ import org.zstack.test.deployer.Deployer;
  * 2. create a vm
  * 3. stop the vm
  * 4. create a template from the vm's root volume
- *
+ * <p>
  * confirm the template created successfully
  */
 public class TestSmpPrimaryStorage3 {
@@ -54,9 +54,9 @@ public class TestSmpPrimaryStorage3 {
         config = loader.getComponent(SMPPrimaryStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         BackupStorageInventory sftp = deployer.backupStorages.get("sftp");
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         api.stopVmInstance(vm.getUuid());

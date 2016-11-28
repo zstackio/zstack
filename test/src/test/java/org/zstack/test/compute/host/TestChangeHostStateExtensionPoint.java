@@ -14,6 +14,7 @@ import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.BeanConstructor;
 import org.zstack.test.DBUtil;
+
 public class TestChangeHostStateExtensionPoint {
     Api api;
     ComponentLoader loader;
@@ -40,7 +41,7 @@ public class TestChangeHostStateExtensionPoint {
         api = new Api();
         api.startServer();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         try {
@@ -52,7 +53,7 @@ public class TestChangeHostStateExtensionPoint {
                 api.changeHostState(host.getUuid(), HostStateEvent.disable);
             } catch (ApiSenderException e) {
             }
-            
+
             ext.setExpectedCurrent(HostState.Enabled);
             ext.setExpectedNext(HostState.Disabled);
             ext.setExpectedStateEvent(HostStateEvent.disable);

@@ -15,25 +15,20 @@ import org.zstack.network.service.portforwarding.PortForwardingProtocolType;
 import org.zstack.network.service.portforwarding.PortForwardingRuleInventory;
 import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.vip.VipVO;
+import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.simulator.virtualrouter.VirtualRouterSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.simulator.kvm.KVMSimulatorConfig;
 
 /**
- * 
  * @author frank
- * 
- * @condition
- * 1. create a vm
+ * @condition 1. create a vm
  * 2. stop vm
  * 3. apply pf rule to the vm
- *
- * @test
- * confirm vip useFor set to pf service type
+ * @test confirm vip useFor set to pf service type
  */
 public class TestVirtualRouterPortForwarding27 {
     Deployer deployer;
@@ -64,7 +59,7 @@ public class TestVirtualRouterPortForwarding27 {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         PortForwardingRuleInventory rule1 = new PortForwardingRuleInventory();
@@ -73,7 +68,7 @@ public class TestVirtualRouterPortForwarding27 {
         VmNicInventory nic = vm.getVmNics().get(0);
         L3NetworkInventory vipNw = deployer.l3Networks.get("PublicNetwork");
         VipInventory vip = api.acquireIp(vipNw.getUuid());
-        
+
         rule1.setName("pfRule1");
         rule1.setVipUuid(vip.getUuid());
         rule1.setVmNicUuid(nic.getUuid());

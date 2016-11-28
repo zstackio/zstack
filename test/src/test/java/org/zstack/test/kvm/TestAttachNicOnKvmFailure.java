@@ -46,9 +46,9 @@ public class TestAttachNicOnKvmFailure {
         config = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test(expected = ApiSenderException.class)
-	public void test() throws ApiSenderException {
+
+    @Test(expected = ApiSenderException.class)
+    public void test() throws ApiSenderException {
         final L3NetworkInventory l3 = deployer.l3Networks.get("TestL3Network4");
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         config.attachNicSuccess = false;

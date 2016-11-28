@@ -11,12 +11,12 @@ import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
+import org.zstack.simulator.storage.backup.sftp.SftpBackupStorageSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.simulator.storage.backup.sftp.SftpBackupStorageSimulatorConfig;
 import org.zstack.test.storage.backup.sftp.TestSftpBackupStorageDeleteImage2;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -25,7 +25,7 @@ import org.zstack.utils.logging.CLogger;
  * 1. create a vm
  * 2. set flag making vm unable to stop on kvm host
  * 3. stop vm
- *
+ * <p>
  * confirm vm failed to stop and state is Unknown
  */
 public class TestVmErrorOnKvm3 {
@@ -54,9 +54,9 @@ public class TestVmErrorOnKvm3 {
         kconfig = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         kconfig.stopVmSuccess = false;
 
@@ -66,6 +66,6 @@ public class TestVmErrorOnKvm3 {
             VmInstanceVO vmvo = dbf.findByUuid(vm.getUuid(), VmInstanceVO.class);
             Assert.assertEquals(VmInstanceState.Unknown, vmvo.getState());
         }
-	}
+    }
 
 }

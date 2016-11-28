@@ -24,7 +24,7 @@ import org.zstack.utils.logging.CLogger;
  * 2. create a disk offering
  * 3. create a data volume from the disk offering
  * 4. delete the disk offering
- *
+ * <p>
  * confirm the volume's disk offering column is not null
  */
 public class TestDeleteDiskOffering3 {

@@ -13,13 +13,13 @@ import org.zstack.header.network.service.NetworkServiceProviderInventory;
 import org.zstack.header.search.APISearchMessage.NOVTriple;
 import org.zstack.header.search.SearchOp;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
+import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.simulator.virtualrouter.VirtualRouterSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -56,7 +56,7 @@ public class TestSearchNetworkProvider {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         APISearchNetworkServiceProviderMsg msg = new APISearchNetworkServiceProviderMsg();
@@ -65,11 +65,11 @@ public class TestSearchNetworkProvider {
         t.setOp(SearchOp.AND_EQ.toString());
         t.setVal(VirtualRouterConstant.VIRTUAL_ROUTER_PROVIDER_TYPE);
         msg.getNameOpValueTriples().add(t);
-        
+
         String res = api.search(msg);
         List<NetworkServiceProviderInventory> invs = JSONObjectUtil.toCollection(res, ArrayList.class, NetworkServiceProviderInventory.class);
         Assert.assertEquals(1, invs.size());
-        
+
         NetworkServiceProviderInventory inv0 = invs.get(0);
         APIGetNetworkServiceProviderMsg gmsg = new APIGetNetworkServiceProviderMsg();
         gmsg.setUuid(inv0.getUuid());

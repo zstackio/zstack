@@ -8,7 +8,6 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.simulator.storage.primary.SimulatorPrimaryStorageDetails;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
-import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.zone.ZoneInventory;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
@@ -44,7 +43,7 @@ public class TestUpdatePrimaryStorage {
         sp.setTotalCapacity(SizeUnit.TERABYTE.toByte(10));
         sp.setAvailableCapacity(sp.getTotalCapacity());
         sp.setUrl("nfs://simulator/primary/");
-    	ZoneInventory zone = api.createZones(1).get(0);
+        ZoneInventory zone = api.createZones(1).get(0);
         sp.setZoneUuid(zone.getUuid());
         PrimaryStorageInventory inv = api.createSimulatoPrimaryStorage(1, sp).get(0);
         inv.setName("1");

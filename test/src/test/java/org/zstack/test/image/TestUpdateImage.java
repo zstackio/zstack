@@ -1,7 +1,6 @@
 package org.zstack.test.image;
 
 import junit.framework.Assert;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.zstack.core.componentloader.ComponentLoader;
@@ -9,7 +8,6 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImagePlatform;
-import org.zstack.header.image.ImageVO;
 import org.zstack.header.simulator.storage.backup.SimulatorBackupStorageDetails;
 import org.zstack.header.storage.backup.BackupStorageInventory;
 import org.zstack.header.storage.backup.BackupStorageVO;

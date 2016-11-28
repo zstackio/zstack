@@ -17,11 +17,13 @@ import org.zstack.header.image.ImageInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.query.QueryCondition;
 import org.zstack.header.zone.ZoneInventory;
-import org.zstack.network.service.virtualrouter.*;
+import org.zstack.network.service.virtualrouter.APICreateVirtualRouterOfferingMsg;
+import org.zstack.network.service.virtualrouter.APIQueryVirtualRouterOfferingMsg;
+import org.zstack.network.service.virtualrouter.APIQueryVirtualRouterOfferingReply;
+import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
 import org.zstack.test.*;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.test.identity.IdentityCreator;
-import org.zstack.test.search.QueryTestValidator;
 import org.zstack.utils.data.SizeUnit;
 
 import java.util.ArrayList;
@@ -99,7 +101,7 @@ public class TestPolicyForVirtualRouterOffering {
             createOffering(zone.getUuid(), l3.getUuid(), img.getUuid(), session);
         } catch (ApiSenderException e) {
             if (IdentityErrors.PERMISSION_DENIED.toString().equals(e.getError().getCode())) {
-                success =  true;
+                success = true;
             }
         }
         Assert.assertTrue(success);
@@ -109,7 +111,7 @@ public class TestPolicyForVirtualRouterOffering {
             api.deleteInstanceOffering(offering.getUuid(), session);
         } catch (ApiSenderException e) {
             if (IdentityErrors.PERMISSION_DENIED.toString().equals(e.getError().getCode())) {
-                success =  true;
+                success = true;
             }
         }
         Assert.assertTrue(success);
@@ -134,7 +136,7 @@ public class TestPolicyForVirtualRouterOffering {
             createOffering(zone.getUuid(), l3.getUuid(), img.getUuid(), session);
         } catch (ApiSenderException e) {
             if (IdentityErrors.PERMISSION_DENIED.toString().equals(e.getError().getCode())) {
-                success =  true;
+                success = true;
             }
         }
         Assert.assertTrue(success);
@@ -144,7 +146,7 @@ public class TestPolicyForVirtualRouterOffering {
             api.deleteInstanceOffering(offering.getUuid(), session);
         } catch (ApiSenderException e) {
             if (IdentityErrors.PERMISSION_DENIED.toString().equals(e.getError().getCode())) {
-                success =  true;
+                success = true;
             }
         }
         Assert.assertTrue(success);

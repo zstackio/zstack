@@ -17,9 +17,7 @@ import org.zstack.test.deployer.Deployer;
 import org.zstack.test.search.QueryTestValidator;
 
 /**
- * 
  * @author Frank
- * 
  */
 public class TestQueryVmNic {
     Deployer deployer;
@@ -38,7 +36,7 @@ public class TestQueryVmNic {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         SessionInventory session = api.loginByAccount("test", "password");

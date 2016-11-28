@@ -44,16 +44,16 @@ public class TestSyncPrimaryStorageCapacityOnKvm {
         config = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
-	    VmInstanceInventory vm = deployer.vms.get("TestVm");
-	    DiskOfferingInventory dinv = deployer.diskOfferings.get("DataOffering");
-	    VolumeInventory vol = api.createDataVolume("d1", dinv.getUuid());
-	    vol = api.attachVolumeToVm(vm.getUuid(), vol.getUuid());
+
+    @Test
+    public void test() throws ApiSenderException {
+        VmInstanceInventory vm = deployer.vms.get("TestVm");
+        DiskOfferingInventory dinv = deployer.diskOfferings.get("DataOffering");
+        VolumeInventory vol = api.createDataVolume("d1", dinv.getUuid());
+        vol = api.attachVolumeToVm(vm.getUuid(), vol.getUuid());
         PrimaryStorageInventory inv = api.syncPrimaryStorageCapacity(vol.getPrimaryStorageUuid());
 
         System.out.println(String.format("total: %s, avail:%s, physicalTotal: %s, physicalAvail: %s",
                 inv.getTotalCapacity(), inv.getAvailableCapacity(), inv.getTotalPhysicalCapacity(), inv.getAvailablePhysicalCapacity()));
-	}
+    }
 }

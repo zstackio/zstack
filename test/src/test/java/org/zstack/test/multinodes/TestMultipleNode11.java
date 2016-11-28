@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
- *
  * create node0 with some non-restartable jobs
  * create node1 with some restartable jobs
  * all jobs are in the same queue
@@ -100,7 +99,7 @@ public class TestMultipleNode11 {
             }
             FileUtils.forceMkdir(passFolder);
 
-            for (String uuid: retUuids) {
+            for (String uuid : retUuids) {
                 File f = new File(PathUtil.join(passFolder.getAbsolutePath(), uuid));
                 f.createNewFile();
                 logger.debug(String.format("create pass file %s", f.getAbsolutePath()));

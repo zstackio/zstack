@@ -24,10 +24,10 @@ public class TestGenerateSqlTrigger {
         api = new Api();
         api.startServer();
     }
-      
 
-	@Test
-	public void test() throws ApiSenderException {
-		api.generateSqlTrigger();
-	}
+
+    @Test
+    public void test() throws ApiSenderException {
+        api.generateSqlTrigger();
+    }
 }

@@ -24,11 +24,10 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 /**
- *
  * start 5 nodes, create 100 vm
  * async stop a node
  * create another 100 vm
- *
+ * <p>
  * TODO: not working now
  */
 public class TestMultipleNode3 {

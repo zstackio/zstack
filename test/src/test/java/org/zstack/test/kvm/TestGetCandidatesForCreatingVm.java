@@ -48,9 +48,9 @@ public class TestGetCandidatesForCreatingVm {
         config = loader.getComponent(SftpBackupStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         ImageInventory img = deployer.images.get("TestImage");
         InstanceOfferingInventory inso = deployer.instanceOfferings.get("TestInstanceOffering");
         L3NetworkInventory l31 = deployer.l3Networks.get("TestL3Network1");

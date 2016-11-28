@@ -14,7 +14,6 @@ import org.zstack.network.service.eip.EipInventory;
 import org.zstack.network.service.eip.EipVO;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.network.service.virtualrouter.eip.EipTO;
-import org.zstack.network.service.virtualrouter.eip.VirtualRouterEipRefVO;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.simulator.virtualrouter.VirtualRouterSimulatorConfig;
 import org.zstack.test.Api;
@@ -24,16 +23,11 @@ import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 
 /**
- * 
  * @author frank
- * 
- * @condition
- * 1. create a vm
+ * @condition 1. create a vm
  * 2. set eip
  * 3. detach the eip nic
- *
- * @test
- * confirm eip removed
+ * @test confirm eip removed
  */
 public class TestDetachNicOnKvm2 {
     Deployer deployer;
@@ -64,7 +58,7 @@ public class TestDetachNicOnKvm2 {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         L3NetworkInventory l3 = deployer.l3Networks.get("GuestNetwork");

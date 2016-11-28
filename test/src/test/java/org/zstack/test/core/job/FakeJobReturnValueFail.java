@@ -9,6 +9,7 @@ import org.zstack.core.job.JobContext;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class FakeJobReturnValueFail implements Job {
     CLogger logger = Utils.getLogger(FakeJobReturnValueFail.class);

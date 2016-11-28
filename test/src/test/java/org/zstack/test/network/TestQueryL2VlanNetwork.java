@@ -35,10 +35,10 @@ public class TestQueryL2VlanNetwork {
         dbf = loader.getComponent(DatabaseFacade.class);
     }
 
-	@Test
-	public void test() throws InterruptedException,ApiSenderException {
-	    L2VlanNetworkInventory l2inv = (L2VlanNetworkInventory) deployer.l2Networks.values().iterator().next();
-	    QueryTestValidator.validateEQ(new APIQueryL2VlanNetworkMsg(), api, APIQueryL2VlanNetworkReply.class, l2inv);
-	}
+    @Test
+    public void test() throws InterruptedException, ApiSenderException {
+        L2VlanNetworkInventory l2inv = (L2VlanNetworkInventory) deployer.l2Networks.values().iterator().next();
+        QueryTestValidator.validateEQ(new APIQueryL2VlanNetworkMsg(), api, APIQueryL2VlanNetworkReply.class, l2inv);
+    }
 
 }

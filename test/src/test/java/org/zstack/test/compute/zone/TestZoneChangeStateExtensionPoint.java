@@ -12,6 +12,7 @@ import org.zstack.test.BeanConstructor;
 import org.zstack.test.DBUtil;
 
 import java.util.List;
+
 public class TestZoneChangeStateExtensionPoint {
     Api api;
     ComponentLoader loader;
@@ -41,7 +42,7 @@ public class TestZoneChangeStateExtensionPoint {
             api.getApiSender().send(msg, APIChangeZoneStateEvent.class, false);
             ZoneVO vo = dbf.findByUuid(zone.getUuid(), ZoneVO.class);
             Assert.assertEquals(ZoneState.Enabled, vo.getState());
-            
+
             ext.setPreventChange(false);
             ext.setExpectedCurrent(ZoneState.Enabled);
             ext.setExpectedNext(ZoneState.Disabled);

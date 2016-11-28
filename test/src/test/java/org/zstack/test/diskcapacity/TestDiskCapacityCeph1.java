@@ -120,8 +120,8 @@ public class TestDiskCapacityCeph1 {
         }
     }
 
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         AddImage addImage = new AddImage();
         addImage.size = SizeUnit.GIGABYTE.toByte(10);
         addImage.actualSize = SizeUnit.GIGABYTE.toByte(1);
@@ -201,5 +201,5 @@ public class TestDiskCapacityCeph1 {
         used = addImage.actualSize;
         avail = pscap4.getTotalCapacity() - used;
         Assert.assertEquals(avail, pscap4.getAvailableCapacity());
-	}
+    }
 }

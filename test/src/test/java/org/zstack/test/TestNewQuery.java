@@ -4,7 +4,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.zstack.core.Platform;
 import org.zstack.core.componentloader.ComponentLoader;
-import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.query.QueryBuilder;
 import org.zstack.header.query.QueryOp;
 import org.zstack.header.storage.primary.APIQueryPrimaryStorageMsg;
@@ -32,7 +31,7 @@ public class TestNewQuery {
         msg.addQueryCondition("uuid", QueryOp.EQ, Platform.getUuid());
         msg.addQueryCondition("attachedClusterUuids", QueryOp.NOT_IN, Platform.getUuid(), Platform.getUuid());
         query.start();
-        QueryBuilder qb = (QueryBuilder)query;
+        QueryBuilder qb = (QueryBuilder) query;
         qb.query(msg, PrimaryStorageInventory.class);
 
         APIQueryVmInstanceMsg imsg = new APIQueryVmInstanceMsg();

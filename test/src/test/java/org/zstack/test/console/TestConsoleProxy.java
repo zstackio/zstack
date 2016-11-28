@@ -14,12 +14,12 @@ import org.zstack.header.host.HostVO;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.simulator.consoleproxy.ConsoleProxySimulatorConfig;
+import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 

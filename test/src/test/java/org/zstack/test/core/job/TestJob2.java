@@ -17,7 +17,7 @@ public class TestJob2 {
     JobQueueFacade jobf;
     long num = 10;
     FakeJobConfig fl;
-    
+
     @Before
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
@@ -33,14 +33,14 @@ public class TestJob2 {
         FakeJob2 fjob = new FakeJob2();
         jobf.execute("fake-job", "TestJob", fjob);
     }
-    
+
     @Test
     public void test() throws InterruptedException {
         fl.success = true;
-        for (long i=0; i<num; i++) {
+        for (long i = 0; i < num; i++) {
             startJob();
         }
-        
+
         TimeUnit.SECONDS.sleep(15);
         Assert.assertTrue(fl.success);
     }

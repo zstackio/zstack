@@ -68,7 +68,7 @@ public class TestReturnPrimaryStorage {
         Assert.assertEquals(AllocatePrimaryStorageReply.class, reply.getClass());
         AllocatePrimaryStorageReply ar = (AllocatePrimaryStorageReply) reply;
         Assert.assertEquals(pinv.getUuid(), ar.getPrimaryStorageInventory().getUuid());
-        
+
         ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
         rmsg.setDiskSize(requiredSize);
         rmsg.setPrimaryStorageUuid(pinv.getUuid());

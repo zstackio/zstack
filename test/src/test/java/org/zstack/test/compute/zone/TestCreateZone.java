@@ -9,7 +9,10 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.db.UpdateQuery;
 import org.zstack.header.message.APIEvent;
-import org.zstack.header.zone.*;
+import org.zstack.header.zone.APICreateZoneMsg;
+import org.zstack.header.zone.ZoneInventory;
+import org.zstack.header.zone.ZoneVO;
+import org.zstack.header.zone.ZoneVO_;
 import org.zstack.portal.apimediator.PortalSystemTags;
 import org.zstack.test.*;
 

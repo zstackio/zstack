@@ -13,8 +13,7 @@ import org.zstack.header.identity.*;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.query.QueryCondition;
-import org.zstack.header.storage.backup.APIQueryBackupStorageReply;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
@@ -31,7 +30,7 @@ import static org.zstack.utils.CollectionDSL.list;
  * 1. create a deployment owned by the admin account
  * 2. create a normal account
  * 3. share the instance offering/disk offering/image/l3Network to the account
- *
+ * <p>
  * confirm the account can create vm using the shared resource
  */
 public class TestPolicyForVm2 {
@@ -51,7 +50,7 @@ public class TestPolicyForVm2 {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         InstanceOfferingInventory ioinv = deployer.instanceOfferings.get("TestInstanceOffering");
@@ -62,7 +61,7 @@ public class TestPolicyForVm2 {
         DiskOfferingInventory dov = deployer.diskOfferings.get("TestRootDiskOffering");
 
         IdentityCreator identityCreator = new IdentityCreator(api);
-        AccountInventory test=  identityCreator.createAccount("test", "password");
+        AccountInventory test = identityCreator.createAccount("test", "password");
 
         api.shareResource(
                 list(ioinv.getUuid(), l3.getUuid(), img.getUuid(), dov.getUuid()),
@@ -120,7 +119,7 @@ public class TestPolicyForVm2 {
 
         success = false;
         try {
-            api.deleteDiskOffering(dov.getUuid() ,session);
+            api.deleteDiskOffering(dov.getUuid(), session);
         } catch (ApiSenderException e) {
             if (IdentityErrors.PERMISSION_DENIED.toString().equals(e.getError().getCode())) {
                 success = true;

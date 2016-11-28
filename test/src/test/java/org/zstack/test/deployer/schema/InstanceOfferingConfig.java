@@ -1,19 +1,13 @@
-
 package org.zstack.test.deployer.schema;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlSchemaType;
-import javax.xml.bind.annotation.XmlSeeAlso;
-import javax.xml.bind.annotation.XmlType;
+import javax.xml.bind.annotation.*;
 
 
 /**
  * <p>Java class for InstanceOfferingConfig complex type.
- * 
+ * <p>
  * <p>The following schema fragment specifies the expected content contained within this class.
- * 
+ * <p>
  * <pre>
  * &lt;complexType name="InstanceOfferingConfig">
  *   &lt;complexContent>
@@ -32,16 +26,14 @@ import javax.xml.bind.annotation.XmlType;
  *   &lt;/complexContent>
  * &lt;/complexType>
  * </pre>
- * 
- * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "InstanceOfferingConfig", propOrder = {
-    "accountRef"
+        "accountRef"
 })
 @XmlSeeAlso({
-    VirtualRouterOfferingConfig.class,
-    ConvergedOfferingConfig.class
+        VirtualRouterOfferingConfig.class,
+        ConvergedOfferingConfig.class
 })
 public class InstanceOfferingConfig {
 
@@ -65,11 +57,9 @@ public class InstanceOfferingConfig {
 
     /**
      * Gets the value of the accountRef property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getAccountRef() {
         return accountRef;
@@ -77,11 +67,9 @@ public class InstanceOfferingConfig {
 
     /**
      * Sets the value of the accountRef property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setAccountRef(String value) {
         this.accountRef = value;
@@ -89,11 +77,9 @@ public class InstanceOfferingConfig {
 
     /**
      * Gets the value of the name property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getName() {
         return name;
@@ -101,11 +87,9 @@ public class InstanceOfferingConfig {
 
     /**
      * Sets the value of the name property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setName(String value) {
         this.name = value;
@@ -113,11 +97,9 @@ public class InstanceOfferingConfig {
 
     /**
      * Gets the value of the description property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getDescription() {
         return description;
@@ -125,11 +107,9 @@ public class InstanceOfferingConfig {
 
     /**
      * Sets the value of the description property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setDescription(String value) {
         this.description = value;
@@ -137,11 +117,9 @@ public class InstanceOfferingConfig {
 
     /**
      * Gets the value of the memoryCapacity property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getMemoryCapacity() {
         if (memoryCapacity == null) {
@@ -153,11 +131,9 @@ public class InstanceOfferingConfig {
 
     /**
      * Sets the value of the memoryCapacity property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setMemoryCapacity(String value) {
         this.memoryCapacity = value;
@@ -165,15 +141,13 @@ public class InstanceOfferingConfig {
 
     /**
      * Gets the value of the cpuNum property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link Long }
-     *     
+     *
+     * @return possible object is
+     * {@link Long }
      */
     public long getCpuNum() {
         if (cpuNum == null) {
-            return  1L;
+            return 1L;
         } else {
             return cpuNum;
         }
@@ -181,11 +155,9 @@ public class InstanceOfferingConfig {
 
     /**
      * Sets the value of the cpuNum property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link Long }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link Long }
      */
     public void setCpuNum(Long value) {
         this.cpuNum = value;
@@ -193,15 +165,13 @@ public class InstanceOfferingConfig {
 
     /**
      * Gets the value of the cpuSpeed property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link Long }
-     *     
+     *
+     * @return possible object is
+     * {@link Long }
      */
     public long getCpuSpeed() {
         if (cpuSpeed == null) {
-            return  1024L;
+            return 1024L;
         } else {
             return cpuSpeed;
         }
@@ -209,11 +179,9 @@ public class InstanceOfferingConfig {
 
     /**
      * Sets the value of the cpuSpeed property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link Long }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link Long }
      */
     public void setCpuSpeed(Long value) {
         this.cpuSpeed = value;
@@ -221,11 +189,9 @@ public class InstanceOfferingConfig {
 
     /**
      * Gets the value of the hostTag property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getHostTag() {
         return hostTag;
@@ -233,11 +199,9 @@ public class InstanceOfferingConfig {
 
     /**
      * Sets the value of the hostTag property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setHostTag(String value) {
         this.hostTag = value;
@@ -245,11 +209,9 @@ public class InstanceOfferingConfig {
 
     /**
      * Gets the value of the allocatorStrategy property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getAllocatorStrategy() {
         return allocatorStrategy;
@@ -257,11 +219,9 @@ public class InstanceOfferingConfig {
 
     /**
      * Sets the value of the allocatorStrategy property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setAllocatorStrategy(String value) {
         this.allocatorStrategy = value;

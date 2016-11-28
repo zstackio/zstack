@@ -22,13 +22,13 @@ public class TestCloudBusSendMultiMsg {
     boolean isSuccess = false;
     Service serv;
     int msgNum = 10;
-    
+
     public static class HelloWorldMsg extends Message {
     }
-    
+
     class FakeService extends AbstractService {
         private int count = 0;
-        
+
         @Override
         public boolean start() {
             bus.registerService(this);
@@ -46,9 +46,9 @@ public class TestCloudBusSendMultiMsg {
         @Override
         public void handleMessage(Message msg) {
             if (msg.getClass() == HelloWorldMsg.class) {
-                count ++;
+                count++;
             }
-            
+
             if (count == msgNum) {
                 isSuccess = true;
                 latch.countDown();
@@ -59,9 +59,9 @@ public class TestCloudBusSendMultiMsg {
         public String getId() {
             return this.getClass().getCanonicalName();
         }
-        
+
     }
-    
+
     @Before
     public void setUp() throws Exception {
         BeanConstructor con = new BeanConstructor();
@@ -74,7 +74,7 @@ public class TestCloudBusSendMultiMsg {
     @Test
     public void test() throws InterruptedException, ClassNotFoundException {
         List<HelloWorldMsg> msgs = new ArrayList<HelloWorldMsg>(msgNum);
-        for (int i=0; i<msgNum; i++) {
+        for (int i = 0; i < msgNum; i++) {
             HelloWorldMsg msg = new HelloWorldMsg();
             msg.setServiceId(FakeService.class.getCanonicalName());
             msgs.add(msg);

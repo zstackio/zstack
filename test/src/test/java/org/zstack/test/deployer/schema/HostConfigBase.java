@@ -1,20 +1,15 @@
-
 package org.zstack.test.deployer.schema;
 
+import javax.xml.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.List;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlSeeAlso;
-import javax.xml.bind.annotation.XmlType;
 
 
 /**
  * <p>Java class for HostConfigBase complex type.
- * 
+ * <p>
  * <p>The following schema fragment specifies the expected content contained within this class.
- * 
+ * <p>
  * <pre>
  * &lt;complexType name="HostConfigBase">
  *   &lt;complexContent>
@@ -29,16 +24,14 @@ import javax.xml.bind.annotation.XmlType;
  *   &lt;/complexContent>
  * &lt;/complexType>
  * </pre>
- * 
- * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "HostConfigBase", propOrder = {
-    "hostTag"
+        "hostTag"
 })
 @XmlSeeAlso({
-    SimulatorHostConfig.class,
-    KvmHostConfig.class
+        SimulatorHostConfig.class,
+        KvmHostConfig.class
 })
 public class HostConfigBase {
 
@@ -52,25 +45,23 @@ public class HostConfigBase {
 
     /**
      * Gets the value of the hostTag property.
-     * 
+     * <p>
      * <p>
      * This accessor method returns a reference to the live list,
      * not a snapshot. Therefore any modification you make to the
      * returned list will be present inside the JAXB object.
      * This is why there is not a <CODE>set</CODE> method for the hostTag property.
-     * 
+     * <p>
      * <p>
      * For example, to add a new item, do as follows:
      * <pre>
      *    getHostTag().add(newItem);
      * </pre>
-     * 
-     * 
+     * <p>
+     * <p>
      * <p>
      * Objects of the following type(s) are allowed in the list
      * {@link String }
-     * 
-     * 
      */
     public List<String> getHostTag() {
         if (hostTag == null) {
@@ -81,11 +72,9 @@ public class HostConfigBase {
 
     /**
      * Gets the value of the name property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getName() {
         return name;
@@ -93,11 +82,9 @@ public class HostConfigBase {
 
     /**
      * Sets the value of the name property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setName(String value) {
         this.name = value;
@@ -105,11 +92,9 @@ public class HostConfigBase {
 
     /**
      * Gets the value of the description property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getDescription() {
         return description;
@@ -117,11 +102,9 @@ public class HostConfigBase {
 
     /**
      * Sets the value of the description property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setDescription(String value) {
         this.description = value;
@@ -129,11 +112,9 @@ public class HostConfigBase {
 
     /**
      * Gets the value of the managementIp property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getManagementIp() {
         if (managementIp == null) {
@@ -145,11 +126,9 @@ public class HostConfigBase {
 
     /**
      * Sets the value of the managementIp property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setManagementIp(String value) {
         this.managementIp = value;

@@ -19,7 +19,6 @@ import org.zstack.network.service.eip.EipInventory;
 import org.zstack.network.service.eip.EipVO;
 import org.zstack.network.service.portforwarding.PortForwardingRuleInventory;
 import org.zstack.network.service.portforwarding.PortForwardingRuleVO;
-import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.network.service.virtualrouter.eip.EipTO;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
@@ -31,17 +30,16 @@ import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 
 /**
- * 
  * @author frank
- * 
- * 1. create a vm
- * 2. set eip
- * 3. add a port forwarding
- * 4. add a security group
- * 4. detach the eip nic
- *
- * confirm eip removed
- * confirm port forwarding and security group are still avaiable
+ *         <p>
+ *         1. create a vm
+ *         2. set eip
+ *         3. add a port forwarding
+ *         4. add a security group
+ *         4. detach the eip nic
+ *         <p>
+ *         confirm eip removed
+ *         confirm port forwarding and security group are still avaiable
  */
 public class TestDetachNicOnKvm6 {
     Deployer deployer;
@@ -73,7 +71,7 @@ public class TestDetachNicOnKvm6 {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         L3NetworkInventory l3 = deployer.l3Networks.get("GuestNetwork");

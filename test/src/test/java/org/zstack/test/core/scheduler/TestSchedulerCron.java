@@ -67,9 +67,9 @@ public class TestSchedulerCron {
         api.createCronScheduler(volUuid, type, cronTask, session);
         TimeUnit.SECONDS.sleep(8);
         long counter = dbf.count(VolumeSnapshotVO.class);
-        Assert.assertEquals(3,counter);
+        Assert.assertEquals(3, counter);
         SchedulerVO vo = dbf.listAll(SchedulerVO.class).get(0);
-        SchedulerInventory inv = api.changeSchedulerState(vo.getUuid(),"disable",session);
+        SchedulerInventory inv = api.changeSchedulerState(vo.getUuid(), "disable", session);
         SchedulerVO changeRecord = dbf.listAll(SchedulerVO.class).get(0);
         Assert.assertEquals("Disabled", changeRecord.getState());
         Assert.assertEquals("Disabled", inv.getState());

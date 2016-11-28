@@ -29,11 +29,11 @@ public class TestMaxSession {
         api = new Api();
         api.startServer();
     }
-    
-    @Test(expected=ApiSenderException.class)
+
+    @Test(expected = ApiSenderException.class)
     public void test() throws ApiSenderException {
         IdentityGlobalConfig.MAX_CONCURRENT_SESSION.updateValue(num);
-        for (int i = 0; i< num + 1; i ++) {
+        for (int i = 0; i < num + 1; i++) {
             api.loginAsAdmin();
         }
     }

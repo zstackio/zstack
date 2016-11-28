@@ -41,44 +41,44 @@ import java.util.concurrent.TimeUnit;
 public class TestKvmHostCapacityOnFailure {
     CLogger logger = Utils.getLogger(TestKvmHostCapacityOnFailure.class);
 
-	Deployer deployer;
-	Api api;
-	ComponentLoader loader;
-	CloudBus bus;
-	DatabaseFacade dbf;
-	SessionInventory session;
-	VirtualRouterSimulatorConfig vconfig;
-	KVMSimulatorConfig kconfig;
+    Deployer deployer;
+    Api api;
+    ComponentLoader loader;
+    CloudBus bus;
+    DatabaseFacade dbf;
+    SessionInventory session;
+    VirtualRouterSimulatorConfig vconfig;
+    KVMSimulatorConfig kconfig;
     ThreadFacade thdf;
     int total = 100;
     int syncLevel = 50;
     int timeout = 1200;
 
-	@Before
-	public void setUp() throws Exception {
-		DBUtil.reDeployDB();
-		WebBeanConstructor con = new WebBeanConstructor();
-		deployer = new Deployer("deployerXml/kvm/TestKvm1000Vm.xml", con);
-		deployer.addSpringConfig("VirtualRouter.xml");
-		deployer.addSpringConfig("VirtualRouterSimulator.xml");
-		deployer.addSpringConfig("KVMRelated.xml");
+    @Before
+    public void setUp() throws Exception {
+        DBUtil.reDeployDB();
+        WebBeanConstructor con = new WebBeanConstructor();
+        deployer = new Deployer("deployerXml/kvm/TestKvm1000Vm.xml", con);
+        deployer.addSpringConfig("VirtualRouter.xml");
+        deployer.addSpringConfig("VirtualRouterSimulator.xml");
+        deployer.addSpringConfig("KVMRelated.xml");
 
         ThreadGlobalProperty.MAX_THREAD_NUM = 500;
         CoreGlobalProperty.VM_TRACER_ON = false;
 
-		deployer.build();
-		api = deployer.getApi();
-		loader = deployer.getComponentLoader();
-		vconfig = loader.getComponent(VirtualRouterSimulatorConfig.class);
-		kconfig = loader.getComponent(KVMSimulatorConfig.class);
-		bus = loader.getComponent(CloudBus.class);
-		dbf = loader.getComponent(DatabaseFacade.class);
+        deployer.build();
+        api = deployer.getApi();
+        loader = deployer.getComponentLoader();
+        vconfig = loader.getComponent(VirtualRouterSimulatorConfig.class);
+        kconfig = loader.getComponent(KVMSimulatorConfig.class);
+        bus = loader.getComponent(CloudBus.class);
+        dbf = loader.getComponent(DatabaseFacade.class);
         thdf = loader.getComponent(ThreadFacade.class);
-		session = api.loginAsAdmin();
-	}
+        session = api.loginAsAdmin();
+    }
 
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         kconfig.startVmFailureChance = 0.8;
         HostInventory host = deployer.hosts.get("host1");
         HostCapacityVO hcap = dbf.findByUuid(host.getUuid(), HostCapacityVO.class);
@@ -102,7 +102,7 @@ public class TestKvmHostCapacityOnFailure {
         final Random random = new Random();
 
         final CountDownLatch latch = new CountDownLatch(total);
-        for (int i=0; i<total; i++) {
+        for (int i = 0; i < total; i++) {
             final int finalI = i;
             thdf.syncSubmit(new SyncTask<Object>() {
                 @Override
@@ -164,5 +164,5 @@ public class TestKvmHostCapacityOnFailure {
         HostCapacityVO hcap1 = dbf.findByUuid(host.getUuid(), HostCapacityVO.class);
         Assert.assertEquals(String.format("mismatch memory capacity: %s", SizeUnit.BYTE.toMegaByte(hcap.getAvailableMemory() - hcap1.getAvailableMemory())),
                 hcap.getAvailableMemory(), hcap1.getAvailableMemory());
-	}
+    }
 }

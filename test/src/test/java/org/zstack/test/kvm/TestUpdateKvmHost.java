@@ -6,7 +6,6 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.allocator.HostCapacityVO;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.host.APIAddHostEvent;
 import org.zstack.header.host.HostInventory;
@@ -49,7 +48,7 @@ public class TestUpdateKvmHost {
         config = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
+
     private HostInventory addHost() throws ApiSenderException {
         ClusterInventory cinv = api.listClusters(null).get(0);
         APIAddKVMHostMsg msg = new APIAddKVMHostMsg();
@@ -63,7 +62,7 @@ public class TestUpdateKvmHost {
         APIAddHostEvent evt = sender.send(msg, APIAddHostEvent.class);
         return evt.getInventory();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         config.connectSuccess = true;

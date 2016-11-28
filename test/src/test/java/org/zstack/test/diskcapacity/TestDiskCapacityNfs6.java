@@ -17,7 +17,9 @@ import org.zstack.header.message.AbstractBeforeDeliveryMessageInterceptor;
 import org.zstack.header.message.Message;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.storage.backup.BackupStorageInventory;
-import org.zstack.header.storage.primary.*;
+import org.zstack.header.storage.primary.APIGetPrimaryStorageCapacityReply;
+import org.zstack.header.storage.primary.InstantiateVolumeOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
@@ -119,8 +121,8 @@ public class TestDiskCapacityNfs6 {
         }
     }
 
-	@Test
-	public void test() throws ApiSenderException {
+    @Test
+    public void test() throws ApiSenderException {
         ZoneInventory zone = deployer.zones.get("Zone1");
         psRatioMgr.setGlobalRatio(1);
 
@@ -163,5 +165,5 @@ public class TestDiskCapacityNfs6 {
 
         Assert.assertEquals(r1.getTotalCapacity(), r2.getTotalPhysicalCapacity());
         Assert.assertEquals(r1.getAvailableCapacity(), r2.getAvailableCapacity());
-	}
+    }
 }

@@ -26,7 +26,7 @@ public class TestGenerateGroovyClass {
         api = new Api();
         api.startServer();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         api.generateGroovyClass();

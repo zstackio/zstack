@@ -13,7 +13,7 @@ public class BackupStorageDetachExtension implements BackupStorageDetachExtensio
     boolean afterCalled = false;
     String expectedBackStorageUuid;
     String expectedZoneUuid;
-    
+
     @Override
     public void preDetachBackupStorage(BackupStorageInventory inventory, String zoneUuid) throws BackupStorageException {
         if (preventChange) {

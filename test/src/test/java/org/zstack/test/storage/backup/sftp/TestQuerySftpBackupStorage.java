@@ -48,7 +48,7 @@ public class TestQuerySftpBackupStorage {
         gcf = loader.getComponent(GlobalConfigFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         SftpBackupStorageInventory inv = JSONObjectUtil.rehashObject(deployer.backupStorages.get("sftp1"), SftpBackupStorageInventory.class);

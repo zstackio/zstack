@@ -44,14 +44,14 @@ public class TestStopVmOnKvmExtensionPoint {
         ext = loader.getComponent(KVMStopVmExtension.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
-	    VmInstanceInventory vm = deployer.vms.get("TestVm");
-	    api.stopVmInstance(vm.getUuid());
-	    Assert.assertTrue(ext.beforecalled);
-	    Assert.assertTrue(ext.successCalled);
-	    Assert.assertFalse(ext.failCalled);
-	}
+
+    @Test
+    public void test() throws ApiSenderException {
+        VmInstanceInventory vm = deployer.vms.get("TestVm");
+        api.stopVmInstance(vm.getUuid());
+        Assert.assertTrue(ext.beforecalled);
+        Assert.assertTrue(ext.successCalled);
+        Assert.assertFalse(ext.failCalled);
+    }
 
 }

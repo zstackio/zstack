@@ -1,6 +1,5 @@
 package org.zstack.test.kvm;
 
-import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
@@ -10,9 +9,6 @@ import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.storage.backup.BackupStorageInventory;
-import org.zstack.header.storage.backup.BackupStorageStatus;
-import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.simulator.storage.backup.sftp.SftpBackupStorageSimulatorConfig;
 import org.zstack.simulator.storage.primary.nfs.NfsPrimaryStorageSimulatorConfig;

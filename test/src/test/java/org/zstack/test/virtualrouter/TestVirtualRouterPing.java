@@ -7,15 +7,8 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.identity.SessionInventory;
-import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.network.service.portforwarding.PortForwardingProtocolType;
-import org.zstack.network.service.portforwarding.PortForwardingRuleInventory;
-import org.zstack.network.service.vip.VipInventory;
-import org.zstack.network.service.virtualrouter.VirtualRouter;
 import org.zstack.network.service.virtualrouter.VirtualRouterGlobalConfig;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmVO;
-import org.zstack.network.service.virtualrouter.portforwarding.PortForwardingRuleTO;
 import org.zstack.simulator.appliancevm.ApplianceVmSimulatorConfig;
 import org.zstack.simulator.virtualrouter.VirtualRouterSimulatorConfig;
 import org.zstack.test.Api;
@@ -23,19 +16,13 @@ import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.utils.TimeUtils;
 
 import java.util.concurrent.TimeUnit;
 
 /**
- * 
  * @author frank
- * 
- * @condition
- * 1. create a virtual router
- *
- * @test
- * confirm uuid is set on the agent
+ * @condition 1. create a virtual router
+ * @test confirm uuid is set on the agent
  * confirm check command is issued by the interval
  */
 public class TestVirtualRouterPing {
@@ -67,7 +54,7 @@ public class TestVirtualRouterPing {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         VirtualRouterVmVO vr = dbf.listAll(VirtualRouterVmVO.class).get(0);

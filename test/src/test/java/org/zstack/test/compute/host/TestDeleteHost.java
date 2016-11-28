@@ -16,8 +16,9 @@ import org.zstack.test.BeanConstructor;
 import org.zstack.test.DBUtil;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+
 public class TestDeleteHost {
-	CLogger logger = Utils.getLogger(TestChangeHostState.class);
+    CLogger logger = Utils.getLogger(TestChangeHostState.class);
     Api api;
     ComponentLoader loader;
     DatabaseFacade dbf;
@@ -40,7 +41,7 @@ public class TestDeleteHost {
         api = new Api();
         api.startServer();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         try {

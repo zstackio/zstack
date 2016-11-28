@@ -30,15 +30,14 @@ import static org.zstack.utils.CollectionDSL.map;
 /**
  * 1. create a vm with user data
  * 2. attach a new l3 network
- *
+ * <p>
  * confirm the user data applied on the new l3 network
- *
+ * <p>
  * bug: https://github.com/zxwing/premium/issues/113
- *
+ * <p>
  * 3. delete the l3
- *
+ * <p>
  * confirm the userdat cleaned up
- *
  */
 public class TestUserdata1 {
     Deployer deployer;
@@ -78,8 +77,8 @@ public class TestUserdata1 {
         session = api.loginAsAdmin();
     }
 
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         ImageInventory img = deployer.images.get("TestImage");
 
         InstanceOfferingInventory ioinv = deployer.instanceOfferings.get("small");
@@ -95,7 +94,7 @@ public class TestUserdata1 {
 
         fconfig.applyUserdataCmds.clear();
         final L3NetworkInventory l32 = deployer.l3Networks.get("TestL3Network2");
-        vm =  api.attachNic(vm.getUuid(), l32.getUuid());
+        vm = api.attachNic(vm.getUuid(), l32.getUuid());
 
         VmNicInventory nic = CollectionUtils.find(vm.getVmNics(), new Function<VmNicInventory, VmNicInventory>() {
             @Override

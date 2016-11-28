@@ -13,7 +13,6 @@ import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.volume.VolumeConstant;
-import org.zstack.kvm.KVMConstant;
 import org.zstack.simulator.storage.backup.sftp.SftpBackupStorageSimulatorConfig;
 import org.zstack.storage.backup.sftp.SftpBackupStorageInventory;
 import org.zstack.test.Api;
@@ -50,7 +49,7 @@ public class TestSftpBackupStorageDownloadImageFailure {
         config = loader.getComponent(SftpBackupStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         SftpBackupStorageTestHelper helper = new SftpBackupStorageTestHelper();
@@ -63,7 +62,7 @@ public class TestSftpBackupStorageDownloadImageFailure {
         iinv.setName("TestImage");
         iinv.setType(ImageConstant.ZSTACK_IMAGE_TYPE);
         iinv.setUrl("http://zstack.org/download/testimage.qcow2");
-        try{
+        try {
             api.addImage(iinv, sinv.getUuid());
         } catch (ApiSenderException e) {
         }

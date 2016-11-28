@@ -13,7 +13,7 @@ public class VmStopExtension implements VmInstanceStopExtensionPoint {
     boolean afterCalled = false;
     boolean failedCalled = false;
     String expectedUuid;
-    
+
     @Override
     public String preStopVm(VmInstanceInventory inv) {
         if (preventStop) {

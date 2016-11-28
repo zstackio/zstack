@@ -32,7 +32,7 @@ public class TestStopVm {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         VmInstanceInventory inv = api.listVmInstances(null).get(0);

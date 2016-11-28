@@ -41,11 +41,11 @@ public class TestDestroyVmOnKvmFailure {
         config = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test(expected=ApiSenderException.class)
-	public void test() throws ApiSenderException {
-	    config.destroyVmSuccess = false;
-	    VmInstanceInventory vm = deployer.vms.get("TestVm");
-	    api.destroyVmInstance(vm.getUuid());
-	}
+
+    @Test(expected = ApiSenderException.class)
+    public void test() throws ApiSenderException {
+        config.destroyVmSuccess = false;
+        VmInstanceInventory vm = deployer.vms.get("TestVm");
+        api.destroyVmInstance(vm.getUuid());
+    }
 }

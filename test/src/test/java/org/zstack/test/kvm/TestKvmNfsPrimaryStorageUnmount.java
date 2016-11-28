@@ -57,7 +57,7 @@ public class TestKvmNfsPrimaryStorageUnmount {
         session = api.loginAsAdmin();
         cinv = api.listClusters(null).get(0);
     }
-    
+
     private void removeHostAndPrimaryStorage() throws ApiSenderException {
         List<PrimaryStorageInventory> pinvs = api.listPrimaryStorage(null);
         for (PrimaryStorageInventory pinv : pinvs) {
@@ -69,7 +69,7 @@ public class TestKvmNfsPrimaryStorageUnmount {
             api.deleteHost(hinv.getUuid());
         }
     }
-    
+
     private HostInventory addHost() throws ApiSenderException {
         config.connectSuccess = true;
         config.connectException = false;
@@ -92,7 +92,7 @@ public class TestKvmNfsPrimaryStorageUnmount {
         APIAddHostEvent evt = sender.send(msg, APIAddHostEvent.class);
         return evt.getInventory();
     }
-    
+
     private PrimaryStorageInventory addPrimaryStorage() throws ApiSenderException {
         config.totalDiskCapacity = SizeUnit.GIGABYTE.toByte(100);
         config.availableDiskCapacity = SizeUnit.GIGABYTE.toByte(50);
@@ -111,8 +111,8 @@ public class TestKvmNfsPrimaryStorageUnmount {
         api.attachPrimaryStorage(cinv.getUuid(), inv.getUuid());
         return inv;
     }
-    
-    
+
+
     @Test
     public void testDetach() throws ApiSenderException {
         addHost();

@@ -32,15 +32,15 @@ import org.zstack.utils.logging.CLogger;
 
 /**
  * 1. create a vm with mevoco setting
- *
+ * <p>
  * confirm the vm created successfully
  * confirm the qos set
  * confirm the flat dhcp works
  * confirm the over-provisioning works
- *
+ * <p>
  * 2. attach a data volume
  * confirm the qos set
- *
+ * <p>
  * 3. add DNS
  * confirm the DNS added successfully
  */
@@ -86,9 +86,9 @@ public class TestMevocoMultipleNetwork {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         final L3NetworkInventory l31 = deployer.l3Networks.get("TestL3Network1");
         final L3NetworkInventory l32 = deployer.l3Networks.get("TestL3Network2");

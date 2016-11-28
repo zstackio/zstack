@@ -47,13 +47,13 @@ public class TestSimulatorVmAlarm {
         mgr = loader.getComponent(AlertManager.class);
         evtf = loader.getComponent(EventFacade.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         evtf.on(AlertCanonicalEvents.FIRE_ALERT_PATH, new EventCallback() {
             @Override
             protected void run(Map tokens, Object data) {
-                count ++;
+                count++;
             }
         });
 

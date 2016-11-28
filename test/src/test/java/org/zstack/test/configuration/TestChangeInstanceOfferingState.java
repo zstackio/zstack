@@ -48,7 +48,7 @@ public class TestChangeInstanceOfferingState {
         inv.setMemorySize(SizeUnit.GIGABYTE.toByte(1));
         inv.setDescription("TestInstanceOffering");
         inv = api.addInstanceOffering(inv);
-        
+
         InstanceOfferingVO vo = dbf.findByUuid(inv.getUuid(), InstanceOfferingVO.class);
         Assert.assertNotNull(vo);
         Assert.assertEquals(InstanceOfferingDuration.Permanent, vo.getDuration());

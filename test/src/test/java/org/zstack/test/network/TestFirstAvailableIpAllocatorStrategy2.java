@@ -40,7 +40,7 @@ public class TestFirstAvailableIpAllocatorStrategy2 {
         api.stopServer();
     }
 
-    private void takeIp(L3NetworkInventory l3inv, IpRangeInventory ipinv, String...ips) {
+    private void takeIp(L3NetworkInventory l3inv, IpRangeInventory ipinv, String... ips) {
         for (String ip : ips) {
             UsedIpVO vo = new UsedIpVO(ipinv.getUuid(), ip);
             vo.setUuid(Platform.getUuid());
@@ -49,7 +49,7 @@ public class TestFirstAvailableIpAllocatorStrategy2 {
             dbf.persist(vo);
         }
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         ZoneInventory zone = api.createZones(1).get(0);
@@ -60,9 +60,9 @@ public class TestFirstAvailableIpAllocatorStrategy2 {
         IpRangeInventory ipInv = api.addIpRange(l3inv.getUuid(), "10.223.110.10", "10.223.110.20", "10.223.110.1", "255.255.255.0");
         IpRangeVO ipvo = dbf.findByUuid(ipInv.getUuid(), IpRangeVO.class);
         Assert.assertNotNull(ipvo);
-        
+
         takeIp(l3inv, ipInv, "10.223.110.10", "10.223.110.11", "10.223.110.12", "10.223.110.14");
-        
+
         AllocateIpMsg msg = new AllocateIpMsg();
         msg.setL3NetworkUuid(l3inv.getUuid());
         msg.setServiceId(bus.makeLocalServiceId(L3NetworkConstant.SERVICE_ID));

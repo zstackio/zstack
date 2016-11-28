@@ -13,7 +13,7 @@ public class TestDeployer {
     @Before
     public void setUp() throws Exception {
         String deployConfig = System.getProperty("config");
-        DebugUtils.Assert(deployConfig!=null, "you must specify deployer configure by -Dconfig=path");
+        DebugUtils.Assert(deployConfig != null, "you must specify deployer configure by -Dconfig=path");
         DBUtil.reDeployDB();
         deployer = new Deployer(deployConfig);
         deployer.build();

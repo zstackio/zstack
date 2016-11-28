@@ -1,6 +1,5 @@
 package org.zstack.test.applianceVm;
 
-import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
@@ -12,8 +11,6 @@ import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.kvm.KVMSystemTags;
 import org.zstack.network.service.eip.EipInventory;
-import org.zstack.network.service.flat.FlatEipBackend.ApplyEipCmd;
-import org.zstack.network.service.flat.FlatEipBackend.EipTO;
 import org.zstack.network.service.flat.FlatNetworkServiceSimulatorConfig;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.test.Api;

@@ -23,13 +23,13 @@ import static org.zstack.utils.CollectionDSL.map;
  * 1. set HostTag.RESERVED_CPU_CAPACITY to a big value that makes allocation failure
  * 2. set HostTag.RESERVED_MEMORY_CAPACITY to a big value that makes allocation failure
  * 3. remove all tags
- *
+ * <p>
  * confirm in case 1,2 vm creation fails, in case 3 vm creation succeeds
  */
 @Deprecated
 public class TestReservedHostCapacity2 {
     Deployer deployer;
-    Api api; 
+    Api api;
     ComponentLoader loader;
     CloudBus bus;
     DatabaseFacade dbf;
@@ -51,9 +51,9 @@ public class TestReservedHostCapacity2 {
     public void test() throws ApiSenderException {
         boolean success = false;
         HostInventory host = deployer.hosts.values().iterator().next();
-        TagInventory tag = HostSystemTags.RESERVED_CPU_CAPACITY.createTag(host.getUuid(), map(e("capacity", 10*2600L)));
+        TagInventory tag = HostSystemTags.RESERVED_CPU_CAPACITY.createTag(host.getUuid(), map(e("capacity", 10 * 2600L)));
 
-        L3NetworkInventory l3  = deployer.l3Networks.get("TestL3Network1");
+        L3NetworkInventory l3 = deployer.l3Networks.get("TestL3Network1");
         InstanceOfferingInventory instanceOffering = deployer.instanceOfferings.get("TestInstanceOffering");
         ImageInventory imageInventory = deployer.images.get("TestImage");
 

@@ -20,7 +20,7 @@ public class TestThreadFacadeSyncReturnValueCancel {
     ThreadFacade thdf;
     int threadNum = 5;
 
-    class Tester implements SyncTask<Integer>{
+    class Tester implements SyncTask<Integer> {
         int index;
 
         Tester(int index) {
@@ -56,13 +56,13 @@ public class TestThreadFacadeSyncReturnValueCancel {
         thdf = loader.getComponent(ThreadFacade.class);
     }
 
-    @Test(expected=CancellationException.class)
+    @Test(expected = CancellationException.class)
     public void test() throws InterruptedException, ExecutionException {
         Future<Integer> ret = null;
         for (int i = 0; i < threadNum; i++) {
             Tester worker = new Tester(i);
             Future<Integer> f = thdf.syncSubmit(worker);
-            if (i == threadNum-1) {
+            if (i == threadNum - 1) {
                 ret = f;
                 f.cancel(true);
             }

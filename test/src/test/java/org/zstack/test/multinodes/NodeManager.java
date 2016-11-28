@@ -92,7 +92,7 @@ public class NodeManager {
     public void createLightWeightNodeWithCore(int num, final int timeout, List<String> springConfigs) {
         List<NodeRunner> ns = new ArrayList<NodeRunner>();
 
-        for (int i=0; i<num; i++) {
+        for (int i = 0; i < num; i++) {
             NodeRunner node = new NodeRunner();
             int port = 8100 + i;
             node.setPort(port);
@@ -148,9 +148,9 @@ public class NodeManager {
     public void createNodes(int num, final int timeout) {
         List<NodeRunner> ns = new ArrayList<NodeRunner>();
 
-        for (int i=0; i<num; i++) {
+        for (int i = 0; i < num; i++) {
             NodeRunner node = new NodeRunner();
-            int port = portStart ++;
+            int port = portStart++;
             node.setLoadAll(true);
             node.setPort(port);
             node.setServiceId("node" + nodeStart++);
@@ -213,7 +213,7 @@ public class NodeManager {
 
     public void stopNodes(final int timeout) {
         final CountDownLatch latch = new CountDownLatch(nodes.size());
-        for (final NodeRunner node: nodes) {
+        for (final NodeRunner node : nodes) {
             new Runnable() {
                 @Override
                 @AsyncThread

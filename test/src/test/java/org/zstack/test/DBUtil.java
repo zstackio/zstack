@@ -20,13 +20,13 @@ import static org.zstack.utils.StringDSL.ln;
 
 public class DBUtil {
     private static final CLogger logger = Utils.getLogger(DBUtil.class);
-    
+
     public static void reDeployDB() {
         logger.info("Deploying database ...");
         String home = System.getProperty("user.dir");
         String baseDir = Utils.getPathUtil().join(home, "../");
         Properties prop = new Properties();
-        
+
         try {
             prop.load(DBUtil.class.getClassLoader().getResourceAsStream("zstack.properties"));
 
@@ -52,7 +52,7 @@ public class DBUtil {
                 }
             }
 
-            String shellcmd = String.format("build/deploydb.sh %s %s",  user, password);
+            String shellcmd = String.format("build/deploydb.sh %s %s", user, password);
             ShellUtils.run(shellcmd, baseDir, false);
             logger.info("Deploying database successfully");
         } catch (Exception e) {
@@ -61,7 +61,7 @@ public class DBUtil {
     }
 
     @Deprecated
-    public static void reDeployCassandra(String...keyspaces) {
+    public static void reDeployCassandra(String... keyspaces) {
         // initializing platform causes zstack.properties to be load
         Platform.getUuid();
 

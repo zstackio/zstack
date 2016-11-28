@@ -13,7 +13,6 @@ import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.portforwarding.PortForwardingRuleInventory;
 import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.vip.VipVO;
-import org.zstack.network.service.virtualrouter.portforwarding.PortForwardingRuleTO;
 import org.zstack.simulator.appliancevm.ApplianceVmSimulatorConfig;
 import org.zstack.simulator.virtualrouter.VirtualRouterSimulatorConfig;
 import org.zstack.test.Api;
@@ -25,10 +24,9 @@ import org.zstack.test.virtualrouter.PortForwardingRuleTestValidator;
 import org.zstack.test.virtualrouter.VipTestValidator;
 
 /**
- * 
  * 1. create a vm with port forwarding rule
  * 2. detach the nic having rule
- *
+ * <p>
  * confirm port forwarding rule detached
  */
 public class TestDetachNicOnKvm3 {
@@ -60,7 +58,7 @@ public class TestDetachNicOnKvm3 {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         L3NetworkInventory l3 = deployer.l3Networks.get("GuestNetwork");

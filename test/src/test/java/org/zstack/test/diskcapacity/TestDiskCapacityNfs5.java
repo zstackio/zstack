@@ -44,14 +44,13 @@ import static org.zstack.utils.CollectionDSL.list;
  * 3. attach a data volume to the vm
  * 4. create snapshots from the root volume and the data volume
  * 5. delay to delete the vm and data volume
- *
+ * <p>
  * confirm the capacity of the nfs storage correct
- *
+ * <p>
  * 6. expunge the vm
  * 7. expunge the data volume
- *
+ * <p>
  * confirm the capacity of the nfs storage correct
- *
  */
 public class TestDiskCapacityNfs5 {
     CLogger logger = Utils.getLogger(TestSftpBackupStorageDeleteImage2.class);
@@ -136,8 +135,8 @@ public class TestDiskCapacityNfs5 {
         }
     }
 
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         AddImage addImage = new AddImage();
         addImage.size = SizeUnit.GIGABYTE.toByte(10);
         addImage.actualSize = SizeUnit.GIGABYTE.toByte(1);
@@ -195,5 +194,5 @@ public class TestDiskCapacityNfs5 {
         used = addImage.actualSize;
         avail = pscap4.getTotalCapacity() - used;
         Assert.assertEquals(avail, pscap4.getAvailableCapacity());
-	}
+    }
 }

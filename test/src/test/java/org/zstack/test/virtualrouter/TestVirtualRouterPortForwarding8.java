@@ -10,27 +10,22 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.network.service.portforwarding.PortForwardingRuleInventory;
 import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.vip.VipVO;
+import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.simulator.virtualrouter.VirtualRouterSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.simulator.kvm.KVMSimulatorConfig;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 
  * @author frank
- * 
- * @condition
- * 1. create two vms with port forwarding rules using deployer
+ * @condition 1. create two vms with port forwarding rules using deployer
  * 2. reboot virtual router
- *
- * @test
- * confirm port forwarding rules were applied on virtual router
+ * @test confirm port forwarding rules were applied on virtual router
  */
 public class TestVirtualRouterPortForwarding8 {
     Deployer deployer;
@@ -61,7 +56,7 @@ public class TestVirtualRouterPortForwarding8 {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         List<ApplianceVmVO> vrs = dbf.listAll(ApplianceVmVO.class);
@@ -73,7 +68,7 @@ public class TestVirtualRouterPortForwarding8 {
         TimeUnit.SECONDS.sleep(2);
         PortForwardingRuleTestValidator validator = new PortForwardingRuleTestValidator();
         validator.validate(vconfig.portForwardingRules, deployer.portForwardingRules.values());
-        
+
         PortForwardingRuleInventory pfRule1 = deployer.portForwardingRules.get("pfRule1");
         VipVO vipvo = dbf.findByUuid(pfRule1.getVipUuid(), VipVO.class);
         VipInventory vip = VipInventory.valueOf(vipvo);

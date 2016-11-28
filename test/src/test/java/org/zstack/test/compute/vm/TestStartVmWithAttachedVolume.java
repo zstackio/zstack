@@ -33,7 +33,7 @@ public class TestStartVmWithAttachedVolume {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         DiskOfferingInventory dinv = deployer.diskOfferings.get("TestDataDiskOffering");

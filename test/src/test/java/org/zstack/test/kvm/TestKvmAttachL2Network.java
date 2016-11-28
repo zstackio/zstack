@@ -11,7 +11,10 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.kvm.KVMHostFactory;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
-import org.zstack.test.*;
+import org.zstack.test.Api;
+import org.zstack.test.ApiSenderException;
+import org.zstack.test.DBUtil;
+import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -43,7 +46,7 @@ public class TestKvmAttachL2Network {
         config = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         L2NetworkInventory l2 = deployer.l2Networks.get("TestL2Network");

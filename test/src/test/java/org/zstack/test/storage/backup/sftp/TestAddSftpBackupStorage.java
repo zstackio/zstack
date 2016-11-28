@@ -46,7 +46,7 @@ public class TestAddSftpBackupStorage {
         gcf = loader.getComponent(GlobalConfigFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         config.connectSuccess = true;

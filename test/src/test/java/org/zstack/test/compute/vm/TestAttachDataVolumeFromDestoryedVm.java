@@ -31,7 +31,7 @@ public class TestAttachDataVolumeFromDestoryedVm {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         VmInstanceInventory vm1 = deployer.vms.get("vm1");
@@ -42,7 +42,7 @@ public class TestAttachDataVolumeFromDestoryedVm {
                 break;
             }
         }
-        
+
         VmInstanceInventory vm2 = deployer.vms.get("vm2");
         api.destroyVmInstance(vm1.getUuid());
         dvol1 = api.attachVolumeToVm(vm2.getUuid(), dvol1.getUuid());

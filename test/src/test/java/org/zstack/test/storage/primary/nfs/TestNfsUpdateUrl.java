@@ -49,10 +49,10 @@ public class TestNfsUpdateUrl {
         imgUpgradeExtension = loader.getComponent(ImageUpgradeExtension.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
-	    String url = "localhost:/test";
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
+        String url = "localhost:/test";
         PrimaryStorageInventory nfs = deployer.primaryStorages.get("nfs");
         String oldUrl = nfs.getUrl();
 

@@ -25,10 +25,10 @@ public class TestCloudBusSendMultiMsg3 {
     boolean isSuccess = false;
     Service serv;
     int msgNum = 30;
-    
+
     public static class HelloWorldMsg extends NeedReplyMessage {
     }
-    
+
     class FakeService extends AbstractService {
         @Override
         public boolean start() {
@@ -55,9 +55,9 @@ public class TestCloudBusSendMultiMsg3 {
         public String getId() {
             return this.getClass().getCanonicalName();
         }
-        
+
     }
-    
+
     @Before
     public void setUp() throws Exception {
         BeanConstructor con = new BeanConstructor();
@@ -70,7 +70,7 @@ public class TestCloudBusSendMultiMsg3 {
     @Test
     public void test() throws InterruptedException, ClassNotFoundException {
         List<HelloWorldMsg> msgs = new ArrayList<HelloWorldMsg>(msgNum);
-        for (int i=0; i<msgNum; i++) {
+        for (int i = 0; i < msgNum; i++) {
             HelloWorldMsg msg = new HelloWorldMsg();
             msg.setServiceId(FakeService.class.getCanonicalName());
             msgs.add(msg);

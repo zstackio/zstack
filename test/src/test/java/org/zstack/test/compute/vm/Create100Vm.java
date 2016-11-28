@@ -51,7 +51,7 @@ public class Create100Vm {
             latch.countDown();
         }
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         InstanceOfferingInventory ioinv = api.listInstanceOffering(null).get(0);

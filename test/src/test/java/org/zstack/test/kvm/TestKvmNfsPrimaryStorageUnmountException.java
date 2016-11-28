@@ -56,14 +56,14 @@ public class TestKvmNfsPrimaryStorageUnmountException {
         session = api.loginAsAdmin();
         cinv = api.listClusters(null).get(0);
     }
-    
+
     private void detachPrimaryStorage() throws ApiSenderException {
         List<PrimaryStorageInventory> pinvs = api.listPrimaryStorage(null);
         for (PrimaryStorageInventory pinv : pinvs) {
             api.detachPrimaryStorage(pinv.getUuid(), cinv.getUuid());
         }
     }
-    
+
     private HostInventory addHost() throws ApiSenderException {
         config.connectSuccess = true;
         config.connectException = false;
@@ -86,7 +86,7 @@ public class TestKvmNfsPrimaryStorageUnmountException {
         APIAddHostEvent evt = sender.send(msg, APIAddHostEvent.class);
         return evt.getInventory();
     }
-    
+
     private PrimaryStorageInventory addPrimaryStorage() throws ApiSenderException {
         config.totalDiskCapacity = SizeUnit.GIGABYTE.toByte(100);
         config.availableDiskCapacity = SizeUnit.GIGABYTE.toByte(50);
@@ -104,8 +104,8 @@ public class TestKvmNfsPrimaryStorageUnmountException {
         api.attachPrimaryStorage(cinv.getUuid(), inv.getUuid());
         return inv;
     }
-    
-    
+
+
     @Test
     public void testDetach() throws ApiSenderException {
         /* Detach always success even if unmount failed on hypervisor */

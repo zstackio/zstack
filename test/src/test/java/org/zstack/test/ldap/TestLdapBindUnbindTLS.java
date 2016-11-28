@@ -1,22 +1,15 @@
 package org.zstack.test.ldap;
 
 import com.unboundid.ldap.sdk.LDAPException;
-import com.unboundid.ldap.sdk.LDAPInterface;
-import com.unboundid.ldap.sdk.SearchResult;
-import com.unboundid.ldap.sdk.SearchScope;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.zapodot.junit.ldap.EmbeddedLdapRule;
-import org.zapodot.junit.ldap.EmbeddedLdapRuleBuilder;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.query.QueryCondition;
-import org.zstack.header.volume.VolumeConstant;
 import org.zstack.ldap.*;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSender;

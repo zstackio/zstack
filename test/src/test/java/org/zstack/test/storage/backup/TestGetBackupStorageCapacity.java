@@ -7,7 +7,6 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.storage.backup.APIGetBackupStorageCapacityReply;
-import org.zstack.header.storage.backup.BackupStorage;
 import org.zstack.header.storage.backup.BackupStorageInventory;
 import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.zone.ZoneInventory;
@@ -43,8 +42,8 @@ public class TestGetBackupStorageCapacity {
         dbf = loader.getComponent(DatabaseFacade.class);
     }
 
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         ZoneInventory zone1 = deployer.zones.get("Zone1");
         BackupStorageInventory bs = deployer.backupStorages.get("backup1");
 
@@ -74,5 +73,5 @@ public class TestGetBackupStorageCapacity {
         reply = api.getBackupStorageCapacity(Arrays.asList(zone1.getUuid()), null);
         Assert.assertEquals(bsvo.getTotalCapacity(), reply.getTotalCapacity());
         Assert.assertEquals(bsvo.getAvailableCapacity(), reply.getAvailableCapacity());
-	}
+    }
 }

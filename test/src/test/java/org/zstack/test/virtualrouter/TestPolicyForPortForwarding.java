@@ -1,7 +1,6 @@
 package org.zstack.test.virtualrouter;
 
 import junit.framework.Assert;
-import net.schmizz.sshj.connection.channel.direct.Session;
 import org.junit.Before;
 import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
@@ -19,7 +18,6 @@ import org.zstack.network.service.portforwarding.*;
 import org.zstack.network.service.vip.APICreateVipMsg;
 import org.zstack.network.service.vip.VipConstant;
 import org.zstack.network.service.vip.VipInventory;
-import org.zstack.network.service.vip.VipVO;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.simulator.virtualrouter.VirtualRouterSimulatorConfig;
 import org.zstack.test.Api;
@@ -32,7 +30,7 @@ import org.zstack.test.identity.IdentityCreator;
 import java.util.ArrayList;
 
 /**
- * 
+ *
  */
 public class TestPolicyForPortForwarding {
     Deployer deployer;

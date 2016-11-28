@@ -25,7 +25,7 @@ public class L2VlanNetworkDeployer implements L2NetworkDeployer<L2VlanNetworkCon
             l2inv.setDescription(l2c.getDescription());
             l2inv.setPhysicalInterface(l2c.getPhysicalInterface());
             l2inv.setZoneUuid(zone.getUuid());
-            l2inv.setVlan((int)l2c.getVlan());
+            l2inv.setVlan((int) l2c.getVlan());
             l2inv = deployer.getApi().createL2VlanNetworkByFullConfig(l2inv);
             deployer.l2Networks.put(l2inv.getName(), l2inv);
             deployer.deployL3Network(l2c.getL3Networks(), l2inv);

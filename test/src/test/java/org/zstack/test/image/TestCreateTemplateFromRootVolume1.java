@@ -27,7 +27,7 @@ import java.util.List;
 
 /**
  * 1. don't specify backup storage uuid
- *
+ * <p>
  * confirm creating image succeeds
  */
 public class TestCreateTemplateFromRootVolume1 {
@@ -54,23 +54,23 @@ public class TestCreateTemplateFromRootVolume1 {
         config = loader.getComponent(SftpBackupStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
-	    VmInstanceInventory vm = deployer.vms.get("TestVm");
-	    api.stopVmInstance(vm.getUuid());
-	    String rootVolumeUuid = vm.getRootVolumeUuid();
-	    VolumeVO vol = dbf.findByUuid(rootVolumeUuid, VolumeVO.class);
-	    
-	    BackupStorageInventory sftp = deployer.backupStorages.get("sftp");
-	    ImageInventory image = api.createTemplateFromRootVolume("testImage", rootVolumeUuid, (List)null);
-	    Assert.assertEquals(sftp.getUuid(), image.getBackupStorageRefs().get(0).getBackupStorageUuid());
-	    Assert.assertEquals(ImageStatus.Ready.toString(), image.getStatus());
-	    Assert.assertEquals(vol.getSize(), image.getSize());
+
+    @Test
+    public void test() throws ApiSenderException {
+        VmInstanceInventory vm = deployer.vms.get("TestVm");
+        api.stopVmInstance(vm.getUuid());
+        String rootVolumeUuid = vm.getRootVolumeUuid();
+        VolumeVO vol = dbf.findByUuid(rootVolumeUuid, VolumeVO.class);
+
+        BackupStorageInventory sftp = deployer.backupStorages.get("sftp");
+        ImageInventory image = api.createTemplateFromRootVolume("testImage", rootVolumeUuid, (List) null);
+        Assert.assertEquals(sftp.getUuid(), image.getBackupStorageRefs().get(0).getBackupStorageUuid());
+        Assert.assertEquals(ImageStatus.Ready.toString(), image.getStatus());
+        Assert.assertEquals(vol.getSize(), image.getSize());
         Assert.assertEquals(String.format("volume://%s", vol.getUuid()), image.getUrl());
 
-	    ImageVO ivo = dbf.findByUuid(image.getUuid(), ImageVO.class);
-	    Assert.assertNotNull(ivo);
-	}
+        ImageVO ivo = dbf.findByUuid(image.getUuid(), ImageVO.class);
+        Assert.assertNotNull(ivo);
+    }
 
 }

@@ -19,14 +19,13 @@ import java.util.List;
 
 /**
  * 1. get target hosts for migration
- *
+ * <p>
  * confirm hosts returned correctly
- *
+ * <p>
  * 2. detach the nic from the vm
  * 3. get target hosts for migration
- *
+ * <p>
  * confirm hosts returned correctly
- *
  */
 public class TestMigrateVm4 {
     Deployer deployer;
@@ -45,7 +44,7 @@ public class TestMigrateVm4 {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");

@@ -28,10 +28,9 @@ import java.util.concurrent.TimeUnit;
  * 1. create a vm
  * 2. stop the vm
  * 3. remove the vm from the host
- *
+ * <p>
  * confirm the vm stopped
  * confirm no VmStateChangedOnHostData issued
- *
  */
 public class TestVmStateTracer6 {
     Deployer deployer;
@@ -57,11 +56,11 @@ public class TestVmStateTracer6 {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
         evtf = loader.getComponent(EventFacade.class);
-        
+
         deployer.build();
         api = deployer.getApi();
     }
-    
+
     @Test
     public void test() throws InterruptedException, ApiSenderException {
         evtf.on(VmTracerCanonicalEvents.VM_STATE_CHANGED_PATH, new EventCallback() {

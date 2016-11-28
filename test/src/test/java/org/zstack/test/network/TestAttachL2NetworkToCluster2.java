@@ -7,7 +7,6 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.network.l2.L2NetworkConstant;
-import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.header.network.l2.L2VlanNetworkInventory;
 import org.zstack.header.zone.ZoneInventory;
 import org.zstack.test.Api;
@@ -17,7 +16,7 @@ import org.zstack.test.deployer.Deployer;
 
 /**
  * 1. attach another vlan l2 to cluster that already has a vlan l2 having the same physical interface, vlan attached
- *
+ * <p>
  * confirm attach fail
  */
 public class TestAttachL2NetworkToCluster2 {
@@ -37,7 +36,7 @@ public class TestAttachL2NetworkToCluster2 {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test(expected = ApiSenderException.class)
     public void test() throws ApiSenderException {
         ZoneInventory zone = deployer.zones.get("TestZone");

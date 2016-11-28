@@ -8,8 +8,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
-import org.zstack.network.securitygroup.*;
-import org.zstack.network.securitygroup.APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO;
+import org.zstack.network.securitygroup.SecurityGroupInventory;
 import org.zstack.simulator.SimulatorSecurityGroupBackend;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
@@ -20,21 +19,14 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /**
- * 
  * @author frank
- * 
- * @condition
- * 1. create a security group: sg
+ * @condition 1. create a security group: sg
  * 2. attach sg to two l3Networks: l3nw1, l3nw2
  * 3. create vm1 with two nics: vm1Nic1(l3nw1), vm1Nic2(l3nw2)
  * 5. create vm2 with two nics: vm2Nic1(l3nw1), vm2Nic2(l3nw2)
- *
- * @test
- * confirm APIGetCandidateVmNicForSecurityGroupMsg returns correct nics
- *
+ * @test confirm APIGetCandidateVmNicForSecurityGroupMsg returns correct nics
  */
 public class TestGetCandidateVmNicForSecurityGroup {
     static CLogger logger = Utils.getLogger(TestGetCandidateVmNicForSecurityGroup.class);
@@ -55,7 +47,7 @@ public class TestGetCandidateVmNicForSecurityGroup {
         dbf = loader.getComponent(DatabaseFacade.class);
         sbkd = loader.getComponent(SimulatorSecurityGroupBackend.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         VmInstanceInventory vm1 = deployer.vms.get("TestVm");

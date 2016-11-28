@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit;
  * 2. disable host auto-reconnect
  * 3. stop the vm
  * 4. make the host disconnected
- *
+ * <p>
  * confirm the vm state is stopped, not unknown
  */
 public class TestVmStateTracer7 {
@@ -53,11 +53,11 @@ public class TestVmStateTracer7 {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
         evtf = loader.getComponent(EventFacade.class);
-        
+
         deployer.build();
         api = deployer.getApi();
     }
-    
+
     @Test
     public void test() throws InterruptedException, ApiSenderException {
         HostGlobalConfig.AUTO_RECONNECT_ON_ERROR.updateValue(false);

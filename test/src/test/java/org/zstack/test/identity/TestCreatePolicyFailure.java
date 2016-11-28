@@ -14,7 +14,7 @@ public class TestCreatePolicyFailure {
     ComponentLoader loader;
     DatabaseFacade dbf;
 
-    @Test(expected=CloudRuntimeException.class)
+    @Test(expected = CloudRuntimeException.class)
     public void test() {
         DBUtil.reDeployDB();
         deployer = new Deployer("deployerXml/identity/TestCreatePolicyFailure.xml");

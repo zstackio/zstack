@@ -9,7 +9,6 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.query.QueryOp;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.TagDefinition;
-import org.zstack.header.tag.TagInventory;
 import org.zstack.header.zone.APIQueryZoneMsg;
 import org.zstack.header.zone.APIQueryZoneReply;
 import org.zstack.header.zone.ZoneInventory;

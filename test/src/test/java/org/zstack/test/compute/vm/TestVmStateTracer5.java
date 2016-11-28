@@ -24,10 +24,9 @@ import java.util.concurrent.TimeUnit;
 /**
  * 1. create a vm
  * 2. migrate the vm
- *
+ * <p>
  * confirm the vm migrated successfully
  * confirm the src/dst host capacity correct
- *
  */
 public class TestVmStateTracer5 {
     Deployer deployer;
@@ -48,11 +47,11 @@ public class TestVmStateTracer5 {
         HostGlobalConfig.PING_HOST_INTERVAL.updateValue(1);
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
-        
+
         deployer.build();
         api = deployer.getApi();
     }
-    
+
     @Test
     public void test() throws InterruptedException, ApiSenderException {
         HostInventory host1 = deployer.hosts.get("TestHost1");

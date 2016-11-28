@@ -11,30 +11,25 @@ import org.zstack.header.vm.VmNicInventory;
 import org.zstack.kvm.KVMConstant.KvmVmState;
 import org.zstack.network.securitygroup.SecurityGroupInventory;
 import org.zstack.network.securitygroup.SecurityGroupRuleTO;
+import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.concurrent.TimeUnit;
 
 /**
- * @deprecated this case is not valid any more
- *
  * @author frank
- * 
- * @condition
- * 1. create a security group with some rules
+ * @condition 1. create a security group with some rules
  * 2. create a vm and add vm to the security group
  * 3. put vm to Unknown state
  * 4. put vm back to Running state
- * 
- * @test
- * confirm rules on vm are correct
+ * @test confirm rules on vm are correct
+ * @deprecated this case is not valid any more
  */
 public class TestApplySecurityGroupRuleKvmOnVmStateChange {
     static CLogger logger = Utils.getLogger(TestApplySecurityGroupRuleKvmOnVmStateChange.class);

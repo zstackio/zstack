@@ -53,7 +53,7 @@ public class DefaultImageDeployer implements ImageDeployer<ImageConfig> {
                     vo = dbf.updateAndRefresh(vo);
                     iinv = ImageInventory.valueOf(vo);
                 }
-                if(ic.getActualSize()!=null){
+                if (ic.getActualSize() != null) {
                     ImageVO vo = dbf.findByUuid(iinv.getUuid(), ImageVO.class);
                     long actualSize = deployer.parseSizeCapacity(ic.getActualSize());
                     vo.setActualSize(actualSize);

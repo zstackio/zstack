@@ -12,7 +12,7 @@ public class L2NetworkDeleteExtension implements L2NetworkDeleteExtensionPoint {
     boolean beforeCalled = false;
     boolean afterCalled = false;
     String excpectedUuid;
-    
+
     @Override
     public void preDeleteL2Network(L2NetworkInventory inventory) throws L2NetworkException {
         if (preventDelete) {

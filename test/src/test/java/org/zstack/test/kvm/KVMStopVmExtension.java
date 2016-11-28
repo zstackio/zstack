@@ -10,7 +10,7 @@ public class KVMStopVmExtension implements KVMStopVmExtensionPoint {
     boolean beforecalled;
     boolean successCalled;
     boolean failCalled;
-    
+
     @Override
     public void beforeStopVmOnKvm(KVMHostInventory host, VmInstanceInventory vm) throws KVMException {
         beforecalled = true;

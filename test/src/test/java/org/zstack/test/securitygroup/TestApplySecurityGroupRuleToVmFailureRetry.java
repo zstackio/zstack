@@ -10,12 +10,12 @@ import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.securitygroup.SecurityGroupGlobalConfig;
 import org.zstack.network.securitygroup.SecurityGroupInventory;
 import org.zstack.network.securitygroup.SecurityGroupRuleTO;
+import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -44,7 +44,7 @@ public class TestApplySecurityGroupRuleToVmFailureRetry {
         deployer.build();
         api = deployer.getApi();
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         SecurityGroupInventory scinv = deployer.securityGroups.get("test");

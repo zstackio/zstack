@@ -22,6 +22,7 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
 import java.util.List;
+
 public class TestDetachPrimaryStorage {
     CLogger logger = Utils.getLogger(TestCreatePrimaryStorage.class);
     Api api;
@@ -62,7 +63,7 @@ public class TestDetachPrimaryStorage {
         uuids.add(inv.getUuid());
         inv = api.listPrimaryStorage(uuids).get(0);
         Assert.assertEquals(clusters.size(), inv.getAttachedClusterUuids().size());
-        
+
         for (ClusterInventory c : clusters) {
             api.detachPrimaryStorage(inv.getUuid(), c.getUuid());
         }
@@ -70,7 +71,7 @@ public class TestDetachPrimaryStorage {
         uuids.add(inv.getUuid());
         inv = api.listPrimaryStorage(uuids).get(0);
         Assert.assertEquals(0, inv.getAttachedClusterUuids().size());
-        
+
         SimpleQuery<PrimaryStorageClusterRefVO> query = dbf.createQuery(PrimaryStorageClusterRefVO.class);
         long count = query.count();
         Assert.assertEquals(0, count);

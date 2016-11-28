@@ -3,7 +3,8 @@ package org.zstack.test.core.workflow;
 import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.zstack.core.workflow.*;
+import org.zstack.core.workflow.FlowChainBuilder;
+import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.test.BeanConstructor;
@@ -17,11 +18,11 @@ public class TestShareFlow3 {
     boolean success;
 
     private void increase() {
-        count[0] ++;
+        count[0]++;
     }
 
     private void decrease() {
-        count[0] --;
+        count[0]--;
     }
 
     private void expect(int ret) {
@@ -34,6 +35,7 @@ public class TestShareFlow3 {
 
         chain.then(new ShareFlow() {
             int a;
+
             @Override
             public void setup() {
                 flow(new Flow() {

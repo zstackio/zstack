@@ -10,11 +10,11 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
-import org.zstack.header.core.workflow.FlowChain;
 import org.zstack.core.workflow.FlowChainBuilder;
+import org.zstack.header.configuration.InstanceOfferingInventory;
+import org.zstack.header.core.workflow.FlowChain;
 import org.zstack.header.core.workflow.FlowDoneHandler;
 import org.zstack.header.core.workflow.FlowErrorHandler;
-import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImagePlatform;
@@ -76,7 +76,7 @@ public class TestVmAllocateNicFlowMacCollision {
     }
 
     @Test
-    public void test() throws InterruptedException,ApiSenderException {
+    public void test() throws InterruptedException, ApiSenderException {
         final List<L3NetworkInventory> l3Networks = api.listL3Network(null);
 
         List<VmInstanceVO> vms = persistVm();

@@ -12,7 +12,10 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
-import org.zstack.network.service.lb.*;
+import org.zstack.network.service.lb.LoadBalancerInventory;
+import org.zstack.network.service.lb.LoadBalancerListenerVmNicRefVO;
+import org.zstack.network.service.lb.LoadBalancerListenerVmNicRefVO_;
+import org.zstack.network.service.lb.LoadBalancerVmNicStatus;
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.LbTO;
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.RefreshLbCmd;
 import org.zstack.simulator.appliancevm.ApplianceVmSimulatorConfig;
@@ -26,18 +29,16 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
 /**
- * 
  * @author frank
- * 
- * 1. create a lb
- * 2. stop the vm
- *
- * confirm the nic is inactive
- *
- * 3. start the vm
- *
- * confirm the nic is active
- *
+ *         <p>
+ *         1. create a lb
+ *         2. stop the vm
+ *         <p>
+ *         confirm the nic is inactive
+ *         <p>
+ *         3. start the vm
+ *         <p>
+ *         confirm the nic is active
  */
 public class TestVirtualRouterLb9 {
     Deployer deployer;
@@ -68,7 +69,7 @@ public class TestVirtualRouterLb9 {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         LoadBalancerInventory lb = deployer.loadBalancers.get("lb");

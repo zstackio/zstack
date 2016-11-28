@@ -32,7 +32,7 @@ public class TestStopVmExtensionPoint {
         dbf = loader.getComponent(DatabaseFacade.class);
         ext = loader.getComponent(VmStopExtension.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         VmInstanceInventory inv = api.listVmInstances(null).get(0);
@@ -41,7 +41,7 @@ public class TestStopVmExtensionPoint {
             api.stopVmInstance(inv.getUuid());
         } catch (ApiSenderException e) {
         }
-        
+
         ext.setPreventStop(false);
         ext.setExpectedUuid(inv.getUuid());
         api.stopVmInstance(inv.getUuid());

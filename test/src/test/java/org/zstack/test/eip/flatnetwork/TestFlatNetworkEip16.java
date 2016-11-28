@@ -18,13 +18,12 @@ import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 
 /**
- * 
  * @author frank
- * 
- * 1. create a vm with an EIP using virtual router provider
- * 2. reconnect host
- *
- * confirm flat network eip provider not sync the EIP to vm's host
+ *         <p>
+ *         1. create a vm with an EIP using virtual router provider
+ *         2. reconnect host
+ *         <p>
+ *         confirm flat network eip provider not sync the EIP to vm's host
  */
 public class TestFlatNetworkEip16 {
     Deployer deployer;
@@ -59,7 +58,7 @@ public class TestFlatNetworkEip16 {
         fconfig = loader.getComponent(FlatNetworkServiceSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");

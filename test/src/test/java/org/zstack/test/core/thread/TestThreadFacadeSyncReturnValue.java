@@ -20,7 +20,7 @@ public class TestThreadFacadeSyncReturnValue {
     ThreadFacade thdf;
     int threadNum = 5;
 
-    class Tester implements SyncTask<Integer>{
+    class Tester implements SyncTask<Integer> {
         int index;
 
         Tester(int index) {
@@ -61,10 +61,10 @@ public class TestThreadFacadeSyncReturnValue {
         for (int i = 0; i < threadNum; i++) {
             Tester worker = new Tester(i);
             Future<Integer> f = thdf.syncSubmit(worker);
-            if (i == this.threadNum-1) {
+            if (i == this.threadNum - 1) {
                 ret = f;
             }
         }
-        Assert.assertEquals(this.threadNum-1, ret.get().intValue());
+        Assert.assertEquals(this.threadNum - 1, ret.get().intValue());
     }
 }

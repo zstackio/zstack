@@ -43,11 +43,11 @@ public class TestStopVmOnKvm {
         config = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
-	    VmInstanceInventory vm = deployer.vms.get("TestVm");
-	    vm = api.stopVmInstance(vm.getUuid());
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
+        VmInstanceInventory vm = deployer.vms.get("TestVm");
+        vm = api.stopVmInstance(vm.getUuid());
         Assert.assertEquals(VmInstanceState.Stopped.toString(), vm.getState());
     }
 

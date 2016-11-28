@@ -12,7 +12,7 @@ public class ChangeHostStateExtension implements HostChangeStateExtensionPoint {
     private boolean beforeCalled = false;
     private boolean afterCalled = false;
     private boolean preventChange = false;
-    
+
     @Override
     public void preChangeHostState(HostInventory inventory, HostStateEvent event, HostState nextState) throws HostException {
         if (this.preventChange) {

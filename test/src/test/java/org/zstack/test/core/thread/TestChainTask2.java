@@ -27,14 +27,14 @@ public class TestChainTask2 {
     List<Integer> f1 = new ArrayList<Integer>(threadNum.get());
     List<Integer> f2 = new ArrayList<Integer>(threadNum.get());
     CountDownLatch latch = new CountDownLatch(threadNum.get());
-    
+
     class Tester extends ChainTask {
         int index;
-        
+
         Tester(int index) {
             this.index = index;
         }
-        
+
         @Override
         public String getName() {
             return "Test";
@@ -53,14 +53,14 @@ public class TestChainTask2 {
             chain.next();
         }
     }
-    
+
     @Before
     public void setUp() throws Exception {
         BeanConstructor con = new BeanConstructor();
         loader = con.build();
         thdf = loader.getComponent(ThreadFacade.class);
     }
-    
+
     @AsyncThread
     private void feed1() {
         int index;
@@ -70,7 +70,7 @@ public class TestChainTask2 {
             thdf.chainSubmit(t);
         }
     }
-    
+
     @AsyncThread
     private void feed2() {
         int index;
@@ -80,7 +80,7 @@ public class TestChainTask2 {
             thdf.chainSubmit(t);
         }
     }
-    
+
     @Test
     public void test() throws InterruptedException {
         feed1();

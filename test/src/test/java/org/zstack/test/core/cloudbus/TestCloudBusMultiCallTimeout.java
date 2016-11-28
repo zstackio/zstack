@@ -25,7 +25,7 @@ public class TestCloudBusMultiCallTimeout {
     Service serv;
     int msgNum = 10;
     int ignoreMsgIndex = 5;
-    
+
     public static class HelloWorldMsg extends NeedReplyMessage {
         private int index;
 
@@ -37,7 +37,7 @@ public class TestCloudBusMultiCallTimeout {
             this.index = index;
         }
     }
-    
+
     public static class HelloWorldReply extends MessageReply {
         private int index;
 
@@ -49,7 +49,7 @@ public class TestCloudBusMultiCallTimeout {
             this.index = index;
         }
     }
-    
+
     class FakeService extends AbstractService {
         @Override
         public boolean start() {
@@ -68,7 +68,7 @@ public class TestCloudBusMultiCallTimeout {
         @Override
         public void handleMessage(Message msg) {
             if (msg.getClass() == HelloWorldMsg.class) {
-                HelloWorldMsg hmsg = (HelloWorldMsg)msg;
+                HelloWorldMsg hmsg = (HelloWorldMsg) msg;
                 HelloWorldReply r = new HelloWorldReply();
                 r.setIndex(hmsg.getIndex());
                 if (hmsg.getIndex() != ignoreMsgIndex) {
@@ -81,9 +81,9 @@ public class TestCloudBusMultiCallTimeout {
         public String getId() {
             return this.getClass().getCanonicalName();
         }
-        
+
     }
-    
+
     @Before
     public void setUp() throws Exception {
         BeanConstructor con = new BeanConstructor();
@@ -96,14 +96,14 @@ public class TestCloudBusMultiCallTimeout {
     @Test
     public void test() throws InterruptedException, ClassNotFoundException {
         List<HelloWorldMsg> msgs = new ArrayList<HelloWorldMsg>(msgNum);
-        for (int i=0; i<msgNum; i++) {
+        for (int i = 0; i < msgNum; i++) {
             HelloWorldMsg msg = new HelloWorldMsg();
             msg.setIndex(i);
             msg.setServiceId(FakeService.class.getCanonicalName());
             msg.setTimeout(TimeUnit.SECONDS.toMillis(2));
             msgs.add(msg);
         }
-        
+
         List<MessageReply> rs = bus.call(msgs);
         serv.stop();
         for (MessageReply r : rs) {

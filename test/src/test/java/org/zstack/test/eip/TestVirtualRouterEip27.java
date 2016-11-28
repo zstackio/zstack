@@ -18,14 +18,11 @@ import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 
 /**
- * 
  * @author frank
- * 
- * @condition
- * 1. create a vm
+ * @condition 1. create a vm
  * 2. set eip
  * 3. attach the public network where the eip is from to the vm
- *
+ * <p>
  * confirm the network cannot be attached
  */
 public class TestVirtualRouterEip27 {
@@ -57,7 +54,7 @@ public class TestVirtualRouterEip27 {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         L3NetworkInventory l3 = deployer.l3Networks.get("PublicNetwork");

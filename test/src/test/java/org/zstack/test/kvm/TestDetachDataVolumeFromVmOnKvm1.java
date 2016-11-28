@@ -22,11 +22,11 @@ import org.zstack.utils.logging.CLogger;
 
 /**
  * 1, create vm
- 2, create a volume
- 3, attach volume to vm
- 4, stop vm
- 5, detach volume
- 6, attach volume to vm again
+ * 2, create a volume
+ * 3, attach volume to vm
+ * 4, stop vm
+ * 5, detach volume
+ * 6, attach volume to vm again
  */
 public class TestDetachDataVolumeFromVmOnKvm1 {
     CLogger logger = Utils.getLogger(TestSftpBackupStorageDeleteImage2.class);
@@ -52,17 +52,17 @@ public class TestDetachDataVolumeFromVmOnKvm1 {
         config = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
-	    VmInstanceInventory vm = deployer.vms.get("TestVm");
-	    DiskOfferingInventory dinv = deployer.diskOfferings.get("DataOffering");
-	    VolumeInventory vol = api.createDataVolume("d1", dinv.getUuid());
-	    vol = api.attachVolumeToVm(vm.getUuid(), vol.getUuid());
-	    Assert.assertEquals(true, vol.isAttached());
+
+    @Test
+    public void test() throws ApiSenderException {
+        VmInstanceInventory vm = deployer.vms.get("TestVm");
+        DiskOfferingInventory dinv = deployer.diskOfferings.get("DataOffering");
+        VolumeInventory vol = api.createDataVolume("d1", dinv.getUuid());
+        vol = api.attachVolumeToVm(vm.getUuid(), vol.getUuid());
+        Assert.assertEquals(true, vol.isAttached());
         api.stopVmInstance(vm.getUuid());
-	    vol = api.detachVolumeFromVm(vol.getUuid());
+        vol = api.detachVolumeFromVm(vol.getUuid());
         Assert.assertEquals(false, vol.isAttached());
         api.attachVolumeToVm(vm.getUuid(), vol.getUuid());
-	}
+    }
 }

@@ -24,23 +24,21 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
 /**
- * 
  * @author frank
- * 
- * 1. create a lb
- * 2. add a nic
- *
- * confirm the nic added successfully
- *
- * 3. remove the nic
- *
- * confirm the nic removed successfully
- *
- * 4. add the nic again
- * 5. make the operation fail
- *
- * confirm on vr reference is created
- *
+ *         <p>
+ *         1. create a lb
+ *         2. add a nic
+ *         <p>
+ *         confirm the nic added successfully
+ *         <p>
+ *         3. remove the nic
+ *         <p>
+ *         confirm the nic removed successfully
+ *         <p>
+ *         4. add the nic again
+ *         5. make the operation fail
+ *         <p>
+ *         confirm on vr reference is created
  */
 public class TestVirtualRouterLb4 {
     Deployer deployer;
@@ -71,7 +69,7 @@ public class TestVirtualRouterLb4 {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         LoadBalancerInventory lb = deployer.loadBalancers.get("lb");

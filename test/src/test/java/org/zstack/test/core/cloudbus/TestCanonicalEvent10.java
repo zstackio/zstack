@@ -31,7 +31,7 @@ public class TestCanonicalEvent10 {
         BeanConstructor con = new BeanConstructor();
         loader = con.build();
         evtf = loader.getComponent(EventFacade.class);
-        ((EventFacadeImpl)evtf).start();
+        ((EventFacadeImpl) evtf).start();
     }
 
     @Test
@@ -44,7 +44,7 @@ public class TestCanonicalEvent10 {
 
             @Override
             public void run(Map tokens, Object data) {
-                count ++;
+                count++;
             }
         };
 
@@ -55,7 +55,7 @@ public class TestCanonicalEvent10 {
 
             @Override
             public void run(Map tokens, Object data) {
-                count ++;
+                count++;
             }
         };
 

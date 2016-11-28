@@ -38,7 +38,7 @@ public class TestStartCreatedVmWithRootPassword {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         InstanceOfferingInventory ioinv = api.listInstanceOffering(null).get(0);

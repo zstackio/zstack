@@ -33,59 +33,59 @@ import static org.zstack.utils.CollectionDSL.map;
  * test vr parallelism tag
  */
 public class TestStartVirtualRouter8 {
-	CLogger logger = Utils.getLogger(TestStartVirtualRouter8.class);
-	Deployer deployer;
-	Api api;
-	ComponentLoader loader;
-	CloudBus bus;
-	DatabaseFacade dbf;
-	SessionInventory session;
-	VirtualRouterSimulatorConfig vconfig;
-	KVMSimulatorConfig kconfig;
+    CLogger logger = Utils.getLogger(TestStartVirtualRouter8.class);
+    Deployer deployer;
+    Api api;
+    ComponentLoader loader;
+    CloudBus bus;
+    DatabaseFacade dbf;
+    SessionInventory session;
+    VirtualRouterSimulatorConfig vconfig;
+    KVMSimulatorConfig kconfig;
 
-	@Before
-	public void setUp() throws Exception {
-		DBUtil.reDeployDB();
-		WebBeanConstructor con = new WebBeanConstructor();
-		deployer = new Deployer("deployerXml/virtualRouter/startVirtualRouter.xml", con);
-		deployer.addSpringConfig("VirtualRouter.xml");
-		deployer.addSpringConfig("VirtualRouterSimulator.xml");
-		deployer.addSpringConfig("KVMRelated.xml");
-		deployer.build();
-		api = deployer.getApi();
-		loader = deployer.getComponentLoader();
-		vconfig = loader.getComponent(VirtualRouterSimulatorConfig.class);
-		kconfig = loader.getComponent(KVMSimulatorConfig.class);
-		bus = loader.getComponent(CloudBus.class);
-		dbf = loader.getComponent(DatabaseFacade.class);
-		session = api.loginAsAdmin();
-	}
+    @Before
+    public void setUp() throws Exception {
+        DBUtil.reDeployDB();
+        WebBeanConstructor con = new WebBeanConstructor();
+        deployer = new Deployer("deployerXml/virtualRouter/startVirtualRouter.xml", con);
+        deployer.addSpringConfig("VirtualRouter.xml");
+        deployer.addSpringConfig("VirtualRouterSimulator.xml");
+        deployer.addSpringConfig("KVMRelated.xml");
+        deployer.build();
+        api = deployer.getApi();
+        loader = deployer.getComponentLoader();
+        vconfig = loader.getComponent(VirtualRouterSimulatorConfig.class);
+        kconfig = loader.getComponent(KVMSimulatorConfig.class);
+        bus = loader.getComponent(CloudBus.class);
+        dbf = loader.getComponent(DatabaseFacade.class);
+        session = api.loginAsAdmin();
+    }
 
-	@Test
-	public void test() throws ApiSenderException {
-		ImageInventory iminv = deployer.images.get("TestImage");
-		InstanceOfferingInventory ioinv = deployer.instanceOfferings.get("TestInstanceOffering");
-		L3NetworkInventory l3inv = deployer.l3Networks.get("TestL3Network2");
+    @Test
+    public void test() throws ApiSenderException {
+        ImageInventory iminv = deployer.images.get("TestImage");
+        InstanceOfferingInventory ioinv = deployer.instanceOfferings.get("TestInstanceOffering");
+        L3NetworkInventory l3inv = deployer.l3Networks.get("TestL3Network2");
         InstanceOfferingInventory vroffering = deployer.instanceOfferings.get("virtualRouterOffering");
         VirtualRouterSystemTags.VR_OFFERING_PARALLELISM_DEGREE.createTag(vroffering.getUuid(), map(
                 e(VirtualRouterSystemTags.PARALLELISM_DEGREE_TOKEN, 1000)
         ));
 
-		APICreateVmInstanceMsg msg = new APICreateVmInstanceMsg();
-		msg.setImageUuid(iminv.getUuid());
-		msg.setInstanceOfferingUuid(ioinv.getUuid());
-		List<String> l3uuids = new ArrayList<String>();
-		l3uuids.add(l3inv.getUuid());
-		msg.setL3NetworkUuids(l3uuids);
-		msg.setName("TestVm");
-		msg.setSession(session);
-		msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
-		msg.setType(VmInstanceConstant.USER_VM_TYPE);
-		ApiSender sender = api.getApiSender();
-		sender.send(msg, APICreateVmInstanceEvent.class);
+        APICreateVmInstanceMsg msg = new APICreateVmInstanceMsg();
+        msg.setImageUuid(iminv.getUuid());
+        msg.setInstanceOfferingUuid(ioinv.getUuid());
+        List<String> l3uuids = new ArrayList<String>();
+        l3uuids.add(l3inv.getUuid());
+        msg.setL3NetworkUuids(l3uuids);
+        msg.setName("TestVm");
+        msg.setSession(session);
+        msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
+        msg.setType(VmInstanceConstant.USER_VM_TYPE);
+        ApiSender sender = api.getApiSender();
+        sender.send(msg, APICreateVmInstanceEvent.class);
         ApplianceVmVO vr = dbf.listAll(ApplianceVmVO.class).get(0);
         String paraStr = VirtualRouterSystemTags.VR_PARALLELISM_DEGREE.getTokenByResourceUuid(vr.getUuid(), VirtualRouterSystemTags.PARALLELISM_DEGREE_TOKEN);
-        Assert.assertEquals((Integer)1000, Integer.valueOf(paraStr));
+        Assert.assertEquals((Integer) 1000, Integer.valueOf(paraStr));
     }
 
 }

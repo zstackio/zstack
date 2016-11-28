@@ -6,8 +6,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.network.l3.IpRangeInventory;
 import org.zstack.header.network.l2.L2NetworkInventory;
+import org.zstack.header.network.l3.IpRangeInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.zone.ZoneInventory;
@@ -59,7 +59,7 @@ public class TestListIpRange {
                 return arg.getUuid();
             }
         });
-        for (int i=0; i<3; i++) {
+        for (int i = 0; i < 3; i++) {
             Assert.assertEquals(uuids.get(i), ipinvs.get(i).getUuid());
         }
     }

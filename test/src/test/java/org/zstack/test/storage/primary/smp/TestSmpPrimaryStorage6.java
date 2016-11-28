@@ -22,7 +22,7 @@ import org.zstack.utils.data.SizeUnit;
 /**
  * 1. use smp storage attached to an empty cluster
  * 2. add a host
- *
+ * <p>
  * confirm smp storage's size is set
  */
 public class TestSmpPrimaryStorage6 {
@@ -52,9 +52,9 @@ public class TestSmpPrimaryStorage6 {
         config = loader.getComponent(SMPPrimaryStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         config.totalCapacity = SizeUnit.TERABYTE.toByte(10);
         config.availableCapcacity = SizeUnit.TERABYTE.toByte(5);
         ClusterInventory cluster = deployer.clusters.get("Cluster1");

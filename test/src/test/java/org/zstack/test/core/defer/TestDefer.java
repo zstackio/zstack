@@ -2,8 +2,8 @@ package org.zstack.test.core.defer;
 
 import junit.framework.Assert;
 import org.junit.Test;
-import org.zstack.core.defer.Deferred;
 import org.zstack.core.defer.Defer;
+import org.zstack.core.defer.Deferred;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 

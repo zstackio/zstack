@@ -53,23 +53,22 @@ import static org.zstack.utils.CollectionDSL.map;
 /**
  * 1. create a vm with mevoco setting
  * 2. set the vm abnormally stopped
- *
+ * <p>
  * confirm the dhcp is released
- *
+ * <p>
  * 3. set the vm abnormally running
- *
+ * <p>
  * confirm the dhcp is configured
- *
+ * <p>
  * 4. set the vm to state Starting
  * 5. set the vm abnormally running
- *
+ * <p>
  * confirm the dhcp is configured
- *
+ * <p>
  * 6. set the vm abnormally migrated to the host2
- *
+ * <p>
  * confirm the dhcp released on the host1
  * confirm the dhcp configured on the host2
- *
  */
 public class TestMevoco15 {
     CLogger logger = Utils.getLogger(TestMevoco15.class);
@@ -148,9 +147,9 @@ public class TestMevoco15 {
         Assert.assertTrue(dns.containsAll(target.dns));
         Assert.assertTrue(target.dns.containsAll(dns));
     }
-    
-	@Test
-	public void test() throws InterruptedException {
+
+    @Test
+    public void test() throws InterruptedException {
         VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicy.Direct.toString());
         fconfig.applyDhcpCmdList.clear();
         fconfig.releaseDhcpCmds.clear();

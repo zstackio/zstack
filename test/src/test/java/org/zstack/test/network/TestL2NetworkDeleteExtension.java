@@ -54,7 +54,7 @@ public class TestL2NetworkDeleteExtension {
         }
         vo = dbf.findByUuid(linv.getUuid(), L2NetworkVO.class);
         Assert.assertNotNull(vo);
-        
+
         ext.setPreventDelete(false);
         ext.setExcpectedUuid(linv.getUuid());
         api.deleteL2Network(linv.getUuid());

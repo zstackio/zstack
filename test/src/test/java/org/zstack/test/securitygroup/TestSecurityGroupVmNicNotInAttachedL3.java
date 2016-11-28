@@ -17,9 +17,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 /**
- * 
  * @author frank
- * 
  */
 public class TestSecurityGroupVmNicNotInAttachedL3 {
     static CLogger logger = Utils.getLogger(TestSecurityGroupVmNicNotInAttachedL3.class);
@@ -38,7 +36,7 @@ public class TestSecurityGroupVmNicNotInAttachedL3 {
         loader = deployer.getComponentLoader();
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");

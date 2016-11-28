@@ -1,22 +1,16 @@
 package org.zstack.test.deployer;
 
 import org.springframework.beans.factory.annotation.Autowire;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.header.storage.primary.APIAddPrimaryStorageEvent;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.zone.ZoneInventory;
-import org.zstack.simulator.storage.primary.nfs.NfsPrimaryStorageSimulatorConfig;
 import org.zstack.storage.primary.local.APIAddLocalPrimaryStorageMsg;
-import org.zstack.storage.primary.local.LocalStorageConstants;
-import org.zstack.storage.primary.nfs.APIAddNfsPrimaryStorageMsg;
-import org.zstack.storage.primary.nfs.NfsPrimaryStorageConstant;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSender;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.deployer.schema.DeployerConfig;
 import org.zstack.test.deployer.schema.LocalPrimaryStorageConfig;
-import org.zstack.test.deployer.schema.NfsPrimaryStorageConfig;
 
 import java.util.List;
 
@@ -39,7 +33,7 @@ public class LocalPrimaryStorageDeployer implements PrimaryStorageDeployer<Local
             msg.setZoneUuid(zone.getUuid());
             ApiSender sender = api.getApiSender();
             APIAddPrimaryStorageEvent evt = sender.send(msg, APIAddPrimaryStorageEvent.class);
-            PrimaryStorageInventory inv = evt.getInventory(); 
+            PrimaryStorageInventory inv = evt.getInventory();
             deployer.primaryStorages.put(nc.getName(), inv);
         }
     }

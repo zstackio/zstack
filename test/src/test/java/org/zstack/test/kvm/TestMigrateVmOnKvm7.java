@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * 1. make migrating vm fail on the hypervisor
- *
+ * <p>
  * confirm the capacity on the source/dest hosts are correct
  */
 public class TestMigrateVmOnKvm7 {
@@ -55,10 +55,10 @@ public class TestMigrateVmOnKvm7 {
         config = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
-	    final VmInstanceInventory vm = deployer.vms.get("TestVm");
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
+        final VmInstanceInventory vm = deployer.vms.get("TestVm");
         HostInventory target = CollectionUtils.find(deployer.hosts.values(), new Function<HostInventory, HostInventory>() {
             @Override
             public HostInventory call(HostInventory arg) {
@@ -72,7 +72,7 @@ public class TestMigrateVmOnKvm7 {
         boolean s = false;
         config.migrateVmSuccess = false;
         try {
-             api.migrateVmInstance(vm.getUuid(), target.getUuid());
+            api.migrateVmInstance(vm.getUuid(), target.getUuid());
         } catch (ApiSenderException e) {
             s = true;
         }
@@ -89,5 +89,5 @@ public class TestMigrateVmOnKvm7 {
         HostCapacityVO tvo = dbf.findByUuid(target.getUuid(), HostCapacityVO.class);
         Assert.assertEquals(tvo.getTotalCpu(), tvo.getAvailableCpu());
         Assert.assertEquals(tvo.getTotalMemory(), tvo.getAvailableMemory());
-	}
+    }
 }

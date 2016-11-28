@@ -16,7 +16,6 @@ import org.zstack.network.service.virtualrouter.portforwarding.PortForwardingRul
 import org.zstack.simulator.appliancevm.ApplianceVmSimulatorConfig;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.RangeSet.Range;
-import org.zstack.utils.StringDSL;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -31,7 +30,7 @@ public class PortForwardingRuleTestValidator {
 
     @Autowired
     private DatabaseFacade dbf;
-    
+
     public boolean compare(PortForwardingRuleTO to, PortForwardingRuleInventory inv) {
         SimpleQuery<VmNicVO> q = dbf.createQuery(VmNicVO.class);
         q.select(VmNicVO_.ip);
@@ -59,7 +58,7 @@ public class PortForwardingRuleTestValidator {
 
         return ret;
     }
-    
+
     public void validate(List<PortForwardingRuleTO> actual, Collection<PortForwardingRuleInventory> expected) {
         for (PortForwardingRuleInventory e : expected) {
             boolean has = false;

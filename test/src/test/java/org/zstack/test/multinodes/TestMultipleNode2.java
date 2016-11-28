@@ -16,18 +16,15 @@ import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.utils.TimeUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 /**
- *
  * start 5 nodes, create 100 vm
  * stop a node
  * create another 100 vm

@@ -55,7 +55,7 @@ public class TestSearchSftpBackupStorage {
         gcf = loader.getComponent(GlobalConfigFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         TimeUnit.SECONDS.sleep(1);
@@ -65,11 +65,11 @@ public class TestSearchSftpBackupStorage {
         t.setOp(SearchOp.OR_EQ.toString());
         t.setVal("sftp1");
         msg.getNameOpValueTriples().add(t);
-        
+
         String res = api.search(msg);
         List<SftpBackupStorageInventory> invs = JSONObjectUtil.toCollection(res, ArrayList.class, SftpBackupStorageInventory.class);
         Assert.assertEquals(1, invs.size());
-        
+
         SftpBackupStorageInventory inv0 = invs.get(0);
         APIGetSftpBackupStorageMsg gmsg = new APIGetSftpBackupStorageMsg();
         gmsg.setUuid(inv0.getUuid());

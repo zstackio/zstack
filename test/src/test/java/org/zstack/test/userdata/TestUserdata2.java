@@ -31,9 +31,8 @@ import static org.zstack.utils.CollectionDSL.map;
 /**
  * 1. create a vm with user data
  * 2. reconnect the vm's host
- *
+ * <p>
  * confirm the userdata synced on the host
- *
  */
 public class TestUserdata2 {
     Deployer deployer;
@@ -73,8 +72,8 @@ public class TestUserdata2 {
         session = api.loginAsAdmin();
     }
 
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         ImageInventory img = deployer.images.get("TestImage");
 
         InstanceOfferingInventory ioinv = deployer.instanceOfferings.get("small");

@@ -1,7 +1,6 @@
 package org.zstack.test.network;
 
 import junit.framework.Assert;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
@@ -14,8 +13,6 @@ import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.BeanConstructor;
 import org.zstack.test.DBUtil;
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.function.Function;
 
 import java.util.List;
 
@@ -70,7 +67,7 @@ public class TestGetFreeIp {
         Assert.assertEquals(5, ips.size());
 
         // allocate 9 IPs, make one left
-        for (int i=0; i<9; i++) {
+        for (int i = 0; i < 9; i++) {
             bus.call(amsg);
         }
 

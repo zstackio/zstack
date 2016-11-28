@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * 1. create a stranger vm
- *
+ * <p>
  * confirm the stranger vm event is fired
  */
 @Deprecated
@@ -58,9 +58,9 @@ public class TestVmStateTracer2 {
         deployer.build();
         api = deployer.getApi();
     }
-    
+
     @Test
-    public void test() throws InterruptedException,ApiSenderException {
+    public void test() throws InterruptedException, ApiSenderException {
         strangerVmUuid = Platform.getUuid();
         HostInventory hinv = api.listHosts(null).get(0);
         hostUuidStrangerVmOn = hinv.getUuid();

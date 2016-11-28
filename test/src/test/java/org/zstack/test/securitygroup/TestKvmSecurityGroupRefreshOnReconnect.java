@@ -8,14 +8,11 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
-import org.zstack.header.network.l3.L3Network;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
-import org.zstack.network.securitygroup.SecurityGroupIngressRuleTO;
 import org.zstack.network.securitygroup.SecurityGroupInventory;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
-import org.zstack.simulator.storage.backup.sftp.SftpBackupStorageSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
@@ -23,7 +20,6 @@ import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.test.storage.backup.sftp.TestSftpBackupStorageDeleteImage2;
 import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.TimeUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
@@ -35,7 +31,7 @@ import java.util.concurrent.TimeUnit;
  * 1. create a security group
  * 2. attach security group to a L3
  * 3. reconnect the KVM host
- *
+ * <p>
  * confirm security group is refreshed on the KVM host after host reconnecting
  */
 public class TestKvmSecurityGroupRefreshOnReconnect {
@@ -62,9 +58,9 @@ public class TestKvmSecurityGroupRefreshOnReconnect {
         config = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         HostInventory host1 = deployer.hosts.get("host1");
         final L3NetworkInventory l3 = deployer.l3Networks.get("TestL3Network1");

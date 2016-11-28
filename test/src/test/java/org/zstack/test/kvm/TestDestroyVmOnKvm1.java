@@ -36,11 +36,11 @@ import java.util.concurrent.TimeUnit;
  * 1. stop the vm
  * 2. make the host disconnected
  * 3. destroy the vm
- *
+ * <p>
  * confirm the vm destroyed successfully
- *
+ * <p>
  * 4. change the host to connected
- *
+ * <p>
  * confirm the volume and snapshot deleted
  */
 public class TestDestroyVmOnKvm1 {
@@ -69,12 +69,12 @@ public class TestDestroyVmOnKvm1 {
         nconfig = loader.getComponent(NfsPrimaryStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicy.Direct.toString());
         NfsPrimaryStorageGlobalProperty.BITS_DELETION_GC_INTERVAL = 1;
-	    VmInstanceInventory vm = deployer.vms.get("TestVm");
+        VmInstanceInventory vm = deployer.vms.get("TestVm");
         final VolumeInventory root = vm.getRootVolume();
 
         final VolumeSnapshotInventory sp = api.createSnapshot(root.getUuid());
@@ -86,7 +86,7 @@ public class TestDestroyVmOnKvm1 {
         hvo.setStatus(HostStatus.Disconnected);
         dbf.update(hvo);
 
-	    api.destroyVmInstance(vm.getUuid());
+        api.destroyVmInstance(vm.getUuid());
 
         Assert.assertEquals(0, nconfig.deleteCmds.size());
         hvo.setStatus(HostStatus.Connected);
@@ -110,5 +110,5 @@ public class TestDestroyVmOnKvm1 {
             }
         });
         Assert.assertNotNull(cmd);
-	}
+    }
 }

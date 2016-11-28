@@ -32,7 +32,7 @@ public class TestPolicyAllow2 {
         loader = deployer.getComponentLoader();
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         SimpleQuery<UserVO> query = dbf.createQuery(UserVO.class);

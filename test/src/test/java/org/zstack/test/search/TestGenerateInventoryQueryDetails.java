@@ -23,10 +23,10 @@ public class TestGenerateInventoryQueryDetails {
         api = new Api();
         api.startServer();
     }
-      
 
-	@Test
-	public void test() throws ApiSenderException {
-		api.generateInventoryQueryDetails();
-	}
+
+    @Test
+    public void test() throws ApiSenderException {
+        api.generateInventoryQueryDetails();
+    }
 }

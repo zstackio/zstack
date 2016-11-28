@@ -15,18 +15,13 @@ import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.deployer.Deployer;
+
 /**
- * 
  * @author Frank
- * 
- * @condition
- * 
- * 1. deploy a vm using non-admin account: TestAccount
+ * @condition 1. deploy a vm using non-admin account: TestAccount
  * 2. create another non-admin account: TestAccount1
  * 2. query vm using TestAccount1
- * 
- * @test
- * the vm can be not be seen by TestAccount1
+ * @test the vm can be not be seen by TestAccount1
  */
 public class TestQueryVm2 {
     Deployer deployer;
@@ -45,7 +40,7 @@ public class TestQueryVm2 {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         SessionInventory session = api.loginByAccount("TestAccount1", "password");

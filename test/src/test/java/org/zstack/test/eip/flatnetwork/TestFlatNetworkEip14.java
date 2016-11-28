@@ -25,11 +25,9 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
 /**
- * 
  * 1. create a vm with 2 EIPs
- *
+ * <p>
  * confirm the eips are created
- *
  */
 @Deprecated
 public class TestFlatNetworkEip14 {
@@ -62,7 +60,7 @@ public class TestFlatNetworkEip14 {
         session = api.loginAsAdmin();
     }
 
-    private String getBridgeName(String l3uuid)  {
+    private String getBridgeName(String l3uuid) {
         L3NetworkVO l3 = dbf.findByUuid(l3uuid, L3NetworkVO.class);
         return KVMSystemTags.L2_BRIDGE_NAME.getTokenByResourceUuid(l3.getL2NetworkUuid(), KVMSystemTags.L2_BRIDGE_NAME_TOKEN);
     }

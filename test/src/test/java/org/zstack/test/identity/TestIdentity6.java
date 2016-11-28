@@ -20,21 +20,21 @@ import java.util.concurrent.TimeUnit;
  * 2. create a group
  * 3. create a user
  * 4. add the user to the group
- *
+ * <p>
  * confirm the all operations success
- *
+ * <p>
  * 5. remove the user from the group
- *
+ * <p>
  * confirm the user is not in the group
- *
+ * <p>
  * 5. add the user back to the group
  * 6. delete the user
- *
+ * <p>
  * confirm the user is not in the group
- *
+ * <p>
  * 7. create another user and add the user in the group
  * 8. delete the group
- *
+ * <p>
  * confirm the user is not in the group
  */
 public class TestIdentity6 {
@@ -52,7 +52,7 @@ public class TestIdentity6 {
         api = new Api();
         api.startServer();
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         IdentityCreator creator = new IdentityCreator(api);

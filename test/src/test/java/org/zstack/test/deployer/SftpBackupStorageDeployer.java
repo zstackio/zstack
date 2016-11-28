@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.header.storage.backup.APIAddBackupStorageEvent;
 import org.zstack.header.storage.backup.BackupStorageInventory;
+import org.zstack.simulator.storage.backup.sftp.SftpBackupStorageSimulatorConfig;
 import org.zstack.storage.backup.sftp.APIAddSftpBackupStorageEvent;
 import org.zstack.storage.backup.sftp.APIAddSftpBackupStorageMsg;
 import org.zstack.storage.backup.sftp.SftpBackupStorageConstant;
@@ -13,14 +14,14 @@ import org.zstack.test.ApiSender;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.deployer.schema.DeployerConfig;
 import org.zstack.test.deployer.schema.SftpBackupStorageConfig;
-import org.zstack.simulator.storage.backup.sftp.SftpBackupStorageSimulatorConfig;
 
 import java.util.List;
+
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class SftpBackupStorageDeployer implements BackupStorageDeployer<SftpBackupStorageConfig> {
     @Autowired
     private SftpBackupStorageSimulatorConfig simulatorConfig;
-    
+
     @Override
     public Class<SftpBackupStorageConfig> getSupportedDeployerClassType() {
         return SftpBackupStorageConfig.class;

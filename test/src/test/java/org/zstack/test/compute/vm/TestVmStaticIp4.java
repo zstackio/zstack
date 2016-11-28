@@ -12,7 +12,10 @@ import org.zstack.header.image.ImageInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
-import org.zstack.test.*;
+import org.zstack.test.Api;
+import org.zstack.test.ApiSenderException;
+import org.zstack.test.DBUtil;
+import org.zstack.test.VmCreator;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
@@ -24,7 +27,7 @@ import static org.zstack.utils.CollectionDSL.map;
 
 /**
  * 1 create vm with 3 static IP
- *
+ * <p>
  * test static IP apis
  */
 public class TestVmStaticIp4 {
@@ -44,7 +47,7 @@ public class TestVmStaticIp4 {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         InstanceOfferingInventory ioinv = deployer.instanceOfferings.get("TestInstanceOffering");

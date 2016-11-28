@@ -26,13 +26,13 @@ public class CreateClusters {
         api = new Api();
         api.startServer();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         try {
             int clusterNum = Integer.valueOf(System.getProperty("cluster.num"));
             ZoneInventory zone = api.createZones(1).get(0);
-             api.createClusters(clusterNum, zone.getUuid());
+            api.createClusters(clusterNum, zone.getUuid());
         } finally {
             api.stopServer();
         }

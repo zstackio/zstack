@@ -18,7 +18,7 @@ public class TestThreadFacadeSyncLevel {
     private Map<String, String> thredNames = new HashMap<String, String>();
     int taskNums = 500;
     CountDownLatch latch = new CountDownLatch(taskNums);
-    
+
     class Tester {
         int index;
 

@@ -7,24 +7,22 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.network.securitygroup.SecurityGroupInventory;
 import org.zstack.network.securitygroup.SecurityGroupRuleTO;
+import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
 /**
- * 
  * @author frank
- * 
- * @condition
- * 1. create a security group
+ * @condition 1. create a security group
  * 2. add some rules
  * 3. create a vm
  * 4. add one nic of vm to security group

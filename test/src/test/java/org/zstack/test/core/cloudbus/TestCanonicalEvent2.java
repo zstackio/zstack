@@ -33,7 +33,7 @@ public class TestCanonicalEvent2 {
         BeanConstructor con = new BeanConstructor();
         loader = con.build();
         evtf = loader.getComponent(EventFacade.class);
-        ((EventFacadeImpl)evtf).start();
+        ((EventFacadeImpl) evtf).start();
     }
 
     @Test

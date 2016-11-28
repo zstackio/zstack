@@ -48,7 +48,7 @@ public class TestRebootApplianceVm {
         dbf = loader.getComponent(DatabaseFacade.class);
         apvmf = loader.getComponent(ApplianceVmFacade.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         ApplianceVmSpec spec = new ApplianceVmSpec();

@@ -23,17 +23,12 @@ import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 
 /**
- * 
  * @author frank
- * 
- * @condition
- * 1. create a pf rule
+ * @condition 1. create a pf rule
  * 2. attach pf rule
  * 3. delete pf
  * 2. delete vip
- *
- * @test
- * confirm rule and vip are removed
+ * @test confirm rule and vip are removed
  */
 public class TestVirtualRouterPortForwarding30 {
     Deployer deployer;
@@ -71,7 +66,7 @@ public class TestVirtualRouterPortForwarding30 {
         L3NetworkInventory vipNw = deployer.l3Networks.get("PublicNetwork");
         VipInventory vip = api.acquireIp(vipNw.getUuid());
         VmInstanceInventory vm = deployer.vms.get("TestVm");
-        
+
         rule1.setName("pfRule1");
         rule1.setVipUuid(vip.getUuid());
         rule1.setVipPortStart(22);

@@ -7,17 +7,11 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.identity.SessionInventory;
-import org.zstack.header.message.AbstractBeforeDeliveryMessageInterceptor;
-import org.zstack.header.message.Message;
 import org.zstack.header.network.l2.L2NetworkInventory;
-import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
-import org.zstack.header.storage.snapshot.VolumeSnapshotPrimaryStorageDeletionMsg;
-import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
-import org.zstack.simulator.kvm.VolumeSnapshotKvmSimulator;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
@@ -29,7 +23,7 @@ import org.zstack.utils.logging.CLogger;
 /**
  * 1. make detaching nic fail
  * 2. delete the L2 network
- *
+ * <p>
  * confirm the L2 network deleted successfully
  * confirm the VM is still running and the nic is still there
  */
@@ -58,9 +52,9 @@ public class TestDeleteL2NetworkOnKvm {
         kconfig = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         L2NetworkInventory l2 = deployer.l2Networks.get("TestL2Network");
 

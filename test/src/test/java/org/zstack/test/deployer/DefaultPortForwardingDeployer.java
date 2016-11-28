@@ -11,8 +11,9 @@ import org.zstack.test.deployer.schema.DeployerConfig;
 import org.zstack.test.deployer.schema.PortForwardingConfig;
 
 import java.util.List;
+
 public class DefaultPortForwardingDeployer implements PortForwardingDeployer<PortForwardingConfig> {
-    
+
     @Override
     public Class<PortForwardingConfig> getSupportedDeployerClassType() {
         return PortForwardingConfig.class;
@@ -26,7 +27,7 @@ public class DefaultPortForwardingDeployer implements PortForwardingDeployer<Por
         }
         return null;
     }
-    
+
     @Override
     public void deploy(List<PortForwardingConfig> portForwardingRules, DeployerConfig config, Deployer deployer) throws ApiSenderException {
         for (PortForwardingConfig pf : portForwardingRules) {
@@ -56,7 +57,7 @@ public class DefaultPortForwardingDeployer implements PortForwardingDeployer<Por
 
             SessionInventory session = pf.getAccountRef() == null ? null : deployer.loginByAccountRef(pf.getAccountRef(), config);
 
-            pfinv = deployer.getApi().createPortForwardingRuleByFullConfig(pfinv ,session);
+            pfinv = deployer.getApi().createPortForwardingRuleByFullConfig(pfinv, session);
             deployer.portForwardingRules.put(pfinv.getName(), pfinv);
         }
     }

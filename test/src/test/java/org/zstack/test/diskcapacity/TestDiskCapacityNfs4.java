@@ -46,7 +46,7 @@ import static org.zstack.utils.CollectionDSL.list;
  * 4. create 50 snapshots from the root volume
  * 5. create a template from a snapshot
  * 6. create a data volume from a snapshot
- *
+ * <p>
  * confirm the size of snapshots correct
  * confirm the nfs storage capacity correct
  * confirm the capacity of the backup storage correct
@@ -144,8 +144,8 @@ public class TestDiskCapacityNfs4 {
         }
     }
 
-	@Test
-	public void test() throws ApiSenderException {
+    @Test
+    public void test() throws ApiSenderException {
         AddImage addImage = new AddImage();
         addImage.size = SizeUnit.GIGABYTE.toByte(10);
         addImage.actualSize = SizeUnit.GIGABYTE.toByte(1);
@@ -164,7 +164,7 @@ public class TestDiskCapacityNfs4 {
         int num = 30;
         List<VolumeSnapshotInventory> snapshots = new ArrayList<VolumeSnapshotInventory>();
         long snapshotSize = 0;
-        for (int i=1; i<num; i++) {
+        for (int i = 1; i < num; i++) {
             TakeSnapshot takeSnapshot = new TakeSnapshot();
             takeSnapshot.size = SizeUnit.MEGABYTE.toByte(i);
             takeSnapshot.volumeUuid = root.getUuid();
@@ -212,5 +212,5 @@ public class TestDiskCapacityNfs4 {
         api.createDataVolumeFromSnapshot(sp1.getUuid());
         PrimaryStorageCapacityVO pscap2 = dbf.findByUuid(nfs.getUuid(), PrimaryStorageCapacityVO.class);
         Assert.assertEquals(avail - volumeSize, pscap2.getAvailableCapacity());
-	}
+    }
 }

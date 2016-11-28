@@ -10,7 +10,6 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageStatus;
 import org.zstack.header.storage.backup.BackupStorageInventory;
-import org.zstack.header.storage.backup.BackupStorageStateEvent;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeInventory;
@@ -34,7 +33,7 @@ import java.util.Arrays;
  * 1. create a data volume template
  * 2. create a data volume from that template
  * 3. attach to a vm
- *
+ * <p>
  * confirm volume attached successfully
  */
 public class TestCreateDataVolumeTemplate2 {
@@ -61,9 +60,9 @@ public class TestCreateDataVolumeTemplate2 {
         config = loader.getComponent(NfsPrimaryStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         api.stopVmInstance(vm.getUuid());
         VolumeInventory dataVolume = CollectionUtils.find(vm.getAllVolumes(), new Function<VolumeInventory, VolumeInventory>() {
@@ -85,5 +84,5 @@ public class TestCreateDataVolumeTemplate2 {
 
         vol = api.attachVolumeToVm(vm.getUuid(), vol.getUuid());
         Assert.assertNotNull(vol.getVmInstanceUuid());
-	}
+    }
 }

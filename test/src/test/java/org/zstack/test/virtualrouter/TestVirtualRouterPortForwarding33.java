@@ -3,7 +3,6 @@ package org.zstack.test.virtualrouter;
 import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.zstack.appliancevm.ApplianceVm;
 import org.zstack.appliancevm.ApplianceVmVO;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
@@ -15,7 +14,6 @@ import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.network.service.portforwarding.PortForwardingRuleInventory;
 import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.vip.VipVO;
-import org.zstack.network.service.virtualrouter.VirtualRouter;
 import org.zstack.network.service.virtualrouter.portforwarding.PortForwardingRuleTO;
 import org.zstack.network.service.virtualrouter.portforwarding.VirtualRouterPortForwardingRuleRefVO;
 import org.zstack.network.service.virtualrouter.portforwarding.VirtualRouterPortForwardingRuleRefVO_;
@@ -30,16 +28,11 @@ import org.zstack.test.deployer.Deployer;
 import java.util.List;
 
 /**
- * 
  * @author frank
- * 
- * @condition
- * 1. create a vm with port forwarding rule using deployer
+ * @condition 1. create a vm with port forwarding rule using deployer
  * 2. destroy vr
  * 3. create a new vr
- *
- * @test
- * confirm port forwarding rule is on the new vr
+ * @test confirm port forwarding rule is on the new vr
  */
 public class TestVirtualRouterPortForwarding33 {
     Deployer deployer;
@@ -70,10 +63,10 @@ public class TestVirtualRouterPortForwarding33 {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
-        ApplianceVmVO  vr = dbf.listAll(ApplianceVmVO.class).get(0);
+        ApplianceVmVO vr = dbf.listAll(ApplianceVmVO.class).get(0);
         api.destroyVmInstance(vr.getUuid());
 
         vconfig.portForwardingRules.clear();

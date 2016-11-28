@@ -44,7 +44,7 @@ public class TestSftpBackupStorageDeleteImage {
         config = loader.getComponent(SftpBackupStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         SftpBackupStorageTestHelper helper = new SftpBackupStorageTestHelper();

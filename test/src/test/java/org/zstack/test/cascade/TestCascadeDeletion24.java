@@ -14,11 +14,16 @@ import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.storage.primary.PrimaryStorageSystemTags;
-import org.zstack.test.*;
+import org.zstack.test.Api;
+import org.zstack.test.ApiSenderException;
+import org.zstack.test.DBUtil;
+import org.zstack.test.VmCreator;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
@@ -27,11 +32,10 @@ import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
 /**
- *
  * 1. two primary storage
  * 1. create vm whose root volume and data volume are on different primary storage
  * 2. detach primary storage where vm's data volume is on
- *
+ * <p>
  * confirm vm is stopped
  */
 public class TestCascadeDeletion24 {

@@ -20,15 +20,10 @@ import org.zstack.test.deployer.Deployer;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 
  * @author frank
- * 
- * @condition
- * 1. create a virtual router
+ * @condition 1. create a virtual router
  * 2. stop the virtual router
- *
- * @test
- * confirm no check command after the virtual router stops
+ * @test confirm no check command after the virtual router stops
  */
 public class TestVirtualRouterPing1 {
     Deployer deployer;
@@ -59,7 +54,7 @@ public class TestVirtualRouterPing1 {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         VirtualRouterVmVO vr = dbf.listAll(VirtualRouterVmVO.class).get(0);

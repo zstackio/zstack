@@ -1,18 +1,13 @@
-
 package org.zstack.test.deployer.schema;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlSeeAlso;
-import javax.xml.bind.annotation.XmlType;
+import javax.xml.bind.annotation.*;
 
 
 /**
  * <p>Java class for BackupStorageConfigBase complex type.
- * 
+ * <p>
  * <p>The following schema fragment specifies the expected content contained within this class.
- * 
+ * <p>
  * <pre>
  * &lt;complexType name="BackupStorageConfigBase">
  *   &lt;complexContent>
@@ -26,15 +21,13 @@ import javax.xml.bind.annotation.XmlType;
  *   &lt;/complexContent>
  * &lt;/complexType>
  * </pre>
- * 
- * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "BackupStorageConfigBase")
 @XmlSeeAlso({
-    SftpBackupStorageConfig.class,
-    ImageStoreBackupStorageConfig.class,
-    CephBackupStorageConfig.class
+        SftpBackupStorageConfig.class,
+        ImageStoreBackupStorageConfig.class,
+        CephBackupStorageConfig.class
 })
 public class BackupStorageConfigBase {
 
@@ -51,11 +44,9 @@ public class BackupStorageConfigBase {
 
     /**
      * Gets the value of the name property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getName() {
         return name;
@@ -63,11 +54,9 @@ public class BackupStorageConfigBase {
 
     /**
      * Sets the value of the name property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setName(String value) {
         this.name = value;
@@ -75,11 +64,9 @@ public class BackupStorageConfigBase {
 
     /**
      * Gets the value of the description property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getDescription() {
         return description;
@@ -87,11 +74,9 @@ public class BackupStorageConfigBase {
 
     /**
      * Sets the value of the description property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setDescription(String value) {
         this.description = value;
@@ -99,11 +84,9 @@ public class BackupStorageConfigBase {
 
     /**
      * Gets the value of the url property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getUrl() {
         return url;
@@ -111,11 +94,9 @@ public class BackupStorageConfigBase {
 
     /**
      * Sets the value of the url property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setUrl(String value) {
         this.url = value;
@@ -123,11 +104,9 @@ public class BackupStorageConfigBase {
 
     /**
      * Gets the value of the totalCapacity property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getTotalCapacity() {
         if (totalCapacity == null) {
@@ -139,11 +118,9 @@ public class BackupStorageConfigBase {
 
     /**
      * Sets the value of the totalCapacity property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setTotalCapacity(String value) {
         this.totalCapacity = value;
@@ -151,11 +128,9 @@ public class BackupStorageConfigBase {
 
     /**
      * Gets the value of the availableCapacity property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getAvailableCapacity() {
         if (availableCapacity == null) {
@@ -167,11 +142,9 @@ public class BackupStorageConfigBase {
 
     /**
      * Sets the value of the availableCapacity property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setAvailableCapacity(String value) {
         this.availableCapacity = value;

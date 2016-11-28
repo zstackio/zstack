@@ -11,10 +11,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.gc.GCStatus;
 import org.zstack.core.gc.GarbageCollectorVO;
 import org.zstack.header.host.HostInventory;
-import org.zstack.header.host.HostStatus;
-import org.zstack.header.host.HostVO;
 import org.zstack.header.identity.SessionInventory;
-import org.zstack.header.vm.VmInstance;
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceState;
@@ -37,15 +34,15 @@ import java.util.concurrent.TimeUnit;
 /**
  * 1. stop the vm
  * 2. make the host disconnected
- *
+ * <p>
  * confirm the vm is unknown
- *
+ * <p>
  * 3. destroy the vm
- *
+ * <p>
  * confirm the vm destroyed successfully
- *
+ * <p>
  * 4. change the host to connected
- *
+ * <p>
  * confirm the vm is GCed
  */
 public class TestDestroyVmOnKvm6 {
@@ -74,12 +71,12 @@ public class TestDestroyVmOnKvm6 {
         nconfig = loader.getComponent(NfsPrimaryStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicy.Direct.toString());
         NfsPrimaryStorageGlobalProperty.BITS_DELETION_GC_INTERVAL = 1;
-	    VmInstanceInventory vm = deployer.vms.get("TestVm");
+        VmInstanceInventory vm = deployer.vms.get("TestVm");
 
         HostInventory host = deployer.hosts.get("host1");
         HostGlobalConfig.PING_HOST_INTERVAL.updateValue(1);
@@ -89,7 +86,7 @@ public class TestDestroyVmOnKvm6 {
         VmInstanceVO vmvo = dbf.findByUuid(vm.getUuid(), VmInstanceVO.class);
         Assert.assertEquals(VmInstanceState.Running, vmvo.getState());
 
-	    api.destroyVmInstance(vm.getUuid());
+        api.destroyVmInstance(vm.getUuid());
 
         Assert.assertNull(config.destroyedVmUuid);
 
@@ -104,5 +101,5 @@ public class TestDestroyVmOnKvm6 {
         for (GarbageCollectorVO vo : vos) {
             org.junit.Assert.assertEquals(GCStatus.Done, vo.getStatus());
         }
-	}
+    }
 }

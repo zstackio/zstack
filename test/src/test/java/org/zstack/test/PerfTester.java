@@ -57,7 +57,7 @@ public class PerfTester {
         final ImageInventory imginv = api.listImage(null).get(0);
 
         latch = new CountDownLatch(total);
-        for (int i=0; i<total; i++) {
+        for (int i = 0; i < total; i++) {
             final int finalI = i;
             thdf.syncSubmit(new SyncTask<Object>() {
                 @Override

@@ -17,21 +17,17 @@ import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.test.storage.backup.sftp.TestSftpBackupStorageDeleteImage2;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
-
-import java.util.List;
 
 /**
  * 1. create a vm
  * 2. delete a L3
- *
+ * <p>
  * confirm the nic of the L3 detached
- *
+ * <p>
  * 3. delete all l3
- *
+ * <p>
  * confirm all nics are detached
  * confirm the vm cannot start after stopping
  */
@@ -59,9 +55,9 @@ public class TestDetachNicOnKvm5 {
         config = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         final L3NetworkInventory l3 = deployer.l3Networks.get("TestL3Network1");
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         VmNicInventory nic = vm.findNic(l3.getUuid());

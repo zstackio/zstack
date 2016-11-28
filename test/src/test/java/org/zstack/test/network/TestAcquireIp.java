@@ -32,7 +32,7 @@ public class TestAcquireIp {
         dbf = loader.getComponent(DatabaseFacade.class);
 
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         L3NetworkInventory l3nw = deployer.l3Networks.get("TestL3Network1");

@@ -53,7 +53,7 @@ public class TestDeleteBackupStorageExtensionPoint {
         }
         BackupStorageVO vo = dbf.findByUuid(inv.getUuid(), BackupStorageVO.class);
         Assert.assertNotNull(vo);
-        
+
         ext.setExpectedBackupStorageUuid(inv.getUuid());
         ext.setPreventDelete(false);
         api.deleteBackupStorage(inv.getUuid());

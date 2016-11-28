@@ -22,12 +22,12 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 public class TestQueryIpRange {
-	CLogger logger = Utils.getLogger(TestQueryIpRange.class);
-	Deployer deployer;
-	Api api;
-	ComponentLoader loader;
-	CloudBus bus;
-	DatabaseFacade dbf;
+    CLogger logger = Utils.getLogger(TestQueryIpRange.class);
+    Deployer deployer;
+    Api api;
+    ComponentLoader loader;
+    CloudBus bus;
+    DatabaseFacade dbf;
 
     @Before
     public void setUp() throws Exception {
@@ -42,24 +42,24 @@ public class TestQueryIpRange {
         dbf = loader.getComponent(DatabaseFacade.class);
     }
 
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
-	    SessionInventory session = api.loginByAccount("TestAccount", "password");
-	    L3NetworkInventory l3inv = deployer.l3Networks.get("TestL3Network2");
-	    IpRangeInventory iprange = l3inv.getIpRanges().get(0);
-	    QueryTestValidator.validateEQ(new APIQueryIpRangeMsg(), api, APIQueryIpRangeReply.class, iprange, session);
-	    QueryTestValidator.validateRandomEQConjunction(new APIQueryIpRangeMsg(), api, APIQueryIpRangeReply.class, iprange, session, 2);
-	    
-	    l3inv = deployer.l3Networks.get("TestL3Network3");
-	    APIQueryIpRangeMsg msg = new APIQueryIpRangeMsg();
-	    iprange = l3inv.getIpRanges().get(0);
-	    QueryCondition qc = new QueryCondition();
-	    qc.setName("uuid");
-	    qc.setOp(QueryOp.EQ.toString());
-	    qc.setValue(iprange.getUuid());
-	    msg.getConditions().add(qc);
-	    APIQueryIpRangeReply reply = api.query(msg, APIQueryIpRangeReply.class, session);
-	    Assert.assertEquals(0, reply.getInventories().size());
-	}
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
+        SessionInventory session = api.loginByAccount("TestAccount", "password");
+        L3NetworkInventory l3inv = deployer.l3Networks.get("TestL3Network2");
+        IpRangeInventory iprange = l3inv.getIpRanges().get(0);
+        QueryTestValidator.validateEQ(new APIQueryIpRangeMsg(), api, APIQueryIpRangeReply.class, iprange, session);
+        QueryTestValidator.validateRandomEQConjunction(new APIQueryIpRangeMsg(), api, APIQueryIpRangeReply.class, iprange, session, 2);
+
+        l3inv = deployer.l3Networks.get("TestL3Network3");
+        APIQueryIpRangeMsg msg = new APIQueryIpRangeMsg();
+        iprange = l3inv.getIpRanges().get(0);
+        QueryCondition qc = new QueryCondition();
+        qc.setName("uuid");
+        qc.setOp(QueryOp.EQ.toString());
+        qc.setValue(iprange.getUuid());
+        msg.getConditions().add(qc);
+        APIQueryIpRangeReply reply = api.query(msg, APIQueryIpRangeReply.class, session);
+        Assert.assertEquals(0, reply.getInventories().size());
+    }
 
 }

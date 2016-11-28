@@ -6,8 +6,11 @@ import org.junit.Before;
 import org.junit.Test;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.image.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
+import org.zstack.header.image.ImageInventory;
+import org.zstack.header.image.ImageState;
+import org.zstack.header.image.ImageStateEvent;
+import org.zstack.header.image.ImageVO;
 import org.zstack.header.simulator.SimulatorConstant;
 import org.zstack.header.simulator.storage.backup.SimulatorBackupStorageDetails;
 import org.zstack.header.storage.backup.BackupStorageInventory;
@@ -61,7 +64,7 @@ public class TestChangeImageState {
         iinv.setFormat(SimulatorConstant.SIMULATOR_VOLUME_FORMAT_STRING);
         iinv.setUrl("http://zstack.org/download/win7.qcow2");
         iinv = api.addImage(iinv, inv.getUuid());
-        
+
         ImageVO ivo = dbf.findByUuid(iinv.getUuid(), ImageVO.class);
         Assert.assertNotNull(ivo);
         Assert.assertEquals(ImageState.Enabled.toString(), iinv.getState());

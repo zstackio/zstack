@@ -3,7 +3,6 @@ package org.zstack.test.eip;
 import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.zstack.appliancevm.ApplianceVm;
 import org.zstack.appliancevm.ApplianceVmVO;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
@@ -14,7 +13,6 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.network.service.eip.EipInventory;
 import org.zstack.network.service.vip.VipVO;
-import org.zstack.network.service.virtualrouter.VirtualRouter;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.VipTO;
 import org.zstack.network.service.virtualrouter.eip.EipTO;
 import org.zstack.network.service.virtualrouter.eip.VirtualRouterEipRefVO;
@@ -30,16 +28,11 @@ import org.zstack.test.deployer.Deployer;
 import java.util.List;
 
 /**
- * 
  * @author frank
- * 
- * @condition
- * 1. create a vm
+ * @condition 1. create a vm
  * 2. destroy vr
  * 3. create new vr
- *
- * @test
- * confirm eip is on new vr
+ * @test confirm eip is on new vr
  */
 public class TestVirtualRouterEip26 {
     Deployer deployer;
@@ -70,7 +63,7 @@ public class TestVirtualRouterEip26 {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         ApplianceVmVO vr = dbf.listAll(ApplianceVmVO.class).get(0);

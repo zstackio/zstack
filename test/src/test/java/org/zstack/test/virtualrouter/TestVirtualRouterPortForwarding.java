@@ -22,16 +22,11 @@ import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 
 /**
- * 
  * @author frank
- * 
- * @condition
- * 1. create a vm
+ * @condition 1. create a vm
  * 2. acquire a public ip: pub1
  * 3. set port forwarding to vm using pub1
- *
- * @test
- * confirm port forwarding rules on vm are correct
+ * @test confirm port forwarding rules on vm are correct
  */
 public class TestVirtualRouterPortForwarding {
     Deployer deployer;
@@ -62,7 +57,7 @@ public class TestVirtualRouterPortForwarding {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         L3NetworkInventory publicNw = deployer.l3Networks.get("PublicNetwork");

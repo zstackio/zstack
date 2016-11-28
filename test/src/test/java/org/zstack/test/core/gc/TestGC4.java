@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * 1. set the failure time to 20000
- *
+ * <p>
  * confirm the task finally succeeded
  */
 public class TestGC4 {
@@ -40,7 +40,7 @@ public class TestGC4 {
         CLogger logger = Utils.getLogger(TRunner.class);
 
         public void run(GCContext context, GCCompletion completion) {
-            count ++;
+            count++;
             logger.debug(String.format("count: %s", count));
             if (count < 20000) {
                 completion.fail(null);

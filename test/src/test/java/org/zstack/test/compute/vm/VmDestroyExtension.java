@@ -13,7 +13,7 @@ public class VmDestroyExtension implements VmInstanceDestroyExtensionPoint {
     boolean afterCalled = false;
     boolean failedCalled = false;
     String expectedUuid;
-    
+
     @Override
     public String preDestroyVm(VmInstanceInventory inv) {
         if (preventDestroy) {

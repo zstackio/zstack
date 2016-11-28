@@ -50,7 +50,7 @@ public class TestFirstAvailableIpAllocatorStrategyReturnIp {
         IpRangeInventory ipInv = api.addIpRange(l3inv.getUuid(), "10.223.110.10", "10.223.110.20", "10.223.110.1", "255.255.255.0");
         IpRangeVO ipvo = dbf.findByUuid(ipInv.getUuid(), IpRangeVO.class);
         Assert.assertNotNull(ipvo);
-        
+
         AllocateIpMsg msg = new AllocateIpMsg();
         msg.setL3NetworkUuid(l3inv.getUuid());
         msg.setServiceId(bus.makeLocalServiceId(L3NetworkConstant.SERVICE_ID));

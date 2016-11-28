@@ -21,7 +21,7 @@ import java.util.List;
 public class NfsPrimaryStorageDeployer implements PrimaryStorageDeployer<NfsPrimaryStorageConfig> {
     @Autowired
     private NfsPrimaryStorageSimulatorConfig nfsSimulatorConfig;
-    
+
     @Override
     public Class<NfsPrimaryStorageConfig> getSupportedDeployerClassType() {
         return NfsPrimaryStorageConfig.class;
@@ -45,7 +45,7 @@ public class NfsPrimaryStorageDeployer implements PrimaryStorageDeployer<NfsPrim
             }
             ApiSender sender = api.getApiSender();
             APIAddPrimaryStorageEvent evt = sender.send(msg, APIAddPrimaryStorageEvent.class);
-            PrimaryStorageInventory inv = evt.getInventory(); 
+            PrimaryStorageInventory inv = evt.getInventory();
             deployer.primaryStorages.put(nc.getName(), inv);
         }
     }

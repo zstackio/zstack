@@ -24,7 +24,7 @@ import org.zstack.utils.logging.CLogger;
 /**
  * 1. resize the nfs primary storage
  * 2. reconnect the nfs primary storage
- *
+ * <p>
  * confirm the remount command is sent
  * confirm the nfs capacity is extended
  */
@@ -52,11 +52,11 @@ public class TestNfsMountOptions1 {
         config = loader.getComponent(NfsPrimaryStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         PrimaryStorageInventory nfs = deployer.primaryStorages.get("nfs");
-        Assert.assertEquals(1,  config.mountCmds.size());
+        Assert.assertEquals(1, config.mountCmds.size());
         MountCmd cmd = config.mountCmds.get(0);
         Assert.assertEquals("test", cmd.getOptions());
 

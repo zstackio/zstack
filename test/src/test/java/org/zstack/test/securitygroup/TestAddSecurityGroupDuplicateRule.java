@@ -30,6 +30,7 @@ public class TestAddSecurityGroupDuplicateRule {
         loader = deployer.getComponentLoader();
         dbf = loader.getComponent(DatabaseFacade.class);
     }
+
     @Test
     public void test() {
         long count = dbf.count(SecurityGroupRuleVO.class);

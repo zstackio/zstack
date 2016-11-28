@@ -21,15 +21,10 @@ import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 
 /**
- * 
  * @author frank
- * 
- * @condition
- * 1. create a vm
+ * @condition 1. create a vm
  * 2. set eip
- *
- * @test
- * confirm eip works
+ * @test confirm eip works
  */
 public class TestVyosEip {
     Deployer deployer;
@@ -61,7 +56,7 @@ public class TestVyosEip {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         Assert.assertEquals(1, vconfig.eips.size());

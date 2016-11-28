@@ -16,8 +16,9 @@ import org.zstack.test.BeanConstructor;
 import org.zstack.test.DBUtil;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+
 public class TestCreateHost {
-	CLogger logger = Utils.getLogger(TestCreateHost.class);
+    CLogger logger = Utils.getLogger(TestCreateHost.class);
     Api api;
     ComponentLoader loader;
     DatabaseFacade dbf;
@@ -40,19 +41,19 @@ public class TestCreateHost {
         api.startServer();
     }
 
-	@Test
-	public void test() throws ApiSenderException {
-	    try {
+    @Test
+    public void test() throws ApiSenderException {
+        try {
             ZoneInventory zone = api.createZones(1).get(0);
             ClusterInventory cluster = api.createClusters(1, zone.getUuid()).get(0);
-	        HostInventory host = api.createHost(1, cluster.getUuid()).get(0);
-	        HostVO vo = dbf.findByUuid(host.getUuid(), HostVO.class);
-	        Assert.assertNotNull(vo);
-	        SimulatorHostVO svo = dbf.findByUuid(host.getUuid(), SimulatorHostVO.class);
-	        Assert.assertNotNull(svo);
-	    } finally {
-	        api.stopServer();
-	    }
-	}
+            HostInventory host = api.createHost(1, cluster.getUuid()).get(0);
+            HostVO vo = dbf.findByUuid(host.getUuid(), HostVO.class);
+            Assert.assertNotNull(vo);
+            SimulatorHostVO svo = dbf.findByUuid(host.getUuid(), SimulatorHostVO.class);
+            Assert.assertNotNull(svo);
+        } finally {
+            api.stopServer();
+        }
+    }
 
 }

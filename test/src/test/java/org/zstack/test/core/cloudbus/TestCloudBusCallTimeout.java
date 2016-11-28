@@ -23,10 +23,10 @@ public class TestCloudBusCallTimeout {
     ComponentLoader loader;
     CloudBusIN bus;
     Service serv;
-    
+
     @Rule
     public ExpectedException thrown = ExpectedException.none();
-    
+
     public static class HelloWorldMsg extends NeedReplyMessage {
         private String greet;
 
@@ -37,8 +37,9 @@ public class TestCloudBusCallTimeout {
         public void setGreet(String greet) {
             this.greet = greet;
         }
-        
+
     }
+
     public static class HelloWorldReply extends MessageReply {
         private String greet;
 
@@ -50,7 +51,7 @@ public class TestCloudBusCallTimeout {
             this.greet = greet;
         }
     }
-    
+
     class FakeService extends AbstractService {
         @Override
         public boolean start() {
@@ -75,9 +76,9 @@ public class TestCloudBusCallTimeout {
         public String getId() {
             return this.getClass().getCanonicalName();
         }
-        
+
     }
-    
+
     @Before
     public void setUp() throws Exception {
         BeanConstructor con = new BeanConstructor();

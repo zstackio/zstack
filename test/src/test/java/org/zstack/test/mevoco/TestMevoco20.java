@@ -12,7 +12,10 @@ import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.UsedIpVO;
-import org.zstack.header.network.service.*;
+import org.zstack.header.network.service.NetworkServiceL3NetworkRefInventory;
+import org.zstack.header.network.service.NetworkServiceProviderVO;
+import org.zstack.header.network.service.NetworkServiceProviderVO_;
+import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
@@ -46,9 +49,8 @@ import static org.zstack.utils.CollectionDSL.list;
  * 2. detach the virtual router services from the L3
  * 3. attach the flat network services to the L3
  * 4. reconnect the host
- *
+ * <p>
  * confirm the IPs are set on the vm by the flat network services
- *
  */
 public class TestMevoco20 {
     CLogger logger = Utils.getLogger(TestMevoco20.class);
@@ -94,9 +96,9 @@ public class TestMevoco20 {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         L3NetworkInventory l3 = deployer.l3Networks.get("TestL3Network1");
         Map<String, List<String>> services = new HashMap<String, List<String>>();

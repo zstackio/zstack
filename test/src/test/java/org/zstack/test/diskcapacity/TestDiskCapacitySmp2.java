@@ -125,8 +125,8 @@ public class TestDiskCapacitySmp2 {
         }
     }
 
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         AddImage addImage = new AddImage();
         addImage.size = SizeUnit.GIGABYTE.toByte(10);
         addImage.actualSize = SizeUnit.GIGABYTE.toByte(1);
@@ -193,5 +193,5 @@ public class TestDiskCapacitySmp2 {
 
         PrimaryStorageCapacityVO pscap1 = dbf.findByUuid(nfs.getUuid(), PrimaryStorageCapacityVO.class);
         Assert.assertEquals(data1Size, pscap.getAvailableCapacity() - pscap1.getAvailableCapacity());
-	}
+    }
 }
