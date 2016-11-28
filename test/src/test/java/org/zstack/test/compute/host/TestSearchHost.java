@@ -42,9 +42,9 @@ public class TestSearchHost {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
-    public void test() throws InterruptedException,ApiSenderException {
+    public void test() throws InterruptedException, ApiSenderException {
         TimeUnit.SECONDS.sleep(2);
         APISearchHostMsg msg = new APISearchHostMsg();
         NOLTriple t = new NOLTriple();
@@ -57,14 +57,14 @@ public class TestSearchHost {
         String content = api.search(msg);
         List<HostInventory> invs = JSONObjectUtil.toCollection(content, ArrayList.class, HostInventory.class);
         Assert.assertEquals(3, invs.size());
-        
+
         HostInventory inv0 = invs.get(0);
         APIGetHostMsg gmsg = new APIGetHostMsg();
         gmsg.setUuid(inv0.getUuid());
         String res = api.getInventory(gmsg);
         HostInventory hinv = JSONObjectUtil.toObject(res, HostInventory.class);
         Assert.assertEquals(inv0.getName(), hinv.getName());
-        
+
         APISearchHostMsg msg1 = new APISearchHostMsg();
         content = api.search(msg1);
         invs = JSONObjectUtil.toCollection(content, ArrayList.class, HostInventory.class);
@@ -72,7 +72,7 @@ public class TestSearchHost {
             api.maintainHost(inv.getUuid());
             api.deleteHost(inv.getUuid());
         }
-        
+
         TimeUnit.SECONDS.sleep(2);
         content = api.search(msg1);
         invs = JSONObjectUtil.toCollection(content, ArrayList.class, HostInventory.class);

@@ -21,16 +21,11 @@ import org.zstack.utils.logging.CLogger;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 
  * @author frank
- *
- * @condition
- * 1. create a security group
+ * @condition 1. create a security group
  * 2. create a vm and add to security group
  * 3. stop vm
- * 
- * @test
- * confirm rules are cleaned on vm
+ * @test confirm rules are cleaned on vm
  */
 public class TestSecurityGroupRuleOnVmStopped {
     static CLogger logger = Utils.getLogger(TestSecurityGroupRuleOnVmStopped.class);
@@ -51,7 +46,7 @@ public class TestSecurityGroupRuleOnVmStopped {
         dbf = loader.getComponent(DatabaseFacade.class);
         sbkd = loader.getComponent(SimulatorSecurityGroupBackend.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         SecurityGroupInventory scinv = deployer.securityGroups.get("test");

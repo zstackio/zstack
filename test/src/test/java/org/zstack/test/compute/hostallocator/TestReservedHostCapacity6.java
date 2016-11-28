@@ -26,13 +26,13 @@ import static org.zstack.utils.CollectionDSL.map;
 
 /**
  * 1. set ZoneTag.HOST_RESERVED_MEMORY_CAPACITY, ClusterTag.HOST_RESERVED_MEMORY_CAPACITY, HostTag.RESERVED_MEMORY_CAPACITY, KvmGlobalConfig.RESERVED_MEMORY_CAPACITY
- *
+ * <p>
  * confirm the precedence is:
  * HostTag.RESERVED_MEMORY_CAPACITY > ClusterTag.HOST_RESERVED_MEMORY_CAPACITY >  ZoneTag.HOST_RESERVED_MEMORY_CAPACITY > KvmGlobalConfig.RESERVED_MEMORY_CAPACITY
  */
 public class TestReservedHostCapacity6 {
     Deployer deployer;
-    Api api; 
+    Api api;
     ComponentLoader loader;
     CloudBus bus;
     DatabaseFacade dbf;
@@ -66,7 +66,7 @@ public class TestReservedHostCapacity6 {
         // set host reserved capacity to big value that cannot create vm
         TagInventory htag = HostSystemTags.RESERVED_MEMORY_CAPACITY.createTag(host.getUuid(), map(e("capacity", "1T")));
 
-        L3NetworkInventory l3  = deployer.l3Networks.get("TestL3Network1");
+        L3NetworkInventory l3 = deployer.l3Networks.get("TestL3Network1");
         InstanceOfferingInventory instanceOffering = deployer.instanceOfferings.get("TestInstanceOffering");
         ImageInventory imageInventory = deployer.images.get("TestImage");
 

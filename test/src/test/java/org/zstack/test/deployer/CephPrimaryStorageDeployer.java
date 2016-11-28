@@ -24,7 +24,7 @@ import static org.zstack.utils.CollectionDSL.list;
  * Created by frank on 7/29/2015.
  */
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
-public class CephPrimaryStorageDeployer implements PrimaryStorageDeployer<CephPrimaryStorageConfig>{
+public class CephPrimaryStorageDeployer implements PrimaryStorageDeployer<CephPrimaryStorageConfig> {
     @Autowired
     private CephPrimaryStorageSimulatorConfig sconfig;
 

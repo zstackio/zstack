@@ -36,20 +36,20 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * 1. add an image
- *
+ * <p>
  * confirm the image distributed to the host1
- *
+ * <p>
  * 2. add a new host
- *
+ * <p>
  * confirm the image distributed to the host2
- *
+ * <p>
  * 3. delete the image cache
  * 4. reconnect the host2
- *
+ * <p>
  * confirm the image distributed to the host2
- *
+ * <p>
  * 5. reconnect host1
- *
+ * <p>
  * confirm no images get re-downloaded
  */
 public class TestMevoco1 {
@@ -104,9 +104,9 @@ public class TestMevoco1 {
         return null;
     }
 
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
-	    MevocoGlobalConfig.DISTRIBUTE_IMAGE.updateValue(true);
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
+        MevocoGlobalConfig.DISTRIBUTE_IMAGE.updateValue(true);
         BackupStorageInventory sftp = deployer.backupStorages.get("sftp");
         PrimaryStorageInventory local = deployer.primaryStorages.get("local");
         ImageInventory img = new ImageInventory();

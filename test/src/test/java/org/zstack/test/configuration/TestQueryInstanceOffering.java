@@ -32,7 +32,7 @@ public class TestQueryInstanceOffering {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException, JSONException {
         InstanceOfferingInventory inv = deployer.instanceOfferings.values().iterator().next();

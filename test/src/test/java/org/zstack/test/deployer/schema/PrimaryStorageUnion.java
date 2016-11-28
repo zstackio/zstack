@@ -1,18 +1,17 @@
-
 package org.zstack.test.deployer.schema;
 
-import java.util.ArrayList;
-import java.util.List;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlType;
+import java.util.ArrayList;
+import java.util.List;
 
 
 /**
  * <p>Java class for PrimaryStorageUnion complex type.
- * 
+ * <p>
  * <p>The following schema fragment specifies the expected content contained within this class.
- * 
+ * <p>
  * <pre>
  * &lt;complexType name="PrimaryStorageUnion">
  *   &lt;complexContent>
@@ -29,17 +28,15 @@ import javax.xml.bind.annotation.XmlType;
  *   &lt;/complexContent>
  * &lt;/complexType>
  * </pre>
- * 
- * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "PrimaryStorageUnion", propOrder = {
-    "simulatorPrimaryStorage",
-    "nfsPrimaryStorage",
-    "iscsiBtrfsPrimaryStorage",
-    "localPrimaryStorage",
-    "cephPrimaryStorage",
-    "sharedMountPointPrimaryStorage"
+        "simulatorPrimaryStorage",
+        "nfsPrimaryStorage",
+        "iscsiBtrfsPrimaryStorage",
+        "localPrimaryStorage",
+        "cephPrimaryStorage",
+        "sharedMountPointPrimaryStorage"
 })
 public class PrimaryStorageUnion {
 
@@ -52,25 +49,23 @@ public class PrimaryStorageUnion {
 
     /**
      * Gets the value of the simulatorPrimaryStorage property.
-     * 
+     * <p>
      * <p>
      * This accessor method returns a reference to the live list,
      * not a snapshot. Therefore any modification you make to the
      * returned list will be present inside the JAXB object.
      * This is why there is not a <CODE>set</CODE> method for the simulatorPrimaryStorage property.
-     * 
+     * <p>
      * <p>
      * For example, to add a new item, do as follows:
      * <pre>
      *    getSimulatorPrimaryStorage().add(newItem);
      * </pre>
-     * 
-     * 
+     * <p>
+     * <p>
      * <p>
      * Objects of the following type(s) are allowed in the list
      * {@link SimulatorPrimaryStorageConfig }
-     * 
-     * 
      */
     public List<SimulatorPrimaryStorageConfig> getSimulatorPrimaryStorage() {
         if (simulatorPrimaryStorage == null) {
@@ -81,25 +76,23 @@ public class PrimaryStorageUnion {
 
     /**
      * Gets the value of the nfsPrimaryStorage property.
-     * 
+     * <p>
      * <p>
      * This accessor method returns a reference to the live list,
      * not a snapshot. Therefore any modification you make to the
      * returned list will be present inside the JAXB object.
      * This is why there is not a <CODE>set</CODE> method for the nfsPrimaryStorage property.
-     * 
+     * <p>
      * <p>
      * For example, to add a new item, do as follows:
      * <pre>
      *    getNfsPrimaryStorage().add(newItem);
      * </pre>
-     * 
-     * 
+     * <p>
+     * <p>
      * <p>
      * Objects of the following type(s) are allowed in the list
      * {@link NfsPrimaryStorageConfig }
-     * 
-     * 
      */
     public List<NfsPrimaryStorageConfig> getNfsPrimaryStorage() {
         if (nfsPrimaryStorage == null) {
@@ -110,25 +103,23 @@ public class PrimaryStorageUnion {
 
     /**
      * Gets the value of the iscsiBtrfsPrimaryStorage property.
-     * 
+     * <p>
      * <p>
      * This accessor method returns a reference to the live list,
      * not a snapshot. Therefore any modification you make to the
      * returned list will be present inside the JAXB object.
      * This is why there is not a <CODE>set</CODE> method for the iscsiBtrfsPrimaryStorage property.
-     * 
+     * <p>
      * <p>
      * For example, to add a new item, do as follows:
      * <pre>
      *    getIscsiBtrfsPrimaryStorage().add(newItem);
      * </pre>
-     * 
-     * 
+     * <p>
+     * <p>
      * <p>
      * Objects of the following type(s) are allowed in the list
      * {@link IscsiFileSystemPrimaryStorageConfig }
-     * 
-     * 
      */
     public List<IscsiFileSystemPrimaryStorageConfig> getIscsiBtrfsPrimaryStorage() {
         if (iscsiBtrfsPrimaryStorage == null) {
@@ -139,25 +130,23 @@ public class PrimaryStorageUnion {
 
     /**
      * Gets the value of the localPrimaryStorage property.
-     * 
+     * <p>
      * <p>
      * This accessor method returns a reference to the live list,
      * not a snapshot. Therefore any modification you make to the
      * returned list will be present inside the JAXB object.
      * This is why there is not a <CODE>set</CODE> method for the localPrimaryStorage property.
-     * 
+     * <p>
      * <p>
      * For example, to add a new item, do as follows:
      * <pre>
      *    getLocalPrimaryStorage().add(newItem);
      * </pre>
-     * 
-     * 
+     * <p>
+     * <p>
      * <p>
      * Objects of the following type(s) are allowed in the list
      * {@link LocalPrimaryStorageConfig }
-     * 
-     * 
      */
     public List<LocalPrimaryStorageConfig> getLocalPrimaryStorage() {
         if (localPrimaryStorage == null) {
@@ -168,25 +157,23 @@ public class PrimaryStorageUnion {
 
     /**
      * Gets the value of the cephPrimaryStorage property.
-     * 
+     * <p>
      * <p>
      * This accessor method returns a reference to the live list,
      * not a snapshot. Therefore any modification you make to the
      * returned list will be present inside the JAXB object.
      * This is why there is not a <CODE>set</CODE> method for the cephPrimaryStorage property.
-     * 
+     * <p>
      * <p>
      * For example, to add a new item, do as follows:
      * <pre>
      *    getCephPrimaryStorage().add(newItem);
      * </pre>
-     * 
-     * 
+     * <p>
+     * <p>
      * <p>
      * Objects of the following type(s) are allowed in the list
      * {@link CephPrimaryStorageConfig }
-     * 
-     * 
      */
     public List<CephPrimaryStorageConfig> getCephPrimaryStorage() {
         if (cephPrimaryStorage == null) {
@@ -197,25 +184,23 @@ public class PrimaryStorageUnion {
 
     /**
      * Gets the value of the sharedMountPointPrimaryStorage property.
-     * 
+     * <p>
      * <p>
      * This accessor method returns a reference to the live list,
      * not a snapshot. Therefore any modification you make to the
      * returned list will be present inside the JAXB object.
      * This is why there is not a <CODE>set</CODE> method for the sharedMountPointPrimaryStorage property.
-     * 
+     * <p>
      * <p>
      * For example, to add a new item, do as follows:
      * <pre>
      *    getSharedMountPointPrimaryStorage().add(newItem);
      * </pre>
-     * 
-     * 
+     * <p>
+     * <p>
      * <p>
      * Objects of the following type(s) are allowed in the list
      * {@link SharedMountPointPrimaryStorageConfig }
-     * 
-     * 
      */
     public List<SharedMountPointPrimaryStorageConfig> getSharedMountPointPrimaryStorage() {
         if (sharedMountPointPrimaryStorage == null) {

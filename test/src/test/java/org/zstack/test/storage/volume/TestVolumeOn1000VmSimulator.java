@@ -42,12 +42,12 @@ import static org.zstack.utils.StringDSL.ln;
 public class TestVolumeOn1000VmSimulator {
     CLogger logger = Utils.getLogger(TestVolumeOn1000VmSimulator.class);
 
-	Deployer deployer;
-	Api api;
-	ComponentLoader loader;
-	CloudBus bus;
-	DatabaseFacade dbf;
-	SessionInventory session;
+    Deployer deployer;
+    Api api;
+    ComponentLoader loader;
+    CloudBus bus;
+    DatabaseFacade dbf;
+    SessionInventory session;
     ThreadFacade thdf;
     int vmNum = 1000;
     int syncLevel = 1000;
@@ -69,17 +69,17 @@ public class TestVolumeOn1000VmSimulator {
 
     @Before
     public void setUp() throws Exception {
-		DBUtil.reDeployDB();
-		WebBeanConstructor con = new WebBeanConstructor();
-		deployer = new Deployer("deployerXml/vm/TestSimulator1000Vm.xml", con);
-		deployer.build();
-		api = deployer.getApi();
-		loader = deployer.getComponentLoader();
-		bus = loader.getComponent(CloudBus.class);
-		dbf = loader.getComponent(DatabaseFacade.class);
+        DBUtil.reDeployDB();
+        WebBeanConstructor con = new WebBeanConstructor();
+        deployer = new Deployer("deployerXml/vm/TestSimulator1000Vm.xml", con);
+        deployer.build();
+        api = deployer.getApi();
+        loader = deployer.getComponentLoader();
+        bus = loader.getComponent(CloudBus.class);
+        dbf = loader.getComponent(DatabaseFacade.class);
         thdf = loader.getComponent(ThreadFacade.class);
-		session = api.loginAsAdmin();
-	}
+        session = api.loginAsAdmin();
+    }
 
     @SyncThread(level = 1000)
     private void attachDataVolume(String vmUuid, String diskOfferingUuid, int vmId) throws ApiSenderException {
@@ -113,9 +113,9 @@ public class TestVolumeOn1000VmSimulator {
             timeCosts.add(e - s);
 
             TimeDetails td = new TimeDetails();
-            td.total = TimeUnit.MILLISECONDS.toSeconds(e-s);
-            td.createVolume = TimeUnit.MILLISECONDS.toSeconds(ce-cs);
-            td.attachVolume = TimeUnit.MILLISECONDS.toSeconds(ae-as);
+            td.total = TimeUnit.MILLISECONDS.toSeconds(e - s);
+            td.createVolume = TimeUnit.MILLISECONDS.toSeconds(ce - cs);
+            td.attachVolume = TimeUnit.MILLISECONDS.toSeconds(ae - as);
             td.vmId = vmId;
             details.add(td);
 
@@ -123,8 +123,8 @@ public class TestVolumeOn1000VmSimulator {
         }
     }
 
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         IdentityGlobalConfig.SESSION_TIMEOUT.updateValue(TimeUnit.HOURS.toSeconds(100));
         CoreGlobalProperty.VM_TRACER_ON = false;
         L2NetworkInventory l2 = deployer.l2Networks.get("TestL2Network");
@@ -146,7 +146,7 @@ public class TestVolumeOn1000VmSimulator {
         final Random random = new Random();
 
         final CountDownLatch latch = new CountDownLatch(vmNum);
-        for (int i=0; i<vmNum; i++) {
+        for (int i = 0; i < vmNum; i++) {
             final int finalI = i;
             thdf.syncSubmit(new SyncTask<Object>() {
                 @Override
@@ -190,7 +190,7 @@ public class TestVolumeOn1000VmSimulator {
         final DiskOfferingInventory diskOffering = deployer.diskOfferings.get("DataDiskOffering");
         long volumePerVm = volumeNum / vmNum;
         System.out.println(String.format("total %s volumes, %s per vm", volumeNum, volumePerVm));
-        for (int j=0; j<vmNum; j++) {
+        for (int j = 0; j < vmNum; j++) {
             String vmUuid = vmUuids.get(j);
             for (long i = 0; i < volumePerVm; i++) {
                 attachDataVolume(vmUuid, diskOffering.getUuid(), j);
@@ -232,5 +232,5 @@ public class TestVolumeOn1000VmSimulator {
         long count = q.count();
         Assert.assertEquals(volumeNum, count);
 
-	}
+    }
 }

@@ -10,28 +10,23 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.network.service.portforwarding.PortForwardingRuleInventory;
 import org.zstack.network.service.virtualrouter.portforwarding.PortForwardingRuleTO;
+import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.simulator.virtualrouter.VirtualRouterSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.simulator.kvm.KVMSimulatorConfig;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 
  * @author frank
- * 
- * @condition
- * 1. create a vm with port forwarding rule using deployer
+ * @condition 1. create a vm with port forwarding rule using deployer
  * 2. stop virtual router
  * 3. start virtual router
- *
- * @test
- * confirm port forwarding rule was applied on virtual router
+ * @test confirm port forwarding rule was applied on virtual router
  */
 public class TestVirtualRouterPortForwarding6 {
     Deployer deployer;
@@ -62,7 +57,7 @@ public class TestVirtualRouterPortForwarding6 {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         List<ApplianceVmVO> vrs = dbf.listAll(ApplianceVmVO.class);

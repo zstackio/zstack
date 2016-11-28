@@ -10,11 +10,9 @@ import org.zstack.header.identity.AccountConstant.StatementEffect;
 import org.zstack.header.identity.IdentityErrors;
 import org.zstack.header.identity.PolicyInventory.Statement;
 import org.zstack.header.identity.SessionInventory;
-import org.zstack.header.network.l3.APIGetIpAddressCapacityReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.query.QueryCondition;
 import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.network.service.eip.EipInventory;
 import org.zstack.network.service.vip.*;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.simulator.virtualrouter.VirtualRouterSimulatorConfig;
@@ -26,28 +24,26 @@ import org.zstack.test.deployer.Deployer;
 import org.zstack.test.identity.IdentityCreator;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 
 
 /**
  * 1. create a user
  * 2. assign permissions of allow of creating/updating/changing/deleting VIP to the user
- *
+ * <p>
  * confirm the user can do those operations
- *
+ * <p>
  * 3. assign permissions of deny of creating/updating/changing/deleting VIP to the user
- *
+ * <p>
  * confirm the user cannot do those operations
- *
+ * <p>
  * 4. create a user added in a group
  * 5. assign permissions of allow of creating/updating/changing/deleting VIP to the group
- *
+ * <p>
  * confirm the user can do those operations
- *
+ * <p>
  * 6. assign permissions of deny of creating/updating/changing/deleting VIP to the group
- *
+ * <p>
  * confirm the user cannot do those operations
- *
  */
 public class TestPolicyForVip {
     Deployer deployer;
@@ -78,7 +74,7 @@ public class TestPolicyForVip {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         L3NetworkInventory pubL3 = deployer.l3Networks.get("PublicNetwork");

@@ -21,7 +21,7 @@ import org.zstack.test.deployer.Deployer;
  * 1. have 2 back storage
  * 2. disable all backup storage
  * 3. add image to both back storage
- *
+ * <p>
  * confirm image failed to add
  */
 public class TestAddImage3 {
@@ -43,7 +43,7 @@ public class TestAddImage3 {
     }
 
     @Test
-    public void test() throws InterruptedException,ApiSenderException {
+    public void test() throws InterruptedException, ApiSenderException {
         BackupStorageInventory bs1 = deployer.backupStorages.get("TestBackupStorage");
         BackupStorageInventory bs2 = deployer.backupStorages.get("TestBackupStorage1");
 

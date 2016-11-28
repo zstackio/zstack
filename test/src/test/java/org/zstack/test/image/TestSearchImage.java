@@ -41,30 +41,30 @@ public class TestSearchImage {
     }
 
     @Test
-    public void test() throws InterruptedException,ApiSenderException {
-    	TimeUnit.SECONDS.sleep(1);
-    	APISearchImageMsg msg = new APISearchImageMsg();
-    	NOVTriple t = new NOVTriple();
-    	t.setName("name");
-    	t.setOp(SearchOp.AND_EQ.toString());
-    	t.setVal("TestImage");
-    	msg.getNameOpValueTriples().add(t);
-    	
-    	t = new NOVTriple();
-    	t.setName("url");
-    	t.setOp(SearchOp.AND_EQ.toString());
-    	t.setVal("http://zstack.org/download/test.qcow2");
-    	msg.getNameOpValueTriples().add(t);
-    	
-    	String content = api.search(msg);
-    	List<ImageInventory> invs = JSONObjectUtil.toCollection(content, ArrayList.class, ImageInventory.class);
-    	Assert.assertEquals(1, invs.size());
-    	
-    	ImageInventory inv0 = invs.get(0);
-    	APIGetImageMsg gmsg = new APIGetImageMsg();
-    	gmsg.setUuid(inv0.getUuid());
-    	String res = api.getInventory(gmsg);
-    	ImageInventory iinv = JSONObjectUtil.toObject(res, ImageInventory.class);
-    	Assert.assertEquals(inv0.getName(), iinv.getName());
+    public void test() throws InterruptedException, ApiSenderException {
+        TimeUnit.SECONDS.sleep(1);
+        APISearchImageMsg msg = new APISearchImageMsg();
+        NOVTriple t = new NOVTriple();
+        t.setName("name");
+        t.setOp(SearchOp.AND_EQ.toString());
+        t.setVal("TestImage");
+        msg.getNameOpValueTriples().add(t);
+
+        t = new NOVTriple();
+        t.setName("url");
+        t.setOp(SearchOp.AND_EQ.toString());
+        t.setVal("http://zstack.org/download/test.qcow2");
+        msg.getNameOpValueTriples().add(t);
+
+        String content = api.search(msg);
+        List<ImageInventory> invs = JSONObjectUtil.toCollection(content, ArrayList.class, ImageInventory.class);
+        Assert.assertEquals(1, invs.size());
+
+        ImageInventory inv0 = invs.get(0);
+        APIGetImageMsg gmsg = new APIGetImageMsg();
+        gmsg.setUuid(inv0.getUuid());
+        String res = api.getInventory(gmsg);
+        ImageInventory iinv = JSONObjectUtil.toObject(res, ImageInventory.class);
+        Assert.assertEquals(inv0.getName(), iinv.getName());
     }
 }

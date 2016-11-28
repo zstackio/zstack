@@ -54,9 +54,9 @@ public class TestKvmVolumeCacheMode1 {
         config = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         StartVmCmd cmd = config.startVmCmd;
         for (VolumeTO to : cmd.getDataVolumes()) {
             Assert.assertEquals(mode, to.getCacheMode());
@@ -70,5 +70,5 @@ public class TestKvmVolumeCacheMode1 {
         Assert.assertEquals(1, config.attachDataVolumeCmds.size());
         AttachDataVolumeCmd acmd = config.attachDataVolumeCmds.get(0);
         Assert.assertEquals(mode, acmd.getVolume().getCacheMode());
-	}
+    }
 }

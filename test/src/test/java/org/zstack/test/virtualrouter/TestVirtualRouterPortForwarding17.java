@@ -24,17 +24,12 @@ import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 
 /**
- * 
  * @author frank
- * 
- * @condition
- * 1. create a vm
+ * @condition 1. create a vm
  * 2. acquire a public ip
  * 3. create a pf rule with out specifying vm nic
  * 3. attach the rule to vm
- *
- * @test
- * confirm port forwarding rules on vm are correct
+ * @test confirm port forwarding rules on vm are correct
  */
 public class TestVirtualRouterPortForwarding17 {
     Deployer deployer;
@@ -65,7 +60,7 @@ public class TestVirtualRouterPortForwarding17 {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         L3NetworkInventory publicNw = deployer.l3Networks.get("PublicNetwork");

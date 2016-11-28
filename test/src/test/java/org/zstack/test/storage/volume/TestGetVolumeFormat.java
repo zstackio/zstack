@@ -6,21 +6,14 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.identity.SessionInventory;
-import org.zstack.header.image.ImageConstant;
-import org.zstack.header.query.QueryCondition;
-import org.zstack.header.query.QueryOp;
-import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.volume.*;
 import org.zstack.header.volume.APIGetVolumeFormatReply.VolumeFormatReplyStruct;
+import org.zstack.header.volume.VolumeConstant;
 import org.zstack.kvm.KVMConstant;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.test.search.QueryTestValidator;
 import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.function.Function;
 
 import java.util.List;
@@ -43,7 +36,7 @@ public class TestGetVolumeFormat {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         List<VolumeFormatReplyStruct> structs = api.getVolumeFormats();

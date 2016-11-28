@@ -6,7 +6,6 @@ import org.junit.Test;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.network.securitygroup.APIAddSecurityGroupRuleMsg;
-import org.zstack.network.securitygroup.SecurityGroup;
 import org.zstack.network.securitygroup.SecurityGroupInventory;
 import org.zstack.network.securitygroup.SecurityGroupRuleVO;
 import org.zstack.test.Api;

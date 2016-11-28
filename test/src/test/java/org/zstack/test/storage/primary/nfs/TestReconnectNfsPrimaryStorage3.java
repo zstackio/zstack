@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * 1. resize the nfs primary storage
  * 2. reconnect the nfs primary storage
- *
+ * <p>
  * confirm the remount command is sent
  * confirm the nfs capacity is extended
  */
@@ -61,9 +61,9 @@ public class TestReconnectNfsPrimaryStorage3 {
         config = loader.getComponent(NfsPrimaryStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         PrimaryStorageInventory ps = deployer.primaryStorages.get("nfs");
         config.totalCapacity = SizeUnit.TERABYTE.toByte(2);
         config.availableCapacity = SizeUnit.GIGABYTE.toByte(10);

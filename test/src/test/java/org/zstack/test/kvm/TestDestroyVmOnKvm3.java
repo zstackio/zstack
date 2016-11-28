@@ -13,11 +13,9 @@ import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.identity.SessionInventory;
-import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeInventory;
-import org.zstack.storage.primary.local.LocalStorageKvmBackend.DeleteBitsCmd;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 import org.zstack.test.Api;
@@ -25,24 +23,22 @@ import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.data.SizeUnit;
-import org.zstack.utils.function.Function;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
  * use local storage
- *
+ * <p>
  * 1. stop the vm
  * 2. make the host disconnected
  * 3. destroy the vm
- *
+ * <p>
  * confirm the vm destroyed successfully
- *
+ * <p>
  * 4. deleted the host
- *
+ * <p>
  * confirm the GC job done
  */
 public class TestDestroyVmOnKvm3 {
@@ -80,9 +76,9 @@ public class TestDestroyVmOnKvm3 {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicy.Direct.toString());
         HostInventory host = deployer.hosts.get("host1");
         VmInstanceInventory vm = deployer.vms.get("TestVm");

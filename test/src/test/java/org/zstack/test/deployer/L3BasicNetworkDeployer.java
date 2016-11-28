@@ -40,7 +40,7 @@ public class L3BasicNetworkDeployer implements L3NetworkDeployer<L3BasicNetworkC
             deployer.addIpRange(l3c.getIpRange(), l3inv, session);
 
             for (String dns : l3c.getDns()) {
-            	deployer.getApi().addDns(l3inv.getUuid(), dns);
+                deployer.getApi().addDns(l3inv.getUuid(), dns);
             }
             deployer.attachNetworkServiceToL3Network(l3inv, l3c.getNetworkService());
             List<String> uuids = new ArrayList<String>();

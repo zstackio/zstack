@@ -7,10 +7,12 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.header.identity.*;
 import org.zstack.header.identity.AccountConstant.StatementEffect;
+import org.zstack.header.identity.PolicyInventory;
 import org.zstack.header.identity.PolicyInventory.Statement;
-import org.zstack.header.query.QueryOp;
+import org.zstack.header.identity.UserInventory;
+import org.zstack.header.identity.UserPolicyRefVO;
+import org.zstack.header.identity.UserPolicyRefVO_;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.BeanConstructor;
@@ -22,7 +24,6 @@ import java.util.List;
 
 /**
  * test batch operation of attach/detach polices to user/group
- *
  */
 public class TestIdentity9 {
     Deployer deployer;
@@ -49,7 +50,7 @@ public class TestIdentity9 {
 
         int num = 10;
         List<String> policyUuids = new ArrayList<String>();
-        for (int i=0; i<num; i++) {
+        for (int i = 0; i < num; i++) {
             Statement s = new Statement();
             s.addAction(".*");
             s.setEffect(StatementEffect.Allow);

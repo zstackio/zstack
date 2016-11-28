@@ -43,7 +43,7 @@ public class TestRemoveDnsFromL3Network {
     @Test
     public void test() throws ApiSenderException {
         SimpleQuery<L3NetworkDnsVO> q = dbf.createQuery(L3NetworkDnsVO.class);
-        L3NetworkDnsVO dns  = (L3NetworkDnsVO) q.list().get(0);
+        L3NetworkDnsVO dns = (L3NetworkDnsVO) q.list().get(0);
         api.removeDnsFromL3Network(dns.getDns(), dns.getL3NetworkUuid());
         long count = q.count();
         Assert.assertEquals(0L, count);

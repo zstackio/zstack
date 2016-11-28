@@ -36,7 +36,7 @@ public class TestGetHostAllocatorStrategies {
 
     @Test
     public void test() throws ApiSenderException {
-        List<String > types = api.getHostAllocatorStrategies();
+        List<String> types = api.getHostAllocatorStrategies();
         Assert.assertFalse(types.isEmpty());
     }
 }

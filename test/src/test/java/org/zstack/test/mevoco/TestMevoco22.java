@@ -40,9 +40,8 @@ import static org.zstack.utils.CollectionDSL.map;
  * 1. create a vm with user data
  * 2. delete the l3 network
  * 3. attach a new l3 network
- *
+ * <p>
  * confirm the user data applied on the new l3 network
- *
  */
 public class TestMevoco22 {
     Deployer deployer;
@@ -84,8 +83,8 @@ public class TestMevoco22 {
         session = api.loginAsAdmin();
     }
 
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         ImageInventory img = deployer.images.get("TestImage");
 
         InstanceOfferingInventory ioinv = deployer.instanceOfferings.get("TestInstanceOffering");

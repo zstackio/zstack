@@ -8,7 +8,6 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.cluster.ClusterInventory;
-import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
@@ -22,7 +21,7 @@ import org.zstack.test.deployer.Deployer;
  * 1. have two clusters
  * 2. create a vm with virtual router
  * 3. detach primary storage from cluster vr is running
- *
+ * <p>
  * confirm vr is migrated to another cluster
  */
 public class TestCascadeDeletion32 {
@@ -52,7 +51,7 @@ public class TestCascadeDeletion32 {
         ClusterInventory cluster1 = deployer.clusters.get("Cluster1");
         ClusterInventory cluster2 = deployer.clusters.get("Cluster2");
         PrimaryStorageInventory ps = deployer.primaryStorages.get("nfs");
-        ApplianceVmVO  vr = dbf.listAll(ApplianceVmVO.class).get(0);
+        ApplianceVmVO vr = dbf.listAll(ApplianceVmVO.class).get(0);
         String lastClusterUuid = vr.getClusterUuid();
         String targetClusterUuid = cluster1.getUuid().equals(lastClusterUuid) ? cluster2.getUuid() : cluster1.getUuid();
         api.detachPrimaryStorage(ps.getUuid(), lastClusterUuid);

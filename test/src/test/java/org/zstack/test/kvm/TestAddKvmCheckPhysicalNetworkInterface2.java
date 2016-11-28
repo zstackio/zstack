@@ -49,7 +49,7 @@ public class TestAddKvmCheckPhysicalNetworkInterface2 {
         session = api.loginAsAdmin();
         cinv = api.listClusters(null).get(0);
     }
-    
+
     private HostInventory addHost() throws ApiSenderException {
         config.connectSuccess = true;
         config.connectException = false;
@@ -67,13 +67,13 @@ public class TestAddKvmCheckPhysicalNetworkInterface2 {
         APIAddHostEvent evt = sender.send(msg, APIAddHostEvent.class);
         return evt.getInventory();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         config.checkPhysicalInterfaceSuccess = true;
         config.checkPhysicalInterfaceException = false;
         addHost();
-        
+
         List<L2NetworkInventory> l2invs = api.listL2Network(null);
         for (L2NetworkInventory l2inv : l2invs) {
             api.attachL2NetworkToCluster(l2inv.getUuid(), cinv.getUuid());

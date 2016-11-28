@@ -8,22 +8,16 @@
 
 package org.zstack.test;
 
+import javax.xml.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.List;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlSchemaType;
-import javax.xml.bind.annotation.XmlType;
 
 
 /**
  * <p>Java class for anonymous complex type.
- * 
+ * <p>
  * <p>The following schema fragment specifies the expected content contained within this class.
- * 
+ * <p>
  * <pre>
  * &lt;complexType>
  *   &lt;complexContent>
@@ -59,13 +53,11 @@ import javax.xml.bind.annotation.XmlType;
  *   &lt;/complexContent>
  * &lt;/complexType>
  * </pre>
- * 
- * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "", propOrder = {
-    "testCase",
-    "_import"
+        "testCase",
+        "_import"
 })
 @XmlRootElement(name = "UnitTestSuiteConfig")
 public class UnitTestSuiteConfig {
@@ -80,25 +72,23 @@ public class UnitTestSuiteConfig {
 
     /**
      * Gets the value of the testCase property.
-     * 
+     * <p>
      * <p>
      * This accessor method returns a reference to the live list,
      * not a snapshot. Therefore any modification you make to the
      * returned list will be present inside the JAXB object.
      * This is why there is not a <CODE>set</CODE> method for the testCase property.
-     * 
+     * <p>
      * <p>
      * For example, to add a new item, do as follows:
      * <pre>
      *    getTestCase().add(newItem);
      * </pre>
-     * 
-     * 
+     * <p>
+     * <p>
      * <p>
      * Objects of the following type(s) are allowed in the list
      * {@link UnitTestSuiteConfig.TestCase }
-     * 
-     * 
      */
     public List<UnitTestSuiteConfig.TestCase> getTestCase() {
         if (testCase == null) {
@@ -109,25 +99,23 @@ public class UnitTestSuiteConfig {
 
     /**
      * Gets the value of the import property.
-     * 
+     * <p>
      * <p>
      * This accessor method returns a reference to the live list,
      * not a snapshot. Therefore any modification you make to the
      * returned list will be present inside the JAXB object.
      * This is why there is not a <CODE>set</CODE> method for the import property.
-     * 
+     * <p>
      * <p>
      * For example, to add a new item, do as follows:
      * <pre>
      *    getImport().add(newItem);
      * </pre>
-     * 
-     * 
+     * <p>
+     * <p>
      * <p>
      * Objects of the following type(s) are allowed in the list
      * {@link UnitTestSuiteConfig.Import }
-     * 
-     * 
      */
     public List<UnitTestSuiteConfig.Import> getImport() {
         if (_import == null) {
@@ -138,11 +126,9 @@ public class UnitTestSuiteConfig {
 
     /**
      * Gets the value of the timeout property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link Integer }
-     *     
+     *
+     * @return possible object is
+     * {@link Integer }
      */
     public Integer getTimeout() {
         return timeout;
@@ -150,11 +136,9 @@ public class UnitTestSuiteConfig {
 
     /**
      * Sets the value of the timeout property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link Integer }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link Integer }
      */
     public void setTimeout(Integer value) {
         this.timeout = value;
@@ -163,9 +147,9 @@ public class UnitTestSuiteConfig {
 
     /**
      * <p>Java class for anonymous complex type.
-     * 
+     * <p>
      * <p>The following schema fragment specifies the expected content contained within this class.
-     * 
+     * <p>
      * <pre>
      * &lt;complexType>
      *   &lt;complexContent>
@@ -175,8 +159,6 @@ public class UnitTestSuiteConfig {
      *   &lt;/complexContent>
      * &lt;/complexType>
      * </pre>
-     * 
-     * 
      */
     @XmlAccessorType(XmlAccessType.FIELD)
     @XmlType(name = "")
@@ -187,11 +169,9 @@ public class UnitTestSuiteConfig {
 
         /**
          * Gets the value of the resource property.
-         * 
-         * @return
-         *     possible object is
-         *     {@link String }
-         *     
+         *
+         * @return possible object is
+         * {@link String }
          */
         public String getResource() {
             return resource;
@@ -199,11 +179,9 @@ public class UnitTestSuiteConfig {
 
         /**
          * Sets the value of the resource property.
-         * 
-         * @param value
-         *     allowed object is
-         *     {@link String }
-         *     
+         *
+         * @param value allowed object is
+         *              {@link String }
          */
         public void setResource(String value) {
             this.resource = value;
@@ -214,9 +192,9 @@ public class UnitTestSuiteConfig {
 
     /**
      * <p>Java class for anonymous complex type.
-     * 
+     * <p>
      * <p>The following schema fragment specifies the expected content contained within this class.
-     * 
+     * <p>
      * <pre>
      * &lt;complexType>
      *   &lt;complexContent>
@@ -228,8 +206,6 @@ public class UnitTestSuiteConfig {
      *   &lt;/complexContent>
      * &lt;/complexType>
      * </pre>
-     * 
-     * 
      */
     @XmlAccessorType(XmlAccessType.FIELD)
     @XmlType(name = "")
@@ -246,11 +222,9 @@ public class UnitTestSuiteConfig {
 
         /**
          * Gets the value of the clazz property.
-         * 
-         * @return
-         *     possible object is
-         *     {@link String }
-         *     
+         *
+         * @return possible object is
+         * {@link String }
          */
         public String getClazz() {
             return clazz;
@@ -258,11 +232,9 @@ public class UnitTestSuiteConfig {
 
         /**
          * Sets the value of the clazz property.
-         * 
-         * @param value
-         *     allowed object is
-         *     {@link String }
-         *     
+         *
+         * @param value allowed object is
+         *              {@link String }
          */
         public void setClazz(String value) {
             this.clazz = value;
@@ -270,11 +242,9 @@ public class UnitTestSuiteConfig {
 
         /**
          * Gets the value of the timeout property.
-         * 
-         * @return
-         *     possible object is
-         *     {@link Integer }
-         *     
+         *
+         * @return possible object is
+         * {@link Integer }
          */
         public Integer getTimeout() {
             return timeout;
@@ -282,11 +252,9 @@ public class UnitTestSuiteConfig {
 
         /**
          * Sets the value of the timeout property.
-         * 
-         * @param value
-         *     allowed object is
-         *     {@link Integer }
-         *     
+         *
+         * @param value allowed object is
+         *              {@link Integer }
          */
         public void setTimeout(Integer value) {
             this.timeout = value;
@@ -294,11 +262,9 @@ public class UnitTestSuiteConfig {
 
         /**
          * Gets the value of the repeatTimes property.
-         * 
-         * @return
-         *     possible object is
-         *     {@link Integer }
-         *     
+         *
+         * @return possible object is
+         * {@link Integer }
          */
         public Integer getRepeatTimes() {
             return repeatTimes;
@@ -306,11 +272,9 @@ public class UnitTestSuiteConfig {
 
         /**
          * Sets the value of the repeatTimes property.
-         * 
-         * @param value
-         *     allowed object is
-         *     {@link Integer }
-         *     
+         *
+         * @param value allowed object is
+         *              {@link Integer }
          */
         public void setRepeatTimes(Integer value) {
             this.repeatTimes = value;

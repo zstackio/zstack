@@ -7,11 +7,11 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.query.QueryOp;
+import org.zstack.header.tag.TagInventory;
 import org.zstack.header.zone.APIQueryZoneMsg;
 import org.zstack.header.zone.APIQueryZoneReply;
 import org.zstack.header.zone.ZoneInventory;
 import org.zstack.header.zone.ZoneVO;
-import org.zstack.header.tag.TagInventory;
 import org.zstack.tag.TagSubQueryExtension;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
@@ -43,8 +43,8 @@ public class TestUserTag {
     @Test
     public void test() throws ApiSenderException {
         ZoneInventory zone1 = deployer.zones.get("Zone1");
-        TagInventory inv =  api.createUserTag(zone1.getUuid(), "zone", ZoneVO.class);
-        inv =  api.createUserTag(zone1.getUuid(), "big", ZoneVO.class);
+        TagInventory inv = api.createUserTag(zone1.getUuid(), "zone", ZoneVO.class);
+        inv = api.createUserTag(zone1.getUuid(), "big", ZoneVO.class);
 
         APIQueryZoneMsg msg = new APIQueryZoneMsg();
         msg.addQueryCondition(TagSubQueryExtension.USER_TAG_NAME, QueryOp.IN, "zone");

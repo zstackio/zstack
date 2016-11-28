@@ -21,42 +21,42 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 public class TestCreateVirtualRouterFailure {
-	CLogger logger = Utils.getLogger(TestCreateVirtualRouterFailure.class);
-	Deployer deployer;
-	Api api;
-	ComponentLoader loader;
-	CloudBus bus;
-	DatabaseFacade dbf;
-	SessionInventory session;
-	VirtualRouterSimulatorConfig vconfig;
-	KVMSimulatorConfig kconfig;
+    CLogger logger = Utils.getLogger(TestCreateVirtualRouterFailure.class);
+    Deployer deployer;
+    Api api;
+    ComponentLoader loader;
+    CloudBus bus;
+    DatabaseFacade dbf;
+    SessionInventory session;
+    VirtualRouterSimulatorConfig vconfig;
+    KVMSimulatorConfig kconfig;
     ApplianceVmSimulatorConfig aconfig;
 
-	@Before
-	public void setUp() throws Exception {
-		DBUtil.reDeployDB();
-		WebBeanConstructor con = new WebBeanConstructor();
-		deployer = new Deployer("deployerXml/virtualRouter/startVirtualRouter.xml", con);
-		deployer.addSpringConfig("VirtualRouter.xml");
-		deployer.addSpringConfig("VirtualRouterSimulator.xml");
-		deployer.addSpringConfig("KVMRelated.xml");
-		deployer.build();
-		api = deployer.getApi();
-		loader = deployer.getComponentLoader();
-		vconfig = loader.getComponent(VirtualRouterSimulatorConfig.class);
-		kconfig = loader.getComponent(KVMSimulatorConfig.class);
+    @Before
+    public void setUp() throws Exception {
+        DBUtil.reDeployDB();
+        WebBeanConstructor con = new WebBeanConstructor();
+        deployer = new Deployer("deployerXml/virtualRouter/startVirtualRouter.xml", con);
+        deployer.addSpringConfig("VirtualRouter.xml");
+        deployer.addSpringConfig("VirtualRouterSimulator.xml");
+        deployer.addSpringConfig("KVMRelated.xml");
+        deployer.build();
+        api = deployer.getApi();
+        loader = deployer.getComponentLoader();
+        vconfig = loader.getComponent(VirtualRouterSimulatorConfig.class);
+        kconfig = loader.getComponent(KVMSimulatorConfig.class);
         aconfig = loader.getComponent(ApplianceVmSimulatorConfig.class);
-		bus = loader.getComponent(CloudBus.class);
-		dbf = loader.getComponent(DatabaseFacade.class);
-		session = api.loginAsAdmin();
-	}
+        bus = loader.getComponent(CloudBus.class);
+        dbf = loader.getComponent(DatabaseFacade.class);
+        session = api.loginAsAdmin();
+    }
 
-	@Test
-	public void test() throws ApiSenderException {
+    @Test
+    public void test() throws ApiSenderException {
         ApplianceVmGlobalProperty.NO_ROLLBACK_ON_POST_FAILURE = false;
         ImageInventory iminv = deployer.images.get("TestImage");
-		InstanceOfferingInventory ioinv = deployer.instanceOfferings.get("TestInstanceOffering");
-		L3NetworkInventory l3inv = deployer.l3Networks.get("TestL3Network2");
+        InstanceOfferingInventory ioinv = deployer.instanceOfferings.get("TestInstanceOffering");
+        L3NetworkInventory l3inv = deployer.l3Networks.get("TestL3Network2");
 
         boolean success = false;
         aconfig.prepareBootstrapInfoSuccess = false;
@@ -74,5 +74,5 @@ public class TestCreateVirtualRouterFailure {
         }
 
         Assert.assertTrue(success);
-	}
+    }
 }

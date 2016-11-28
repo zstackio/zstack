@@ -47,12 +47,12 @@ public class TestAcquireIp1 {
         }
     }
 
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         L3NetworkInventory l3nw = deployer.l3Networks.get("TestL3Network1");
 
-        for (int i=0; i<num; i++) {
+        for (int i = 0; i < num; i++) {
             acquireIp(l3nw.getUuid());
         }
 

@@ -7,15 +7,12 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.identity.SessionInventory;
-import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.vm.VmInstance;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.lb.LoadBalancerInventory;
 import org.zstack.network.service.lb.LoadBalancerListenerInventory;
 import org.zstack.network.service.lb.LoadBalancerListenerVO;
 import org.zstack.network.service.lb.LoadBalancerVO;
-import org.zstack.network.service.vip.VipVO;
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.LbTO;
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.RefreshLbCmd;
 import org.zstack.simulator.appliancevm.ApplianceVmSimulatorConfig;
@@ -29,25 +26,23 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
 /**
- * 
  * @author frank
- * 
- * 1. create a lb
- * 2. add a listener
- * 3. add a nic to the listener
- *
- * confirm the listener added successfully
- *
- * 3. remove the listener
- *
- * confirm the listener removed successfully
- *
- * 4. add the listener again
- * 5. make adding nic fail
- * 6. add a nic to the listener
- *
- * confirm the nic failed to add
- *
+ *         <p>
+ *         1. create a lb
+ *         2. add a listener
+ *         3. add a nic to the listener
+ *         <p>
+ *         confirm the listener added successfully
+ *         <p>
+ *         3. remove the listener
+ *         <p>
+ *         confirm the listener removed successfully
+ *         <p>
+ *         4. add the listener again
+ *         5. make adding nic fail
+ *         6. add a nic to the listener
+ *         <p>
+ *         confirm the nic failed to add
  */
 public class TestVirtualRouterLb5 {
     Deployer deployer;
@@ -78,7 +73,7 @@ public class TestVirtualRouterLb5 {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         LoadBalancerInventory lb = deployer.loadBalancers.get("lb");
@@ -158,7 +153,7 @@ public class TestVirtualRouterLb5 {
             s = true;
         }
         Assert.assertTrue(s);
-        LoadBalancerListenerVO lvo = dbf.findByUuid(listener1.getUuid(),LoadBalancerListenerVO.class);
+        LoadBalancerListenerVO lvo = dbf.findByUuid(listener1.getUuid(), LoadBalancerListenerVO.class);
         Assert.assertTrue(lvo.getVmNicRefs().isEmpty());
     }
 }

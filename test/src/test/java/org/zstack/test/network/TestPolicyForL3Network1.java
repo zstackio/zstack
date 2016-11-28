@@ -8,7 +8,6 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.identity.*;
 import org.zstack.header.network.l2.L2NetworkInventory;
-import org.zstack.header.network.l3.IpRangeInventory;
 import org.zstack.header.network.l3.L3NetworkConstant;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;

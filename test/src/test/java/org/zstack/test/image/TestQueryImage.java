@@ -33,7 +33,7 @@ public class TestQueryImage {
     }
 
     @Test
-    public void test() throws InterruptedException,ApiSenderException {
+    public void test() throws InterruptedException, ApiSenderException {
         ImageInventory inv = deployer.images.values().iterator().next();
         QueryTestValidator.validateEQ(new APIQueryImageMsg(), api, APIQueryImageReply.class, inv);
         QueryTestValidator.validateRandomEQConjunction(new APIQueryImageMsg(), api, APIQueryImageReply.class, inv, 2);

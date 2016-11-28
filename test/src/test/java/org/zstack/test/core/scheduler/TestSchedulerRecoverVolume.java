@@ -63,8 +63,8 @@ public class TestSchedulerRecoverVolume {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         String volUuid = vm.getRootVolumeUuid();
         Integer interval = 6;
-        String type="simple";
-        Long startDate=0L;
+        String type = "simple";
+        Long startDate = 0L;
         Integer count = 4;
         DiskOfferingInventory dinv = new DiskOfferingInventory();
         dinv.setDiskSize(SizeUnit.GIGABYTE.toByte(10));
@@ -83,19 +83,19 @@ public class TestSchedulerRecoverVolume {
         //destroy volume
         TimeUnit.SECONDS.sleep(1);
         long record1 = dbf.count(VolumeSnapshotVO.class);
-        Assert.assertEquals(1,record1);
+        Assert.assertEquals(1, record1);
         api.deleteDataVolume(vinv.getUuid());
         TimeUnit.SECONDS.sleep(19);
         // should not execute job when destroy status
         long record2 = dbf.count(VolumeSnapshotVO.class);
-        Assert.assertEquals(1,record2);
+        Assert.assertEquals(1, record2);
 
         //recover volume, should missing
         api.recoverVolume(vinv.getUuid(), null);
         //TimeUnit.SECONDS.sleep(8);
         // from create 24s, should be triggered 2 times, minus 2 time
         long record3 = dbf.count(VolumeSnapshotVO.class);
-        Assert.assertEquals(1,record3);
+        Assert.assertEquals(1, record3);
 
     }
 }

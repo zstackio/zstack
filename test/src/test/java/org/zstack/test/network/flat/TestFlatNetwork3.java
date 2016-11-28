@@ -22,7 +22,7 @@ import org.zstack.utils.data.SizeUnit;
 
 /**
  * 1. delete a flat network
- *
+ * <p>
  * confirm the namespace is deleted
  */
 public class TestFlatNetwork3 {
@@ -66,8 +66,8 @@ public class TestFlatNetwork3 {
         session = api.loginAsAdmin();
     }
 
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         final L3NetworkInventory l3 = deployer.l3Networks.get("TestL3Network1");
         String brName = new BridgeNameFinder().findByL3Uuid(l3.getUuid());
 

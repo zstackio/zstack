@@ -1,4 +1,3 @@
-
 package org.zstack.test.deployer.schema;
 
 import javax.xml.bind.annotation.XmlAccessType;
@@ -9,9 +8,9 @@ import javax.xml.bind.annotation.XmlType;
 
 /**
  * <p>Java class for PortForwardingConfig complex type.
- * 
+ * <p>
  * <p>The following schema fragment specifies the expected content contained within this class.
- * 
+ * <p>
  * <pre>
  * &lt;complexType name="PortForwardingConfig">
  *   &lt;complexContent>
@@ -34,23 +33,21 @@ import javax.xml.bind.annotation.XmlType;
  *   &lt;/complexContent>
  * &lt;/complexType>
  * </pre>
- * 
- * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "PortForwardingConfig", propOrder = {
-    "accountRef",
-    "name",
-    "description",
-    "publicL3NetworkRef",
-    "privateL3NetworkRef",
-    "vmRef",
-    "publicPortStart",
-    "publicPortEnd",
-    "privatePortStart",
-    "privatePortEnd",
-    "allowedCidr",
-    "protocolType"
+        "accountRef",
+        "name",
+        "description",
+        "publicL3NetworkRef",
+        "privateL3NetworkRef",
+        "vmRef",
+        "publicPortStart",
+        "publicPortEnd",
+        "privatePortStart",
+        "privatePortEnd",
+        "allowedCidr",
+        "protocolType"
 })
 public class PortForwardingConfig {
 
@@ -73,11 +70,9 @@ public class PortForwardingConfig {
 
     /**
      * Gets the value of the accountRef property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getAccountRef() {
         return accountRef;
@@ -85,11 +80,9 @@ public class PortForwardingConfig {
 
     /**
      * Sets the value of the accountRef property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setAccountRef(String value) {
         this.accountRef = value;
@@ -97,11 +90,9 @@ public class PortForwardingConfig {
 
     /**
      * Gets the value of the name property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getName() {
         return name;
@@ -109,11 +100,9 @@ public class PortForwardingConfig {
 
     /**
      * Sets the value of the name property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setName(String value) {
         this.name = value;
@@ -121,11 +110,9 @@ public class PortForwardingConfig {
 
     /**
      * Gets the value of the description property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getDescription() {
         return description;
@@ -133,11 +120,9 @@ public class PortForwardingConfig {
 
     /**
      * Sets the value of the description property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setDescription(String value) {
         this.description = value;
@@ -145,11 +130,9 @@ public class PortForwardingConfig {
 
     /**
      * Gets the value of the publicL3NetworkRef property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getPublicL3NetworkRef() {
         return publicL3NetworkRef;
@@ -157,11 +140,9 @@ public class PortForwardingConfig {
 
     /**
      * Sets the value of the publicL3NetworkRef property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setPublicL3NetworkRef(String value) {
         this.publicL3NetworkRef = value;
@@ -169,11 +150,9 @@ public class PortForwardingConfig {
 
     /**
      * Gets the value of the privateL3NetworkRef property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getPrivateL3NetworkRef() {
         return privateL3NetworkRef;
@@ -181,11 +160,9 @@ public class PortForwardingConfig {
 
     /**
      * Sets the value of the privateL3NetworkRef property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setPrivateL3NetworkRef(String value) {
         this.privateL3NetworkRef = value;
@@ -193,11 +170,9 @@ public class PortForwardingConfig {
 
     /**
      * Gets the value of the vmRef property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getVmRef() {
         return vmRef;
@@ -205,11 +180,9 @@ public class PortForwardingConfig {
 
     /**
      * Sets the value of the vmRef property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setVmRef(String value) {
         this.vmRef = value;
@@ -217,11 +190,9 @@ public class PortForwardingConfig {
 
     /**
      * Gets the value of the publicPortStart property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link Long }
-     *     
+     *
+     * @return possible object is
+     * {@link Long }
      */
     public Long getPublicPortStart() {
         return publicPortStart;
@@ -229,11 +200,9 @@ public class PortForwardingConfig {
 
     /**
      * Sets the value of the publicPortStart property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link Long }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link Long }
      */
     public void setPublicPortStart(Long value) {
         this.publicPortStart = value;
@@ -241,7 +210,6 @@ public class PortForwardingConfig {
 
     /**
      * Gets the value of the publicPortEnd property.
-     * 
      */
     public long getPublicPortEnd() {
         return publicPortEnd;
@@ -249,7 +217,6 @@ public class PortForwardingConfig {
 
     /**
      * Sets the value of the publicPortEnd property.
-     * 
      */
     public void setPublicPortEnd(long value) {
         this.publicPortEnd = value;
@@ -257,11 +224,9 @@ public class PortForwardingConfig {
 
     /**
      * Gets the value of the privatePortStart property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link Long }
-     *     
+     *
+     * @return possible object is
+     * {@link Long }
      */
     public Long getPrivatePortStart() {
         return privatePortStart;
@@ -269,11 +234,9 @@ public class PortForwardingConfig {
 
     /**
      * Sets the value of the privatePortStart property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link Long }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link Long }
      */
     public void setPrivatePortStart(Long value) {
         this.privatePortStart = value;
@@ -281,7 +244,6 @@ public class PortForwardingConfig {
 
     /**
      * Gets the value of the privatePortEnd property.
-     * 
      */
     public long getPrivatePortEnd() {
         return privatePortEnd;
@@ -289,7 +251,6 @@ public class PortForwardingConfig {
 
     /**
      * Sets the value of the privatePortEnd property.
-     * 
      */
     public void setPrivatePortEnd(long value) {
         this.privatePortEnd = value;
@@ -297,11 +258,9 @@ public class PortForwardingConfig {
 
     /**
      * Gets the value of the allowedCidr property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getAllowedCidr() {
         return allowedCidr;
@@ -309,11 +268,9 @@ public class PortForwardingConfig {
 
     /**
      * Sets the value of the allowedCidr property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setAllowedCidr(String value) {
         this.allowedCidr = value;
@@ -321,11 +278,9 @@ public class PortForwardingConfig {
 
     /**
      * Gets the value of the protocolType property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getProtocolType() {
         return protocolType;
@@ -333,11 +288,9 @@ public class PortForwardingConfig {
 
     /**
      * Sets the value of the protocolType property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setProtocolType(String value) {
         this.protocolType = value;

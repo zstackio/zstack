@@ -31,26 +31,26 @@ import static org.zstack.utils.CollectionDSL.*;
 
 /**
  * 1. create a vm with user data
- *
+ * <p>
  * confirm the user data set
- *
+ * <p>
  * 2. stop the vm
- *
+ * <p>
  * confirm the user data removed
- *
+ * <p>
  * 3. start the vm
- *
+ * <p>
  * confirm the user data set
- *
+ * <p>
  * 4. stop the vm
  * 5. delete the userdata
  * 6. start the vm
- *
+ * <p>
  * confirm the metadata set
- *
+ * <p>
  * 7. create another vm with user data
  * 8. delete the vm
- *
+ * <p>
  * confirm the user data removed
  */
 public class TestMevoco4 {
@@ -91,8 +91,8 @@ public class TestMevoco4 {
         session = api.loginAsAdmin();
     }
 
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         ImageInventory img = deployer.images.get("TestImage");
         fconfig.applyUserdataCmds.clear();
 

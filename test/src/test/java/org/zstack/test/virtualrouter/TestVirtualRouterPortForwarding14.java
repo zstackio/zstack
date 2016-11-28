@@ -8,26 +8,21 @@ import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.simulator.virtualrouter.VirtualRouterSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.simulator.kvm.KVMSimulatorConfig;
 
 /**
- * 
  * @author frank
- * 
- * @condition
- * 1. create a vm which has port forwarding service enabled on l3Network
+ * @condition 1. create a vm which has port forwarding service enabled on l3Network
  * 2. don't apply any port forwarding rules to the vm
  * 3. stop vm
  * 4. start vm
- *
- * @test
- * the vm can start successfully
+ * @test the vm can start successfully
  */
 public class TestVirtualRouterPortForwarding14 {
     Deployer deployer;
@@ -60,7 +55,7 @@ public class TestVirtualRouterPortForwarding14 {
         gcf = loader.getComponent(GlobalConfigFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");

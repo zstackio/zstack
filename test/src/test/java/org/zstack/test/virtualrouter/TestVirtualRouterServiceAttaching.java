@@ -10,7 +10,6 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.network.service.NetworkServiceProvider;
 import org.zstack.header.network.service.NetworkServiceProviderVO;
 import org.zstack.header.network.service.NetworkServiceProviderVO_;
 import org.zstack.header.network.service.NetworkServiceType;
@@ -25,21 +24,14 @@ import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
- * 
  * @author frank
- * 
- * @condition
- * 1. select port forwarding service
+ * @condition 1. select port forwarding service
  * 2. dont select source nat service
  * 3. repeat above to eip
- *
- * @test
- * confirm  without snat, port forwarding/eip fail to attach
+ * @test confirm  without snat, port forwarding/eip fail to attach
  */
 public class TestVirtualRouterServiceAttaching {
     Deployer deployer;
@@ -70,7 +62,7 @@ public class TestVirtualRouterServiceAttaching {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         L3NetworkInventory guestL3 = deployer.l3Networks.get("GuestNetwork");

@@ -30,20 +30,20 @@ public class TestThredFacadeSyncThreadSignature {
             this.index = index;
         }
 
-        @SyncThread(compoundSignature=true)
+        @SyncThread(compoundSignature = true)
         void sayHello() {
             logger.info(String.valueOf(index) + ": " + "hello world");
             helloList.add(index);
-            if (index == taskNum-1) {
+            if (index == taskNum - 1) {
                 latch.countDown();
             }
         }
-        
-        @SyncThread(compoundSignature=true, signature="bye")
+
+        @SyncThread(compoundSignature = true, signature = "bye")
         void sayBye() {
             logger.info(String.valueOf(index) + ": " + "byte");
             byeList.add(index);
-            if (index == taskNum-1) {
+            if (index == taskNum - 1) {
                 latch.countDown();
             }
         }
@@ -52,17 +52,17 @@ public class TestThredFacadeSyncThreadSignature {
         void sayOk() {
             logger.info(String.valueOf(index) + ": " + "ok");
             okList.add(index);
-            if (index == taskNum-1) {
+            if (index == taskNum - 1) {
                 latch.countDown();
             }
         }
-        
+
         void sayAll() {
             sayHello();
             sayBye();
             sayOk();
         }
-        
+
         @Override
         public String getSyncSignature() {
             return "Tester";
@@ -86,7 +86,7 @@ public class TestThredFacadeSyncThreadSignature {
             num = i;
         }
     }
-    
+
     @Test
     public void test() throws InterruptedException {
         for (int i = 0; i < this.taskNum; i++) {

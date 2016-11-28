@@ -60,7 +60,7 @@ public class TestAddKvmHostConncectFailure {
         return evt.getInventory();
     }
 
-    @Test(expected=ApiSenderException.class)
+    @Test(expected = ApiSenderException.class)
     public void testConnectFailure() throws ApiSenderException {
         config.connectSuccess = false;
         config.connectException = false;

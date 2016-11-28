@@ -41,6 +41,7 @@ public class TestAsyncBackup8 {
             public void setup() {
                 flow(new NoRollbackFlow() {
                     String __name__ = "1";
+
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         trigger.next();
@@ -49,6 +50,7 @@ public class TestAsyncBackup8 {
 
                 flow(new NoRollbackFlow() {
                     String __name__ = "2";
+
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         trigger.next();
@@ -57,6 +59,7 @@ public class TestAsyncBackup8 {
 
                 flow(new NoRollbackFlow() {
                     String __name__ = "3";
+
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         throw new RuntimeException("error");

@@ -15,7 +15,7 @@ import org.zstack.test.search.QueryTestValidator;
 /**
  * 1. create an account
  * 2. create a user
- *
+ * <p>
  * confirm the user created successfully
  */
 public class TestIdentity2 {
@@ -33,7 +33,7 @@ public class TestIdentity2 {
         api = new Api();
         api.startServer();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         IdentityCreator creator = new IdentityCreator(api);

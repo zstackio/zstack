@@ -1,19 +1,18 @@
-
 package org.zstack.test.deployer.schema;
 
-import java.util.ArrayList;
-import java.util.List;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlType;
+import java.util.ArrayList;
+import java.util.List;
 
 
 /**
  * <p>Java class for ZoneConfig complex type.
- * 
+ * <p>
  * <p>The following schema fragment specifies the expected content contained within this class.
- * 
+ * <p>
  * <pre>
  * &lt;complexType name="ZoneConfig">
  *   &lt;complexContent>
@@ -30,15 +29,13 @@ import javax.xml.bind.annotation.XmlType;
  *   &lt;/complexContent>
  * &lt;/complexType>
  * </pre>
- * 
- * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "ZoneConfig", propOrder = {
-    "clusters",
-    "backupStorageRef",
-    "l2Networks",
-    "primaryStorages"
+        "clusters",
+        "backupStorageRef",
+        "l2Networks",
+        "primaryStorages"
 })
 public class ZoneConfig {
 
@@ -53,11 +50,9 @@ public class ZoneConfig {
 
     /**
      * Gets the value of the clusters property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link ClusterUnion }
-     *     
+     *
+     * @return possible object is
+     * {@link ClusterUnion }
      */
     public ClusterUnion getClusters() {
         return clusters;
@@ -65,11 +60,9 @@ public class ZoneConfig {
 
     /**
      * Sets the value of the clusters property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link ClusterUnion }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link ClusterUnion }
      */
     public void setClusters(ClusterUnion value) {
         this.clusters = value;
@@ -77,25 +70,23 @@ public class ZoneConfig {
 
     /**
      * Gets the value of the backupStorageRef property.
-     * 
+     * <p>
      * <p>
      * This accessor method returns a reference to the live list,
      * not a snapshot. Therefore any modification you make to the
      * returned list will be present inside the JAXB object.
      * This is why there is not a <CODE>set</CODE> method for the backupStorageRef property.
-     * 
+     * <p>
      * <p>
      * For example, to add a new item, do as follows:
      * <pre>
      *    getBackupStorageRef().add(newItem);
      * </pre>
-     * 
-     * 
+     * <p>
+     * <p>
      * <p>
      * Objects of the following type(s) are allowed in the list
      * {@link String }
-     * 
-     * 
      */
     public List<String> getBackupStorageRef() {
         if (backupStorageRef == null) {
@@ -106,11 +97,9 @@ public class ZoneConfig {
 
     /**
      * Gets the value of the l2Networks property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link L2NetworkUnion }
-     *     
+     *
+     * @return possible object is
+     * {@link L2NetworkUnion }
      */
     public L2NetworkUnion getL2Networks() {
         return l2Networks;
@@ -118,11 +107,9 @@ public class ZoneConfig {
 
     /**
      * Sets the value of the l2Networks property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link L2NetworkUnion }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link L2NetworkUnion }
      */
     public void setL2Networks(L2NetworkUnion value) {
         this.l2Networks = value;
@@ -130,11 +117,9 @@ public class ZoneConfig {
 
     /**
      * Gets the value of the primaryStorages property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link PrimaryStorageUnion }
-     *     
+     *
+     * @return possible object is
+     * {@link PrimaryStorageUnion }
      */
     public PrimaryStorageUnion getPrimaryStorages() {
         return primaryStorages;
@@ -142,11 +127,9 @@ public class ZoneConfig {
 
     /**
      * Sets the value of the primaryStorages property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link PrimaryStorageUnion }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link PrimaryStorageUnion }
      */
     public void setPrimaryStorages(PrimaryStorageUnion value) {
         this.primaryStorages = value;
@@ -154,11 +137,9 @@ public class ZoneConfig {
 
     /**
      * Gets the value of the name property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getName() {
         return name;
@@ -166,11 +147,9 @@ public class ZoneConfig {
 
     /**
      * Sets the value of the name property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setName(String value) {
         this.name = value;
@@ -178,11 +157,9 @@ public class ZoneConfig {
 
     /**
      * Gets the value of the description property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getDescription() {
         return description;
@@ -190,11 +167,9 @@ public class ZoneConfig {
 
     /**
      * Sets the value of the description property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setDescription(String value) {
         this.description = value;

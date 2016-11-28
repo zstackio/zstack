@@ -31,7 +31,7 @@ import java.util.Arrays;
 
 /**
  * 1. create two data volumes template from data volume
- *
+ * <p>
  * confirm install path of two templates are different
  */
 public class TestCreateDataVolumeTemplate5 {
@@ -60,9 +60,9 @@ public class TestCreateDataVolumeTemplate5 {
         kvmConfig = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         api.stopVmInstance(vm.getUuid());
         VolumeInventory dataVolume = CollectionUtils.find(vm.getAllVolumes(), new Function<VolumeInventory, VolumeInventory>() {
@@ -83,5 +83,5 @@ public class TestCreateDataVolumeTemplate5 {
 
         ImageInventory template1 = api.addDataVolumeTemplateFromDataVolume(dataVolume.getUuid(), Arrays.asList(sftp.getUuid()));
         Assert.assertFalse(template.getBackupStorageRefs().get(0).getInstallPath().equals(template1.getBackupStorageRefs().get(0).getInstallPath()));
-	}
+    }
 }

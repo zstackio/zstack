@@ -18,7 +18,6 @@ import org.zstack.storage.backup.imagestore.ImageStoreBackupStorageSimulatorConf
 import org.zstack.storage.backup.sftp.*;
 import org.zstack.test.*;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.test.deployer.schema.ImageStoreBackupStorageConfig;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.gson.JSONObjectUtil;

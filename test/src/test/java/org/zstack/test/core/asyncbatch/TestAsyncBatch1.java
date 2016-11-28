@@ -56,7 +56,7 @@ public class TestAsyncBatch1 {
         }.start();
 
         completion.await();
-        Assert.assertEquals(1+2+3, count);
+        Assert.assertEquals(1 + 2 + 3, count);
 
         count = 0;
         FutureCompletion completion1 = new FutureCompletion();
@@ -89,7 +89,7 @@ public class TestAsyncBatch1 {
         }.start();
 
         completion1.await();
-        Assert.assertEquals(1+3, count);
+        Assert.assertEquals(1 + 3, count);
 
         FutureCompletion completion2 = new FutureCompletion();
         new LoopAsyncBatch<Integer>(completion2) {

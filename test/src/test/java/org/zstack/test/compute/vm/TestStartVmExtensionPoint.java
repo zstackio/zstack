@@ -32,18 +32,18 @@ public class TestStartVmExtensionPoint {
         dbf = loader.getComponent(DatabaseFacade.class);
         ext = loader.getComponent(VmStartExtension.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         VmInstanceInventory inv = api.listVmInstances(null).get(0);
         api.stopVmInstance(inv.getUuid());
-        
+
         ext.setPreventStart(true);
         try {
             api.startVmInstance(inv.getUuid());
         } catch (ApiSenderException e) {
         }
-        
+
         ext.setPreventStart(false);
         ext.setExpectedUuid(inv.getUuid());
         api.startVmInstance(inv.getUuid());

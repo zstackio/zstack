@@ -2,7 +2,8 @@ package org.zstack.test.core.workflow;
 
 import junit.framework.Assert;
 import org.junit.Test;
-import org.zstack.core.workflow.*;
+import org.zstack.core.workflow.SimpleFlowChain;
+import org.zstack.core.workflow.WorkFlowException;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowDoneHandler;
 import org.zstack.header.core.workflow.FlowRollback;
@@ -28,11 +29,11 @@ public class TestSimpleFlow9 {
         int num = 10;
 
         SimpleFlowChain schain = new SimpleFlowChain();
-        for (int i=0; i<num; i++) {
+        for (int i = 0; i < num; i++) {
             schain.then(new Flow() {
                 @Override
                 public void run(FlowTrigger chain, Map data) {
-                    count[0] ++;
+                    count[0]++;
                     chain.next();
                 }
 

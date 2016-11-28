@@ -21,10 +21,10 @@ import org.zstack.header.vm.APICreateVmInstanceMsg;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
+import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.simulator.virtualrouter.VirtualRouterSimulatorConfig;
 import org.zstack.test.*;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.test.storage.backup.sftp.TestSftpBackupStorageDeleteImage2;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -33,60 +33,60 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class TestStartVirtualRouter3 {
-	CLogger logger = Utils.getLogger(TestSftpBackupStorageDeleteImage2.class);
-	Deployer deployer;
-	Api api;
-	ComponentLoader loader;
-	CloudBus bus;
-	DatabaseFacade dbf;
-	SessionInventory session;
-	VirtualRouterSimulatorConfig vconfig;
-	KVMSimulatorConfig kconfig;
+    CLogger logger = Utils.getLogger(TestSftpBackupStorageDeleteImage2.class);
+    Deployer deployer;
+    Api api;
+    ComponentLoader loader;
+    CloudBus bus;
+    DatabaseFacade dbf;
+    SessionInventory session;
+    VirtualRouterSimulatorConfig vconfig;
+    KVMSimulatorConfig kconfig;
 
-	@Before
-	public void setUp() throws Exception {
-		DBUtil.reDeployDB();
-		WebBeanConstructor con = new WebBeanConstructor();
-		deployer = new Deployer("deployerXml/virtualRouter/startVirtualRouter3.xml", con);
-		deployer.addSpringConfig("VirtualRouter.xml");
-		deployer.addSpringConfig("VirtualRouterSimulator.xml");
-		deployer.addSpringConfig("KVMRelated.xml");
-		deployer.build();
-		api = deployer.getApi();
-		loader = deployer.getComponentLoader();
-		vconfig = loader.getComponent(VirtualRouterSimulatorConfig.class);
-		kconfig = loader.getComponent(KVMSimulatorConfig.class);
-		bus = loader.getComponent(CloudBus.class);
-		dbf = loader.getComponent(DatabaseFacade.class);
-		session = api.loginAsAdmin();
-	}
+    @Before
+    public void setUp() throws Exception {
+        DBUtil.reDeployDB();
+        WebBeanConstructor con = new WebBeanConstructor();
+        deployer = new Deployer("deployerXml/virtualRouter/startVirtualRouter3.xml", con);
+        deployer.addSpringConfig("VirtualRouter.xml");
+        deployer.addSpringConfig("VirtualRouterSimulator.xml");
+        deployer.addSpringConfig("KVMRelated.xml");
+        deployer.build();
+        api = deployer.getApi();
+        loader = deployer.getComponentLoader();
+        vconfig = loader.getComponent(VirtualRouterSimulatorConfig.class);
+        kconfig = loader.getComponent(KVMSimulatorConfig.class);
+        bus = loader.getComponent(CloudBus.class);
+        dbf = loader.getComponent(DatabaseFacade.class);
+        session = api.loginAsAdmin();
+    }
 
-	@Test
-	public void test() throws ApiSenderException {
-		ImageInventory iminv = deployer.images.get("TestImage");
-		InstanceOfferingInventory ioinv = deployer.instanceOfferings.get("TestInstanceOffering");
-		L3NetworkInventory l3inv = deployer.l3Networks.get("TestL3Network2");
-		L3NetworkInventory l3inv2 = deployer.l3Networks.get("TestL3Network3");
-		APICreateVmInstanceMsg msg = new APICreateVmInstanceMsg();
-		msg.setImageUuid(iminv.getUuid());
-		msg.setInstanceOfferingUuid(ioinv.getUuid());
-		List<String> l3uuids = new ArrayList<String>();
-		l3uuids.add(l3inv.getUuid());
-		l3uuids.add(l3inv2.getUuid());
-		msg.setL3NetworkUuids(l3uuids);
+    @Test
+    public void test() throws ApiSenderException {
+        ImageInventory iminv = deployer.images.get("TestImage");
+        InstanceOfferingInventory ioinv = deployer.instanceOfferings.get("TestInstanceOffering");
+        L3NetworkInventory l3inv = deployer.l3Networks.get("TestL3Network2");
+        L3NetworkInventory l3inv2 = deployer.l3Networks.get("TestL3Network3");
+        APICreateVmInstanceMsg msg = new APICreateVmInstanceMsg();
+        msg.setImageUuid(iminv.getUuid());
+        msg.setInstanceOfferingUuid(ioinv.getUuid());
+        List<String> l3uuids = new ArrayList<String>();
+        l3uuids.add(l3inv.getUuid());
+        l3uuids.add(l3inv2.getUuid());
+        msg.setL3NetworkUuids(l3uuids);
         msg.setDefaultL3NetworkUuid(l3inv.getUuid());
-		msg.setName("TestVm");
-		msg.setSession(session);
-		msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
-		msg.setType(VmInstanceConstant.USER_VM_TYPE);
-		ApiSender sender = api.getApiSender();
-		sender.send(msg, APICreateVmInstanceEvent.class);
-		
-		SimpleQuery<ApplianceVmVO> q = dbf.createQuery(ApplianceVmVO.class);
+        msg.setName("TestVm");
+        msg.setSession(session);
+        msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
+        msg.setType(VmInstanceConstant.USER_VM_TYPE);
+        ApiSender sender = api.getApiSender();
+        sender.send(msg, APICreateVmInstanceEvent.class);
+
+        SimpleQuery<ApplianceVmVO> q = dbf.createQuery(ApplianceVmVO.class);
         q.add(ApplianceVmVO_.type, Op.EQ, ApplianceVmConstant.APPLIANCE_VM_TYPE);
         q.add(ApplianceVmVO_.applianceVmType, Op.EQ, VirtualRouterConstant.VIRTUAL_ROUTER_VM_TYPE);
         q.add(ApplianceVmVO_.state, Op.EQ, VmInstanceState.Running);
         long count = q.count();
-		Assert.assertEquals(2, count);
-	}
+        Assert.assertEquals(2, count);
+    }
 }

@@ -60,12 +60,12 @@ public class TestSchedulerDelete {
         String volUuid = vm.getRootVolumeUuid();
         Integer interval = 3;
         Integer repeatCount = 6;
-        String type="simple";
+        String type = "simple";
         Long startDate = 0L;
         api.createVolumeSnapshotScheduler(volUuid, session, type, startDate, interval, repeatCount);
         TimeUnit.SECONDS.sleep(8);
         long counter = dbf.count(VolumeSnapshotVO.class);
-        Assert.assertEquals(3,counter);
+        Assert.assertEquals(3, counter);
         SchedulerVO firstRecord = dbf.listAll(SchedulerVO.class).get(0);
         api.deleteScheduler(firstRecord.getUuid(), session);
         TimeUnit.SECONDS.sleep(4);

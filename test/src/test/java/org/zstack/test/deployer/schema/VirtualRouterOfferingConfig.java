@@ -1,18 +1,13 @@
-
 package org.zstack.test.deployer.schema;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlType;
+import javax.xml.bind.annotation.*;
 
 
 /**
  * <p>Java class for VirtualRouterOfferingConfig complex type.
- * 
+ * <p>
  * <p>The following schema fragment specifies the expected content contained within this class.
- * 
+ * <p>
  * <pre>
  * &lt;complexType name="VirtualRouterOfferingConfig">
  *   &lt;complexContent>
@@ -28,19 +23,16 @@ import javax.xml.bind.annotation.XmlType;
  *   &lt;/complexContent>
  * &lt;/complexType>
  * </pre>
- * 
- * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "VirtualRouterOfferingConfig", propOrder = {
-    "managementL3NetworkRef",
-    "publicL3NetworkRef",
-    "imageRef",
-    "zoneRef"
+        "managementL3NetworkRef",
+        "publicL3NetworkRef",
+        "imageRef",
+        "zoneRef"
 })
 public class VirtualRouterOfferingConfig
-    extends InstanceOfferingConfig
-{
+        extends InstanceOfferingConfig {
 
     @XmlElement(required = true)
     protected String managementL3NetworkRef;
@@ -54,11 +46,9 @@ public class VirtualRouterOfferingConfig
 
     /**
      * Gets the value of the managementL3NetworkRef property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getManagementL3NetworkRef() {
         return managementL3NetworkRef;
@@ -66,11 +56,9 @@ public class VirtualRouterOfferingConfig
 
     /**
      * Sets the value of the managementL3NetworkRef property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setManagementL3NetworkRef(String value) {
         this.managementL3NetworkRef = value;
@@ -78,11 +66,9 @@ public class VirtualRouterOfferingConfig
 
     /**
      * Gets the value of the publicL3NetworkRef property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getPublicL3NetworkRef() {
         return publicL3NetworkRef;
@@ -90,11 +76,9 @@ public class VirtualRouterOfferingConfig
 
     /**
      * Sets the value of the publicL3NetworkRef property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setPublicL3NetworkRef(String value) {
         this.publicL3NetworkRef = value;
@@ -102,11 +86,9 @@ public class VirtualRouterOfferingConfig
 
     /**
      * Gets the value of the imageRef property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getImageRef() {
         return imageRef;
@@ -114,11 +96,9 @@ public class VirtualRouterOfferingConfig
 
     /**
      * Sets the value of the imageRef property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setImageRef(String value) {
         this.imageRef = value;
@@ -126,11 +106,9 @@ public class VirtualRouterOfferingConfig
 
     /**
      * Gets the value of the zoneRef property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getZoneRef() {
         return zoneRef;
@@ -138,11 +116,9 @@ public class VirtualRouterOfferingConfig
 
     /**
      * Sets the value of the zoneRef property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setZoneRef(String value) {
         this.zoneRef = value;
@@ -150,11 +126,9 @@ public class VirtualRouterOfferingConfig
 
     /**
      * Gets the value of the isDefault property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link Boolean }
-     *     
+     *
+     * @return possible object is
+     * {@link Boolean }
      */
     public boolean isIsDefault() {
         if (isDefault == null) {
@@ -166,11 +140,9 @@ public class VirtualRouterOfferingConfig
 
     /**
      * Sets the value of the isDefault property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link Boolean }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link Boolean }
      */
     public void setIsDefault(Boolean value) {
         this.isDefault = value;

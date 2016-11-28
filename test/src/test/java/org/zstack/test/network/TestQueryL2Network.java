@@ -38,16 +38,16 @@ public class TestQueryL2Network {
         dbf = loader.getComponent(DatabaseFacade.class);
     }
 
-	@Test
-	public void test() throws InterruptedException,ApiSenderException {
-	    APIQueryL2NetworkMsg msg = new APIQueryL2NetworkMsg();
-	    QueryCondition qc = new QueryCondition();
-	    qc.setName("description");
-	    qc.setOp(QueryOp.IN.toString());
-	    qc.setValue("Test");
-	    msg.getConditions().add(qc);
-	    APIQueryL2NetworkReply reply = api.query(msg, APIQueryL2NetworkReply.class);
-	    Assert.assertEquals(7, reply.getInventories().size());
+    @Test
+    public void test() throws InterruptedException, ApiSenderException {
+        APIQueryL2NetworkMsg msg = new APIQueryL2NetworkMsg();
+        QueryCondition qc = new QueryCondition();
+        qc.setName("description");
+        qc.setOp(QueryOp.IN.toString());
+        qc.setValue("Test");
+        msg.getConditions().add(qc);
+        APIQueryL2NetworkReply reply = api.query(msg, APIQueryL2NetworkReply.class);
+        Assert.assertEquals(7, reply.getInventories().size());
 
         boolean hasVlanL2 = false;
         for (L2NetworkInventory inv : reply.getInventories()) {
@@ -58,7 +58,7 @@ public class TestQueryL2Network {
         }
 
         Assert.assertTrue(hasVlanL2);
-	    
+
         msg = new APIQueryL2NetworkMsg();
         qc = new QueryCondition();
         qc.setName("description");
@@ -67,7 +67,7 @@ public class TestQueryL2Network {
         msg.getConditions().add(qc);
         reply = api.query(msg, APIQueryL2NetworkReply.class);
         Assert.assertEquals(0, reply.getInventories().size());
-        
+
         ClusterInventory cinv = deployer.clusters.get("TestCluster");
         msg = new APIQueryL2NetworkMsg();
         msg.addQueryCondition("attachedClusterUuids", QueryOp.IN, cinv.getUuid());
@@ -87,6 +87,6 @@ public class TestQueryL2Network {
         msg.setConditions(new ArrayList<QueryCondition>());
         reply = api.query(msg, APIQueryL2NetworkReply.class);
         Assert.assertTrue(reply.getInventories().get(0) instanceof L2VlanNetworkInventory);
-	}
+    }
 
 }

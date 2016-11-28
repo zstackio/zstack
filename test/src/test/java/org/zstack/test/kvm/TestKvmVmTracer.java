@@ -37,20 +37,19 @@ import static org.zstack.utils.CollectionDSL.map;
 /**
  * 1. create a vm
  * 2. report the vm stopped on the host
- *
+ * <p>
  * confirm the vm's state changed to stopped
  * confirm the capacity of the host returned
- *
+ * <p>
  * 3. report the vm running on the host
- *
+ * <p>
  * confirm the vm's state changed to running
  * confirm the capacity of the host allocated
- *
+ * <p>
  * 4. report the vm running on the other host
- *
+ * <p>
  * confirm the capacity of the original host returned
  * confirm the capacity of the new host allocated
- *
  */
 public class TestKvmVmTracer {
     CLogger logger = Utils.getLogger(TestSftpBackupStorageDeleteImage2.class);
@@ -78,9 +77,9 @@ public class TestKvmVmTracer {
         config = loader.getComponent(SftpBackupStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws InterruptedException {
+
+    @Test
+    public void test() throws InterruptedException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         String hostUuid = vm.getHostUuid();
 

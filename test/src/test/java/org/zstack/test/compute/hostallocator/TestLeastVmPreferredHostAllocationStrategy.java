@@ -28,12 +28,12 @@ import java.util.concurrent.Callable;
 /**
  * 1. add 100 hosts
  * 2. start 2000 vms
- *
+ * <p>
  * see if VMs are equally distributed
  */
 public class TestLeastVmPreferredHostAllocationStrategy {
     Deployer deployer;
-    Api api; 
+    Api api;
     ComponentLoader loader;
     CloudBus bus;
     DatabaseFacade dbf;
@@ -53,7 +53,7 @@ public class TestLeastVmPreferredHostAllocationStrategy {
 
     @Test
     public void test() throws ApiSenderException {
-        L3NetworkInventory l3  = deployer.l3Networks.get("l3Network1");
+        L3NetworkInventory l3 = deployer.l3Networks.get("l3Network1");
         ImageInventory imageInventory = deployer.images.get("image1");
         ClusterInventory cluster = deployer.clusters.get("cluster1");
         InstanceOfferingInventory ins = deployer.instanceOfferings.get("instanceOffering512M512HZ");
@@ -66,9 +66,9 @@ public class TestLeastVmPreferredHostAllocationStrategy {
         ios = api.addInstanceOffering(ios);
 
         long sip = NetworkUtils.ipv4StringToLong("192.168.0.1");
-        for (int i=0; i<hostNum; i++) {
+        for (int i = 0; i < hostNum; i++) {
             APIAddSimulatorHostMsg amsg = new APIAddSimulatorHostMsg();
-            amsg.setCpuCapacity(8*2600);
+            amsg.setCpuCapacity(8 * 2600);
             amsg.setMemoryCapacity(SizeUnit.GIGABYTE.toByte(32));
             amsg.setClusterUuid(cluster.getUuid());
             amsg.setManagementIp(NetworkUtils.longToIpv4String(sip + i));
@@ -79,7 +79,7 @@ public class TestLeastVmPreferredHostAllocationStrategy {
             sender.send(amsg, APIAddHostEvent.class);
         }
 
-        for (int i=0; i<vmNum; i++) {
+        for (int i = 0; i < vmNum; i++) {
             VmCreator creator = new VmCreator(api);
             creator.addL3Network(l3.getUuid());
             creator.imageUuid = imageInventory.getUuid();

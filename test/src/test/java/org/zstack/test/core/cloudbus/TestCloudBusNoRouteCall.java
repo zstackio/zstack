@@ -5,9 +5,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBusIN;
 import org.zstack.core.componentloader.ComponentLoader;
-import org.zstack.header.AbstractService;
-import org.zstack.header.Service;
-import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.test.BeanConstructor;
@@ -31,8 +28,9 @@ public class TestCloudBusNoRouteCall {
         public void setGreet(String greet) {
             this.greet = greet;
         }
-        
+
     }
+
     public static class HelloWorldReply extends MessageReply {
         private String greet;
 
@@ -44,7 +42,7 @@ public class TestCloudBusNoRouteCall {
             this.greet = greet;
         }
     }
-    
+
     @Before
     public void setUp() throws Exception {
         BeanConstructor con = new BeanConstructor();

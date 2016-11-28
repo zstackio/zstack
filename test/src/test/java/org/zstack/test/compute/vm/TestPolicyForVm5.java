@@ -9,18 +9,12 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.configuration.InstanceOfferingInventory;
-import org.zstack.header.identity.*;
-import org.zstack.header.identity.AccountConstant.StatementEffect;
-import org.zstack.header.identity.PolicyInventory.Statement;
+import org.zstack.header.identity.AccountInventory;
+import org.zstack.header.identity.AccountResourceRefVO;
+import org.zstack.header.identity.AccountResourceRefVO_;
+import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.query.QueryCondition;
-import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.vm.VmNicInventory;
-import org.zstack.network.service.eip.*;
-import org.zstack.network.service.vip.APICreateVipMsg;
-import org.zstack.network.service.vip.VipConstant;
-import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmVO;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.simulator.virtualrouter.VirtualRouterSimulatorConfig;
@@ -28,16 +22,13 @@ import org.zstack.test.*;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.test.identity.IdentityCreator;
 
-import java.util.ArrayList;
-
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
  * 1. share resources to another account
  * 2. create a vm by the account
- *
+ * <p>
  * confirm the virtual router is owned by the original account
- *
  */
 public class TestPolicyForVm5 {
     Deployer deployer;

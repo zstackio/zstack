@@ -28,13 +28,13 @@ import static org.zstack.utils.CollectionDSL.map;
 
 /**
  * 1. set ZoneTag.HOST_RESERVED_CPU_CAPACITY, ClusterTag.HOST_RESERVED_CPU_CAPACITY, HostTag.RESERVED_CPU_CAPACITY, KvmGlobalConfig.RESERVED_CPU_CAPACITY
- *
+ * <p>
  * confirm getCpuMemoryCapacity returns right capacity
  */
 @Deprecated
 public class TestGetCpuMemoryCapacity2 {
     Deployer deployer;
-    Api api; 
+    Api api;
     ComponentLoader loader;
     CloudBus bus;
     DatabaseFacade dbf;

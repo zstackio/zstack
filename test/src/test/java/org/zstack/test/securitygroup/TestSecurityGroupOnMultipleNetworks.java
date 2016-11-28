@@ -21,11 +21,8 @@ import org.zstack.utils.logging.CLogger;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 
  * @author frank
- * 
- * @condition
- * 1. create a security group: sg
+ * @condition 1. create a security group: sg
  * 2. attach sg to two l3Networks: l3nw1, l3nw2
  * 3. create vm1 with two nics: vm1Nic1(l3nw1), vm1Nic2(l3nw2)
  * 4. add vm1Nic1 to sg
@@ -33,10 +30,7 @@ import java.util.concurrent.TimeUnit;
  * 6. add vm2Nic1 to sg
  * 7. verify rules on both nics
  * 8. add vm1Nic2 to sg
- * 
- * @test
- * confirm after adding vm1Nic2 to sg, rules on vm1Nic1, vm2Nic1 are not changed
- *
+ * @test confirm after adding vm1Nic2 to sg, rules on vm1Nic1, vm2Nic1 are not changed
  */
 public class TestSecurityGroupOnMultipleNetworks {
     static CLogger logger = Utils.getLogger(TestSecurityGroupOnMultipleNetworks.class);
@@ -57,7 +51,7 @@ public class TestSecurityGroupOnMultipleNetworks {
         dbf = loader.getComponent(DatabaseFacade.class);
         sbkd = loader.getComponent(SimulatorSecurityGroupBackend.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         SecurityGroupInventory scinv = deployer.securityGroups.get("test");
@@ -66,19 +60,19 @@ public class TestSecurityGroupOnMultipleNetworks {
         L3NetworkInventory l3nw2 = deployer.l3Networks.get("TestL3Network2");
         VmNicInventory vm1Nic1 = SecurityGroupTestValidator.getVmNicOnSpecificL3Network(vm1.getVmNics(), l3nw1.getUuid());
         VmNicInventory vm1Nic2 = SecurityGroupTestValidator.getVmNicOnSpecificL3Network(vm1.getVmNics(), l3nw2.getUuid());
-        
+
         VmInstanceInventory vm2 = deployer.vms.get("TestVm1");
         VmNicInventory vm2Nic1 = SecurityGroupTestValidator.getVmNicOnSpecificL3Network(vm2.getVmNics(), l3nw1.getUuid());
 
         api.addVmNicToSecurityGroup(scinv.getUuid(), vm1Nic1.getUuid());
         api.addVmNicToSecurityGroup(scinv.getUuid(), vm2Nic1.getUuid());
-        
+
         TimeUnit.MILLISECONDS.sleep(500);
         SecurityGroupRuleTO vm1Nic1TO = sbkd.getRulesOnHost(vm1.getHostUuid(), vm1Nic1.getInternalName());
         SecurityGroupTestValidator.validate(vm1Nic1TO, scinv.getRules());
         SecurityGroupRuleTO vm2Nic1TO = sbkd.getRulesOnHost(vm2.getHostUuid(), vm2Nic1.getInternalName());
         SecurityGroupTestValidator.validate(vm2Nic1TO, scinv.getRules());
-        
+
         api.addVmNicToSecurityGroup(scinv.getUuid(), vm1Nic2.getUuid());
         TimeUnit.MILLISECONDS.sleep(500);
         vm1Nic1TO = sbkd.getRulesOnHost(vm1.getHostUuid(), vm1Nic1.getInternalName());

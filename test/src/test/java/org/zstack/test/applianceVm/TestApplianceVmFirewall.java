@@ -120,7 +120,7 @@ public class TestApplianceVmFirewall {
             }
 
             private ApplianceVmNicTO findNicTO(VmNicInventory nic) {
-                Object tos =  config.bootstrapInfo.get(ApplianceVmConstant.BootstrapParams.additionalNics.toString());
+                Object tos = config.bootstrapInfo.get(ApplianceVmConstant.BootstrapParams.additionalNics.toString());
                 List<ApplianceVmNicTO> lst = JSONObjectUtil.toCollection(JSONObjectUtil.toJsonString(tos), ArrayList.class, ApplianceVmNicTO.class);
                 for (ApplianceVmNicTO nto : lst) {
                     if (nto.getIp().equals(nic.getIp())) {

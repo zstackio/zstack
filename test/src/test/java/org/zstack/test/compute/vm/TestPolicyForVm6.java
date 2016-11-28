@@ -42,7 +42,7 @@ public class TestPolicyForVm6 {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         IdentityCreator identityCreator = new IdentityCreator(api);

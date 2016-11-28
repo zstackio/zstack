@@ -25,7 +25,7 @@ import org.zstack.utils.logging.CLogger;
  * 1. create a primary storage
  * 2. set primary storage to Disconnected
  * 3. try allocating primary storage
- *
+ * <p>
  * confirm failure
  */
 public class TestDefaultPrimaryStorageAllocatorStrategyFailure5 {

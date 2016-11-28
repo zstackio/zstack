@@ -8,10 +8,8 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.network.service.eip.EipInventory;
 import org.zstack.network.service.eip.EipVO;
 import org.zstack.network.service.vip.VipVO;
-import org.zstack.network.service.virtualrouter.eip.EipTO;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.simulator.virtualrouter.VirtualRouterSimulatorConfig;
 import org.zstack.test.Api;
@@ -21,16 +19,11 @@ import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 
 /**
- * 
  * @author frank
- * 
- * @condition
- * 1. create a vm
+ * @condition 1. create a vm
  * 2. set eip
  * 3. delete public l3
- *
- * @test
- * confirm vip and eip are deleted
+ * @test confirm vip and eip are deleted
  */
 public class TestVirtualRouterEip24 {
     Deployer deployer;
@@ -61,7 +54,7 @@ public class TestVirtualRouterEip24 {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         L3NetworkInventory publicL3 = deployer.l3Networks.get("PublicNetwork");

@@ -5,9 +5,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.zone.ZoneInventory;
-import org.zstack.header.zone.ZoneVO;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.BeanConstructor;
@@ -18,7 +16,7 @@ import java.util.List;
 /**
  * 1. create a zone
  * 2. update its information
- *
+ * <p>
  * confirm the update succeeds
  */
 public class TestUpdateZone {

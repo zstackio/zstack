@@ -23,7 +23,7 @@ public class TestJobReturnValueFail {
     long num = 10;
     boolean success = true;
     int retGot = 0;
-    
+
     @Before
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
@@ -46,17 +46,17 @@ public class TestJobReturnValueFail {
             @Override
             public void fail(ErrorCode errorCode) {
                 logger.debug(errorCode.toString());
-                retGot ++;
+                retGot++;
             }
         }, Long.class);
     }
-    
+
     @Test
     public void test() throws InterruptedException {
-        for (long i=0; i<num; i++) {
+        for (long i = 0; i < num; i++) {
             startJob(i);
         }
-        
+
         TimeUnit.SECONDS.sleep(15);
         Assert.assertTrue(success);
         Assert.assertEquals(num, retGot);

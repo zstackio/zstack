@@ -6,9 +6,9 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.header.network.service.APIQueryNetworkServiceProviderMsg;
 import org.zstack.header.network.service.APIQueryNetworkServiceProviderReply;
-import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.header.query.QueryCondition;
 import org.zstack.header.query.QueryOp;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
@@ -65,7 +65,7 @@ public class TestQueryNetworkServiceProvider {
         msg.getConditions().add(qc);
         reply = api.query(msg, APIQueryNetworkServiceProviderReply.class);
         Assert.assertEquals(1, reply.getInventories().size());
-        
+
         msg = new APIQueryNetworkServiceProviderMsg();
         qc = new QueryCondition();
         qc.setName("attachedL2NetworkUuids");
@@ -80,14 +80,14 @@ public class TestQueryNetworkServiceProvider {
         msg.getConditions().add(qc);
         reply = api.query(msg, APIQueryNetworkServiceProviderReply.class);
         Assert.assertEquals(1, reply.getInventories().size());
-        
+
         msg = new APIQueryNetworkServiceProviderMsg();
         qc = new QueryCondition();
         qc.setName("attachedL2NetworkUuids");
         qc.setOp(QueryOp.EQ.toString());
         qc.setValue(l2inv.getUuid());
         msg.getConditions().add(qc);
-        
+
         qc = new QueryCondition();
         qc.setName("name");
         qc.setOp(QueryOp.EQ.toString());

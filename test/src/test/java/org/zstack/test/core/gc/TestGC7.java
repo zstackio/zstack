@@ -45,8 +45,8 @@ public class TestGC7 {
 
         @Override
         public void run(GCContext context, GCCompletion completion) {
-            logger.debug((String)context.getContext());
-            success ++;
+            logger.debug((String) context.getContext());
+            success++;
             completion.success();
         }
     }

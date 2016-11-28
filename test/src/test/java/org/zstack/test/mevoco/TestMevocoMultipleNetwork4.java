@@ -34,9 +34,8 @@ import java.util.concurrent.TimeUnit;
 /**
  * 1. create a vm with 2 flat L3 networks
  * 2. delete the vm's default L3 network
- *
+ * <p>
  * confirm the ResetDefaultGatewayCmd sent to the backend
- *
  */
 public class TestMevocoMultipleNetwork4 {
     CLogger logger = Utils.getLogger(TestMevocoMultipleNetwork4.class);
@@ -80,9 +79,9 @@ public class TestMevocoMultipleNetwork4 {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         final L3NetworkInventory l31 = deployer.l3Networks.get("TestL3Network1");
         final L3NetworkInventory l32 = deployer.l3Networks.get("TestL3Network2");

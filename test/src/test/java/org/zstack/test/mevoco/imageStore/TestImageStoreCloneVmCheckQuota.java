@@ -12,7 +12,6 @@ import org.zstack.header.image.ImageConstant;
 import org.zstack.header.vm.APICloneVmInstanceMsg;
 import org.zstack.header.vm.CloneVmInstanceResults;
 import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.volume.VolumeConstant;
 import org.zstack.storage.backup.imagestore.ImageStoreBackupStorageSimulatorConfig;
 import org.zstack.test.*;
 import org.zstack.test.deployer.Deployer;

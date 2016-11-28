@@ -20,7 +20,7 @@ public class TestDeleteZone1 {
     Api api;
     ComponentLoader loader;
     DatabaseFacade dbf;
-    
+
     @Before
     public void setUp() throws Exception {
         DBUtil.reDeployDB();

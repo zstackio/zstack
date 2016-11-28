@@ -21,17 +21,14 @@ import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 
 /**
- * 
  * @author frank
- * 
- * @condition
- * 1. make the subnets of eip and vm nic overlap
+ * @condition 1. make the subnets of eip and vm nic overlap
  * 2. attach the eip to the vm
- *
+ * <p>
  * confirm the eip cannot be attached
- *
+ * <p>
  * 3. create another eip with the vm nic
- *
+ * <p>
  * confirm the eip cannot be attached
  */
 public class TestVirtualRouterEip28 {
@@ -63,7 +60,7 @@ public class TestVirtualRouterEip28 {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");

@@ -3,18 +3,17 @@ package org.zstack.test.identity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.header.AbstractService;
-import org.zstack.header.Service;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.Message;
 
 public class FakeAuthorizationServiceForRoleTest extends AbstractService {
     @Autowired
     private CloudBus bus;
-    
+
     public static final String SERVICE_ID = "FakeAuthorizationServiceForRoleTest";
     public static final String ALLOW_POLICY_ROLE = "test:allow";
     public static final String DENY_POLICY_ROLE = "test:deny";
-    
+
     @Override
     public boolean start() {
         bus.registerService(this);

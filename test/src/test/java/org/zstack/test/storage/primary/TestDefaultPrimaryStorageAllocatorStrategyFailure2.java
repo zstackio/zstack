@@ -22,6 +22,7 @@ import org.zstack.test.DBUtil;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.logging.CLogger;
+
 public class TestDefaultPrimaryStorageAllocatorStrategyFailure2 {
     CLogger logger = Utils.getLogger(TestDefaultPrimaryStorageAllocatorStrategyFailure2.class);
     Api api;
@@ -69,7 +70,7 @@ public class TestDefaultPrimaryStorageAllocatorStrategyFailure2 {
         HostInventory host = api.createHost(1, cluster.getUuid()).get(0);
         api.attachPrimaryStorage(cluster.getUuid(), pinv.getUuid());
         /* primary storage is not big enough */
-        
+
         AllocatePrimaryStorageMsg msg = new AllocatePrimaryStorageMsg();
         msg.setRequiredHostUuid(host.getUuid());
         msg.setSize(requiredSize);

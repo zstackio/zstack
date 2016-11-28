@@ -1,18 +1,13 @@
-
 package org.zstack.test.deployer.schema;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlSchemaType;
-import javax.xml.bind.annotation.XmlType;
+import javax.xml.bind.annotation.*;
 
 
 /**
  * <p>Java class for KvmHostConfig complex type.
- * 
+ * <p>
  * <p>The following schema fragment specifies the expected content contained within this class.
- * 
+ * <p>
  * <pre>
  * &lt;complexType name="KvmHostConfig">
  *   &lt;complexContent>
@@ -26,14 +21,11 @@ import javax.xml.bind.annotation.XmlType;
  *   &lt;/complexContent>
  * &lt;/complexType>
  * </pre>
- * 
- * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "KvmHostConfig")
 public class KvmHostConfig
-    extends HostConfigBase
-{
+        extends HostConfigBase {
 
     @XmlAttribute(name = "username")
     protected String username;
@@ -50,11 +42,9 @@ public class KvmHostConfig
 
     /**
      * Gets the value of the username property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getUsername() {
         if (username == null) {
@@ -66,11 +56,9 @@ public class KvmHostConfig
 
     /**
      * Sets the value of the username property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setUsername(String value) {
         this.username = value;
@@ -78,11 +66,9 @@ public class KvmHostConfig
 
     /**
      * Gets the value of the password property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getPassword() {
         if (password == null) {
@@ -94,11 +80,9 @@ public class KvmHostConfig
 
     /**
      * Sets the value of the password property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setPassword(String value) {
         this.password = value;
@@ -106,11 +90,9 @@ public class KvmHostConfig
 
     /**
      * Gets the value of the memoryCapacity property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getMemoryCapacity() {
         if (memoryCapacity == null) {
@@ -122,11 +104,9 @@ public class KvmHostConfig
 
     /**
      * Sets the value of the memoryCapacity property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setMemoryCapacity(String value) {
         this.memoryCapacity = value;
@@ -134,15 +114,13 @@ public class KvmHostConfig
 
     /**
      * Gets the value of the cpuNum property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link Long }
-     *     
+     *
+     * @return possible object is
+     * {@link Long }
      */
     public long getCpuNum() {
         if (cpuNum == null) {
-            return  8L;
+            return 8L;
         } else {
             return cpuNum;
         }
@@ -150,11 +128,9 @@ public class KvmHostConfig
 
     /**
      * Sets the value of the cpuNum property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link Long }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link Long }
      */
     public void setCpuNum(Long value) {
         this.cpuNum = value;
@@ -162,15 +138,13 @@ public class KvmHostConfig
 
     /**
      * Gets the value of the cpuSpeed property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link Long }
-     *     
+     *
+     * @return possible object is
+     * {@link Long }
      */
     public long getCpuSpeed() {
         if (cpuSpeed == null) {
-            return  3000L;
+            return 3000L;
         } else {
             return cpuSpeed;
         }
@@ -178,11 +152,9 @@ public class KvmHostConfig
 
     /**
      * Sets the value of the cpuSpeed property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link Long }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link Long }
      */
     public void setCpuSpeed(Long value) {
         this.cpuSpeed = value;

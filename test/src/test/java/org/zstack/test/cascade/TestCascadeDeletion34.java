@@ -17,7 +17,7 @@ import org.zstack.test.deployer.Deployer;
  * 1. have VR images on a backup storage
  * 2. have a virtual route offering referring to that image
  * 3. delete the backup storage
- *
+ * <p>
  * confirm the virtual router offering is deleted as well
  */
 public class TestCascadeDeletion34 {

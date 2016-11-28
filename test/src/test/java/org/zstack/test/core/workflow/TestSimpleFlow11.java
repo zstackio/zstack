@@ -2,19 +2,15 @@ package org.zstack.test.core.workflow;
 
 import junit.framework.Assert;
 import org.junit.Test;
-import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.core.workflow.WorkFlowException;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
-import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.test.BeanConstructor;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
-
-import java.util.Map;
 
 /**
  * Created with IntelliJ IDEA.

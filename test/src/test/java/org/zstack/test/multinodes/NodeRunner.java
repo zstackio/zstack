@@ -6,8 +6,8 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.core.thread.AsyncThread;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.MessageReply;
 import org.zstack.utils.Utils;
@@ -144,7 +144,7 @@ public class NodeRunner {
         isRunning = true;
 
         assert serviceId != null;
-        MultiNodeTestMsg msg  = new MultiNodeTestMsg();
+        MultiNodeTestMsg msg = new MultiNodeTestMsg();
         msg.setServiceId(serviceId);
         msg.setOpCode(msg.READY);
         msg.setTimeout(TimeUnit.SECONDS.toMillis(1));
@@ -157,7 +157,7 @@ public class NodeRunner {
                     throw new CloudRuntimeException(String.format("node[%s] fail to start, %s", serviceId, r.getError()));
                 }
             } else {
-                MultiNodeTestReply mr = (MultiNodeTestReply)r;
+                MultiNodeTestReply mr = (MultiNodeTestReply) r;
                 managementNodeId = mr.getManagementNodeId();
                 break;
             }
@@ -184,7 +184,7 @@ public class NodeRunner {
         }
 
         assert serviceId != null;
-        MultiNodeTestMsg msg  = new MultiNodeTestMsg();
+        MultiNodeTestMsg msg = new MultiNodeTestMsg();
         msg.setServiceId(serviceId);
         msg.setOpCode(msg.EXIT);
         msg.setTimeout(TimeUnit.SECONDS.toMillis(60));
@@ -241,6 +241,7 @@ public class NodeRunner {
     public void setPropertyString(String propertyString) {
         this.propertyString = propertyString;
     }
+
     public NodeRunner() {
     }
 
@@ -303,7 +304,7 @@ public class NodeRunner {
             } catch (InterruptedException e) {
             }
 
-            try  {
+            try {
                 p.exitValue();
                 return;
             } catch (IllegalThreadStateException ie) {

@@ -10,9 +10,7 @@ import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostStateEvent;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.network.l2.L2NetworkInventory;
-import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
-import org.zstack.simulator.storage.primary.nfs.NfsPrimaryStorageSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
@@ -29,7 +27,7 @@ import java.util.concurrent.TimeUnit;
  * 2. put host1 into maintenance mode
  * 3. attach l2 network to cluster
  * 4. enable host1
- *
+ * <p>
  * confirm after host gets out of maintenance mode, l2 network mounts on it
  */
 public class TestKvmMaintenanceModeAttachL2Network {
@@ -56,9 +54,9 @@ public class TestKvmMaintenanceModeAttachL2Network {
         config = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         HostInventory host1 = deployer.hosts.get("host1");
         api.maintainHost(host1.getUuid());
         L2NetworkInventory l2 = deployer.l2Networks.get("TestL2Network1");
@@ -69,5 +67,5 @@ public class TestKvmMaintenanceModeAttachL2Network {
         // wait for host reconnect
         TimeUnit.SECONDS.sleep(5);
         Assert.assertEquals(1, config.createBridgeCmds.size());
-	}
+    }
 }

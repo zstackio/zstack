@@ -47,10 +47,10 @@ public class TestAttachDataVolumeToVmOnKvm2 {
         config = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
-	    VmInstanceInventory vm = deployer.vms.get("TestVm");
+
+    @Test
+    public void test() throws ApiSenderException {
+        VmInstanceInventory vm = deployer.vms.get("TestVm");
         Assert.assertEquals(2, vm.getAllVolumes().size());
-	}
+    }
 }

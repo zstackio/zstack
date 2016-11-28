@@ -11,26 +11,21 @@ import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.network.service.eip.EipInventory;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.network.service.virtualrouter.eip.EipTO;
+import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.simulator.virtualrouter.VirtualRouterSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.simulator.kvm.KVMSimulatorConfig;
 
 /**
- * 
  * @author frank
- * 
- * @condition
- * 1. create vm1 with eip1
+ * @condition 1. create vm1 with eip1
  * 2. create vm2 with eip2
  * 3. stop vm1
  * 4. start vm1
- *
- * @test
- * confirm after starting vm1 only apply its own eip1
+ * @test confirm after starting vm1 only apply its own eip1
  */
 public class TestVirtualRouterEip20 {
     Deployer deployer;
@@ -61,7 +56,7 @@ public class TestVirtualRouterEip20 {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         VmInstanceInventory vm1 = deployer.vms.get("vm1");

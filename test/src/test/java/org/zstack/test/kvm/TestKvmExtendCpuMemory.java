@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * 1. extend memory/cpu of the host
  * 2. reconnect the host
- *
+ * <p>
  * confirm the host capacity is extended
  */
 public class TestKvmExtendCpuMemory {
@@ -56,9 +56,9 @@ public class TestKvmExtendCpuMemory {
         cpuMgr = loader.getComponent(HostCpuOverProvisioningManager.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         long expandedMem = SizeUnit.GIGABYTE.toGigaByte(10);
         config.totalMemory += expandedMem;

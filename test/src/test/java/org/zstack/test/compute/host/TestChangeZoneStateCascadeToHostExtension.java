@@ -41,7 +41,7 @@ public class TestChangeZoneStateCascadeToHostExtension {
         api = new Api();
         api.startServer();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         try {
@@ -57,7 +57,7 @@ public class TestChangeZoneStateCascadeToHostExtension {
             Assert.assertEquals(ZoneState.Enabled.toString(), zone.getState());
             host = api.listHosts(null).get(0);
             Assert.assertEquals(HostState.Enabled.toString(), host.getState());
-            
+
             ext.setExpectedCurrent(HostState.Enabled);
             ext.setExpectedNext(HostState.Disabled);
             ext.setExpectedStateEvent(HostStateEvent.disable);

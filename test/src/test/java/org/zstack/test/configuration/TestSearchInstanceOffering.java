@@ -40,7 +40,7 @@ public class TestSearchInstanceOffering {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException, JSONException {
         TimeUnit.SECONDS.sleep(5);
@@ -54,7 +54,7 @@ public class TestSearchInstanceOffering {
         List<InstanceOfferingInventory> invs = JSONObjectUtil.toCollection(content, ArrayList.class, InstanceOfferingInventory.class);
         Assert.assertEquals(3, invs.size());
         Assert.assertTrue(invs.get(0).getCpuNum() >= 3);
-        
+
         msg = new APISearchInstanceOfferingMsg();
         t.setName("memorySize");
         t.setOp(SearchOp.AND_GTE.toString());

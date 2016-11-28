@@ -40,14 +40,14 @@ public class TestGC8 {
 
         @Override
         public void run(GCContext context, GCCompletion completion) {
-            logger.debug((String)context.getContext());
+            logger.debug((String) context.getContext());
             completion.success();
         }
     }
 
     @Test
     public void test() {
-        for (int i=0; i<5; i++) {
+        for (int i = 0; i < 5; i++) {
             TimeBasedGCPersistentContext<String> context = new TimeBasedGCPersistentContext<String>();
             context.setRunnerClass(TRunner.class);
             context.setInterval(1000000);

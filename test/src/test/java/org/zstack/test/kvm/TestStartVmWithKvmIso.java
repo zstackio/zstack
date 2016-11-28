@@ -24,7 +24,7 @@ import org.zstack.utils.logging.CLogger;
  * 2. create a VM from the image
  * 3. stop the VM and attach the ISO to the VM
  * 4. start the VM
- *
+ * <p>
  * confirm the VM starts successfully
  */
 public class TestStartVmWithKvmIso {
@@ -53,9 +53,9 @@ public class TestStartVmWithKvmIso {
         kconfig = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         ImageInventory iso = deployer.images.get("ISO");
         VmInstanceInventory vm = deployer.vms.get("TestVm");
 

@@ -44,15 +44,15 @@ public class TestDetachDataVolumeFromVmOnKvmFailure {
         config = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test(expected=ApiSenderException.class)
-	public void test() throws ApiSenderException {
-	    VmInstanceInventory vm = deployer.vms.get("TestVm");
-	    DiskOfferingInventory dinv = deployer.diskOfferings.get("DataOffering");
-	    VolumeInventory vol = api.createDataVolume("d1", dinv.getUuid());
-	    vol = api.attachVolumeToVm(vm.getUuid(), vol.getUuid());
-	    Assert.assertEquals(true, vol.isAttached());
-	    config.detachVolumeSuccess = false;
-	    api.detachVolumeFromVm(vol.getUuid());
-	}
+
+    @Test(expected = ApiSenderException.class)
+    public void test() throws ApiSenderException {
+        VmInstanceInventory vm = deployer.vms.get("TestVm");
+        DiskOfferingInventory dinv = deployer.diskOfferings.get("DataOffering");
+        VolumeInventory vol = api.createDataVolume("d1", dinv.getUuid());
+        vol = api.attachVolumeToVm(vm.getUuid(), vol.getUuid());
+        Assert.assertEquals(true, vol.isAttached());
+        config.detachVolumeSuccess = false;
+        api.detachVolumeFromVm(vol.getUuid());
+    }
 }

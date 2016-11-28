@@ -22,7 +22,7 @@ import java.util.List;
 public class DefaultLbDeployer implements LbDeployer<LbConfig> {
     @Override
     public void deploy(List<LbConfig> lbs, DeployerConfig config, Deployer deployer) throws ApiSenderException {
-        Api api  = deployer.getApi();
+        Api api = deployer.getApi();
         for (LbConfig lb : lbs) {
             L3NetworkInventory pl3 = deployer.l3Networks.get(lb.getPublicL3NetworkRef());
             assert pl3 != null;
@@ -53,11 +53,11 @@ public class DefaultLbDeployer implements LbDeployer<LbConfig> {
                     String l3Name = refs[1];
 
                     L3NetworkInventory l3 = deployer.l3Networks.get(l3Name);
-                    assert l3 != null: String.format("cannot find l3Network[name:%s]", l3Name);
+                    assert l3 != null : String.format("cannot find l3Network[name:%s]", l3Name);
                     VmInstanceInventory vm = deployer.vms.get(vmName);
-                    assert vm != null: String.format("cannot find vm[name:%s]", vmName);
+                    assert vm != null : String.format("cannot find vm[name:%s]", vmName);
                     VmNicInventory nic = vm.findNic(l3.getUuid());
-                    assert nic != null: String.format("cannot find nic[l3name: %s] of vm[name:%s]", l3Name, vmName);
+                    assert nic != null : String.format("cannot find nic[l3name: %s] of vm[name:%s]", l3Name, vmName);
 
                     inv = api.addVmNicToLoadBalancerListener(inv.getUuid(), nic.getUuid(), session);
                     deployer.loadBalancerListeners.put(inv.getName(), inv);

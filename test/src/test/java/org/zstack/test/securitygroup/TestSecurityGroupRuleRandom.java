@@ -39,7 +39,7 @@ public class TestSecurityGroupRuleRandom {
     static ComponentLoader loader;
     static DatabaseFacade dbf;
     static SimulatorSecurityGroupBackend sbkd;
-    static String[] operations = { "stop", "reboot", "start" };
+    static String[] operations = {"stop", "reboot", "start"};
     static int num = 10;
     CountDownLatch latch = new CountDownLatch(3);
 

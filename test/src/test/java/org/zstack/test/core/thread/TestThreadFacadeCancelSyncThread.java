@@ -21,9 +21,9 @@ public class TestThreadFacadeCancelSyncThread {
     ThreadFacade thdf;
     int threadNum = 5;
     volatile int count = 0;
-    CountDownLatch latch = new CountDownLatch(threadNum-1);
+    CountDownLatch latch = new CountDownLatch(threadNum - 1);
 
-    class Tester implements SyncTask<Void>{
+    class Tester implements SyncTask<Void> {
         int index;
 
         Tester(int index) {
@@ -71,11 +71,11 @@ public class TestThreadFacadeCancelSyncThread {
         for (int i = 0; i < this.threadNum; i++) {
             Tester worker = new Tester(i);
             Future<Void> f = thdf.syncSubmit(worker);
-            if (i == this.threadNum-1) {
-               f.cancel(true); 
+            if (i == this.threadNum - 1) {
+                f.cancel(true);
             }
         }
         latch.await(10, TimeUnit.SECONDS);
-        Assert.assertEquals(threadNum-1, this.count);
+        Assert.assertEquals(threadNum - 1, this.count);
     }
 }

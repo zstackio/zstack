@@ -10,7 +10,7 @@ public class KVMRebootVmExtension implements KVMRebootVmExtensionPoint {
     boolean beforeCalled;
     boolean successCalled;
     boolean failCalled;
-    
+
     @Override
     public void beforeRebootVmOnKvm(KVMHostInventory host, VmInstanceInventory vm) throws KVMException {
         beforeCalled = true;

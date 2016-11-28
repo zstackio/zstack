@@ -51,18 +51,18 @@ public class TestSearchVirtualRouterOffering {
         t.setOp(SearchOp.AND_EQ.toString());
         t.setVal(VirtualRouterConstant.VIRTUAL_ROUTER_OFFERING_TYPE);
         msg.getNameOpValueTriples().add(t);
-        
+
         String res = api.search(msg);
         List<VirtualRouterOfferingInventory> invs = JSONObjectUtil.toCollection(res, ArrayList.class, VirtualRouterOfferingInventory.class);
         Assert.assertEquals(1, invs.size());
-        
+
         VirtualRouterOfferingInventory inv0 = invs.get(0);
         APIGetVirtualRouterOfferingMsg gmsg = new APIGetVirtualRouterOfferingMsg();
         gmsg.setUuid(inv0.getUuid());
         res = api.getInventory(gmsg);
         VirtualRouterOfferingInventory vinv = JSONObjectUtil.toObject(res, VirtualRouterOfferingInventory.class);
         Assert.assertEquals(inv0.getName(), vinv.getName());
-        
+
         api.deleteInstanceOffering(vinv.getUuid());
         TimeUnit.SECONDS.sleep(1);
         res = api.getInventory(gmsg);

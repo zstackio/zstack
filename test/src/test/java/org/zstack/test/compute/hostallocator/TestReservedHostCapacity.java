@@ -14,13 +14,13 @@ import org.zstack.test.deployer.Deployer;
 
 /**
  * 1. set KVMGlobalConfig.RESERVED_CPU_CAPACITY to a big value that makes allocation failure
- *
+ * <p>
  * confirm vm creation failure
  */
 @Deprecated
 public class TestReservedHostCapacity {
     Deployer deployer;
-    Api api; 
+    Api api;
     ComponentLoader loader;
     CloudBus bus;
     DatabaseFacade dbf;
@@ -41,7 +41,7 @@ public class TestReservedHostCapacity {
     @Test(expected = ApiSenderException.class)
     public void test() throws ApiSenderException {
         KVMGlobalConfig.RESERVED_CPU_CAPACITY.updateValue(10 * 2600L);
-        L3NetworkInventory l3  = deployer.l3Networks.get("TestL3Network1");
+        L3NetworkInventory l3 = deployer.l3Networks.get("TestL3Network1");
         InstanceOfferingInventory instanceOffering = deployer.instanceOfferings.get("TestInstanceOffering");
         ImageInventory imageInventory = deployer.images.get("TestImage");
 

@@ -16,6 +16,7 @@ import org.zstack.test.BeanConstructor;
 import org.zstack.test.DBUtil;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+
 public class TestHostDeleteExtensionPoint {
     CLogger logger = Utils.getLogger(TestChangeHostState.class);
     Api api;
@@ -53,11 +54,11 @@ public class TestHostDeleteExtensionPoint {
             api.maintainHost(host.getUuid());
             try {
                 api.deleteHost(host.getUuid());
-            } catch (ApiSenderException e){
+            } catch (ApiSenderException e) {
             }
             HostVO vo = dbf.findByUuid(host.getUuid(), HostVO.class);
             Assert.assertNotNull(vo);
-            
+
             ext.setPreventDelete(false);
             ext.setExpectedHostUuid(host.getUuid());
             api.deleteHost(host.getUuid());

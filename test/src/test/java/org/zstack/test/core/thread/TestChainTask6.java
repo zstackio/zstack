@@ -23,14 +23,14 @@ public class TestChainTask6 {
     int threadNum = 100000;
     List<Integer> res = new ArrayList<Integer>(threadNum);
     CountDownLatch latch = new CountDownLatch(threadNum);
-    
+
     class Tester extends ChainTask {
         int index;
-        
+
         Tester(int index) {
             this.index = index;
         }
-        
+
         @Override
         public String getName() {
             return "Test";
@@ -57,21 +57,21 @@ public class TestChainTask6 {
             chain.next();
         }
     }
-    
+
     @Before
     public void setUp() throws Exception {
         BeanConstructor con = new BeanConstructor();
         loader = con.build();
         thdf = loader.getComponent(ThreadFacade.class);
     }
-    
+
     @Test
     public void test() throws InterruptedException {
-        for (int i=0; i<threadNum; i++) {
+        for (int i = 0; i < threadNum; i++) {
             Tester t = new Tester(i);
             thdf.chainSubmit(t);
         }
-        
+
         latch.await(2, TimeUnit.MINUTES);
         Assert.assertEquals(threadNum, res.size());
     }

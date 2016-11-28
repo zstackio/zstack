@@ -31,41 +31,41 @@ import java.util.concurrent.Callable;
  * 1. create a vm
  * 2. stop vr
  * 3. stop vm
- *
+ * <p>
  * confirm vm stopped successfully
  */
 public class TestVirtualRouterDhcp {
-	CLogger logger = Utils.getLogger(TestVirtualRouterDhcp.class);
-	Deployer deployer;
-	Api api;
-	ComponentLoader loader;
-	CloudBus bus;
-	DatabaseFacade dbf;
-	SessionInventory session;
-	VirtualRouterSimulatorConfig vconfig;
-	KVMSimulatorConfig kconfig;
+    CLogger logger = Utils.getLogger(TestVirtualRouterDhcp.class);
+    Deployer deployer;
+    Api api;
+    ComponentLoader loader;
+    CloudBus bus;
+    DatabaseFacade dbf;
+    SessionInventory session;
+    VirtualRouterSimulatorConfig vconfig;
+    KVMSimulatorConfig kconfig;
 
-	@Before
-	public void setUp() throws Exception {
-		DBUtil.reDeployDB();
-		WebBeanConstructor con = new WebBeanConstructor();
-		deployer = new Deployer("deployerXml/virtualRouter/TestVirtualRouterDhcp.xml", con);
+    @Before
+    public void setUp() throws Exception {
+        DBUtil.reDeployDB();
+        WebBeanConstructor con = new WebBeanConstructor();
+        deployer = new Deployer("deployerXml/virtualRouter/TestVirtualRouterDhcp.xml", con);
         deployer.addSpringConfig("NetworkService.xml");
-		deployer.addSpringConfig("VirtualRouter.xml");
-		deployer.addSpringConfig("VirtualRouterSimulator.xml");
-		deployer.addSpringConfig("KVMRelated.xml");
-		deployer.build();
-		api = deployer.getApi();
-		loader = deployer.getComponentLoader();
-		vconfig = loader.getComponent(VirtualRouterSimulatorConfig.class);
-		kconfig = loader.getComponent(KVMSimulatorConfig.class);
-		bus = loader.getComponent(CloudBus.class);
-		dbf = loader.getComponent(DatabaseFacade.class);
-		session = api.loginAsAdmin();
-	}
+        deployer.addSpringConfig("VirtualRouter.xml");
+        deployer.addSpringConfig("VirtualRouterSimulator.xml");
+        deployer.addSpringConfig("KVMRelated.xml");
+        deployer.build();
+        api = deployer.getApi();
+        loader = deployer.getComponentLoader();
+        vconfig = loader.getComponent(VirtualRouterSimulatorConfig.class);
+        kconfig = loader.getComponent(KVMSimulatorConfig.class);
+        bus = loader.getComponent(CloudBus.class);
+        dbf = loader.getComponent(DatabaseFacade.class);
+        session = api.loginAsAdmin();
+    }
 
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         final VmInstanceInventory vm = deployer.vms.get("TestVm");
         VmNicInventory defaultNic = CollectionUtils.find(vm.getVmNics(), new Function<VmNicInventory, VmNicInventory>() {
             @Override
@@ -112,5 +112,5 @@ public class TestVirtualRouterDhcp {
         }
 
         Assert.assertTrue(success);
-	}
+    }
 }

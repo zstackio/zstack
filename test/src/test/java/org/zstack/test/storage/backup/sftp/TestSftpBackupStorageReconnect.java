@@ -48,7 +48,7 @@ public class TestSftpBackupStorageReconnect {
         config = loader.getComponent(SftpBackupStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         SftpBackupStorageTestHelper helper = new SftpBackupStorageTestHelper();

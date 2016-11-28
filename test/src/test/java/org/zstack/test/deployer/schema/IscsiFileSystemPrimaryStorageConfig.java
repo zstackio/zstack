@@ -1,4 +1,3 @@
-
 package org.zstack.test.deployer.schema;
 
 import javax.xml.bind.annotation.XmlAccessType;
@@ -9,9 +8,9 @@ import javax.xml.bind.annotation.XmlType;
 
 /**
  * <p>Java class for IscsiFileSystemPrimaryStorageConfig complex type.
- * 
+ * <p>
  * <p>The following schema fragment specifies the expected content contained within this class.
- * 
+ * <p>
  * <pre>
  * &lt;complexType name="IscsiFileSystemPrimaryStorageConfig">
  *   &lt;complexContent>
@@ -26,14 +25,11 @@ import javax.xml.bind.annotation.XmlType;
  *   &lt;/complexContent>
  * &lt;/complexType>
  * </pre>
- * 
- * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "IscsiFileSystemPrimaryStorageConfig")
 public class IscsiFileSystemPrimaryStorageConfig
-    extends PrimaryStorageConfigBase
-{
+        extends PrimaryStorageConfigBase {
 
     @XmlAttribute(name = "chapUsername")
     protected String chapUsername;
@@ -50,11 +46,9 @@ public class IscsiFileSystemPrimaryStorageConfig
 
     /**
      * Gets the value of the chapUsername property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getChapUsername() {
         return chapUsername;
@@ -62,11 +56,9 @@ public class IscsiFileSystemPrimaryStorageConfig
 
     /**
      * Sets the value of the chapUsername property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setChapUsername(String value) {
         this.chapUsername = value;
@@ -74,11 +66,9 @@ public class IscsiFileSystemPrimaryStorageConfig
 
     /**
      * Gets the value of the chapPassword property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getChapPassword() {
         return chapPassword;
@@ -86,11 +76,9 @@ public class IscsiFileSystemPrimaryStorageConfig
 
     /**
      * Sets the value of the chapPassword property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setChapPassword(String value) {
         this.chapPassword = value;
@@ -98,11 +86,9 @@ public class IscsiFileSystemPrimaryStorageConfig
 
     /**
      * Gets the value of the hostname property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getHostname() {
         return hostname;
@@ -110,11 +96,9 @@ public class IscsiFileSystemPrimaryStorageConfig
 
     /**
      * Sets the value of the hostname property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setHostname(String value) {
         this.hostname = value;
@@ -122,11 +106,9 @@ public class IscsiFileSystemPrimaryStorageConfig
 
     /**
      * Gets the value of the sshUsername property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getSshUsername() {
         return sshUsername;
@@ -134,11 +116,9 @@ public class IscsiFileSystemPrimaryStorageConfig
 
     /**
      * Sets the value of the sshUsername property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setSshUsername(String value) {
         this.sshUsername = value;
@@ -146,11 +126,9 @@ public class IscsiFileSystemPrimaryStorageConfig
 
     /**
      * Gets the value of the sshPassword property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getSshPassword() {
         return sshPassword;
@@ -158,11 +136,9 @@ public class IscsiFileSystemPrimaryStorageConfig
 
     /**
      * Sets the value of the sshPassword property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setSshPassword(String value) {
         this.sshPassword = value;
@@ -170,11 +146,9 @@ public class IscsiFileSystemPrimaryStorageConfig
 
     /**
      * Gets the value of the filesystemType property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getFilesystemType() {
         return filesystemType;
@@ -182,11 +156,9 @@ public class IscsiFileSystemPrimaryStorageConfig
 
     /**
      * Sets the value of the filesystemType property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setFilesystemType(String value) {
         this.filesystemType = value;

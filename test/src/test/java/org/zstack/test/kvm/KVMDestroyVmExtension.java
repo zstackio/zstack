@@ -10,7 +10,7 @@ public class KVMDestroyVmExtension implements KVMDestroyVmExtensionPoint {
     boolean beforeCalled;
     boolean successCalled;
     boolean failCalled;
-    
+
     @Override
     public void beforeDestroyVmOnKvm(KVMHostInventory host, VmInstanceInventory vm) throws KVMException {
         beforeCalled = true;

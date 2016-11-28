@@ -48,14 +48,13 @@ import static org.zstack.utils.CollectionDSL.list;
  * 3. attach a data volume to the vm
  * 4. create snapshots from the root volume and the data volume
  * 5. delay to delete the vm and data volume
- *
+ * <p>
  * confirm the capacity of the local storage correct
- *
+ * <p>
  * 6. expunge the vm
  * 7. expunge the data volume
- *
+ * <p>
  * confirm the capacity of the local storage correct
- *
  */
 public class TestDiskCapacityLocalStorage6 {
     CLogger logger = Utils.getLogger(TestSftpBackupStorageDeleteImage2.class);
@@ -153,8 +152,8 @@ public class TestDiskCapacityLocalStorage6 {
         }
     }
 
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         AddImage addImage = new AddImage();
         addImage.size = SizeUnit.GIGABYTE.toByte(10);
         addImage.actualSize = SizeUnit.GIGABYTE.toByte(1);
@@ -224,5 +223,5 @@ public class TestDiskCapacityLocalStorage6 {
         LocalStorageHostRefVO href4 = new LocalStorageHostRefVOFinder().findByPrimaryKey(host.getUuid(), local.getUuid());
         Assert.assertEquals(avail, pscap4.getAvailableCapacity());
         Assert.assertEquals(avail, href4.getAvailableCapacity());
-	}
+    }
 }

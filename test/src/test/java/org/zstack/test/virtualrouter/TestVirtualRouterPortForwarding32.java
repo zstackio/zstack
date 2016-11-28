@@ -19,15 +19,10 @@ import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 
 /**
- * 
  * @author frank
- * 
- * @condition
- * 1. create a vm with port forwarding rule using deployer
+ * @condition 1. create a vm with port forwarding rule using deployer
  * 2. destroy virtual router
- *
- * @test
- * confirm port forwarding rule and vip both removed
+ * @test confirm port forwarding rule and vip both removed
  */
 public class TestVirtualRouterPortForwarding32 {
     Deployer deployer;
@@ -58,7 +53,7 @@ public class TestVirtualRouterPortForwarding32 {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         ApplianceVmVO apvm = dbf.listAll(ApplianceVmVO.class).get(0);

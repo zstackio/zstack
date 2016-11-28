@@ -74,8 +74,8 @@ public class TestKvmVmAlarm {
         return new File(PrometheusConstant.VM_CPU_ALERT_FILE_PATH);
     }
 
-	@Test
-	public void test() throws InterruptedException, ApiSenderException, IOException {
+    @Test
+    public void test() throws InterruptedException, ApiSenderException, IOException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
 
         APICreateVmCpuAlarmMsg msg = new APICreateVmCpuAlarmMsg();
@@ -157,7 +157,7 @@ public class TestKvmVmAlarm {
         sendAlert(vmUuid, inv);
 
         List<AlertVO> vos = dbf.listAll(AlertVO.class);
-        AlertVO vo = vos.stream().filter((it)->{
+        AlertVO vo = vos.stream().filter((it) -> {
             int count = 0;
             for (AlertLabelVO lvo : it.getLabels()) {
                 if (lvo.getValue().equals(vmUuid) || lvo.getValue().equals(VmAlarmFactory.CPU_ALARM)) {

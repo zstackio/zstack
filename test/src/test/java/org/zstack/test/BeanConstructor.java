@@ -83,11 +83,11 @@ public class BeanConstructor {
                 String r = String.format("\t<import resource=\"zstack.xml\" />");
                 contents.add(insertPos, r);
             } else {
-                for (String bean: coreBeans.split("\\n")) {
+                for (String bean : coreBeans.split("\\n")) {
                     contents.add(insertPos, bean);
                 }
             }
-            
+
             for (String c : xmls) {
                 String r = String.format("\t<import resource=\"springConfigXml/%s\" />", c);
                 contents.add(insertPos, r);

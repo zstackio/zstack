@@ -40,7 +40,7 @@ public class TestQueryVolume {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         IdentityCreator identityCreator = new IdentityCreator(api);
@@ -52,7 +52,7 @@ public class TestQueryVolume {
             QueryTestValidator.validateEQ(new APIQueryVolumeMsg(), api, APIQueryVolumeReply.class, vol, session);
             QueryTestValidator.validateRandomEQConjunction(new APIQueryVolumeMsg(), api, APIQueryVolumeReply.class, vol, session, 3);
         }
-        
+
         APIQueryVolumeMsg msg = new APIQueryVolumeMsg();
         QueryCondition c = new QueryCondition();
         c.setName("size");
@@ -61,7 +61,7 @@ public class TestQueryVolume {
         msg.getConditions().add(c);
         APIQueryVolumeReply reply = api.query(msg, APIQueryVolumeReply.class, session);
         Assert.assertEquals(2, reply.getInventories().size());
-        
+
         msg = new APIQueryVolumeMsg();
         c = new QueryCondition();
         c.setName("size");

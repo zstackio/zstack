@@ -50,7 +50,7 @@ public class TestAddKvmHost {
         cpuMgr = loader.getComponent(HostCpuOverProvisioningManager.class);
         session = api.loginAsAdmin();
     }
-    
+
     private HostInventory addHost() throws ApiSenderException {
         ClusterInventory cinv = api.listClusters(null).get(0);
         APIAddKVMHostMsg msg = new APIAddKVMHostMsg();
@@ -64,7 +64,7 @@ public class TestAddKvmHost {
         APIAddHostEvent evt = sender.send(msg, APIAddHostEvent.class);
         return evt.getInventory();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         config.connectSuccess = true;

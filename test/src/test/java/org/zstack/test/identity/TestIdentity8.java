@@ -7,18 +7,17 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.header.identity.*;
 import org.zstack.header.identity.AccountConstant.StatementEffect;
+import org.zstack.header.identity.*;
 import org.zstack.header.identity.PolicyInventory.Statement;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.BeanConstructor;
 import org.zstack.test.DBUtil;
-import org.zstack.test.search.QueryTestValidator;
 
 /**
  * 1. delete an account
- *
+ * <p>
  * confirm the resources under the account are deleted
  */
 public class TestIdentity8 {
@@ -36,7 +35,7 @@ public class TestIdentity8 {
         api = new Api();
         api.startServer();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         IdentityCreator creator = new IdentityCreator(api);

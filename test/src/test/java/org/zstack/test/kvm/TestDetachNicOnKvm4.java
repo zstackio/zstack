@@ -23,13 +23,11 @@ import org.zstack.utils.logging.CLogger;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 
  * 1. create a security group: sg and attach to l3network
  * 2. create vm1 and vm1Nic1 to sg
  * 3. detach the nic having sg rule
- *
+ * <p>
  * confirm after detaching nic, rules for vm1Nic1 were removed
- *
  */
 public class TestDetachNicOnKvm4 {
     static CLogger logger = Utils.getLogger(TestDetachNicOnKvm4.class);
@@ -50,16 +48,16 @@ public class TestDetachNicOnKvm4 {
         dbf = loader.getComponent(DatabaseFacade.class);
         sbkd = loader.getComponent(SimulatorSecurityGroupBackend.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         VmInstanceInventory vm1 = deployer.vms.get("TestVm");
         SecurityGroupInventory scinv = deployer.securityGroups.get("test");
         L3NetworkInventory l3nw1 = deployer.l3Networks.get("TestL3Network1");
         VmNicInventory vm1Nic1 = SecurityGroupTestValidator.getVmNicOnSpecificL3Network(vm1.getVmNics(), l3nw1.getUuid());
-        
+
         api.addVmNicToSecurityGroup(scinv.getUuid(), vm1Nic1.getUuid());
-        
+
         TimeUnit.MILLISECONDS.sleep(500);
         SecurityGroupRuleTO vm1Nic1TO = sbkd.getRulesOnHost(vm1.getHostUuid(), vm1Nic1.getInternalName());
         SecurityGroupTestValidator.validate(vm1Nic1TO, scinv.getRules());

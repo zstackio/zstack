@@ -1,4 +1,3 @@
-
 package org.zstack.test.deployer.schema;
 
 import javax.xml.bind.annotation.XmlAccessType;
@@ -9,9 +8,9 @@ import javax.xml.bind.annotation.XmlType;
 
 /**
  * <p>Java class for SecurityGroupRuleConfig complex type.
- * 
+ * <p>
  * <p>The following schema fragment specifies the expected content contained within this class.
- * 
+ * <p>
  * <pre>
  * &lt;complexType name="SecurityGroupRuleConfig">
  *   &lt;complexContent>
@@ -27,16 +26,14 @@ import javax.xml.bind.annotation.XmlType;
  *   &lt;/complexContent>
  * &lt;/complexType>
  * </pre>
- * 
- * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "SecurityGroupRuleConfig", propOrder = {
-    "type",
-    "protocol",
-    "startPort",
-    "endPort",
-    "allowedCidr"
+        "type",
+        "protocol",
+        "startPort",
+        "endPort",
+        "allowedCidr"
 })
 public class SecurityGroupRuleConfig {
 
@@ -50,11 +47,9 @@ public class SecurityGroupRuleConfig {
 
     /**
      * Gets the value of the type property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getType() {
         return type;
@@ -62,11 +57,9 @@ public class SecurityGroupRuleConfig {
 
     /**
      * Sets the value of the type property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setType(String value) {
         this.type = value;
@@ -74,11 +67,9 @@ public class SecurityGroupRuleConfig {
 
     /**
      * Gets the value of the protocol property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getProtocol() {
         return protocol;
@@ -86,11 +77,9 @@ public class SecurityGroupRuleConfig {
 
     /**
      * Sets the value of the protocol property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setProtocol(String value) {
         this.protocol = value;
@@ -98,11 +87,9 @@ public class SecurityGroupRuleConfig {
 
     /**
      * Gets the value of the startPort property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link Long }
-     *     
+     *
+     * @return possible object is
+     * {@link Long }
      */
     public Long getStartPort() {
         return startPort;
@@ -110,11 +97,9 @@ public class SecurityGroupRuleConfig {
 
     /**
      * Sets the value of the startPort property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link Long }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link Long }
      */
     public void setStartPort(Long value) {
         this.startPort = value;
@@ -122,11 +107,9 @@ public class SecurityGroupRuleConfig {
 
     /**
      * Gets the value of the endPort property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link Long }
-     *     
+     *
+     * @return possible object is
+     * {@link Long }
      */
     public Long getEndPort() {
         return endPort;
@@ -134,11 +117,9 @@ public class SecurityGroupRuleConfig {
 
     /**
      * Sets the value of the endPort property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link Long }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link Long }
      */
     public void setEndPort(Long value) {
         this.endPort = value;
@@ -146,11 +127,9 @@ public class SecurityGroupRuleConfig {
 
     /**
      * Gets the value of the allowedCidr property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getAllowedCidr() {
         return allowedCidr;
@@ -158,11 +137,9 @@ public class SecurityGroupRuleConfig {
 
     /**
      * Sets the value of the allowedCidr property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setAllowedCidr(String value) {
         this.allowedCidr = value;

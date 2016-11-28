@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit;
  * 1. create a data volume template
  * 2. setup creating data volume to fail
  * 3. create data volume from the template
- *
+ * <p>
  * confirm volume failed to create, and primary storage capacity is returned
  */
 public class TestCreateDataVolumeTemplate4 {
@@ -61,9 +61,9 @@ public class TestCreateDataVolumeTemplate4 {
         config = loader.getComponent(NfsPrimaryStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         api.stopVmInstance(vm.getUuid());
         VolumeInventory dataVolume = CollectionUtils.find(vm.getAllVolumes(), new Function<VolumeInventory, VolumeInventory>() {
@@ -89,5 +89,5 @@ public class TestCreateDataVolumeTemplate4 {
             s = true;
         }
         Assert.assertTrue(s);
-	}
+    }
 }

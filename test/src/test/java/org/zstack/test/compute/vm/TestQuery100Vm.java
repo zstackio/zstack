@@ -1,21 +1,21 @@
 package org.zstack.test.compute.vm;
 
 import junit.framework.Assert;
-import org.apache.commons.lang.time.StopWatch;
 import org.junit.Before;
 import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.SyncThread;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.query.QueryOp;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.APIQueryVmInstanceMsg;
+import org.zstack.header.vm.APIQueryVmInstanceReply;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
@@ -99,7 +99,7 @@ public class TestQuery100Vm {
         latch.await(10, TimeUnit.MINUTES);
 
         long qs = System.currentTimeMillis();
-        for (int i=0; i<queryTimes; i++) {
+        for (int i = 0; i < queryTimes; i++) {
             queryVm();
         }
         latch2.await(20, TimeUnit.MINUTES);
@@ -118,7 +118,7 @@ public class TestQuery100Vm {
                 TimeUnit.MILLISECONDS.toSeconds(qe - qs),
                 TimeUnit.MILLISECONDS.toSeconds(minTime),
                 TimeUnit.MILLISECONDS.toSeconds(maxTime),
-                TimeUnit.MILLISECONDS.toSeconds(totalTime/timeCost.size())
+                TimeUnit.MILLISECONDS.toSeconds(totalTime / timeCost.size())
         ));
     }
 }

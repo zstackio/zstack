@@ -32,17 +32,17 @@ public class TestDestroyVmExtensionPoint {
         dbf = loader.getComponent(DatabaseFacade.class);
         ext = loader.getComponent(VmDestroyExtension.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         VmInstanceInventory inv = api.listVmInstances(null).get(0);
-        
+
         ext.setPreventDestroy(true);
         try {
             api.destroyVmInstance(inv.getUuid());
         } catch (ApiSenderException e) {
         }
-        
+
         ext.setPreventDestroy(false);
         ext.setExpectedUuid(inv.getUuid());
         api.destroyVmInstance(inv.getUuid());

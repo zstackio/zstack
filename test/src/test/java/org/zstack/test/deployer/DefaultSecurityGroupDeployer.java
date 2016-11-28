@@ -28,7 +28,7 @@ public class DefaultSecurityGroupDeployer implements SecurityGroupDeployer<Secur
             SessionInventory session = null;
             if (sc.getAccountRef() != null) {
                 session = deployer.loginByAccountRef(sc.getAccountRef(), config);
-            } 
+            }
             if (session != null) {
                 scinv = deployer.getApi().createSecurityGroupByFullConfig(scinv, session);
             } else {

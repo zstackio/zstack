@@ -3,7 +3,8 @@ package org.zstack.test.virtualrouter;
 import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.zstack.appliancevm.*;
+import org.zstack.appliancevm.ApplianceVmFirewallProtocol;
+import org.zstack.appliancevm.ApplianceVmFirewallRuleTO;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
@@ -32,33 +33,33 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class TestVirtualRouterFirewall {
-	CLogger logger = Utils.getLogger(TestVirtualRouterFirewall.class);
-	Deployer deployer;
-	Api api;
-	ComponentLoader loader;
-	CloudBus bus;
-	DatabaseFacade dbf;
-	SessionInventory session;
-	VirtualRouterSimulatorConfig vconfig;
-	ApplianceVmSimulatorConfig aconfig;
+    CLogger logger = Utils.getLogger(TestVirtualRouterFirewall.class);
+    Deployer deployer;
+    Api api;
+    ComponentLoader loader;
+    CloudBus bus;
+    DatabaseFacade dbf;
+    SessionInventory session;
+    VirtualRouterSimulatorConfig vconfig;
+    ApplianceVmSimulatorConfig aconfig;
 
-	@Before
-	public void setUp() throws Exception {
-		DBUtil.reDeployDB();
-		WebBeanConstructor con = new WebBeanConstructor();
-		deployer = new Deployer("deployerXml/virtualRouter/startVirtualRouter.xml", con);
-		deployer.addSpringConfig("VirtualRouter.xml");
-		deployer.addSpringConfig("VirtualRouterSimulator.xml");
-		deployer.addSpringConfig("KVMRelated.xml");
-		deployer.build();
-		api = deployer.getApi();
-		loader = deployer.getComponentLoader();
-		vconfig = loader.getComponent(VirtualRouterSimulatorConfig.class);
-		aconfig = loader.getComponent(ApplianceVmSimulatorConfig.class);
-		bus = loader.getComponent(CloudBus.class);
-		dbf = loader.getComponent(DatabaseFacade.class);
-		session = api.loginAsAdmin();
-	}
+    @Before
+    public void setUp() throws Exception {
+        DBUtil.reDeployDB();
+        WebBeanConstructor con = new WebBeanConstructor();
+        deployer = new Deployer("deployerXml/virtualRouter/startVirtualRouter.xml", con);
+        deployer.addSpringConfig("VirtualRouter.xml");
+        deployer.addSpringConfig("VirtualRouterSimulator.xml");
+        deployer.addSpringConfig("KVMRelated.xml");
+        deployer.build();
+        api = deployer.getApi();
+        loader = deployer.getComponentLoader();
+        vconfig = loader.getComponent(VirtualRouterSimulatorConfig.class);
+        aconfig = loader.getComponent(ApplianceVmSimulatorConfig.class);
+        bus = loader.getComponent(CloudBus.class);
+        dbf = loader.getComponent(DatabaseFacade.class);
+        session = api.loginAsAdmin();
+    }
 
     private void hasRule(List<ApplianceVmFirewallRuleTO> tos, int startPort, ApplianceVmFirewallProtocol protocol) {
         for (ApplianceVmFirewallRuleTO r : tos) {
@@ -84,29 +85,29 @@ public class TestVirtualRouterFirewall {
         }
     }
 
-	@Test
-	public void test() throws ApiSenderException {
-		ImageInventory iminv = deployer.images.get("TestImage");
-		InstanceOfferingInventory ioinv = deployer.instanceOfferings.get("TestInstanceOffering");
-		final L3NetworkInventory l3inv = deployer.l3Networks.get("TestL3Network2");
-		APICreateVmInstanceMsg msg = new APICreateVmInstanceMsg();
-		msg.setImageUuid(iminv.getUuid());
-		msg.setInstanceOfferingUuid(ioinv.getUuid());
-		List<String> l3uuids = new ArrayList<String>();
-		l3uuids.add(l3inv.getUuid());
-		msg.setL3NetworkUuids(l3uuids);
-		msg.setName("TestVm");
-		msg.setSession(session);
-		msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
-		msg.setType(VmInstanceConstant.USER_VM_TYPE);
-		ApiSender sender = api.getApiSender();
-		sender.send(msg, APICreateVmInstanceEvent.class);
+    @Test
+    public void test() throws ApiSenderException {
+        ImageInventory iminv = deployer.images.get("TestImage");
+        InstanceOfferingInventory ioinv = deployer.instanceOfferings.get("TestInstanceOffering");
+        final L3NetworkInventory l3inv = deployer.l3Networks.get("TestL3Network2");
+        APICreateVmInstanceMsg msg = new APICreateVmInstanceMsg();
+        msg.setImageUuid(iminv.getUuid());
+        msg.setInstanceOfferingUuid(ioinv.getUuid());
+        List<String> l3uuids = new ArrayList<String>();
+        l3uuids.add(l3inv.getUuid());
+        msg.setL3NetworkUuids(l3uuids);
+        msg.setName("TestVm");
+        msg.setSession(session);
+        msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
+        msg.setType(VmInstanceConstant.USER_VM_TYPE);
+        ApiSender sender = api.getApiSender();
+        sender.send(msg, APICreateVmInstanceEvent.class);
 
         final VirtualRouterVmInventory vr = VirtualRouterVmInventory.valueOf(dbf.listAll(VirtualRouterVmVO.class).get(0));
         List<ApplianceVmFirewallRuleTO> tos = CollectionUtils.transformToList(aconfig.firewallRules, new Function<ApplianceVmFirewallRuleTO, ApplianceVmFirewallRuleTO>() {
             @Override
             public ApplianceVmFirewallRuleTO call(ApplianceVmFirewallRuleTO arg) {
-                return  arg.getNicMac().equals(vr.getManagementNic().getMac()) ? arg : null;
+                return arg.getNicMac().equals(vr.getManagementNic().getMac()) ? arg : null;
             }
         });
 
@@ -127,7 +128,7 @@ public class TestVirtualRouterFirewall {
         tos = CollectionUtils.transformToList(aconfig.firewallRules, new Function<ApplianceVmFirewallRuleTO, ApplianceVmFirewallRuleTO>() {
             @Override
             public ApplianceVmFirewallRuleTO call(ApplianceVmFirewallRuleTO arg) {
-                return  arg.getNicMac().equals(userNic.getMac()) ? arg : null;
+                return arg.getNicMac().equals(userNic.getMac()) ? arg : null;
             }
         });
 

@@ -31,12 +31,12 @@ public class TestCreateSecurityGroup3000 {
         loader = deployer.getComponentLoader();
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         long count = dbf.count(SecurityGroupVO.class);
         Assert.assertEquals(1, count);
-        for (int i=0; i<3000; i++) {
+        for (int i = 0; i < 3000; i++) {
             api.createSecurityGroup(String.format("sg-%s", i));
         }
     }

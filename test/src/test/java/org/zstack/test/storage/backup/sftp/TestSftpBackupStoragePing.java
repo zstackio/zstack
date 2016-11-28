@@ -51,7 +51,7 @@ public class TestSftpBackupStoragePing {
         session = api.loginAsAdmin();
         BackupStorageGlobalConfig.PING_INTERVAL.updateValue(1);
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         SftpBackupStorageTestHelper helper = new SftpBackupStorageTestHelper();

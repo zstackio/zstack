@@ -11,21 +11,14 @@ import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.network.l3.L3NetworkDnsVO;
 import org.zstack.header.network.l3.L3NetworkVO;
-import org.zstack.header.storage.primary.ImageCacheVO;
 import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
-import org.zstack.header.vm.*;
-import org.zstack.header.volume.VolumeInventory;
-import org.zstack.header.volume.VolumeVO;
-import org.zstack.kvm.KVMAgentCommands.MigrateVmCmd;
+import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.flat.FlatDhcpBackend.ApplyDhcpCmd;
 import org.zstack.network.service.flat.FlatDhcpBackend.DhcpInfo;
 import org.zstack.network.service.flat.FlatDhcpBackend.ReleaseDhcpCmd;
 import org.zstack.network.service.flat.FlatNetworkServiceSimulatorConfig;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
-import org.zstack.storage.primary.local.LocalStorageHostRefVO;
-import org.zstack.storage.primary.local.LocalStorageKvmBackend.CreateEmptyVolumeCmd;
-import org.zstack.storage.primary.local.LocalStorageKvmBackend.DeleteBitsCmd;
-import org.zstack.storage.primary.local.LocalStorageResourceRefVO;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 import org.zstack.test.Api;
@@ -40,11 +33,10 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /**
  * 1. migrate a vm with storage
- *
+ * <p>
  * confirm dhcp set on the dst host and removed from the src host
  */
 public class TestMevoco10 {
@@ -116,9 +108,9 @@ public class TestMevoco10 {
         Assert.assertTrue(dns.containsAll(target.dns));
         Assert.assertTrue(target.dns.containsAll(dns));
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         HostInventory host2 = deployer.hosts.get("host2");
         VmInstanceInventory vm = deployer.vms.get("TestVm");
 
@@ -135,5 +127,5 @@ public class TestMevoco10 {
         Assert.assertEquals(1, fconfig.releaseDhcpCmds.size());
         ReleaseDhcpCmd rcmd = fconfig.releaseDhcpCmds.get(0);
         checkNic(nic, rcmd.dhcp);
-	}
+    }
 }

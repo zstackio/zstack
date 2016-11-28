@@ -24,7 +24,7 @@ import org.zstack.utils.data.SizeUnit;
 
 /**
  * 1. delete a flat network
- *
+ * <p>
  * confirm the namespace is deleted
  */
 public class TestFlatNetwork4 {
@@ -68,8 +68,8 @@ public class TestFlatNetwork4 {
         session = api.loginAsAdmin();
     }
 
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         api.setTimeout(100000);
         HostInventory host = deployer.hosts.get("host1");
         fconfig.applyDhcpCmdList.clear();
@@ -83,14 +83,14 @@ public class TestFlatNetwork4 {
 
         Assert.assertEquals(2, fconfig.applyDhcpCmdList.size());
 
-        ApplyDhcpCmd cmd = fconfig.applyDhcpCmdList.stream().filter( c -> c.l3NetworkUuid.equals(nic1.getL3NetworkUuid())).findAny().get();
+        ApplyDhcpCmd cmd = fconfig.applyDhcpCmdList.stream().filter(c -> c.l3NetworkUuid.equals(nic1.getL3NetworkUuid())).findAny().get();
         Assert.assertNotNull(cmd);
         Assert.assertEquals(1, cmd.dhcp.size());
         DhcpInfo dhcp = cmd.dhcp.get(0);
         Assert.assertNotNull(dhcp);
         Assert.assertEquals(nic1.getIp(), dhcp.ip);
 
-        cmd = fconfig.applyDhcpCmdList.stream().filter( c -> c.l3NetworkUuid.equals(nic2.getL3NetworkUuid())).findAny().get();
+        cmd = fconfig.applyDhcpCmdList.stream().filter(c -> c.l3NetworkUuid.equals(nic2.getL3NetworkUuid())).findAny().get();
         Assert.assertNotNull(cmd);
         Assert.assertEquals(1, cmd.dhcp.size());
         dhcp = cmd.dhcp.get(0);

@@ -7,7 +7,6 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.allocator.HostCapacityVO;
-import org.zstack.header.vm.VmInstance;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
@@ -36,12 +35,12 @@ public class TestMigrateVmExtensionPoint {
         dbf = loader.getComponent(DatabaseFacade.class);
         ext = loader.getComponent(VmMigrateExtension.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         VmInstanceInventory inv = api.listVmInstances(null).get(0);
         String srcHost = inv.getHostUuid();
-        
+
         ext.setPreventMigrate(true);
         try {
             api.migrateVmInstance(inv.getUuid(), null);
@@ -57,7 +56,7 @@ public class TestMigrateVmExtensionPoint {
         ext.setPreventMigrate(false);
         ext.setExpectedUuid(inv.getUuid());
         inv = api.migrateVmInstance(inv.getUuid(), null);
-        
+
         Assert.assertTrue(ext.isBeforeCalled());
         Assert.assertTrue(ext.isAfterCalled());
         Assert.assertEquals(VmInstanceState.Running.toString(), inv.getState());

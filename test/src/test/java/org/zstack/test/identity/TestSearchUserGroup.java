@@ -36,9 +36,9 @@ public class TestSearchUserGroup {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
-    public void test() throws InterruptedException,ApiSenderException {
+    public void test() throws InterruptedException, ApiSenderException {
         TimeUnit.SECONDS.sleep(5);
         APISearchAccountMsg amsg = new APISearchAccountMsg();
         NOVTriple t = new NOVTriple();
@@ -48,7 +48,7 @@ public class TestSearchUserGroup {
         amsg.getNameOpValueTriples().add(t);
         String content = api.search(amsg);
         AccountInventory ainv = (AccountInventory) JSONObjectUtil.toCollection(content, ArrayList.class, AccountInventory.class).get(0);
-        
+
         SessionInventory session = api.loginByAccount(ainv.getName(), "password");
         APISearchUserGroupMsg msg = new APISearchUserGroupMsg();
         msg.setSession(session);
@@ -59,7 +59,7 @@ public class TestSearchUserGroup {
         content = api.search(msg);
         UserGroupInventory uginv = (UserGroupInventory) JSONObjectUtil.toCollection(content, ArrayList.class, UserGroupInventory.class).get(0);
         Assert.assertEquals("group1", uginv.getName());
-        
+
         APIGetUserGroupMsg gmsg = new APIGetUserGroupMsg();
         gmsg.setUuid(uginv.getUuid());
         String res = api.getInventory(gmsg);

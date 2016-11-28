@@ -30,12 +30,12 @@ import java.util.concurrent.TimeUnit;
 /**
  * 1. add 2 images to sftp backup storage
  * 2. directly delete image1
- *
+ * <p>
  * confirm the capacity returned to the backup storage
- *
+ * <p>
  * 3. delete image2
  * 4. expunge image2
- *
+ * <p>
  * confirm the capacity returned to the backup storage
  */
 public class TestSftpBackupStorageExpungeImage {
@@ -66,7 +66,7 @@ public class TestSftpBackupStorageExpungeImage {
         gcf = loader.getComponent(GlobalConfigFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         BackupStorageInventory sftp = deployer.backupStorages.get("sftp1");

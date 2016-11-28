@@ -27,7 +27,7 @@ public class TestRestAsyncCallback1 {
     int num = 200;
     CountDownLatch latch = new CountDownLatch(num);
     volatile List<Boolean> success = new ArrayList<Boolean>(num);
-    
+
     @Before
     public void setUp() throws Exception {
         wbean = new WebBeanConstructor();
@@ -70,21 +70,21 @@ public class TestRestAsyncCallback1 {
             public Class<String> getReturnClass() {
                 return String.class;
             }
-            
+
         }, TimeUnit.SECONDS, 5);
     }
-    
+
     @Test
     public void test() throws InterruptedException {
-        for (int i=0; i<num; i++) {
+        for (int i = 0; i < num; i++) {
             call();
         }
-        
+
         latch.await(2, TimeUnit.MINUTES);
         Assert.assertEquals(num, success.size());
         for (Boolean r : success) {
             Assert.assertTrue(r);
         }
     }
-    
+
 }

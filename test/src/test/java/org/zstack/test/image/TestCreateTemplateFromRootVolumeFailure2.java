@@ -9,7 +9,6 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.storage.backup.BackupStorageInventory;
-import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.zone.ZoneInventory;
 import org.zstack.simulator.storage.primary.nfs.NfsPrimaryStorageSimulatorConfig;
@@ -24,7 +23,7 @@ import org.zstack.utils.logging.CLogger;
 
 /**
  * 1. detach backup storage
- *
+ * <p>
  * confirm creating image fails
  */
 public class TestCreateTemplateFromRootVolumeFailure2 {
@@ -51,24 +50,24 @@ public class TestCreateTemplateFromRootVolumeFailure2 {
         config = loader.getComponent(NfsPrimaryStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test(expected = ApiSenderException.class)
-	public void test() throws ApiSenderException {
-	    VmInstanceInventory vm = deployer.vms.get("TestVm");
-	    api.stopVmInstance(vm.getUuid());
-	    String rootVolumeUuid = vm.getRootVolumeUuid();
+
+    @Test(expected = ApiSenderException.class)
+    public void test() throws ApiSenderException {
+        VmInstanceInventory vm = deployer.vms.get("TestVm");
+        api.stopVmInstance(vm.getUuid());
+        String rootVolumeUuid = vm.getRootVolumeUuid();
 
         ZoneInventory zone = deployer.zones.get("Zone1");
-	    BackupStorageInventory sftp = deployer.backupStorages.get("sftp");
+        BackupStorageInventory sftp = deployer.backupStorages.get("sftp");
         api.detachBackupStorage(sftp.getUuid(), zone.getUuid());
-	    try {
-	        api.createTemplateFromRootVolume("testImage", rootVolumeUuid, sftp.getUuid());
-	    } catch (ApiSenderException e) {
+        try {
+            api.createTemplateFromRootVolume("testImage", rootVolumeUuid, sftp.getUuid());
+        } catch (ApiSenderException e) {
             long count = dbf.count(ImageVO.class);
             Assert.assertEquals(1, count);
             throw e;
-	    }
-	    
-	}
+        }
+
+    }
 
 }

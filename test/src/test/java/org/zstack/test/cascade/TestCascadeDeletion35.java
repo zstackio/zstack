@@ -7,23 +7,12 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
-import org.zstack.header.cluster.ClusterVO;
-import org.zstack.header.configuration.DiskOfferingInventory;
-import org.zstack.header.configuration.DiskOfferingVO;
-import org.zstack.header.configuration.InstanceOfferingInventory;
-import org.zstack.header.configuration.InstanceOfferingVO;
-import org.zstack.header.host.HostVO;
-import org.zstack.header.image.ImageVO;
-import org.zstack.header.network.l2.L2NetworkVO;
-import org.zstack.header.network.l3.*;
-import org.zstack.header.storage.backup.BackupStorageInventory;
-import org.zstack.header.storage.backup.BackupStorageVO;
-import org.zstack.header.storage.primary.PrimaryStorageVO;
+import org.zstack.header.network.l3.IpRangeInventory;
+import org.zstack.header.network.l3.IpRangeVO;
+import org.zstack.header.network.l3.IpRangeVO_;
+import org.zstack.header.network.l3.UsedIpVO;
 import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.vm.VmInstanceState;
-import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmNicInventory;
-import org.zstack.header.zone.ZoneVO;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
@@ -32,11 +21,10 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
 /**
- *
  * 1. delete ip range
  * 2. add a new ip range
  * 3. start vm
- *
+ * <p>
  * confirm the nic on deleted IP range gets a new IP, but other nics keep old IPs
  */
 public class TestCascadeDeletion35 {

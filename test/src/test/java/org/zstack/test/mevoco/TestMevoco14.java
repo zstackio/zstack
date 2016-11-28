@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * 1. set the IP range with 49 IP
  * 2. concurrently create 50 vm
- *
+ * <p>
  * confirm only 49 vms created successfully
  * confirm the 49 vms don't occupy the DHCP server IP
  */
@@ -95,8 +95,8 @@ public class TestMevoco14 {
         }
     }
 
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         final BackupStorageInventory sftp = deployer.backupStorages.get("sftp");
         final ImageInventory img = new ImageInventory();
         img.setName("image");
@@ -105,7 +105,7 @@ public class TestMevoco14 {
         img.setFormat("qcow2");
         img.setUrl("http://test.img");
 
-        for (int i=0; i<num; i++) {
+        for (int i = 0; i < num; i++) {
             createVm(img, sftp.getUuid());
         }
 

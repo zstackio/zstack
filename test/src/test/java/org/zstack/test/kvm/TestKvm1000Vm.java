@@ -16,7 +16,8 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.network.l2.L2NetworkInventory;
-import org.zstack.header.network.l3.*;
+import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.network.l3.L3NetworkVO_;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
@@ -33,40 +34,40 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 public class TestKvm1000Vm {
-	Deployer deployer;
-	Api api;
-	ComponentLoader loader;
-	CloudBus bus;
-	DatabaseFacade dbf;
-	SessionInventory session;
-	VirtualRouterSimulatorConfig vconfig;
-	KVMSimulatorConfig kconfig;
+    Deployer deployer;
+    Api api;
+    ComponentLoader loader;
+    CloudBus bus;
+    DatabaseFacade dbf;
+    SessionInventory session;
+    VirtualRouterSimulatorConfig vconfig;
+    KVMSimulatorConfig kconfig;
     ThreadFacade thdf;
     int total = 500000;
     int syncLevel = 1000;
     int timeout = 1200;
 
-	@Before
-	public void setUp() throws Exception {
-		DBUtil.reDeployDB();
-		WebBeanConstructor con = new WebBeanConstructor();
-		deployer = new Deployer("deployerXml/kvm/TestKvm1000Vm.xml", con);
-		deployer.addSpringConfig("VirtualRouter.xml");
-		deployer.addSpringConfig("VirtualRouterSimulator.xml");
-		deployer.addSpringConfig("KVMRelated.xml");
-		deployer.build();
-		api = deployer.getApi();
-		loader = deployer.getComponentLoader();
-		vconfig = loader.getComponent(VirtualRouterSimulatorConfig.class);
-		kconfig = loader.getComponent(KVMSimulatorConfig.class);
-		bus = loader.getComponent(CloudBus.class);
-		dbf = loader.getComponent(DatabaseFacade.class);
+    @Before
+    public void setUp() throws Exception {
+        DBUtil.reDeployDB();
+        WebBeanConstructor con = new WebBeanConstructor();
+        deployer = new Deployer("deployerXml/kvm/TestKvm1000Vm.xml", con);
+        deployer.addSpringConfig("VirtualRouter.xml");
+        deployer.addSpringConfig("VirtualRouterSimulator.xml");
+        deployer.addSpringConfig("KVMRelated.xml");
+        deployer.build();
+        api = deployer.getApi();
+        loader = deployer.getComponentLoader();
+        vconfig = loader.getComponent(VirtualRouterSimulatorConfig.class);
+        kconfig = loader.getComponent(KVMSimulatorConfig.class);
+        bus = loader.getComponent(CloudBus.class);
+        dbf = loader.getComponent(DatabaseFacade.class);
         thdf = loader.getComponent(ThreadFacade.class);
-		session = api.loginAsAdmin();
-	}
+        session = api.loginAsAdmin();
+    }
 
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         CoreGlobalProperty.VM_TRACER_ON = false;
         L2NetworkInventory l2 = deployer.l2Networks.get("TestL2Network");
         SimpleQuery<L3NetworkVO> l3q = dbf.createQuery(L3NetworkVO.class);
@@ -87,7 +88,7 @@ public class TestKvm1000Vm {
         final Random random = new Random();
 
         final CountDownLatch latch = new CountDownLatch(total);
-        for (int i=0; i<total; i++) {
+        for (int i = 0; i < total; i++) {
             final int finalI = i;
             thdf.syncSubmit(new SyncTask<Object>() {
                 @Override
@@ -127,6 +128,6 @@ public class TestKvm1000Vm {
         SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
         q.add(VmInstanceVO_.state, Op.EQ, VmInstanceState.Running);
         long count = q.count();
-        Assert.assertEquals(total+3, count);
-	}
+        Assert.assertEquals(total + 3, count);
+    }
 }

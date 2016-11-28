@@ -14,11 +14,10 @@ import org.zstack.test.DBUtil;
 import org.zstack.test.deployer.Deployer;
 
 /**
- *
  * 1. create vm
  * 2. delete cluster the vm is on
  * 3. start vm
- *
+ * <p>
  * confirm vm can start success
  */
 public class TestCascadeDeletion19 {

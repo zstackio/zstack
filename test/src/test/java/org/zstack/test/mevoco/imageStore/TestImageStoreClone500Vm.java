@@ -49,7 +49,7 @@ public class TestImageStoreClone500Vm {
         int numOfClonedVm = 0;
         String[] names = new String[numOfVm];
         for (int idx = 0; idx < numOfVm; ++idx) {
-            names[idx] = String.format("cloned-%d", idx+1);
+            names[idx] = String.format("cloned-%d", idx + 1);
         }
 
         try {

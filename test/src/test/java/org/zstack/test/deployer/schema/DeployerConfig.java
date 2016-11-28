@@ -1,19 +1,18 @@
-
 package org.zstack.test.deployer.schema;
 
-import java.util.ArrayList;
-import java.util.List;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
+import java.util.ArrayList;
+import java.util.List;
 
 
 /**
  * <p>Java class for anonymous complex type.
- * 
+ * <p>
  * <p>The following schema fragment specifies the expected content contained within this class.
- * 
+ * <p>
  * <pre>
  * &lt;complexType>
  *   &lt;complexContent>
@@ -36,23 +35,21 @@ import javax.xml.bind.annotation.XmlType;
  *   &lt;/complexContent>
  * &lt;/complexType>
  * </pre>
- * 
- * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "", propOrder = {
-    "zones",
-    "securityGroups",
-    "portForwardings",
-    "eips",
-    "lbs",
-    "backupStorages",
-    "images",
-    "vm",
-    "instanceOfferings",
-    "diskOffering",
-    "account",
-    "dns"
+        "zones",
+        "securityGroups",
+        "portForwardings",
+        "eips",
+        "lbs",
+        "backupStorages",
+        "images",
+        "vm",
+        "instanceOfferings",
+        "diskOffering",
+        "account",
+        "dns"
 })
 @XmlRootElement(name = "deployerConfig")
 public class DeployerConfig {
@@ -72,11 +69,9 @@ public class DeployerConfig {
 
     /**
      * Gets the value of the zones property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link ZoneUnion }
-     *     
+     *
+     * @return possible object is
+     * {@link ZoneUnion }
      */
     public ZoneUnion getZones() {
         return zones;
@@ -84,11 +79,9 @@ public class DeployerConfig {
 
     /**
      * Sets the value of the zones property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link ZoneUnion }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link ZoneUnion }
      */
     public void setZones(ZoneUnion value) {
         this.zones = value;
@@ -96,11 +89,9 @@ public class DeployerConfig {
 
     /**
      * Gets the value of the securityGroups property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link SecurityGroupUnion }
-     *     
+     *
+     * @return possible object is
+     * {@link SecurityGroupUnion }
      */
     public SecurityGroupUnion getSecurityGroups() {
         return securityGroups;
@@ -108,11 +99,9 @@ public class DeployerConfig {
 
     /**
      * Sets the value of the securityGroups property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link SecurityGroupUnion }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link SecurityGroupUnion }
      */
     public void setSecurityGroups(SecurityGroupUnion value) {
         this.securityGroups = value;
@@ -120,11 +109,9 @@ public class DeployerConfig {
 
     /**
      * Gets the value of the portForwardings property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link PortForwardingUnion }
-     *     
+     *
+     * @return possible object is
+     * {@link PortForwardingUnion }
      */
     public PortForwardingUnion getPortForwardings() {
         return portForwardings;
@@ -132,11 +119,9 @@ public class DeployerConfig {
 
     /**
      * Sets the value of the portForwardings property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link PortForwardingUnion }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link PortForwardingUnion }
      */
     public void setPortForwardings(PortForwardingUnion value) {
         this.portForwardings = value;
@@ -144,11 +129,9 @@ public class DeployerConfig {
 
     /**
      * Gets the value of the eips property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link EipUnion }
-     *     
+     *
+     * @return possible object is
+     * {@link EipUnion }
      */
     public EipUnion getEips() {
         return eips;
@@ -156,11 +139,9 @@ public class DeployerConfig {
 
     /**
      * Sets the value of the eips property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link EipUnion }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link EipUnion }
      */
     public void setEips(EipUnion value) {
         this.eips = value;
@@ -168,11 +149,9 @@ public class DeployerConfig {
 
     /**
      * Gets the value of the lbs property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link LbUnion }
-     *     
+     *
+     * @return possible object is
+     * {@link LbUnion }
      */
     public LbUnion getLbs() {
         return lbs;
@@ -180,11 +159,9 @@ public class DeployerConfig {
 
     /**
      * Sets the value of the lbs property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link LbUnion }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link LbUnion }
      */
     public void setLbs(LbUnion value) {
         this.lbs = value;
@@ -192,11 +169,9 @@ public class DeployerConfig {
 
     /**
      * Gets the value of the backupStorages property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link BackupStorageUnion }
-     *     
+     *
+     * @return possible object is
+     * {@link BackupStorageUnion }
      */
     public BackupStorageUnion getBackupStorages() {
         return backupStorages;
@@ -204,11 +179,9 @@ public class DeployerConfig {
 
     /**
      * Sets the value of the backupStorages property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link BackupStorageUnion }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link BackupStorageUnion }
      */
     public void setBackupStorages(BackupStorageUnion value) {
         this.backupStorages = value;
@@ -216,11 +189,9 @@ public class DeployerConfig {
 
     /**
      * Gets the value of the images property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link ImageUnion }
-     *     
+     *
+     * @return possible object is
+     * {@link ImageUnion }
      */
     public ImageUnion getImages() {
         return images;
@@ -228,11 +199,9 @@ public class DeployerConfig {
 
     /**
      * Sets the value of the images property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link ImageUnion }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link ImageUnion }
      */
     public void setImages(ImageUnion value) {
         this.images = value;
@@ -240,11 +209,9 @@ public class DeployerConfig {
 
     /**
      * Gets the value of the vm property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link VmUnion }
-     *     
+     *
+     * @return possible object is
+     * {@link VmUnion }
      */
     public VmUnion getVm() {
         return vm;
@@ -252,11 +219,9 @@ public class DeployerConfig {
 
     /**
      * Sets the value of the vm property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link VmUnion }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link VmUnion }
      */
     public void setVm(VmUnion value) {
         this.vm = value;
@@ -264,11 +229,9 @@ public class DeployerConfig {
 
     /**
      * Gets the value of the instanceOfferings property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link InstanceOfferingUnion }
-     *     
+     *
+     * @return possible object is
+     * {@link InstanceOfferingUnion }
      */
     public InstanceOfferingUnion getInstanceOfferings() {
         return instanceOfferings;
@@ -276,11 +239,9 @@ public class DeployerConfig {
 
     /**
      * Sets the value of the instanceOfferings property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link InstanceOfferingUnion }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link InstanceOfferingUnion }
      */
     public void setInstanceOfferings(InstanceOfferingUnion value) {
         this.instanceOfferings = value;
@@ -288,25 +249,23 @@ public class DeployerConfig {
 
     /**
      * Gets the value of the diskOffering property.
-     * 
+     * <p>
      * <p>
      * This accessor method returns a reference to the live list,
      * not a snapshot. Therefore any modification you make to the
      * returned list will be present inside the JAXB object.
      * This is why there is not a <CODE>set</CODE> method for the diskOffering property.
-     * 
+     * <p>
      * <p>
      * For example, to add a new item, do as follows:
      * <pre>
      *    getDiskOffering().add(newItem);
      * </pre>
-     * 
-     * 
+     * <p>
+     * <p>
      * <p>
      * Objects of the following type(s) are allowed in the list
      * {@link DiskOfferingConfig }
-     * 
-     * 
      */
     public List<DiskOfferingConfig> getDiskOffering() {
         if (diskOffering == null) {
@@ -317,25 +276,23 @@ public class DeployerConfig {
 
     /**
      * Gets the value of the account property.
-     * 
+     * <p>
      * <p>
      * This accessor method returns a reference to the live list,
      * not a snapshot. Therefore any modification you make to the
      * returned list will be present inside the JAXB object.
      * This is why there is not a <CODE>set</CODE> method for the account property.
-     * 
+     * <p>
      * <p>
      * For example, to add a new item, do as follows:
      * <pre>
      *    getAccount().add(newItem);
      * </pre>
-     * 
-     * 
+     * <p>
+     * <p>
      * <p>
      * Objects of the following type(s) are allowed in the list
      * {@link AccountConfig }
-     * 
-     * 
      */
     public List<AccountConfig> getAccount() {
         if (account == null) {
@@ -346,25 +303,23 @@ public class DeployerConfig {
 
     /**
      * Gets the value of the dns property.
-     * 
+     * <p>
      * <p>
      * This accessor method returns a reference to the live list,
      * not a snapshot. Therefore any modification you make to the
      * returned list will be present inside the JAXB object.
      * This is why there is not a <CODE>set</CODE> method for the dns property.
-     * 
+     * <p>
      * <p>
      * For example, to add a new item, do as follows:
      * <pre>
      *    getDns().add(newItem);
      * </pre>
-     * 
-     * 
+     * <p>
+     * <p>
      * <p>
      * Objects of the following type(s) are allowed in the list
      * {@link DnsConfig }
-     * 
-     * 
      */
     public List<DnsConfig> getDns() {
         if (dns == null) {

@@ -18,7 +18,7 @@ public class CascadeTestHelper {
         Assert.assertEquals(String.format("there are still records in DB for entity class[%s]", entityClass.getName()), 0, count);
     }
 
-    public void zeroInDatabase(Class...entityClass) {
+    public void zeroInDatabase(Class... entityClass) {
         for (Class ec : entityClass) {
             zeroInDatabase(ec);
         }

@@ -17,7 +17,6 @@ import org.zstack.header.image.ImageConstant;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.query.QueryCondition;
 import org.zstack.header.storage.backup.BackupStorageInventory;
-import org.zstack.header.storage.primary.ImageCacheVO;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.*;
@@ -35,22 +34,21 @@ import static org.zstack.utils.CollectionDSL.list;
 /**
  * 1. create a user
  * 2. assign permissions of allow of creating/changing/updating/attaching/detaching/deleting volume to the user
- *
+ * <p>
  * confirm the user can do those operations
- *
+ * <p>
  * 3. assign permissions of deny of creating/changing/updating/attaching/detaching/deleting volume to the user
- *
+ * <p>
  * confirm the user cannot do those operations
- *
+ * <p>
  * 4. create a user added in a group
  * 5. assign permissions of allow of creating/changing/updating/attaching/detaching/deleting volume to the group
- *
+ * <p>
  * confirm the user can do those operations
- *
+ * <p>
  * 6. assign permissions of deny of creating/changing/updating/attaching/detaching/deleting volume to the user
- *
+ * <p>
  * confirm the user cannot do those operations
- *
  */
 public class TestPolicyForVolume {
     Deployer deployer;
@@ -71,7 +69,7 @@ public class TestPolicyForVolume {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         DiskOfferingInventory dov = deployer.diskOfferings.get("TestRootDiskOffering");

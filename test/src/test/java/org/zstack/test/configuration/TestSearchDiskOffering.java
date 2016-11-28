@@ -39,7 +39,7 @@ public class TestSearchDiskOffering {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         TimeUnit.SECONDS.sleep(5);

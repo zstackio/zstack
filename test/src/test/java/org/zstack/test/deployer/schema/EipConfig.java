@@ -1,4 +1,3 @@
-
 package org.zstack.test.deployer.schema;
 
 import javax.xml.bind.annotation.XmlAccessType;
@@ -8,9 +7,9 @@ import javax.xml.bind.annotation.XmlType;
 
 /**
  * <p>Java class for EipConfig complex type.
- * 
+ * <p>
  * <p>The following schema fragment specifies the expected content contained within this class.
- * 
+ * <p>
  * <pre>
  * &lt;complexType name="EipConfig">
  *   &lt;complexContent>
@@ -27,17 +26,15 @@ import javax.xml.bind.annotation.XmlType;
  *   &lt;/complexContent>
  * &lt;/complexType>
  * </pre>
- * 
- * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "EipConfig", propOrder = {
-    "accountRef",
-    "name",
-    "description",
-    "publicL3NetworkRef",
-    "privateL3NetworkRef",
-    "vmRef"
+        "accountRef",
+        "name",
+        "description",
+        "publicL3NetworkRef",
+        "privateL3NetworkRef",
+        "vmRef"
 })
 public class EipConfig {
 
@@ -50,11 +47,9 @@ public class EipConfig {
 
     /**
      * Gets the value of the accountRef property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getAccountRef() {
         return accountRef;
@@ -62,11 +57,9 @@ public class EipConfig {
 
     /**
      * Sets the value of the accountRef property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setAccountRef(String value) {
         this.accountRef = value;
@@ -74,11 +67,9 @@ public class EipConfig {
 
     /**
      * Gets the value of the name property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getName() {
         return name;
@@ -86,11 +77,9 @@ public class EipConfig {
 
     /**
      * Sets the value of the name property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setName(String value) {
         this.name = value;
@@ -98,11 +87,9 @@ public class EipConfig {
 
     /**
      * Gets the value of the description property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getDescription() {
         return description;
@@ -110,11 +97,9 @@ public class EipConfig {
 
     /**
      * Sets the value of the description property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setDescription(String value) {
         this.description = value;
@@ -122,11 +107,9 @@ public class EipConfig {
 
     /**
      * Gets the value of the publicL3NetworkRef property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getPublicL3NetworkRef() {
         return publicL3NetworkRef;
@@ -134,11 +117,9 @@ public class EipConfig {
 
     /**
      * Sets the value of the publicL3NetworkRef property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setPublicL3NetworkRef(String value) {
         this.publicL3NetworkRef = value;
@@ -146,11 +127,9 @@ public class EipConfig {
 
     /**
      * Gets the value of the privateL3NetworkRef property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getPrivateL3NetworkRef() {
         return privateL3NetworkRef;
@@ -158,11 +137,9 @@ public class EipConfig {
 
     /**
      * Sets the value of the privateL3NetworkRef property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setPrivateL3NetworkRef(String value) {
         this.privateL3NetworkRef = value;
@@ -170,11 +147,9 @@ public class EipConfig {
 
     /**
      * Gets the value of the vmRef property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getVmRef() {
         return vmRef;
@@ -182,11 +157,9 @@ public class EipConfig {
 
     /**
      * Sets the value of the vmRef property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setVmRef(String value) {
         this.vmRef = value;

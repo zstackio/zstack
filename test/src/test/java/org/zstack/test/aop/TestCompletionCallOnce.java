@@ -32,12 +32,12 @@ public class TestCompletionCallOnce {
         Completion completion = new Completion() {
             @Override
             public void success() {
-                success ++;
+                success++;
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
-                fail ++;
+                fail++;
             }
         };
 

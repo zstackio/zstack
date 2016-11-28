@@ -29,19 +29,13 @@ import java.util.Map;
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
- * 
  * @author Frank
- * 
- * @condition
- * 
- * 1. deploy a vm using non-admin account
+ * @condition 1. deploy a vm using non-admin account
  * 2. query vm on each queryable field of VmInstanceInventory using non-admin account
- * 
- * @test
- * the vm can be correctly found
- *
+ * @test the vm can be correctly found
+ * <p>
  * 3. test APIQueryAccountResourceRefMsg
- *
+ * <p>
  * confirm work
  */
 public class TestQueryVm {
@@ -61,7 +55,7 @@ public class TestQueryVm {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         SessionInventory session = api.loginByAccount("test", "password");

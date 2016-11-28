@@ -61,7 +61,7 @@ public class TestAddImage {
         iinv.setFormat("simulator");
         iinv.setUrl("http://zstack.org/download/win7.qcow2");
         iinv = api.addImage(iinv, inv.getUuid());
-        
+
         ImageVO ivo = dbf.findByUuid(iinv.getUuid(), ImageVO.class);
         Assert.assertNotNull(ivo);
     }

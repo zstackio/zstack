@@ -64,17 +64,17 @@ public class TestSchedulerCreateVolumeSnapshot {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         String volUuid = vm.getRootVolumeUuid();
         Integer interval = 5;
-        String type="simple";
-        Long startDate=0L;
+        String type = "simple";
+        Long startDate = 0L;
         String schedulerUuid = api.createVolumeSnapshotScheduler(volUuid, session, type, startDate, interval, null);
         TimeUnit.SECONDS.sleep(2);
         long record = dbf.count(VolumeSnapshotVO.class);
-        Assert.assertEquals(1,record);
+        Assert.assertEquals(1, record);
 
         //test change volume status
         api.deleteScheduler(schedulerUuid, null);
         long record0 = dbf.count(SchedulerVO.class);
-        Assert.assertEquals(0,record0);
+        Assert.assertEquals(0, record0);
         DiskOfferingInventory dinv = new DiskOfferingInventory();
         dinv.setDiskSize(SizeUnit.GIGABYTE.toByte(10));
         dinv.setName("Test");
@@ -94,22 +94,22 @@ public class TestSchedulerCreateVolumeSnapshot {
         //destroy volume
         TimeUnit.SECONDS.sleep(2);
         long record1 = dbf.count(VolumeSnapshotVO.class);
-        Assert.assertEquals(2,record1);
+        Assert.assertEquals(2, record1);
         api.deleteDataVolume(vinv.getUuid());
         TimeUnit.SECONDS.sleep(4);
         long record2 = dbf.count(VolumeSnapshotVO.class);
-        Assert.assertEquals(2,record2);
+        Assert.assertEquals(2, record2);
 
         //expunge volume
         api.expungeDataVolume(vinv.getUuid(), null);
         TimeUnit.SECONDS.sleep(3);
         long record4 = dbf.count(VolumeSnapshotVO.class);
         //only leave the first root volume record
-        Assert.assertEquals(1,record4);
+        Assert.assertEquals(1, record4);
 
         // check schedulerVO
         long record5 = dbf.count(SchedulerVO.class);
-        Assert.assertEquals(0,record5);
+        Assert.assertEquals(0, record5);
 
     }
 

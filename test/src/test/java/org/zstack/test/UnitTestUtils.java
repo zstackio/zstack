@@ -13,7 +13,7 @@ public class UnitTestUtils {
             ShellUtils.runVerbose(String.format("mvn test -Dtest=%s", clazz.getSimpleName()), System.getProperty("user.dir"), false);
         }
     }
-    
+
     public static void runTestCase(Class<?> clazz) {
         runTestCase(clazz, null);
     }
@@ -25,7 +25,7 @@ public class UnitTestUtils {
                 return;
             } catch (Throwable t) {
                 if (catchedException.isAssignableFrom(t.getClass())) {
-                    retries --;
+                    retries--;
                     try {
                         TimeUnit.SECONDS.sleep(interval);
                     } catch (InterruptedException e) {

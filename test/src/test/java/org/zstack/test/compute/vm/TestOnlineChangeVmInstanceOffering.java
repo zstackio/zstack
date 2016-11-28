@@ -1,18 +1,13 @@
 package org.zstack.test.compute.vm;
 
 import junit.framework.Assert;
-import org.hamcrest.core.Is;
 import org.junit.Before;
 import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.allocator.HostCapacityVO;
 import org.zstack.header.configuration.InstanceOfferingInventory;
-import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.kvm.KVMAgentCommands;
-import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
@@ -44,12 +39,12 @@ public class TestOnlineChangeVmInstanceOffering {
         loader = deployer.getComponentLoader();
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
-       //config = loader.getComponent(KVMSimulatorConfig.class);
+        //config = loader.getComponent(KVMSimulatorConfig.class);
 
     }
 
     @Test
-    public void test()throws ApiSenderException{
+    public void test() throws ApiSenderException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
 
         InstanceOfferingInventory inv = new InstanceOfferingInventory();
@@ -74,12 +69,12 @@ public class TestOnlineChangeVmInstanceOffering {
         vm = api.stopVmInstance(vm.getUuid());
         vm = api.startVmInstance(vm.getUuid());
 
-        Assert.assertEquals(inv.getCpuNum(), (int)vm.getCpuNum());
-        Assert.assertEquals(inv.getCpuSpeed(), (long)vm.getCpuSpeed());
-        Assert.assertEquals(inv.getMemorySize(), (long)vm.getMemorySize());
+        Assert.assertEquals(inv.getCpuNum(), (int) vm.getCpuNum());
+        Assert.assertEquals(inv.getCpuSpeed(), (long) vm.getCpuSpeed());
+        Assert.assertEquals(inv.getMemorySize(), (long) vm.getMemorySize());
         vm = api.changeInstanceOffering(vm.getUuid(), inv1.getUuid());
-        Assert.assertEquals(inv1.getCpuNum(), (int)vm.getCpuNum());
-        Assert.assertEquals(inv1.getCpuSpeed(), (long)vm.getCpuSpeed());
-        Assert.assertEquals(inv1.getMemorySize(), (long)vm.getMemorySize());
+        Assert.assertEquals(inv1.getCpuNum(), (int) vm.getCpuNum());
+        Assert.assertEquals(inv1.getCpuSpeed(), (long) vm.getCpuSpeed());
+        Assert.assertEquals(inv1.getMemorySize(), (long) vm.getMemorySize());
     }
 }

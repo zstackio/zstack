@@ -11,18 +11,19 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
+
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class FakeJob2 implements Job {
     CLogger logger = Utils.getLogger(FakeJob2.class);
-    
+
     @JobContext
     private long index;
     @Autowired
     private FakeJobConfig fl;
-    
+
     public FakeJob2() {
     }
-    
+
     @Override
     public void run(ReturnValueCompletion<Object> complete) {
         try {

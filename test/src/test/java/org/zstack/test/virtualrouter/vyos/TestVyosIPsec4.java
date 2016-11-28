@@ -6,23 +6,12 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.ha.HaSystemTags;
-import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.ipsec.IPsecConnectionInventory;
-import org.zstack.ipsec.IPsecConnectionVO;
-import org.zstack.ipsec.IPsecConstants;
-import org.zstack.ipsec.IPsecPeerCidrVO;
-import org.zstack.ipsec.vyos.VyosIPsecBackend.CreateIPsecConnectionCmd;
-import org.zstack.ipsec.vyos.VyosIPsecBackend.DeleteIPsecConnectionCmd;
-import org.zstack.ipsec.vyos.VyosIPsecBackend.IPsecInfo;
 import org.zstack.ipsec.vyos.VyosIPsecSimulatorConfig;
 import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.vip.VipVO;
-import org.zstack.network.service.virtualrouter.VirtualRouterVmVO;
-import org.zstack.network.service.virtualrouter.vyos.VyosConstants;
 import org.zstack.simulator.appliancevm.ApplianceVmSimulatorConfig;
 import org.zstack.simulator.virtualrouter.VirtualRouterSimulatorConfig;
 import org.zstack.test.Api;
@@ -30,7 +19,6 @@ import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.utils.DebugUtils;
 
 import java.util.List;
 
@@ -39,7 +27,7 @@ import static java.util.Arrays.asList;
 /**
  * 1. create an ipsec with deleteVipOnFailure system tag set
  * 2. make the ipsec fails to create
- *
+ * <p>
  * confirm the vip is deleted
  */
 public class TestVyosIPsec4 {

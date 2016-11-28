@@ -10,7 +10,6 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.network.l2.L2NetworkInventory;
-import org.zstack.kvm.KVMGlobalConfig;
 import org.zstack.kvm.KVMHostFactory;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.test.Api;
@@ -51,7 +50,7 @@ public class TestKvmAttachL2Network6 {
         session = api.loginAsAdmin();
         HostGlobalConfig.PING_HOST_INTERVAL.updateValue(1);
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         L2NetworkInventory l2 = deployer.l2Networks.get("TestL2Network");

@@ -23,16 +23,11 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 
  * @author frank
- * 
- * @condition
- * 1. create two security groups with some rules
+ * @condition 1. create two security groups with some rules
  * 2. create vm1 and add in both security groups
  * 3. create vm2 and add in the second security group
- *
- * @test
- * confirm rules on vm1 are still correct
+ * @test confirm rules on vm1 are still correct
  */
 public class TestSecurityGroupRuleInTwoGroup {
     static CLogger logger = Utils.getLogger(TestSecurityGroupRuleInTwoGroup.class);
@@ -53,7 +48,7 @@ public class TestSecurityGroupRuleInTwoGroup {
         dbf = loader.getComponent(DatabaseFacade.class);
         sbkd = loader.getComponent(SimulatorSecurityGroupBackend.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         SecurityGroupInventory scinv = deployer.securityGroups.get("test");
@@ -61,11 +56,11 @@ public class TestSecurityGroupRuleInTwoGroup {
         VmNicInventory vm1Nic = vm1.getVmNics().get(0);
 
         api.addVmNicToSecurityGroup(scinv.getUuid(), vm1Nic.getUuid());
-        
+
         SecurityGroupInventory scinv2 = deployer.securityGroups.get("test1");
         api.addVmNicToSecurityGroup(scinv2.getUuid(), vm1Nic.getUuid());
         TimeUnit.MILLISECONDS.sleep(500);
-        
+
         VmInstanceInventory vm2 = deployer.vms.get("TestVm1");
         VmNicInventory vm2Nic = vm2.getVmNics().get(0);
         api.addVmNicToSecurityGroup(scinv.getUuid(), vm2Nic.getUuid());
@@ -75,7 +70,7 @@ public class TestSecurityGroupRuleInTwoGroup {
         List<SecurityGroupRuleInventory> expectedRules = new ArrayList<SecurityGroupRuleInventory>();
         expectedRules.addAll(scinv.getRules());
         expectedRules.addAll(scinv2.getRules());
-        
+
         SecurityGroupTestValidator.validate(vmto, expectedRules);
     }
 }

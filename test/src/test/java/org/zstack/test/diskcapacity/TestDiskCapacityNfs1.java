@@ -114,8 +114,8 @@ public class TestDiskCapacityNfs1 {
         }
     }
 
-	@Test
-	public void test() throws ApiSenderException {
+    @Test
+    public void test() throws ApiSenderException {
         AddImage addImage = new AddImage();
         addImage.size = SizeUnit.GIGABYTE.toByte(10);
         addImage.actualSize = SizeUnit.GIGABYTE.toByte(1);
@@ -148,5 +148,5 @@ public class TestDiskCapacityNfs1 {
         VolumeInventory vol = api.syncVolumeSize(root.getUuid(), null);
         Assert.assertEquals(volumeSize, vol.getSize());
         Assert.assertEquals(volumeActualSize, vol.getActualSize().longValue());
-	}
+    }
 }

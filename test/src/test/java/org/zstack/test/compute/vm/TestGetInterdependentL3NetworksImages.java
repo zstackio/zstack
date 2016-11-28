@@ -62,9 +62,9 @@ public class TestGetInterdependentL3NetworksImages {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         ZoneInventory zone = deployer.zones.get("Zone1");
         ImageInventory imgOnSftp = deployer.images.get("TestImage");
         ImageInventory imgOnCeph = deployer.images.get("TestImage1");
@@ -83,15 +83,15 @@ public class TestGetInterdependentL3NetworksImages {
 
         // network 1, 2, 4
         Assert.assertTrue(reply.getInventories().stream().filter(o -> {
-            L3NetworkInventory l3 = (L3NetworkInventory)o;
+            L3NetworkInventory l3 = (L3NetworkInventory) o;
             return l3.getUuid().equals(l31.getUuid());
         }).findAny().isPresent());
         Assert.assertTrue(reply.getInventories().stream().filter(o -> {
-            L3NetworkInventory l3 = (L3NetworkInventory)o;
+            L3NetworkInventory l3 = (L3NetworkInventory) o;
             return l3.getUuid().equals(l32.getUuid());
         }).findAny().isPresent());
         Assert.assertTrue(reply.getInventories().stream().filter(o -> {
-            L3NetworkInventory l3 = (L3NetworkInventory)o;
+            L3NetworkInventory l3 = (L3NetworkInventory) o;
             return l3.getUuid().equals(l34.getUuid());
         }).findAny().isPresent());
 
@@ -104,11 +104,11 @@ public class TestGetInterdependentL3NetworksImages {
         Assert.assertEquals(2, reply.getInventories().size());
         // only network 1, 3
         Assert.assertTrue(reply.getInventories().stream().filter(o -> {
-            L3NetworkInventory l3 = (L3NetworkInventory)o;
+            L3NetworkInventory l3 = (L3NetworkInventory) o;
             return l3.getUuid().equals(l33.getUuid());
         }).findAny().isPresent());
         Assert.assertTrue(reply.getInventories().stream().filter(o -> {
-            L3NetworkInventory l3 = (L3NetworkInventory)o;
+            L3NetworkInventory l3 = (L3NetworkInventory) o;
             return l3.getUuid().equals(l31.getUuid());
         }).findAny().isPresent());
 

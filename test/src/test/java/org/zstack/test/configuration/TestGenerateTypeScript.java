@@ -7,7 +7,6 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.BeanConstructor;
-import org.zstack.test.image.TestAddImage;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -25,7 +24,7 @@ public class TestGenerateTypeScript {
         api = new Api();
         api.startServer();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         api.generateTypeScript();

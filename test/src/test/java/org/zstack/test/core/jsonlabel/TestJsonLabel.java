@@ -21,7 +21,7 @@ import static java.util.Arrays.asList;
 public class TestJsonLabel {
     ComponentLoader loader;
     DatabaseFacade dbf;
-    
+
     @Before
     public void setUp() throws Exception {
         BeanConstructor con = new BeanConstructor();
@@ -50,7 +50,7 @@ public class TestJsonLabel {
 
         int num = 3;
         CountDownLatch latch = new CountDownLatch(num);
-        for (int i=0; i<num; i++) {
+        for (int i = 0; i < num; i++) {
             new Runnable() {
                 @Override
                 @AsyncThread
@@ -68,7 +68,7 @@ public class TestJsonLabel {
         Assert.assertEquals("v2", new JsonLabel().get("k2", String.class));
 
         CountDownLatch latch2 = new CountDownLatch(num);
-        for (int i=0; i<num; i++) {
+        for (int i = 0; i < num; i++) {
             new Runnable() {
                 @Override
                 @AsyncThread

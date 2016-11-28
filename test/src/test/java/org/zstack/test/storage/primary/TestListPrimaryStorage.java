@@ -20,6 +20,7 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.List;
+
 public class TestListPrimaryStorage {
     CLogger logger = Utils.getLogger(TestListPrimaryStorage.class);
     Api api;
@@ -49,7 +50,7 @@ public class TestListPrimaryStorage {
         sp.setTotalCapacity(SizeUnit.TERABYTE.toByte(10));
         sp.setAvailableCapacity(sp.getTotalCapacity());
         sp.setUrl("nfs://simulator/primary/");
-    	ZoneInventory zone = api.createZones(1).get(0);
+        ZoneInventory zone = api.createZones(1).get(0);
         sp.setZoneUuid(zone.getUuid());
         api.createSimulatoPrimaryStorage(10, sp);
         List<PrimaryStorageInventory> invs = api.listPrimaryStorage(null);
@@ -61,7 +62,7 @@ public class TestListPrimaryStorage {
             }
         });
         invs = api.listPrimaryStorage(uuids);
-        for (int i=0; i<uuids.size(); i++) {
+        for (int i = 0; i < uuids.size(); i++) {
             Assert.assertEquals(uuids.get(i), invs.get(i).getUuid());
         }
     }

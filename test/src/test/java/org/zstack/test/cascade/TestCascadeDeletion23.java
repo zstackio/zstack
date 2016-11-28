@@ -8,7 +8,6 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
-import org.zstack.header.vm.VmInstance;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
@@ -18,10 +17,9 @@ import org.zstack.test.DBUtil;
 import org.zstack.test.deployer.Deployer;
 
 /**
- *
  * 1. create vm
  * 2. detach primary storage where vm's root volume is on
- *
+ * <p>
  * confirm vm is stopped
  */
 public class TestCascadeDeletion23 {

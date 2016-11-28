@@ -8,25 +8,25 @@ import org.zstack.kvm.KVMHostInventory;
 import org.zstack.kvm.KVMStartVmExtensionPoint;
 
 public class KVMStartVmExtension implements KVMStartVmExtensionPoint {
-	public boolean beforeCalled = false;
-	public boolean successCalled = false;
-	public boolean failedCalled = false;
-	
-	@Override
-	public void beforeStartVmOnKvm(KVMHostInventory host,
-			VmInstanceSpec order, StartVmCmd cmd) throws KVMException {
-		beforeCalled = true;
-	}
+    public boolean beforeCalled = false;
+    public boolean successCalled = false;
+    public boolean failedCalled = false;
 
-	@Override
-	public void startVmOnKvmSuccess(KVMHostInventory host, VmInstanceSpec order) {
-		successCalled = true;
-	}
+    @Override
+    public void beforeStartVmOnKvm(KVMHostInventory host,
+                                   VmInstanceSpec order, StartVmCmd cmd) throws KVMException {
+        beforeCalled = true;
+    }
 
-	@Override
-	public void startVmOnKvmFailed(KVMHostInventory host,
-			VmInstanceSpec order, ErrorCode err) {
-		failedCalled = true;
-	}
+    @Override
+    public void startVmOnKvmSuccess(KVMHostInventory host, VmInstanceSpec order) {
+        successCalled = true;
+    }
+
+    @Override
+    public void startVmOnKvmFailed(KVMHostInventory host,
+                                   VmInstanceSpec order, ErrorCode err) {
+        failedCalled = true;
+    }
 
 }

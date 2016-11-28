@@ -7,7 +7,6 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.allocator.APIGetCpuMemoryCapacityReply;
-import org.zstack.header.allocator.HostCapacityVO;
 import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.test.Api;
@@ -18,7 +17,7 @@ import org.zstack.test.deployer.Deployer;
 /**
  * 1. change instance offering of the vm
  * 2. stop/start the vm
- *
+ * <p>
  * confirm the cpu/memory capacity of the system changed
  */
 public class TestChangeVmInstanceOffering1 {
@@ -38,7 +37,7 @@ public class TestChangeVmInstanceOffering1 {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
@@ -52,7 +51,7 @@ public class TestChangeVmInstanceOffering1 {
         api.startVmInstance(vm.getUuid());
 
         APIGetCpuMemoryCapacityReply cap2 = api.retrieveHostCapacityByAll();
-        Assert.assertTrue(String.format("CPU: cap1: %s != cap2: %s", cap1.getAvailableCpu(), cap2.getAvailableCpu()) ,cap1.getAvailableCpu() != cap2.getAvailableCpu());
+        Assert.assertTrue(String.format("CPU: cap1: %s != cap2: %s", cap1.getAvailableCpu(), cap2.getAvailableCpu()), cap1.getAvailableCpu() != cap2.getAvailableCpu());
         Assert.assertTrue(String.format("MEM: cap1: %s != cap2: %s", cap1.getAvailableMemory(), cap2.getAvailableMemory()), cap1.getAvailableMemory() != cap2.getAvailableMemory());
     }
 }

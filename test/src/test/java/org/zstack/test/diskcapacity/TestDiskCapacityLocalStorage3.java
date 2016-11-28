@@ -11,7 +11,9 @@ import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
-import org.zstack.header.image.*;
+import org.zstack.header.image.APIAddImageEvent;
+import org.zstack.header.image.APIAddImageMsg;
+import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.AbstractBeforeDeliveryMessageInterceptor;
 import org.zstack.header.message.Message;
 import org.zstack.header.network.l3.L3NetworkInventory;
@@ -43,7 +45,7 @@ import static org.zstack.utils.CollectionDSL.list;
  * 3. create a vm from the image
  * 4. create an image from the root volume
  * 5. create data volume and attach to the vm
- *
+ * <p>
  * confirm the size of image/volume are correct
  * confirm the local storage capacity correct
  */
@@ -154,8 +156,8 @@ public class TestDiskCapacityLocalStorage3 {
         }
     }
 
-	@Test
-	public void test() throws ApiSenderException {
+    @Test
+    public void test() throws ApiSenderException {
         AddImage addImage = new AddImage();
         addImage.size = SizeUnit.GIGABYTE.toByte(10);
         addImage.actualSize = SizeUnit.GIGABYTE.toByte(1);
@@ -229,5 +231,5 @@ public class TestDiskCapacityLocalStorage3 {
 
         BackupStorageVO bsAfter2 = dbf.findByUuid(sftp.getUuid(), BackupStorageVO.class);
         Assert.assertEquals(dataVolumeActualSize, bsAfter.getAvailableCapacity() - bsAfter2.getAvailableCapacity());
-	}
+    }
 }

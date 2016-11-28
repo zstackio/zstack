@@ -4,11 +4,12 @@ import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.zstack.core.Platform;
-import org.zstack.core.cloudbus.CloudBusIN;
 import org.zstack.core.componentloader.ComponentLoader;
-import org.zstack.core.keyvalue.*;
+import org.zstack.core.keyvalue.KeyValueEntityProxy;
+import org.zstack.core.keyvalue.KeyValueFacade;
+import org.zstack.core.keyvalue.KeyValueQuery;
+import org.zstack.core.keyvalue.Op;
 import org.zstack.header.core.keyvalue.KeyValueEntity;
-import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.test.BeanConstructor;
 import org.zstack.test.DBUtil;
 

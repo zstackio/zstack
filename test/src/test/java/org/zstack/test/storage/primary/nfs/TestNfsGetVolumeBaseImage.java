@@ -50,9 +50,9 @@ public class TestNfsGetVolumeBaseImage {
         volumeUpgradeExtension = loader.getComponent(VolumeUpgradeExtension.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         String imageUuid = vm.getRootVolume().getRootImageUuid();
         config.getVolumeBaseImagePaths.put(vm.getRootVolumeUuid(), String.format("/%s.qcow2", imageUuid));
@@ -68,6 +68,6 @@ public class TestNfsGetVolumeBaseImage {
         TimeUnit.SECONDS.sleep(3);
         vol = dbf.findByUuid(vm.getRootVolumeUuid(), VolumeVO.class);
         Assert.assertEquals(imageUuid, vol.getRootImageUuid());
-	}
+    }
 
 }

@@ -29,13 +29,11 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
 /**
- * 
  * 1. create a vm with 2 EIPs
  * 2. detach one eip
- *
+ * <p>
  * confirm the eip detached
  * confirm the another eip is still there
- *
  */
 @Deprecated
 public class TestFlatNetworkEip15 {
@@ -68,7 +66,7 @@ public class TestFlatNetworkEip15 {
         session = api.loginAsAdmin();
     }
 
-    private String getBridgeName(String l3uuid)  {
+    private String getBridgeName(String l3uuid) {
         L3NetworkVO l3 = dbf.findByUuid(l3uuid, L3NetworkVO.class);
         return KVMSystemTags.L2_BRIDGE_NAME.getTokenByResourceUuid(l3.getL2NetworkUuid(), KVMSystemTags.L2_BRIDGE_NAME_TOKEN);
     }

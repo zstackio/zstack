@@ -11,26 +11,21 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.network.service.eip.EipInventory;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.network.service.virtualrouter.eip.EipTO;
+import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.simulator.virtualrouter.VirtualRouterSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.simulator.kvm.KVMSimulatorConfig;
 
 /**
- * 
  * @author frank
- * 
- * @condition
- * 1. create a vm
+ * @condition 1. create a vm
  * 2. set eip
  * 3. stop vr
  * 4. start vr
- *
- * @test
- * confirm eip works
+ * @test confirm eip works
  */
 public class TestVirtualRouterEip10 {
     Deployer deployer;
@@ -61,7 +56,7 @@ public class TestVirtualRouterEip10 {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         ApplianceVmVO apvm = dbf.listAll(ApplianceVmVO.class).get(0);

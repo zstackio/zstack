@@ -25,8 +25,8 @@ import static org.zstack.utils.CollectionDSL.map;
 
 /**
  * 1.reserve ZoneTag.HOST_RESERVED_MEMORY_CAPACITY, ClusterTag.HOST_RESERVED_MEMORY_CAPACITY, HostTag.RESERVED_MEMORY_CAPACITY, KvmGlobalConfig.RESERVED_MEMORY_CAPACITY
- *   to a small value
- *
+ * to a small value
+ * <p>
  * confirm vm creation succeeds
  */
 public class TestReservedHostCapacity8 {
@@ -60,7 +60,7 @@ public class TestReservedHostCapacity8 {
         TagInventory ctag = ClusterSystemTags.HOST_RESERVED_MEMORY_CAPACITY.createTag(cluster.getUuid(), map(e("capacity", "1k")));
         TagInventory htag = HostSystemTags.RESERVED_MEMORY_CAPACITY.createTag(host.getUuid(), map(e("capacity", "1k")));
 
-        L3NetworkInventory l3  = deployer.l3Networks.get("TestL3Network1");
+        L3NetworkInventory l3 = deployer.l3Networks.get("TestL3Network1");
         InstanceOfferingInventory instanceOffering = deployer.instanceOfferings.get("TestInstanceOffering");
         ImageInventory imageInventory = deployer.images.get("TestImage");
 

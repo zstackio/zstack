@@ -16,6 +16,7 @@ import org.zstack.test.BeanConstructor;
 import org.zstack.test.DBUtil;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+
 public class TestHostMaintenanceAndDelete {
     CLogger logger = Utils.getLogger(TestChangeHostState.class);
     Api api;

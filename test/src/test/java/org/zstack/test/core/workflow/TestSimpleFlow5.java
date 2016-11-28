@@ -2,10 +2,10 @@ package org.zstack.test.core.workflow;
 
 import junit.framework.Assert;
 import org.junit.Test;
-import org.zstack.header.core.workflow.FlowTrigger;
-import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.core.workflow.WorkFlowException;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 

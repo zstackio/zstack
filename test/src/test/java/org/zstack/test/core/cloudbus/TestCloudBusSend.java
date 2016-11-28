@@ -19,10 +19,10 @@ public class TestCloudBusSend {
     CountDownLatch latch = new CountDownLatch(1);
     boolean isSuccess = false;
     Service serv;
-    
+
     public static class HelloWorldMsg extends Message {
     }
-    
+
     class FakeService extends AbstractService {
         @Override
         public boolean start() {
@@ -50,9 +50,9 @@ public class TestCloudBusSend {
         public String getId() {
             return this.getClass().getCanonicalName();
         }
-        
+
     }
-    
+
     @Before
     public void setUp() throws Exception {
         BeanConstructor con = new BeanConstructor();

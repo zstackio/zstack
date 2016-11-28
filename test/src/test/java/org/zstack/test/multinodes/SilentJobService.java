@@ -29,7 +29,7 @@ public class SilentJobService extends AbstractService {
         if (msg instanceof SilentJobMsg) {
             SilentJobMsg smsg = (SilentJobMsg) msg;
             List<String> uuids = new ArrayList<String>();
-            for (int i=0; i<smsg.getJobNum(); i++) {
+            for (int i = 0; i < smsg.getJobNum(); i++) {
                 SilentJob job = null;
                 if (smsg.isRestartable()) {
                     job = new RestartableSilentJob();

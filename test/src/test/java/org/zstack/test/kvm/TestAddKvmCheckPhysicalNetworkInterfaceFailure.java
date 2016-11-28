@@ -44,7 +44,7 @@ public class TestAddKvmCheckPhysicalNetworkInterfaceFailure {
         config = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
+
     private HostInventory addHost() throws ApiSenderException {
         config.connectSuccess = true;
         config.connectException = false;
@@ -63,8 +63,8 @@ public class TestAddKvmCheckPhysicalNetworkInterfaceFailure {
         APIAddHostEvent evt = sender.send(msg, APIAddHostEvent.class);
         return evt.getInventory();
     }
-    
-    @Test(expected=ApiSenderException.class)
+
+    @Test(expected = ApiSenderException.class)
     public void test() throws ApiSenderException {
         config.checkPhysicalInterfaceSuccess = false;
         config.checkPhysicalInterfaceException = false;

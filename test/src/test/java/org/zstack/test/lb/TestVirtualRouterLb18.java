@@ -7,18 +7,12 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.identity.SessionInventory;
-import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.query.QueryOp;
-import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.vm.VmNicInventory;
-import org.zstack.network.service.lb.*;
-import org.zstack.network.service.vip.VipInventory;
+import org.zstack.network.service.lb.LoadBalancerInventory;
+import org.zstack.network.service.lb.LoadBalancerListenerVO;
+import org.zstack.network.service.lb.LoadBalancerListenerVmNicRefVO;
+import org.zstack.network.service.lb.LoadBalancerVO;
 import org.zstack.network.service.vip.VipVO;
-import org.zstack.network.service.virtualrouter.APIQueryVirtualRouterVmMsg;
-import org.zstack.network.service.virtualrouter.APIQueryVirtualRouterVmReply;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.VipTO;
-import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.LbTO;
-import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.RefreshLbCmd;
 import org.zstack.simulator.appliancevm.ApplianceVmSimulatorConfig;
 import org.zstack.simulator.virtualrouter.VirtualRouterSimulatorConfig;
 import org.zstack.test.Api;
@@ -28,13 +22,12 @@ import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 
 /**
- * 
  * @author frank
- * 
- * 1. create a lb
- * 2. delete the vip
- *
- * confirm the lb deleted
+ *         <p>
+ *         1. create a lb
+ *         2. delete the vip
+ *         <p>
+ *         confirm the lb deleted
  */
 public class TestVirtualRouterLb18 {
     Deployer deployer;
@@ -65,7 +58,7 @@ public class TestVirtualRouterLb18 {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         vconfig.removedVips.clear();

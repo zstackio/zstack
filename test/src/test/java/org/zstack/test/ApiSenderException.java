@@ -18,7 +18,7 @@ public class ApiSenderException extends Exception {
 
         return error.toString();
     }
-    
+
     public ErrorCode getError() {
         return error;
     }

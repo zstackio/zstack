@@ -44,13 +44,13 @@ public class TestDestroyVmOnKvmExtensionPoint {
         ext = loader.getComponent(KVMDestroyVmExtension.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
-	    VmInstanceInventory vm = deployer.vms.get("TestVm");
-	    api.destroyVmInstance(vm.getUuid());
-	    Assert.assertTrue(ext.beforeCalled);
-	    Assert.assertTrue(ext.successCalled);
-	    Assert.assertFalse(ext.failCalled);
-	}
+
+    @Test
+    public void test() throws ApiSenderException {
+        VmInstanceInventory vm = deployer.vms.get("TestVm");
+        api.destroyVmInstance(vm.getUuid());
+        Assert.assertTrue(ext.beforeCalled);
+        Assert.assertTrue(ext.successCalled);
+        Assert.assertFalse(ext.failCalled);
+    }
 }

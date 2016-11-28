@@ -7,13 +7,10 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.identity.SessionInventory;
-import org.zstack.header.image.ImageInventory;
-import org.zstack.header.image.ImageStatus;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.storage.backup.BackupStorageInventory;
 import org.zstack.header.storage.backup.BackupStorageStateEvent;
 import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.volume.VolumeVO;
 import org.zstack.simulator.storage.backup.sftp.SftpBackupStorageSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
@@ -29,7 +26,7 @@ import java.util.Arrays;
 /**
  * 1. create image from root volume on two backup storage
  * 2. disable sftp, sftp1
- *
+ * <p>
  * confirm creation fails
  */
 public class TestCreateTemplateFromRootVolumeFailure4 {
@@ -56,14 +53,14 @@ public class TestCreateTemplateFromRootVolumeFailure4 {
         config = loader.getComponent(SftpBackupStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test(expected = ApiSenderException.class)
-	public void test() throws ApiSenderException {
-	    VmInstanceInventory vm = deployer.vms.get("TestVm");
-	    api.stopVmInstance(vm.getUuid());
-	    String rootVolumeUuid = vm.getRootVolumeUuid();
 
-	    BackupStorageInventory sftp = deployer.backupStorages.get("sftp");
+    @Test(expected = ApiSenderException.class)
+    public void test() throws ApiSenderException {
+        VmInstanceInventory vm = deployer.vms.get("TestVm");
+        api.stopVmInstance(vm.getUuid());
+        String rootVolumeUuid = vm.getRootVolumeUuid();
+
+        BackupStorageInventory sftp = deployer.backupStorages.get("sftp");
         BackupStorageInventory sftp1 = deployer.backupStorages.get("sftp1");
         api.changeBackupStorageState(sftp.getUuid(), BackupStorageStateEvent.disable);
         api.changeBackupStorageState(sftp1.getUuid(), BackupStorageStateEvent.disable);
@@ -74,6 +71,6 @@ public class TestCreateTemplateFromRootVolumeFailure4 {
             Assert.assertEquals(1, count);
             throw e;
         }
-	}
+    }
 
 }

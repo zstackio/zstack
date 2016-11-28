@@ -30,7 +30,7 @@ import org.zstack.utils.logging.CLogger;
  * 2. create a KVM cluster
  * 3. attach nfs to the cluster
  * 4. add a KVM host to the cluster
- *
+ * <p>
  * confirm the primary storage connected
  */
 public class TestNfsPrimaryStorageStatus {
@@ -57,9 +57,9 @@ public class TestNfsPrimaryStorageStatus {
         config = loader.getComponent(NfsPrimaryStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         ZoneInventory zone = deployer.zones.get("Zone1");
 
         PrimaryStorageInventory nfs = new PrimaryStorageInventory();

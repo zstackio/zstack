@@ -8,22 +8,23 @@ import org.zstack.core.job.JobContext;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class FakeJob implements Job {
     CLogger logger = Utils.getLogger(FakeJob.class);
-    
+
     @JobContext
     private long index;
     @Autowired
     private FakeJobConfig fl;
-    
+
     private FakeJob() {
     }
-    
+
     public FakeJob(long index) {
         this.index = index;
     }
-    
+
     @Override
     public void run(ReturnValueCompletion<Object> complete) {
         try {

@@ -62,7 +62,7 @@ public class UserVmDeployer implements VmDeployer<UserVmConfig> {
                 }
                 creator.zoneUuid = zinv.getUuid();
             }
-            
+
             if (vc.getClusterRef() != null) {
                 ClusterInventory cinv = deployer.clusters.get(vc.getClusterRef());
                 if (cinv == null) {

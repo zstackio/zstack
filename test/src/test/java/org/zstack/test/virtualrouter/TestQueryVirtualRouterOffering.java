@@ -6,7 +6,6 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.configuration.APICreateInstanceOfferingEvent;
 import org.zstack.header.configuration.InstanceOfferingInventory;
-import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.zone.ZoneInventory;

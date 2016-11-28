@@ -87,7 +87,7 @@ public class TestDesignatedHostAllocationStrategy4 {
 
     @Test
     public void test() throws ApiSenderException {
-        L3NetworkInventory l3  = deployer.l3Networks.get("l3Network1");
+        L3NetworkInventory l3 = deployer.l3Networks.get("l3Network1");
         InstanceOfferingInventory instanceOffering = deployer.instanceOfferings.get("instanceOffering512M512HZ");
         ImageInventory imageInventory = deployer.images.get("image1");
         HostInventory host = deployer.hosts.get("host1");

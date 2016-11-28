@@ -13,32 +13,33 @@ import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.zone.ZoneInventory;
 import org.zstack.network.service.virtualrouter.VirtualRouterOfferingInventory;
 import org.zstack.network.service.virtualrouter.VirtualRouterOfferingVO;
-import org.zstack.test.*;
+import org.zstack.test.Api;
+import org.zstack.test.ApiSenderException;
+import org.zstack.test.DBUtil;
+import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.test.identity.IdentityCreator;
-import org.zstack.utils.SizeUtils;
 import org.zstack.utils.data.SizeUnit;
 
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
  * 1. update the only vr offering to non-default by admin
- *
+ * <p>
  * confirm the offering is still the default
- *
+ * <p>
  * 2. create a default vr offering by a normal account
- *
+ * <p>
  * confirm failure
- *
+ * <p>
  * 3. create a non-default vr offering by a normal account
  * 4. update the non-default vr offering to the default one
- *
+ * <p>
  * confirm failure
- *
+ * <p>
  * 5. create another default vr offering by the admin
- *
+ * <p>
  * confirm success
- *
  */
 public class TestUpdateVirtualRouterOffering {
     Deployer deployer;
@@ -58,9 +59,10 @@ public class TestUpdateVirtualRouterOffering {
         loader = deployer.getComponentLoader();
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-	@Test
-	public void test() throws ApiSenderException {
-		InstanceOfferingInventory iinv = deployer.instanceOfferings.get("virtualRouterOffering");
+
+    @Test
+    public void test() throws ApiSenderException {
+        InstanceOfferingInventory iinv = deployer.instanceOfferings.get("virtualRouterOffering");
 
         VirtualRouterOfferingInventory vroffering = VirtualRouterOfferingInventory.valueOf(dbf.findByUuid(iinv.getUuid(), VirtualRouterOfferingVO.class));
         vroffering.setDefault(false);
@@ -123,5 +125,5 @@ public class TestUpdateVirtualRouterOffering {
 
         VirtualRouterOfferingVO old = dbf.findByUuid(vroffering.getUuid(), VirtualRouterOfferingVO.class);
         Assert.assertFalse(old.isDefault());
-	}
+    }
 }

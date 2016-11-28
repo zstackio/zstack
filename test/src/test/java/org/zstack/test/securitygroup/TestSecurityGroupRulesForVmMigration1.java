@@ -26,16 +26,11 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 
  * @author frank
- * 
- * @condition
- * 1. create vm with sg rules
+ * @condition 1. create vm with sg rules
  * 2. migrate vm to another host
  * 3. make vm migration fail
- *
- * @test
- * confirm rules on vm on previous host are recovered
+ * @test confirm rules on vm on previous host are recovered
  * confirm rules on dest host are cleaned up
  */
 public class TestSecurityGroupRulesForVmMigration1 {
@@ -59,7 +54,7 @@ public class TestSecurityGroupRulesForVmMigration1 {
         sbkd = loader.getComponent(SimulatorSecurityGroupBackend.class);
         config = loader.getComponent(SimulatorConfig.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         HostInventory host2 = deployer.hosts.get("host2");

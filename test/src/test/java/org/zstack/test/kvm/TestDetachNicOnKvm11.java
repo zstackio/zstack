@@ -28,7 +28,7 @@ import org.zstack.utils.network.NetworkUtils;
 /**
  * 1. set static ip to a vm nic
  * 2. detach the nic
- *
+ * <p>
  * confirm static ip tag is removed
  */
 public class TestDetachNicOnKvm11 {
@@ -55,9 +55,9 @@ public class TestDetachNicOnKvm11 {
         config = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         final L3NetworkInventory l3 = deployer.l3Networks.get("TestL3Network1");
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         VmNicInventory nic = CollectionUtils.find(vm.getVmNics(), new Function<VmNicInventory, VmNicInventory>() {

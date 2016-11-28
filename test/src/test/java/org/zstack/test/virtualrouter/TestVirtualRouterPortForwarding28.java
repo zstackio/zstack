@@ -7,14 +7,9 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.identity.SessionInventory;
-import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.network.service.portforwarding.PortForwardingRuleInventory;
 import org.zstack.network.service.portforwarding.PortForwardingRuleState;
 import org.zstack.network.service.portforwarding.PortForwardingRuleStateEvent;
-import org.zstack.network.service.vip.VipVO;
-import org.zstack.network.service.virtualrouter.portforwarding.PortForwardingRuleTO;
-import org.zstack.network.service.virtualrouter.portforwarding.VirtualRouterPortForwardingRuleRefVO;
-import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipVO;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.simulator.virtualrouter.VirtualRouterSimulatorConfig;
 import org.zstack.test.Api;
@@ -24,14 +19,9 @@ import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 
 /**
- * 
  * @author frank
- * 
- * @condition
- * 1. change port forwarding rule state
- *
- * @test
- * confirm state change success
+ * @condition 1. change port forwarding rule state
+ * @test confirm state change success
  */
 public class TestVirtualRouterPortForwarding28 {
     Deployer deployer;
@@ -62,7 +52,7 @@ public class TestVirtualRouterPortForwarding28 {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         PortForwardingRuleInventory pfRule1 = deployer.portForwardingRules.get("pfRule1");

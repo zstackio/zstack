@@ -15,7 +15,7 @@ import org.zstack.test.deployer.Deployer;
 
 /**
  * 1. attach another l2 to cluster that already has a l2 having the same physical interface attached
- *
+ * <p>
  * confirm attach fail
  */
 public class TestAttachL2NetworkToCluster1 {
@@ -35,7 +35,7 @@ public class TestAttachL2NetworkToCluster1 {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test(expected = ApiSenderException.class)
     public void test() throws ApiSenderException {
         ZoneInventory zone = deployer.zones.get("TestZone");

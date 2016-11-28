@@ -36,7 +36,7 @@ public class TestAttachVolumeToVm3 {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         SimpleQuery<DiskOfferingVO> dq = dbf.createQuery(DiskOfferingVO.class);
@@ -45,7 +45,7 @@ public class TestAttachVolumeToVm3 {
         VolumeInventory vinv = api.createDataVolume("TestData", dvo.getUuid());
         VmInstanceInventory vminv = api.listVmInstances(null).get(0);
         api.stopVmInstance(vminv.getUuid());
-        
+
         vinv = api.attachVolumeToVm(vminv.getUuid(), vinv.getUuid());
         Assert.assertTrue(vinv.isAttached());
         Assert.assertEquals(VolumeStatus.Ready.toString(), vinv.getStatus());

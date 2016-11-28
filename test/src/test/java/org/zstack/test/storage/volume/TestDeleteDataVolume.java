@@ -1,7 +1,6 @@
 package org.zstack.test.storage.volume;
 
 import junit.framework.Assert;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
@@ -23,8 +22,8 @@ import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.logging.CLogger;
 
 public class TestDeleteDataVolume {
-	CLogger logger = Utils.getLogger(TestDeleteDataVolume.class);
-	Api api;
+    CLogger logger = Utils.getLogger(TestDeleteDataVolume.class);
+    Api api;
     ComponentLoader loader;
     DatabaseFacade dbf;
     CloudBus bus;
@@ -55,7 +54,7 @@ public class TestDeleteDataVolume {
         Assert.assertEquals(VolumeStatus.NotInstantiated.toString(), vinv.getStatus());
         Assert.assertEquals(VolumeType.Data.toString(), vinv.getType());
         Assert.assertFalse(vinv.isAttached());
-        
+
         api.deleteDataVolume(vinv.getUuid());
         VolumeVO vo = dbf.findByUuid(vinv.getUuid(), VolumeVO.class);
         Assert.assertNull(vo);

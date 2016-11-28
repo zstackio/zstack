@@ -25,7 +25,7 @@ public class TestJobReturnValue {
     boolean success = true;
     int retGot = 0;
     CountDownLatch latch = new CountDownLatch(num);
-    
+
     @Before
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
@@ -42,7 +42,7 @@ public class TestJobReturnValue {
             @Override
             public void success(Long returnValue) {
                 logger.debug(String.format("get return value[%s]", returnValue));
-                retGot ++;
+                retGot++;
                 if (returnValue != index) {
                     logger.debug(String.format("expect %s but %s", index, returnValue));
                     success = false;
@@ -58,10 +58,10 @@ public class TestJobReturnValue {
             }
         }, Long.class);
     }
-    
+
     @Test
     public void test() throws InterruptedException {
-        for (long i=0; i<num; i++) {
+        for (long i = 0; i < num; i++) {
             startJob(i);
         }
 

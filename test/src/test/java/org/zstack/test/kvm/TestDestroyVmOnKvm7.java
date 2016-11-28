@@ -34,15 +34,15 @@ import java.util.concurrent.TimeUnit;
 /**
  * 1. stop the vm
  * 2. make the host disconnected
- *
+ * <p>
  * confirm the vm is unknown
- *
+ * <p>
  * 3. destroy the vm
- *
+ * <p>
  * confirm the vm destroyed successfully
- *
+ * <p>
  * 4. delete the host
- *
+ * <p>
  * confirm the vm GC job is done
  */
 public class TestDestroyVmOnKvm7 {
@@ -71,12 +71,12 @@ public class TestDestroyVmOnKvm7 {
         nconfig = loader.getComponent(NfsPrimaryStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicy.Direct.toString());
         NfsPrimaryStorageGlobalProperty.BITS_DELETION_GC_INTERVAL = 1;
-	    VmInstanceInventory vm = deployer.vms.get("TestVm");
+        VmInstanceInventory vm = deployer.vms.get("TestVm");
 
         HostInventory host = deployer.hosts.get("host1");
         HostGlobalConfig.PING_HOST_INTERVAL.updateValue(1);
@@ -86,7 +86,7 @@ public class TestDestroyVmOnKvm7 {
         VmInstanceVO vmvo = dbf.findByUuid(vm.getUuid(), VmInstanceVO.class);
         Assert.assertEquals(VmInstanceState.Running, vmvo.getState());
 
-	    api.destroyVmInstance(vm.getUuid());
+        api.destroyVmInstance(vm.getUuid());
 
         Assert.assertNull(config.destroyedVmUuid);
 
@@ -98,5 +98,5 @@ public class TestDestroyVmOnKvm7 {
         for (GarbageCollectorVO vo : vos) {
             org.junit.Assert.assertEquals(GCStatus.Done, vo.getStatus());
         }
-	}
+    }
 }

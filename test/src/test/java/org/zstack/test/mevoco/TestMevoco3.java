@@ -9,8 +9,6 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.vm.VmNicInventory;
-import org.zstack.header.volume.VolumeInventory;
 import org.zstack.mevoco.MevocoConstants;
 import org.zstack.mevoco.MevocoGlobalConfig;
 import org.zstack.network.service.flat.FlatNetworkServiceSimulatorConfig;
@@ -28,9 +26,8 @@ import org.zstack.utils.logging.CLogger;
 
 /**
  * 1. create a vm with mevoco host allocator strategy
- *
+ * <p>
  * confirm the vm created with the strategy
- *
  */
 public class TestMevoco3 {
     CLogger logger = Utils.getLogger(TestMevoco3.class);
@@ -70,9 +67,9 @@ public class TestMevoco3 {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         Assert.assertEquals(MevocoConstants.MEVOCO_HOST_ALLOCATOR_STRATEGY, vm.getAllocatorStrategy());
 

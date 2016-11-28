@@ -8,7 +8,7 @@ public class ClusterDeleteExtension implements ClusterDeleteExtensionPoint {
     private boolean preventDelete = false;
     private boolean beforeCalled = false;
     private boolean afterCalled = false;
-    
+
     @Override
     public void preDeleteCluster(ClusterInventory inventory) throws ClusterException {
         if (this.preventDelete) {

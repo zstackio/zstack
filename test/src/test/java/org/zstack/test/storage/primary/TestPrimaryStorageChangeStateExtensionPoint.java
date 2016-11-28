@@ -17,6 +17,7 @@ import org.zstack.test.ApiSenderException;
 import org.zstack.test.BeanConstructor;
 import org.zstack.test.DBUtil;
 import org.zstack.utils.data.SizeUnit;
+
 public class TestPrimaryStorageChangeStateExtensionPoint {
     Api api;
     ComponentLoader loader;
@@ -48,10 +49,10 @@ public class TestPrimaryStorageChangeStateExtensionPoint {
         sp.setTotalCapacity(SizeUnit.TERABYTE.toByte(10));
         sp.setAvailableCapacity(sp.getTotalCapacity());
         sp.setUrl("nfs://simulator/primary/");
-    	ZoneInventory zone = api.createZones(1).get(0);
+        ZoneInventory zone = api.createZones(1).get(0);
         sp.setZoneUuid(zone.getUuid());
         PrimaryStorageInventory inv = api.createSimulatoPrimaryStorage(1, sp).get(0);
-        
+
         ext.setPreventChange(true);
         try {
             api.changePrimaryStorageState(inv.getUuid(), PrimaryStorageStateEvent.disable);
@@ -59,7 +60,7 @@ public class TestPrimaryStorageChangeStateExtensionPoint {
         }
         PrimaryStorageVO vo = dbf.findByUuid(inv.getUuid(), PrimaryStorageVO.class);
         Assert.assertEquals(PrimaryStorageState.Enabled, vo.getState());
-        
+
         ext.setPreventChange(false);
         ext.setExpectedCurrent(PrimaryStorageState.Enabled);
         ext.setExpectedNext(PrimaryStorageState.Disabled);

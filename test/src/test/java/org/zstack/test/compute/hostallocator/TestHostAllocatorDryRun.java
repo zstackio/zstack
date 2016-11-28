@@ -23,16 +23,16 @@ import org.zstack.utils.function.Function;
 
 /**
  * make every conditions ready
- *
+ * <p>
  * confirm starts right and host capacity allocated right
  */
 public class TestHostAllocatorDryRun {
     Deployer deployer;
-    Api api; 
+    Api api;
     ComponentLoader loader;
     CloudBus bus;
     DatabaseFacade dbf;
-    
+
     @Before
     public void setUp() throws Exception {
         DBUtil.reDeployDB();

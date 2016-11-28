@@ -22,15 +22,9 @@ import org.zstack.test.search.QueryTestValidator;
 import java.util.List;
 
 /**
- * 
  * @author Frank
- * 
- * @condition
- *
- * test nested query
- *
- * @test
- * the vm can be correctly found
+ * @condition test nested query
+ * @test the vm can be correctly found
  */
 public class TestQueryVm3 {
     Deployer deployer;
@@ -49,7 +43,7 @@ public class TestQueryVm3 {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         SessionInventory session = api.loginByAccount("test", "password");

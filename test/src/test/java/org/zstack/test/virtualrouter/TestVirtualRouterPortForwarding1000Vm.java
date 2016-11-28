@@ -15,7 +15,6 @@ import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageVO;
-import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.rest.HttpCallStatistic;
 import org.zstack.header.rest.RESTFacade;
@@ -28,8 +27,6 @@ import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.simulator.virtualrouter.VirtualRouterSimulatorConfig;
 import org.zstack.test.*;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.utils.DebugUtils;
-import org.zstack.utils.DebugUtils.TimeStatistic;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -41,14 +38,14 @@ import java.util.concurrent.TimeUnit;
 import static org.zstack.utils.StringDSL.ln;
 
 public class TestVirtualRouterPortForwarding1000Vm {
-	Deployer deployer;
-	Api api;
-	ComponentLoader loader;
-	CloudBus bus;
-	DatabaseFacade dbf;
-	SessionInventory session;
-	VirtualRouterSimulatorConfig vconfig;
-	KVMSimulatorConfig kconfig;
+    Deployer deployer;
+    Api api;
+    ComponentLoader loader;
+    CloudBus bus;
+    DatabaseFacade dbf;
+    SessionInventory session;
+    VirtualRouterSimulatorConfig vconfig;
+    KVMSimulatorConfig kconfig;
     ThreadFacade thdf;
     RESTFacade restf;
     int total = 1000;
@@ -61,28 +58,28 @@ public class TestVirtualRouterPortForwarding1000Vm {
     List<Long> createCost = new ArrayList<Long>(ruleNum);
     final List<String> vmNicUuids = new ArrayList<String>(total);
 
-	@Before
-	public void setUp() throws Exception {
-		DBUtil.reDeployDB();
-		WebBeanConstructor con = new WebBeanConstructor();
-		deployer = new Deployer("deployerXml/virtualRouter/TestPortForwarding1000Vm.xml", con);
-		deployer.addSpringConfig("VirtualRouter.xml");
-		deployer.addSpringConfig("VirtualRouterSimulator.xml");
-		deployer.addSpringConfig("KVMRelated.xml");
+    @Before
+    public void setUp() throws Exception {
+        DBUtil.reDeployDB();
+        WebBeanConstructor con = new WebBeanConstructor();
+        deployer = new Deployer("deployerXml/virtualRouter/TestPortForwarding1000Vm.xml", con);
+        deployer.addSpringConfig("VirtualRouter.xml");
+        deployer.addSpringConfig("VirtualRouterSimulator.xml");
+        deployer.addSpringConfig("KVMRelated.xml");
         deployer.addSpringConfig("PortForwarding.xml");
         deployer.addSpringConfig("vip.xml");
-		deployer.build();
-		api = deployer.getApi();
-		loader = deployer.getComponentLoader();
-		vconfig = loader.getComponent(VirtualRouterSimulatorConfig.class);
-		kconfig = loader.getComponent(KVMSimulatorConfig.class);
-		bus = loader.getComponent(CloudBus.class);
-		dbf = loader.getComponent(DatabaseFacade.class);
+        deployer.build();
+        api = deployer.getApi();
+        loader = deployer.getComponentLoader();
+        vconfig = loader.getComponent(VirtualRouterSimulatorConfig.class);
+        kconfig = loader.getComponent(KVMSimulatorConfig.class);
+        bus = loader.getComponent(CloudBus.class);
+        dbf = loader.getComponent(DatabaseFacade.class);
         thdf = loader.getComponent(ThreadFacade.class);
         restf = loader.getComponent(RESTFacade.class);
-		session = api.loginAsAdmin();
+        session = api.loginAsAdmin();
         SimulatorGlobalProperty.NOT_CACHE_AGENT_COMMAND = true;
-	}
+    }
 
     @SyncThread(level = 1000)
     private void createRule(L3NetworkInventory pub, L3NetworkInventory guest, String vmNicUuid, int port) throws ApiSenderException {
@@ -91,7 +88,7 @@ public class TestVirtualRouterPortForwarding1000Vm {
             long s = System.currentTimeMillis();
             VipInventory vip = api.acquireIp(pub.getUuid());
             long s1 = System.currentTimeMillis();
-            vipCost.add(s1 -s);
+            vipCost.add(s1 - s);
             PortForwardingRuleInventory rule = new PortForwardingRuleInventory();
             rule.setVipUuid(vip.getUuid());
             rule.setName("pf");
@@ -102,7 +99,7 @@ public class TestVirtualRouterPortForwarding1000Vm {
             rule.setProtocolType(PortForwardingProtocolType.TCP.toString());
             rule = api.createPortForwardingRuleByFullConfig(rule);
             long s2 = System.currentTimeMillis();
-            createCost.add(s2 -s1);
+            createCost.add(s2 - s1);
             api.attachPortForwardingRule(rule.getUuid(), vmNicUuid);
             timeCost.add(System.currentTimeMillis() - s2);
         } finally {
@@ -110,8 +107,8 @@ public class TestVirtualRouterPortForwarding1000Vm {
         }
     }
 
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         CoreGlobalProperty.VM_TRACER_ON = false;
         final L3NetworkInventory guestL3 = deployer.l3Networks.get("TestL3Network1");
         L3NetworkInventory pubL3 = deployer.l3Networks.get("MgmtNetwork");
@@ -123,7 +120,7 @@ public class TestVirtualRouterPortForwarding1000Vm {
         final InstanceOfferingInventory ioinv = deployer.instanceOfferings.get("TestInstanceOffering");
 
         final CountDownLatch latch = new CountDownLatch(total);
-        for (int i=0; i<total; i++) {
+        for (int i = 0; i < total; i++) {
             final int finalI = i;
             thdf.syncSubmit(new SyncTask<Object>() {
                 @Override
@@ -150,7 +147,7 @@ public class TestVirtualRouterPortForwarding1000Vm {
                         creator.imageUuid = img.getUuid();
                         creator.name = "vm-" + finalI;
                         creator.timeout = (int) TimeUnit.MINUTES.toSeconds(10);
-                        VmInstanceInventory vm =  creator.create();
+                        VmInstanceInventory vm = creator.create();
                         synchronized (vmNicUuids) {
                             vmNicUuids.add(vm.getVmNics().get(0).getUuid());
                         }
@@ -171,9 +168,9 @@ public class TestVirtualRouterPortForwarding1000Vm {
         long rulePerVm = ruleNum / total;
 
         System.out.println(String.format("start creating port forwarding rule, total: %s, rule per vm: %s", ruleNum, rulePerVm));
-        for (int j=0; j<total; j++) {
+        for (int j = 0; j < total; j++) {
             String nicUuid = vmNicUuids.get(j);
-            for (int i=0; i<rulePerVm; i++) {
+            for (int i = 0; i < rulePerVm; i++) {
                 createRule(pubL3, guestL3, nicUuid, i);
             }
         }
@@ -188,7 +185,7 @@ public class TestVirtualRouterPortForwarding1000Vm {
         for (long t : vipCost) {
             min = Math.min(t, min);
             max = Math.max(t, max);
-            total  += t;
+            total += t;
         }
         avg = total / vipCost.size();
 
@@ -212,7 +209,7 @@ public class TestVirtualRouterPortForwarding1000Vm {
         for (long t : createCost) {
             min = Math.min(t, min);
             max = Math.max(t, max);
-            total  += t;
+            total += t;
         }
         avg = total / createCost.size();
 
@@ -236,7 +233,7 @@ public class TestVirtualRouterPortForwarding1000Vm {
         for (long t : timeCost) {
             min = Math.min(t, min);
             max = Math.max(t, max);
-            total  += t;
+            total += t;
         }
         avg = total / timeCost.size();
 
@@ -277,5 +274,5 @@ public class TestVirtualRouterPortForwarding1000Vm {
         for (HttpCallStatistic stat : hstats) {
             System.out.println(stat.toString());
         }
-	}
+    }
 }

@@ -44,7 +44,7 @@ public class TestAddKvmHostConncectException {
         config = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
+
     private HostInventory addHost() throws ApiSenderException {
         ClusterInventory cinv = api.listClusters(null).get(0);
         APIAddKVMHostMsg msg = new APIAddKVMHostMsg();
@@ -59,8 +59,8 @@ public class TestAddKvmHostConncectException {
         APIAddHostEvent evt = sender.send(msg, APIAddHostEvent.class);
         return evt.getInventory();
     }
-    
-    @Test(expected=ApiSenderException.class)
+
+    @Test(expected = ApiSenderException.class)
     public void testConnectFailure() throws ApiSenderException {
         config.connectException = true;
         addHost();

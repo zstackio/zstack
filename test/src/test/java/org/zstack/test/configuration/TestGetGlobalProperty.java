@@ -30,7 +30,7 @@ public class TestGetGlobalProperty {
         api = new Api();
         api.startServer();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         APIGetGlobalPropertyMsg msg = new APIGetGlobalPropertyMsg();

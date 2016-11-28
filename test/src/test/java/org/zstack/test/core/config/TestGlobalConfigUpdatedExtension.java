@@ -16,23 +16,23 @@ import org.zstack.test.DBUtil;
 import java.util.concurrent.TimeUnit;
 
 public class TestGlobalConfigUpdatedExtension {
-	GlobalConfigFacade gcf;
-	ComponentLoader loader;
-	Api api;
+    GlobalConfigFacade gcf;
+    ComponentLoader loader;
+    Api api;
     int result;
-	
-	@Before
-	public void setUp() throws Exception {
-	    DBUtil.reDeployDB();
+
+    @Before
+    public void setUp() throws Exception {
+        DBUtil.reDeployDB();
         BeanConstructor con = new BeanConstructor();
         loader = con.addXml("PortalForUnitTest.xml").addXml("AccountManager.xml").build();
-		gcf = loader.getComponent(GlobalConfigFacade.class);
-		api = new Api();
-		api.startServer();
-	}
+        gcf = loader.getComponent(GlobalConfigFacade.class);
+        api = new Api();
+        api.startServer();
+    }
 
-	@Test
-	public void test() throws InterruptedException, ApiSenderException {
+    @Test
+    public void test() throws InterruptedException, ApiSenderException {
         GlobalConfigForTest.TEST.installUpdateExtension(new GlobalConfigUpdateExtensionPoint() {
             @Override
             public void updateGlobalConfig(GlobalConfig oldConfig, GlobalConfig newConfig) {
@@ -41,16 +41,16 @@ public class TestGlobalConfigUpdatedExtension {
         });
 
         GlobalConfigInventory target = null;
-		for (GlobalConfigInventory inv : api.listGlobalConfig(null)) {
-		    if ("Test".equals(inv.getName())) {
-		        target = inv;
-		        break;
-		    }
-		}
-		target.setValue("1200");
-		api.updateGlobalConfig(target);
-		TimeUnit.SECONDS.sleep(1);
-		Assert.assertEquals(1200, result);
-	}
+        for (GlobalConfigInventory inv : api.listGlobalConfig(null)) {
+            if ("Test".equals(inv.getName())) {
+                target = inv;
+                break;
+            }
+        }
+        target.setValue("1200");
+        api.updateGlobalConfig(target);
+        TimeUnit.SECONDS.sleep(1);
+        Assert.assertEquals(1200, result);
+    }
 
 }

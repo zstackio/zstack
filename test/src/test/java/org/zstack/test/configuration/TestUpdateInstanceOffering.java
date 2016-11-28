@@ -1,14 +1,11 @@
 package org.zstack.test.configuration;
 
 import junit.framework.Assert;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.configuration.InstanceOfferingDuration;
 import org.zstack.header.configuration.InstanceOfferingInventory;
-import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.BeanConstructor;

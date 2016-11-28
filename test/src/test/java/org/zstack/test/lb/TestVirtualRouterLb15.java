@@ -10,7 +10,6 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
-import org.zstack.network.service.lb.LoadBalancerInventory;
 import org.zstack.network.service.lb.LoadBalancerListenerInventory;
 import org.zstack.network.service.virtualrouter.VirtualRouterRoleManager;
 import org.zstack.network.service.virtualrouter.VirtualRouterSystemTags;
@@ -29,19 +28,16 @@ import org.zstack.utils.function.Function;
 import java.util.List;
 
 /**
- * 
  * @author frank
- * 
- * @condition
- * 1. create a lb
+ * @condition 1. create a lb
  * 2. use separate vr
  * 3. stop the non-lb vr
  * 4. start the vr
- *
+ * <p>
  * confirm lb not synced on the new-created non-lb vr
- *
+ * <p>
  * 5. reboot the lb vr
- *
+ * <p>
  * confirm lb synced on the lb vr
  */
 public class TestVirtualRouterLb15 {
@@ -73,7 +69,7 @@ public class TestVirtualRouterLb15 {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         L3NetworkInventory gnw = deployer.l3Networks.get("GuestNetwork");

@@ -21,7 +21,7 @@ import org.zstack.test.deployer.Deployer;
  * 1. have two clusters
  * 2. create a vm with virtual router
  * 3. detach l2 which vr has l3 on
- *
+ * <p>
  * confirm vr is migrated to another cluster
  */
 public class TestCascadeDeletion30 {
@@ -50,7 +50,7 @@ public class TestCascadeDeletion30 {
     public void test() throws ApiSenderException, InterruptedException {
         ClusterInventory cluster1 = deployer.clusters.get("Cluster1");
         ClusterInventory cluster2 = deployer.clusters.get("Cluster2");
-        ApplianceVmVO  vr = dbf.listAll(ApplianceVmVO.class).get(0);
+        ApplianceVmVO vr = dbf.listAll(ApplianceVmVO.class).get(0);
         String lastClusterUuid = vr.getClusterUuid();
         String targetClusterUuid = cluster1.getUuid().equals(lastClusterUuid) ? cluster2.getUuid() : cluster1.getUuid();
         L2NetworkInventory l2 = deployer.l2Networks.get("TestL2Network");

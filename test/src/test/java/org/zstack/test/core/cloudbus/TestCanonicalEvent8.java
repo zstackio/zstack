@@ -31,7 +31,7 @@ public class TestCanonicalEvent8 {
         BeanConstructor con = new BeanConstructor();
         loader = con.build();
         evtf = loader.getComponent(EventFacade.class);
-        ((EventFacadeImpl)evtf).start();
+        ((EventFacadeImpl) evtf).start();
     }
 
     @Test
@@ -40,7 +40,7 @@ public class TestCanonicalEvent8 {
         evtf.on(path, new AutoOffEventCallback() {
             @Override
             public boolean run(Map tokens, Object data) {
-                count ++;
+                count++;
                 return true;
             }
         });

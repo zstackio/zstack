@@ -3,7 +3,6 @@ package org.zstack.test.search;
 import org.junit.Before;
 import org.junit.Test;
 import org.zstack.core.componentloader.ComponentLoader;
-import org.zstack.core.db.DatabaseFacade;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.BeanConstructor;
@@ -22,11 +21,11 @@ public class TestGenerateQuableFields {
         api = new Api();
         api.startServer();
     }
-      
 
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         api.setTimeout(1000000);
-		api.generateQueryableFields();
-	}
+        api.generateQueryableFields();
+    }
 }

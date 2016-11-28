@@ -48,7 +48,7 @@ public class TestBackupAttachExtensionPoint {
         ss.setUsedCapacity(0);
         ss.setUrl("nfs://simulator/backupstorage/");
         BackupStorageInventory inv = api.createSimulatorBackupStorage(1, ss).get(0);
-        
+
         ext.setPreventAttach(true);
         try {
             api.attachBackupStorage(zone.getUuid(), inv.getUuid());
@@ -56,7 +56,7 @@ public class TestBackupAttachExtensionPoint {
         }
         BackupStorageVO vo = dbf.findByUuid(inv.getUuid(), BackupStorageVO.class);
         Assert.assertEquals(0, vo.getAttachedZoneRefs().size());
-        
+
         ext.setPreventAttach(false);
         ext.setExpectedBackupStorageUuid(inv.getUuid());
         ext.setExpectedZoneUuid(zone.getUuid());

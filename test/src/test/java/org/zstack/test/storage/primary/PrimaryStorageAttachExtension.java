@@ -13,9 +13,9 @@ public class PrimaryStorageAttachExtension implements PrimaryStorageAttachExtens
     boolean afterCalled = false;
     String expectedPrimaryStorageUuid;
     String expectedClusterUuid;
-    
+
     @Override
-    public void preAttachPrimaryStorage(PrimaryStorageInventory inventory, String clusterUuid) throws PrimaryStorageException{
+    public void preAttachPrimaryStorage(PrimaryStorageInventory inventory, String clusterUuid) throws PrimaryStorageException {
         if (this.preventAttach) {
             throw new PrimaryStorageException("Prevent attaching primary storage on purpose");
         }

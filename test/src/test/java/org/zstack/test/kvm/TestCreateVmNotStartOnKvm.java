@@ -52,9 +52,9 @@ public class TestCreateVmNotStartOnKvm {
         config = loader.getComponent(SftpBackupStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws InterruptedException, ApiSenderException {
+
+    @Test
+    public void test() throws InterruptedException, ApiSenderException {
         InstanceOfferingInventory inv = deployer.instanceOfferings.get("TestInstanceOffering");
         ImageInventory image = deployer.images.get("TestImage");
         L3NetworkInventory l3 = deployer.l3Networks.get("TestL3Network1");

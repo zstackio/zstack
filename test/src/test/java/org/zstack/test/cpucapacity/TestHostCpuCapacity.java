@@ -49,9 +49,9 @@ public class TestHostCpuCapacity {
         kconfig = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         InstanceOfferingInventory ioinv = deployer.instanceOfferings.get("TestInstanceOffering");
         Assert.assertEquals(ioinv.getCpuNum(), vm.getCpuNum().intValue());

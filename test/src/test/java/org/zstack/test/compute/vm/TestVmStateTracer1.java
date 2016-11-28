@@ -18,7 +18,10 @@ import org.zstack.header.host.HostVO;
 import org.zstack.header.host.RecalculateHostCapacityMsg;
 import org.zstack.header.message.AbstractBeforeDeliveryMessageInterceptor;
 import org.zstack.header.message.Message;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
+import org.zstack.header.vm.VmTracerCanonicalEvents;
 import org.zstack.simulator.SimulatorController;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
@@ -32,17 +35,16 @@ import java.util.concurrent.TimeUnit;
  * 1. create a vm
  * 2. disable host auto-reconnect
  * 3. make the host disconnected
- *
+ * <p>
  * confirm the vm becomes Unknown
  * confirm the host capacity not changed
  * confirm VmStateChangedOnHostData issued
- *
+ * <p>
  * 4. reconnect the host
- *
+ * <p>
  * confirm the vm becomes running
  * confirm VmStateChangedOnHostData issued
  * confirm the RecalculateHostCapacityMsg message sent
- *
  */
 public class TestVmStateTracer1 {
     Deployer deployer;
@@ -68,11 +70,11 @@ public class TestVmStateTracer1 {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
         evtf = loader.getComponent(EventFacade.class);
-        
+
         deployer.build();
         api = deployer.getApi();
     }
-    
+
     @Test
     public void test() throws InterruptedException, ApiSenderException {
         HostGlobalConfig.AUTO_RECONNECT_ON_ERROR.updateValue(false);
@@ -118,7 +120,7 @@ public class TestVmStateTracer1 {
         bus.installBeforeDeliveryMessageInterceptor(new AbstractBeforeDeliveryMessageInterceptor() {
             @Override
             public void intercept(Message msg) {
-                if (((RecalculateHostCapacityMsg)msg).getHostUuid().equals(hostUuid)) {
+                if (((RecalculateHostCapacityMsg) msg).getHostUuid().equals(hostUuid)) {
                     success3 = true;
                 }
             }

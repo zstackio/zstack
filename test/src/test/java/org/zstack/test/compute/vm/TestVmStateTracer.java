@@ -29,12 +29,12 @@ import java.util.concurrent.TimeUnit;
 /**
  * 1. create a vm
  * 2. make the vm abnormally stopped
- *
+ * <p>
  * confirm the host capacity returned
  * confirm VmStateChangedOnHostData issued
- *
+ * <p>
  * 3. make the vm abnormally started
- *
+ * <p>
  * confirm the host capacity allocated
  * confirm VmStateChangedOnHostData issued
  */
@@ -61,11 +61,11 @@ public class TestVmStateTracer {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
         evtf = loader.getComponent(EventFacade.class);
-        
+
         deployer.build();
         api = deployer.getApi();
     }
-    
+
     @Test
     public void test() throws InterruptedException {
         SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);

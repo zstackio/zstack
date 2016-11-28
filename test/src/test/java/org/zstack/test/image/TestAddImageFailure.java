@@ -22,46 +22,46 @@ import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.logging.CLogger;
 
 public class TestAddImageFailure {
-	CLogger logger = Utils.getLogger(TestAddImageFailure.class);
-	 Api api;
-	    ComponentLoader loader;
-	    DatabaseFacade dbf;
+    CLogger logger = Utils.getLogger(TestAddImageFailure.class);
+    Api api;
+    ComponentLoader loader;
+    DatabaseFacade dbf;
 
-	    @Before
-	    public void setUp() throws Exception {
-	        DBUtil.reDeployDB();
-	        BeanConstructor con = new BeanConstructor();
-	        /* This loads spring application context */
-	        loader = con.addXml("PortalForUnitTest.xml").addXml("Simulator.xml").addXml("BackupStorageManager.xml")
-	                .addXml("ImageManager.xml").addXml("AccountManager.xml").build();
-	        dbf = loader.getComponent(DatabaseFacade.class);
-	        api = new Api();
-	        api.startServer();
-	    }
+    @Before
+    public void setUp() throws Exception {
+        DBUtil.reDeployDB();
+        BeanConstructor con = new BeanConstructor();
+            /* This loads spring application context */
+        loader = con.addXml("PortalForUnitTest.xml").addXml("Simulator.xml").addXml("BackupStorageManager.xml")
+                .addXml("ImageManager.xml").addXml("AccountManager.xml").build();
+        dbf = loader.getComponent(DatabaseFacade.class);
+        api = new Api();
+        api.startServer();
+    }
 
-	    @After
-	    public void tearDown() throws Exception {
-	        api.stopServer();
-	    }
+    @After
+    public void tearDown() throws Exception {
+        api.stopServer();
+    }
 
-	    @Test(expected = ApiSenderException.class)
-	    public void test() throws ApiSenderException {
-	        SimulatorBackupStorageDetails ss = new SimulatorBackupStorageDetails();
-	        ss.setTotalCapacity(SizeUnit.GIGABYTE.toByte(100));
-	        ss.setUsedCapacity(0);
-	        ss.setUrl("nfs://simulator/backupstorage/");
-	        BackupStorageInventory inv = api.createSimulatorBackupStorage(1, ss).get(0);
-	        BackupStorageVO vo = dbf.findByUuid(inv.getUuid(), BackupStorageVO.class);
-	        Assert.assertNotNull(vo);
-	        api.changeBackupStorageState(inv.getUuid(), BackupStorageStateEvent.disable);
+    @Test(expected = ApiSenderException.class)
+    public void test() throws ApiSenderException {
+        SimulatorBackupStorageDetails ss = new SimulatorBackupStorageDetails();
+        ss.setTotalCapacity(SizeUnit.GIGABYTE.toByte(100));
+        ss.setUsedCapacity(0);
+        ss.setUrl("nfs://simulator/backupstorage/");
+        BackupStorageInventory inv = api.createSimulatorBackupStorage(1, ss).get(0);
+        BackupStorageVO vo = dbf.findByUuid(inv.getUuid(), BackupStorageVO.class);
+        Assert.assertNotNull(vo);
+        api.changeBackupStorageState(inv.getUuid(), BackupStorageStateEvent.disable);
 
-	        ImageInventory iinv = new ImageInventory();
-	        iinv.setName("Test Image");
-	        iinv.setDescription("Test Image");
-	        iinv.setMediaType(ImageMediaType.RootVolumeTemplate.toString());
-	        iinv.setGuestOsType("Window7");
-            iinv.setFormat(SimulatorConstant.SIMULATOR_VOLUME_FORMAT_STRING);
-	        iinv.setUrl("http://zstack.org/download/win7.qcow2");
-	        api.addImage(iinv, inv.getUuid());
-	    }
+        ImageInventory iinv = new ImageInventory();
+        iinv.setName("Test Image");
+        iinv.setDescription("Test Image");
+        iinv.setMediaType(ImageMediaType.RootVolumeTemplate.toString());
+        iinv.setGuestOsType("Window7");
+        iinv.setFormat(SimulatorConstant.SIMULATOR_VOLUME_FORMAT_STRING);
+        iinv.setUrl("http://zstack.org/download/win7.qcow2");
+        api.addImage(iinv, inv.getUuid());
+    }
 }

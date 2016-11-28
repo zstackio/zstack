@@ -13,7 +13,7 @@ public class PrimaryStorageDetachExtension implements PrimaryStorageDetachExtens
     boolean afterCalled = false;
     String expectedClusterUuid;
     String expectedPrimaryStorageUuid;
-    
+
     @Override
     public void preDetachPrimaryStorage(PrimaryStorageInventory inventory, String clusterUuid) throws PrimaryStorageException {
         if (this.preventDetach) {
@@ -43,10 +43,10 @@ public class PrimaryStorageDetachExtension implements PrimaryStorageDetachExtens
             this.afterCalled = true;
         } else {
             String err = String.format("afterDetachPrimaryStorage: expected primaryStorageUuid:%s clusterUuid:%s" +
-                    " but got primaryStorageUuid: %s clusterUuid: %s",
+                            " but got primaryStorageUuid: %s clusterUuid: %s",
                     this.expectedPrimaryStorageUuid, this.expectedClusterUuid, inventory.getUuid(), clusterUuid);
             logger.warn(err);
-        } 
+        }
     }
 
     public CLogger getLogger() {

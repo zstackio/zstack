@@ -30,16 +30,17 @@ public class TestAddVirtualRouterOffering1 {
         loader = deployer.getComponentLoader();
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-	@Test
-	public void test() {
-		InstanceOfferingInventory iinv = deployer.instanceOfferings.get("virtualRouterOffering");
-		VirtualRouterOfferingVO vo = dbf.findByUuid(iinv.getUuid(), VirtualRouterOfferingVO.class);
-		Assert.assertNotNull(vo);
+
+    @Test
+    public void test() {
+        InstanceOfferingInventory iinv = deployer.instanceOfferings.get("virtualRouterOffering");
+        VirtualRouterOfferingVO vo = dbf.findByUuid(iinv.getUuid(), VirtualRouterOfferingVO.class);
+        Assert.assertNotNull(vo);
         Assert.assertTrue(vo.isDefault());
 
         iinv = deployer.instanceOfferings.get("virtualRouterOffering2");
         vo = dbf.findByUuid(iinv.getUuid(), VirtualRouterOfferingVO.class);
         Assert.assertNotNull(vo);
         Assert.assertTrue(vo.isDefault());
-	}
+    }
 }

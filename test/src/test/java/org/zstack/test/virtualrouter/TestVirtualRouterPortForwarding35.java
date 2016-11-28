@@ -13,7 +13,6 @@ import org.zstack.network.service.portforwarding.PortForwardingProtocolType;
 import org.zstack.network.service.portforwarding.PortForwardingRuleInventory;
 import org.zstack.network.service.portforwarding.PortForwardingRuleVO;
 import org.zstack.network.service.vip.VipInventory;
-import org.zstack.network.service.virtualrouter.portforwarding.PortForwardingRuleTO;
 import org.zstack.simulator.appliancevm.ApplianceVmSimulatorConfig;
 import org.zstack.simulator.virtualrouter.VirtualRouterSimulatorConfig;
 import org.zstack.test.Api;
@@ -23,17 +22,12 @@ import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 
 /**
- * 
  * @author frank
- * 
- * @condition
- * 1. create a vm
+ * @condition 1. create a vm
  * 2. acquire a public ip: pub1
  * 3. set port forwarding to vm using pub1
  * 4. detach the vm nic
- *
- * @test
- * confirm port forwarding rule is removed from VR
+ * @test confirm port forwarding rule is removed from VR
  * confirm the vm nic is cleaned from the rule
  */
 public class TestVirtualRouterPortForwarding35 {
@@ -65,7 +59,7 @@ public class TestVirtualRouterPortForwarding35 {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         L3NetworkInventory publicNw = deployer.l3Networks.get("PublicNetwork");

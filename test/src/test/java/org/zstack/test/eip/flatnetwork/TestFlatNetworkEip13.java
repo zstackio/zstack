@@ -28,20 +28,16 @@ import org.zstack.test.deployer.Deployer;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 
  * @author frank
- * 
- * @condition
- * 1. create a vm
+ * @condition 1. create a vm
  * 2. set the host disconnected
  * 3. delete the public network
- *
+ * <p>
  * confirm the eip deleted
- *
+ * <p>
  * 4. reconnect the host
- *
+ * <p>
  * confirm the eip is deleted by GC
- *
  */
 public class TestFlatNetworkEip13 {
     Deployer deployer;
@@ -73,7 +69,7 @@ public class TestFlatNetworkEip13 {
         session = api.loginAsAdmin();
     }
 
-    private String getBridgeName(String l3uuid)  {
+    private String getBridgeName(String l3uuid) {
         L3NetworkVO l3 = dbf.findByUuid(l3uuid, L3NetworkVO.class);
         return KVMSystemTags.L2_BRIDGE_NAME.getTokenByResourceUuid(l3.getL2NetworkUuid(), KVMSystemTags.L2_BRIDGE_NAME_TOKEN);
     }

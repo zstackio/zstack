@@ -28,11 +28,11 @@ import java.util.List;
  */
 public class TestDefaultHostAllocationStrategyFailure5 {
     Deployer deployer;
-    Api api; 
+    Api api;
     ComponentLoader loader;
     CloudBus bus;
     DatabaseFacade dbf;
-    
+
     @Before
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
@@ -43,6 +43,7 @@ public class TestDefaultHostAllocationStrategyFailure5 {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
+
     private class VmCreator {
         List<String> l3NetworkUuids = new ArrayList<String>();
         String imageUuid;
@@ -83,7 +84,7 @@ public class TestDefaultHostAllocationStrategyFailure5 {
 
     @Test(expected = ApiSenderException.class)
     public void test() throws ApiSenderException {
-        L3NetworkInventory l3  = deployer.l3Networks.get("l3Network1");
+        L3NetworkInventory l3 = deployer.l3Networks.get("l3Network1");
         InstanceOfferingInventory instanceOffering = deployer.instanceOfferings.get("instanceOffering512M512HZ");
         ImageInventory imageInventory = deployer.images.get("image1");
         DiskOfferingInventory diskOfferingInventory = deployer.diskOfferings.get("disk120G");

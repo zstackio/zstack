@@ -30,7 +30,7 @@ public class TestAcquireRequiredVip1 {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         String rip = "192.168.1.5";

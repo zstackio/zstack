@@ -15,7 +15,7 @@ import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.logging.CLogger;
 
 public class TestUpdateDiskOffering {
-	CLogger logger = Utils.getLogger(TestUpdateDiskOffering.class);
+    CLogger logger = Utils.getLogger(TestUpdateDiskOffering.class);
     Api api;
     ComponentLoader loader;
     DatabaseFacade dbf;
@@ -31,17 +31,17 @@ public class TestUpdateDiskOffering {
         api.startServer();
     }
 
-	@Test
-	public void test() throws InterruptedException, ApiSenderException {
-	    DiskOfferingInventory inv = new DiskOfferingInventory();
-	    inv.setDiskSize(SizeUnit.GIGABYTE.toByte(10));
-	    inv.setName("Test");
-	    inv.setDescription("Test");
-	    inv = api.addDiskOffering(inv);
+    @Test
+    public void test() throws InterruptedException, ApiSenderException {
+        DiskOfferingInventory inv = new DiskOfferingInventory();
+        inv.setDiskSize(SizeUnit.GIGABYTE.toByte(10));
+        inv.setName("Test");
+        inv.setDescription("Test");
+        inv = api.addDiskOffering(inv);
         inv.setName("1");
         inv.setDescription("xxx");
         inv = api.updateDiskOffering(inv);
         Assert.assertEquals("1", inv.getName());
         Assert.assertEquals("xxx", inv.getDescription());
-	}
+    }
 }

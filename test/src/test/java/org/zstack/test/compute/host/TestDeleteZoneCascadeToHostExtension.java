@@ -14,6 +14,7 @@ import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.BeanConstructor;
 import org.zstack.test.DBUtil;
+
 public class TestDeleteZoneCascadeToHostExtension {
     Api api;
     ComponentLoader loader;
@@ -50,11 +51,11 @@ public class TestDeleteZoneCascadeToHostExtension {
             api.maintainHost(host.getUuid());
             try {
                 api.deleteZone(zone.getUuid());
-            } catch (ApiSenderException e){
+            } catch (ApiSenderException e) {
             }
             HostVO vo = dbf.findByUuid(host.getUuid(), HostVO.class);
             Assert.assertNotNull(vo);
-            
+
             ext.setPreventDelete(false);
             ext.setExpectedHostUuid(host.getUuid());
             api.deleteZone(zone.getUuid());

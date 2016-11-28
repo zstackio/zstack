@@ -31,7 +31,7 @@ public class TestShareFlow4 {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        afterDone.add(()->{
+                        afterDone.add(() -> {
                             success = true;
                         });
 
@@ -64,7 +64,7 @@ public class TestShareFlow4 {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        afterError.add(()->{
+                        afterError.add(() -> {
                             success = true;
                         });
 
@@ -101,7 +101,7 @@ public class TestShareFlow4 {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        afterFinal.add(()->{
+                        afterFinal.add(() -> {
                             success = true;
                         });
 

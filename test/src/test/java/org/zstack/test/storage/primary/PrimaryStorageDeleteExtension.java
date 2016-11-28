@@ -12,7 +12,7 @@ public class PrimaryStorageDeleteExtension implements PrimaryStorageDeleteExtens
     boolean beforeCalled = false;
     boolean afterCalled = false;
     String expectedUuid;
-    
+
     @Override
     public void preDeletePrimaryStorage(PrimaryStorageInventory inv) throws PrimaryStorageException {
         if (this.preventDelete) {

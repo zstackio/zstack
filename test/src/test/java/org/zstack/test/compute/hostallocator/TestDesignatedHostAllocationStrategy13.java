@@ -38,7 +38,7 @@ import static org.zstack.utils.CollectionDSL.map;
 /**
  * 1. create system tag of primary storage required user tag on disk offering
  * 2. create a vm with that disk offering
- *
+ * <p>
  * confirm vm's data disk is created on primary storage specified
  */
 public class TestDesignatedHostAllocationStrategy13 {
@@ -99,7 +99,7 @@ public class TestDesignatedHostAllocationStrategy13 {
 
     @Test
     public void test() throws ApiSenderException {
-        L3NetworkInventory l3  = deployer.l3Networks.get("l3Network2");
+        L3NetworkInventory l3 = deployer.l3Networks.get("l3Network2");
         InstanceOfferingInventory instanceOffering = deployer.instanceOfferings.get("instanceOffering512M512HZ");
         ImageInventory imageInventory = deployer.images.get("image1");
         PrimaryStorageInventory ps2 = deployer.primaryStorages.get("primaryStorage2");

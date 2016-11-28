@@ -41,13 +41,13 @@ public class TestQueryHost {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
-    public void test() throws InterruptedException,ApiSenderException {
+    public void test() throws InterruptedException, ApiSenderException {
         HostInventory inv = deployer.hosts.get("TestHost3");
         QueryTestValidator.validateEQ(new APIQueryHostMsg(), api, APIQueryHostReply.class, inv);
         QueryTestValidator.validateRandomEQConjunction(new APIQueryHostMsg(), api, APIQueryHostReply.class, inv, 3);
-        
+
         APIQueryHostMsg msg = new APIQueryHostMsg();
         msg.setConditions(new ArrayList<QueryCondition>());
         APIQueryHostReply reply = api.query(msg, APIQueryHostReply.class);

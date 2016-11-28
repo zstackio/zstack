@@ -21,7 +21,7 @@ public class TestThreadFacadeSyncReturnValueTimeout {
     ThreadFacade thdf;
     int threadNum = 5;
 
-    class Tester implements SyncTask<String>{
+    class Tester implements SyncTask<String> {
         int index;
 
         Tester(int index) {
@@ -30,7 +30,7 @@ public class TestThreadFacadeSyncReturnValueTimeout {
 
         @Override
         public String call() throws Exception {
-            if (index == threadNum-1) {
+            if (index == threadNum - 1) {
                 Thread.sleep(5000);
             }
             return "I am back";
@@ -59,13 +59,13 @@ public class TestThreadFacadeSyncReturnValueTimeout {
         thdf = loader.getComponent(ThreadFacade.class);
     }
 
-    @Test(expected=TimeoutException.class)
+    @Test(expected = TimeoutException.class)
     public void test() throws InterruptedException, ExecutionException, TimeoutException {
         Future<String> ret = null;
         for (int i = 0; i < this.threadNum; i++) {
             Tester worker = new Tester(i);
             Future<String> f = thdf.syncSubmit(worker);
-            if (i == this.threadNum-1) {
+            if (i == this.threadNum - 1) {
                 ret = f;
             }
         }

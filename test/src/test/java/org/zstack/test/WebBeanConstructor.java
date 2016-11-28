@@ -1,7 +1,9 @@
 package org.zstack.test;
 
 import org.apache.commons.io.FileUtils;
+import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.webapp.WebAppContext;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.appliancevm.ApplianceVmGlobalProperty;
 import org.zstack.core.Platform;
@@ -10,9 +12,6 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.kvm.KVMGlobalProperty;
 import org.zstack.network.service.virtualrouter.VirtualRouterGlobalProperty;
 import org.zstack.storage.backup.sftp.SftpBackupStorageGlobalProperty;
-
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.webapp.WebAppContext;
 
 import java.io.File;
 import java.io.IOException;
@@ -33,7 +32,7 @@ public class WebBeanConstructor extends BeanConstructor {
         SftpBackupStorageGlobalProperty.AGENT_PORT = port;
         ApplianceVmGlobalProperty.AGENT_PORT = port;
     }
-    
+
     private void generateWarFile() {
         WarBuilder wbuilder = new WarBuilder();
         wbuilder.setSpringConfigPath(springConfigPath);
@@ -64,7 +63,7 @@ public class WebBeanConstructor extends BeanConstructor {
         try {
             prepareJetty();
             jetty.start();
-         //   jetty.join();
+            //   jetty.join();
         } catch (Exception e) {
             throw new CloudRuntimeException(e);
         }
@@ -72,20 +71,20 @@ public class WebBeanConstructor extends BeanConstructor {
 
     public void stopJetty() {
         try {
-            if(jetty != null)
+            if (jetty != null)
                 jetty.stop();
-        } catch (Exception e){
+        } catch (Exception e) {
             throw new CloudRuntimeException(e);
         }
     }
-    
+
     @Override
     public ComponentLoader build() {
         generateSpringConfig();
         startJetty();
         return Platform.getComponentLoader();
     }
-    
+
     public String getSiteUrl() {
         if (siteUrl == null) {
             ub = UriComponentsBuilder.fromHttpUrl("http://localhost");
@@ -102,8 +101,8 @@ public class WebBeanConstructor extends BeanConstructor {
     public void setPort(int port) {
         this.port = port;
     }
-    
-    public String buildUrl(String...path) {
+
+    public String buildUrl(String... path) {
         UriComponentsBuilder ubb = UriComponentsBuilder.fromHttpUrl(getSiteUrl());
         for (String p : path) {
             ubb.path(p);

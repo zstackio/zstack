@@ -37,9 +37,9 @@ public class TestQueryCluster {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
-    public void test() throws InterruptedException,ApiSenderException, JSONException {
+    public void test() throws InterruptedException, ApiSenderException, JSONException {
         ClusterInventory inv = deployer.clusters.get("Cluster3");
         QueryTestValidator.validateEQ(new APIQueryClusterMsg(), api, APIQueryClusterReply.class, inv);
         QueryTestValidator.validateRandomEQConjunction(new APIQueryClusterMsg(), api, APIQueryClusterReply.class, inv, 2);

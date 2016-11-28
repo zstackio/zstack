@@ -13,24 +13,19 @@ import org.zstack.network.service.portforwarding.PortForwardingRuleInventory;
 import org.zstack.network.service.portforwarding.PortForwardingRuleVO;
 import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.vip.VipVO;
+import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.simulator.virtualrouter.VirtualRouterSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.simulator.kvm.KVMSimulatorConfig;
 
 /**
- * 
  * @author frank
- * 
- * @condition
- * 1. create a pf rule without attaching
+ * @condition 1. create a pf rule without attaching
  * 2. delete vip
- *
- * @test
- * confirm all rules and vip are removed
+ * @test confirm all rules and vip are removed
  */
 public class TestVirtualRouterPortForwarding26 {
     Deployer deployer;
@@ -67,7 +62,7 @@ public class TestVirtualRouterPortForwarding26 {
         PortForwardingRuleInventory rule1 = new PortForwardingRuleInventory();
         L3NetworkInventory vipNw = deployer.l3Networks.get("PublicNetwork");
         VipInventory vip = api.acquireIp(vipNw.getUuid());
-        
+
         rule1.setName("pfRule1");
         rule1.setVipUuid(vip.getUuid());
         rule1.setVipPortStart(22);

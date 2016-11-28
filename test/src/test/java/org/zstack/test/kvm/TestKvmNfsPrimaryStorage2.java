@@ -28,8 +28,6 @@ import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
-import java.util.concurrent.TimeUnit;
-
 public class TestKvmNfsPrimaryStorage2 {
     static CLogger logger = Utils.getLogger(TestKvmNfsPrimaryStorage2.class);
     static Deployer deployer;
@@ -63,7 +61,7 @@ public class TestKvmNfsPrimaryStorage2 {
         session = api.loginAsAdmin();
         cinv = api.listClusters(null).get(0);
     }
-    
+
     private HostInventory addHost() throws ApiSenderException {
         config.connectSuccess = true;
         config.connectException = false;
@@ -86,7 +84,7 @@ public class TestKvmNfsPrimaryStorage2 {
         APIAddHostEvent evt = sender.send(msg, APIAddHostEvent.class);
         return evt.getInventory();
     }
-    
+
     private PrimaryStorageInventory addPrimaryStorage() throws ApiSenderException {
         APIAddNfsPrimaryStorageMsg msg = new APIAddNfsPrimaryStorageMsg();
         msg.setName("KVM-NFS");
@@ -100,7 +98,7 @@ public class TestKvmNfsPrimaryStorage2 {
         api.attachPrimaryStorage(cinv.getUuid(), inv.getUuid());
         return inv;
     }
-    
+
     @Test
     public void testAttach() throws ApiSenderException, InterruptedException {
         /* attach primary storage to cluster before adding host */

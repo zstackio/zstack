@@ -9,7 +9,6 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.header.AbstractService;
-import org.zstack.header.Service;
 import org.zstack.header.message.Message;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;

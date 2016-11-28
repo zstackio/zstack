@@ -24,14 +24,14 @@ public class TestChainTaskCancel {
     int threadNum = 10;
     List<Integer> res = new ArrayList<Integer>(threadNum);
     CountDownLatch latch = new CountDownLatch(5);
-    
+
     class Tester extends ChainTask {
         int index;
-        
+
         Tester(int index) {
             this.index = index;
         }
-        
+
         @Override
         public String getName() {
             return "Test";
@@ -55,27 +55,27 @@ public class TestChainTaskCancel {
             chain.next();
         }
     }
-    
+
     @Before
     public void setUp() throws Exception {
         BeanConstructor con = new BeanConstructor();
         loader = con.build();
         thdf = loader.getComponent(ThreadFacade.class);
     }
-    
+
     @Test
     public void test() throws InterruptedException {
-        for (int i=0; i<threadNum; i++) {
+        for (int i = 0; i < threadNum; i++) {
             Tester t = new Tester(i);
             Future<Void> f = thdf.chainSubmit(t);
-            if (i>=5) {
+            if (i >= 5) {
                 f.cancel(true);
             }
         }
-        
+
         latch.await(2, TimeUnit.MINUTES);
         Assert.assertEquals(5, res.size());
-        for (int i=0; i<5; i++) {
+        for (int i = 0; i < 5; i++) {
             Assert.assertTrue(res.contains(i));
         }
     }

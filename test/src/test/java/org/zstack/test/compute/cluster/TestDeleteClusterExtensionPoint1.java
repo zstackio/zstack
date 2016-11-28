@@ -30,7 +30,7 @@ public class TestDeleteClusterExtensionPoint1 {
         api = new Api();
         api.startServer();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         try {

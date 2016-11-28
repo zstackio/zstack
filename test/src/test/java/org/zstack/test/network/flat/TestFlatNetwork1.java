@@ -26,9 +26,9 @@ import java.util.concurrent.CountDownLatch;
  * 1. has 2 IPs
  * 2. use flat network provider
  * 3. create 3 VMs concurrently
- *
+ * <p>
  * for BUG: https://github.com/zxwing/premium/issues/360
- *
+ * <p>
  * confirm only one created successfully
  */
 public class TestFlatNetwork1 {
@@ -68,8 +68,8 @@ public class TestFlatNetwork1 {
         session = api.loginAsAdmin();
     }
 
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         final ImageInventory image = deployer.images.get("TestImage");
         final InstanceOfferingInventory ioinv = deployer.instanceOfferings.get("TestInstanceOffering");
         final L3NetworkInventory l3 = deployer.l3Networks.get("TestL3Network1");
@@ -78,7 +78,7 @@ public class TestFlatNetwork1 {
 
         int num = 3;
         final CountDownLatch latch = new CountDownLatch(num);
-        for (int i=0; i<num; i++) {
+        for (int i = 0; i < num; i++) {
             final int finalI = i;
             new Runnable() {
                 @Override

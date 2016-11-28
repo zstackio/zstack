@@ -15,7 +15,6 @@ import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.lb.LoadBalancerInventory;
 import org.zstack.network.service.lb.LoadBalancerListenerInventory;
 import org.zstack.network.service.lb.LoadBalancerListenerVO;
-import org.zstack.network.service.lb.LoadBalancerVO;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmVO;
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerRefVO;
 import org.zstack.simulator.appliancevm.ApplianceVmSimulatorConfig;
@@ -27,18 +26,17 @@ import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 
 /**
- * 
  * @author frank
- * 
- * 1. create a lb
- * 2. use separate vr
- * 3. delete the vm
- *
- * confirm the separate vr not deleted
- *
- * 4. delete the lb
- *
- * confirm the separate vr deleted
+ *         <p>
+ *         1. create a lb
+ *         2. use separate vr
+ *         3. delete the vm
+ *         <p>
+ *         confirm the separate vr not deleted
+ *         <p>
+ *         4. delete the lb
+ *         <p>
+ *         confirm the separate vr deleted
  */
 public class TestVirtualRouterLb12 {
     Deployer deployer;
@@ -69,7 +67,7 @@ public class TestVirtualRouterLb12 {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicy.Direct.toString());

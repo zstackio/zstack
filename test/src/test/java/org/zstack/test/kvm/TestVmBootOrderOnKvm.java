@@ -27,7 +27,7 @@ import static org.zstack.utils.CollectionDSL.list;
 
 /**
  * 1 create a vm from a data volume template
- *
+ * <p>
  * confirm the vm failed to create
  */
 public class TestVmBootOrderOnKvm {
@@ -54,9 +54,9 @@ public class TestVmBootOrderOnKvm {
         config = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         StartVmCmd scmd = config.startVmCmd;
         Assert.assertTrue(scmd.getBootDev().contains(BootDev.cdrom.toString()));
 

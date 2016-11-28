@@ -5,8 +5,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
-import org.zstack.header.core.Completion;
-import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.core.FutureReturnValueCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.test.BeanConstructor;

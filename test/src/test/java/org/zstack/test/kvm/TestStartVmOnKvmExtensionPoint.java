@@ -39,12 +39,12 @@ public class TestStartVmOnKvmExtensionPoint {
         ext = loader.getComponent(KVMStartVmExtension.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() {
-		Assert.assertTrue(ext.beforeCalled);
-		Assert.assertTrue(ext.successCalled);
-		Assert.assertFalse(ext.failedCalled);
-	}
+
+    @Test
+    public void test() {
+        Assert.assertTrue(ext.beforeCalled);
+        Assert.assertTrue(ext.successCalled);
+        Assert.assertFalse(ext.failedCalled);
+    }
 
 }

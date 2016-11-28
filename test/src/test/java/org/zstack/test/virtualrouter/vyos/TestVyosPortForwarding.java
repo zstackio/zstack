@@ -25,18 +25,13 @@ import org.zstack.test.virtualrouter.PortForwardingRuleTestValidator;
 import org.zstack.test.virtualrouter.VipTestValidator;
 
 /**
- * 
  * @author frank
- * 
- * @condition
- * use vyos provider
- *
+ * @condition use vyos provider
+ * <p>
  * 1. create a vm
  * 2. acquire a public ip: pub1
  * 3. set port forwarding to vm using pub1
- *
- * @test
- * confirm port forwarding rules on vm are correct
+ * @test confirm port forwarding rules on vm are correct
  */
 public class TestVyosPortForwarding {
     Deployer deployer;
@@ -68,7 +63,7 @@ public class TestVyosPortForwarding {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         L3NetworkInventory publicNw = deployer.l3Networks.get("PublicNetwork");

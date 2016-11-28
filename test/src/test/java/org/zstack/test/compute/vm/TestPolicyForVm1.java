@@ -15,7 +15,9 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.identity.UserInventory;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.APICreateVmInstanceMsg;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
@@ -26,7 +28,7 @@ import org.zstack.test.identity.IdentityCreator;
 /**
  * 1. create a user
  * 2. assign no permission to the user
- *
+ * <p>
  * confirm the user can not create/start/stop/reboot/destroy/migrate the vm
  */
 public class TestPolicyForVm1 {
@@ -46,7 +48,7 @@ public class TestPolicyForVm1 {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         InstanceOfferingInventory ioinv = deployer.instanceOfferings.get("TestInstanceOffering");

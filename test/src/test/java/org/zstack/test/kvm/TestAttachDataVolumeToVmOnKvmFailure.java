@@ -46,13 +46,13 @@ public class TestAttachDataVolumeToVmOnKvmFailure {
         config = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
-	    config.attachVolumeSuccess = false;
-	    VmInstanceInventory vm = deployer.vms.get("TestVm");
-	    DiskOfferingInventory dinv = deployer.diskOfferings.get("DataOffering");
-	    VolumeInventory vol = api.createDataVolume("d1", dinv.getUuid());
+
+    @Test
+    public void test() throws ApiSenderException {
+        config.attachVolumeSuccess = false;
+        VmInstanceInventory vm = deployer.vms.get("TestVm");
+        DiskOfferingInventory dinv = deployer.diskOfferings.get("DataOffering");
+        VolumeInventory vol = api.createDataVolume("d1", dinv.getUuid());
 
         boolean s = false;
         try {
@@ -65,5 +65,5 @@ public class TestAttachDataVolumeToVmOnKvmFailure {
         VolumeVO vo = dbf.findByUuid(vol.getUuid(), VolumeVO.class);
         Assert.assertEquals(VolumeStatus.Ready, vo.getStatus());
         Assert.assertNull(vo.getDeviceId());
-	}
+    }
 }

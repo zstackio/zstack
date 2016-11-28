@@ -27,13 +27,12 @@ import java.util.ArrayList;
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
- *
  * 1. create resources with account1
- *
+ * <p>
  * confirm account 2 cannot see resources of the account 1
- *
+ * <p>
  * 2. share the resources to hte account 2
- *
+ * <p>
  * confirm account 2 can see resources of the account 1
  */
 public class TestQueryVm6 {
@@ -53,7 +52,7 @@ public class TestQueryVm6 {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         InstanceOfferingInventory iniov = deployer.instanceOfferings.get("TestInstanceOffering");
@@ -91,7 +90,7 @@ public class TestQueryVm6 {
         qir = api.query(qimsg, APIQueryInstanceOfferingReply.class, session);
         Assert.assertEquals(1, qir.getInventories().size());
 
-        qdr = api.query(qdmsg, APIQueryDiskOfferingReply.class ,session);
+        qdr = api.query(qdmsg, APIQueryDiskOfferingReply.class, session);
         Assert.assertEquals(1, qdr.getInventories().size());
 
         imgr = api.query(imgmsg, APIQueryImageReply.class, session);
@@ -107,7 +106,7 @@ public class TestQueryVm6 {
         qir = api.query(qimsg, APIQueryInstanceOfferingReply.class, sessionForAccount2);
         Assert.assertEquals(0, qir.getInventories().size());
 
-        qdr = api.query(qdmsg, APIQueryDiskOfferingReply.class ,sessionForAccount2);
+        qdr = api.query(qdmsg, APIQueryDiskOfferingReply.class, sessionForAccount2);
         Assert.assertEquals(0, qdr.getInventories().size());
 
         imgr = api.query(imgmsg, APIQueryImageReply.class, sessionForAccount2);
@@ -122,7 +121,7 @@ public class TestQueryVm6 {
         qir = api.query(qimsg, APIQueryInstanceOfferingReply.class, session);
         Assert.assertEquals(1, qir.getInventories().size());
 
-        qdr = api.query(qdmsg, APIQueryDiskOfferingReply.class ,session);
+        qdr = api.query(qdmsg, APIQueryDiskOfferingReply.class, session);
         Assert.assertEquals(1, qdr.getInventories().size());
 
         imgr = api.query(imgmsg, APIQueryImageReply.class, session);
@@ -134,7 +133,7 @@ public class TestQueryVm6 {
         qir = api.query(qimsg, APIQueryInstanceOfferingReply.class, sessionForAccount2);
         Assert.assertEquals(1, qir.getInventories().size());
 
-        qdr = api.query(qdmsg, APIQueryDiskOfferingReply.class ,sessionForAccount2);
+        qdr = api.query(qdmsg, APIQueryDiskOfferingReply.class, sessionForAccount2);
         Assert.assertEquals(1, qdr.getInventories().size());
 
         imgr = api.query(imgmsg, APIQueryImageReply.class, sessionForAccount2);

@@ -66,7 +66,7 @@ public class TestSftpBackupStorageAddImageTimeoutManagement {
         timeoutManager = loader.getComponent(ApiTimeoutManager.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         SftpBackupStorageTestHelper helper = new SftpBackupStorageTestHelper();

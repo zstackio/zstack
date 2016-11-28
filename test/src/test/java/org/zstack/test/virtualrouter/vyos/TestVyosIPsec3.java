@@ -31,7 +31,7 @@ import java.util.List;
 import static java.util.Arrays.asList;
 
 /**
- *  test sync ipsec connection
+ * test sync ipsec connection
  */
 public class TestVyosIPsec3 {
     Deployer deployer;

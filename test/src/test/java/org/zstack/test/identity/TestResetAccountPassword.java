@@ -29,7 +29,7 @@ public class TestResetAccountPassword {
         api = new Api();
         api.startServer();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         SessionInventory session = api.loginAsAdmin();

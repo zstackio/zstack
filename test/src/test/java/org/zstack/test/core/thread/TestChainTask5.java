@@ -28,14 +28,14 @@ public class TestChainTask5 {
     int threadNum = 100;
     List<Integer> res = new ArrayList<Integer>(threadNum);
     CountDownLatch latch = new CountDownLatch(threadNum);
-    
+
     class Tester extends ChainTask {
         int index;
-        
+
         Tester(int index) {
             this.index = index;
         }
-        
+
         @Override
         public String getName() {
             return String.format("test-%s", index);
@@ -74,10 +74,10 @@ public class TestChainTask5 {
         deployer.build();
         api = deployer.getApi();
     }
-    
+
     @Test
     public void test() throws InterruptedException, ApiSenderException {
-        for (int i=0; i<threadNum; i++) {
+        for (int i = 0; i < threadNum; i++) {
             Tester t = new Tester(i);
             thdf.chainSubmit(t);
         }

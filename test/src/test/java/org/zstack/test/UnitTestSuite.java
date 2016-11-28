@@ -108,7 +108,7 @@ public class UnitTestSuite {
                 }
 
                 String[] caseNames = cases.split(",");
-                DebugUtils.Assert(caseNames.length!=0, String.format("cases cannot be an empty string"));
+                DebugUtils.Assert(caseNames.length != 0, String.format("cases cannot be an empty string"));
                 List<CaseInfo> casesToRun = new ArrayList<CaseInfo>();
                 for (String caseName : caseNames) {
                     CaseInfo info = caseMap.get(caseName);
@@ -156,7 +156,7 @@ public class UnitTestSuite {
                     testCases.add(info);
 
                     if (c.getRepeatTimes() != null && c.getRepeatTimes() > 1) {
-                        for (int i=0; i<c.getRepeatTimes(); i++) {
+                        for (int i = 0; i < c.getRepeatTimes(); i++) {
                             info = new CaseInfo();
                             info.clazz = clazz;
                             info.timeout = parseCaseTimeout(c, config);
@@ -186,7 +186,7 @@ public class UnitTestSuite {
 
             int index = 0;
             for (CaseInfo info : testCases) {
-                info.index = index ++;
+                info.index = index++;
                 CaseRunner runner = new CaseRunner();
                 runner.caseInfo = info;
                 try {
@@ -239,7 +239,7 @@ public class UnitTestSuite {
             List<String> failedCaseNames = new ArrayList<String>();
             for (CaseInfo info : testCases) {
                 if (!info.done) {
-                    skipped ++;
+                    skipped++;
                     continue;
                 }
 
@@ -265,7 +265,7 @@ public class UnitTestSuite {
 
             f.format("\n\nTest Summary:\n-------------------------------------------------------------------------------");
             String fmt = "\nTotal cases: %s\tSuccess: %s\tFailed: %s\tSkipped: %s\tPass rate: %s%%";
-            f.format(fmt, testCases.size(), successCases, failedCases, skipped, successRate*100);
+            f.format(fmt, testCases.size(), successCases, failedCases, skipped, successRate * 100);
             if (failedCases > 0) {
                 f.format("\n\nsee error logs in %s", errLogFolder.getAbsolutePath());
             }
@@ -389,12 +389,12 @@ public class UnitTestSuite {
                 }
 
                 private String formatSeconds() {
-                    return String.format("%02d:%02d", (seconds%3600)/60, (seconds%60));
+                    return String.format("%02d:%02d", (seconds % 3600) / 60, (seconds % 60));
                 }
 
                 private int printBar() {
                     String fmt = String.format("\r%%-%ss%s%s [ %s ]", maxCaseNameLen, StringUtils.repeat(".", dotLen),
-                            StringUtils.repeat(" ", DOT_LEN - dotLen),  formatSeconds());
+                            StringUtils.repeat(" ", DOT_LEN - dotLen), formatSeconds());
                     String str = String.format(fmt, caseInfo.caseNameWithIndex());
                     System.out.print(str);
                     return str.length();

@@ -23,19 +23,18 @@ import org.zstack.utils.logging.CLogger;
 
 /**
  * 1. reconnect nfs primary storage
- *
+ * <p>
  * confirm the ping command sent
- *
+ * <p>
  * 2. make the ping command fail
  * 3. reconnect
- *
+ * <p>
  * confirm the primary storage disconnected
- *
+ * <p>
  * 3. make the ping command success
  * 4. reconnect
- *
+ * <p>
  * confirm the primary storage connected
- *
  */
 public class TestReconnectNfsPrimaryStorage4 {
     CLogger logger = Utils.getLogger(TestSftpBackupStorageDeleteImage2.class);
@@ -61,9 +60,9 @@ public class TestReconnectNfsPrimaryStorage4 {
         config = loader.getComponent(NfsPrimaryStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         PrimaryStorageInventory ps = deployer.primaryStorages.get("nfs");
         config.pingCmds.clear();
         api.reconnectPrimaryStorage(ps.getUuid());

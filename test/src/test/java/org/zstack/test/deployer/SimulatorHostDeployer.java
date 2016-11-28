@@ -13,7 +13,7 @@ public class SimulatorHostDeployer implements HostDeployer<SimulatorHostConfig> 
     static {
         Deployer.registerDeployer(new SimulatorHostDeployer());
     }
-    
+
     @Override
     public Class<SimulatorHostConfig> getSupportedDeployerClassType() {
         return SimulatorHostConfig.class;

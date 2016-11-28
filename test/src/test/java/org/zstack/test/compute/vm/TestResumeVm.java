@@ -26,7 +26,7 @@ public class TestResumeVm {
     DatabaseFacade dbf;
 
     @Before
-    public void setUp() throws Exception{
+    public void setUp() throws Exception {
         WebBeanConstructor con = new WebBeanConstructor();
         DBUtil.reDeployDB();
 

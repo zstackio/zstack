@@ -4,7 +4,6 @@ import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBusIN;
-import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.cloudbus.CloudBusSteppingCallback;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.header.AbstractService;
@@ -26,10 +25,10 @@ public class TestCloudBusSendMultiMsg5 {
     boolean isSuccess = true;
     Service serv;
     int msgNum = 30;
-    
+
     public static class HelloWorldMsg extends NeedReplyMessage {
     }
-    
+
     class FakeService extends AbstractService {
         @Override
         public boolean start() {
@@ -56,9 +55,9 @@ public class TestCloudBusSendMultiMsg5 {
         public String getId() {
             return this.getClass().getCanonicalName();
         }
-        
+
     }
-    
+
     @Before
     public void setUp() throws Exception {
         BeanConstructor con = new BeanConstructor();
@@ -71,7 +70,7 @@ public class TestCloudBusSendMultiMsg5 {
     @Test
     public void test() throws InterruptedException, ClassNotFoundException {
         List<HelloWorldMsg> msgs = new ArrayList<HelloWorldMsg>(msgNum);
-        for (int i=0; i<msgNum; i++) {
+        for (int i = 0; i < msgNum; i++) {
             HelloWorldMsg msg = new HelloWorldMsg();
             msg.setServiceId(FakeService.class.getCanonicalName());
             msgs.add(msg);

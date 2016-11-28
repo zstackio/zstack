@@ -14,7 +14,7 @@ public class VmMigrateExtension implements VmInstanceMigrateExtensionPoint {
     boolean afterCalled = false;
     boolean failedCalled = false;
     String expectedUuid;
-    
+
     @Override
     public void preMigrateVm(VmInstanceInventory inv, String huuid) {
         if (preventMigrate) {

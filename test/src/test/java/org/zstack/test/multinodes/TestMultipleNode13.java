@@ -22,11 +22,10 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
- *
  * 1. start 2 nodes
  * 2. update global config test
  * 3. instruct node1 to report global config test
- *
+ * <p>
  * confirm global config was updated on node1, but other global configs don't change
  */
 public class TestMultipleNode13 {

@@ -41,18 +41,18 @@ import java.util.List;
 /**
  * 1. migrate a vm with storage
  * 2. set migration failed
- *
+ * <p>
  * confirm the dhcp is set on the dst host and removed from the dst host
- *
+ * <p>
  * 3. delete the ip range
  * 4. add a new ip range
  * 5. create a vm
- *
+ * <p>
  * confirm the dhcp IP is from the new range
- *
+ * <p>
  * 6. add a new IP range2
  * 7. delete the IP range2
- *
+ * <p>
  * confirm the DHCP IP tag is still on the L3
  */
 public class TestMevoco11 {
@@ -124,9 +124,9 @@ public class TestMevoco11 {
         Assert.assertTrue(dns.containsAll(target.dns));
         Assert.assertTrue(target.dns.containsAll(dns));
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         HostInventory host2 = deployer.hosts.get("host2");
         VmInstanceInventory vm = deployer.vms.get("TestVm");
 
@@ -184,5 +184,5 @@ public class TestMevoco11 {
 
         String dhcpTag = FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.getTag(l3Uuid);
         Assert.assertNotNull(dhcpTag);
-	}
+    }
 }

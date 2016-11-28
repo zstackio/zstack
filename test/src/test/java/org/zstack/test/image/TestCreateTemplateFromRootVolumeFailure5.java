@@ -7,7 +7,6 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.identity.SessionInventory;
-import org.zstack.header.image.ImageBackupStorageRefInventory;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageStatus;
 import org.zstack.header.image.ImageVO;
@@ -22,18 +21,15 @@ import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.test.storage.backup.sftp.TestSftpBackupStorageDeleteImage2;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.Arrays;
-import java.util.List;
 
 /**
  * 1. create image from root volume on two backup storage
  * 2. disable sftp
- *
+ * <p>
  * confirm creation only succeeds on sftp1
  */
 public class TestCreateTemplateFromRootVolumeFailure5 {
@@ -60,26 +56,26 @@ public class TestCreateTemplateFromRootVolumeFailure5 {
         config = loader.getComponent(SftpBackupStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
-	    VmInstanceInventory vm = deployer.vms.get("TestVm");
-	    api.stopVmInstance(vm.getUuid());
-	    String rootVolumeUuid = vm.getRootVolumeUuid();
-	    VolumeVO vol = dbf.findByUuid(rootVolumeUuid, VolumeVO.class);
-	    
-	    BackupStorageInventory sftp = deployer.backupStorages.get("sftp");
+
+    @Test
+    public void test() throws ApiSenderException {
+        VmInstanceInventory vm = deployer.vms.get("TestVm");
+        api.stopVmInstance(vm.getUuid());
+        String rootVolumeUuid = vm.getRootVolumeUuid();
+        VolumeVO vol = dbf.findByUuid(rootVolumeUuid, VolumeVO.class);
+
+        BackupStorageInventory sftp = deployer.backupStorages.get("sftp");
         BackupStorageInventory sftp1 = deployer.backupStorages.get("sftp1");
         api.changeBackupStorageState(sftp.getUuid(), BackupStorageStateEvent.disable);
-	    ImageInventory image = api.createTemplateFromRootVolume("testImage", rootVolumeUuid, Arrays.asList(sftp.getUuid(), sftp1.getUuid()));
+        ImageInventory image = api.createTemplateFromRootVolume("testImage", rootVolumeUuid, Arrays.asList(sftp.getUuid(), sftp1.getUuid()));
         Assert.assertEquals(1, image.getBackupStorageRefs().size());
-	    Assert.assertEquals(ImageStatus.Ready.toString(), image.getStatus());
-	    Assert.assertEquals(vol.getSize(), image.getSize());
+        Assert.assertEquals(ImageStatus.Ready.toString(), image.getStatus());
+        Assert.assertEquals(vol.getSize(), image.getSize());
         Assert.assertEquals(String.format("volume://%s", vol.getUuid()), image.getUrl());
         Assert.assertEquals(sftp1.getUuid(), image.getBackupStorageRefs().get(0).getBackupStorageUuid());
 
-	    ImageVO ivo = dbf.findByUuid(image.getUuid(), ImageVO.class);
-	    Assert.assertNotNull(ivo);
-	}
+        ImageVO ivo = dbf.findByUuid(image.getUuid(), ImageVO.class);
+        Assert.assertNotNull(ivo);
+    }
 
 }

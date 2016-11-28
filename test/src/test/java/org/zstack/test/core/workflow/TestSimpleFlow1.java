@@ -2,10 +2,10 @@ package org.zstack.test.core.workflow;
 
 import junit.framework.Assert;
 import org.junit.Test;
-import org.zstack.header.core.workflow.FlowTrigger;
-import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.core.workflow.WorkFlowException;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -28,21 +28,21 @@ public class TestSimpleFlow1 {
                 .then(new NoRollbackFlow() {
                     @Override
                     public void run(FlowTrigger chain, Map data) {
-                        count[0] ++;
+                        count[0]++;
                         chain.next();
                     }
                 })
                 .then(new NoRollbackFlow() {
                     @Override
                     public void run(FlowTrigger chain, Map data) {
-                        count[0] ++;
+                        count[0]++;
                         chain.fail(null);
                     }
                 })
                 .then(new NoRollbackFlow() {
                     @Override
                     public void run(FlowTrigger chain, Map data) {
-                        count[0] ++;
+                        count[0]++;
                         chain.next();
                     }
                 })

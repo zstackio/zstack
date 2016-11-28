@@ -24,7 +24,7 @@ public class TestCloudBusMultiCall {
     CloudBusIN bus;
     Service serv;
     int msgNum = 10;
-    
+
     public static class HelloWorldMsg extends NeedReplyMessage {
         private String greet;
 
@@ -35,8 +35,9 @@ public class TestCloudBusMultiCall {
         public void setGreet(String greet) {
             this.greet = greet;
         }
-        
+
     }
+
     public static class HelloWorldReply extends MessageReply {
         private String greet;
 
@@ -48,7 +49,7 @@ public class TestCloudBusMultiCall {
             this.greet = greet;
         }
     }
-    
+
     class FakeService extends AbstractService {
         @Override
         public boolean start() {
@@ -67,7 +68,7 @@ public class TestCloudBusMultiCall {
         @Override
         public void handleMessage(Message msg) {
             if (msg.getClass() == HelloWorldMsg.class) {
-                HelloWorldMsg hmsg = (HelloWorldMsg)msg;
+                HelloWorldMsg hmsg = (HelloWorldMsg) msg;
                 HelloWorldReply r = new HelloWorldReply();
                 r.setGreet(hmsg.getGreet());
                 bus.reply(msg, r);
@@ -78,9 +79,9 @@ public class TestCloudBusMultiCall {
         public String getId() {
             return this.getClass().getCanonicalName();
         }
-        
+
     }
-    
+
     @Before
     public void setUp() throws Exception {
         BeanConstructor con = new BeanConstructor();
@@ -93,14 +94,14 @@ public class TestCloudBusMultiCall {
     @Test
     public void test() throws InterruptedException, ClassNotFoundException {
         List<HelloWorldMsg> msgs = new ArrayList<HelloWorldMsg>(msgNum);
-        for (int i=0; i<msgNum; i++) {
+        for (int i = 0; i < msgNum; i++) {
             HelloWorldMsg msg = new HelloWorldMsg();
             msg.setGreet("Hello");
             msg.setServiceId(FakeService.class.getCanonicalName());
             msg.setTimeout(TimeUnit.SECONDS.toMillis(2));
             msgs.add(msg);
         }
-        
+
         List<MessageReply> rs = bus.call(msgs);
         serv.stop();
         for (MessageReply r : rs) {

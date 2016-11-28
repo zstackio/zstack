@@ -48,7 +48,7 @@ public class TestCreateApplianceVm1 {
         dbf = loader.getComponent(DatabaseFacade.class);
         apvmf = loader.getComponent(ApplianceVmFacade.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         final ApplianceVmSpec spec = new ApplianceVmSpec();
@@ -82,7 +82,7 @@ public class TestCreateApplianceVm1 {
         new Runnable() {
             @Override
             public void run() {
-                for (int i=0; i<num; i++) {
+                for (int i = 0; i < num; i++) {
                     apvmf.createApplianceVm(spec, new ReturnValueCompletion<ApplianceVmInventory>() {
                         private VmNicInventory findNic(List<VmNicInventory> lst, String l3Uuid) {
                             for (VmNicInventory nic : lst) {
@@ -103,7 +103,7 @@ public class TestCreateApplianceVm1 {
                                 Assert.assertEquals(ApplianceVmConstant.APPLIANCE_VM_TYPE, vm.getType());
                                 Assert.assertEquals(type.toString(), vm.getApplianceVmType());
                                 Assert.assertEquals(VmInstanceState.Running.toString(), vm.getState());
-                                success ++;
+                                success++;
                             } finally {
                                 latch.countDown();
                             }

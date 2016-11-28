@@ -55,9 +55,9 @@ public class TestNfsImageCleaner {
         config = loader.getComponent(NfsPrimaryStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         ImageGlobalConfig.DELETION_POLICY.updateValue(ImageDeletionPolicy.Direct.toString());
         ImageInventory image1 = deployer.images.get("TestImage");
         api.deleteImage(image1.getUuid());
@@ -79,5 +79,5 @@ public class TestNfsImageCleaner {
         Assert.assertEquals(c.getInstallUrl(), cmd.getInstallPath());
         c = q.find();
         Assert.assertNull(c);
-	}
+    }
 }

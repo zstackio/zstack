@@ -56,15 +56,15 @@ public class TestDeleteDataVolumeOnKvm {
         nconfig = loader.getComponent(NfsPrimaryStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
-	    VmInstanceInventory vm = deployer.vms.get("TestVm");
-	    DiskOfferingInventory dinv = deployer.diskOfferings.get("DataOffering");
-	    VolumeInventory vol1 = api.createDataVolume("d1", dinv.getUuid());
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
+        VmInstanceInventory vm = deployer.vms.get("TestVm");
+        DiskOfferingInventory dinv = deployer.diskOfferings.get("DataOffering");
+        VolumeInventory vol1 = api.createDataVolume("d1", dinv.getUuid());
         VolumeInventory vol2 = api.createDataVolume("d2", dinv.getUuid());
         VolumeInventory vol3 = api.createDataVolume("d3", dinv.getUuid());
-	    vol1 = api.attachVolumeToVm(vm.getUuid(), vol1.getUuid());
+        vol1 = api.attachVolumeToVm(vm.getUuid(), vol1.getUuid());
         vol2 = api.attachVolumeToVm(vm.getUuid(), vol2.getUuid());
         vol3 = api.attachVolumeToVm(vm.getUuid(), vol3.getUuid());
 
@@ -163,5 +163,5 @@ public class TestDeleteDataVolumeOnKvm {
         Assert.assertEquals(1, nconfig.deleteCmds.size());
         cmd = nconfig.deleteCmds.get(0);
         Assert.assertTrue(vol6.getInstallPath().contains(cmd.getInstallPath()));
-	}
+    }
 }

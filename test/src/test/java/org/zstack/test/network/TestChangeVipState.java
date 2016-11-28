@@ -7,12 +7,13 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.network.service.vip.*;
+import org.zstack.network.service.vip.VipInventory;
+import org.zstack.network.service.vip.VipState;
+import org.zstack.network.service.vip.VipStateEvent;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.test.search.QueryTestValidator;
 
 public class TestChangeVipState {
     Deployer deployer;
@@ -31,7 +32,7 @@ public class TestChangeVipState {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         L3NetworkInventory l3nw = deployer.l3Networks.get("TestL3Network1");

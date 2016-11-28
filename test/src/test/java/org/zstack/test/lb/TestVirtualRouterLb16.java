@@ -7,15 +7,11 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.identity.SessionInventory;
-import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.tag.SystemTagInventory;
-import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.lb.LoadBalancerInventory;
 import org.zstack.network.service.lb.LoadBalancerListenerVO;
 import org.zstack.network.service.lb.LoadBalancerSystemTags;
 import org.zstack.network.service.lb.LoadBalancerVO;
-import org.zstack.network.service.vip.VipVO;
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.LbTO;
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.RefreshLbCmd;
 import org.zstack.simulator.appliancevm.ApplianceVmSimulatorConfig;
@@ -32,22 +28,21 @@ import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
 /**
- * 
  * @author frank
- * 
- * 1. create a lb
- * 2. delete a lb system tag
- *
- * confirm unable to delete
- *
- * 3. update the system tag
- * 4. refresh the lb
- *
- * confirm lb refreshed successfully
- *
- * 5. update the sysetem tag to an invalid value
- *
- * confirm unable to update
+ *         <p>
+ *         1. create a lb
+ *         2. delete a lb system tag
+ *         <p>
+ *         confirm unable to delete
+ *         <p>
+ *         3. update the system tag
+ *         4. refresh the lb
+ *         <p>
+ *         confirm lb refreshed successfully
+ *         <p>
+ *         5. update the sysetem tag to an invalid value
+ *         <p>
+ *         confirm unable to update
  */
 public class TestVirtualRouterLb16 {
     Deployer deployer;
@@ -78,7 +73,7 @@ public class TestVirtualRouterLb16 {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         LoadBalancerInventory lb = deployer.loadBalancers.get("lb");
@@ -108,7 +103,7 @@ public class TestVirtualRouterLb16 {
             }
         });
 
-        String val =  LoadBalancerSystemTags.UNHEALTHY_THRESHOLD.getTokenByTag(unhealthThreshold, LoadBalancerSystemTags.UNHEALTHY_THRESHOLD_TOKEN);
+        String val = LoadBalancerSystemTags.UNHEALTHY_THRESHOLD.getTokenByTag(unhealthThreshold, LoadBalancerSystemTags.UNHEALTHY_THRESHOLD_TOKEN);
         Assert.assertEquals(Integer.valueOf(newval), Integer.valueOf(val));
 
         s = false;

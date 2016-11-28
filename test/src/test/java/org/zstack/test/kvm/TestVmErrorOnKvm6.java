@@ -13,12 +13,12 @@ import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
+import org.zstack.simulator.storage.backup.sftp.SftpBackupStorageSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.simulator.storage.backup.sftp.SftpBackupStorageSimulatorConfig;
 import org.zstack.test.storage.backup.sftp.TestSftpBackupStorageDeleteImage2;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -29,7 +29,7 @@ import org.zstack.utils.logging.CLogger;
  * 3. destroy vm, vm will come to state Unknown
  * 4. set flag making vm able to destroy on kvm host
  * 5. destroy vm
- *
+ * <p>
  * confirm vm is destroyed
  */
 public class TestVmErrorOnKvm6 {
@@ -58,9 +58,9 @@ public class TestVmErrorOnKvm6 {
         kconfig = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicy.Direct.toString());
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         kconfig.destroyVmSuccess = false;
@@ -75,6 +75,6 @@ public class TestVmErrorOnKvm6 {
         api.destroyVmInstance(vm.getUuid());
         VmInstanceVO vmvo = dbf.findByUuid(vm.getUuid(), VmInstanceVO.class);
         Assert.assertNull(vmvo);
-	}
+    }
 
 }

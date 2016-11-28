@@ -11,7 +11,6 @@ import org.zstack.header.network.l3.APIGetIpAddressCapacityReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceVO;
-import org.zstack.header.vm.VmNicInventory;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
@@ -25,7 +24,7 @@ import org.zstack.utils.logging.CLogger;
 /**
  * 1. attach a nic to vm
  * 2. make attaching fails
- *
+ * <p>
  * confirm the IP is returned
  */
 public class TestAttachNicOnKvm2 {

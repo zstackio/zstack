@@ -33,7 +33,7 @@ import java.util.Arrays;
  * 1. create a data volume template
  * 2. disable backup storage the template is on
  * 3. create data volume from the template
- *
+ * <p>
  * confirm volume failed to create
  */
 public class TestCreateDataVolumeTemplate3 {
@@ -60,9 +60,9 @@ public class TestCreateDataVolumeTemplate3 {
         config = loader.getComponent(NfsPrimaryStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test(expected = ApiSenderException.class)
-	public void test() throws ApiSenderException {
+
+    @Test(expected = ApiSenderException.class)
+    public void test() throws ApiSenderException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         VolumeInventory dataVolume = CollectionUtils.find(vm.getAllVolumes(), new Function<VolumeInventory, VolumeInventory>() {
             @Override
@@ -77,5 +77,5 @@ public class TestCreateDataVolumeTemplate3 {
         Assert.assertEquals(ImageStatus.Ready.toString(), template.getStatus());
         api.changeBackupStorageState(sftp.getUuid(), BackupStorageStateEvent.disable);
         api.createDataVolumeFromTemplate(template.getUuid(), nfs.getUuid());
-	}
+    }
 }

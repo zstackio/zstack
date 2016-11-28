@@ -34,7 +34,7 @@ public class TestChangeSecurityGroupState {
         loader = deployer.getComponentLoader();
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         long count = dbf.count(SecurityGroupVO.class);

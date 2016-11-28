@@ -31,7 +31,7 @@ public class TestSearch {
         api = new Api();
         api.startServer();
     }
-    
+
     @Test
     public void test() {
         SearchQuery<VmInstanceInventory> q = new SearchQuery<VmInstanceInventory>(VmInstanceInventory.class);
@@ -40,7 +40,7 @@ public class TestSearch {
         for (VmInstanceInventory vm : invs) {
             logger.debug(Utils.getFieldPrinter().print(vm));
         }
-        
+
         SearchQuery<VmInstanceInventory> q1 = new SearchQuery<VmInstanceInventory>(VmInstanceInventory.class);
         q1.select("uuid", "name", "vmNics");
         List<ESTuple> tuples = q1.listTuple();

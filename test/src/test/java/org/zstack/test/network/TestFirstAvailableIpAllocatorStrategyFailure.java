@@ -44,8 +44,8 @@ public class TestFirstAvailableIpAllocatorStrategyFailure {
     private void takeIp(L3NetworkInventory l3inv, IpRangeInventory ipinv, String startIp, String endIp) {
         long sip = NetworkUtils.ipv4StringToLong(startIp);
         long eip = NetworkUtils.ipv4StringToLong(endIp);
-        
-        for (long lip=sip; lip<=eip; lip++) {
+
+        for (long lip = sip; lip <= eip; lip++) {
             String ip = NetworkUtils.longToIpv4String(lip);
             UsedIpVO vo = new UsedIpVO(ipinv.getUuid(), ip);
             vo.setUuid(Platform.getUuid());
@@ -54,7 +54,7 @@ public class TestFirstAvailableIpAllocatorStrategyFailure {
             dbf.persist(vo);
         }
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         String startIp = "10.223.110.10";
@@ -67,9 +67,9 @@ public class TestFirstAvailableIpAllocatorStrategyFailure {
         IpRangeInventory ipInv = api.addIpRange(l3inv.getUuid(), startIp, endIp, "10.223.110.1", "255.255.255.0");
         IpRangeVO ipvo = dbf.findByUuid(ipInv.getUuid(), IpRangeVO.class);
         Assert.assertNotNull(ipvo);
-        
+
         takeIp(l3inv, ipInv, startIp, endIp);
-        
+
         AllocateIpMsg msg = new AllocateIpMsg();
         msg.setL3NetworkUuid(l3inv.getUuid());
         msg.setServiceId(bus.makeLocalServiceId(L3NetworkConstant.SERVICE_ID));

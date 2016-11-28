@@ -19,16 +19,11 @@ import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 
 /**
- * 
  * @author frank
- * 
- * @condition
- * 1. create a vm
+ * @condition 1. create a vm
  * 2. set eip
  * 3. destroy vr
- *
- * @test
- * confirm vr related eip VO removed
+ * @test confirm vr related eip VO removed
  */
 public class TestVirtualRouterEip25 {
     Deployer deployer;
@@ -59,7 +54,7 @@ public class TestVirtualRouterEip25 {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         ApplianceVmVO vr = dbf.listAll(ApplianceVmVO.class).get(0);

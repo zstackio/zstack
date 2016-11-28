@@ -12,12 +12,12 @@ import org.zstack.header.image.ImageInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.simulator.storage.backup.sftp.SftpBackupStorageSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.simulator.storage.backup.sftp.SftpBackupStorageSimulatorConfig;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -54,15 +54,15 @@ public class TestMillionVms {
         config = loader.getComponent(SftpBackupStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
+
     @AsyncThread
     void createVm() throws ApiSenderException {
-        for (int i=0; i<1000; i++) {
+        for (int i = 0; i < 1000; i++) {
             api.createVmByFullConfig(vm, null, l3uuids, ds);
         }
         latch.countDown();
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         ImageInventory im = deployer.images.get("TestImage");
@@ -79,7 +79,7 @@ public class TestMillionVms {
         vm.setType(VmInstanceConstant.USER_VM_TYPE);
         vm.setInstanceOfferingUuid(iouuid);
         vm.setImageUuid(imuuid);
-        for (int i=0; i<num; i++) {
+        for (int i = 0; i < num; i++) {
             createVm();
         }
         latch.await();

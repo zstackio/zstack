@@ -12,9 +12,9 @@ import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.rest.RestAPIResponse;
 import org.zstack.header.zone.APICreateZoneEvent;
 import org.zstack.header.zone.APICreateZoneMsg;
+import org.zstack.simulator.SyncRESTCaller;
 import org.zstack.test.Api;
 import org.zstack.test.DBUtil;
-import org.zstack.simulator.SyncRESTCaller;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -40,7 +40,7 @@ public class TestCreateZoneByHttpApi {
         api.startServer();
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws InterruptedException {
         APICreateZoneMsg msg = new APICreateZoneMsg();

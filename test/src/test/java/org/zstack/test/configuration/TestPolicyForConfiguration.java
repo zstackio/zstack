@@ -1,7 +1,6 @@
 package org.zstack.test.configuration;
 
 import junit.framework.Assert;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.zstack.core.componentloader.ComponentLoader;
@@ -23,29 +22,28 @@ import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
-import java.util.concurrent.Callable;
 
 /**
  * 1. create a user
  * 2. assign permissions of allow of creating/deleting/changing/updating instance offering and disk offering to the user
- *
+ * <p>
  * confirm the user can create/delete/change/update the instance offering and disk offering
- *
+ * <p>
  * 3. assign permissions of deny of creating/deleting/changing/updating instance offering and disk offering to the user
- *
+ * <p>
  * confirm the user can not create/delete/change/update the instance offering and disk offering
- *
+ * <p>
  * 4. create a group
  * 5. create another user
  * 6. add the user to the group
  * 7. assign permissions of allow of creating/deleting/changing/updating instance offering and disk offering to the group
- *
+ * <p>
  * confirm the group can create/delete/change/update the instance offering and disk offering
- *
+ * <p>
  * 7. assign permissions of deny of creating/deleting/changing/updating instance offering and disk offering to the group
- *
+ * <p>
  * confirm the group cannot create/delete/change/update the instance offering and disk offering
- *
+ * <p>
  * confirm the user can query the instance offering and disk offering
  */
 public class TestPolicyForConfiguration {

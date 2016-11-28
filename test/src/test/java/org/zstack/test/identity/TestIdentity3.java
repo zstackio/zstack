@@ -17,7 +17,7 @@ import org.zstack.test.DBUtil;
 /**
  * 1. create an account
  * 2. reset password of the account
- *
+ * <p>
  * confirm the password is reset
  */
 public class TestIdentity3 {
@@ -35,7 +35,7 @@ public class TestIdentity3 {
         api = new Api();
         api.startServer();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         IdentityCreator creator = new IdentityCreator(api);

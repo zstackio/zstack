@@ -40,13 +40,11 @@ import java.util.Map;
  * 2. change vm's instance offering to another one with different qos
  * 3. stop/start vm
  * confirm the vm's qos setting changed
- *
+ * <p>
  * 4. change vm's instance offering to one without qos
  * 5. stop/start vm
- *
+ * <p>
  * confirm ths vm's qos is gone
- *
- *
  */
 public class TestMevoco17 {
     CLogger logger = Utils.getLogger(TestMevoco17.class);
@@ -90,9 +88,9 @@ public class TestMevoco17 {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         InstanceOfferingInventory offering2 = deployer.instanceOfferings.get("TestInstanceOffering1");
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         api.stopVmInstance(vm.getUuid());
@@ -111,12 +109,12 @@ public class TestMevoco17 {
         Map m = (Map) scmd.getAddons().get(MevocoConstants.KVM_NIC_QOS);
         Assert.assertNotNull(m);
         NicQos nqos = JSONObjectUtil.rehashObject(m.get(nic.getUuid()), NicQos.class);
-        Assert.assertEquals(networkBandwidth, (long)nqos.outboundBandwidth);
+        Assert.assertEquals(networkBandwidth, (long) nqos.outboundBandwidth);
 
         m = (Map) scmd.getAddons().get(MevocoConstants.KVM_VOLUME_QOS);
         VolumeQos vqos = JSONObjectUtil.rehashObject(m.get(root.getUuid()), VolumeQos.class);
-        Assert.assertEquals(ioBandwidth, (long)vqos.totalBandwidth);
-        Assert.assertEquals(iops, (long)vqos.totalIops);
+        Assert.assertEquals(ioBandwidth, (long) vqos.totalBandwidth);
+        Assert.assertEquals(iops, (long) vqos.totalIops);
 
         InstanceOfferingInventory offering3 = deployer.instanceOfferings.get("small");
         api.stopVmInstance(vm.getUuid());

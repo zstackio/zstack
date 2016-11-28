@@ -21,7 +21,7 @@ import org.zstack.utils.data.SizeUnit;
 /**
  * 1. use smp storage
  * 2. resize the primary storage
- *
+ * <p>
  * confirm resize success
  */
 public class TestSmpPrimaryStorage5 {
@@ -51,9 +51,9 @@ public class TestSmpPrimaryStorage5 {
         config = loader.getComponent(SMPPrimaryStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         PrimaryStorageInventory smp = deployer.primaryStorages.get("smp");
 
         config.totalCapacity = SizeUnit.TERABYTE.toByte(10);

@@ -25,7 +25,7 @@ import java.util.concurrent.Callable;
  * 1. create a vm with virtual router
  * 2. delete host
  * 3. set vr migration failure
- *
+ * <p>
  * confirm vr is deleted
  */
 public class TestCascadeDeletion21 {
@@ -55,7 +55,7 @@ public class TestCascadeDeletion21 {
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicy.Direct.toString());
-        ApplianceVmVO  vr = dbf.listAll(ApplianceVmVO.class).get(0);
+        ApplianceVmVO vr = dbf.listAll(ApplianceVmVO.class).get(0);
         String lastHostUuid = vr.getHostUuid();
         kconfig.migrateVmSuccess = false;
         api.deleteHost(lastHostUuid);

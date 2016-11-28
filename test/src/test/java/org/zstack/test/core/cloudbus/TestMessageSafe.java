@@ -22,7 +22,7 @@ public class TestMessageSafe {
     ComponentLoader loader;
     CloudBusIN bus;
     Service serv;
-    
+
     public static class HelloWorldMsg extends NeedReplyMessage {
         private String greet;
 
@@ -33,8 +33,9 @@ public class TestMessageSafe {
         public void setGreet(String greet) {
             this.greet = greet;
         }
-        
+
     }
+
     public static class HelloWorldReply extends MessageReply {
         private String greet;
 
@@ -46,7 +47,7 @@ public class TestMessageSafe {
             this.greet = greet;
         }
     }
-    
+
     class FakeService extends AbstractService {
         @Override
         public boolean start() {
@@ -70,9 +71,9 @@ public class TestMessageSafe {
         public String getId() {
             return this.getClass().getCanonicalName();
         }
-        
+
     }
-    
+
     @Before
     public void setUp() throws Exception {
         BeanConstructor con = new BeanConstructor();
@@ -88,7 +89,7 @@ public class TestMessageSafe {
         msg.setGreet("Hello");
         msg.setServiceId(FakeService.class.getCanonicalName());
         msg.setTimeout(TimeUnit.SECONDS.toMillis(10));
-        MessageReply r =  bus.call(msg);
+        MessageReply r = bus.call(msg);
         serv.stop();
         Assert.assertFalse(r.isSuccess());
     }

@@ -33,7 +33,7 @@ public class TestVmGetAttachableVolume {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         DiskOfferingInventory dinv = deployer.diskOfferings.get("TestDataDiskOffering");

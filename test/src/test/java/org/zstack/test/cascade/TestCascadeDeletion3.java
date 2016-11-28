@@ -13,8 +13,8 @@ import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
-import org.zstack.header.network.l3.IpRangeVO;
 import org.zstack.header.network.l2.L2NetworkVO;
+import org.zstack.header.network.l3.IpRangeVO;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.storage.backup.BackupStorageInventory;
 import org.zstack.header.storage.backup.BackupStorageVO;
@@ -28,7 +28,6 @@ import org.zstack.test.DBUtil;
 import org.zstack.test.deployer.Deployer;
 
 /**
- *
  * delete one host
  */
 public class TestCascadeDeletion3 {

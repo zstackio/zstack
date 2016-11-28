@@ -32,7 +32,7 @@ public class TestGenerateApiCategory {
         api = new Api();
         api.startServer();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         GenerateMessageIdentityCategoryMsg msg = new GenerateMessageIdentityCategoryMsg();

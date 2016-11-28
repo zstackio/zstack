@@ -30,7 +30,7 @@ public class TestCompletionCallOnce2 {
         NoErrorCompletion completion = new NoErrorCompletion() {
             @Override
             public void done() {
-                success ++;
+                success++;
             }
         };
 

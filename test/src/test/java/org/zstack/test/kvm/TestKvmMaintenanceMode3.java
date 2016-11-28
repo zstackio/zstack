@@ -52,9 +52,9 @@ public class TestKvmMaintenanceMode3 {
         config = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test(expected = ApiSenderException.class)
-	public void test() throws ApiSenderException {
+
+    @Test(expected = ApiSenderException.class)
+    public void test() throws ApiSenderException {
         HostInventory host1 = deployer.hosts.get("host1");
         config.migrateVmSuccess = false;
         config.stopVmSuccess = false;
@@ -65,5 +65,5 @@ public class TestKvmMaintenanceMode3 {
             Assert.assertEquals(HostState.Enabled.toString(), host1.getState());
             throw se;
         }
-	}
+    }
 }

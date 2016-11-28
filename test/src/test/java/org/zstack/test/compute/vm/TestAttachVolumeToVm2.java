@@ -37,7 +37,7 @@ public class TestAttachVolumeToVm2 {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         PrimaryStorageInventory pinv = api.listPrimaryStorage(null).get(0);
@@ -51,7 +51,7 @@ public class TestAttachVolumeToVm2 {
         vvo.setPrimaryStorageUuid(pinv.getUuid());
         dbf.update(vvo);
         vinv = VolumeInventory.valueOf(vvo);
-        
+
         VmInstanceInventory vminv = api.listVmInstances(null).get(0);
         vinv = api.attachVolumeToVm(vminv.getUuid(), vinv.getUuid());
         Assert.assertTrue(vinv.isAttached());

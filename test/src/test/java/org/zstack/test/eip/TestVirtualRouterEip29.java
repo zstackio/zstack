@@ -23,14 +23,13 @@ import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 
 /**
- * 
  * @author frank
- * 
- * 1. create a vm with an eip
- * 2. detach the eip nic
- *
- * confirm eip deleted
- * confirm the vmNicUuid and guestIp set to null on the eip
+ *         <p>
+ *         1. create a vm with an eip
+ *         2. detach the eip nic
+ *         <p>
+ *         confirm eip deleted
+ *         confirm the vmNicUuid and guestIp set to null on the eip
  */
 public class TestVirtualRouterEip29 {
     Deployer deployer;
@@ -61,7 +60,7 @@ public class TestVirtualRouterEip29 {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         Assert.assertEquals(1, vconfig.eips.size());

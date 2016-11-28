@@ -14,71 +14,71 @@ import java.util.List;
 
 public class SecurityGroupTestValidator {
     private static CLogger logger = Utils.getLogger(SecurityGroupTestValidator.class);
-    
+
     public static void validate(SecurityGroupRuleTO actual, List<SecurityGroupRuleInventory> expected) {
         List<String> rules = new ArrayList<String>();
-        
+
         StringBuilder sb = new StringBuilder("\n*************************** security group validator ******************************");
         sb.append(String.format("\nexpected rules:\n%s", JSONObjectUtil.toJsonString(expected)));
         sb.append(String.format("\nactual rules:\n%s", JSONObjectUtil.toJsonString(actual)));
         sb.append("\n*************************************************************************");
         logger.debug(sb.toString());
-        
+
         for (RuleTO r : actual.getRules()) {
             rules.add(r.toString());
         }
-        
+
         Assert.assertEquals(expected.size(), rules.size());
 
         for (SecurityGroupRuleInventory r : expected) {
             Assert.assertTrue(rules.contains(r.toString()));
         }
     }
-    
+
     public static void validateInternalIpIn(SecurityGroupRuleTO actual, String internalIp, List<SecurityGroupRuleInventory> expected) {
         List<String> rules = new ArrayList<String>();
-        
+
         StringBuilder sb = new StringBuilder("\n*************************** security group validator ******************************");
         sb.append(String.format("\nexpected rules:\n%s", JSONObjectUtil.toJsonString(expected)));
         sb.append(String.format("\nactual rules:\n%s", JSONObjectUtil.toJsonString(actual)));
         sb.append(String.format("\ninclusive internal ip: %s", internalIp));
         sb.append("\n*************************************************************************");
         logger.debug(sb.toString());
-        
+
         for (RuleTO r : actual.getRules()) {
             rules.add(r.toString());
             Assert.assertTrue(r.getAllowedInternalIpRange().contains(internalIp));
         }
-        
+
         Assert.assertEquals(expected.size(), rules.size());
 
         for (SecurityGroupRuleInventory r : expected) {
             Assert.assertTrue(rules.contains(r.toString()));
         }
     }
-    
+
     public static void validateInternalIpNotIn(SecurityGroupRuleTO actual, String internalIp, List<SecurityGroupRuleInventory> expected) {
         List<String> rules = new ArrayList<String>();
-        
+
         StringBuilder sb = new StringBuilder("\n*************************** security group validator ******************************");
         sb.append(String.format("\nexpected rules:\n%s", JSONObjectUtil.toJsonString(expected)));
         sb.append(String.format("\nactual rules:\n%s", JSONObjectUtil.toJsonString(actual)));
         sb.append(String.format("\nexclusive internal ip: %s", internalIp));
         sb.append("\n*************************************************************************");
         logger.debug(sb.toString());
-        
+
         for (RuleTO r : actual.getRules()) {
             rules.add(r.toString());
             Assert.assertFalse(r.getAllowedInternalIpRange().contains(internalIp));
         }
-        
+
         Assert.assertEquals(expected.size(), rules.size());
 
         for (SecurityGroupRuleInventory r : expected) {
             Assert.assertTrue(rules.contains(r.toString()));
         }
     }
-    
+
     public static VmNicInventory getVmNicOnSpecificL3Network(List<VmNicInventory> nics, String l3Uuid) {
         for (VmNicInventory nic : nics) {
             if (nic.getL3NetworkUuid().equals(l3Uuid)) {

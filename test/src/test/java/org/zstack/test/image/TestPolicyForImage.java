@@ -32,22 +32,21 @@ import java.util.List;
 /**
  * 1. create a user
  * 2. assign permissions of allow of creating/changing/updating/deleting to the user
- *
+ * <p>
  * confirm the user can create/change/update/delete the image
- *
+ * <p>
  * 3. assign permissions of deny of creating/changing/updating/deleting to the user
- *
+ * <p>
  * confirm the user cannot create/change/update/delete the image
- *
+ * <p>
  * 4. create a user added to a group
  * 5. assign permissions of allow of creating/changing/updating/deleting to the group
- *
+ * <p>
  * confirm the user can create/change/update/delete the image
- *
+ * <p>
  * 6. assign permissions of deny of creating/changing/updating/deleting to the group
- *
+ * <p>
  * confirm the user cannot create/change/update/delete the image
- *
  */
 public class TestPolicyForImage {
     CLogger logger = Utils.getLogger(TestPolicyForImage.class);

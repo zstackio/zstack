@@ -23,7 +23,7 @@ public class TestAsyncSafe3 {
         BeanConstructor con = new BeanConstructor();
         con.build();
     }
-    
+
     @Test
     public void test() {
         throwError(new NoErrorCompletion() {

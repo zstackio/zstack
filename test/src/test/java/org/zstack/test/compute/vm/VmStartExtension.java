@@ -13,7 +13,7 @@ public class VmStartExtension implements VmInstanceStartExtensionPoint {
     boolean afterCalled = false;
     boolean failedCalled = false;
     String expectedUuid;
-    
+
     @Override
     public String preStartVm(VmInstanceInventory inv) {
         if (preventStart) {

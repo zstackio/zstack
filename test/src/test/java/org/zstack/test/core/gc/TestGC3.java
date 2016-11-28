@@ -47,7 +47,7 @@ public class TestGC3 {
         CLogger logger = Utils.getLogger(TRunner.class);
 
         public void run(GCContext context, GCCompletion completion) {
-            count ++;
+            count++;
             logger.debug(String.format("count: %s", count));
             if (count < 3) {
                 completion.fail(null);

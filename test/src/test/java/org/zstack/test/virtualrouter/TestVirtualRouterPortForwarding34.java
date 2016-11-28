@@ -12,7 +12,6 @@ import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.network.service.portforwarding.PortForwardingProtocolType;
 import org.zstack.network.service.portforwarding.PortForwardingRuleInventory;
 import org.zstack.network.service.vip.VipInventory;
-import org.zstack.network.service.virtualrouter.portforwarding.PortForwardingRuleTO;
 import org.zstack.simulator.appliancevm.ApplianceVmSimulatorConfig;
 import org.zstack.simulator.virtualrouter.VirtualRouterSimulatorConfig;
 import org.zstack.test.Api;
@@ -22,7 +21,6 @@ import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 
 /**
- *
  * test rules with different VIPs
  * confirm it will fail
  */
@@ -55,7 +53,7 @@ public class TestVirtualRouterPortForwarding34 {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         L3NetworkInventory publicNw = deployer.l3Networks.get("PublicNetwork");
@@ -90,7 +88,7 @@ public class TestVirtualRouterPortForwarding34 {
         try {
             api.createPortForwardingRuleByFullConfig(rule);
         } catch (ApiSenderException e) {
-            s =  true;
+            s = true;
         }
         Assert.assertTrue(s);
     }

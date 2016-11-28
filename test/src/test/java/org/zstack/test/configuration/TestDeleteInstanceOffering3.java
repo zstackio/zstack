@@ -18,7 +18,7 @@ import org.zstack.test.deployer.Deployer;
 /**
  * 1. set vm.instanceOffering.setNullWhenDeleting to false
  * 2. delete instance offering
- *
+ * <p>
  * confirm instance offering column is not null on vm inventory
  */
 public class TestDeleteInstanceOffering3 {
@@ -38,7 +38,7 @@ public class TestDeleteInstanceOffering3 {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         VmGlobalConfig.UPDATE_INSTANCE_OFFERING_TO_NULL_WHEN_DELETING.updateValue(false);

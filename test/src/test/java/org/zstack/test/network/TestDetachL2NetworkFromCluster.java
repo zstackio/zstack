@@ -28,7 +28,7 @@ public class TestDetachL2NetworkFromCluster {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         L2NetworkInventory l2inv = api.listL2Network(null).get(0);

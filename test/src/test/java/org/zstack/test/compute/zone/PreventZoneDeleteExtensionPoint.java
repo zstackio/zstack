@@ -7,7 +7,7 @@ import org.zstack.header.zone.ZoneInventory;
 public class PreventZoneDeleteExtensionPoint implements ZoneDeleteExtensionPoint {
     private boolean beforeCalled = false;
     private boolean afterCalled = false;
-    
+
     @Override
     public void preDeleteZone(ZoneInventory inventory) throws ZoneException {
         throw new ZoneException("Prevent deleting zone on purpose");

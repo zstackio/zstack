@@ -23,7 +23,7 @@ import org.zstack.utils.logging.CLogger;
  * Time: 3:10 PM
  * To change this template use File | Settings | File Templates.
  */
-    public class TestChangeDiskOfferingState {
+public class TestChangeDiskOfferingState {
     CLogger logger = Utils.getLogger(TestChangeDiskOfferingState.class);
     Api api;
     ComponentLoader loader;

@@ -26,7 +26,7 @@ public class TestAttachL2NetworkToCluster {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
     public void test() {
     }

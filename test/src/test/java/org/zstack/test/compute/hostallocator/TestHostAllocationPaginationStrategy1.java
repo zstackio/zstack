@@ -8,8 +8,6 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.apimediator.ApiMediatorConstant;
 import org.zstack.header.cluster.ClusterInventory;
-import org.zstack.header.configuration.DiskOfferingInventory;
-import org.zstack.header.configuration.DiskOfferingVO;
 import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.image.ImageInventory;
@@ -19,7 +17,6 @@ import org.zstack.header.vm.APICreateVmInstanceEvent;
 import org.zstack.header.vm.APICreateVmInstanceMsg;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.storage.primary.PrimaryStorageSystemTags;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSender;
 import org.zstack.test.ApiSenderException;
@@ -30,15 +27,12 @@ import org.zstack.utils.data.SizeUnit;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.zstack.utils.CollectionDSL.e;
-import static org.zstack.utils.CollectionDSL.map;
-
 /**
  * 1. have 6 hosts, only the last host have enough capacity
  * 2. set hostAllocator.usePagination to true
  * 3. set hostAllocator.paginationLimit = 1
  * 3. create vm
- *
+ * <p>
  * confirm vm created successfully
  */
 public class TestHostAllocationPaginationStrategy1 {
@@ -99,7 +93,7 @@ public class TestHostAllocationPaginationStrategy1 {
 
     @Test
     public void test() throws ApiSenderException {
-        L3NetworkInventory l3  = deployer.l3Networks.get("l3Network1");
+        L3NetworkInventory l3 = deployer.l3Networks.get("l3Network1");
         InstanceOfferingInventory instanceOffering = deployer.instanceOfferings.get("instanceOffering512M512HZ");
         ImageInventory imageInventory = deployer.images.get("image1");
         ClusterInventory cluster = deployer.clusters.get("cluster1");

@@ -16,7 +16,7 @@ import org.zstack.test.deployer.Deployer;
 
 /**
  * 1. delete instance offering
- *
+ * <p>
  * confirm vm created from this instance offering has null instance offering uuid column
  */
 public class TestDeleteInstanceOffering2 {
@@ -36,7 +36,7 @@ public class TestDeleteInstanceOffering2 {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         InstanceOfferingInventory ioinv = api.listInstanceOffering(null).get(0);

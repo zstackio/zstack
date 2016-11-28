@@ -20,15 +20,10 @@ import org.zstack.test.deployer.Deployer;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 
  * @author frank
- * 
- * @condition
- * 1. create a virtual router
+ * @condition 1. create a virtual router
  * 2. erase the uuid on the agent side
- *
- * @test
- * confirm the reconnect is issued
+ * @test confirm the reconnect is issued
  */
 public class TestVirtualRouterPing3 {
     Deployer deployer;
@@ -59,7 +54,7 @@ public class TestVirtualRouterPing3 {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         VirtualRouterVmVO vr = dbf.listAll(VirtualRouterVmVO.class).get(0);

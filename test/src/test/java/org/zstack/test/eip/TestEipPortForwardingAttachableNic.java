@@ -26,9 +26,7 @@ import org.zstack.utils.function.Function;
 import java.util.List;
 
 /**
- * 
  * get attachable vm nics for eip and port forwarding are not conflicting
- * 
  */
 public class TestEipPortForwardingAttachableNic {
     Deployer deployer;
@@ -61,7 +59,7 @@ public class TestEipPortForwardingAttachableNic {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         PortForwardingRuleInventory pfRule1 = deployer.portForwardingRules.get("pfRule1");
@@ -80,11 +78,11 @@ public class TestEipPortForwardingAttachableNic {
 
         api.attachEip(eip.getUuid(), targetNic.getUuid());
         List<VmNicInventory> nics = api.getPortForwardingAttachableNics(pfRule1.getUuid());
-        Assert.assertEquals(0 , nics.size());
+        Assert.assertEquals(0, nics.size());
 
         api.detachEip(eip.getUuid());
         nics = api.getPortForwardingAttachableNics(pfRule1.getUuid());
-        Assert.assertEquals(1 , nics.size());
+        Assert.assertEquals(1, nics.size());
         Assert.assertEquals(targetNic.getUuid(), nics.get(0).getUuid());
 
         api.attachPortForwardingRule(pfRule1.getUuid(), targetNic.getUuid());

@@ -36,7 +36,7 @@ import java.util.concurrent.TimeUnit;
  * 1. two NFS storage running two VMs with the same image
  * 2. delete the image and two VMs
  * 3. clean up image cache on the nfs
- *
+ * <p>
  * confirm the image cache of the nfs get cleaned up
  * confirm the image cache of the nfs1 doesn't get cleaned up
  */
@@ -64,9 +64,9 @@ public class TestNfsImageCleaner1 {
         config = loader.getComponent(NfsPrimaryStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         ImageGlobalConfig.DELETION_POLICY.updateValue(ImageDeletionPolicy.Direct.toString());
         ImageInventory image1 = deployer.images.get("TestImage");
         api.deleteImage(image1.getUuid());
@@ -100,5 +100,5 @@ public class TestNfsImageCleaner1 {
         q.add(ImageCacheVO_.primaryStorageUuid, Op.EQ, nfs1.getUuid());
         c = q.find();
         Assert.assertNotNull(c);
-	}
+    }
 }

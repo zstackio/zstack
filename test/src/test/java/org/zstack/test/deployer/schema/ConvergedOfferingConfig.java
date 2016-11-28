@@ -1,4 +1,3 @@
-
 package org.zstack.test.deployer.schema;
 
 import javax.xml.bind.annotation.XmlAccessType;
@@ -9,9 +8,9 @@ import javax.xml.bind.annotation.XmlType;
 
 /**
  * <p>Java class for ConvergedOfferingConfig complex type.
- * 
+ * <p>
  * <p>The following schema fragment specifies the expected content contained within this class.
- * 
+ * <p>
  * <pre>
  * &lt;complexType name="ConvergedOfferingConfig">
  *   &lt;complexContent>
@@ -26,19 +25,16 @@ import javax.xml.bind.annotation.XmlType;
  *   &lt;/complexContent>
  * &lt;/complexType>
  * </pre>
- * 
- * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "ConvergedOfferingConfig", propOrder = {
-    "networkOutboundBandwidth",
-    "networkInboundBandwidth",
-    "volumeTotalBandwidth",
-    "volumeTotalIops"
+        "networkOutboundBandwidth",
+        "networkInboundBandwidth",
+        "volumeTotalBandwidth",
+        "volumeTotalIops"
 })
 public class ConvergedOfferingConfig
-    extends InstanceOfferingConfig
-{
+        extends InstanceOfferingConfig {
 
     @XmlSchemaType(name = "unsignedInt")
     protected Long networkOutboundBandwidth;
@@ -51,11 +47,9 @@ public class ConvergedOfferingConfig
 
     /**
      * Gets the value of the networkOutboundBandwidth property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link Long }
-     *     
+     *
+     * @return possible object is
+     * {@link Long }
      */
     public Long getNetworkOutboundBandwidth() {
         return networkOutboundBandwidth;
@@ -63,11 +57,9 @@ public class ConvergedOfferingConfig
 
     /**
      * Sets the value of the networkOutboundBandwidth property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link Long }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link Long }
      */
     public void setNetworkOutboundBandwidth(Long value) {
         this.networkOutboundBandwidth = value;
@@ -75,11 +67,9 @@ public class ConvergedOfferingConfig
 
     /**
      * Gets the value of the networkInboundBandwidth property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link Long }
-     *     
+     *
+     * @return possible object is
+     * {@link Long }
      */
     public Long getNetworkInboundBandwidth() {
         return networkInboundBandwidth;
@@ -87,11 +77,9 @@ public class ConvergedOfferingConfig
 
     /**
      * Sets the value of the networkInboundBandwidth property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link Long }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link Long }
      */
     public void setNetworkInboundBandwidth(Long value) {
         this.networkInboundBandwidth = value;
@@ -99,11 +87,9 @@ public class ConvergedOfferingConfig
 
     /**
      * Gets the value of the volumeTotalBandwidth property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link Long }
-     *     
+     *
+     * @return possible object is
+     * {@link Long }
      */
     public Long getVolumeTotalBandwidth() {
         return volumeTotalBandwidth;
@@ -111,11 +97,9 @@ public class ConvergedOfferingConfig
 
     /**
      * Sets the value of the volumeTotalBandwidth property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link Long }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link Long }
      */
     public void setVolumeTotalBandwidth(Long value) {
         this.volumeTotalBandwidth = value;
@@ -123,11 +107,9 @@ public class ConvergedOfferingConfig
 
     /**
      * Gets the value of the volumeTotalIops property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link Long }
-     *     
+     *
+     * @return possible object is
+     * {@link Long }
      */
     public Long getVolumeTotalIops() {
         return volumeTotalIops;
@@ -135,11 +117,9 @@ public class ConvergedOfferingConfig
 
     /**
      * Sets the value of the volumeTotalIops property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link Long }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link Long }
      */
     public void setVolumeTotalIops(Long value) {
         this.volumeTotalIops = value;

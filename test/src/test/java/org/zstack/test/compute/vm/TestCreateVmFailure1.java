@@ -6,12 +6,8 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.configuration.InstanceOfferingInventory;
-import org.zstack.header.image.ImageInventory;
-import org.zstack.header.vm.*;
-import org.zstack.header.volume.VolumeInventory;
-import org.zstack.header.volume.VolumeType;
-import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.vm.CreateVmOnHypervisorMsg;
+import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
@@ -21,7 +17,7 @@ import org.zstack.test.deployer.Deployer;
 /**
  * 1. create VM with disk offering
  * 2. make creation fail
- *
+ * <p>
  * confirm the error returns quickly instead of timeout
  */
 public class TestCreateVmFailure1 {
@@ -44,7 +40,7 @@ public class TestCreateVmFailure1 {
         dbf = loader.getComponent(DatabaseFacade.class);
         busProxy = loader.getComponent(CloudBusAopProxy.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         busProxy.addMessage(CreateVmOnHypervisorMsg.class, CloudBusAopProxy.Behavior.FAIL);

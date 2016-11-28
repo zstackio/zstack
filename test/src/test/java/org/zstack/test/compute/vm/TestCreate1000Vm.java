@@ -103,7 +103,7 @@ public class TestCreate1000Vm {
     private void addHosts() throws ApiSenderException, InterruptedException {
         String ip = "10.1.0.2";
         long iplong = NetworkUtils.ipv4StringToLong(ip);
-        for (int i=0; i<hostNum; i++) {
+        for (int i = 0; i < hostNum; i++) {
             addHost(++iplong, i);
         }
 
@@ -131,13 +131,13 @@ public class TestCreate1000Vm {
     }
 
     private void addPrimaryStorage() throws ApiSenderException, InterruptedException {
-        for (int i=0; i<psNum; i++) {
+        for (int i = 0; i < psNum; i++) {
             addPrimaryStorage(i);
         }
 
         psLatch.await(30, TimeUnit.MINUTES);
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         HostAllocatorGlobalConfig.USE_PAGINATION.updateValue(true);
@@ -182,7 +182,7 @@ public class TestCreate1000Vm {
                 TimeUnit.MILLISECONDS.toSeconds(totalTime),
                 TimeUnit.MILLISECONDS.toSeconds(minTime),
                 TimeUnit.MILLISECONDS.toSeconds(maxTime),
-                TimeUnit.MILLISECONDS.toSeconds(totalTime/timeCost.size())
+                TimeUnit.MILLISECONDS.toSeconds(totalTime / timeCost.size())
         ));
 
         /*

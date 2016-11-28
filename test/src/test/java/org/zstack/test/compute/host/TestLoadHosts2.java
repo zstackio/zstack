@@ -18,6 +18,7 @@ import org.zstack.test.BeanConstructor;
 import org.zstack.test.UnitTestUtils;
 
 import java.util.concurrent.TimeUnit;
+
 public class TestLoadHosts2 {
     Api api;
     ComponentLoader loader;

@@ -136,8 +136,8 @@ public class TestDiskCapacityCeph2 {
         return s;
     }
 
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         AddImage addImage = new AddImage();
         addImage.size = SizeUnit.GIGABYTE.toByte(10);
         addImage.actualSize = SizeUnit.GIGABYTE.toByte(1);
@@ -217,5 +217,5 @@ public class TestDiskCapacityCeph2 {
         data = api.syncVolumeSize(data.getUuid(), null);
         Assert.assertEquals(volumeSize, data.getSize());
         Assert.assertEquals(volumeActualSize + getSnapshotSize(data.getUuid()), data.getActualSize().longValue());
-	}
+    }
 }

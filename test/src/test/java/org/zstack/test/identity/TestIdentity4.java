@@ -19,7 +19,7 @@ import org.zstack.test.DBUtil;
  * 1. create an account
  * 2. create a user
  * 3. reset the password of user
- *
+ * <p>
  * confirm the password reset successfully
  */
 public class TestIdentity4 {
@@ -37,7 +37,7 @@ public class TestIdentity4 {
         api = new Api();
         api.startServer();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         IdentityCreator creator = new IdentityCreator(api);
@@ -51,7 +51,7 @@ public class TestIdentity4 {
         user = dbf.findByUuid(u.getUuid(), UserVO.class);
         Assert.assertEquals("new", user.getPassword());
 
-        UserInventory user2 =  creator.createUser("user2", "password");
+        UserInventory user2 = creator.createUser("user2", "password");
 
         boolean s = false;
         try {

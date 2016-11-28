@@ -24,9 +24,7 @@ import org.zstack.utils.logging.CLogger;
 import java.util.List;
 
 /**
- * 
  * @author frank
- * 
  */
 public class TestQueryVmNicInSecurityGroup {
     static CLogger logger = Utils.getLogger(TestQueryVmNicInSecurityGroup.class);
@@ -45,7 +43,7 @@ public class TestQueryVmNicInSecurityGroup {
         loader = deployer.getComponentLoader();
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");

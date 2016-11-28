@@ -6,21 +6,15 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.identity.SessionInventory;
-import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.query.QueryOp;
 import org.zstack.header.vm.APIQueryVmNicMsg;
 import org.zstack.header.vm.APIQueryVmNicReply;
-import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.lb.*;
-import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.network.service.virtualrouter.APIQueryVirtualRouterVmMsg;
 import org.zstack.network.service.virtualrouter.APIQueryVirtualRouterVmReply;
-import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.LbTO;
-import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.RefreshLbCmd;
 import org.zstack.simulator.appliancevm.ApplianceVmSimulatorConfig;
 import org.zstack.simulator.virtualrouter.VirtualRouterSimulatorConfig;
 import org.zstack.test.Api;
@@ -30,16 +24,13 @@ import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.test.search.QueryTestValidator;
 
-import javax.management.QueryEval;
-
 /**
- * 
  * @author frank
- * 
- * 1. create a lb
- * 2. query
- *
- * confirm all queries succeded
+ *         <p>
+ *         1. create a lb
+ *         2. query
+ *         <p>
+ *         confirm all queries succeded
  */
 public class TestVirtualRouterLb17 {
     Deployer deployer;
@@ -70,7 +61,7 @@ public class TestVirtualRouterLb17 {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         LoadBalancerInventory lb = deployer.loadBalancers.get("lb");

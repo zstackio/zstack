@@ -23,8 +23,8 @@ public class TestThreadFacadeReturnValueException {
 
     @Rule
     public ExpectedException thrown = ExpectedException.none();
-    
-    class Tester implements Task<Integer>{
+
+    class Tester implements Task<Integer> {
         int index;
 
         Tester(int index) {

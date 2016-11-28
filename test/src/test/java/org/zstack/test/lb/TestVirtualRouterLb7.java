@@ -27,14 +27,13 @@ import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 
 /**
- * 
  * @author frank
- * 
- * 1. create a lb
- * 2. use separate vr
- * 3. destroy the lb
- *
- * confirm the lb and the vr are destroyed
+ *         <p>
+ *         1. create a lb
+ *         2. use separate vr
+ *         3. destroy the lb
+ *         <p>
+ *         confirm the lb and the vr are destroyed
  */
 public class TestVirtualRouterLb7 {
     Deployer deployer;
@@ -65,7 +64,7 @@ public class TestVirtualRouterLb7 {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicy.Direct.toString());

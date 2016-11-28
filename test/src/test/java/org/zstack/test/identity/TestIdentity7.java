@@ -22,26 +22,25 @@ import org.zstack.test.deployer.Deployer;
  * 2. create a policy
  * 3. attach the policy to the user
  * 4. delete the user
- *
+ * <p>
  * confirm the policy is detached
- *
+ * <p>
  * 5. create another user
  * 6. attach the policy to the user
  * 7. delete the policy
- *
+ * <p>
  * confirm the policy is detached
- *
+ * <p>
  * 8. create a group and a policy
  * 9. attach the policy to the group
  * 10. delete the group
- *
+ * <p>
  * confirm the policy is detached
- *
+ * <p>
  * 11. create another group and attach the policy
  * 12. delete the policy
- *
+ * <p>
  * confirm the policy is detached
- *
  */
 public class TestIdentity7 {
     Deployer deployer;

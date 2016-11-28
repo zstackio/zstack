@@ -31,15 +31,15 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * use local storage
- *
+ * <p>
  * 1. stop the vm
  * 2. make the host disconnected
  * 3. destroy the vm
- *
+ * <p>
  * confirm the vm destroyed successfully
- *
+ * <p>
  * 4. reconnect the host
- *
+ * <p>
  * confirm the volume and snapshot deleted
  */
 public class TestDestroyVmOnKvm2 {
@@ -77,9 +77,9 @@ public class TestDestroyVmOnKvm2 {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicy.Direct.toString());
         HostInventory host = deployer.hosts.get("host1");
         VmInstanceInventory vm = deployer.vms.get("TestVm");

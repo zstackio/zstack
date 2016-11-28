@@ -26,7 +26,7 @@ public class TestGenerateSqlForeignKey {
         api = new Api();
         api.startServer();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         api.generateSqlForeignKey();

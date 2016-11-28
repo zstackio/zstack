@@ -1,18 +1,13 @@
-
 package org.zstack.test.deployer.schema;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlSeeAlso;
-import javax.xml.bind.annotation.XmlType;
+import javax.xml.bind.annotation.*;
 
 
 /**
  * <p>Java class for L2NoVlanNetworkConfig complex type.
- * 
+ * <p>
  * <p>The following schema fragment specifies the expected content contained within this class.
- * 
+ * <p>
  * <pre>
  * &lt;complexType name="L2NoVlanNetworkConfig">
  *   &lt;complexContent>
@@ -27,15 +22,13 @@ import javax.xml.bind.annotation.XmlType;
  *   &lt;/complexContent>
  * &lt;/complexType>
  * </pre>
- * 
- * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "L2NoVlanNetworkConfig", propOrder = {
-    "l3Networks"
+        "l3Networks"
 })
 @XmlSeeAlso({
-    L2VlanNetworkConfig.class
+        L2VlanNetworkConfig.class
 })
 public class L2NoVlanNetworkConfig {
 
@@ -49,11 +42,9 @@ public class L2NoVlanNetworkConfig {
 
     /**
      * Gets the value of the l3Networks property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link L3NetworkUnion }
-     *     
+     *
+     * @return possible object is
+     * {@link L3NetworkUnion }
      */
     public L3NetworkUnion getL3Networks() {
         return l3Networks;
@@ -61,11 +52,9 @@ public class L2NoVlanNetworkConfig {
 
     /**
      * Sets the value of the l3Networks property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link L3NetworkUnion }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link L3NetworkUnion }
      */
     public void setL3Networks(L3NetworkUnion value) {
         this.l3Networks = value;
@@ -73,11 +62,9 @@ public class L2NoVlanNetworkConfig {
 
     /**
      * Gets the value of the name property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getName() {
         return name;
@@ -85,11 +72,9 @@ public class L2NoVlanNetworkConfig {
 
     /**
      * Sets the value of the name property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setName(String value) {
         this.name = value;
@@ -97,11 +82,9 @@ public class L2NoVlanNetworkConfig {
 
     /**
      * Gets the value of the description property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getDescription() {
         return description;
@@ -109,11 +92,9 @@ public class L2NoVlanNetworkConfig {
 
     /**
      * Sets the value of the description property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setDescription(String value) {
         this.description = value;
@@ -121,11 +102,9 @@ public class L2NoVlanNetworkConfig {
 
     /**
      * Gets the value of the physicalInterface property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     *
+     * @return possible object is
+     * {@link String }
      */
     public String getPhysicalInterface() {
         return physicalInterface;
@@ -133,11 +112,9 @@ public class L2NoVlanNetworkConfig {
 
     /**
      * Sets the value of the physicalInterface property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setPhysicalInterface(String value) {
         this.physicalInterface = value;

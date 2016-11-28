@@ -13,7 +13,7 @@ public class VmRebootExtesnion implements VmInstanceRebootExtensionPoint {
     boolean afterCalled = false;
     boolean failedCalled = false;
     String expectedUuid;
-    
+
     @Override
     public String preRebootVm(VmInstanceInventory inv) {
         if (preventReboot) {

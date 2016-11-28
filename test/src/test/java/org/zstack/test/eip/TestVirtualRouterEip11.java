@@ -12,25 +12,20 @@ import org.zstack.network.service.eip.EipVO;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands;
 import org.zstack.network.service.virtualrouter.eip.EipTO;
+import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.simulator.virtualrouter.VirtualRouterSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.simulator.kvm.KVMSimulatorConfig;
 
 /**
- * 
  * @author frank
- * 
- * @condition
- * 1. create a vm
+ * @condition 1. create a vm
  * 2. set eip
  * 3. detach eip
- *
- * @test
- * confirm eip detached
+ * @test confirm eip detached
  */
 public class TestVirtualRouterEip11 {
     Deployer deployer;
@@ -61,7 +56,7 @@ public class TestVirtualRouterEip11 {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         Assert.assertEquals(1, vconfig.eips.size());

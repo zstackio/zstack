@@ -68,7 +68,7 @@ public class TestQemuAgentSystemTag {
     public void test() throws ApiSenderException {
         ImageInventory image1 = deployer.images.get("Image_1");
 
-        TagInventory inv =  api.createSystemTag(image1.getUuid(), TestSystemTags.qemu.getTagFormat(), ImageVO.class);
+        TagInventory inv = api.createSystemTag(image1.getUuid(), TestSystemTags.qemu.getTagFormat(), ImageVO.class);
 
         APIQueryImageMsg imsg = new APIQueryImageMsg();
         imsg.addQueryCondition(TagSubQueryExtension.SYS_TAG_NAME, QueryOp.EQ, TestSystemTags.qemu.getTagFormat());
@@ -129,7 +129,7 @@ public class TestQemuAgentSystemTag {
         List<String> nws = new ArrayList<String>(nwinvs.size());
         Assert.assertNotNull(vm);
         nws.add(vm.getDefaultL3NetworkUuid());
-        List <String> disks = new ArrayList<String>(1);
+        List<String> disks = new ArrayList<String>(1);
         disks.add(dinvs.get(1).getUuid());
         Assert.assertNotNull(dinvs.get(0));
         Assert.assertNotNull(nws.get(0));

@@ -40,7 +40,7 @@ public class TestStartCreatedVmExtensionPoint {
         dbf = loader.getComponent(DatabaseFacade.class);
         ext = loader.getComponent(VmInstanceStartNewCreatedVmExtension.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         InstanceOfferingInventory ioinv = api.listInstanceOffering(null).get(0);
@@ -55,16 +55,16 @@ public class TestStartCreatedVmExtensionPoint {
         vm.setImageUuid(iminv.getUuid());
         List<String> nws = new ArrayList<String>();
         nws.add(ninv.getUuid());
-        
+
         ext.setPreventStart(true);
         try {
             api.createVmByFullConfig(vm, dinv.getUuid(), nws, null);
         } catch (ApiSenderException e) {
         }
-        
+
         ext.setPreventStart(false);
         api.createVmByFullConfig(vm, dinv.getUuid(), nws, null);
-        
+
         Assert.assertTrue(ext.isBeforeCalled());
         Assert.assertTrue(ext.isAfterCalled());
     }

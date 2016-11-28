@@ -30,11 +30,11 @@ import java.util.concurrent.TimeUnit;
  * 1. create a vm
  * 2. make the vm's host disconnected
  * 3. delete the ip range
- *
+ * <p>
  * confirm the ip range deleted successfully
- *
+ * <p>
  * 4. reconnect the host
- *
+ * <p>
  * confirm the vm stopped on the host
  */
 public class TestDeleteIpRangeOnKvm {
@@ -61,9 +61,9 @@ public class TestDeleteIpRangeOnKvm {
         config = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         HostInventory host = deployer.hosts.get("host1");
         config.pingSuccess = false;

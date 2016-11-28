@@ -6,20 +6,14 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.query.QueryOp;
 import org.zstack.header.tag.*;
-import org.zstack.header.zone.APIQueryZoneMsg;
-import org.zstack.header.zone.APIQueryZoneReply;
 import org.zstack.header.zone.ZoneInventory;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.tag.SystemTag;
-import org.zstack.tag.TagSubQueryExtension;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.deployer.Deployer;
-
-import java.util.List;
 
 /**
  * test lifecycle listener
@@ -72,7 +66,7 @@ public class TestSystemTag2 {
             }
         });
         ZoneInventory zone1 = deployer.zones.get("Zone1");
-        TagInventory inv =  api.createSystemTag(zone1.getUuid(), "big", ZoneVO.class);
+        TagInventory inv = api.createSystemTag(zone1.getUuid(), "big", ZoneVO.class);
 
         api.deleteTag(inv.getUuid());
 

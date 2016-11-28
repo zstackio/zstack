@@ -8,7 +8,6 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.header.allocator.HostCapacityVO;
 import org.zstack.header.apimediator.ApiMediatorConstant;
 import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.host.HostVO;
@@ -29,16 +28,16 @@ import java.util.List;
 /**
  * 1. have 5 hosts
  * 2. create 100 vm
- *
+ * <p>
  * confirm vm are random on each hosts
  */
 public class TestDefaultHostAllocationStrategy3 {
     Deployer deployer;
-    Api api; 
+    Api api;
     ComponentLoader loader;
     CloudBus bus;
     DatabaseFacade dbf;
-    
+
     @Before
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
@@ -90,7 +89,7 @@ public class TestDefaultHostAllocationStrategy3 {
 
     @Test
     public void test() throws ApiSenderException {
-        L3NetworkInventory l3  = deployer.l3Networks.get("l3Network1");
+        L3NetworkInventory l3 = deployer.l3Networks.get("l3Network1");
         InstanceOfferingInventory instanceOffering = deployer.instanceOfferings.get("instanceOffering512M512HZ");
         ImageInventory imageInventory = deployer.images.get("image1");
 
@@ -104,7 +103,7 @@ public class TestDefaultHostAllocationStrategy3 {
 
         int num = 100;
 
-        for (int i=0; i<num; i++) {
+        for (int i = 0; i < num; i++) {
             VmCreator creator = new VmCreator();
             creator.addL3Network(l3.getUuid());
             creator.imageUuid = imageInventory.getUuid();
@@ -112,7 +111,7 @@ public class TestDefaultHostAllocationStrategy3 {
             creator.create();
         }
 
-        for (String huuid: huuids) {
+        for (String huuid : huuids) {
             SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
             q.add(VmInstanceVO_.hostUuid, Op.EQ, huuid);
             long count = q.count();

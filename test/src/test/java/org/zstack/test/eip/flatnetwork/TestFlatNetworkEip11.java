@@ -24,15 +24,11 @@ import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 
 /**
- * 
  * @author frank
- * 
- * @condition
- * 1. create a vm
+ * @condition 1. create a vm
  * 2. detach the vm's nic
- *
+ * <p>
  * confirm the eip is deleted
- *
  */
 public class TestFlatNetworkEip11 {
     Deployer deployer;

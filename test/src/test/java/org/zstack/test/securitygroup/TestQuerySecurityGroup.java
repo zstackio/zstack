@@ -44,7 +44,7 @@ public class TestQuerySecurityGroup {
         SecurityGroupInventory inv = deployer.securityGroups.get("test");
         QueryTestValidator.validateEQ(new APIQuerySecurityGroupMsg(), api, APIQuerySecurityGroupReply.class, inv, session);
         QueryTestValidator.validateRandomEQConjunction(new APIQuerySecurityGroupMsg(), api, APIQuerySecurityGroupReply.class, inv, session, 2);
-        
+
         L3NetworkInventory l3inv = deployer.l3Networks.get("TestL3Network1");
         APIQuerySecurityGroupMsg msg = new APIQuerySecurityGroupMsg();
         msg.addQueryCondition("attachedL3NetworkUuids", QueryOp.NOT_EQ, l3inv.getUuid());

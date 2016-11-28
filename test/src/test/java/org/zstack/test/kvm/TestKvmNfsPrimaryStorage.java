@@ -63,7 +63,7 @@ public class TestKvmNfsPrimaryStorage {
         session = api.loginAsAdmin();
         cinv = api.listClusters(null).get(0);
     }
-    
+
     private HostInventory addHost() throws ApiSenderException {
         config.connectSuccess = true;
         config.connectException = false;
@@ -86,7 +86,7 @@ public class TestKvmNfsPrimaryStorage {
         APIAddHostEvent evt = sender.send(msg, APIAddHostEvent.class);
         return evt.getInventory();
     }
-    
+
     private PrimaryStorageInventory addPrimaryStorage() throws ApiSenderException {
         APIAddNfsPrimaryStorageMsg msg = new APIAddNfsPrimaryStorageMsg();
         msg.setName("KVM-NFS");
@@ -100,7 +100,7 @@ public class TestKvmNfsPrimaryStorage {
         api.attachPrimaryStorage(cinv.getUuid(), inv.getUuid());
         return inv;
     }
-    
+
     @Test
     public void testAttach() throws ApiSenderException, InterruptedException {
         addHost();

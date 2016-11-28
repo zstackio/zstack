@@ -8,7 +8,6 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.image.ImageVO;
-import org.zstack.header.storage.backup.BackupStorage;
 import org.zstack.header.storage.backup.BackupStorageInventory;
 import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.vm.VmInstanceInventory;
@@ -24,7 +23,7 @@ import org.zstack.utils.logging.CLogger;
 
 /**
  * 1. change backup storage capacity to 0
- *
+ * <p>
  * confirm creating image fails
  */
 public class TestCreateTemplateFromRootVolumeFailure1 {
@@ -51,25 +50,25 @@ public class TestCreateTemplateFromRootVolumeFailure1 {
         config = loader.getComponent(NfsPrimaryStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test(expected = ApiSenderException.class)
-	public void test() throws ApiSenderException {
-	    VmInstanceInventory vm = deployer.vms.get("TestVm");
-	    api.stopVmInstance(vm.getUuid());
-	    String rootVolumeUuid = vm.getRootVolumeUuid();
-	    
-	    BackupStorageInventory sftp = deployer.backupStorages.get("sftp");
+
+    @Test(expected = ApiSenderException.class)
+    public void test() throws ApiSenderException {
+        VmInstanceInventory vm = deployer.vms.get("TestVm");
+        api.stopVmInstance(vm.getUuid());
+        String rootVolumeUuid = vm.getRootVolumeUuid();
+
+        BackupStorageInventory sftp = deployer.backupStorages.get("sftp");
         BackupStorageVO bvo = dbf.findByUuid(sftp.getUuid(), BackupStorageVO.class);
         bvo.setAvailableCapacity(0);
         dbf.update(bvo);
-	    try {
-	        api.createTemplateFromRootVolume("testImage", rootVolumeUuid, sftp.getUuid());
-	    } catch (ApiSenderException e) {
+        try {
+            api.createTemplateFromRootVolume("testImage", rootVolumeUuid, sftp.getUuid());
+        } catch (ApiSenderException e) {
             long count = dbf.count(ImageVO.class);
             Assert.assertEquals(1, count);
             throw e;
-	    }
-	    
-	}
+        }
+
+    }
 
 }

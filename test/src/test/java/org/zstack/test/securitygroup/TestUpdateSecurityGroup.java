@@ -6,7 +6,6 @@ import org.junit.Test;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.network.securitygroup.SecurityGroupInventory;
-import org.zstack.network.securitygroup.SecurityGroupVO;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
@@ -32,7 +31,7 @@ public class TestUpdateSecurityGroup {
         loader = deployer.getComponentLoader();
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         SecurityGroupInventory inv = deployer.securityGroups.get("test");

@@ -11,12 +11,12 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.simulator.storage.backup.sftp.SftpBackupStorageSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.simulator.storage.backup.sftp.SftpBackupStorageSimulatorConfig;
 import org.zstack.test.storage.backup.sftp.TestSftpBackupStorageDeleteImage2;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -26,7 +26,7 @@ import org.zstack.utils.logging.CLogger;
  * 2. migrate vm to host that doesn't have primary storage/l2 network
  * 3. vm will fail to migrate
  * 4. stop vm
- *
+ * <p>
  * confirm vm stops successfully
  */
 public class TestVmErrorOnKvm8 {
@@ -53,9 +53,9 @@ public class TestVmErrorOnKvm8 {
         config = loader.getComponent(SftpBackupStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         HostInventory host2 = deployer.hosts.get("host2");
 
@@ -69,6 +69,6 @@ public class TestVmErrorOnKvm8 {
         api.stopVmInstance(vm.getUuid());
         VmInstanceVO vmvo = dbf.findByUuid(vm.getUuid(), VmInstanceVO.class);
         Assert.assertEquals(VmInstanceState.Stopped, vmvo.getState());
-	}
+    }
 
 }

@@ -19,7 +19,7 @@ public class TestThreadFacadeReturnValue {
     ComponentLoader loader;
     ThreadFacade thdf;
 
-    class Tester implements Task<Integer>{
+    class Tester implements Task<Integer> {
         int index;
 
         Tester(int index) {

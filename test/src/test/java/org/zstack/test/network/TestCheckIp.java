@@ -14,8 +14,6 @@ import org.zstack.test.ApiSenderException;
 import org.zstack.test.BeanConstructor;
 import org.zstack.test.DBUtil;
 
-import java.util.List;
-
 public class TestCheckIp {
     Api api;
     ComponentLoader loader;

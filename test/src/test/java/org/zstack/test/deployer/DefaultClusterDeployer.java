@@ -9,7 +9,7 @@ import org.zstack.test.deployer.schema.DeployerConfig;
 import java.util.List;
 
 public class DefaultClusterDeployer implements ClusterDeployer<ClusterConfig> {
-    
+
     @Override
     public Class<ClusterConfig> getSupportedDeployerClassType() {
         return ClusterConfig.class;

@@ -29,7 +29,7 @@ import org.zstack.utils.logging.CLogger;
  * 1. set the IP range with 2 IPs
  * 2. create a vm
  * 3. create another vm
- *
+ * <p>
  * confirm the second vm failed to create because there is no IP.
  * because the second IP is occupied by the DHCP server
  */
@@ -75,9 +75,9 @@ public class TestMevoco13 {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         L2NetworkInventory l2 = deployer.l2Networks.get("TestL2Network");
         Assert.assertTrue(KVMSystemTags.L2_BRIDGE_NAME.hasTag(l2.getUuid()));
 

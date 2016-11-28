@@ -8,7 +8,7 @@ import org.zstack.license.LicenseType;
  * Created by frank on 12/31/2015.
  */
 public class MockLicenseManagerImpl extends LicenseManagerImpl {
-    public static LicenseInfo mockLicenseInfo ;
+    public static LicenseInfo mockLicenseInfo;
 
     static {
         LicenseInfo l = new LicenseInfo();

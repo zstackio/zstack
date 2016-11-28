@@ -64,14 +64,14 @@ public class TestSchedulerUpdate {
         Integer interval = 3;
         Integer repeatCount = 10;
         String type = "simple";
-        Long startDate = date.getTime()/1000;
+        Long startDate = date.getTime() / 1000;
         api.createVolumeSnapshotScheduler(volUuid, session, type, startDate, interval, repeatCount);
         TimeUnit.SECONDS.sleep(1);
         long record = dbf.count(VolumeSnapshotVO.class);
-        Assert.assertEquals(1,record);
+        Assert.assertEquals(1, record);
         SchedulerVO firstRecord = dbf.listAll(SchedulerVO.class).get(0);
-        api.updateScheduler(firstRecord.getUuid(),"test update", "new description", session);
-        SchedulerVO secondRecord= dbf.listAll(SchedulerVO.class).get(0);
+        api.updateScheduler(firstRecord.getUuid(), "test update", "new description", session);
+        SchedulerVO secondRecord = dbf.listAll(SchedulerVO.class).get(0);
         Assert.assertEquals(secondRecord.getSchedulerDescription(), "new description");
         Assert.assertEquals(secondRecord.getSchedulerName(), "test update");
 
@@ -80,7 +80,7 @@ public class TestSchedulerUpdate {
         Assert.assertEquals(pauseRecord.getState(), "Disabled");
         TimeUnit.SECONDS.sleep(3);
         long pauseCount = dbf.count(VolumeSnapshotVO.class);
-        Assert.assertEquals(1,pauseCount);
+        Assert.assertEquals(1, pauseCount);
 
         api.changeSchedulerState(firstRecord.getUuid(), "enable", session);
         SchedulerVO resumeRecord = dbf.listAll(SchedulerVO.class).get(0);
@@ -88,12 +88,12 @@ public class TestSchedulerUpdate {
         TimeUnit.SECONDS.sleep(6);
         long resumeCount = dbf.count(VolumeSnapshotVO.class);
         //resume will trigger immediately, so
-        Assert.assertEquals(4,resumeCount);
+        Assert.assertEquals(4, resumeCount);
 
         api.changeResourceOwner(vm.getUuid(), AccountConstant.INITIAL_SYSTEM_ADMIN_UUID);
         TimeUnit.SECONDS.sleep(4);
         long changeCount = dbf.count(VolumeSnapshotVO.class);
-        Assert.assertEquals(4,changeCount);
+        Assert.assertEquals(4, changeCount);
         SchedulerVO changeRecord = dbf.listAll(SchedulerVO.class).get(0);
         Assert.assertEquals(changeRecord.getState(), "Disabled");
 

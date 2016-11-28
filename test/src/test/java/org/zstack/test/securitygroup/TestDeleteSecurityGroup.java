@@ -6,7 +6,6 @@ import org.junit.Test;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.network.securitygroup.SecurityGroup;
 import org.zstack.network.securitygroup.SecurityGroupInventory;
 import org.zstack.network.securitygroup.SecurityGroupRuleTO;
 import org.zstack.network.securitygroup.SecurityGroupVO;
@@ -20,16 +19,11 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 
  * @author frank
- * 
- * @condition
- * 1. create security group with some rules
+ * @condition 1. create security group with some rules
  * 2. create a vm and add into security group
  * 3. delete security group
- *
- * @test
- * confirm no security group rules on host anymore
+ * @test confirm no security group rules on host anymore
  */
 public class TestDeleteSecurityGroup {
     static CLogger logger = Utils.getLogger(TestDeleteSecurityGroup.class);
@@ -50,7 +44,7 @@ public class TestDeleteSecurityGroup {
         dbf = loader.getComponent(DatabaseFacade.class);
         sbkd = loader.getComponent(SimulatorSecurityGroupBackend.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         SecurityGroupInventory scinv = deployer.securityGroups.get("test");
@@ -69,7 +63,7 @@ public class TestDeleteSecurityGroup {
                 break;
             }
         }
-        
+
         Assert.assertEquals(0, rto.getRules().size());
 
         AccountReferenceValidator referenceValidator = new AccountReferenceValidator();

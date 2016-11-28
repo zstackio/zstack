@@ -49,13 +49,13 @@ public class TestMigrateVmOnKvm5 {
         config = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
-	    final VmInstanceInventory vm = deployer.vms.get("TestVm");
+
+    @Test
+    public void test() throws ApiSenderException {
+        final VmInstanceInventory vm = deployer.vms.get("TestVm");
         boolean s = false;
         try {
-             api.migrateVmInstance(vm.getUuid(), vm.getHostUuid());
+            api.migrateVmInstance(vm.getUuid(), vm.getHostUuid());
         } catch (ApiSenderException e) {
             s = true;
         }
@@ -68,7 +68,7 @@ public class TestMigrateVmOnKvm5 {
         Assert.assertEquals(VmInstanceState.Running, vo.getState());
 
         HostCapacityVO tvo = dbf.findByUuid(vm.getHostUuid(), HostCapacityVO.class);
-        Assert.assertEquals(tvo.getTotalCpu()- vm.getCpuNum(), tvo.getAvailableCpu());
+        Assert.assertEquals(tvo.getTotalCpu() - vm.getCpuNum(), tvo.getAvailableCpu());
         Assert.assertEquals(tvo.getTotalMemory() - vm.getMemorySize(), tvo.getAvailableMemory());
-	}
+    }
 }

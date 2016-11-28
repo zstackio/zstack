@@ -47,7 +47,7 @@ import static org.zstack.utils.CollectionDSL.list;
  * 1. use local storage
  * 2. add an image
  * 3. create 100 vm from the image
- *
+ * <p>
  * confirm the size of image/volume are correct
  * confirm the local storage capacity correct
  */
@@ -160,8 +160,8 @@ public class TestDiskCapacityLocalStorage2 {
         }
     }
 
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicy.Direct.toString());
 
         AddImage addImage = new AddImage();
@@ -174,13 +174,13 @@ public class TestDiskCapacityLocalStorage2 {
 
 
         int destroyed = 0;
-        for (int i=0; i<num; i++) {
+        for (int i = 0; i < num; i++) {
             CreateVm createVm = new CreateVm();
             createVm.imageUuid = image.getUuid();
             createVm.rootVolumeActualSize = addImage.actualSize;
             createVm.destroyed = new Random().nextBoolean();
             if (createVm.destroyed) {
-                destroyed ++;
+                destroyed++;
             }
             VmInstanceInventory vm = createVm.create();
         }
@@ -198,5 +198,5 @@ public class TestDiskCapacityLocalStorage2 {
         long avail = pscap.getTotalCapacity() - used;
         Assert.assertEquals(avail, pscap.getAvailableCapacity());
         Assert.assertEquals(avail, href.getAvailableCapacity());
-	}
+    }
 }

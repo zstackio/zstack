@@ -42,7 +42,7 @@ public class TestGC9PreCase {
 
         @Override
         public void run(GCContext context, GCCompletion completion) {
-            logger.debug((String)context.getContext());
+            logger.debug((String) context.getContext());
             success = true;
             completion.success();
         }
@@ -74,7 +74,7 @@ public class TestGC9PreCase {
 
     @Test
     public void test() throws InterruptedException {
-        for (int i=0; i<50; i++) {
+        for (int i = 0; i < 50; i++) {
             scheduleJobs(String.format("test-gc-%s", i));
         }
 

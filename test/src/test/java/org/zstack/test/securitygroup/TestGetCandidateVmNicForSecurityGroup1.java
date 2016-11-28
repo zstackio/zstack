@@ -26,7 +26,7 @@ import java.util.List;
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
- * 
+ *
  *
  */
 public class TestGetCandidateVmNicForSecurityGroup1 {
@@ -48,7 +48,7 @@ public class TestGetCandidateVmNicForSecurityGroup1 {
         dbf = loader.getComponent(DatabaseFacade.class);
         sbkd = loader.getComponent(SimulatorSecurityGroupBackend.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         VmInstanceInventory vm1 = deployer.vms.get("TestVm");

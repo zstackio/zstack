@@ -25,7 +25,7 @@ import org.zstack.utils.logging.CLogger;
 /**
  * 1. has two smp primary storage
  * 2. create data volumes on them with specified primary storage uuid
- *
+ * <p>
  * confirm volumes created on right primary storage
  */
 public class TestSmpPrimaryStorageCreateDataVolume {
@@ -54,9 +54,9 @@ public class TestSmpPrimaryStorageCreateDataVolume {
         config = loader.getComponent(NfsPrimaryStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         PrimaryStorageInventory smp1 = deployer.primaryStorages.get("smp1");
         PrimaryStorageInventory smp2 = deployer.primaryStorages.get("smp2");
         DiskOfferingInventory diskOffering = deployer.diskOfferings.get("DataOffering");

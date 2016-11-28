@@ -22,17 +22,12 @@ import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 
 /**
- * 
  * @author frank
- * 
- * @condition
- * 1. create vm1 with port forwarding rule
+ * @condition 1. create vm1 with port forwarding rule
  * 2. detach the rule
  * 3. create vm2
  * 4. attach rule to vm2
- *
- * @test
- * confirm port forwarding rule detach/attach work
+ * @test confirm port forwarding rule detach/attach work
  */
 public class TestVirtualRouterPortForwarding23 {
     Deployer deployer;

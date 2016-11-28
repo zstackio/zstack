@@ -47,7 +47,7 @@ public class TestKvmAttachL2Network4 {
         config = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         L2NetworkInventory l2 = deployer.l2Networks.get("TestL2Network");

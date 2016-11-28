@@ -31,7 +31,7 @@ public class SftpBackupStorageTestHelper {
     private SftpBackupStorageSimulatorConfig config;
     @Autowired
     private DatabaseFacade dbf;
-    
+
     public SftpBackupStorageInventory addSimpleHttpBackupStorage(Api api) throws ApiSenderException {
         APIAddSftpBackupStorageMsg msg = new APIAddSftpBackupStorageMsg();
         msg.setSession(api.getAdminSession());
@@ -51,7 +51,7 @@ public class SftpBackupStorageTestHelper {
         Assert.assertEquals(vo.getHostname(), "localhost");
         return JSONObjectUtil.rehashObject(inv, SftpBackupStorageInventory.class);
     }
-    
+
     public ImageInventory addImage(Api api, SftpBackupStorageInventory sinv) throws ApiSenderException {
         config.downloadSuccess1 = true;
         config.downloadSuccess2 = true;

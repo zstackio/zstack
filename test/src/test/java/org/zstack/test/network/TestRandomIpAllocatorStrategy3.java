@@ -54,7 +54,7 @@ public class TestRandomIpAllocatorStrategy3 {
         IpRangeVO ipvo = dbf.findByUuid(ipInv.getUuid(), IpRangeVO.class);
         Assert.assertNotNull(ipvo);
 
-        for (long i=0; i<100; i++) {
+        for (long i = 0; i < 100; i++) {
             AllocateIpMsg msg = new AllocateIpMsg();
             msg.setL3NetworkUuid(l3inv.getUuid());
             msg.setServiceId(bus.makeLocalServiceId(L3NetworkConstant.SERVICE_ID));

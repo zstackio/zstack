@@ -35,12 +35,12 @@ public class TestBackupStorageChangeStateExtensionPoint {
         api = new Api();
         api.startServer();
     }
-    
+
     @After
     public void tearDown() throws Exception {
         api.stopServer();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         SimulatorBackupStorageDetails ss = new SimulatorBackupStorageDetails();
@@ -48,7 +48,7 @@ public class TestBackupStorageChangeStateExtensionPoint {
         ss.setUsedCapacity(0);
         ss.setUrl("nfs://simulator/backupstorage/");
         BackupStorageInventory inv = api.createSimulatorBackupStorage(1, ss).get(0);
-        
+
         ext.setPreventChange(true);
         try {
             api.changeBackupStorageState(inv.getUuid(), BackupStorageStateEvent.disable);
@@ -56,7 +56,7 @@ public class TestBackupStorageChangeStateExtensionPoint {
         }
         BackupStorageVO vo = dbf.findByUuid(inv.getUuid(), BackupStorageVO.class);
         Assert.assertEquals(BackupStorageState.Enabled, vo.getState());
-        
+
         ext.setPreventChange(false);
         ext.setExpectedBackupStorageUuid(inv.getUuid());
         ext.setExpectedCurrent(BackupStorageState.Enabled);

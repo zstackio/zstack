@@ -27,7 +27,7 @@ import static org.zstack.utils.CollectionDSL.map;
 /**
  * 1. add two hosts
  * 2. make two hosts os version mismatch
- *
+ * <p>
  * confirm vm migration will fail
  */
 public class TestMigrateVmOnKvm6 {
@@ -53,11 +53,11 @@ public class TestMigrateVmOnKvm6 {
         dbf = loader.getComponent(DatabaseFacade.class);
         config = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
-}
-    
-	@Test(expected = ApiSenderException.class)
-	public void test() throws ApiSenderException {
-	    final VmInstanceInventory vm = deployer.vms.get("TestVm");
+    }
+
+    @Test(expected = ApiSenderException.class)
+    public void test() throws ApiSenderException {
+        final VmInstanceInventory vm = deployer.vms.get("TestVm");
         HostInventory target = CollectionUtils.find(deployer.hosts.values(), new Function<HostInventory, HostInventory>() {
             @Override
             public HostInventory call(HostInventory arg) {
@@ -70,5 +70,5 @@ public class TestMigrateVmOnKvm6 {
 
         HostSystemTags.OS_DISTRIBUTION.recreateInherentTag(target.getUuid(), map(e(HostSystemTags.OS_DISTRIBUTION_TOKEN, "some_fake_distribution")));
         api.migrateVmInstance(vm.getUuid(), target.getUuid());
-	}
+    }
 }

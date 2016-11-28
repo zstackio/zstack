@@ -45,7 +45,7 @@ public class TestListL2NoVlanNetwork {
     public void test() throws ApiSenderException {
         int testNum = 10;
         ZoneInventory zone = api.createZones(1).get(0);
-        for (int i=0; i<testNum; i++) {
+        for (int i = 0; i < testNum; i++) {
             api.createNoVlanL2Network(zone.getUuid(), "eth" + i);
         }
         List<L2NetworkInventory> invs = api.listL2Network(null);
@@ -57,7 +57,7 @@ public class TestListL2NoVlanNetwork {
             }
         });
         invs = api.listL2Network(uuids);
-        for (int i=0; i<testNum; i++) {
+        for (int i = 0; i < testNum; i++) {
             Assert.assertEquals(uuids.get(i), invs.get(i).getUuid());
         }
     }

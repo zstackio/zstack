@@ -15,6 +15,7 @@ import org.zstack.test.ApiSenderException;
 import org.zstack.test.BeanConstructor;
 import org.zstack.test.DBUtil;
 import org.zstack.utils.data.SizeUnit;
+
 public class TestPrimaryStorageDeleteExtensionPoint {
     Api api;
     ComponentLoader loader;
@@ -46,7 +47,7 @@ public class TestPrimaryStorageDeleteExtensionPoint {
         sp.setTotalCapacity(SizeUnit.TERABYTE.toByte(10));
         sp.setAvailableCapacity(sp.getTotalCapacity());
         sp.setUrl("nfs://simulator/primary/");
-    	ZoneInventory zone = api.createZones(1).get(0);
+        ZoneInventory zone = api.createZones(1).get(0);
         sp.setZoneUuid(zone.getUuid());
         PrimaryStorageInventory inv = api.createSimulatoPrimaryStorage(1, sp).get(0);
         ext.setPreventDelete(true);
@@ -56,7 +57,7 @@ public class TestPrimaryStorageDeleteExtensionPoint {
         }
         PrimaryStorageVO vo = dbf.findByUuid(inv.getUuid(), PrimaryStorageVO.class);
         Assert.assertNotNull(vo);
-        
+
         ext.setPreventDelete(false);
         ext.setExpectedUuid(inv.getUuid());
         api.deletePrimaryStorage(inv.getUuid());

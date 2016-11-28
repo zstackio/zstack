@@ -21,7 +21,7 @@ import org.zstack.test.deployer.Deployer;
  * 3. delete the l3
  * 4. recover the vm
  * 5  start the vm
- *
+ * <p>
  * confirm unable to start the vm and the vm state is stopped
  */
 public class TestDestroyVm1 {
@@ -41,7 +41,7 @@ public class TestDestroyVm1 {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         VmInstanceInventory vm1 = deployer.vms.get("TestVm");

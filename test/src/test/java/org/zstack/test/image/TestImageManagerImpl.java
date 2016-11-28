@@ -9,7 +9,7 @@ import org.zstack.image.ImageGlobalConfig;
  */
 public class TestImageManagerImpl {
     @Test
-    public void test(){
+    public void test() {
 //        boolean enableInject = ImageGlobalConfig.DELETION_POLICY.value();
         String test = ImageGlobalConfig.DELETION_POLICY.value();
         System.out.println(test);
