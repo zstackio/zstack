@@ -6,7 +6,10 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.identity.SessionInventory;
-import org.zstack.header.storage.snapshot.*;
+import org.zstack.header.storage.snapshot.APIQueryVolumeSnapshotTreeMsg;
+import org.zstack.header.storage.snapshot.APIQueryVolumeSnapshotTreeReply;
+import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
+import org.zstack.header.storage.snapshot.VolumeSnapshotTreeInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
@@ -43,9 +46,9 @@ public class TestQuerySnapshotTree {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         String volUuid = vm.getRootVolumeUuid();
         VolumeSnapshotInventory inv = api.createSnapshot(volUuid);
