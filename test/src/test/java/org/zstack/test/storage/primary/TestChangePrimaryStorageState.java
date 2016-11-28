@@ -19,6 +19,7 @@ import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.concurrent.BrokenBarrierException;
+
 public class TestChangePrimaryStorageState {
     CLogger logger = Utils.getLogger(TestChangePrimaryStorageState.class);
     Api api;
@@ -44,7 +45,7 @@ public class TestChangePrimaryStorageState {
         sp.setTotalCapacity(SizeUnit.TERABYTE.toByte(10));
         sp.setAvailableCapacity(sp.getTotalCapacity());
         sp.setUrl("nfs://simulator/primary/");
-    	ZoneInventory zone = api.createZones(1).get(0);
+        ZoneInventory zone = api.createZones(1).get(0);
         sp.setZoneUuid(zone.getUuid());
         PrimaryStorageInventory inv = api.createSimulatoPrimaryStorage(1, sp).get(0);
         inv = api.changePrimaryStorageState(inv.getUuid(), PrimaryStorageStateEvent.disable);

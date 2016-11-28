@@ -24,9 +24,8 @@ import org.zstack.utils.data.SizeUnit;
 
 /**
  * 1. test get missing uuid for image cache
- *
+ * <p>
  * confirm it works
- *
  */
 public class TestLocalStorage49 {
     Deployer deployer;
@@ -65,9 +64,9 @@ public class TestLocalStorage49 {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         ImageInventory image = deployer.images.get("TestImage");
         SimpleQuery<ImageCacheVO> q = dbf.createQuery(ImageCacheVO.class);
         q.add(ImageCacheVO_.imageUuid, Op.EQ, image.getUuid());

@@ -27,13 +27,12 @@ import org.zstack.utils.data.SizeUnit;
  * 3. stop the vm
  * 4. take a snapshot from vm's root volume
  * 5. create a volume from the snapshot
- *
+ * <p>
  * confirm the volume created successfully
- *
+ * <p>
  * 6. attach the volume to the vm
- *
+ * <p>
  * confirm the volume attached successfully
- *
  */
 public class TestLocalStorage23 {
     Deployer deployer;
@@ -72,9 +71,9 @@ public class TestLocalStorage23 {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         api.stopVmInstance(vm.getUuid());
 

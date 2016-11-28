@@ -36,7 +36,7 @@ import java.util.concurrent.TimeUnit;
  * 1. one host, one vm
  * 2. delete the image the vm created from
  * 3. delete the vm
- *
+ * <p>
  * confirm the image is garbage collected
  */
 public class TestLocalStorage52 {
@@ -75,9 +75,9 @@ public class TestLocalStorage52 {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         ImageGlobalConfig.DELETION_POLICY.updateValue(ImageDeletionPolicy.Direct.toString());
         ImageInventory image1 = deployer.images.get("TestImage");
         api.deleteImage(image1.getUuid());

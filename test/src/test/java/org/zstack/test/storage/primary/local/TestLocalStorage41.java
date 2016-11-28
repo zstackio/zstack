@@ -30,7 +30,7 @@ import java.util.concurrent.TimeUnit;
  * 2. create a vm with a data volume
  * 3. delete the vm and the data volume
  * 4. delete the host on which the vm is
- *
+ * <p>
  * confirm unable to recover the vm and volume because the host is deleted
  */
 public class TestLocalStorage41 {
@@ -68,9 +68,9 @@ public class TestLocalStorage41 {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         HostInventory host = deployer.hosts.get("host1");
         final VmInstanceInventory vm = deployer.vms.get("TestVm");
         VolumeInventory data = CollectionUtils.find(vm.getAllVolumes(), new Function<VolumeInventory, VolumeInventory>() {

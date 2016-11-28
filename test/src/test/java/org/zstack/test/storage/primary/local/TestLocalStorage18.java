@@ -6,11 +6,9 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.storage.backup.BackupStorageInventory;
-import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
@@ -30,7 +28,7 @@ import static org.zstack.utils.CollectionDSL.list;
  * 1. use local storage and nfs storage
  * 2. create a vm with a data disk
  * 3. create an image from the data volume
- *
+ * <p>
  * confirm the image is created successfully
  */
 public class TestLocalStorage18 {
@@ -68,9 +66,9 @@ public class TestLocalStorage18 {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         final VmInstanceInventory vm = deployer.vms.get("TestVm");
         BackupStorageInventory sftp = deployer.backupStorages.get("sftp");
 

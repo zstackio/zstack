@@ -1,6 +1,5 @@
 package org.zstack.test.storage.primary.local;
 
-import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
@@ -9,10 +8,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
-import org.zstack.header.storage.primary.PrimaryStorageCapacityVO;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
-import org.zstack.header.volume.VolumeInventory;
-import org.zstack.header.volume.VolumeStatus;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;

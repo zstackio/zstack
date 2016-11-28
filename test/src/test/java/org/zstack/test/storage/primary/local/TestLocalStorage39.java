@@ -11,13 +11,7 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
 import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.volume.VolumeInventory;
-import org.zstack.kvm.KVMHostVO;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
-import org.zstack.storage.primary.local.LocalStorageKvmBackend.CheckMd5sumCmd;
-import org.zstack.storage.primary.local.LocalStorageKvmBackend.GetBackingFileCmd;
-import org.zstack.storage.primary.local.LocalStorageKvmBackend.GetMd5Cmd;
-import org.zstack.storage.primary.local.LocalStorageKvmMigrateVmFlow.CopyBitsFromRemoteCmd;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 import org.zstack.test.Api;
@@ -35,10 +29,9 @@ import java.util.concurrent.TimeUnit;
  * 1. delete the image
  * 2. set check md5 fail and the backing file existing on the dst host
  * 2. migrate a vm with storage
- *
+ * <p>
  * confirm the migration failed
  * confirm the backing file is not deleted
- *
  */
 public class TestLocalStorage39 {
     CLogger logger = Utils.getLogger(TestLocalStorage39.class);
@@ -81,9 +74,9 @@ public class TestLocalStorage39 {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         HostInventory host2 = deployer.hosts.get("host2");
         VmInstanceInventory vm = deployer.vms.get("TestVm");
 
@@ -104,5 +97,5 @@ public class TestLocalStorage39 {
 
         TimeUnit.SECONDS.sleep(2);
         Assert.assertTrue(config.deleteBitsCmds.isEmpty());
-	}
+    }
 }

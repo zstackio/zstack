@@ -86,7 +86,7 @@ public class TestLocalStorage48 {
         TimeUnit.SECONDS.sleep(3);
         api.reconnectPrimaryStorage(local2.getUuid());
         TimeUnit.SECONDS.sleep(3);
-        
+
         vol = dbf.findByUuid(vm.getRootVolumeUuid(), VolumeVO.class);
         Assert.assertEquals(imageUuid, vol.getRootImageUuid());
     }

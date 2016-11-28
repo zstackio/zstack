@@ -6,13 +6,8 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
-import org.zstack.header.image.APIQueryImageMsg;
-import org.zstack.header.image.APIQueryImageReply;
-import org.zstack.header.image.ImageInventory;
 import org.zstack.header.query.QueryOp;
 import org.zstack.header.storage.snapshot.APIQueryVolumeSnapshotMsg;
 import org.zstack.header.storage.snapshot.APIQueryVolumeSnapshotReply;
@@ -21,14 +16,16 @@ import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.APIQueryVolumeMsg;
 import org.zstack.header.volume.APIQueryVolumeReply;
 import org.zstack.header.volume.VolumeInventory;
-import org.zstack.storage.primary.local.*;
+import org.zstack.storage.primary.local.APIQueryLocalStorageResourceRefMsg;
+import org.zstack.storage.primary.local.APIQueryLocalStorageResourceRefReply;
+import org.zstack.storage.primary.local.LocalStorageResourceRefInventory;
+import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.utils.CollectionDSL;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.function.Function;
@@ -38,7 +35,7 @@ import java.util.List;
 /**
  * 1. use local storage
  * 2. create a vm
- *
+ * <p>
  * confirm all local storage related commands, VOs are set
  */
 public class TestQueryLocalStorage {
@@ -76,9 +73,9 @@ public class TestQueryLocalStorage {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         HostInventory host = deployer.hosts.get("host1");
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         VolumeInventory root = vm.getRootVolume();

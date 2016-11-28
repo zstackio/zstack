@@ -1,20 +1,19 @@
 package org.zstack.test.storage.primary.local;
 
-import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
-import org.zstack.header.image.ImageInventory;
-import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
-import org.zstack.test.*;
+import org.zstack.test.Api;
+import org.zstack.test.ApiSenderException;
+import org.zstack.test.DBUtil;
+import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.data.SizeUnit;
@@ -24,7 +23,7 @@ import org.zstack.utils.function.Function;
  * 1. have two hosts with local storage
  * 2. create a vm1
  * 3. migrate the vm1
- *
+ * <p>
  * confirm the vm1 migrated successfully
  */
 public class TestLocalStorage15 {
@@ -63,9 +62,9 @@ public class TestLocalStorage15 {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         final VmInstanceInventory vm1 = deployer.vms.get("TestVm");
         String hostToMigarate = CollectionUtils.find(deployer.hosts.values(), new Function<String, HostInventory>() {
             @Override
