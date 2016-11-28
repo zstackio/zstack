@@ -74,6 +74,7 @@ public class VmAllocateHostForStoppedVmFlow implements Flow {
                     UpdateQuery q = UpdateQuery.New();
                     q.entity(VmInstanceVO.class);
                     q.condAnd(VmInstanceVO_.uuid, SimpleQuery.Op.EQ, spec.getVmInventory().getUuid());
+                    q.set(VmInstanceVO_.lastHostUuid, spec.getVmInventory().getHostUuid());
                     q.set(VmInstanceVO_.hostUuid, areply.getHost().getUuid());
                     q.set(VmInstanceVO_.clusterUuid, areply.getHost().getClusterUuid());
                     q.update();
