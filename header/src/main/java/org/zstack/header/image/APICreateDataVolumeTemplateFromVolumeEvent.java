@@ -1,7 +1,6 @@
 package org.zstack.header.image;
 
 import org.zstack.header.message.APIEvent;
-import org.zstack.header.volume.VolumeInventory;
 
 /**
  */

@@ -12,42 +12,36 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * @inventory
- *
- * inventory for volume snapshot
- *
+ * @inventory inventory for volume snapshot
  * @category volume snapshot
- *
- * @example
- *
+ * @example {
+ * "inventory": {
+ * "uuid": "6c8c6b0ea9844ff3bc58cc46b2fde6ce",
+ * "name": "Snapshot-565e50b3c6ab4eb19c3d0dc66b36b3f9",
+ * "description": "Test snapshot",
+ * "type": "Hypervisor",
+ * "volumeUuid": "565e50b3c6ab4eb19c3d0dc66b36b3f9",
+ * "treeUuid": "2e1bea0124eb4b08b88bee3a5fd3d51a",
+ * "hypervisorType": "KVM",
+ * "parentUuid": "b95dd4de16f8486d8de38c014891b7cd",
+ * "primaryStorageUuid": "8e0fbd85f5064c19aad766ae8adb9081",
+ * "primaryStorageInstallPath": "/opt/zstack/nfsprimarystorage/prim-8e0fbd85f5064c19aad766ae8adb9081/dataVolumes/acct-36c27e8ff05c4780bf6d2fa65700f22e/vol-565e50b3c6ab4eb19c3d0dc66b36b3f9/snapshots/6c8c6b0ea9844ff3bc58cc46b2fde6ce.qcow2",
+ * "type": "Data",
+ * "latest": true,
+ * "size": 10485760,
+ * "state": "Enabled",
+ * "status": "Ready",
+ * "createDate": "May 3, 2014 12:00:53 PM",
+ * "lastOpDate": "May 3, 2014 12:00:53 PM",
+ * "backupStorageRefs": [
  * {
-"inventory": {
-"uuid": "6c8c6b0ea9844ff3bc58cc46b2fde6ce",
-"name": "Snapshot-565e50b3c6ab4eb19c3d0dc66b36b3f9",
-"description": "Test snapshot",
-"type": "Hypervisor",
-"volumeUuid": "565e50b3c6ab4eb19c3d0dc66b36b3f9",
-"treeUuid": "2e1bea0124eb4b08b88bee3a5fd3d51a",
-"hypervisorType": "KVM",
-"parentUuid": "b95dd4de16f8486d8de38c014891b7cd",
-"primaryStorageUuid": "8e0fbd85f5064c19aad766ae8adb9081",
-"primaryStorageInstallPath": "/opt/zstack/nfsprimarystorage/prim-8e0fbd85f5064c19aad766ae8adb9081/dataVolumes/acct-36c27e8ff05c4780bf6d2fa65700f22e/vol-565e50b3c6ab4eb19c3d0dc66b36b3f9/snapshots/6c8c6b0ea9844ff3bc58cc46b2fde6ce.qcow2",
-"type": "Data",
-"latest": true,
-"size": 10485760,
-"state": "Enabled",
-"status": "Ready",
-"createDate": "May 3, 2014 12:00:53 PM",
-"lastOpDate": "May 3, 2014 12:00:53 PM",
-"backupStorageRefs": [
-{
-"volumeSnapshotUuid": "6c8c6b0ea9844ff3bc58cc46b2fde6ce",
-"backupStorageUuid": "9656aa7cc6fb46ebab65aedc12a4728c",
-"installPath": "nfs:/test1/volumeSnapshots/acct-36c27e8ff05c4780bf6d2fa65700f22e/6c8c6b0ea9844ff3bc58cc46b2fde6ce/6c8c6b0ea9844ff3bc58cc46b2fde6ce.qcow2"
-}
-]
-}
-}
+ * "volumeSnapshotUuid": "6c8c6b0ea9844ff3bc58cc46b2fde6ce",
+ * "backupStorageUuid": "9656aa7cc6fb46ebab65aedc12a4728c",
+ * "installPath": "nfs:/test1/volumeSnapshots/acct-36c27e8ff05c4780bf6d2fa65700f22e/6c8c6b0ea9844ff3bc58cc46b2fde6ce/6c8c6b0ea9844ff3bc58cc46b2fde6ce.qcow2"
+ * }
+ * ]
+ * }
+ * }
  * @since 0.1.0
  */
 @Inventory(mappingVOClass = VolumeSnapshotVO.class)
@@ -79,24 +73,19 @@ public class VolumeSnapshotInventory {
      */
     private String description;
     /**
-     * @desc
-     * - Hypervisor: file based snapshot which is created by hypervisor. For example, QCOW2 snapshot in KVM
+     * @desc - Hypervisor: file based snapshot which is created by hypervisor. For example, QCOW2 snapshot in KVM
      * - Storage: storage based snapshot which is created by primary storage. For example, ISCSI vendor usually provides
-     *   their own means to create snapshot from block device
-     *
-     * @choices
-     * - Hypervisor
+     * their own means to create snapshot from block device
+     * @choices - Hypervisor
      * - Storage
      */
     private String type;
     /**
-     * @desc
-     * uuid of volume where the snapshot was created from
+     * @desc uuid of volume where the snapshot was created from
      */
     private String volumeUuid;
     /**
-     * @desc
-     * uuid of volume snapshot tree the snapshot belongs to
+     * @desc uuid of volume snapshot tree the snapshot belongs to
      */
     private String treeUuid;
 
@@ -116,8 +105,7 @@ public class VolumeSnapshotInventory {
     private String primaryStorageInstallPath;
     /**
      * @desc type of volume where the snapshot was created. See type of :ref:`VolumeInventory`
-     * @choices
-     * - Root
+     * @choices - Root
      * - Data
      */
     private String volumeType;
@@ -125,8 +113,7 @@ public class VolumeSnapshotInventory {
     private String format;
     /**
      * @desc true if the snapshot is the last one of the snapshot branch, false if not
-     * @choices
-     * - true
+     * @choices - true
      * - false
      */
     private Boolean latest;
@@ -135,26 +122,20 @@ public class VolumeSnapshotInventory {
      */
     private Long size;
     /**
-     * @desc
-     * - Enabled: ok for operations
+     * @desc - Enabled: ok for operations
      * - Disabled: volume cannot revert to this snapshot
-     *
-     * @choices
-     * - Enabled
+     * @choices - Enabled
      * - Disabled
      */
     private String state;
     /**
-     * @desc
-     * - Creating: the snapshot is being created from volume
+     * @desc - Creating: the snapshot is being created from volume
      * - CreatingTemplate: a template is being created from the snapshot
      * - CreatingVolume: a volume is being created from the snapshot
      * - Ready: ok for operations
      * - BackingUp: the snapshot is being backed up to backup storage
      * - Deleting: the snapshot is being deleted
-     *
-     * @choices
-     * - Creating
+     * @choices - Creating
      * - CreatingTemplate
      * - CreatingVolume
      * - Ready
@@ -174,7 +155,7 @@ public class VolumeSnapshotInventory {
      * @desc a list of :ref:`VolumeSnapshotBackupStorageRefInventory` representing information of the snapshot on backup storage
      */
     @Queryable(mappingClass = VolumeSnapshotBackupStorageRefInventory.class,
-            joinColumn = @JoinColumn(name="volumeSnapshotUuid"))
+            joinColumn = @JoinColumn(name = "volumeSnapshotUuid"))
     private List<VolumeSnapshotBackupStorageRefInventory> backupStorageRefs;
 
     public static VolumeSnapshotInventory valueOf(VolumeSnapshotVO vo) {

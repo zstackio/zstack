@@ -10,26 +10,26 @@ public class InstanceOfferingAO {
     @Id
     @Column
     private String uuid;
-    
+
     @Column
     @Index
     private String name;
-    
+
     @Column
     private String description;
-    
+
     @Column
     private int cpuNum;
-    
+
     @Column
     private int cpuSpeed;
-    
+
     @Column
     private long memorySize;
 
     @Column
     private String allocatorStrategy;
-    
+
     @Column
     private int sortKey;
 
@@ -39,13 +39,13 @@ public class InstanceOfferingAO {
 
     @Column
     private Timestamp createDate;
-    
+
     @Column
     private Timestamp lastOpDate;
 
     @Column
-    private String type ;
-    
+    private String type;
+
     @Column
     @Enumerated(EnumType.STRING)
     private InstanceOfferingDuration duration;
@@ -75,67 +75,67 @@ public class InstanceOfferingAO {
     }
 
     public String getUuid() {
-    	return uuid;
+        return uuid;
     }
 
-	public void setUuid(String uuid) {
-    	this.uuid = uuid;
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
     }
 
-	public int getCpuNum() {
-    	return cpuNum;
+    public int getCpuNum() {
+        return cpuNum;
     }
 
-	public void setCpuNum(int cpuNum) {
-    	this.cpuNum = cpuNum;
+    public void setCpuNum(int cpuNum) {
+        this.cpuNum = cpuNum;
     }
 
-	public int getCpuSpeed() {
-    	return cpuSpeed;
+    public int getCpuSpeed() {
+        return cpuSpeed;
     }
 
-	public void setCpuSpeed(int cpuSpeed) {
-    	this.cpuSpeed = cpuSpeed;
+    public void setCpuSpeed(int cpuSpeed) {
+        this.cpuSpeed = cpuSpeed;
     }
 
-	public long getMemorySize() {
-    	return memorySize;
+    public long getMemorySize() {
+        return memorySize;
     }
 
-	public void setMemorySize(long memorySize) {
-    	this.memorySize = memorySize;
+    public void setMemorySize(long memorySize) {
+        this.memorySize = memorySize;
     }
 
-	public String getAllocatorStrategy() {
-    	return allocatorStrategy;
+    public String getAllocatorStrategy() {
+        return allocatorStrategy;
     }
 
-	public void setAllocatorStrategy(String allocatorStrategy) {
-    	this.allocatorStrategy = allocatorStrategy;
+    public void setAllocatorStrategy(String allocatorStrategy) {
+        this.allocatorStrategy = allocatorStrategy;
     }
 
-	public String getName() {
-    	return name;
+    public String getName() {
+        return name;
     }
 
-	public void setName(String name) {
-    	this.name = name;
+    public void setName(String name) {
+        this.name = name;
     }
 
-	public String getDescription() {
-    	return description;
+    public String getDescription() {
+        return description;
     }
 
-	public void setDescription(String description) {
-    	this.description = description;
+    public void setDescription(String description) {
+        this.description = description;
     }
 
-	public int getSortKey() {
-    	return sortKey;
+    public int getSortKey() {
+        return sortKey;
     }
 
-	public void setSortKey(int sortKey) {
-    	this.sortKey = sortKey;
+    public void setSortKey(int sortKey) {
+        this.sortKey = sortKey;
     }
 
     public String getType() {
@@ -163,12 +163,12 @@ public class InstanceOfferingAO {
     }
 
     public InstanceOfferingDuration getDuration() {
-		return duration;
-	}
+        return duration;
+    }
 
-	public void setDuration(InstanceOfferingDuration duration) {
-		this.duration = duration;
-	}
+    public void setDuration(InstanceOfferingDuration duration) {
+        this.duration = duration;
+    }
 
     public InstanceOfferingState getState() {
         return state;

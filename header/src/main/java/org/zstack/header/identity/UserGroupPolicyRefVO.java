@@ -2,8 +2,6 @@ package org.zstack.header.identity;
 
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
-import org.zstack.header.vo.SoftDeletionCascade;
-import org.zstack.header.vo.SoftDeletionCascades;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
@@ -12,21 +10,21 @@ import java.sql.Timestamp;
 @Table
 public class UserGroupPolicyRefVO {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column
     private long id;
-    
+
     @Column
     @ForeignKey(parentEntityClass = UserGroupVO.class, parentKey = "uuid", onDeleteAction = ReferenceOption.CASCADE)
     private String groupUuid;
-    
+
     @Column
     @ForeignKey(parentEntityClass = PolicyVO.class, parentKey = "uuid", onDeleteAction = ReferenceOption.CASCADE)
     private String policyUuid;
-    
+
     @Column
     private Timestamp createDate;
-    
+
     @Column
     private Timestamp lastOpDate;
 

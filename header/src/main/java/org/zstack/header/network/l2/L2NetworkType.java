@@ -10,7 +10,7 @@ public class L2NetworkType {
     public static boolean hasType(String typeName) {
         return types.containsKey(typeName);
     }
-    
+
     public L2NetworkType(String typeName) {
         this.typeName = typeName;
         types.put(typeName, this);
@@ -36,27 +36,27 @@ public class L2NetworkType {
         }
         return type;
     }
-    
+
     @Override
     public String toString() {
         return typeName;
     }
-    
+
     @Override
     public boolean equals(Object t) {
         if (t == null || !(t instanceof L2NetworkType)) {
             return false;
         }
-        
-        L2NetworkType type = (L2NetworkType)t;
+
+        L2NetworkType type = (L2NetworkType) t;
         return type.toString().equals(typeName);
     }
-    
+
     @Override
     public int hashCode() {
         return typeName.hashCode();
     }
-    
+
     public static Set<String> getAllTypeNames() {
         HashSet<String> exposedTypes = new HashSet<String>();
         for (L2NetworkType type : types.values()) {

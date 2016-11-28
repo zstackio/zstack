@@ -44,7 +44,7 @@ public enum VolumeSnapshotStatus {
 
     private Map<StatusEvent, Transaction> transactionMap = new HashMap<>();
 
-    private void transactions(Transaction...transactions) {
+    private void transactions(Transaction... transactions) {
         for (Transaction tran : transactions) {
             transactionMap.put(tran.event, tran);
         }

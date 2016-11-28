@@ -9,7 +9,11 @@ import org.zstack.header.vm.VmAccountPerference;
 public class ChangeVmPasswordReply extends MessageReply {
     private VmAccountPerference vmAccountPerference;
 
-    public VmAccountPerference getVmAccountPerference() { return vmAccountPerference; }
+    public VmAccountPerference getVmAccountPerference() {
+        return vmAccountPerference;
+    }
 
-    public void setVmAccountPerference(VmAccountPerference vmAccountPerference) { this.vmAccountPerference = vmAccountPerference; }
+    public void setVmAccountPerference(VmAccountPerference vmAccountPerference) {
+        this.vmAccountPerference = vmAccountPerference;
+    }
 }

@@ -14,6 +14,7 @@ public class AuthorizationInfo implements ConfigAttribute {
     public void setNeedRoles(List<String> needRoles) {
         this.needRoles = needRoles;
     }
+
     @Override
     public String getAttribute() {
         return null;

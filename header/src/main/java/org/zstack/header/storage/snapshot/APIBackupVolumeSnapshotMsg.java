@@ -7,41 +7,30 @@ import org.zstack.header.rest.APINoSee;
 import org.zstack.header.storage.backup.BackupStorageVO;
 
 /**
- * @api
- * back up volume snapshot to backup storage
- *
+ * @api back up volume snapshot to backup storage
  * @category volume snapshot
- *
- * @since 0.1.0
- *
  * @cli
- *
- * @httpMsg
- *
- * {
-"org.zstack.header.storage.snapshot.APIBackupVolumeSnapshotMsg": {
-"uuid": "b86f375d5ebf455b8037021f8e641fc8",
-"session": {
-"uuid": "cb3ffca02e214c10a0ed8b8bb54cdf97"
-}
-}
-}
- * @msg
- * {
-"org.zstack.header.storage.snapshot.APIBackupVolumeSnapshotMsg": {
-"uuid": "b86f375d5ebf455b8037021f8e641fc8",
-"session": {
-"uuid": "cb3ffca02e214c10a0ed8b8bb54cdf97"
-},
-"timeout": 1800000,
-"id": "1f3a2ab2c26a4b309992b231118723a6",
-"serviceId": "api.portal"
-}
-}
- *
- * @result
- *
- * see :ref:`APIBackupVolumeSnapshotEvent`
+ * @httpMsg {
+ * "org.zstack.header.storage.snapshot.APIBackupVolumeSnapshotMsg": {
+ * "uuid": "b86f375d5ebf455b8037021f8e641fc8",
+ * "session": {
+ * "uuid": "cb3ffca02e214c10a0ed8b8bb54cdf97"
+ * }
+ * }
+ * }
+ * @msg {
+ * "org.zstack.header.storage.snapshot.APIBackupVolumeSnapshotMsg": {
+ * "uuid": "b86f375d5ebf455b8037021f8e641fc8",
+ * "session": {
+ * "uuid": "cb3ffca02e214c10a0ed8b8bb54cdf97"
+ * },
+ * "timeout": 1800000,
+ * "id": "1f3a2ab2c26a4b309992b231118723a6",
+ * "serviceId": "api.portal"
+ * }
+ * }
+ * @result see :ref:`APIBackupVolumeSnapshotEvent`
+ * @since 0.1.0
  */
 
 @Action(category = VolumeSnapshotConstant.ACTION_CATEGORY)

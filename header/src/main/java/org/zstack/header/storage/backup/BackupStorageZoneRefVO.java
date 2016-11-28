@@ -18,21 +18,21 @@ import java.sql.Timestamp;
 })
 public class BackupStorageZoneRefVO {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column
     private Long id;
-    
+
     @Column
     @ForeignKey(parentEntityClass = BackupStorageEO.class, onDeleteAction = ReferenceOption.CASCADE)
     private String backupStorageUuid;
-    
+
     @Column
     @ForeignKey(parentEntityClass = ZoneEO.class, onDeleteAction = ReferenceOption.CASCADE)
     private String zoneUuid;
-    
+
     @Column
     private Timestamp createDate;
-    
+
     @Column
     private Timestamp lastOpDate;
 

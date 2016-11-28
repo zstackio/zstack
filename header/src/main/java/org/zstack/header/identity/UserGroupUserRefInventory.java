@@ -21,7 +21,7 @@ public class UserGroupUserRefInventory {
     private String groupUuid;
     private Timestamp createDate;
     private Timestamp lastOpDate;
-    
+
     public static UserGroupUserRefInventory valueOf(UserGroupUserRefVO vo) {
         UserGroupUserRefInventory inv = new UserGroupUserRefInventory();
         inv.setUserUuid(vo.getUserUuid());
@@ -38,7 +38,7 @@ public class UserGroupUserRefInventory {
         }
         return invs;
     }
-    
+
     public String getUserUuid() {
         return userUuid;
     }

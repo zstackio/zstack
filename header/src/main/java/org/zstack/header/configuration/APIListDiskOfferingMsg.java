@@ -8,7 +8,7 @@ public class APIListDiskOfferingMsg extends APIListMessage {
     public APIListDiskOfferingMsg(List<String> uuids) {
         super(uuids);
     }
-    
+
     public APIListDiskOfferingMsg() {
     }
 }

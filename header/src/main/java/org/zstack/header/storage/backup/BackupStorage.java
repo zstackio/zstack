@@ -7,15 +7,15 @@ import org.zstack.header.message.Message;
 import java.util.List;
 
 public interface BackupStorage {
-	void handleMessage(Message msg);
-	
-	void deleteHook();
-	
-	void changeStateHook(BackupStorageStateEvent evt, BackupStorageState nextState);
+    void handleMessage(Message msg);
+
+    void deleteHook();
+
+    void changeStateHook(BackupStorageStateEvent evt, BackupStorageState nextState);
 
     void attachHook(String zoneUuid, Completion completion);
-	
-	void detachHook(Completion completion);
-	
-	List<ImageInventory> scanImages();
+
+    void detachHook(Completion completion);
+
+    List<ImageInventory> scanImages();
 }

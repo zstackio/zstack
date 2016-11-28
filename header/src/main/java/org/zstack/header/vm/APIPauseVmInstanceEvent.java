@@ -5,7 +5,7 @@ import org.zstack.header.message.APIEvent;
 /**
  * Created by luchkun on 10/29/16.
  */
-public class APIPauseVmInstanceEvent extends APIEvent{
+public class APIPauseVmInstanceEvent extends APIEvent {
 
     private VmInstanceInventory inventory;
 
@@ -13,14 +13,15 @@ public class APIPauseVmInstanceEvent extends APIEvent{
         super(null);
     }
 
-    public APIPauseVmInstanceEvent(String apiId){
+    public APIPauseVmInstanceEvent(String apiId) {
         super(apiId);
     }
 
-    public VmInstanceInventory getInventory(){
+    public VmInstanceInventory getInventory() {
         return inventory;
     }
-    public void setInventory(VmInstanceInventory inventory){
+
+    public void setInventory(VmInstanceInventory inventory) {
         this.inventory = inventory;
     }
 }

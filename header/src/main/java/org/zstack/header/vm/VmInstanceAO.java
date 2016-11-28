@@ -17,22 +17,22 @@ public class VmInstanceAO {
     @Id
     @Column
     private String uuid;
-    
+
     @Column
     @Index(length = 128)
     private String name;
-    
+
     @Column
     private String description;
-    
+
     @Column
     @ForeignKey(parentEntityClass = ZoneEO.class, onDeleteAction = ReferenceOption.SET_NULL)
     private String zoneUuid;
-    
+
     @Column
     @ForeignKey(parentEntityClass = ClusterEO.class, onDeleteAction = ReferenceOption.SET_NULL)
     private String clusterUuid;
-    
+
     @Column
     @ForeignKey(parentEntityClass = ImageEO.class, onDeleteAction = ReferenceOption.RESTRICT)
     private String imageUuid;
@@ -40,18 +40,18 @@ public class VmInstanceAO {
     @Column
     @ForeignKey(parentEntityClass = HostEO.class, onDeleteAction = ReferenceOption.SET_NULL)
     private String hostUuid;
-    
+
     @Column
     private Long internalId;
-    
+
     @Column
     @ForeignKey(parentEntityClass = HostEO.class, onDeleteAction = ReferenceOption.SET_NULL)
     private String lastHostUuid;
-    
+
     @Column
     @ForeignKey(parentEntityClass = InstanceOfferingEO.class, onDeleteAction = ReferenceOption.RESTRICT)
     private String instanceOfferingUuid;
-    
+
     @Column
     private String rootVolumeUuid;
 
@@ -60,7 +60,7 @@ public class VmInstanceAO {
 
     @Column
     private String type;
-    
+
     @Column
     private String hypervisorType;
 
@@ -81,10 +81,10 @@ public class VmInstanceAO {
 
     @Column
     private Timestamp createDate;
-    
+
     @Column
     private Timestamp lastOpDate;
-    
+
     @Column
     @Enumerated(EnumType.STRING)
     private VmInstanceState state;

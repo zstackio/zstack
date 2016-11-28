@@ -4,7 +4,7 @@ import javax.persistence.*;
 
 @Entity
 @Table
-@Inheritance(strategy=InheritanceType.JOINED)
+@Inheritance(strategy = InheritanceType.JOINED)
 public class HostEO extends HostAO {
     @Column
     private String deleted;

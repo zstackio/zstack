@@ -10,7 +10,7 @@ import javax.persistence.Table;
 
 @Entity
 @Table
-@PrimaryKeyJoinColumn(name="uuid", referencedColumnName="uuid")
+@PrimaryKeyJoinColumn(name = "uuid", referencedColumnName = "uuid")
 @EO(EOClazz = L2NetworkEO.class, needView = false)
 @AutoDeleteTag
 public class L2VlanNetworkVO extends L2NetworkVO {

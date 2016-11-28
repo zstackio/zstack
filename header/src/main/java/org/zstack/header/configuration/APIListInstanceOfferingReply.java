@@ -5,7 +5,7 @@ import org.zstack.header.message.APIReply;
 import java.util.List;
 
 public class APIListInstanceOfferingReply extends APIReply {
-	private List<InstanceOfferingInventory> inventories;
+    private List<InstanceOfferingInventory> inventories;
 
     public List<InstanceOfferingInventory> getInventories() {
         return inventories;
@@ -14,5 +14,5 @@ public class APIListInstanceOfferingReply extends APIReply {
     public void setInventories(List<InstanceOfferingInventory> inventories) {
         this.inventories = inventories;
     }
-	
+
 }

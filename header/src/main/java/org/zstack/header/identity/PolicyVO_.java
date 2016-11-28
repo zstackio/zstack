@@ -3,7 +3,6 @@ package org.zstack.header.identity;
 import javax.persistence.metamodel.SingularAttribute;
 import javax.persistence.metamodel.StaticMetamodel;
 import java.sql.Timestamp;
-import java.util.Date;
 
 @StaticMetamodel(PolicyVO.class)
 public class PolicyVO_ {

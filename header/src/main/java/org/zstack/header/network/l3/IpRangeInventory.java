@@ -14,29 +14,24 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+
 /**
- * @inventory
- *
- * inventory for ip range
- *
+ * @inventory inventory for ip range
  * @category l3network
- *
- * @example
- * {
-"inventory": {
-"uuid": "b1cfcdeca4024d13ac82edbe8d959720",
-"l3NetworkUuid": "50e637dc68b7480291ba87cbb81d94ad",
-"name": "TestIpRange",
-"description": "Test",
-"startIp": "10.0.0.100",
-"endIp": "10.10.1.200",
-"netmask": "255.0.0.0",
-"gateway": "10.0.0.1",
-"createDate": "May 4, 2014 4:30:23 PM",
-"lastOpDate": "May 4, 2014 4:30:23 PM"
-}
-}
- *
+ * @example {
+ * "inventory": {
+ * "uuid": "b1cfcdeca4024d13ac82edbe8d959720",
+ * "l3NetworkUuid": "50e637dc68b7480291ba87cbb81d94ad",
+ * "name": "TestIpRange",
+ * "description": "Test",
+ * "startIp": "10.0.0.100",
+ * "endIp": "10.10.1.200",
+ * "netmask": "255.0.0.0",
+ * "gateway": "10.0.0.1",
+ * "createDate": "May 4, 2014 4:30:23 PM",
+ * "lastOpDate": "May 4, 2014 4:30:23 PM"
+ * }
+ * }
  * @since 0.1.0
  */
 @Inventory(mappingVOClass = IpRangeVO.class)
@@ -45,7 +40,7 @@ import java.util.List;
         @ExpandedQuery(expandedField = "l3Network", inventoryClass = L3NetworkInventory.class,
                 foreignKey = "l3NetworkUuid", expandedInventoryKey = "uuid")
 })
-public class IpRangeInventory implements Serializable{
+public class IpRangeInventory implements Serializable {
     /**
      * @desc ip range uuid
      */
@@ -88,7 +83,7 @@ public class IpRangeInventory implements Serializable{
      * @desc last time this resource gets operated
      */
     private Timestamp lastOpDate;
-    
+
     public static IpRangeInventory valueOf(IpRangeVO vo) {
         IpRangeInventory inv = new IpRangeInventory();
         inv.setCreateDate(vo.getCreateDate());
@@ -104,7 +99,7 @@ public class IpRangeInventory implements Serializable{
         inv.setNetworkCidr(vo.getNetworkCidr());
         return inv;
     }
-    
+
     public static List<IpRangeInventory> valueOf(Collection<IpRangeVO> vos) {
         List<IpRangeInventory> invs = new ArrayList<IpRangeInventory>(vos.size());
         for (IpRangeVO vo : vos) {
@@ -124,48 +119,63 @@ public class IpRangeInventory implements Serializable{
     public String getUuid() {
         return uuid;
     }
+
     public void setUuid(String uuid) {
         this.uuid = uuid;
     }
+
     public String getL3NetworkUuid() {
         return l3NetworkUuid;
     }
+
     public void setL3NetworkUuid(String l3NetworkUuid) {
         this.l3NetworkUuid = l3NetworkUuid;
     }
+
     public String getName() {
         return name;
     }
+
     public void setName(String name) {
         this.name = name;
     }
+
     public String getDescription() {
         return description;
     }
+
     public void setDescription(String description) {
         this.description = description;
     }
+
     public String getStartIp() {
         return startIp;
     }
+
     public void setStartIp(String startIp) {
         this.startIp = startIp;
     }
+
     public String getEndIp() {
         return endIp;
     }
+
     public void setEndIp(String endIp) {
         this.endIp = endIp;
     }
+
     public String getNetmask() {
         return netmask;
     }
+
     public void setNetmask(String netmask) {
         this.netmask = netmask;
     }
+
     public String getGateway() {
         return gateway;
     }
+
     public void setGateway(String gateway) {
         this.gateway = gateway;
     }
@@ -188,7 +198,7 @@ public class IpRangeInventory implements Serializable{
 
     @Override
     public String toString() {
-    	return JSONObjectUtil.toJsonString(this);
+        return JSONObjectUtil.toJsonString(this);
     }
 
     public static IpRangeInventory fromMessage(APIAddIpRangeMsg msg) {

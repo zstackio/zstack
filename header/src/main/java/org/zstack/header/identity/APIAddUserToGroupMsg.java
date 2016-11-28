@@ -9,7 +9,7 @@ public class APIAddUserToGroupMsg extends APIMessage implements AccountMessage {
     private String userUuid;
     @APIParam(checkAccount = true)
     private String groupUuid;
-    
+
     @Override
     public String getAccountUuid() {
         return this.getSession().getAccountUuid();

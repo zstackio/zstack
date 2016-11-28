@@ -1,7 +1,6 @@
 package org.zstack.header.storage.snapshot;
 
 import org.zstack.header.message.NeedReplyMessage;
-import org.zstack.header.rest.APINoSee;
 import org.zstack.header.storage.backup.BackupStorageInventory;
 
 /**
@@ -24,6 +23,7 @@ public class BackupVolumeSnapshotMsg extends NeedReplyMessage implements VolumeS
     public void setTreeUuid(String treeUuid) {
         this.treeUuid = treeUuid;
     }
+
     @Override
     public String getVolumeUuid() {
         return volumeUuid;

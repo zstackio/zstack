@@ -5,7 +5,7 @@ import org.zstack.header.errorcode.ErrorCode;
 /**
  * Created by frank on 6/18/2015.
  */
-public interface VolumeDeletionExtensionPoint  {
+public interface VolumeDeletionExtensionPoint {
     void preDeleteVolume(VolumeInventory volume);
 
     void beforeDeleteVolume(VolumeInventory volume);

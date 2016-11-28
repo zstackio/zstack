@@ -5,7 +5,7 @@ import org.zstack.header.message.APIReply;
 import java.util.List;
 
 public class APIListBackupStorageReply extends APIReply {
-	private List<BackupStorageInventory> inventories;
+    private List<BackupStorageInventory> inventories;
 
     public List<BackupStorageInventory> getInventories() {
         return inventories;

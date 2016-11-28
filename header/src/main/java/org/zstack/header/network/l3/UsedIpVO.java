@@ -16,38 +16,38 @@ public class UsedIpVO {
     @Id
     @Column
     private String uuid;
-    
+
     @Column
     @ForeignKey(parentEntityClass = IpRangeEO.class, onDeleteAction = ReferenceOption.CASCADE)
     private String ipRangeUuid;
-    
+
     @Column
     @ForeignKey(parentEntityClass = L3NetworkEO.class, onDeleteAction = ReferenceOption.CASCADE)
     private String l3NetworkUuid;
-    
+
     @Column
     @Index
     private String ip;
-    
+
     @Column
     private String gateway;
-    
+
     @Column
     private String netmask;
-    
+
     @Column
     @Index
     private long ipInLong;
-    
+
     @Column
     private String usedFor;
 
     @Column
     private String metaData;
-    
+
     @Column
     private Timestamp createDate;
-    
+
     @Column
     private Timestamp lastOpDate;
 
@@ -55,7 +55,7 @@ public class UsedIpVO {
         this.ip = ip;
         this.ipRangeUuid = rangeUuid;
     }
-    
+
     private UsedIpVO() {
     }
 
@@ -101,21 +101,21 @@ public class UsedIpVO {
         this.l3NetworkUuid = l3NetworkUuid;
     }
 
-	public String getGateway() {
-		return gateway;
-	}
+    public String getGateway() {
+        return gateway;
+    }
 
-	public void setGateway(String gateway) {
-		this.gateway = gateway;
-	}
+    public void setGateway(String gateway) {
+        this.gateway = gateway;
+    }
 
-	public String getNetmask() {
-		return netmask;
-	}
+    public String getNetmask() {
+        return netmask;
+    }
 
-	public void setNetmask(String netmask) {
-		this.netmask = netmask;
-	}
+    public void setNetmask(String netmask) {
+        this.netmask = netmask;
+    }
 
     public String getUsedFor() {
         return usedFor;

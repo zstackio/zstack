@@ -14,50 +14,50 @@ import java.sql.Timestamp;
 @Entity
 @Table
 @TriggerIndex
-@SqlTrigger(foreignVOClass=VmInstanceVO.class, foreignVOJoinColumn="vmInstanceUuid")
+@SqlTrigger(foreignVOClass = VmInstanceVO.class, foreignVOJoinColumn = "vmInstanceUuid")
 public class VmNicVO {
     @Id
     @Column
     private String uuid;
-    
+
     @Column
     @ForeignKey(parentEntityClass = VmInstanceEO.class, onDeleteAction = ReferenceOption.CASCADE)
     private String vmInstanceUuid;
-    
+
     @Column
     @ForeignKey(parentEntityClass = UsedIpVO.class, onDeleteAction = ReferenceOption.SET_NULL)
     private String usedIpUuid;
-    
+
     @Column
     @ForeignKey(parentEntityClass = L3NetworkEO.class, onDeleteAction = ReferenceOption.SET_NULL)
     private String l3NetworkUuid;
-    
+
     @Column
     @Index
     private String ip;
-    
+
     @Column
     private String netmask;
-    
+
     @Column
     private String gateway;
-   
+
     @Column
     @Index
     private String mac;
-    
+
     @Column
     private String metaData;
-    
+
     @Column
     private int deviceId;
-    
+
     @Column
     private String internalName;
-    
+
     @Column
     private Timestamp createDate;
-    
+
     @Column
     private Timestamp lastOpDate;
 
@@ -139,29 +139,29 @@ public class VmNicVO {
     }
 
     public String getMetaData() {
-		return metaData;
-	}
+        return metaData;
+    }
 
-	public void setMetaData(String metaData) {
-		this.metaData = metaData;
-	}
+    public void setMetaData(String metaData) {
+        this.metaData = metaData;
+    }
 
-	public String getNetmask() {
-		return netmask;
-	}
+    public String getNetmask() {
+        return netmask;
+    }
 
-	public void setNetmask(String netmask) {
-		this.netmask = netmask;
-	}
+    public void setNetmask(String netmask) {
+        this.netmask = netmask;
+    }
 
-	public String getGateway() {
-		return gateway;
-	}
+    public String getGateway() {
+        return gateway;
+    }
 
-	public void setGateway(String gateway) {
-		this.gateway = gateway;
-	}
-	
+    public void setGateway(String gateway) {
+        this.gateway = gateway;
+    }
+
     public String getInternalName() {
         return internalName;
     }

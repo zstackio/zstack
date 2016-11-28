@@ -14,7 +14,7 @@ public class CheckNetworkPhysicalInterfaceMsg extends NeedReplyMessage implement
     public void setPhysicalInterface(String physicalInterface) {
         this.physicalInterface = physicalInterface;
     }
-    
+
     public void setHostUuid(String hostUuid) {
         this.hostUuid = hostUuid;
     }

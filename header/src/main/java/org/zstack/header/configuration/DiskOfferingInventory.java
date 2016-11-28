@@ -17,7 +17,7 @@ import java.util.List;
         @ExpandedQuery(expandedField = "volume", inventoryClass = VolumeInventory.class,
                 foreignKey = "uuid", expandedInventoryKey = "diskOfferingUuid"),
 })
-public class DiskOfferingInventory implements Serializable{
+public class DiskOfferingInventory implements Serializable {
     private String uuid;
     private String name;
     private String description;
@@ -28,22 +28,22 @@ public class DiskOfferingInventory implements Serializable{
     private Timestamp createDate;
     private Timestamp lastOpDate;
     private String allocatorStrategy;
-    
+
     public static DiskOfferingInventory valueOf(DiskOfferingVO vo) {
-    	DiskOfferingInventory inv = new DiskOfferingInventory();
-    	inv.setCreateDate(vo.getCreateDate());
-    	inv.setDescription(vo.getDescription());
-    	inv.setDiskSize(vo.getDiskSize());
-    	inv.setName(vo.getName());
-    	inv.setSortKey(vo.getSortKey());
-    	inv.setUuid(vo.getUuid());
-    	inv.setAllocatorStrategy(vo.getAllocatorStrategy());
-    	inv.setLastOpDate(vo.getLastOpDate());
+        DiskOfferingInventory inv = new DiskOfferingInventory();
+        inv.setCreateDate(vo.getCreateDate());
+        inv.setDescription(vo.getDescription());
+        inv.setDiskSize(vo.getDiskSize());
+        inv.setName(vo.getName());
+        inv.setSortKey(vo.getSortKey());
+        inv.setUuid(vo.getUuid());
+        inv.setAllocatorStrategy(vo.getAllocatorStrategy());
+        inv.setLastOpDate(vo.getLastOpDate());
         inv.setType(vo.getType());
         inv.setState(vo.getState().toString());
-    	return inv;
+        return inv;
     }
-    
+
     public static List<DiskOfferingInventory> valueOf(Collection<DiskOfferingVO> vos) {
         List<DiskOfferingInventory> invs = new ArrayList<DiskOfferingInventory>(vos.size());
         for (DiskOfferingVO vo : vos) {
@@ -51,45 +51,53 @@ public class DiskOfferingInventory implements Serializable{
         }
         return invs;
     }
-    
-	public String getName() {
-    	return name;
-    }
-	public void setName(String name) {
-    	this.name = name;
-    }
-	public String getDescription() {
-    	return description;
-    }
-	public void setDescription(String description) {
-    	this.description = description;
-    }
-	public long getDiskSize() {
-    	return diskSize;
-    }
-	public void setDiskSize(long diskSize) {
-    	this.diskSize = diskSize;
-    }
-	public int getSortKey() {
-    	return sortKey;
-    }
-	public void setSortKey(int sortKey) {
-    	this.sortKey = sortKey;
-    }
-	public String getUuid() {
-    	return uuid;
+
+    public String getName() {
+        return name;
     }
 
-	public void setUuid(String uuid) {
-    	this.uuid = uuid;
+    public void setName(String name) {
+        this.name = name;
     }
 
-	public String getAllocatorStrategy() {
-    	return allocatorStrategy;
+    public String getDescription() {
+        return description;
     }
 
-	public void setAllocatorStrategy(String allocatorStrategy) {
-    	this.allocatorStrategy = allocatorStrategy;
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public long getDiskSize() {
+        return diskSize;
+    }
+
+    public void setDiskSize(long diskSize) {
+        this.diskSize = diskSize;
+    }
+
+    public int getSortKey() {
+        return sortKey;
+    }
+
+    public void setSortKey(int sortKey) {
+        this.sortKey = sortKey;
+    }
+
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
+    public String getAllocatorStrategy() {
+        return allocatorStrategy;
+    }
+
+    public void setAllocatorStrategy(String allocatorStrategy) {
+        this.allocatorStrategy = allocatorStrategy;
     }
 
     public Timestamp getCreateDate() {

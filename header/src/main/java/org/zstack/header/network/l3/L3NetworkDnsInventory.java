@@ -11,8 +11,8 @@ import java.util.List;
 public class L3NetworkDnsInventory {
     private String l3NetworkUuid;
     private String dns;
-	private Timestamp createDate;
-	private Timestamp lastOpDate;
+    private Timestamp createDate;
+    private Timestamp lastOpDate;
 
     public static L3NetworkDnsInventory valueOf(L3NetworkDnsVO vo) {
         L3NetworkDnsInventory inv = new L3NetworkDnsInventory();

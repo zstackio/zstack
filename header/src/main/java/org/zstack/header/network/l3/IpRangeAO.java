@@ -16,30 +16,30 @@ public class IpRangeAO {
     @Id
     @Column
     private String uuid;
-    
+
     @Column
     @ForeignKey(parentEntityClass = L3NetworkEO.class, onDeleteAction = ReferenceOption.CASCADE)
     private String l3NetworkUuid;
-    
+
     @Column
     @Index
     private String name;
-    
+
     @Column
     private String description;
 
     @Column
     @Index
     private String startIp;
-    
+
     @Column
     @Index
     private String endIp;
-    
+
     @Column
     @Index
     private String netmask;
-    
+
     @Column
     @Index
     private String gateway;
@@ -49,7 +49,7 @@ public class IpRangeAO {
 
     @Column
     private Timestamp createDate;
-    
+
     @Column
     private Timestamp lastOpDate;
 

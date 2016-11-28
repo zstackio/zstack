@@ -11,7 +11,7 @@ public class CreateTemplateFromVmRootVolumeMsg extends NeedReplyMessage implemen
     private ImageInventory imageInventory;
     private VolumeInventory rootVolumeInventory;
     private String backupStorageUuid;
-    
+
     public VolumeInventory getRootVolumeInventory() {
         return rootVolumeInventory;
     }

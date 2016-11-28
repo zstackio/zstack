@@ -6,7 +6,7 @@ import java.util.List;
 
 
 public class APIListZonesReply extends APIReply {
-	private List<ZoneInventory> inventories;
+    private List<ZoneInventory> inventories;
 
     public List<ZoneInventory> getInventories() {
         return inventories;
@@ -15,5 +15,5 @@ public class APIListZonesReply extends APIReply {
     public void setInventories(List<ZoneInventory> inventories) {
         this.inventories = inventories;
     }
-	
+
 }

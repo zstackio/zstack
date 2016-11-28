@@ -7,11 +7,11 @@ public class CloudNoRouteFoundException extends Exception {
 
     public CloudNoRouteFoundException() {
     }
-    
+
     public CloudNoRouteFoundException(ErrorCode error) {
         this.error = error;
     }
-    
+
     public ErrorCode getError() {
         return error;
     }

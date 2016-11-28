@@ -7,28 +7,28 @@ import java.util.Date;
 @Table
 public class DeleteVO {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column
     private long id;
-    
+
     @Column
     private String voName;
-    
+
     @Column
     private String uuid;
-    
+
     @Column
     private String foreignVOName;
-    
+
     @Column
     private String foreignVOUuid;
-    
+
     @Column
     private String foreignVOToDeleteName;
-    
+
     @Column
     private String foreignVOToDeleteUuid;
-    
+
     @Column
     private Date deletedDate;
 

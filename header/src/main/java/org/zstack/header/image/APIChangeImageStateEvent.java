@@ -11,11 +11,11 @@ import org.zstack.header.message.APIEvent;
 public class APIChangeImageStateEvent extends APIEvent {
     private ImageInventory inventory;
 
-    public  APIChangeImageStateEvent(String apiId) {
+    public APIChangeImageStateEvent(String apiId) {
         super(apiId);
     }
 
-    public  APIChangeImageStateEvent() {
+    public APIChangeImageStateEvent() {
         super(null);
     }
 

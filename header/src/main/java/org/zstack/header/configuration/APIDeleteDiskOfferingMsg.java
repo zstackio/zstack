@@ -6,23 +6,23 @@ import org.zstack.header.message.APIParam;
 
 @Action(category = ConfigurationConstant.ACTION_CATEGORY)
 public class APIDeleteDiskOfferingMsg extends APIDeleteMessage implements DiskOfferingMessage {
-	@APIParam(checkAccount = true, operationTarget = true)
-	private String uuid;
+    @APIParam(checkAccount = true, operationTarget = true)
+    private String uuid;
 
-	public APIDeleteDiskOfferingMsg() {
-	}
-	
-	public APIDeleteDiskOfferingMsg(String uuid) {
-	    super();
-	    this.uuid = uuid;
+    public APIDeleteDiskOfferingMsg() {
     }
 
-	public String getUuid() {
-    	return uuid;
+    public APIDeleteDiskOfferingMsg(String uuid) {
+        super();
+        this.uuid = uuid;
     }
 
-	public void setUuid(String uuid) {
-    	this.uuid = uuid;
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
     }
 
     @Override

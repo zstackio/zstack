@@ -1,7 +1,6 @@
 package org.zstack.header.network.l3;
 
 import org.zstack.header.identity.Action;
-import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.message.APISyncCallMessage;
 
@@ -35,11 +34,11 @@ public class APIGetFreeIpMsg extends APISyncCallMessage implements L3NetworkMess
         this.ipRangeUuid = ipRangeUuid;
     }
 
-    public void setStartIp(String start){
+    public void setStartIp(String start) {
         this.start = start;
     }
 
-    public String getStart(){
+    public String getStart() {
         return start;
     }
 

@@ -3,27 +3,21 @@ package org.zstack.header.host;
 import org.zstack.header.message.APIEvent;
 
 /**
- *@apiResult
- *
- * api event for message :ref:`APIDeleteHostMsg`
- *
- *@since 0.1.0
- *
- *@example
- *
- * {
-"org.zstack.header.host.APIDeleteHostEvent": {
-"success": true
-}
-}
+ * @apiResult api event for message :ref:`APIDeleteHostMsg`
+ * @example {
+ * "org.zstack.header.host.APIDeleteHostEvent": {
+ * "success": true
+ * }
+ * }
+ * @since 0.1.0
  */
 public class APIDeleteHostEvent extends APIEvent {
-	public APIDeleteHostEvent() {
-		super(null);
-	}
-	
-	public APIDeleteHostEvent(String apiId) {
-	    super(apiId);
+    public APIDeleteHostEvent() {
+        super(null);
+    }
+
+    public APIDeleteHostEvent(String apiId) {
+        super(apiId);
     }
 
 }

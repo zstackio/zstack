@@ -6,9 +6,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 public enum HostStatus {
-	Connecting,
-	Connected,
-	Disconnected;
+    Connecting,
+    Connected,
+    Disconnected;
 
     static {
         Connecting.transactions(
@@ -40,7 +40,7 @@ public enum HostStatus {
         }
     }
 
-    private void transactions(Transaction...transactions) {
+    private void transactions(Transaction... transactions) {
         for (Transaction tran : transactions) {
             transactionMap.put(tran.event, tran);
         }

@@ -12,17 +12,17 @@ public class ManagementNodeVO {
 
     @Column
     private String hostName;
-    
+
     @Column
     private Timestamp joinDate;
-    
+
     @Column
     private Timestamp heartBeat;
-    
+
     @Column
     @Enumerated(EnumType.STRING)
     private ManagementNodeState state = ManagementNodeState.JOINING;
-    
+
     @Column
     private int port;
 

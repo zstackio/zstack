@@ -9,68 +9,68 @@ import java.util.Set;
 
 @Entity
 @Table
-@Inheritance(strategy=InheritanceType.JOINED)
+@Inheritance(strategy = InheritanceType.JOINED)
 public class NetworkServiceProviderVO {
     @Id
     @Column
     private String uuid;
-    
+
     @Column
     @Index
     private String name;
-    
+
     @Column
     private String description;
-    
+
     @Column
     private String type;
-    
+
     @Column
     private Timestamp createDate;
-    
+
     @Column
     private Timestamp lastOpDate;
-    
-    @ElementCollection(fetch=FetchType.EAGER)
+
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(
-          name="NetworkServiceTypeVO",
-          joinColumns=@JoinColumn(name="networkServiceProviderUuid")
+            name = "NetworkServiceTypeVO",
+            joinColumns = @JoinColumn(name = "networkServiceProviderUuid")
     )
-    @Column(name="type")
+    @Column(name = "type")
     private Set<String> networkServiceTypes = new HashSet<String>();
 
-    @OneToMany(fetch=FetchType.EAGER)
-    @JoinColumn(name="networkServiceProviderUuid", insertable=false, updatable=false)
+    @OneToMany(fetch = FetchType.EAGER)
+    @JoinColumn(name = "networkServiceProviderUuid", insertable = false, updatable = false)
     private Set<NetworkServiceProviderL2NetworkRefVO> attachedL2NetworkRefs = new HashSet<NetworkServiceProviderL2NetworkRefVO>();
 
     @PreUpdate
     private void preUpdate() {
         lastOpDate = null;
     }
-    
-	public String getUuid() {
-		return uuid;
-	}
 
-	public void setUuid(String uuid) {
-		this.uuid = uuid;
-	}
+    public String getUuid() {
+        return uuid;
+    }
 
-	public String getName() {
-		return name;
-	}
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
 
-	public void setName(String name) {
-		this.name = name;
-	}
+    public String getName() {
+        return name;
+    }
 
-	public String getDescription() {
-		return description;
-	}
+    public void setName(String name) {
+        this.name = name;
+    }
 
-	public void setDescription(String description) {
-		this.description = description;
-	}
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
 
     public Timestamp getCreateDate() {
         return createDate;
@@ -89,27 +89,27 @@ public class NetworkServiceProviderVO {
     }
 
     public Set<String> getNetworkServiceTypes() {
-		return networkServiceTypes;
-	}
+        return networkServiceTypes;
+    }
 
-	public void setNetworkServiceTypes(Set<String> networkServiceTypes) {
-		this.networkServiceTypes = networkServiceTypes;
-	}
+    public void setNetworkServiceTypes(Set<String> networkServiceTypes) {
+        this.networkServiceTypes = networkServiceTypes;
+    }
 
-	public Set<NetworkServiceProviderL2NetworkRefVO> getAttachedL2NetworkRefs() {
-		return attachedL2NetworkRefs;
-	}
+    public Set<NetworkServiceProviderL2NetworkRefVO> getAttachedL2NetworkRefs() {
+        return attachedL2NetworkRefs;
+    }
 
-	public void setAttachedL2NetworkRefs(Set<NetworkServiceProviderL2NetworkRefVO> attchedL2NetworkRefs) {
-		this.attachedL2NetworkRefs = attchedL2NetworkRefs;
-	}
+    public void setAttachedL2NetworkRefs(Set<NetworkServiceProviderL2NetworkRefVO> attchedL2NetworkRefs) {
+        this.attachedL2NetworkRefs = attchedL2NetworkRefs;
+    }
 
-	public String getType() {
-		return type;
-	}
+    public String getType() {
+        return type;
+    }
 
-	public void setType(String type) {
-		this.type = type;
-	}
-	
+    public void setType(String type) {
+        this.type = type;
+    }
+
 }

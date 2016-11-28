@@ -5,23 +5,18 @@ import org.zstack.header.message.APIReply;
 import java.util.List;
 
 /**
- *@apiResult
- * api reply for message :ref:`APIGetL2NetworkTypesMsg`
- *
- *@category l2network
- *
- *@since 0.1.0
- *
- *@example
- * {
-"org.zstack.header.network.l2.APIGetL2NetworkTypesReply": {
-"l2NetworkTypes": [
-"L2VlanNetwork",
-"L2NoVlanNetwork"
-],
-"success": true
-}
-}
+ * @apiResult api reply for message :ref:`APIGetL2NetworkTypesMsg`
+ * @category l2network
+ * @example {
+ * "org.zstack.header.network.l2.APIGetL2NetworkTypesReply": {
+ * "l2NetworkTypes": [
+ * "L2VlanNetwork",
+ * "L2NoVlanNetwork"
+ * ],
+ * "success": true
+ * }
+ * }
+ * @since 0.1.0
  */
 
 public class APIGetL2NetworkTypesReply extends APIReply {

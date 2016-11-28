@@ -11,35 +11,35 @@ import java.sql.Timestamp;
 @Table
 public class AccountResourceRefVO {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column
     private long id;
-    
+
     @Column
     @ForeignKey(parentEntityClass = AccountVO.class, parentKey = "uuid", onDeleteAction = ReferenceOption.CASCADE)
     private String accountUuid;
-    
+
     @Column
     @ForeignKey(parentEntityClass = AccountVO.class, parentKey = "uuid", onDeleteAction = ReferenceOption.CASCADE)
     private String ownerAccountUuid;
-    
+
     @Column
     @Index
     private String resourceUuid;
-    
+
     @Column
     @Index
     private String resourceType;
-    
+
     @Column
     private int permission;
-    
+
     @Column
     private boolean isShared;
-    
+
     @Column
     private Timestamp createDate;
-    
+
     @Column
     private Timestamp lastOpDate;
 
@@ -95,7 +95,7 @@ public class AccountResourceRefVO {
     public void setShared(boolean isShared) {
         this.isShared = isShared;
     }
-    
+
     public String getOwnerAccountUuid() {
         return ownerAccountUuid;
     }

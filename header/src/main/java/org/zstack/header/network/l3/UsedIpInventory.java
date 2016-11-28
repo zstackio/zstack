@@ -5,7 +5,7 @@ import org.zstack.header.rest.APINoSee;
 import java.io.Serializable;
 import java.sql.Timestamp;
 
-public class UsedIpInventory implements Serializable{
+public class UsedIpInventory implements Serializable {
     private String uuid;
     private String ipRangeUuid;
     private String l3NetworkUuid;
@@ -34,7 +34,7 @@ public class UsedIpInventory implements Serializable{
         inv.setLastOpDate(vo.getLastOpDate());
         return inv;
     }
-    
+
     public String getUuid() {
         return uuid;
     }
@@ -46,18 +46,23 @@ public class UsedIpInventory implements Serializable{
     public String getIpRangeUuid() {
         return ipRangeUuid;
     }
+
     public void setIpRangeUuid(String ipRangeUuid) {
         this.ipRangeUuid = ipRangeUuid;
     }
+
     public String getIp() {
         return ip;
     }
+
     public void setIp(String ip) {
         this.ip = ip;
     }
+
     public long getIpInLong() {
         return ipInLong;
     }
+
     public void setIpInLong(long ipInLong) {
         this.ipInLong = ipInLong;
     }
@@ -86,21 +91,21 @@ public class UsedIpInventory implements Serializable{
         this.l3NetworkUuid = l3NetworkUuid;
     }
 
-	public String getNetmask() {
-		return netmask;
-	}
+    public String getNetmask() {
+        return netmask;
+    }
 
-	public void setNetmask(String netmask) {
-		this.netmask = netmask;
-	}
+    public void setNetmask(String netmask) {
+        this.netmask = netmask;
+    }
 
-	public String getGateway() {
-		return gateway;
-	}
+    public String getGateway() {
+        return gateway;
+    }
 
-	public void setGateway(String gateway) {
-		this.gateway = gateway;
-	}
+    public void setGateway(String gateway) {
+        this.gateway = gateway;
+    }
 
     public String getUsedFor() {
         return usedFor;

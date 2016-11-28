@@ -8,8 +8,11 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface SqlTrigger {
-	Class<?> foreignVOClass() default Object.class;
-	String foreignVOJoinColumn() default "";
-	Class<?> foreignVOToDeleteClass() default Object.class;
-	String foreignVOToDeleteJoinColumn() default "";
+    Class<?> foreignVOClass() default Object.class;
+
+    String foreignVOJoinColumn() default "";
+
+    Class<?> foreignVOToDeleteClass() default Object.class;
+
+    String foreignVOToDeleteJoinColumn() default "";
 }

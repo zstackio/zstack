@@ -3,7 +3,10 @@ package org.zstack.header.identity;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
 import java.sql.Timestamp;
 
 @Entity
@@ -12,17 +15,17 @@ public class SessionVO {
     @Id
     @Column
     private String uuid;
-    
+
     @Column
     @ForeignKey(parentEntityClass = AccountVO.class, parentKey = "uuid", onDeleteAction = ReferenceOption.CASCADE)
     private String accountUuid;
-    
+
     @Column
     private String userUuid;
-    
+
     @Column
     private Timestamp expiredDate;
-    
+
     @Column
     private Timestamp createDate;
 

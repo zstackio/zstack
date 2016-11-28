@@ -41,7 +41,7 @@ public class ErrorCode implements Serializable, Cloneable {
         this.code = code;
         this.description = description;
     }
-    
+
     public ErrorCode(String code, String description, String details) {
         super();
         this.code = code;
@@ -68,7 +68,7 @@ public class ErrorCode implements Serializable, Cloneable {
     public String getCode() {
         return code;
     }
-    
+
     public String getDescription() {
         return description;
     }
@@ -80,7 +80,7 @@ public class ErrorCode implements Serializable, Cloneable {
     public void setDetails(String details) {
         this.details = details;
     }
-    
+
     public ErrorCode copy() {
         try {
             return (ErrorCode) this.clone();
@@ -88,12 +88,12 @@ public class ErrorCode implements Serializable, Cloneable {
             throw new CloudRuntimeException(e);
         }
     }
-    
+
     @Override
     public String toString() {
         return JSONObjectUtil.toJsonString(this);
     }
-    
+
     public static ErrorCode fromString(String err) {
         String arr = err.replace("ErrorCode", "").replace("[", "").replace("]", "").trim();
         try {
@@ -122,7 +122,7 @@ public class ErrorCode implements Serializable, Cloneable {
         this.elaboration = elaboration;
     }
 
-    public boolean isError(Enum...errorEnums) {
+    public boolean isError(Enum... errorEnums) {
         for (Enum e : errorEnums) {
             if (e.toString().equals(getCode())) {
                 return true;

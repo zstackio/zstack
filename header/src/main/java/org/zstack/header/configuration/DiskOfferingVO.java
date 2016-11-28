@@ -10,5 +10,5 @@ import javax.persistence.Table;
 @Table
 @EO(EOClazz = DiskOfferingEO.class)
 @AutoDeleteTag
-public class DiskOfferingVO extends DiskOfferingAO{
+public class DiskOfferingVO extends DiskOfferingAO {
 }

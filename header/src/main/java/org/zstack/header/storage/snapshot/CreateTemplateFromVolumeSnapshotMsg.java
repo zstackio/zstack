@@ -32,6 +32,7 @@ public class CreateTemplateFromVolumeSnapshotMsg extends NeedReplyMessage implem
     public void setTreeUuid(String treeUuid) {
         this.treeUuid = treeUuid;
     }
+
     public String getImageUuid() {
         return imageUuid;
     }

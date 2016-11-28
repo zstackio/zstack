@@ -6,47 +6,36 @@ import org.zstack.header.message.APIParam;
 import org.zstack.header.network.l2.L2NetworkVO;
 
 /**
- * @api
- *
- * create l3Network
- *
+ * @api create l3Network
  * @category l3Network
- *
- * @since 0.1.0
- *
  * @cli
- *
- * @httpMsg
- * {
-"org.zstack.header.network.l3.APICreateL3NetworkMsg": {
-"name": "GuestNetwork",
-"description": "Test",
-"type": "L3BasicNetwork",
-"l2NetworkUuid": "2f5e0755584d41dabb73c7dcbee2fe29",
-"session": {
-"uuid": "ec153083110d4b508bebb8750b62a393"
-}
-}
-}
- *
- * @msg
- * {
-"org.zstack.header.network.l3.APICreateL3NetworkMsg": {
-"name": "GuestNetwork",
-"description": "Test",
-"type": "L3BasicNetwork",
-"l2NetworkUuid": "2f5e0755584d41dabb73c7dcbee2fe29",
-"session": {
-"uuid": "ec153083110d4b508bebb8750b62a393"
-},
-"timeout": 1800000,
-"id": "d0248f2636af4d4cb93667f55e67b560",
-"serviceId": "api.portal"
-}
-}
- *
- * @result
- * see :ref:`APICreateL3NetworkEvent`
+ * @httpMsg {
+ * "org.zstack.header.network.l3.APICreateL3NetworkMsg": {
+ * "name": "GuestNetwork",
+ * "description": "Test",
+ * "type": "L3BasicNetwork",
+ * "l2NetworkUuid": "2f5e0755584d41dabb73c7dcbee2fe29",
+ * "session": {
+ * "uuid": "ec153083110d4b508bebb8750b62a393"
+ * }
+ * }
+ * }
+ * @msg {
+ * "org.zstack.header.network.l3.APICreateL3NetworkMsg": {
+ * "name": "GuestNetwork",
+ * "description": "Test",
+ * "type": "L3BasicNetwork",
+ * "l2NetworkUuid": "2f5e0755584d41dabb73c7dcbee2fe29",
+ * "session": {
+ * "uuid": "ec153083110d4b508bebb8750b62a393"
+ * },
+ * "timeout": 1800000,
+ * "id": "d0248f2636af4d4cb93667f55e67b560",
+ * "serviceId": "api.portal"
+ * }
+ * }
+ * @result see :ref:`APICreateL3NetworkEvent`
+ * @since 0.1.0
  */
 @Action(category = L3NetworkConstant.ACTION_CATEGORY)
 public class APICreateL3NetworkMsg extends APICreateMessage {
@@ -93,24 +82,31 @@ public class APICreateL3NetworkMsg extends APICreateMessage {
     public String getName() {
         return name;
     }
+
     public void setName(String name) {
         this.name = name;
     }
+
     public String getDescription() {
         return description;
     }
+
     public void setDescription(String description) {
         this.description = description;
     }
+
     public String getType() {
         return type;
     }
+
     public void setType(String type) {
         this.type = type;
     }
+
     public String getL2NetworkUuid() {
         return l2NetworkUuid;
     }
+
     public void setL2NetworkUuid(String l2NetworkUuid) {
         this.l2NetworkUuid = l2NetworkUuid;
     }

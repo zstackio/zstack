@@ -9,7 +9,7 @@ import org.zstack.utils.logging.CLogger;
 public class NopeCompletion extends Completion {
     private static final CLogger logger = Utils.getLogger(NopeCompletion.class);
 
-    public NopeCompletion(AsyncBackup...completion) {
+    public NopeCompletion(AsyncBackup... completion) {
         super(completion);
     }
 

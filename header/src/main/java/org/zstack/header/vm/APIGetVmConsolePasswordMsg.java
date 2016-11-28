@@ -3,6 +3,7 @@ package org.zstack.header.vm;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.message.APISyncCallMessage;
+
 /**
  * Created by root on 7/29/16.
  */
@@ -12,17 +13,17 @@ public class APIGetVmConsolePasswordMsg extends APISyncCallMessage implements Vm
     private String uuid;
 
     public String getUuid() {
-            return uuid;
-        }
+        return uuid;
+    }
 
     public void setUuid(String uuid) {
-            this.uuid = uuid;
-        }
+        this.uuid = uuid;
+    }
 
     @Override
     public String getVmInstanceUuid() {
-            return getUuid();
-        }
+        return getUuid();
+    }
 }
 
 

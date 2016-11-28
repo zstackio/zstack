@@ -14,5 +14,5 @@ public class APIIsReadyToGoMsg extends APISyncCallMessage {
     }
 
     public APIIsReadyToGoMsg() {
-	}
+    }
 }

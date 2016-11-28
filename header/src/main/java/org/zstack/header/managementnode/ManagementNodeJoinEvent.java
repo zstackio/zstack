@@ -4,14 +4,14 @@ import org.zstack.header.message.LocalEvent;
 
 public class ManagementNodeJoinEvent extends LocalEvent {
     private String nodeId;
-    
+
     public ManagementNodeJoinEvent() {
     }
-    
+
     public ManagementNodeJoinEvent(String nodeId) {
         this.nodeId = nodeId;
     }
-    
+
     @Override
     public String getSubCategory() {
         return ManagementNodeConstant.MANAGEMENT_NODE_EVENT;

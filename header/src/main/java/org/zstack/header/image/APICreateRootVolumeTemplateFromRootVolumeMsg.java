@@ -42,24 +42,31 @@ public class APICreateRootVolumeTemplateFromRootVolumeMsg extends APICreateMessa
     public String getName() {
         return name;
     }
+
     public void setName(String name) {
         this.name = name;
     }
+
     public String getDescription() {
         return description;
     }
+
     public void setDescription(String description) {
         this.description = description;
     }
+
     public String getGuestOsType() {
         return guestOsType;
     }
+
     public void setGuestOsType(String guestOsType) {
         this.guestOsType = guestOsType;
     }
+
     public String getRootVolumeUuid() {
         return rootVolumeUuid;
     }
+
     public void setRootVolumeUuid(String rootVolumeUuid) {
         this.rootVolumeUuid = rootVolumeUuid;
     }

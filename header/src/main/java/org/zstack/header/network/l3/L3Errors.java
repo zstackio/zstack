@@ -2,7 +2,7 @@ package org.zstack.header.network.l3;
 
 /**
  */
-public enum  L3Errors {
+public enum L3Errors {
     ALLOCATE_IP_ERROR(1000);
 
     private String code;

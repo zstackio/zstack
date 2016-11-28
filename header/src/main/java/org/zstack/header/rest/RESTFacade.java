@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit;
 
 public interface RESTFacade {
     void asyncJsonPost(String url, Object body, AsyncRESTCallback callback, TimeUnit unit, long timeout);
-    
+
     void asyncJsonPost(String url, String body, AsyncRESTCallback callback, TimeUnit unit, long timeout);
 
     void asyncJsonPost(String url, Object body, AsyncRESTCallback callback);
@@ -18,22 +18,22 @@ public interface RESTFacade {
     void asyncJsonPost(String url, String body, AsyncRESTCallback callback);
 
     <T> T syncJsonPost(String url, Object body, Class<T> returnClass);
-    
+
     <T> T syncJsonPost(String url, String body, Class<T> returnClass);
 
     <T> T syncJsonPost(String url, String body, Map<String, String> headers, Class<T> returnClass);
-    
+
     HttpEntity<String> httpServletRequestToHttpEntity(HttpServletRequest req);
-    
+
     RestTemplate getRESTTemplate();
-    
+
     void echo(String url, Completion callback);
-    
+
     void echo(String url, Completion callback, long inverval, long timeout);
 
     Map<String, HttpCallStatistic> getStatistics();
 
-    <T> void registerSyncHttpCallHandler(String path, Class<T> objectType,  SyncHttpCallHandler<T> handler);
+    <T> void registerSyncHttpCallHandler(String path, Class<T> objectType, SyncHttpCallHandler<T> handler);
 
     String getBaseUrl();
 

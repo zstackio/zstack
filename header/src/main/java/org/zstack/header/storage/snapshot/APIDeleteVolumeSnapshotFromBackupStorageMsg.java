@@ -9,47 +9,38 @@ import org.zstack.header.storage.backup.BackupStorageVO;
 import java.util.List;
 
 /**
- * @api
- * delete a copy of volume snapshot from one or more backup storage
- *
+ * @api delete a copy of volume snapshot from one or more backup storage
  * @category volume snapshot
- *
- * @since 0.1.0
- *
  * @cli
- *
- * @httpMsg
- * {
-"org.zstack.header.storage.snapshot.APIDeleteVolumeSnapshotFromBackupStorageMsg": {
-"uuid": "789f13b8e9b84e44888b113e55c6e776",
-"backupStorageUuids": [
-"1da98b69748a4ef39eabc74f064a151a"
-],
-"deleteMode": "Permissive",
-"session": {
-"uuid": "f6a11ad55751458d9623174ef7fce8de"
-}
-}
-}
- * @msg
- * {
-"org.zstack.header.storage.snapshot.APIDeleteVolumeSnapshotFromBackupStorageMsg": {
-"uuid": "789f13b8e9b84e44888b113e55c6e776",
-"backupStorageUuids": [
-"1da98b69748a4ef39eabc74f064a151a"
-],
-"deleteMode": "Permissive",
-"session": {
-"uuid": "f6a11ad55751458d9623174ef7fce8de"
-},
-"timeout": 1800000,
-"id": "b0225e5fc5df4c13ad2ab8b04a42aaff",
-"serviceId": "api.portal"
-}
-}
- *
- * @result
- * see :ref:`APIDeleteVolumeSnapshotFromBackupStorageEvent`
+ * @httpMsg {
+ * "org.zstack.header.storage.snapshot.APIDeleteVolumeSnapshotFromBackupStorageMsg": {
+ * "uuid": "789f13b8e9b84e44888b113e55c6e776",
+ * "backupStorageUuids": [
+ * "1da98b69748a4ef39eabc74f064a151a"
+ * ],
+ * "deleteMode": "Permissive",
+ * "session": {
+ * "uuid": "f6a11ad55751458d9623174ef7fce8de"
+ * }
+ * }
+ * }
+ * @msg {
+ * "org.zstack.header.storage.snapshot.APIDeleteVolumeSnapshotFromBackupStorageMsg": {
+ * "uuid": "789f13b8e9b84e44888b113e55c6e776",
+ * "backupStorageUuids": [
+ * "1da98b69748a4ef39eabc74f064a151a"
+ * ],
+ * "deleteMode": "Permissive",
+ * "session": {
+ * "uuid": "f6a11ad55751458d9623174ef7fce8de"
+ * },
+ * "timeout": 1800000,
+ * "id": "b0225e5fc5df4c13ad2ab8b04a42aaff",
+ * "serviceId": "api.portal"
+ * }
+ * }
+ * @result see :ref:`APIDeleteVolumeSnapshotFromBackupStorageEvent`
+ * @since 0.1.0
  */
 @Action(category = VolumeSnapshotConstant.ACTION_CATEGORY)
 public class APIDeleteVolumeSnapshotFromBackupStorageMsg extends APIDeleteMessage implements VolumeSnapshotMessage {
@@ -59,8 +50,7 @@ public class APIDeleteVolumeSnapshotFromBackupStorageMsg extends APIDeleteMessag
     @APIParam(resourceType = VolumeSnapshotVO.class, checkAccount = true, operationTarget = true)
     private String uuid;
     /**
-     * @desc
-     * a list of backup storage uuid where snapshot is being deleted from
+     * @desc a list of backup storage uuid where snapshot is being deleted from
      */
     @APIParam(resourceType = BackupStorageVO.class)
     private List<String> backupStorageUuids;
@@ -85,6 +75,7 @@ public class APIDeleteVolumeSnapshotFromBackupStorageMsg extends APIDeleteMessag
     public void setTreeUuid(String treeUuid) {
         this.treeUuid = treeUuid;
     }
+
     public String getUuid() {
         return uuid;
     }

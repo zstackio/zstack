@@ -9,38 +9,38 @@ import javax.persistence.*;
 @Table
 public class NetworkServiceTypeVO {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column
     private long id;
-    
+
     @Column
     @ForeignKey(parentEntityClass = NetworkServiceProviderVO.class, onDeleteAction = ReferenceOption.CASCADE)
     private String networkServiceProviderUuid;
-    
+
     @Column
     private String type;
 
-	public long getId() {
-		return id;
-	}
+    public long getId() {
+        return id;
+    }
 
-	public void setId(long id) {
-		this.id = id;
-	}
+    public void setId(long id) {
+        this.id = id;
+    }
 
-	public String getNetworkServiceProviderUuid() {
-		return networkServiceProviderUuid;
-	}
+    public String getNetworkServiceProviderUuid() {
+        return networkServiceProviderUuid;
+    }
 
-	public void setNetworkServiceProviderUuid(String networkServiceProviderUuid) {
-		this.networkServiceProviderUuid = networkServiceProviderUuid;
-	}
+    public void setNetworkServiceProviderUuid(String networkServiceProviderUuid) {
+        this.networkServiceProviderUuid = networkServiceProviderUuid;
+    }
 
-	public String getType() {
-		return type;
-	}
+    public String getType() {
+        return type;
+    }
 
-	public void setType(String type) {
-		this.type = type;
-	}
+    public void setType(String type) {
+        this.type = type;
+    }
 }

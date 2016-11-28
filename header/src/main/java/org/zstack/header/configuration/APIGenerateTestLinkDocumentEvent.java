@@ -8,11 +8,11 @@ public class APIGenerateTestLinkDocumentEvent extends APIEvent {
     public APIGenerateTestLinkDocumentEvent() {
         super(null);
     }
-    
+
     public APIGenerateTestLinkDocumentEvent(String apiId) {
         super(apiId);
     }
-    
+
     public String getOutputDir() {
         return outputDir;
     }

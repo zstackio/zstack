@@ -38,7 +38,7 @@ public class ConsoleProxyAgentType {
             return false;
         }
 
-        ConsoleProxyAgentType type = (ConsoleProxyAgentType)t;
+        ConsoleProxyAgentType type = (ConsoleProxyAgentType) t;
         return type.toString().equals(typeName);
     }
 

@@ -10,13 +10,18 @@ public class ChangeVmPasswordMsg extends NeedReplyMessage implements HostMessage
     private String hostUuid;
     private VmAccountPerference accountPerference;
 
-    public VmAccountPerference getAccountPerference() { return accountPerference; }
+    public VmAccountPerference getAccountPerference() {
+        return accountPerference;
+    }
 
-    public void setAccountPerference(VmAccountPerference accountPerference) { this.accountPerference = accountPerference; }
+    public void setAccountPerference(VmAccountPerference accountPerference) {
+        this.accountPerference = accountPerference;
+    }
 
     public void setHostUuid(String hostUuid) {
         this.hostUuid = hostUuid;
     }
+
     @Override
     public String getHostUuid() {
         return hostUuid;

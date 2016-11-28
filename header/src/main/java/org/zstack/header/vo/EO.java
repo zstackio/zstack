@@ -11,6 +11,8 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface EO {
     Class<?> EOClazz();
+
     String softDeletedColumn() default "deleted";
+
     boolean needView() default true;
 }

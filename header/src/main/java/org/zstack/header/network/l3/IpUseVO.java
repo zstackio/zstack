@@ -24,7 +24,7 @@ public class IpUseVO {
 
     @Column
     private Timestamp createDate;
-    
+
     @Column
     private Timestamp lastOpDate;
 

@@ -6,7 +6,7 @@ import java.util.List;
 
 public interface Service extends Component {
     void handleMessage(Message msg);
-    
+
     String getId();
 
     int getSyncLevel();

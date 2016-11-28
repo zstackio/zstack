@@ -9,11 +9,11 @@ public abstract class AsyncRESTCallback extends AbstractCompletion {
     public AsyncRESTCallback() {
     }
 
-    public AsyncRESTCallback(AsyncBackup...backup) {
+    public AsyncRESTCallback(AsyncBackup... backup) {
         super(backup);
     }
 
     public abstract void fail(ErrorCode err);
-    
+
     public abstract void success(HttpEntity<String> responseEntity);
 }

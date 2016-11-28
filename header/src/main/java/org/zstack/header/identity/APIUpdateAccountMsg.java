@@ -13,7 +13,7 @@ public class APIUpdateAccountMsg extends APIMessage implements AccountMessage {
     private String name;
     @APIParam(maxLength = 2048, required = false)
     private String description;
-    
+
     public String getPassword() {
         return password;
     }

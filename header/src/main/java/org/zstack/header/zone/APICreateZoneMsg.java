@@ -4,45 +4,31 @@ import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIParam;
 
 /**
- * @api
- * create a new zone
- *
- * @httpMsg
-
-{
-"org.zstack.header.zone.APICreateZoneMsg": {
-"session": {
-"uuid": "b15610a241594f42a7183f82deedadba"
-},
-"name": "zone1",
-"description": "Test"
-}
-}
-
- @msg
- {
- "org.zstack.header.zone.APICreateZoneMsg": {
- "name": "TestZone",
- "description": "Test",
- "session": {
- "uuid": "7a4dcadf87b94f93854cca7d3550f120"
- },
- "timeout": 1800000,
- "id": "70d36c271de3441a82575dfc471b2170",
- "serviceId": "api.portal"
- }
- }
-
- *
- *
+ * @api create a new zone
+ * @httpMsg {
+ * "org.zstack.header.zone.APICreateZoneMsg": {
+ * "session": {
+ * "uuid": "b15610a241594f42a7183f82deedadba"
+ * },
+ * "name": "zone1",
+ * "description": "Test"
+ * }
+ * }
+ * @msg {
+ * "org.zstack.header.zone.APICreateZoneMsg": {
+ * "name": "TestZone",
+ * "description": "Test",
+ * "session": {
+ * "uuid": "7a4dcadf87b94f93854cca7d3550f120"
+ * },
+ * "timeout": 1800000,
+ * "id": "70d36c271de3441a82575dfc471b2170",
+ * "serviceId": "api.portal"
+ * }
+ * }
  * @cli
- *
- * @since
- * 0.1.0
- *
- * @result
- * see :ref:`APICreateZoneEvent`
- *
+ * @result see :ref:`APICreateZoneEvent`
+ * @since 0.1.0
  */
 public class APICreateZoneMsg extends APICreateMessage {
     /**

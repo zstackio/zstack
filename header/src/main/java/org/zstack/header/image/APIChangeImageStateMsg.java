@@ -11,7 +11,7 @@ import org.zstack.header.message.APIParam;
  * To change this template use File | Settings | File Templates.
  */
 @Action(category = ImageConstant.ACTION_CATEGORY)
-public class APIChangeImageStateMsg  extends APIMessage implements ImageMessage{
+public class APIChangeImageStateMsg extends APIMessage implements ImageMessage {
     @APIParam(resourceType = ImageVO.class, checkAccount = true, operationTarget = true)
     private String uuid;
     @APIParam(validValues = {"enable", "disable"})

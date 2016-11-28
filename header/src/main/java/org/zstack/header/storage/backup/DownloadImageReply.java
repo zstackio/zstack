@@ -60,6 +60,6 @@ public class DownloadImageReply extends MessageReply {
     }
 
     public DownloadImageReply() {
-	    super();
+        super();
     }
 }

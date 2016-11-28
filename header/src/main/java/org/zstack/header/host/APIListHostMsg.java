@@ -8,7 +8,7 @@ public class APIListHostMsg extends APIListMessage {
 
     public APIListHostMsg() {
     }
-    
+
     public APIListHostMsg(List<String> uuids) {
         super(uuids);
     }

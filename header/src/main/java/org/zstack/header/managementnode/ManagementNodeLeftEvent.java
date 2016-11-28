@@ -6,10 +6,10 @@ public class ManagementNodeLeftEvent extends LocalEvent {
     private String leftNodeId;
     private String sponsorNodeId;
     private boolean isHeartbeatStop;
-    
+
     public ManagementNodeLeftEvent() {
     }
-    
+
     public ManagementNodeLeftEvent(String leftNodeId, String sponsorNodeId, boolean isHeartbeatStop) {
         super();
         this.leftNodeId = leftNodeId;

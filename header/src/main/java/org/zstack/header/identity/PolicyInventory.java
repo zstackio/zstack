@@ -1,4 +1,3 @@
-
 package org.zstack.header.identity;
 
 import org.zstack.header.configuration.PythonClassInventory;

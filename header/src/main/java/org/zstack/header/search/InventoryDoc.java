@@ -23,12 +23,12 @@ public class InventoryDoc {
             return f.getAnnotation(APINoSee.class) != null;
         }
     }
-    
+
     static {
         GsonUtil gutil = new GsonUtil();
-        gson = gutil.setExclusionStrategies(new ExclusionStrategy[] {new APINoSeeFilter()}).create();
+        gson = gutil.setExclusionStrategies(new ExclusionStrategy[]{new APINoSeeFilter()}).create();
     }
-    
+
     public String getIndexId() {
         return indexId;
     }
@@ -44,7 +44,7 @@ public class InventoryDoc {
     public void setDoc(String doc) {
         this.doc = doc;
     }
-    
+
     public static InventoryDoc toDoc(String inventoryName, String indexId, Object inventory) {
         InventoryDoc doc = new InventoryDoc();
         doc.setInventoryName(inventoryName);
@@ -52,7 +52,7 @@ public class InventoryDoc {
         doc.setDoc(gson.toJson(inventory));
         return doc;
     }
-    
+
     public static Gson getGson() {
         return gson;
     }

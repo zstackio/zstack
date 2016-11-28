@@ -19,7 +19,7 @@ import java.util.List;
         @ExpandedQuery(expandedField = "l3Network", inventoryClass = L3NetworkInventory.class,
                 foreignKey = "l3NetworkUuid", expandedInventoryKey = "uuid"),
 })
-public class VmNicInventory implements Serializable{
+public class VmNicInventory implements Serializable {
     private String uuid;
     private String vmInstanceUuid;
     @APINoSee
@@ -35,7 +35,7 @@ public class VmNicInventory implements Serializable{
     private Integer deviceId;
     private Timestamp createDate;
     private Timestamp lastOpDate;
-    
+
     public static VmNicInventory valueOf(VmNicVO vo) {
         VmNicInventory inv = new VmNicInventory();
         inv.setUuid(vo.getUuid());
@@ -53,7 +53,7 @@ public class VmNicInventory implements Serializable{
         inv.setGateway(vo.getGateway());
         return inv;
     }
-    
+
     public static List<VmNicInventory> valueOf(Collection<VmNicVO> vos) {
         List<VmNicInventory> invs = new ArrayList<VmNicInventory>(vos.size());
         for (VmNicVO vo : vos) {
@@ -61,34 +61,43 @@ public class VmNicInventory implements Serializable{
         }
         return invs;
     }
-    
+
     public String getUuid() {
         return uuid;
     }
+
     public void setUuid(String uuid) {
         this.uuid = uuid;
     }
+
     public String getVmInstanceUuid() {
         return vmInstanceUuid;
     }
+
     public void setVmInstanceUuid(String vmInstanceUuid) {
         this.vmInstanceUuid = vmInstanceUuid;
     }
+
     public String getUsedIpUuid() {
         return usedIpUuid;
     }
+
     public void setUsedIpUuid(String usedIpUuid) {
         this.usedIpUuid = usedIpUuid;
     }
+
     public String getIp() {
         return ip;
     }
+
     public void setIp(String ip) {
         this.ip = ip;
     }
+
     public String getMac() {
         return mac;
     }
+
     public void setMac(String mac) {
         this.mac = mac;
     }
@@ -126,28 +135,28 @@ public class VmNicInventory implements Serializable{
     }
 
     public String getMetaData() {
-		return metaData;
-	}
+        return metaData;
+    }
 
-	public void setMetaData(String metaData) {
-		this.metaData = metaData;
-	}
+    public void setMetaData(String metaData) {
+        this.metaData = metaData;
+    }
 
-	public String getNetmask() {
-		return netmask;
-	}
+    public String getNetmask() {
+        return netmask;
+    }
 
-	public void setNetmask(String netmask) {
-		this.netmask = netmask;
-	}
+    public void setNetmask(String netmask) {
+        this.netmask = netmask;
+    }
 
-	public String getGateway() {
-		return gateway;
-	}
+    public String getGateway() {
+        return gateway;
+    }
 
-	public void setGateway(String gateway) {
-		this.gateway = gateway;
-	}
+    public void setGateway(String gateway) {
+        this.gateway = gateway;
+    }
 
     public String getInternalName() {
         return internalName;

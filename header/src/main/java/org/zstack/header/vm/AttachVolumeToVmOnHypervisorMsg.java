@@ -8,7 +8,7 @@ public class AttachVolumeToVmOnHypervisorMsg extends NeedReplyMessage implements
     private VmInstanceInventory vmInventory;
     private VolumeInventory inventory;
     private String hostUuid;
-    
+
     @Override
     public String getHostUuid() {
         return hostUuid;

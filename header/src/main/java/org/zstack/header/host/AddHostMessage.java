@@ -5,8 +5,12 @@ package org.zstack.header.host;
  */
 public interface AddHostMessage {
     String getName();
+
     String getDescription();
+
     String getManagementIp();
+
     String getClusterUuid();
+
     String getResourceUuid();
 }

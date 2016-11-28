@@ -5,8 +5,7 @@ import java.util.concurrent.TimeUnit;
 
 public abstract class NeedReplyMessage extends Message {
     /**
-     * @desc
-     * in millisecond. Any reply/event received after timeout will be dropped
+     * @desc in millisecond. Any reply/event received after timeout will be dropped
      * @optional
      */
     protected long timeout = -1;
@@ -32,7 +31,7 @@ public abstract class NeedReplyMessage extends Message {
     public NeedReplyMessage() {
         super();
     }
-    
+
     public NeedReplyMessage(long timeout) {
         super();
     }

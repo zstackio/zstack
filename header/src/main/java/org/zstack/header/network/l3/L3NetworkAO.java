@@ -45,7 +45,7 @@ public class L3NetworkAO {
 
     @Column
     private Timestamp createDate;
-    
+
     @Column
     private Timestamp lastOpDate;
 

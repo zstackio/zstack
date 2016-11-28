@@ -10,7 +10,6 @@ import org.zstack.header.search.Inventory;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 
 @Inventory(mappingVOClass = UserVO.class)
@@ -45,7 +44,7 @@ public class UserInventory {
         inv.setDescription(vo.getDescription());
         return inv;
     }
-    
+
     public static List<UserInventory> valueOf(Collection<UserVO> vos) {
         List<UserInventory> invs = new ArrayList<UserInventory>(vos.size());
         for (UserVO vo : vos) {
@@ -65,18 +64,23 @@ public class UserInventory {
     public String getUuid() {
         return uuid;
     }
+
     public void setUuid(String uuid) {
         this.uuid = uuid;
     }
+
     public String getAccountUuid() {
         return accountUuid;
     }
+
     public void setAccountUuid(String accountUuid) {
         this.accountUuid = accountUuid;
     }
+
     public String getName() {
         return name;
     }
+
     public void setName(String name) {
         this.name = name;
     }

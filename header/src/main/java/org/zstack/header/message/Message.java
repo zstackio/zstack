@@ -16,33 +16,33 @@ public abstract class Message implements Serializable, AsyncBackup {
     /**
      * @ignore
      */
-	@GsonTransient
-	@APINoSee
+    @GsonTransient
+    @APINoSee
     @NoJsonSchema
     private transient MessageProperties props;
     /**
      * @ignore
      */
-	@APINoSee
+    @APINoSee
     @NoJsonSchema
-	private Map<String, Object> headers = new LinkedHashMap<String, Object>();
+    private Map<String, Object> headers = new LinkedHashMap<String, Object>();
     /**
      * @ignore
      */
-	@APINoSee
+    @APINoSee
     private String id;
     /**
      * @ignore
      */
-	@APINoSee
+    @APINoSee
     private String serviceId;
     /**
      * @ignore
      */
-	@APINoSee
+    @APINoSee
     private long createdTime;
-    
-    
+
+
     public Message() {
         createdTime = System.currentTimeMillis();
         id = UUID.randomUUID().toString().replace("-", "");
@@ -57,11 +57,11 @@ public abstract class Message implements Serializable, AsyncBackup {
     }
 
     public void putHeaderEntry(String key, Object value) {
-		headers.put(key, value);
-	}
+        headers.put(key, value);
+    }
 
     public <T> T getHeaderEntry(String key) {
-        return (T)headers.get(key);
+        return (T) headers.get(key);
     }
 
     public BasicProperties getAMQPProperties() {
@@ -88,7 +88,7 @@ public abstract class Message implements Serializable, AsyncBackup {
     public String getId() {
         return id;
     }
-    
+
     public void setId(String id) {
         this.id = id;
     }
@@ -108,18 +108,18 @@ public abstract class Message implements Serializable, AsyncBackup {
     public String getMessageName() {
         return this.getClass().getCanonicalName();
     }
-    
+
     @Override
     public boolean equals(Object t) {
-    	if (t == null || !(t instanceof Message)) {
-    		return false;
-    	}
-    	
-    	return ((Message)t).getId().equals(getId());
+        if (t == null || !(t instanceof Message)) {
+            return false;
+        }
+
+        return ((Message) t).getId().equals(getId());
     }
-    
+
     @Override
     public int hashCode() {
-    	return getId().hashCode();
+        return getId().hashCode();
     }
 }

@@ -27,12 +27,15 @@ public class APIGetCpuMemoryCapacityReply extends APIReply {
     public long getTotalCpu() {
         return totalCpu;
     }
+
     public void setTotalCpu(long totalCpu) {
         this.totalCpu = totalCpu;
     }
+
     public long getTotalMemory() {
         return totalMemory;
     }
+
     public void setTotalMemory(long totalMemory) {
         this.totalMemory = totalMemory;
     }

@@ -1,11 +1,9 @@
 package org.zstack.header.identity;
 
 import org.zstack.header.configuration.PythonClassInventory;
-import org.zstack.header.rest.APINoSee;
 
 import java.io.Serializable;
 import java.sql.Timestamp;
-import java.util.Date;
 
 @PythonClassInventory
 public class SessionInventory implements Serializable {
@@ -14,7 +12,7 @@ public class SessionInventory implements Serializable {
     private String userUuid;
     private Timestamp expiredDate;
     private Timestamp createDate;
-    
+
     public static SessionInventory valueOf(SessionVO vo) {
         SessionInventory inv = new SessionInventory();
         inv.setAccountUuid(vo.getAccountUuid());
@@ -36,18 +34,23 @@ public class SessionInventory implements Serializable {
     public String getUuid() {
         return uuid;
     }
+
     public void setUuid(String uuid) {
         this.uuid = uuid;
     }
+
     public String getAccountUuid() {
         return accountUuid;
     }
+
     public void setAccountUuid(String accountUuid) {
         this.accountUuid = accountUuid;
     }
+
     public String getUserUuid() {
         return userUuid;
     }
+
     public void setUserUuid(String userUuid) {
         this.userUuid = userUuid;
     }

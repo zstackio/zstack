@@ -37,7 +37,7 @@ public class InstanceOfferingType {
             return false;
         }
 
-        InstanceOfferingType type = (InstanceOfferingType)t;
+        InstanceOfferingType type = (InstanceOfferingType) t;
         return type.toString().equals(typeName);
     }
 

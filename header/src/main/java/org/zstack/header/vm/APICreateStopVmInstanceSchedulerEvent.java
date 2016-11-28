@@ -20,6 +20,7 @@ public class APICreateStopVmInstanceSchedulerEvent extends APIEvent {
     public APICreateStopVmInstanceSchedulerEvent(String apiId) {
         super(apiId);
     }
+
     public APICreateStopVmInstanceSchedulerEvent() {
         super(null);
     }

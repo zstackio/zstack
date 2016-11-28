@@ -15,13 +15,14 @@ public class StopVmOnHypervisorMsg extends NeedReplyMessage implements HostMessa
         this.vmInventory = vmInventory;
     }
 
-    public String getType(){
+    public String getType() {
         return type;
     }
 
-    public void setType(String type){
+    public void setType(String type) {
         this.type = type;
     }
+
     @Override
     public String getHostUuid() {
         return vmInventory.getHostUuid();

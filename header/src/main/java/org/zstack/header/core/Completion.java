@@ -3,7 +3,7 @@ package org.zstack.header.core;
 import org.zstack.header.errorcode.ErrorCode;
 
 public abstract class Completion extends AbstractCompletion {
-    public Completion(AsyncBackup...backup) {
+    public Completion(AsyncBackup... backup) {
         super(backup);
     }
 
@@ -12,6 +12,6 @@ public abstract class Completion extends AbstractCompletion {
     }
 
     public abstract void success();
-    
+
     public abstract void fail(ErrorCode errorCode);
 }

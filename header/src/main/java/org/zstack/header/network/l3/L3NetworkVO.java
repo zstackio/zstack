@@ -14,28 +14,28 @@ import java.util.Set;
 @EO(EOClazz = L3NetworkEO.class)
 @AutoDeleteTag
 public class L3NetworkVO extends L3NetworkAO {
-    @OneToMany(fetch=FetchType.EAGER)
-    @JoinColumn(name="l3NetworkUuid", insertable=false, updatable=false)
+    @OneToMany(fetch = FetchType.EAGER)
+    @JoinColumn(name = "l3NetworkUuid", insertable = false, updatable = false)
     @NoView
     private Set<L3NetworkDnsVO> dns = new HashSet<L3NetworkDnsVO>();
-    
-    @OneToMany(fetch=FetchType.EAGER)
-    @JoinColumn(name="l3NetworkUuid", insertable=false, updatable=false)
+
+    @OneToMany(fetch = FetchType.EAGER)
+    @JoinColumn(name = "l3NetworkUuid", insertable = false, updatable = false)
     @NoView
     private Set<IpRangeVO> ipRanges = new HashSet<IpRangeVO>();
-    
-    @OneToMany(fetch=FetchType.EAGER)
-    @JoinColumn(name="l3NetworkUuid", insertable=false, updatable=false)
+
+    @OneToMany(fetch = FetchType.EAGER)
+    @JoinColumn(name = "l3NetworkUuid", insertable = false, updatable = false)
     @NoView
     private Set<NetworkServiceL3NetworkRefVO> networkServices = new HashSet<NetworkServiceL3NetworkRefVO>();
-    
-    public Set<L3NetworkDnsVO> getDns() {
-		return dns;
-	}
 
-	public void setDns(Set<L3NetworkDnsVO> dns) {
-		this.dns = dns;
-	}
+    public Set<L3NetworkDnsVO> getDns() {
+        return dns;
+    }
+
+    public void setDns(Set<L3NetworkDnsVO> dns) {
+        this.dns = dns;
+    }
 
     public Set<IpRangeVO> getIpRanges() {
         return ipRanges;
@@ -45,11 +45,11 @@ public class L3NetworkVO extends L3NetworkAO {
         this.ipRanges = ipRanges;
     }
 
-	public Set<NetworkServiceL3NetworkRefVO> getNetworkServices() {
-		return networkServices;
-	}
+    public Set<NetworkServiceL3NetworkRefVO> getNetworkServices() {
+        return networkServices;
+    }
 
-	public void setNetworkServices(Set<NetworkServiceL3NetworkRefVO> networkServices) {
-		this.networkServices = networkServices;
-	}
+    public void setNetworkServices(Set<NetworkServiceL3NetworkRefVO> networkServices) {
+        this.networkServices = networkServices;
+    }
 }

@@ -8,7 +8,7 @@ public class DetachVolumeFromVmOnHypervisorMsg extends NeedReplyMessage implemen
     private VmInstanceInventory vmInventory;
     private VolumeInventory inventory;
     private String hostUuid;
-    
+
     @Override
     public String getHostUuid() {
         return hostUuid;

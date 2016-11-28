@@ -9,12 +9,12 @@ import javax.persistence.*;
 
 @Entity
 @Table
-@Inheritance(strategy=InheritanceType.JOINED)
+@Inheritance(strategy = InheritanceType.JOINED)
 @EO(EOClazz = HostEO.class)
 @AutoDeleteTag
 public class HostVO extends HostAO {
-    @OneToOne(fetch=FetchType.EAGER)
-    @JoinColumn(name="uuid")
+    @OneToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "uuid")
     @NoView
     private HostCapacityVO capacity;
 

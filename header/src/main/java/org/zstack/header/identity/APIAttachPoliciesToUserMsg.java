@@ -11,7 +11,7 @@ public class APIAttachPoliciesToUserMsg extends APIMessage implements AccountMes
     private String userUuid;
     @APIParam(resourceType = PolicyVO.class, nonempty = true, checkAccount = true, operationTarget = true)
     private List<String> policyUuids;
-    
+
     @Override
     public String getAccountUuid() {
         return this.getSession().getAccountUuid();

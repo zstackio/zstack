@@ -6,33 +6,33 @@ import org.zstack.header.vm.VmNicInventory;
 import java.util.List;
 
 public class AttachNicToVmOnHypervisorMsg extends NeedReplyMessage implements HostMessage {
-	private String vmInstanceUuid;
-	private String hostUuid;
-	private List<VmNicInventory> nics;
-	
-	public String getVmUuid() {
-		return vmInstanceUuid;
-	}
+    private String vmInstanceUuid;
+    private String hostUuid;
+    private List<VmNicInventory> nics;
 
-	public void setVmUuid(String vmInstanceUuid) {
-		this.vmInstanceUuid = vmInstanceUuid;
-	}
+    public String getVmUuid() {
+        return vmInstanceUuid;
+    }
 
-	public List<VmNicInventory> getNics() {
-		return nics;
-	}
+    public void setVmUuid(String vmInstanceUuid) {
+        this.vmInstanceUuid = vmInstanceUuid;
+    }
 
-	public void setNics(List<VmNicInventory> nics) {
-		this.nics = nics;
-	}
+    public List<VmNicInventory> getNics() {
+        return nics;
+    }
 
-	public void setHostUuid(String hostUuid) {
-		this.hostUuid = hostUuid;
-	}
+    public void setNics(List<VmNicInventory> nics) {
+        this.nics = nics;
+    }
 
-	@Override
-	public String getHostUuid() {
-		return hostUuid;
-	}
+    public void setHostUuid(String hostUuid) {
+        this.hostUuid = hostUuid;
+    }
+
+    @Override
+    public String getHostUuid() {
+        return hostUuid;
+    }
 
 }

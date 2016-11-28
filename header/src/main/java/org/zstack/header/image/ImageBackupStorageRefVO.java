@@ -22,7 +22,7 @@ import java.sql.Timestamp;
 public class ImageBackupStorageRefVO implements Serializable {
     @Id
     @Column
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
     @Column
     @ForeignKey(parentEntityClass = ImageEO.class, onDeleteAction = ReferenceOption.CASCADE)
