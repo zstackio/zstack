@@ -7,9 +7,8 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.identity.SessionInventory;
-import org.zstack.header.storage.snapshot.*;
+import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.volume.VolumeVO;
 import org.zstack.simulator.kvm.VolumeSnapshotKvmSimulator;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
@@ -46,9 +45,9 @@ public class TestUpdateSnapshot {
         snapshotKvmSimulator = loader.getComponent(VolumeSnapshotKvmSimulator.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         String volUuid = vm.getRootVolumeUuid();
         VolumeSnapshotInventory inv = api.createSnapshot(volUuid);

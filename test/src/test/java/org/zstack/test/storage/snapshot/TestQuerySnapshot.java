@@ -45,9 +45,9 @@ public class TestQuerySnapshot {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         String volUuid = vm.getRootVolumeUuid();
         VolumeSnapshotInventory inv = api.createSnapshot(volUuid);

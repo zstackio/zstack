@@ -1235,7 +1235,10 @@ public class VolumeSnapshotTreeBase {
                 done(new FlowDoneHandler(msg, completion) {
                     @Transactional
                     private void updateLatest() {
-                        String sql = "update VolumeSnapshotVO s set s.latest = false where s.latest = true and s.treeUuid = :treeUuid";
+                        String sql = "update VolumeSnapshotVO s" +
+                                " set s.latest = false" +
+                                " where s.latest = true" +
+                                " and s.treeUuid = :treeUuid";
                         Query q = dbf.getEntityManager().createQuery(sql);
                         q.setParameter("treeUuid", currentRoot.getTreeUuid());
                         q.executeUpdate();
@@ -1243,12 +1246,17 @@ public class VolumeSnapshotTreeBase {
                         currentRoot.setLatest(true);
                         dbf.getEntityManager().merge(currentRoot);
 
-                        sql = "update VolumeSnapshotTreeVO tree set tree.current = false where tree.current = true and tree.volumeUuid = :volUuid";
+                        sql = "update VolumeSnapshotTreeVO tree" +
+                                " set tree.current = false" +
+                                " where tree.current = true" +
+                                " and tree.volumeUuid = :volUuid";
                         q = dbf.getEntityManager().createQuery(sql);
                         q.setParameter("volUuid", currentRoot.getVolumeUuid());
                         q.executeUpdate();
 
-                        sql = "update VolumeSnapshotTreeVO tree set tree.current = true where tree.uuid = :treeUuid";
+                        sql = "update VolumeSnapshotTreeVO tree" +
+                                " set tree.current = true" +
+                                " where tree.uuid = :treeUuid";
                         q = dbf.getEntityManager().createQuery(sql);
                         q.setParameter("treeUuid", currentRoot.getTreeUuid());
                         q.executeUpdate();

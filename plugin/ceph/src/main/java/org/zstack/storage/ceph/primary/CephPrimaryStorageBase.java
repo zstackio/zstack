@@ -2503,21 +2503,84 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     private void handle(final RevertVolumeFromSnapshotOnPrimaryStorageMsg msg) {
         final RevertVolumeFromSnapshotOnPrimaryStorageReply reply = new RevertVolumeFromSnapshotOnPrimaryStorageReply();
 
-        RollbackSnapshotCmd cmd = new RollbackSnapshotCmd();
-        cmd.snapshotPath = msg.getSnapshot().getPrimaryStorageInstallPath();
-        httpCall(ROLLBACK_SNAPSHOT_PATH, cmd, RollbackSnapshotRsp.class, new ReturnValueCompletion<RollbackSnapshotRsp>(msg) {
+        final FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("revert-volume-[uuid:%s]-from-snapshot-[uuid:%s]-on-ceph-primary-storage",
+                msg.getVolume().getUuid(), msg.getSnapshot().getUuid()));
+        chain.then(new ShareFlow() {
             @Override
-            public void success(RollbackSnapshotRsp returnValue) {
-                reply.setNewVolumeInstallPath(msg.getVolume().getInstallPath());
-                bus.reply(msg, reply);
-            }
+            public void setup() {
+                String originalVolumePath = msg.getVolume().getInstallPath();
+                // get volume path from snapshot path, just split @
+                String volumePath = msg.getSnapshot().getPrimaryStorageInstallPath().split("@")[0];
 
-            @Override
-            public void fail(ErrorCode errorCode) {
-                reply.setError(errorCode);
-                bus.reply(msg, reply);
+                flow(new NoRollbackFlow() {
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        RollbackSnapshotCmd cmd = new RollbackSnapshotCmd();
+                        cmd.snapshotPath = msg.getSnapshot().getPrimaryStorageInstallPath();
+                        httpCall(ROLLBACK_SNAPSHOT_PATH, cmd, RollbackSnapshotRsp.class, new ReturnValueCompletion<RollbackSnapshotRsp>(msg) {
+                            @Override
+                            public void success(RollbackSnapshotRsp returnValue) {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "delete-origin-root-volume-which-has-no-snapshot";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        SimpleQuery<VolumeSnapshotVO> sq = dbf.createQuery(VolumeSnapshotVO.class);
+                        sq.add(VolumeSnapshotVO_.primaryStorageInstallPath, Op.LIKE,
+                                String.format("%s%%", originalVolumePath));
+                        sq.count();
+                        if (sq.count() == 0) {
+                            DeleteCmd cmd = new DeleteCmd();
+                            cmd.installPath = originalVolumePath;
+                            httpCall(DELETE_PATH, cmd, DeleteRsp.class, new ReturnValueCompletion<DeleteRsp>() {
+                                @Override
+                                public void success(DeleteRsp returnValue) {
+                                    logger.debug(String.format("successfully deleted %s", originalVolumePath));
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    //TODO GC
+                                    logger.warn(String.format("unable to delete %s, %s. Need a cleanup",
+                                            originalVolumePath, errorCode));
+                                }
+                            });
+                        }
+                        trigger.next();
+                    }
+                });
+
+                done(new FlowDoneHandler(msg) {
+                    @Override
+                    public void handle(Map data) {
+                        reply.setNewVolumeInstallPath(volumePath);
+                        bus.reply(msg, reply);
+                    }
+                });
+
+                error(new FlowErrorHandler(msg) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        reply.setError(errCode);
+                        bus.reply(msg, reply);
+                    }
+                });
             }
-        });
+        }).start();
+
+
     }
 
     private void handle(final ReInitRootVolumeFromTemplateOnPrimaryStorageMsg msg) {

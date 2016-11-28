@@ -12,12 +12,12 @@ import org.zstack.header.storage.backup.BackupStorageInventory;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeVO;
+import org.zstack.simulator.storage.primary.nfs.NfsPrimaryStorageSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.simulator.storage.primary.nfs.NfsPrimaryStorageSimulatorConfig;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -88,8 +88,8 @@ public class TestSnapshotOnKvm26 {
         Assert.assertEquals(svo.getTreeUuid(), cvo.getUuid());
     }
 
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         BackupStorageInventory bs = deployer.backupStorages.get("sftp");
         BackupStorageInventory bs1 = deployer.backupStorages.get("sftp1");
         VmInstanceInventory vm = deployer.vms.get("TestVm");
@@ -109,7 +109,7 @@ public class TestSnapshotOnKvm26 {
         inv3 = api.backupSnapshot(inv3.getUuid(), bs.getUuid());
         inv3 = api.backupSnapshot(inv3.getUuid(), bs1.getUuid());
 
-        long count =  dbf.count(VolumeSnapshotBackupStorageRefVO.class);
+        long count = dbf.count(VolumeSnapshotBackupStorageRefVO.class);
         Assert.assertEquals(5, count);
 
         SimpleQuery<VolumeSnapshotBackupStorageRefVO> q = dbf.createQuery(VolumeSnapshotBackupStorageRefVO.class);

@@ -48,9 +48,9 @@ public class TestSnapshotOnKvm49 {
         snapshotKvmSimulator = loader.getComponent(VolumeSnapshotKvmSimulator.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         AccountInventory test = deployer.accounts.get("test");
         VmInstanceInventory vm = deployer.vms.get("TestVm");
 
