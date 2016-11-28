@@ -6,7 +6,7 @@ public class APIAttachPolicyToUserGroupEvent extends APIEvent {
     public APIAttachPolicyToUserGroupEvent(String apiId) {
         super(apiId);
     }
-    
+
     public APIAttachPolicyToUserGroupEvent() {
         super(null);
     }

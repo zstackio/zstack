@@ -1,6 +1,5 @@
 package org.zstack.header.vm;
 
-import com.sun.org.apache.regexp.internal.RE;
 import org.zstack.header.configuration.PythonClass;
 import org.zstack.header.exception.CloudRuntimeException;
 
@@ -104,7 +103,7 @@ public enum VmInstanceState {
         Resuming.transactions(
                 new Transaction(VmInstanceStateEvent.running, VmInstanceState.Running),
                 new Transaction(VmInstanceStateEvent.destroying, VmInstanceState.Destroying),
-                new Transaction(VmInstanceStateEvent.paused,VmInstanceState.Paused),
+                new Transaction(VmInstanceStateEvent.paused, VmInstanceState.Paused),
                 new Transaction(VmInstanceStateEvent.unknown, VmInstanceState.Unknown)
         );
         Unknown.transactions(
@@ -148,7 +147,7 @@ public enum VmInstanceState {
         return drivenEvent;
     }
 
-    private void transactions(Transaction...transactions) {
+    private void transactions(Transaction... transactions) {
         for (Transaction tran : transactions) {
             transactionMap.put(tran.event, tran);
         }

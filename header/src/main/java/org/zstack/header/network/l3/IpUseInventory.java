@@ -16,7 +16,7 @@ public class IpUseInventory {
     private String details;
     private Timestamp createDate;
     private Timestamp lastOpDate;
-    
+
     public static IpUseInventory valueOf(IpUseVO vo) {
         IpUseInventory inv = new IpUseInventory();
         inv.setUse(vo.getUse());
@@ -36,46 +36,59 @@ public class IpUseInventory {
         }
         return invs;
     }
-    
+
     public String getUuid() {
         return uuid;
     }
+
     public void setUuid(String uuid) {
         this.uuid = uuid;
     }
+
     public String getUsedIpUuid() {
         return usedIpUuid;
     }
+
     public void setUsedIpUuid(String usedIpUuid) {
         this.usedIpUuid = usedIpUuid;
     }
+
     public String getServiceId() {
         return serviceId;
     }
+
     public void setServiceId(String serviceId) {
         this.serviceId = serviceId;
     }
+
     public String getUse() {
         return use;
     }
+
     public void setUse(String use) {
         this.use = use;
     }
+
     public String getDetails() {
         return details;
     }
+
     public void setDetails(String details) {
         this.details = details;
     }
+
     public Timestamp getCreateDate() {
         return createDate;
     }
+
     public void setCreateDate(Timestamp createDate) {
         this.createDate = createDate;
     }
+
     public Timestamp getLastOpDate() {
         return lastOpDate;
     }
+
     public void setLastOpDate(Timestamp lastOpDate) {
         this.lastOpDate = lastOpDate;
     }

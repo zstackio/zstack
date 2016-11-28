@@ -24,7 +24,7 @@ public interface FlowChain {
 
     FlowChain setData(Map data);
 
-    FlowChain putData(Map.Entry...es);
+    FlowChain putData(Map.Entry... es);
 
     FlowChain setName(String name);
 

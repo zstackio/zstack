@@ -3,7 +3,6 @@ package org.zstack.header.console;
 import org.zstack.header.configuration.PythonClassInventory;
 import org.zstack.header.search.Inventory;
 
-import java.sql.Date;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;

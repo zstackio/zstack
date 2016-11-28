@@ -8,7 +8,9 @@ import org.zstack.header.query.ExpandedQueryAliases;
 import org.zstack.header.search.Inventory;
 
 import java.sql.Timestamp;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 @Inventory(mappingVOClass = UserGroupVO.class)
 @PythonClassInventory
@@ -41,7 +43,7 @@ public class UserGroupInventory {
         inv.setCreateDate(vo.getCreateDate());
         return inv;
     }
-    
+
     public static List<UserGroupInventory> valueOf(Collection<UserGroupVO> vos) {
         List<UserGroupInventory> invs = new ArrayList<UserGroupInventory>(vos.size());
         for (UserGroupVO vo : vos) {
@@ -49,28 +51,35 @@ public class UserGroupInventory {
         }
         return invs;
     }
-    
+
     public String getUuid() {
         return uuid;
     }
+
     public void setUuid(String uuid) {
         this.uuid = uuid;
     }
+
     public String getAccountUuid() {
         return accountUuid;
     }
+
     public void setAccountUuid(String accountUuid) {
         this.accountUuid = accountUuid;
     }
+
     public String getName() {
         return name;
     }
+
     public void setName(String name) {
         this.name = name;
     }
+
     public String getDescription() {
         return description;
     }
+
     public void setDescription(String description) {
         this.description = description;
     }

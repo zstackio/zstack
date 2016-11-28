@@ -9,54 +9,54 @@ import java.sql.Timestamp;
 
 @Entity
 @Table
-@SqlTrigger(foreignVOClass=L3NetworkDnsVO.class, foreignVOJoinColumn="l3NetworkUuid")
+@SqlTrigger(foreignVOClass = L3NetworkDnsVO.class, foreignVOJoinColumn = "l3NetworkUuid")
 public class L3NetworkDnsVO {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column
     private long id;
-    
+
     @Column
     @ForeignKey(parentEntityClass = L3NetworkEO.class, onDeleteAction = ReferenceOption.CASCADE)
     private String l3NetworkUuid;
-    
+
     @Column
     private String dns;
 
-	@Column
-	private Timestamp createDate;
-	
-	@Column
-	private Timestamp lastOpDate;
+    @Column
+    private Timestamp createDate;
 
-	@PreUpdate
-	private void preUpdate() {
-		lastOpDate = null;
-	}
-	
-	public long getId() {
-		return id;
-	}
+    @Column
+    private Timestamp lastOpDate;
 
-	public void setId(long id) {
-		this.id = id;
-	}
+    @PreUpdate
+    private void preUpdate() {
+        lastOpDate = null;
+    }
 
-	public String getL3NetworkUuid() {
-		return l3NetworkUuid;
-	}
+    public long getId() {
+        return id;
+    }
 
-	public void setL3NetworkUuid(String l3NetworkUuid) {
-		this.l3NetworkUuid = l3NetworkUuid;
-	}
+    public void setId(long id) {
+        this.id = id;
+    }
 
-	public String getDns() {
-		return dns;
-	}
+    public String getL3NetworkUuid() {
+        return l3NetworkUuid;
+    }
 
-	public void setDns(String dns) {
-		this.dns = dns;
-	}
+    public void setL3NetworkUuid(String l3NetworkUuid) {
+        this.l3NetworkUuid = l3NetworkUuid;
+    }
+
+    public String getDns() {
+        return dns;
+    }
+
+    public void setDns(String dns) {
+        this.dns = dns;
+    }
 
     public Timestamp getCreateDate() {
         return createDate;

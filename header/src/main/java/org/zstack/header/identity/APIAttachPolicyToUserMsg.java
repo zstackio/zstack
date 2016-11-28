@@ -9,7 +9,7 @@ public class APIAttachPolicyToUserMsg extends APIMessage implements AccountMessa
     private String userUuid;
     @APIParam(checkAccount = true, operationTarget = true)
     private String policyUuid;
-    
+
     @Override
     public String getAccountUuid() {
         return this.getSession().getAccountUuid();

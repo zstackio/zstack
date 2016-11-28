@@ -40,7 +40,7 @@ public class ConsoleProxyVO {
     private int targetPort;
 
     @Column
-    @Enumerated(value=EnumType.STRING)
+    @Enumerated(value = EnumType.STRING)
     private ConsoleProxyStatus status;
 
     @Column

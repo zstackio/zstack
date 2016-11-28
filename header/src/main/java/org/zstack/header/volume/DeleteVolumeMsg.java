@@ -4,7 +4,7 @@ import org.zstack.header.message.NeedReplyMessage;
 
 public class DeleteVolumeMsg extends NeedReplyMessage implements VolumeMessage {
     private boolean detachBeforeDeleting = true;
-	private String uuid;
+    private String uuid;
     private String deletionPolicy;
 
     public String getDeletionPolicy() {
@@ -24,11 +24,11 @@ public class DeleteVolumeMsg extends NeedReplyMessage implements VolumeMessage {
     }
 
     public String getUuid() {
-    	return uuid;
+        return uuid;
     }
 
-	public void setUuid(String uuid) {
-    	this.uuid = uuid;
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
     }
 
     @Override

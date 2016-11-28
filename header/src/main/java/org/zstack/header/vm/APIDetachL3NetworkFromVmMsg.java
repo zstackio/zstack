@@ -3,7 +3,6 @@ package org.zstack.header.vm;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
-import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.rest.APINoSee;
 
 /**

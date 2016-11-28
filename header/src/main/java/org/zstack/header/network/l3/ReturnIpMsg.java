@@ -5,7 +5,7 @@ import org.zstack.header.message.NeedReplyMessage;
 public class ReturnIpMsg extends NeedReplyMessage implements L3NetworkMessage {
     private String usedIpUuid;
     private String l3NetworkUuid;
-    
+
     public String getUsedIpUuid() {
         return usedIpUuid;
     }

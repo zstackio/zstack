@@ -11,7 +11,7 @@ import org.zstack.header.message.APIParam;
  * To change this template use File | Settings | File Templates.
  */
 @Action(category = ConfigurationConstant.ACTION_CATEGORY)
-public class APIChangeInstanceOfferingStateMsg extends APIMessage implements  InstanceOfferingMessage {
+public class APIChangeInstanceOfferingStateMsg extends APIMessage implements InstanceOfferingMessage {
     @APIParam(resourceType = InstanceOfferingVO.class, checkAccount = true, operationTarget = true)
     private String uuid;
     @APIParam(validValues = {"enable", "disable"})

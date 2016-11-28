@@ -14,49 +14,45 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+
 /**
- * @inventory
- * inventory for l3Network
- *
+ * @inventory inventory for l3Network
  * @category l3network
- *
- * @example
+ * @example {
+ * "inventory": {
+ * "uuid": "f73926eb4f234f8195c61c33d8db419d",
+ * "name": "GuestNetwork",
+ * "description": "Test",
+ * "type": "L3BasicNetwork",
+ * "zoneUuid": "732fbb4383b24b019f60d862995976bf",
+ * "l2NetworkUuid": "f1a092c6914840c9895c564abbc55375",
+ * "state": "Enabled",
+ * "createDate": "May 4, 2014 11:07:24 PM",
+ * "lastOpDate": "May 4, 2014 11:07:24 PM",
+ * "dns": [],
+ * "ipRanges": [
  * {
-"inventory": {
-"uuid": "f73926eb4f234f8195c61c33d8db419d",
-"name": "GuestNetwork",
-"description": "Test",
-"type": "L3BasicNetwork",
-"zoneUuid": "732fbb4383b24b019f60d862995976bf",
-"l2NetworkUuid": "f1a092c6914840c9895c564abbc55375",
-"state": "Enabled",
-"createDate": "May 4, 2014 11:07:24 PM",
-"lastOpDate": "May 4, 2014 11:07:24 PM",
-"dns": [],
-"ipRanges": [
-{
-"uuid": "78b43f4b0a9745fab49c967e1c35beb1",
-"l3NetworkUuid": "f73926eb4f234f8195c61c33d8db419d",
-"name": "TestIpRange",
-"description": "Test",
-"startIp": "10.10.2.100",
-"endIp": "10.20.2.200",
-"netmask": "255.0.0.0",
-"gateway": "10.10.2.1",
-"createDate": "May 4, 2014 11:07:24 PM",
-"lastOpDate": "May 4, 2014 11:07:24 PM"
-}
-],
-"networkServices": [
-{
-"l3NetworkUuid": "f73926eb4f234f8195c61c33d8db419d",
-"networkServiceProviderUuid": "bbb525dc4cc8451295d379797e092dba",
-"networkServiceType": "PortForwarding"
-}
-]
-}
-}
- *
+ * "uuid": "78b43f4b0a9745fab49c967e1c35beb1",
+ * "l3NetworkUuid": "f73926eb4f234f8195c61c33d8db419d",
+ * "name": "TestIpRange",
+ * "description": "Test",
+ * "startIp": "10.10.2.100",
+ * "endIp": "10.20.2.200",
+ * "netmask": "255.0.0.0",
+ * "gateway": "10.10.2.1",
+ * "createDate": "May 4, 2014 11:07:24 PM",
+ * "lastOpDate": "May 4, 2014 11:07:24 PM"
+ * }
+ * ],
+ * "networkServices": [
+ * {
+ * "l3NetworkUuid": "f73926eb4f234f8195c61c33d8db419d",
+ * "networkServiceProviderUuid": "bbb525dc4cc8451295d379797e092dba",
+ * "networkServiceType": "PortForwarding"
+ * }
+ * ]
+ * }
+ * }
  * @since 0.1.0
  */
 @Inventory(mappingVOClass = L3NetworkVO.class)
@@ -74,7 +70,7 @@ import java.util.List;
 @ExpandedQueryAliases({
         @ExpandedQueryAlias(alias = "serviceProvider", expandedField = "serviceProviderRef.serviceProvider")
 })
-public class L3NetworkInventory implements Serializable{
+public class L3NetworkInventory implements Serializable {
     /**
      * @desc l3Network uuid
      */
@@ -100,12 +96,9 @@ public class L3NetworkInventory implements Serializable{
      */
     private String l2NetworkUuid;
     /**
-     * @desc
-     * - Enabled: ok for operations
+     * @desc - Enabled: ok for operations
      * - Disabled: no vm can be created on this l3Network
-     *
-     * @choices
-     * - Enabled
+     * @choices - Enabled
      * - Disabled
      */
     private String state;
@@ -126,21 +119,21 @@ public class L3NetworkInventory implements Serializable{
      * @desc a list of dns
      */
     @Queryable(mappingClass = L3NetworkDnsInventory.class,
-            joinColumn = @JoinColumn(name="l3NetworkUuid", referencedColumnName = "dns"))
+            joinColumn = @JoinColumn(name = "l3NetworkUuid", referencedColumnName = "dns"))
     private List<String> dns;
     /**
      * @desc a list of ip ranges. see :ref:`IpRangeInventory`
      */
     @Queryable(mappingClass = IpRangeInventory.class,
-            joinColumn = @JoinColumn(name="l3NetworkUuid"))
+            joinColumn = @JoinColumn(name = "l3NetworkUuid"))
     private List<IpRangeInventory> ipRanges;
     /**
      * @desc a list of network services enabled on this l3Network. See :ref:`NetworkServiceL3NetworkRefInventory`
      */
     @Queryable(mappingClass = NetworkServiceL3NetworkRefInventory.class,
-            joinColumn = @JoinColumn(name="l3NetworkUuid"))
+            joinColumn = @JoinColumn(name = "l3NetworkUuid"))
     private List<NetworkServiceL3NetworkRefInventory> networkServices;
-    
+
     public static L3NetworkInventory valueOf(L3NetworkVO vo) {
         L3NetworkInventory inv = new L3NetworkInventory();
         inv.setUuid(vo.getUuid());
@@ -153,7 +146,7 @@ public class L3NetworkInventory implements Serializable{
         inv.setZoneUuid(vo.getZoneUuid());
         inv.setState(vo.getState().toString());
         for (L3NetworkDnsVO dnsvo : vo.getDns()) {
-        	inv.getDns().add(dnsvo.getDns());
+            inv.getDns().add(dnsvo.getDns());
         }
         inv.setSystem(vo.isSystem());
         inv.setIpRanges(IpRangeInventory.valueOf(vo.getIpRanges()));
@@ -161,7 +154,7 @@ public class L3NetworkInventory implements Serializable{
         inv.setNetworkServices(NetworkServiceL3NetworkRefInventory.valueOf(vo.getNetworkServices()));
         return inv;
     }
-    
+
     public static List<L3NetworkInventory> valueOf(Collection<L3NetworkVO> vos) {
         List<L3NetworkInventory> invs = new ArrayList<L3NetworkInventory>(vos.size());
         for (L3NetworkVO vo : vos) {
@@ -189,36 +182,47 @@ public class L3NetworkInventory implements Serializable{
     public String getUuid() {
         return uuid;
     }
+
     public void setUuid(String uuid) {
         this.uuid = uuid;
     }
+
     public String getName() {
         return name;
     }
+
     public void setName(String name) {
         this.name = name;
     }
+
     public String getDescription() {
         return description;
     }
+
     public void setDescription(String description) {
         this.description = description;
     }
+
     public String getType() {
         return type;
     }
+
     public void setType(String type) {
         this.type = type;
     }
+
     public String getZoneUuid() {
         return zoneUuid;
     }
+
     public void setZoneUuid(String zoneUuid) {
         this.zoneUuid = zoneUuid;
     }
+
     public String getL2NetworkUuid() {
         return l2NetworkUuid;
     }
+
     public void setL2NetworkUuid(String l2NetworkUuid) {
         this.l2NetworkUuid = l2NetworkUuid;
     }
@@ -228,12 +232,12 @@ public class L3NetworkInventory implements Serializable{
         if (dns == null) {
             dns = new ArrayList<String>();
         }
-		return dns;
-	}
+        return dns;
+    }
 
-	public void setDns(List<String> dns) {
-		this.dns = dns;
-	}
+    public void setDns(List<String> dns) {
+        this.dns = dns;
+    }
 
     public Timestamp getCreateDate() {
         return createDate;
@@ -259,37 +263,37 @@ public class L3NetworkInventory implements Serializable{
         this.ipRanges = ipRanges;
     }
 
-	public List<NetworkServiceL3NetworkRefInventory> getNetworkServices() {
-		return networkServices;
-	}
+    public List<NetworkServiceL3NetworkRefInventory> getNetworkServices() {
+        return networkServices;
+    }
 
-	public void setNetworkServices(List<NetworkServiceL3NetworkRefInventory> networkServices) {
-		this.networkServices = networkServices;
-	}
-	
-	public List<NetworkServiceL3NetworkRefInventory> getNetworkServiceL3NetworkRefByProviderUuid(String providerUuid) {
-		if (networkServices == null || networkServices.isEmpty()) {
-			return new ArrayList<NetworkServiceL3NetworkRefInventory>(0);
-		}
-		
-		List<NetworkServiceL3NetworkRefInventory> refs = new ArrayList<NetworkServiceL3NetworkRefInventory>();
-		for (NetworkServiceL3NetworkRefInventory ref : networkServices) {
-			if (ref.getNetworkServiceProviderUuid().equals(providerUuid)) {
-				refs.add(ref);
-			}
-		}
-		
-		return refs;
-	}
-	
-	public List<String> getNetworkServiceTypesFromProvider(String providerUuid) {
-	    List<NetworkServiceL3NetworkRefInventory> refs = getNetworkServiceL3NetworkRefByProviderUuid(providerUuid);
-	    List<String> nwTypes = new ArrayList<String>(refs.size());
-	    for (NetworkServiceL3NetworkRefInventory ref : refs) {
-	        nwTypes.add(ref.getNetworkServiceType());
-	    }
-	    return nwTypes;
-	}
+    public void setNetworkServices(List<NetworkServiceL3NetworkRefInventory> networkServices) {
+        this.networkServices = networkServices;
+    }
+
+    public List<NetworkServiceL3NetworkRefInventory> getNetworkServiceL3NetworkRefByProviderUuid(String providerUuid) {
+        if (networkServices == null || networkServices.isEmpty()) {
+            return new ArrayList<NetworkServiceL3NetworkRefInventory>(0);
+        }
+
+        List<NetworkServiceL3NetworkRefInventory> refs = new ArrayList<NetworkServiceL3NetworkRefInventory>();
+        for (NetworkServiceL3NetworkRefInventory ref : networkServices) {
+            if (ref.getNetworkServiceProviderUuid().equals(providerUuid)) {
+                refs.add(ref);
+            }
+        }
+
+        return refs;
+    }
+
+    public List<String> getNetworkServiceTypesFromProvider(String providerUuid) {
+        List<NetworkServiceL3NetworkRefInventory> refs = getNetworkServiceL3NetworkRefByProviderUuid(providerUuid);
+        List<String> nwTypes = new ArrayList<String>(refs.size());
+        for (NetworkServiceL3NetworkRefInventory ref : refs) {
+            nwTypes.add(ref.getNetworkServiceType());
+        }
+        return nwTypes;
+    }
 
     public String getState() {
         return state;

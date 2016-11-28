@@ -9,7 +9,7 @@ public class APICreateUserGroupMsg extends APICreateMessage implements AccountMe
     private String name;
     @APIParam(maxLength = 2048, required = false)
     private String description;
-    
+
     @Override
     public String getAccountUuid() {
         return this.getSession().getAccountUuid();

@@ -10,18 +10,13 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * @inventory
- * information for volume snapshot on backup storage
- *
+ * @inventory information for volume snapshot on backup storage
  * @category volume snapshot
- *
- * @example
- * {
-"volumeSnapshotUuid": "6c8c6b0ea9844ff3bc58cc46b2fde6ce",
-"backupStorageUuid": "9656aa7cc6fb46ebab65aedc12a4728c",
-"installPath": "nfs:/test1/volumeSnapshots/acct-36c27e8ff05c4780bf6d2fa65700f22e/6c8c6b0ea9844ff3bc58cc46b2fde6ce/6c8c6b0ea9844ff3bc58cc46b2fde6ce.qcow2"
-}
- *
+ * @example {
+ * "volumeSnapshotUuid": "6c8c6b0ea9844ff3bc58cc46b2fde6ce",
+ * "backupStorageUuid": "9656aa7cc6fb46ebab65aedc12a4728c",
+ * "installPath": "nfs:/test1/volumeSnapshots/acct-36c27e8ff05c4780bf6d2fa65700f22e/6c8c6b0ea9844ff3bc58cc46b2fde6ce/6c8c6b0ea9844ff3bc58cc46b2fde6ce.qcow2"
+ * }
  * @since 0.1.0
  */
 @Inventory(mappingVOClass = VolumeSnapshotBackupStorageRefVO.class)

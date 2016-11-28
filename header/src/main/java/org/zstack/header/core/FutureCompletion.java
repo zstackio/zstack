@@ -22,7 +22,7 @@ public class FutureCompletion extends Completion {
         this.timeout = timeout;
     }
 
-    public FutureCompletion(AsyncBackup...backups) {
+    public FutureCompletion(AsyncBackup... backups) {
         super(backups);
     }
 

@@ -12,7 +12,7 @@ import java.sql.Timestamp;
  */
 @Entity
 @Table
-@Inheritance(strategy= InheritanceType.JOINED)
+@Inheritance(strategy = InheritanceType.JOINED)
 public class SchedulerVO {
     @Id
     @Column
@@ -165,6 +165,7 @@ public class SchedulerVO {
     public void setState(String state) {
         this.state = state;
     }
+
     public String getJobData() {
         return jobData;
     }
@@ -172,6 +173,7 @@ public class SchedulerVO {
     public void setJobData(String jobData) {
         this.jobData = jobData;
     }
+
     public String getSchedulerName() {
         return schedulerName;
     }

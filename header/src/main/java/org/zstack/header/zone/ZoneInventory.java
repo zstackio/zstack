@@ -22,22 +22,15 @@ import java.util.List;
 
 /**
  * @inventory inventory for zone
- *
- * @example
-
-
-  {
-      "uuid": "b729da71b1c7412781d5de22229d5e17",
-      "name": "TestZone",
-      "description": "Test",
-      "state": "Enabled",
-      "type": "zstack",
-      "createDate": "Apr 25, 2014 6:04:52 PM",
-      "lastOpDate": "Apr 25, 2014 6:04:52 PM"
-  }
-
-
- *
+ * @example {
+ * "uuid": "b729da71b1c7412781d5de22229d5e17",
+ * "name": "TestZone",
+ * "description": "Test",
+ * "state": "Enabled",
+ * "type": "zstack",
+ * "createDate": "Apr 25, 2014 6:04:52 PM",
+ * "lastOpDate": "Apr 25, 2014 6:04:52 PM"
+ * }
  * @since 0.1.0
  */
 
@@ -62,36 +55,34 @@ import java.util.List;
 @ExpandedQueryAliases({
         @ExpandedQueryAlias(alias = "backupStorage", expandedField = "backupStorageRef.backupStorage")
 })
-public class ZoneInventory implements Serializable{
+public class ZoneInventory implements Serializable {
     /**
      * @desc resource uuid
      */
-	private String uuid;
+    private String uuid;
 
     /**
      * @desc max length of 255 characters
      */
-	private String name;
+    private String name;
 
     /**
      * @desc max length of 2048 characters
      * @nullable
      */
-	private String description;
+    private String description;
 
     /**
      * @desc when state is Disabled, no vm can be created, unless descendant resource cluster/host has different state Enabled
-     *
-     * @choices
-     * - Enabled
+     * @choices - Enabled
      * - Disabled
      */
-	private String state;
+    private String state;
 
     /**
      * @desc for now, the only zone type is 'zstack'
      */
-	private String type;
+    private String type;
 
     /**
      * @desc the time this resource gets created
@@ -102,54 +93,63 @@ public class ZoneInventory implements Serializable{
      * @desc last time this resource gets operated
      */
     private Timestamp lastOpDate;
-	
-	public static ZoneInventory valueOf(ZoneVO vo) {
-		ZoneInventory inv = new ZoneInventory();
-		inv.setName(vo.getName());
-		inv.setDescription(vo.getDescription());
-		inv.setUuid(vo.getUuid());
-		inv.setState(vo.getState().toString());
-		inv.setType(vo.getType());
-		inv.setCreateDate(vo.getCreateDate());
-		inv.setLastOpDate(vo.getLastOpDate());
-		return inv;
-	}
-	
-	public static List<ZoneInventory> valueOf(Collection<ZoneVO> vos) {
-	    List<ZoneInventory> invs = new ArrayList<ZoneInventory>(vos.size());
-	    for (ZoneVO vo : vos) {
-	        invs.add(ZoneInventory.valueOf(vo));
-	    }
-	    return invs;
-	}
-	
-	public String getName() {
-    	return name;
+
+    public static ZoneInventory valueOf(ZoneVO vo) {
+        ZoneInventory inv = new ZoneInventory();
+        inv.setName(vo.getName());
+        inv.setDescription(vo.getDescription());
+        inv.setUuid(vo.getUuid());
+        inv.setState(vo.getState().toString());
+        inv.setType(vo.getType());
+        inv.setCreateDate(vo.getCreateDate());
+        inv.setLastOpDate(vo.getLastOpDate());
+        return inv;
     }
-	public void setName(String name) {
-    	this.name = name;
+
+    public static List<ZoneInventory> valueOf(Collection<ZoneVO> vos) {
+        List<ZoneInventory> invs = new ArrayList<ZoneInventory>(vos.size());
+        for (ZoneVO vo : vos) {
+            invs.add(ZoneInventory.valueOf(vo));
+        }
+        return invs;
     }
-	public String getUuid() {
-    	return uuid;
+
+    public String getName() {
+        return name;
     }
-	public void setUuid(String uuid) {
-    	this.uuid = uuid;
+
+    public void setName(String name) {
+        this.name = name;
     }
-	public String getDescription() {
-    	return description;
+
+    public String getUuid() {
+        return uuid;
     }
-	public void setDescription(String description) {
-    	this.description = description;
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
     }
-	public String getState() {
-    	return state;
+
+    public String getDescription() {
+        return description;
     }
-	public void setState(String state) {
-    	this.state = state;
+
+    public void setDescription(String description) {
+        this.description = description;
     }
+
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
+    }
+
     public String getType() {
         return type;
     }
+
     public void setType(String type) {
         this.type = type;
     }

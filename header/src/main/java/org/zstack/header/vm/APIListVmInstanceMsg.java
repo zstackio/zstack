@@ -8,7 +8,7 @@ public class APIListVmInstanceMsg extends APIListMessage {
     public APIListVmInstanceMsg(List<String> uuids) {
         super(uuids);
     }
-    
+
     public APIListVmInstanceMsg() {
         super(null);
     }

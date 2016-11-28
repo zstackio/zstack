@@ -2,7 +2,6 @@ package org.zstack.header.rest;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
-import java.util.Date;
 
 @Entity
 @Table
@@ -10,20 +9,20 @@ public class RestAPIVO {
     @Id
     @Column
     private String uuid;
-    
+
     @Column
     private String apiMessageName;
-    
+
     @Column
     @Enumerated(EnumType.STRING)
     private RestAPIState state;
-    
+
     @Column
     private String result;
-    
+
     @Column
     private Timestamp createDate;
-    
+
     @Column
     private Timestamp lastOpDate;
 

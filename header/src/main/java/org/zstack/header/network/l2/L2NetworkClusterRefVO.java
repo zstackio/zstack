@@ -15,28 +15,28 @@ import java.sql.Timestamp;
 @Entity
 @Table
 @TriggerIndex
-@SqlTrigger(foreignVOClass=L2NetworkVO.class, foreignVOJoinColumn="l2NetworkUuid")
+@SqlTrigger(foreignVOClass = L2NetworkVO.class, foreignVOJoinColumn = "l2NetworkUuid")
 @SoftDeletionCascades({
         @SoftDeletionCascade(parent = L2NetworkVO.class, joinColumn = "l2NetworkUuid"),
         @SoftDeletionCascade(parent = ClusterVO.class, joinColumn = "clusterUuid")
 })
 public class L2NetworkClusterRefVO {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column
     private long id;
-    
+
     @Column
     @ForeignKey(parentEntityClass = ClusterEO.class, onDeleteAction = ReferenceOption.CASCADE)
     private String clusterUuid;
-    
+
     @Column
     @ForeignKey(parentEntityClass = L2NetworkEO.class, onDeleteAction = ReferenceOption.CASCADE)
     private String l2NetworkUuid;
-    
+
     @Column
     private Timestamp createDate;
-    
+
     @Column
     private Timestamp lastOpDate;
 

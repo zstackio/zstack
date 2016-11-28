@@ -8,7 +8,7 @@ public class APIListAccountMsg extends APIListMessage {
     public APIListAccountMsg(List<String> uuids) {
         super(uuids);
     }
-    
+
     public APIListAccountMsg() {
     }
 }

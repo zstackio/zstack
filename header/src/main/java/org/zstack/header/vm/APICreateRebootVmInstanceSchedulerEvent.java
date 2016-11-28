@@ -20,6 +20,7 @@ public class APICreateRebootVmInstanceSchedulerEvent extends APIEvent {
     public APICreateRebootVmInstanceSchedulerEvent(String apiId) {
         super(apiId);
     }
+
     public APICreateRebootVmInstanceSchedulerEvent() {
         super(null);
     }

@@ -28,5 +28,5 @@ public class ManagementNodeExitMsg extends Message {
     }
 
     public ManagementNodeExitMsg() {
-	}
+    }
 }

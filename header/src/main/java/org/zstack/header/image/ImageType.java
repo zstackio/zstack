@@ -7,7 +7,7 @@ public class ImageType {
     private static Map<String, ImageType> types = Collections.synchronizedMap(new HashMap<String, ImageType>());
     private final String typeName;
     private boolean exposed = true;
-    
+
     public ImageType(String typeName) {
         this.typeName = typeName;
         types.put(typeName, this);
@@ -37,27 +37,27 @@ public class ImageType {
         }
         return type;
     }
-    
+
     @Override
     public String toString() {
         return typeName;
     }
-    
+
     @Override
     public boolean equals(Object t) {
         if (t == null || !(t instanceof ImageType)) {
             return false;
         }
-        
-        ImageType type = (ImageType)t;
+
+        ImageType type = (ImageType) t;
         return type.toString().equals(typeName);
     }
-    
+
     @Override
     public int hashCode() {
         return typeName.hashCode();
     }
-    
+
     public static Set<String> getAllTypeNames() {
         HashSet<String> exposedTypes = new HashSet<String>();
         for (ImageType type : types.values()) {

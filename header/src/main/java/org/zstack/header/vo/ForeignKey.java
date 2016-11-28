@@ -15,6 +15,7 @@ public @interface ForeignKey {
         NO_ACTION("NO ACTION");
 
         private String reference;
+
         private ReferenceOption(String reference) {
             this.reference = reference;
         }
@@ -34,7 +35,10 @@ public @interface ForeignKey {
     }
 
     Class parentEntityClass();
+
     String parentKey() default "";
+
     ReferenceOption onUpdateAction() default ReferenceOption.NO_ACTION;
+
     ReferenceOption onDeleteAction() default ReferenceOption.NO_ACTION;
 }

@@ -6,8 +6,7 @@ public class MessageReply extends Message {
     /**
      * @desc indicate the failure or success. Client should evaluate this field before evaluating
      * inventory field
-     * @choices
-     * - true
+     * @choices - true
      * - false
      */
     private boolean success = true;

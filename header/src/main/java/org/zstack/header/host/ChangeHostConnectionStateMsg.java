@@ -5,7 +5,7 @@ import org.zstack.header.message.NeedReplyMessage;
 public class ChangeHostConnectionStateMsg extends NeedReplyMessage implements HostMessage {
     private String hostUuid;
     private String connectionStateEvent;
-    
+
     @Override
     public String getHostUuid() {
         return hostUuid;

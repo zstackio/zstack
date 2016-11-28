@@ -9,6 +9,8 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Inventory {
     Class<?> mappingVOClass();
+
     String collectionValueOfMethod() default "";
+
     Parent[] parent() default {};
 }

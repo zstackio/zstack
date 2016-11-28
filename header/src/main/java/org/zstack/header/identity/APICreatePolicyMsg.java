@@ -2,7 +2,6 @@ package org.zstack.header.identity;
 
 import org.zstack.header.identity.PolicyInventory.Statement;
 import org.zstack.header.message.APICreateMessage;
-import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 
 import java.util.List;

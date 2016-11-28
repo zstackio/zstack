@@ -7,7 +7,7 @@ import java.util.List;
 public class APIListIpRangeMsg extends APIListMessage {
     public APIListIpRangeMsg() {
     }
-    
+
     public APIListIpRangeMsg(List<String> uuids) {
         super(uuids);
     }

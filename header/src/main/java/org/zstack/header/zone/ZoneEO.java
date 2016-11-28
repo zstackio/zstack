@@ -8,7 +8,7 @@ import javax.persistence.Table;
  */
 @Entity
 @Table
-public class ZoneEO extends ZoneAO{
+public class ZoneEO extends ZoneAO {
     @Column
     private String deleted;
 

@@ -11,8 +11,12 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ExpandedQuery {
     String expandedField();
+
     Class inventoryClass();
+
     String foreignKey();
+
     String expandedInventoryKey();
+
     boolean hidden() default false;
 }

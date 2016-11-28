@@ -5,27 +5,21 @@ import org.zstack.header.message.APIReply;
 import java.util.List;
 
 /**
- *@apiResult
- *
- * api reply for message :ref:`APIGetBackupStorageTypesMsg`
- *
- *@since 0.1.0
- *
- *@example
- * {
-"org.zstack.header.storage.backup.APIGetBackupStorageTypesReply": {
-"backupStorageTypes": [
-"SimulatorBackupStorage"
-],
-"success": true
-}
-}
+ * @apiResult api reply for message :ref:`APIGetBackupStorageTypesMsg`
+ * @example {
+ * "org.zstack.header.storage.backup.APIGetBackupStorageTypesReply": {
+ * "backupStorageTypes": [
+ * "SimulatorBackupStorage"
+ * ],
+ * "success": true
+ * }
+ * }
+ * @since 0.1.0
  */
 
 public class APIGetBackupStorageTypesReply extends APIReply {
     /**
-     * @desc
-     * a list of backup storage types supported by zstack
+     * @desc a list of backup storage types supported by zstack
      */
     private List<String> backupStorageTypes;
 

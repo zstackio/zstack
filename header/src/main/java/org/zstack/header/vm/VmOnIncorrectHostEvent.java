@@ -7,7 +7,7 @@ public class VmOnIncorrectHostEvent extends LocalEvent {
     private String hostUuidVmOn;
     private String hostUuidInDb;
     private boolean isStoppedVm;
-    
+
     @Override
     public String getSubCategory() {
         return "VmOnIncorrectHostEvent";

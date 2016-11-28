@@ -10,17 +10,17 @@ public class DiskOfferingAO {
     @Id
     @Column
     private String uuid;
-    
+
     @Column
     @Index
     private String name;
-    
+
     @Column
     private String description;
-    
+
     @Column
     private long diskSize;
-    
+
     @Column
     private int sortKey;
 
@@ -33,10 +33,10 @@ public class DiskOfferingAO {
 
     @Column
     private Timestamp createDate;
-    
+
     @Column
     private Timestamp lastOpDate;
-    
+
     @Column
     private String allocatorStrategy;
 
@@ -45,52 +45,52 @@ public class DiskOfferingAO {
         lastOpDate = null;
     }
 
-	public String getUuid() {
-    	return uuid;
+    public String getUuid() {
+        return uuid;
     }
 
-	public void setUuid(String uuid) {
-    	this.uuid = uuid;
-	}
-
-	public long getDiskSize() {
-    	return diskSize;
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
     }
 
-	public void setDiskSize(long diskSize) {
-    	this.diskSize = diskSize;
+    public long getDiskSize() {
+        return diskSize;
     }
 
-	public String getName() {
-    	return name;
+    public void setDiskSize(long diskSize) {
+        this.diskSize = diskSize;
     }
 
-	public void setName(String name) {
-    	this.name = name;
+    public String getName() {
+        return name;
     }
 
-	public String getDescription() {
-    	return description;
+    public void setName(String name) {
+        this.name = name;
     }
 
-	public void setDescription(String description) {
-    	this.description = description;
+    public String getDescription() {
+        return description;
     }
 
-	public int getSortKey() {
-    	return sortKey;
+    public void setDescription(String description) {
+        this.description = description;
     }
 
-	public void setSortKey(int sortKey) {
-    	this.sortKey = sortKey;
+    public int getSortKey() {
+        return sortKey;
     }
 
-	public String getAllocatorStrategy() {
-    	return allocatorStrategy;
+    public void setSortKey(int sortKey) {
+        this.sortKey = sortKey;
     }
 
-	public void setAllocatorStrategy(String allocatorStrategy) {
-    	this.allocatorStrategy = allocatorStrategy;
+    public String getAllocatorStrategy() {
+        return allocatorStrategy;
+    }
+
+    public void setAllocatorStrategy(String allocatorStrategy) {
+        this.allocatorStrategy = allocatorStrategy;
     }
 
     public Timestamp getCreateDate() {

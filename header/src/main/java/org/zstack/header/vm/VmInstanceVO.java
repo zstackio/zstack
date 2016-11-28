@@ -11,22 +11,22 @@ import java.util.Set;
 
 @Entity
 @Table
-@Inheritance(strategy=InheritanceType.JOINED)
+@Inheritance(strategy = InheritanceType.JOINED)
 @EO(EOClazz = VmInstanceEO.class)
 @AutoDeleteTag
 public class VmInstanceVO extends VmInstanceAO {
-    @OneToMany(fetch=FetchType.EAGER)
-    @JoinColumn(name="vmInstanceUuid", insertable=false, updatable=false)
+    @OneToMany(fetch = FetchType.EAGER)
+    @JoinColumn(name = "vmInstanceUuid", insertable = false, updatable = false)
     @NoView
     private Set<VmNicVO> vmNics = new HashSet<VmNicVO>();
-    
-    @OneToMany(fetch=FetchType.EAGER)
-    @JoinColumn(name="vmInstanceUuid", insertable=false, updatable=false)
+
+    @OneToMany(fetch = FetchType.EAGER)
+    @JoinColumn(name = "vmInstanceUuid", insertable = false, updatable = false)
     @NoView
     private Set<VolumeVO> allVolumes = new HashSet<VolumeVO>();
 
-    @OneToOne(fetch=FetchType.EAGER)
-    @JoinColumn(name="rootVolumeUuid", insertable=false, updatable=false)
+    @OneToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "rootVolumeUuid", insertable = false, updatable = false)
     @NoView
     private VolumeVO rootVolumes;
 

@@ -8,7 +8,6 @@ import org.zstack.header.message.APIReply;
  */
 
 
-
 public class APIGetVmConsolePasswordReply extends APIReply {
     private String consolePassword;
 

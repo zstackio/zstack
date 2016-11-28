@@ -4,7 +4,7 @@ import org.zstack.header.message.APIMessage;
 
 public class APIScanBackupStorageMsg extends APIMessage implements BackupStorageMessage {
     private String backupStorageUuid;
-    
+
     @Override
     public String getBackupStorageUuid() {
         return backupStorageUuid;

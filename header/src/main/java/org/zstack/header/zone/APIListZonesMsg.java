@@ -7,7 +7,7 @@ import java.util.List;
 public class APIListZonesMsg extends APIListMessage {
     public APIListZonesMsg() {
     }
-    
+
     public APIListZonesMsg(List<String> uuids) {
         super(uuids);
     }

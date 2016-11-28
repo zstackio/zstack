@@ -12,8 +12,8 @@ import java.util.Map;
  * Time: 5:35 PM
  * To change this template use File | Settings | File Templates.
  */
-public abstract class FlowErrorHandler extends AbstractCompletion  {
-    public FlowErrorHandler(AsyncBackup...backups) {
+public abstract class FlowErrorHandler extends AbstractCompletion {
+    public FlowErrorHandler(AsyncBackup... backups) {
         super(backups);
     }
 

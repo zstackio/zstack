@@ -15,6 +15,7 @@ import java.util.List;
  */
 public abstract class AbstractCompositeType implements CompositeData, Serializable {
     protected abstract String[] getFieldNames();
+
     public abstract CompositeType getCompositeType();
 
     @Override
@@ -35,7 +36,7 @@ public abstract class AbstractCompositeType implements CompositeData, Serializab
     @Override
     public Object[] getAll(String[] keys) {
         Object[] ret = new Object[keys.length];
-        for (int i=0; i<keys.length; i++) {
+        for (int i = 0; i < keys.length; i++) {
             ret[i] = get(keys[i]);
         }
         return ret;
@@ -43,7 +44,7 @@ public abstract class AbstractCompositeType implements CompositeData, Serializab
 
     @Override
     public boolean containsKey(String key) {
-        String [] fieldNames = getFieldNames();
+        String[] fieldNames = getFieldNames();
         for (String fname : fieldNames) {
             if (fname.equals(key)) {
                 return true;

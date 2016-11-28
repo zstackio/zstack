@@ -4,11 +4,11 @@ import org.zstack.header.message.APIEvent;
 
 public class APICreateAccountEvent extends APIEvent {
     private AccountInventory inventory;
-    
+
     public APICreateAccountEvent(String apiId) {
         super(apiId);
     }
-    
+
     public APICreateAccountEvent() {
         super(null);
     }

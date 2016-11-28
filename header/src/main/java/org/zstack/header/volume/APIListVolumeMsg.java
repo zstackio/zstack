@@ -7,7 +7,7 @@ import java.util.List;
 public class APIListVolumeMsg extends APIListMessage {
     public APIListVolumeMsg() {
     }
-    
+
     public APIListVolumeMsg(List<String> uuids) {
         super(uuids);
     }

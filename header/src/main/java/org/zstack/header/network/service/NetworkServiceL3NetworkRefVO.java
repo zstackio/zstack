@@ -14,51 +14,51 @@ import javax.persistence.*;
 @Entity
 @Table
 @TriggerIndex
-@SqlTrigger(foreignVOClass=L3NetworkVO.class, foreignVOJoinColumn="l3NetworkUuid")
+@SqlTrigger(foreignVOClass = L3NetworkVO.class, foreignVOJoinColumn = "l3NetworkUuid")
 @SoftDeletionCascades({
         @SoftDeletionCascade(parent = L3NetworkVO.class, joinColumn = "l3NetworkUuid"),
         @SoftDeletionCascade(parent = NetworkServiceProviderVO.class, joinColumn = "networkServiceProviderUuid")
 })
 public class NetworkServiceL3NetworkRefVO {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column
     private long id;
-    
+
     @Column
     @ForeignKey(parentEntityClass = L3NetworkEO.class, onDeleteAction = ReferenceOption.CASCADE)
     private String l3NetworkUuid;
-    
+
     @Column
     @ForeignKey(parentEntityClass = NetworkServiceProviderVO.class, onDeleteAction = ReferenceOption.CASCADE)
     private String networkServiceProviderUuid;
-    
+
     @Column
     private String networkServiceType;
 
-	public long getId() {
-		return id;
-	}
+    public long getId() {
+        return id;
+    }
 
-	public void setId(long id) {
-		this.id = id;
-	}
+    public void setId(long id) {
+        this.id = id;
+    }
 
-	public String getL3NetworkUuid() {
-		return l3NetworkUuid;
-	}
+    public String getL3NetworkUuid() {
+        return l3NetworkUuid;
+    }
 
-	public void setL3NetworkUuid(String l3NetworkUuid) {
-		this.l3NetworkUuid = l3NetworkUuid;
-	}
+    public void setL3NetworkUuid(String l3NetworkUuid) {
+        this.l3NetworkUuid = l3NetworkUuid;
+    }
 
-	public String getNetworkServiceProviderUuid() {
-		return networkServiceProviderUuid;
-	}
+    public String getNetworkServiceProviderUuid() {
+        return networkServiceProviderUuid;
+    }
 
-	public void setNetworkServiceProviderUuid(String networkServiceProviderUuid) {
-		this.networkServiceProviderUuid = networkServiceProviderUuid;
-	}
+    public void setNetworkServiceProviderUuid(String networkServiceProviderUuid) {
+        this.networkServiceProviderUuid = networkServiceProviderUuid;
+    }
 
     public String getNetworkServiceType() {
         return networkServiceType;

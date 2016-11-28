@@ -8,12 +8,12 @@ import org.zstack.header.message.APIParam;
  * Created by root on 10/29/16.
  */
 @Action(category = VmInstanceConstant.ACTION_CATEGORY)
-public class APIPauseVmInstanceMsg extends APIMessage implements VmInstanceMessage{
-    @APIParam(resourceType = VmInstanceVO.class,checkAccount = true,operationTarget = true)
+public class APIPauseVmInstanceMsg extends APIMessage implements VmInstanceMessage {
+    @APIParam(resourceType = VmInstanceVO.class, checkAccount = true, operationTarget = true)
     private String uuid;
 
     @Override
-    public String getVmInstanceUuid(){
+    public String getVmInstanceUuid() {
         return getUuid();
     }
 

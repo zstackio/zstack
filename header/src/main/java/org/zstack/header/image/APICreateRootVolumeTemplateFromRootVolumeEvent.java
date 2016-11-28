@@ -8,11 +8,11 @@ public class APICreateRootVolumeTemplateFromRootVolumeEvent extends APIEvent {
     public APICreateRootVolumeTemplateFromRootVolumeEvent(String apiId) {
         super(apiId);
     }
-    
+
     public APICreateRootVolumeTemplateFromRootVolumeEvent() {
         super(null);
     }
-    
+
     public ImageInventory getInventory() {
         return inventory;
     }

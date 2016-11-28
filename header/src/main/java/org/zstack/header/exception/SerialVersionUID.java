@@ -2,7 +2,7 @@ package org.zstack.header.exception;
 
 public interface SerialVersionUID {
     public static final long Base = 0x564D4F70 << 32;
-    
+
     public static final long CloudRuntimeException = Base | 0x01;
     public static final long CloudConfigureFailException = Base | (0x01 << 1);
     public static final long CloudInvalidParameterException = Base | (0x01 << 3);

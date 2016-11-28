@@ -8,7 +8,7 @@ public class APIListImageMsg extends APIListMessage {
 
     public APIListImageMsg() {
     }
-    
+
     public APIListImageMsg(List<String> uuids) {
         super(uuids);
     }

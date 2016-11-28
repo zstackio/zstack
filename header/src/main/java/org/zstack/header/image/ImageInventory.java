@@ -11,6 +11,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+
 @Inventory(mappingVOClass = ImageVO.class)
 @PythonClassInventory
 @ExpandedQueries({
@@ -22,20 +23,20 @@ import java.util.List;
 @ExpandedQueryAliases({
         @ExpandedQueryAlias(alias = "backupStorage", expandedField = "backupStorageRef.backupStorage")
 })
-public class ImageInventory implements Serializable{
-	private String uuid;
-	private String name;
-	private String description;
+public class ImageInventory implements Serializable {
+    private String uuid;
+    private String name;
+    private String description;
     private String exportUrl;
-	private String state;
+    private String state;
     private String status;
-	private Long size;
+    private Long size;
     private Long actualSize;
-	private String md5Sum;
-	private String url;
-	private String mediaType;
-	private String guestOsType;
-	private String type;
+    private String md5Sum;
+    private String url;
+    private String mediaType;
+    private String guestOsType;
+    private String type;
     private String platform;
     private String format;
     private Boolean system;
@@ -44,30 +45,30 @@ public class ImageInventory implements Serializable{
     @Queryable(mappingClass = ImageBackupStorageRefInventory.class,
             joinColumn = @JoinColumn(name = "imageUuid"))
     private List<ImageBackupStorageRefInventory> backupStorageRefs;
-	
-	public static ImageInventory valueOf(ImageVO vo) {
-		ImageInventory inv = new ImageInventory();
-		inv.setCreateDate(vo.getCreateDate());
-		inv.setDescription(vo.getDescription());
+
+    public static ImageInventory valueOf(ImageVO vo) {
+        ImageInventory inv = new ImageInventory();
+        inv.setCreateDate(vo.getCreateDate());
+        inv.setDescription(vo.getDescription());
         inv.setExportUrl(vo.getExportUrl());
-		inv.setMediaType(vo.getMediaType().toString());
+        inv.setMediaType(vo.getMediaType().toString());
         inv.setFormat(vo.getFormat());
-		inv.setGuestOsType(vo.getGuestOsType());
-		inv.setMd5Sum(vo.getMd5Sum());
-		inv.setName(vo.getName());
-		inv.setSize(vo.getSize());
+        inv.setGuestOsType(vo.getGuestOsType());
+        inv.setMd5Sum(vo.getMd5Sum());
+        inv.setName(vo.getName());
+        inv.setSize(vo.getSize());
         inv.setActualSize(vo.getActualSize());
         inv.setStatus(vo.getStatus().toString());
-		inv.setState(vo.getState().toString());
-		inv.setUrl(vo.getUrl());
+        inv.setState(vo.getState().toString());
+        inv.setUrl(vo.getUrl());
         inv.setPlatform(vo.getPlatform() == null ? null : vo.getPlatform().toString());
-		inv.setUuid(vo.getUuid());
-		inv.setType(vo.getType());
+        inv.setUuid(vo.getUuid());
+        inv.setType(vo.getType());
         inv.setSystem(vo.isSystem());
-		inv.setLastOpDate(vo.getLastOpDate());
+        inv.setLastOpDate(vo.getLastOpDate());
         inv.setBackupStorageRefs(ImageBackupStorageRefInventory.valueOf(vo.getBackupStorageRefs()));
-		return inv;
-	}
+        return inv;
+    }
 
     public static ImageInventory valueOf(ImageEO vo) {
         ImageInventory inv = new ImageInventory();
@@ -99,14 +100,14 @@ public class ImageInventory implements Serializable{
         }
         return invs;
     }
-	
-	public static List<ImageInventory> valueOf(Collection<ImageVO> vos) {
-	    List<ImageInventory> invs = new ArrayList<ImageInventory>(vos.size());
-	    for (ImageVO vo : vos) {
-	        invs.add(ImageInventory.valueOf(vo));
-	    }
-	    return invs;
-	}
+
+    public static List<ImageInventory> valueOf(Collection<ImageVO> vos) {
+        List<ImageInventory> invs = new ArrayList<ImageInventory>(vos.size());
+        for (ImageVO vo : vos) {
+            invs.add(ImageInventory.valueOf(vo));
+        }
+        return invs;
+    }
 
     public Long getActualSize() {
         return actualSize;
@@ -149,22 +150,27 @@ public class ImageInventory implements Serializable{
     }
 
     public String getUuid() {
-    	return uuid;
+        return uuid;
     }
-	public void setUuid(String uuid) {
-    	this.uuid = uuid;
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
     }
-	public String getName() {
-    	return name;
+
+    public String getName() {
+        return name;
     }
-	public void setName(String name) {
-    	this.name = name;
+
+    public void setName(String name) {
+        this.name = name;
     }
-	public String getDescription() {
-    	return description;
+
+    public String getDescription() {
+        return description;
     }
-	public void setDescription(String description) {
-    	this.description = description;
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public String getExportUrl() {
@@ -176,43 +182,53 @@ public class ImageInventory implements Serializable{
     }
 
     public String getState() {
-    	return state;
-    }
-	public void setState(String state) {
-    	this.state = state;
-    }
-	public long getSize() {
-    	return size;
-    }
-	public void setSize(long size) {
-    	this.size = size;
-    }
-	public String getMd5Sum() {
-    	return md5Sum;
-    }
-	public void setMd5Sum(String md5Sum) {
-    	this.md5Sum = md5Sum;
-    }
-	public String getUrl() {
-    	return url;
-    }
-	public void setUrl(String url) {
-    	this.url = url;
-    }
-	public String getMediaType() {
-    	return mediaType;
-    }
-	public void setMediaType(String type) {
-    	this.mediaType = type;
-    }
-	public String getGuestOsType() {
-    	return guestOsType;
+        return state;
     }
 
-	public void setGuestOsType(String guestOsType) {
-    	this.guestOsType = guestOsType;
+    public void setState(String state) {
+        this.state = state;
     }
-	
+
+    public long getSize() {
+        return size;
+    }
+
+    public void setSize(long size) {
+        this.size = size;
+    }
+
+    public String getMd5Sum() {
+        return md5Sum;
+    }
+
+    public void setMd5Sum(String md5Sum) {
+        this.md5Sum = md5Sum;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public String getMediaType() {
+        return mediaType;
+    }
+
+    public void setMediaType(String type) {
+        this.mediaType = type;
+    }
+
+    public String getGuestOsType() {
+        return guestOsType;
+    }
+
+    public void setGuestOsType(String guestOsType) {
+        this.guestOsType = guestOsType;
+    }
+
     public String getType() {
         return type;
     }

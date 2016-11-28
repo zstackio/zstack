@@ -7,22 +7,22 @@ import java.util.Date;
 @Table
 public class UpdateVO {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column
     private long id;
-    
+
     @Column
     private String voName;
-    
+
     @Column
     private String uuid;
-    
+
     @Column
     private Date updateDate;
-    
+
     @Column
     private String foreignVOName;
-    
+
     @Column
     private String foreignVOUuid;
 

@@ -3,7 +3,6 @@ package org.zstack.header.cluster;
 import javax.persistence.metamodel.SingularAttribute;
 import javax.persistence.metamodel.StaticMetamodel;
 import java.sql.Timestamp;
-import java.util.Date;
 
 /**
  */

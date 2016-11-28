@@ -5,5 +5,6 @@ package org.zstack.header.message;
  */
 public interface BeforePublishEventInterceptor {
     int orderOfBeforePublishEventInterceptor();
+
     void beforePublishEvent(Event evt);
 }

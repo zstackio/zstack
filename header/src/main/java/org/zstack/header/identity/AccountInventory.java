@@ -8,8 +8,8 @@ import org.zstack.header.search.Inventory;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
+
 @Inventory(mappingVOClass = AccountVO.class)
 @ExpandedQueries({
         @ExpandedQuery(expandedField = "user", inventoryClass = UserInventory.class,
@@ -29,7 +29,7 @@ public class AccountInventory {
     private String type;
     private Timestamp createDate;
     private Timestamp lastOpDate;
-    
+
     public static AccountInventory valueOf(AccountVO vo) {
         AccountInventory inv = new AccountInventory();
         inv.setUuid(vo.getUuid());
@@ -40,7 +40,7 @@ public class AccountInventory {
         inv.setLastOpDate(vo.getLastOpDate());
         return inv;
     }
-    
+
     public static List<AccountInventory> valueOf(Collection<AccountVO> vos) {
         List<AccountInventory> lst = new ArrayList<AccountInventory>(vos.size());
         for (AccountVO vo : vos) {

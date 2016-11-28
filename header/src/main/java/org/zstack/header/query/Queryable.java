@@ -10,5 +10,6 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Queryable {
     Class mappingClass();
+
     JoinColumn joinColumn();
 }

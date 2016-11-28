@@ -6,7 +6,7 @@ public class APIScanBackupStorageEvent extends APIEvent {
     public APIScanBackupStorageEvent(String apiId) {
         super(apiId);
     }
-    
+
     public APIScanBackupStorageEvent() {
         super(null);
     }

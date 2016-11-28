@@ -6,6 +6,7 @@ public class APIAttachPolicyToUserEvent extends APIEvent {
     public APIAttachPolicyToUserEvent() {
         super(null);
     }
+
     public APIAttachPolicyToUserEvent(String apiId) {
         super(apiId);
     }

@@ -47,7 +47,7 @@ public class VolumeFormat {
         this.exposed = exposed;
     }
 
-    public VolumeFormat(String typeName, HypervisorType master, HypervisorType...attachables) {
+    public VolumeFormat(String typeName, HypervisorType master, HypervisorType... attachables) {
         this.typeName = typeName;
         types.put(typeName, this);
         masterHypervisorType = master;
@@ -55,7 +55,7 @@ public class VolumeFormat {
         logger.debug(String.format("volume format[%s] registers itself with master hypervisor type[%s] and attachable hypervisor types%s", typeName, masterHypervisorType, attachableHypervisorTypes));
     }
 
-    public VolumeFormat(String typeName, HypervisorType master, boolean exposed, HypervisorType...attachables) {
+    public VolumeFormat(String typeName, HypervisorType master, boolean exposed, HypervisorType... attachables) {
         this(typeName, master, attachables);
         this.exposed = exposed;
     }
@@ -83,7 +83,7 @@ public class VolumeFormat {
             return false;
         }
 
-        VolumeFormat type = (VolumeFormat)t;
+        VolumeFormat type = (VolumeFormat) t;
         return type.toString().equals(typeName);
     }
 
@@ -146,7 +146,7 @@ public class VolumeFormat {
     public static List<VolumeFormat> getVolumeFormatSupportedByHypervisorType(HypervisorType hvType) {
         List<VolumeFormat> formats = new ArrayList<VolumeFormat>();
         for (VolumeFormat format : types.values()) {
-            if (hvType.equals(format.getMasterHypervisorType()) || format.getAttachableHypervisorTypes().contains(hvType))  {
+            if (hvType.equals(format.getMasterHypervisorType()) || format.getAttachableHypervisorTypes().contains(hvType)) {
                 formats.add(format);
             }
         }

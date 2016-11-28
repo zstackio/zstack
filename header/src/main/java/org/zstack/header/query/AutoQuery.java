@@ -11,5 +11,6 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface AutoQuery {
     Class replyClass();
+
     Class inventoryClass();
 }

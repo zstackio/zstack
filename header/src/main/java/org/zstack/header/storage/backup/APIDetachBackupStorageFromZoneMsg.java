@@ -5,59 +5,50 @@ import org.zstack.header.message.APIParam;
 import org.zstack.header.zone.ZoneVO;
 
 /**
- * @api
- *
- * detach backup storage from a zone
- *
- * @since 0.1.0
- *
+ * @api detach backup storage from a zone
  * @cli
- *
- * @httpMsg
- * {
-"org.zstack.header.storage.backup.APIDetachBackupStorageMsg": {
-"backupStorageUuid": "18421b64c18c458a8f362203c73593e1",
-"zoneUuid": "87f460f2045249638ba83c56e06f1d55",
-"session": {
-"uuid": "53f06ad106d24beaa8de9300242b409b"
-}
-}
-}
- * @msg
- * {
-"org.zstack.header.storage.backup.APIDetachBackupStorageMsg": {
-"backupStorageUuid": "18421b64c18c458a8f362203c73593e1",
-"zoneUuid": "87f460f2045249638ba83c56e06f1d55",
-"session": {
-"uuid": "53f06ad106d24beaa8de9300242b409b"
-},
-"timeout": 1800000,
-"id": "2e7cbc742e5147ff98e02abc64ac295f",
-"serviceId": "api.portal"
-}
-}
- * @result
- *
- * see :ref:`APIDetachBackupStorageEvent`
+ * @httpMsg {
+ * "org.zstack.header.storage.backup.APIDetachBackupStorageMsg": {
+ * "backupStorageUuid": "18421b64c18c458a8f362203c73593e1",
+ * "zoneUuid": "87f460f2045249638ba83c56e06f1d55",
+ * "session": {
+ * "uuid": "53f06ad106d24beaa8de9300242b409b"
+ * }
+ * }
+ * }
+ * @msg {
+ * "org.zstack.header.storage.backup.APIDetachBackupStorageMsg": {
+ * "backupStorageUuid": "18421b64c18c458a8f362203c73593e1",
+ * "zoneUuid": "87f460f2045249638ba83c56e06f1d55",
+ * "session": {
+ * "uuid": "53f06ad106d24beaa8de9300242b409b"
+ * },
+ * "timeout": 1800000,
+ * "id": "2e7cbc742e5147ff98e02abc64ac295f",
+ * "serviceId": "api.portal"
+ * }
+ * }
+ * @result see :ref:`APIDetachBackupStorageEvent`
+ * @since 0.1.0
  */
 public class APIDetachBackupStorageFromZoneMsg extends APIMessage implements BackupStorageMessage {
     /**
      * @desc backup storage uuid
      */
-	@APIParam(resourceType = BackupStorageVO.class)
-	private String backupStorageUuid;
+    @APIParam(resourceType = BackupStorageVO.class)
+    private String backupStorageUuid;
     /**
      * @desc zone uuid. See :ref:`ZoneInventory`
      */
-	@APIParam(resourceType = ZoneVO.class)
-	private String zoneUuid;
+    @APIParam(resourceType = ZoneVO.class)
+    private String zoneUuid;
 
-	public APIDetachBackupStorageFromZoneMsg() {
-	}
-	
-	public APIDetachBackupStorageFromZoneMsg(String uuid) {
-	    super();
-	    this.backupStorageUuid = uuid;
+    public APIDetachBackupStorageFromZoneMsg() {
+    }
+
+    public APIDetachBackupStorageFromZoneMsg(String uuid) {
+        super();
+        this.backupStorageUuid = uuid;
     }
 
     public void setBackupStorageUuid(String backupStorageUuid) {

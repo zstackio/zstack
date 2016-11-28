@@ -12,11 +12,11 @@ public class UserVO {
     @Id
     @Column
     private String uuid;
-    
+
     @Column
     @ForeignKey(parentEntityClass = AccountVO.class, parentKey = "uuid", onDeleteAction = ReferenceOption.CASCADE)
     private String accountUuid;
-    
+
     @Column
     private String name;
 
@@ -25,16 +25,16 @@ public class UserVO {
 
     @Column
     private String password;
-    
+
     @Column
     private String securityKey;
-    
+
     @Column
     private String token;
-    
+
     @Column
     private Timestamp createDate;
-    
+
     @Column
     private Timestamp lastOpDate;
 

@@ -22,7 +22,7 @@ public interface NetworkServiceExtensionPoint {
 
     NetworkServiceType getNetworkServiceType();
 
-    void applyNetworkService(VmInstanceSpec servedVm, Map<String, Object> data,  Completion completion);
+    void applyNetworkService(VmInstanceSpec servedVm, Map<String, Object> data, Completion completion);
 
     void releaseNetworkService(VmInstanceSpec servedVm, Map<String, Object> data, NoErrorCompletion completion);
 }

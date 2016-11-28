@@ -3,7 +3,6 @@ package org.zstack.header.image;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
-import org.zstack.header.storage.backup.BackupStorage;
 import org.zstack.header.storage.backup.BackupStorageVO;
 
 import java.util.List;

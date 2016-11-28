@@ -8,5 +8,5 @@ import org.zstack.header.message.APISyncCallMessage;
  * Time: 8:46 PM
  * To change this template use File | Settings | File Templates.
  */
-public class APIGetHostAllocatorStrategiesMsg extends APISyncCallMessage{
+public class APIGetHostAllocatorStrategiesMsg extends APISyncCallMessage {
 }

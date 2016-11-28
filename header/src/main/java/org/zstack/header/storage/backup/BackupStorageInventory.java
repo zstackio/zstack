@@ -13,26 +13,24 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+
 /**
- * @inventory
- * inventory for backup storage
- *
- * @example
- * {
-"inventory": {
-"uuid": "18421b64c18c458a8f362203c73593e1",
-"name": "SimulatoryBackupStorage-0",
-"url": "nfs://simulator/backupstorage/-0",
-"totalCapacity": 107374182400,
-"availableCapacity": 107374182400,
-"type": "SimulatorBackupStorage",
-"state": "Enabled",
-"status": "Connected",
-"createDate": "May 2, 2014 12:23:20 AM",
-"lastOpDate": "May 2, 2014 12:23:20 AM",
-"attachedZoneUuids": []
-}
-}
+ * @inventory inventory for backup storage
+ * @example {
+ * "inventory": {
+ * "uuid": "18421b64c18c458a8f362203c73593e1",
+ * "name": "SimulatoryBackupStorage-0",
+ * "url": "nfs://simulator/backupstorage/-0",
+ * "totalCapacity": 107374182400,
+ * "availableCapacity": 107374182400,
+ * "type": "SimulatorBackupStorage",
+ * "state": "Enabled",
+ * "status": "Connected",
+ * "createDate": "May 2, 2014 12:23:20 AM",
+ * "lastOpDate": "May 2, 2014 12:23:20 AM",
+ * "attachedZoneUuids": []
+ * }
+ * }
  * @since 0.1.0
  */
 @Inventory(mappingVOClass = BackupStorageVO.class)
@@ -50,114 +48,105 @@ import java.util.List;
         @ExpandedQueryAlias(alias = "image", expandedField = "imageRef.image"),
         @ExpandedQueryAlias(alias = "volumeSnapshot", expandedField = "volumeSnapshotRef.volumeSnapshot"),
 })
-public class BackupStorageInventory implements Serializable{
+public class BackupStorageInventory implements Serializable {
     /**
      * @desc backup storage uuid
      */
-	private String uuid;
+    private String uuid;
     /**
      * @desc max length of 255 characters
      */
-	private String name;
+    private String name;
     /**
-     * @desc
-     * depending on backup storage type, ulr may have various meanings. For example,
+     * @desc depending on backup storage type, ulr may have various meanings. For example,
      * for Sftp backup storage it means path to folder on filesystem that is used to
      * store images/volumes/snapshots
      */
-	private String url;
+    private String url;
     /**
-     * @desc
-     * max length of 2048 characters
+     * @desc max length of 2048 characters
      * @nullable
      */
-	private String description;
+    private String description;
     /**
-     * @desc
-     * total capacity in bytes
+     * @desc total capacity in bytes
      */
-	private Long totalCapacity;
+    private Long totalCapacity;
     /**
-     * @desc
-     * available capacity in bytes
+     * @desc available capacity in bytes
      */
     private Long availableCapacity;
     /**
-     * @desc
-     * backup storage type
+     * @desc backup storage type
      */
     @TypeField
-	private String type;
+    private String type;
     /**
-     * @desc
-     * - Enabled: images/volumes/snapshots can be downloaded/uploaded
+     * @desc - Enabled: images/volumes/snapshots can be downloaded/uploaded
      * - Disabled: NO images/volumes/snapshots can be downloaded/uploaded
-     * @choices
-     * - Enabled
+     * @choices - Enabled
      * - Disabled
      */
-	private String state;
+    private String state;
     /**
-     * @desc
-     * - Connecting: connection is being established between backup storage and zstack. NO images/volumes/snapshots can be downloaded/uploaded
+     * @desc - Connecting: connection is being established between backup storage and zstack. NO images/volumes/snapshots can be downloaded/uploaded
      * - Connected: connection is established. images/volumes/snapshots can be downloaded/uploaded
      * - Disconnected: connection is broken. NO images/volumes/snapshots can be downloaded/uploaded
-     *
+     * <p>
      * depending on backup storage type, the connection may have various meanings. For example, for Sftp backup storage connection is the http
      * channel between zstack and sftp backup storage agent
      */
-	private String status;
+    private String status;
     /**
      * @desc the time this resource gets created
      */
-	private Timestamp createDate;
+    private Timestamp createDate;
     /**
      * @desc last time this resource gets operated
      */
-	private Timestamp lastOpDate;
+    private Timestamp lastOpDate;
     /**
-     * @desc
-     * a list of zone uuid this backup storage has attached to. See :ref:`ZoneInventory`
+     * @desc a list of zone uuid this backup storage has attached to. See :ref:`ZoneInventory`
      */
-	@Queryable(mappingClass = BackupStorageZoneRefInventory.class,
-            joinColumn = @JoinColumn(name="backupStorageUuid", referencedColumnName = "zoneUuid"))
-	private List<String> attachedZoneUuids;
+    @Queryable(mappingClass = BackupStorageZoneRefInventory.class,
+            joinColumn = @JoinColumn(name = "backupStorageUuid", referencedColumnName = "zoneUuid"))
+    private List<String> attachedZoneUuids;
 
-	protected BackupStorageInventory(BackupStorageVO vo) {
-		this.setCreateDate(vo.getCreateDate());
-		this.setDescription(vo.getDescription());
-		this.setLastOpDate(vo.getLastOpDate());
-		this.setName(vo.getName());
-		this.setState(vo.getState().toString());
-		this.setStatus(vo.getStatus().toString());
-		this.setTotalCapacity(vo.getTotalCapacity());
+    protected BackupStorageInventory(BackupStorageVO vo) {
+        this.setCreateDate(vo.getCreateDate());
+        this.setDescription(vo.getDescription());
+        this.setLastOpDate(vo.getLastOpDate());
+        this.setName(vo.getName());
+        this.setState(vo.getState().toString());
+        this.setStatus(vo.getStatus().toString());
+        this.setTotalCapacity(vo.getTotalCapacity());
         this.setAvailableCapacity(vo.getAvailableCapacity());
-		this.setType(vo.getType());
-		this.setUrl(vo.getUrl());
-		this.setUuid(vo.getUuid());
-		this.attachedZoneUuids = new ArrayList<String>(vo.getAttachedZoneRefs().size());
-		for (BackupStorageZoneRefVO ref : vo.getAttachedZoneRefs()) {
+        this.setType(vo.getType());
+        this.setUrl(vo.getUrl());
+        this.setUuid(vo.getUuid());
+        this.attachedZoneUuids = new ArrayList<String>(vo.getAttachedZoneRefs().size());
+        for (BackupStorageZoneRefVO ref : vo.getAttachedZoneRefs()) {
             if (!this.attachedZoneUuids.contains(ref.getZoneUuid())) {
                 this.attachedZoneUuids.add(ref.getZoneUuid());
             }
-		}
-	}
-	
-	public BackupStorageInventory() {
-	}
+        }
+    }
 
-	public static BackupStorageInventory valueOf(BackupStorageVO vo) {
-		BackupStorageInventory inv = new BackupStorageInventory(vo);
-		return inv;
-	}
+    public BackupStorageInventory() {
+    }
 
-	public static List<BackupStorageInventory> valueOf(Collection<BackupStorageVO> vos) {
-	    List<BackupStorageInventory> invs = new ArrayList<BackupStorageInventory>(vos.size());
-	    for (BackupStorageVO vo : vos) {
-	        invs.add(BackupStorageInventory.valueOf(vo));
-	    }
-	    return invs;
-	}
+    public static BackupStorageInventory valueOf(BackupStorageVO vo) {
+        BackupStorageInventory inv = new BackupStorageInventory(vo);
+        return inv;
+    }
+
+    public static List<BackupStorageInventory> valueOf(Collection<BackupStorageVO> vos) {
+        List<BackupStorageInventory> invs = new ArrayList<BackupStorageInventory>(vos.size());
+        for (BackupStorageVO vo : vos) {
+            invs.add(BackupStorageInventory.valueOf(vo));
+        }
+        return invs;
+    }
 
     public long getAvailableCapacity() {
         return availableCapacity;
@@ -168,44 +157,44 @@ public class BackupStorageInventory implements Serializable{
     }
 
     public String getUuid() {
-		return uuid;
-	}
+        return uuid;
+    }
 
-	public void setUuid(String uuid) {
-		this.uuid = uuid;
-	}
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
 
-	public String getName() {
-		return name;
-	}
+    public String getName() {
+        return name;
+    }
 
-	public void setName(String name) {
-		this.name = name;
-	}
+    public void setName(String name) {
+        this.name = name;
+    }
 
-	public String getUrl() {
-		return url;
-	}
+    public String getUrl() {
+        return url;
+    }
 
-	public void setUrl(String url) {
-		this.url = url;
-	}
+    public void setUrl(String url) {
+        this.url = url;
+    }
 
-	public String getDescription() {
-		return description;
-	}
+    public String getDescription() {
+        return description;
+    }
 
-	public void setDescription(String description) {
-		this.description = description;
-	}
+    public void setDescription(String description) {
+        this.description = description;
+    }
 
-	public long getTotalCapacity() {
-		return totalCapacity;
-	}
+    public long getTotalCapacity() {
+        return totalCapacity;
+    }
 
-	public void setTotalCapacity(long totalCapacity) {
-		this.totalCapacity = totalCapacity;
-	}
+    public void setTotalCapacity(long totalCapacity) {
+        this.totalCapacity = totalCapacity;
+    }
 
     public Timestamp getCreateDate() {
         return createDate;
@@ -224,20 +213,20 @@ public class BackupStorageInventory implements Serializable{
     }
 
     public String getType() {
-		return type;
-	}
+        return type;
+    }
 
-	public void setType(String type) {
-		this.type = type;
-	}
+    public void setType(String type) {
+        this.type = type;
+    }
 
-	public String getState() {
-		return state;
-	}
+    public String getState() {
+        return state;
+    }
 
-	public void setState(String state) {
-		this.state = state;
-	}
+    public void setState(String state) {
+        this.state = state;
+    }
 
     public List<String> getAttachedZoneUuids() {
         return attachedZoneUuids;

@@ -7,16 +7,16 @@ import java.sql.Timestamp;
 
 @StaticMetamodel(InstanceOfferingAO.class)
 public class InstanceOfferingAO_ {
-	public static volatile SingularAttribute<InstanceOfferingAO, String> uuid;
-	public static volatile SingularAttribute<InstanceOfferingAO, Integer> cpuNum;
-	public static volatile SingularAttribute<InstanceOfferingAO, Integer> cpuSpeed;
-	public static volatile SingularAttribute<InstanceOfferingAO, Long> memorySize;
-	public static volatile SingularAttribute<InstanceOfferingAO, String> allocatorStrategy;
-	public static volatile SingularAttribute<InstanceOfferingAO, String> name;
-	public static volatile SingularAttribute<InstanceOfferingAO, String> description;
+    public static volatile SingularAttribute<InstanceOfferingAO, String> uuid;
+    public static volatile SingularAttribute<InstanceOfferingAO, Integer> cpuNum;
+    public static volatile SingularAttribute<InstanceOfferingAO, Integer> cpuSpeed;
+    public static volatile SingularAttribute<InstanceOfferingAO, Long> memorySize;
+    public static volatile SingularAttribute<InstanceOfferingAO, String> allocatorStrategy;
+    public static volatile SingularAttribute<InstanceOfferingAO, String> name;
+    public static volatile SingularAttribute<InstanceOfferingAO, String> description;
     public static volatile SingularAttribute<InstanceOfferingAO, InstanceOfferingState> state;
-	public static volatile SingularAttribute<InstanceOfferingAO, String> type;
-	public static volatile SingularAttribute<InstanceOfferingAO, Integer> sortKey;
-	public static volatile SingularAttribute<InstanceOfferingAO, Timestamp> createDate;
-	public static volatile SingularAttribute<InstanceOfferingAO, Timestamp> lastOpDate;
+    public static volatile SingularAttribute<InstanceOfferingAO, String> type;
+    public static volatile SingularAttribute<InstanceOfferingAO, Integer> sortKey;
+    public static volatile SingularAttribute<InstanceOfferingAO, Timestamp> createDate;
+    public static volatile SingularAttribute<InstanceOfferingAO, Timestamp> lastOpDate;
 }

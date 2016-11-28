@@ -7,7 +7,7 @@ import java.util.Map;
 /**
  * Created by Mei Lei <meilei007@gmail.com> on 11/1/16.
  */
-public class APIGetCurrentTimeReply extends APIReply{
+public class APIGetCurrentTimeReply extends APIReply {
     private Map<String, Long> currentTime;
 
     public Map<String, Long> getCurrentTime() {

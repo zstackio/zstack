@@ -5,7 +5,6 @@ import javax.persistence.metamodel.StaticMetamodel;
 import java.util.Date;
 
 
-
 @StaticMetamodel(ManagementNodeVO.class)
 public class ManagementNodeVO_ {
     public static volatile SingularAttribute<ManagementNodeVO, String> uuid;

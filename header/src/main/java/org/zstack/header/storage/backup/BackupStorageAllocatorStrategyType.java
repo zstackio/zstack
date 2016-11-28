@@ -35,7 +35,7 @@ public class BackupStorageAllocatorStrategyType {
             return false;
         }
 
-        BackupStorageAllocatorStrategyType type = (BackupStorageAllocatorStrategyType)t;
+        BackupStorageAllocatorStrategyType type = (BackupStorageAllocatorStrategyType) t;
         return type.toString().equals(typeName);
     }
 

@@ -6,9 +6,9 @@ import java.util.Map;
 
 public class IpAllocatorType {
     private static Map<String, IpAllocatorType> types = Collections.synchronizedMap(new HashMap<String, IpAllocatorType>());
-    
+
     private final String typeName;
-    
+
     public IpAllocatorType(String typeName) {
         this.typeName = typeName;
         types.put(typeName, this);
@@ -25,22 +25,22 @@ public class IpAllocatorType {
         }
         return type;
     }
-    
+
     @Override
     public String toString() {
         return typeName;
     }
-    
+
     @Override
     public boolean equals(Object t) {
         if (t == null || !(t instanceof IpAllocatorType)) {
             return false;
         }
-        
-        IpAllocatorType type = (IpAllocatorType)t;
+
+        IpAllocatorType type = (IpAllocatorType) t;
         return type.toString().equals(typeName);
     }
-    
+
     @Override
     public int hashCode() {
         return typeName.hashCode();

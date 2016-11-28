@@ -19,7 +19,7 @@ public abstract class AbstractCompletion implements AsyncBackup {
         this.backups = backups;
     }
 
-    protected AbstractCompletion(AsyncBackup...backups) {
+    protected AbstractCompletion(AsyncBackup... backups) {
         this.backups = Arrays.asList(backups);
     }
 

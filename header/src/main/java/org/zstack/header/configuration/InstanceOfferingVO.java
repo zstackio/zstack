@@ -10,7 +10,7 @@ import javax.persistence.Table;
 
 @Entity
 @Table
-@Inheritance(strategy=InheritanceType.JOINED)
+@Inheritance(strategy = InheritanceType.JOINED)
 @EO(EOClazz = InstanceOfferingEO.class)
 @AutoDeleteTag
 public class InstanceOfferingVO extends InstanceOfferingAO {

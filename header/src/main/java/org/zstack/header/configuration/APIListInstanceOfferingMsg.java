@@ -8,7 +8,7 @@ public class APIListInstanceOfferingMsg extends APIListMessage {
 
     public APIListInstanceOfferingMsg() {
     }
-    
+
     public APIListInstanceOfferingMsg(List<String> uuids) {
         super(uuids);
     }

@@ -9,5 +9,6 @@ import java.lang.annotation.Target;
 @Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
 public @interface Validation {
     boolean notNull() default true;
+
     boolean notZero() default false;
 }

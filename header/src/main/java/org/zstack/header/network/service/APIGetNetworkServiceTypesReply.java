@@ -6,36 +6,31 @@ import java.util.List;
 import java.util.Map;
 
 /**
- *@apiResult
- * api reply for message :ref:`APIGetNetworkServiceTypesMsg`
- *
- *@category network service
- *
- *@since 0.1.0
- *
- *@example
- * {
-"org.zstack.header.network.service.APIGetNetworkServiceTypesReply": {
-"serviceAndProviderTypes": {
-"SecurityGroup": [
-"38bf6be45b33401eb20ca273e72b981f"
-],
-"DHCP": [
-"66f4ce5d10a949e386f0c6da6d76052f"
-],
-"SNAT": [
-"66f4ce5d10a949e386f0c6da6d76052f"
-],
-"DNS": [
-"66f4ce5d10a949e386f0c6da6d76052f"
-],
-"PortForwarding": [
-"66f4ce5d10a949e386f0c6da6d76052f"
-]
-},
-"success": true
-}
-}
+ * @apiResult api reply for message :ref:`APIGetNetworkServiceTypesMsg`
+ * @category network service
+ * @example {
+ * "org.zstack.header.network.service.APIGetNetworkServiceTypesReply": {
+ * "serviceAndProviderTypes": {
+ * "SecurityGroup": [
+ * "38bf6be45b33401eb20ca273e72b981f"
+ * ],
+ * "DHCP": [
+ * "66f4ce5d10a949e386f0c6da6d76052f"
+ * ],
+ * "SNAT": [
+ * "66f4ce5d10a949e386f0c6da6d76052f"
+ * ],
+ * "DNS": [
+ * "66f4ce5d10a949e386f0c6da6d76052f"
+ * ],
+ * "PortForwarding": [
+ * "66f4ce5d10a949e386f0c6da6d76052f"
+ * ]
+ * },
+ * "success": true
+ * }
+ * }
+ * @since 0.1.0
  */
 
 public class APIGetNetworkServiceTypesReply extends APIReply {

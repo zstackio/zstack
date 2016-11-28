@@ -83,18 +83,23 @@ public class AllocateHostMsg extends NeedReplyMessage {
     public long getCpuCapacity() {
         return cpuCapacity;
     }
+
     public void setCpuCapacity(long cpuCapacity) {
         this.cpuCapacity = cpuCapacity;
     }
+
     public long getMemoryCapacity() {
         return memoryCapacity;
     }
+
     public void setMemoryCapacity(long memoryCapacity) {
         this.memoryCapacity = memoryCapacity;
     }
+
     public long getDiskSize() {
         return diskSize;
     }
+
     public void setDiskSize(long diskSize) {
         this.diskSize = diskSize;
     }
@@ -102,15 +107,18 @@ public class AllocateHostMsg extends NeedReplyMessage {
     public String getAllocatorStrategy() {
         return allocatorStrategy;
     }
+
     public void setAllocatorStrategy(String allocatorStrategy) {
         this.allocatorStrategy = allocatorStrategy;
     }
+
     public List<String> getAvoidHostUuids() {
         if (avoidHostUuids == null) {
             avoidHostUuids = new ArrayList<String>(0);
         }
         return avoidHostUuids;
     }
+
     public void setAvoidHostUuids(List<String> avoidHostUuids) {
         this.avoidHostUuids = avoidHostUuids;
     }
@@ -121,9 +129,11 @@ public class AllocateHostMsg extends NeedReplyMessage {
         }
         return l3NetworkUuids;
     }
+
     public void setL3NetworkUuids(List<String> l3NetworkUuids) {
         this.l3NetworkUuids = l3NetworkUuids;
     }
+
     public VmInstanceInventory getVmInstance() {
         return vmInstance;
     }

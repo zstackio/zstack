@@ -24,6 +24,7 @@ public class VolumeSnapshotDeletionMsg extends DeletionMessage implements Volume
     public void setTreeUuid(String treeUuid) {
         this.treeUuid = treeUuid;
     }
+
     public boolean isVolumeDeletion() {
         return volumeDeletion;
     }

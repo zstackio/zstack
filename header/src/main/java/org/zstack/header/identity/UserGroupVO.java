@@ -12,20 +12,20 @@ public class UserGroupVO {
     @Id
     @Column
     private String uuid;
-    
+
     @Column
     @ForeignKey(parentEntityClass = AccountVO.class, parentKey = "uuid", onDeleteAction = ReferenceOption.CASCADE)
     private String accountUuid;
-    
+
     @Column
     private String name;
-    
+
     @Column
     private String description;
-    
+
     @Column
     private Timestamp createDate;
-    
+
     @Column
     private Timestamp lastOpDate;
 

@@ -9,80 +9,70 @@ import org.zstack.header.network.l3.L3NetworkVO;
 
 import java.util.List;
 import java.util.Map;
+
 /**
- * @api
- *
- * attach network service to l3Network
- *
+ * @api attach network service to l3Network
  * @category network service
- *
- * @since 0.1.0
- *
  * @cli
- *
- * @httpMsg
- * {
-"org.zstack.header.network.service.APIAttachNetworkServiceToL3NetworkMsg": {
-"l3NetworkUuid": "fba7bf08a590444c9e21eee394b61135",
-"networkServices": {
-"1d1d5ff248b24906a39f96aa3c6411dd": [
-"PortForwarding"
-]
-},
-"session": {
-"uuid": "d93f354c4339450e8c2a4c31de89da15"
-}
-}
-}
- * @msg
- * {
-"org.zstack.header.network.service.APIAttachNetworkServiceToL3NetworkMsg": {
-"l3NetworkUuid": "fba7bf08a590444c9e21eee394b61135",
-"networkServices": {
-"1d1d5ff248b24906a39f96aa3c6411dd": [
-"PortForwarding"
-]
-},
-"session": {
-"uuid": "d93f354c4339450e8c2a4c31de89da15"
-},
-"timeout": 1800000,
-"id": "ba6534c0256c4166b9742c40b201e956",
-"serviceId": "api.portal"
-}
-}
- *
- * @result
- *
- * see :ref:`APIAttachNetworkServiceToL3NetworkEvent`
+ * @httpMsg {
+ * "org.zstack.header.network.service.APIAttachNetworkServiceToL3NetworkMsg": {
+ * "l3NetworkUuid": "fba7bf08a590444c9e21eee394b61135",
+ * "networkServices": {
+ * "1d1d5ff248b24906a39f96aa3c6411dd": [
+ * "PortForwarding"
+ * ]
+ * },
+ * "session": {
+ * "uuid": "d93f354c4339450e8c2a4c31de89da15"
+ * }
+ * }
+ * }
+ * @msg {
+ * "org.zstack.header.network.service.APIAttachNetworkServiceToL3NetworkMsg": {
+ * "l3NetworkUuid": "fba7bf08a590444c9e21eee394b61135",
+ * "networkServices": {
+ * "1d1d5ff248b24906a39f96aa3c6411dd": [
+ * "PortForwarding"
+ * ]
+ * },
+ * "session": {
+ * "uuid": "d93f354c4339450e8c2a4c31de89da15"
+ * },
+ * "timeout": 1800000,
+ * "id": "ba6534c0256c4166b9742c40b201e956",
+ * "serviceId": "api.portal"
+ * }
+ * }
+ * @result see :ref:`APIAttachNetworkServiceToL3NetworkEvent`
+ * @since 0.1.0
  */
 @Action(category = L3NetworkConstant.ACTION_CATEGORY)
 public class APIAttachNetworkServiceToL3NetworkMsg extends APIMessage implements L3NetworkMessage {
     /**
      * @desc l3Network uuid
      */
-	@APIParam(resourceType = L3NetworkVO.class, checkAccount = true, operationTarget = true)
-	private String l3NetworkUuid;
+    @APIParam(resourceType = L3NetworkVO.class, checkAccount = true, operationTarget = true)
+    private String l3NetworkUuid;
     /**
      * @desc a map where key is network service provider uuid and value is list of network service types
      */
-	@APIParam
-	private Map<String, List<String>> networkServices;
-	
-	@Override
-	public String getL3NetworkUuid() {
-		return l3NetworkUuid;
-	}
+    @APIParam
+    private Map<String, List<String>> networkServices;
 
-	public Map<String, List<String>> getNetworkServices() {
-		return networkServices;
-	}
+    @Override
+    public String getL3NetworkUuid() {
+        return l3NetworkUuid;
+    }
 
-	public void setNetworkServices(Map<String, List<String>> networkServices) {
-		this.networkServices = networkServices;
-	}
+    public Map<String, List<String>> getNetworkServices() {
+        return networkServices;
+    }
 
-	public void setL3NetworkUuid(String l3NetworkUuid) {
-		this.l3NetworkUuid = l3NetworkUuid;
-	}
+    public void setNetworkServices(Map<String, List<String>> networkServices) {
+        this.networkServices = networkServices;
+    }
+
+    public void setL3NetworkUuid(String l3NetworkUuid) {
+        this.l3NetworkUuid = l3NetworkUuid;
+    }
 }

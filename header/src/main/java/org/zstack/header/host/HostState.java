@@ -46,7 +46,7 @@ public enum HostState {
         }
     }
 
-    private void transactions(Transaction...transactions) {
+    private void transactions(Transaction... transactions) {
         for (Transaction tran : transactions) {
             transactionMap.put(tran.event, tran);
         }

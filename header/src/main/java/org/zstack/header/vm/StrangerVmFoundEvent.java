@@ -6,7 +6,7 @@ public class StrangerVmFoundEvent extends LocalEvent {
     private String vmIdentify;
     private String vmState;
     private String hostUuid;
-    
+
     @Override
     public String getSubCategory() {
         return "StrangerVmFoundEvent";

@@ -8,8 +8,8 @@ public interface GlobalApiMessageInterceptor extends ApiMessageInterceptor {
         FRONT,
         END,
     }
-    
+
     List<Class> getMessageClassToIntercept();
-    
+
     InterceptorPosition getPosition();
 }

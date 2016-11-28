@@ -4,88 +4,76 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 
 /**
- * @api
- * change state of cluster. See field 'state' of :ref:`ClusterInventory` for details.
+ * @api change state of cluster. See field 'state' of :ref:`ClusterInventory` for details.
  * When changing cluster state, the states of descendant resources(hosts) are changed in cascade as well.
- *
+ * <p>
  * For example, putting a cluster into Disabled will change all hosts in this cluster into
  * Disabled state, however, you can enable a host without effecting cluster's state later.
  * Host state is not necessary to be the same with cluster state
- *
  * @cli
- *
+ * @httpMsg {
+ * "org.zstack.header.cluster.APIChangeClusterStateMsg": {
+ * "session": {
+ * "uuid": "056414ac9bac43998b974c1af1670bea"
+ * },
+ * "uuid": "44e981a73c7d414a995d5894b086670a",
+ * "stateEvent": "enable"
+ * }
+ * }
+ * @msg {
+ * "org.zstack.header.cluster.APIChangeClusterStateMsg": {
+ * "uuid": "44e981a73c7d414a995d5894b086670a",
+ * "stateEvent": "enable",
+ * "session": {
+ * "uuid": "056414ac9bac43998b974c1af1670bea"
+ * },
+ * "timeout": 1800000,
+ * "id": "1e886cf057944a54888d8f826edf2028",
+ * "serviceId": "api.portal"
+ * }
+ * }
+ * @result see :ref:`APIChangeClusterStateEvent`
  * @since 0.1.0
- *
- * @httpMsg
- * {
-"org.zstack.header.cluster.APIChangeClusterStateMsg": {
-"session": {
-"uuid": "056414ac9bac43998b974c1af1670bea"
-},
-"uuid": "44e981a73c7d414a995d5894b086670a",
-"stateEvent": "enable"
-}
-}
-
- @msg
-
- {
- "org.zstack.header.cluster.APIChangeClusterStateMsg": {
- "uuid": "44e981a73c7d414a995d5894b086670a",
- "stateEvent": "enable",
- "session": {
- "uuid": "056414ac9bac43998b974c1af1670bea"
- },
- "timeout": 1800000,
- "id": "1e886cf057944a54888d8f826edf2028",
- "serviceId": "api.portal"
- }
- }
-
- @result see :ref:`APIChangeClusterStateEvent`
  */
 public class APIChangeClusterStateMsg extends APIMessage implements ClusterMessage {
     /**
      * @desc cluster uuid
      */
-	@APIParam(resourceType = ClusterVO.class)
-	private String uuid;
+    @APIParam(resourceType = ClusterVO.class)
+    private String uuid;
     /**
-     * @desc
-     * - enable: enable cluster
+     * @desc - enable: enable cluster
      * - disable: disable cluster
-     *
+     * <p>
      * see state in :ref:`ClusterInventory` for details
-     *
-     * @choices
-     * - enable
+     * @choices - enable
      * - disable
      */
-	@APIParam(validValues={"enable", "disable"})
-	private String stateEvent;
+    @APIParam(validValues = {"enable", "disable"})
+    private String stateEvent;
 
-	public APIChangeClusterStateMsg() {
-	}
-	
-	public APIChangeClusterStateMsg(String uuid, String stateEvent) {
-		this.uuid = uuid;
-		this.stateEvent = stateEvent;
-	}
-	
-	public void setUuid(String clusterUuid) {
-    	this.uuid = clusterUuid;
+    public APIChangeClusterStateMsg() {
     }
 
-	public String getStateEvent() {
-    	return stateEvent;
+    public APIChangeClusterStateMsg(String uuid, String stateEvent) {
+        this.uuid = uuid;
+        this.stateEvent = stateEvent;
     }
 
-	public void setStateEvent(String stateEvent) {
-    	this.stateEvent = stateEvent;
+    public void setUuid(String clusterUuid) {
+        this.uuid = clusterUuid;
+    }
+
+    public String getStateEvent() {
+        return stateEvent;
+    }
+
+    public void setStateEvent(String stateEvent) {
+        this.stateEvent = stateEvent;
     }
 
     public String getUuid() {
-	    return uuid;
+        return uuid;
     }
 
     @Override

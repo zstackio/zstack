@@ -14,7 +14,7 @@ import java.io.Serializable;
 public class VolumeSnapshotBackupStorageRefVO implements Serializable {
     @Id
     @Column
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
     @Column
     @ForeignKey(parentEntityClass = VolumeSnapshotEO.class, onDeleteAction = ReferenceOption.CASCADE)

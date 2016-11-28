@@ -6,7 +6,7 @@ import org.zstack.header.message.APIEvent;
 /**
  * Created by root on 7/30/16.
  */
-public class APICreateStartVmInstanceSchedulerEvent extends APIEvent{
+public class APICreateStartVmInstanceSchedulerEvent extends APIEvent {
     private SchedulerInventory inventory;
 
     public SchedulerInventory getInventory() {
@@ -20,6 +20,7 @@ public class APICreateStartVmInstanceSchedulerEvent extends APIEvent{
     public APICreateStartVmInstanceSchedulerEvent(String apiId) {
         super(apiId);
     }
+
     public APICreateStartVmInstanceSchedulerEvent() {
         super(null);
     }

@@ -9,14 +9,14 @@ import java.sql.Timestamp;
 
 @Entity
 @Table
-@Inheritance(strategy=InheritanceType.JOINED)
+@Inheritance(strategy = InheritanceType.JOINED)
 @TriggerIndex
 @SqlTrigger
 public class AccountVO {
     @Id
     @Column
     private String uuid;
-    
+
     @Column
     @Index
     private String name;
@@ -26,16 +26,16 @@ public class AccountVO {
 
     @Column
     private String password;
-    
+
     @Column
     private Timestamp createDate;
-    
+
     @Column
     private Timestamp lastOpDate;
-    
-	@Column
-	@Enumerated(EnumType.STRING)
-	private AccountType type;
+
+    @Column
+    @Enumerated(EnumType.STRING)
+    private AccountType type;
 
     @PreUpdate
     private void preUpdate() {

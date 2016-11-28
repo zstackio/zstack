@@ -7,12 +7,12 @@ import java.util.Map;
 public class VmInstanceType {
     private static Map<String, VmInstanceType> types = Collections.synchronizedMap(new HashMap<String, VmInstanceType>());
     private final String typeName;
-    
+
     public VmInstanceType(String typeName) {
         this.typeName = typeName;
         types.put(typeName, this);
     }
-    
+
     public static VmInstanceType valueOf(String typeName) {
         VmInstanceType type = types.get(typeName);
         if (type == null) {
@@ -20,22 +20,22 @@ public class VmInstanceType {
         }
         return type;
     }
-    
+
     @Override
     public String toString() {
         return typeName;
     }
-    
+
     @Override
     public boolean equals(Object t) {
         if (t == null || !(t instanceof VmInstanceType)) {
             return false;
         }
-        
-        VmInstanceType type = (VmInstanceType)t;
+
+        VmInstanceType type = (VmInstanceType) t;
         return type.toString().equals(typeName);
     }
-    
+
     @Override
     public int hashCode() {
         return typeName.hashCode();

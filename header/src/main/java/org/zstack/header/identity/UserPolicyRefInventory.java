@@ -21,7 +21,7 @@ public class UserPolicyRefInventory {
     private String policyUuid;
     private Timestamp createDate;
     private Timestamp lastOpDate;
-    
+
     public UserPolicyRefInventory valueOf(UserPolicyRefVO vo) {
         UserPolicyRefInventory inv = new UserPolicyRefInventory();
         inv.setUserUuid(vo.getUserUuid());
@@ -39,16 +39,19 @@ public class UserPolicyRefInventory {
 
         return invs;
     }
-    
+
     public String getUserUuid() {
         return userUuid;
     }
+
     public void setUserUuid(String userUuid) {
         this.userUuid = userUuid;
     }
+
     public String getPolicyUuid() {
         return policyUuid;
     }
+
     public void setPolicyUuid(String policyUuid) {
         this.policyUuid = policyUuid;
     }

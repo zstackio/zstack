@@ -5,10 +5,6 @@ import org.zstack.header.query.ExpandedQueries;
 import org.zstack.header.query.ExpandedQuery;
 import org.zstack.header.search.Inventory;
 
-import javax.persistence.Column;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;

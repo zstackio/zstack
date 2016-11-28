@@ -25,22 +25,28 @@ public class MigrateVmOnHypervisorMsg extends NeedReplyMessage implements HostMe
     public VmInstanceInventory getVmInventory() {
         return vmInventory;
     }
+
     public void setVmInventory(VmInstanceInventory vmInventory) {
         this.vmInventory = vmInventory;
     }
+
     public HostInventory getDestHostInventory() {
         return destHostInventory;
     }
+
     public void setDestHostInventory(HostInventory destHostInventory) {
         this.destHostInventory = destHostInventory;
     }
+
     @Override
     public String getHostUuid() {
         return getSrcHostUuid();
     }
+
     public String getSrcHostUuid() {
         return srcHostUuid;
     }
+
     public void setSrcHostUuid(String srcHostUuid) {
         this.srcHostUuid = srcHostUuid;
     }

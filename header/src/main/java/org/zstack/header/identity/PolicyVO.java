@@ -12,20 +12,20 @@ public class PolicyVO {
     @Id
     @Column
     private String uuid;
-    
+
     @Column
     private String name;
-    
+
     @Column
     @ForeignKey(parentEntityClass = AccountVO.class, parentKey = "uuid", onDeleteAction = ReferenceOption.CASCADE)
     private String accountUuid;
-    
+
     @Column
     private String data;
-    
+
     @Column
     private Timestamp createDate;
-    
+
     @Column
     private Timestamp lastOpDate;
 

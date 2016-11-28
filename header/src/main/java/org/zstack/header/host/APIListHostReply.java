@@ -5,7 +5,7 @@ import org.zstack.header.message.APIReply;
 import java.util.List;
 
 public class APIListHostReply extends APIReply {
-	private List<HostInventory> inventories;
+    private List<HostInventory> inventories;
 
     public List<HostInventory> getInventories() {
         return inventories;

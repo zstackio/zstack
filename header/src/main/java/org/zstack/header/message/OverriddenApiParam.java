@@ -11,5 +11,6 @@ import java.lang.annotation.Target;
 @Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
 public @interface OverriddenApiParam {
     String field();
+
     APIParam param();
 }

@@ -6,45 +6,32 @@ import org.zstack.header.message.APIParam;
 import org.zstack.header.network.l3.L3NetworkVO;
 
 /**
- * @api
- *
- * attach a nic to vm. If vm is running, user is responsible for running DHCP client software inside
+ * @api attach a nic to vm. If vm is running, user is responsible for running DHCP client software inside
  * vm in order to get ip address
- *
- * @since 0.1.0
- *
  * @cli
- *
- * @httpMsg
- *
- * {
-"org.zstack.header.vm.APIAttachNicToVmMsg": {
-"vmInstanceUuid": "94d991c631674b16be65bfdf28b9e84a",
-"l3NetworkUuid": "e438b93332ba40dcbb5d553c749a43ca",
-"session": {
-"uuid": "f6bcff806cb84ae5b91589ae6716b200"
-}
-}
-}
- *
- * @msg
- *
- * {
-"org.zstack.header.vm.APIAttachNicToVmMsg": {
-"vmInstanceUuid": "94d991c631674b16be65bfdf28b9e84a",
-"l3NetworkUuid": "e438b93332ba40dcbb5d553c749a43ca",
-"session": {
-"uuid": "f6bcff806cb84ae5b91589ae6716b200"
-},
-"timeout": 1800000,
-"id": "5a441ef9697c4e7b98c9e86715e4987f",
-"serviceId": "api.portal"
-}
-}
- *
- * @result
- *
- * see :ref:`APIAttachNicToVmEvent`
+ * @httpMsg {
+ * "org.zstack.header.vm.APIAttachNicToVmMsg": {
+ * "vmInstanceUuid": "94d991c631674b16be65bfdf28b9e84a",
+ * "l3NetworkUuid": "e438b93332ba40dcbb5d553c749a43ca",
+ * "session": {
+ * "uuid": "f6bcff806cb84ae5b91589ae6716b200"
+ * }
+ * }
+ * }
+ * @msg {
+ * "org.zstack.header.vm.APIAttachNicToVmMsg": {
+ * "vmInstanceUuid": "94d991c631674b16be65bfdf28b9e84a",
+ * "l3NetworkUuid": "e438b93332ba40dcbb5d553c749a43ca",
+ * "session": {
+ * "uuid": "f6bcff806cb84ae5b91589ae6716b200"
+ * },
+ * "timeout": 1800000,
+ * "id": "5a441ef9697c4e7b98c9e86715e4987f",
+ * "serviceId": "api.portal"
+ * }
+ * }
+ * @result see :ref:`APIAttachNicToVmEvent`
+ * @since 0.1.0
  */
 @Action(category = VmInstanceConstant.ACTION_CATEGORY)
 public class APIAttachL3NetworkToVmMsg extends APIMessage implements VmInstanceMessage {

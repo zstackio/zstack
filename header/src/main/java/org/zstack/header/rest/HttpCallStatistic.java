@@ -44,7 +44,7 @@ public class HttpCallStatistic {
 
     public void addStatistic(long time) {
         totalTime += time;
-        count ++;
+        count++;
         averageTime = totalTime / count;
     }
 

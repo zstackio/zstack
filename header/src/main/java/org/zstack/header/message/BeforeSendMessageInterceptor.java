@@ -5,5 +5,6 @@ package org.zstack.header.message;
  */
 public interface BeforeSendMessageInterceptor {
     int order();
+
     void intercept(Message msg);
 }

@@ -25,13 +25,13 @@ public class TagInventory {
     }
 
     public static TagInventory valueOf(UserTagVO vo) {
-        TagInventory inv = valueOf((TagAO)vo);
+        TagInventory inv = valueOf((TagAO) vo);
         inv.setType(TagType.User.toString());
         return inv;
     }
 
     public static TagInventory valueOf(SystemTagVO vo) {
-        TagInventory inv = valueOf((TagAO)vo);
+        TagInventory inv = valueOf((TagAO) vo);
         inv.setType(TagType.System.toString());
         return inv;
     }

@@ -10,29 +10,26 @@ import org.zstack.header.zone.ZoneInventory;
 import javax.persistence.JoinColumn;
 import java.io.Serializable;
 import java.sql.Timestamp;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 /**
- * @inventory
- * inventory for l2Network
- *
+ * @inventory inventory for l2Network
  * @category l2network
- *
- * @example
- * {
-"inventory": {
-"uuid": "f685ff94513542bbb8e814027f8deb13",
-"name": "l2-basic",
-"description": "Basic L2 Test",
-"zoneUuid": "45a2864b6ddf4d2fb9b4c3736a923dcb",
-"physicalInterface": "eth0",
-"type": "L2NoVlanNetwork",
-"createDate": "May 5, 2014 12:58:35 PM",
-"lastOpDate": "May 5, 2014 12:58:35 PM",
-"attachedClusterUuids": []
-}
-}
- *
+ * @example {
+ * "inventory": {
+ * "uuid": "f685ff94513542bbb8e814027f8deb13",
+ * "name": "l2-basic",
+ * "description": "Basic L2 Test",
+ * "zoneUuid": "45a2864b6ddf4d2fb9b4c3736a923dcb",
+ * "physicalInterface": "eth0",
+ * "type": "L2NoVlanNetwork",
+ * "createDate": "May 5, 2014 12:58:35 PM",
+ * "lastOpDate": "May 5, 2014 12:58:35 PM",
+ * "attachedClusterUuids": []
+ * }
+ * }
  * @since 0.1.0
  */
 @Inventory(mappingVOClass = L2NetworkVO.class)
@@ -89,10 +86,10 @@ public class L2NetworkInventory implements Serializable {
     @Queryable(mappingClass = L2NetworkClusterRefInventory.class,
             joinColumn = @JoinColumn(name = "l2NetworkUuid", referencedColumnName = "clusterUuid"))
     private List<String> attachedClusterUuids;
-    
+
     public L2NetworkInventory() {
     }
-    
+
     protected L2NetworkInventory(L2NetworkVO vo) {
         this.setUuid(vo.getUuid());
         this.setZoneUuid(vo.getZoneUuid());
@@ -107,11 +104,11 @@ public class L2NetworkInventory implements Serializable {
             this.attachedClusterUuids.add(ref.getClusterUuid());
         }
     }
-    
+
     public static L2NetworkInventory valueOf(L2NetworkVO vo) {
         return new L2NetworkInventory(vo);
     }
-    
+
     public static List<L2NetworkInventory> valueOf(Collection<L2NetworkVO> vos) {
         List<L2NetworkInventory> invs = new ArrayList<L2NetworkInventory>(vos.size());
         for (L2NetworkVO vo : vos) {
@@ -119,34 +116,43 @@ public class L2NetworkInventory implements Serializable {
         }
         return invs;
     }
-    
+
     public String getUuid() {
         return uuid;
     }
+
     public void setUuid(String uuid) {
         this.uuid = uuid;
     }
+
     public String getName() {
         return name;
     }
+
     public void setName(String name) {
         this.name = name;
     }
+
     public String getDescription() {
         return description;
     }
+
     public void setDescription(String description) {
         this.description = description;
     }
+
     public String getZoneUuid() {
         return zoneUuid;
     }
+
     public void setZoneUuid(String zoneUuid) {
         this.zoneUuid = zoneUuid;
     }
+
     public String getPhysicalInterface() {
         return physicalInterface;
     }
+
     public void setPhysicalInterface(String physicalInterface) {
         this.physicalInterface = physicalInterface;
     }

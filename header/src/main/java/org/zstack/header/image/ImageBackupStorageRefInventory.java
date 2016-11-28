@@ -5,7 +5,6 @@ import org.zstack.header.query.ExpandedQuery;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.search.Inventory;
 import org.zstack.header.storage.backup.BackupStorageInventory;
-import org.zstack.header.storage.primary.ImageCacheInventory;
 
 import java.io.Serializable;
 import java.sql.Timestamp;
