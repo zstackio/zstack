@@ -1,7 +1,6 @@
 package org.zstack.header.storage.primary;
 
 import java.sql.Timestamp;
-import java.util.Date;
 
 public class ImageCacheInventory {
     private long id;
@@ -13,7 +12,7 @@ public class ImageCacheInventory {
     private String state;
     private Timestamp createDate;
     private Timestamp lastOpDate;
-    
+
     public static ImageCacheInventory valueOf(ImageCacheVO vo) {
         ImageCacheInventory inv = new ImageCacheInventory();
         inv.setCreateDate(vo.getCreateDate());
@@ -27,40 +26,51 @@ public class ImageCacheInventory {
         inv.setState(vo.getState().toString());
         return inv;
     }
-    
+
     public long getId() {
         return id;
     }
+
     public void setId(long id) {
         this.id = id;
     }
+
     public String getPrimaryStorageUuid() {
         return primaryStorageUuid;
     }
+
     public void setPrimaryStorageUuid(String primaryStorageUuid) {
         this.primaryStorageUuid = primaryStorageUuid;
     }
+
     public String getImageUuid() {
         return imageUuid;
     }
+
     public void setImageUuid(String imageUuid) {
         this.imageUuid = imageUuid;
     }
+
     public String getInstallUrl() {
         return installUrl;
     }
+
     public void setInstallUrl(String installUrl) {
         this.installUrl = installUrl;
     }
+
     public long getSize() {
         return size;
     }
+
     public void setSize(long size) {
         this.size = size;
     }
+
     public String getMd5sum() {
         return md5sum;
     }
+
     public void setMd5sum(String md5sum) {
         this.md5sum = md5sum;
     }
@@ -84,6 +94,7 @@ public class ImageCacheInventory {
     public String getState() {
         return state;
     }
+
     public void setState(String state) {
         this.state = state;
     }

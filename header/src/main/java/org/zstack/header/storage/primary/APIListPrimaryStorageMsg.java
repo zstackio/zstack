@@ -8,7 +8,7 @@ public class APIListPrimaryStorageMsg extends APIListMessage {
 
     public APIListPrimaryStorageMsg() {
     }
-    
+
     public APIListPrimaryStorageMsg(List<String> uuids) {
         super(uuids);
     }

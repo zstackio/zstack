@@ -11,37 +11,37 @@ import java.sql.Timestamp;
 @Table
 public class ImageCacheShadowVO {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column
     private long id;
-    
+
     @Column
     @ForeignKey(parentEntityClass = PrimaryStorageEO.class, onDeleteAction = ReferenceOption.CASCADE)
     private String primaryStorageUuid;
-    
+
     @Column
     private String imageUuid;
-    
+
     @Column
     private String installUrl;
-    
+
     @Column
     @Enumerated(EnumType.STRING)
     private ImageMediaType mediaType;
-    
+
     @Column
     private long size;
-    
+
     @Column
     @Enumerated(EnumType.STRING)
     private ImageCacheState state = ImageCacheState.ready;
-    
+
     @Column
     private String md5sum;
-    
+
     @Column
     private Timestamp createDate;
-    
+
     @Column
     private Timestamp lastOpDate;
 

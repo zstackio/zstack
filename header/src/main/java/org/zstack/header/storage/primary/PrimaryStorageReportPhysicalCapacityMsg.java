@@ -18,13 +18,16 @@ public class PrimaryStorageReportPhysicalCapacityMsg extends NeedReplyMessage im
     public long getTotalCapacity() {
         return totalCapacity;
     }
+
     public void setTotalCapacity(long totalCapacity) {
         this.totalCapacity = totalCapacity;
     }
+
     @Override
     public String getPrimaryStorageUuid() {
         return primaryStorageUuid;
     }
+
     public void setPrimaryStorageUuid(String primaryStorageUuid) {
         this.primaryStorageUuid = primaryStorageUuid;
     }

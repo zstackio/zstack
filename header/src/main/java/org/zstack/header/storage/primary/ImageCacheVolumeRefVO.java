@@ -22,7 +22,7 @@ import java.sql.Timestamp;
 public class ImageCacheVolumeRefVO {
     @Id
     @Column
-    @GeneratedValue(strategy= GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
     @Column

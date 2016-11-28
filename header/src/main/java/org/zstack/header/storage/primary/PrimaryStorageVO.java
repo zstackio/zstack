@@ -9,27 +9,27 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-@Inheritance(strategy=InheritanceType.JOINED)
+@Inheritance(strategy = InheritanceType.JOINED)
 @Table
-@NamedQueries({ 
-	@NamedQuery(name = "PrimaryStorageVO.countLeft",
-	        query = "select count(p) from PrimaryStorageVO p where p.uuid != :uuid and p.uuid in (select psc.primaryStorageUuid from PrimaryStorageClusterRefVO psc where psc.clusterUuid = :clusterUuid)"),
+@NamedQueries({
+        @NamedQuery(name = "PrimaryStorageVO.countLeft",
+                query = "select count(p) from PrimaryStorageVO p where p.uuid != :uuid and p.uuid in (select psc.primaryStorageUuid from PrimaryStorageClusterRefVO psc where psc.clusterUuid = :clusterUuid)"),
 })
 @EO(EOClazz = PrimaryStorageEO.class)
 @AutoDeleteTag
 public class PrimaryStorageVO extends PrimaryStorageAO {
-    @OneToMany(fetch=FetchType.EAGER)
-    @JoinColumn(name="primaryStorageUuid", insertable=false, updatable=false)
+    @OneToMany(fetch = FetchType.EAGER)
+    @JoinColumn(name = "primaryStorageUuid", insertable = false, updatable = false)
     @NoView
     private Set<PrimaryStorageClusterRefVO> attachedClusterRefs = new HashSet<PrimaryStorageClusterRefVO>();
 
-    @OneToOne(fetch=FetchType.EAGER)
-    @JoinColumn(name="uuid")
+    @OneToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "uuid")
     @NoView
     private PrimaryStorageCapacityVO capacity;
 
-	public PrimaryStorageVO() {
-	}
+    public PrimaryStorageVO() {
+    }
 
     public PrimaryStorageVO(PrimaryStorageVO other) {
         super(other);
