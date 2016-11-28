@@ -501,7 +501,7 @@ public class VolumeBase implements Volume {
     }
 
     private void handle(final ExpungeVolumeMsg msg) {
-        final ExpungeVmReply reply = new ExpungeVmReply();
+        final ExpungeVolumeReply reply = new ExpungeVolumeReply();
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
@@ -528,7 +528,7 @@ public class VolumeBase implements Volume {
 
             @Override
             public String getName() {
-                return ExpungeVmMsg.class.getName();
+                return ExpungeVolumeMsg.class.getName();
             }
         });
     }
