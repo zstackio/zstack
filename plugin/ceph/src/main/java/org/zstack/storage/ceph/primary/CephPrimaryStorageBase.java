@@ -21,7 +21,10 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.host.*;
+import org.zstack.header.host.HostConstant;
+import org.zstack.header.host.HostStatus;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
 import org.zstack.header.image.APICreateDataVolumeTemplateFromVolumeMsg;
 import org.zstack.header.image.APICreateRootVolumeTemplateFromRootVolumeMsg;
 import org.zstack.header.image.APICreateRootVolumeTemplateFromVolumeSnapshotMsg;
@@ -34,11 +37,8 @@ import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
-import org.zstack.header.storage.snapshot.APIDeleteVolumeSnapshotMsg;
-import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
-import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
+import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.vm.APICreateVmInstanceMsg;
-import org.zstack.header.vm.VmAccountPerference;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
 import org.zstack.header.volume.*;
 import org.zstack.kvm.*;
@@ -1029,6 +1029,11 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     private String makeRootVolumeInstallPath(String volUuid) {
         return String.format("ceph://%s/%s", getSelf().getRootVolumePoolName(), volUuid);
+    }
+
+    private String makeResetImageRootVolumeInstallPath(String volUuid) {
+        return String.format("ceph://%s/reset-image-%s-%s", getSelf().getRootVolumePoolName(), volUuid,
+                System.currentTimeMillis());
     }
 
     private String makeDataVolumeInstallPath(String volUuid) {
@@ -2518,25 +2523,91 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     private void handle(final ReInitRootVolumeFromTemplateOnPrimaryStorageMsg msg) {
         final ReInitRootVolumeFromTemplateOnPrimaryStorageReply reply = new ReInitRootVolumeFromTemplateOnPrimaryStorageReply();
 
-        RollbackSnapshotCmd cmd = new RollbackSnapshotCmd();
-        SimpleQuery<ImageCacheVO> sq = dbf.createQuery(ImageCacheVO.class);
-        sq.add(ImageCacheVO_.imageUuid, Op.EQ, msg.getVolume().getRootImageUuid());
-        sq.add(ImageCacheVO_.primaryStorageUuid, Op.EQ, msg.getPrimaryStorageUuid());
-        ImageCacheVO ivo = sq.find();
-        cmd.snapshotPath = ivo.getInstallUrl();
-        httpCall(ROLLBACK_SNAPSHOT_PATH, cmd, RollbackSnapshotRsp.class, new ReturnValueCompletion<RollbackSnapshotRsp>(msg) {
-            @Override
-            public void success(RollbackSnapshotRsp returnValue) {
-                reply.setNewVolumeInstallPath(msg.getVolume().getInstallPath());
-                bus.reply(msg, reply);
-            }
+        final FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("reimage-vm-root-volume-%s", msg.getVolume().getUuid()));
+        chain.then(new ShareFlow() {
+            String cloneInstallPath;
+            String originalVolumePath = msg.getVolume().getInstallPath();
+            String volumePath = makeResetImageRootVolumeInstallPath(msg.getVolume().getUuid());
+            ImageCacheVO cache;
 
             @Override
-            public void fail(ErrorCode errorCode) {
-                reply.setError(errorCode);
-                bus.reply(msg, reply);
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "clone-image";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        SimpleQuery<ImageCacheVO> sq = dbf.createQuery(ImageCacheVO.class);
+                        sq.add(ImageCacheVO_.imageUuid, Op.EQ, msg.getVolume().getRootImageUuid());
+                        sq.add(ImageCacheVO_.primaryStorageUuid, Op.EQ, msg.getPrimaryStorageUuid());
+                        ImageCacheVO ivo = sq.find();
+
+                        CloneCmd cmd = new CloneCmd();
+                        cmd.srcPath = ivo.getInstallUrl();
+                        cmd.dstPath = volumePath;
+
+                        httpCall(CLONE_PATH, cmd, CloneRsp.class, new ReturnValueCompletion<CloneRsp>(trigger) {
+                            @Override
+                            public void fail(ErrorCode err) {
+                                trigger.fail(err);
+                            }
+
+                            @Override
+                            public void success(CloneRsp ret) {
+                                trigger.next();
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "delete-origin-root-volume-which-has-no-snapshot";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        SimpleQuery<VolumeSnapshotVO> sq = dbf.createQuery(VolumeSnapshotVO.class);
+                        sq.add(VolumeSnapshotVO_.primaryStorageInstallPath, Op.LIKE,
+                                String.format("%s%%", originalVolumePath));
+                        sq.count();
+                        if (sq.count() == 0) {
+                            DeleteCmd cmd = new DeleteCmd();
+                            cmd.installPath = originalVolumePath;
+                            httpCall(DELETE_PATH, cmd, DeleteRsp.class, new ReturnValueCompletion<DeleteRsp>() {
+                                @Override
+                                public void success(DeleteRsp returnValue) {
+                                    logger.debug(String.format("successfully deleted %s", originalVolumePath));
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    //TODO GC
+                                    logger.warn(String.format("unable to delete %s, %s. Need a cleanup",
+                                            originalVolumePath, errorCode));
+                                }
+                            });
+                        }
+                        trigger.next();
+                    }
+                });
+
+                done(new FlowDoneHandler(msg) {
+                    @Override
+                    public void handle(Map data) {
+                        reply.setNewVolumeInstallPath(volumePath);
+                        bus.reply(msg, reply);
+                    }
+                });
+
+                error(new FlowErrorHandler(msg) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        reply.setError(errCode);
+                        bus.reply(msg, reply);
+                    }
+                });
             }
-        });
+        }).start();
     }
 
     private void handle(final DeleteSnapshotOnPrimaryStorageMsg msg) {
