@@ -27,7 +27,7 @@ import java.util.List;
  * 2. create a two vms: vm1 and vm2 on different hosts
  * 3. attach a data volume to the vm1
  * 4. detach the data volume from the vm1
- *
+ * <p>
  * confirm the the volume is attachable for the vm1 but unattachable for the vm2
  */
 public class TestLocalStorage25 {
@@ -66,9 +66,9 @@ public class TestLocalStorage25 {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         PrimaryStorageInventory local = deployer.primaryStorages.get("local");
         VmInstanceInventory vm1 = deployer.vms.get("TestVm");
         VmInstanceInventory vm2 = deployer.vms.get("TestVm1");
@@ -78,12 +78,12 @@ public class TestLocalStorage25 {
         data = api.attachVolumeToVm(vm1.getUuid(), data.getUuid());
         data = api.detachVolumeFromVm(data.getUuid());
 
-        List<VolumeInventory> vols  = api.getVmAttachableVolume(vm1.getUuid());
+        List<VolumeInventory> vols = api.getVmAttachableVolume(vm1.getUuid());
         Assert.assertEquals(1, vols.size());
         VolumeInventory vol = vols.get(0);
         Assert.assertEquals(data.getUuid(), vol.getUuid());
 
-        vols  = api.getVmAttachableVolume(vm2.getUuid());
+        vols = api.getVmAttachableVolume(vm2.getUuid());
         Assert.assertTrue(vols.isEmpty());
     }
 }

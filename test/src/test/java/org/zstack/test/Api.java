@@ -1562,6 +1562,40 @@ public class Api implements CloudBusEventListener {
         return evt.getInventory();
     }
 
+    public VmInstanceInventory createVmByFullConfigWithSpecifiedPS(VmInstanceInventory inv,
+                                                                   String rootDiskOfferingUuid,
+                                                                   List<String> l3NetworkUuids,
+                                                                   List<String> diskOfferingUuids,
+                                                                   String psUuid,
+                                                                   SessionInventory session) throws ApiSenderException {
+        APICreateVmInstanceMsg msg = new APICreateVmInstanceMsg();
+        msg.setClusterUuid(inv.getClusterUuid());
+        if (diskOfferingUuids != null) {
+            msg.setDataDiskOfferingUuids(diskOfferingUuids);
+        }
+        msg.setSession(session);
+        msg.setDescription(inv.getDescription());
+        msg.setHostUuid(inv.getHostUuid());
+        msg.setImageUuid(inv.getImageUuid());
+        msg.setInstanceOfferingUuid(inv.getInstanceOfferingUuid());
+        msg.setL3NetworkUuids(l3NetworkUuids);
+        msg.setName(inv.getName());
+        msg.setType(inv.getType());
+        msg.setZoneUuid(inv.getZoneUuid());
+        msg.setHostUuid(inv.getHostUuid());
+        msg.setClusterUuid(inv.getClusterUuid());
+        msg.setRootDiskOfferingUuid(rootDiskOfferingUuid);
+        msg.setDefaultL3NetworkUuid(inv.getDefaultL3NetworkUuid());
+        msg.setPrimaryStorageUuidForRootVolume(psUuid);
+        if (msg.getL3NetworkUuids().size() > 1 && msg.getDefaultL3NetworkUuid() == null) {
+            msg.setDefaultL3NetworkUuid(msg.getL3NetworkUuids().get(0));
+        }
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APICreateVmInstanceEvent evt = sender.send(msg, APICreateVmInstanceEvent.class);
+        return evt.getInventory();
+    }
+
     public VmInstanceInventory changeInstanceOffering(String vmUuid, String instanceOfferingUuid) throws ApiSenderException {
         APIChangeInstanceOfferingMsg msg = new APIChangeInstanceOfferingMsg();
         msg.setVmInstanceUuid(vmUuid);

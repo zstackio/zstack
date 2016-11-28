@@ -8,18 +8,15 @@ import org.junit.rules.ExpectedException;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.header.configuration.DiskOffering;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
-import org.zstack.header.vm.VmInstanceConstant.Capability;
 import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeInventory;
-import org.zstack.storage.primary.local.*;
+import org.zstack.storage.primary.local.LocalStorageHostRefVO;
+import org.zstack.storage.primary.local.LocalStorageHostRefVOFinder;
+import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
@@ -27,8 +24,6 @@ import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.utils.data.SizeUnit;
-
-import java.util.Map;
 
 /*
  * local storage

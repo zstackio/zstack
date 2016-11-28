@@ -36,7 +36,7 @@ import java.util.concurrent.TimeUnit;
  * 2. delete the image the vm created from
  * 3. delete the vm
  * 4. set the qcow2 reference
- *
+ * <p>
  * confirm the image is not garbage collected
  */
 public class TestLocalStorage53 {
@@ -74,9 +74,9 @@ public class TestLocalStorage53 {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         ImageGlobalConfig.DELETION_POLICY.updateValue(ImageDeletionPolicy.Direct.toString());
         ImageInventory image1 = deployer.images.get("TestImage");
         api.deleteImage(image1.getUuid());

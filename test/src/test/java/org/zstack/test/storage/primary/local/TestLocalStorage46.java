@@ -6,30 +6,22 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.timeout.ApiTimeout;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
-import org.zstack.header.image.APICreateRootVolumeTemplateFromRootVolumeMsg;
-import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.AbstractBeforeDeliveryMessageInterceptor;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.rest.BeforeAsyncJsonPostInterceptor;
 import org.zstack.header.rest.RESTFacade;
-import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
-import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
-import org.zstack.header.storage.snapshot.VolumeSnapshotVO_;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
-import org.zstack.storage.primary.local.*;
-import org.zstack.storage.primary.local.LocalStorageKvmBackend.*;
-import org.zstack.storage.primary.local.LocalStorageKvmSftpBackupStorageMediatorImpl.SftpDownloadBitsCmd;
+import org.zstack.storage.primary.local.APILocalStorageMigrateVolumeMsg;
+import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
@@ -49,7 +41,6 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
- *
  * Test API timeout
  */
 public class TestLocalStorage46 {
@@ -96,9 +87,9 @@ public class TestLocalStorage46 {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         api.stopVmInstance(vm.getUuid());
         VolumeInventory data = CollectionUtils.find(vm.getAllVolumes(), new Function<VolumeInventory, VolumeInventory>() {

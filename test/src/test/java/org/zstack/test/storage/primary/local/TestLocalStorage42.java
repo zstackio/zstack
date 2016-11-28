@@ -8,14 +8,15 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
-import org.zstack.storage.primary.local.*;
+import org.zstack.storage.primary.local.LocalStorageHostRefVO;
+import org.zstack.storage.primary.local.LocalStorageHostRefVOFinder;
+import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
@@ -27,7 +28,7 @@ import org.zstack.utils.data.SizeUnit;
 /**
  * 1. use local storage
  * 2. create 6 vm
- *
+ * <p>
  * confirm they are created on 2 hosts balanced
  */
 public class TestLocalStorage42 {
@@ -66,10 +67,10 @@ public class TestLocalStorage42 {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
-        PrimaryStorageInventory local=deployer.primaryStorages.get("local");
+
+    @Test
+    public void test() throws ApiSenderException {
+        PrimaryStorageInventory local = deployer.primaryStorages.get("local");
 
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         VmInstanceInventory vm1 = api.createVmFromClone(vm);

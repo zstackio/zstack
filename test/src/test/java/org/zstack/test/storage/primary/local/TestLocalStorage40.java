@@ -26,17 +26,17 @@ import java.util.List;
  * 1. create two vms on different hosts
  * 2. attach a data volume to the vm1
  * 3. detach the data volume, now the data volume is ready to attach
- *
+ * <p>
  * confirm the candidate vm for attaching data volume is vm1
  * confirm the vm1's candidate volume is the data volume
- *
+ * <p>
  * 4. migrate the data volume to vm2's host
- *
+ * <p>
  * confirm the candidate vm for attaching data volume is vm2
  * confirm the vm2's candidate volume is the data volume
- *
+ * <p>
  * 5. migrate the data volume to vm1' host
- *
+ * <p>
  * confirm the candidate vm for attaching data volume is vm1
  * confirm the vm1's candidate volume is the data volume
  */
@@ -76,9 +76,9 @@ public class TestLocalStorage40 {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         PrimaryStorageInventory local = deployer.primaryStorages.get("local");
         VmInstanceInventory vm1 = deployer.vms.get("TestVm");
         VmInstanceInventory vm2 = deployer.vms.get("TestVm1");

@@ -26,7 +26,7 @@ import org.zstack.utils.data.SizeUnit;
  * 3. stop the vm
  * 4. take a snapshot from vm's root volume
  * 5. delete the snapshot
- *
+ * <p>
  * confirm the snapshot deleted successfully
  */
 public class TestLocalStorage24 {
@@ -66,9 +66,9 @@ public class TestLocalStorage24 {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         api.stopVmInstance(vm.getUuid());
 

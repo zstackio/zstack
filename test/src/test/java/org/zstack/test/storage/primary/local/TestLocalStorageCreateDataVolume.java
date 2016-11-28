@@ -32,7 +32,7 @@ import static org.zstack.utils.CollectionDSL.map;
 /**
  * 1. has two local primary storage
  * 2. create data volumes on them with specified primary storage uuid
- *
+ * <p>
  * confirm volumes created on right primary storage
  */
 public class TestLocalStorageCreateDataVolume {
@@ -86,9 +86,9 @@ public class TestLocalStorageCreateDataVolume {
         APICreateDataVolumeEvent e = sender.send(msg, APICreateDataVolumeEvent.class);
         return e.getInventory();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         PrimaryStorageInventory local = deployer.primaryStorages.get("local");
         HostInventory host1 = deployer.hosts.get("host1");
         HostInventory host2 = deployer.hosts.get("host2");

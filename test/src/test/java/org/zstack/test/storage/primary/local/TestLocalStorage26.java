@@ -6,12 +6,9 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
-import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.volume.VolumeInventory;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 import org.zstack.test.Api;
@@ -26,7 +23,7 @@ import java.util.List;
 /**
  * 1. use local storage and nfs storage
  * 2. create a two vms: vm1 and vm2 on different hosts
- *
+ * <p>
  * confirm vms can migrate
  */
 public class TestLocalStorage26 {
@@ -65,15 +62,15 @@ public class TestLocalStorage26 {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         VmInstanceInventory vm1 = deployer.vms.get("TestVm");
         VmInstanceInventory vm2 = deployer.vms.get("TestVm1");
 
-        List<HostInventory> hosts =  api.getMigrationTargetHost(vm1.getUuid());
+        List<HostInventory> hosts = api.getMigrationTargetHost(vm1.getUuid());
         Assert.assertFalse(hosts.isEmpty());
-        hosts =  api.getMigrationTargetHost(vm2.getUuid());
+        hosts = api.getMigrationTargetHost(vm2.getUuid());
         Assert.assertFalse(hosts.isEmpty());
     }
 }
