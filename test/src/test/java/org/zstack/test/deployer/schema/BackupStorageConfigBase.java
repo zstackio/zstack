@@ -33,6 +33,7 @@ import javax.xml.bind.annotation.XmlType;
 @XmlType(name = "BackupStorageConfigBase")
 @XmlSeeAlso({
     SftpBackupStorageConfig.class,
+    ImageStoreBackupStorageConfig.class,
     CephBackupStorageConfig.class
 })
 public class BackupStorageConfigBase {
