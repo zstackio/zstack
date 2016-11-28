@@ -14,21 +14,26 @@ import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.query.QueryOp;
+import org.zstack.header.storage.backup.BackupStorageInventory;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.tag.TagDefinition;
 import org.zstack.header.tag.TagInventory;
 import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.tag.SystemTag;
 import org.zstack.tag.TagSubQueryExtension;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
+import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -50,7 +55,8 @@ public class TestQemuAgentSystemTag {
     @Before
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
-        deployer = new Deployer("deployerXml/tag/TestQemuAgentTag.xml");
+        WebBeanConstructor con = new WebBeanConstructor();
+        deployer = new Deployer("deployerXml/tag/TestQemuAgentTag.xml", con);
         deployer.build();
         api = deployer.getApi();
         loader = deployer.getComponentLoader();
@@ -61,6 +67,7 @@ public class TestQemuAgentSystemTag {
     @Test
     public void test() throws ApiSenderException {
         ImageInventory image1 = deployer.images.get("Image_1");
+
         TagInventory inv =  api.createSystemTag(image1.getUuid(), TestSystemTags.qemu.getTagFormat(), ImageVO.class);
 
         APIQueryImageMsg imsg = new APIQueryImageMsg();
@@ -74,25 +81,46 @@ public class TestQemuAgentSystemTag {
 
         // make sure vm and image have the same system-tags
         VmInstanceInventory testvm = createVmFromImage(deployer.vms.get("Vm_1"));
-        SimpleQuery<SystemTagVO> pq = dbf.createQuery(SystemTagVO.class);
-        pq.select(SystemTagVO_.tag);
-        pq.add(SystemTagVO_.resourceUuid, SimpleQuery.Op.EQ, testvm.getUuid());
-        String tag = pq.findValue();
+        String tag = getResourceUuidTag(testvm.getUuid());
         Assert.assertEquals(tag, TestSystemTags.qemu.getTagFormat());
 
-        // make sure vm carry off the SystemTags while clone vm
+        // make sure vm and the generate-image carry off the SystemTags while clone vm
         VmInstanceInventory clonevm = createVmFromClone(deployer.vms.get("Vm_1"));
-        pq = dbf.createQuery(SystemTagVO.class);
-        pq.select(SystemTagVO_.tag);
-        pq.add(SystemTagVO_.resourceUuid, SimpleQuery.Op.EQ, clonevm.getUuid());
-        tag = pq.findValue();
-        Assert.assertEquals(tag, TestSystemTags.qemu.getTagFormat());
+        tag = getResourceUuidTag(clonevm.getUuid());
+        // check the vm have tag
+        Assert.assertEquals(TestSystemTags.qemu.getTagFormat(), tag);
 
+
+        SimpleQuery<VmInstanceVO> pqv = dbf.createQuery(VmInstanceVO.class);
+        pqv.add(VmInstanceVO_.uuid, SimpleQuery.Op.EQ, clonevm.getUuid());
+        VmInstanceVO cloned = pqv.find();
+        String rootImageUuid = cloned.getRootVolumes().getRootImageUuid();
+        // check the image have tag
+        tag = getResourceUuidTag(rootImageUuid);
+        Assert.assertEquals(TestSystemTags.qemu.getTagFormat(), tag);
+
+
+        BackupStorageInventory bs = deployer.backupStorages.get("sftp");
+        List<String> bsUuids = Collections.singletonList(bs.getUuid());
+        logger.debug(cloned.getRootVolumes().getUuid());
+
+//        ImageInventory commitedImage = api.commitVolumeAsImage(testvm.getRootVolumeUuid(), "test-commit-image", bsUuids);
+//        // check the commited-image have tag
+//        tag = getResourceUuidTag(commitedImage.getUuid());
+//        Assert.assertEquals(TestSystemTags.qemu.getTagFormat(), tag);
 
         api.deleteTag(inv.getUuid());
 
         SystemTagVO tvo = dbf.findByUuid(inv.getUuid(), SystemTagVO.class);
         Assert.assertNull(tvo);
+    }
+
+    String getResourceUuidTag(String resourceUuid) {
+        SimpleQuery<SystemTagVO> pq = dbf.createQuery(SystemTagVO.class);
+        pq.select(SystemTagVO_.tag);
+        pq.add(SystemTagVO_.resourceUuid, SimpleQuery.Op.EQ, resourceUuid);
+        String tag = pq.findValue();
+        return tag;
     }
 
     VmInstanceInventory createVmFromImage(VmInstanceInventory vm) throws ApiSenderException {

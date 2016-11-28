@@ -25,6 +25,11 @@ public class VmInstanceVO extends VmInstanceAO {
     @NoView
     private Set<VolumeVO> allVolumes = new HashSet<VolumeVO>();
 
+    @OneToOne(fetch=FetchType.EAGER)
+    @JoinColumn(name="rootVolumeUuid", insertable=false, updatable=false)
+    @NoView
+    private VolumeVO rootVolumes;
+
     public VmInstanceVO() {
     }
 
@@ -32,6 +37,7 @@ public class VmInstanceVO extends VmInstanceAO {
         super(other);
         this.vmNics = other.vmNics;
         this.allVolumes = other.allVolumes;
+        this.rootVolumes = other.rootVolumes;
     }
 
 
@@ -49,5 +55,13 @@ public class VmInstanceVO extends VmInstanceAO {
 
     public void setAllVolumes(Set<VolumeVO> allVolumes) {
         this.allVolumes = allVolumes;
+    }
+
+    public VolumeVO getRootVolumes() {
+        return rootVolumes;
+    }
+
+    public void setRootVolumes(VolumeVO rootVolumes) {
+        this.rootVolumes = rootVolumes;
     }
 }

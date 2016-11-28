@@ -10,6 +10,7 @@
 						   url="nfs://test" />
 	</backupStorages>
 
+
 	<diskOffering name="TestRootDiskOffering" description="Test"
 				  diskSize="50G" />
 	<diskOffering name="TestDataDiskOffering" description="Test"

@@ -11,4 +11,5 @@ import javax.persistence.Table;
 @EO(EOClazz = VolumeEO.class)
 @AutoDeleteTag
 public class VolumeVO extends VolumeAO {
+
 }
