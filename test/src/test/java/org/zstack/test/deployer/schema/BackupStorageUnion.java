@@ -21,6 +21,7 @@ import javax.xml.bind.annotation.XmlType;
  *         &lt;element name="simulatorBackupStorage" type="{http://zstack.org/schema/zstack}SimulatorBackupStorageConfig" maxOccurs="unbounded" minOccurs="0"/>
  *         &lt;element name="sftpBackupStorage" type="{http://zstack.org/schema/zstack}SftpBackupStorageConfig" maxOccurs="unbounded" minOccurs="0"/>
  *         &lt;element name="cephBackupStorage" type="{http://zstack.org/schema/zstack}CephBackupStorageConfig" maxOccurs="unbounded" minOccurs="0"/>
+ *         &lt;element name="imageStoreBackupStorage" type="{http://zstack.org/schema/zstack}ImageStoreBackupStorageConfig" maxOccurs="unbounded" minOccurs="0"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
  *   &lt;/complexContent>
@@ -33,13 +34,15 @@ import javax.xml.bind.annotation.XmlType;
 @XmlType(name = "BackupStorageUnion", propOrder = {
     "simulatorBackupStorage",
     "sftpBackupStorage",
-    "cephBackupStorage"
+    "cephBackupStorage",
+    "imageStoreBackupStorage"
 })
 public class BackupStorageUnion {
 
     protected List<SimulatorBackupStorageConfig> simulatorBackupStorage;
     protected List<SftpBackupStorageConfig> sftpBackupStorage;
     protected List<CephBackupStorageConfig> cephBackupStorage;
+    protected List<ImageStoreBackupStorageConfig> imageStoreBackupStorage;
 
     /**
      * Gets the value of the simulatorBackupStorage property.
@@ -126,6 +129,35 @@ public class BackupStorageUnion {
             cephBackupStorage = new ArrayList<CephBackupStorageConfig>();
         }
         return this.cephBackupStorage;
+    }
+
+    /**
+     * Gets the value of the imageStoreBackupStorage property.
+     * 
+     * <p>
+     * This accessor method returns a reference to the live list,
+     * not a snapshot. Therefore any modification you make to the
+     * returned list will be present inside the JAXB object.
+     * This is why there is not a <CODE>set</CODE> method for the imageStoreBackupStorage property.
+     * 
+     * <p>
+     * For example, to add a new item, do as follows:
+     * <pre>
+     *    getImageStoreBackupStorage().add(newItem);
+     * </pre>
+     * 
+     * 
+     * <p>
+     * Objects of the following type(s) are allowed in the list
+     * {@link ImageStoreBackupStorageConfig }
+     * 
+     * 
+     */
+    public List<ImageStoreBackupStorageConfig> getImageStoreBackupStorage() {
+        if (imageStoreBackupStorage == null) {
+            imageStoreBackupStorage = new ArrayList<ImageStoreBackupStorageConfig>();
+        }
+        return this.imageStoreBackupStorage;
     }
 
 }

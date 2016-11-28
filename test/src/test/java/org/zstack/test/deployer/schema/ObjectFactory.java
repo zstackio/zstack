@@ -310,6 +310,14 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link ImageStoreBackupStorageConfig }
+     * 
+     */
+    public ImageStoreBackupStorageConfig createImageStoreBackupStorageConfig() {
+        return new ImageStoreBackupStorageConfig();
+    }
+
+    /**
      * Create an instance of {@link L2NetworkUnion }
      * 
      */
