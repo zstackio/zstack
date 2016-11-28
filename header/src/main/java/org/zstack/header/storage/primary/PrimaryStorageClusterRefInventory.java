@@ -23,7 +23,7 @@ public class PrimaryStorageClusterRefInventory {
     private String primaryStorageUuid;
     private Timestamp createDate;
     private Timestamp lastOpDate;
-    
+
     public static PrimaryStorageClusterRefInventory valueOf(PrimaryStorageClusterRefVO vo) {
         PrimaryStorageClusterRefInventory inv = new PrimaryStorageClusterRefInventory();
         inv.setClusterUuid(vo.getClusterUuid());
@@ -40,22 +40,27 @@ public class PrimaryStorageClusterRefInventory {
         }
         return invs;
     }
-    
+
     public long getId() {
         return id;
     }
+
     public void setId(long id) {
         this.id = id;
     }
+
     public String getClusterUuid() {
         return clusterUuid;
     }
+
     public void setClusterUuid(String clusterUuid) {
         this.clusterUuid = clusterUuid;
     }
+
     public String getPrimaryStorageUuid() {
         return primaryStorageUuid;
     }
+
     public void setPrimaryStorageUuid(String primaryStorageUuid) {
         this.primaryStorageUuid = primaryStorageUuid;
     }

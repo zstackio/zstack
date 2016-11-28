@@ -11,7 +11,7 @@ public class CreateTemplateFromVolumeOnPrimaryStorageMsg extends NeedReplyMessag
     private VolumeInventory volumeInventory;
     private ImageInventory imageInventory;
     private String backupStorageUuid;
-    
+
     @Override
     public String getPrimaryStorageUuid() {
         return volumeInventory.getPrimaryStorageUuid();

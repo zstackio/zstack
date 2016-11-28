@@ -9,45 +9,45 @@ import java.sql.Timestamp;
 
 @MappedSuperclass
 public class PrimaryStorageAO {
-	@Id
-	@Column
-	private String uuid;
+    @Id
+    @Column
+    private String uuid;
 
-	@Column
+    @Column
     @ForeignKey(parentEntityClass = ZoneEO.class, onDeleteAction = ReferenceOption.RESTRICT)
-	private String zoneUuid;
+    private String zoneUuid;
 
-	@Column
-	private String name;
+    @Column
+    private String name;
 
-	@Column
-	private String url;
+    @Column
+    private String url;
 
-	@Column
-	private String description;
+    @Column
+    private String description;
 
-	@Column
-	private String type;
+    @Column
+    private String type;
 
-	@Column
-	private String mountPath;
+    @Column
+    private String mountPath;
 
-	@Column
-	@Enumerated(EnumType.STRING)
-	private PrimaryStorageState state;
+    @Column
+    @Enumerated(EnumType.STRING)
+    private PrimaryStorageState state;
 
     @Column
     @Enumerated(EnumType.STRING)
     private PrimaryStorageStatus status;
 
-	@Column
-	private Timestamp createDate;
+    @Column
+    private Timestamp createDate;
 
-	@Column
-	private Timestamp lastOpDate;
+    @Column
+    private Timestamp lastOpDate;
 
-	public PrimaryStorageAO() {
-	}
+    public PrimaryStorageAO() {
+    }
 
     public PrimaryStorageAO(PrimaryStorageAO other) {
         this.uuid = other.uuid;
@@ -77,43 +77,43 @@ public class PrimaryStorageAO {
     }
 
     public String getUuid() {
-    	return uuid;
+        return uuid;
     }
 
-	public void setUuid(String uuid) {
-    	this.uuid = uuid;
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
     }
 
-	public String getName() {
-    	return name;
+    public String getName() {
+        return name;
     }
 
-	public void setName(String name) {
-    	this.name = name;
+    public void setName(String name) {
+        this.name = name;
     }
 
-	public String getDescription() {
-    	return description;
+    public String getDescription() {
+        return description;
     }
 
-	public void setDescription(String description) {
-    	this.description = description;
+    public void setDescription(String description) {
+        this.description = description;
     }
 
-	public String getType() {
-    	return type;
+    public String getType() {
+        return type;
     }
 
-	public void setType(String type) {
-    	this.type = type;
+    public void setType(String type) {
+        this.type = type;
     }
 
-	public PrimaryStorageState getState() {
-    	return state;
+    public PrimaryStorageState getState() {
+        return state;
     }
 
-	public void setState(PrimaryStorageState state) {
-    	this.state = state;
+    public void setState(PrimaryStorageState state) {
+        this.state = state;
     }
 
     public Timestamp getCreateDate() {
@@ -133,11 +133,11 @@ public class PrimaryStorageAO {
     }
 
     public String getUrl() {
-    	return url;
+        return url;
     }
 
-	public void setUrl(String url) {
-    	this.url = url;
+    public void setUrl(String url) {
+        this.url = url;
     }
 
     public String getMountPath() {

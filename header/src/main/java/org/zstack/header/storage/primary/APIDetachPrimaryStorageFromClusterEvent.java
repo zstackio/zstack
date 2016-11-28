@@ -3,59 +3,53 @@ package org.zstack.header.storage.primary;
 import org.zstack.header.message.APIEvent;
 
 /**
- *@apiResult
- *
- * api event for message :ref:`APIDetachPrimaryStorageMsg`
- *
- *@since 0.1.0
- *
- *@example
- *
- * {
-"org.zstack.header.storage.primary.APIDetachPrimaryStorageEvent": {
-"inventory": {
-"uuid": "f4ac0a3119c94c6fae844c2298615d27",
-"zoneUuid": "f04caf351c014aa890126fc78193d063",
-"name": "SimulatorPrimaryStorage-0",
-"url": "nfs://simulator/primary/-0",
-"description": "Test Primary Storage",
-"totalCapacity": 10995116277760,
-"availableCapacity": 10995116277760,
-"type": "SimulatorPrimaryStorage",
-"state": "Enabled",
-"mountPath": "/primarystoragesimulator/f4ac0a3119c94c6fae844c2298615d27",
-"createDate": "May 1, 2014 2:42:51 PM",
-"lastOpDate": "May 1, 2014 2:42:51 PM",
-"attachedClusterUuids": [
-"f23e402bc53b4b5abae87273b6004016",
-"4a1789235a86409a9a6db83f97bc582f",
-"fe755538d4e845d5b82073e4f80cb90b",
-"1f45d6d6c02b43bfb6196dcacb5b8a25"
-]
-},
-"success": true
-}
-}
+ * @apiResult api event for message :ref:`APIDetachPrimaryStorageMsg`
+ * @example {
+ * "org.zstack.header.storage.primary.APIDetachPrimaryStorageEvent": {
+ * "inventory": {
+ * "uuid": "f4ac0a3119c94c6fae844c2298615d27",
+ * "zoneUuid": "f04caf351c014aa890126fc78193d063",
+ * "name": "SimulatorPrimaryStorage-0",
+ * "url": "nfs://simulator/primary/-0",
+ * "description": "Test Primary Storage",
+ * "totalCapacity": 10995116277760,
+ * "availableCapacity": 10995116277760,
+ * "type": "SimulatorPrimaryStorage",
+ * "state": "Enabled",
+ * "mountPath": "/primarystoragesimulator/f4ac0a3119c94c6fae844c2298615d27",
+ * "createDate": "May 1, 2014 2:42:51 PM",
+ * "lastOpDate": "May 1, 2014 2:42:51 PM",
+ * "attachedClusterUuids": [
+ * "f23e402bc53b4b5abae87273b6004016",
+ * "4a1789235a86409a9a6db83f97bc582f",
+ * "fe755538d4e845d5b82073e4f80cb90b",
+ * "1f45d6d6c02b43bfb6196dcacb5b8a25"
+ * ]
+ * },
+ * "success": true
+ * }
+ * }
+ * @since 0.1.0
  */
 public class APIDetachPrimaryStorageFromClusterEvent extends APIEvent {
-	public APIDetachPrimaryStorageFromClusterEvent() {
-		super(null);
-	}
-	
-	public APIDetachPrimaryStorageFromClusterEvent(String apiId) {
-	    super(apiId);
+    public APIDetachPrimaryStorageFromClusterEvent() {
+        super(null);
+    }
+
+    public APIDetachPrimaryStorageFromClusterEvent(String apiId) {
+        super(apiId);
     }
 
     /**
      * @desc see :ref:`PrimaryStorageInventory`
      */
-	private PrimaryStorageInventory inventory;
+    private PrimaryStorageInventory inventory;
 
-	public PrimaryStorageInventory getInventory() {
-    	return inventory;
+    public PrimaryStorageInventory getInventory() {
+        return inventory;
     }
 
-	public void setInventory(PrimaryStorageInventory inventory) {
-    	this.inventory = inventory;
+    public void setInventory(PrimaryStorageInventory inventory) {
+        this.inventory = inventory;
     }
 }

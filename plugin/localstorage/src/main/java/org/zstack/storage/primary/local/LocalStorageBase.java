@@ -659,7 +659,9 @@ public class LocalStorageBase extends PrimaryStorageBase {
             q.add(LocalStorageHostRefVO_.hostUuid, Op.EQ, msg.getHostUuid());
             LocalStorageHostRefVO ref = q.find();
             if (ref == null) {
-                reply.setError(errf.instantiateErrorCode(SysErrors.RESOURCE_NOT_FOUND, String.format("local primary storage[uuid:%s] doesn't have the host[uuid:%s]", self.getUuid(), msg.getHostUuid())));
+                reply.setError(errf.instantiateErrorCode(SysErrors.RESOURCE_NOT_FOUND,
+                        String.format("local primary storage[uuid:%s] doesn't have the host[uuid:%s]",
+                                self.getUuid(), msg.getHostUuid())));
                 bus.reply(msg, reply);
                 return;
             }
