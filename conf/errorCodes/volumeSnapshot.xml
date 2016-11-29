@@ -3,6 +3,21 @@
 
     <code>
         <id>1000</id>
-        <description>Snapshot is not in correct status for operation</description>
+        <description>Snapshot is not in correct status for operation.</description>
+    </code>
+
+    <code>
+        <id>1001</id>
+        <description>VM is not in Stopped state, cannot do re-image operation.</description>
+    </code>
+
+    <code>
+        <id>1002</id>
+        <description>Original image media type of VM is ISO, cannot do re-image operation.</description>
+    </code>
+
+    <code>
+        <id>1003</id>
+        <description>Cannot find image cache, cannot do re-image operation.</description>
     </code>
 </error>

@@ -8,7 +8,7 @@ public enum ApplianceVmErrors {
 
     private String code;
 
-    private ApplianceVmErrors(int id) {
+    ApplianceVmErrors(int id) {
         code = String.format("APPLIANCE_VM.%s", id);
     }
 

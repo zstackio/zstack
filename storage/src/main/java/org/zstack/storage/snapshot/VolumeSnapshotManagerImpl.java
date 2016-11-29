@@ -17,6 +17,7 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.scheduler.SchedulerInventory;
 import org.zstack.header.core.scheduler.SchedulerVO;
 import org.zstack.header.core.workflow.*;
@@ -739,7 +740,8 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
             q.add(VmInstanceVO_.uuid, Op.EQ, rootVolume.getVmInstanceUuid());
             VmInstanceState state = q.findValue();
             if (state != VmInstanceState.Stopped) {
-                throw new OperationFailureException(errf.stringToOperationError(
+                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(
+                        VolumeSnapshotErrors.RE_IMAGE_VM_NOT_IN_STOPPED_STATE,
                         String.format("unable to reset volume[uuid:%s] to origin image[uuid:%s]," +
                                         " the vm[uuid:%s] volume attached to is not in Stopped state, current state is %s",
                                 rootVolume.getUuid(), rootVolume.getRootImageUuid(),
@@ -753,7 +755,8 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         q.add(ImageCacheVO_.imageUuid, Op.EQ, rootVolume.getRootImageUuid());
         List<ImageCacheVO> images = q.list();
         if (images == null || images.isEmpty()) {
-            throw new OperationFailureException(errf.stringToOperationError(
+            throw new OperationFailureException(errf.instantiateErrorCode(
+                    VolumeSnapshotErrors.RE_IMAGE_CANNOT_FIND_IMAGE_CACHE,
                     String.format("unable to reset volume[uuid:%s] to origin image[uuid:%s]," +
                                     " cannot find image cache.",
                             rootVolume.getUuid(), rootVolume.getRootImageUuid())
@@ -761,7 +764,8 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         }
         ImageCacheVO image = images.get(0);
         if (image.getMediaType().toString().equals("ISO")) {
-            throw new OperationFailureException(errf.stringToOperationError(
+            throw new OperationFailureException(errf.instantiateErrorCode(
+                    VolumeSnapshotErrors.RE_IMAGE_IMAGE_MEDIA_TYPE_SHOULD_NOT_BE_ISO,
                     String.format("unable to reset volume[uuid:%s] to origin image[uuid:%s]," +
                                     " for image type is ISO",
                             rootVolume.getUuid(), rootVolume.getRootImageUuid())
