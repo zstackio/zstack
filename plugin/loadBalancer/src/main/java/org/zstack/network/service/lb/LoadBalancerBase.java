@@ -25,9 +25,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
-import org.zstack.header.vm.VmNicInventory;
-import org.zstack.header.vm.VmNicVO;
-import org.zstack.header.vm.VmNicVO_;
+import org.zstack.header.vm.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.vip.VipManager;
@@ -40,6 +38,8 @@ import org.zstack.utils.function.Function;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static java.util.Arrays.asList;
 
 /**
  * Created by frank on 8/8/2015.
@@ -457,9 +457,59 @@ public class LoadBalancerBase {
             handle((APIDeleteLoadBalancerMsg) msg);
         } else if (msg instanceof APIRefreshLoadBalancerMsg) {
             handle((APIRefreshLoadBalancerMsg) msg);
+        } else if (msg instanceof APIGetCandidateVmNicsForLoadBalancerMsg) {
+            handle((APIGetCandidateVmNicsForLoadBalancerMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    @Transactional(readOnly = true)
+    private void handle(APIGetCandidateVmNicsForLoadBalancerMsg msg) {
+        APIGetCandidateVmNicsForLoadBalancerReply reply = new APIGetCandidateVmNicsForLoadBalancerReply();
+
+        String sql = "select vip.peerL3NetworkUuid from VipVO vip where vip.uuid = :uuid";
+        TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
+        q.setParameter("uuid", self.getVipUuid());
+        List<String> ret = q.getResultList();
+        String peerL3Uuid = ret.isEmpty() ? null : ret.get(0);
+
+        if (peerL3Uuid != null) {
+            // the load balancer has been bound to a private L3 network
+            sql = "select nic from VmNicVO nic, VmInstanceVO vm where nic.l3NetworkUuid = :l3Uuid and nic.uuid not in (select ref.vmNicUuid from LoadBalancerListenerVmNicRefVO ref" +
+                    " where ref.listenerUuid = :luuid) and nic.vmInstanceUuid = vm.uuid and vm.type = :vmType and vm.state in (:vmStates)";
+            TypedQuery<VmNicVO> pq = dbf.getEntityManager().createQuery(sql, VmNicVO.class);
+            pq.setParameter("l3Uuid", peerL3Uuid);
+            pq.setParameter("luuid", msg.getListenerUuid());
+            pq.setParameter("vmType", VmInstanceConstant.USER_VM_TYPE);
+            pq.setParameter("vmStates", asList(VmInstanceState.Running, VmInstanceState.Stopped));
+            List<VmNicVO> nics = pq.getResultList();
+            reply.setInventories(VmNicInventory.valueOf(nics));
+            bus.reply(msg, reply);
+            return;
+        }
+
+        // the load balancer has not been bound to any private L3 network
+        sql = "select l3.uuid from L3NetworkVO l3, NetworkServiceL3NetworkRefVO ref where l3.uuid = ref.l3NetworkUuid" +
+                " and ref.networkServiceType = :type";
+        q = dbf.getEntityManager().createQuery(sql, String.class);
+        q.setParameter("type", LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
+        List<String> l3Uuids = q.getResultList();
+        if (l3Uuids.isEmpty()) {
+            reply.setInventories(new ArrayList<>());
+            bus.reply(msg, reply);
+            return;
+        }
+
+        sql = "select nic from VmNicVO nic, VmInstanceVO vm where nic.l3NetworkUuid in (select l3.uuid from L3NetworkVO l3, NetworkServiceL3NetworkRefVO ref where l3.uuid = ref.l3NetworkUuid" +
+                " and ref.networkServiceType = :type) and nic.vmInstanceUuid = vm.uuid and vm.type = :vmType and vm.state in (:vmStates)";
+        TypedQuery<VmNicVO> nq = dbf.getEntityManager().createQuery(sql, VmNicVO.class);
+        nq.setParameter("type", LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
+        nq.setParameter("vmType", VmInstanceConstant.USER_VM_TYPE);
+        nq.setParameter("vmStates", asList(VmInstanceState.Running, VmInstanceState.Stopped));
+        List<VmNicVO> nics = nq.getResultList();
+        reply.setInventories(VmNicInventory.valueOf(nics));
+        bus.reply(msg, reply);
     }
 
     private void handle(final APIRefreshLoadBalancerMsg msg) {

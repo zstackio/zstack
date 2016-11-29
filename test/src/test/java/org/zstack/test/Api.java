@@ -3825,6 +3825,15 @@ public class Api implements CloudBusEventListener {
         sender.send(msg, APIDeleteLoadBalancerEvent.class);
     }
 
+    public List<VmNicInventory> getVmNicCandidatesForLoadBalancer(String listenerUuid, SessionInventory session) throws ApiSenderException {
+        APIGetCandidateVmNicsForLoadBalancerMsg msg = new APIGetCandidateVmNicsForLoadBalancerMsg();
+        msg.setListenerUuid(listenerUuid);
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        APIGetCandidateVmNicsForLoadBalancerReply reply = sender.call(msg, APIGetCandidateVmNicsForLoadBalancerReply.class);
+        return reply.getInventories();
+    }
+
     public APIGetLocalStorageHostDiskCapacityReply getLocalStorageHostCapacity(String psUuid, String huuid) throws ApiSenderException {
         APIGetLocalStorageHostDiskCapacityMsg msg = new APIGetLocalStorageHostDiskCapacityMsg();
         msg.setHostUuid(huuid);

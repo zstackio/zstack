@@ -44,9 +44,19 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
             validate((APICreateLoadBalancerMsg) msg);
         } else if (msg instanceof APIRemoveVmNicFromLoadBalancerMsg) {
             validate((APIRemoveVmNicFromLoadBalancerMsg) msg);
+        } else if (msg instanceof APIGetCandidateVmNicsForLoadBalancerMsg) {
+            validate((APIGetCandidateVmNicsForLoadBalancerMsg) msg);
         }
 
         return msg;
+    }
+
+    private void validate(APIGetCandidateVmNicsForLoadBalancerMsg msg) {
+        SimpleQuery<LoadBalancerListenerVO> lq = dbf.createQuery(LoadBalancerListenerVO.class);
+        lq.select(LoadBalancerListenerVO_.loadBalancerUuid);
+        lq.add(LoadBalancerListenerVO_.uuid, Op.EQ, msg.getListenerUuid());
+        String lbuuid = lq.findValue();
+        msg.setLoadBalancerUuid(lbuuid);
     }
 
     private void validate(APIRemoveVmNicFromLoadBalancerMsg msg) {
