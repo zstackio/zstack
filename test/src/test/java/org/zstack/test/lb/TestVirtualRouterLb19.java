@@ -22,13 +22,13 @@ import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 
 /**
- * 
- * @author frank
- * 
- * 1. create a lb
- * 2. delete the vip
  *
- * confirm the lb deleted
+ * 1. add a vm nic to two listeners
+ * 2. remove the nic from on listener
+ *
+ * confirm the nic is still in another listener
+ * for BUG: https://github.com/zxwing/premium/issues/1478
+ *
  */
 public class TestVirtualRouterLb19 {
     Deployer deployer;
