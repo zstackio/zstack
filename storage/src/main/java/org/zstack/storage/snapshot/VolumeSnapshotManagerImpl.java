@@ -28,7 +28,6 @@ import org.zstack.header.message.*;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
 import org.zstack.header.storage.snapshot.*;
-import org.zstack.header.vm.StartVmInstanceMsg;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
@@ -733,6 +732,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         VolumeVO rootVolume = dbf.findByUuid(vmInstanceVO.getRootVolumeUuid(), VolumeVO.class);
         VolumeInventory rootVolumeInventory = VolumeInventory.valueOf(rootVolume);
 
+        // check vm stopped
         if (rootVolume.getVmInstanceUuid() != null) {
             SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
             q.select(VmInstanceVO_.state);
@@ -748,6 +748,27 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
             }
         }
 
+        // check image cache to ensure image type is not ISO
+        SimpleQuery<ImageCacheVO> q = dbf.createQuery(ImageCacheVO.class);
+        q.add(ImageCacheVO_.imageUuid, Op.EQ, rootVolume.getRootImageUuid());
+        List<ImageCacheVO> images = q.list();
+        if (images == null || images.isEmpty()) {
+            throw new OperationFailureException(errf.stringToOperationError(
+                    String.format("unable to reset volume[uuid:%s] to origin image[uuid:%s]," +
+                                    " cannot find image cache.",
+                            rootVolume.getUuid(), rootVolume.getRootImageUuid())
+            ));
+        }
+        ImageCacheVO image = images.get(0);
+        if (image.getMediaType().toString().equals("ISO")) {
+            throw new OperationFailureException(errf.stringToOperationError(
+                    String.format("unable to reset volume[uuid:%s] to origin image[uuid:%s]," +
+                                    " for image type is ISO",
+                            rootVolume.getUuid(), rootVolume.getRootImageUuid())
+            ));
+        }
+
+        // do the re-image op
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("reset-root-volume-%s-from-image-%s", rootVolume.getUuid(), rootVolume.getRootImageUuid()));
         chain.then(new ShareFlow() {
