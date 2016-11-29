@@ -83,7 +83,22 @@ public class TestVirtualRouterPortForwarding29 {
         nics = api.getPortForwardingAttachableNics(r2.getUuid());
         Assert.assertEquals(0, nics.size());
 
+        // rule 3 is not attachable because it's another VIP
         nics = api.getPortForwardingAttachableNics(r3.getUuid());
+        Assert.assertEquals(0, nics.size());
+
+        // rule4 share the same vip with rule1, so it's attachable
+        PortForwardingRuleInventory r4 = new PortForwardingRuleInventory();
+        r4.setName("rule4");
+        r4.setVipUuid(r1.getVipUuid());
+        r4.setVipPortStart(200);
+        r4.setVipPortEnd(220);
+        r4.setPrivatePortStart(200);
+        r4.setPrivatePortEnd(220);
+        r4.setProtocolType("TCP");
+        r4 = api.createPortForwardingRuleByFullConfig(r4);
+
+        nics = api.getPortForwardingAttachableNics(r4.getUuid());
         Assert.assertEquals(1, nics.size());
         nic = nics.get(0);
         Assert.assertEquals(guestL3.getUuid(), nic.getL3NetworkUuid());

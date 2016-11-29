@@ -211,7 +211,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         l3q.setParameter("nsType", PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
         List<String> l3Uuids = l3q.getResultList();
         if (l3Uuids.isEmpty()) {
-            return new ArrayList<VmNicInventory>();
+            return new ArrayList<>();
         }
 
         sql = "select pf.privatePortStart, pf.privatePortEnd, pf.protocolType from PortForwardingRuleVO pf where pf.uuid = :ruleUuid";
@@ -222,7 +222,14 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         int eport = t.get(1, Integer.class);
         PortForwardingProtocolType protocol = t.get(2, PortForwardingProtocolType.class);
 
-        sql = "select nic from VmNicVO nic, VmInstanceVO vm where nic.l3NetworkUuid in (:l3Uuids) and nic.vmInstanceUuid = vm.uuid and vm.type = :vmType and vm.state in (:vmStates) and nic.uuid not in (select pf.vmNicUuid from PortForwardingRuleVO pf where pf.protocolType = :protocol and pf.vmNicUuid is not null and ((pf.privatePortStart >= :sport and pf.privatePortStart <= :eport) or (pf.privatePortStart <= :sport and :sport <= pf.privatePortEnd)))";
+        sql = "select nic from VmNicVO nic, VmInstanceVO vm where nic.l3NetworkUuid in (:l3Uuids)" +
+                " and nic.vmInstanceUuid = vm.uuid and vm.type = :vmType and vm.state in (:vmStates)" +
+                " and nic.uuid not in (select pf.vmNicUuid from PortForwardingRuleVO pf" +
+                " where pf.protocolType = :protocol and pf.vmNicUuid is not null and" +
+                " ((pf.privatePortStart >= :sport and pf.privatePortStart <= :eport) or" +
+                " (pf.privatePortStart <= :sport and :sport <= pf.privatePortEnd)))" +
+                " and nic.uuid not in (select pf1.vmNicUuid from PortForwardingRuleVO pf1 where pf1.vipUuid != :vipUuid" +
+                " and pf1.vmNicUuid is not null)";
         TypedQuery<VmNicVO> nq = dbf.getEntityManager().createQuery(sql, VmNicVO.class);
         nq.setParameter("l3Uuids", l3Uuids);
         nq.setParameter("vmType", VmInstanceConstant.USER_VM_TYPE);
@@ -230,6 +237,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         nq.setParameter("sport", sport);
         nq.setParameter("eport", eport);
         nq.setParameter("protocol", protocol);
+        nq.setParameter("vipUuid", vipUuid);
         List<VmNicVO> nics = nq.getResultList();
         return VmNicInventory.valueOf(nics);
     }
