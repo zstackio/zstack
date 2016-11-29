@@ -1173,26 +1173,17 @@ public class LocalStorageBase extends PrimaryStorageBase {
                             ref.getSystemUsedCapacity());
                 } else {
                     ref = refs.get(0);
-                    boolean totalCapacityChanged = false;
-                    if (ref.getTotalCapacity() != c.totalPhysicalSize) {
-                        totalCapacityChanged = true;
-                    }
-
                     ref.setAvailablePhysicalCapacity(c.availablePhysicalSize);
                     ref.setTotalPhysicalCapacity(c.totalPhysicalSize);
                     ref.setTotalCapacity(c.totalPhysicalSize);
                     dbf.update(ref);
 
-                    if (totalCapacityChanged) {
-                        // the host's local storage capacity changed
-                        // need to recalculate the capacity in the database
-                        RecalculatePrimaryStorageCapacityMsg rmsg = new RecalculatePrimaryStorageCapacityMsg();
-                        rmsg.setPrimaryStorageUuid(self.getUuid());
-                        bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
-                        bus.send(rmsg);
-                    } else {
-                        new LocalStorageCapacityRecalculator().calculateByHostUuids(self.getUuid(), list(msg.getHostUuid()));
-                    }
+                    // the host's local storage capacity changed
+                    // need to recalculate the capacity in the database
+                    RecalculatePrimaryStorageCapacityMsg rmsg = new RecalculatePrimaryStorageCapacityMsg();
+                    rmsg.setPrimaryStorageUuid(self.getUuid());
+                    bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
+                    bus.send(rmsg);
                 }
 
                 bus.reply(msg, reply);
@@ -1810,7 +1801,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                           final Long avail,
                           final Long totalPhysical,
                           final Long availPhysical,
-                          final Long sysmtemUsed) {
+                          final Long systemUsed) {
         PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(self.getUuid());
         updater.run(new PrimaryStorageCapacityUpdaterRunnable() {
             @Override
@@ -1827,12 +1818,12 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 if (availPhysical != null) {
                     cap.setAvailablePhysicalCapacity(cap.getAvailablePhysicalCapacity() + availPhysical);
                 }
-                if (sysmtemUsed != null) {
+                if (systemUsed != null) {
                     if (cap.getSystemUsedCapacity() == null) {
                         cap.setSystemUsedCapacity(0L);
                     }
 
-                    cap.setSystemUsedCapacity(cap.getSystemUsedCapacity() + sysmtemUsed);
+                    cap.setSystemUsedCapacity(cap.getSystemUsedCapacity() + systemUsed);
                 }
                 return cap;
             }
