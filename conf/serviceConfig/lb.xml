@@ -32,6 +32,10 @@
     </message>
 
     <message>
+        <name>org.zstack.network.service.lb.APIGetCandidateVmNicsForLoadBalancerMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.network.service.lb.APIQueryLoadBalancerListenerMsg</name>
         <serviceId>query</serviceId>
     </message>
