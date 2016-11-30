@@ -2004,7 +2004,12 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
                                         serv.handleMessage(msg);
                                     } catch (Throwable t) {
                                         logExceptionWithMessageDump(msg, t);
-                                        replyErrorByMessageType(msg, errf.stringToInternalError(t.getMessage()));
+
+                                        if (t instanceof OperationFailureException) {
+                                            replyErrorByMessageType(msg, ((OperationFailureException) t).getErrorCode());
+                                        } else {
+                                            replyErrorByMessageType(msg, errf.stringToInternalError(t.getMessage()));
+                                        }
                                     }
 
                                     return null;
