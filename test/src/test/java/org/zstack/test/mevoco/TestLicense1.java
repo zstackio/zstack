@@ -134,53 +134,6 @@ public class TestLicense1 {
         licInfo.setLicenseType(LicenseType.Free);
         MockLicenseManagerImpl.mockLicenseInfo = licInfo;
 
-        s = false;
-        APIGetVmMonitoringDataMsg vmmmsg = new APIGetVmMonitoringDataMsg();
-        vmmmsg.setVmInstanceUuid(vm.getUuid());
-        vmmmsg.setServiceId(ApiMediatorConstant.SERVICE_ID);
-        vmmmsg.setQuery(new LinkedHashMap());
-        vmmmsg.setSession(api.getAdminSession());
-        ApiSender sender = new ApiSender();
-        try {
-            sender.call(vmmmsg, APIGetVmMonitoringDataReply.class);
-        } catch (ApiSenderException e) {
-            if (LicenseErrors.LICENSE_NOT_PERMITTED.toString().equals(e.getError().getCode())) {
-                s = true;
-            }
-        }
-        Assert.assertTrue(s);
-
-        s = false;
-        APIGetHostMonitoringDataMsg hmmsg = new APIGetHostMonitoringDataMsg();
-        hmmsg.setHostUuid(host1.getUuid());
-        hmmsg.setServiceId(ApiMediatorConstant.SERVICE_ID);
-        hmmsg.setQuery(new LinkedHashMap());
-        hmmsg.setSession(api.getAdminSession());
-        sender = new ApiSender();
-        try {
-            sender.call(hmmsg, APIGetHostMonitoringDataReply.class);
-        } catch (ApiSenderException e) {
-            if (LicenseErrors.LICENSE_NOT_PERMITTED.toString().equals(e.getError().getCode())) {
-                s = true;
-            }
-        }
-        Assert.assertTrue(s);
-
-        s = false;
-        APIMonitoringPassThroughMsg pmsg = new APIMonitoringPassThroughMsg();
-        pmsg.setServiceId(ApiMediatorConstant.SERVICE_ID);
-        pmsg.setSession(api.getAdminSession());
-        pmsg.setQuery(new LinkedHashMap());
-        pmsg.setApiPath("/api");
-        sender = new ApiSender();
-        try {
-            sender.call(pmsg, APIMonitoringPassThroughReply.class);
-        } catch (ApiSenderException e) {
-            if (LicenseErrors.LICENSE_NOT_PERMITTED.toString().equals(e.getError().getCode())) {
-                s = true;
-            }
-        }
-        Assert.assertTrue(s);
 
         InstanceOfferingInventory ioinv = deployer.instanceOfferings.get("TestInstanceOffering");
         s = false;
