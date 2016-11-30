@@ -29,8 +29,6 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.*;
-import org.zstack.header.vm.VmCheckOwnStateMsg;
-import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -216,7 +214,7 @@ public class ImageBase implements Image {
                     dbf.remove(ref);
                     logger.debug(String.format("successfully expunged the image[uuid: %s, name: %s] on the backup storage[uuid: %s]",
                             self.getUuid(), self.getName(), ref.getBackupStorageUuid()));
-                    self = dbf.findByUuid(self.getUuid(), ImageVO.class);
+                    self = dbf.reload(self);
                     if (self.getBackupStorageRefs().isEmpty()) {
                         logger.debug(String.format("the image[uuid:%s, name:%s] has been expunged on all backup storage, remove it from database",
                                 self.getUuid(), self.getName()));
@@ -432,15 +430,18 @@ public class ImageBase implements Image {
             }
         }
 
+        List<Object> refs = new ArrayList<>();
         for (ImageBackupStorageRefVO ref : self.getBackupStorageRefs()) {
             if (toRecoverBsUuids.contains(ref.getBackupStorageUuid())) {
                 ref.setStatus(ImageStatus.Ready);
-                dbf.update(ref);
+                refs.add(ref);
             }
         }
 
         self.setStatus(ImageStatus.Ready);
-        self = dbf.updateAndRefresh(self);
+        refs.add(self);
+        dbf.updateCollection(refs);
+        self = dbf.reload(self);
 
         logger.debug(String.format("successfully recovered the image[uuid:%s, name:%s] on the backup storage%s",
                 self.getUuid(), self.getName(), toRecoverBsUuids));
@@ -534,6 +535,10 @@ public class ImageBase implements Image {
     }
 
     private void gcImage(List<ExpungeImageMsg> expungeImageMsgs) {
+        if (expungeImageMsgs.isEmpty()) {
+            return;
+        }
+
         TimeBasedGCEphemeralContext<Void> context = new TimeBasedGCEphemeralContext<>();
         context.setName("gc-image-msgs");
         context.setInterval(10);
