@@ -1771,61 +1771,44 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     private void handle(final DestroyVmInstanceMsg msg) {
-        thdf.chainSubmit(new ChainTask(msg) {
+        final DestroyVmInstanceReply reply = new DestroyVmInstanceReply();
+        final String issuer = VmInstanceVO.class.getSimpleName();
+
+        VmDeletionStruct s = new VmDeletionStruct();
+        s.setDeletionPolicy(deletionPolicyMgr.getDeletionPolicy(self.getUuid()));
+        s.setInventory(getSelfInventory());
+        final List<VmDeletionStruct> ctx = list(s);
+
+        final FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName(String.format("destory-vm-%s", self.getUuid()));
+        chain.then(new NoRollbackFlow() {
             @Override
-            public String getName() {
-                return String.format("destroy-vm-%s", self.getUuid());
-            }
+            public void run(final FlowTrigger trigger, Map data) {
+                casf.asyncCascade(CascadeConstant.DELETION_FORCE_DELETE_CODE, issuer, ctx, new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
 
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+        }).done(new FlowDoneHandler(msg) {
             @Override
-            public String getSyncSignature() {
-                return syncThreadName;
+            public void handle(Map data) {
+                casf.asyncCascadeFull(CascadeConstant.DELETION_CLEANUP_CODE, issuer, ctx, new NopeCompletion());
+                bus.reply(msg, reply);
             }
-
+        }).error(new FlowErrorHandler(msg) {
             @Override
-            public void run(final SyncTaskChain taskChain) {
-                final DestroyVmInstanceReply reply = new DestroyVmInstanceReply();
-                final String issuer = VmInstanceVO.class.getSimpleName();
-
-                VmDeletionStruct s = new VmDeletionStruct();
-                s.setDeletionPolicy(deletionPolicyMgr.getDeletionPolicy(self.getUuid()));
-                s.setInventory(getSelfInventory());
-                final List<VmDeletionStruct> ctx = list(s);
-
-                final FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
-                chain.setName(String.format("destory-vm-%s", self.getUuid()));
-                chain.then(new NoRollbackFlow() {
-                    @Override
-                    public void run(final FlowTrigger trigger, Map data) {
-                        casf.asyncCascade(CascadeConstant.DELETION_FORCE_DELETE_CODE, issuer, ctx, new Completion(trigger) {
-                            @Override
-                            public void success() {
-                                trigger.next();
-                            }
-
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                trigger.fail(errorCode);
-                            }
-                        });
-                    }
-                }).done(new FlowDoneHandler(msg, taskChain) {
-                    @Override
-                    public void handle(Map data) {
-                        casf.asyncCascadeFull(CascadeConstant.DELETION_CLEANUP_CODE, issuer, ctx, new NopeCompletion());
-                        bus.reply(msg, reply);
-                        taskChain.next();
-                    }
-                }).error(new FlowErrorHandler(msg, taskChain) {
-                    @Override
-                    public void handle(final ErrorCode errCode, Map data) {
-                        reply.setError(errCode);
-                        bus.reply(msg, reply);
-                        taskChain.next();
-                    }
-                }).start();
+            public void handle(final ErrorCode errCode, Map data) {
+                reply.setError(errCode);
+                bus.reply(msg, reply);
             }
-        });
+        }).start();
     }
 
 

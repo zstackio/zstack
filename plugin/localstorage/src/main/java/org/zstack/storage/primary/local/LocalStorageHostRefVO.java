@@ -10,14 +10,6 @@ import javax.persistence.*;
 import java.io.Serializable;
 import java.sql.Timestamp;
 
-/**
- * Created by frank on 6/30/2015.
- */
-class CompositePrimaryKeyForLocalStorageHostRefVO implements Serializable {
-    private String hostUuid;
-    private String primaryStorageUuid;
-}
-
 @Entity
 @Table
 @IdClass(CompositePrimaryKeyForLocalStorageHostRefVO.class)

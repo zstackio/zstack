@@ -27,24 +27,30 @@ public class LocalStorageCapacityUpdater {
     private DatabaseFacade dbf;
 
     @Transactional
-    public void updatePhysicalCapacityByKvmAgentResponse(String psUuid, String hostUuid, AgentResponse rsp) {
+    private LocalStorageHostRefVO updateLocalStorageRef(String psUuid, String hostUuid, AgentResponse rsp) {
         String sqlLocalStorageHostRefVO = "select ref" +
                 " from LocalStorageHostRefVO ref" +
-                " where hostUuid = :hostUuid" +
-                " and primaryStorageUuid = :primaryStorageUuid";
+                " where ref.hostUuid = :hostUuid" +
+                " and ref.primaryStorageUuid = :primaryStorageUuid";
         TypedQuery<LocalStorageHostRefVO> query = dbf.getEntityManager().
                 createQuery(sqlLocalStorageHostRefVO, LocalStorageHostRefVO.class);
         query.setParameter("hostUuid", hostUuid);
         query.setParameter("primaryStorageUuid", psUuid);
-        List<LocalStorageHostRefVO> refs = query.setLockMode(LockModeType.PESSIMISTIC_WRITE).getResultList();
-        if (refs == null || refs.isEmpty()) {
-            return;
+        List<LocalStorageHostRefVO> refs = query.getResultList();
+        if (refs.isEmpty()) {
+            return null;
         }
+
         LocalStorageHostRefVO ref = refs.get(0);
+        CompositePrimaryKeyForLocalStorageHostRefVO id = new CompositePrimaryKeyForLocalStorageHostRefVO();
+        id.setHostUuid(ref.getHostUuid());
+        id.setPrimaryStorageUuid(ref.getPrimaryStorageUuid());
+
+        ref = dbf.getEntityManager().find(LocalStorageHostRefVO.class, id, LockModeType.PESSIMISTIC_WRITE);
 
         if (ref.getAvailablePhysicalCapacity() == rsp.getAvailableCapacity()
                 && ref.getTotalPhysicalCapacity() == rsp.getTotalCapacity()) {
-            return;
+            return null;
         }
 
         long originalPhysicalTotal = ref.getTotalPhysicalCapacity();
@@ -61,6 +67,15 @@ public class LocalStorageCapacityUpdater {
                             "physical available: %s --> %s\n",
                     hostUuid, psUuid, originalPhysicalTotal, ref.getTotalPhysicalCapacity(),
                     originalPhysicalAvailable, ref.getAvailablePhysicalCapacity()));
+        }
+
+        return ref;
+    }
+
+    public void updatePhysicalCapacityByKvmAgentResponse(String psUuid, String hostUuid, AgentResponse rsp) {
+        LocalStorageHostRefVO ref = updateLocalStorageRef(psUuid, hostUuid, rsp);
+        if (ref == null) {
+            return;
         }
 
         final long totalChange = rsp.getTotalCapacity() - ref.getTotalPhysicalCapacity();
