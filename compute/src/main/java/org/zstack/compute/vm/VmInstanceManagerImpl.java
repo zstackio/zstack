@@ -101,8 +101,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         ManagementNodeReadyExtensionPoint,
         L3NetworkDeleteExtensionPoint,
         ResourceOwnerAfterChangeExtensionPoint,
-        GlobalApiMessageInterceptor,
-        PrimaryStorageDeleteExtensionPoint {
+        GlobalApiMessageInterceptor {
     private static final CLogger logger = Utils.getLogger(VmInstanceManagerImpl.class);
     private Map<String, VmInstanceFactory> vmInstanceFactories = Collections.synchronizedMap(new HashMap<>());
     private List<String> createVmWorkFlowElements;
@@ -2009,36 +2008,5 @@ public class VmInstanceManagerImpl extends AbstractService implements
                             "change the owner of the VM the root volume belongs to", ref.getResourceUuid())
             ));
         }
-    }
-
-    public void preDeletePrimaryStorage(PrimaryStorageInventory inv) throws PrimaryStorageException {
-
-    }
-
-    public void beforeDeletePrimaryStorage(PrimaryStorageInventory inv) {
-
-    }
-
-    public void afterDeletePrimaryStorage(PrimaryStorageInventory inv) {
-        String sql = "select vm.name,vm.uuid" +
-                " from VmInstanceVO vm, VolumeVO vol" +
-                " where vm.uuid = vol.vmInstanceUuid" +
-                " and vm.state = 'Destroyed'" +
-                " and vol.type = 'Root'" +
-                " and vol.primaryStorageUuid = :primaryUuid";
-
-        TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
-        q.setParameter("primaryUuid", inv.getUuid());
-        List<Tuple> vms = q.getResultList();
-        if (vms.isEmpty()) {
-            return;
-        }
-
-        for (Tuple vm : vms) {
-            APIExpungeVmInstanceMsg msg = new APIExpungeVmInstanceMsg();
-            msg.setUuid(vm.get(1, String.class));
-            passThrough(msg);
-        }
-
     }
 }
