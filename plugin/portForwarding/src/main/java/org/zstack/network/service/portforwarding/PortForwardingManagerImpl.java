@@ -311,6 +311,15 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
 
         VmInstanceState vmState = getVmStateFromVmNicUuid(msg.getVmNicUuid());
         if (VmInstanceState.Running != vmState) {
+            //TODO: dirty fix that should be refixed in 1.9 https://github.com/zxwing/premium/issues/1496
+            SimpleQuery<VipVO> q = dbf.createQuery(VipVO.class);
+            q.add(VipVO_.uuid, Op.EQ, vo.getVipUuid());
+            VipVO vip = q.find();
+            if (vip.getPeerL3NetworkUuid() == null) {
+                vip.setPeerL3NetworkUuid(nicvo.getL3NetworkUuid());
+                dbf.update(vip);
+            }
+
             evt.setInventory(inv);
             bus.publish(evt);
             return;
@@ -494,6 +503,13 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         VmInstanceState vmState = q.findValue();
         if (VmInstanceState.Running != vmState) {
             vipMgr.lockVip(vipInventory, PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
+
+            //TODO: dirty fix that should be refixed in 1.9 https://github.com/zxwing/premium/issues/1496
+            if (vip.getPeerL3NetworkUuid() == null) {
+                vip.setPeerL3NetworkUuid(vmNic.getL3NetworkUuid());
+                dbf.update(vip);
+            }
+
             vo.setVmNicUuid(vmNic.getUuid());
             vo.setGuestIp(vmNic.getIp());
             PortForwardingRuleVO pvo = dbf.updateAndRefresh(vo);
