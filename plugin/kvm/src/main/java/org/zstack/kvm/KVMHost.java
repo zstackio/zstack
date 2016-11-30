@@ -20,6 +20,7 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.logging.Log;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
+import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.configuration.InstanceOfferingInventory;
@@ -75,6 +76,8 @@ public class KVMHost extends HostBase implements Host {
     private ErrorFacade errf;
     @Autowired
     private TagManager tagmgr;
+    @Autowired
+    private ApiTimeoutManager timeoutManager;
 
     private KVMHostContext context;
 
@@ -372,7 +375,7 @@ public class KVMHost extends HostBase implements Host {
 
         ChangeVmPasswordCmd cmd = new ChangeVmPasswordCmd();
         cmd.setAccountPerference(msg.getAccountPerference());
-        cmd.setTimeout(msg.getTimeout());
+        cmd.setTimeout(timeoutManager.getTimeout(cmd.getClass(), "10m"));
 
         restf.asyncJsonPost(changeVmPasswordPath, cmd, new JsonAsyncRESTCallback<ChangeVmPasswordResponse>(msg) {
             @Override
