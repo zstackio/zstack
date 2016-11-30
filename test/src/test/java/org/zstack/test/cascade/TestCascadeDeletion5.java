@@ -73,7 +73,11 @@ public class TestCascadeDeletion5 {
         Assert.assertTrue(0 != count);
         count = dbf.count(VmInstanceVO.class);
         Assert.assertEquals(0, count);
+        count = dbf.count(VmInstanceEO.class);
+        Assert.assertEquals(0, count);
         count = dbf.count(PrimaryStorageVO.class);
+        Assert.assertEquals(0, count);
+        count = dbf.count(PrimaryStorageEO.class);
         Assert.assertEquals(0, count);
         count = dbf.count(L2NetworkVO.class);
         Assert.assertTrue(0 != count);

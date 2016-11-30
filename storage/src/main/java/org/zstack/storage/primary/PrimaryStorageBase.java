@@ -888,10 +888,28 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             });
         }
 
+        // Due to issue #1412, deleting PS asynchronously might leave VmInstanceEO in
+        // database. Since eoCleanup() could be called before deleting VmInstanceVO.
+        chain.then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                casf.asyncCascadeFull(CascadeConstant.DELETION_CLEANUP_CODE, issuer, ctx, new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+        });
+
         chain.done(new FlowDoneHandler(msg) {
             @Override
             public void handle(Map data) {
-                casf.asyncCascadeFull(CascadeConstant.DELETION_CLEANUP_CODE, issuer, ctx, new NopeCompletion());
                 bus.publish(evt);
 
                 PrimaryStorageDeletedData d = new PrimaryStorageDeletedData();
