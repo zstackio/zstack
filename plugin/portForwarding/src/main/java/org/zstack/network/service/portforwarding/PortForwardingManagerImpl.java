@@ -51,6 +51,7 @@ import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
 
+import static java.util.Arrays.asList;
 import static org.zstack.utils.CollectionDSL.list;
 
 public class PortForwardingManagerImpl extends AbstractService implements PortForwardingManager,
@@ -196,20 +197,27 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
 
     @Transactional(readOnly = true)
     private List<VmNicInventory> getAttachableVmNics(String ruleUuid) {
-        String sql = "select l3.zoneUuid, vip.uuid from L3NetworkVO l3, VipVO vip, PortForwardingRuleVO rule where vip.l3NetworkUuid = l3.uuid and vip.uuid = rule.vipUuid and rule.uuid = :ruleUuid";
+        String sql = "select l3.zoneUuid, vip.uuid, vip.peerL3NetworkUuid from L3NetworkVO l3, VipVO vip, PortForwardingRuleVO rule where vip.l3NetworkUuid = l3.uuid and vip.uuid = rule.vipUuid and rule.uuid = :ruleUuid";
         TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
         q.setParameter("ruleUuid", ruleUuid);
         Tuple t = q.getSingleResult();
         String zoneUuid = t.get(0, String.class);
         String vipUuid = t.get(1, String.class);
+        String vipPeerL3Uuid = t.get(2, String.class);
 
-        sql = "select l3.uuid from L3NetworkVO l3, VipVO vip, NetworkServiceL3NetworkRefVO ref where l3.system = :system and l3.uuid != vip.l3NetworkUuid and l3.uuid = ref.l3NetworkUuid and ref.networkServiceType = :nsType and l3.zoneUuid = :zoneUuid and vip.uuid = :vipUuid";
-        TypedQuery<String> l3q = dbf.getEntityManager().createQuery(sql, String.class);
-        l3q.setParameter("vipUuid", vipUuid);
-        l3q.setParameter("system", false);
-        l3q.setParameter("zoneUuid", zoneUuid);
-        l3q.setParameter("nsType", PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
-        List<String> l3Uuids = l3q.getResultList();
+        List<String> l3Uuids;
+        if (vipPeerL3Uuid == null) {
+            sql = "select l3.uuid from L3NetworkVO l3, VipVO vip, NetworkServiceL3NetworkRefVO ref where l3.system = :system and l3.uuid != vip.l3NetworkUuid and l3.uuid = ref.l3NetworkUuid and ref.networkServiceType = :nsType and l3.zoneUuid = :zoneUuid and vip.uuid = :vipUuid";
+            TypedQuery<String> l3q = dbf.getEntityManager().createQuery(sql, String.class);
+            l3q.setParameter("vipUuid", vipUuid);
+            l3q.setParameter("system", false);
+            l3q.setParameter("zoneUuid", zoneUuid);
+            l3q.setParameter("nsType", PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
+            l3Uuids = l3q.getResultList();
+        } else {
+            l3Uuids = asList(vipPeerL3Uuid);
+        }
+
         if (l3Uuids.isEmpty()) {
             return new ArrayList<>();
         }
@@ -233,7 +241,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         TypedQuery<VmNicVO> nq = dbf.getEntityManager().createQuery(sql, VmNicVO.class);
         nq.setParameter("l3Uuids", l3Uuids);
         nq.setParameter("vmType", VmInstanceConstant.USER_VM_TYPE);
-        nq.setParameter("vmStates", Arrays.asList(VmInstanceState.Running, VmInstanceState.Stopped));
+        nq.setParameter("vmStates", asList(VmInstanceState.Running, VmInstanceState.Stopped));
         nq.setParameter("sport", sport);
         nq.setParameter("eport", eport);
         nq.setParameter("protocol", protocol);

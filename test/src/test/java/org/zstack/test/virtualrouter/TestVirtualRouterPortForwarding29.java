@@ -8,6 +8,7 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.portforwarding.PortForwardingRuleInventory;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
@@ -21,9 +22,8 @@ import org.zstack.test.deployer.Deployer;
 import java.util.List;
 
 /**
- * @author frank
- * @condition 1. get attachable vm nics for rule
- * @test confirm state change success
+ * test APIGetPortForwardingAttachableVmNicsMsg
+ *
  */
 public class TestVirtualRouterPortForwarding29 {
     Deployer deployer;
@@ -63,31 +63,42 @@ public class TestVirtualRouterPortForwarding29 {
 
         L3NetworkInventory guestL3 = deployer.l3Networks.get("GuestNetwork");
 
+        VmInstanceInventory vm1 = deployer.vms.get("TestVm");
+        VmInstanceInventory vm2 = deployer.vms.get("TestVm2");
+        VmNicInventory vmNic1 = vm1.getVmNics().get(0);
+        VmNicInventory vmNic2 = vm2.getVmNics().get(0);
+
         List<VmNicInventory> nics = api.getPortForwardingAttachableNics(r1.getUuid());
-        Assert.assertEquals(1, nics.size());
-        VmNicInventory nic = nics.get(0);
-        Assert.assertEquals(guestL3.getUuid(), nic.getL3NetworkUuid());
+        Assert.assertEquals(2, nics.size());
+        VmNicInventory nic1 = nics.get(0);
+        VmNicInventory nic2 = nics.get(1);
+        Assert.assertFalse(nic1.getUuid().equals(nic2.getUuid()));
 
         nics = api.getPortForwardingAttachableNics(r2.getUuid());
+        Assert.assertEquals(2, nics.size());
+        nic1 = nics.get(0);
+        nic2 = nics.get(1);
+        Assert.assertFalse(nic1.getUuid().equals(nic2.getUuid()));
+
+        nics = api.getPortForwardingAttachableNics(r3.getUuid());
+        Assert.assertEquals(2, nics.size());
+        nic1 = nics.get(0);
+        nic2 = nics.get(1);
+        Assert.assertFalse(nic1.getUuid().equals(nic2.getUuid()));
+
+        api.attachPortForwardingRule(r1.getUuid(), vmNic1.getUuid());
+
+        // rule 2,3 are not attachable to the vm1 because they use other VIPs
+        nics = api.getPortForwardingAttachableNics(r2.getUuid());
         Assert.assertEquals(1, nics.size());
-        nic = nics.get(0);
-        Assert.assertEquals(guestL3.getUuid(), nic.getL3NetworkUuid());
+        Assert.assertEquals(vmNic2.getUuid(), nics.get(0).getUuid());
 
         nics = api.getPortForwardingAttachableNics(r3.getUuid());
         Assert.assertEquals(1, nics.size());
-        nic = nics.get(0);
-        Assert.assertEquals(guestL3.getUuid(), nic.getL3NetworkUuid());
+        Assert.assertEquals(vmNic2.getUuid(), nics.get(0).getUuid());
 
-        api.attachPortForwardingRule(r1.getUuid(), nic.getUuid());
-
-        nics = api.getPortForwardingAttachableNics(r2.getUuid());
-        Assert.assertEquals(0, nics.size());
-
-        // rule 3 is not attachable because it's another VIP
-        nics = api.getPortForwardingAttachableNics(r3.getUuid());
-        Assert.assertEquals(0, nics.size());
-
-        // rule4 share the same vip with rule1, so it's attachable
+        // rule4 share the same vip with rule1, so it's attachable to the vm1
+        // and only attachable to the vm1 because the vm2 is on another private L3
         PortForwardingRuleInventory r4 = new PortForwardingRuleInventory();
         r4.setName("rule4");
         r4.setVipUuid(r1.getVipUuid());
@@ -100,7 +111,6 @@ public class TestVirtualRouterPortForwarding29 {
 
         nics = api.getPortForwardingAttachableNics(r4.getUuid());
         Assert.assertEquals(1, nics.size());
-        nic = nics.get(0);
-        Assert.assertEquals(guestL3.getUuid(), nic.getL3NetworkUuid());
+        Assert.assertEquals(vmNic1.getUuid(), nics.get(0).getUuid());
     }
 }
