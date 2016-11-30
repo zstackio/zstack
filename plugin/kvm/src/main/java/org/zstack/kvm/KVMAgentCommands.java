@@ -873,29 +873,11 @@ public class KVMAgentCommands {
 
     public static class ChangeVmPasswordCmd extends AgentCommand{
         private VmAccountPerference accountPerference;
-        private String qcowFile;
-        private String ip;
         private long timeout;
 
         public VmAccountPerference getAccountPerference() { return accountPerference; }
 
         public void setAccountPerference(VmAccountPerference accountPerference) { this.accountPerference = accountPerference; }
-
-        public String getQcowFile() {
-            return qcowFile;
-        }
-
-        public void setQcowFile(String qcowFile) {
-            this.qcowFile = qcowFile;
-        }
-
-        public String getIp() {
-            return ip;
-        }
-
-        public void setIp(String ip) {
-            this.ip = ip;
-        }
 
         public long getTimeout() {
             return timeout;
