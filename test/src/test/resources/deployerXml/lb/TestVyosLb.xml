@@ -72,7 +72,7 @@
                             <ipRange name="TestIpRange" description="Test" startIp="10.10.2.100"
                                      endIp="10.20.2.200" gateway="10.10.2.1" netmask="255.0.0.0" />
 
-                            <networkService provider="Vyos">
+                            <networkService provider="vrouter">
                                 <serviceType>PortForwarding</serviceType>
                                 <serviceType>SNAT</serviceType>
                                 <serviceType>LoadBalancer</serviceType>

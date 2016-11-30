@@ -69,7 +69,7 @@
 
 							<dns>1.1.1.1</dns>
 
-							<networkService provider="Vyos">
+							<networkService provider="vrouter">
 								<serviceType>DHCP</serviceType>
 								<serviceType>DNS</serviceType>
 								<serviceType>Eip</serviceType>
