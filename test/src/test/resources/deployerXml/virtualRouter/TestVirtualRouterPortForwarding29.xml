@@ -30,13 +30,18 @@
             <instanceOfferingRef>TestInstanceOffering</instanceOfferingRef>
             <l3NetworkRef>GuestNetwork</l3NetworkRef>
         </userVm>
+
+		<userVm name="TestVm2" description="Test">
+			<imageRef>TestImage</imageRef>
+			<instanceOfferingRef>TestInstanceOffering</instanceOfferingRef>
+			<l3NetworkRef>GuestNetwork2</l3NetworkRef>
+		</userVm>
     </vm>
     
     <portForwardings>
     	<portForwarding>
     		<name>pfRule1</name>
     		<publicL3NetworkRef>PublicNetwork</publicL3NetworkRef>
-    		<privateL3NetworkRef>GuestNetwork</privateL3NetworkRef>
     		<publicPortStart>22</publicPortStart>
     		<publicPortEnd>100</publicPortEnd>
     		<privatePortStart>22</privatePortStart>
@@ -48,7 +53,6 @@
         <portForwarding>
             <name>pfRule2</name>
             <publicL3NetworkRef>PublicNetwork</publicL3NetworkRef>
-            <privateL3NetworkRef>GuestNetwork</privateL3NetworkRef>
             <publicPortStart>50</publicPortStart>
             <publicPortEnd>80</publicPortEnd>
             <privatePortStart>50</privatePortStart>
@@ -60,7 +64,6 @@
         <portForwarding>
             <name>pfRule3</name>
             <publicL3NetworkRef>PublicNetwork</publicL3NetworkRef>
-            <privateL3NetworkRef>GuestNetwork</privateL3NetworkRef>
             <publicPortStart>50</publicPortStart>
             <publicPortEnd>80</publicPortEnd>
             <privatePortStart>50</privatePortStart>
@@ -80,6 +83,7 @@
 					</hosts>
 					<primaryStorageRef>nfs</primaryStorageRef>
 					<l2NetworkRef>TestL2Network</l2NetworkRef>
+					<l2NetworkRef>TestL2Network2</l2NetworkRef>
 				</cluster>
 			</clusters>
 			
@@ -102,6 +106,22 @@
 							</networkService>
 						</l3BasicNetwork>
 						
+					</l3Networks>
+				</l2NoVlanNetwork>
+
+				<l2NoVlanNetwork name="TestL2Network2" description="Test"
+								 physicalInterface="eth1">
+					<l3Networks>
+						<l3BasicNetwork name="GuestNetwork2" description="Test">
+							<ipRange name="TestIpRange" description="Test" startIp="10.10.2.100"
+									 endIp="10.20.2.200" gateway="10.10.2.1" netmask="255.0.0.0" />
+
+							<networkService provider="VirtualRouter">
+								<serviceType>PortForwarding</serviceType>
+								<serviceType>SNAT</serviceType>
+							</networkService>
+						</l3BasicNetwork>
+
 					</l3Networks>
 				</l2NoVlanNetwork>
 			</l2Networks>
