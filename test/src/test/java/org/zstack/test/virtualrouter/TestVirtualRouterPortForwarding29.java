@@ -112,5 +112,27 @@ public class TestVirtualRouterPortForwarding29 {
         nics = api.getPortForwardingAttachableNics(r4.getUuid());
         Assert.assertEquals(1, nics.size());
         Assert.assertEquals(vmNic1.getUuid(), nics.get(0).getUuid());
+
+        // make the vm1 has no pf rules
+        api.detachPortForwardingRule(r1.getUuid());
+        api.stopVmInstance(vm2.getUuid());
+        api.attachPortForwardingRule(r2.getUuid(), vmNic2.getUuid());
+
+        // rule 5 shares the same vip with rule2, as rule2 has been attached to
+        // the stopped vm2, the rule5 cannot be attached to the vm1 which is on
+        // another guest L3 network
+        PortForwardingRuleInventory r5 = new PortForwardingRuleInventory();
+        r5.setName("rule5");
+        r5.setVipUuid(r2.getVipUuid());
+        r5.setVipPortStart(2000);
+        r5.setVipPortEnd(2200);
+        r5.setPrivatePortStart(2000);
+        r5.setPrivatePortEnd(2200);
+        r5.setProtocolType("TCP");
+        r5 = api.createPortForwardingRuleByFullConfig(r5);
+
+        nics = api.getPortForwardingAttachableNics(r5.getUuid());
+        Assert.assertEquals(1, nics.size());
+        Assert.assertEquals(vmNic2.getUuid(), nics.get(0).getUuid());
     }
 }

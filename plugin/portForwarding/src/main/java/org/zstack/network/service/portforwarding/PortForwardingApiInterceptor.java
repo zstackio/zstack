@@ -86,7 +86,7 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(final APIAttachPortForwardingRuleMsg msg) {
         SimpleQuery<PortForwardingRuleVO> q = dbf.createQuery(PortForwardingRuleVO.class);
-        q.select(PortForwardingRuleVO_.vmNicUuid, PortForwardingRuleVO_.state, PortForwardingRuleVO_.vipUuid);
+        q.select(PortForwardingRuleVO_.vmNicUuid, PortForwardingRuleVO_.state);
         q.add(PortForwardingRuleVO_.uuid, Op.EQ, msg.getRuleUuid());
         Tuple t = q.findTuple();
 
@@ -104,12 +104,12 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
             ));
         }
 
-        String vipL3Uuid = new Callable<String>() {
+        VipVO vip = new Callable<VipVO>() {
             @Override
             @Transactional(readOnly = true)
-            public String call() {
-                String sql = "select vip.l3NetworkUuid from VipVO vip, PortForwardingRuleVO pf where vip.uuid = pf.vipUuid and pf.uuid = :pfUuid";
-                TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
+            public VipVO call() {
+                String sql = "select vip from VipVO vip, PortForwardingRuleVO pf where vip.uuid = pf.vipUuid and pf.uuid = :pfUuid";
+                TypedQuery<VipVO> q = dbf.getEntityManager().createQuery(sql, VipVO.class);
                 q.setParameter("pfUuid", msg.getRuleUuid());
                 return q.getSingleResult();
             }
@@ -119,15 +119,22 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
         vq.select(VmNicVO_.l3NetworkUuid);
         vq.add(VmNicVO_.uuid, Op.EQ, msg.getVmNicUuid());
         String guestL3Uuid = vq.findValue();
-        if (guestL3Uuid.equals(vipL3Uuid)) {
+        if (guestL3Uuid.equals(vip.getL3NetworkUuid())) {
             throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
                     String.format("guest l3Network of vm nic[uuid:%s] and vip l3Network of port forwarding rule[uuid:%s] are the same network",
                             msg.getVmNicUuid(), msg.getRuleUuid())
             ));
         }
 
-        String vipUuid = t.get(2, String.class);
-        checkIfAnotherVip(vipUuid, msg.getVmNicUuid());
+        if (vip.getPeerL3NetworkUuid() != null && vip.getPeerL3NetworkUuid().equals(guestL3Uuid)) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("the VIP[uuid:%s] is already bound the a guest L3 network[uuid:%s], but the VM nic[uuid:%s]" +
+                            " is no another guest L3 network[uuid:%s]", vip.getUuid(), vip.getPeerL3NetworkUuid(),
+                            msg.getVmNicUuid(), guestL3Uuid)
+            ));
+        }
+
+        checkIfAnotherVip(vip.getUuid(), msg.getVmNicUuid());
     }
 
     private boolean rangeOverlap(int s1, int e1, int s2, int e2) {
@@ -189,9 +196,11 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
 
         if (msg.getVmNicUuid() != null) {
             SimpleQuery<VipVO> vq = dbf.createQuery(VipVO.class);
-            vq.select(VipVO_.l3NetworkUuid);
+            vq.select(VipVO_.l3NetworkUuid, VipVO_.peerL3NetworkUuid);
             vq.add(VipVO_.uuid, Op.EQ, msg.getVipUuid());
-            String vipL3Uuid = vq.findValue();
+            Tuple t = vq.findTuple();
+            String vipL3Uuid = t.get(0, String.class);
+            String peerL3Uuid = t.get(1, String.class);
 
             SimpleQuery<VmNicVO> nicq = dbf.createQuery(VmNicVO.class);
             nicq.select(VmNicVO_.l3NetworkUuid);
@@ -200,6 +209,13 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
             if (nicL3Uuid.equals(vipL3Uuid)) {
                 throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
                         String.format("guest l3Network of vm nic[uuid:%s] and vip l3Network of vip[uuid: %s] are the same network", msg.getVmNicUuid(), msg.getVipUuid())
+                ));
+            }
+
+            if (peerL3Uuid != null && !peerL3Uuid.equals(nicL3Uuid)) {
+                throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                        String.format("the VIP[uuid:%s] is already bound the a guest L3 network[uuid:%s], but the VM nic[uuid:%s]" +
+                                " is no another guest L3 network[uuid:%s]", msg.getVipUuid(), peerL3Uuid, msg.getVmNicUuid(), nicL3Uuid)
                 ));
             }
 
