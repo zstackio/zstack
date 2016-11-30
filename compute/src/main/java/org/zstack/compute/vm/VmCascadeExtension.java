@@ -332,6 +332,9 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
             List<VmInstanceDeletionMsg> msgs = new ArrayList<>();
             for (VmDeletionStruct inv : vminvs) {
                 VmInstanceDeletionMsg msg = new VmInstanceDeletionMsg();
+                if (PrimaryStorageVO.class.getSimpleName().equals(action.getParentIssuer())) {
+                    msg.setDeletionPolicy(VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy.Direct.toString());
+                }
                 msg.setForceDelete(action.isActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE));
                 msg.setVmInstanceUuid(inv.getInventory().getUuid());
                 bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, inv.getInventory().getUuid());

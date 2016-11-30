@@ -60,7 +60,7 @@ public class TestCascadeDeletion5 {
         DiskOfferingInventory do2 = deployer.diskOfferings.get("TestDataDiskOffering");
         InstanceOfferingInventory io = deployer.instanceOfferings.get("TestInstanceOffering");
         BackupStorageInventory bs = deployer.backupStorages.get("TestBackupStorage");
-        VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicy.Direct.toString());
+        VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicy.Delay.toString());
 
         ClusterInventory ci = deployer.clusters.get("TestCluster");
         api.detachPrimaryStorage(prinv.getUuid(), ci.getUuid());
