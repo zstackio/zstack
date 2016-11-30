@@ -6,8 +6,8 @@ import org.zstack.header.network.service.NetworkServiceProviderType;
  * Created by xing5 on 2016/10/31.
  */
 public interface VyosConstants {
-    String VYOS_VM_TYPE = "Vyos";
-    String VYOS_ROUTER_PROVIDER_TYPE = "Vyos";
+    String VYOS_VM_TYPE = "vrouter";
+    String VYOS_ROUTER_PROVIDER_TYPE = "vrouter";
 
     String ANSIBLE_PLAYBOOK_NAME = "zvr.py";
     String ANSIBLE_MODULE_PATH = "ansible/zvr";
