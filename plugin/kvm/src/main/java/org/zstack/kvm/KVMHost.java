@@ -2635,7 +2635,7 @@ public class KVMHost extends HostBase implements Host {
                             new Log(self.getUuid()).log(KVMHostLabel.COLLECT_HOST_FACTS);
 
                             HostFactCmd cmd = new HostFactCmd();
-                            restf.asyncJsonPost(hostFactPath, cmd, new JsonAsyncRESTCallback<HostFactResponse>() {
+                            restf.asyncJsonPost(hostFactPath, cmd, new JsonAsyncRESTCallback<HostFactResponse>(trigger) {
                                 @Override
                                 public void fail(ErrorCode err) {
                                     trigger.fail(err);
