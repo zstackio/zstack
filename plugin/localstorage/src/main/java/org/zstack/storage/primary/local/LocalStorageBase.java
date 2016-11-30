@@ -45,6 +45,7 @@ import org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManager;
 import org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply.HostDiskCapacity;
 import org.zstack.storage.primary.local.MigrateBitsStruct.ResourceInfo;
 import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -1285,8 +1286,14 @@ public class LocalStorageBase extends PrimaryStorageBase {
         q.setLockMode(LockModeType.PESSIMISTIC_WRITE);
         q.setParameter("resUuid", resUuid);
         q.setParameter("puuid", self.getUuid());
-        Tuple twoRefs = q.getSingleResult();
+        List<Tuple> tupleList = q.getResultList();
+        if (tupleList == null || tupleList.isEmpty()) {
+            return;
+        }
 
+        DebugUtils.Assert(tupleList.size() == 1,
+                "should not get more than one LocalStorageHostRefVO/LocalStorageResourceRefVO");
+        Tuple twoRefs = tupleList.get(0);
         LocalStorageHostRefVO href = twoRefs.get(0, LocalStorageHostRefVO.class);
         LocalStorageResourceRefVO rref = twoRefs.get(1, LocalStorageResourceRefVO.class);
 
