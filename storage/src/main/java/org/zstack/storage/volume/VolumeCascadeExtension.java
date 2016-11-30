@@ -218,10 +218,7 @@ public class VolumeCascadeExtension extends AbstractAsyncCascadeExtension {
                     // when deleting the primary storage, the foreign key of VolumeVO to PrimaryStorageVO
                     // will cause VolumeVO to be deleted but left AccountResourceRefVO of the volume left
 
-                    // here we delete data volumes only, and the root volumes will be deleted in VmCascade
-                    List<String> volUuids = volumes.stream()
-                            .filter(s -> s.getInventory().getType().equals(VolumeType.Data.toString()))
-                            .map(s -> s.getInventory().getUuid()).collect(Collectors.toList());
+                    List<String> volUuids = volumes.stream().map(s -> s.getInventory().getUuid()).collect(Collectors.toList());
                     UpdateQuery q = UpdateQuery.New();
                     q.entity(AccountResourceRefVO.class);
                     q.condAnd(AccountResourceRefVO_.resourceUuid, Op.IN, volUuids);
