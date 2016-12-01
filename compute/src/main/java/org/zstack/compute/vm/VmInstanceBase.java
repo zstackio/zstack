@@ -701,7 +701,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         VmInstanceSpec spec = buildSpecFromInventory(inv, VmOperation.Expunge);
         FlowChain chain = getExpungeVmWorkFlowChain(inv);
         setFlowMarshaller(chain);
-        chain.setName(String.format("destroy-vm-%s", self.getUuid()));
+        chain.setName(String.format("expunge-vm-%s", self.getUuid()));
         chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
         chain.getData().put(Params.DeletionPolicy, VmInstanceDeletionPolicy.Direct);
         chain.done(new FlowDoneHandler(completion) {
