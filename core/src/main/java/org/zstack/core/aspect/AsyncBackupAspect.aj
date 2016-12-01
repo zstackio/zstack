@@ -27,6 +27,7 @@ public aspect AsyncBackupAspect {
 
     private boolean isAsyncBackup(Object backup) {
         return backup instanceof Message || backup instanceof Completion || backup instanceof ReturnValueCompletion
+                || backup instanceof AsyncLatch
                 || backup instanceof FlowTrigger || backup instanceof SyncTaskChain
                 || backup instanceof NoErrorCompletion || backup instanceof FlowRollback;
     }
@@ -56,6 +57,8 @@ public aspect AsyncBackupAspect {
                 ((Completion)ancestor).fail(err);
             } else if (ancestor instanceof ReturnValueCompletion) {
                 ((ReturnValueCompletion)ancestor).fail(err);
+            } else if (ancestor instanceof AsyncLatch) {
+                ((AsyncLatch) ancestor).ack();
             } else if (ancestor instanceof FlowTrigger) {
                 ((FlowTrigger) ancestor).fail(err);
             } else if (ancestor instanceof FlowRollback) {
