@@ -49,9 +49,9 @@
         <type>java.lang.Integer</type>
     </config>
     <config>
-        <name>vyos.password</name>
-        <description>The password of user 'vyos' for the vyos virtual router</description>
-        <defaultValue>vyos12#</defaultValue>
+        <name>vrouter.password</name>
+        <description>The password for vrouter vm</description>
+        <defaultValue>vrouter12#</defaultValue>
         <category>virtualRouter</category>
     </config>
 </globalConfig>
