@@ -126,7 +126,7 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
             ));
         }
 
-        if (vip.getPeerL3NetworkUuid() != null && vip.getPeerL3NetworkUuid().equals(guestL3Uuid)) {
+        if (vip.getPeerL3NetworkUuid() != null && !vip.getPeerL3NetworkUuid().equals(guestL3Uuid)) {
             throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
                     String.format("the VIP[uuid:%s] is already bound the a guest L3 network[uuid:%s], but the VM nic[uuid:%s]" +
                             " is on another guest L3 network[uuid:%s]", vip.getUuid(), vip.getPeerL3NetworkUuid(),
