@@ -205,7 +205,7 @@ public class VyosVmFactory extends VirtualRouterApplianceVmFactory implements Co
         NetworkServiceProviderVO vo = new NetworkServiceProviderVO();
         vo.setUuid(Platform.getUuid());
         vo.setName(VyosConstants.VYOS_VM_TYPE);
-        vo.setDescription("zstack vyos network service provider");
+        vo.setDescription("zstack vrouter network service provider");
         vo.getNetworkServiceTypes().add(NetworkServiceType.DHCP.toString());
         vo.getNetworkServiceTypes().add(NetworkServiceType.DNS.toString());
         vo.getNetworkServiceTypes().add(NetworkServiceType.SNAT.toString());

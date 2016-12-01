@@ -27,5 +27,5 @@ public class VirtualRouterSystemTags {
 
     public static PatternedSystemTag DEDICATED_ROLE_VR = new PatternedSystemTag("dedicatedRole", VmInstanceVO.class);
 
-    public static SystemTag VYOS_OFFERING = new PatternedSystemTag("vyos", InstanceOfferingVO.class);
+    public static SystemTag VYOS_OFFERING = new PatternedSystemTag("vrouter", InstanceOfferingVO.class);
 }
