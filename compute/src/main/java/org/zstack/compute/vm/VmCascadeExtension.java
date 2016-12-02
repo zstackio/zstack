@@ -10,6 +10,7 @@ import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.db.UpdateQuery;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.configuration.InstanceOfferingInventory;
@@ -19,6 +20,8 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.identity.AccountInventory;
+import org.zstack.header.identity.AccountResourceRefVO;
+import org.zstack.header.identity.AccountResourceRefVO_;
 import org.zstack.header.identity.AccountVO;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.L2NetworkConstant;
@@ -377,13 +380,26 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
             bus.send(msgs, new CloudBusListCallBack(completion) {
                 @Override
                 public void run(List<MessageReply> replies) {
-                    for (MessageReply r : replies) {
-                        if (!r.isSuccess()) {
-                            DetachNicFromVmMsg msg = msgs.get(replies.indexOf(r));
+                    List<String> vmNicUuids = new ArrayList<String>();
 
+                    for (MessageReply r : replies) {
+                        DetachNicFromVmMsg msg = msgs.get(replies.indexOf(r));
+                        if (!r.isSuccess()) {
                             //TODO: send alarm
                             logger.warn(String.format("failed to detach nic[uuid:%s] from the vm[uuid:%s], %s",
                                     msg.getVmNicUuid(), msg.getVmInstanceUuid(), r.getError()));
+                        } else {
+                            vmNicUuids.add(msg.getVmNicUuid());
+                        }
+                    }
+
+                    if (action.getParentIssuer().equals(L3NetworkVO.class.getSimpleName())) {
+                        if (!vmNicUuids.isEmpty()) {
+                            UpdateQuery q = UpdateQuery.New()
+                                    .entity(AccountResourceRefVO.class)
+                                    .condAnd(AccountResourceRefVO_.resourceUuid, Op.IN, vmNicUuids)
+                                    .condAnd(AccountResourceRefVO_.resourceType, Op.EQ, VmNicVO.class.getSimpleName());
+                            q.delete();
                         }
                     }
 
