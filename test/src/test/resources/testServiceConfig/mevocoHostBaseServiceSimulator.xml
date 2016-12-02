@@ -1,0 +1,7 @@
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>mevocoHostBaseService</id>
+
+    <message>
+        <name>org.zstack.header.host.ChangeVmPasswordMsg</name>
+    </message>
+</service>
