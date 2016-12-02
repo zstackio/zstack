@@ -109,9 +109,7 @@ class SimulatorHost extends HostBase {
             handle((DetachNicFromVmOnHypervisorMsg) msg);
         } else if (msg instanceof VmAttachNicOnHypervisorMsg) {
             handle((VmAttachNicOnHypervisorMsg) msg);
-        } else if (msg instanceof ChangeVmPasswordMsg) {
-            handle((ChangeVmPasswordMsg) msg);
-	    } else {
+        } else {
 	        super.handleLocalMessage(msg);
 	    }
 	}
@@ -177,12 +175,6 @@ class SimulatorHost extends HostBase {
     private void handle(CheckNetworkPhysicalInterfaceMsg msg) {
         logger.debug(String.format("Successfully checked physical network interface %s on simulator host", msg.getPhysicalInterface()));
         CheckNetworkPhysicalInterfaceReply reply = new CheckNetworkPhysicalInterfaceReply();
-        bus.reply(msg, reply);
-    }
-
-    private void handle(final ChangeVmPasswordMsg msg) {
-        logger.debug(String.format("SimulatorHost handle the message, hostid = %s ", msg.getHostUuid()));
-        ChangeVmPasswordReply reply = new ChangeVmPasswordReply();
         bus.reply(msg, reply);
     }
 

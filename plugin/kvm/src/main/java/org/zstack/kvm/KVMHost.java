@@ -1,6 +1,7 @@
 package org.zstack.kvm;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -67,6 +68,7 @@ public class KVMHost extends HostBase implements Host {
     private static final CLogger logger = Utils.getLogger(KVMHost.class);
 
     @Autowired
+    @Qualifier("KVMHostFactory")
     private KVMHostFactory factory;
     @Autowired
     private RESTFacade restf;
@@ -107,8 +109,6 @@ public class KVMHost extends HostBase implements Host {
     private String getConsolePortPath;
     private String changeCpuMemoryPath;
     private String deleteConsoleFirewall;
-    private String changeVmPasswordPath;
-    private String setRootPasswordPath;
 
     private String agentPackageName = KVMGlobalProperty.AGENT_PACKAGE_NAME;
 
@@ -211,14 +211,6 @@ public class KVMHost extends HostBase implements Host {
         changeCpuMemoryPath = ub.build().toString();
 
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
-        ub.path(KVMConstant.KVM_VM_CHANGE_PASSWORD_PATH);
-        changeVmPasswordPath = ub.build().toString();
-
-        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
-        ub.path(KVMConstant.KVM_VM_SET_ROOT_PASSWORD_PATH);
-        setRootPasswordPath = ub.build().toString();
-
-        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_DELETE_CONSOLE_FIREWALL_PATH);
         deleteConsoleFirewall = ub.build().toString();
     }
@@ -274,8 +266,6 @@ public class KVMHost extends HostBase implements Host {
             handle((VmDirectlyDestroyOnHypervisorMsg) msg);
         } else if (msg instanceof OnlineChangeVmCpuMemoryMsg) {
             handle((OnlineChangeVmCpuMemoryMsg) msg);
-        } else if (msg instanceof ChangeVmPasswordMsg) {
-            handle((ChangeVmPasswordMsg) msg);
         } else if (msg instanceof PauseVmOnHypervisorMsg) {
             handle((PauseVmOnHypervisorMsg) msg);
         } else if (msg instanceof ResumeVmOnHypervisorMsg) {
@@ -368,37 +358,6 @@ public class KVMHost extends HostBase implements Host {
         }
 
         bus.reply(msg, reply);
-    }
-
-    private void handle(final ChangeVmPasswordMsg msg) {
-        final ChangeVmPasswordReply reply = new ChangeVmPasswordReply();
-
-        ChangeVmPasswordCmd cmd = new ChangeVmPasswordCmd();
-        cmd.setAccountPerference(msg.getAccountPerference());
-        cmd.setTimeout(timeoutManager.getTimeout(cmd.getClass(), "10m"));
-
-        restf.asyncJsonPost(changeVmPasswordPath, cmd, new JsonAsyncRESTCallback<ChangeVmPasswordResponse>(msg) {
-            @Override
-            public void fail(ErrorCode err) {
-                reply.setError(err);
-                bus.reply(msg, reply);
-            }
-
-            @Override
-            public void success(ChangeVmPasswordResponse ret) {
-                if (!ret.isSuccess()) {
-                    reply.setError(errf.stringToOperationError(ret.getError()));
-                } else {
-                    reply.setVmAccountPerference(ret.getVmAccountPerference());
-                }
-                bus.reply(msg, reply);
-            }
-
-            @Override
-            public Class<ChangeVmPasswordResponse> getReturnClass() {
-                return ChangeVmPasswordResponse.class;
-            }
-        });
     }
 
     private void handle(final OnlineChangeVmCpuMemoryMsg msg) {

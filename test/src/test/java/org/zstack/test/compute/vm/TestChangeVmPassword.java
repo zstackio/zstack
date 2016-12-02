@@ -10,6 +10,7 @@ import org.zstack.header.vm.*;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
+import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.test.tag.TestQemuAgentSystemTag;
 
@@ -26,8 +27,9 @@ public class TestChangeVmPassword {
     @Before
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
-        deployer = new Deployer("deployerXml/vm/TestChangeVmPassword.xml");
-        deployer.addSpringConfig("mevocoRelated.xml");
+        WebBeanConstructor con = new WebBeanConstructor();
+        deployer = new Deployer("deployerXml/vm/TestChangeVmPassword.xml", con);
+//        deployer.addSpringConfig("mevocoRelated.xml");
         deployer.build();
         api = deployer.getApi();
         loader = deployer.getComponentLoader();
@@ -43,17 +45,17 @@ public class TestChangeVmPassword {
         Assert.assertEquals(VmInstanceState.Running.toString(), inv.getState());
 
         VmAccountPerference account = api.changeVmPassword(new VmAccountPerference(
-                inv.getUuid(), "root", "test1234"));
+                inv.getUuid(), "change", "test1234"));
         Assert.assertNotNull(account);
         Assert.assertEquals(inv.getUuid(), account.getVmUuid());
-        Assert.assertEquals("root", account.getUserAccount());
+        Assert.assertEquals("change", account.getUserAccount());
         Assert.assertEquals("******", account.getAccountPassword());
 
         account = api.changeVmPassword(new VmAccountPerference(
-                inv.getUuid(), "root", "||||||"));
+                inv.getUuid(), "change", "||||||"));
         Assert.assertNotNull(account);
         Assert.assertEquals(inv.getUuid(), account.getVmUuid());
-        Assert.assertEquals("root", account.getUserAccount());
+        Assert.assertEquals("change", account.getUserAccount());
         Assert.assertEquals("******", account.getAccountPassword());
 
 
@@ -63,7 +65,7 @@ public class TestChangeVmPassword {
 
         try {
             account = api.changeVmPassword(new VmAccountPerference(
-                    inv.getUuid(), "root", "test1234"));
+                    inv.getUuid(), "change", "test1234"));
             Assert.assertFalse(true);
         } catch (ApiSenderException e) {
             Assert.assertEquals(VmErrors.NOT_IN_CORRECT_STATE.toString(), e.getError().getCode());

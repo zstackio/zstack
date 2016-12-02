@@ -71,6 +71,9 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
     @Autowired
     private HostCpuOverProvisioningManager cpuRatioMgr;
 
+    private Map<Class, HostBaseExtensionFactory> hostBaseExtensionFactories = new HashMap<>();
+
+
     private Map<String, HypervisorFactory> hypervisorFactories = Collections.synchronizedMap(new HashMap<String, HypervisorFactory>());
     private Map<String, HostMessageHandlerExtensionPoint> msgHandlers = Collections.synchronizedMap(new HashMap<String, HostMessageHandlerExtensionPoint>());
     private static final Set<Class> allowedMessageAfterSoftDeletion = new HashSet<Class>();
@@ -416,6 +419,18 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
             hypervisorFactories.put(f.getHypervisorType().toString(), f);
         }
 
+        for (HostBaseExtensionFactory ext : pluginRgty.getExtensionList(HostBaseExtensionFactory.class)) {
+            for (Class clz : ext.getMessageClasses()) {
+                HostBaseExtensionFactory old = hostBaseExtensionFactories.get(clz);
+                if (old != null) {
+                    throw new CloudRuntimeException(String.format("duplicate HostBaseExtensionFactory[%s, %s] for the" +
+                            " message[%s]", old.getClass(), ext.getClass(), clz));
+                }
+
+                hostBaseExtensionFactories.put(clz, ext);
+            }
+        }
+
         for (HostMessageHandlerExtensionPoint handler : pluginRgty.getExtensionList(HostMessageHandlerExtensionPoint.class)) {
             assert handler.getMessageNameTheExtensionServed() != null;
             @SuppressWarnings("unchecked")
@@ -571,5 +586,10 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
     public void managementNodeReady() {
         logger.debug(String.format("Management node[uuid:%s] joins, start loading host...", Platform.getManagementServerId()));
         loadHost();
+    }
+
+    @Override
+    public HostBaseExtensionFactory getHostBaseExtensionFactory(Message msg) {
+        return hostBaseExtensionFactories.get(msg.getClass());
     }
 }

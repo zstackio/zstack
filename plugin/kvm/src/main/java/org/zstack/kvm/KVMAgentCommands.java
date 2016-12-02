@@ -5,7 +5,6 @@ import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.core.validation.Validation;
 import org.zstack.header.storage.snapshot.APIDeleteVolumeSnapshotMsg;
 import org.zstack.header.vm.APICreateVmInstanceMsg;
-import org.zstack.header.vm.VmAccountPerference;
 import org.zstack.header.vm.VmBootDevice;
 import org.zstack.header.volume.APICreateVolumeSnapshotMsg;
 import org.zstack.network.securitygroup.SecurityGroupRuleTO;
@@ -871,22 +870,6 @@ public class KVMAgentCommands {
     public static class StartVmResponse extends AgentResponse {
     }
 
-    public static class ChangeVmPasswordCmd extends AgentCommand{
-        private VmAccountPerference accountPerference;
-        private long timeout;
-
-        public VmAccountPerference getAccountPerference() { return accountPerference; }
-
-        public void setAccountPerference(VmAccountPerference accountPerference) { this.accountPerference = accountPerference; }
-
-        public long getTimeout() {
-            return timeout;
-        }
-
-        public void setTimeout(long timeout) {
-            this.timeout = timeout;
-        }
-    }
     public static class OnlineChangeCpuMemoryCmd extends AgentCommand{
         private String vmUuid;
         private int cpuNum;
@@ -917,21 +900,6 @@ public class KVMAgentCommands {
         }
     }
 
-    public static class ChangeVmPasswordResponse extends AgentResponse{
-        private VmAccountPerference accountPerference;
-        private String qcowFile;
-
-        public VmAccountPerference getVmAccountPerference() { return accountPerference; }
-        public void setVmAccountPerference(VmAccountPerference accountPerference) { this.accountPerference = accountPerference; }
-
-        public String getQcowFile() {
-            return qcowFile;
-        }
-
-        public void setQcowFile(String qcowFile) {
-            this.qcowFile = qcowFile;
-        }
-    }
     public static class OnlineChangeCpuMemoryResponse extends AgentResponse{
         private int cpuNum;
         private long memorySize;
