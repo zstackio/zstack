@@ -153,7 +153,6 @@ public class CephBackupStorageBase extends BackupStorageBase {
         String url;
         String installPath;
         String imageUuid;
-        boolean inject = false;
 
         public String getImageUuid() {
             return imageUuid;
@@ -177,14 +176,6 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
         public void setInstallPath(String installPath) {
             this.installPath = installPath;
-        }
-
-        public boolean isInject() {
-            return inject;
-        }
-
-        public void setInject(boolean inject) {
-            this.inject = inject;
         }
     }
 
@@ -368,8 +359,6 @@ public class CephBackupStorageBase extends BackupStorageBase {
         cmd.url = msg.getImageInventory().getUrl();
         cmd.installPath = makeImageInstallPath(msg.getImageInventory().getUuid());
         cmd.imageUuid = msg.getImageInventory().getUuid();
-        cmd.inject = msg.isInject();
-
 
         String sql = "update ImageBackupStorageRefVO set installPath = :installPath " +
                 "where backupStorageUuid = :bsUuid and imageUuid = :imageUuid";

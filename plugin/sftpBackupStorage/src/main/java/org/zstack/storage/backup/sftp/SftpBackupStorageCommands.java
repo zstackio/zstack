@@ -86,7 +86,6 @@ public class SftpBackupStorageCommands {
         private String url;
         private long timeout;
         private String urlScheme;
-        private boolean inject;
 
         public String getUuid() {
             return uuid;
@@ -125,13 +124,6 @@ public class SftpBackupStorageCommands {
             this.urlScheme = urlScheme;
         }
 
-        public boolean isInject() {
-            return inject;
-        }
-
-        public void setInject(boolean inject) {
-            this.inject = inject;
-        }
     }
     public static class DownloadResponse extends AgentResponse {
         public String md5Sum;

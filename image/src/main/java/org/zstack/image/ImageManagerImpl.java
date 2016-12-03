@@ -25,7 +25,6 @@ import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
-import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.*;
@@ -899,19 +898,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         final List<DownloadImageMsg> dmsgs = CollectionUtils.transformToList(msg.getBackupStorageUuids(), new Function<DownloadImageMsg, String>() {
             @Override
             public DownloadImageMsg call(String arg) {
-                boolean enableInject = false;
-                if(msg.getSystemTags() != null) {
-                    if (msg.getSystemTags().contains(ImageSystemTags.IMAGE_INJECT_QEMUGA.getTagFormat()) == true) {
-                        enableInject = ImageGlobalConfig.ENABLE_QEMUGA.value(Boolean.class);
-                        if (enableInject) {
-                            if (ImageConstant.QCOW2_FORMAT_STRING.equals(msg.getFormat()) == false) {
-                                final ErrorCode err = errf.instantiateErrorCode(ImageErrors.INJECT_QEMUGA_ERROR, "Inject image can only support qcow2 format.");
-                                throw new OperationFailureException(err);
-                            }
-                        }
-                    }
-                }
-                DownloadImageMsg dmsg = new DownloadImageMsg(inv, enableInject);
+                DownloadImageMsg dmsg = new DownloadImageMsg(inv);
                 dmsg.setBackupStorageUuid(arg);
                 dmsg.setFormat(msg.getFormat());
                 bus.makeTargetServiceIdByResourceUuid(dmsg, BackupStorageConstant.SERVICE_ID, arg);
