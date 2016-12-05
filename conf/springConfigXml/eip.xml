@@ -23,34 +23,6 @@
             <zstack:extension interface="org.zstack.header.vm.VmIpChangedExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.identity.ResourceOwnerAfterChangeExtensionPoint"/>
         </zstack:plugin>
-
-        <property name="createEipFlowNames">
-            <list>
-                <value>org.zstack.network.service.eip.EipPrepareVipFlow</value>
-                <value>org.zstack.network.service.eip.AttachEipFlow</value>
-            </list>
-        </property>
-
-        <property name="removeEipFlowNames">
-            <list>
-                <value>org.zstack.network.service.eip.DetachEipFlow</value>
-                <value>org.zstack.network.service.eip.EipReturnVipFlow</value>
-            </list>
-        </property>
-
-        <property name="attachEipFlowNames">
-            <list>
-                <value>org.zstack.network.service.eip.EipPrepareVipFlow</value>
-                <value>org.zstack.network.service.eip.AttachEipFlow</value>
-            </list>
-        </property>
-
-        <property name="detachEipFlowNames">
-            <list>
-                <value>org.zstack.network.service.eip.DetachEipFlow</value>
-                <value>org.zstack.network.service.eip.EipReturnVipFlow</value>
-            </list>
-        </property>
     </bean>
 
     <bean id="EipExtension" class="org.zstack.network.service.eip.EipExtension">

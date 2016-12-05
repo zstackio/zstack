@@ -12,13 +12,11 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
+import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
-import org.zstack.header.core.workflow.FlowChain;
-import org.zstack.header.core.workflow.FlowChainProcessor;
-import org.zstack.header.core.workflow.FlowDoneHandler;
-import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -79,15 +77,6 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
     private ErrorFacade errf;
 
     private Map<String, EipBackend> backends = new HashMap<>();
-    private List<String> createEipFlowNames;
-    private List<String> removeEipFlowNames;
-    private List<String> attachEipFlowNames;
-    private List<String> detachEipFlowNames;
-    private FlowChainBuilder createEipFlowBuilder;
-    private FlowChainBuilder removeEipFlowBuilder;
-    private FlowChainBuilder attachEipFlowBuilder;
-    private FlowChainBuilder detachEipFlowBuilder;
-
 
     @Override
     @MessageSafe
@@ -330,27 +319,70 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         NetworkServiceProviderType providerType = nwServiceMgr.
                 getTypeOfNetworkServiceProviderForService(nicInventory.getL3NetworkUuid(), EipConstant.EIP_TYPE);
 
-        FlowChain chain = removeEipFlowBuilder.build();
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("delete-eip-vmNic-%s-vip-%s", nicvo.getUuid(), vipvo.getUuid()));
-        chain.getData().put(EipConstant.Params.NETWORK_SERVICE_PROVIDER_TYPE.toString(), providerType.toString());
-        chain.getData().put(EipConstant.Params.EIP_STRUCT.toString(), struct);
-        chain.getData().put(EipConstant.Params.NEED_UNLOCK_VIP.toString(), true);
-        chain.getData().put(VipConstant.Params.VIP_SERVICE_PROVIDER_TYPE.toString(), providerType);
-        chain.getData().put(VipConstant.Params.VIP.toString(), vipInventory);
-        chain.done(new FlowDoneHandler(msg) {
+        chain.then(new ShareFlow() {
             @Override
-            public void handle(Map data) {
-                dbf.remove(vo);
-                bus.publish(evt);
-            }
-        }).error(new FlowErrorHandler(msg) {
-            @Override
-            public void handle(ErrorCode errCode, Map data) {
-                evt.setErrorCode(errCode);
-                bus.publish(evt);
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "delete-eip-from-backend";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        EipBackend bkd = getEipBackend(providerType.toString());
+                        bkd.revokeEip(struct, new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                //TODO
+                                logger.warn(String.format("failed to detach eip[uuid:%s, ip:%s, vm nic uuid:%s] on service provider[%s], service provider will garbage collect. %s",
+                                        struct.getEip().getUuid(), struct.getVip().getIp(), struct.getNic().getUuid(), providerType, errorCode));
+                                trigger.next();
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "release-vip";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        new Vip(vipInventory.getUuid()).release(new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
+                done(new FlowDoneHandler(msg) {
+                    @Override
+                    public void handle(Map data) {
+                        dbf.remove(vo);
+                        bus.publish(evt);
+                    }
+                });
+
+                error(new FlowErrorHandler(msg) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        evt.setErrorCode(errCode);
+                        bus.publish(evt);
+                    }
+                });
             }
         }).start();
-
     }
 
     private void handle(APICreateEipMsg msg) {
@@ -411,8 +443,6 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         final EipInventory retinv = EipInventory.valueOf(vo);
 
         final VmNicInventory nicInventory = VmNicInventory.valueOf(nicvo);
-        L3NetworkVO l3vo = dbf.findByUuid(nicvo.getL3NetworkUuid(), L3NetworkVO.class);
-        L3NetworkInventory l3NetworkInventory = L3NetworkInventory.valueOf(l3vo);
 
         SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
         q.select(VmInstanceVO_.state);
@@ -447,30 +477,99 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         struct.setNic(nicInventory);
         struct.setVip(vipInventory);
         NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(nicInventory.getL3NetworkUuid(), EipConstant.EIP_TYPE);
-        FlowChain chain = createEipFlowBuilder.build();
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("create-eip-vmNic-%s-vip-%s", msg.getVmNicUuid(), msg.getVipUuid()));
-        chain.getData().put(EipConstant.Params.EIP_STRUCT.toString(), struct);
-        chain.getData().put(EipConstant.Params.NEED_LOCK_VIP.toString(), true);
-        chain.getData().put(EipConstant.Params.NETWORK_SERVICE_PROVIDER_TYPE.toString(), providerType.toString());
-        chain.getData().put(VipConstant.Params.VIP.toString(), vipInventory);
-        chain.getData().put(VipConstant.Params.VIP_SERVICE_PROVIDER_TYPE.toString(), providerType.toString());
-        chain.getData().put(VipConstant.Params.GUEST_L3NETWORK_VIP_FOR.toString(), l3NetworkInventory);
-        chain.done(new FlowDoneHandler(msg) {
+        chain.then(new ShareFlow() {
             @Override
-            public void handle(Map data) {
-                evt.setInventory(retinv);
-                logger.debug(String.format("successfully created eip[uuid:%s, name:%s] on vip[uuid:%s] for vm nic[uuid:%s]",
-                        retinv.getUuid(), retinv.getName(), vipInventory.getUuid(), nicInventory.getUuid()));
-                bus.publish(evt);
-            }
-        }).error(new FlowErrorHandler(msg) {
-            @Override
-            public void handle(ErrorCode errCode, Map data) {
-                evt.setErrorCode(errCode);
-                dbf.remove(fevo);
-                logger.debug(String.format("failed to create eip[uuid:%s, name:%s] on vip[uuid:%s] for vm nic[uuid:%s], %s",
-                        retinv.getUuid(), retinv.getName(), vipInventory.getUuid(), nicInventory.getUuid(), errCode));
-                bus.publish(evt);
+            public void setup() {
+                flow(new Flow() {
+                    String __name__ = "prepare-vip";
+
+                    boolean s = false;
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        Vip vip = new Vip(vipInventory.getUuid());
+                        vip.setServiceProvider(providerType.toString());
+                        vip.setUseFor(EipConstant.EIP_NETWORK_SERVICE_TYPE);
+                        vip.setPeerL3NetworkUuid(nicInventory.getL3NetworkUuid());
+                        vip.acquire(new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                s = true;
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        if (!s) {
+                            trigger.rollback();
+                            return;
+                        }
+
+                        Vip vip = new Vip(vipInventory.getUuid());
+                        vip.release(new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.rollback();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                logger.warn(errorCode.toString());
+                                trigger.rollback();
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "create-eip-on-backend";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        EipBackend bkd = getEipBackend(providerType.toString());
+                        bkd.applyEip(struct, new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
+                done(new FlowDoneHandler(msg) {
+                    @Override
+                    public void handle(Map data) {
+                        evt.setInventory(retinv);
+                        logger.debug(String.format("successfully created eip[uuid:%s, name:%s] on vip[uuid:%s] for vm nic[uuid:%s]",
+                                retinv.getUuid(), retinv.getName(), vipInventory.getUuid(), nicInventory.getUuid()));
+                        bus.publish(evt);
+                    }
+                });
+
+                error(new FlowErrorHandler(msg) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        evt.setErrorCode(errCode);
+                        dbf.remove(fevo);
+                        logger.debug(String.format("failed to create eip[uuid:%s, name:%s] on vip[uuid:%s] for vm nic[uuid:%s], %s",
+                                retinv.getUuid(), retinv.getName(), vipInventory.getUuid(), nicInventory.getUuid(), errCode));
+                        bus.publish(evt);
+                    }
+                });
             }
         }).start();
     }
@@ -494,10 +593,6 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
     @Override
     public boolean start() {
         populateExtensions();
-        createEipFlowBuilder = FlowChainBuilder.newBuilder().setFlowClassNames(createEipFlowNames).construct();
-        removeEipFlowBuilder = FlowChainBuilder.newBuilder().setFlowClassNames(removeEipFlowNames).construct();
-        attachEipFlowBuilder = FlowChainBuilder.newBuilder().setFlowClassNames(attachEipFlowNames).construct();
-        detachEipFlowBuilder = FlowChainBuilder.newBuilder().setFlowClassNames(detachEipFlowNames).construct();
         return true;
     }
 
@@ -518,39 +613,76 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
 
 
     private void detachEip(final EipStruct struct, final String providerType, final boolean updateDb, final Completion completion) {
-        VipInventory vip = struct.getVip();
         VmNicInventory nic = struct.getNic();
         final EipInventory eip = struct.getEip();
 
-        FlowChain chain = detachEipFlowBuilder.build();
-
-        chain.setProcessors(CollectionUtils.transformToList(pluginRgty.getExtensionList(DetachEipFlowChainExtensionPoint.class), new Function<FlowChainProcessor, DetachEipFlowChainExtensionPoint>() {
-            @Override
-            public FlowChainProcessor call(DetachEipFlowChainExtensionPoint ext) {
-                return ext.createDetachEipFlowChainProcessor(struct, providerType);
-            }
-        }));
-
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("detach-eip-%s-vmNic-%s", eip.getUuid(), nic.getUuid()));
-        chain.getData().put(EipConstant.Params.EIP_STRUCT.toString(), struct);
-        chain.getData().put(EipConstant.Params.NETWORK_SERVICE_PROVIDER_TYPE.toString(), providerType);
-        chain.getData().put(VipConstant.Params.VIP.toString(), vip);
-        chain.done(new FlowDoneHandler(completion) {
+        chain.then(new ShareFlow() {
             @Override
-            public void handle(Map data) {
-                if (updateDb) {
-                    EipVO eipvo = dbf.findByUuid(eip.getUuid(), EipVO.class);
-                    eipvo.setVmNicUuid(null);
-                    eipvo.setGuestIp(null);
-                    dbf.update(eipvo);
-                }
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "delete-eip-from-backend";
 
-                completion.success();
-            }
-        }).error(new FlowErrorHandler(completion) {
-            @Override
-            public void handle(ErrorCode errCode, Map data) {
-                completion.fail(errCode);
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        EipBackend bkd = getEipBackend(providerType);
+                        bkd.revokeEip(struct, new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                //TODO
+                                logger.warn(String.format("failed to detach eip[uuid:%s, ip:%s, vm nic uuid:%s] on service provider[%s], service provider will garbage collect. %s",
+                                        struct.getEip().getUuid(), struct.getVip().getIp(), struct.getNic().getUuid(), providerType, errorCode));
+                                trigger.next();
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "delete-vip-from-backend";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        new Vip(eip.getVipUuid()).deleteFromBackend(new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
+                done(new FlowDoneHandler(completion) {
+                    @Override
+                    public void handle(Map data) {
+                        if (updateDb) {
+                            EipVO eipvo = dbf.findByUuid(eip.getUuid(), EipVO.class);
+                            eipvo.setVmNicUuid(null);
+                            eipvo.setGuestIp(null);
+                            dbf.update(eipvo);
+                        }
+
+                        completion.success();
+                    }
+                });
+
+                error(new FlowErrorHandler(completion) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        completion.fail(errCode);
+                    }
+                });
             }
         }).start();
     }
@@ -569,53 +701,96 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
     public void attachEip(final EipStruct struct, final String providerType, final Completion completion) {
         final EipInventory eip = struct.getEip();
         final VmNicInventory nic = struct.getNic();
-        VipInventory vip = struct.getVip();
 
-        L3NetworkVO l3vo = dbf.findByUuid(nic.getL3NetworkUuid(), L3NetworkVO.class);
-        L3NetworkInventory l3inv = L3NetworkInventory.valueOf(l3vo);
 
-        FlowChain chain = attachEipFlowBuilder.build();
-
-        chain.setProcessors(CollectionUtils.transformToList(pluginRgty.getExtensionList(AttachEipFlowChainExtensionPoint.class), new Function<FlowChainProcessor, AttachEipFlowChainExtensionPoint>() {
-            @Override
-            public FlowChainProcessor call(AttachEipFlowChainExtensionPoint ext) {
-                return ext.createAttachEipFlowChainProcessor(struct, providerType);
-            }
-        }));
-
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("attach-eip-%s-vmNic-%s", eip.getUuid(), nic.getUuid()));
-        chain.getData().put(EipConstant.Params.NETWORK_SERVICE_PROVIDER_TYPE.toString(), providerType);
-        chain.getData().put(EipConstant.Params.EIP_STRUCT.toString(), struct);
-        chain.getData().put(VipConstant.Params.VIP.toString(), vip);
-        chain.getData().put(VipConstant.Params.VIP_SERVICE_PROVIDER_TYPE.toString(), providerType);
-        chain.getData().put(VipConstant.Params.GUEST_L3NETWORK_VIP_FOR.toString(), l3inv);
-        chain.done(new FlowDoneHandler(completion) {
+        chain.then(new ShareFlow() {
             @Override
-            public void handle(Map data) {
-                completion.success();
-            }
-        }).error(new FlowErrorHandler(completion) {
-            @Override
-            public void handle(ErrorCode errCode, Map data) {
-                completion.fail(errCode);
+            public void setup() {
+                flow(new Flow() {
+                    boolean s = false;
+
+                    String __name__ = "acquire-vip";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        Vip vip = new Vip(struct.getVip().getUuid());
+                        vip.setServiceProvider(providerType);
+                        vip.setUseFor(EipConstant.EIP_NETWORK_SERVICE_TYPE);
+                        vip.setPeerL3NetworkUuid(nic.getL3NetworkUuid());
+                        vip.acquire(new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                s = true;
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        if (!s) {
+                            trigger.rollback();
+                            return;
+                        }
+
+                        Vip vip = new Vip(struct.getVip().getUuid());
+                        vip.release(new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.rollback();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                logger.warn(errorCode.toString());
+                                trigger.rollback();
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "create-eip-on-backend";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        EipBackend bkd = getEipBackend(providerType);
+                        bkd.applyEip(struct, new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
+                done(new FlowDoneHandler(completion) {
+                    @Override
+                    public void handle(Map data) {
+                        completion.success();
+                    }
+                });
+
+                error(new FlowErrorHandler(completion) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        completion.fail(errCode);
+                    }
+                });
             }
         }).start();
-    }
-
-    public void setCreateEipFlowNames(List<String> createEipFlowNames) {
-        this.createEipFlowNames = createEipFlowNames;
-    }
-
-    public void setRemoveEipFlowNames(List<String> removeEipFlowNames) {
-        this.removeEipFlowNames = removeEipFlowNames;
-    }
-
-    public void setAttachEipFlowNames(List<String> attachEipFlowNames) {
-        this.attachEipFlowNames = attachEipFlowNames;
-    }
-
-    public void setDetachEipFlowNames(List<String> detachEipFlowNames) {
-        this.detachEipFlowNames = detachEipFlowNames;
     }
 
     @Override
