@@ -57,7 +57,7 @@ public class VipVO {
     private String usedIpUuid;
 
     @Column
-    @ForeignKey(parentEntityClass = L3NetworkEO.class, onDeleteAction = ReferenceOption.CASCADE)
+    @ForeignKey(parentEntityClass = L3NetworkEO.class, onDeleteAction = ReferenceOption.SET_NULL)
     private String peerL3NetworkUuid;
 
     @Column

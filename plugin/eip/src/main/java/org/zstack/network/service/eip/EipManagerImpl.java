@@ -10,6 +10,7 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.db.UpdateQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
@@ -663,16 +664,27 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                     }
                 });
 
+                if (updateDb) {
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "udpate-eip";
+
+                        @Override
+                        public void run(FlowTrigger trigger, Map data) {
+                            UpdateQuery q = UpdateQuery.New();
+                            q.entity(EipVO.class);
+                            q.condAnd(EipVO_.uuid, Op.EQ, eip.getUuid());
+                            q.set(EipVO_.vmNicUuid, null);
+                            q.set(EipVO_.guestIp, null);
+                            q.update();;
+
+                            trigger.next();
+                        }
+                    });
+                }
+
                 done(new FlowDoneHandler(completion) {
                     @Override
                     public void handle(Map data) {
-                        if (updateDb) {
-                            EipVO eipvo = dbf.findByUuid(eip.getUuid(), EipVO.class);
-                            eipvo.setVmNicUuid(null);
-                            eipvo.setGuestIp(null);
-                            dbf.update(eipvo);
-                        }
-
                         completion.success();
                     }
                 });
@@ -827,23 +839,22 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         struct.setNic(nicInventory);
         struct.setEip(EipInventory.valueOf(vo));
         struct.setSnatInboundTraffic(EipGlobalConfig.SNAT_INBOUND_TRAFFIC.value(Boolean.class));
-        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
-        chain.then(new DetachEipFlow());
-        chain.setName(String.format("detach-eip-%s-vmNic-%s-for-vip-deletion", vo.getUuid(), nicvo.getUuid()));
-        chain.getData().put(EipConstant.Params.EIP_STRUCT.toString(), struct);
-        chain.getData().put(EipConstant.Params.NETWORK_SERVICE_PROVIDER_TYPE.toString(), providerType.toString());
-        chain.done(new FlowDoneHandler(completion) {
+
+        EipBackend bkd = getEipBackend(providerType.toString());
+        bkd.revokeEip(struct, new Completion(completion) {
             @Override
-            public void handle(Map data) {
+            public void success() {
                 dbf.remove(vo);
                 completion.success();
             }
-        }).error(new FlowErrorHandler(completion) {
+
             @Override
-            public void handle(ErrorCode errCode, Map data) {
-                completion.fail(errCode);
+            public void fail(ErrorCode errorCode) {
+                logger.warn(String.format("failed to detach eip[uuid:%s, ip:%s, vm nic uuid:%s] on service provider[%s], service provider will garbage collect. %s",
+                        struct.getEip().getUuid(), struct.getVip().getIp(), struct.getNic().getUuid(), providerType, errorCode));
+                completion.fail(errorCode);
             }
-        }).start();
+        });
     }
 
     @Override

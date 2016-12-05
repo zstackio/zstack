@@ -57,9 +57,9 @@
         </zstack:plugin>
     </bean>
 
-    <bean id="FlatVipBackend" class="org.zstack.network.service.flat.FlatVipBackend">
+    <bean id="FlatVipFactory" class="org.zstack.network.service.flat.FlatVipFactory">
         <zstack:plugin>
-            <zstack:extension interface="org.zstack.network.service.vip.VipBackend" />
+            <zstack:extension interface="org.zstack.network.service.vip.VipFactory" />
         </zstack:plugin>
     </bean>
 

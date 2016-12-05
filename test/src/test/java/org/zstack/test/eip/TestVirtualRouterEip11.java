@@ -74,6 +74,6 @@ public class TestVirtualRouterEip11 {
         VirtualRouterCommands.VipTO vto = vconfig.removedVips.get(0);
         Assert.assertEquals(vipvo.getIp(), vto.getIp());
         vipvo = dbf.findByUuid(eip.getVipUuid(), VipVO.class);
-        Assert.assertNull(vipvo.getPeerL3NetworkUuid());
+        Assert.assertNotNull(vipvo.getPeerL3NetworkUuid());
     }
 }
