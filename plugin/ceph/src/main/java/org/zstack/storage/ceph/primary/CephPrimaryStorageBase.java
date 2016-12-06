@@ -639,7 +639,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static final String KVM_HA_CANCEL_SELF_FENCER = "/ha/ceph/cancelselffencer";
     public static final String GET_FACTS = "/ceph/primarystorage/facts";
     public static final String DELETE_IMAGE_CACHE = "/ceph/primarystorage/deleteimagecache";
-    public static final String SET_ROOT_PASSWORD = "/ceph/primarystorage/setrootpassword";
 
     private final Map<String, BackupStorageMediator> backupStorageMediators = new HashMap<String, BackupStorageMediator>();
 
