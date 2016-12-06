@@ -75,7 +75,6 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
 
 
     private Map<String, HypervisorFactory> hypervisorFactories = Collections.synchronizedMap(new HashMap<String, HypervisorFactory>());
-    private Map<String, HostMessageHandlerExtensionPoint> msgHandlers = Collections.synchronizedMap(new HashMap<String, HostMessageHandlerExtensionPoint>());
     private static final Set<Class> allowedMessageAfterSoftDeletion = new HashSet<Class>();
 
     static {
@@ -426,25 +425,10 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
                     throw new CloudRuntimeException(String.format("duplicate HostBaseExtensionFactory[%s, %s] for the" +
                             " message[%s]", old.getClass(), ext.getClass(), clz));
                 }
-
                 hostBaseExtensionFactories.put(clz, ext);
             }
         }
 
-        for (HostMessageHandlerExtensionPoint handler : pluginRgty.getExtensionList(HostMessageHandlerExtensionPoint.class)) {
-            assert handler.getMessageNameTheExtensionServed() != null;
-            @SuppressWarnings("unchecked")
-            List<String> msgNames = handler.getMessageNameTheExtensionServed();
-            for (String msgName : msgNames) {
-                @SuppressWarnings("rawtypes")
-                HostMessageHandlerExtensionPoint old = msgHandlers.get(msgName);
-                if (old != null) {
-                    throw new CloudRuntimeException(String.format("Duplicate handler[%s, %s] found for message[%s], old one is %s, new one is %s", old.getClass().getName(), handler
-                            .getClass().getName(), msgName, old.getClass().getName(), handler.getClass().getName()));
-                }
-                msgHandlers.put(msgName, handler);
-            }
-        }
     }
 
     @Override
@@ -574,11 +558,6 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         }
 
         return factory;
-    }
-
-    @Override
-    public HostMessageHandlerExtensionPoint getHostMessageHandlerExtension(Message msg) {
-        return msgHandlers.get(msg.getMessageName());
     }
 
     @Override

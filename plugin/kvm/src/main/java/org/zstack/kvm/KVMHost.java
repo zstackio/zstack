@@ -2709,10 +2709,6 @@ public class KVMHost extends HostBase implements Host {
     }
 
     @Override
-    public void executeHostMessageHandlerHook(HostMessageHandlerExtensionPoint ext, Message msg) {
-    }
-
-    @Override
     protected HostVO updateHost(APIUpdateHostMsg msg) {
         if (!(msg instanceof APIUpdateKVMHostMsg)) {
             return super.updateHost(msg);

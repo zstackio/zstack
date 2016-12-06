@@ -8,17 +8,20 @@ import org.zstack.header.host.*;
 import org.zstack.header.simulator.APIAddSimulatorHostMsg;
 import org.zstack.header.simulator.SimulatorConstant;
 import org.zstack.header.simulator.SimulatorHostVO;
+import org.zstack.header.vm.*;
 import org.zstack.header.volume.VolumeFormat;
 import org.zstack.tag.SystemTagCreator;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import static java.util.Arrays.asList;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
-public class SimulatorFactory implements HypervisorFactory {
+public class SimulatorFactory implements HypervisorFactory, HostBaseExtensionFactory {
     private static final HypervisorType hypervisorType = new HypervisorType(SimulatorConstant.SIMULATOR_HYPERVISOR_TYPE, CoreGlobalProperty.EXPOSE_SIMULATOR_TYPE);
     public static final VolumeFormat SIMULATOR_VOLUME_FORMAT = new VolumeFormat(SimulatorConstant.SIMULATOR_VOLUME_FORMAT_STRING, hypervisorType, CoreGlobalProperty.EXPOSE_SIMULATOR_TYPE);
     private Map<String, Host> hosts = Collections.synchronizedMap(new HashMap<String, Host>());
@@ -79,5 +82,17 @@ public class SimulatorFactory implements HypervisorFactory {
             hosts.put(vo.getUuid(), host);
         }
         return host;
+    }
+
+    @Override
+    public List<Class> getMessageClasses() {
+        return asList(CreateVmOnHypervisorMsg.class,
+                StopVmOnHypervisorMsg.class,
+                RebootVmOnHypervisorMsg.class,
+                StartVmOnHypervisorMsg.class,
+                MigrateVmOnHypervisorMsg.class,
+                AttachVolumeToVmOnHypervisorMsg.class,
+                DetachVolumeFromVmOnHypervisorMsg.class,
+                DestroyVmOnHypervisorMsg.class);
     }
 }

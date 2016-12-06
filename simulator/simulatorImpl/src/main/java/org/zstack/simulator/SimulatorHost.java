@@ -12,10 +12,9 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.CheckNetworkPhysicalInterfaceMsg;
 import org.zstack.header.network.l2.CheckNetworkPhysicalInterfaceReply;
 import org.zstack.header.simulator.*;
-import org.zstack.header.vm.VmAttachNicOnHypervisorMsg;
-import org.zstack.header.vm.VmAttachNicOnHypervisorReply;
-import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.vm.*;
 import org.zstack.utils.Utils;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
@@ -109,6 +108,22 @@ class SimulatorHost extends HostBase {
             handle((DetachNicFromVmOnHypervisorMsg) msg);
         } else if (msg instanceof VmAttachNicOnHypervisorMsg) {
             handle((VmAttachNicOnHypervisorMsg) msg);
+        } else if (msg instanceof CreateVmOnHypervisorMsg) {
+            handle((CreateVmOnHypervisorMsg)msg);
+        } else if (msg instanceof StopVmOnHypervisorMsg) {
+            handle((StopVmOnHypervisorMsg)msg);
+        } else if (msg instanceof RebootVmOnHypervisorMsg) {
+            handle((RebootVmOnHypervisorMsg)msg);
+        } else if (msg instanceof StartVmOnHypervisorMsg) {
+            handle((StartVmOnHypervisorMsg)msg);
+        } else if (msg instanceof MigrateVmOnHypervisorMsg) {
+            handle((MigrateVmOnHypervisorMsg)msg);
+        } else if (msg instanceof AttachVolumeToVmOnHypervisorMsg) {
+            handle((AttachVolumeToVmOnHypervisorMsg)msg);
+        } else if (msg instanceof DetachVolumeFromVmOnHypervisorMsg) {
+            handle((DetachVolumeFromVmOnHypervisorMsg)msg);
+        } else if (msg instanceof DestroyVmOnHypervisorMsg) {
+            handle((DestroyVmOnHypervisorMsg)msg);
         } else {
 	        super.handleLocalMessage(msg);
 	    }
@@ -178,9 +193,46 @@ class SimulatorHost extends HostBase {
         bus.reply(msg, reply);
     }
 
-    @Override
-    public void executeHostMessageHandlerHook(HostMessageHandlerExtensionPoint ext, Message msg) {
-        ext.handleMessage(msg, this);
+    private void handle(DestroyVmOnHypervisorMsg msg) {
+        logger.debug(String.format("Successfully destroyed vm on simulator host[uuid:%s], %s", self.getUuid(), JSONObjectUtil.toJsonString(msg.getVmInventory())));
+        DestroyVmOnHypervisorReply reply = new DestroyVmOnHypervisorReply();
+        bus.reply(msg, reply);
+    }
+
+    private void handle(DetachVolumeFromVmOnHypervisorMsg msg) {
+        logger.debug(String.format("Successfully detached volume[uuid:%s] to vm[uuid:%s] on simulator host[uuid:%s]", msg.getInventory().getUuid(), msg.getVmInventory().getUuid(), self.getUuid()));
+        DetachVolumeFromVmOnHypervisorReply reply = new DetachVolumeFromVmOnHypervisorReply();
+        bus.reply(msg, reply);
+    }
+
+    private void handle(AttachVolumeToVmOnHypervisorMsg msg) {
+        logger.debug(String.format("Successfully attached volume[uuid:%s] to vm[uuid:%s] on simulator host[uuid:%s]", msg.getInventory().getUuid(), msg.getVmInventory().getUuid(), self.getUuid()));
+        AttachVolumeToVmOnHypervisorReply reply = new AttachVolumeToVmOnHypervisorReply();
+        bus.reply(msg, reply);
+    }
+
+    private void handle(StartVmOnHypervisorMsg msg) {
+        logger.debug(String.format("Successfully started vm on simulator host[uuid:%s], %s", self.getUuid(), JSONObjectUtil.toJsonString(msg.getVmSpec())));
+        StartVmOnHypervisorReply reply = new StartVmOnHypervisorReply();
+        bus.reply(msg, reply);
+    }
+
+    private void handle(StopVmOnHypervisorMsg msg) {
+        logger.debug(String.format("Successfully stopped vm on simulator host[uuid:%s], %s", self.getUuid(), JSONObjectUtil.toJsonString(msg.getVmInventory())));
+        StopVmOnHypervisorReply reply = new StopVmOnHypervisorReply();
+        bus.reply(msg, reply);
+    }
+
+    private void handle(CreateVmOnHypervisorMsg msg) {
+        logger.debug(String.format("Successfully created vm on simulator host[uuid:%s], %s", self.getUuid(), JSONObjectUtil.toJsonString(msg.getVmSpec())));
+        CreateVmOnHypervisorReply reply = new CreateVmOnHypervisorReply();
+        bus.reply(msg, reply);
+    }
+
+    private void handle(RebootVmOnHypervisorMsg msg) {
+        logger.debug(String.format("Successfully rebooted vm on simulator host[uuid:%s], %s", self.getUuid(), JSONObjectUtil.toJsonString(msg.getVmInventory())));
+        RebootVmOnHypervisorReply reply = new RebootVmOnHypervisorReply();
+        bus.reply(msg, reply);
     }
 
     void setVmState(String vmUuid, VmInstanceState state) {

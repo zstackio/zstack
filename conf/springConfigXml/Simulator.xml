@@ -18,11 +18,6 @@
         </zstack:plugin>
     </bean>
 
-    <bean id="SimulatorFactory" class="org.zstack.simulator.SimulatorFactory">
-        <zstack:plugin>
-            <zstack:extension interface="org.zstack.header.host.HypervisorFactory" />
-        </zstack:plugin>
-    </bean>
     <bean id="SimulatorPrimaryStorageFactory"
         class="org.zstack.simulator.storage.primary.SimulatorPrimaryStorageFactory">
         <zstack:plugin>
@@ -47,11 +42,10 @@
         </zstack:plugin>
     </bean>
 
-    <bean id="VmInstanceHostMessageHandlerExtension"
-        class="org.zstack.simulator.VmInstanceHostMessageHandlerExtension">
+    <bean id="SimulatorFactory" class="org.zstack.simulator.SimulatorFactory">
         <zstack:plugin>
-            <zstack:extension
-                interface="org.zstack.header.host.HostMessageHandlerExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.host.HostBaseExtensionFactory" />
+            <zstack:extension interface="org.zstack.header.host.HypervisorFactory" />
         </zstack:plugin>
     </bean>
 

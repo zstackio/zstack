@@ -85,8 +85,6 @@ public abstract class HostBase extends AbstractHost {
 
     protected abstract void connectHook(ConnectHostInfo info, Completion complete);
 
-    protected abstract void executeHostMessageHandlerHook(HostMessageHandlerExtensionPoint ext, Message msg);
-
     protected HostBase(HostVO self) {
         this.self = self;
         id = "Host-" + self.getUuid();
@@ -551,13 +549,6 @@ public abstract class HostBase extends AbstractHost {
             if (ext != null) {
                 Host h = ext.getHost(self);
                 h.handleMessage(msg);
-            } else {
-                bus.dealWithUnknownMessage(msg);
-            }
-
-            HostMessageHandlerExtensionPoint ext1 = hostMgr.getHostMessageHandlerExtension(msg);
-            if (ext1 != null) {
-                executeHostMessageHandlerHook(ext1, msg);
             } else {
                 bus.dealWithUnknownMessage(msg);
             }
