@@ -547,13 +547,13 @@ public abstract class HostBase extends AbstractHost {
         } else if (msg instanceof PingHostMsg) {
             handle((PingHostMsg) msg);
         } else {
-            HostBaseExtensionFactory ext = hostMgr.getHostBaseExtensionFactory(msg);
-            if (ext != null) {
-                Host h = ext.getHost(self);
-                h.handleMessage(msg);
-            } else {
-                bus.dealWithUnknownMessage(msg);
-            }
+//            HostBaseExtensionFactory ext = hostMgr.getHostBaseExtensionFactory(msg);
+//            if (ext != null) {
+//                Host h = ext.getHost(self);
+//                h.handleMessage(msg);
+//            } else {
+//                bus.dealWithUnknownMessage(msg);
+//            }
 
             HostMessageHandlerExtensionPoint ext1 = hostMgr.getHostMessageHandlerExtension(msg);
             if (ext1 != null) {
