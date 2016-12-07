@@ -10,10 +10,7 @@ import org.zstack.header.simulator.storage.backup.SimulatorBackupStorageDetails;
 import org.zstack.header.storage.backup.BackupStorageInventory;
 import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.zone.ZoneInventory;
-import org.zstack.test.Api;
-import org.zstack.test.ApiSenderException;
-import org.zstack.test.BeanConstructor;
-import org.zstack.test.DBUtil;
+import org.zstack.test.*;
 import org.zstack.utils.data.SizeUnit;
 
 public class TestBackupAttachExtensionPoint {
@@ -25,7 +22,7 @@ public class TestBackupAttachExtensionPoint {
     @Before
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
-        BeanConstructor con = new BeanConstructor();
+        BeanConstructor con = new WebBeanConstructor();
         /* This loads spring application context */
         loader = con.addXml("PortalForUnitTest.xml").addXml("Simulator.xml")
                 .addXml("BackupStorageManager.xml").addXml("ZoneManager.xml").addXml("BackupStorageAttachExtension.xml").addXml("AccountManager.xml").build();

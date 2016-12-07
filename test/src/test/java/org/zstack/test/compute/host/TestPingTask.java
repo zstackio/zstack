@@ -27,7 +27,7 @@ public class TestPingTask {
     @Before
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
-        BeanConstructor con = new BeanConstructor();
+        BeanConstructor con = new WebBeanConstructor();
         /* This loads spring application context */
         loader = con.addXml("PortalForUnitTest.xml").addXml("ClusterManager.xml")
                 .addXml("ZoneManager.xml").addXml("HostManager.xml")

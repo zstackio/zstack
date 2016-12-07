@@ -1,9 +1,11 @@
 package org.zstack.header.vm;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.rest.RestRequest;
 
 /**
  * @api attach a nic to vm. If vm is running, user is responsible for running DHCP client software inside
@@ -34,6 +36,12 @@ import org.zstack.header.network.l3.L3NetworkVO;
  * @since 0.1.0
  */
 @Action(category = VmInstanceConstant.ACTION_CATEGORY)
+@RestRequest(
+        path = "/vm-instances/{vmInstanceUuid}/l3-networks/{l3NetworkUuid}",
+        parameterName = "params",
+        method = HttpMethod.POST,
+        responseClass = APIAttachL3NetworkToVmEvent.class
+)
 public class APIAttachL3NetworkToVmMsg extends APIMessage implements VmInstanceMessage {
     /**
      * @desc vm uuid

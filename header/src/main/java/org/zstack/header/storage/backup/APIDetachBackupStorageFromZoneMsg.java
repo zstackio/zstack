@@ -1,7 +1,9 @@
 package org.zstack.header.storage.backup;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 import org.zstack.header.zone.ZoneVO;
 
 /**
@@ -31,6 +33,11 @@ import org.zstack.header.zone.ZoneVO;
  * @result see :ref:`APIDetachBackupStorageEvent`
  * @since 0.1.0
  */
+@RestRequest(
+        path = "/zones/{zoneUuid}/backup-storage/{backupStorageUuid}",
+        method = HttpMethod.DELETE,
+        responseClass = APIDetachBackupStorageFromZoneEvent.class
+)
 public class APIDetachBackupStorageFromZoneMsg extends APIMessage implements BackupStorageMessage {
     /**
      * @desc backup storage uuid

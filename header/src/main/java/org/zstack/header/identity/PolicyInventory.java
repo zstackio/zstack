@@ -6,6 +6,7 @@ import org.zstack.header.query.ExpandedQueries;
 import org.zstack.header.query.ExpandedQuery;
 import org.zstack.header.query.ExpandedQueryAlias;
 import org.zstack.header.query.ExpandedQueryAliases;
+import org.zstack.header.rest.SDK;
 import org.zstack.header.search.Inventory;
 import org.zstack.utils.gson.JSONObjectUtil;
 
@@ -28,6 +29,7 @@ import java.util.List;
         @ExpandedQueryAlias(alias = "user", expandedField = "userRef.user")
 })
 public class PolicyInventory {
+    @SDK(sdkClassName = "PolicyStatement")
     public static class Statement {
         private String name;
         private StatementEffect effect;

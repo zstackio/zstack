@@ -1,14 +1,22 @@
 package org.zstack.kvm;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
 import java.util.Set;
 
 /**
  * Created by xing5 on 2016/3/14.
  */
+@RestRequest(
+        path = "/hosts/kvm/actions",
+        isAction = true,
+        method = HttpMethod.PUT,
+        responseClass = APIKvmRunShellEvent.class
+)
 public class APIKvmRunShellMsg extends APIMessage {
     @APIParam(resourceType = HostVO.class, nonempty = true)
     private Set<String> hostUuids;

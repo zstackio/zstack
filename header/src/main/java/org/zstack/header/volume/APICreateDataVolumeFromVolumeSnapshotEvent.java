@@ -1,6 +1,7 @@
 package org.zstack.header.volume;
 
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.rest.RestResponse;
 
 /**
  * @apiResult api event for message :ref:`APICreateDataVolumeFromVolumeSnapshotMsg`
@@ -23,6 +24,7 @@ import org.zstack.header.message.APIEvent;
  * }
  * @since 0.1.0
  */
+@RestResponse(allTo = "inventory")
 public class APICreateDataVolumeFromVolumeSnapshotEvent extends APIEvent {
     /**
      * @desc see :ref:`VolumeInventory`

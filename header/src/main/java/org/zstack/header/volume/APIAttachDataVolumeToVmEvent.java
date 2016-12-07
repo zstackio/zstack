@@ -1,6 +1,7 @@
 package org.zstack.header.volume;
 
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.rest.RestResponse;
 
 /**
  * @apiResult api event for message :ref:`APIAttachVolumeToVmMsg`
@@ -27,6 +28,7 @@ import org.zstack.header.message.APIEvent;
  * }
  * @since 0.1.0
  */
+@RestResponse(allTo = "inventory")
 public class APIAttachDataVolumeToVmEvent extends APIEvent {
     /**
      * @desc the data volume that attached to vm. See :ref:`VolumeInventory`

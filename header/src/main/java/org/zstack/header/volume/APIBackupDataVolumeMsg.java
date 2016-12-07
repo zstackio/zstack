@@ -1,8 +1,10 @@
 package org.zstack.header.volume;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.backup.BackupStorageVO;
 
 /**
@@ -31,6 +33,12 @@ import org.zstack.header.storage.backup.BackupStorageVO;
  * @since 0.1.0
  */
 @Action(category = VolumeConstant.ACTION_CATEGORY)
+@RestRequest(
+        path = "/volumes/{uuid}/actions",
+        method = HttpMethod.PUT,
+        isAction = true,
+        responseClass = APIBackupDataVolumeEvent.class
+)
 public class APIBackupDataVolumeMsg extends APIMessage implements VolumeMessage {
     /**
      * @desc data volume uuid

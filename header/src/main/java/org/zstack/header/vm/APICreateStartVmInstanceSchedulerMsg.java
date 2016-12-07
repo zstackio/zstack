@@ -1,15 +1,23 @@
 package org.zstack.header.vm;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.core.scheduler.APICreateSchedulerMessage;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
 /**
  * Created by root on 7/30/16.
  */
 @Action(category = VmInstanceConstant.ACTION_CATEGORY)
+@RestRequest(
+        path = "/vm-instances/{vmUuid}/schedulers/starting",
+        method = HttpMethod.POST,
+        parameterName = "params",
+        responseClass = APICreateStartVmInstanceSchedulerEvent.class
+)
 public class APICreateStartVmInstanceSchedulerMsg extends APICreateSchedulerMessage implements VmInstanceMessage {
     /**
      * @desc vm uuid

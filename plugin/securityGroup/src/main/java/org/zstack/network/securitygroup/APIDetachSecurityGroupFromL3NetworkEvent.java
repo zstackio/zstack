@@ -1,6 +1,7 @@
 package org.zstack.network.securitygroup;
 
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.rest.RestResponse;
 
 /**
  *@apiResult
@@ -53,6 +54,7 @@ import org.zstack.header.message.APIEvent;
 }
  */
 
+@RestResponse(allTo = "inventory")
 public class APIDetachSecurityGroupFromL3NetworkEvent extends APIEvent {
     /**
      * @desc see :ref:`SecurityGroupInventory`

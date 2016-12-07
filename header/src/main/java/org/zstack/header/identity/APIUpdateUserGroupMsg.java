@@ -1,12 +1,21 @@
 package org.zstack.header.identity;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
+import org.zstack.header.rest.RestResponse;
 
 /**
  * Created by xing5 on 2016/3/25.
  */
 @Action(category = AccountConstant.ACTION_CATEGORY, accountOnly = true)
+@RestRequest(
+        path = "/accounts/groups/actions",
+        method = HttpMethod.PUT,
+        isAction = true,
+        responseClass = APIUpdateUserGroupEvent.class
+)
 public class APIUpdateUserGroupMsg extends APIMessage implements AccountMessage {
     @APIParam(resourceType = UserGroupVO.class, checkAccount = true, operationTarget = true)
     private String uuid;

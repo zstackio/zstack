@@ -1,7 +1,9 @@
 package org.zstack.header.network.l2;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
 /**
  * @api delete l2Network
@@ -31,6 +33,11 @@ import org.zstack.header.message.APIParam;
  * @result see :ref:`APIDeleteL2NetworkEvent`
  * @since 0.1.0
  */
+@RestRequest(
+        path = "/l2-networks/{uuid}",
+        method = HttpMethod.DELETE,
+        responseClass = APIDeleteL2NetworkEvent.class
+)
 public class APIDeleteL2NetworkMsg extends APIDeleteMessage implements L2NetworkMessage {
     /**
      * @desc l2Network uuid

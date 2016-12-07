@@ -1,10 +1,18 @@
 package org.zstack.ldap;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.APISessionMessage;
 import org.zstack.header.identity.SuppressCredentialCheck;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
 @SuppressCredentialCheck
+@RestRequest(
+        path = "/ldap/login",
+        method = HttpMethod.PUT,
+        isAction = true,
+        responseClass = APILogInByLdapReply.class
+)
 public class APILogInByLdapMsg extends APISessionMessage {
     @APIParam
     private String uid;

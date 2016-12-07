@@ -7,10 +7,7 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.config.GlobalConfigException;
 import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.config.GlobalConfigInventory;
-import org.zstack.test.Api;
-import org.zstack.test.ApiSenderException;
-import org.zstack.test.BeanConstructor;
-import org.zstack.test.DBUtil;
+import org.zstack.test.*;
 
 public class TestGlobalConfig {
     GlobalConfigFacade gcf;
@@ -20,7 +17,7 @@ public class TestGlobalConfig {
     @Before
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
-        BeanConstructor con = new BeanConstructor();
+        BeanConstructor con = new WebBeanConstructor();
         loader = con.addXml("PortalForUnitTest.xml").addXml("AccountManager.xml").build();
         gcf = loader.getComponent(GlobalConfigFacade.class);
         api = new Api();

@@ -1,8 +1,10 @@
 package org.zstack.network.service.portforwarding;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
 /**
  * @api
@@ -40,6 +42,11 @@ import org.zstack.header.message.APIParam;
  * see :ref:`APIDetachPortForwardingRuleEvent`
  */
 @Action(category = PortForwardingConstant.ACTION_CATEGORY)
+@RestRequest(
+        path = "/port-forwarding/{uuid}/vm-instances/nics",
+        method = HttpMethod.DELETE,
+        responseClass = APIDetachPortForwardingRuleEvent.class
+)
 public class APIDetachPortForwardingRuleMsg extends APIMessage {
     /**
      * @desc rule uuid

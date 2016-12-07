@@ -34,6 +34,8 @@
         <module>search</module>
         <module>console</module>
         <module>tag</module>
+        <module>rest</module>
+        <module>sdk</module>
     </modules>
 
     <dependencyManagement>
@@ -49,6 +51,11 @@
                 <artifactId>commons-dbcp</artifactId>
                 <version>1.4</version>
             </dependency>
+	    <dependency>
+	        <groupId>commons-collections</groupId>
+	        <artifactId>commons-collections</artifactId>
+	        <version>3.2.2</version>
+	    </dependency>
             <dependency>
                 <groupId>commons-codec</groupId>
                 <artifactId>commons-codec</artifactId>
@@ -107,7 +114,7 @@
             <dependency>
                 <groupId>org.codehaus.groovy</groupId>
                 <artifactId>groovy</artifactId>
-                <version>2.2.2</version>
+                <version>2.4.5</version>
             </dependency>
             <dependency>
                 <groupId>org.hibernate.javax.persistence</groupId>
@@ -280,6 +287,13 @@
                 <artifactId>joda-time</artifactId>
                 <version>2.9.1</version>
             </dependency>
+	    <!-- https://mvnrepository.com/artifact/commons-beanutils/commons-beanutils -->
+	    <dependency>
+	        <groupId>commons-beanutils</groupId>
+	        <artifactId>commons-beanutils</artifactId>
+	        <version>1.9.3</version>
+	    </dependency>
+
 
             <!-- build plugins -->
             <dependency>
@@ -335,6 +349,17 @@
                 <artifactId>snakeyaml</artifactId>
                 <version>1.17</version>
             </dependency>
+   	    <dependency>
+   	        <groupId>com.squareup.okhttp3</groupId>
+   	        <artifactId>okhttp</artifactId>
+   	        <version>3.5.0</version>
+   	    </dependency>
+	   <!-- https://mvnrepository.com/artifact/org.codehaus.groovy/groovy-json -->
+	   <dependency>
+	       <groupId>org.codehaus.groovy</groupId>
+	       <artifactId>groovy-json</artifactId>
+	       <version>2.4.7</version>
+	   </dependency>
 
         </dependencies>
     </dependencyManagement>
@@ -407,6 +432,25 @@
                     </docletArtifact>
                 </configuration>
             </plugin>
+
+	    <plugin>
+	       <groupId>org.codehaus.gmaven</groupId>
+	       <artifactId>gmaven-plugin</artifactId>
+	       <version>1.5</version>
+	       <executions>
+	       	<execution>
+	                <configuration>
+	    		<providerSelection>2.0</providerSelection>
+	    	    </configuration>
+	    	    <goals>
+	    	        <goal>generateStubs</goal>
+	    		<goal>compile</goal>
+	    		<goal>generateTestStubs</goal>
+	    		<goal>testCompile</goal>
+	    	    </goals>
+	    	</execution>
+	        </executions>
+	    </plugin>
         </plugins>
     </build>
 
@@ -432,6 +476,8 @@
                 <module>console</module>
                 <module>tag</module>
                 <module>premium</module>
+                <module>rest</module>
+                <module>sdk</module>
             </modules>
         </profile>
 

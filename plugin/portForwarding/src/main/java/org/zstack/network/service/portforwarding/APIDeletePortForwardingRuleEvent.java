@@ -1,6 +1,8 @@
 package org.zstack.network.service.portforwarding;
 
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.rest.RestResponse;
+
 /**
  *@apiResult
  * api event for message :ref:`APIDeletePortForwardingRuleMsg`
@@ -16,6 +18,7 @@ import org.zstack.header.message.APIEvent;
 }
 }
  */
+@RestResponse
 public class APIDeletePortForwardingRuleEvent extends APIEvent {
     public APIDeletePortForwardingRuleEvent(String apiId) {
         super(apiId);

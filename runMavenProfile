@@ -1,12 +1,48 @@
 #!/bin/sh
 
 usage() {
-    echo "usage:$0 [deploydb|deploy|xml-java-schema|premium]"
+    echo "usage:$0 [deploydb|deploy|xml-java-schema|premium|sdk|doc]"
+}
+
+doc() {
+    cd test
+    mvn test -Dtest=TestGenerateDocTemplate
+    cd - > /dev/null
+}
+
+md() {
+    cd test
+    mvn test -Dtest=TestGenerateMarkDownDoc
+    cd - > /dev/null
+}
+
+sdk() {
+    set -u
+    rm -rf ~/zstack-sdk/java
+    cd test
+    mvn test -Dtest=TestGenerateSDK
+    if [ $? -ne 0 ]; then
+	echo "if you see a compile error, you may try to compile and install the sdk module first"
+	exit 1
+    fi
+    cd - > /dev/null
+
+    cd sdk/src/main/java/org/zstack/sdk/
+    find . -type f  | grep -E -v "(ZSClient|ZSConfig|ApiException|AsyncRestState|Completion|Constants|ErrorCode|ErrorCodeList|InternalCompletion|ApiResult|Param|RestInfo|AbstractAction|QueryAction).java" | xargs rm -f
+    cd -
+    yes | cp ~/zstack-sdk/java/* sdk/src/main/java/org/zstack/sdk/
+    set +u
 }
 
 run_profile() {
     if test x$1 = x'premium'; then
         mvn -Dmaven.test.skip=true -P premium clean install
+    elif test x$1 = x'md'; then
+	md
+    elif test x$1 = x'sdk'; then
+        sdk
+    elif test x$1 = x'doc'; then
+	doc
     else
         mvn -pl build -P $1 exec:exec -D$1
     fi

@@ -1,7 +1,9 @@
 package org.zstack.header.storage.primary;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
 /**
  * @api delete a primary storage
@@ -30,6 +32,12 @@ import org.zstack.header.message.APIParam;
  * @result see :ref:`APIDetachPrimaryStorageEvent`
  * @since 0.1.0
  */
+@RestRequest(
+        path = "/primary-storage/{uuid}",
+        method = HttpMethod.DELETE,
+        responseClass = APIDeletePrimaryStorageEvent.class,
+        parameterName = "null"
+)
 public class APIDeletePrimaryStorageMsg extends APIDeleteMessage implements PrimaryStorageMessage {
     /**
      * @desc primary storage uuid

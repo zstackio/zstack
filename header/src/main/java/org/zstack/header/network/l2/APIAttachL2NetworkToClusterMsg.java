@@ -1,8 +1,10 @@
 package org.zstack.header.network.l2;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
 /**
  * @api attach l2Network to cluster
@@ -32,6 +34,12 @@ import org.zstack.header.message.APIParam;
  * @result see :ref:`APIAttachL2NetworkToClusterEvent`
  * @since 0.1.0
  */
+@RestRequest(
+        path = "/l2-networks/{l2NetworkUuid}/clusters/{clusterUuid}",
+        method = HttpMethod.POST,
+        responseClass = APIAttachL2NetworkToClusterEvent.class,
+        parameterName = "null"
+)
 public class APIAttachL2NetworkToClusterMsg extends APIMessage implements L2NetworkMessage {
     /**
      * @desc l2Network uuid

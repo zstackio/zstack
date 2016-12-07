@@ -1,8 +1,17 @@
 package org.zstack.header.simulator;
 
+import org.springframework.http.HttpMethod;
+import org.zstack.header.host.APIAddHostEvent;
 import org.zstack.header.host.APIAddHostMsg;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
+@RestRequest(
+		path = "/hosts/simulators",
+		method = HttpMethod.POST,
+		parameterName = "params",
+		responseClass = APIAddHostEvent.class
+)
 public class APIAddSimulatorHostMsg extends APIAddHostMsg {
 	@APIParam
 	private long memoryCapacity = 1000000000;

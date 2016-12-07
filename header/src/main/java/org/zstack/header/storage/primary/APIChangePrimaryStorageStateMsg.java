@@ -1,7 +1,9 @@
 package org.zstack.header.storage.primary;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
 /**
  * @api change primary storage state
@@ -30,6 +32,13 @@ import org.zstack.header.message.APIParam;
  * @result see :ref:`APIChangePrimaryStorageStateEvent`
  * @since 0.1.0
  */
+@RestRequest(
+        path = "/primary-storage/{uuid}/actions",
+        isAction = true,
+        parameterName = "params",
+        responseClass = APIChangePrimaryStorageStateEvent.class,
+        method = HttpMethod.PUT
+)
 public class APIChangePrimaryStorageStateMsg extends APIMessage implements PrimaryStorageMessage {
     /**
      * @desc primary storage uuid

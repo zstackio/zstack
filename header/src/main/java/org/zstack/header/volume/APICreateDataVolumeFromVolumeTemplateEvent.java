@@ -1,9 +1,11 @@
 package org.zstack.header.volume;
 
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.rest.RestResponse;
 
 /**
  */
+@RestResponse(allTo = "inventory")
 public class APICreateDataVolumeFromVolumeTemplateEvent extends APIEvent {
     private VolumeInventory inventory;
 

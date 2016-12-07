@@ -1,10 +1,12 @@
 package org.zstack.storage.primary.local;
 
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.rest.RestResponse;
 
 /**
  * Created by frank on 11/16/2015.
  */
+@RestResponse(allTo = "inventory")
 public class APILocalStorageMigrateVolumeEvent extends APIEvent {
     private LocalStorageResourceRefInventory inventory;
 

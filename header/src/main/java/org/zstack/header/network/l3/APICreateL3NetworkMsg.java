@@ -1,9 +1,11 @@
 package org.zstack.header.network.l3;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.network.l2.L2NetworkVO;
+import org.zstack.header.rest.RestRequest;
 
 /**
  * @api create l3Network
@@ -38,6 +40,12 @@ import org.zstack.header.network.l2.L2NetworkVO;
  * @since 0.1.0
  */
 @Action(category = L3NetworkConstant.ACTION_CATEGORY)
+@RestRequest(
+        path = "/l3-networks",
+        method = HttpMethod.POST,
+        responseClass = APICreateL3NetworkEvent.class,
+        parameterName = "params"
+)
 public class APICreateL3NetworkMsg extends APICreateMessage {
     /**
      * @desc max length of 255 characters

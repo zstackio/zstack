@@ -1,7 +1,9 @@
 package org.zstack.header.identity;
 
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.rest.RestResponse;
 
+@RestResponse(allTo = "inventory")
 public class APICreateUserGroupEvent extends APIEvent {
     private UserGroupInventory inventory;
 

@@ -114,7 +114,7 @@ public class TestDetachNicOnKvm8 {
 
         latch1.await(120, TimeUnit.SECONDS);
 
-        TimeUnit.SECONDS.sleep(5);
+        TimeUnit.SECONDS.sleep(8);
         ipcap = api.getIpAddressCapacityByAll();
         long avail2 = ipcap.getAvailableCapacity();
 

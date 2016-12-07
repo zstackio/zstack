@@ -11,6 +11,7 @@ import org.zstack.storage.primary.PrimaryStorageSystemTags;
 import org.zstack.test.Api;
 import org.zstack.test.BeanConstructor;
 import org.zstack.test.DBUtil;
+import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.search.QueryTestValidator;
 
 /**
@@ -23,7 +24,7 @@ public class TestQueryTag {
     @Before
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
-        BeanConstructor con = new BeanConstructor();
+        BeanConstructor con = new WebBeanConstructor();
         con.addXml("PortalForUnitTest.xml").addXml("AccountManager.xml");
         loader = con.build();
         dbf = loader.getComponent(DatabaseFacade.class);

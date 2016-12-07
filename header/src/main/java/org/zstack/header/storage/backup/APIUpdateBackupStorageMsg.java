@@ -1,11 +1,19 @@
 package org.zstack.header.storage.backup;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
 /**
  * Created by frank on 6/14/2015.
  */
+@RestRequest(
+        path = "/backup-storage/{uuid}/actions",
+        responseClass = APIUpdateBackupStorageEvent.class,
+        method = HttpMethod.PUT,
+        isAction = true
+)
 public class APIUpdateBackupStorageMsg extends APIMessage implements BackupStorageMessage {
     @APIParam(resourceType = BackupStorageVO.class)
     private String uuid;

@@ -1,12 +1,20 @@
 package org.zstack.header.network.l3;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
 /**
  */
 @Action(category = L3NetworkConstant.ACTION_CATEGORY)
+@RestRequest(
+        path = "/l3-networks/{l3NetworkUuid}/ip-ranges/by-cidr",
+        method = HttpMethod.POST,
+        parameterName = "params",
+        responseClass = APIAddIpRangeByNetworkCidrEvent.class
+)
 public class APIAddIpRangeByNetworkCidrMsg extends APICreateMessage implements L3NetworkMessage {
     @APIParam(maxLength = 255)
     private String name;

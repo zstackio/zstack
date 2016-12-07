@@ -1,10 +1,12 @@
 package org.zstack.header.network.l2;
 
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.rest.RestResponse;
 
 /**
  * Created by frank on 6/14/2015.
  */
+@RestResponse(allTo = "inventory")
 public class APIUpdateL2NetworkEvent extends APIEvent {
     private L2NetworkInventory inventory;
 

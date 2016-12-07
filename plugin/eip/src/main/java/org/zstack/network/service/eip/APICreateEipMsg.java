@@ -1,9 +1,11 @@
 package org.zstack.network.service.eip;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.network.service.vip.VipVO;
 
@@ -52,6 +54,12 @@ import org.zstack.network.service.vip.VipVO;
  * see :ref:`APICreateEipEvent`
  */
 @Action(category = EipConstant.ACTION_CATEGORY)
+@RestRequest(
+        path = "/eips",
+        method = HttpMethod.POST,
+        responseClass = APICreateEipEvent.class,
+        parameterName = "params"
+)
 public class APICreateEipMsg extends APICreateMessage {
     /**
      * @desc max length of 255 characters

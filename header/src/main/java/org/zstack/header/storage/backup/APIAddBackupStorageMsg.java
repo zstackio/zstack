@@ -1,8 +1,16 @@
 package org.zstack.header.storage.backup;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
+@RestRequest(
+        path = "/backup-storage",
+        method = HttpMethod.POST,
+        parameterName = "params",
+        responseClass = APIAddBackupStorageEvent.class
+)
 public abstract class APIAddBackupStorageMsg extends APICreateMessage {
     /**
      * @desc see :ref:`BackupStorageInventory`

@@ -1,10 +1,12 @@
 package org.zstack.storage.fusionstor.primary;
 
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.rest.RestResponse;
 
 /**
  * Created by frank on 8/6/2015.
  */
+@RestResponse(allTo = "inventory")
 public class APIUpdateMonToFusionstorPrimaryStorageEvent extends APIEvent {
     private FusionstorPrimaryStorageInventory inventory;
 

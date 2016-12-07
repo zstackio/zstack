@@ -1,9 +1,11 @@
 package org.zstack.header.volume;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.configuration.DiskOfferingVO;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.tag.TagResourceType;
 
@@ -37,6 +39,12 @@ import org.zstack.header.tag.TagResourceType;
  */
 @Action(category = VolumeConstant.ACTION_CATEGORY)
 @TagResourceType(VolumeVO.class)
+@RestRequest(
+        path = "/volumes/data",
+        method = HttpMethod.POST,
+        parameterName = "params",
+        responseClass = APICreateDataVolumeEvent.class
+)
 public class APICreateDataVolumeMsg extends APICreateMessage {
     /**
      * @desc max length of 255 characters

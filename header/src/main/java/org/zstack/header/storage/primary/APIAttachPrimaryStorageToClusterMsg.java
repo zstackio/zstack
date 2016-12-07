@@ -1,8 +1,10 @@
 package org.zstack.header.storage.primary;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
 /**
  * @api attach primary storage to a cluster
@@ -31,6 +33,11 @@ import org.zstack.header.message.APIParam;
  * @result see :ref:`APIAttachPrimaryStorageEvent`
  * @since 0.1.0
  */
+@RestRequest(
+        path = "/clusters/{clusterUuid}/primary-storage/{primaryStorageUuid}",
+        method = HttpMethod.POST,
+        responseClass = APIAttachPrimaryStorageToClusterEvent.class
+)
 public class APIAttachPrimaryStorageToClusterMsg extends APIMessage implements PrimaryStorageMessage {
     /**
      * @desc uuid of cluster this primary storage is attaching to

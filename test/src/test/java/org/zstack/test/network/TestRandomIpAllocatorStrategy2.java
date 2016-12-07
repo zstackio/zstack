@@ -11,10 +11,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.zone.ZoneInventory;
-import org.zstack.test.Api;
-import org.zstack.test.ApiSenderException;
-import org.zstack.test.BeanConstructor;
-import org.zstack.test.DBUtil;
+import org.zstack.test.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
@@ -39,7 +36,7 @@ public class TestRandomIpAllocatorStrategy2 {
     @Before
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
-        BeanConstructor con = new BeanConstructor();
+        BeanConstructor con = new WebBeanConstructor();
         loader = con.addXml("PortalForUnitTest.xml").addXml("ZoneManager.xml").addXml("NetworkManager.xml").addXml("AccountManager.xml").build();
         dbf = loader.getComponent(DatabaseFacade.class);
         bus = loader.getComponent(CloudBus.class);

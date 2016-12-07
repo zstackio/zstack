@@ -1,7 +1,11 @@
 package org.zstack.kvm;
 
+import org.springframework.http.HttpMethod;
+import org.zstack.header.host.APIAddHostEvent;
 import org.zstack.header.host.APIAddHostMsg;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
+
 /**
  * @api
  *
@@ -50,6 +54,12 @@ import org.zstack.header.message.APIParam;
  *
  * see :ref:`APIAddHostEvent`
  */
+@RestRequest(
+        path = "/hosts/kvm",
+        method = HttpMethod.POST,
+        parameterName = "params",
+        responseClass = APIAddHostEvent.class
+)
 public class APIAddKVMHostMsg extends APIAddHostMsg {
     /**
      * @desc user name used for ssh login.

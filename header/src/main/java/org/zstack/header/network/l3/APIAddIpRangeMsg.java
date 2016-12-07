@@ -1,8 +1,10 @@
 package org.zstack.header.network.l3;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
 /**
  * @api add a ip range to l3Network
@@ -43,6 +45,12 @@ import org.zstack.header.message.APIParam;
  * @since 0.1.0
  */
 @Action(category = L3NetworkConstant.ACTION_CATEGORY)
+@RestRequest(
+        path = "/l3-networks/{l3NetworkUuid}/ip-ranges",
+        method = HttpMethod.POST,
+        responseClass = APIAddIpRangeEvent.class,
+        parameterName = "params"
+)
 public class APIAddIpRangeMsg extends APICreateMessage implements L3NetworkMessage {
     /**
      * @desc l3Network uuid

@@ -1,10 +1,17 @@
 package org.zstack.header.configuration;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
 @Action(category = ConfigurationConstant.ACTION_CATEGORY)
+@RestRequest(
+        path = "/disk-offerings/{uuid}",
+        method = HttpMethod.DELETE,
+        responseClass = APIDeleteDiskOfferingEvent.class
+)
 public class APIDeleteDiskOfferingMsg extends APIDeleteMessage implements DiskOfferingMessage {
     @APIParam(checkAccount = true, operationTarget = true)
     private String uuid;

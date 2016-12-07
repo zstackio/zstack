@@ -1,7 +1,9 @@
 package org.zstack.header.cluster;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
 /**
  * @api change state of cluster. See field 'state' of :ref:`ClusterInventory` for details.
@@ -35,6 +37,12 @@ import org.zstack.header.message.APIParam;
  * @result see :ref:`APIChangeClusterStateEvent`
  * @since 0.1.0
  */
+@RestRequest(
+        path = "/clusters/{uuid}/actions",
+        method = HttpMethod.PUT,
+        isAction = true,
+        responseClass = APIChangeClusterStateEvent.class
+)
 public class APIChangeClusterStateMsg extends APIMessage implements ClusterMessage {
     /**
      * @desc cluster uuid

@@ -1,6 +1,7 @@
 package org.zstack.header.cluster;
 
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.rest.RestResponse;
 
 /**
  * @apiResult api event for message :ref:`APICreateClusterMsg`
@@ -22,6 +23,7 @@ import org.zstack.header.message.APIEvent;
  * }
  * @since 0.1.0
  */
+@RestResponse(allTo = "inventory")
 public class APICreateClusterEvent extends APIEvent {
     /**
      * @desc cluster inventory (see :ref:`ClusterInventory`)

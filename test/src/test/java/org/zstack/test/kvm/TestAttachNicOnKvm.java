@@ -6,10 +6,13 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.vm.VmNicVO;
+import org.zstack.header.vm.VmNicVO_;
 import org.zstack.kvm.KVMAgentCommands;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmVO;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
@@ -58,15 +61,10 @@ public class TestAttachNicOnKvm {
         vm = api.attachNic(vm.getUuid(), l3.getUuid());
         Assert.assertEquals(4, vm.getVmNics().size());
 
-        final VmNicInventory nic = CollectionUtils.find(vm.getVmNics(), new Function<VmNicInventory, VmNicInventory>() {
-            @Override
-            public VmNicInventory call(VmNicInventory arg) {
-                if (arg.getL3NetworkUuid().equals(l3.getUuid())) {
-                    return arg;
-                }
-                return null;
-            }
-        });
+        VmNicVO nic = Q.New(VmNicVO.class)
+                .eq(VmNicVO_.l3NetworkUuid, l3.getUuid())
+                .eq(VmNicVO_.vmInstanceUuid, vm.getUuid())
+                .find();
 
         Assert.assertEquals(3, nic.getDeviceId());
 

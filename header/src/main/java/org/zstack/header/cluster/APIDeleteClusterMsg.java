@@ -1,7 +1,9 @@
 package org.zstack.header.cluster;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
 /**
  * @api delete a cluster. All descendant resources, for example hosts/vm are deleted in cascade as well
@@ -29,6 +31,12 @@ import org.zstack.header.message.APIParam;
  * @result see :ref:`APIDeleteClusterEvent`
  * @since 0.1.0
  */
+@RestRequest(
+        path = "/clusters/{uuid}",
+        method = HttpMethod.DELETE,
+        responseClass = APIDeleteClusterEvent.class,
+        parameterName = "params"
+)
 public class APIDeleteClusterMsg extends APIDeleteMessage implements ClusterMessage {
     /**
      * @desc cluster uuid

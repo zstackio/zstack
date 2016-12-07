@@ -1,8 +1,11 @@
 package org.zstack.network.securitygroup;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
+import org.zstack.header.rest.RestResponse;
 
 import java.util.List;
 
@@ -50,6 +53,12 @@ import java.util.List;
  * see :ref:`APIAddVmNicToSecurityGroupEvent`
  */
 @Action(category = SecurityGroupConstant.ACTION_CATEGORY)
+@RestRequest(
+        path = "/security-groups/{securityGroupUuid}/vm-instances/nics",
+        method = HttpMethod.POST,
+        responseClass = APIAddVmNicToSecurityGroupEvent.class,
+        parameterName = "params"
+)
 public class APIAddVmNicToSecurityGroupMsg extends APIMessage {
     /**
      * @desc security group uuid

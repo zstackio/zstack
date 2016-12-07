@@ -1,6 +1,7 @@
 package org.zstack.header.network.l3;
 
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.rest.RestResponse;
 
 /**
  * @apiResult api event for :ref:`APIChangeL3NetworkStateMsg`
@@ -27,6 +28,7 @@ import org.zstack.header.message.APIEvent;
  * }
  * @since 0.1.0
  */
+@RestResponse(allTo = "inventory")
 public class APIChangeL3NetworkStateEvent extends APIEvent {
     /**
      * @desc see :ref:`L3NetworkInventory`

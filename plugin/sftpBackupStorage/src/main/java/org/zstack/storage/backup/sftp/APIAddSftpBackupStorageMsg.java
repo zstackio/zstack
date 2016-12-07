@@ -1,6 +1,8 @@
 package org.zstack.storage.backup.sftp;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.backup.APIAddBackupStorageMsg;
 /**
  * @api
@@ -51,6 +53,13 @@ import org.zstack.header.storage.backup.APIAddBackupStorageMsg;
  *
  * see :ref:`APIAddBackupStorageEvent`
  */
+
+@RestRequest(
+        path = "/backup-storage/sftp",
+        method = HttpMethod.POST,
+        responseClass = APIAddSftpBackupStorageEvent.class,
+        parameterName = "params"
+)
 public class APIAddSftpBackupStorageMsg extends APIAddBackupStorageMsg {
     @APIParam(maxLength = 255, emptyString = false)
     private String hostname;

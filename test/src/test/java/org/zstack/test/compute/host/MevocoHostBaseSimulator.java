@@ -49,7 +49,7 @@ public class MevocoHostBaseSimulator extends AbstractService {
         logger.debug(String.format("SimulatorHost handle the message, hostid = %s ", msg.getHostUuid()));
         ChangeVmPasswordReply reply = new ChangeVmPasswordReply();
         reply.setSuccess(true);
-        reply.setVmAccountPerference(msg.getAccountPerference());
+        reply.setVmAccountPreference(msg.getAccountPerference());
         bus.reply(msg, reply);
     }
 }

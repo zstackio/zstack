@@ -114,7 +114,6 @@ public class TestDestroyVm {
         vm1 = api.startVmInstance(vm1.getUuid());
 
         for (VmNicInventory nic : vm1.getVmNics()) {
-            Assert.assertNotNull(nic.getUsedIpUuid());
             Assert.assertNotNull(nic.getGateway());
             Assert.assertNotNull(nic.getIp());
             Assert.assertNotNull(nic.getNetmask());

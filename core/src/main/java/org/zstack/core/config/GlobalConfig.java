@@ -78,6 +78,13 @@ public class GlobalConfig {
         ));
     }
 
+    public GlobalConfigVO reload() {
+        SimpleQuery<GlobalConfigVO> q = dbf.createQuery(GlobalConfigVO.class);
+        q.add(GlobalConfigVO_.category, Op.EQ, category);
+        q.add(GlobalConfigVO_.name, Op.EQ, name);
+        return q.find();
+    }
+
     public void installLocalUpdateExtension(GlobalConfigUpdateExtensionPoint ext) {
         localUpdateExtensions.add(ext);
     }

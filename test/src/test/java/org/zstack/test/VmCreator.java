@@ -4,7 +4,10 @@ import org.zstack.core.MessageCommandRecorder;
 import org.zstack.header.apimediator.ApiMediatorConstant;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.vm.*;
+import org.zstack.sdk.ApiException;
+import org.zstack.sdk.CreateVmInstanceAction;
 import org.zstack.utils.Utils;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
@@ -52,36 +55,32 @@ public class VmCreator {
         MessageCommandRecorder.reset();
         MessageCommandRecorder.start(APICreateVmInstanceMsg.class);
 
-        APICreateVmInstanceMsg msg = new APICreateVmInstanceMsg();
-        msg.setClusterUuid(clusterUUid);
-        msg.setImageUuid(imageUuid);
-        msg.setName(name);
-        msg.setHostUuid(hostUuid);
-        msg.setDataDiskOfferingUuids(diskOfferingUuids);
-        msg.setInstanceOfferingUuid(instanceOfferingUuid);
-        msg.setL3NetworkUuids(l3NetworkUuids);
-        msg.setDefaultL3NetworkUuid(defaultL3NetworkUuid == null ? l3NetworkUuids.get(0) : defaultL3NetworkUuid);
-        msg.setType(VmInstanceConstant.USER_VM_TYPE);
-        msg.setZoneUuid(zoneUuid);
-        msg.setHostUuid(hostUuid);
-        msg.setRootDiskOfferingUuid(rootDiskOfferingUuid);
-        msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
-        msg.setSystemTags(systemTags);
-        msg.setUserTags(userTags);
-        msg.setDescription(description);
-        msg.setPrimaryStorageUuidForRootVolume(primaryStorageUuidForRootVolume);
-        if (strategy != null) {
-            msg.setStrategy(strategy.toString());
-        }
-        msg.setSession(session == null ? api.getAdminSession() : session);
-        ApiSender sender = new ApiSender();
-        sender.setTimeout(timeout);
-        APICreateVmInstanceEvent evt = sender.send(msg, APICreateVmInstanceEvent.class);
+        CreateVmInstanceAction action = new CreateVmInstanceAction();
+        action.clusterUuid = clusterUUid;
+        action.imageUuid = imageUuid;
+        action.name = name;
+        action.hostUuid = hostUuid;
+        action.dataDiskOfferingUuids = diskOfferingUuids;
+        action.instanceOfferingUuid = instanceOfferingUuid;
+        action.l3NetworkUuids = l3NetworkUuids;
+        action.defaultL3NetworkUuid = defaultL3NetworkUuid == null ? l3NetworkUuids.get(0) : defaultL3NetworkUuid;
+        action.type = VmInstanceConstant.USER_VM_TYPE;
+        action.zoneUuid = zoneUuid;
+        action.hostUuid = hostUuid;
+        action.rootDiskOfferingUuid = rootDiskOfferingUuid;
+        action.systemTags = systemTags;
+        action.userTags = userTags;
+        action.description = description;
+        action.primaryStorageUuidForRootVolume = primaryStorageUuidForRootVolume;
+        action.strategy = strategy == null ? null : strategy.toString();
+        action.sessionId = session == null ? api.getAdminSession().getUuid() : session.getUuid();
+        CreateVmInstanceAction.Result res = action.call();
+        api.throwExceptionIfNeed(res.error);
 
         String callingChain = MessageCommandRecorder.endAndToString();
         logger.debug(callingChain);
 
-        return evt.getInventory();
+        return JSONObjectUtil.rehashObject(res.value.getInventory(), VmInstanceInventory.class);
     }
 
     public CloneVmInstanceResults cloneVm(List<String> names, String instanceUuid) throws ApiSenderException {

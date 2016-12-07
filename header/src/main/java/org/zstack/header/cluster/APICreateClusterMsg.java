@@ -1,7 +1,9 @@
 package org.zstack.header.cluster;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 import org.zstack.header.zone.ZoneVO;
 
 /**
@@ -35,6 +37,12 @@ import org.zstack.header.zone.ZoneVO;
  * @result see :ref:`APICreateClusterEvent`
  * @since 0.1.0
  */
+@RestRequest(
+        path = "/clusters",
+        parameterName = "params",
+        method = HttpMethod.POST,
+        responseClass = APICreateClusterEvent.class
+)
 public class APICreateClusterMsg extends APICreateMessage {
     /**
      * @desc uuid of zone this cluster is going to create in

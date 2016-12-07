@@ -1,13 +1,21 @@
 package org.zstack.header.image;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
 /**
  * Created by xing5 on 2016/5/6.
  */
 @Action(category = ImageConstant.ACTION_CATEGORY)
+@RestRequest(
+        path = "/images/{uuid}/actions",
+        responseClass = APISyncImageSizeEvent.class,
+        method = HttpMethod.PUT,
+        isAction = true
+)
 public class APISyncImageSizeMsg extends APIMessage implements ImageMessage {
     @APIParam(resourceType = ImageVO.class, checkAccount = true, operationTarget = true)
     private String uuid;

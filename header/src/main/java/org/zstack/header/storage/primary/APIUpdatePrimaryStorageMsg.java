@@ -1,11 +1,19 @@
 package org.zstack.header.storage.primary;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
 /**
  * Created by frank on 6/14/2015.
  */
+@RestRequest(
+        path = "/primary-storage/{uuid}/actions",
+        isAction = true,
+        method = HttpMethod.PUT,
+        responseClass = APIUpdatePrimaryStorageEvent.class
+)
 public class APIUpdatePrimaryStorageMsg extends APIMessage implements PrimaryStorageMessage {
     @APIParam(resourceType = PrimaryStorageVO.class)
     private String uuid;

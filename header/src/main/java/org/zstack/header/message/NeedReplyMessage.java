@@ -1,5 +1,7 @@
 package org.zstack.header.message;
 
+import org.zstack.header.rest.APINoSee;
+
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -8,6 +10,7 @@ public abstract class NeedReplyMessage extends Message {
      * @desc in millisecond. Any reply/event received after timeout will be dropped
      * @optional
      */
+    @APINoSee
     protected long timeout = -1;
     protected List<String> systemTags;
     protected List<String> userTags;

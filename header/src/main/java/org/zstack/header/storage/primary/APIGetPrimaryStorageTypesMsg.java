@@ -1,6 +1,8 @@
 package org.zstack.header.storage.primary;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APISyncCallMessage;
+import org.zstack.header.rest.RestRequest;
 
 /**
  * @api get supported primary storage type
@@ -25,5 +27,10 @@ import org.zstack.header.message.APISyncCallMessage;
  * @result see :ref:`APIGetPrimaryStorageTypesReply`
  * @since 0.1.0
  */
+@RestRequest(
+        path = "/primary-storage/types",
+        method = HttpMethod.GET,
+        responseClass = APIGetPrimaryStorageTypesReply.class
+)
 public class APIGetPrimaryStorageTypesMsg extends APISyncCallMessage {
 }

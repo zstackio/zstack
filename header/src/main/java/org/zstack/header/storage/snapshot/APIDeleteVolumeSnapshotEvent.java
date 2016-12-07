@@ -1,6 +1,7 @@
 package org.zstack.header.storage.snapshot;
 
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.rest.RestResponse;
 
 /**
  * @apiResult api event for message :ref:`APIDeleteVolumeSnapshotMsg`
@@ -12,6 +13,7 @@ import org.zstack.header.message.APIEvent;
  * }
  * @since 0.1.0
  */
+@RestResponse
 public class APIDeleteVolumeSnapshotEvent extends APIEvent {
     public APIDeleteVolumeSnapshotEvent(String apiId) {
         super(apiId);

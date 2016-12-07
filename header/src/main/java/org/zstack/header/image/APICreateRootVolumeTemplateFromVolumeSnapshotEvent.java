@@ -2,13 +2,17 @@ package org.zstack.header.image;
 
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.rest.RestResponse;
+import org.zstack.header.rest.SDK;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  */
+@RestResponse(fieldsTo = {"inventory", "failures=failuresOnBackupStorage"})
 public class APICreateRootVolumeTemplateFromVolumeSnapshotEvent extends APIEvent {
+    @SDK(sdkClassName = "CreateRootVolumeTemplateFromVolumeSnapshotFailure")
     public static class Failure {
         public String backupStorageUuid;
         public ErrorCode error;

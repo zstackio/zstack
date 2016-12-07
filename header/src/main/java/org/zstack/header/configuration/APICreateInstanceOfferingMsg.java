@@ -1,12 +1,20 @@
 package org.zstack.header.configuration;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 import org.zstack.header.tag.TagResourceType;
 
 @Action(category = ConfigurationConstant.ACTION_CATEGORY)
 @TagResourceType(InstanceOfferingVO.class)
+@RestRequest(
+        path = "/instance-offerings",
+        responseClass = APICreateInstanceOfferingEvent.class,
+        parameterName = "params",
+        method = HttpMethod.POST
+)
 public class APICreateInstanceOfferingMsg extends APICreateMessage {
     @APIParam(maxLength = 255)
     private String name;

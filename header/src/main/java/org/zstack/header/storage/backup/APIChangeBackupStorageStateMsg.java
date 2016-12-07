@@ -1,7 +1,9 @@
 package org.zstack.header.storage.backup;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
 /**
  * @api change backup storage state
@@ -30,6 +32,12 @@ import org.zstack.header.message.APIParam;
  * @result See :ref:`APIChangeBackupStorageStateEvent`
  * @since 0.1.0
  */
+@RestRequest(
+        path = "/backup-storage/{uuid}/actions",
+        isAction = true,
+        responseClass = APIChangeBackupStorageStateEvent.class,
+        method = HttpMethod.PUT
+)
 public class APIChangeBackupStorageStateMsg extends APIMessage implements BackupStorageMessage {
     /**
      * @desc backup storage uuid

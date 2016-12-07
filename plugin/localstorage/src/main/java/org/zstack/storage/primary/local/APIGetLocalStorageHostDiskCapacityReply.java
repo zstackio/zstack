@@ -1,12 +1,14 @@
 package org.zstack.storage.primary.local;
 
 import org.zstack.header.message.APIReply;
+import org.zstack.header.rest.RestResponse;
 
 import java.util.List;
 
 /**
  * Created by frank on 10/15/2015.
  */
+@RestResponse(allTo = "inventories")
 public class APIGetLocalStorageHostDiskCapacityReply extends APIReply {
     public static class HostDiskCapacity {
         private String hostUuid;

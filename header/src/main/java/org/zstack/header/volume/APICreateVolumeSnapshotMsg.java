@@ -1,8 +1,10 @@
 package org.zstack.header.volume;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 
 /**
@@ -36,6 +38,12 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
  * @since 0.1.0
  */
 @Action(category = VolumeSnapshotConstant.ACTION_CATEGORY)
+@RestRequest(
+        path = "/volumes/{volumeUuid}/volume-snapshots",
+        method = HttpMethod.POST,
+        responseClass = APICreateVolumeSnapshotEvent.class,
+        parameterName = "params"
+)
 public class APICreateVolumeSnapshotMsg extends APICreateMessage implements VolumeMessage {
     /**
      * @desc volume uuid. See :ref:`VolumeInventory`

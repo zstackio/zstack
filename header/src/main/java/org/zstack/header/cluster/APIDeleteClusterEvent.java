@@ -1,6 +1,7 @@
 package org.zstack.header.cluster;
 
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.rest.RestResponse;
 
 /**
  * @apiResult
@@ -12,6 +13,7 @@ import org.zstack.header.message.APIEvent;
  * @since 0.1.0
  */
 
+@RestResponse
 public class APIDeleteClusterEvent extends APIEvent {
 
     public APIDeleteClusterEvent() {

@@ -102,7 +102,8 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
 
         try {
             c.updateValue(msg.getValue());
-            GlobalConfigInventory inv = GlobalConfigInventory.valueOf(c);
+
+            GlobalConfigInventory inv = GlobalConfigInventory.valueOf(c.reload());
             evt.setInventory(inv);
         } catch (GlobalConfigException e) {
             evt.setErrorCode(errf.stringToInvalidArgumentError(e.getMessage()));

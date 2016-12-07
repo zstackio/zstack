@@ -6,14 +6,15 @@ import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.eip.EipInventory;
 import org.zstack.network.service.vip.VipInventory;
+import org.zstack.sdk.CreateEipAction;
+import org.zstack.sdk.CreateVipAction;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.deployer.schema.DeployerConfig;
 import org.zstack.test.deployer.schema.EipConfig;
+import org.zstack.utils.gson.JSONObjectUtil;
 
 import java.util.List;
 
-/**
- */
 public class DefaultEipDeployer implements EipDeployer<EipConfig> {
     @Override
     public void deploy(List<EipConfig> eips, DeployerConfig config, Deployer deployer) throws ApiSenderException {
@@ -33,10 +34,23 @@ public class DefaultEipDeployer implements EipDeployer<EipConfig> {
                 nicUuid = nic.getUuid();
             }
 
-            SessionInventory session = eip.getAccountRef() == null ? null : deployer.loginByAccountRef(eip.getAccountRef(), config);
+            SessionInventory session = eip.getAccountRef() == null ? deployer.getApi().getAdminSession() : deployer.loginByAccountRef(eip.getAccountRef(), config);
 
-            VipInventory vip = deployer.getApi().acquireIp(publ3.getUuid());
-            EipInventory inv = deployer.getApi().createEip(eip.getName(), vip.getUuid(), nicUuid, session);
+            CreateVipAction vipAction = new CreateVipAction();
+            vipAction.name = "vip";
+            vipAction.l3NetworkUuid = publ3.getUuid();
+            vipAction.sessionId = session.getUuid();
+            CreateVipAction.Result res = vipAction.call().throwExceptionIfError();
+            VipInventory vip = JSONObjectUtil.rehashObject(res.value.getInventory(), VipInventory.class);
+
+            CreateEipAction eipAction = new CreateEipAction();
+            eipAction.name = eip.getName();
+            eipAction.vipUuid = vip.getUuid();
+            eipAction.sessionId = session.getUuid();
+            eipAction.vmNicUuid = nicUuid;
+            CreateEipAction.Result eres = eipAction.call().throwExceptionIfError();
+
+            EipInventory inv = JSONObjectUtil.rehashObject(eres.value.getInventory(), EipInventory.class);
             deployer.eips.put(inv.getName(), inv);
         }
     }

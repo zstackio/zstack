@@ -1,6 +1,7 @@
 package org.zstack.header.storage.primary;
 
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.rest.RestResponse;
 
 /**
  * @apiResult api event for message of *addPrimaryStorage*, for example, :ref:`APIAddNfsPrimaryStorageMsg`
@@ -26,6 +27,7 @@ import org.zstack.header.message.APIEvent;
  * }
  * @since 0.1.0
  */
+@RestResponse(allTo = "inventory")
 public class APIAddPrimaryStorageEvent extends APIEvent {
     /**
      * @desc see :ref:`PrimaryStorageInventory`

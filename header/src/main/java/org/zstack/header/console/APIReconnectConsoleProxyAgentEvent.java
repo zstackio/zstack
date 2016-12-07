@@ -2,12 +2,14 @@ package org.zstack.header.console;
 
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.NoJsonSchema;
+import org.zstack.header.rest.RestResponse;
 
 import java.util.Map;
 
 /**
  * Created by xing5 on 2016/3/15.
  */
+@RestResponse(allTo = "inventory")
 public class APIReconnectConsoleProxyAgentEvent extends APIEvent {
     @NoJsonSchema
     private Map<String, Object> inventory;

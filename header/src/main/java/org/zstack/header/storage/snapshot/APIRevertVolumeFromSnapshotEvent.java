@@ -1,6 +1,7 @@
 package org.zstack.header.storage.snapshot;
 
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.rest.RestResponse;
 
 /**
  * @apiResult api event for :ref:`APIRevertVolumeFromSnapshotMsg`
@@ -12,6 +13,7 @@ import org.zstack.header.message.APIEvent;
  * }
  * @since 0.1.0
  */
+@RestResponse
 public class APIRevertVolumeFromSnapshotEvent extends APIEvent {
     public APIRevertVolumeFromSnapshotEvent(String apiId) {
         super(apiId);

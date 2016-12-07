@@ -86,17 +86,21 @@ public abstract class APIQueryMessage extends APISyncCallMessage {
         this.start = start;
     }
 
-    // internal use for test
-    public void addQueryCondition(String name, QueryOp op, String... vals) {
+    public void addQueryCondition(String name, String op, String... vals) {
         QueryCondition qc = new QueryCondition();
         qc.setName(name);
-        qc.setOp(op.toString());
+        qc.setOp(op);
         if (vals.length == 1) {
             qc.setValue(vals[0]);
         } else {
             qc.setValues(vals);
         }
         getConditions().add(qc);
+    }
+
+    // internal use for test
+    public void addQueryCondition(String name, QueryOp op, String... vals) {
+        addQueryCondition(name, op.toString(), vals);
     }
 
     public void addField(String name) {

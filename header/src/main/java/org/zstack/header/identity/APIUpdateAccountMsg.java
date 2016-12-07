@@ -1,9 +1,17 @@
 package org.zstack.header.identity;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
 @Action(category = AccountConstant.ACTION_CATEGORY, accountOnly = true)
+@RestRequest(
+        path = "/accounts/{uuid}",
+        method = HttpMethod.PUT,
+        isAction = true,
+        responseClass = APIUpdateAccountEvent.class
+)
 public class APIUpdateAccountMsg extends APIMessage implements AccountMessage {
     @APIParam(resourceType = AccountVO.class, required = false, checkAccount = true, operationTarget = true)
     private String uuid;

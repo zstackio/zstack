@@ -1,9 +1,17 @@
 package org.zstack.header.host;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
+@RestRequest(
+        path = "/hosts",
+        method = HttpMethod.POST,
+        parameterName = "params",
+        responseClass = APIAddHostEvent.class
+)
 public abstract class APIAddHostMsg extends APICreateMessage implements AddHostMessage {
     /**
      * @desc max length of 255 characters

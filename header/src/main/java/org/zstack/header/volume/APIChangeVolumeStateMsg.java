@@ -1,8 +1,10 @@
 package org.zstack.header.volume;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
 /**
  * @api change data volume state
@@ -32,6 +34,12 @@ import org.zstack.header.message.APIParam;
  * @since 0.1.0
  */
 @Action(category = VolumeConstant.ACTION_CATEGORY)
+@RestRequest(
+        path = "/volumes/{uuid}/actions",
+        isAction = true,
+        method = HttpMethod.PUT,
+        responseClass = APIChangeVolumeStateEvent.class
+)
 public class APIChangeVolumeStateMsg extends APIMessage implements VolumeMessage {
     /**
      * @desc data volume uuid

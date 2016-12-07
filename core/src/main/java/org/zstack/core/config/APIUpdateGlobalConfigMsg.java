@@ -1,8 +1,16 @@
 package org.zstack.core.config;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
+@RestRequest(
+        path = "/global-configurations/{category}/{name}/actions",
+        method = HttpMethod.PUT,
+        isAction = true,
+        responseClass = APIUpdateGlobalConfigEvent.class
+)
 public class APIUpdateGlobalConfigMsg extends APIMessage {
     @APIParam
     private String category;

@@ -1,6 +1,7 @@
 package org.zstack.header.network.l3;
 
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.rest.RestResponse;
 
 /**
  * @apiResult api event for :ref:`APIDeleteL3NetworkMsg`
@@ -12,6 +13,7 @@ import org.zstack.header.message.APIEvent;
  * }
  * @since 0.1.0
  */
+@RestResponse
 public class APIDeleteL3NetworkEvent extends APIEvent {
     public APIDeleteL3NetworkEvent(String apiId) {
         super(apiId);

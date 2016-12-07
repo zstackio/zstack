@@ -1,9 +1,17 @@
 package org.zstack.header.storage.primary;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 import org.zstack.header.zone.ZoneVO;
 
+@RestRequest(
+        path = "/primary-storage",
+        method = HttpMethod.POST,
+        parameterName = "params",
+        responseClass = APIAddPrimaryStorageEvent.class
+)
 public abstract class APIAddPrimaryStorageMsg extends APICreateMessage {
     /**
      * @desc depending on primary storage, formats of url are various. For example, NFS primary storage

@@ -29,7 +29,7 @@ public class TestChangeVmPassword {
         DBUtil.reDeployDB();
         WebBeanConstructor con = new WebBeanConstructor();
         deployer = new Deployer("deployerXml/vm/TestChangeVmPassword.xml", con);
-//        deployer.addSpringConfig("mevocoRelated.xml");
+        deployer.addSpringConfig("KVMRelated.xml");
         deployer.build();
         api = deployer.getApi();
         loader = deployer.getComponentLoader();
@@ -38,17 +38,17 @@ public class TestChangeVmPassword {
     }
 
     @Test
-    public void test_running() throws ApiSenderException {
+    public void test() throws ApiSenderException {
         VmInstanceInventory inv = api.listVmInstances(null).get(0);
         api.createSystemTag(inv.getUuid(), TestQemuAgentSystemTag.TestSystemTags.qemu.getTagFormat(), VmInstanceVO.class);
 
         Assert.assertEquals(VmInstanceState.Running.toString(), inv.getState());
 
-        APIChangeVmPasswordEvent account = api.changeVmPassword(new VmAccountPerference(
+        VmAccountPreference account = api.changeVmPassword(new VmAccountPreference(
                 inv.getUuid(), "change", "test1234"));
         Assert.assertNotNull(account);
 
-        account = api.changeVmPassword(new VmAccountPerference(
+        account = api.changeVmPassword(new VmAccountPreference(
                 inv.getUuid(), "change", "||||||"));
         Assert.assertNotNull(account);
 
@@ -57,7 +57,7 @@ public class TestChangeVmPassword {
         Assert.assertEquals(VmInstanceState.Stopped.toString(), vm.getState());
 
         try {
-            account = api.changeVmPassword(new VmAccountPerference(
+            account = api.changeVmPassword(new VmAccountPreference(
                     inv.getUuid(), "change", "test1234"));
             Assert.assertFalse(true);
         } catch (ApiSenderException e) {

@@ -1,9 +1,11 @@
 package org.zstack.header.storage.primary;
 
 import org.zstack.header.message.APIReply;
+import org.zstack.header.rest.RestResponse;
 
 /**
  */
+@RestResponse(fieldsTo = {"all"})
 public class APIGetPrimaryStorageCapacityReply extends APIReply {
     private long totalCapacity;
     private long availableCapacity;

@@ -1,6 +1,7 @@
 package org.zstack.header.zone;
 
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.rest.RestResponse;
 
 
 /**
@@ -21,6 +22,7 @@ import org.zstack.header.message.APIEvent;
  * }
  * @since 0.1.0
  */
+@RestResponse(allTo = "inventory")
 public class APIChangeZoneStateEvent extends APIEvent {
     /**
      * @desc zone inventory (see :ref:`ZoneInventory`)

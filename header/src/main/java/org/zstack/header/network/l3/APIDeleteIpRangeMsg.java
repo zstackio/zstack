@@ -1,9 +1,11 @@
 package org.zstack.header.network.l3;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.APINoSee;
+import org.zstack.header.rest.RestRequest;
 
 /**
  * @api delete ip range
@@ -34,6 +36,11 @@ import org.zstack.header.rest.APINoSee;
  * @since 0.1.0
  */
 @Action(category = L3NetworkConstant.ACTION_CATEGORY)
+@RestRequest(
+        path = "/l3-networks/ip-ranges/{uuid}",
+        method = HttpMethod.DELETE,
+        responseClass = APIDeleteIpRangeEvent.class
+)
 public class APIDeleteIpRangeMsg extends APIDeleteMessage implements L3NetworkMessage, IpRangeMessage {
     /**
      * @desc ip range uuid

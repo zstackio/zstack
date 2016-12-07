@@ -1,8 +1,10 @@
 package org.zstack.header.image;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
 /**
  * Created with IntelliJ IDEA.
@@ -11,6 +13,13 @@ import org.zstack.header.message.APIParam;
  * To change this template use File | Settings | File Templates.
  */
 @Action(category = ImageConstant.ACTION_CATEGORY)
+@RestRequest(
+        path = "/images/{uuid}/actions",
+        isAction = true,
+        responseClass = APIChangeImageStateEvent.class,
+        parameterName = "params",
+        method = HttpMethod.PUT
+)
 public class APIChangeImageStateMsg extends APIMessage implements ImageMessage {
     @APIParam(resourceType = ImageVO.class, checkAccount = true, operationTarget = true)
     private String uuid;

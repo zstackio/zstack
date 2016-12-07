@@ -1,6 +1,7 @@
 package org.zstack.header.network.l2;
 
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.rest.RestResponse;
 
 /**
  * @apiResult api event for message :ref:`APIDetachL2NetworkFromClusterMsg`
@@ -23,6 +24,8 @@ import org.zstack.header.message.APIEvent;
  * }
  * @since 0.1.0
  */
+
+@RestResponse(allTo = "inventory")
 public class APIDetachL2NetworkFromClusterEvent extends APIEvent {
     /**
      * @desc see :ref:`L2NetworkInventory`

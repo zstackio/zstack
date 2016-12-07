@@ -46,7 +46,6 @@
         <dispatcher>REQUEST</dispatcher>
         <dispatcher>FORWARD</dispatcher>
     </filter-mapping>
-    
 
     <!-- NOTE: this listener must be put as the first listener to execute, don't change the order !!! -->
     <listener>

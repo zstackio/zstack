@@ -1,11 +1,20 @@
 package org.zstack.network.service.virtualrouter;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.rest.RestRequest;
+import org.zstack.header.vm.APICreateVmInstanceEvent;
 import org.zstack.header.vm.APICreateVmInstanceMsg;
 
 import java.util.Set;
 
+@RestRequest(
+		path = "/vm-instances/appliances/virtual-routers",
+		method = HttpMethod.POST,
+		responseClass = APICreateVmInstanceEvent.class,
+		parameterName = "params"
+)
 public class APICreateVirtualRouterVmMsg extends APICreateVmInstanceMsg {
 	@APIParam(resourceType = L3NetworkVO.class, checkAccount = true)
     private String managementNetworkUuid;

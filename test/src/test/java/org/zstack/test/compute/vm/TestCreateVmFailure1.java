@@ -45,11 +45,14 @@ public class TestCreateVmFailure1 {
     public void test() throws ApiSenderException, InterruptedException {
         busProxy.addMessage(CreateVmOnHypervisorMsg.class, CloudBusAopProxy.Behavior.FAIL);
         VmInstanceInventory vm = deployer.vms.get("TestVm");
+
+        boolean s = false;
         try {
             api.createVmFromClone(vm);
         } catch (ApiSenderException e) {
-            Assert.assertEquals("SYS.1006", e.getError().getCode());
+            s = true;
         }
+        Assert.assertTrue(s);
     }
 
 }

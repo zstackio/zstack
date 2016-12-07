@@ -3,6 +3,7 @@ package org.zstack.header.vm;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.message.APIReply;
+import org.zstack.header.rest.RestResponse;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.zone.ZoneInventory;
 
@@ -12,6 +13,7 @@ import java.util.Map;
 /**
  * Created by xing5 on 2016/8/17.
  */
+@RestResponse(fieldsTo = {"all"})
 public class APIGetCandidateZonesClustersHostsForCreatingVmReply extends APIReply {
     private List<ZoneInventory> zones;
     private List<ClusterInventory> clusters;

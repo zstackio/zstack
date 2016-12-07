@@ -1,8 +1,10 @@
 package org.zstack.header.image;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 
@@ -11,6 +13,12 @@ import java.util.List;
 /**
  */
 @Action(category = ImageConstant.ACTION_CATEGORY)
+@RestRequest(
+        path = "/images/root-volume-templates/from/volume-snapshots/{snapshotUuid}",
+        responseClass = APICreateRootVolumeTemplateFromVolumeSnapshotEvent.class,
+        method = HttpMethod.POST,
+        parameterName = "params"
+)
 public class APICreateRootVolumeTemplateFromVolumeSnapshotMsg extends APICreateMessage {
     @APIParam(resourceType = VolumeSnapshotVO.class, checkAccount = true, operationTarget = true)
     private String snapshotUuid;

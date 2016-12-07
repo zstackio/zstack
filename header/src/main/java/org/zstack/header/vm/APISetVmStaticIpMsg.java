@@ -1,14 +1,23 @@
 package org.zstack.header.vm;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.rest.RestRequest;
+import org.zstack.header.rest.RestResponse;
 
 /**
  * Created by frank on 2/26/2016.
  */
 @Action(category = VmInstanceConstant.ACTION_CATEGORY)
+@RestRequest(
+        path = "/vm-instances/{vmInstanceUuid}/actions",
+        isAction = true,
+        method = HttpMethod.PUT,
+        responseClass = APISetVmStaticIpEvent.class
+)
 public class APISetVmStaticIpMsg extends APIMessage implements VmInstanceMessage {
     @APIParam(resourceType = VmInstanceVO.class, checkAccount = true, operationTarget = true)
     private String vmInstanceUuid;

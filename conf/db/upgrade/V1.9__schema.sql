@@ -44,3 +44,13 @@ CREATE TABLE `zstack`.`ShareableVolumeVmInstanceRefVO`(
     `createDate` timestamp,
     PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE  `zstack`.`AsyncRestVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE,
+    `apiMessage` text DEFAULT NULL,
+    `state` varchar(64) NOT NULL,
+    `result` text DEFAULT NULL,
+    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp,
+    PRIMARY KEY  (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

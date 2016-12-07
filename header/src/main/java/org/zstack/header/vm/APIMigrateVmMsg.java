@@ -1,9 +1,11 @@
 package org.zstack.header.vm;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
 /**
  * @api live migrate vm to another host
@@ -33,6 +35,12 @@ import org.zstack.header.message.APIParam;
  * @since 0.1.0
  */
 @Action(category = VmInstanceConstant.ACTION_CATEGORY)
+@RestRequest(
+        path = "/vm-instances/{vmInstanceUuid}/actions",
+        isAction = true,
+        responseClass = APIMigrateVmEvent.class,
+        method = HttpMethod.PUT
+)
 public class APIMigrateVmMsg extends APIMessage implements VmInstanceMessage {
     /**
      * @desc vm uuid
@@ -46,6 +54,10 @@ public class APIMigrateVmMsg extends APIMessage implements VmInstanceMessage {
      */
     @APIParam(required = false, resourceType = HostVO.class)
     private String hostUuid;
+
+    public void setVmInstanceUuid(String vmInstanceUuid) {
+        this.vmInstanceUuid = vmInstanceUuid;
+    }
 
     public String getVmUuid() {
         return vmInstanceUuid;

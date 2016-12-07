@@ -1,10 +1,19 @@
 package org.zstack.storage.primary.local;
 
+import org.springframework.http.HttpMethod;
+import org.zstack.header.rest.RestRequest;
+import org.zstack.header.storage.primary.APIAddPrimaryStorageEvent;
 import org.zstack.header.storage.primary.APIAddPrimaryStorageMsg;
 
 /**
  * Created by frank on 7/1/2015.
  */
+@RestRequest(
+        path = "/primary-storage/local-storage",
+        method = HttpMethod.POST,
+        responseClass = APIAddPrimaryStorageEvent.class,
+        parameterName = "params"
+)
 public class APIAddLocalPrimaryStorageMsg extends APIAddPrimaryStorageMsg {
     @Override
     public String getType() {

@@ -1,6 +1,7 @@
 package org.zstack.header.network.l3;
 
 import org.zstack.header.message.APIReply;
+import org.zstack.header.rest.RestResponse;
 
 import java.util.List;
 
@@ -10,6 +11,7 @@ import java.util.List;
  * Time: 10:38 PM
  * To change this template use File | Settings | File Templates.
  */
+@RestResponse(fieldsTo = {"types=l3NetworkTypes"})
 public class APIGetL3NetworkTypesReply extends APIReply {
     private List<String> l3NetworkTypes;
 

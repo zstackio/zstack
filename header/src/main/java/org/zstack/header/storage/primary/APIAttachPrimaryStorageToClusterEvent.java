@@ -1,6 +1,8 @@
 package org.zstack.header.storage.primary;
 
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.rest.RestRequest;
+import org.zstack.header.rest.RestResponse;
 
 /**
  * @apiResult api event for message :ref:`APIAttachPrimaryStorageMsg`
@@ -28,6 +30,7 @@ import org.zstack.header.message.APIEvent;
  * }
  * @since 0.1.0
  */
+@RestResponse(allTo = "inventory")
 public class APIAttachPrimaryStorageToClusterEvent extends APIEvent {
     /**
      * @desc see :ref:`PrimaryStorageInventory`

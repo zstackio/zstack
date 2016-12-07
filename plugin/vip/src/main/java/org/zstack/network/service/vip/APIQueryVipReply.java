@@ -1,7 +1,7 @@
 package org.zstack.network.service.vip;
 
-import org.zstack.header.message.APIReply;
 import org.zstack.header.query.APIQueryReply;
+import org.zstack.header.rest.RestResponse;
 
 import java.util.List;
 
@@ -11,6 +11,7 @@ import java.util.List;
  * Time: 8:35 PM
  * To change this template use File | Settings | File Templates.
  */
+@RestResponse(allTo = "inventories")
 public class APIQueryVipReply extends APIQueryReply {
     private List<VipInventory> inventories;
 

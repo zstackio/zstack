@@ -10,10 +10,7 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
-import org.zstack.test.Api;
-import org.zstack.test.ApiSenderException;
-import org.zstack.test.BeanConstructor;
-import org.zstack.test.UnitTestUtils;
+import org.zstack.test.*;
 
 import java.util.concurrent.TimeUnit;
 
@@ -25,7 +22,7 @@ public class TestLoadHosts {
     @Before
     public void setUp() throws Exception {
         UnitTestUtils.runTestCase(CreateHost.class, "-Dhost.num=100");
-        BeanConstructor con = new BeanConstructor();
+        BeanConstructor con = new WebBeanConstructor();
         /* This loads spring application context */
         loader = con.addXml("PortalForUnitTest.xml")
                 .addXml("ClusterManager.xml")

@@ -1,7 +1,9 @@
 package org.zstack.header.storage.snapshot;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.message.APISyncCallMessage;
+import org.zstack.header.rest.RestRequest;
 import org.zstack.header.volume.VolumeVO;
 
 /**

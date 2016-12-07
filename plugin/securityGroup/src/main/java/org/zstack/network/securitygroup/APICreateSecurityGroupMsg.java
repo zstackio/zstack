@@ -1,8 +1,11 @@
 package org.zstack.network.securitygroup;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
+
 /**
  * @api
  * create security group
@@ -40,6 +43,11 @@ import org.zstack.header.message.APIParam;
  * see :ref:`APICreateSecurityGroupEvent`
  */
 @Action(category = SecurityGroupConstant.ACTION_CATEGORY)
+@RestRequest(
+        path = "/security-groups",
+        method = HttpMethod.POST,
+        responseClass = APICreateSecurityGroupEvent.class
+)
 public class APICreateSecurityGroupMsg extends APICreateMessage {
     /**
      * @desc max length of 255 characters

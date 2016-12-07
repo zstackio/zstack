@@ -1,7 +1,9 @@
 package org.zstack.header.host;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
 /**
  * @api change host state. When host state is Disabled, no vm can be created on this host.
@@ -30,6 +32,12 @@ import org.zstack.header.message.APIParam;
  * @result see :ref:`APIChangeHostStateEvent`
  * @since 0.1.0
  */
+@RestRequest(
+        path = "/hosts/{uuid}/actions",
+        isAction = true,
+        responseClass = APIChangeHostStateEvent.class,
+        method = HttpMethod.PUT
+)
 public class APIChangeHostStateMsg extends APIMessage implements HostMessage {
     /**
      * @desc host uuid

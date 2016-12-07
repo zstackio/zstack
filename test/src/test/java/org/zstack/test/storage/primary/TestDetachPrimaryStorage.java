@@ -12,10 +12,7 @@ import org.zstack.header.simulator.storage.primary.SimulatorPrimaryStorageDetail
 import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.zone.ZoneInventory;
-import org.zstack.test.Api;
-import org.zstack.test.ApiSenderException;
-import org.zstack.test.BeanConstructor;
-import org.zstack.test.DBUtil;
+import org.zstack.test.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.logging.CLogger;
@@ -32,7 +29,7 @@ public class TestDetachPrimaryStorage {
     @Before
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
-        BeanConstructor con = new BeanConstructor();
+        BeanConstructor con = new WebBeanConstructor();
         /* This loads spring application context */
         loader = con.addXml("PortalForUnitTest.xml").addXml("Simulator.xml").addXml("PrimaryStorageManager.xml")
                 .addXml("ZoneManager.xml").addXml("ClusterManager.xml").addXml("ConfigurationManager.xml").addXml("AccountManager.xml").build();

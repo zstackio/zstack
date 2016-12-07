@@ -1,8 +1,10 @@
 package org.zstack.header.volume;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 import org.zstack.header.vm.VmInstanceVO;
 
 /**
@@ -33,6 +35,11 @@ import org.zstack.header.vm.VmInstanceVO;
  * @since 0.1.0
  */
 @Action(category = VolumeConstant.ACTION_CATEGORY)
+@RestRequest(
+        path = "/volumes/{volumeUuid}/vm-instances/{vmInstanceUuid}",
+        method = HttpMethod.POST,
+        responseClass = APIAttachDataVolumeToVmEvent.class
+)
 public class APIAttachDataVolumeToVmMsg extends APIMessage implements VolumeMessage {
     /**
      * @desc vm uuid. see :ref:`VmInstanceInventory`
@@ -45,10 +52,13 @@ public class APIAttachDataVolumeToVmMsg extends APIMessage implements VolumeMess
     @APIParam(resourceType = VolumeVO.class, checkAccount = true, operationTarget = true)
     private String volumeUuid;
 
+    public void setVmInstanceUuid(String vmInstanceUuid) {
+        this.vmInstanceUuid = vmInstanceUuid;
+    }
+
     public String getVmUuid() {
         return vmInstanceUuid;
     }
-
 
     public void setVmUuid(String vmInstanceUuid) {
         this.vmInstanceUuid = vmInstanceUuid;

@@ -1,6 +1,7 @@
 package org.zstack.header.console;
 
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.rest.RestResponse;
 
 /**
  * Created with IntelliJ IDEA.
@@ -8,6 +9,7 @@ import org.zstack.header.message.APIEvent;
  * Time: 11:27 PM
  * To change this template use File | Settings | File Templates.
  */
+@RestResponse(allTo = "inventory")
 public class APIRequestConsoleAccessEvent extends APIEvent {
     private ConsoleInventory inventory;
 

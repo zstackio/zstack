@@ -1344,7 +1344,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
     }
 
     private void handle(final APIUpdateCephBackupStorageMonMsg msg) {
-        final APIUpdateMonToCephBackupStorageEvent evt = new APIUpdateMonToCephBackupStorageEvent(msg.getId());
+        final APIUpdateCephBackupStorageMonEvent evt = new APIUpdateCephBackupStorageMonEvent(msg.getId());
         CephBackupStorageMonVO monvo = dbf.findByUuid(msg.getMonUuid(), CephBackupStorageMonVO.class);
         if (msg.getHostname() != null) {
             monvo.setHostname(msg.getHostname());

@@ -1,13 +1,21 @@
 package org.zstack.header.storage.backup;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.message.APISyncCallMessage;
+import org.zstack.header.rest.RestRequest;
 import org.zstack.header.zone.ZoneVO;
 
 import java.util.List;
 
 /**
  */
+@RestRequest(
+        path = "/backup-storage/capacities",
+        method = HttpMethod.GET,
+        parameterName = "params",
+        responseClass = APIGetBackupStorageCapacityReply.class
+)
 public class APIGetBackupStorageCapacityMsg extends APISyncCallMessage {
     @APIParam(required = false, resourceType = ZoneVO.class)
     private List<String> zoneUuids;

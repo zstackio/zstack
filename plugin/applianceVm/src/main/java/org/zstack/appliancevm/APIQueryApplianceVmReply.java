@@ -1,12 +1,13 @@
 package org.zstack.appliancevm;
 
-import org.zstack.header.message.APIReply;
 import org.zstack.header.query.APIQueryReply;
+import org.zstack.header.rest.RestResponse;
 
 import java.util.List;
 
 /**
  */
+@RestResponse(allTo = "inventories")
 public class APIQueryApplianceVmReply extends APIQueryReply {
     private List<ApplianceVmInventory> inventories;
 

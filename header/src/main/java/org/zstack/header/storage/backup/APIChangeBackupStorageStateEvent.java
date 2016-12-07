@@ -1,6 +1,7 @@
 package org.zstack.header.storage.backup;
 
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.rest.RestResponse;
 
 /**
  * @apiResult api event for :ref:`APIChangeBackupStorageStateMsg`
@@ -25,6 +26,7 @@ import org.zstack.header.message.APIEvent;
  * @since 0.1.0
  */
 
+@RestResponse(allTo = "inventory")
 public class APIChangeBackupStorageStateEvent extends APIEvent {
     /**
      * @desc see :ref:`BackupStorageInventory`

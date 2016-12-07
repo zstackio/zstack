@@ -1,10 +1,11 @@
 package org.zstack.network.service.virtualrouter;
 
-import org.zstack.header.message.APIReply;
 import org.zstack.header.query.APIQueryReply;
+import org.zstack.header.rest.RestResponse;
 
 import java.util.List;
 
+@RestResponse(allTo = "inventories")
 public class APIQueryVirtualRouterOfferingReply extends APIQueryReply {
     private List<VirtualRouterOfferingInventory> inventories;
 

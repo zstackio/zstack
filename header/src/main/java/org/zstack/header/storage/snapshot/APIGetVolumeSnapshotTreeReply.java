@@ -1,6 +1,7 @@
 package org.zstack.header.storage.snapshot;
 
 import org.zstack.header.message.APIReply;
+import org.zstack.header.rest.RestResponse;
 
 import java.util.List;
 

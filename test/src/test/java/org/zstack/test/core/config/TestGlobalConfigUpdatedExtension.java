@@ -8,10 +8,7 @@ import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.config.GlobalConfigInventory;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
-import org.zstack.test.Api;
-import org.zstack.test.ApiSenderException;
-import org.zstack.test.BeanConstructor;
-import org.zstack.test.DBUtil;
+import org.zstack.test.*;
 
 import java.util.concurrent.TimeUnit;
 
@@ -24,7 +21,7 @@ public class TestGlobalConfigUpdatedExtension {
     @Before
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
-        BeanConstructor con = new BeanConstructor();
+        BeanConstructor con = new WebBeanConstructor();
         loader = con.addXml("PortalForUnitTest.xml").addXml("AccountManager.xml").build();
         gcf = loader.getComponent(GlobalConfigFacade.class);
         api = new Api();

@@ -2,6 +2,7 @@ package org.zstack.kvm;
 
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.rest.RestResponse;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -9,6 +10,7 @@ import java.util.Map;
 /**
  * Created by xing5 on 2016/3/14.
  */
+@RestResponse(allTo = "inventory")
 public class APIKvmRunShellEvent extends APIEvent {
     public static class ShellResult {
         private int returnCode;

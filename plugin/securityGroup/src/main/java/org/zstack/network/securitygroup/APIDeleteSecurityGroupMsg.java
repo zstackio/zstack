@@ -1,9 +1,12 @@
 package org.zstack.network.securitygroup;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
+
 /**
  * @api
  * delete security group
@@ -43,6 +46,11 @@ import org.zstack.header.message.APIParam;
  * see :ref:`APIDeleteSecurityGroupEvent`
  */
 @Action(category = SecurityGroupConstant.ACTION_CATEGORY)
+@RestRequest(
+        path = "/security-groups/{uuid}",
+        method = HttpMethod.DELETE,
+        responseClass = APIDeleteSecurityGroupEvent.class
+)
 public class APIDeleteSecurityGroupMsg extends APIDeleteMessage {
     /**
      * @desc security group uuid

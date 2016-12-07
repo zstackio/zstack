@@ -4,14 +4,14 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.header.cluster.ClusterInventory;
-import org.zstack.header.host.APIAddHostEvent;
-import org.zstack.kvm.APIAddKVMHostMsg;
+import org.zstack.header.host.HostInventory;
+import org.zstack.sdk.AddKVMHostAction;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.test.Api;
-import org.zstack.test.ApiSender;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.deployer.schema.DeployerConfig;
 import org.zstack.test.deployer.schema.KvmHostConfig;
+import org.zstack.utils.gson.JSONObjectUtil;
 
 import java.util.List;
 
@@ -32,16 +32,18 @@ public class KvmHostDeployer implements HostDeployer<KvmHostConfig> {
             simulatorConfig.cpuNum = kc.getCpuNum();
             simulatorConfig.cpuSpeed = kc.getCpuSpeed();
             simulatorConfig.totalMemory = deployer.parseSizeCapacity(kc.getMemoryCapacity());
-            APIAddKVMHostMsg msg = new APIAddKVMHostMsg();
-            msg.setName(kc.getName());
-            msg.setClusterUuid(cluster.getUuid());
-            msg.setManagementIp(kc.getManagementIp());
-            msg.setUsername(kc.getUsername());
-            msg.setPassword(kc.getPassword());
-            msg.setSession(api.getAdminSession());
-            ApiSender sender = api.getApiSender();
-            APIAddHostEvent evt = sender.send(msg, APIAddHostEvent.class);
-            deployer.hosts.put(kc.getName(), evt.getInventory());
+
+            AddKVMHostAction action = new AddKVMHostAction();
+            action.name = kc.getName();
+            action.clusterUuid = cluster.getUuid();
+            action.managementIp = kc.getManagementIp();
+            action.username = kc.getUsername();
+            action.password = kc.getPassword();
+            action.sessionId = api.getAdminSession().getUuid();
+            AddKVMHostAction.Result res = action.call().throwExceptionIfError();
+
+            HostInventory inv = JSONObjectUtil.rehashObject(res.value.getInventory(), HostInventory.class);
+            deployer.hosts.put(kc.getName(), inv);
         }
     }
 }

@@ -1,6 +1,8 @@
 package org.zstack.header.network.l2;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APISyncCallMessage;
+import org.zstack.header.rest.RestRequest;
 
 /**
  * @api get supported l2Network types
@@ -26,5 +28,10 @@ import org.zstack.header.message.APISyncCallMessage;
  * @result see :ref:`APIGetL2NetworkTypesReply`
  * @since 0.1.0
  */
+@RestRequest(
+        path = "/l2-networks/types",
+        method = HttpMethod.GET,
+        responseClass = APIGetL2NetworkTypesReply.class
+)
 public class APIGetL2NetworkTypesMsg extends APISyncCallMessage {
 }

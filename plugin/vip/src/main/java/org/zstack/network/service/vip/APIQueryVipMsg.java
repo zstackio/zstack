@@ -1,8 +1,10 @@
 package org.zstack.network.service.vip;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.query.APIQueryMessage;
 import org.zstack.header.query.AutoQuery;
+import org.zstack.header.rest.RestRequest;
 
 /**
  * Created with IntelliJ IDEA.
@@ -12,5 +14,11 @@ import org.zstack.header.query.AutoQuery;
  */
 @AutoQuery(replyClass = APIQueryVipReply.class, inventoryClass = VipInventory.class)
 @Action(category = VipConstant.ACTION_CATEGORY, names = {"read"})
+@RestRequest(
+        path = "/vips",
+        optionalPaths = {"/vips/{uuid}"},
+        method = HttpMethod.GET,
+        responseClass = APIQueryVipReply.class
+)
 public class APIQueryVipMsg extends APIQueryMessage {
 }

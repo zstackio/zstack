@@ -1,14 +1,22 @@
 package org.zstack.storage.primary.local;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.message.APISyncCallMessage;
+import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.primary.PrimaryStorageMessage;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 
 /**
  * Created by frank on 10/15/2015.
  */
+@RestRequest(
+        path = "/primary-storage/local-storage/capacities",
+        method = HttpMethod.GET,
+        responseClass = APIGetLocalStorageHostDiskCapacityReply.class,
+        parameterName = "params"
+)
 public class APIGetLocalStorageHostDiskCapacityMsg extends APISyncCallMessage implements PrimaryStorageMessage {
     @APIParam(resourceType = HostVO.class, required = false)
     private String hostUuid;

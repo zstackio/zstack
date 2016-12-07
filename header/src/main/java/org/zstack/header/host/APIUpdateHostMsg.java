@@ -1,11 +1,19 @@
 package org.zstack.header.host;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
 /**
  * Created by frank on 6/14/2015.
  */
+@RestRequest(
+        path = "/hosts/{uuid}/actions",
+        method = HttpMethod.PUT,
+        responseClass = APIUpdateHostEvent.class,
+        isAction = true
+)
 public class APIUpdateHostMsg extends APIMessage implements HostMessage {
     @APIParam(resourceType = HostVO.class)
     private String uuid;

@@ -1,8 +1,16 @@
 package org.zstack.header.identity;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
 @SuppressCredentialCheck
+@RestRequest(
+        path = "/accounts/users/login",
+        isAction = true,
+        method = HttpMethod.PUT,
+        responseClass = APILogInReply.class
+)
 public class APILogInByUserMsg extends APISessionMessage {
     @APIParam(required = false)
     private String accountUuid;

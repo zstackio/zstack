@@ -4,10 +4,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.test.Api;
-import org.zstack.test.ApiSenderException;
-import org.zstack.test.BeanConstructor;
-import org.zstack.test.DBUtil;
+import org.zstack.test.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -20,7 +17,7 @@ public class TestAddDns {
     @Before
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
-        BeanConstructor con = new BeanConstructor();
+        BeanConstructor con = new WebBeanConstructor();
         /* This loads spring application context */
         loader = con.addXml("PortalForUnitTest.xml").addXml("ConfigurationManager.xml").addXml("AccountManager.xml").build();
         dbf = loader.getComponent(DatabaseFacade.class);

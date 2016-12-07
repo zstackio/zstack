@@ -1,6 +1,8 @@
 package org.zstack.network.securitygroup;
 
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.rest.RestResponse;
+
 /**
  *@apiResult
  *
@@ -17,6 +19,7 @@ import org.zstack.header.message.APIEvent;
 }
 }
  */
+@RestResponse
 public class APIAddVmNicToSecurityGroupEvent extends APIEvent {
     public APIAddVmNicToSecurityGroupEvent(String apiId) {
         super(apiId);

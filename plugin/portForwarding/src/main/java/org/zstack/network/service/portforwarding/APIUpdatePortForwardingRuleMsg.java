@@ -1,13 +1,21 @@
 package org.zstack.network.service.portforwarding;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
 /**
  * Created by frank on 6/15/2015.
  */
 @Action(category = PortForwardingConstant.ACTION_CATEGORY)
+@RestRequest(
+        path = "/port-forwarding/{uuid}/actions",
+        method = HttpMethod.PUT,
+        responseClass = APIUpdatePortForwardingRuleEvent.class,
+        isAction = true
+)
 public class APIUpdatePortForwardingRuleMsg extends APIMessage {
     @APIParam(resourceType = PortForwardingRuleVO.class, checkAccount = true, operationTarget = true)
     private String uuid;

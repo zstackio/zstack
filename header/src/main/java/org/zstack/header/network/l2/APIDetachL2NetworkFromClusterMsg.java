@@ -1,8 +1,10 @@
 package org.zstack.header.network.l2;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
 /**
  * @api detach l2Network from a cluster
@@ -32,6 +34,12 @@ import org.zstack.header.message.APIParam;
  * @result see :ref:`APIDetachL2NetworkFromClusterEvent`
  * @since 0.1.0
  */
+@RestRequest(
+        path = "/l2-networks/{l2NetworkUuid}/clusters/{clusterUuid}",
+        method = HttpMethod.DELETE,
+        responseClass = APIDetachL2NetworkFromClusterEvent.class,
+        parameterName = "null"
+)
 public class APIDetachL2NetworkFromClusterMsg extends APIMessage implements L2NetworkMessage {
     /**
      * @desc l2Network uuid

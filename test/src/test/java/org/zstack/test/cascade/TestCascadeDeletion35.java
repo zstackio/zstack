@@ -13,12 +13,15 @@ import org.zstack.header.network.l3.IpRangeVO_;
 import org.zstack.header.network.l3.UsedIpVO;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.vm.VmNicVO;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.function.Function;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * 1. delete ip range
@@ -51,14 +54,16 @@ public class TestCascadeDeletion35 {
         q.add(IpRangeVO_.name, SimpleQuery.Op.EQ, "TestIpRange1");
         final IpRangeVO ipr = q.find();
         VmInstanceInventory vm = deployer.vms.get("TestVm");
-        int nicNum = vm.getVmNics().size();
-        VmNicInventory nic = CollectionUtils.find(vm.getVmNics(), new Function<VmNicInventory, VmNicInventory>() {
-            @Override
-            public VmNicInventory call(VmNicInventory arg) {
-                UsedIpVO ip = dbf.findByUuid(arg.getUsedIpUuid(), UsedIpVO.class);
-                return ip.getIpRangeUuid().equals(ipr.getUuid()) ? arg : null;
-            }
-        });
+        List<VmNicVO> nics = dbf.listByPrimaryKeys(vm.getVmNics().stream().map(VmNicInventory::getUuid).collect(Collectors.toList()),
+                VmNicVO.class);
+
+        int nicNum = nics.size();
+        Optional<VmNicVO> opt = nics.stream().filter(arg -> {
+            UsedIpVO ip = dbf.findByUuid(arg.getUsedIpUuid(), UsedIpVO.class);
+            return ip.getIpRangeUuid().equals(ipr.getUuid());
+        }).findFirst();
+        Assert.assertTrue(opt.isPresent());
+        VmNicVO nic = opt.get();
 
         api.deleteIpRange(ipr.getUuid());
 

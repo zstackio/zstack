@@ -1,7 +1,10 @@
 package org.zstack.header.zone;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.APINoSee;
+import org.zstack.header.rest.RestRequest;
 
 /**
  * @api create a new zone
@@ -30,6 +33,12 @@ import org.zstack.header.message.APIParam;
  * @result see :ref:`APICreateZoneEvent`
  * @since 0.1.0
  */
+@RestRequest(
+        path = "/zones",
+        method = HttpMethod.POST,
+        parameterName = "zone",
+        responseClass = APICreateZoneEvent.class
+)
 public class APICreateZoneMsg extends APICreateMessage {
     /**
      * @desc max length of 255 characters
@@ -47,6 +56,7 @@ public class APICreateZoneMsg extends APICreateMessage {
      * @choices zstack
      */
     @APIParam(required = false, validValues = {"zstack"})
+    @APINoSee
     private String type;
 
     public String getDescription() {

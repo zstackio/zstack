@@ -8,6 +8,7 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.test.BeanConstructor;
+import org.zstack.test.WebBeanConstructor;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -33,7 +34,7 @@ public class TestAsyncCascade2 {
 
     @Before
     public void setUp() throws Exception {
-        BeanConstructor con = new BeanConstructor();
+        BeanConstructor con = new WebBeanConstructor();
         loader = con.build();
         casf = loader.getComponent(CascadeFacade.class);
     }

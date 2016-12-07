@@ -1,13 +1,21 @@
 package org.zstack.storage.fusionstor.primary;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.APINoSee;
+import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.primary.PrimaryStorageMessage;
 
 /**
  * Created by Mei Lei on 6/6/2016.
  */
+@RestRequest(
+        path = "/primary-storage/fusionstor/mons/{monUuid}/actions",
+        isAction = true,
+        method = HttpMethod.PUT,
+        responseClass = APIUpdateMonToFusionstorPrimaryStorageEvent.class
+)
 public class APIUpdateFusionstorPrimaryStorageMonMsg extends APIMessage implements PrimaryStorageMessage {
     @APINoSee
     private String primaryStorageUuid;

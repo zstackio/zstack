@@ -1,6 +1,7 @@
 package org.zstack.header.storage.backup;
 
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.rest.RestResponse;
 
 /**
  * @apiResult api event for message :ref:`APIDeleteBackupStorageMsg`
@@ -11,6 +12,7 @@ import org.zstack.header.message.APIEvent;
  * }
  * @since 0.1.0
  */
+@RestResponse
 public class APIDeleteBackupStorageEvent extends APIEvent {
 
     public APIDeleteBackupStorageEvent(String apiId) {

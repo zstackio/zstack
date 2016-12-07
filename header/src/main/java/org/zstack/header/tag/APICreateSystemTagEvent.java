@@ -1,9 +1,11 @@
 package org.zstack.header.tag;
 
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.rest.RestResponse;
 
 /**
  */
+@RestResponse(allTo = "inventory")
 public class APICreateSystemTagEvent extends APIEvent {
     private SystemTagInventory inventory;
 

@@ -9,11 +9,15 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.storage.backup.BackupStorageInventory;
+import org.zstack.sdk.AddImageAction;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.deployer.schema.DeployerConfig;
 import org.zstack.test.deployer.schema.ImageConfig;
+import org.zstack.utils.gson.JSONObjectUtil;
 
 import java.util.List;
+
+import static org.codehaus.groovy.runtime.InvokerHelper.asList;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class DefaultImageDeployer implements ImageDeployer<ImageConfig> {
@@ -29,23 +33,27 @@ public class DefaultImageDeployer implements ImageDeployer<ImageConfig> {
     public void deploy(List<ImageConfig> images, DeployerConfig config, Deployer deployer) throws ApiSenderException {
         for (ImageConfig ic : images) {
             for (String bsref : ic.getBackupStorageRef()) {
-                ImageInventory iinv = new ImageInventory();
                 BackupStorageInventory bs = deployer.backupStorages.get(bsref);
                 if (bs == null) {
                     throw new CloudRuntimeException(String.format("Cannot find BackupStorage with name[%s], unable to add image[name:%s] to it", bsref, ic.getName()));
                 }
 
-                iinv.setDescription(ic.getDescription());
-                iinv.setMediaType(ic.getMediaType());
-                iinv.setGuestOsType(ic.getGuestOsType());
-                iinv.setFormat(ic.getFormat());
-                iinv.setName(ic.getName());
-                iinv.setUrl(ic.getUrl());
-                iinv.setPlatform(ic.getPlatform());
+                SessionInventory session = ic.getAccountRef() == null ? deployer.getApi().getAdminSession() : deployer.loginByAccountRef(ic.getAccountRef(), config);
 
-                SessionInventory session = ic.getAccountRef() == null ? null : deployer.loginByAccountRef(ic.getAccountRef(), config);
+                AddImageAction action = new AddImageAction();
+                action.description = ic.getDescription();
+                action.mediaType = ic.getMediaType();
+                action.guestOsType = ic.getGuestOsType();
+                action.format = ic.getFormat();
+                action.name = ic.getName();
+                action.url = ic.getUrl();
+                action.platform = ic.getPlatform();
+                action.sessionId = session.getUuid();
+                action.backupStorageUuids = asList(bs.getUuid());
 
-                iinv = deployer.getApi().addImageByFullConfig(iinv, bs.getUuid(), session);
+                AddImageAction.Result res = action.call().throwExceptionIfError();
+                ImageInventory iinv = JSONObjectUtil.rehashObject(res.value.getInventory(), ImageInventory.class);
+
                 if (ic.getSize() != null) {
                     ImageVO vo = dbf.findByUuid(iinv.getUuid(), ImageVO.class);
                     long size = deployer.parseSizeCapacity(ic.getSize());

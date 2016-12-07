@@ -13,6 +13,7 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created with IntelliJ IDEA.
@@ -24,7 +25,7 @@ public class TestCanonicalEvent11 {
     CLogger logger = Utils.getLogger(TestCanonicalEvent11.class);
     ComponentLoader loader;
     EventFacade evtf;
-    int count;
+    AtomicInteger count = new AtomicInteger(0);
 
     @Before
     public void setUp() throws Exception {
@@ -40,14 +41,14 @@ public class TestCanonicalEvent11 {
         EventCallback cb = new EventCallback() {
             @Override
             public void run(Map tokens, Object data) {
-                count++;
+                count.incrementAndGet();
             }
         };
 
         EventCallback cb1 = new EventCallback() {
             @Override
             public void run(Map tokens, Object data) {
-                count++;
+                count.incrementAndGet();
             }
         };
 
@@ -57,7 +58,7 @@ public class TestCanonicalEvent11 {
         evtf.fire(path, null);
         TimeUnit.SECONDS.sleep(1);
 
-        Assert.assertEquals(2, count);
+        Assert.assertEquals(2, count.intValue());
     }
 }
 

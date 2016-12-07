@@ -1,13 +1,21 @@
 package org.zstack.header.allocator;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.message.APISyncCallMessage;
+import org.zstack.header.rest.RestRequest;
 import org.zstack.header.zone.ZoneVO;
 
 import java.util.List;
 
+@RestRequest(
+        path = "/hosts/capacities/cpu-memory",
+        method = HttpMethod.GET,
+        responseClass = APIGetCpuMemoryCapacityReply.class,
+        parameterName = "params"
+)
 public class APIGetCpuMemoryCapacityMsg extends APISyncCallMessage {
     @APIParam(required = false, resourceType = ZoneVO.class)
     private List<String> zoneUuids;

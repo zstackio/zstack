@@ -1,8 +1,10 @@
 package org.zstack.header.network.service;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APISyncCallMessage;
 import org.zstack.header.network.l3.L3NetworkConstant;
+import org.zstack.header.rest.RestRequest;
 
 /**
  * @api get supported network service types
@@ -29,5 +31,10 @@ import org.zstack.header.network.l3.L3NetworkConstant;
  * @since 0.1.0
  */
 @Action(category = L3NetworkConstant.ACTION_CATEGORY, names = {"read"})
+@RestRequest(
+        path = "/network-services/types",
+        method = HttpMethod.GET,
+        responseClass = APIGetNetworkServiceTypesReply.class
+)
 public class APIGetNetworkServiceTypesMsg extends APISyncCallMessage {
 }

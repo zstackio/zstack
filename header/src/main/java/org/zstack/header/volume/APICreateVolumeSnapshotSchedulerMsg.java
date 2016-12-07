@@ -1,13 +1,21 @@
 package org.zstack.header.volume;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.core.scheduler.APICreateSchedulerMessage;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
 /**
  * Created by root on 7/11/16.
  */
 @Action(category = VolumeConstant.ACTION_CATEGORY)
+@RestRequest(
+        path = "/volumes/schedulers/create-volume-snapshots",
+        method = HttpMethod.POST,
+        responseClass = APICreateVolumeSnapshotSchedulerEvent.class,
+        parameterName = "params"
+)
 public class APICreateVolumeSnapshotSchedulerMsg extends APICreateSchedulerMessage implements VolumeMessage {
     /**
      * @desc volume uuid. See :ref:`VolumeInventory`

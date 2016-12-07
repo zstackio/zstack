@@ -2,10 +2,13 @@ package org.zstack.header.vm;
 
 import org.zstack.header.core.scheduler.SchedulerInventory;
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.rest.RestResponse;
 
 /**
  * Created by root on 7/30/16.
  */
+
+@RestResponse(allTo = "inventory")
 public class APICreateStartVmInstanceSchedulerEvent extends APIEvent {
     private SchedulerInventory inventory;
 

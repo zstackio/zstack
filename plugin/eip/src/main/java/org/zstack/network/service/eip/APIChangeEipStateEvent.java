@@ -1,9 +1,11 @@
 package org.zstack.network.service.eip;
 
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.rest.RestResponse;
 
 /**
  */
+@RestResponse(allTo = "inventory")
 public class APIChangeEipStateEvent extends APIEvent {
     private EipInventory inventory;
 

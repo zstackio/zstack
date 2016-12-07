@@ -70,6 +70,8 @@ public class TypeUtils {
             return (T) Boolean.valueOf(val);
         } else  if (Float.class.isAssignableFrom(clazz) || Float.TYPE.isAssignableFrom(clazz)) {
             return (T) Float.valueOf(val);
+        } else if (Short.class.isAssignableFrom(clazz) || Short.TYPE.isAssignableFrom(clazz)) {
+            return (T) Short.valueOf(val);
         } else if (Double.class.isAssignableFrom(clazz) || Double.TYPE.isAssignableFrom(clazz)) {
             return (T) Double.valueOf(val);
         } else if (String.class.isAssignableFrom(clazz)) {

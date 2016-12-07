@@ -1,9 +1,11 @@
 package org.zstack.header.network.l3;
 
 import org.zstack.header.query.APIQueryReply;
+import org.zstack.header.rest.RestResponse;
 
 import java.util.List;
 
+@RestResponse(allTo = "inventories")
 public class APIQueryIpRangeReply extends APIQueryReply {
     private List<IpRangeInventory> inventories;
 

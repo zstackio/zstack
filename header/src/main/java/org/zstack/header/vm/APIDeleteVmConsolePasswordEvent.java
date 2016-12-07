@@ -1,10 +1,12 @@
 package org.zstack.header.vm;
 
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.rest.RestResponse;
 
 /**
  * Created by root on 8/2/16.
  */
+@RestResponse
 public class APIDeleteVmConsolePasswordEvent extends APIEvent {
     private VmInstanceInventory inventory;
 

@@ -1,6 +1,7 @@
 package org.zstack.header.image;
 
 import org.zstack.header.message.APIReply;
+import org.zstack.header.rest.RestResponse;
 import org.zstack.header.storage.backup.BackupStorageInventory;
 
 import java.util.List;
@@ -8,6 +9,7 @@ import java.util.List;
 /**
  * Created by xing5 on 2016/8/30.
  */
+@RestResponse(allTo = "inventories")
 public class APIGetCandidateBackupStorageForCreatingImageReply extends APIReply {
     private List<BackupStorageInventory> inventories;
 

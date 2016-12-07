@@ -1,5 +1,8 @@
 package org.zstack.storage.primary.nfs;
 
+import org.springframework.http.HttpMethod;
+import org.zstack.header.rest.RestRequest;
+import org.zstack.header.storage.primary.APIAddPrimaryStorageEvent;
 import org.zstack.header.storage.primary.APIAddPrimaryStorageMsg;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.tag.TagResourceType;
@@ -50,6 +53,12 @@ import org.zstack.header.tag.TagResourceType;
  * see :ref:`APIAddNfsPrimaryStorageEvent`
  */
 @TagResourceType(PrimaryStorageVO.class)
+@RestRequest(
+        path = "/primary-storage/nfs",
+        method = HttpMethod.POST,
+        responseClass = APIAddPrimaryStorageEvent.class,
+        parameterName = "params"
+)
 public class APIAddNfsPrimaryStorageMsg extends APIAddPrimaryStorageMsg {
     public APIAddNfsPrimaryStorageMsg() {
         this.setType(NfsPrimaryStorageConstant.NFS_PRIMARY_STORAGE_TYPE);

@@ -1,13 +1,21 @@
 package org.zstack.header.network.l3;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
 /**
  * Created by frank on 6/14/2015.
  */
 @Action(category = L3NetworkConstant.ACTION_CATEGORY)
+@RestRequest(
+        path = "/l3-networks/{uuid}/actions",
+        isAction = true,
+        method = HttpMethod.PUT,
+        responseClass = APIUpdateL3NetworkEvent.class
+)
 public class APIUpdateL3NetworkMsg extends APIMessage implements L3NetworkMessage {
     @APIParam(resourceType = L3NetworkVO.class, checkAccount = true, operationTarget = true)
     private String uuid;

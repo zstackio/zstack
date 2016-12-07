@@ -6,6 +6,7 @@ import org.junit.Test;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.test.Api;
 import org.zstack.test.BeanConstructor;
+import org.zstack.test.WebBeanConstructor;
 
 import java.util.List;
 import java.util.Map;
@@ -22,7 +23,7 @@ public class TestGetNetworkServiceTypes {
 
     @Before
     public void setUp() throws Exception {
-        BeanConstructor con = new BeanConstructor();
+        BeanConstructor con = new WebBeanConstructor();
         loader = con.addAllConfigInZstackXml().build();
         api = new Api();
         api.startServer();

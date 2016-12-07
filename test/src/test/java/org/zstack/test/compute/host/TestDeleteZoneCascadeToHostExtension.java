@@ -10,10 +10,7 @@ import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.simulator.SimulatorHostVO;
 import org.zstack.header.zone.ZoneInventory;
-import org.zstack.test.Api;
-import org.zstack.test.ApiSenderException;
-import org.zstack.test.BeanConstructor;
-import org.zstack.test.DBUtil;
+import org.zstack.test.*;
 
 public class TestDeleteZoneCascadeToHostExtension {
     Api api;
@@ -24,7 +21,7 @@ public class TestDeleteZoneCascadeToHostExtension {
     @Before
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
-        BeanConstructor con = new BeanConstructor();
+        BeanConstructor con = new WebBeanConstructor();
         /* This loads spring application context */
         loader = con.addXml("PortalForUnitTest.xml")
                 .addXml("ClusterManager.xml")

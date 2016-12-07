@@ -1,6 +1,7 @@
 package org.zstack.header.vm;
 
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.rest.RestResponse;
 
 /**
  * @apiResult api event for message :ref:`APIDestroyVmInstanceMsg`
@@ -11,6 +12,7 @@ import org.zstack.header.message.APIEvent;
  * }
  * @since 0.1.0
  */
+@RestResponse
 public class APIDestroyVmInstanceEvent extends APIEvent {
 
     public APIDestroyVmInstanceEvent(String apiId) {

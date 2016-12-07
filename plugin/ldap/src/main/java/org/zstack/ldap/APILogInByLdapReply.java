@@ -3,7 +3,9 @@ package org.zstack.ldap;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.message.APIReply;
+import org.zstack.header.rest.RestResponse;
 
+@RestResponse(fieldsTo = {"all"})
 public class APILogInByLdapReply extends APIReply {
     private SessionInventory inventory;
     private AccountInventory accountInventory;

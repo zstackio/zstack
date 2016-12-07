@@ -1,11 +1,20 @@
 package org.zstack.kvm;
 
+import org.springframework.http.HttpMethod;
+import org.zstack.header.host.APIUpdateHostEvent;
 import org.zstack.header.host.APIUpdateHostMsg;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
 /**
  * Created by frank on 6/15/2015.
  */
+@RestRequest(
+        path = "/hosts/kvm/{uuid}/actions",
+        method = HttpMethod.PUT,
+        responseClass = APIUpdateHostEvent.class,
+        isAction = true
+)
 public class APIUpdateKVMHostMsg extends APIUpdateHostMsg {
     @APIParam(maxLength = 255, required = false)
     private String username;

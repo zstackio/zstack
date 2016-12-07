@@ -153,16 +153,6 @@ public class TestPolicyForL3Network {
 
         success = false;
         try {
-            addIpRange(l3.getUuid(), "10.0.0.0/24", session);
-        } catch (ApiSenderException e) {
-            if (IdentityErrors.PERMISSION_DENIED.toString().equals(e.getError().getCode())) {
-                success = true;
-            }
-        }
-        Assert.assertTrue(success);
-
-        success = false;
-        try {
             api.attachNetworkServiceToL3Network(l3.getUuid(), pinv.getUuid(), list("DHCP", "DNS"), session);
         } catch (ApiSenderException e) {
             if (IdentityErrors.PERMISSION_DENIED.toString().equals(e.getError().getCode())) {
@@ -273,16 +263,6 @@ public class TestPolicyForL3Network {
         success = false;
         try {
             addIpRange(l3.getUuid(), session);
-        } catch (ApiSenderException e) {
-            if (IdentityErrors.PERMISSION_DENIED.toString().equals(e.getError().getCode())) {
-                success = true;
-            }
-        }
-        Assert.assertTrue(success);
-
-        success = false;
-        try {
-            addIpRange(l3.getUuid(), "10.0.0.0/24", session);
         } catch (ApiSenderException e) {
             if (IdentityErrors.PERMISSION_DENIED.toString().equals(e.getError().getCode())) {
                 success = true;

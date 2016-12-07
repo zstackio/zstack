@@ -1,8 +1,10 @@
 package org.zstack.header.configuration;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
 /**
  * Created with IntelliJ IDEA.
@@ -11,6 +13,13 @@ import org.zstack.header.message.APIParam;
  * To change this template use File | Settings | File Templates.
  */
 @Action(category = ConfigurationConstant.ACTION_CATEGORY)
+@RestRequest(
+        path = "/disk-offerings/{uuid}/actions",
+        isAction = true,
+        method = HttpMethod.PUT,
+        parameterName = "params",
+        responseClass = APIChangeDiskOfferingStateEvent.class
+)
 public class APIChangeDiskOfferingStateMsg extends APIMessage implements DiskOfferingMessage {
     @APIParam(resourceType = DiskOfferingVO.class, checkAccount = true, operationTarget = true)
     private String uuid;

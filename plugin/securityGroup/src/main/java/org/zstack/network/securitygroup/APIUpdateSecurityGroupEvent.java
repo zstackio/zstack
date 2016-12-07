@@ -1,10 +1,12 @@
 package org.zstack.network.securitygroup;
 
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.rest.RestResponse;
 
 /**
  * Created by frank on 6/15/2015.
  */
+@RestResponse(allTo = "inventory")
 public class APIUpdateSecurityGroupEvent extends APIEvent {
     private SecurityGroupInventory inventory;
 

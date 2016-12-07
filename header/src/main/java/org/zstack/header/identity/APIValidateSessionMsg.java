@@ -1,6 +1,8 @@
 package org.zstack.header.identity;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
 /**
  * Created with IntelliJ IDEA.
@@ -9,6 +11,12 @@ import org.zstack.header.message.APIParam;
  * To change this template use File | Settings | File Templates.
  */
 @SuppressCredentialCheck
+@RestRequest(
+        path = "/accounts/sessions/{sessionUuid}/valid",
+        responseClass = APIValidateSessionReply.class,
+        method = HttpMethod.GET,
+        parameterName = "null"
+)
 public class APIValidateSessionMsg extends APISessionMessage {
     @APIParam
     private String sessionUuid;

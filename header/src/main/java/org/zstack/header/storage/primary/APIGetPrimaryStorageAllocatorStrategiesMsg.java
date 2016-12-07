@@ -1,6 +1,8 @@
 package org.zstack.header.storage.primary;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APISyncCallMessage;
+import org.zstack.header.rest.RestRequest;
 
 /**
  * @api get allocation strategy of primary storage
@@ -25,5 +27,10 @@ import org.zstack.header.message.APISyncCallMessage;
  * @result see :ref:`APIGetPrimaryStorageAllocatorStrategiesReply`
  * @since 0.1.0
  */
+@RestRequest(
+        path = "/primary-storage/allocators/strategies",
+        method = HttpMethod.GET,
+        responseClass = APIGetPrimaryStorageAllocatorStrategiesReply.class
+)
 public class APIGetPrimaryStorageAllocatorStrategiesMsg extends APISyncCallMessage {
 }

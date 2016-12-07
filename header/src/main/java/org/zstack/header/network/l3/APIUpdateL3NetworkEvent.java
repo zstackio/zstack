@@ -1,10 +1,12 @@
 package org.zstack.header.network.l3;
 
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.rest.RestResponse;
 
 /**
  * Created by frank on 6/15/2015.
  */
+@RestResponse(allTo = "inventory")
 public class APIUpdateL3NetworkEvent extends APIEvent {
     private L3NetworkInventory inventory;
 

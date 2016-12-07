@@ -1,9 +1,11 @@
 package org.zstack.header.storage.snapshot;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.APINoSee;
+import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.backup.BackupStorageVO;
 
 /**

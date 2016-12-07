@@ -1,10 +1,12 @@
 package org.zstack.header.volume;
 
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.rest.RestResponse;
 
 /**
  * Created by frank on 6/14/2015.
  */
+@RestResponse(allTo = "inventory")
 public class APIUpdateVolumeEvent extends APIEvent {
     private VolumeInventory inventory;
 

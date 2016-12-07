@@ -382,12 +382,14 @@ public class RESTFacadeImpl implements RESTFacade {
 
     @Override
     public <T> T syncJsonPost(String url, String body, Map<String, String> headers, Class<T> returnClass) {
+        body = body == null ? "" : body;
+
         HttpHeaders requestHeaders = new HttpHeaders();
         if (headers != null) {
             requestHeaders.setAll(headers);
         }
         requestHeaders.setContentType(MediaType.APPLICATION_JSON);
-        requestHeaders.setContentLength(body == null ? 0 : body.length());
+        requestHeaders.setContentLength(body.length());
         HttpEntity<String> req = new HttpEntity<String>(body, requestHeaders);
         if (logger.isTraceEnabled()) {
             logger.trace(String.format("json post[%s], %s", url, req.toString()));

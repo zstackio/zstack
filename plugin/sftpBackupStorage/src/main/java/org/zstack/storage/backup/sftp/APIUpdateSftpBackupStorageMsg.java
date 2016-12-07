@@ -1,11 +1,20 @@
 package org.zstack.storage.backup.sftp;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
+import org.zstack.header.storage.backup.APIUpdateBackupStorageEvent;
 import org.zstack.header.storage.backup.APIUpdateBackupStorageMsg;
 
 /**
  * Created by frank on 6/15/2015.
  */
+@RestRequest(
+        path = "/backup-storage/sftp/{uuid}/actions",
+        responseClass = APIUpdateBackupStorageEvent.class,
+        method = HttpMethod.PUT,
+        isAction = true
+)
 public class APIUpdateSftpBackupStorageMsg extends APIUpdateBackupStorageMsg {
     @APIParam(maxLength = 255, required = false)
     private String username;

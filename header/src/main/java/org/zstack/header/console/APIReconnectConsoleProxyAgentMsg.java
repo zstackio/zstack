@@ -1,13 +1,22 @@
 package org.zstack.header.console;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
 import java.util.List;
 
 /**
  * Created by xing5 on 2016/3/15.
  */
+@RestRequest(
+        path = "/consoles/agents",
+        isAction = true,
+        parameterName = "params",
+        responseClass = APIReconnectConsoleProxyAgentEvent.class,
+        method = HttpMethod.PUT
+)
 public class APIReconnectConsoleProxyAgentMsg extends APIMessage implements ConsoleProxyAgentMessage {
     @APIParam(required = false, nonempty = true)
     private List<String> agentUuids;

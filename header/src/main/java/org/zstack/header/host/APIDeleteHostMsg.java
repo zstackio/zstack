@@ -1,7 +1,10 @@
 package org.zstack.header.host;
 
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
 
 /**
@@ -30,6 +33,11 @@ import org.zstack.header.message.APIParam;
  * @result see :ref:`APIDeleteHostEvent`
  * @since 0.1.0
  */
+@RestRequest(
+        path = "/hosts/{uuid}",
+        method = HttpMethod.DELETE,
+        responseClass = APIDeleteHostEvent.class
+)
 public class APIDeleteHostMsg extends APIDeleteMessage implements HostMessage {
     /**
      * @desc host uuid

@@ -1,10 +1,18 @@
 package org.zstack.header.configuration;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
 @Action(category = ConfigurationConstant.ACTION_CATEGORY)
+@RestRequest(
+        path = "/disk-offerings",
+        method = HttpMethod.POST,
+        responseClass = APICreateDiskOfferingEvent.class,
+        parameterName = "params"
+)
 public class APICreateDiskOfferingMsg extends APICreateMessage {
     @APIParam(maxLength = 255)
     private String name;

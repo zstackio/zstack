@@ -1,6 +1,8 @@
 package org.zstack.header.network.l2;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
 /**
  * @api create a l2VlanNetwork
@@ -38,6 +40,12 @@ import org.zstack.header.message.APIParam;
  * @result see :ref:`APICreateL2VlanNetworkEvent`
  * @since 0.1.0
  */
+@RestRequest(
+        path = "/l2-vlan-networks",
+        method = HttpMethod.POST,
+        responseClass = APICreateL2NetworkEvent.class,
+        parameterName = "params"
+)
 public class APICreateL2VlanNetworkMsg extends APICreateL2NetworkMsg {
     /**
      * @desc vlan id

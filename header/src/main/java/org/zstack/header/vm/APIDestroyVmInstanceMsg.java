@@ -1,8 +1,11 @@
 package org.zstack.header.vm;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
+import org.zstack.header.rest.RestResponse;
 
 /**
  * @api destroy a vm instance
@@ -32,6 +35,12 @@ import org.zstack.header.message.APIParam;
  * @since 0.1.0
  */
 @Action(category = VmInstanceConstant.ACTION_CATEGORY)
+@RestRequest(
+        path = "/vm-instances/{uuid}",
+        method = HttpMethod.DELETE,
+        responseClass = APIDestroyVmInstanceEvent.class,
+        parameterName = "null"
+)
 public class APIDestroyVmInstanceMsg extends APIDeleteMessage implements VmInstanceMessage {
     /**
      * @desc vm uuid

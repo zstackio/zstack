@@ -1,6 +1,8 @@
 package org.zstack.network.securitygroup;
 
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.rest.RestResponse;
+
 /**
  *@apiResult
  * api event for :ref:`APIDeleteSecurityGroupRuleMsg`
@@ -40,6 +42,7 @@ import org.zstack.header.message.APIEvent;
 }
 }
  */
+@RestResponse(allTo = "inventory")
 public class APIDeleteSecurityGroupRuleEvent extends APIEvent {
     /**
      * @desc see :ref:`SecurityGroupInventory`

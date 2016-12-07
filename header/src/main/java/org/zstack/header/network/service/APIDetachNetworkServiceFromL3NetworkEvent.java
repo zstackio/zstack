@@ -2,10 +2,12 @@ package org.zstack.header.network.service;
 
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.rest.RestResponse;
 
 /**
  * Created by frank on 1/4/2016.
  */
+@RestResponse(allTo = "inventory")
 public class APIDetachNetworkServiceFromL3NetworkEvent extends APIEvent {
     private L3NetworkInventory inventory;
 

@@ -188,13 +188,13 @@ public class VmInstanceSpec implements Serializable {
     private boolean gcOnStopFailure;
     private String consolePassword;
     private boolean instanceOfferingOnlineChange;
-    private VmAccountPerference accountPerference;
+    private VmAccountPreference accountPerference;
 
-    public VmAccountPerference getAccountPerference() {
+    public VmAccountPreference getAccountPerference() {
         return accountPerference;
     }
 
-    public void setAccountPerference(VmAccountPerference accountPerference) {
+    public void setAccountPerference(VmAccountPreference accountPerference) {
         this.accountPerference = accountPerference;
     }
 

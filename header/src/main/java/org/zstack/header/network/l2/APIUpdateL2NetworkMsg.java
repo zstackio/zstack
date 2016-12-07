@@ -1,11 +1,20 @@
 package org.zstack.header.network.l2;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
 /**
  * Created by frank on 6/14/2015.
  */
+@RestRequest(
+        path = "/l2-networks/{uuid}/actions",
+        method = HttpMethod.PUT,
+        parameterName = "params",
+        responseClass = APIUpdateL2NetworkEvent.class,
+        isAction = true
+)
 public class APIUpdateL2NetworkMsg extends APIMessage implements L2NetworkMessage {
     @APIParam(resourceType = L2NetworkVO.class)
     private String uuid;

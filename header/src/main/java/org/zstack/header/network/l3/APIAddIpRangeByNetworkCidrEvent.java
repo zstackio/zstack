@@ -1,9 +1,11 @@
 package org.zstack.header.network.l3;
 
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.rest.RestResponse;
 
 /**
  */
+@RestResponse(allTo = "inventory")
 public class APIAddIpRangeByNetworkCidrEvent extends APIEvent {
     private IpRangeInventory inventory;
 

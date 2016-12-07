@@ -3,6 +3,7 @@ package org.zstack.network.service.eip;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestResponse;
 
 /**
  *@apiResult
@@ -29,7 +30,7 @@ import org.zstack.header.message.APIParam;
 }
 }
  */
-
+@RestResponse(allTo = "inventory")
 public class APICreateEipEvent extends APIEvent {
     /**
      * @desc see :ref:`EipInventory`

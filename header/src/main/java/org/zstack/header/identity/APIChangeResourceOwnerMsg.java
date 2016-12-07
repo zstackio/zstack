@@ -1,11 +1,19 @@
 package org.zstack.header.identity;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
 /**
  * Created by xing5 on 2016/4/16.
  */
+@RestRequest(
+        path = "/account/{accountUuid}/resources",
+        method = HttpMethod.POST,
+        responseClass = APIChangeResourceOwnerEvent.class,
+        parameterName = "params"
+)
 public class APIChangeResourceOwnerMsg extends APIMessage {
     @APIParam(resourceType = AccountVO.class)
     private String accountUuid;

@@ -1,13 +1,21 @@
 package org.zstack.network.service.vip;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
 /**
  * Created by frank on 6/15/2015.
  */
 @Action(category = VipConstant.ACTION_CATEGORY)
+@RestRequest(
+        path = "/vips/{uuid}/actions",
+        method = HttpMethod.PUT,
+        responseClass = APIUpdateVipEvent.class,
+        isAction = true
+)
 public class APIUpdateVipMsg extends APIMessage implements VipMessage {
     @APIParam(resourceType = VipVO.class, checkAccount = true, operationTarget = true)
     private String uuid;

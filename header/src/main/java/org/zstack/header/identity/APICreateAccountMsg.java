@@ -1,8 +1,17 @@
 package org.zstack.header.identity;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
+import org.zstack.header.zone.APICreateZoneEvent;
 
+@RestRequest(
+        path = "/accounts",
+        method = HttpMethod.POST,
+        parameterName = "params",
+        responseClass = APICreateAccountEvent.class
+)
 public class APICreateAccountMsg extends APICreateMessage {
     @APIParam(maxLength = 255)
     private String name;

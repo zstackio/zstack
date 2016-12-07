@@ -1,5 +1,6 @@
 package org.zstack.header.vm;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.configuration.DiskOfferingVO;
 import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.header.identity.Action;
@@ -7,6 +8,7 @@ import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.message.APISyncCallMessage;
 import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.rest.RestRequest;
 
 import java.util.List;
 
@@ -14,6 +16,12 @@ import java.util.List;
  * Created by xing5 on 2016/8/17.
  */
 @Action(category = VmInstanceConstant.ACTION_CATEGORY, names = {"read"})
+@RestRequest(
+        path = "/vm-instances/candidate-destinations",
+        method = HttpMethod.GET,
+        responseClass = APIGetCandidateZonesClustersHostsForCreatingVmReply.class,
+        parameterName = "params"
+)
 public class APIGetCandidateZonesClustersHostsForCreatingVmMsg extends APISyncCallMessage {
     @APIParam(resourceType = InstanceOfferingVO.class, checkAccount = true)
     private String instanceOfferingUuid;

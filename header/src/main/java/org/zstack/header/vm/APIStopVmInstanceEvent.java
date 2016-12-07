@@ -1,6 +1,7 @@
 package org.zstack.header.vm;
 
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.rest.RestResponse;
 
 /**
  * @apiResult api event for message :ref:`APIStopVmInstanceMsg`
@@ -109,6 +110,7 @@ import org.zstack.header.message.APIEvent;
  * }
  * @since 0.1.0
  */
+@RestResponse(allTo = "inventory")
 public class APIStopVmInstanceEvent extends APIEvent {
     /**
      * @desc see :ref:`VmInstanceInventory`

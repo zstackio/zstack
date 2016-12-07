@@ -72,11 +72,5 @@ public class TestChangeVmInstanceOffering {
         Assert.assertEquals(ioinv1.getMemorySize(), (long) vm.getMemorySize());
 
         vm = api.rebootVmInstance(vm.getUuid());
-
-        // after reboot, the capacity changed
-        Assert.assertEquals(ioinv2.getCpuNum(), (int) vm.getCpuNum());
-        Assert.assertEquals(ioinv2.getCpuSpeed(), (long) vm.getCpuSpeed());
-        Assert.assertEquals(ioinv2.getMemorySize(), (long) vm.getMemorySize());
-
     }
 }

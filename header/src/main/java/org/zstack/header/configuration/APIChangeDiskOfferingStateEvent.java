@@ -1,6 +1,7 @@
 package org.zstack.header.configuration;
 
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.rest.RestResponse;
 
 /**
  * Created with IntelliJ IDEA.
@@ -8,6 +9,7 @@ import org.zstack.header.message.APIEvent;
  * Time: 2:37 PM
  * To change this template use File | Settings | File Templates.
  */
+@RestResponse(allTo = "inventory")
 public class APIChangeDiskOfferingStateEvent extends APIEvent {
     private DiskOfferingInventory inventory;
 

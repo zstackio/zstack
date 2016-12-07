@@ -1,7 +1,9 @@
 package org.zstack.header.storage.backup;
 
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.rest.RestResponse;
 
+@RestResponse(fieldsTo = {"all"})
 public class APIExportImageFromBackupStorageEvent extends APIEvent {
     public APIExportImageFromBackupStorageEvent() {
     }

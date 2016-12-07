@@ -9,10 +9,7 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.volume.*;
-import org.zstack.test.Api;
-import org.zstack.test.ApiSenderException;
-import org.zstack.test.BeanConstructor;
-import org.zstack.test.DBUtil;
+import org.zstack.test.*;
 import org.zstack.utils.data.SizeUnit;
 
 /**
@@ -30,7 +27,7 @@ public class TestChangeVolumeState {
     @Before
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
-        BeanConstructor con = new BeanConstructor();
+        BeanConstructor con = new WebBeanConstructor();
         /* This loads spring application context */
         loader = con.addXml("PortalForUnitTest.xml").addXml("Simulator.xml")
                 .addXml("PrimaryStorageManager.xml").addXml("ConfigurationManager.xml")

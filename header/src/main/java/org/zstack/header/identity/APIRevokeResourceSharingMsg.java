@@ -1,7 +1,9 @@
 package org.zstack.header.identity;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
 import java.util.List;
 
@@ -9,6 +11,12 @@ import java.util.List;
  * Created by frank on 7/13/2015.
  */
 @Action(category = AccountConstant.ACTION_CATEGORY)
+@RestRequest(
+        path = "/accounts/resources/actions",
+        method = HttpMethod.PUT,
+        isAction = true,
+        responseClass = APIRevokeResourceSharingEvent.class
+)
 public class APIRevokeResourceSharingMsg extends APIMessage implements AccountMessage {
     @APIParam(nonempty = true)
     private List<String> resourceUuids;

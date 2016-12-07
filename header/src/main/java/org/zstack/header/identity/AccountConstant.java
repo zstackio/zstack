@@ -1,6 +1,7 @@
 package org.zstack.header.identity;
 
 import org.zstack.header.configuration.PythonClass;
+import org.zstack.header.rest.SDK;
 
 @PythonClass
 public interface AccountConstant {
@@ -30,6 +31,7 @@ public interface AccountConstant {
         ALLOW,
     }
 
+    @SDK(sdkClassName = "PolicyStatementEffect")
     enum StatementEffect {
         Allow,
         Deny,

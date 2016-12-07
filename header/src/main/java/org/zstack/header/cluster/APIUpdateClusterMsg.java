@@ -1,11 +1,19 @@
 package org.zstack.header.cluster;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
 /**
  * Created by frank on 6/14/2015.
  */
+@RestRequest(
+        path = "/clusters/{uuid}/actions",
+        responseClass = APIUpdateClusterEvent.class,
+        isAction = true,
+        method = HttpMethod.PUT
+)
 public class APIUpdateClusterMsg extends APIMessage implements ClusterMessage {
     @APIParam(resourceType = ClusterVO.class)
     private String uuid;

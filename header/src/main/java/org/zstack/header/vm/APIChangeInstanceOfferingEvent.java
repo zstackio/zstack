@@ -1,10 +1,12 @@
 package org.zstack.header.vm;
 
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.rest.RestResponse;
 
 /**
  * Created by frank on 7/16/2015.
  */
+@RestResponse(allTo = "inventory")
 public class APIChangeInstanceOfferingEvent extends APIEvent {
     private VmInstanceInventory inventory;
 

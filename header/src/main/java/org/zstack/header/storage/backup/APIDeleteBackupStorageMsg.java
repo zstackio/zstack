@@ -1,7 +1,9 @@
 package org.zstack.header.storage.backup;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
 /**
  * @api delete backup storage
@@ -30,6 +32,11 @@ import org.zstack.header.message.APIParam;
  * @result See :ref:`APIDeleteBackupStorageEvent`
  * @since 0.1.0
  */
+@RestRequest(
+        path = "/backup-storage/{uuid}",
+        method = HttpMethod.DELETE,
+        responseClass = APIDeleteBackupStorageEvent.class
+)
 public class APIDeleteBackupStorageMsg extends APIDeleteMessage implements BackupStorageMessage {
     /**
      * @desc backup storage uuid

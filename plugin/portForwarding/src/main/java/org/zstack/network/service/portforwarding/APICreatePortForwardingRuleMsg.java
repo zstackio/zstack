@@ -1,8 +1,10 @@
 package org.zstack.network.service.portforwarding;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.network.service.vip.VipVO;
 
@@ -59,6 +61,11 @@ import org.zstack.network.service.vip.VipVO;
  * see :ref:`APICreatePortForwardingRuleEvent`
  */
 @Action(category = PortForwardingConstant.ACTION_CATEGORY)
+@RestRequest(
+        path = "/port-forwarding",
+        method = HttpMethod.POST,
+        responseClass = APICreatePortForwardingRuleEvent.class
+)
 public class APICreatePortForwardingRuleMsg extends APICreateMessage {
     /**
      * @desc uuid of vip the rule is being created on

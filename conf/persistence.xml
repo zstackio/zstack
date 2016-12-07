@@ -131,5 +131,6 @@
         <class>org.zstack.ldap.LdapAccountRefVO</class>
         <class>org.zstack.core.jsonlabel.JsonLabelVO</class>
         <class>org.zstack.header.core.progress.ProgressVO</class>
+        <class>org.zstack.rest.AsyncRestVO</class>
     </persistence-unit>
 </persistence>

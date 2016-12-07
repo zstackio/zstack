@@ -1,12 +1,20 @@
 package org.zstack.header.identity;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
 /**
  * Created by frank on 7/10/2015.
  */
 @Action(category = AccountConstant.ACTION_CATEGORY)
+@RestRequest(
+        path = "/accounts/users/actions",
+        isAction = true,
+        method = HttpMethod.PUT,
+        responseClass = APIUpdateUserEvent.class
+)
 public class APIUpdateUserMsg extends APIMessage implements AccountMessage {
     @APIParam(resourceType = UserVO.class, checkAccount = true, operationTarget = true, required = false)
     private String uuid;

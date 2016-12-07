@@ -1,9 +1,11 @@
 package org.zstack.network.service.portforwarding;
 
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.rest.RestResponse;
 
 /**
  */
+@RestResponse(allTo = "inventory")
 public class APIChangePortForwardingRuleStateEvent extends APIEvent {
     private PortForwardingRuleInventory inventory;
 

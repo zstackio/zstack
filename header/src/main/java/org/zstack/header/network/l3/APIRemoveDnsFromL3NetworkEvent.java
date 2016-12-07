@@ -1,6 +1,8 @@
 package org.zstack.header.network.l3;
 
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.rest.RestRequest;
+import org.zstack.header.rest.RestResponse;
 
 /**
  * @apiResult api event for :ref:`APIRemoveDnsFromL3NetworkMsg`
@@ -39,6 +41,7 @@ import org.zstack.header.message.APIEvent;
  * }
  * @since 0.1.0
  */
+@RestResponse(allTo = "inventory")
 public class APIRemoveDnsFromL3NetworkEvent extends APIEvent {
     /**
      * @desc see :ref:`L3NetworkInventory`

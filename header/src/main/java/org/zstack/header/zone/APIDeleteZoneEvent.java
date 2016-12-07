@@ -1,6 +1,7 @@
 package org.zstack.header.zone;
 
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.rest.RestResponse;
 
 
 /**
@@ -12,6 +13,7 @@ import org.zstack.header.message.APIEvent;
  * }
  * @since 0.1.0
  */
+@RestResponse
 public class APIDeleteZoneEvent extends APIEvent {
 
     public APIDeleteZoneEvent(String apiId) {

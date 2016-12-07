@@ -1,6 +1,7 @@
 package org.zstack.header.network.l3;
 
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.rest.RestResponse;
 
 /**
  * @apiResult api event for APIAddIpRangeMsg
@@ -24,6 +25,7 @@ import org.zstack.header.message.APIEvent;
  * }
  * @since 0.1.0
  */
+@RestResponse(allTo = "inventory")
 public class APIAddIpRangeEvent extends APIEvent {
     /**
      * @desc see :ref:`IpRangeInventory`

@@ -1,9 +1,16 @@
 package org.zstack.header.identity;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
 @Action(category = AccountConstant.ACTION_CATEGORY, accountOnly = true)
+@RestRequest(
+        path = "/accounts/groups/{groupUuid}/policies",
+        method = HttpMethod.POST,
+        responseClass = APIAttachPolicyToUserGroupEvent.class
+)
 public class APIAttachPolicyToUserGroupMsg extends APIMessage implements AccountMessage {
     @APIParam(resourceType = PolicyVO.class, checkAccount = true, operationTarget = true)
     private String policyUuid;

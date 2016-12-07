@@ -12,10 +12,7 @@ import org.zstack.header.network.l3.L3NetworkState;
 import org.zstack.header.network.l3.L3NetworkStateEvent;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.zone.ZoneInventory;
-import org.zstack.test.Api;
-import org.zstack.test.ApiSenderException;
-import org.zstack.test.BeanConstructor;
-import org.zstack.test.DBUtil;
+import org.zstack.test.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -28,7 +25,7 @@ public class TestChangeL3BasicNetworkState {
     @Before
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
-        BeanConstructor con = new BeanConstructor();
+        BeanConstructor con = new WebBeanConstructor();
         /* This loads spring application context */
         loader = con.addXml("PortalForUnitTest.xml").addXml("ZoneManager.xml").addXml("NetworkManager.xml").addXml("AccountManager.xml").build();
         dbf = loader.getComponent(DatabaseFacade.class);

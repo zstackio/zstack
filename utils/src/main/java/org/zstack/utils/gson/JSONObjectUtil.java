@@ -11,7 +11,7 @@ public class JSONObjectUtil {
     private static final Gson prettyGson;
     
     static {
-        gson = new GsonUtil().create();
+        gson = new GsonBuilder().create();
         prettyGson = new GsonBuilder().setPrettyPrinting().create();
     }
     

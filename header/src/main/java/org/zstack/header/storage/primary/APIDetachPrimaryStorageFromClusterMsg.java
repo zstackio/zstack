@@ -1,8 +1,10 @@
 package org.zstack.header.storage.primary;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
 /**
  * @api detach primary storage from a cluster
@@ -31,6 +33,12 @@ import org.zstack.header.message.APIParam;
  * @result see :ref:`APIDetachPrimaryStorageEvent`
  * @since 0.1.0
  */
+@RestRequest(
+        path = "/clusters/{clusterUuid}/primary-storage/{primaryStorageUuid}",
+        method = HttpMethod.DELETE,
+        responseClass = APIDetachPrimaryStorageFromClusterEvent.class,
+        parameterName = "null"
+)
 public class APIDetachPrimaryStorageFromClusterMsg extends APIMessage implements PrimaryStorageMessage {
     /**
      * @desc primary storage uuid

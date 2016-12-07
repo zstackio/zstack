@@ -1,6 +1,7 @@
 package org.zstack.header.network.l2;
 
 import org.zstack.header.message.APIReply;
+import org.zstack.header.rest.RestResponse;
 
 import java.util.List;
 
@@ -19,6 +20,7 @@ import java.util.List;
  * @since 0.1.0
  */
 
+@RestResponse(fieldsTo = {"types=l2NetworkTypes"})
 public class APIGetL2NetworkTypesReply extends APIReply {
     /**
      * @desc a list of supported l2Network types

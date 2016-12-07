@@ -1,8 +1,10 @@
 package org.zstack.header.volume;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 
@@ -35,6 +37,12 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
  * @since 0.1.0
  */
 @Action(category = VolumeConstant.ACTION_CATEGORY)
+@RestRequest(
+        path = "/volumes/data/from/volume-snapshots/{volumeSnapshotUuid}",
+        responseClass = APICreateDataVolumeFromVolumeSnapshotEvent.class,
+        method = HttpMethod.POST,
+        parameterName = "params"
+)
 public class APICreateDataVolumeFromVolumeSnapshotMsg extends APICreateMessage {
     /**
      * @desc max length of 255 characters

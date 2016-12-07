@@ -1,6 +1,7 @@
 package org.zstack.header.storage.primary;
 
 import org.zstack.header.message.APIReply;
+import org.zstack.header.rest.RestResponse;
 
 import java.util.List;
 
@@ -17,6 +18,7 @@ import java.util.List;
  * }
  * @since 0.1.0
  */
+@RestResponse(fieldsTo = {"types=primaryStorageTypes"})
 public class APIGetPrimaryStorageTypesReply extends APIReply {
     /**
      * @desc a list of primary storage types supported by zstack

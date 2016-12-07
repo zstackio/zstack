@@ -1,9 +1,12 @@
 package org.zstack.network.service.portforwarding;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
+
 /**
  * @api
  * delete a port forwarding rule
@@ -45,6 +48,11 @@ import org.zstack.header.message.APIParam;
  */
 
 @Action(category = PortForwardingConstant.ACTION_CATEGORY)
+@RestRequest(
+        path = "/port-forwarding/{uuid}",
+        method = HttpMethod.DELETE,
+        responseClass = APIDeletePortForwardingRuleEvent.class
+)
 public class APIDeletePortForwardingRuleMsg extends APIDeleteMessage {
     /**
      * @desc

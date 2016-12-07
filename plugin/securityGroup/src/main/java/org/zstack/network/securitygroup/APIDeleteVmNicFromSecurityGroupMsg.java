@@ -1,8 +1,10 @@
 package org.zstack.network.securitygroup;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 import org.zstack.header.vm.VmNicVO;
 
 import java.util.List;
@@ -48,6 +50,11 @@ import java.util.List;
  * see :ref:`APIDeleteVmNicFromSecurityGroupEvent`
  */
 @Action(category = SecurityGroupConstant.ACTION_CATEGORY)
+@RestRequest(
+        path = "/security-groups/{securityGroupUuid}/vm-instances/nics",
+        method = HttpMethod.DELETE,
+        responseClass = APIDeleteVmNicFromSecurityGroupEvent.class
+)
 public class APIDeleteVmNicFromSecurityGroupMsg extends APIMessage {
     /**
      * @desc security group uuid

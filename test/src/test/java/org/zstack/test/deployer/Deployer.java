@@ -16,10 +16,7 @@ import org.zstack.header.image.ImageInventory;
 import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.header.network.l3.IpRangeInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.network.service.APIQueryNetworkServiceProviderMsg;
-import org.zstack.header.network.service.APIQueryNetworkServiceProviderReply;
 import org.zstack.header.network.service.NetworkServiceProviderInventory;
-import org.zstack.header.query.QueryCondition;
 import org.zstack.header.storage.backup.BackupStorageInventory;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.vm.VmInstanceInventory;
@@ -29,12 +26,15 @@ import org.zstack.network.service.eip.EipInventory;
 import org.zstack.network.service.lb.LoadBalancerInventory;
 import org.zstack.network.service.lb.LoadBalancerListenerInventory;
 import org.zstack.network.service.portforwarding.PortForwardingRuleInventory;
+import org.zstack.sdk.QueryNetworkServiceProviderAction;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.BeanConstructor;
+import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.schema.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.xml.bind.JAXBContext;
@@ -108,6 +108,7 @@ public class Deployer {
     public String SPRING_CONFIG_EIP_SERVICE = "eip.xml";
     public String SPRING_CONFIG_SNAPSHOT_SERVICE = "volumeSnapshot.xml";
     public String SPRING_CONFIG_TAG_MANAGER = "tag.xml";
+    public String SPRING_CONFIG_REST_MANAGER = "rest.xml";
 
     private void scanDeployer() {
         ClassPathScanningCandidateComponentProvider scanner = new ClassPathScanningCandidateComponentProvider(true);
@@ -133,7 +134,7 @@ public class Deployer {
     }
 
     public Deployer(String xmlName) {
-        this(xmlName, new BeanConstructor());
+        this(xmlName, new WebBeanConstructor());
     }
 
     private void addDefaultConfig(String config) {
@@ -165,6 +166,7 @@ public class Deployer {
             addDefaultConfig(this.SPRING_CONFIG_EIP_SERVICE);
             addDefaultConfig(this.SPRING_CONFIG_SNAPSHOT_SERVICE);
             addDefaultConfig(this.SPRING_CONFIG_TAG_MANAGER);
+            addDefaultConfig(this.SPRING_CONFIG_REST_MANAGER);
 
             for (String xml : springConfigs) {
                 beanConstructor.addXml(xml);
@@ -415,10 +417,16 @@ public class Deployer {
             return;
         }
 
-        APIQueryNetworkServiceProviderMsg msg = new APIQueryNetworkServiceProviderMsg();
-        msg.setConditions(new ArrayList<QueryCondition>());
-        APIQueryNetworkServiceProviderReply r = api.query(msg, APIQueryNetworkServiceProviderReply.class);
-        List<NetworkServiceProviderInventory> providers = r.getInventories();
+        QueryNetworkServiceProviderAction action = new QueryNetworkServiceProviderAction();
+        action.sessionId = getApi().getAdminSession().getUuid();
+        QueryNetworkServiceProviderAction.Result res = action.call().throwExceptionIfError();
+
+        List<NetworkServiceProviderInventory> providers = JSONObjectUtil.toCollection(
+                JSONObjectUtil.toJsonString(res.value.getInventories()),
+                ArrayList.class,
+                NetworkServiceProviderInventory.class
+        );
+
         for (NetworkServiceConfig nc : services) {
             String uuid = getNetworkServiceProviderUuid(providers, nc.getProvider());
             api.attachNetworkServiceToL3Network(l3.getUuid(), uuid, nc.getServiceType());

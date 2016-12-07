@@ -1,6 +1,7 @@
 package org.zstack.header.network.l2;
 
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.rest.RestResponse;
 
 /**
  * @apiResult api event for :ref:`APICreateL2VlanNetworkMsg`
@@ -24,6 +25,7 @@ import org.zstack.header.message.APIEvent;
  * }
  * @since 0.1.0
  */
+@RestResponse(allTo = "inventory")
 public class APICreateL2VlanNetworkEvent extends APIEvent {
     /**
      * @desc see :ref:`L2VlanNetworkInventory`

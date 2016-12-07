@@ -7,6 +7,7 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.BeanConstructor;
+import org.zstack.test.WebBeanConstructor;
 
 import java.util.List;
 
@@ -22,7 +23,7 @@ public class TestGetL2NetworkTypes {
 
     @Before
     public void setUp() throws Exception {
-        BeanConstructor con = new BeanConstructor();
+        BeanConstructor con = new WebBeanConstructor();
         /* This loads spring application context */
         loader = con.addXml("PortalForUnitTest.xml").addXml("ZoneManager.xml")
                 .addXml("NetworkManager.xml").addXml("AccountManager.xml").build();

@@ -69,7 +69,9 @@ public class KVMSimulatorController {
         Map<String, String> m = new HashMap<String, String>();
         for (String vmUuid : cmd.vmUuids) {
             Map<String, String> h = config.checkVmStatesConfig.get(cmd.hostUuid);
-            m.put(vmUuid, h.get(vmUuid));
+            if (h != null) {
+                m.put(vmUuid, h.get(vmUuid));
+            }
         }
         rsp.states = m;
         config.checkVmStateCmds.add(cmd);

@@ -71,10 +71,7 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -676,8 +673,8 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
             struct.setVirtualRouterOfferingSelector(new VirtualRouterOfferingSelector() {
                 @Override
                 public VirtualRouterOfferingInventory selectVirtualRouterOffering(L3NetworkInventory l3, List<VirtualRouterOfferingInventory> candidates) {
-                    VirtualRouterOfferingInventory def = candidates.stream().filter(VirtualRouterOfferingInventory::isDefault).findAny().get();
-                    return def == null ? candidates.get(0) : def;
+                    Optional<VirtualRouterOfferingInventory> opt = candidates.stream().filter(VirtualRouterOfferingInventory::isDefault).findAny();
+                    return !opt.isPresent() ? candidates.get(0) : opt.get();
                 }
             });
         }

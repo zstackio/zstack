@@ -1,8 +1,10 @@
 package org.zstack.network.securitygroup;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
 import java.util.List;
 /**
@@ -46,6 +48,12 @@ import java.util.List;
  * see :ref:`APIDeleteSecurityGroupRuleEvent`
  */
 @Action(category = SecurityGroupConstant.ACTION_CATEGORY)
+@RestRequest(
+        path = "/security-groups/rules",
+        method = HttpMethod.DELETE,
+        responseClass = APIDeleteSecurityGroupRuleEvent.class,
+        parameterName = "params"
+)
 public class APIDeleteSecurityGroupRuleMsg extends APIMessage {
     /**
      * @desc a list of rule uuid

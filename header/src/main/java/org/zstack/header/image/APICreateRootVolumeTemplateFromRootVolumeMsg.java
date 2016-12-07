@@ -1,14 +1,22 @@
 package org.zstack.header.image;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.volume.VolumeVO;
 
 import java.util.List;
 
 @Action(category = ImageConstant.ACTION_CATEGORY)
+@RestRequest(
+        path = "/images/root-volume-templates/from/volumes/{rootVolumeUuid}",
+        method = HttpMethod.POST,
+        responseClass = APICreateRootVolumeTemplateFromRootVolumeEvent.class,
+        parameterName = "params"
+)
 public class APICreateRootVolumeTemplateFromRootVolumeMsg extends APICreateMessage {
     @APIParam(maxLength = 255)
     private String name;

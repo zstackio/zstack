@@ -1,6 +1,7 @@
 package org.zstack.header.network.service;
 
 import org.zstack.header.message.APIReply;
+import org.zstack.header.rest.RestResponse;
 
 import java.util.List;
 import java.util.Map;
@@ -33,6 +34,7 @@ import java.util.Map;
  * @since 0.1.0
  */
 
+@RestResponse(fieldsTo = {"types=serviceAndProviderTypes"})
 public class APIGetNetworkServiceTypesReply extends APIReply {
     /**
      * @desc a map where key is network service type and value is a list of network service provider uuid which provide

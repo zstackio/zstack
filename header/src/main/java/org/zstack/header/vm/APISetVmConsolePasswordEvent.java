@@ -1,10 +1,12 @@
 package org.zstack.header.vm;
 
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.rest.RestResponse;
 
 /**
  * Created by root on 7/29/16.
  */
+@RestResponse(allTo = "inventory")
 public class APISetVmConsolePasswordEvent extends APIEvent {
     private VmInstanceInventory inventory;
 

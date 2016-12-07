@@ -1,8 +1,11 @@
 package org.zstack.storage.ceph.primary;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.message.OverriddenApiParam;
 import org.zstack.header.message.OverriddenApiParams;
+import org.zstack.header.rest.RestRequest;
+import org.zstack.header.storage.primary.APIAddPrimaryStorageEvent;
 import org.zstack.header.storage.primary.APIAddPrimaryStorageMsg;
 import org.zstack.storage.ceph.CephConstants;
 
@@ -14,6 +17,12 @@ import java.util.List;
 @OverriddenApiParams({
         @OverriddenApiParam(field = "url", param = @APIParam(maxLength = 2048, required = false))
 })
+@RestRequest(
+        path = "/primary-storage/ceph",
+        method = HttpMethod.POST,
+        responseClass = APIAddPrimaryStorageEvent.class,
+        parameterName = "params"
+)
 public class APIAddCephPrimaryStorageMsg extends APIAddPrimaryStorageMsg {
     @APIParam(nonempty = false, emptyString = false)
     private List<String> monUrls;

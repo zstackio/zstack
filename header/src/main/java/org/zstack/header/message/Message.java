@@ -42,10 +42,13 @@ public abstract class Message implements Serializable, AsyncBackup {
     @APINoSee
     private long createdTime;
 
+    protected static String uuid() {
+        return UUID.randomUUID().toString().replace("-", "");
+    }
 
     public Message() {
         createdTime = System.currentTimeMillis();
-        id = UUID.randomUUID().toString().replace("-", "");
+        id = uuid();
     }
 
     public Map<String, Object> getHeaders() {

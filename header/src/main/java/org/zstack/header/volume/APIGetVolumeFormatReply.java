@@ -1,11 +1,13 @@
 package org.zstack.header.volume;
 
 import org.zstack.header.message.APIReply;
+import org.zstack.header.rest.RestResponse;
 
 import java.util.List;
 
 /**
  */
+@RestResponse(allTo = "formats")
 public class APIGetVolumeFormatReply extends APIReply {
     public static class VolumeFormatReplyStruct {
         private String format;

@@ -2,6 +2,7 @@ package org.zstack.header.network.service;
 
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.rest.RestResponse;
 
 /**
  * @apiResult api event for message :ref:`APIAttachNetworkServiceToL3NetworkMsg`
@@ -48,6 +49,7 @@ import org.zstack.header.network.l3.L3NetworkInventory;
  * @since 0.1.0
  */
 
+@RestResponse(allTo = "inventory")
 public class APIAttachNetworkServiceToL3NetworkEvent extends APIEvent {
     /**
      * @desc see :ref:`L3NetworkInventory`

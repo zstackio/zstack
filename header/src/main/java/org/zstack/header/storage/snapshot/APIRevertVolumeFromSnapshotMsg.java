@@ -1,9 +1,11 @@
 package org.zstack.header.storage.snapshot;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.APINoSee;
+import org.zstack.header.rest.RestRequest;
 
 /**
  * @api revert a volume to one of its snapshot
@@ -33,6 +35,12 @@ import org.zstack.header.rest.APINoSee;
  */
 
 @Action(category = VolumeSnapshotConstant.ACTION_CATEGORY)
+@RestRequest(
+        path = "/volume-snapshots/{uuid}/actions",
+        isAction = true,
+        method = HttpMethod.PUT,
+        responseClass = APIRevertVolumeFromSnapshotEvent.class
+)
 public class APIRevertVolumeFromSnapshotMsg extends APIMessage implements VolumeSnapshotMessage {
     /**
      * @desc volume snapshot uuid

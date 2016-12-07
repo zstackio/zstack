@@ -1,8 +1,10 @@
 package org.zstack.header.vm;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
 /**
  * @api reboot a vm instance
@@ -30,6 +32,12 @@ import org.zstack.header.message.APIParam;
  * @since 0.1.0
  */
 @Action(category = VmInstanceConstant.ACTION_CATEGORY)
+@RestRequest(
+        path = "/vm-instances/{uuid}/actions",
+        method = HttpMethod.PUT,
+        isAction = true,
+        responseClass = APIRebootVmInstanceEvent.class
+)
 public class APIRebootVmInstanceMsg extends APIMessage implements VmInstanceMessage {
     /**
      * @desc vm uuid

@@ -217,7 +217,7 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
     }
 
     private void handle(APIGenerateApiTypeScriptDefinitionMsg msg) {
-        TypeScriptApiWriter writer = GroovyUtils.loadClass("scripts/TypeScriptApiWriterImpl.groovy", this.getClass().getClassLoader());
+        TypeScriptApiWriter writer = GroovyUtils.newInstance("scripts/TypeScriptApiWriterImpl.groovy", this.getClass().getClassLoader());
         List<Class> apiMsgClass = BeanUtils.scanClassByType("org.zstack", APIMessage.class);
         List<Class> apiEventClass = BeanUtils.scanClassByType("org.zstack", APIEvent.class);
         List<Class> apiReplyClass = BeanUtils.scanClassByType("org.zstack", APIReply.class);

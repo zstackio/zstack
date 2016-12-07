@@ -1,8 +1,10 @@
 package org.zstack.network.service.portforwarding;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 import org.zstack.header.vm.VmNicVO;
 
 /**
@@ -44,6 +46,11 @@ import org.zstack.header.vm.VmNicVO;
  * see :ref:`APIAttachPortForwardingRuleEvent`
  */
 @Action(category = PortForwardingConstant.ACTION_CATEGORY)
+@RestRequest(
+        path = "/port-forwarding/{ruleUuid}/vm-instances/nics/{vmNicUuid}",
+        method = HttpMethod.POST,
+        responseClass = APIAttachPortForwardingRuleEvent.class
+)
 public class APIAttachPortForwardingRuleMsg extends APIMessage {
     /**
      * @desc rule uuid

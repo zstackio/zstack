@@ -1,8 +1,10 @@
 package org.zstack.network.service.lb;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 import org.zstack.header.tag.TagResourceType;
 
 /**
@@ -10,6 +12,12 @@ import org.zstack.header.tag.TagResourceType;
  */
 @TagResourceType(LoadBalancerListenerVO.class)
 @Action(category = LoadBalancerConstants.ACTION_CATEGORY)
+@RestRequest(
+        path = "/load-balancers/{loadBalancerUuid}/listeners",
+        method = HttpMethod.POST,
+        responseClass = APICreateLoadBalancerListenerEvent.class,
+        parameterName = "params"
+)
 public class APICreateLoadBalancerListenerMsg extends APICreateMessage implements LoadBalancerMessage {
     @APIParam(resourceType = LoadBalancerVO.class, checkAccount = true, operationTarget = true)
     private String loadBalancerUuid;

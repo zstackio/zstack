@@ -1,6 +1,8 @@
 package org.zstack.header.storage.backup;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APISyncCallMessage;
+import org.zstack.header.rest.RestRequest;
 
 /**
  * @api get supported backup storage types
@@ -25,5 +27,10 @@ import org.zstack.header.message.APISyncCallMessage;
  * @result see :ref:`APIGetBackupStorageTypesReply`
  * @since 0.1.0
  */
+@RestRequest(
+        path = "/backup-storage/types",
+        method = HttpMethod.GET,
+        responseClass = APIGetBackupStorageTypesReply.class
+)
 public class APIGetBackupStorageTypesMsg extends APISyncCallMessage {
 }
