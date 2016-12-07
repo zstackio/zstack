@@ -47,7 +47,6 @@ public abstract class VmTracer {
         @Transactional(readOnly = true)
         private void buildManagementServerSideVmStates() {
             mgmtSideStates = new HashMap<String, VmInstanceState>();
-
             String sql = "select vm.uuid, vm.state from VmInstanceVO vm where vm.hostUuid = :huuid or (vm.hostUuid is null and vm.lastHostUuid = :huuid)" +
                     " and vm.state not in (:vmstates)";
             TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);

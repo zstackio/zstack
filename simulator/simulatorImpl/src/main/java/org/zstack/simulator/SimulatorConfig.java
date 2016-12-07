@@ -1,10 +1,10 @@
 package org.zstack.simulator;
 
 import org.zstack.header.host.TakeSnapshotOnHypervisorMsg;
-import org.zstack.header.vm.VmInstance;
 import org.zstack.header.vm.VmInstanceState;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -12,15 +12,19 @@ import java.util.Map;
 /**
  */
 public class SimulatorConfig {
+    private static final CLogger logger = Utils.getLogger(SimulatorConfig.class);
+
     public volatile boolean migrateSuccess = true;
     public Map<String, Map<String, VmInstanceState>> vms = new HashMap<String, Map<String, VmInstanceState>>();
     public volatile boolean snapshotSuccess = true;
     public Map<String, List<TakeSnapshotOnHypervisorMsg>> snapshots = new HashMap<String, List<TakeSnapshotOnHypervisorMsg>>();
 
     public void putVm(String hostUuid, String vmUuid, VmInstanceState vmState) {
+        logger.debug(String.format("hostUuid: %s, vmUuid: %s, vmState: %s", hostUuid, vmUuid, vmState.toString()));
         Map<String, VmInstanceState> vmmap = vms.get(hostUuid);
         if (vmmap == null) {
             vmmap = new HashMap<String, VmInstanceState>();
+            vmmap.put(vmUuid, vmState);
             vms.put(hostUuid, vmmap);
         }
 

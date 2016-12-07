@@ -291,7 +291,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         self = dbf.updateAndRefresh(self);
 
         if (bs != state) {
-            logger.debug(String.format("vm[uuid:%s] changed state from %s to %s", self.getUuid(), bs, self.getState()));
+            logger.debug(String.format("vm[uuid:%s] changed state from %s to %s in db", self.getUuid(), bs, self.getState()));
 
             VmCanonicalEvents.VmStateChangedData data = new VmCanonicalEvents.VmStateChangedData();
             data.setVmUuid(self.getUuid());

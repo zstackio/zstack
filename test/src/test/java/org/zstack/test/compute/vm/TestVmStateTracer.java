@@ -22,6 +22,8 @@ import org.zstack.simulator.SimulatorController;
 import org.zstack.test.Api;
 import org.zstack.test.DBUtil;
 import org.zstack.test.deployer.Deployer;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -49,6 +51,7 @@ public class TestVmStateTracer {
     EventFacade evtf;
     boolean success1 = false;
     boolean success2 = false;
+    private static final CLogger logger = Utils.getLogger(TestVmStateTracer.class);
 
     @Before
     public void setUp() throws Exception {

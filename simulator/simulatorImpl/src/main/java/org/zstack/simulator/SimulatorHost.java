@@ -1,5 +1,7 @@
 package org.zstack.simulator;
 
+import org.springframework.beans.factory.annotation.Autowire;
+import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.compute.host.HostBase;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -20,6 +22,7 @@ import org.zstack.utils.logging.CLogger;
 import java.util.ArrayList;
 import java.util.List;
 
+@Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 class SimulatorHost extends HostBase {
     private static final CLogger logger = Utils.getLogger(SimulatorHost.class);
     private SimulatorConnection conn;
@@ -130,9 +133,14 @@ class SimulatorHost extends HostBase {
 	}
 
     private void handle(MigrateVmOnHypervisorMsg msg) {
-        config.removeVm(msg.getSrcHostUuid(), msg.getVmInventory().getUuid());
-        config.putVm(msg.getDestHostInventory().getUuid(), msg.getVmInventory().getUuid(), VmInstanceState.Running);
         MigrateVmOnHypervisorReply reply = new MigrateVmOnHypervisorReply();
+        if (!config.migrateSuccess) {
+            reply.setError(errf.stringToOperationError("on purpose"));
+        } else {
+            logger.debug(String.format("Successfully migrate vm[uuid:%s] on simulator host[uuid:%s] to host[uuid:%s]", msg.getVmInventory().getUuid(), self.getUuid(), msg.getDestHostInventory().getUuid()));
+            config.removeVm(msg.getSrcHostUuid(), msg.getVmInventory().getUuid());
+            config.putVm(msg.getDestHostInventory().getUuid(), msg.getVmInventory().getUuid(), VmInstanceState.Running);
+        }
         bus.reply(msg, reply);
     }
 
@@ -214,24 +222,28 @@ class SimulatorHost extends HostBase {
     private void handle(StartVmOnHypervisorMsg msg) {
         logger.debug(String.format("Successfully started vm on simulator host[uuid:%s], %s", self.getUuid(), JSONObjectUtil.toJsonString(msg.getVmSpec())));
         StartVmOnHypervisorReply reply = new StartVmOnHypervisorReply();
+        setVmState(msg.getVmSpec().getVmInventory().getUuid(), VmInstanceState.Running);
         bus.reply(msg, reply);
     }
 
     private void handle(StopVmOnHypervisorMsg msg) {
         logger.debug(String.format("Successfully stopped vm on simulator host[uuid:%s], %s", self.getUuid(), JSONObjectUtil.toJsonString(msg.getVmInventory())));
         StopVmOnHypervisorReply reply = new StopVmOnHypervisorReply();
+        setVmState(msg.getVmInventory().getUuid(), VmInstanceState.Stopped);
         bus.reply(msg, reply);
     }
 
     private void handle(CreateVmOnHypervisorMsg msg) {
         logger.debug(String.format("Successfully created vm on simulator host[uuid:%s], %s", self.getUuid(), JSONObjectUtil.toJsonString(msg.getVmSpec())));
         CreateVmOnHypervisorReply reply = new CreateVmOnHypervisorReply();
+        setVmState(msg.getVmSpec().getVmInventory().getUuid(), VmInstanceState.Running);
         bus.reply(msg, reply);
     }
 
     private void handle(RebootVmOnHypervisorMsg msg) {
         logger.debug(String.format("Successfully rebooted vm on simulator host[uuid:%s], %s", self.getUuid(), JSONObjectUtil.toJsonString(msg.getVmInventory())));
         RebootVmOnHypervisorReply reply = new RebootVmOnHypervisorReply();
+        setVmState(msg.getVmInventory().getUuid(), VmInstanceState.Running);
         bus.reply(msg, reply);
     }
 
