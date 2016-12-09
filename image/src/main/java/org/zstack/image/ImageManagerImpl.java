@@ -901,6 +901,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                 DownloadImageMsg dmsg = new DownloadImageMsg(inv);
                 dmsg.setBackupStorageUuid(arg);
                 dmsg.setFormat(msg.getFormat());
+                dmsg.setSystemTags(msg.getSystemTags());
                 bus.makeTargetServiceIdByResourceUuid(dmsg, BackupStorageConstant.SERVICE_ID, arg);
                 return dmsg;
             }
