@@ -1828,6 +1828,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         class Context {
             GetMd5Rsp getMd5Rsp;
             String backingFilePath;
+            String rootVolumeUuid;
             Long backingFileSize;
             String backingFileMd5;
             ImageVO image;
@@ -1877,6 +1878,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                             public void success(GetBackingFileRsp rsp) {
                                 context.backingFilePath = rsp.backingFilePath;
                                 context.backingFileSize = rsp.size;
+                                context.rootVolumeUuid = cmd.volumeUuid;
                                 trigger.next();
                             }
 
@@ -1968,6 +1970,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                 cmd.dstPassword = password;
                                 cmd.dstPort = port;
                                 cmd.paths = list(context.backingFilePath);
+                                cmd.uuid = context.rootVolumeUuid;
 
                                 httpCall(LocalStorageKvmMigrateVmFlow.COPY_TO_REMOTE_BITS_PATH, struct.getSrcHostUuid(), cmd, false,
                                         AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger, chain) {
@@ -2146,6 +2149,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                         return arg.getPath();
                     }
                 });
+                cmd.uuid = struct.getInfos().get(0).getResourceRef().getResourceUuid();
 
                 httpCall(LocalStorageKvmMigrateVmFlow.COPY_TO_REMOTE_BITS_PATH, struct.getSrcHostUuid(), cmd, false,
                         AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {

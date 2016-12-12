@@ -92,6 +92,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
 
     @ApiTimeout(apiClasses = {APILocalStorageMigrateVolumeMsg.class})
     public static class CopyBitsFromRemoteCmd extends LocalStorageKvmBackend.AgentCommand {
+        public String uuid; // for progress_report
         public List<String> paths;
         public String dstIp;
         public String dstPassword;
@@ -101,6 +102,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
 
     class BackingImage {
         String uuid;
+        String rootVolumeUuid;
         String path;
         Long size;
         String md5;
@@ -321,6 +323,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                                     cmd.dstPassword = dstHost.getPassword();
                                     cmd.dstPort = dstHost.getPort();
                                     cmd.paths = list(backingImage.path);
+                                    cmd.uuid = rootVolume.getUuid();
 
                                     callKvmHost(srcHostUuid, ref.getPrimaryStorageUuid(), COPY_TO_REMOTE_BITS_PATH, cmd, AgentResponse.class,
                                             new ReturnValueCompletion<AgentResponse>(trigger, chain) {
@@ -961,6 +964,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                     cmd.dstPassword = dstHost.getPassword();
                     cmd.dstUsername = dstHost.getUsername();
                     cmd.dstPort = dstHost.getPort();
+                    cmd.uuid = p.volume.getUuid();
                     callKvmHost(srcHostUuid, p.volume.getPrimaryStorageUuid(), COPY_TO_REMOTE_BITS_PATH, cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
                         @Override
                         public void success(AgentResponse returnValue) {

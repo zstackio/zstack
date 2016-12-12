@@ -74,6 +74,7 @@
     <import resource="springConfigXml/PortForwarding.xml"/>
     <import resource="springConfigXml/PrimaryStorageManager.xml"/>
     <import resource="springConfigXml/ProgressBar.xml"/>
+    <import resource="springConfigXml/Progress.xml"/>
     <import resource="springConfigXml/QueryFacade.xml"/>
     <import resource="springConfigXml/RESTFacade.xml"/>
     <import resource="springConfigXml/SchedulerFacade.xml"/>

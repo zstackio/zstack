@@ -13,3 +13,29 @@ CREATE TABLE `zstack`.`VCenterDatacenterVO` (
 
 # Foreign keys for table VCenterDatacenterVO
 ALTER TABLE VCenterDatacenterVO ADD CONSTRAINT fkVCenterDatacenterVOVCenterVO FOREIGN KEY (vCenterUuid) REFERENCES VCenterVO (uuid) ON DELETE CASCADE;
+CREATE TABLE `zstack`.`ProgressVO` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `resourceUuid` varchar(32) NOT NULL,
+  `processType` varchar(32) NOT NULL,
+  `progress` varchar(32) DEFAULT NULL,
+  `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `id` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+SET NAMES utf8;
+SET FOREIGN_KEY_CHECKS = 0;
+
+-- ----------------------------
+--  Table structure for `ProgressVO`
+-- ----------------------------
+CREATE TABLE `ProgressVO` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `resourceUuid` varchar(32) NOT NULL,
+  `processType` varchar(32) NOT NULL,
+  `progress` varchar(32) DEFAULT NULL,
+  `lastOpDate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `id` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;

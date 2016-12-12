@@ -37,6 +37,8 @@ import org.zstack.header.configuration.*;
 import org.zstack.header.console.APIRequestConsoleAccessEvent;
 import org.zstack.header.console.APIRequestConsoleAccessMsg;
 import org.zstack.header.console.ConsoleInventory;
+import org.zstack.header.core.progress.APIGetTaskProgressMsg;
+import org.zstack.header.core.progress.APIGetTaskProgressReply;
 import org.zstack.header.core.scheduler.SchedulerInventory;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
@@ -1649,6 +1651,15 @@ public class Api implements CloudBusEventListener {
         sender.setTimeout(timeout);
         APIStopVmInstanceEvent evt = sender.send(msg, APIStopVmInstanceEvent.class);
         return evt.getInventory();
+    }
+
+    public APIGetTaskProgressReply getProgressReport(String resourceUuid) throws ApiSenderException {
+        APIGetTaskProgressMsg msg = new APIGetTaskProgressMsg();
+        msg.setSession(adminSession);
+        msg.setResourceUuid(resourceUuid);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        return sender.call(msg, APIGetTaskProgressReply.class);
     }
 
     public VmAccountPerference changeVmPassword(VmAccountPerference account)
