@@ -33,7 +33,6 @@ import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 
 /**
  * Created by frank on 7/2/2015.
@@ -63,16 +62,24 @@ public class LocalStorageAllocateCapacityFlow implements Flow {
         return q.getSingleResult() > 0;
     }
 
+    @Transactional(readOnly = true)
+    private String getMostFreeLocalStorageUuid(String hostUuid) {
+        String sql = "select ref.primaryStorageUuid" +
+                " from LocalStorageHostRefVO ref, PrimaryStorageCapacityVO cap" +
+                " where cap.uuid = ref.primaryStorageUuid" +
+                " and ref.hostUuid = :huuid" +
+                " group by ref.primaryStorageUuid" +
+                " order by cap.availableCapacity";
+        TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
+        q.setParameter("huuid", hostUuid);
+        return q.getResultList().get(0);
+    }
+
     @Override
     public void run(final FlowTrigger trigger, Map data) {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
 
-        SimpleQuery<LocalStorageHostRefVO> q = dbf.createQuery(LocalStorageHostRefVO.class);
-        q.select(LocalStorageHostRefVO_.primaryStorageUuid);
-        q.add(LocalStorageHostRefVO_.hostUuid, Op.EQ, spec.getDestHost().getUuid());
-        List<String> localStorageUuids = q.listValue();
-        Random random = new Random();
-        String localStorageUuid = localStorageUuids.get(random.nextInt(localStorageUuids.size()));
+        String localStorageUuid = getMostFreeLocalStorageUuid(spec.getDestHost().getUuid());
 
         SimpleQuery<BackupStorageVO> bq = dbf.createQuery(BackupStorageVO.class);
         bq.select(BackupStorageVO_.type);
