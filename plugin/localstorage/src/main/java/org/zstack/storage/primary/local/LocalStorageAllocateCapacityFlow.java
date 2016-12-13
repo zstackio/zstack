@@ -69,7 +69,7 @@ public class LocalStorageAllocateCapacityFlow implements Flow {
                 " where cap.uuid = ref.primaryStorageUuid" +
                 " and ref.hostUuid = :huuid" +
                 " group by ref.primaryStorageUuid" +
-                " order by cap.availableCapacity";
+                " order by cap.availableCapacity desc";
         TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
         q.setParameter("huuid", hostUuid);
         return q.getResultList().get(0);
