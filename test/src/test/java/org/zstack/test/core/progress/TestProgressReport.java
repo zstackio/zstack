@@ -12,10 +12,7 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.progress.ProgressCommands.ProgressReportCmd;
 import org.zstack.core.progress.ProgressCommands.ProgressReportResponse;
 import org.zstack.core.progress.ProgressReportService;
-import org.zstack.header.core.progress.APIGetTaskProgressReply;
-import org.zstack.header.core.progress.ProgressConstants;
-import org.zstack.header.core.progress.ProgressVO;
-import org.zstack.header.core.progress.ProgressVO_;
+import org.zstack.header.core.progress.*;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.image.ImageInventory;
@@ -119,8 +116,10 @@ public class TestProgressReport {
         q.add(ProgressVO_.resourceUuid, SimpleQuery.Op.EQ, cmd.getResourceUuid());
         Assert.assertFalse(q.isExists());
 
-        reply = api.getProgressReport(cmd.getResourceUuid());
-        Assert.assertEquals(0, reply.getTaskProgress().size());
-
+        try {
+            reply = api.getProgressReport(cmd.getResourceUuid());
+        } catch (ApiSenderException e) {
+            Assert.assertEquals(ProgressError.NO_SUCH_TASK_RUNNING.toString(), e.getError().getCode());
+        }
     }
 }
