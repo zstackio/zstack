@@ -115,6 +115,14 @@ public class ProgressReportService extends AbstractService implements Management
 
     private void insertProgress(ProgressReportCmd cmd) {
         logger.debug("insert progress and it begins");
+        SimpleQuery<ProgressVO> q = dbf.createQuery(ProgressVO.class);
+        // please notice if there are no conditions that result more than two vo found...
+        q.add(ProgressVO_.processType, SimpleQuery.Op.EQ, cmd.getProcessType());
+        q.add(ProgressVO_.resourceUuid, SimpleQuery.Op.EQ, cmd.getResourceUuid());
+        if (q.isExists()) {
+            logger.warn(String.format("delete records that shouldn't exist...: %s", q.count()));
+            q.list().stream().forEach(p -> dbf.remove(p));
+        }
         ProgressVO vo = new ProgressVO();
         vo.setProgress(cmd.getProgress() == null? "0%":cmd.getProgress());
         vo.setProcessType(cmd.getProcessType());
@@ -123,13 +131,13 @@ public class ProgressReportService extends AbstractService implements Management
     }
 
     private void deleteProgress(ProgressReportCmd cmd) {
-        logger.debug("delete progress and it over");
+        logger.debug("delete progress and it's over");
         SimpleQuery<ProgressVO> q = dbf.createQuery(ProgressVO.class);
-        // please notice if there are and conditions that result more than two vo found...
+        // please notice if there are no conditions that result more than two vo found...
         q.add(ProgressVO_.processType, SimpleQuery.Op.EQ, cmd.getProcessType());
         q.add(ProgressVO_.resourceUuid, SimpleQuery.Op.EQ, cmd.getResourceUuid());
         if (q.isExists()) {
-            dbf.remove(q.find());
+            q.list().stream().forEach(p -> dbf.remove(p));
         }
     }
 
@@ -144,6 +152,7 @@ public class ProgressReportService extends AbstractService implements Management
         q.add(ProgressVO_.processType, SimpleQuery.Op.EQ, cmd.getProcessType());
         q.add(ProgressVO_.resourceUuid, SimpleQuery.Op.EQ, cmd.getResourceUuid());
         if (q.isExists()) {
+            assert q.list().size() == 1;
             ProgressVO vo = q.find();
             vo.setProgress(cmd.getProgress());
             dbf.updateAndRefresh(vo);
@@ -191,6 +200,7 @@ public class ProgressReportService extends AbstractService implements Management
         if (msg.getProcessType() != null) {
             q.add(ProgressVO_.processType, SimpleQuery.Op.EQ, msg.getProcessType());
         }
+        q.orderBy(ProgressVO_.lastOpDate, SimpleQuery.Od.ASC);
         List<ProgressVO> vos = q.list();
         if (q.list().size() == 0) {
             reply.setError(errf.instantiateErrorCode(ProgressError.NO_SUCH_TASK_RUNNING,
