@@ -3,6 +3,7 @@ package org.zstack.kvm;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.tag.TagDefinition;
+import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.tag.PatternedSystemTag;
 import org.zstack.tag.SystemTag;
@@ -26,6 +27,12 @@ public class KVMSystemTags {
     public static PatternedSystemTag L2_BRIDGE_NAME = new PatternedSystemTag(String.format("kvm::bridge::{%s}", L2_BRIDGE_NAME_TOKEN), L2NetworkVO.class);
 
     public static SystemTag VOLUME_VIRTIO_SCSI = new SystemTag("capability::virtio-scsi", VolumeVO.class);
+
+    public static final String DISK_OFFERING_VIRTIO_SCSI_TOKEN = "diskOfferingUuid";
+    public static final String DISK_OFFERING_VIRTIO_SCSI_NUM_TOKEN = "number";
+    public static PatternedSystemTag DISK_OFFERING_VIRTIO_SCSI = new PatternedSystemTag(
+            String.format("virtio::diskOffering::{%s}::num::{%s}",
+                    DISK_OFFERING_VIRTIO_SCSI_TOKEN, DISK_OFFERING_VIRTIO_SCSI_NUM_TOKEN), VmInstanceVO.class);
 
     public static final String VOLUME_WWN_TOKEN = "wwn";
     public static PatternedSystemTag VOLUME_WWN = new PatternedSystemTag(String.format("kvm::volume::{%s}", VOLUME_WWN_TOKEN), VolumeVO.class);

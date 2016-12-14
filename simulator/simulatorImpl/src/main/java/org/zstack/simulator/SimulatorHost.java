@@ -1,8 +1,8 @@
 package org.zstack.simulator;
 
 import org.springframework.beans.factory.annotation.Autowire;
-import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.compute.host.HostBase;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -112,25 +112,25 @@ class SimulatorHost extends HostBase {
         } else if (msg instanceof VmAttachNicOnHypervisorMsg) {
             handle((VmAttachNicOnHypervisorMsg) msg);
         } else if (msg instanceof CreateVmOnHypervisorMsg) {
-            handle((CreateVmOnHypervisorMsg)msg);
+            handle((CreateVmOnHypervisorMsg) msg);
         } else if (msg instanceof StopVmOnHypervisorMsg) {
-            handle((StopVmOnHypervisorMsg)msg);
+            handle((StopVmOnHypervisorMsg) msg);
         } else if (msg instanceof RebootVmOnHypervisorMsg) {
-            handle((RebootVmOnHypervisorMsg)msg);
+            handle((RebootVmOnHypervisorMsg) msg);
         } else if (msg instanceof StartVmOnHypervisorMsg) {
-            handle((StartVmOnHypervisorMsg)msg);
+            handle((StartVmOnHypervisorMsg) msg);
         } else if (msg instanceof MigrateVmOnHypervisorMsg) {
-            handle((MigrateVmOnHypervisorMsg)msg);
+            handle((MigrateVmOnHypervisorMsg) msg);
         } else if (msg instanceof AttachVolumeToVmOnHypervisorMsg) {
-            handle((AttachVolumeToVmOnHypervisorMsg)msg);
+            handle((AttachVolumeToVmOnHypervisorMsg) msg);
         } else if (msg instanceof DetachVolumeFromVmOnHypervisorMsg) {
-            handle((DetachVolumeFromVmOnHypervisorMsg)msg);
+            handle((DetachVolumeFromVmOnHypervisorMsg) msg);
         } else if (msg instanceof DestroyVmOnHypervisorMsg) {
-            handle((DestroyVmOnHypervisorMsg)msg);
+            handle((DestroyVmOnHypervisorMsg) msg);
         } else {
-	        super.handleLocalMessage(msg);
-	    }
-	}
+            super.handleLocalMessage(msg);
+        }
+    }
 
     private void handle(MigrateVmOnHypervisorMsg msg) {
         MigrateVmOnHypervisorReply reply = new MigrateVmOnHypervisorReply();

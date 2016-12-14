@@ -46,6 +46,7 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.vm.*;
 import org.zstack.header.volume.VolumeInventory;
+import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.kvm.KVMAgentCommands.*;
 import org.zstack.kvm.KVMConstant.KvmVmState;
@@ -1722,6 +1723,32 @@ public class KVMHost extends HostBase implements Host {
         });
     }
 
+    @Transactional
+    private void setDataVolumeUseVirtIOSCSI(final VmInstanceSpec spec) {
+        String vmUuid = spec.getVmInventory().getUuid();
+        Map<String, Integer> diskOfferingUuid_Num = new HashMap<>();
+        List<Map<String, String>> tokenList = KVMSystemTags.DISK_OFFERING_VIRTIO_SCSI.getTokensOfTagsByResourceUuid(vmUuid);
+        for (Map<String, String> tokens : tokenList) {
+            String diskOfferingUuid = tokens.get(KVMSystemTags.DISK_OFFERING_VIRTIO_SCSI_TOKEN);
+            Integer num = Integer.parseInt(tokens.get(KVMSystemTags.DISK_OFFERING_VIRTIO_SCSI_NUM_TOKEN));
+            diskOfferingUuid_Num.put(diskOfferingUuid, num);
+        }
+        for (VolumeInventory volumeInv : spec.getDestDataVolumes()) {
+            if (volumeInv.getType().equals(VolumeType.Root.toString())) {
+                continue;
+            }
+            if (diskOfferingUuid_Num.containsKey(volumeInv.getDiskOfferingUuid())
+                    && diskOfferingUuid_Num.get(volumeInv.getDiskOfferingUuid()) > 0) {
+                tagmgr.createNonInherentSystemTag(volumeInv.getUuid(),
+                        KVMSystemTags.VOLUME_VIRTIO_SCSI.getTagFormat(),
+                        VolumeVO.class.getSimpleName());
+                diskOfferingUuid_Num.put(volumeInv.getDiskOfferingUuid(),
+                        diskOfferingUuid_Num.get(volumeInv.getDiskOfferingUuid()) - 1);
+            }
+        }
+
+    }
+
     private void handle(final CreateVmOnHypervisorMsg msg) {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
@@ -1731,6 +1758,7 @@ public class KVMHost extends HostBase implements Host {
 
             @Override
             public void run(final SyncTaskChain chain) {
+                setDataVolumeUseVirtIOSCSI(msg.getVmSpec());
                 startVm(msg.getVmSpec(), msg, new NoErrorCompletion(chain) {
                     @Override
                     public void done() {
@@ -2004,14 +2032,14 @@ public class KVMHost extends HostBase implements Host {
         });
     }
 
-    private void pauseVm(final PauseVmOnHypervisorMsg msg,final NoErrorCompletion completion) {
+    private void pauseVm(final PauseVmOnHypervisorMsg msg, final NoErrorCompletion completion) {
         checkStatus();
         final VmInstanceInventory vminv = msg.getVmInventory();
         PauseVmOnHypervisorReply reply = new PauseVmOnHypervisorReply();
         PauseVmCmd cmd = new PauseVmCmd();
         cmd.setUuid(vminv.getUuid());
         cmd.setTimeout(120);
-        restf.asyncJsonPost(pauseVmPath, cmd, new JsonAsyncRESTCallback<PauseVmResponse>(msg,completion) {
+        restf.asyncJsonPost(pauseVmPath, cmd, new JsonAsyncRESTCallback<PauseVmResponse>(msg, completion) {
             @Override
             public void fail(ErrorCode err) {
                 reply.setError(err);
@@ -2021,7 +2049,7 @@ public class KVMHost extends HostBase implements Host {
 
             @Override
             public void success(PauseVmResponse ret) {
-                if(!ret.isSuccess()) {
+                if (!ret.isSuccess()) {
                     String err = String.format("unable to pause vm[uuid:%s,  name:%s] on kvm host[uuid:%s, ip:%s], because %s", vminv.getUuid(),
                             vminv.getName(), self.getUuid(), self.getManagementIp(), ret.getError());
                     reply.setError(errf.instantiateErrorCode(HostErrors.FAILED_TO_STOP_VM_ON_HYPERVISOR, err));
@@ -2033,13 +2061,13 @@ public class KVMHost extends HostBase implements Host {
 
             @Override
             public Class<PauseVmResponse> getReturnClass() {
-                return PauseVmResponse.class ;
+                return PauseVmResponse.class;
             }
         });
 
     }
 
-    private void handle(final PauseVmOnHypervisorMsg msg){
+    private void handle(final PauseVmOnHypervisorMsg msg) {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
@@ -2047,8 +2075,8 @@ public class KVMHost extends HostBase implements Host {
             }
 
             @Override
-            public void run(final SyncTaskChain chain){
-                pauseVm(msg,new NoErrorCompletion(chain){
+            public void run(final SyncTaskChain chain) {
+                pauseVm(msg, new NoErrorCompletion(chain) {
                     @Override
                     public void done() {
                         chain.next();
@@ -2057,18 +2085,18 @@ public class KVMHost extends HostBase implements Host {
             }
 
             @Override
-            public String getName(){
-                return String.format("pause-vm-%s-on-host-%s",msg.getVmInventory().getUuid(),self.getUuid());
+            public String getName() {
+                return String.format("pause-vm-%s-on-host-%s", msg.getVmInventory().getUuid(), self.getUuid());
             }
 
             @Override
-            protected int getSyncLevel(){
+            protected int getSyncLevel() {
                 return getHostSyncLevel();
             }
         });
     }
 
-    private void handle(final ResumeVmOnHypervisorMsg msg){
+    private void handle(final ResumeVmOnHypervisorMsg msg) {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {

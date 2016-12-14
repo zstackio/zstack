@@ -1568,6 +1568,7 @@ public class Api implements CloudBusEventListener {
                                                                    String rootDiskOfferingUuid,
                                                                    List<String> l3NetworkUuids,
                                                                    List<String> diskOfferingUuids,
+                                                                   List<String> sysTags,
                                                                    String psUuid,
                                                                    SessionInventory session) throws ApiSenderException {
         APICreateVmInstanceMsg msg = new APICreateVmInstanceMsg();
@@ -1589,6 +1590,7 @@ public class Api implements CloudBusEventListener {
         msg.setRootDiskOfferingUuid(rootDiskOfferingUuid);
         msg.setDefaultL3NetworkUuid(inv.getDefaultL3NetworkUuid());
         msg.setPrimaryStorageUuidForRootVolume(psUuid);
+        msg.setSystemTags(sysTags);
         if (msg.getL3NetworkUuids().size() > 1 && msg.getDefaultL3NetworkUuid() == null) {
             msg.setDefaultL3NetworkUuid(msg.getL3NetworkUuids().get(0));
         }
