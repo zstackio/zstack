@@ -3181,6 +3181,18 @@ public class Api implements CloudBusEventListener {
         }
     }
 
+    public APIEnableChangeVmPasswordEvent enableChangeVmPassword(String resourceUuid, String resourceType, boolean enable) throws ApiSenderException {
+        APIEnableChangeVmPasswordMsg msg = new APIEnableChangeVmPasswordMsg();
+        msg.setEnable(enable);
+        msg.setResourceUuid(resourceUuid);
+        msg.setResourceType(resourceType);
+        msg.setSession(adminSession);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIEnableChangeVmPasswordEvent evt = sender.send(msg, APIEnableChangeVmPasswordEvent.class);
+        return evt;
+    }
+
     public TagInventory createUserTag(String resourceUuid, String tag, Class entitiClass) throws ApiSenderException {
         return createUserTag(resourceUuid, tag, entitiClass, null);
     }

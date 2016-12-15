@@ -128,6 +128,9 @@ public class TestMevoco21 {
         q.add(PolicyVO_.accountUuid, SimpleQuery.Op.EQ, test.getUuid());
         List<PolicyVO> ps = q.list();
 
+
+        validate(ps, "TAG.ENABLE-PASSWORD", "instance:APIEnableChangeVmPasswordMsg", AccountConstant.StatementEffect.Allow);
+        validate(ps, "VM.USER-PASSWORD.CHANGE", "instance:APIChangeVmPasswordMsg", AccountConstant.StatementEffect.Allow);
         validate(ps, "VM.CREATE", "instance:APICreateVmInstanceMsg", AccountConstant.StatementEffect.Allow);
         validate(ps, "VM.UPDATE", "instance:APIUpdateVmInstanceMsg", AccountConstant.StatementEffect.Allow);
         validate(ps, "VM.START", "instance:APIStartVmInstanceMsg", AccountConstant.StatementEffect.Allow);

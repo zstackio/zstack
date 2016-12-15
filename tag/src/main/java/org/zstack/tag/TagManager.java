@@ -1,6 +1,7 @@
 package org.zstack.tag;
 
 import org.zstack.header.message.APICreateMessage;
+import org.zstack.header.message.Message;
 import org.zstack.header.tag.SystemTagCreateMessageValidator;
 import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.tag.TagInventory;
@@ -50,4 +51,6 @@ public interface TagManager {
     void validateSystemTag(String resourceUuid, String resourceType, String tag);
 
     void installCreateMessageValidator(String resourceType, SystemTagCreateMessageValidator validator);
+
+    TagManagerExtensionFactory getTagManagerExtensionFactory(Message msg);
 }

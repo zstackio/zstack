@@ -45,13 +45,13 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     private static final CLogger logger = Utils.getLogger(TagManagerImpl.class);
 
     @Autowired
-    private DatabaseFacade dbf;
+    protected DatabaseFacade dbf;
     @Autowired
-    private CloudBus bus;
+    protected CloudBus bus;
     @Autowired
     private QueryFacade qf;
     @Autowired
-    private ErrorFacade errf;
+    protected ErrorFacade errf;
     @Autowired
     private PluginRegistry pluginRgty;
 
@@ -62,6 +62,8 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     private Map<String, List<SystemTagCreateMessageValidator>> createMessageValidators = new HashMap<>();
     private Map<String, List<SystemTagLifeCycleExtension>> lifeCycleExtensions = new HashMap<>();
     private List<Class> autoDeleteTagClasses;
+    private Map<Class, TagManagerExtensionFactory> tagManagerExtensionFactories = new HashMap<>();
+
 
     private void initSystemTags() throws IllegalAccessException {
         List<Class> classes = BeanUtils.scanClass("org.zstack", TagDefinition.class);
@@ -165,6 +167,18 @@ public class TagManagerImpl extends AbstractService implements TagManager,
                 }
 
                 lst.add(ext);
+            }
+        }
+
+        for (TagManagerExtensionFactory ext : pluginRgty.getExtensionList(TagManagerExtensionFactory.class)) {
+            for (Class clz : ext.getMessageClasses()) {
+                TagManagerExtensionFactory old = tagManagerExtensionFactories.get(clz);
+                if (old != null) {
+                    throw new CloudRuntimeException(String.format("duplicate TagManagerExtensionFactory[%s, %s] for the" +
+                            " message[%s]", old.getClass(), ext.getClass(), clz));
+                }
+                logger.debug(String.format("add tagmanager extension: %s", clz.getName()));
+                tagManagerExtensionFactories.put(clz, ext);
             }
         }
     }
@@ -543,8 +557,19 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         } else if (msg instanceof APIUpdateSystemTagMsg) {
             handle((APIUpdateSystemTagMsg) msg);
         } else {
-            bus.dealWithUnknownMessage(msg);
+            TagManagerExtensionFactory tmef = getTagManagerExtensionFactory(msg);
+            if (tmef != null) {
+                TagMangerService t = tmef.getTagManager();
+                t.handleMessage(msg);
+            } else {
+                bus.dealWithUnknownMessage(msg);
+            }
         }
+    }
+
+    @Override
+    public TagManagerExtensionFactory getTagManagerExtensionFactory(Message msg) {
+        return tagManagerExtensionFactories.get(msg.getClass());
     }
 
     @Deferred
