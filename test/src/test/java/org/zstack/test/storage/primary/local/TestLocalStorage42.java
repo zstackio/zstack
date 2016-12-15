@@ -71,6 +71,7 @@ public class TestLocalStorage42 {
     @Test
     public void test() throws ApiSenderException {
         PrimaryStorageInventory local = deployer.primaryStorages.get("local");
+        PrimaryStorageInventory local2 = deployer.primaryStorages.get("local2");
 
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         VmInstanceInventory vm1 = api.createVmFromClone(vm);
@@ -92,8 +93,12 @@ public class TestLocalStorage42 {
         count = q.count();
         Assert.assertEquals(3, count);
 
-        LocalStorageHostRefVO cap1 = new LocalStorageHostRefVOFinder().findByPrimaryKey(host1.getUuid(), local.getUuid());
-        LocalStorageHostRefVO cap2 = new LocalStorageHostRefVOFinder().findByPrimaryKey(host2.getUuid(), local.getUuid());
-        Assert.assertEquals(cap1.getAvailableCapacity(), cap2.getAvailableCapacity());
+        LocalStorageHostRefVO cap1_1 = new LocalStorageHostRefVOFinder().findByPrimaryKey(host1.getUuid(), local.getUuid());
+        LocalStorageHostRefVO cap1_2 = new LocalStorageHostRefVOFinder().findByPrimaryKey(host2.getUuid(), local.getUuid());
+
+        LocalStorageHostRefVO cap2_1 = new LocalStorageHostRefVOFinder().findByPrimaryKey(host1.getUuid(), local2.getUuid());
+        LocalStorageHostRefVO cap2_2 = new LocalStorageHostRefVOFinder().findByPrimaryKey(host2.getUuid(), local2.getUuid());
+        Assert.assertEquals(cap1_1.getAvailableCapacity() + cap1_2.getAvailableCapacity(),
+                cap2_1.getAvailableCapacity() + cap2_2.getAvailableCapacity());
     }
 }

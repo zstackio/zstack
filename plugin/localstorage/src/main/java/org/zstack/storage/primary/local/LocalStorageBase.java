@@ -355,7 +355,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        reserveCapacityOnHost(msg.getDestHostUuid(), requiredSize);
+                        reserveCapacityOnHost(msg.getDestHostUuid(), requiredSize, self.getUuid());
                         trigger.next();
                     }
 
@@ -612,7 +612,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
     private void handle(LocalStorageReserveHostCapacityMsg msg) {
         LocalStorageReserveHostCapacityReply reply = new LocalStorageReserveHostCapacityReply();
         long size = msg.isNoOverProvisioning() ? msg.getSize() : ratioMgr.calculateByRatio(self.getUuid(), msg.getSize());
-        reserveCapacityOnHost(msg.getHostUuid(), size);
+        reserveCapacityOnHost(msg.getHostUuid(), size, self.getUuid());
         bus.reply(msg, reply);
     }
 
@@ -878,7 +878,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         size = reply.getSize();
-                        reserveCapacityOnHost(hostUuid, size);
+                        reserveCapacityOnHost(hostUuid, size, self.getUuid());
                         trigger.next();
                     }
 
@@ -1199,10 +1199,14 @@ public class LocalStorageBase extends PrimaryStorageBase {
     }
 
     @Transactional
-    protected void reserveCapacityOnHost(String hostUuid, long size) {
-        String sql = "select ref from LocalStorageHostRefVO ref where ref.hostUuid = :huuid";
+    protected void reserveCapacityOnHost(String hostUuid, long size, String psUuid) {
+        String sql = "select ref" +
+                " from LocalStorageHostRefVO ref" +
+                " where ref.hostUuid = :huuid" +
+                " and ref.primaryStorageUuid = :psUuid";
         TypedQuery<LocalStorageHostRefVO> q = dbf.getEntityManager().createQuery(sql, LocalStorageHostRefVO.class);
         q.setParameter("huuid", hostUuid);
+        q.setParameter("psUuid", psUuid);
         q.setLockMode(LockModeType.PESSIMISTIC_WRITE);
         List<LocalStorageHostRefVO> refs = q.getResultList();
 
@@ -1338,7 +1342,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        reserveCapacityOnHost(finalHostUuid, requiredSize);
+                        reserveCapacityOnHost(finalHostUuid, requiredSize, self.getUuid());
                         reservedSize = requiredSize;
                         trigger.next();
                     }
@@ -1515,7 +1519,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        reserveCapacityOnHost(msg.getHostUuid(), requiredSize);
+                        reserveCapacityOnHost(msg.getHostUuid(), requiredSize, self.getUuid());
                         trigger.next();
                     }
 
@@ -1644,7 +1648,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        reserveCapacityOnHost(msg.getDestHostUuid(), msg.getIsoSpec().getInventory().getActualSize());
+                        reserveCapacityOnHost(msg.getDestHostUuid(), msg.getIsoSpec().getInventory().getActualSize(), self.getUuid());
                         trigger.next();
                     }
 

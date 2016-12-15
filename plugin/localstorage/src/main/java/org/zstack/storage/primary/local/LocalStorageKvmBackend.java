@@ -849,6 +849,8 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                     fchain.setName(String.format("download-image-%s-to-local-storage-%s-cache-host-%s",
                             image.getUuid(), self.getUuid(), hostUuid));
                     fchain.then(new ShareFlow() {
+                        String psUuid;
+
                         @Override
                         public void setup() {
                             flow(new Flow() {
@@ -870,6 +872,8 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                         public void run(MessageReply reply) {
                                             if (reply.isSuccess()) {
                                                 s = true;
+                                                AllocatePrimaryStorageReply r = reply.castReply();
+                                                psUuid = r.getPrimaryStorageInventory().getUuid();
                                                 trigger.next();
                                             } else {
                                                 trigger.fail(reply.getError());
@@ -898,7 +902,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
                                 @Override
                                 public void run(FlowTrigger trigger, Map data) {
-                                    reserveCapacityOnHost(hostUuid, image.getActualSize());
+                                    reserveCapacityOnHost(hostUuid, image.getActualSize(), psUuid);
                                     trigger.next();
                                 }
 
@@ -1372,7 +1376,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 ret.setNewVolumeInstallPath(treply.getNewVolumeInstallPath());
                 ret.setInventory(sp);
 
-                reserveCapacityOnHost(hostUuid, sp.getSize());
+                reserveCapacityOnHost(hostUuid, sp.getSize(), self.getUuid());
                 completion.success(ret);
             }
         });
@@ -1903,7 +1907,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                             return;
                         }
 
-                        reserveCapacityOnHost(struct.getDestHostUuid(), context.backingFileSize);
+                        reserveCapacityOnHost(struct.getDestHostUuid(), context.backingFileSize, self.getUuid());
                         s = true;
                         trigger.next();
                     }
@@ -2379,7 +2383,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        reserveCapacityOnHost(ref.getHostUuid(), requiredSize);
+                        reserveCapacityOnHost(ref.getHostUuid(), requiredSize, ref.getPrimaryStorageUuid());
                         trigger.next();
                     }
 
