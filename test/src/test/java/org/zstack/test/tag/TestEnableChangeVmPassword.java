@@ -6,6 +6,7 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.tag.APIEnableChangeVmPasswordEvent;
 import org.zstack.header.vm.VmInstanceInventory;
@@ -33,7 +34,7 @@ public class TestEnableChangeVmPassword {
         DBUtil.reDeployDB();
         WebBeanConstructor con = new WebBeanConstructor();
         deployer = new Deployer("deployerXml/tag/TestEnableChangeVmPassword.xml", con);
-        deployer.addSpringConfig("mevocotag.xml");
+        deployer.addSpringConfig("tag.xml");
         deployer.build();
         api = deployer.getApi();
         loader = deployer.getComponentLoader();
@@ -56,27 +57,37 @@ public class TestEnableChangeVmPassword {
         Assert.assertFalse(evt.isEnable());
         Assert.assertEquals(evt.getResourceUuid(), image1.getUuid());
 
-        evt = api.enableChangeVmPassword(image1.getUuid(), "VmInstanceVO", true);
-        Assert.assertFalse(evt.isSuccess());
+        try {
+            api.enableChangeVmPassword(image1.getUuid(), "VmInstanceVO", true);
+            Assert.assertTrue("resourceType_VmInstanceVO_not_support_resourceUuid_image", false);
+        } catch (ApiSenderException e) {
+            Assert.assertEquals(e.getError().getCode(), SysErrors.OPERATION_ERROR.toString());
+        }
 
         evt = api.enableChangeVmPassword(vm1.getUuid(), "VmInstanceVO", true);
         Assert.assertTrue(evt.isSuccess());
         Assert.assertTrue(evt.isEnable());
         Assert.assertEquals(evt.getResourceUuid(), vm1.getUuid());
 
-        evt = api.enableChangeVmPassword(vm1.getUuid(), "ImageVO", true);
-        Assert.assertFalse(evt.isSuccess());
+        try {
+            api.enableChangeVmPassword(vm1.getUuid(), "ImageVO", true);
+            Assert.assertTrue("resourceType_ImageVO_not_support_resourceUuid_vm", false);
+        } catch (ApiSenderException e) {
+            Assert.assertEquals(e.getError().getCode(), SysErrors.OPERATION_ERROR.toString());
+        }
 
         try {
             api.enableChangeVmPassword(vm1.getUuid(), "VolumeVO", true);
             Assert.assertTrue("only_support_VmInstanceVO_and_ImageVO", false);
         } catch (ApiSenderException e) {
+            Assert.assertEquals(e.getError().getCode(), SysErrors.INVALID_ARGUMENT_ERROR.toString());
         }
 
         try {
             api.enableChangeVmPassword("test_must_exception", "ImageVO", true);
             Assert.assertTrue("resource_uuid_must_find", false);
         } catch (ApiSenderException e) {
+            Assert.assertEquals(e.getError().getCode(), SysErrors.OPERATION_ERROR.toString());
         }
     }
 }

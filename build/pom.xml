@@ -47,6 +47,7 @@
                                         <exclude>springConfigXml/sharedMountPointPrimaryStorage.xml</exclude>
                                         <exclude>springConfigXml/ceph.xml</exclude>
                                         <exclude>springConfigXml/fusionstor.xml</exclude>
+                                        <exclude>springConfigXml/tag.xml</exclude>
                                     </excludes>
                                 </resource>
                                 <resource>
