@@ -49,16 +49,18 @@ public class LocalStorageAllocateCapacityFlow implements Flow {
     protected HostAllocatorManager hostAllocatorMgr;
 
     @Transactional(readOnly = true)
-    private boolean isThereOtherStorageForTheHost(String hostUuid, String localStorageUuid) {
+    private boolean isThereOtherNonLocalStoragePrimaryStorageForTheHost(String hostUuid, String localStorageUuid) {
         String sql = "select count(pri)" +
                 " from PrimaryStorageVO pri, PrimaryStorageClusterRefVO ref, HostVO host" +
                 " where pri.uuid = ref.primaryStorageUuid" +
                 " and ref.clusterUuid = host.clusterUuid" +
                 " and host.uuid = :huuid" +
-                " and pri.uuid != :puuid";
+                " and pri.uuid != :puuid" +
+                " and pri.type != :pstype";
         TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
         q.setParameter("huuid", hostUuid);
         q.setParameter("puuid", localStorageUuid);
+        q.setParameter("pstype", LocalStorageConstants.LOCAL_STORAGE_TYPE);
         return q.getSingleResult() > 0;
     }
 
@@ -117,13 +119,14 @@ public class LocalStorageAllocateCapacityFlow implements Flow {
         msgs.add(rmsg);
 
         if (!spec.getDataDiskOfferings().isEmpty()) {
-            boolean hasOtherPrimaryStorage = isThereOtherStorageForTheHost(spec.getDestHost().getUuid(), localStorageUuid);
+            boolean hasOtherNonLocalStoragePrimaryStorage = isThereOtherNonLocalStoragePrimaryStorageForTheHost(
+                    spec.getDestHost().getUuid(), localStorageUuid);
 
             for (DiskOfferingInventory dinv : spec.getDataDiskOfferings()) {
                 AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
                 amsg.setSize(dinv.getDiskSize());
                 amsg.setRequiredHostUuid(spec.getDestHost().getUuid());
-                if (hasOtherPrimaryStorage) {
+                if (hasOtherNonLocalStoragePrimaryStorage) {
                     amsg.setAllocationStrategy(dinv.getAllocatorStrategy());
                     amsg.addExcludePrimaryStorageUuid(localStorageUuid);
                     amsg.addExcludeAllocatorStrategy(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY);

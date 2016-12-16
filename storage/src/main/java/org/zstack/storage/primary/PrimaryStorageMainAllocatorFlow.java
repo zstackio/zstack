@@ -43,7 +43,11 @@ public class PrimaryStorageMainAllocatorFlow extends NoRollbackFlow {
         TypedQuery<PrimaryStorageVO> query;
         String errorInfo;
         if (spec.getRequiredPrimaryStorageUuid() != null) {
-            String sql = "select pri from PrimaryStorageVO pri where pri.state = :priState and pri.status = :status and pri.uuid = :priUuid";
+            String sql = "select pri" +
+                    " from PrimaryStorageVO pri" +
+                    " where pri.state = :priState" +
+                    " and pri.status = :status" +
+                    " and pri.uuid = :priUuid";
             query = dbf.getEntityManager().createQuery(sql, PrimaryStorageVO.class);
             query.setParameter("priState", PrimaryStorageState.Enabled);
             query.setParameter("status", PrimaryStorageStatus.Connected);
@@ -81,7 +85,11 @@ public class PrimaryStorageMainAllocatorFlow extends NoRollbackFlow {
                             "[attached to clusters:%s, state:%s, status:%s, available capacity > %s",
                     spec.getRequiredClusterUuids(), PrimaryStorageState.Enabled, PrimaryStorageStatus.Connected, spec.getSize());
         } else if (spec.getRequiredZoneUuid() != null) {
-            String sql = "select pri from PrimaryStorageVO pri where pri.zoneUuid = :zoneUuid and pri.status = :status and pri.state = :priState";
+            String sql = "select pri" +
+                    " from PrimaryStorageVO pri" +
+                    " where pri.zoneUuid = :zoneUuid" +
+                    " and pri.status = :status" +
+                    " and pri.state = :priState";
             query = dbf.getEntityManager().createQuery(sql, PrimaryStorageVO.class);
             query.setParameter("priState", PrimaryStorageState.Enabled);
             query.setParameter("status", PrimaryStorageStatus.Connected);
@@ -89,7 +97,10 @@ public class PrimaryStorageMainAllocatorFlow extends NoRollbackFlow {
             errorInfo = String.format("cannot find primary storage satisfying conditions[in zone:%s, state:%s, status:%s, available capacity > %s",
                     spec.getRequiredZoneUuid(), PrimaryStorageState.Enabled, PrimaryStorageStatus.Connected, spec.getSize());
         } else {
-            String sql = "select pri from PrimaryStorageVO pri where pri.status = :status and pri.state = :priState";
+            String sql = "select pri" +
+                    " from PrimaryStorageVO pri" +
+                    " where pri.status = :status" +
+                    " and pri.state = :priState";
             query = dbf.getEntityManager().createQuery(sql, PrimaryStorageVO.class);
             query.setParameter("priState", PrimaryStorageState.Enabled);
             query.setParameter("status", PrimaryStorageStatus.Connected);
