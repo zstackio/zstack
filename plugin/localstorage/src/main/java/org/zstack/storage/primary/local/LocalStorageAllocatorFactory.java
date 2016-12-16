@@ -23,8 +23,9 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Callable;
 
 /**
@@ -93,7 +94,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
             q.add(LocalStorageHostRefVO_.hostUuid, Op.IN, huuids);
             List<Tuple> ts = q.listTuple();
 
-            final List<String> toRemoveHuuids = new ArrayList<String>();
+            final Set<String> toRemoveHuuids = new HashSet<>();
             for (Tuple t : ts) {
                 String huuid = t.get(0, String.class);
                 long cap = t.get(1, Long.class);
@@ -102,9 +103,19 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
                     toRemoveHuuids.add(huuid);
                 }
             }
+            // for more than one local storage, maybe one of it fit the requirement
+            for (Tuple t : ts) {
+                String huuid = t.get(0, String.class);
+                long cap = t.get(1, Long.class);
+                String psUuid = t.get(2, String.class);
+                if (cap >= ratioMgr.calculateByRatio(psUuid, spec.getDiskSize())) {
+                    toRemoveHuuids.remove(huuid);
+                }
+            }
 
             if (!toRemoveHuuids.isEmpty()) {
-                logger.debug(String.format("local storage filters out hosts%s, because they don't have required disk capacity[%s bytes]", toRemoveHuuids, spec.getDiskSize()));
+                logger.debug(String.format("local storage filters out hosts%s, because they don't have required disk capacity[%s bytes]",
+                        toRemoveHuuids, spec.getDiskSize()));
 
                 candidates = CollectionUtils.transformToList(candidates, new Function<HostVO, HostVO>() {
                     @Override
