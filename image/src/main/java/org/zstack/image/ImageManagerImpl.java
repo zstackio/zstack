@@ -798,6 +798,29 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                     }
                 });
 
+                flow(new Flow() {
+                    String __name__ = "copy-system-tag-to-image";
+
+                    public void run(FlowTrigger trigger, Map data) {
+                        // find the rootimage and create some systemtag if it has
+                        SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
+                        q.add(VolumeVO_.uuid, SimpleQuery.Op.EQ, msg.getRootVolumeUuid());
+                        q.select(VolumeVO_.vmInstanceUuid);
+                        String vmInstanceUuid = q.findValue();
+                        if (tagMgr.hasSystemTag(vmInstanceUuid, ImageSystemTags.IMAGE_INJECT_QEMUGA.getTagFormat())) {
+                            tagMgr.createNonInherentSystemTag(imageVO.getUuid(),
+                                    ImageSystemTags.IMAGE_INJECT_QEMUGA.getTagFormat(),
+                                    ImageVO.class.getSimpleName());
+                        }
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        trigger.rollback();
+                    }
+                });
+
                 done(new FlowDoneHandler(msg) {
                     @Override
                     public void handle(Map data) {
