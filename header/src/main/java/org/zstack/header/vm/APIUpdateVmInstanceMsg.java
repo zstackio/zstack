@@ -23,9 +23,9 @@ public class APIUpdateVmInstanceMsg extends APIMessage implements VmInstanceMess
     @APIParam(required = false, validValues = {"Linux", "Windows", "Other", "Paravirtualization", "WindowsVirtio"})
     private String platform;
     @APIParam(required = false, numberRange = {1, 1024})
-    private int cpuCores;
+    private Integer cpuCores;
     @APIParam(required = false, numberRange = {1, Long.MAX_VALUE})
-    private int memory;
+    private Integer memory;
 
     public String getDefaultL3NetworkUuid() {
         return defaultL3NetworkUuid;
