@@ -810,9 +810,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             return VmAbnormalLifeCycleOperation.VmRunningOnTheHost;
         }
 
-        if (originalState == VmInstanceState.Running && currentState == VmInstanceState.Stopped &&
-                currentHostUuid.equals(originalHostUuid)) {
-            return VmAbnormalLifeCycleOperation.VmStoppedOnTheSameHost;
+        if (originalState == VmInstanceState.Stopped && currentState == VmInstanceState.Running) {
+            return VmAbnormalLifeCycleOperation.VmRunningOnTheHost;
         }
 
         if (VmInstanceState.intermediateStates.contains(originalState) && currentState == VmInstanceState.Running) {
@@ -821,6 +820,11 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         if (VmInstanceState.intermediateStates.contains(originalState) && currentState == VmInstanceState.Stopped) {
             return VmAbnormalLifeCycleOperation.VmStoppedFromIntermediateState;
+        }
+
+        if (originalState == VmInstanceState.Running && currentState == VmInstanceState.Paused &&
+                currentHostUuid.equals(originalHostUuid)) {
+            return VmAbnormalLifeCycleOperation.VmPausedFromRunningStateHostNotChanged;
         }
 
         if (originalState == VmInstanceState.Unknown && currentState == VmInstanceState.Paused &&
@@ -943,6 +947,13 @@ public class VmInstanceBase extends AbstractVmInstance {
             return;
         } else if (operation == VmAbnormalLifeCycleOperation.VmPausedFromUnknownStateHostNotChanged) {
             //some reason led vm to unknown state and the paused vm are detected on the host again
+            self.setHostUuid(msg.getHostUuid());
+            changeVmStateInDb(VmInstanceStateEvent.paused);
+            fireEvent.run();
+            bus.reply(msg, reply);
+            completion.done();
+        } else if (operation == VmAbnormalLifeCycleOperation.VmPausedFromRunningStateHostNotChanged) {
+            // just synchronize database
             self.setHostUuid(msg.getHostUuid());
             changeVmStateInDb(VmInstanceStateEvent.paused);
             fireEvent.run();
