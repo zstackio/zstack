@@ -1,25 +1,12 @@
 #!/bin/sh
 
 usage() {
-    echo "usage:$0 [deploydb|deploy|xml-java-schema|premium|build-python-sdk]"
-}
-
-build_python_sdk() {
-    zstack_test_dir="./test/"
-    apibinding_dir="../../zstack-utility/apibinding/apibinding/"
-
-    cd ${zstack_test_dir}
-    mvn test -Dtest=TestGenerateApiPythonClassAndJsonTemplate
-    /bin/cp -f ~/zstack-python-template/python/api_actions.py ${apibinding_dir}
-    /bin/cp -f ~/zstack-python-template/python/inventory.py ${apibinding_dir}
-
+    echo "usage:$0 [deploydb|deploy|xml-java-schema|premium]"
 }
 
 run_profile() {
     if test x$1 = x'premium'; then
         mvn -Dmaven.test.skip=true -P premium clean install
-    elif test x$1 = x'build-python-sdk'; then
-        build_python_sdk
     else
         mvn -pl build -P $1 exec:exec -D$1
     fi
