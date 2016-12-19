@@ -133,5 +133,12 @@ public class TestKvmVmTracer {
         HostCapacityVO host2cap = dbf.findByUuid(host2.getUuid(), HostCapacityVO.class);
         Assert.assertEquals(host2cap.getAvailableCpu(), host2cap.getTotalCpu() - cpu);
         Assert.assertEquals(host2cap.getAvailableMemory(), host2cap.getTotalMemory() - vmvo.getMemorySize());
+
+        cmd.vmState = KvmVmState.Paused.toString();
+        restf.syncJsonPost(url, JSONObjectUtil.toJsonString(cmd), header, String.class);
+        TimeUnit.SECONDS.sleep(3);
+        vmvo = dbf.findByUuid(vm.getUuid(), VmInstanceVO.class);
+        Assert.assertEquals(VmInstanceState.Paused, vmvo.getState());
+        Assert.assertEquals(host2.getUuid(), vmvo.getHostUuid());
     }
 }

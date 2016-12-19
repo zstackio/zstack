@@ -810,8 +810,9 @@ public class VmInstanceBase extends AbstractVmInstance {
             return VmAbnormalLifeCycleOperation.VmRunningOnTheHost;
         }
 
-        if (originalState == VmInstanceState.Stopped && currentState == VmInstanceState.Running) {
-            return VmAbnormalLifeCycleOperation.VmRunningOnTheHost;
+        if (originalState == VmInstanceState.Running && currentState == VmInstanceState.Stopped &&
+                currentHostUuid.equals(originalHostUuid)) {
+            return VmAbnormalLifeCycleOperation.VmStoppedOnTheSameHost;
         }
 
         if (VmInstanceState.intermediateStates.contains(originalState) && currentState == VmInstanceState.Running) {
