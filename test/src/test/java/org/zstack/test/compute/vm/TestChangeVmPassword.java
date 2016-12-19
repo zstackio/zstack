@@ -44,20 +44,13 @@ public class TestChangeVmPassword {
 
         Assert.assertEquals(VmInstanceState.Running.toString(), inv.getState());
 
-        VmAccountPerference account = api.changeVmPassword(new VmAccountPerference(
+        APIChangeVmPasswordEvent account = api.changeVmPassword(new VmAccountPerference(
                 inv.getUuid(), "change", "test1234"));
         Assert.assertNotNull(account);
-        Assert.assertEquals(inv.getUuid(), account.getVmUuid());
-        Assert.assertEquals("change", account.getUserAccount());
-        Assert.assertEquals("******", account.getAccountPassword());
 
         account = api.changeVmPassword(new VmAccountPerference(
                 inv.getUuid(), "change", "||||||"));
         Assert.assertNotNull(account);
-        Assert.assertEquals(inv.getUuid(), account.getVmUuid());
-        Assert.assertEquals("change", account.getUserAccount());
-        Assert.assertEquals("******", account.getAccountPassword());
-
 
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         vm = api.stopVmInstance(inv.getUuid());

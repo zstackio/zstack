@@ -1664,7 +1664,7 @@ public class Api implements CloudBusEventListener {
         return sender.call(msg, APIGetTaskProgressReply.class);
     }
 
-    public VmAccountPerference changeVmPassword(VmAccountPerference account)
+    public APIChangeVmPasswordEvent changeVmPassword(VmAccountPerference account)
             throws ApiSenderException {
         APIChangeVmPasswordMsg msg = new APIChangeVmPasswordMsg();
         msg.setSession(adminSession);
@@ -1674,6 +1674,7 @@ public class Api implements CloudBusEventListener {
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIChangeVmPasswordEvent evt = sender.send(msg, APIChangeVmPasswordEvent.class);
+        return evt;
     }
 
     public VmInstanceInventory pauseVmInstance(String uuid) throws ApiSenderException {
