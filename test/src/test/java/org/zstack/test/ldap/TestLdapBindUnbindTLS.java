@@ -1,6 +1,7 @@
 package org.zstack.test.ldap;
 
 import com.unboundid.ldap.sdk.LDAPException;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -9,8 +10,10 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.SessionInventory;
+import org.zstack.header.message.APIEvent;
 import org.zstack.header.query.QueryCondition;
 import org.zstack.ldap.*;
+import org.zstack.portal.apimediator.PortalSystemTags;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSender;
 import org.zstack.test.ApiSenderException;
@@ -20,9 +23,12 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.stream.Collectors;
 
 public class TestLdapBindUnbindTLS {
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
     CLogger logger = Utils.getLogger(TestLdapBindUnbindTLS.class);
     Deployer deployer;
     Api api;
@@ -30,9 +36,6 @@ public class TestLdapBindUnbindTLS {
     CloudBus bus;
     SessionInventory session;
     LdapManager ldapManager;
-
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
 
     @Before
     public void setUp() throws Exception {
@@ -83,7 +86,8 @@ public class TestLdapBindUnbindTLS {
         queryLdapServer();
 
         // test conn
-        APITestAddLdapServerConnectionMsg msg211 = new APITestAddLdapServerConnectionMsg();
+        APIAddLdapServerMsg msg211 = new APIAddLdapServerMsg();
+        msg211.setSystemTags(Arrays.asList(PortalSystemTags.VALIDATION_ONLY.getTagFormat()));
         msg211.setName("miao");
         msg211.setDescription("miao desc");
         msg211.setUrl(url);
@@ -93,8 +97,8 @@ public class TestLdapBindUnbindTLS {
         msg211.setEncryption("TLS");
         msg211.setSession(session);
         msg211.setTimeout(10);
-        APITestAddLdapServerConnectionEvent evt211 = sender.send(msg211, APITestAddLdapServerConnectionEvent.class);
-        logger.debug(evt211.getInventory().getName());
+        APIEvent evt211 = sender.send(msg211, APIEvent.class);
+        Assert.assertTrue(evt211.isSuccess());
 
 
         // bind account
