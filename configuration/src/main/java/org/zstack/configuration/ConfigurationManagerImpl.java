@@ -56,6 +56,13 @@ import java.util.stream.Collectors;
 public class ConfigurationManagerImpl extends AbstractService implements ConfigurationManager {
     private static final CLogger logger = Utils.getLogger(ConfigurationManagerImpl.class);
     private static final FieldPrinter printer = Utils.getFieldPrinter();
+    private static final Set<Class> allowedInstanceOfferingMessageAfterSoftDeletion = new HashSet<>();
+    private static final Set<Class> allowedDiskOfferingMessageAfterSoftDeletion = new HashSet<>();
+
+    static {
+        allowedDiskOfferingMessageAfterSoftDeletion.add(DiskOfferingDeletionMsg.class);
+        allowedInstanceOfferingMessageAfterSoftDeletion.add(InstanceOfferingDeletionMsg.class);
+    }
 
     @Autowired
     private CloudBus bus;
@@ -71,21 +78,11 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
     private TagManager tagMgr;
     @Autowired
     private AccountManager acntMgr;
-
-
     private Set<String> generatedPythonClassName;
     private Map<String, InstanceOfferingFactory> instanceOfferingFactories = new HashMap<>();
     private Map<String, DiskOfferingFactory> diskOfferingFactories = new HashMap<>();
     private Set<String> generatedGroovyClassName = new HashSet<>();
     private List<PythonApiBindingWriter> pythonApiBindingWriters = new ArrayList<>();
-
-    private static final Set<Class> allowedInstanceOfferingMessageAfterSoftDeletion = new HashSet<>();
-    private static final Set<Class> allowedDiskOfferingMessageAfterSoftDeletion = new HashSet<>();
-
-    static {
-        allowedDiskOfferingMessageAfterSoftDeletion.add(DiskOfferingDeletionMsg.class);
-        allowedInstanceOfferingMessageAfterSoftDeletion.add(InstanceOfferingDeletionMsg.class);
-    }
 
     private void instanceOfferingPassThrough(InstanceOfferingMessage msg) {
         InstanceOfferingVO vo = dbf.findByUuid(msg.getInstanceOfferingUuid(), InstanceOfferingVO.class);
@@ -836,12 +833,16 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
     }
 
     private void handle(APIGenerateApiJsonTemplateMsg msg) throws IOException {
+        generateApiJsonTemplate(msg.getExportPath(), msg.getBasePackageNames());
+        APIGenerateApiJsonTemplateEvent evt = new APIGenerateApiJsonTemplateEvent(msg.getId());
+        bus.publish(evt);
+    }
+
+    public void generateApiJsonTemplate(String exportPath, List<String> basePkgs) throws IOException {
         generatedPythonClassName = new HashSet<>();
-        String exportPath = msg.getExportPath();
         if (exportPath == null) {
             exportPath = PathUtil.join(System.getProperty("user.home"), "zstack-python-template");
         }
-        List<String> basePkgs = msg.getBasePackageNames();
         if (basePkgs == null || basePkgs.isEmpty()) {
             basePkgs = new ArrayList<>(1);
             basePkgs.add("org.zstack");
@@ -872,7 +873,8 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
                         clazz = Class.forName(bd.getBeanClassName());
                         logger.debug(String.format("dumping message: %s", bd.getBeanClassName()));
                         String template = RESTApiJsonTemplateGenerator.dump(clazz);
-                        FileUtils.write(new File(PathUtil.join(jsonFolder.getAbsolutePath(), clazz.getName() + ".json")), template);
+                        FileUtils.write(new File(PathUtil.join(jsonFolder.getAbsolutePath(),
+                                clazz.getName() + ".json")), template);
                     } catch (Exception e) {
                         logger.warn(String.format("Unable to generate json template for %s", bd.getBeanClassName()), e);
                     }
@@ -886,7 +888,8 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
                 }
             }
             apiNameBuilder.append("]\n");
-            FileUtils.write(new File(PathUtil.join(pythonFolder.getAbsolutePath(), "api_messages.py")), apiNameBuilder.toString());
+            FileUtils.write(new File(PathUtil.join(pythonFolder.getAbsolutePath(), "api_messages.py")),
+                    apiNameBuilder.toString());
         }
 
         // write inventory.py
@@ -911,8 +914,6 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
         }
 
         logger.info(String.format("Generated result in %s", folder.getAbsolutePath()));
-        APIGenerateApiJsonTemplateEvent evt = new APIGenerateApiJsonTemplateEvent(msg.getId());
-        bus.publish(evt);
         generatedPythonClassName = null;
     }
 
