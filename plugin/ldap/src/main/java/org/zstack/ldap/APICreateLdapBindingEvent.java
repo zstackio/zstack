@@ -2,14 +2,14 @@ package org.zstack.ldap;
 
 import org.zstack.header.message.APIEvent;
 
-public class APIBindLdapAccountEvent extends APIEvent {
+public class APICreateLdapBindingEvent extends APIEvent {
     private LdapAccountRefInventory inventory;
 
-    public APIBindLdapAccountEvent(String apiId) {
+    public APICreateLdapBindingEvent(String apiId) {
         super(apiId);
     }
 
-    public APIBindLdapAccountEvent() {
+    public APICreateLdapBindingEvent() {
         super(null);
     }
 

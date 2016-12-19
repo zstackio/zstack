@@ -3,7 +3,7 @@ package org.zstack.ldap;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 
-public class APIUnbindLdapAccountMsg extends APIMessage {
+public class APIDeleteLdapBindingMsg extends APIMessage {
     @APIParam(maxLength = 32)
     private String uuid;
 

@@ -12,15 +12,15 @@
     </message>
 
     <message>
-        <name>org.zstack.ldap.APIBindLdapAccountMsg</name>
+        <name>org.zstack.ldap.APICreateLdapBindingMsg</name>
     </message>
 
     <message>
-        <name>org.zstack.ldap.APIUnbindLdapAccountMsg</name>
+        <name>org.zstack.ldap.APIDeleteLdapBindingMsg</name>
     </message>
 
     <message>
-        <name>org.zstack.ldap.APIQueryLdapAccountMsg</name>
+        <name>org.zstack.ldap.APIQueryLdapBindingMsg</name>
         <serviceId>query</serviceId>
     </message>
 
@@ -42,6 +42,6 @@
     </message>
 
     <message>
-        <name>org.zstack.ldap.APICleanInvalidLdapBindingsMsg</name>
+        <name>org.zstack.ldap.APICleanInvalidLdapBindingMsg</name>
     </message>
 </service>

@@ -99,11 +99,11 @@ public class TestLdapBindUnbindTLS {
 
         // bind account
         AccountInventory ai1 = api.createAccount("ldapuser1", "hello-kitty");
-        APIBindLdapAccountMsg msg2 = new APIBindLdapAccountMsg();
+        APICreateLdapBindingMsg msg2 = new APICreateLdapBindingMsg();
         msg2.setAccountUuid(ai1.getUuid());
         msg2.setLdapUid(uid);
         msg2.setSession(session);
-        APIBindLdapAccountEvent evt2 = sender.send(msg2, APIBindLdapAccountEvent.class);
+        APICreateLdapBindingEvent evt2 = sender.send(msg2, APICreateLdapBindingEvent.class);
         logger.debug(evt2.getInventory().getUuid());
 
 

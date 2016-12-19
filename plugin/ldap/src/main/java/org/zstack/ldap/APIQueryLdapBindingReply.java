@@ -4,7 +4,7 @@ import org.zstack.header.query.APIQueryReply;
 
 import java.util.List;
 
-public class APIQueryLdapAccountReply extends APIQueryReply {
+public class APIQueryLdapBindingReply extends APIQueryReply {
     private List<LdapAccountRefInventory> inventories;
 
     public List<LdapAccountRefInventory> getInventories() {

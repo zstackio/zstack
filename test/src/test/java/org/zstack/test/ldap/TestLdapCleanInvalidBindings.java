@@ -101,19 +101,19 @@ public class TestLdapCleanInvalidBindings {
         AccountInventory accInv_4 = api.createAccount("user4", "hello-kitty");
 
         // bind account
-        APIBindLdapAccountMsg msg2 = new APIBindLdapAccountMsg();
+        APICreateLdapBindingMsg msg2 = new APICreateLdapBindingMsg();
         msg2.setAccountUuid(accInv_ldap_1.getUuid());
         msg2.setLdapUid("sclaus");
         msg2.setSession(session);
-        APIBindLdapAccountEvent evt2 = sender.send(msg2, APIBindLdapAccountEvent.class);
+        APICreateLdapBindingEvent evt2 = sender.send(msg2, APICreateLdapBindingEvent.class);
         logger.debug(evt2.getInventory().getUuid());
 
         // bind account
-        APIBindLdapAccountMsg msg21 = new APIBindLdapAccountMsg();
+        APICreateLdapBindingMsg msg21 = new APICreateLdapBindingMsg();
         msg21.setAccountUuid(accInv_ldap_2.getUuid());
         msg21.setLdapUid("jsteinbeck");
         msg21.setSession(session);
-        APIBindLdapAccountEvent evt21 = sender.send(msg21, APIBindLdapAccountEvent.class);
+        APICreateLdapBindingEvent evt21 = sender.send(msg21, APICreateLdapBindingEvent.class);
         logger.debug(evt21.getInventory().getUuid());
 
         // update ldap server
@@ -124,12 +124,12 @@ public class TestLdapCleanInvalidBindings {
         APIUpdateLdapServerEvent updateEvt1 = sender.send(updateMsg1, APIUpdateLdapServerEvent.class);
 
         // clean invalid bindings
-        APICleanInvalidLdapBindingsMsg cleanMsg1 = new APICleanInvalidLdapBindingsMsg();
+        APICleanInvalidLdapBindingMsg cleanMsg1 = new APICleanInvalidLdapBindingMsg();
         cleanMsg1.setSession(session);
-        APICleanInvalidLdapBindingsEvent cleanEvt1 = sender.send(cleanMsg1, APICleanInvalidLdapBindingsEvent.class);
+        APICleanInvalidLdapBindingEvent cleanEvt1 = sender.send(cleanMsg1, APICleanInvalidLdapBindingEvent.class);
 
         // some assertions
-        Assert.assertTrue(cleanEvt1.getAccountInventoryList().size() == 1);
-        Assert.assertTrue(cleanEvt1.getAccountInventoryList().get(0).getUuid().equals(accInv_ldap_2.getUuid()));
+        Assert.assertTrue(cleanEvt1.getAccountInventories().size() == 1);
+        Assert.assertTrue(cleanEvt1.getAccountInventories().get(0).getUuid().equals(accInv_ldap_2.getUuid()));
     }
 }

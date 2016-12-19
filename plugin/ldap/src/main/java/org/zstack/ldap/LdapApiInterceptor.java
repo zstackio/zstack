@@ -29,9 +29,9 @@ public class LdapApiInterceptor implements ApiMessageInterceptor {
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
         if (msg instanceof APIAddLdapServerMsg) {
 
-        } else if (msg instanceof APIBindLdapAccountMsg) {
+        } else if (msg instanceof APICreateLdapBindingMsg) {
 
-        } else if (msg instanceof APIUnbindLdapAccountMsg) {
+        } else if (msg instanceof APIDeleteLdapBindingMsg) {
 
         }
 

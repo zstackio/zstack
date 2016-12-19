@@ -118,16 +118,16 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
             handle((APIAddLdapServerMsg) msg);
         } else if (msg instanceof APIDeleteLdapServerMsg) {
             handle((APIDeleteLdapServerMsg) msg);
-        } else if (msg instanceof APIBindLdapAccountMsg) {
-            handle((APIBindLdapAccountMsg) msg);
-        } else if (msg instanceof APIUnbindLdapAccountMsg) {
-            handle((APIUnbindLdapAccountMsg) msg);
+        } else if (msg instanceof APICreateLdapBindingMsg) {
+            handle((APICreateLdapBindingMsg) msg);
+        } else if (msg instanceof APIDeleteLdapBindingMsg) {
+            handle((APIDeleteLdapBindingMsg) msg);
         } else if (msg instanceof APITestAddLdapServerConnectionMsg) {
             handle((APITestAddLdapServerConnectionMsg) msg);
         } else if (msg instanceof APIUpdateLdapServerMsg) {
             handle((APIUpdateLdapServerMsg) msg);
-        } else if (msg instanceof APICleanInvalidLdapBindingsMsg) {
-            handle((APICleanInvalidLdapBindingsMsg) msg);
+        } else if (msg instanceof APICleanInvalidLdapBindingMsg) {
+            handle((APICleanInvalidLdapBindingMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -318,8 +318,8 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         bus.publish(evt);
     }
 
-    private void handle(APIBindLdapAccountMsg msg) {
-        APIBindLdapAccountEvent evt = new APIBindLdapAccountEvent(msg.getId());
+    private void handle(APICreateLdapBindingMsg msg) {
+        APICreateLdapBindingEvent evt = new APICreateLdapBindingEvent(msg.getId());
 
         // account check
         SimpleQuery<AccountVO> sq = dbf.createQuery(AccountVO.class);
@@ -359,8 +359,8 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         bus.publish(evt);
     }
 
-    private void handle(APIUnbindLdapAccountMsg msg) {
-        APIUnbindLdapAccountEvent evt = new APIUnbindLdapAccountEvent(msg.getId());
+    private void handle(APIDeleteLdapBindingMsg msg) {
+        APIDeleteLdapBindingEvent evt = new APIDeleteLdapBindingEvent(msg.getId());
 
         dbf.removeByPrimaryKey(msg.getUuid(), LdapAccountRefVO.class);
 
@@ -391,8 +391,8 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
     }
 
     @Transactional
-    private void handle(APICleanInvalidLdapBindingsMsg msg) {
-        APICleanInvalidLdapBindingsEvent evt = new APICleanInvalidLdapBindingsEvent(msg.getId());
+    private void handle(APICleanInvalidLdapBindingMsg msg) {
+        APICleanInvalidLdapBindingEvent evt = new APICleanInvalidLdapBindingEvent(msg.getId());
 
         ArrayList<String> accountUuidList = new ArrayList<>();
         ArrayList<String> ldapAccountRefUuidList = new ArrayList<>();
@@ -413,7 +413,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
             // return accounts of which ldap bindings had been removed
             SimpleQuery<AccountVO> sq1 = dbf.createQuery(AccountVO.class);
             sq1.add(AccountVO_.uuid, SimpleQuery.Op.IN, accountUuidList);
-            evt.setAccountInventoryList(sq1.list());
+            evt.setAccountInventories(sq1.list());
         }
 
         bus.publish(evt);
