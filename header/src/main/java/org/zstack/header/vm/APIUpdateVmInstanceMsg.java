@@ -25,7 +25,7 @@ public class APIUpdateVmInstanceMsg extends APIMessage implements VmInstanceMess
     @APIParam(required = false, numberRange = {1, 1024})
     private Integer cpuCores;
     @APIParam(required = false, numberRange = {1, Long.MAX_VALUE})
-    private Integer memory;
+    private Long memory;
 
     public String getDefaultL3NetworkUuid() {
         return defaultL3NetworkUuid;
@@ -80,19 +80,19 @@ public class APIUpdateVmInstanceMsg extends APIMessage implements VmInstanceMess
         return uuid;
     }
 
-    public int getCpuCores() {
+    public Integer getCpuCores() {
         return cpuCores;
     }
 
-    public void setCpuCores(int cpuCores) {
+    public void setCpuCores(Integer cpuCores) {
         this.cpuCores = cpuCores;
     }
 
-    public int getMemory() {
+    public Long getMemory() {
         return memory;
     }
 
-    public void setMemory(int memory) {
+    public void setMemory(Long memory) {
         this.memory = memory;
     }
 }

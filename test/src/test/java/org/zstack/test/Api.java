@@ -3361,6 +3361,18 @@ public class Api implements CloudBusEventListener {
         return evt.getInventory();
     }
 
+    public VmInstanceInventory updateCpuMemory(String uuid, Integer cpu, Long memory) throws ApiSenderException {
+        APIUpdateVmInstanceMsg msg = new APIUpdateVmInstanceMsg();
+        msg.setSession(adminSession);
+        msg.setUuid(uuid);
+        msg.setCpuCores(cpu);
+        msg.setMemory(memory);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIUpdateVmInstanceEvent evt = sender.send(msg, APIUpdateVmInstanceEvent.class);
+        return evt.getInventory();
+    }
+
     public PrimaryStorageInventory updatePrimaryStorage(PrimaryStorageInventory inv) throws ApiSenderException {
         APIUpdatePrimaryStorageMsg msg = new APIUpdatePrimaryStorageMsg();
         msg.setSession(adminSession);

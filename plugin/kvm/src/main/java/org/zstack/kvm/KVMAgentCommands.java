@@ -870,7 +870,7 @@ public class KVMAgentCommands {
     public static class StartVmResponse extends AgentResponse {
     }
 
-    public static class OnlineChangeCpuMemoryCmd extends AgentCommand{
+    public static class ChangeCpuMemoryCmd extends AgentCommand{
         private String vmUuid;
         private int cpuNum;
         private long memorySize;
@@ -900,7 +900,7 @@ public class KVMAgentCommands {
         }
     }
 
-    public static class OnlineChangeCpuMemoryResponse extends AgentResponse{
+    public static class ChangeCpuMemoryResponse extends AgentResponse{
         private int cpuNum;
         private long memorySize;
 

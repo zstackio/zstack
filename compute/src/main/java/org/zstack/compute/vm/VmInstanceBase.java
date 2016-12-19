@@ -3019,15 +3019,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                                                                     final VmInstanceInventory vm,
                                                                     final InstanceOfferingInventory inv,
                                                                     APIChangeInstanceOfferingEvent evt) {
-        Map m = new HashMap();
-        m.put(VmSystemTags.PENDING_CAPACITY_CHNAGE_CPU_NUM_TOKEN, newOfferingVO.getCpuNum());
-        m.put(VmSystemTags.PENDING_CAPACITY_CHNAGE_CPU_SPEED_TOKEN, newOfferingVO.getCpuSpeed());
-        m.put(VmSystemTags.PENDING_CAPACITY_CHNAGE_MEMORY_TOKEN, newOfferingVO.getMemorySize());
-        SystemTagCreator creator = VmSystemTags.PENDING_CAPACITY_CHANGE.newSystemTagCreator(self.getUuid());
-        creator.inherent = true;
-        creator.recreate = true;
-        creator.setTagByTokens(m);
-        creator.create();
+        pendingCpuAndMemoryForNextStart(newOfferingVO.getCpuNum(), newOfferingVO.getCpuSpeed(), newOfferingVO.getMemorySize());
 
         self.setInstanceOfferingUuid(newOfferingVO.getUuid());
         self = dbf.updateAndRefresh(self);
@@ -3041,6 +3033,18 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         evt.setInventory(getSelfInventory());
         bus.publish(evt);
+    }
+
+    private void pendingCpuAndMemoryForNextStart(int cpuNum, long cpuSpeed, long memorySize) {
+        Map m = new HashMap();
+        m.put(VmSystemTags.PENDING_CAPACITY_CHNAGE_CPU_NUM_TOKEN, cpuNum);
+        m.put(VmSystemTags.PENDING_CAPACITY_CHNAGE_CPU_SPEED_TOKEN, cpuSpeed);
+        m.put(VmSystemTags.PENDING_CAPACITY_CHNAGE_MEMORY_TOKEN, memorySize);
+        SystemTagCreator creator = VmSystemTags.PENDING_CAPACITY_CHANGE.newSystemTagCreator(self.getUuid());
+        creator.inherent = true;
+        creator.recreate = true;
+        creator.setTagByTokens(m);
+        creator.create();
     }
 
     private void changeInstanceOfferingForStoppedVm(List<ChangeInstanceOfferingExtensionPoint> exts,
@@ -3162,6 +3166,11 @@ public class VmInstanceBase extends AbstractVmInstance {
                     self.setPlatform(msg.getPlatform());
                     update = true;
                 }
+
+                if (msg.getCpuCores() != null || msg.getMemory() != null) {
+                    changeCpuAndMemory(msg);
+                    update = true;
+                }
                 if (update) {
                     self = dbf.updateAndRefresh(self);
                 }
@@ -3279,6 +3288,13 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
 
         return vos;
+    }
+
+    private void changeCpuAndMemory(APIUpdateVmInstanceMsg msg) {
+        // add some systemTag and can be appliance for the next start
+        int cpuNum = msg.getCpuCores() == null?self.getCpuNum():msg.getCpuCores();
+        long memory = msg.getMemory() == null?self.getMemorySize():msg.getMemory();
+        pendingCpuAndMemoryForNextStart(cpuNum, self.getCpuSpeed(), memory);
     }
 
     private void handle(APIGetVmAttachableDataVolumeMsg msg) {

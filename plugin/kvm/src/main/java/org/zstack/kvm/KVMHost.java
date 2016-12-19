@@ -110,7 +110,7 @@ public class KVMHost extends HostBase implements Host {
     private String detachIsoPath;
     private String checkVmStatePath;
     private String getConsolePortPath;
-    private String changeCpuMemoryPath;
+    private String onlineChangeCpuMemoryPath;
     private String deleteConsoleFirewall;
 
     private String agentPackageName = KVMGlobalProperty.AGENT_PACKAGE_NAME;
@@ -210,8 +210,8 @@ public class KVMHost extends HostBase implements Host {
         getConsolePortPath = ub.build().toString();
 
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
-        ub.path(KVMConstant.KVM_VM_CHANGE_CPUMEMORY);
-        changeCpuMemoryPath = ub.build().toString();
+        ub.path(KVMConstant.KVM_VM_ONLINE_CHANGE_CPUMEMORY);
+        onlineChangeCpuMemoryPath = ub.build().toString();
 
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_DELETE_CONSOLE_FIREWALL_PATH);
@@ -366,11 +366,11 @@ public class KVMHost extends HostBase implements Host {
     private void handle(final OnlineChangeVmCpuMemoryMsg msg) {
         final OnlineChangeVmCpuMemoryReply reply = new OnlineChangeVmCpuMemoryReply();
 
-        OnlineChangeCpuMemoryCmd cmd = new OnlineChangeCpuMemoryCmd();
+        ChangeCpuMemoryCmd cmd = new ChangeCpuMemoryCmd();
         cmd.setVmUuid(msg.getVmInstanceUuid());
         cmd.setCpuNum(msg.getInstanceOfferingInventory().getCpuNum());
         cmd.setMemorySize(msg.getInstanceOfferingInventory().getMemorySize());
-        restf.asyncJsonPost(changeCpuMemoryPath, cmd, new JsonAsyncRESTCallback<OnlineChangeCpuMemoryResponse>(msg) {
+        restf.asyncJsonPost(onlineChangeCpuMemoryPath, cmd, new JsonAsyncRESTCallback<ChangeCpuMemoryResponse>(msg) {
             @Override
             public void fail(ErrorCode err) {
                 reply.setError(err);
@@ -378,7 +378,7 @@ public class KVMHost extends HostBase implements Host {
             }
 
             @Override
-            public void success(OnlineChangeCpuMemoryResponse ret) {
+            public void success(ChangeCpuMemoryResponse ret) {
                 if (!ret.isSuccess()) {
                     reply.setError(errf.stringToOperationError(ret.getError()));
                 } else {
@@ -392,8 +392,8 @@ public class KVMHost extends HostBase implements Host {
             }
 
             @Override
-            public Class<OnlineChangeCpuMemoryResponse> getReturnClass() {
-                return OnlineChangeCpuMemoryResponse.class;
+            public Class<ChangeCpuMemoryResponse> getReturnClass() {
+                return ChangeCpuMemoryResponse.class;
             }
         });
     }
