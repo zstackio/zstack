@@ -78,38 +78,41 @@ public class ProgressReportService extends AbstractService implements Management
         return true;
     }
 
-    private boolean validation(String processType) {
-        logger.debug(String.format("validate the process: %s", processType));
-        if (ProgressConstants.ProgressType.valueOf(processType) == null) {
+    private void validation(ProgressReportCmd cmd) {
+        validationType(cmd.getProcessType());
+        validationUuid(cmd.getResourceUuid());
+    }
+
+    private void validationType(String processType) {
+        if (processType == null || ProgressConstants.ProgressType.valueOf(processType) == null) {
             logger.warn(String.format("not supported processtype: %s", processType));
             throw new OperationFailureException(
                     errf.stringToOperationError(String.format("not supported processtype: %s",
                             processType)));
         }
-        return true;
+    }
+
+    private void validationUuid(String uuid) {
+        if (uuid == null) {
+            logger.warn(String.format("not supported null uuid: %s", uuid));
+            throw new OperationFailureException(
+                    errf.stringToOperationError(String.format("not supported null uuid: %s",
+                            uuid)));
+        }
     }
 
     private void startProcess(ProgressReportCmd cmd) {
-        if (!validation(cmd.getProcessType())) {
-            logger.warn(String.format("processType:%s is not supported!", cmd.getProcessType()));
-            return;
-        }
+        validation(cmd);
         insertProgress(cmd);
     }
 
     private void process(ProgressReportCmd cmd) {
-        if (!validation(cmd.getProcessType())) {
-            logger.warn(String.format("processType:%s is not supported!", cmd.getProcessType()));
-            return;
-        }
+        validation(cmd);
         updateProgress(cmd);
     }
 
     private void finishProcess(ProgressReportCmd cmd) {
-        if (!validation(cmd.getProcessType())) {
-            logger.warn(String.format("processType:%s is not supported!", cmd.getProcessType()));
-            return;
-        }
+        validation(cmd);
         deleteProgress(cmd);
     }
 
