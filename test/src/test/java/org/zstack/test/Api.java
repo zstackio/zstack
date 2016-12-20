@@ -4013,6 +4013,53 @@ public class Api implements CloudBusEventListener {
         return evt.getInventory();
     }
 
+    public APISetVmDiskQosEvent setDiskQos(String vmUuid, String volumeUuid, long bandWidth) throws ApiSenderException {
+        APISetVmDiskQosMsg msg = new APISetVmDiskQosMsg();
+        msg.setVmUuid(vmUuid);
+        msg.setVolumeUuid(volumeUuid);
+        msg.setVolumeBandwidth(bandWidth);
+        msg.setSession(adminSession);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APISetVmDiskQosEvent evt = sender.send(msg, APISetVmDiskQosEvent.class);
+        return evt;
+    }
+
+    public APIGetVmDiskQosReply getVmDiskQos(String vmUuid, String volumeUuid) throws ApiSenderException {
+        APIGetVmDiskQosMsg msg = new APIGetVmDiskQosMsg();
+        msg.setVmUuid(vmUuid);
+        msg.setVolumeUuid(volumeUuid);
+        msg.setSession(adminSession);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIGetVmDiskQosReply reply = sender.call(msg, APIGetVmDiskQosReply.class);
+        return reply;
+    }
+
+    public APISetVmNicQosEvent setVmNicQos(String vmUuid, String vmNicUuid, long inbound, long outbound) throws ApiSenderException {
+        APISetVmNicQosMsg msg = new APISetVmNicQosMsg();
+        msg.setVmUuid(vmUuid);
+        msg.setVmNicUuid(vmNicUuid);
+        msg.setInboundBandwidth(inbound);
+        msg.setOutboundBandwidth(outbound);
+        msg.setSession(adminSession);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APISetVmNicQosEvent evt = sender.send(msg, APISetVmNicQosEvent.class);
+        return evt;
+    }
+
+    public APIGetVmNicQosReply getVmNicQos(String vmUuid, String vmNicUuid) throws ApiSenderException {
+        APIGetVmNicQosMsg msg = new APIGetVmNicQosMsg();
+        msg.setVmUuid(vmUuid);
+        msg.setVmNicUuid(vmNicUuid);
+        msg.setSession(adminSession);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIGetVmNicQosReply reply = sender.call(msg, APIGetVmNicQosReply.class);
+        return reply;
+    }
+
 
     public List<String> getVmBootOrder(String vmUuid, SessionInventory session) throws ApiSenderException {
         APIGetVmBootOrderMsg msg = new APIGetVmBootOrderMsg();
