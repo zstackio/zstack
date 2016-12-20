@@ -3365,8 +3365,8 @@ public class Api implements CloudBusEventListener {
         APIUpdateVmInstanceMsg msg = new APIUpdateVmInstanceMsg();
         msg.setSession(adminSession);
         msg.setUuid(uuid);
-        msg.setCpuCores(cpu);
-        msg.setMemory(memory);
+        msg.setCpuNum(cpu);
+        msg.setMemorySize(memory);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIUpdateVmInstanceEvent evt = sender.send(msg, APIUpdateVmInstanceEvent.class);

@@ -3167,7 +3167,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     update = true;
                 }
 
-                if (msg.getCpuCores() != null || msg.getMemory() != null) {
+                if (msg.getCpuNum() != null || msg.getMemorySize() != null) {
                     changeCpuAndMemory(msg);
                     update = true;
                 }
@@ -3292,9 +3292,12 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     private void changeCpuAndMemory(APIUpdateVmInstanceMsg msg) {
         // add some systemTag and can be appliance for the next start
-        int cpuNum = msg.getCpuCores() == null?self.getCpuNum():msg.getCpuCores();
-        long memory = msg.getMemory() == null?self.getMemorySize():msg.getMemory();
+        int cpuNum = msg.getCpuNum() == null?self.getCpuNum():msg.getCpuNum();
+        long memory = msg.getMemorySize() == null?self.getMemorySize():msg.getMemorySize();
         pendingCpuAndMemoryForNextStart(cpuNum, self.getCpuSpeed(), memory);
+        self.setCpuNum(cpuNum);
+        self.setMemorySize(memory);
+        self = dbf.updateAndRefresh(self);
     }
 
     private void handle(APIGetVmAttachableDataVolumeMsg msg) {

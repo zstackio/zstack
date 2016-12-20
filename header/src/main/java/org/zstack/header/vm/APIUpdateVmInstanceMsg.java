@@ -23,9 +23,9 @@ public class APIUpdateVmInstanceMsg extends APIMessage implements VmInstanceMess
     @APIParam(required = false, validValues = {"Linux", "Windows", "Other", "Paravirtualization", "WindowsVirtio"})
     private String platform;
     @APIParam(required = false, numberRange = {1, 1024})
-    private Integer cpuCores;
+    private Integer cpuNum;
     @APIParam(required = false, numberRange = {1, Long.MAX_VALUE})
-    private Long memory;
+    private Long memorySize;
 
     public String getDefaultL3NetworkUuid() {
         return defaultL3NetworkUuid;
@@ -80,19 +80,19 @@ public class APIUpdateVmInstanceMsg extends APIMessage implements VmInstanceMess
         return uuid;
     }
 
-    public Integer getCpuCores() {
-        return cpuCores;
+    public Integer getCpuNum() {
+        return cpuNum;
     }
 
-    public void setCpuCores(Integer cpuCores) {
-        this.cpuCores = cpuCores;
+    public void setCpuNum(Integer cpuNum) {
+        this.cpuNum = cpuNum;
     }
 
-    public Long getMemory() {
-        return memory;
+    public Long getMemorySize() {
+        return memorySize;
     }
 
-    public void setMemory(Long memory) {
-        this.memory = memory;
+    public void setMemorySize(Long memorySize) {
+        this.memorySize = memorySize;
     }
 }

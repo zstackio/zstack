@@ -51,13 +51,14 @@ public class TestUpdateVm {
         Assert.assertEquals("3000", VmSystemTags.PENDING_CAPACITY_CHANGE.getTokenByResourceUuid(vm.getUuid(), VmSystemTags.PENDING_CAPACITY_CHNAGE_CPU_SPEED_TOKEN));
         Assert.assertEquals("4294967296", VmSystemTags.PENDING_CAPACITY_CHANGE.getTokenByResourceUuid(vm.getUuid(), VmSystemTags.PENDING_CAPACITY_CHNAGE_MEMORY_TOKEN));
 
+
         vm = api.updateCpuMemory(vm.getUuid(), 2, null);
         Assert.assertEquals("2", VmSystemTags.PENDING_CAPACITY_CHANGE.getTokenByResourceUuid(vm.getUuid(), VmSystemTags.PENDING_CAPACITY_CHNAGE_CPU_NUM_TOKEN));
         // please note the expectedMemory value!
-        Assert.assertEquals("3221225472", VmSystemTags.PENDING_CAPACITY_CHANGE.getTokenByResourceUuid(vm.getUuid(), VmSystemTags.PENDING_CAPACITY_CHNAGE_MEMORY_TOKEN));
+        Assert.assertEquals("4294967296", VmSystemTags.PENDING_CAPACITY_CHANGE.getTokenByResourceUuid(vm.getUuid(), VmSystemTags.PENDING_CAPACITY_CHNAGE_MEMORY_TOKEN));
 
-        vm = api.updateCpuMemory(vm.getUuid(), 2, Long.valueOf(4294967296l));
-        Assert.assertEquals("pendingCapacityChange::cpuNum::2::cpuSpeed::3000::memory::4294967296", VmSystemTags.PENDING_CAPACITY_CHANGE.getTag(vm.getUuid()).toString());
+        vm = api.updateCpuMemory(vm.getUuid(), 3, Long.valueOf(4294967296l));
+        Assert.assertEquals("pendingCapacityChange::cpuNum::3::cpuSpeed::3000::memory::4294967296", VmSystemTags.PENDING_CAPACITY_CHANGE.getTag(vm.getUuid()).toString());
 
         vm = api.stopVmInstance(vm.getUuid());
         TimeUnit.SECONDS.sleep(1);
@@ -66,7 +67,7 @@ public class TestUpdateVm {
         TimeUnit.SECONDS.sleep(1);
 
         Assert.assertEquals(Long.valueOf(4294967296l), vm.getMemorySize());
-        Assert.assertEquals(Integer.valueOf(2), vm.getCpuNum());
+        Assert.assertEquals(Integer.valueOf(3), vm.getCpuNum());
         Assert.assertEquals(VmInstanceState.Running.toString(), vm.getState());
     }
 
