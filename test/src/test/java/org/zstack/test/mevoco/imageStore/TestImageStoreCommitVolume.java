@@ -8,9 +8,9 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
+import org.zstack.header.image.APICreateRootVolumeTemplateFromRootVolumeMsg;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.storage.backup.BackupStorageInventory;
-import org.zstack.header.storage.primary.APICommitVolumeAsImageMsg;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.VmInstanceInventory;
@@ -63,13 +63,13 @@ public class TestImageStoreCommitVolume {
 
         // Commit a volume as image
         MessageCommandRecorder.reset();
-        MessageCommandRecorder.start(APICommitVolumeAsImageMsg.class);
+        MessageCommandRecorder.start(APICreateRootVolumeTemplateFromRootVolumeMsg.class);
 
         BackupStorageInventory bs = deployer.backupStorages.get("imagestore");
         List<String> bsUuids = Collections.singletonList(bs.getUuid());
-        ImageInventory inv = api.commitVolumeAsImage(
-                vm.getRootVolumeUuid(),
+        ImageInventory inv = api.createTemplateFromRootVolume(
                 "test-image",
+                vm.getRootVolumeUuid(),
                 bsUuids
         );
 
@@ -91,9 +91,9 @@ public class TestImageStoreCommitVolume {
         api.deleteImage(vol.getRootImageUuid(), bsUuids, null);
         TimeUnit.SECONDS.sleep(2);
 
-        inv = api.commitVolumeAsImage(
-                vm.getRootVolumeUuid(),
+        inv = api.createTemplateFromRootVolume(
                 "test-image2",
+                vm.getRootVolumeUuid(),
                 bsUuids
         );
         Assert.assertTrue(inv != null);
