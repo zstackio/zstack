@@ -1778,7 +1778,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 flow(new NoRollbackFlow() {
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        deleteBits(msg.getInstallPath(), msg.getHostUuid(), new Completion(trigger) {
+                        deleteBits(PathUtil.parentFolder(msg.getInstallPath()), msg.getHostUuid(), new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.next();
