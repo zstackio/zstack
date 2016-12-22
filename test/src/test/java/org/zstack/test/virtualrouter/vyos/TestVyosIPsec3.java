@@ -181,7 +181,6 @@ public class TestVyosIPsec3 {
         SyncIPsecConnectionCmd cmd = iconfig.syncIPsecConnectionCmds.get(0);
         Assert.assertEquals(1, cmd.infos.size());
         compare(ipsec, cmd.infos.get(0));
-        System.out.println(String.format("xxxxxxxxxxxxxxxxxxxxxxx %s", JSONObjectUtil.toJsonString(vrconfig.vips)));
         Assert.assertEquals(1, vrconfig.vips.size());
         VirtualRouterCommands.VipTO vipto = vrconfig.vips.get(0);
         Assert.assertEquals(vip.getIp(), vipto.getIp());

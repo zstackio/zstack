@@ -13,6 +13,7 @@ CREATE TABLE `zstack`.`VCenterDatacenterVO` (
 
 # Foreign keys for table VCenterDatacenterVO
 ALTER TABLE VCenterDatacenterVO ADD CONSTRAINT fkVCenterDatacenterVOVCenterVO FOREIGN KEY (vCenterUuid) REFERENCES VCenterVO (uuid) ON DELETE CASCADE;
+
 -- ----------------------------
 --  Table structure for `ProgressVO`
 -- ----------------------------
@@ -26,3 +27,6 @@ CREATE TABLE `ProgressVO` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `id` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
+
+ALTER TABLE `zstack`.`IPsecConnectionVO` ADD COLUMN `state` varchar(255) NOT NULL DEFAULT "Enabled";
+ALTER TABLE `zstack`.`IPsecConnectionVO` ADD COLUMN `status` varchar(255) NOT NULL DEFAULT "Ready";
