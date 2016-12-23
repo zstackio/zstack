@@ -14,5 +14,6 @@
     <TestCase class="org.zstack.test.storage.primary.nfs.TestImageCacheMissingUuid"/>
     <TestCase class="org.zstack.test.storage.primary.nfs.TestNfsImageCleaner"/>
     <TestCase class="org.zstack.test.storage.primary.nfs.TestNfsImageCleaner1"/>
+    <TestCase class="org.zstack.test.storage.primary.nfs.TestNfsImageCleaner2"/>
     <TestCase class="org.zstack.test.storage.primary.nfs.TestNfsUpdateUrl"/>
 </UnitTestSuiteConfig>

@@ -257,6 +257,18 @@ public class LocalStorageSimulator {
         return null;
     }
 
+    @RequestMapping(value=LocalStorageKvmBackend.DELETE_DIR_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String deleteDir(HttpEntity<String> entity) {
+        DeleteBitsCmd cmd = JSONObjectUtil.toObject(entity.getBody(), DeleteBitsCmd.class);
+        synchronized (config) {
+            config.deleteDirCmds.add(cmd);
+        }
+        DeleteBitsRsp rsp = new DeleteBitsRsp();
+        reply(entity, rsp);
+        return null;
+    }
+
     @RequestMapping(value=LocalStorageKvmSftpBackupStorageMediatorImpl.DOWNLOAD_BIT_PATH, method= RequestMethod.POST)
     public @ResponseBody
     String download(HttpEntity<String> entity) {

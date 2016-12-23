@@ -221,7 +221,7 @@ public abstract class ImageCacheCleaner {
             return null;
         }
 
-        String sql = "select c from ImageCacheVO c where c.imageUuid not in (select vol.rootImageUuid from VolumeVO vol) and c.id in (:ids)";
+        String sql = "select c from ImageCacheVO c where c.imageUuid not in (select vol.rootImageUuid from VolumeVO vol where vol.rootImageUuid is not null) and c.id in (:ids)";
         TypedQuery<ImageCacheVO> cq = dbf.getEntityManager().createQuery(sql, ImageCacheVO.class);
         cq.setParameter("ids", staleImageCacheIds);
         List<ImageCacheVO> stale = cq.getResultList();
