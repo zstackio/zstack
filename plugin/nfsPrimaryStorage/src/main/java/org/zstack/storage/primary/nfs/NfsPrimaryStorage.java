@@ -257,7 +257,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
 
         DeleteBitsOnPrimaryStorageMsg dmsg = new DeleteBitsOnPrimaryStorageMsg();
         dmsg.setHypervisorType(bkd.getHypervisorType().toString());
-        dmsg.setInstallPath(PathUtil.parentFolder(msg.getInstallPath()));
+        dmsg.setInstallPath(msg.getInstallPath());
         dmsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
         bus.makeTargetServiceIdByResourceUuid(dmsg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
         bus.send(dmsg, new CloudBusCallBack(msg) {

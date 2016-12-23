@@ -559,6 +559,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     public static final String CREATE_EMPTY_VOLUME_PATH = "/localstorage/volume/createempty";
     public static final String CREATE_VOLUME_FROM_CACHE_PATH = "/localstorage/volume/createvolumefromcache";
     public static final String DELETE_BITS_PATH = "/localstorage/delete";
+    public static final String DELETE_DIR_PATH = "/localstorage/deletedir";
     public static final String CHECK_BITS_PATH = "/localstorage/checkbits";
     public static final String CREATE_TEMPLATE_FROM_VOLUME = "/localstorage/volume/createtemplate";
     public static final String REVERT_SNAPSHOT_PATH = "/localstorage/snapshot/revert";
@@ -1148,11 +1149,17 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
     @Override
     public void deleteBits(final String path, final String hostUuid, final Completion completion) {
+        deleteBits(path, hostUuid, false, completion);
+    }
+
+    public void deleteBits(final String path, final String hostUuid, boolean dir, final Completion completion) {
         DeleteBitsCmd cmd = new DeleteBitsCmd();
         cmd.setPath(path);
         cmd.setHostUuid(hostUuid);
 
-        httpCall(DELETE_BITS_PATH, hostUuid, cmd, DeleteBitsRsp.class, new ReturnValueCompletion<DeleteBitsRsp>(completion) {
+        String delete_path = dir ? DELETE_DIR_PATH : DELETE_BITS_PATH;
+
+        httpCall(delete_path, hostUuid, cmd, DeleteBitsRsp.class, new ReturnValueCompletion<DeleteBitsRsp>(completion) {
             @Override
             public void success(DeleteBitsRsp returnValue) {
                 completion.success();
@@ -1266,7 +1273,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     @Override
     void handle(DeleteBitsOnPrimaryStorageMsg msg, final ReturnValueCompletion<DeleteBitsOnPrimaryStorageReply> completion) {
         String hostUuid = getHostUuidByResourceUuid(msg.getBitsUuid(), msg.getBitsType());
-        deleteBits(msg.getInstallPath(), hostUuid, new Completion(completion) {
+        deleteBits(PathUtil.parentFolder(msg.getInstallPath()), hostUuid, true, new Completion(completion) {
             @Override
             public void success() {
                 DeleteBitsOnPrimaryStorageReply reply = new DeleteBitsOnPrimaryStorageReply();
@@ -1778,7 +1785,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 flow(new NoRollbackFlow() {
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        deleteBits(PathUtil.parentFolder(msg.getInstallPath()), msg.getHostUuid(), new Completion(trigger) {
+                        deleteBits(PathUtil.parentFolder(msg.getInstallPath()), msg.getHostUuid(), true, new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.next();
