@@ -62,8 +62,9 @@ public class CephImageCacheCleaner extends ImageCacheCleaner implements Manageme
             dbf.getEntityManager().remove(vo);
         }
 
-        sql = "select s from ImageCacheShadowVO s";
+        sql = "select s from ImageCacheShadowVO s, PrimaryStorageVO p where p.uuid = s.primaryStorageUuid and p.type = :ptype";
         TypedQuery<ImageCacheShadowVO> sq = dbf.getEntityManager().createQuery(sql, ImageCacheShadowVO.class);
+        sq.setParameter("ptype", getPrimaryStorageType());
         return sq.getResultList();
     }
 
