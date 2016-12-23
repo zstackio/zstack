@@ -27,6 +27,7 @@ public class LocalStorageSimulatorConfig {
     public List<CreateEmptyVolumeCmd> createEmptyVolumeCmds = new ArrayList<>();
     public List<CreateVolumeFromCacheCmd> createVolumeFromCacheCmds = new ArrayList<>();
     public List<DeleteBitsCmd> deleteBitsCmds = new ArrayList<>();
+    public List<DeleteBitsCmd> deleteDirCmds = new ArrayList<>();
     public List<SftpUploadBitsCmd> uploadBitsCmds = new ArrayList<>();
     public List<SftpDownloadBitsCmd> downloadBitsCmds = new ArrayList<>();
     public List<CreateTemplateFromVolumeCmd> createTemplateFromVolumeCmds = new ArrayList<>();
