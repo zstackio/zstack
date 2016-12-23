@@ -238,8 +238,9 @@ public abstract class ImageCacheCleaner {
             dbf.getEntityManager().remove(vo);
         }
 
-        sql = "select s from ImageCacheShadowVO s";
+        sql = "select s from ImageCacheShadowVO s, PrimaryStorageVO p where p.uuid = s.primaryStorageUuid and p.type = :ptype";
         TypedQuery<ImageCacheShadowVO> sq = dbf.getEntityManager().createQuery(sql, ImageCacheShadowVO.class);
+        sq.setParameter("ptype", getPrimaryStorageType());
         return sq.getResultList();
     }
 
@@ -248,8 +249,9 @@ public abstract class ImageCacheCleaner {
         List<ImageCacheShadowVO> newDeletedAndOld = createShadowImageCacheVOsForNewDeletedAndOld(psUuid);
         if (newDeletedAndOld == null) {
             // no new deleted images, let's check if there any old that failed to be deleted last time
-            String sql = "select s from ImageCacheShadowVO s";
+            String sql = "select s from ImageCacheShadowVO s, PrimaryStorageVO p where p.uuid = s.primaryStorageUuid and p.type = :ptype";
             TypedQuery<ImageCacheShadowVO> sq = dbf.getEntityManager().createQuery(sql, ImageCacheShadowVO.class);
+            sq.setParameter("ptype", getPrimaryStorageType());
             return sq.getResultList();
         } else {
             return newDeletedAndOld;
