@@ -252,6 +252,7 @@ public class CephBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
     }
     @Override
     public void afterAddBackupStorage(AddBackupStorageStruct backupStorage) {
+        logger.debug("starting to import ceph images metadata");
         if (!(backupStorage.getType().equals(CephConstants.CEPH_BACKUP_STORAGE_TYPE) && backupStorage.isImportImages())) {
             logger.debug("will not to import ceph images metadata due to importImages didn't set or bs type is not ceph");
             return;
@@ -262,7 +263,6 @@ public class CephBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
         CephBackupStorageVO cephBackupStorageVO = query.find();
         CephBackupStorageInventory inv = CephBackupStorageInventory.valueOf(cephBackupStorageVO);
 
-        logger.debug("starting to import ceph images metadata");
         BakeImageMetadataMsg msg = new BakeImageMetadataMsg();
         msg.setBackupStorageUuid(backupStorageUuid);
         msg.setOperation(CephConstants.AFTER_ADD_BACKUPSTORAGE);
@@ -295,6 +295,7 @@ public class CephBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
     }
 
     public void afterExpungeImage(ImageInventory img, String backupStorageUuid) {
+        logger.debug(String.format("starting to delete image %s from metadata file", img.getUuid()));
         if (!getBackupStorageTypeFromImageInventory(img).equals(CephConstants.CEPH_BACKUP_STORAGE_TYPE)) {
             return;
         }

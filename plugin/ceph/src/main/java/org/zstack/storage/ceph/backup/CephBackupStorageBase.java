@@ -249,7 +249,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
         public String monAddr;
     }
 
-    public static class GetImagesMetaDataCommand extends AgentCommand {
+    public static class GetImagesMetaDataCmd extends AgentCommand {
         private String poolName;
 
         public String getPoolName() {
@@ -528,7 +528,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
     private void bakeImageMetadata(BakeImageMetadataMsg msg, final SyncTaskChain chain) {
         if (msg.getOperation().equals(CephConstants.AFTER_ADD_BACKUPSTORAGE)) {
-            GetImagesMetaDataCommand cmd = new GetImagesMetaDataCommand();
+            GetImagesMetaDataCmd cmd = new GetImagesMetaDataCmd();
             cmd.setPoolName(msg.getPoolName());
             final BakeImageMetadataReply reply = new BakeImageMetadataReply();
 

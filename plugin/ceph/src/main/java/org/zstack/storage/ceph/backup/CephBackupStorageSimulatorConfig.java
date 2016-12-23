@@ -23,6 +23,10 @@ public class CephBackupStorageSimulatorConfig {
     public Map<String, CephBackupStorageConfig> config = new HashMap<String, CephBackupStorageConfig>();
     public List<DownloadCmd> downloadCmds = new ArrayList<DownloadCmd>();
     public List<DeleteCmd> deleteCmds = new ArrayList<DeleteCmd>();
+    public List<CheckImageMetaDataFileExistCmd> checkMetadataFileCmds = new ArrayList<CheckImageMetaDataFileExistCmd>();
+    public List<DeleteImageInfoFromMetaDataFileCmd> deleteImageInfoFromMetadataFileCmds = new ArrayList<DeleteImageInfoFromMetaDataFileCmd>();
+    public List<DumpImageInfoToMetaDataFileCmd> dumpImageInfoToMetaDataFileCmds = new ArrayList<DumpImageInfoToMetaDataFileCmd>();
+    public List<GetImagesMetaDataCmd> getImageInfoToMetaDataFileCmds = new ArrayList<GetImagesMetaDataCmd>();
     public List<PingCmd> pingCmds = new ArrayList<PingCmd>();
     public Map<String, Long> imageSize = new HashMap<String, Long>();
     public Map<String, Long> imageActualSize = new HashMap<String, Long>();
