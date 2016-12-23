@@ -216,8 +216,6 @@ public class ImageBase implements Image {
                 } else {
                     returnBackupStorageCapacity(ref.getBackupStorageUuid(), self.getActualSize());
                     //TODO remove ref from metadata, this logic should after all refs deleted
-                    logger.debug("meilei. delete metadata");
-                    logger.debug(String.format("meilei. imageInventory %s", ImageInventory.valueOf(self).toString()));
                     CollectionUtils.safeForEach(pluginRgty.getExtensionList(ExpungeImageExtensionPoint.class), new ForEachFunction<ExpungeImageExtensionPoint>() {
                         @Override
                         public void run(ExpungeImageExtensionPoint ext) {

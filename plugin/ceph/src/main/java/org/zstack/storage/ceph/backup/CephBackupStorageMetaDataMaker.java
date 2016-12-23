@@ -15,6 +15,7 @@ import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.backup.*;
 import org.zstack.storage.ceph.CephConstants;
 import org.zstack.storage.ceph.CephGlobalProperty;
+import org.zstack.storage.ceph.MonStatus;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -118,14 +119,13 @@ public class CephBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
     }
 
     protected String getHostnameFromBackupStorage(CephBackupStorageInventory inv) {
-        logger.debug(String.format("meilei uuid is %s", inv.getUuid()));
         SimpleQuery<CephBackupStorageMonVO> q = dbf.createQuery(CephBackupStorageMonVO.class);
         q.select(CephBackupStorageMonVO_.hostname);
         q.add(CephBackupStorageMonVO_.backupStorageUuid, SimpleQuery.Op.EQ, inv.getUuid());
+        q.add(CephBackupStorageMonVO_.status, SimpleQuery.Op.EQ, MonStatus.Connected);
+        q.setLimit(1);
         String hostName = q.findValue();
-        logger.debug(String.format("meilei host name is %s", hostName));
         DebugUtils.Assert(hostName!= null, String.format("cannot find hostName for ceph backup storage [uuid:%s]", inv.getUuid()));
-        //return cephMonVO.getHostname();
         return hostName;
     }
 
