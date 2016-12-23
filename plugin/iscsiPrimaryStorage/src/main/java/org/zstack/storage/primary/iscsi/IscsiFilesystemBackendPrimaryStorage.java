@@ -1158,8 +1158,6 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
     protected void handleLocalMessage(Message msg) {
         if (msg instanceof TakeSnapshotMsg) {
             handle((TakeSnapshotMsg) msg);
-        } else if (msg instanceof MergeVolumeSnapshotOnPrimaryStorageMsg) {
-            handle((MergeVolumeSnapshotOnPrimaryStorageMsg) msg);
         } else if (msg instanceof DeleteSnapshotOnPrimaryStorageMsg) {
             handle((DeleteSnapshotOnPrimaryStorageMsg) msg);
         } else if (msg instanceof RevertVolumeFromSnapshotOnPrimaryStorageMsg) {
@@ -1661,7 +1659,8 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
         });
     }
 
-    private void handle(MergeVolumeSnapshotOnPrimaryStorageMsg msg) {
+    @Override
+    protected void handle(MergeVolumeSnapshotOnPrimaryStorageMsg msg) {
         MergeVolumeSnapshotOnPrimaryStorageReply reply = new MergeVolumeSnapshotOnPrimaryStorageReply();
         bus.reply(msg, reply);
     }

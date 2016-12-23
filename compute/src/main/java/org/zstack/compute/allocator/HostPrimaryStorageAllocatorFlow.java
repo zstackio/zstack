@@ -38,12 +38,13 @@ public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
                     " from PrimaryStorageClusterRefVO pr, PrimaryStorageVO pri, PrimaryStorageCapacityVO cap" +
                     " where pr.primaryStorageUuid = pri.uuid" +
                     " and pri.uuid = cap.uuid" +
-                    " and pri.state = :state" +
+                    " and (pri.state = :state or pri.state =:state1)" +
                     " and pri.status = :status" +
                     " )";
             TypedQuery<HostVO> query = dbf.getEntityManager().createQuery(sql, HostVO.class);
             query.setParameter("uuids", huuids);
             query.setParameter("state", PrimaryStorageState.Enabled);
+            query.setParameter("state1", PrimaryStorageState.Disabled);
             query.setParameter("status", PrimaryStorageStatus.Connected);
             return query.getResultList();
         }

@@ -46,6 +46,7 @@ public class VmExpungeRootVolumeFlow extends NoRollbackFlow {
                     logger.warn(String.format("failed to expunge the root volume[uuid:%s] of the vm[uuid:%s, name:%s], %s",
                             spec.getVmInventory().getRootVolumeUuid(), spec.getVmInventory().getUuid(),
                             spec.getVmInventory().getName(), reply.getError()));
+                    trigger.fail(reply.getError());
                 }
 
                 trigger.next();

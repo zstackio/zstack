@@ -2284,12 +2284,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     protected void handleLocalMessage(Message msg) {
         if (msg instanceof TakeSnapshotMsg) {
             handle((TakeSnapshotMsg) msg);
-        } else if (msg instanceof MergeVolumeSnapshotOnPrimaryStorageMsg) {
-            handle((MergeVolumeSnapshotOnPrimaryStorageMsg) msg);
-        } else if (msg instanceof DeleteSnapshotOnPrimaryStorageMsg) {
-            handle((DeleteSnapshotOnPrimaryStorageMsg) msg);
-        } else if (msg instanceof RevertVolumeFromSnapshotOnPrimaryStorageMsg) {
-            handle((RevertVolumeFromSnapshotOnPrimaryStorageMsg) msg);
         } else if (msg instanceof CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg) {
             handle((CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg) msg);
         } else if (msg instanceof BackupVolumeSnapshotFromPrimaryStorageToBackupStorageMsg) {
@@ -2304,8 +2298,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             handle((CancelSelfFencerOnKvmHostMsg) msg);
         } else if (msg instanceof DeleteImageCacheOnPrimaryStorageMsg) {
             handle((DeleteImageCacheOnPrimaryStorageMsg) msg);
-        } else if (msg instanceof ReInitRootVolumeFromTemplateOnPrimaryStorageMsg) {
-            handle((ReInitRootVolumeFromTemplateOnPrimaryStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -2499,7 +2491,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         });
     }
 
-    private void handle(final RevertVolumeFromSnapshotOnPrimaryStorageMsg msg) {
+    protected void handle(final RevertVolumeFromSnapshotOnPrimaryStorageMsg msg) {
         final RevertVolumeFromSnapshotOnPrimaryStorageReply reply = new RevertVolumeFromSnapshotOnPrimaryStorageReply();
 
         final FlowChain chain = FlowChainBuilder.newShareFlowChain();
@@ -2582,7 +2574,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     }
 
-    private void handle(final ReInitRootVolumeFromTemplateOnPrimaryStorageMsg msg) {
+    protected void handle(final ReInitRootVolumeFromTemplateOnPrimaryStorageMsg msg) {
         final ReInitRootVolumeFromTemplateOnPrimaryStorageReply reply = new ReInitRootVolumeFromTemplateOnPrimaryStorageReply();
 
         final FlowChain chain = FlowChainBuilder.newShareFlowChain();
@@ -2672,7 +2664,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         }).start();
     }
 
-    private void handle(final DeleteSnapshotOnPrimaryStorageMsg msg) {
+    @Override
+    protected void handle(final DeleteSnapshotOnPrimaryStorageMsg msg) {
         final DeleteSnapshotOnPrimaryStorageReply reply = new DeleteSnapshotOnPrimaryStorageReply();
         DeleteSnapshotCmd cmd = new DeleteSnapshotCmd();
         cmd.snapshotPath = msg.getSnapshot().getPrimaryStorageInstallPath();
@@ -2690,7 +2683,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         });
     }
 
-    private void handle(MergeVolumeSnapshotOnPrimaryStorageMsg msg) {
+    @Override
+    protected void handle(MergeVolumeSnapshotOnPrimaryStorageMsg msg) {
         MergeVolumeSnapshotOnPrimaryStorageReply reply = new MergeVolumeSnapshotOnPrimaryStorageReply();
         bus.reply(msg, reply);
     }

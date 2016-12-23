@@ -910,7 +910,7 @@ public class KvmBackend extends HypervisorBackend {
         });
     }
 
-    @Override
+
     void handle(MergeVolumeSnapshotOnPrimaryStorageMsg msg, final ReturnValueCompletion<MergeVolumeSnapshotOnPrimaryStorageReply> completion) {
         boolean offline = true;
         VolumeInventory volume = msg.getTo();

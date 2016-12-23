@@ -331,24 +331,16 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
     public void handleLocalMessage(Message msg) {
         if (msg instanceof TakeSnapshotMsg) {
             handle((TakeSnapshotMsg) msg);
-        } else if (msg instanceof DeleteSnapshotOnPrimaryStorageMsg) {
-            handle((DeleteSnapshotOnPrimaryStorageMsg) msg);
-        } else if (msg instanceof RevertVolumeFromSnapshotOnPrimaryStorageMsg) {
-            handle((RevertVolumeFromSnapshotOnPrimaryStorageMsg) msg);
         } else if (msg instanceof BackupVolumeSnapshotFromPrimaryStorageToBackupStorageMsg) {
             handle((BackupVolumeSnapshotFromPrimaryStorageToBackupStorageMsg) msg);
         } else if (msg instanceof CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg) {
             handle((CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg) msg);
-        } else if (msg instanceof MergeVolumeSnapshotOnPrimaryStorageMsg) {
-            handle((MergeVolumeSnapshotOnPrimaryStorageMsg) msg);
         } else if (msg instanceof SMPPrimaryStorageHypervisorSpecificMessage) {
             handle((SMPPrimaryStorageHypervisorSpecificMessage) msg);
         } else if (msg instanceof UploadBitsToBackupStorageMsg) {
             handle((UploadBitsToBackupStorageMsg) msg);
         } else if (msg instanceof CreateTemporaryVolumeFromSnapshotMsg) {
             handle((CreateTemporaryVolumeFromSnapshotMsg) msg);
-        } else if (msg instanceof ReInitRootVolumeFromTemplateOnPrimaryStorageMsg) {
-            handle((ReInitRootVolumeFromTemplateOnPrimaryStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -396,7 +388,7 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
         bkd.handleHypervisorSpecificMessage(msg);
     }
 
-    private void handle(final MergeVolumeSnapshotOnPrimaryStorageMsg msg) {
+    protected void handle(final MergeVolumeSnapshotOnPrimaryStorageMsg msg) {
         HypervisorBackend bkd = getHypervisorBackendByVolumeUuid(msg.getTo().getUuid());
         bkd.handle(msg, new ReturnValueCompletion<MergeVolumeSnapshotOnPrimaryStorageReply>(msg) {
             @Override
@@ -447,7 +439,7 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
         });
     }
 
-    private void handle(final RevertVolumeFromSnapshotOnPrimaryStorageMsg msg) {
+    protected void handle(final RevertVolumeFromSnapshotOnPrimaryStorageMsg msg) {
         HypervisorBackend bkd = getHypervisorBackendByVolumeUuid(msg.getVolume().getUuid());
         bkd.handle(msg, new ReturnValueCompletion<RevertVolumeFromSnapshotOnPrimaryStorageReply>(msg) {
             @Override
@@ -464,7 +456,7 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
         });
     }
 
-    private void handle(final ReInitRootVolumeFromTemplateOnPrimaryStorageMsg msg) {
+    protected void handle(final ReInitRootVolumeFromTemplateOnPrimaryStorageMsg msg) {
         HypervisorBackend bkd = getHypervisorBackendByVolumeUuid(msg.getVolume().getUuid());
         bkd.handle(msg, new ReturnValueCompletion<ReInitRootVolumeFromTemplateOnPrimaryStorageReply>(msg) {
             @Override
@@ -481,7 +473,8 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
         });
     }
 
-    private void handle(final DeleteSnapshotOnPrimaryStorageMsg msg) {
+    @Override
+    protected void handle(final DeleteSnapshotOnPrimaryStorageMsg msg) {
         HypervisorBackend bkd = getHypervisorBackendByVolumeUuid(msg.getSnapshot().getVolumeUuid());
         bkd.handle(msg, new ReturnValueCompletion<DeleteSnapshotOnPrimaryStorageReply>(msg) {
             @Override

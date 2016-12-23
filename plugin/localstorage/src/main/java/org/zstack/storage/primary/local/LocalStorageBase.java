@@ -478,16 +478,10 @@ public class LocalStorageBase extends PrimaryStorageBase {
             handle((RemoveHostFromLocalStorageMsg) msg);
         } else if (msg instanceof TakeSnapshotMsg) {
             handle((TakeSnapshotMsg) msg);
-        } else if (msg instanceof DeleteSnapshotOnPrimaryStorageMsg) {
-            handle((DeleteSnapshotOnPrimaryStorageMsg) msg);
-        } else if (msg instanceof RevertVolumeFromSnapshotOnPrimaryStorageMsg) {
-            handle((RevertVolumeFromSnapshotOnPrimaryStorageMsg) msg);
         } else if (msg instanceof BackupVolumeSnapshotFromPrimaryStorageToBackupStorageMsg) {
             handle((BackupVolumeSnapshotFromPrimaryStorageToBackupStorageMsg) msg);
         } else if (msg instanceof CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg) {
             handle((CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg) msg);
-        } else if (msg instanceof MergeVolumeSnapshotOnPrimaryStorageMsg) {
-            handle((MergeVolumeSnapshotOnPrimaryStorageMsg) msg);
         } else if (msg instanceof DownloadImageToPrimaryStorageCacheMsg) {
             handle((DownloadImageToPrimaryStorageCacheMsg) msg);
         } else if (msg instanceof LocalStorageCreateEmptyVolumeMsg) {
@@ -510,8 +504,6 @@ public class LocalStorageBase extends PrimaryStorageBase {
             handle((LocalStorageDeleteImageCacheOnPrimaryStorageMsg) msg);
         } else if (msg instanceof MigrateVolumeOnLocalStorageMsg) {
             handle((MigrateVolumeOnLocalStorageMsg) msg);
-        } else if (msg instanceof ReInitRootVolumeFromTemplateOnPrimaryStorageMsg) {
-            handle((ReInitRootVolumeFromTemplateOnPrimaryStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -812,7 +804,8 @@ public class LocalStorageBase extends PrimaryStorageBase {
         }
     }
 
-    private void handle(final MergeVolumeSnapshotOnPrimaryStorageMsg msg) {
+    @Override
+    protected void handle(final MergeVolumeSnapshotOnPrimaryStorageMsg msg) {
         final String hostUuid = getHostUuidByResourceUuid(msg.getTo().getUuid());
         LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(hostUuid);
         LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
@@ -931,7 +924,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
         });
     }
 
-    private void handle(final RevertVolumeFromSnapshotOnPrimaryStorageMsg msg) {
+    protected void handle(final RevertVolumeFromSnapshotOnPrimaryStorageMsg msg) {
         final RevertVolumeFromSnapshotOnPrimaryStorageReply reply = new RevertVolumeFromSnapshotOnPrimaryStorageReply();
 
         String hostUuid = getHostUuidByResourceUuid(msg.getSnapshot().getUuid());
@@ -951,7 +944,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
         });
     }
 
-    private void handle(final ReInitRootVolumeFromTemplateOnPrimaryStorageMsg msg) {
+    protected void handle(final ReInitRootVolumeFromTemplateOnPrimaryStorageMsg msg) {
         final ReInitRootVolumeFromTemplateOnPrimaryStorageReply reply = new ReInitRootVolumeFromTemplateOnPrimaryStorageReply();
 
         String hostUuid = getHostUuidByResourceUuid(msg.getVolume().getUuid());
@@ -978,7 +971,8 @@ public class LocalStorageBase extends PrimaryStorageBase {
         return q.findValue();
     }
 
-    private void handle(final DeleteSnapshotOnPrimaryStorageMsg msg) {
+    @Override
+    protected void handle(final DeleteSnapshotOnPrimaryStorageMsg msg) {
         final String hostUuid = getHostUuidByResourceUuid(msg.getSnapshot().getUuid());
 
         FlowChain chain = FlowChainBuilder.newShareFlowChain();

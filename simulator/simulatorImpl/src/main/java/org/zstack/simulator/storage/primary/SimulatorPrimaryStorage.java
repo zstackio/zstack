@@ -130,6 +130,34 @@ public class SimulatorPrimaryStorage extends PrimaryStorageBase {
     }
 
     @Override
+    protected void handle(MergeVolumeSnapshotOnPrimaryStorageMsg msg) {
+        MergeVolumeSnapshotOnPrimaryStorageReply reply = new MergeVolumeSnapshotOnPrimaryStorageReply();
+        reply.setSuccess(true);
+        bus.reply(msg, reply);
+    }
+
+    @Override
+    protected void handle(DeleteSnapshotOnPrimaryStorageMsg msg) {
+        DeleteSnapshotOnPrimaryStorageReply reply = new DeleteSnapshotOnPrimaryStorageReply();
+        reply.setSuccess(true);
+        bus.reply(msg, reply);
+    }
+
+    @Override
+    protected void handle(RevertVolumeFromSnapshotOnPrimaryStorageMsg msg) {
+        RevertVolumeFromSnapshotOnPrimaryStorageReply reply = new RevertVolumeFromSnapshotOnPrimaryStorageReply();
+        reply.setSuccess(true);
+        bus.reply(msg, reply);
+    }
+
+    @Override
+    protected void handle(ReInitRootVolumeFromTemplateOnPrimaryStorageMsg msg) {
+        ReInitRootVolumeFromTemplateOnPrimaryStorageReply reply = new ReInitRootVolumeFromTemplateOnPrimaryStorageReply();
+        reply.setSuccess(true);
+        bus.reply(msg, reply);
+    }
+
+    @Override
     protected void connectHook(ConnectParam param, Completion completion) {
         completion.success();
     }

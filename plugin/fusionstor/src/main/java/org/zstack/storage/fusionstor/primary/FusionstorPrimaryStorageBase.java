@@ -2244,12 +2244,6 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
     protected void handleLocalMessage(Message msg) {
         if (msg instanceof TakeSnapshotMsg) {
             handle((TakeSnapshotMsg) msg);
-        } else if (msg instanceof MergeVolumeSnapshotOnPrimaryStorageMsg) {
-            handle((MergeVolumeSnapshotOnPrimaryStorageMsg) msg);
-        } else if (msg instanceof DeleteSnapshotOnPrimaryStorageMsg) {
-            handle((DeleteSnapshotOnPrimaryStorageMsg) msg);
-        } else if (msg instanceof RevertVolumeFromSnapshotOnPrimaryStorageMsg) {
-            handle((RevertVolumeFromSnapshotOnPrimaryStorageMsg) msg);
         } else if (msg instanceof CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg) {
             handle((CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg) msg);
         } else if (msg instanceof BackupVolumeSnapshotFromPrimaryStorageToBackupStorageMsg) {
@@ -2260,8 +2254,6 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
             handle((UploadBitsToBackupStorageMsg) msg);
         } else if (msg instanceof SetupSelfFencerOnKvmHostMsg) {
             handle((SetupSelfFencerOnKvmHostMsg) msg);
-        } else if (msg instanceof ReInitRootVolumeFromTemplateOnPrimaryStorageMsg) {
-            handle((ReInitRootVolumeFromTemplateOnPrimaryStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -2390,7 +2382,7 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
         });
     }
 
-    private void handle(final RevertVolumeFromSnapshotOnPrimaryStorageMsg msg) {
+    protected  void handle(final RevertVolumeFromSnapshotOnPrimaryStorageMsg msg) {
         final RevertVolumeFromSnapshotOnPrimaryStorageReply reply = new RevertVolumeFromSnapshotOnPrimaryStorageReply();
 
         final FlowChain chain = FlowChainBuilder.newShareFlowChain();
@@ -2473,7 +2465,7 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
 
     }
 
-    private void handle(final ReInitRootVolumeFromTemplateOnPrimaryStorageMsg msg) {
+    protected void handle(final ReInitRootVolumeFromTemplateOnPrimaryStorageMsg msg) {
         final ReInitRootVolumeFromTemplateOnPrimaryStorageReply reply = new ReInitRootVolumeFromTemplateOnPrimaryStorageReply();
 
         final FlowChain chain = FlowChainBuilder.newShareFlowChain();
@@ -2563,7 +2555,8 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
         }).start();
     }
 
-    private void handle(final DeleteSnapshotOnPrimaryStorageMsg msg) {
+    @Override
+    protected void handle(final DeleteSnapshotOnPrimaryStorageMsg msg) {
         final DeleteSnapshotOnPrimaryStorageReply reply = new DeleteSnapshotOnPrimaryStorageReply();
         DeleteSnapshotCmd cmd = new DeleteSnapshotCmd();
         cmd.snapshotPath = msg.getSnapshot().getPrimaryStorageInstallPath();
@@ -2581,7 +2574,7 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
         });
     }
 
-    private void handle(MergeVolumeSnapshotOnPrimaryStorageMsg msg) {
+    protected  void handle(MergeVolumeSnapshotOnPrimaryStorageMsg msg) {
         MergeVolumeSnapshotOnPrimaryStorageReply reply = new MergeVolumeSnapshotOnPrimaryStorageReply();
         bus.reply(msg, reply);
     }

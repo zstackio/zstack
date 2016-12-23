@@ -90,16 +90,10 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
             handle((PrimaryStorageRemoveCachedImageMsg) msg);
         } else if (msg instanceof TakeSnapshotMsg) {
             handle((TakeSnapshotMsg) msg);
-        } else if (msg instanceof DeleteSnapshotOnPrimaryStorageMsg) {
-            handle((DeleteSnapshotOnPrimaryStorageMsg) msg);
-        } else if (msg instanceof RevertVolumeFromSnapshotOnPrimaryStorageMsg) {
-            handle((RevertVolumeFromSnapshotOnPrimaryStorageMsg) msg);
         } else if (msg instanceof BackupVolumeSnapshotFromPrimaryStorageToBackupStorageMsg) {
             handle((BackupVolumeSnapshotFromPrimaryStorageToBackupStorageMsg) msg);
         } else if (msg instanceof CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg) {
             handle((CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg) msg);
-        } else if (msg instanceof MergeVolumeSnapshotOnPrimaryStorageMsg) {
-            handle((MergeVolumeSnapshotOnPrimaryStorageMsg) msg);
         } else if (msg instanceof CreateTemporaryVolumeFromSnapshotMsg) {
             handle((CreateTemporaryVolumeFromSnapshotMsg) msg);
         } else if (msg instanceof UploadBitsToBackupStorageMsg) {
@@ -108,8 +102,6 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
             handle((GetVolumeRootImageUuidFromPrimaryStorageMsg) msg);
         } else if (msg instanceof DeleteImageCacheOnPrimaryStorageMsg) {
             handle((DeleteImageCacheOnPrimaryStorageMsg) msg);
-        } else if (msg instanceof ReInitRootVolumeFromTemplateOnPrimaryStorageMsg) {
-            handle((ReInitRootVolumeFromTemplateOnPrimaryStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -348,7 +340,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         }
     }
 
-    private void handle(final MergeVolumeSnapshotOnPrimaryStorageMsg msg) {
+    protected void handle(final MergeVolumeSnapshotOnPrimaryStorageMsg msg) {
         final MergeVolumeSnapshotOnPrimaryStorageReply reply = new MergeVolumeSnapshotOnPrimaryStorageReply();
 
         VolumeSnapshotInventory snapshot = msg.getFrom();
@@ -410,7 +402,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         });
     }
 
-    private void handle(final RevertVolumeFromSnapshotOnPrimaryStorageMsg msg) {
+    protected void handle(final RevertVolumeFromSnapshotOnPrimaryStorageMsg msg) {
         final RevertVolumeFromSnapshotOnPrimaryStorageReply reply = new RevertVolumeFromSnapshotOnPrimaryStorageReply();
 
         HostInventory destHost = factory.getConnectedHostForOperation(PrimaryStorageInventory.valueOf(self));
@@ -442,7 +434,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         });
     }
 
-    private void handle(final ReInitRootVolumeFromTemplateOnPrimaryStorageMsg msg) {
+    protected  void handle(final ReInitRootVolumeFromTemplateOnPrimaryStorageMsg msg) {
         final ReInitRootVolumeFromTemplateOnPrimaryStorageReply reply = new ReInitRootVolumeFromTemplateOnPrimaryStorageReply();
 
         HostInventory destHost = factory.getConnectedHostForOperation(PrimaryStorageInventory.valueOf(self));
@@ -477,7 +469,8 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         });
     }
 
-    private void handle(final DeleteSnapshotOnPrimaryStorageMsg msg) {
+    @Override
+    protected void handle(final DeleteSnapshotOnPrimaryStorageMsg msg) {
         final DeleteSnapshotOnPrimaryStorageReply reply = new DeleteSnapshotOnPrimaryStorageReply();
         final VolumeSnapshotInventory sinv = msg.getSnapshot();
         final NfsPrimaryStorageBackend bkd = getBackend(nfsMgr.findHypervisorTypeByImageFormatAndPrimaryStorageUuid(sinv.getFormat(), self.getUuid()));
