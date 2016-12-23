@@ -3,26 +3,31 @@ package org.zstack.image;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.cloudbus.EventCallback;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.UpdateQuery;
 import org.zstack.header.Component;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.image.ImageConstant;
-import org.zstack.header.image.ImageInventory;
-import org.zstack.header.image.ImageVO;
-import org.zstack.header.image.SyncImageSizeMsg;
+import org.zstack.header.image.*;
+import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.BackupStorageCanonicalEvents;
 import org.zstack.header.storage.backup.BackupStorageCanonicalEvents.BackupStorageStatusChangedData;
 import org.zstack.header.storage.backup.BackupStorageStatus;
 import org.zstack.header.storage.primary.ImageCacheVO;
+import org.zstack.header.storage.primary.ImageCacheVO_;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.StringDSL;
+import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
+import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.io.File;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -30,6 +35,8 @@ import java.util.Map;
  * Created by xing5 on 2016/5/6.
  */
 public class ImageUpgradeExtension implements Component {
+    private static final CLogger logger = Utils.getLogger(ImageUpgradeExtension.class);
+
     @Autowired
     private DatabaseFacade dbf;
     @Autowired
@@ -88,8 +95,8 @@ public class ImageUpgradeExtension implements Component {
         evtf.on(BackupStorageCanonicalEvents.BACKUP_STORAGE_STATUS_CHANGED, new EventCallback() {
             @Transactional(readOnly = true)
             private List<ImageInventory> getImagesForSync(String bsUuid) {
-                String sql = "select img from ImageVO img, ImageBackupStorageRefVO ref where img.size = img.actualSize" +
-                        " and img.uuid = ref.imageUuid and ref.backupStorageUuid = :bsUuid";
+                String sql = "select img from ImageVO img, ImageBackupStorageRefVO ref where" +
+                        " img.uuid = ref.imageUuid and ref.backupStorageUuid = :bsUuid";
                 TypedQuery<ImageVO> q = dbf.getEntityManager().createQuery(sql, ImageVO.class);
                 q.setParameter("bsUuid", bsUuid);
                 List<ImageVO> vos = q.getResultList();
@@ -124,7 +131,34 @@ public class ImageUpgradeExtension implements Component {
                     }
                 });
 
-                bus.send(msgs);
+                bus.send(msgs, new CloudBusListCallBack() {
+                    @Override
+                    public void run(List<MessageReply> replies) {
+                        Map<String, Long> res = new HashMap<>();
+                        for (MessageReply r : replies) {
+                            ImageInventory image = imgs.get(replies.indexOf(r));
+
+                            if (!r.isSuccess()) {
+                                logger.warn(String.format("failed to sync image [%s] size: %s",
+                                        image.getUuid(), r.getError().getDetails()));
+                                continue;
+                            }
+
+                            SyncImageSizeReply reply = r.castReply();
+                            if (!res.containsKey(image.getUuid())) {
+                                res.put(image.getUuid(), reply.getActualSize());
+                            }
+                        }
+
+                        for (Map.Entry<String, Long> entry: res.entrySet()) {
+                            UpdateQuery.New()
+                                    .entity(ImageCacheVO.class)
+                                    .set(ImageCacheVO_.size, entry.getValue())
+                                    .condAnd(ImageCacheVO_.imageUuid, SimpleQuery.Op.EQ, entry.getKey())
+                                    .update();
+                        }
+                    }
+                });
             }
         });
     }
