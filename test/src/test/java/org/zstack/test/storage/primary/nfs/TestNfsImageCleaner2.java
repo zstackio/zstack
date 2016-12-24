@@ -32,6 +32,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.logging.CLogger;
 
+import java.io.File;
 import java.util.concurrent.TimeUnit;
 
 public class TestNfsImageCleaner2 {
@@ -88,7 +89,8 @@ public class TestNfsImageCleaner2 {
 
         Assert.assertEquals(1, config.deleteCmds.size());
         DeleteCmd cmd = config.deleteCmds.get(0);
-        Assert.assertEquals(c.getInstallUrl(), cmd.getInstallPath());
+        Assert.assertTrue(cmd.isFolder());
+        Assert.assertEquals(new File(c.getInstallUrl()).getParent(), cmd.getInstallPath());
         c = q.find();
         Assert.assertNull(c);
     }

@@ -57,6 +57,7 @@ import org.zstack.utils.path.PathUtil;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
+import java.io.File;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -248,8 +249,9 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         }
 
         DeleteBitsOnPrimaryStorageMsg dmsg = new DeleteBitsOnPrimaryStorageMsg();
+        dmsg.setFolder(true);
         dmsg.setHypervisorType(bkd.getHypervisorType().toString());
-        dmsg.setInstallPath(msg.getInstallPath());
+        dmsg.setInstallPath(new File(msg.getInstallPath()).getParent());
         dmsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
         bus.makeTargetServiceIdByResourceUuid(dmsg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
         bus.send(dmsg, new CloudBusCallBack(msg) {
