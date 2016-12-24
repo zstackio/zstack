@@ -283,7 +283,7 @@ public class VmInstanceExtensionPointEmitter implements Component {
         CollectionUtils.safeForEach(attachVolumeExtensions, new ForEachFunction<VmAttachVolumeExtensionPoint>() {
             @Override
             public void run(VmAttachVolumeExtensionPoint arg) {
-                arg.beforeAttachVolume(vm, volume);
+                arg.afterAttachVolume(vm, volume);
             }
         });
     }

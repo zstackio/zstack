@@ -7,9 +7,14 @@ import org.zstack.header.volume.VolumeInventory;
  */
 public class DetachDataVolumeFromVmMsg extends NeedReplyMessage implements VmInstanceMessage {
     private VolumeInventory volume;
+    private String vmInstanceUuid;
 
     public String getVmInstanceUuid() {
-        return volume.getVmInstanceUuid();
+        return vmInstanceUuid;
+    }
+
+    public void setVmInstanceUuid(String vmInstanceUuid) {
+        this.vmInstanceUuid = vmInstanceUuid;
     }
 
     public VolumeInventory getVolume() {

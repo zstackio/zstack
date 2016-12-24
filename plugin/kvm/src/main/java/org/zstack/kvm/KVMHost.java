@@ -1323,6 +1323,7 @@ public class KVMHost extends HostBase implements Host {
                 ImagePlatform.valueOf(vm.getPlatform()).isParaVirtualization());
         to.setUseVirtioSCSI(KVMSystemTags.VOLUME_VIRTIO_SCSI.hasTag(vol.getUuid()));
         to.setWwn(setVolumeWwn(vol.getUuid()));
+        to.setShareable(vol.isShareable());
 
         final DetachVolumeFromVmOnHypervisorReply reply = new DetachVolumeFromVmOnHypervisorReply();
         final DetachDataVolumeCmd cmd = new DetachDataVolumeCmd();
@@ -1419,6 +1420,7 @@ public class KVMHost extends HostBase implements Host {
                 ImagePlatform.valueOf(vm.getPlatform()).isParaVirtualization());
         to.setUseVirtioSCSI(KVMSystemTags.VOLUME_VIRTIO_SCSI.hasTag(vol.getUuid()));
         to.setWwn(setVolumeWwn(vol.getUuid()));
+        to.setShareable(vol.isShareable());
         to.setCacheMode(KVMGlobalConfig.LIBVIRT_CACHE_MODE.value());
 
         final AttachVolumeToVmOnHypervisorReply reply = new AttachVolumeToVmOnHypervisorReply();
@@ -1885,6 +1887,7 @@ public class KVMHost extends HostBase implements Host {
             v.setUseVirtio(true);
             v.setUseVirtioSCSI(KVMSystemTags.VOLUME_VIRTIO_SCSI.hasTag(data.getUuid()));
             v.setWwn(setVolumeWwn(data.getUuid()));
+            v.setShareable(data.isShareable());
             v.setCacheMode(KVMGlobalConfig.LIBVIRT_CACHE_MODE.value());
             dataVolumes.add(v);
         }

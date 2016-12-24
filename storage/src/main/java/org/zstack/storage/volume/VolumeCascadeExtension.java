@@ -134,8 +134,12 @@ public class VolumeCascadeExtension extends AbstractAsyncCascadeExtension {
                     @Override
                     @Transactional(readOnly = true)
                     public List<VolumeVO> call() {
-                        String sql = "select d from VolumeVO d, AccountResourceRefVO r where d.uuid = r.resourceUuid and" +
-                                " r.resourceType = :rtype and r.accountUuid in (:auuids) and d.type = :dtype";
+                        String sql = "select d" +
+                                " from VolumeVO d, AccountResourceRefVO r" +
+                                " where d.uuid = r.resourceUuid" +
+                                " and r.resourceType = :rtype" +
+                                " and r.accountUuid in (:auuids)" +
+                                " and d.type = :dtype";
                         TypedQuery<VolumeVO> q = dbf.getEntityManager().createQuery(sql, VolumeVO.class);
                         q.setParameter("auuids", auuids);
                         q.setParameter("rtype", VolumeVO.class.getSimpleName());

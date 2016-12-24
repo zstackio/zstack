@@ -4,13 +4,16 @@ package org.zstack.compute.vm;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Od;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.volume.VolumeInventory;
@@ -25,16 +28,20 @@ import java.util.Map;
 public class VmAssignDeviceIdToAttachingVolumeFlow implements Flow {
     @Autowired
     private DatabaseFacade dbf;
+    @Autowired
+    private PluginRegistry pluginRegistry;
+    @Autowired
+    ErrorFacade errf;
 
-    private int getNextDeviceId(String vmUuid) {
+    private int getNextVolumeDeviceId(String vmUuid) {
         SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
         q.select(VolumeVO_.deviceId);
         q.add(VolumeVO_.vmInstanceUuid, Op.EQ, vmUuid);
         q.add(VolumeVO_.deviceId, Op.NOT_NULL);
         q.orderBy(VolumeVO_.deviceId, Od.ASC);
         List<Integer> devIds = q.listValue();
-        
-        BitSet full = new BitSet(devIds.size()+1);
+
+        BitSet full = new BitSet(devIds.size() + 1);
         devIds.forEach(full::set);
         return full.nextClearBit(0);
     }
@@ -45,7 +52,16 @@ public class VmAssignDeviceIdToAttachingVolumeFlow implements Flow {
         final VmInstanceSpec spec = (VmInstanceSpec) ctx.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
 
         VolumeVO dvol = dbf.findByUuid(volume.getUuid(), VolumeVO.class);
-        dvol.setDeviceId(getNextDeviceId(spec.getVmInventory().getUuid()));
+        List<GetNextVolumeDeviceIdExtensionPoint> exts = pluginRegistry.getExtensionList(
+                GetNextVolumeDeviceIdExtensionPoint.class);
+        if (exts == null || exts.isEmpty()) {
+            dvol.setDeviceId(getNextVolumeDeviceId(spec.getVmInventory().getUuid()));
+        } else if (exts.size() == 1) {
+            exts.get(0).getNextVolumeDeviceId(spec.getVmInventory().getUuid());
+        } else {
+            throw new OperationFailureException(errf.stringToOperationError(
+                    "should not be more than one GetNextVolumeDeviceIdExtensionPoint implementation"));
+        }
         dvol = dbf.updateAndRefresh(dvol);
         ctx.put(VmInstanceConstant.Params.AttachingVolumeInventory.toString(), VolumeInventory.valueOf(dvol));
         chain.next();

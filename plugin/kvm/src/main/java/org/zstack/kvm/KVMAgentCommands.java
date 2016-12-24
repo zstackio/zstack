@@ -477,18 +477,9 @@ public class KVMAgentCommands {
         private String volumeUuid;
         private boolean useVirtio;
         private boolean useVirtioSCSI;
+        private boolean shareable;
         private String cacheMode = "none";
-
-        public String getWwn() {
-            return wwn;
-        }
-
-        public void setWwn(String wwn) {
-            this.wwn = wwn;
-        }
-
         private String wwn;
-
         public VolumeTO() {
         }
 
@@ -501,6 +492,22 @@ public class KVMAgentCommands {
             this.useVirtioSCSI = other.useVirtioSCSI;
             this.cacheMode = other.cacheMode;
             this.wwn = other.wwn;
+        }
+
+        public boolean isShareable() {
+            return shareable;
+        }
+
+        public void setShareable(boolean shareable) {
+            this.shareable = shareable;
+        }
+
+        public String getWwn() {
+            return wwn;
+        }
+
+        public void setWwn(String wwn) {
+            this.wwn = wwn;
         }
 
         public boolean isUseVirtioSCSI() {

@@ -24,4 +24,5 @@ public class VolumeAO_ {
     public static volatile SingularAttribute<VolumeAO, VolumeStatus> status;
     public static volatile SingularAttribute<VolumeAO, Timestamp> createDate;
     public static volatile SingularAttribute<VolumeAO, Timestamp> lastOpDate;
+    public static volatile SingularAttribute<VolumeAO, Boolean> isShareable;
 }

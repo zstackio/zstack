@@ -206,6 +206,15 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static class CreateEmptyVolumeCmd extends AgentCommand {
         String installPath;
         long size;
+        boolean shareable;
+
+        public boolean isShareable() {
+            return shareable;
+        }
+
+        public void setShareable(boolean shareable) {
+            this.shareable = shareable;
+        }
 
         public String getInstallPath() {
             return installPath;
@@ -1060,6 +1069,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         cmd.installPath = VolumeType.Root.toString().equals(msg.getVolume().getType()) ?
                 makeRootVolumeInstallPath(msg.getVolume().getUuid()) : makeDataVolumeInstallPath(msg.getVolume().getUuid());
         cmd.size = msg.getVolume().getSize();
+        cmd.setShareable(msg.getVolume().isShareable());
 
         final InstantiateVolumeOnPrimaryStorageReply reply = new InstantiateVolumeOnPrimaryStorageReply();
 

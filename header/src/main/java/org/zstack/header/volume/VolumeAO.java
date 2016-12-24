@@ -74,20 +74,36 @@ public class VolumeAO implements ShadowEntity {
     @Column
     private Timestamp lastOpDate;
 
+    @Column
+    private boolean isShareable;
+
     @Transient
     private VolumeAO shadow;
+
+    public VolumeAO() {
+        this.state = VolumeState.Enabled;
+    }
+
+    public boolean isShareable() {
+        return isShareable;
+    }
+
+    public void setShareable(boolean shareable) {
+        isShareable = shareable;
+    }
 
     public VolumeAO getShadow() {
         return shadow;
     }
 
+    @Override
+    public void setShadow(Object o) {
+        shadow = (VolumeAO) o;
+    }
+
     @PreUpdate
     private void preUpdate() {
         lastOpDate = null;
-    }
-
-    public VolumeAO() {
-        this.state = VolumeState.Enabled;
     }
 
     public Long getActualSize() {
@@ -228,10 +244,5 @@ public class VolumeAO implements ShadowEntity {
 
     public void setStatus(VolumeStatus status) {
         this.status = status;
-    }
-
-    @Override
-    public void setShadow(Object o) {
-        shadow = (VolumeAO) o;
     }
 }

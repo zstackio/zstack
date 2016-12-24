@@ -158,17 +158,14 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
     }
 
     private void validate(APIDetachDataVolumeFromVmMsg msg) {
-        SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
-        q.select(VolumeVO_.vmInstanceUuid);
-        q.add(VolumeVO_.uuid, Op.EQ, msg.getVolumeUuid());
-        String vmUuid = q.findValue();
-        if (vmUuid == null) {
+        VolumeVO vol = dbf.findByUuid(msg.getVolumeUuid(), VolumeVO.class);
+        if (!vol.isShareable() && vol.getVmInstanceUuid() == null) {
             throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
                     String.format("data volume[uuid:%s] is not attached to any vm, can't detach", msg.getVolumeUuid())
             ));
         }
 
-        VolumeVO vol = dbf.findByUuid(msg.getVolumeUuid(), VolumeVO.class);
+
         if (vol.getType() == VolumeType.Root) {
             throw new ApiMessageInterceptionException(errf.stringToOperationError(
                     String.format("the volume[uuid:%s, name:%s] is Root Volume, can't detach it",

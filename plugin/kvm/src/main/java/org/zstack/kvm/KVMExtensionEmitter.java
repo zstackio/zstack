@@ -1,13 +1,13 @@
 package org.zstack.kvm;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.zstack.core.componentloader.PluginExtension;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.header.Component;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.volume.VolumeInventory;
+import org.zstack.header.volume.VolumeVO;
 import org.zstack.kvm.KVMAgentCommands.AttachDataVolumeCmd;
 import org.zstack.kvm.KVMAgentCommands.DetachDataVolumeCmd;
 import org.zstack.kvm.KVMAgentCommands.StartVmCmd;
@@ -17,9 +17,7 @@ import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 public class KVMExtensionEmitter implements Component {
     private static final CLogger logger = Utils.getLogger(KVMExtensionEmitter.class);
@@ -27,13 +25,13 @@ public class KVMExtensionEmitter implements Component {
     @Autowired
     private PluginRegistry pluginRgty;
 
-    private List<KVMStartVmExtensionPoint> startVmExts = new ArrayList<KVMStartVmExtensionPoint>();
-    private List<KVMDestroyVmExtensionPoint> destroyVmExts = new ArrayList<KVMDestroyVmExtensionPoint>();
-    private List<KVMStopVmExtensionPoint> stopVmExts = new ArrayList<KVMStopVmExtensionPoint>();
-    private List<KVMRebootVmExtensionPoint> rebootVmExts = new ArrayList<KVMRebootVmExtensionPoint>();
-    private List<KVMStartVmAddonExtensionPoint> addonsExts = new ArrayList<KVMStartVmAddonExtensionPoint>();
-    private List<KVMAttachVolumeExtensionPoint> attachVolumeExts = new ArrayList<KVMAttachVolumeExtensionPoint>();
-    private List<KVMDetachVolumeExtensionPoint> detachVolumeExts = new ArrayList<KVMDetachVolumeExtensionPoint>();
+    private List<KVMStartVmExtensionPoint> startVmExts = new ArrayList<>();
+    private List<KVMDestroyVmExtensionPoint> destroyVmExts = new ArrayList<>();
+    private List<KVMStopVmExtensionPoint> stopVmExts = new ArrayList<>();
+    private List<KVMRebootVmExtensionPoint> rebootVmExts = new ArrayList<>();
+    private List<KVMStartVmAddonExtensionPoint> addonsExts = new ArrayList<>();
+    private List<KVMAttachVolumeExtensionPoint> attachVolumeExts = new ArrayList<>();
+    private List<KVMDetachVolumeExtensionPoint> detachVolumeExts = new ArrayList<>();
 
     private void populateExtensions() {
         startVmExts = pluginRgty.getExtensionList(KVMStartVmExtensionPoint.class);

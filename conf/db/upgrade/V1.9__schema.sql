@@ -17,7 +17,7 @@ ALTER TABLE VCenterDatacenterVO ADD CONSTRAINT fkVCenterDatacenterVOVCenterVO FO
 -- ----------------------------
 --  Table structure for `ProgressVO`
 -- ----------------------------
-CREATE TABLE `ProgressVO` (
+CREATE TABLE `zstack`.`ProgressVO` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `resourceUuid` varchar(32) NOT NULL,
   `processType` varchar(32) NOT NULL,
@@ -30,3 +30,17 @@ CREATE TABLE `ProgressVO` (
 
 ALTER TABLE `zstack`.`IPsecConnectionVO` ADD COLUMN `state` varchar(255) NOT NULL DEFAULT "Enabled";
 ALTER TABLE `zstack`.`IPsecConnectionVO` ADD COLUMN `status` varchar(255) NOT NULL DEFAULT "Ready";
+
+ALTER TABLE `zstack`.`VolumeEO` ADD COLUMN `isShareable` boolean NOT NULL DEFAULT FALSE;
+DROP VIEW IF EXISTS `zstack`.`VolumeVO`;
+CREATE VIEW `zstack`.`VolumeVO` AS SELECT uuid, name, description, primaryStorageUuid, vmInstanceUuid, diskOfferingUuid, rootImageUuid, installPath, type, status, size, actualSize, deviceId, format, state, createDate, lastOpDate, isShareable FROM `zstack`.`VolumeEO` WHERE deleted IS NULL;
+
+CREATE TABLE `zstack`.`ShareableVolumeVmInstanceRefVO`(
+    `uuid` varchar(32) NOT NULL UNIQUE,
+    `volumeUuid` varchar(32) NOT NULL,
+    `vmInstanceUuid` varchar(255) NOT NULL,
+    `deviceId` int unsigned NOT NULL,
+    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp,
+    PRIMARY KEY  (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

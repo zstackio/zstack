@@ -99,8 +99,14 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
             return;
         }
 
-        VolumeBase volume = new VolumeBase(vo);
-        volume.handleMessage(msg);
+        List<VolumeFactory> l = pluginRgty.getExtensionList(VolumeFactory.class);
+        if (!l.isEmpty()) {
+            VolumeBase volumeBase = l.get(0).makeVolumeBase(vo);
+            volumeBase.handleMessage(msg);
+        } else {
+            VolumeBase volumeBase = new VolumeBase(vo);
+            volumeBase.handleMessage(msg);
+        }
     }
 
     @Override
@@ -506,6 +512,10 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), VolumeVO.class);
         tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), VolumeVO.class.getSimpleName());
 
+        if (msg.hasSystemTag(VolumeSystemTags.SHAREABLE.getTagFormat())) {
+            vo.setShareable(true);
+        }
+
         vo = dbf.persistAndRefresh(vo);
 
         if (msg.getPrimaryStorageUuid() == null) {
@@ -574,6 +584,16 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                 return arg.getPrimaryStorageTypeForInstantiateDataVolumeOnCreationExtensionPoint();
             }
         });
+
+        {
+            List<VolumeFactory> exts = pluginRgty.getExtensionList(
+                    VolumeFactory.class);
+            if (exts.size() > 1) {
+                throw new OperationFailureException(errf.stringToOperationError(
+                        String.format("there should not be more than one %s implementation.",
+                                VolumeFactory.class.getSimpleName())));
+            }
+        }
 
         return true;
     }

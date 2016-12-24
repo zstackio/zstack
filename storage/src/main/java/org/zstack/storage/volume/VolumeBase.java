@@ -67,7 +67,8 @@ import static org.zstack.utils.CollectionDSL.list;
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VolumeBase implements Volume {
     private static final CLogger logger = Utils.getLogger(VolumeBase.class);
-
+    protected String syncThreadId;
+    protected VolumeVO self;
     @Autowired
     private CloudBus bus;
     @Autowired
@@ -86,9 +87,6 @@ public class VolumeBase implements Volume {
     private PluginRegistry pluginRgty;
     @Autowired
     private VolumeDeletionPolicyManager deletionPolicyMgr;
-
-    protected String syncThreadId;
-    protected VolumeVO self;
 
     public VolumeBase(VolumeVO vo) {
         self = vo;
@@ -848,11 +846,6 @@ public class VolumeBase implements Volume {
         ret.put(Capability.MigrationToOtherPrimaryStorage.toString(), psType.isSupportVolumeMigrationToOtherPrimaryStorage());
     }
 
-    class VolumeSize {
-        long size;
-        long actualSize;
-    }
-
     private void syncVolumeVolumeSize(final ReturnValueCompletion<VolumeSize> completion) {
         SyncVolumeSizeOnPrimaryStorageMsg smsg = new SyncVolumeSizeOnPrimaryStorageMsg();
         smsg.setPrimaryStorageUuid(self.getPrimaryStorageUuid());
@@ -1037,7 +1030,6 @@ public class VolumeBase implements Volume {
         bus.publish(evt);
     }
 
-
     @Transactional(readOnly = true)
     private List<VmInstanceVO> getCandidateVmForAttaching(String accountUuid) {
         List<String> vmUuids = acntMgr.getResourceUuidsCanAccessByAccount(accountUuid, VmInstanceVO.class);
@@ -1133,6 +1125,11 @@ public class VolumeBase implements Volume {
                             evt.setErrorCode(reply.getError());
                         }
 
+                        if (self.isShareable()) {
+                            self.setVmInstanceUuid(null);
+                            dbf.update(self);
+                        }
+
                         bus.publish(evt);
                         chain.next();
                     }
@@ -1158,7 +1155,15 @@ public class VolumeBase implements Volume {
             public void run(SyncTaskChain chain) {
                 DetachDataVolumeFromVmMsg dmsg = new DetachDataVolumeFromVmMsg();
                 dmsg.setVolume(getSelfInventory());
-                bus.makeTargetServiceIdByResourceUuid(dmsg, VmInstanceConstant.SERVICE_ID, dmsg.getVmInstanceUuid());
+                String vmUuid;
+                if (msg.getVmUuid() != null) {
+                    vmUuid = msg.getVmUuid();
+                } else {
+                    vmUuid = getSelfInventory().getVmInstanceUuid();
+                }
+                dmsg.setVmInstanceUuid(vmUuid);
+
+                bus.makeTargetServiceIdByResourceUuid(dmsg, VmInstanceConstant.SERVICE_ID, vmUuid);
                 bus.send(dmsg, new CloudBusCallBack(msg, chain) {
                     @Override
                     public void run(MessageReply reply) {
@@ -1382,5 +1387,10 @@ public class VolumeBase implements Volume {
         APIChangeVolumeStateEvent evt = new APIChangeVolumeStateEvent(msg.getId());
         evt.setInventory(inv);
         bus.publish(evt);
+    }
+
+    class VolumeSize {
+        long size;
+        long actualSize;
     }
 }

@@ -3,6 +3,7 @@ package org.zstack.header.volume;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.vm.VmInstanceVO;
 
 /**
  * @api detach a data volume from vm
@@ -36,17 +37,27 @@ public class APIDetachDataVolumeFromVmMsg extends APIMessage implements VolumeMe
      */
     @APIParam(resourceType = VolumeVO.class, checkAccount = true, operationTarget = true)
     private String uuid;
+    @APIParam(required = false, resourceType = VmInstanceVO.class, checkAccount = true, operationTarget = true)
+    private String vmUuid;
+
+    public String getVmUuid() {
+        return vmUuid;
+    }
+
+    public void setVmUuid(String vmUuid) {
+        this.vmUuid = vmUuid;
+    }
 
     public String getUuid() {
         return uuid;
     }
 
+    public void setUuid(String volumeUuid) {
+        this.uuid = volumeUuid;
+    }
+
     @Override
     public String getVolumeUuid() {
         return uuid;
-    }
-
-    public void setUuid(String volumeUuid) {
-        this.uuid = volumeUuid;
     }
 }

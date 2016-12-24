@@ -1859,6 +1859,16 @@ public class Api implements CloudBusEventListener {
         return evt.getInventory();
     }
 
+    public VolumeInventory detachVolumeFromVmEx(String volumeUuid, String vmUuid, SessionInventory session) throws ApiSenderException {
+        APIDetachDataVolumeFromVmMsg msg = new APIDetachDataVolumeFromVmMsg();
+        msg.setSession(session == null ? adminSession : session);
+        msg.setUuid(volumeUuid);
+        msg.setVmUuid(vmUuid);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIDetachDataVolumeFromVmEvent evt = sender.send(msg, APIDetachDataVolumeFromVmEvent.class);
+        return evt.getInventory();
+    }
 
     public SessionInventory loginAsAdmin() throws ApiSenderException {
         return loginByAccount(AccountConstant.INITIAL_SYSTEM_ADMIN_NAME, AccountConstant.INITIAL_SYSTEM_ADMIN_PASSWORD);
