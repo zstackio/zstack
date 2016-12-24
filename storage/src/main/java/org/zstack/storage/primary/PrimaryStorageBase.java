@@ -278,6 +278,10 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handle((RevertVolumeFromSnapshotOnPrimaryStorageMsg) msg);
         } else if (msg instanceof ReInitRootVolumeFromTemplateOnPrimaryStorageMsg) {
             handle((ReInitRootVolumeFromTemplateOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof MergeVolumeSnapshotOnPrimaryStorageMsg) {
+            handle((MergeVolumeSnapshotOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof DeleteSnapshotOnPrimaryStorageMsg) {
+            handle((DeleteSnapshotOnPrimaryStorageMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
