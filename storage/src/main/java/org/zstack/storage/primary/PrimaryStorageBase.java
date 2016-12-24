@@ -237,9 +237,6 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         } else if (msg instanceof ReInitRootVolumeFromTemplateOnPrimaryStorageMsg) {
             forbidOperationWhenPrimaryStorageMaintenance(self.getState().toString());
             forbidOperationWhenPrimaryStorageDisable(self.getState().toString());
-        } else {
-            bus.dealWithUnknownMessage(msg);
-        }
     }
 
     protected void handleLocalMessage(Message msg) {
