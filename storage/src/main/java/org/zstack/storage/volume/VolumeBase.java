@@ -639,7 +639,13 @@ public class VolumeBase implements Volume {
                         public void run(final FlowTrigger trigger, Map data) {
                             DetachDataVolumeFromVmMsg dmsg = new DetachDataVolumeFromVmMsg();
                             dmsg.setVolume(getSelfInventory());
-                            bus.makeTargetServiceIdByResourceUuid(dmsg, VmInstanceConstant.SERVICE_ID, dmsg.getVmInstanceUuid());
+                            String vmUuid;
+                            if (dmsg.getVmInstanceUuid() == null) {
+                                vmUuid = getSelfInventory().getVmInstanceUuid();
+                            } else {
+                                vmUuid = dmsg.getVmInstanceUuid();
+                            }
+                            bus.makeTargetServiceIdByResourceUuid(dmsg, VmInstanceConstant.SERVICE_ID, vmUuid);
                             bus.send(dmsg, new CloudBusCallBack(trigger) {
                                 @Override
                                 public void run(MessageReply reply) {
