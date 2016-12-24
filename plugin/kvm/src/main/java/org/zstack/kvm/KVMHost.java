@@ -1802,6 +1802,7 @@ public class KVMHost extends HostBase implements Host {
             String platform = q.findValue();
 
             to.setUseVirtio(ImagePlatform.valueOf(platform).isParaVirtualization());
+            to.setIp(nic.getIp());
         }
 
         return to;
