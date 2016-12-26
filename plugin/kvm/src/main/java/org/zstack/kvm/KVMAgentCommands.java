@@ -400,12 +400,21 @@ public class KVMAgentCommands {
 
     public static class NicTO {
         private String mac;
+        private String ip;
         private String bridgeName;
         private String uuid;
         private String nicInternalName;
         private int deviceId;
         private String metaData;
         private Boolean useVirtio;
+
+        public String getIp() {
+            return ip;
+        }
+
+        public void setIp(String ip) {
+            this.ip = ip;
+        }
 
         public String getUuid() {
             return uuid;
