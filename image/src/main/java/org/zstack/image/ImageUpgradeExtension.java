@@ -16,8 +16,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.BackupStorageCanonicalEvents;
 import org.zstack.header.storage.backup.BackupStorageCanonicalEvents.BackupStorageStatusChangedData;
 import org.zstack.header.storage.backup.BackupStorageStatus;
-import org.zstack.header.storage.primary.ImageCacheVO;
-import org.zstack.header.storage.primary.ImageCacheVO_;
+import org.zstack.header.storage.primary.*;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.StringDSL;
 import org.zstack.utils.Utils;
@@ -30,6 +29,7 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Created by xing5 on 2016/5/6.
@@ -157,6 +157,16 @@ public class ImageUpgradeExtension implements Component {
                                     .condAnd(ImageCacheVO_.imageUuid, SimpleQuery.Op.EQ, entry.getKey())
                                     .update();
                         }
+
+                        // Ask primary storage service to recalculate the capacities
+                        final List<RecalculatePrimaryStorageCapacityMsg> rmsgs = dbf.listAll(PrimaryStorageVO.class).stream()
+                                .map((psvo) -> {
+                                    RecalculatePrimaryStorageCapacityMsg rmsg = new RecalculatePrimaryStorageCapacityMsg();
+                                    rmsg.setPrimaryStorageUuid(psvo.getUuid());
+                                    bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
+                                    return rmsg;
+                                }).collect(Collectors.toList());
+                        bus.send(rmsgs);
                     }
                 });
             }
