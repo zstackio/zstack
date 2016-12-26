@@ -161,6 +161,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
         String url;
         String installPath;
         String imageUuid;
+        String sendCommandUrl;
 
         public String getImageUuid() {
             return imageUuid;
@@ -184,6 +185,14 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
         public void setInstallPath(String installPath) {
             this.installPath = installPath;
+        }
+
+        public String getSendCommandUrl() {
+            return sendCommandUrl;
+        }
+
+        public void setSendCommandUrl(String sendCommandUrl) {
+            this.sendCommandUrl = sendCommandUrl;
         }
     }
 
@@ -629,6 +638,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
         cmd.url = msg.getImageInventory().getUrl();
         cmd.installPath = makeImageInstallPath(msg.getImageInventory().getUuid());
         cmd.imageUuid = msg.getImageInventory().getUuid();
+        cmd.sendCommandUrl = restf.getSendCommandUrl();
 
         String sql = "update ImageBackupStorageRefVO set installPath = :installPath " +
                 "where backupStorageUuid = :bsUuid and imageUuid = :imageUuid";
