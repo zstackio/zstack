@@ -67,7 +67,7 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
         TypedQuery<ImageVO> q;
         String allImageInventories = null;
         ImageInventory img = dumpInfo.getImg();
-        String sql = "select img from ImageVO img, ImageBackupStorageRefVO ref where ref.backupStorageUuid = :bsUuid";
+        String sql = "select img from ImageVO img where uuid in (select imageUuid from ImageBackupStorageRefVO ref where ref.backupStorageUuid= :bsUuid)";
         q = dbf.getEntityManager().createQuery(sql, ImageVO.class);
         if (dumpInfo.getImg() != null ) {
             q.setParameter("bsUuid", getBackupStorageUuidFromImageInventory(img));
