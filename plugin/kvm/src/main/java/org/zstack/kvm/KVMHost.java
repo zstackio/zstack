@@ -1802,7 +1802,9 @@ public class KVMHost extends HostBase implements Host {
             String platform = q.findValue();
 
             to.setUseVirtio(ImagePlatform.valueOf(platform).isParaVirtualization());
-            to.setIp(nic.getIp());
+            if (! (nic.getIp().isEmpty() && nic.getIp() == null)) {
+                to.setIp(nic.getIp());
+            }
         }
 
         return to;
@@ -1897,6 +1899,9 @@ public class KVMHost extends HostBase implements Host {
 
         List<NicTO> nics = new ArrayList<>(spec.getDestNics().size());
         for (VmNicInventory nic : spec.getDestNics()) {
+            if ( ! spec.getVmInventory().getType().equals(VmInstanceConstant.USER_VM_TYPE)) {
+                nic.setIp("");
+            }
             nics.add(completeNicInfo(nic));
         }
         cmd.setNics(nics);
