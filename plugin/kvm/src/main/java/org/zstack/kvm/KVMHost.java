@@ -2475,7 +2475,14 @@ public class KVMHost extends HostBase implements Host {
 
                                 @Override
                                 public void run(FlowTrigger trigger, Map data) {
-                                    String checkList = KVMGlobalConfig.HOST_DNS_CHECK_LIST.value();
+                                    String checkList;
+                                    if (AnsibleGlobalProperty.ZSTACK_REPO.contains(KVMConstant.ALI_REPO)) {
+                                        checkList = KVMGlobalConfig.HOST_DNS_CHECK_ALIYUN.value();
+                                    } else if (AnsibleGlobalProperty.ZSTACK_REPO.contains(KVMConstant.NETEASE_REPO)) {
+                                        checkList = KVMGlobalConfig.HOST_DNS_CHECK_163.value();
+                                    } else {
+                                        checkList = KVMGlobalConfig.HOST_DNS_CHECK_LIST.value();
+                                    }
 
                                     new Log(self.getUuid()).log(KVMHostLabel.ADD_HOST_CHECK_DNS, checkList);
 
@@ -2495,8 +2502,8 @@ public class KVMHost extends HostBase implements Host {
                                         ));
                                     } else if (ret.getReturnCode() != 0) {
                                         trigger.fail(errf.stringToOperationError(
-                                                String.format("failed to ping all DNS/IP in %s; please check /etc/resolv.conf to make sure your host is able to reach public internet, or change host.DNSCheckList if you have some special network setup",
-                                                        KVMGlobalConfig.HOST_DNS_CHECK_LIST.value())
+                                                String.format("failed to ping all DNS/IP in %s; please check /etc/resolv.conf to make sure your host is able to reach public internet",
+                                                        checkList)
                                         ));
                                     } else {
                                         trigger.next();

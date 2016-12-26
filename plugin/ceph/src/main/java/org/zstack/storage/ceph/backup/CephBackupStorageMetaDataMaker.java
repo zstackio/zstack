@@ -153,9 +153,7 @@ public class CephBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
                 "bs.uuid = refVo.backupStorageUuid and refVo.imageUuid = :uuid";
         TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
         q.setParameter("uuid", img.getUuid());
-        String type = q.getSingleResult();
-        logger.debug(String.format("meilei: %s", type));
-        return type;
+        return q.getSingleResult();
     }
 
     protected  void dumpImagesBackupStorageInfoToMetaDataFile(ImageInventory img, boolean allImagesInfo,  String hostName, String bsUuid ) {

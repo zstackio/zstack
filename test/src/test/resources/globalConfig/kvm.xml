@@ -47,6 +47,20 @@
 
     <config>
         <category>kvm</category>
+        <name>host.DNSCheckAliyun</name>
+        <description>DNS or IP check list. When adding a KVM host, if all DNS/IP in the list are failed to ping, the adding host will fail.</description>
+        <defaultValue>mirrors.aliyun.com</defaultValue>
+    </config>
+
+    <config>
+        <category>kvm</category>
+        <name>host.DNSCheck163</name>
+        <description>DNS or IP check list. When adding a KVM host, if all DNS/IP in the list are failed to ping, the adding host will fail.</description>
+        <defaultValue>mirrors.163.com</defaultValue>
+    </config>
+
+    <config>
+        <category>kvm</category>
         <name>redhat.liveSnapshotOn</name>
         <description>when set to true, enable the live volume snapshot on RedHat series OS if the libvirt and QEMU versions match the requirement</description>
         <type>java.lang.Boolean</type>

@@ -58,6 +58,9 @@ public interface KVMConstant {
 
     String KVM_AGENT_OWNER = "kvm";
 
+    String ALI_REPO = "ali";
+    String NETEASE_REPO = "163";
+
     enum KvmVmState {
         NoState,
         Running,
