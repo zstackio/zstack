@@ -32,6 +32,7 @@ import org.zstack.header.image.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.APIDeleteVolumeSnapshotMsg;
@@ -80,6 +81,9 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     private ApiTimeoutManager timeoutMgr;
     @Autowired
     private GCFacade gcf;
+    @Autowired
+    private RESTFacade restf;
+
 
     public static class AgentCommand {
     }
@@ -2154,6 +2158,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 cmd.dstUsername = username;
                 cmd.dstPassword = password;
                 cmd.dstPort = port;
+                cmd.sendCommandUrl = restf.getSendCommandUrl();
                 cmd.paths = CollectionUtils.transformToList(struct.getInfos(), new Function<String, ResourceInfo>() {
                     @Override
                     public String call(ResourceInfo arg) {
