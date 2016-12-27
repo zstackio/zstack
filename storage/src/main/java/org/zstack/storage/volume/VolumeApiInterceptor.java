@@ -165,6 +165,12 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
             ));
         }
 
+        if (vol.isShareable() && msg.getVmUuid() == null) {
+            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
+                    String.format("to detach shareable data volume[uuid:%s], vm uuid is needed.", msg.getVolumeUuid())
+            ));
+        }
+
 
         if (vol.getType() == VolumeType.Root) {
             throw new ApiMessageInterceptionException(errf.stringToOperationError(
