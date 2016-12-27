@@ -47,7 +47,7 @@ public class CephBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
     @Transactional
     protected String getAllImageInventories(ImageInventory img, String bsUuid) {
         String allImageInventories = null;
-        String sql = "select img from ImageVO img where uuid in (select imageUuid from ImageBackupStorageRefVO where backupStorageUuid= :bsUuid)";
+        String sql = "select img from ImageVO img where uuid in (select imageUuid from ImageBackupStorageRefVO ref where ref.backupStorageUuid= :bsUuid)";
         TypedQuery<ImageVO> q = dbf.getEntityManager().createQuery(sql, ImageVO.class);
         if (img != null ) {
             q.setParameter("bsUuid", getBackupStorageUuidFromImageInventory(img));
