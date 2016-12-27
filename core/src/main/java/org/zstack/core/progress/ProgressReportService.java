@@ -127,7 +127,7 @@ public class ProgressReportService extends AbstractService implements Management
             q.list().stream().forEach(p -> dbf.remove(p));
         }
         ProgressVO vo = new ProgressVO();
-        vo.setProgress(cmd.getProgress() == null? "0%":cmd.getProgress());
+        vo.setProgress(cmd.getProgress() == null? "0":cmd.getProgress());
         vo.setProcessType(cmd.getProcessType());
         vo.setResourceUuid(cmd.getResourceUuid());
         dbf.persistAndRefresh(vo);
@@ -150,7 +150,7 @@ public class ProgressReportService extends AbstractService implements Management
     }
 
     private void updateProgress(ProgressReportCmd cmd) {
-        logger.debug("update progress and during processing");
+        logger.debug(String.format("update progress and during processing, progress is: %s", cmd.getProgress()));
         SimpleQuery<ProgressVO> q = dbf.createQuery(ProgressVO.class);
         q.add(ProgressVO_.processType, SimpleQuery.Op.EQ, cmd.getProcessType());
         q.add(ProgressVO_.resourceUuid, SimpleQuery.Op.EQ, cmd.getResourceUuid());
