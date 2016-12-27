@@ -50,6 +50,7 @@ import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.search.SearchQuery;
+import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.ObjectUtils;
@@ -854,9 +855,10 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                         q.select(VolumeVO_.vmInstanceUuid);
                         String vmInstanceUuid = q.findValue();
                         if (tagMgr.hasSystemTag(vmInstanceUuid, ImageSystemTags.IMAGE_INJECT_QEMUGA.getTagFormat())) {
-                            tagMgr.createNonInherentSystemTag(imageVO.getUuid(),
-                                    ImageSystemTags.IMAGE_INJECT_QEMUGA.getTagFormat(),
-                                    ImageVO.class.getSimpleName());
+                            SystemTagCreator creator = ImageSystemTags.IMAGE_INJECT_QEMUGA.newSystemTagCreator(imageVO.getUuid());
+                            creator.inherent = false;
+                            creator.recreate = true;
+                            creator.create();
                         }
                         trigger.next();
                     }
