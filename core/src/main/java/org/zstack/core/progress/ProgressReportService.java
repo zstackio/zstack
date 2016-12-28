@@ -117,7 +117,8 @@ public class ProgressReportService extends AbstractService implements Management
     }
 
     private void insertProgress(ProgressReportCmd cmd) {
-        logger.debug("insert progress and it begins");
+        logger.debug(String.format("insert progress and it begins, progressType is: %s", cmd.getProcessType()
+        ));
         SimpleQuery<ProgressVO> q = dbf.createQuery(ProgressVO.class);
         // please notice if there are no conditions that result more than two vo found...
         q.add(ProgressVO_.processType, SimpleQuery.Op.EQ, cmd.getProcessType());
