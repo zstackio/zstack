@@ -11,7 +11,7 @@ public aspect EncryptAspect {
     @Autowired
     private EncryptRSA rsa;
 
-    void around(String param) : args(param) && execution(@org.zstack.header.vo.ENCRYPT * *(..)){
+    void around(String param) : args(param) && execution(@org.zstack.header.core.encrypt.ENCRYPT * *(..)){
         if(param.length() > 0){
             try{
                 logger.debug(String.format("password before encrypt is: %s", param));

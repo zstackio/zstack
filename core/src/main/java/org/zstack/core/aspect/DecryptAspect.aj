@@ -24,7 +24,7 @@ public aspect DecryptAspect {
 	private EncryptRSA encryptRSA;
 	private static final CLogger logger = Utils.getLogger(DecryptAspect.class);
 
-	Object around(): execution(@org.zstack.header.vo.DECRYPT * *(..)){
+	Object around(): execution(@org.zstack.header.core.encrypt.DECRYPT * *(..)){
 		Object value = proceed();
 		if (value != null){
 			try{
