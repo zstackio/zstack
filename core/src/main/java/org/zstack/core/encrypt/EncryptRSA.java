@@ -158,7 +158,7 @@ public class EncryptRSA {
 			logger.debug(String.format("tempUTF8 first is: %s",tempdecodeUTF8.substring(0, appendString.length())));
 			if (tempdecodeUTF8.substring(0, appendString.length()).equals(appendString)){
 				logger.debug(String.format("tempUTF8 after is: %s",tempdecodeUTF8.substring(appendString.length(), tempdecodeUTF8.length())));
-				return tempdecodeUTF8.substring(36,tempdecodeUTF8.length());
+				return tempdecodeUTF8.substring(appendString.length(),tempdecodeUTF8.length());
 			}
 			return password;
 		}catch (Exception e){
