@@ -7,6 +7,7 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.compute.host.HostBase;
 import org.zstack.compute.host.HostSystemTags;
+import org.zstack.compute.vm.VmGlobalConfig;
 import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.MessageCommandRecorder;
@@ -1802,7 +1803,7 @@ public class KVMHost extends HostBase implements Host {
             String platform = q.findValue();
 
             to.setUseVirtio(ImagePlatform.valueOf(platform).isParaVirtualization());
-            if (! (nic.getIp().isEmpty() && nic.getIp() == null)) {
+            if (! (nic.getIp().isEmpty() && nic.getIp() == null && VmGlobalConfig.VM_CLEAN_TRAFFIC.value(Boolean.class))) {
                 to.setIp(nic.getIp());
             }
         }

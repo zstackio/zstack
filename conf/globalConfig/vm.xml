@@ -38,4 +38,13 @@
 		<defaultValue>3600</defaultValue>
 		<type>java.lang.Long</type>
 	</config>
+
+	<config>
+		<name>cleanTraffic</name>
+		<description>switch for clean spoofing traffic from vm</description>
+		<category>vm</category>
+		<defaultValue>false</defaultValue>
+		<type>java.lang.Boolean</type>
+	</config>
+
 </globalConfig>
