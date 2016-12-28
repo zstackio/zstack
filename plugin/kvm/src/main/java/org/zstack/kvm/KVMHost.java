@@ -1803,7 +1803,7 @@ public class KVMHost extends HostBase implements Host {
             String platform = q.findValue();
 
             to.setUseVirtio(ImagePlatform.valueOf(platform).isParaVirtualization());
-            if (! (nic.getIp().isEmpty() && nic.getIp() == null && VmGlobalConfig.VM_CLEAN_TRAFFIC.value(Boolean.class))) {
+            if (! (nic.getIp().isEmpty() || nic.getIp() == null) && VmGlobalConfig.VM_CLEAN_TRAFFIC.value(Boolean.class)) {
                 to.setIp(nic.getIp());
             }
         }
