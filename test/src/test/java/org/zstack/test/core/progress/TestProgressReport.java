@@ -105,8 +105,7 @@ public class TestProgressReport {
         Assert.assertEquals("50%", vo.getProgress());
 
         APIGetTaskProgressReply reply = api.getProgressReport(cmd.getResourceUuid());
-        Assert.assertEquals(1, reply.getTaskProgress().size());
-        Assert.assertEquals("50%", reply.getTaskProgress().get(0).getProgress());
+        Assert.assertEquals("50%", reply.getProgress());
 
         TimeUnit.MILLISECONDS.sleep(1);
         header = map(e(RESTConstant.COMMAND_PATH, ProgressConstants.PROGRESS_FINISH_PATH));
