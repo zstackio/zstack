@@ -211,7 +211,12 @@ public class ProgressReportService extends AbstractService implements Management
                     "no such task running now"));
             reply.setSuccess(false);
         } else {
-            vos.stream().forEach(p -> reply.getTaskProgress().add(new TaskProgress(p)));
+            ProgressVO vo = vos.get(vos.size() - 1);
+            reply.setProgress(vo.getProgress());
+            reply.setCreateDate(vo.getCreateDate());
+            reply.setLastOpDate(vo.getLastOpDate());
+            reply.setProcessType(vo.getProcessType());
+            reply.setResourceUuid(vo.getResourceUuid());
         }
         bus.reply(msg, reply);
     }
