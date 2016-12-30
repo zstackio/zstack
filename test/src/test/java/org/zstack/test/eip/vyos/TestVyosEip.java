@@ -7,11 +7,13 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.identity.SessionInventory;
+import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.network.service.eip.EipInventory;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmVO;
 import org.zstack.network.service.virtualrouter.eip.EipTO;
+import org.zstack.network.service.virtualrouter.vyos.VyosConstants;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.simulator.virtualrouter.VirtualRouterSimulatorConfig;
 import org.zstack.test.Api;
@@ -79,5 +81,13 @@ public class TestVyosEip {
         Assert.assertFalse(vconfig.dnsInfo.isEmpty());
         Assert.assertFalse(vconfig.snatInfos.isEmpty());
         Assert.assertFalse(vconfig.eips.isEmpty());
+
+        // see https://github.com/zxwing/premium/issues/1636
+        api.destroyVmInstance(vr.getUuid());
+        VmInstanceInventory vm = deployer.vms.get("TestVm");
+        api.stopVmInstance(vm.getUuid());
+        api.startVmInstance(vm.getUuid());
+        vr = dbf.listAll(VirtualRouterVmVO.class).get(0);
+        Assert.assertEquals(VyosConstants.VYOS_VM_TYPE, vr.getApplianceVmType());
     }
 }

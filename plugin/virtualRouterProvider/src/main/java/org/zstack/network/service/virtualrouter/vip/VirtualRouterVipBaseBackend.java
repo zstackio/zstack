@@ -21,6 +21,7 @@ import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.vm.*;
 import org.zstack.network.service.vip.*;
 import org.zstack.network.service.virtualrouter.*;
+import org.zstack.network.service.virtualrouter.vyos.VyosConstants;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -206,6 +207,18 @@ public class VirtualRouterVipBaseBackend extends VipBaseBackend {
 
                 VirtualRouterStruct s = new VirtualRouterStruct();
                 s.setL3Network(L3NetworkInventory.valueOf(dbf.findByUuid(self.getPeerL3NetworkUuid(), L3NetworkVO.class)));
+
+                String appVmType;
+                if (self.getServiceProvider().equals(VirtualRouterConstant.VIRTUAL_ROUTER_PROVIDER_TYPE)) {
+                    appVmType = VirtualRouterConstant.VIRTUAL_ROUTER_VM_TYPE;
+                } else if (self.getServiceProvider().equals(VyosConstants.VYOS_ROUTER_PROVIDER_TYPE)) {
+                    appVmType = VyosConstants.VYOS_VM_TYPE;
+                } else {
+                    throw new CloudRuntimeException(String.format("unknown network service provider type[%s]", self.getServiceProvider()));
+                }
+
+                s.setApplianceVmType(appVmType);
+                s.setProviderType(self.getServiceProvider());
                 s.setOfferingValidator(offering -> {
                     if (!offering.getPublicNetworkUuid().equals(self.getL3NetworkUuid())) {
                         throw new OperationFailureException(errf.stringToOperationError(
