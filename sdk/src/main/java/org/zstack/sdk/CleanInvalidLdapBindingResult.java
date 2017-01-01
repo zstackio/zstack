@@ -1,6 +1,6 @@
 package org.zstack.sdk;
 
-public class CleanInvalidLdapBindingsResult {
+public class CleanInvalidLdapBindingResult {
     public java.util.List<AccountInventory> inventories;
     public void setInventories(java.util.List<AccountInventory> inventories) {
         this.inventories = inventories;

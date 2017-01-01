@@ -138,4 +138,12 @@ public class VolumeInventory  {
         return this.lastOpDate;
     }
 
+    public boolean isShareable;
+    public void setIsShareable(boolean isShareable) {
+        this.isShareable = isShareable;
+    }
+    public boolean getIsShareable() {
+        return this.isShareable;
+    }
+
 }

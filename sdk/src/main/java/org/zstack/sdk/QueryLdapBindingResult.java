@@ -1,6 +1,6 @@
 package org.zstack.sdk;
 
-public class QueryLdapAccountResult {
+public class QueryLdapBindingResult {
     public java.util.List<LdapAccountRefInventory> inventories;
     public void setInventories(java.util.List<LdapAccountRefInventory> inventories) {
         this.inventories = inventories;

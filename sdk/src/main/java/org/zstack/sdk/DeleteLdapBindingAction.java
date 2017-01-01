@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class QueryLdapAccountAction extends QueryAction {
+public class DeleteLdapBindingAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public QueryLdapAccountResult value;
+        public DeleteLdapBindingResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -22,6 +22,21 @@ public class QueryLdapAccountAction extends QueryAction {
         }
     }
 
+    @Param(required = true, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String uuid;
+
+    @Param(required = false)
+    public java.util.List systemTags;
+
+    @Param(required = false)
+    public java.util.List userTags;
+
+    @Param(required = true)
+    public String sessionId;
+
+    public long timeout;
+    
+    public long pollingInterval;
 
 
     public Result call() {
@@ -32,8 +47,8 @@ public class QueryLdapAccountAction extends QueryAction {
             return ret;
         }
         
-        QueryLdapAccountResult value = res.getResult(QueryLdapAccountResult.class);
-        ret.value = value == null ? new QueryLdapAccountResult() : value;
+        DeleteLdapBindingResult value = res.getResult(DeleteLdapBindingResult.class);
+        ret.value = value == null ? new DeleteLdapBindingResult() : value;
         return ret;
     }
 
@@ -48,8 +63,8 @@ public class QueryLdapAccountAction extends QueryAction {
                     return;
                 }
                 
-                QueryLdapAccountResult value = res.getResult(QueryLdapAccountResult.class);
-                ret.value = value == null ? new QueryLdapAccountResult() : value;
+                DeleteLdapBindingResult value = res.getResult(DeleteLdapBindingResult.class);
+                ret.value = value == null ? new DeleteLdapBindingResult() : value;
                 completion.complete(ret);
             }
         });
@@ -61,10 +76,10 @@ public class QueryLdapAccountAction extends QueryAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
-        info.path = "/ldap/accounts/refs";
+        info.httpMethod = "DELETE";
+        info.path = "/ldap/bindings/{uuid}";
         info.needSession = true;
-        info.needPoll = false;
+        info.needPoll = true;
         info.parameterName = "";
         return info;
     }

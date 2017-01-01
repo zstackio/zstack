@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class CleanInvalidLdapBindingsAction extends AbstractAction {
+public class CleanInvalidLdapBindingAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public CleanInvalidLdapBindingsResult value;
+        public CleanInvalidLdapBindingResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -44,8 +44,8 @@ public class CleanInvalidLdapBindingsAction extends AbstractAction {
             return ret;
         }
         
-        CleanInvalidLdapBindingsResult value = res.getResult(CleanInvalidLdapBindingsResult.class);
-        ret.value = value == null ? new CleanInvalidLdapBindingsResult() : value;
+        CleanInvalidLdapBindingResult value = res.getResult(CleanInvalidLdapBindingResult.class);
+        ret.value = value == null ? new CleanInvalidLdapBindingResult() : value;
         return ret;
     }
 
@@ -60,8 +60,8 @@ public class CleanInvalidLdapBindingsAction extends AbstractAction {
                     return;
                 }
                 
-                CleanInvalidLdapBindingsResult value = res.getResult(CleanInvalidLdapBindingsResult.class);
-                ret.value = value == null ? new CleanInvalidLdapBindingsResult() : value;
+                CleanInvalidLdapBindingResult value = res.getResult(CleanInvalidLdapBindingResult.class);
+                ret.value = value == null ? new CleanInvalidLdapBindingResult() : value;
                 completion.complete(ret);
             }
         });
@@ -74,10 +74,10 @@ public class CleanInvalidLdapBindingsAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/ladp/bindings/actions";
+        info.path = "/ldap/bindings/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "cleanInvalidLdapBindings";
+        info.parameterName = "cleanInvalidLdapBinding";
         return info;
     }
 

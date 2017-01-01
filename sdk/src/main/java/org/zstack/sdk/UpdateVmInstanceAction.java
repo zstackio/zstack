@@ -40,6 +40,12 @@ public class UpdateVmInstanceAction extends AbstractAction {
     @Param(required = false, validValues = {"Linux","Windows","Other","Paravirtualization","WindowsVirtio"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String platform;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,1024L}, noTrim = false)
+    public java.lang.Integer cpuNum;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,9223372036854775807L}, noTrim = false)
+    public java.lang.Long memorySize;
+
     @Param(required = false)
     public java.util.List systemTags;
 

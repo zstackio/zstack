@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class UnbindLdapAccountAction extends AbstractAction {
+public class QueryLdapBindingAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public UnbindLdapAccountResult value;
+        public QueryLdapBindingResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -22,21 +22,6 @@ public class UnbindLdapAccountAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = false)
-    public java.util.List systemTags;
-
-    @Param(required = false)
-    public java.util.List userTags;
-
-    @Param(required = true)
-    public String sessionId;
-
-    public long timeout;
-    
-    public long pollingInterval;
 
 
     public Result call() {
@@ -47,8 +32,8 @@ public class UnbindLdapAccountAction extends AbstractAction {
             return ret;
         }
         
-        UnbindLdapAccountResult value = res.getResult(UnbindLdapAccountResult.class);
-        ret.value = value == null ? new UnbindLdapAccountResult() : value;
+        QueryLdapBindingResult value = res.getResult(QueryLdapBindingResult.class);
+        ret.value = value == null ? new QueryLdapBindingResult() : value;
         return ret;
     }
 
@@ -63,8 +48,8 @@ public class UnbindLdapAccountAction extends AbstractAction {
                     return;
                 }
                 
-                UnbindLdapAccountResult value = res.getResult(UnbindLdapAccountResult.class);
-                ret.value = value == null ? new UnbindLdapAccountResult() : value;
+                QueryLdapBindingResult value = res.getResult(QueryLdapBindingResult.class);
+                ret.value = value == null ? new QueryLdapBindingResult() : value;
                 completion.complete(ret);
             }
         });
@@ -76,10 +61,10 @@ public class UnbindLdapAccountAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "DELETE";
-        info.path = "/ldap/account-refs/{uuid}";
+        info.httpMethod = "GET";
+        info.path = "/ldap/bindings";
         info.needSession = true;
-        info.needPoll = true;
+        info.needPoll = false;
         info.parameterName = "";
         return info;
     }

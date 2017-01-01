@@ -98,7 +98,7 @@ public class UpdateLdapServerAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/ldap/servers/{ldapServerUuid}/actions";
+        info.path = "/ldap/servers/{ldapServerUuid}";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "updateLdapServer";

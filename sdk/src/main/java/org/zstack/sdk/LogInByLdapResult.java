@@ -1,12 +1,20 @@
 package org.zstack.sdk;
 
 public class LogInByLdapResult {
-    public SessionInventory session;
-    public void setSession(SessionInventory session) {
-        this.session = session;
+    public SessionInventory inventory;
+    public void setInventory(SessionInventory inventory) {
+        this.inventory = inventory;
     }
-    public SessionInventory getSession() {
-        return this.session;
+    public SessionInventory getInventory() {
+        return this.inventory;
+    }
+
+    public AccountInventory accountInventory;
+    public void setAccountInventory(AccountInventory accountInventory) {
+        this.accountInventory = accountInventory;
+    }
+    public AccountInventory getAccountInventory() {
+        return this.accountInventory;
     }
 
 }

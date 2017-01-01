@@ -46,6 +46,9 @@ public class AddSftpBackupStorageAction extends AbstractAction {
     @Param(required = false)
     public java.lang.String type;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public boolean importImages = false;
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 

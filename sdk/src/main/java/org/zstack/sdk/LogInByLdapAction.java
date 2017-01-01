@@ -73,7 +73,7 @@ public class LogInByLdapAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/ldap/uids/{uid}/actions";
+        info.path = "/ldap/login";
         info.needSession = false;
         info.needPoll = false;
         info.parameterName = "logInByLdap";

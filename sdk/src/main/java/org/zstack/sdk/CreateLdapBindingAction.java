@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class TestAddLdapServerConnectionAction extends AbstractAction {
+public class CreateLdapBindingAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public TestAddLdapServerConnectionResult value;
+        public CreateLdapBindingResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -23,25 +23,10 @@ public class TestAddLdapServerConnectionAction extends AbstractAction {
     }
 
     @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
+    public java.lang.String ldapUid;
 
-    @Param(required = true, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = true, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String url;
-
-    @Param(required = true, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String base;
-
-    @Param(required = true, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String username;
-
-    @Param(required = true, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String password;
-
-    @Param(required = true, validValues = {"None","TLS"}, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String encryption;
+    @Param(required = true, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String accountUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -65,8 +50,8 @@ public class TestAddLdapServerConnectionAction extends AbstractAction {
             return ret;
         }
         
-        TestAddLdapServerConnectionResult value = res.getResult(TestAddLdapServerConnectionResult.class);
-        ret.value = value == null ? new TestAddLdapServerConnectionResult() : value;
+        CreateLdapBindingResult value = res.getResult(CreateLdapBindingResult.class);
+        ret.value = value == null ? new CreateLdapBindingResult() : value;
         return ret;
     }
 
@@ -81,8 +66,8 @@ public class TestAddLdapServerConnectionAction extends AbstractAction {
                     return;
                 }
                 
-                TestAddLdapServerConnectionResult value = res.getResult(TestAddLdapServerConnectionResult.class);
-                ret.value = value == null ? new TestAddLdapServerConnectionResult() : value;
+                CreateLdapBindingResult value = res.getResult(CreateLdapBindingResult.class);
+                ret.value = value == null ? new CreateLdapBindingResult() : value;
                 completion.complete(ret);
             }
         });
@@ -94,11 +79,11 @@ public class TestAddLdapServerConnectionAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/ldap/servers/actions";
+        info.httpMethod = "POST";
+        info.path = "/ldap/bindings";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "testAddLdapServerConnection";
+        info.parameterName = "";
         return info;
     }
 
