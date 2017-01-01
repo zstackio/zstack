@@ -86,6 +86,8 @@ import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.storage.snapshot.VolumeSnapshotTreeInventory;
+import org.zstack.header.tag.APIEnableChangeVmPasswordEvent;
+import org.zstack.header.tag.APIEnableChangeVmPasswordMsg;
 import org.zstack.header.tag.TagInventory;
 import org.zstack.header.tag.TagType;
 import org.zstack.header.vm.*;
