@@ -10,6 +10,7 @@ public class ZSConfig {
     int port = 8080;
     long defaultPollingTimeout = TimeUnit.HOURS.toMillis(3);
     long defaultPollingInterval = TimeUnit.SECONDS.toMillis(1);
+    String webHook;
 
     public String getHostname() {
         return hostname;
@@ -32,6 +33,11 @@ public class ZSConfig {
 
         public Builder setHostname(String hostname) {
             config.hostname = hostname;
+            return this;
+        }
+
+        public Builder setWebHook(String webHook) {
+            config.webHook = webHook;
             return this;
         }
 

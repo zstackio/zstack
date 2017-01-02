@@ -7,9 +7,9 @@ import org.zstack.header.message.APIMessage;
  * Created by xing5 on 2016/12/8.
  */
 public interface AsyncRestApiStore {
-    String save(APIMessage msg);
+    void save(RequestData data);
 
-    void complete(APIEvent evt);
+    RequestData complete(APIEvent evt);
 
     AsyncRestQueryResult query(String uuid);
 }

@@ -193,7 +193,6 @@ public class Api implements CloudBusEventListener {
     public void startServer() {
         mgr = loader.getComponent(ManagementNodeManager.class);
         start();
-        final CountDownLatch count = new CountDownLatch(1);
 
         APIIsReadyToGoMsg msg = new APIIsReadyToGoMsg();
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);

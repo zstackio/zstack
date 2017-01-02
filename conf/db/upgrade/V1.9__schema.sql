@@ -47,7 +47,7 @@ CREATE TABLE `zstack`.`ShareableVolumeVmInstanceRefVO`(
 
 CREATE TABLE  `zstack`.`AsyncRestVO` (
     `uuid` varchar(32) NOT NULL UNIQUE,
-    `apiMessage` text DEFAULT NULL,
+    `requestData` text DEFAULT NULL,
     `state` varchar(64) NOT NULL,
     `result` text DEFAULT NULL,
     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,

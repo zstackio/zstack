@@ -5,8 +5,12 @@ import com.google.gson.GsonBuilder;
 import okhttp3.*;
 import okhttp3.internal.http.HttpMethod;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -19,6 +23,8 @@ public class ZSClient {
 
     static final Gson gson;
     static final Gson prettyGson;
+
+    private static ConcurrentHashMap<String, Api> waittingApis = new ConcurrentHashMap<>();
 
     static {
         gson = new GsonBuilder().create();
@@ -35,10 +41,65 @@ public class ZSClient {
         config = c;
     }
 
+    public static void webHookCallback(HttpServletRequest req, HttpServletResponse rsp) {
+        try {
+            StringBuilder jb = new StringBuilder();
+            BufferedReader reader = req.getReader();
+            String line;
+
+            while ((line = reader.readLine()) != null) {
+                jb.append(line);
+            }
+
+            String jobUuid = req.getHeader(Constants.HEADER_JOB_UUID);
+            if (jobUuid == null) {
+                // TODO: log error
+                rsp.sendError(400, String.format("missing header[%s]", Constants.HEADER_JOB_UUID));
+                return;
+            }
+
+            String jobSuccess = req.getHeader(Constants.HEADER_JOB_SUCCESS);
+            if (jobSuccess == null) {
+                // TODO: log error
+                rsp.sendError(400, String.format("missing header[%s]", Constants.HEADER_JOB_SUCCESS));
+                return;
+            }
+
+            boolean success = Boolean.valueOf(jobSuccess);
+
+            ApiResult res = new ApiResult();
+            if (!success) {
+                res = gson.fromJson(jb.toString(), ApiResult.class);
+            } else {
+                res.setResultString(jb.toString());
+            }
+
+            Api api = waittingApis.get(jobUuid);
+            if (api == null) {
+                //TODO: log error
+                rsp.sendError(404, String.format("no job[uuid:%s] found", jobUuid));
+                return;
+            }
+
+            api.resultFromWebHook = res;
+            synchronized (api) {
+                api.notify();
+            }
+
+            rsp.setStatus(200);
+            rsp.getWriter().write("");
+        } catch (Exception e) {
+            throw new ApiException(e);
+        }
+    }
+
     static class Api {
         AbstractAction action;
         RestInfo info;
         InternalCompletion completion;
+        String jobUuid = UUID.randomUUID().toString().replaceAll("-", "");
+
+        ApiResult resultFromWebHook;
 
         Api(AbstractAction action) {
             this.action = action;
@@ -85,7 +146,12 @@ public class ZSClient {
             action.checkParameters();
 
             Request.Builder reqBuilder = new Request.Builder()
+                    .addHeader(Constants.HEADER_JOB_UUID, jobUuid)
                     .addHeader(Constants.HEADER_JSON_SCHEMA, Boolean.TRUE.toString());
+
+            if (config.webHook != null) {
+                reqBuilder.addHeader(Constants.HEADER_WEBHOOK, config.webHook);
+            }
 
             if (action instanceof QueryAction) {
                 fillQueryApiRequestBuilder(reqBuilder);
@@ -104,12 +170,45 @@ public class ZSClient {
                 if (response.code() == 200 || response.code() == 204) {
                     return writeApiResult(response);
                 } else if (response.code() == 202) {
-                    return pollResult(response);
+
+                    if (config.webHook != null) {
+                        return webHookResult();
+                    } else {
+                        return pollResult(response);
+                    }
                 } else {
                     throw new ApiException(String.format("[Internal Error] the server returns an unknown status code[%s]", response.code()));
                 }
             } catch (IOException e) {
                 throw new ApiException(e);
+            }
+        }
+
+        private ApiResult webHookResult() {
+            waittingApis.put(jobUuid, this);
+
+            synchronized (this) {
+                Long timeout = (Long)action.getParameterValue("timeout", false);
+                timeout = timeout == null ? config.defaultPollingTimeout : timeout;
+
+                try {
+                    this.wait(timeout);
+                } catch (InterruptedException e) {
+                    throw new ApiException(e);
+                }
+
+                if (resultFromWebHook == null) {
+                    resultFromWebHook = new ApiResult();
+                    resultFromWebHook.error = errorCode(
+                            Constants.POLLING_TIMEOUT_ERROR,
+                            "timeout of polling async API result",
+                            String.format("polling result of api[%s] timeout after %s ms", action.getClass().getSimpleName(), timeout)
+                    );
+                }
+
+                waittingApis.remove(jobUuid);
+
+                return resultFromWebHook;
             }
         }
 

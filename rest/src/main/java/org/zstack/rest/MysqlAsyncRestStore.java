@@ -3,6 +3,7 @@ package org.zstack.rest;
 import org.apache.commons.collections.map.LRUMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
@@ -23,9 +24,7 @@ import javax.persistence.Query;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import static org.zstack.utils.CollectionDSL.e;
@@ -49,28 +48,34 @@ public class MysqlAsyncRestStore implements AsyncRestApiStore, Component {
     private Future cleanupThread;
 
     @Override
-    public String save(APIMessage msg) {
+    public void save(RequestData d) {
         AsyncRestVO vo = new AsyncRestVO();
-        vo.setUuid(msg.getId());
-        vo.setApiMessage(JSONObjectUtil.toJsonString(map(e(msg.getClass().getName(), msg))));
+        vo.setUuid(d.apiMessage.getId());
+        vo.setRequestData(d.toJson());
         vo.setState(AsyncRestState.processing);
         dbf.persist(vo);
-
-        return vo.getUuid();
     }
 
     @Override
-    public void complete(APIEvent evt) {
+    public RequestData complete(APIEvent evt) {
+        RequestData d = null;
+
         if (destinationMaker.isManagedByUs(evt.getApiId())) {
-            UpdateQuery q = UpdateQuery.New();
-            q.entity(AsyncRestVO.class);
-            q.condAnd(AsyncRestVO_.uuid, SimpleQuery.Op.EQ, evt.getApiId());
-            q.set(AsyncRestVO_.result, JSONObjectUtil.toJsonString(map(e(evt.getClass().getName(), evt))));
-            q.set(AsyncRestVO_.state, AsyncRestState.done);
-            q.update();
+            AsyncRestVO vo = dbf.findByUuid(evt.getApiId(), AsyncRestVO.class);
+            vo.setState(AsyncRestState.done);
+            vo.setResult(ApiEventResult.toJson(evt));
+            dbf.update(vo);
+
+            d = RequestData.fromJson(vo.getRequestData());
         }
 
-        results.put(evt.getApiId(), evt);
+        if (!CoreGlobalProperty.UNIT_TEST_ON) {
+            // don't use the cache for unit test
+            // we want to test the database
+            results.put(evt.getApiId(), evt);
+        }
+
+        return d;
     }
 
     @Override
@@ -97,14 +102,10 @@ public class MysqlAsyncRestStore implements AsyncRestApiStore, Component {
         }
 
         try {
-            Map m = JSONObjectUtil.toObject(vo.getResult(), LinkedHashMap.class);
-            String apiEventName = (String) m.keySet().iterator().next();
-            Class<APIEvent> apiEventClass = (Class<APIEvent>) Class.forName(apiEventName);
-            evt = JSONObjectUtil.rehashObject(m.get(apiEventName), apiEventClass);
             result.setState(AsyncRestState.done);
-            result.setResult(evt);
+            result.setResult(ApiEventResult.fromJson(vo.getResult()));
 
-            results.put(uuid, evt);
+            results.put(uuid, result.getResult());
         } catch (Exception e) {
             throw new CloudRuntimeException(e);
         }

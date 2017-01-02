@@ -1,5 +1,6 @@
 package org.zstack.rest;
 
+import okhttp3.*;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -17,6 +18,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusEventListener;
+import org.zstack.core.retry.Retry;
+import org.zstack.core.retry.RetryCondition;
 import org.zstack.header.Component;
 import org.zstack.header.apimediator.ApiMediatorConstant;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -60,6 +63,9 @@ public class RestServer implements Component, CloudBusEventListener {
     private static final Logger requestLogger = LogManager.getLogger("api.request");
     private static ThreadLocal<RequestInfo> requestInfo = new ThreadLocal<>();
 
+    private static final OkHttpClient http = new OkHttpClient();
+    private MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+
     @Autowired
     private CloudBus bus;
     @Autowired
@@ -67,8 +73,10 @@ public class RestServer implements Component, CloudBusEventListener {
     @Autowired
     private RESTFacade restf;
 
-    private static class RequestInfo {
-        HttpSession session;
+    static class RequestInfo {
+        // don't save session to database as JSON
+        // it's not JSON-dumpable
+        transient HttpSession session;
         String remoteHost;
         String requestUrl;
         HttpHeaders headers = new HttpHeaders();
@@ -140,10 +148,97 @@ public class RestServer implements Component, CloudBusEventListener {
     @Override
     public boolean handleEvent(Event e) {
         if (e instanceof APIEvent) {
-            asyncStore.complete((APIEvent) e);
+            RequestData d = asyncStore.complete((APIEvent) e);
+
+            if (d != null && d.webHook != null) {
+                try {
+                    callWebHook(d);
+                } catch (Throwable t) {
+                    throw new CloudRuntimeException(t);
+                }
+            }
         }
 
         return false;
+    }
+
+    static class WebHookRetryException extends RuntimeException {
+        public WebHookRetryException() {
+        }
+
+        public WebHookRetryException(String message) {
+            super(message);
+        }
+
+        public WebHookRetryException(String message, Throwable cause) {
+            super(message, cause);
+        }
+
+        public WebHookRetryException(Throwable cause) {
+            super(cause);
+        }
+
+        public WebHookRetryException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+            super(message, cause, enableSuppression, writableStackTrace);
+        }
+    }
+
+    private void callWebHook(RequestData d) throws IllegalAccessException, NoSuchMethodException, InvocationTargetException {
+        requestInfo.set(d.requestInfo);
+
+        AsyncRestQueryResult ret = asyncStore.query(d.apiMessage.getId());
+
+        ApiResponse response = new ApiResponse();
+        // task is done
+        APIEvent evt = ret.getResult();
+        if (evt.isSuccess()) {
+            RestResponseWrapper w = responseAnnotationByClass.get(evt.getClass());
+            if (w == null) {
+                throw new CloudRuntimeException(String.format("cannot find RestResponseWrapper for the class[%s]", evt.getClass()));
+            }
+
+            writeResponse(response, w, ret.getResult());
+        } else {
+            response.setError(evt.getErrorCode());
+        }
+
+        String body = JSONObjectUtil.toJsonString(response);
+        HttpUrl url = HttpUrl.parse(d.webHook);
+        Request.Builder rb = new Request.Builder().url(url)
+                .post(RequestBody.create(JSON, body))
+                .addHeader(RestConstants.HEADER_JOB_UUID, d.apiMessage.getId())
+                .addHeader(RestConstants.HEADER_JOB_SUCCESS, String.valueOf(evt.isSuccess()));
+
+        Request request = rb.build();
+
+        new Retry<Void>() {
+            String __name__ = String.format("call-webhook-%s", d.webHook);
+
+            @Override
+            @RetryCondition(onExceptions = {WebHookRetryException.class}, times = 15, interval = 2)
+            protected Void call() {
+                try {
+                    if (requestLogger.isTraceEnabled()) {
+                        StringBuilder sb = new StringBuilder(String.format("Call Web-Hook[%s] (to %s%s)", d.webHook, d.requestInfo.remoteHost, d.requestInfo.requestUrl));
+                        sb.append(String.format(" Body: %s", body));
+
+                        requestLogger.trace(sb.toString());
+                    }
+
+                    Response r = http.newCall(request).execute();
+
+                    if (r.code() < 200 || r.code() >= 300) {
+                        throw new WebHookRetryException(String.format("failed to post to the webhook[%s], %s",
+                                d.webHook, r.toString()));
+                    }
+
+                } catch (IOException e) {
+                    throw new WebHookRetryException(e);
+                }
+
+                return null;
+            }
+        }.run();
     }
 
     class Api {
@@ -558,6 +653,16 @@ public class RestServer implements Component, CloudBusEventListener {
             msg = JSONObjectUtil.rehashObject(parameter, (Class<APIMessage>) api.apiClass);
         }
 
+        if (requestInfo.get().headers.containsKey(RestConstants.HEADER_JOB_UUID)) {
+            String jobUuid = requestInfo.get().headers.get(RestConstants.HEADER_JOB_UUID).get(0);
+            if (!StringDSL.isZstackUuid(jobUuid)) {
+                throw new RestException(HttpStatus.BAD_REQUEST.value(), String.format("Invalid header[%s], it" +
+                        " must be a UUID with '-' stripped", RestConstants.HEADER_JOB_UUID));
+            }
+
+            msg.setId(jobUuid);
+        }
+
         if (sessionId != null) {
             SessionInventory session = new SessionInventory();
             session.setUuid(sessionId);
@@ -746,11 +851,19 @@ public class RestServer implements Component, CloudBusEventListener {
             MessageReply reply = bus.call(msg);
             sendReplyResponse(reply, api, rsp);
         } else {
-            String apiUuid = asyncStore.save(msg);
+            RequestData d = new RequestData();
+            d.apiMessage = msg;
+            d.requestInfo = requestInfo.get();
+            List<String> webHook = requestInfo.get().headers.get(RestConstants.HEADER_WEBHOOK);
+            if (webHook != null && !webHook.isEmpty()) {
+                d.webHook = webHook.get(0);
+            }
+
+            asyncStore.save(d);
             UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(restf.getBaseUrl());
             ub.path(RestConstants.API_VERSION);
             ub.path(RestConstants.ASYNC_JOB_PATH);
-            ub.path("/" + apiUuid);
+            ub.path("/" + msg.getId());
 
             ApiResponse response = new ApiResponse();
             response.setLocation(ub.build().toUriString());

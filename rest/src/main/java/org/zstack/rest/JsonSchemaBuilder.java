@@ -44,21 +44,30 @@ public class JsonSchemaBuilder {
 
             if (value.getClass().getCanonicalName().startsWith("java.")) {
                 // for JRE classes, only deal with Collection and Map
-                if (value instanceof List) {
-                    List c = (List) value;
+                if (value instanceof Collection) {
+                    Collection c = (Collection) value;
 
-                    for (int i=0; i<c.size(); i++) {
-                        paths.push(String.format("%s[%s]", f.getName(), i));
-                        build(c.get(i), paths);
-                        paths.pop();
+                    Class gtype = FieldUtils.getGenericType(f);
+
+                    if (gtype != null && !gtype.getName().startsWith("java.")) {
+                        int i = 0;
+                        for (Object co : c) {
+                            paths.push(String.format("%s[%s]", f.getName(), i++));
+                            build(co, paths);
+                            paths.pop();
+                        }
                     }
 
                 } else if (value instanceof Map) {
-                    for (Object me : ((Map) value).entrySet()) {
-                        Map.Entry e = (Map.Entry) me;
-                        paths.push(String.format("%s.%s", f.getName(), e.getKey().toString()));
-                        build(e.getValue(), paths);
-                        paths.pop();
+                    Class gtype = FieldUtils.getGenericType(f);
+
+                    if (gtype != null && !gtype.getName().startsWith("java.")) {
+                        for (Object me : ((Map) value).entrySet()) {
+                            Map.Entry e = (Map.Entry) me;
+                            paths.push(String.format("%s.%s", f.getName(), e.getKey().toString()));
+                            build(e.getValue(), paths);
+                            paths.pop();
+                        }
                     }
                 }
 

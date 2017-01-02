@@ -8,6 +8,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.zone.ZoneState;
+import org.zstack.rest.RestConstants;
 import org.zstack.sdk.*;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
@@ -30,8 +31,11 @@ public class TestCreateZoneRest1 {
         DBUtil.reDeployDB();
         WebBeanConstructor con = new WebBeanConstructor();
         /* This loads spring application context */
-        loader = con.addXml("PortalForUnitTest.xml").addXml("ZoneManager.xml")
-                .addXml("AccountManager.xml").addXml("rest.xml").build();
+        loader = con.addXml("PortalForUnitTest.xml")
+                .addXml("ZoneManager.xml")
+                .addXml("AccountManager.xml")
+                .addXml("rest.xml")
+                .build();
         dbf = loader.getComponent(DatabaseFacade.class);
         restf = loader.getComponent(RESTFacade.class);
         api = new Api();
@@ -44,9 +48,10 @@ public class TestCreateZoneRest1 {
 
         ZSClient.configure(
                 new ZSConfig.Builder()
-                .setHostname("127.0.0.1")
-                .setPort(8989)
-                .build()
+                        .setHostname("127.0.0.1")
+                        .setPort(8989)
+                        .setWebHook(String.format("http://127.0.0.1:8989%s", RestConstants.UNIT_TEST_WEBHOOK_PATH))
+                        .build()
         );
 
         CreateZoneAction action = new CreateZoneAction();

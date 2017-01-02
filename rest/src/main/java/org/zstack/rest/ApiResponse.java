@@ -12,7 +12,6 @@ import java.util.Map;
 public class ApiResponse extends HashMap {
     private String location;
     private ErrorCode error;
-    private Object result;
     private Map<String, String> schema;
 
     public String getLocation() {
@@ -40,14 +39,5 @@ public class ApiResponse extends HashMap {
     public void setError(ErrorCode error) {
         this.error = error;
         put("error", error);
-    }
-
-    public Object getResult() {
-        return result;
-    }
-
-    public void setResult(Object result) {
-        this.result = result;
-        put("result", result);
     }
 }

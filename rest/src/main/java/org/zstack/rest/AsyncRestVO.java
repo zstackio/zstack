@@ -16,7 +16,7 @@ public class AsyncRestVO {
     private String uuid;
 
     @Column
-    private String apiMessage;
+    private String requestData;
 
     @Column
     @Enumerated(EnumType.STRING)
@@ -40,12 +40,12 @@ public class AsyncRestVO {
         this.uuid = uuid;
     }
 
-    public String getApiMessage() {
-        return apiMessage;
+    public String getRequestData() {
+        return requestData;
     }
 
-    public void setApiMessage(String apiMessage) {
-        this.apiMessage = apiMessage;
+    public void setRequestData(String requestData) {
+        this.requestData = requestData;
     }
 
     public AsyncRestState getState() {
