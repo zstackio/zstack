@@ -93,7 +93,7 @@ public class TestMultipleNode5 {
                     if (e instanceof APIEvent) {
                         APIEvent evt = (APIEvent) e;
                         if (evt.getApiId().equals(amsg.getId()) &&
-                                !evt.isSuccess() && evt.getErrorCode().getCode().equals(SysErrors.MANAGEMENT_NODE_UNAVAILABLE_ERROR.toString())) {
+                                !evt.isSuccess() && evt.getError().getCode().equals(SysErrors.MANAGEMENT_NODE_UNAVAILABLE_ERROR.toString())) {
                             success2 = true;
                         }
                     }

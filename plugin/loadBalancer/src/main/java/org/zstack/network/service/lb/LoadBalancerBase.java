@@ -578,7 +578,7 @@ public class LoadBalancerBase {
 
                     @Override
                     public void fail(ErrorCode errorCode) {
-                        evt.setErrorCode(errorCode);
+                        evt.setError(errorCode);
                         bus.publish(evt);
                         chain.next();
                     }
@@ -612,7 +612,7 @@ public class LoadBalancerBase {
 
                     @Override
                     public void fail(ErrorCode errorCode) {
-                        evt.setErrorCode(errorCode);
+                        evt.setError(errorCode);
                         bus.publish(evt);
                         chain.next();
                     }
@@ -762,7 +762,7 @@ public class LoadBalancerBase {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                evt.setErrorCode(errorCode);
+                evt.setError(errorCode);
                 bus.publish(evt);
                 completion.done();
             }
@@ -854,7 +854,7 @@ public class LoadBalancerBase {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                evt.setErrorCode(errorCode);
+                evt.setError(errorCode);
                 bus.publish(evt);
                 completion.done();
             }
@@ -1028,7 +1028,7 @@ public class LoadBalancerBase {
                 error(new FlowErrorHandler(msg, completion) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
-                        evt.setErrorCode(errCode);
+                        evt.setError(errCode);
                         bus.publish(evt);
                         completion.done();
                     }

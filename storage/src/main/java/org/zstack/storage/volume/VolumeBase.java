@@ -907,7 +907,7 @@ public class VolumeBase implements Volume {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                evt.setErrorCode(errorCode);
+                evt.setError(errorCode);
                 bus.publish(evt);
             }
         });
@@ -932,7 +932,7 @@ public class VolumeBase implements Volume {
 
                     @Override
                     public void fail(ErrorCode errorCode) {
-                        evt.setErrorCode(errorCode);
+                        evt.setError(errorCode);
                         bus.publish(evt);
                         chain.next();
                     }
@@ -1002,7 +1002,7 @@ public class VolumeBase implements Volume {
                     @Override
                     public void fail(ErrorCode errorCode) {
                         evt.setInventory(getSelfInventory());
-                        evt.setErrorCode(errorCode);
+                        evt.setError(errorCode);
                         bus.publish(evt);
                         chain.next();
                     }
@@ -1128,7 +1128,7 @@ public class VolumeBase implements Volume {
                         } else {
                             self.setVmInstanceUuid(null);
                             dbf.update(self);
-                            evt.setErrorCode(reply.getError());
+                            evt.setError(reply.getError());
                         }
 
                         if (self.isShareable()) {
@@ -1180,7 +1180,7 @@ public class VolumeBase implements Volume {
                             self = dbf.updateAndRefresh(self);
                             evt.setInventory(getSelfInventory());
                         } else {
-                            evt.setErrorCode(reply.getError());
+                            evt.setError(reply.getError());
                         }
 
                         bus.publish(evt);
@@ -1293,7 +1293,7 @@ public class VolumeBase implements Volume {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                evt.setErrorCode(errf.instantiateErrorCode(SysErrors.DELETE_RESOURCE_ERROR, errorCode));
+                evt.setError(errf.instantiateErrorCode(SysErrors.DELETE_RESOURCE_ERROR, errorCode));
                 bus.publish(evt);
             }
         });
@@ -1365,7 +1365,7 @@ public class VolumeBase implements Volume {
 
                             tagMgr.createTagsFromAPICreateMessage(msg, creply.getInventory().getUuid(), VolumeSnapshotVO.class.getSimpleName());
                         } else {
-                            evt.setErrorCode(reply.getError());
+                            evt.setError(reply.getError());
                         }
 
                         bus.publish(evt);

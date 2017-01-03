@@ -327,7 +327,7 @@ public abstract class HostBase extends AbstractHost {
             public void run(MessageReply reply) {
                 APIReconnectHostEvent evt = new APIReconnectHostEvent(msg.getId());
                 if (!reply.isSuccess()) {
-                    evt.setErrorCode(errf.instantiateErrorCode(HostErrors.UNABLE_TO_RECONNECT_HOST, reply.getError()));
+                    evt.setError(errf.instantiateErrorCode(HostErrors.UNABLE_TO_RECONNECT_HOST, reply.getError()));
                     logger.debug(String.format("failed to reconnect host[uuid:%s] because %s", self.getUuid(), reply.getError()));
                 }
                 bus.publish(evt);
@@ -407,7 +407,7 @@ public abstract class HostBase extends AbstractHost {
         }).error(new FlowErrorHandler(msg) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                evt.setErrorCode(errf.instantiateErrorCode(SysErrors.DELETE_RESOURCE_ERROR, errCode));
+                evt.setError(errf.instantiateErrorCode(SysErrors.DELETE_RESOURCE_ERROR, errCode));
                 bus.publish(evt);
             }
         }).start();
@@ -450,7 +450,7 @@ public abstract class HostBase extends AbstractHost {
                 try {
                     extpEmitter.preChange(self, stateEvent);
                 } catch (HostException he) {
-                    evt.setErrorCode(errf.instantiateErrorCode(SysErrors.CHANGE_RESOURCE_STATE_ERROR, he.getMessage()));
+                    evt.setError(errf.instantiateErrorCode(SysErrors.CHANGE_RESOURCE_STATE_ERROR, he.getMessage()));
                     bus.publish(evt);
                     done(chain);
                     return;
@@ -469,7 +469,7 @@ public abstract class HostBase extends AbstractHost {
 
                         @Override
                         public void fail(ErrorCode errorCode) {
-                            evt.setErrorCode(errf.instantiateErrorCode(HostErrors.UNABLE_TO_ENTER_MAINTENANCE_MODE, errorCode.getDetails(), errorCode));
+                            evt.setError(errf.instantiateErrorCode(HostErrors.UNABLE_TO_ENTER_MAINTENANCE_MODE, errorCode.getDetails(), errorCode));
                             changeState(HostStateEvent.enable);
                             bus.publish(evt);
                             done(chain);

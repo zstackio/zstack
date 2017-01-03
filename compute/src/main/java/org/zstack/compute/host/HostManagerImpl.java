@@ -391,7 +391,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
 
             @Override
             public void fail(ErrorCode errorCode) {
-                evt.setErrorCode(errorCode);
+                evt.setError(errorCode);
                 bus.publish(evt);
             }
         });

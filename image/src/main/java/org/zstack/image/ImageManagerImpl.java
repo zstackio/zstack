@@ -50,7 +50,6 @@ import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.search.SearchQuery;
-import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.ObjectUtils;
@@ -408,7 +407,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                 error(new FlowErrorHandler(msg) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
-                        evt.setErrorCode(errCode);
+                        evt.setError(errCode);
                         bus.publish(evt);
                     }
                 });
@@ -475,7 +474,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                     ErrorCodeList error = errf.stringToOperationError(String.format("failed to create template from" +
                                     " the volume snapshot[uuid:%s] on backup storage[uuids:%s]", msg.getSnapshotUuid(),
                             msg.getBackupStorageUuids()), failures.stream().map(f -> f.error).collect(Collectors.toList()));
-                    evt.setErrorCode(error);
+                    evt.setError(error);
                     dbf.remove(vo);
                 } else {
                     ImageVO imvo = dbf.reload(vo);
@@ -838,7 +837,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
                         APICreateRootVolumeTemplateFromRootVolumeEvent evt = new APICreateRootVolumeTemplateFromRootVolumeEvent(msg.getId());
-                        evt.setErrorCode(errCode);
+                        evt.setError(errCode);
                         logger.warn(String.format("failed to create template from root volume[uuid:%s], because %s", msg.getRootVolumeUuid(), errCode));
                         bus.publish(evt);
                     }
@@ -1019,7 +1018,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                     });
 
                     dbf.remove(ivo);
-                    evt.setErrorCode(err);
+                    evt.setError(err);
                 }
 
                 bus.publish(evt);

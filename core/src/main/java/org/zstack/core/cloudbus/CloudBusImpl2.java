@@ -1110,7 +1110,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
                         if (rmeta.needApiEvent) {
                             APIEvent evt = new APIEvent(rmeta.msgId);
                             eventProperty(evt);
-                            evt.setErrorCode(err);
+                            evt.setError(err);
                             wire.publish(evt);
                         } else {
                             MessageReply reply = new MessageReply();
@@ -2142,7 +2142,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
             this.reply(msg, reply);
         } else if (msg instanceof APIMessage) {
             APIEvent evt = new APIEvent(msg.getId());
-            evt.setErrorCode(errf.instantiateErrorCode(SysErrors.UNKNOWN_MESSAGE_ERROR, details));
+            evt.setError(errf.instantiateErrorCode(SysErrors.UNKNOWN_MESSAGE_ERROR, details));
             this.publish(evt);
         } else if (msg instanceof NeedReplyMessage) {
             MessageReply reply = new MessageReply();
@@ -2189,7 +2189,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
             this.reply(msg, reply);
         } else {
             APIEvent evt = new APIEvent(msg.getId());
-            evt.setErrorCode(err);
+            evt.setError(err);
             evt.setSuccess(false);
             this.publish(evt);
         }

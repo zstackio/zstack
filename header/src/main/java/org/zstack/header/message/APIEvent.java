@@ -62,12 +62,11 @@ public class APIEvent extends Event {
         this.success = isSuccess;
     }
 
-
-    public ErrorCode getErrorCode() {
+    public ErrorCode getError() {
         return error;
     }
 
-    public void setErrorCode(ErrorCode errorCode) {
+    public void setError(ErrorCode errorCode) {
         this.success = false;
         this.error = errorCode;
     }

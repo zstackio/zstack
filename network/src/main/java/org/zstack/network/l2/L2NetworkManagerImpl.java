@@ -23,7 +23,6 @@ import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.*;
 import org.zstack.header.network.l2.*;
-import org.zstack.query.QueryFacade;
 import org.zstack.search.GetQuery;
 import org.zstack.search.SearchQuery;
 import org.zstack.tag.TagManager;
@@ -174,7 +173,7 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
 				String err = String.format("unable to create l2network[name:%s, type:%s], %s", msg.getName(), msg.getType(), e.getMessage());
 				logger.warn(err, e);
 				APICreateL2NetworkEvent evt = new APICreateL2NetworkEvent(msg.getId());
-                evt.setErrorCode(errf.instantiateErrorCode(SysErrors.CREATE_RESOURCE_ERROR, err));
+                evt.setError(errf.instantiateErrorCode(SysErrors.CREATE_RESOURCE_ERROR, err));
 				bus.publish(evt);
 				return;
 			}

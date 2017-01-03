@@ -276,7 +276,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
             LdapServerInventory inv = LdapServerInventory.valueOf(ldapServerVO);
             evt.setInventory(inv);
         } else {
-            evt.setErrorCode(errf.instantiateErrorCode(LdapErrors.MORE_THAN_ONE_LDAP_SERVER,
+            evt.setError(errf.instantiateErrorCode(LdapErrors.MORE_THAN_ONE_LDAP_SERVER,
                     "There has been a ldap server record. " +
                             "You'd better remove it before adding a new one!"));
         }
@@ -301,13 +301,13 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         sq.add(AccountVO_.uuid, SimpleQuery.Op.EQ, msg.getAccountUuid());
         AccountVO avo = sq.find();
         if (avo == null) {
-            evt.setErrorCode(errf.instantiateErrorCode(LdapErrors.CANNOT_FIND_ACCOUNT,
+            evt.setError(errf.instantiateErrorCode(LdapErrors.CANNOT_FIND_ACCOUNT,
                     String.format("cannot find the specified account[uuid:%s]", msg.getAccountUuid())));
             bus.publish(evt);
             return;
         }
         if (avo.getType().equals(AccountType.SystemAdmin)) {
-            evt.setErrorCode(errf.instantiateErrorCode(LdapErrors.CANNOT_BIND_ADMIN_ACCOUNT,
+            evt.setError(errf.instantiateErrorCode(LdapErrors.CANNOT_BIND_ADMIN_ACCOUNT,
                     "cannot bind ldap uid to admin account."));
             bus.publish(evt);
             return;
@@ -325,7 +325,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
             evt.setInventory(bindLdapAccount(msg.getAccountUuid(), msg.getLdapUid()));
         } catch (JpaSystemException e) {
             if (e.getRootCause() instanceof MySQLIntegrityConstraintViolationException) {
-                evt.setErrorCode(errf.instantiateErrorCode(LdapErrors.BIND_SAME_LDAP_UID_TO_MULTI_ACCOUNT,
+                evt.setError(errf.instantiateErrorCode(LdapErrors.BIND_SAME_LDAP_UID_TO_MULTI_ACCOUNT,
                         "The ldap uid has been bound to an account. "));
             } else {
                 throw e;
@@ -378,7 +378,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
 
         LdapServerVO ldapServerVO = dbf.findByUuid(msg.getLdapServerUuid(), LdapServerVO.class);
         if (ldapServerVO == null) {
-            evt.setErrorCode(errf.instantiateErrorCode(LdapErrors.UNABLE_TO_GET_SPECIFIED_LDAP_SERVER_RECORD,
+            evt.setError(errf.instantiateErrorCode(LdapErrors.UNABLE_TO_GET_SPECIFIED_LDAP_SERVER_RECORD,
                     String.format("Cannot find the specified ldap server[uuid:%s] in database.",
                             msg.getLdapServerUuid())));
             bus.publish(evt);

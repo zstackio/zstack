@@ -34,6 +34,7 @@ public class TestAsyncCascade {
     @Before
     public void setUp() throws Exception {
         BeanConstructor con = new WebBeanConstructor();
+        con.addXml("PortalForUnitTest.xml");
         loader = con.build();
         casf = loader.getComponent(CascadeFacade.class);
     }

@@ -95,7 +95,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
         GlobalConfig c = allConfigs.get(msg.getIdentity());
         if (c == null) {
             String err = String.format("Unable to find GlobalConfig[category: %s, value: %s]", msg.getCategory(), msg.getName());
-            evt.setErrorCode(errf.stringToInvalidArgumentError(err));
+            evt.setError(errf.stringToInvalidArgumentError(err));
             bus.publish(evt);
             return;
         }
@@ -106,7 +106,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
             GlobalConfigInventory inv = GlobalConfigInventory.valueOf(c.reload());
             evt.setInventory(inv);
         } catch (GlobalConfigException e) {
-            evt.setErrorCode(errf.stringToInvalidArgumentError(e.getMessage()));
+            evt.setError(errf.stringToInvalidArgumentError(e.getMessage()));
             logger.warn(e.getMessage(), e);
         }
         

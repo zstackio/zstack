@@ -57,7 +57,7 @@ public class ZoneBase extends AbstractZone {
         try {
             extpEmitter.preChange(self, stateEvt);
         } catch (ZoneException e) {
-            evt.setErrorCode(errf.instantiateErrorCode(SysErrors.CHANGE_RESOURCE_STATE_ERROR, e.getMessage()));
+            evt.setError(errf.instantiateErrorCode(SysErrors.CHANGE_RESOURCE_STATE_ERROR, e.getMessage()));
             bus.publish(evt);
             return;
         }
@@ -171,7 +171,7 @@ public class ZoneBase extends AbstractZone {
         }).error(new FlowErrorHandler(msg) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                evt.setErrorCode(errf.instantiateErrorCode(SysErrors.DELETE_RESOURCE_ERROR, errCode));
+                evt.setError(errf.instantiateErrorCode(SysErrors.DELETE_RESOURCE_ERROR, errCode));
                 bus.publish(evt);
             }
         }).start();

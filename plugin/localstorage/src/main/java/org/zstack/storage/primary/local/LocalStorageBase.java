@@ -212,7 +212,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
             @Override
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {
-                    evt.setErrorCode(reply.getError());
+                    evt.setError(reply.getError());
                     bus.publish(evt);
                     return;
                 }

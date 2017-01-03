@@ -272,7 +272,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
 
             @Override
             public void fail(ErrorCode errorCode) {
-                evt.setErrorCode(errorCode);
+                evt.setError(errorCode);
                 bus.publish(evt);
             }
         });
@@ -325,7 +325,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
                 prvo.setVmNicUuid(null);
                 prvo.setGuestIp(null);
                 dbf.update(prvo);
-                evt.setErrorCode(errorCode);
+                evt.setError(errorCode);
                 bus.publish(evt);
             }
         });
@@ -488,7 +488,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
 
             @Override
             public void fail(ErrorCode errorCode) {
-                evt.setErrorCode(errorCode);
+                evt.setError(errorCode);
                 bus.publish(evt);
             }
         });
@@ -538,7 +538,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
 
                 @Override
                 public void fail(ErrorCode errorCode) {
-                    evt.setErrorCode(errorCode);
+                    evt.setError(errorCode);
                     bus.publish(evt);
                 }
             });
@@ -563,7 +563,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
 
                 @Override
                 public void fail(ErrorCode errorCode) {
-                    evt.setErrorCode(errorCode);
+                    evt.setError(errorCode);
                     bus.publish(evt);
                 }
             });
@@ -585,7 +585,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
             } catch (PortForwardingException e) {
                 String err = String.format("unable to create port forwarding rule, extension[%s] refused it because %s", extp.getClass().getName(), e.getMessage());
                 logger.warn(err, e);
-                evt.setErrorCode(errf.instantiateErrorCode(SysErrors.CREATE_RESOURCE_ERROR, err));
+                evt.setError(errf.instantiateErrorCode(SysErrors.CREATE_RESOURCE_ERROR, err));
                 bus.publish(evt);
                 return;
             }
@@ -620,7 +620,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
                 logger.debug(String.format("failed to create port forwarding rule %s, because %s", JSONObjectUtil.toJsonString(ruleInv), errorCode));
 
                 dbf.remove(vo);
-                evt.setErrorCode(errf.instantiateErrorCode(SysErrors.CREATE_RESOURCE_ERROR, errorCode));
+                evt.setError(errf.instantiateErrorCode(SysErrors.CREATE_RESOURCE_ERROR, errorCode));
                 bus.publish(evt);
             }
         });

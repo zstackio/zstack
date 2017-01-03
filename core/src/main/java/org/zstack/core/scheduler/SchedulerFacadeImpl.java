@@ -112,7 +112,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
             dbf.removeByPrimaryKey(msg.getUuid(), SchedulerVO.class);
             bus.publish(evt);
         } catch (SchedulerException e) {
-            evt.setErrorCode(errf.instantiateErrorCode(SysErrors.DELETE_RESOURCE_ERROR, e.getMessage()));
+            evt.setError(errf.instantiateErrorCode(SysErrors.DELETE_RESOURCE_ERROR, e.getMessage()));
             bus.publish(evt);
             logger.warn(String.format("Delete Scheduler %s failed!", msg.getUuid()));
             throw new RuntimeException(e);

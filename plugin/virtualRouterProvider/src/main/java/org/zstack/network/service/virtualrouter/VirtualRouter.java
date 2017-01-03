@@ -300,7 +300,7 @@ public class VirtualRouter extends ApplianceVmBase {
                 refreshVO();
                 ErrorCode allowed = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
                 if (allowed != null) {
-                    evt.setErrorCode(allowed);
+                    evt.setError(allowed);
                     bus.publish(evt);
                     chain.next();
                     return;
@@ -316,7 +316,7 @@ public class VirtualRouter extends ApplianceVmBase {
 
                     @Override
                     public void fail(ErrorCode errorCode) {
-                        evt.setErrorCode(errorCode);
+                        evt.setError(errorCode);
                         bus.publish(evt);
                         chain.next();
                     }

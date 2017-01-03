@@ -234,7 +234,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
 
                     evt.setInventory(VolumeInventory.valueOf(vvo));
                 } else {
-                    evt.setErrorCode(reply.getError());
+                    evt.setError(reply.getError());
                 }
 
                 bus.publish(evt);
@@ -453,7 +453,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                 error(new FlowErrorHandler(msg) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
-                        evt.setErrorCode(errCode);
+                        evt.setError(errCode);
                         bus.publish(evt);
                     }
                 });
@@ -540,7 +540,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {
                     dbf.remove(finalVo);
-                    evt.setErrorCode(reply.getError());
+                    evt.setError(reply.getError());
                 } else {
                     evt.setInventory(((InstantiateVolumeReply) reply).getVolume());
                 }

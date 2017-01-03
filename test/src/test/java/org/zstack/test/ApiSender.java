@@ -90,7 +90,7 @@ public class ApiSender {
 
         if (!result.isSuccess()) {
             if (exceptionOnError) {
-                throw new ApiSenderException(result.getErrorCode());
+                throw new ApiSenderException(result.getError());
             } else {
                 return null;
             }

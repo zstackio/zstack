@@ -649,7 +649,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
                 error(new FlowErrorHandler(msg) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
-                        evt.setErrorCode(errCode);
+                        evt.setError(errCode);
                         bus.publish(evt);
                     }
                 });
@@ -723,7 +723,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
                     @Override
                     public void fail(ErrorCode errorCode) {
-                        evt.setErrorCode(errorCode);
+                        evt.setError(errorCode);
                         bus.publish(evt);
                         chain.next();
                     }
@@ -764,7 +764,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                evt.setErrorCode(errorCode);
+                evt.setError(errorCode);
                 bus.publish(evt);
             }
         });
@@ -800,7 +800,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         try {
             extpEmitter.preAttach(self, msg.getClusterUuid());
         } catch (PrimaryStorageException pe) {
-            evt.setErrorCode(errf.instantiateErrorCode(PrimaryStorageErrors.ATTACH_ERROR, pe.getMessage()));
+            evt.setError(errf.instantiateErrorCode(PrimaryStorageErrors.ATTACH_ERROR, pe.getMessage()));
             bus.publish(evt);
             completion.done();
             return;
@@ -829,7 +829,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             @Override
             public void fail(ErrorCode errorCode) {
                 extpEmitter.failToAttach(self, msg.getClusterUuid());
-                evt.setErrorCode(errf.instantiateErrorCode(PrimaryStorageErrors.ATTACH_ERROR, errorCode));
+                evt.setError(errf.instantiateErrorCode(PrimaryStorageErrors.ATTACH_ERROR, errorCode));
                 bus.publish(evt);
                 completion.done();
             }
@@ -887,7 +887,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         try {
             extpEmitter.preChange(self, event);
         } catch (PrimaryStorageException e) {
-            evt.setErrorCode(errf.instantiateErrorCode(SysErrors.CHANGE_RESOURCE_STATE_ERROR, e.getMessage()));
+            evt.setError(errf.instantiateErrorCode(SysErrors.CHANGE_RESOURCE_STATE_ERROR, e.getMessage()));
             bus.publish(evt);
             return;
         }
@@ -998,7 +998,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         }).error(new FlowErrorHandler(msg) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                evt.setErrorCode(errf.instantiateErrorCode(SysErrors.DELETE_RESOURCE_ERROR, errCode));
+                evt.setError(errf.instantiateErrorCode(SysErrors.DELETE_RESOURCE_ERROR, errCode));
                 bus.publish(evt);
             }
         }).start();

@@ -84,6 +84,7 @@ public class TestCeph4 {
         Assert.assertFalse(config.createSnapshotCmds.isEmpty());
         Assert.assertTrue(sp.getPrimaryStorageInstallPath().contains("@"));
 
+        api.stopVmInstance(vm.getUuid());
         api.revertVolumeToSnapshot(sp.getUuid());
         Assert.assertFalse(config.rollbackSnapshotCmds.isEmpty());
         VolumeVO rootvo = dbf.findByUuid(root.getUuid(), VolumeVO.class);

@@ -422,7 +422,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
             @Override
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {
-                    evt.setErrorCode(reply.getError());
+                    evt.setError(reply.getError());
                 } else {
                     self = dbf.reload(self);
                     evt.setInventory(getSelfInventory());
@@ -470,7 +470,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
         try {
             extpEmitter.preDetach(self, msg.getZoneUuid());
         } catch (BackupStorageException e) {
-            evt.setErrorCode(errf.instantiateErrorCode(BackupStorageErrors.DETACH_ERROR, e.getMessage()));
+            evt.setError(errf.instantiateErrorCode(BackupStorageErrors.DETACH_ERROR, e.getMessage()));
             bus.publish(evt);
             return;
         }
@@ -503,7 +503,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
             public void fail(ErrorCode errorCode) {
                 logger.warn(errorCode.toString());
                 extpEmitter.failToDetach(self, msg.getZoneUuid());
-                evt.setErrorCode(errf.instantiateErrorCode(BackupStorageErrors.DETACH_ERROR, errorCode));
+                evt.setError(errf.instantiateErrorCode(BackupStorageErrors.DETACH_ERROR, errorCode));
                 bus.publish(evt);
             }
         });
@@ -515,7 +515,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
 
         String err = extpEmitter.preAttach(svo, msg.getZoneUuid());
         if (err != null) {
-            evt.setErrorCode(errf.instantiateErrorCode(BackupStorageErrors.ATTACH_ERROR, err));
+            evt.setError(errf.instantiateErrorCode(BackupStorageErrors.ATTACH_ERROR, err));
             bus.publish(evt);
             return;
         }
@@ -541,7 +541,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
             public void fail(ErrorCode errorCode) {
                 logger.warn(errorCode.toString());
                 extpEmitter.failToAttach(svo, msg.getZoneUuid());
-                evt.setErrorCode(errf.instantiateErrorCode(BackupStorageErrors.ATTACH_ERROR, errorCode));
+                evt.setError(errf.instantiateErrorCode(BackupStorageErrors.ATTACH_ERROR, errorCode));
                 bus.publish(evt);
             }
         });
@@ -557,7 +557,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
         try {
             extpEmitter.preChange(self, event);
         } catch (BackupStorageException e) {
-            evt.setErrorCode(errf.instantiateErrorCode(SysErrors.CHANGE_RESOURCE_STATE_ERROR, e.getMessage()));
+            evt.setError(errf.instantiateErrorCode(SysErrors.CHANGE_RESOURCE_STATE_ERROR, e.getMessage()));
             bus.publish(evt);
             return;
         }
@@ -638,7 +638,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
         }).error(new FlowErrorHandler(msg) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                evt.setErrorCode(errf.instantiateErrorCode(SysErrors.DELETE_RESOURCE_ERROR, errCode));
+                evt.setError(errf.instantiateErrorCode(SysErrors.DELETE_RESOURCE_ERROR, errCode));
                 bus.publish(evt);
             }
         }).start();

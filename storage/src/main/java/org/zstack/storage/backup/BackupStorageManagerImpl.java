@@ -223,7 +223,7 @@ public class BackupStorageManagerImpl extends AbstractService implements BackupS
 
                 } else {
                     dbf.removeByPrimaryKey(inv.getUuid(), BackupStorageVO.class);
-                    evt.setErrorCode(errf.instantiateErrorCode(SysErrors.CREATE_RESOURCE_ERROR, reply.getError()));
+                    evt.setError(errf.instantiateErrorCode(SysErrors.CREATE_RESOURCE_ERROR, reply.getError()));
                     bus.publish(evt);
                 }
             }

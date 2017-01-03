@@ -271,7 +271,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             @Override
             public void run(MessageReply reply) {
                 if (!reply.isSuccess() && !reply.getError().isError(PrimaryStorageErrors.DISCONNECTED)) {
-                    evt.setErrorCode(reply.getError());
+                    evt.setError(reply.getError());
                     logger.warn(String.format("failed to connect primary storage[uuid:%s, name:%s, url:%s]",
                             finalVo.getUuid(), finalVo.getName(), finalVo.getUrl()));
                     dbf.remove(finalVo);

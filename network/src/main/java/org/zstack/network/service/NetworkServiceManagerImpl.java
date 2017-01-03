@@ -189,7 +189,7 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
 			String err = String.format("unable to detach network service provider[uuid:%s, name:%s, type:%s] to l2network[uuid:%s, name:%s, type:%s], %s",
 					vo.getUuid(), vo.getName(), vo.getType(), l2vo.getUuid(), l2vo.getName(), l2vo.getType(), e.getMessage());
 			logger.warn(err, e);
-            evt.setErrorCode(errf.instantiateErrorCode(NetworkServiceErrors.DETACH_NETWORK_SERVICE_PROVIDER_ERROR, err));
+            evt.setError(errf.instantiateErrorCode(NetworkServiceErrors.DETACH_NETWORK_SERVICE_PROVIDER_ERROR, err));
 			bus.publish(evt);
 			return;
 		}
@@ -224,7 +224,7 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
 			String err = String.format("unable to attach network service provider[uuid:%s, name:%s, type:%s] to l2network[uuid:%s, name:%s, type:%s], %s",
 					vo.getUuid(), vo.getName(), vo.getType(), l2vo.getUuid(), l2vo.getName(), l2vo.getType(), e.getMessage());
 			logger.warn(err, e);
-            evt.setErrorCode(errf.instantiateErrorCode(NetworkServiceErrors.ATTACH_NETWORK_SERVICE_PROVIDER_ERROR, err));
+            evt.setError(errf.instantiateErrorCode(NetworkServiceErrors.ATTACH_NETWORK_SERVICE_PROVIDER_ERROR, err));
 			bus.publish(evt);
 			return;
 		}

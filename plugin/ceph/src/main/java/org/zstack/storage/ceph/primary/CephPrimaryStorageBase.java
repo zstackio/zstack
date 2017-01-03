@@ -2076,7 +2076,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 self = dbf.reload(self);
                 self.setStatus(PrimaryStorageStatus.Disconnected);
                 self = dbf.updateAndRefresh(self);
-                evt.setErrorCode(errorCode);
+                evt.setError(errorCode);
                 bus.publish(evt);
             }
         });
@@ -2282,7 +2282,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 error(new FlowErrorHandler(msg) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
-                        evt.setErrorCode(errCode);
+                        evt.setError(errCode);
                         bus.publish(evt);
                     }
                 });

@@ -837,7 +837,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                     public void handle(ErrorCode errCode, Map data) {
                         logger.warn(String.format("failed to restore volume[uuid:%s] to image[uuid:%s], %s",
                                 rootVolumeInventory.getUuid(), rootVolumeInventory.getRootImageUuid(), errCode));
-                        evt.setErrorCode(errCode);
+                        evt.setError(errCode);
                         bus.publish(evt);
                     }
                 });

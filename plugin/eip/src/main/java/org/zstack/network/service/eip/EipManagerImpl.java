@@ -4,7 +4,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
@@ -16,7 +15,6 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -26,10 +24,8 @@ import org.zstack.header.identity.Quota.QuotaOperator;
 import org.zstack.header.identity.Quota.QuotaPair;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
-import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedQuotaCheckMessage;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.l3.UsedIpInventory;
 import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.query.AddExpandedQueryExtensionPoint;
@@ -50,7 +46,6 @@ import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
 
-import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
@@ -232,7 +227,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
 
             @Override
             public void fail(ErrorCode errorCode) {
-                evt.setErrorCode(errorCode);
+                evt.setError(errorCode);
                 bus.publish(evt);
             }
         });
@@ -279,7 +274,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
 
             @Override
             public void fail(ErrorCode errorCode) {
-                evt.setErrorCode(errorCode);
+                evt.setError(errorCode);
                 bus.publish(evt);
             }
         });
@@ -301,7 +296,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
 
                 @Override
                 public void fail(ErrorCode errorCode) {
-                    evt.setErrorCode(errorCode);
+                    evt.setError(errorCode);
                     bus.publish(evt);
                 }
             });
@@ -378,7 +373,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                 error(new FlowErrorHandler(msg) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
-                        evt.setErrorCode(errCode);
+                        evt.setError(errCode);
                         bus.publish(evt);
                     }
                 });
@@ -430,7 +425,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
 
                 @Override
                 public void fail(ErrorCode errorCode) {
-                    evt.setErrorCode(errorCode);
+                    evt.setError(errorCode);
                     bus.publish(evt);
                 }
             });
@@ -463,7 +458,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
 
                 @Override
                 public void fail(ErrorCode errorCode) {
-                    evt.setErrorCode(errorCode);
+                    evt.setError(errorCode);
                     bus.publish(evt);
                 }
             });
@@ -564,7 +559,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                 error(new FlowErrorHandler(msg) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
-                        evt.setErrorCode(errCode);
+                        evt.setError(errCode);
                         dbf.remove(fevo);
                         logger.debug(String.format("failed to create eip[uuid:%s, name:%s] on vip[uuid:%s] for vm nic[uuid:%s], %s",
                                 retinv.getUuid(), retinv.getName(), vipInventory.getUuid(), nicInventory.getUuid(), errCode));

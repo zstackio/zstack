@@ -491,7 +491,7 @@ public class SftpBackupStorage extends BackupStorageBase {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                evt.setErrorCode(errf.instantiateErrorCode(SftpBackupStorageErrors.RECONNECT_ERROR, errorCode));
+                evt.setError(errf.instantiateErrorCode(SftpBackupStorageErrors.RECONNECT_ERROR, errorCode));
                 bus.publish(evt);
             }
         });

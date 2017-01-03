@@ -875,7 +875,7 @@ public class VolumeSnapshotTreeBase {
         refreshVO();
         final ErrorCode err = isOperationAllowed(msg);
         if (err != null) {
-            evt.setErrorCode(err);
+            evt.setError(err);
             bus.publish(evt);
             completion.done();
             return;
@@ -918,7 +918,7 @@ public class VolumeSnapshotTreeBase {
                 error(new FlowErrorHandler(msg, completion) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
-                        evt.setErrorCode(errCode);
+                        evt.setError(errCode);
                         bus.publish(evt);
                         completion.done();
                     }
@@ -957,7 +957,7 @@ public class VolumeSnapshotTreeBase {
         refreshVO();
         final ErrorCode err = isOperationAllowed(msg);
         if (err != null) {
-            evt.setErrorCode(err);
+            evt.setError(err);
             bus.publish(evt);
             completion.done();
             return;
@@ -1134,7 +1134,7 @@ public class VolumeSnapshotTreeBase {
                 error(new FlowErrorHandler(msg, completion) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
-                        evt.setErrorCode(errCode);
+                        evt.setError(errCode);
                         bus.publish(evt);
                         completion.done();
                     }
@@ -1175,7 +1175,7 @@ public class VolumeSnapshotTreeBase {
         refreshVO();
         final ErrorCode err = isOperationAllowed(msg);
         if (err != null) {
-            evt.setErrorCode(err);
+            evt.setError(err);
             bus.publish(evt);
             completion.done();
             return;
@@ -1277,7 +1277,7 @@ public class VolumeSnapshotTreeBase {
                     public void handle(ErrorCode errCode, Map data) {
                         logger.warn(String.format("failed to restore volume[uuid:%s] to snapshot[uuid:%s, name:%s], %s",
                                 volumeInventory.getUuid(), currentRoot.getUuid(), currentRoot.getName(), errCode));
-                        evt.setErrorCode(errCode);
+                        evt.setError(errCode);
                         bus.publish(evt);
                         completion.done();
                     }
@@ -1353,7 +1353,7 @@ public class VolumeSnapshotTreeBase {
         }).error(new FlowErrorHandler(msg) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                evt.setErrorCode(errf.instantiateErrorCode(SysErrors.DELETE_RESOURCE_ERROR, errCode));
+                evt.setError(errf.instantiateErrorCode(SysErrors.DELETE_RESOURCE_ERROR, errCode));
                 bus.publish(evt);
             }
         }).start();

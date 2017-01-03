@@ -203,7 +203,7 @@ public class L2NoVlanNetwork implements L2Network {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                evt.setErrorCode(errorCode);
+                evt.setError(errorCode);
                 bus.publish(evt);
             }
         });
@@ -323,7 +323,7 @@ public class L2NoVlanNetwork implements L2Network {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                evt.setErrorCode(errf.instantiateErrorCode(L2Errors.ATTACH_ERROR, errorCode));
+                evt.setError(errf.instantiateErrorCode(L2Errors.ATTACH_ERROR, errorCode));
                 bus.publish(evt);
             }
         });
@@ -395,7 +395,7 @@ public class L2NoVlanNetwork implements L2Network {
         }).error(new FlowErrorHandler(msg) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                evt.setErrorCode(errf.instantiateErrorCode(SysErrors.DELETE_RESOURCE_ERROR, errCode));
+                evt.setError(errf.instantiateErrorCode(SysErrors.DELETE_RESOURCE_ERROR, errCode));
                 bus.publish(evt);
             }
         }).start();

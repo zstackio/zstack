@@ -1052,7 +1052,7 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
             public void fail(ErrorCode errorCode) {
                 self.setStatus(PrimaryStorageStatus.Disconnected);
                 self = dbf.updateAndRefresh(self);
-                evt.setErrorCode(errorCode);
+                evt.setError(errorCode);
                 bus.publish(evt);
             }
         });

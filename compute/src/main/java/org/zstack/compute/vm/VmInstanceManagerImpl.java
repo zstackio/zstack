@@ -761,7 +761,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
             @Override
             public void fail(ErrorCode errorCode) {
-                evt.setErrorCode(errorCode);
+                evt.setError(errorCode);
                 bus.publish(evt);
             }
         });

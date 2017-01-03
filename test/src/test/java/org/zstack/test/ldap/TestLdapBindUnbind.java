@@ -177,6 +177,6 @@ public class TestLdapBindUnbind {
         msg4.setUuid(evt2.getInventory().getUuid());
         msg4.setSession(session);
         APIDeleteLdapBindingEvent evt4 = sender.send(msg4, APIDeleteLdapBindingEvent.class);
-        Assert.assertTrue(evt4.getErrorCode() == null);
+        Assert.assertTrue(evt4.getError() == null);
     }
 }

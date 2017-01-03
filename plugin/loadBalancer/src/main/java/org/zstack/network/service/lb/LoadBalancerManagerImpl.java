@@ -192,7 +192,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                 error(new FlowErrorHandler(msg) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
-                        evt.setErrorCode(errCode);
+                        evt.setError(errCode);
                         bus.publish(evt);
                     }
                 });

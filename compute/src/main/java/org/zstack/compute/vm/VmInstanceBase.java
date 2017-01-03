@@ -2200,7 +2200,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                evt.setErrorCode(errorCode);
+                evt.setError(errorCode);
                 bus.publish(evt);
                 completion.done();
             }
@@ -2421,7 +2421,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                 ErrorCode error = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
                 if (error != null) {
-                    evt.setErrorCode(error);
+                    evt.setError(error);
                     bus.publish(evt);
                     chain.next();
                     return;
@@ -2437,7 +2437,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                     @Override
                     public void fail(ErrorCode errorCode) {
-                        evt.setErrorCode(errorCode);
+                        evt.setError(errorCode);
                         bus.publish(evt);
                         chain.next();
                     }
@@ -2470,7 +2470,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                     @Override
                     public void fail(ErrorCode errorCode) {
-                        evt.setErrorCode(errorCode);
+                        evt.setError(errorCode);
                         bus.publish(evt);
                         chain.next();
                     }
@@ -2497,7 +2497,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 refreshVO();
                 ErrorCode allowed = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
                 if (allowed != null) {
-                    evt.setErrorCode(allowed);
+                    evt.setError(allowed);
                     bus.publish(evt);
                     chain.next();
                     return;
@@ -2514,7 +2514,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                     @Override
                     public void fail(ErrorCode errorCode) {
-                        evt.setErrorCode(errorCode);
+                        evt.setError(errorCode);
                         bus.publish(evt);
                         chain.next();
                     }
@@ -2665,7 +2665,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 refreshVO();
                 ErrorCode allowed = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
                 if (allowed != null) {
-                    evt.setErrorCode(allowed);
+                    evt.setError(allowed);
                     bus.publish(evt);
                     chain.next();
                     return;
@@ -2682,7 +2682,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                     @Override
                     public void fail(ErrorCode errorCode) {
-                        evt.setErrorCode(errorCode);
+                        evt.setError(errorCode);
                         bus.publish(evt);
                         chain.next();
                     }
@@ -2798,7 +2798,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 refreshVO();
                 ErrorCode allowed = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
                 if (allowed != null) {
-                    evt.setErrorCode(allowed);
+                    evt.setError(allowed);
                     bus.publish(evt);
                     chain.next();
                     return;
@@ -2816,7 +2816,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                     @Override
                     public void fail(ErrorCode errorCode) {
-                        evt.setErrorCode(errorCode);
+                        evt.setError(errorCode);
                         bus.publish(evt);
                         chain.next();
                     }
@@ -3083,7 +3083,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {
-                    evt.setErrorCode(reply.getError());
+                    evt.setError(reply.getError());
                 } else {
                     OnlineChangeVmCpuMemoryReply hr = reply.castReply();
                     self.setInstanceOfferingUuid(newOfferingVO.getUuid());
@@ -3335,7 +3335,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                evt.setErrorCode(errorCode);
+                evt.setError(errorCode);
                 bus.publish(evt);
             }
         });
@@ -3528,7 +3528,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     @Override
                     public void fail(ErrorCode errorCode) {
                         APIMigrateVmEvent evt = new APIMigrateVmEvent(msg.getId());
-                        evt.setErrorCode(errorCode);
+                        evt.setError(errorCode);
                         bus.publish(evt);
                         chain.next();
                     }
@@ -3811,7 +3811,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void fail(ErrorCode errorCode) {
                 APIStartVmInstanceEvent evt = new APIStartVmInstanceEvent(msg.getId());
-                evt.setErrorCode(errf.instantiateErrorCode(VmErrors.START_ERROR, errorCode));
+                evt.setError(errf.instantiateErrorCode(VmErrors.START_ERROR, errorCode));
                 bus.publish(evt);
                 taskChain.next();
             }
@@ -3847,7 +3847,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                evt.setErrorCode(errorCode);
+                evt.setError(errorCode);
                 bus.publish(evt);
             }
         });
@@ -4104,7 +4104,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void fail(ErrorCode errorCode) {
                 APIRebootVmInstanceEvent evt = new APIRebootVmInstanceEvent(msg.getId());
-                evt.setErrorCode(errf.instantiateErrorCode(VmErrors.REBOOT_ERROR, errorCode));
+                evt.setError(errf.instantiateErrorCode(VmErrors.REBOOT_ERROR, errorCode));
                 bus.publish(evt);
                 taskChain.next();
             }
@@ -4144,7 +4144,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void fail(ErrorCode errorCode) {
                 APIStopVmInstanceEvent evt = new APIStopVmInstanceEvent(msg.getId());
-                evt.setErrorCode(errf.instantiateErrorCode(VmErrors.STOP_ERROR, errorCode));
+                evt.setError(errf.instantiateErrorCode(VmErrors.STOP_ERROR, errorCode));
                 bus.publish(evt);
                 taskChain.next();
             }
@@ -4296,7 +4296,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void fail(ErrorCode errorCode) {
                 APIPauseVmInstanceEvent evt = new APIPauseVmInstanceEvent(msg.getId());
-                evt.setErrorCode(errf.instantiateErrorCode(VmErrors.SUSPEND_ERROR, errorCode));
+                evt.setError(errf.instantiateErrorCode(VmErrors.SUSPEND_ERROR, errorCode));
                 bus.publish(evt);
                 taskChain.next();
             }
@@ -4375,7 +4375,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void fail(ErrorCode errorCode) {
                 APIResumeVmInstanceEvent evt = new APIResumeVmInstanceEvent(msg.getId());
-                evt.setErrorCode(errf.instantiateErrorCode(VmErrors.RESUME_ERROR, errorCode));
+                evt.setError(errf.instantiateErrorCode(VmErrors.RESUME_ERROR, errorCode));
                 bus.publish(evt);
                 taskChain.next();
             }

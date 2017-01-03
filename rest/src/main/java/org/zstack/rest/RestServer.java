@@ -199,7 +199,7 @@ public class RestServer implements Component, CloudBusEventListener {
 
             writeResponse(response, w, ret.getResult());
         } else {
-            response.setError(evt.getErrorCode());
+            response.setError(evt.getError());
         }
 
         String body = JSONObjectUtil.toJsonString(response);
@@ -540,7 +540,7 @@ public class RestServer implements Component, CloudBusEventListener {
             writeResponse(response, w, ret.getResult());
             sendResponse(HttpStatus.OK.value(), response, rsp);
         } else {
-            response.setError(evt.getErrorCode());
+            response.setError(evt.getError());
             sendResponse(HttpStatus.SERVICE_UNAVAILABLE.value(), response, rsp);
         }
     }
