@@ -17,10 +17,12 @@ public class FusionstorPrimaryStorageMonInventory {
     private Timestamp createDate;
     private Timestamp lastOpDate;
     private String primaryStorageUuid;
-    private Integer sshPort;
+    private String monAddr;
     private String sshUsername;
     private String sshPassword;
+    private Integer sshPort;
     private String status;
+    private String monUuid;
 
     public static FusionstorPrimaryStorageMonInventory valueOf(FusionstorPrimaryStorageMonVO vo) {
         FusionstorPrimaryStorageMonInventory inv = new FusionstorPrimaryStorageMonInventory();
@@ -33,6 +35,8 @@ public class FusionstorPrimaryStorageMonInventory {
         inv.setSshUsername(vo.getSshUsername());
         inv.setSshPassword(vo.getSshPassword());
         inv.setStatus(vo.getStatus().toString());
+        inv.setMonAddr(vo.getHostname());
+        inv.setMonUuid(vo.getUuid());
         return inv;
     }
 
@@ -114,5 +118,21 @@ public class FusionstorPrimaryStorageMonInventory {
 
     public void setSshUsername(String sshUsername) {
             this.sshUsername = sshUsername;
+    }
+
+    public String getMonAddr() {
+        return monAddr;
+    }
+
+    public void setMonAddr(String monAddr) {
+        this.monAddr = monAddr;
+    }
+
+    public String getMonUuid() {
+        return monUuid;
+    }
+
+    public void setMonUuid(String monUuid) {
+        this.monUuid = monUuid;
     }
 }
