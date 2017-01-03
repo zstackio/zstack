@@ -85,9 +85,9 @@ public class ProgressReportService extends AbstractService implements Management
 
     private void validationType(String processType) {
         if (processType == null || ProgressConstants.ProgressType.valueOf(processType) == null) {
-            logger.warn(String.format("not supported processtype: %s", processType));
+            logger.warn(String.format("not supported processType: %s", processType));
             throw new OperationFailureException(
-                    errf.stringToOperationError(String.format("not supported processtype: %s",
+                    errf.stringToOperationError(String.format("not supported processType: %s",
                             processType)));
         }
     }
@@ -117,7 +117,7 @@ public class ProgressReportService extends AbstractService implements Management
     }
 
     private void insertProgress(ProgressReportCmd cmd) {
-        logger.debug(String.format("insert progress and it begins, progressType is: %s", cmd.getProcessType()
+        logger.debug(String.format("insert progress and it begins, processType is: %s", cmd.getProcessType()
         ));
         SimpleQuery<ProgressVO> q = dbf.createQuery(ProgressVO.class);
         // please notice if there are no conditions that result more than two vo found...

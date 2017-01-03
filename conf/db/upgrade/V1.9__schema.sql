@@ -19,8 +19,8 @@ ALTER TABLE VCenterDatacenterVO ADD CONSTRAINT fkVCenterDatacenterVOVCenterVO FO
 -- ----------------------------
 CREATE TABLE `zstack`.`ProgressVO` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `resourceUuid` varchar(32) NOT NULL,
-  `processType` varchar(32) NOT NULL,
+  `resourceUuid` varchar(255) NOT NULL,
+  `processType` varchar(1024) NOT NULL,
   `progress` varchar(32) DEFAULT NULL,
   `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
   `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
