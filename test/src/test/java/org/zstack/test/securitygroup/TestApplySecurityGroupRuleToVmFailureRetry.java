@@ -41,7 +41,7 @@ public class TestApplySecurityGroupRuleToVmFailureRetry {
         dbf = loader.getComponent(DatabaseFacade.class);
         config = loader.getComponent(KVMSimulatorConfig.class);
         gcf = loader.getComponent(GlobalConfigFacade.class);
-        SecurityGroupGlobalConfig.FAILURE_HOST_WORKER_INTERVAL.updateValue(3);
+        SecurityGroupGlobalConfig.FAILURE_HOST_WORKER_INTERVAL.updateValue(1);
         deployer.build();
         api = deployer.getApi();
     }
@@ -56,6 +56,7 @@ public class TestApplySecurityGroupRuleToVmFailureRetry {
         api.addVmNicToSecurityGroup(scinv.getUuid(), vmNic.getUuid());
         TimeUnit.MILLISECONDS.sleep(500);
         config.securityGroupSuccess = true;
+        //TimeUnit.SECONDS.sleep(500);
         TimeUnit.SECONDS.sleep(5);
 
         SecurityGroupRuleTO to = config.securityGroups.get(vmNic.getInternalName());
