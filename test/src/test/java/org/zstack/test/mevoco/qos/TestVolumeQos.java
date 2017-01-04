@@ -7,8 +7,8 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.errorcode.SysErrors;
-import org.zstack.header.vm.APIGetVmDiskQosReply;
-import org.zstack.header.vm.APISetVmDiskQosEvent;
+import org.zstack.header.volume.APIGetVolumeQosReply;
+import org.zstack.header.volume.APISetVolumeQosEvent;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
@@ -46,23 +46,21 @@ public class TestVolumeQos {
     @Test
     public void test() throws ApiSenderException {
         String rootVolumeUuid = deployer.vms.get("TestVm").getRootVolumeUuid();
-        String uuid = deployer.vms.get("TestVm").getUuid();
-
         try {
-            api.setDiskQos(uuid, rootVolumeUuid, 1023l);
+            api.setDiskQos(rootVolumeUuid, 1023l);
             Assert.assertTrue("bandwidth must more than 1024", false);
         } catch(ApiSenderException e) {
             Assert.assertEquals(SysErrors.INVALID_ARGUMENT_ERROR.toString(), e.getError().getCode());
         }
 
-        APISetVmDiskQosEvent evt = api.setDiskQos(uuid, rootVolumeUuid, 1024l);
+        APISetVolumeQosEvent evt = api.setDiskQos(rootVolumeUuid, 1024l);
         Assert.assertTrue(evt.isSuccess());
 
-        APIGetVmDiskQosReply reply = api.getVmDiskQos(uuid, rootVolumeUuid);
+        APIGetVolumeQosReply reply = api.getVmDiskQos(rootVolumeUuid);
         Assert.assertTrue(reply.isSuccess());
 
 
-        Assert.assertEquals(1024l, reply.getVmDiskQOS().getVolumeBandwidth());
+        Assert.assertEquals(1024l, reply.getVolumeBandwidth());
 
     }
 }
