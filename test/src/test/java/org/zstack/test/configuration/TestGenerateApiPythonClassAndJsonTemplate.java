@@ -27,7 +27,7 @@ public class TestGenerateApiPythonClassAndJsonTemplate {
     @Before
     public void setUp() throws Exception {
         //DBUtil.reDeployDB();
-        BeanConstructor con = new WebBeanConstructor();
+        BeanConstructor con = new BeanConstructor();
         /* This loads spring application context */
         loader = con.addAllConfigInZstackXml().build();
 
