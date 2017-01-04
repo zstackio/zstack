@@ -24,6 +24,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
+import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -69,6 +70,12 @@ public class TestMigrateVmOnKvm7 {
             }
         });
 
+        config.checkVmStatesConfig.put(vm.getHostUuid(), new HashMap<String, String>() {
+            {
+                put(vm.getUuid(), VmInstanceState.Running.toString());
+            }
+        });
+
         boolean s = false;
         config.migrateVmSuccess = false;
         try {
@@ -84,7 +91,7 @@ public class TestMigrateVmOnKvm7 {
         Assert.assertTrue(0 != cvo.getUsedCpu());
         Assert.assertTrue(0 != cvo.getUsedMemory());
         VmInstanceVO vo = dbf.findByUuid(vm.getUuid(), VmInstanceVO.class);
-        Assert.assertEquals(VmInstanceState.Unknown, vo.getState());
+        Assert.assertEquals(VmInstanceState.Running, vo.getState());
 
         HostCapacityVO tvo = dbf.findByUuid(target.getUuid(), HostCapacityVO.class);
         Assert.assertEquals(tvo.getTotalCpu(), tvo.getAvailableCpu());
