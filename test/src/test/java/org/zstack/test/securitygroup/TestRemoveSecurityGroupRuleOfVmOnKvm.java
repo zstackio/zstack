@@ -6,6 +6,7 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.vm.VmNicVO;
 import org.zstack.network.securitygroup.SecurityGroupInventory;
 import org.zstack.network.securitygroup.SecurityGroupRuleInventory;
 import org.zstack.network.securitygroup.SecurityGroupRuleTO;
@@ -74,7 +75,7 @@ public class TestRemoveSecurityGroupRuleOfVmOnKvm {
         TimeUnit.MILLISECONDS.sleep(500);
         scinv.getRules().remove(ruleToRemove);
 
-        SecurityGroupRuleTO to = config.securityGroups.get(nic.getInternalName());
+        SecurityGroupRuleTO to = config.securityGroups.get(dbf.findByUuid(nic.getUuid(), VmNicVO.class).getInternalName());
         SecurityGroupTestValidator.validate(to, scinv.getRules());
     }
 }

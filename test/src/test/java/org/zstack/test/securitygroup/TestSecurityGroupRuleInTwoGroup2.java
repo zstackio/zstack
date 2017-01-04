@@ -6,6 +6,7 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.vm.VmNicVO;
 import org.zstack.network.securitygroup.APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO;
 import org.zstack.network.securitygroup.*;
 import org.zstack.simulator.SimulatorSecurityGroupBackend;
@@ -82,7 +83,8 @@ public class TestSecurityGroupRuleInTwoGroup2 {
         api.addSecurityGroupRuleByFullConfig(scinv2.getUuid(), aos);
         TimeUnit.MILLISECONDS.sleep(500);
 
-        SecurityGroupRuleTO to = sbkd.getRulesOnHost(vm.getHostUuid(), vmNic.getInternalName());
+        String nicName = dbf.findByUuid(vmNic.getUuid(), VmNicVO.class).getInternalName();
+        SecurityGroupRuleTO to = sbkd.getRulesOnHost(vm.getHostUuid(), nicName);
 
         List<SecurityGroupInventory> sgs = api.listSecurityGroup(null);
         List<SecurityGroupRuleInventory> expectedRules = new ArrayList<SecurityGroupRuleInventory>();

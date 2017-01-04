@@ -17,7 +17,9 @@
 
 	<instanceOfferings>
 		<instanceOffering name="TestInstanceOffering"
-			description="Test" memoryCapacity="3G" cpuNum="1" cpuSpeed="3000" />
+			description="Test" memoryCapacity="3G" cpuNum="1" cpuSpeed="3000">
+			<accountRef>TestAccount</accountRef>
+		</instanceOffering>
 	</instanceOfferings>
 
 	<vm>

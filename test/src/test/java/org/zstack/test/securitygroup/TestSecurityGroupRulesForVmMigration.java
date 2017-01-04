@@ -8,6 +8,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.vm.VmNicVO;
 import org.zstack.network.securitygroup.SecurityGroupInventory;
 import org.zstack.network.securitygroup.SecurityGroupRuleInventory;
 import org.zstack.network.securitygroup.SecurityGroupRuleTO;
@@ -60,17 +61,18 @@ public class TestSecurityGroupRulesForVmMigration {
         api.addVmNicToSecurityGroup(scinv.getUuid(), vm1Nic.getUuid());
         TimeUnit.MILLISECONDS.sleep(500);
 
-        SecurityGroupRuleTO vmto = sbkd.getRulesOnHost(vm1.getHostUuid(), vm1Nic.getInternalName());
+        String nicname = dbf.findByUuid(vm1Nic.getUuid(), VmNicVO.class).getInternalName();
+        SecurityGroupRuleTO vmto = sbkd.getRulesOnHost(vm1.getHostUuid(), nicname);
         List<SecurityGroupRuleInventory> expectedRules = new ArrayList<SecurityGroupRuleInventory>();
         expectedRules.addAll(scinv.getRules());
         SecurityGroupTestValidator.validate(vmto, expectedRules);
         vm1 = api.migrateVmInstance(vm1.getUuid(), host2.getUuid());
         TimeUnit.MILLISECONDS.sleep(1000);
 
-        vmto = sbkd.getRulesOnHost(vm1.getHostUuid(), vm1Nic.getInternalName());
+        vmto = sbkd.getRulesOnHost(vm1.getHostUuid(), nicname);
         SecurityGroupTestValidator.validate(vmto, expectedRules);
 
-        vmto = sbkd.getRulesOnHost(vm1.getLastHostUuid(), vm1Nic.getInternalName());
+        vmto = sbkd.getRulesOnHost(vm1.getLastHostUuid(), nicname);
         Assert.assertNull(vmto);
     }
 }

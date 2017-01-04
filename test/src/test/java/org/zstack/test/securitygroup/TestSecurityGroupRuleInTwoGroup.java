@@ -6,6 +6,7 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.vm.VmNicVO;
 import org.zstack.network.securitygroup.SecurityGroupInventory;
 import org.zstack.network.securitygroup.SecurityGroupRuleInventory;
 import org.zstack.network.securitygroup.SecurityGroupRuleTO;
@@ -66,7 +67,8 @@ public class TestSecurityGroupRuleInTwoGroup {
         api.addVmNicToSecurityGroup(scinv.getUuid(), vm2Nic.getUuid());
         TimeUnit.MILLISECONDS.sleep(500);
 
-        SecurityGroupRuleTO vmto = sbkd.getRulesOnHost(vm1.getHostUuid(), vm1Nic.getInternalName());
+        VmNicVO vm1NicVO = dbf.findByUuid(vm1Nic.getUuid(), VmNicVO.class);
+        SecurityGroupRuleTO vmto = sbkd.getRulesOnHost(vm1.getHostUuid(), vm1NicVO.getInternalName());
         List<SecurityGroupRuleInventory> expectedRules = new ArrayList<SecurityGroupRuleInventory>();
         expectedRules.addAll(scinv.getRules());
         expectedRules.addAll(scinv2.getRules());

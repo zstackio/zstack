@@ -6,6 +6,7 @@ import org.junit.Test;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmNicVO;
 import org.zstack.network.securitygroup.SecurityGroupInventory;
 import org.zstack.network.securitygroup.SecurityGroupRuleTO;
 import org.zstack.network.securitygroup.SecurityGroupVO;
@@ -55,10 +56,12 @@ public class TestDeleteSecurityGroup {
         api.deleteSecurityGroup(scinv.getUuid());
         TimeUnit.MILLISECONDS.sleep(500);
 
+        String nicName = dbf.findByUuid(vm.getVmNics().get(0).getUuid(), VmNicVO.class).getInternalName();
+
         Set<SecurityGroupRuleTO> tos = sbkd.getRulesOnHost(vm.getHostUuid());
         SecurityGroupRuleTO rto = null;
         for (SecurityGroupRuleTO to : tos) {
-            if (to.getVmNicInternalName().equals(vm.getVmNics().get(0).getInternalName())) {
+            if (to.getVmNicInternalName().equals(nicName)) {
                 rto = to;
                 break;
             }

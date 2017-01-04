@@ -7,6 +7,7 @@ import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.vm.VmNicVO;
 import org.zstack.network.securitygroup.SecurityGroupGlobalConfig;
 import org.zstack.network.securitygroup.SecurityGroupInventory;
 import org.zstack.network.securitygroup.SecurityGroupRuleTO;
@@ -49,7 +50,8 @@ public class TestApplySecurityGroupRuleToVmFailureRetry {
     public void test() throws ApiSenderException, InterruptedException {
         SecurityGroupInventory scinv = deployer.securityGroups.get("test");
         VmInstanceInventory vm = deployer.vms.get("TestVm");
-        VmNicInventory vmNic = vm.getVmNics().get(0);
+        VmNicInventory nic = vm.getVmNics().get(0);
+        VmNicVO vmNic = dbf.findByUuid(nic.getUuid(), VmNicVO.class);
         config.securityGroupSuccess = false;
         api.addVmNicToSecurityGroup(scinv.getUuid(), vmNic.getUuid());
         TimeUnit.MILLISECONDS.sleep(500);
