@@ -62,8 +62,8 @@ public class TestNicQos {
         Assert.assertTrue(reply.isSuccess());
 
 
-        Assert.assertEquals(1024l, reply.getVmNicQOS().getInboundBandwidth());
-        Assert.assertEquals(2048000l, reply.getVmNicQOS().getOutboundBandwidth());
+        Assert.assertEquals(1024l, reply.getInboundBandwidth());
+        Assert.assertEquals(2048000l, reply.getOutboundBandwidth());
 
     }
 }

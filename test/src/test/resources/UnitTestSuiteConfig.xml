@@ -3,6 +3,7 @@
     <Import resource="unitTestSuiteXml/Core.xml"/>
     <Import resource="unitTestSuiteXml/Cascade.xml"/>
     <Import resource="unitTestSuiteXml/Others.xml"/>
+    <Import resource="unitTestSuiteXml/qos.xml"/>
     <Import resource="unitTestSuiteXml/ZoneManager.xml"/>
     <Import resource="unitTestSuiteXml/ClusterManager.xml"/>
     <Import resource="unitTestSuiteXml/HostManager.xml"/>
