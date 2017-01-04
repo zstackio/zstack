@@ -4,7 +4,10 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmNicVO;
+import org.zstack.header.vm.VmNicVO_;
 import org.zstack.network.securitygroup.SecurityGroupInventory;
 import org.zstack.network.securitygroup.SecurityGroupRuleTO;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
@@ -53,8 +56,9 @@ public class TestApplySecurityGroupRuleToVmOnKvm {
         SecurityGroupInventory scinv = deployer.securityGroups.get("test");
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         List<String> nicNames = new ArrayList<String>();
-        String nicName = vm.getVmNics().get(0).getInternalName();
-        nicNames.add(vm.getVmNics().get(0).getInternalName());
+        String nicUuid = vm.getVmNics().get(0).getUuid();
+        String nicName = Q.New(VmNicVO.class).select(VmNicVO_.internalName).eq(VmNicVO_.uuid, nicUuid).findValue();
+        nicNames.add(nicName);
 
         List<String> nicUuids = new ArrayList<String>();
         nicUuids.add(vm.getVmNics().get(0).getUuid());

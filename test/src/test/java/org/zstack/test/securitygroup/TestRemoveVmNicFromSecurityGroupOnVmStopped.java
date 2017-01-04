@@ -8,6 +8,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.vm.VmNicVO;
 import org.zstack.network.securitygroup.SecurityGroupInventory;
 import org.zstack.network.securitygroup.SecurityGroupRuleTO;
 import org.zstack.simulator.SimulatorSecurityGroupBackend;
@@ -59,12 +60,13 @@ public class TestRemoveVmNicFromSecurityGroupOnVmStopped {
         api.addVmNicToSecurityGroup(scinv.getUuid(), vm1Nic1.getUuid());
 
         TimeUnit.MILLISECONDS.sleep(500);
-        SecurityGroupRuleTO vm1Nic1TO = sbkd.getRulesOnHost(vm1.getHostUuid(), vm1Nic1.getInternalName());
+        String nicname = dbf.findByUuid(vm1Nic1.getUuid(), VmNicVO.class).getInternalName();
+        SecurityGroupRuleTO vm1Nic1TO = sbkd.getRulesOnHost(vm1.getHostUuid(), nicname);
         SecurityGroupTestValidator.validate(vm1Nic1TO, scinv.getRules());
 
         api.stopVmInstance(vm1.getUuid());
         api.removeVmNicFromSecurityGroup(scinv.getUuid(), vm1Nic1.getUuid());
-        vm1Nic1TO = sbkd.getRulesOnHost(vm1.getHostUuid(), vm1Nic1.getInternalName());
+        vm1Nic1TO = sbkd.getRulesOnHost(vm1.getHostUuid(), nicname);
         Assert.assertTrue(vm1Nic1TO.getRules().isEmpty());
     }
 }

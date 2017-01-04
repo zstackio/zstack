@@ -7,6 +7,7 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.vm.VmNicVO;
 import org.zstack.network.securitygroup.SecurityGroupInventory;
 import org.zstack.network.securitygroup.SecurityGroupRuleTO;
 import org.zstack.simulator.SimulatorSecurityGroupBackend;
@@ -58,7 +59,8 @@ public class TestSecurityGroupRuleOnVmStopped {
         api.stopVmInstance(vm.getUuid());
         TimeUnit.SECONDS.sleep(3);
 
-        SecurityGroupRuleTO to = sbkd.getRulesOnHost(vm.getHostUuid(), vmNic.getInternalName());
+        VmNicVO vmnicvo = dbf.findByUuid(vmNic.getUuid(), VmNicVO.class);
+        SecurityGroupRuleTO to = sbkd.getRulesOnHost(vm.getHostUuid(), vmnicvo.getInternalName());
         Assert.assertEquals(0, to.getRules().size());
         Assert.assertEquals(SecurityGroupRuleTO.ACTION_CODE_DELETE_CHAIN, to.getActionCode());
     }

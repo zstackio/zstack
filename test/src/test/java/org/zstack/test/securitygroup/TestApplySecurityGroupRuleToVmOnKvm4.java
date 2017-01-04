@@ -8,6 +8,7 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.vm.VmNicVO;
 import org.zstack.network.securitygroup.SecurityGroupInventory;
 import org.zstack.network.securitygroup.SecurityGroupRuleTO;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
@@ -92,8 +93,9 @@ public class TestApplySecurityGroupRuleToVmOnKvm4 {
         TimeUnit.MILLISECONDS.sleep(500);
         api.stopVmInstance(vm2.getUuid());
         TimeUnit.MILLISECONDS.sleep(500);
-        SecurityGroupRuleTO actual11 = config.securityGroups.get(vm1Nic1.getInternalName());
-        SecurityGroupRuleTO actual12 = config.securityGroups.get(vm1Nic2.getInternalName());
+
+        SecurityGroupRuleTO actual11 = config.securityGroups.get(dbf.findByUuid(vm1Nic1.getUuid(), VmNicVO.class).getInternalName());
+        SecurityGroupRuleTO actual12 = config.securityGroups.get(dbf.findByUuid(vm1Nic2.getUuid(), VmNicVO.class).getInternalName());
         SecurityGroupTestValidator.validateInternalIpIn(actual11, vm2Nic1.getIp(), scinv1.getRules());
         SecurityGroupTestValidator.validateInternalIpIn(actual12, vm2Nic2.getIp(), scinv2.getRules());
     }

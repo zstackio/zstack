@@ -1,7 +1,10 @@
 package org.zstack.test.securitygroup;
 
 import junit.framework.Assert;
+import org.zstack.core.db.Q;
 import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.vm.VmNicVO;
+import org.zstack.header.vm.VmNicVO_;
 import org.zstack.network.securitygroup.RuleTO;
 import org.zstack.network.securitygroup.SecurityGroupRuleInventory;
 import org.zstack.network.securitygroup.SecurityGroupRuleTO;
@@ -82,7 +85,9 @@ public class SecurityGroupTestValidator {
     public static VmNicInventory getVmNicOnSpecificL3Network(List<VmNicInventory> nics, String l3Uuid) {
         for (VmNicInventory nic : nics) {
             if (nic.getL3NetworkUuid().equals(l3Uuid)) {
-                return nic;
+                VmNicVO vo = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, nic.getUuid()).find();
+                // this will add internalName
+                return VmNicInventory.valueOf(vo);
             }
         }
         return null;

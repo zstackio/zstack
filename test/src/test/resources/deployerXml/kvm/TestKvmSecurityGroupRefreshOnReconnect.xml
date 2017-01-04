@@ -58,6 +58,10 @@
                         <l3BasicNetwork name="TestL3Network1" description="Test">
                             <ipRange name="TestIpRange" description="Test" startIp="10.0.0.100"
                                 endIp="10.10.1.200" gateway="10.0.0.1" netmask="255.0.0.0" />
+
+                            <networkService provider="SecurityGroup">
+                                <serviceType>SecurityGroup</serviceType>
+                            </networkService>
                         </l3BasicNetwork>
                         <l3BasicNetwork name="TestL3Network2" description="Test">
                             <ipRange name="TestIpRange" description="Test" startIp="10.10.2.100"

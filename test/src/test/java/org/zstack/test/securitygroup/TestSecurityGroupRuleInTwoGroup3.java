@@ -6,6 +6,7 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.vm.VmNicVO;
 import org.zstack.network.securitygroup.SecurityGroupInventory;
 import org.zstack.network.securitygroup.SecurityGroupRuleTO;
 import org.zstack.simulator.SimulatorSecurityGroupBackend;
@@ -62,9 +63,11 @@ public class TestSecurityGroupRuleInTwoGroup3 {
 
         TimeUnit.MILLISECONDS.sleep(500);
 
-        SecurityGroupRuleTO tovm1 = sbkd.getRulesOnHost(vm1.getHostUuid(), vm1Nic.getInternalName());
+        VmNicVO vm1NicVO = dbf.findByUuid(vm1Nic.getUuid(), VmNicVO.class);
+        SecurityGroupRuleTO tovm1 = sbkd.getRulesOnHost(vm1.getHostUuid(), vm1NicVO.getInternalName());
         SecurityGroupTestValidator.validate(tovm1, scinv.getRules());
-        SecurityGroupRuleTO tovm2 = sbkd.getRulesOnHost(vm2.getHostUuid(), vm2Nic.getInternalName());
+        VmNicVO vm2NicVO = dbf.findByUuid(vm2Nic.getUuid(), VmNicVO.class);
+        SecurityGroupRuleTO tovm2 = sbkd.getRulesOnHost(vm2.getHostUuid(), vm2NicVO.getInternalName());
         SecurityGroupTestValidator.validate(tovm2, scinv2.getRules());
     }
 }

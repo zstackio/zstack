@@ -7,6 +7,7 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.vm.VmNicVO;
 import org.zstack.network.securitygroup.SecurityGroupInventory;
 import org.zstack.network.securitygroup.SecurityGroupRuleTO;
 import org.zstack.simulator.SimulatorSecurityGroupBackend;
@@ -58,7 +59,8 @@ public class TestSecurityGroupRuleOnVmDestroyed {
         api.destroyVmInstance(vm.getUuid());
         TimeUnit.MILLISECONDS.sleep(500);
 
-        SecurityGroupRuleTO to = sbkd.getRulesOnHost(vm.getHostUuid(), vmNic.getInternalName());
+        VmNicVO nicvo = dbf.findByUuid(vmNic.getUuid(), VmNicVO.class);
+        SecurityGroupRuleTO to = sbkd.getRulesOnHost(vm.getHostUuid(), nicvo.getInternalName());
         Assert.assertEquals(0, to.getRules().size());
     }
 }

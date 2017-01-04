@@ -8,6 +8,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.vm.VmNicVO;
 import org.zstack.network.securitygroup.SecurityGroupInventory;
 import org.zstack.network.securitygroup.SecurityGroupRuleTO;
 import org.zstack.simulator.SimulatorSecurityGroupBackend;
@@ -56,11 +57,12 @@ public class TestRemoveVmNicFromSecurityGroupOnVmStopped2 {
         VmInstanceInventory vm1 = deployer.vms.get("TestVm");
         L3NetworkInventory l3nw1 = deployer.l3Networks.get("TestL3Network1");
         VmNicInventory vm1Nic1 = SecurityGroupTestValidator.getVmNicOnSpecificL3Network(vm1.getVmNics(), l3nw1.getUuid());
+        String nicName = dbf.findByUuid(vm1Nic1.getUuid(), VmNicVO.class).getInternalName();
 
         api.addVmNicToSecurityGroup(scinv.getUuid(), vm1Nic1.getUuid());
 
         TimeUnit.MILLISECONDS.sleep(500);
-        SecurityGroupRuleTO vm1Nic1TO = sbkd.getRulesOnHost(vm1.getHostUuid(), vm1Nic1.getInternalName());
+        SecurityGroupRuleTO vm1Nic1TO = sbkd.getRulesOnHost(vm1.getHostUuid(), nicName);
         SecurityGroupTestValidator.validate(vm1Nic1TO, scinv.getRules());
 
         api.stopVmInstance(vm1.getUuid());
@@ -68,7 +70,7 @@ public class TestRemoveVmNicFromSecurityGroupOnVmStopped2 {
         api.startVmInstance(vm1.getUuid());
         TimeUnit.MILLISECONDS.sleep(500);
 
-        vm1Nic1TO = sbkd.getRulesOnHost(vm1.getHostUuid(), vm1Nic1.getInternalName());
+        vm1Nic1TO = sbkd.getRulesOnHost(vm1.getHostUuid(), nicName);
         Assert.assertTrue(vm1Nic1TO.getRules().isEmpty());
     }
 }
