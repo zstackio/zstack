@@ -16,6 +16,22 @@ public class APICreateRootVolumeTemplateFromVolumeSnapshotEvent extends APIEvent
     public static class Failure {
         public String backupStorageUuid;
         public ErrorCode error;
+
+        public String getBackupStorageUuid() {
+            return backupStorageUuid;
+        }
+
+        public void setBackupStorageUuid(String backupStorageUuid) {
+            this.backupStorageUuid = backupStorageUuid;
+        }
+
+        public ErrorCode getError() {
+            return error;
+        }
+
+        public void setError(ErrorCode error) {
+            this.error = error;
+        }
     }
 
     private ImageInventory inventory;
