@@ -145,7 +145,6 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -3895,26 +3894,24 @@ public class Api implements CloudBusEventListener {
         return evt.getInventory();
     }
 
-    public APISetVmDiskQosEvent setDiskQos(String vmUuid, String volumeUuid, long bandWidth) throws ApiSenderException {
-        APISetVmDiskQosMsg msg = new APISetVmDiskQosMsg();
-        msg.setVmUuid(vmUuid);
-        msg.setVolumeUuid(volumeUuid);
+    public APISetVolumeQosEvent setDiskQos(String volumeUuid, long bandWidth) throws ApiSenderException {
+        APISetVolumeQosMsg msg = new APISetVolumeQosMsg();
+        msg.setUuid(volumeUuid);
         msg.setVolumeBandwidth(bandWidth);
         msg.setSession(adminSession);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
-        APISetVmDiskQosEvent evt = sender.send(msg, APISetVmDiskQosEvent.class);
+        APISetVolumeQosEvent evt = sender.send(msg, APISetVolumeQosEvent.class);
         return evt;
     }
 
-    public APIGetVmDiskQosReply getVmDiskQos(String vmUuid, String volumeUuid) throws ApiSenderException {
-        APIGetVmDiskQosMsg msg = new APIGetVmDiskQosMsg();
-        msg.setVmUuid(vmUuid);
-        msg.setVolumeUuid(volumeUuid);
+    public APIGetVolumeQosReply getVmDiskQos(String volumeUuid) throws ApiSenderException {
+        APIGetVolumeQosMsg msg = new APIGetVolumeQosMsg();
+        msg.setUuid(volumeUuid);
         msg.setSession(adminSession);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
-        APIGetVmDiskQosReply reply = sender.call(msg, APIGetVmDiskQosReply.class);
+        APIGetVolumeQosReply reply = sender.call(msg, APIGetVolumeQosReply.class);
         return reply;
     }
 
