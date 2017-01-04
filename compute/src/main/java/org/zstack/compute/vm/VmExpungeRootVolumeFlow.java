@@ -47,6 +47,8 @@ public class VmExpungeRootVolumeFlow extends NoRollbackFlow {
                             spec.getVmInventory().getRootVolumeUuid(), spec.getVmInventory().getUuid(),
                             spec.getVmInventory().getName(), reply.getError()));
                     trigger.fail(reply.getError());
+
+                    return;
                 }
 
                 trigger.next();
