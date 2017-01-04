@@ -3915,27 +3915,25 @@ public class Api implements CloudBusEventListener {
         return reply;
     }
 
-    public APISetVmNicQosEvent setVmNicQos(String vmUuid, String vmNicUuid, long inbound, long outbound) throws ApiSenderException {
-        APISetVmNicQosMsg msg = new APISetVmNicQosMsg();
-        msg.setVmUuid(vmUuid);
-        msg.setVmNicUuid(vmNicUuid);
+    public APISetNicQosEvent setVmNicQos(String vmUuid, String vmNicUuid, long inbound, long outbound) throws ApiSenderException {
+        APISetNicQosMsg msg = new APISetNicQosMsg();
+        msg.setUuid(vmNicUuid);
         msg.setInboundBandwidth(inbound);
         msg.setOutboundBandwidth(outbound);
         msg.setSession(adminSession);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
-        APISetVmNicQosEvent evt = sender.send(msg, APISetVmNicQosEvent.class);
+        APISetNicQosEvent evt = sender.send(msg, APISetNicQosEvent.class);
         return evt;
     }
 
-    public APIGetVmNicQosReply getVmNicQos(String vmUuid, String vmNicUuid) throws ApiSenderException {
-        APIGetVmNicQosMsg msg = new APIGetVmNicQosMsg();
-        msg.setVmUuid(vmUuid);
-        msg.setVmNicUuid(vmNicUuid);
+    public APIGetNicQosReply getVmNicQos(String vmUuid, String vmNicUuid) throws ApiSenderException {
+        APIGetNicQosMsg msg = new APIGetNicQosMsg();
+        msg.setUuid(vmNicUuid);
         msg.setSession(adminSession);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
-        APIGetVmNicQosReply reply = sender.call(msg, APIGetVmNicQosReply.class);
+        APIGetNicQosReply reply = sender.call(msg, APIGetNicQosReply.class);
         return reply;
     }
 

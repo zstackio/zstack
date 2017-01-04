@@ -7,8 +7,8 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.errorcode.SysErrors;
-import org.zstack.header.vm.APIGetVmNicQosReply;
-import org.zstack.header.vm.APISetVmNicQosEvent;
+import org.zstack.header.vm.APIGetNicQosReply;
+import org.zstack.header.vm.APISetNicQosEvent;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
@@ -55,10 +55,10 @@ public class TestNicQos {
             Assert.assertEquals(SysErrors.INVALID_ARGUMENT_ERROR.toString(), e.getError().getCode());
         }
 
-        APISetVmNicQosEvent evt = api.setVmNicQos(uuid, nicUuid, 1024l, 2048000l);
+        APISetNicQosEvent evt = api.setVmNicQos(uuid, nicUuid, 1024l, 2048000l);
         Assert.assertTrue(evt.isSuccess());
 
-        APIGetVmNicQosReply reply = api.getVmNicQos(uuid, nicUuid);
+        APIGetNicQosReply reply = api.getVmNicQos(uuid, nicUuid);
         Assert.assertTrue(reply.isSuccess());
 
 
