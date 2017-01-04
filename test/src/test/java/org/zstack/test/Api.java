@@ -3077,6 +3077,66 @@ public class Api implements CloudBusEventListener {
         }
     }
 
+    public APISetImageQgaDisableEvent disableImageQga(String uuid) throws ApiSenderException {
+        APISetImageQgaDisableMsg msg = new APISetImageQgaDisableMsg();
+        msg.setUuid(uuid);
+        msg.setSession(adminSession);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APISetImageQgaDisableEvent evt = sender.send(msg, APISetImageQgaDisableEvent.class);
+        return evt;
+    }
+
+    public APISetImageQgaEnableEvent enableImageQga(String uuid) throws ApiSenderException {
+        APISetImageQgaEnableMsg msg = new APISetImageQgaEnableMsg();
+        msg.setUuid(uuid);
+        msg.setSession(adminSession);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APISetImageQgaEnableEvent evt = sender.send(msg, APISetImageQgaEnableEvent.class);
+        return evt;
+    }
+
+    public APIGetImageQgaEnableReply getEnableImageQga(String uuid) throws ApiSenderException {
+        APIGetImageQgaEnableMsg msg = new APIGetImageQgaEnableMsg();
+        msg.setUuid(uuid);
+        msg.setSession(adminSession);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIGetImageQgaEnableReply reply = sender.call(msg, APIGetImageQgaEnableReply.class);
+        return reply;
+    }
+
+    public APISetVmQgaDisableEvent disableVmQga(String uuid) throws ApiSenderException {
+        APISetVmQgaDisableMsg msg = new APISetVmQgaDisableMsg();
+        msg.setUuid(uuid);
+        msg.setSession(adminSession);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APISetVmQgaDisableEvent evt = sender.send(msg, APISetVmQgaDisableEvent.class);
+        return evt;
+    }
+
+    public APISetVmQgaEnableEvent enableVmQga(String uuid) throws ApiSenderException {
+        APISetVmQgaEnableMsg msg = new APISetVmQgaEnableMsg();
+        msg.setUuid(uuid);
+        msg.setSession(adminSession);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APISetVmQgaEnableEvent evt = sender.send(msg, APISetVmQgaEnableEvent.class);
+        return evt;
+    }
+
+    public APIGetVmQgaEnableReply getEnableVmQga(String uuid) throws ApiSenderException {
+        APIGetVmQgaEnableMsg msg = new APIGetVmQgaEnableMsg();
+        msg.setUuid(uuid);
+        msg.setSession(adminSession);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIGetVmQgaEnableReply reply = sender.call(msg, APIGetVmQgaEnableReply.class);
+        return reply;
+    }
+
     public APIEnableChangeVmPasswordEvent enableChangeVmPassword(String resourceUuid, String resourceType, boolean enable) throws ApiSenderException {
         APIEnableChangeVmPasswordMsg msg = new APIEnableChangeVmPasswordMsg();
         msg.setEnable(enable);
