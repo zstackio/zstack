@@ -114,18 +114,6 @@ FOR EACH ROW
     END$$
 DELIMITER ;
 
-# L2NetworkEO
-DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_L2NetworkEO;
-DELIMITER $$
-CREATE TRIGGER trigger_clean_AccountResourceRefVO_for_L2NetworkEO AFTER UPDATE ON `L2NetworkEO`
-FOR EACH ROW
-    BEGIN
-        IF OLD.`deleted` IS NULL AND NEW.`deleted` IS NOT NULL THEN
-            DELETE FROM `AccountResourceRefVO` WHERE `resourceUuid` = OLD.`uuid` AND `resourceType` = 'L2NetworkVO';
-        END IF;
-    END$$
-DELIMITER ;
-
 # L3NetworkEO
 DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_L3NetworkEO;
 DELIMITER $$
@@ -138,6 +126,26 @@ FOR EACH ROW
     END$$
 DELIMITER ;
 
+# LoadBalancerListenerVO
+DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_LoadBalancerListenerVO;
+DELIMITER $$
+CREATE TRIGGER trigger_clean_AccountResourceRefVO_for_LoadBalancerListenerVO AFTER DELETE ON `LoadBalancerListenerVO`
+FOR EACH ROW
+    BEGIN
+        DELETE FROM `AccountResourceRefVO` WHERE `resourceUuid` = OLD.`uuid` AND `resourceType` = 'LoadBalancerListenerVO';
+    END$$
+DELIMITER ;
+
+# LoadBalancerVO
+DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_LoadBalancerVO;
+DELIMITER $$
+CREATE TRIGGER trigger_clean_AccountResourceRefVO_for_LoadBalancerVO AFTER DELETE ON `LoadBalancerVO`
+FOR EACH ROW
+    BEGIN
+        DELETE FROM `AccountResourceRefVO` WHERE `resourceUuid` = OLD.`uuid` AND `resourceType` = 'LoadBalancerVO';
+    END$$
+DELIMITER ;
+
 # PolicyVO
 DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_PolicyVO;
 DELIMITER $$
@@ -145,6 +153,16 @@ CREATE TRIGGER trigger_clean_AccountResourceRefVO_for_PolicyVO AFTER DELETE ON `
 FOR EACH ROW
     BEGIN
         DELETE FROM `AccountResourceRefVO` WHERE `resourceUuid` = OLD.`uuid` AND `resourceType` = 'PolicyVO';
+    END$$
+DELIMITER ;
+
+# PortForwardingRuleVO
+DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_PortForwardingRuleVO;
+DELIMITER $$
+CREATE TRIGGER trigger_clean_AccountResourceRefVO_for_PortForwardingRuleVO AFTER DELETE ON `PortForwardingRuleVO`
+FOR EACH ROW
+    BEGIN
+        DELETE FROM `AccountResourceRefVO` WHERE `resourceUuid` = OLD.`uuid` AND `resourceType` = 'PortForwardingRuleVO';
     END$$
 DELIMITER ;
 
@@ -254,29 +272,6 @@ FOR EACH ROW
     END$$
 DELIMITER ;
 
-# VolumeSnapshotTreeEO
-DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_VolumeSnapshotTreeEO;
-DELIMITER $$
-CREATE TRIGGER trigger_clean_AccountResourceRefVO_for_VolumeSnapshotTreeEO AFTER UPDATE ON `VolumeSnapshotTreeEO`
-FOR EACH ROW
-    BEGIN
-        IF OLD.`deleted` IS NULL AND NEW.`deleted` IS NOT NULL THEN
-            DELETE FROM `AccountResourceRefVO` WHERE `resourceUuid` = OLD.`uuid` AND `resourceType` = 'VolumeSnapshotTreeVO';
-        END IF;
-    END$$
-DELIMITER ;
-
-# ZoneEO
-DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_ZoneEO;
-DELIMITER $$
-CREATE TRIGGER trigger_clean_AccountResourceRefVO_for_ZoneEO AFTER UPDATE ON `ZoneEO`
-FOR EACH ROW
-    BEGIN
-        IF OLD.`deleted` IS NULL AND NEW.`deleted` IS NOT NULL THEN
-            DELETE FROM `AccountResourceRefVO` WHERE `resourceUuid` = OLD.`uuid` AND `resourceType` = 'ZoneVO';
-        END IF;
-    END$$
-DELIMITER ;
 
 ALTER TABLE `zstack`.`SharedResourceVO` ADD UNIQUE INDEX(`ownerAccountUuid`,`receiverAccountUuid`,`resourceUuid`);
 ALTER TABLE `zstack`.`ShareableVolumeVmInstanceRefVO` ADD UNIQUE INDEX(`volumeUuid`,`vmInstanceUuid`);
