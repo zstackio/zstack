@@ -502,6 +502,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     @ApiTimeout(apiClasses = {APILocalStorageMigrateVolumeMsg.class})
     public static class GetMd5Cmd extends AgentCommand {
         public List<GetMd5TO> md5s;
+        public String sendCommandUrl;
     }
 
     public static class Md5TO {
@@ -518,6 +519,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     @ApiTimeout(apiClasses = {APILocalStorageMigrateVolumeMsg.class})
     public static class CheckMd5sumCmd extends AgentCommand {
         public List<Md5TO> md5s;
+        public String sendCommandUrl;
     }
 
     @ApiTimeout(apiClasses = {APILocalStorageMigrateVolumeMsg.class})
@@ -2121,6 +2123,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             @Override
             public void run(final FlowTrigger trigger, Map data) {
                 GetMd5Cmd cmd = new GetMd5Cmd();
+                cmd.sendCommandUrl = restf.getSendCommandUrl();
                 cmd.md5s = CollectionUtils.transformToList(struct.getInfos(), new Function<GetMd5TO, ResourceInfo>() {
                     @Override
                     public GetMd5TO call(ResourceInfo arg) {
@@ -2227,6 +2230,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             @Override
             public void run(final FlowTrigger trigger, Map data) {
                 CheckMd5sumCmd cmd = new CheckMd5sumCmd();
+                cmd.sendCommandUrl = restf.getSendCommandUrl();
                 cmd.md5s = context.getMd5Rsp.md5s;
                 httpCall(CHECK_MD5_PATH, struct.getDestHostUuid(), cmd, false, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
                     @Override
