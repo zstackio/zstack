@@ -1,4 +1,4 @@
-package org.zstack.header.storage.snapshot;
+package org.zstack.header.vm;
 
 import org.zstack.header.message.APIEvent;
 

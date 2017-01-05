@@ -24,6 +24,7 @@ import org.zstack.header.allocator.AllocateHostDryRunReply;
 import org.zstack.header.allocator.DesignatedAllocateHostMsg;
 import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.allocator.HostAllocatorError;
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
@@ -829,7 +830,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
 
         if (originalState == VmInstanceState.Unknown && currentState == VmInstanceState.Paused &&
-                currentHostUuid.equals(originalHostUuid)){
+                currentHostUuid.equals(originalHostUuid)) {
             return VmAbnormalLifeCycleOperation.VmPausedFromUnknownStateHostNotChanged;
         }
 
@@ -2045,6 +2046,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APIPauseVmInstanceMsg) msg);
         } else if (msg instanceof APIResumeVmInstanceMsg) {
             handle((APIResumeVmInstanceMsg) msg);
+        } else if (msg instanceof APIReimageVmInstanceMsg) {
+            handle((APIReimageVmInstanceMsg) msg);
         } else {
             VmInstanceBaseExtensionFactory ext = vmMgr.getVmInstanceBaseExtensionFactory(msg);
             if (ext != null) {
@@ -3292,8 +3295,8 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     private void changeCpuAndMemory(APIUpdateVmInstanceMsg msg) {
         // add some systemTag and can be appliance for the next start
-        int cpuNum = msg.getCpuNum() == null?self.getCpuNum():msg.getCpuNum();
-        long memory = msg.getMemorySize() == null?self.getMemorySize():msg.getMemorySize();
+        int cpuNum = msg.getCpuNum() == null ? self.getCpuNum() : msg.getCpuNum();
+        long memory = msg.getMemorySize() == null ? self.getMemorySize() : msg.getMemorySize();
         pendingCpuAndMemoryForNextStart(cpuNum, self.getCpuSpeed(), memory);
         self.setCpuNum(cpuNum);
         self.setMemorySize(memory);
@@ -4433,6 +4436,144 @@ public class VmInstanceBase extends AbstractVmInstance {
                 return String.format("resume-vm-%s", msg.getVmInstanceUuid());
             }
         });
+    }
+
+    private void handle(final APIReimageVmInstanceMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                reimageVmInstance(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return "get-starting-candidate-hosts";
+            }
+        });
+    }
+
+    private void reimageVmInstance(final APIReimageVmInstanceMsg msg, NoErrorCompletion completion){
+        final APIReimageVmInstanceEvent evt = new APIReimageVmInstanceEvent(msg.getId());
+
+        VmInstanceVO vmInstanceVO = dbf.findByUuid(msg.getVmInstanceUuid(), VmInstanceVO.class);
+        VolumeVO rootVolume = dbf.findByUuid(vmInstanceVO.getRootVolumeUuid(), VolumeVO.class);
+        VolumeInventory rootVolumeInventory = VolumeInventory.valueOf(rootVolume);
+
+        // check vm stopped
+        {
+            SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
+            q.select(VmInstanceVO_.state);
+            q.add(VmInstanceVO_.uuid, Op.EQ, rootVolume.getVmInstanceUuid());
+            VmInstanceState state = q.findValue();
+            if (state != VmInstanceState.Stopped) {
+                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(
+                        VmErrors.RE_IMAGE_VM_NOT_IN_STOPPED_STATE,
+                        String.format("unable to reset volume[uuid:%s] to origin image[uuid:%s]," +
+                                        " the vm[uuid:%s] volume attached to is not in Stopped state, current state is %s",
+                                rootVolume.getUuid(), rootVolume.getRootImageUuid(),
+                                rootVolume.getVmInstanceUuid(), state)
+                ));
+            }
+        }
+
+        // check image cache to ensure image type is not ISO
+        {
+            SimpleQuery<ImageCacheVO> q = dbf.createQuery(ImageCacheVO.class);
+            q.select(ImageCacheVO_.mediaType);
+            q.add(ImageCacheVO_.imageUuid, Op.EQ, rootVolume.getRootImageUuid());
+            q.setLimit(1);
+            ImageMediaType imageMediaType = q.findValue();
+            if (imageMediaType == null) {
+                throw new OperationFailureException(errf.instantiateErrorCode(
+                        VmErrors.RE_IMAGE_CANNOT_FIND_IMAGE_CACHE,
+                        String.format("unable to reset volume[uuid:%s] to origin image[uuid:%s]," +
+                                        " cannot find image cache.",
+                                rootVolume.getUuid(), rootVolume.getRootImageUuid())
+                ));
+            }
+            if (imageMediaType.toString().equals("ISO")) {
+                throw new OperationFailureException(errf.instantiateErrorCode(
+                        VmErrors.RE_IMAGE_IMAGE_MEDIA_TYPE_SHOULD_NOT_BE_ISO,
+                        String.format("unable to reset volume[uuid:%s] to origin image[uuid:%s]," +
+                                        " for image type is ISO",
+                                rootVolume.getUuid(), rootVolume.getRootImageUuid())
+                ));
+            }
+        }
+
+        // do the re-image op
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("reset-root-volume-%s-from-image-%s", rootVolume.getUuid(), rootVolume.getRootImageUuid()));
+        chain.then(new ShareFlow() {
+            String newVolumeInstallPath;
+
+            @Override
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "reset-root-volume-from-image-on-primary-storage";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        ReInitRootVolumeFromTemplateOnPrimaryStorageMsg rmsg = new ReInitRootVolumeFromTemplateOnPrimaryStorageMsg();
+                        rmsg.setVolume(rootVolumeInventory);
+                        bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, rootVolumeInventory.getPrimaryStorageUuid());
+                        bus.send(rmsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (reply.isSuccess()) {
+                                    ReInitRootVolumeFromTemplateOnPrimaryStorageReply re = (ReInitRootVolumeFromTemplateOnPrimaryStorageReply) reply;
+                                    newVolumeInstallPath = re.getNewVolumeInstallPath();
+                                    trigger.next();
+                                } else {
+                                    trigger.fail(reply.getError());
+                                }
+                            }
+                        });
+                    }
+                });
+
+                done(new FlowDoneHandler(msg) {
+                    private void updateLatest() {
+                        List<AfterReimageVmInstanceExtensionPoint> list = pluginRgty.getExtensionList(
+                                AfterReimageVmInstanceExtensionPoint.class);
+                        for(AfterReimageVmInstanceExtensionPoint ext:list){
+                            ext.afterReimageVmInstance(rootVolumeInventory);
+                        }
+                    }
+
+                    @Override
+                    public void handle(Map data) {
+                        rootVolume.setInstallPath(newVolumeInstallPath);
+                        dbf.update(rootVolume);
+                        updateLatest();
+                        bus.publish(evt);
+                        completion.done();
+                    }
+                });
+
+                error(new FlowErrorHandler(msg) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        logger.warn(String.format("failed to restore volume[uuid:%s] to image[uuid:%s], %s",
+                                rootVolumeInventory.getUuid(), rootVolumeInventory.getRootImageUuid(), errCode));
+                        evt.setError(errCode);
+                        bus.publish(evt);
+                        completion.done();
+                    }
+                });
+            }
+        }).start();
+
     }
 }
 

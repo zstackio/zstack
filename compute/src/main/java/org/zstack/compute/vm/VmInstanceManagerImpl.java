@@ -22,6 +22,7 @@ import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.CancelablePeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
+import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
 import org.zstack.header.allocator.AllocateHostDryRunReply;
 import org.zstack.header.allocator.DesignatedAllocateHostMsg;
@@ -36,7 +37,7 @@ import org.zstack.header.configuration.DiskOfferingVO_;
 import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.scheduler.APICreateSchedulerMessage;
-import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
@@ -84,6 +85,7 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 
+import javax.persistence.Query;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.sql.Timestamp;
@@ -1105,11 +1107,11 @@ public class VmInstanceManagerImpl extends AbstractService implements
         return expungeVmFlowBuilder.build();
     }
 
-    public FlowChain getPauseWorkFlowChain(VmInstanceInventory inv){
+    public FlowChain getPauseWorkFlowChain(VmInstanceInventory inv) {
         return pauseVmFlowBuilder.build();
     }
 
-    public FlowChain getResumeVmWorkFlowChain(VmInstanceInventory inv){
+    public FlowChain getResumeVmWorkFlowChain(VmInstanceInventory inv) {
         return resumeVmFlowBuilder.build();
     }
 
@@ -1153,11 +1155,11 @@ public class VmInstanceManagerImpl extends AbstractService implements
         this.expungeVmWorkFlowElements = expungeVmWorkFlowElements;
     }
 
-    public void setPauseVmWorkFlowElements(List<String> pauseVmWorkFlowElements){
+    public void setPauseVmWorkFlowElements(List<String> pauseVmWorkFlowElements) {
         this.pauseVmWorkFlowElements = pauseVmWorkFlowElements;
     }
 
-    public void setResumeVmWorkFlowElements(List<String> resumeVmWorkFlowElements){
+    public void setResumeVmWorkFlowElements(List<String> resumeVmWorkFlowElements) {
         this.resumeVmWorkFlowElements = resumeVmWorkFlowElements;
     }
 
@@ -2009,4 +2011,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
             ));
         }
     }
+
+
 }
