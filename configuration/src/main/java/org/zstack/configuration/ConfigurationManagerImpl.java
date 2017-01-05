@@ -539,7 +539,7 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
 
         for (Field f : fs) {
             APINoSee nosee = f.getAnnotation(APINoSee.class);
-            if (nosee != null) {
+            if (nosee != null && !f.getName().equals("timeout") && !f.getName().equals("session")) {
                 continue;
             }
 
@@ -678,9 +678,7 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
         scanner.addExcludeFilter(new AnnotationTypeFilter(Component.class));
         List<String> apiNames = new ArrayList<>(100);
         for (String pkg : basePkgs) {
-            for (BeanDefinition bd : scanner.findCandidateComponents(pkg).stream().sorted((bd1, bd2) -> {
-                return bd1.getBeanClassName().compareTo(bd2.getBeanClassName());
-            }).collect(Collectors.toList())) {
+            for (BeanDefinition bd : scanner.findCandidateComponents(pkg).stream().sorted(Comparator.comparing(BeanDefinition::getBeanClassName)).collect(Collectors.toList())) {
                 try {
                     Class<?> clazz = Class.forName(bd.getBeanClassName());
                     if (clazz == APIMessage.class || clazz == APIListMessage.class || clazz == APIDeleteMessage.class || clazz == APISearchMessage.class) {

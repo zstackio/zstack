@@ -114,6 +114,14 @@ X-Job-Success: true
 
 当值为*true*时执行成功，为*false*时执行失败。
 
+## API种类
+
+ZStack的API分为同步API和异步API两种：
+
+#### 同步API
+
+
+
 ## 操作
 
 跟所有的RESTful API类似，绝大多数ZStack API执行的是CRUD(Create, Read, Update, Delete)操作，
@@ -158,12 +166,24 @@ Authorization： OAuth 0c234e29a2ad4ff4b0d97d4f3b47c6cf
 
 ```$xslt
 GET /v1/vm-instances/56f0fd314a2647ffb4f9565f6d05858e
+
+Authorization： OAuth 0c234e29a2ad4ff4b0d97d4f3b47c6cf
 ```
 
 返回UUID为*56f0fd314a2647ffb4f9565f6d05858e*虚拟机的信息。
 
 
 #### 删除资源
+
+删除资源使用`DELETE`方法，被删除资源的UUID编码在URL中，例如：
+
+```$xslt
+DELETE /v1/vm-instances/56f0fd314a2647ffb4f9565f6d05858e
+
+Authorization： OAuth 0c234e29a2ad4ff4b0d97d4f3b47c6cf
+```
+
+删除UUID为`56f0fd314a2647ffb4f9565f6d05858e`的虚拟机。
 
 #### 修改资源与类PRC操作
 
