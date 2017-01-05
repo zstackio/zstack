@@ -55,6 +55,7 @@ CREATE TABLE  `zstack`.`AsyncRestVO` (
     PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+
 # DiskOfferingEO
 DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_DiskOfferingEO;
 DELIMITER $$
@@ -276,3 +277,7 @@ FOR EACH ROW
         END IF;
     END$$
 DELIMITER ;
+
+ALTER TABLE `zstack`.`SharedResourceVO` ADD UNIQUE INDEX(`ownerAccountUuid`,`receiverAccountUuid`,`resourceUuid`);
+ALTER TABLE `zstack`.`ShareableVolumeVmInstanceRefVO` ADD UNIQUE INDEX(`volumeUuid`,`vmInstanceUuid`);
+
