@@ -4,7 +4,9 @@
 		<zone name="Zone1" description="Test">
 			<clusters>
 				<cluster name="Cluster1" description="Test" hypervisorType="KVM" />
+				<cluster name="Cluster2" description="Test" hypervisorType="KVM" />
 			</clusters>
 		</zone>
 	</zones>
 </deployerConfig>
+

@@ -5,6 +5,7 @@ import org.apache.commons.codec.binary.Base64;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -30,11 +31,32 @@ public class EncryptRSA {
 	@Autowired
 	private GlobalConfigFacade gcf;
 
+
 	/*static{
 		if (key1 == null && key2 == null){
 			initSecretKey();
 		}
 	}*/
+
+	public String updateKey(String key) throws Exception{
+		try {
+			EncryptGlobalConfig.ENCRYPT_ALGORITHM.updateValue(key);
+
+			String keyString = EncryptGlobalConfig.ENCRYPT_ALGORITHM.value();
+			//String keyString2 = EncryptGlobalConfig.ENCRYPT_ALGORITHM.getDefaultValue()
+			logger.debug(String.format("key is : %s",keyString));
+			byte[] srcBytes = encodeUTF8(keyString);
+			key1 = Base64.decodeBase64(srcBytes);
+
+			//key1 = Base64.decodeBase64(encodeUTF8(keyString));
+			key2 = toKey(key1);
+			return "success";
+		}catch (Exception e){
+			logger.debug("change key failed");
+			logger.debug(e.getStackTrace().toString());
+			return "failed";
+		}
+	}
 
 	public void initKey() throws Exception{
 		/*KeyGenerator kg = null;
@@ -53,6 +75,7 @@ public class EncryptRSA {
 		try {
 			if (key1 == null && key2 == null){
 				String keyString = EncryptGlobalConfig.ENCRYPT_ALGORITHM.value();
+				//String keyString2 = EncryptGlobalConfig.ENCRYPT_ALGORITHM.getDefaultValue()
 				logger.debug(String.format("key is : %s",keyString));
 				byte[] srcBytes = encodeUTF8(keyString);
 				key1 = Base64.decodeBase64(srcBytes);
@@ -149,11 +172,51 @@ public class EncryptRSA {
 		}
 	}
 
+	public String encrypt(String password,String keyString){
+		try {
+			password = appendString+password;
+
+			logger.debug(String.format("key is : %s",keyString));
+			byte[] srcBytes = encodeUTF8(keyString);
+			byte[] newKey1 = Base64.decodeBase64(srcBytes);
+			Key newKey2 = toKey(newKey1);
+			byte[] encryptData = encrypt(password.getBytes(),newKey2);
+			byte[] base64EncryptData = Base64.encodeBase64(encryptData);
+			return decodeUTF8(base64EncryptData);
+		}catch (Exception e){
+			logger.debug(e.getMessage());
+			return password;
+		}
+	}
+
 	public Object decrypt1(String password) throws Exception{
 		initKey();
 		try {
 			byte[] srcBytes = encodeUTF8(password);
 			byte[] desBytes = decrypt(Base64.decodeBase64(srcBytes), key2);
+			String tempdecodeUTF8 = decodeUTF8(desBytes);
+			logger.debug(String.format("tempUTF8 first is: %s",tempdecodeUTF8.substring(0, appendString.length())));
+			if (tempdecodeUTF8.substring(0, appendString.length()).equals(appendString)){
+				logger.debug(String.format("tempUTF8 after is: %s",tempdecodeUTF8.substring(appendString.length(), tempdecodeUTF8.length())));
+				return tempdecodeUTF8.substring(appendString.length(),tempdecodeUTF8.length());
+			}
+			return password;
+		}catch (Exception e){
+			logger.debug(e.getMessage());
+			return password;
+		}
+
+	}
+
+	public Object decrypt(String password,String keyString) throws Exception{
+		try {
+			logger.debug(String.format("key is : %s",keyString));
+			byte[] keySrcBytes = encodeUTF8(keyString);
+			byte[] newKey1 = Base64.decodeBase64(keySrcBytes);
+			Key newKey2 = toKey(newKey1);
+
+			byte[] srcBytes = encodeUTF8(password);
+			byte[] desBytes = decrypt(Base64.decodeBase64(srcBytes), newKey2);
 			String tempdecodeUTF8 = decodeUTF8(desBytes);
 			logger.debug(String.format("tempUTF8 first is: %s",tempdecodeUTF8.substring(0, appendString.length())));
 			if (tempdecodeUTF8.substring(0, appendString.length()).equals(appendString)){
