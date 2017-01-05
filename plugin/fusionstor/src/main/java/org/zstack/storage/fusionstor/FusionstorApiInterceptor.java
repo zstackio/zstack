@@ -8,22 +8,23 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.storage.fusionstor.backup.APIAddFusionstorBackupStorageMsg;
 import org.zstack.storage.fusionstor.backup.APIAddMonToFusionstorBackupStorageMsg;
+import org.zstack.storage.fusionstor.backup.APIUpdateFusionstorBackupStorageMonMsg;
 import org.zstack.storage.fusionstor.backup.FusionstorBackupStorageMonVO;
 import org.zstack.storage.fusionstor.backup.FusionstorBackupStorageMonVO_;
 import org.zstack.storage.fusionstor.primary.APIAddFusionstorPrimaryStorageMsg;
 import org.zstack.storage.fusionstor.primary.APIAddMonToFusionstorPrimaryStorageMsg;
+import org.zstack.storage.fusionstor.primary.APIUpdateFusionstorPrimaryStorageMonMsg;
 import org.zstack.storage.fusionstor.primary.FusionstorPrimaryStorageMonVO;
 import org.zstack.storage.fusionstor.primary.FusionstorPrimaryStorageMonVO_;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.NetworkUtils;
 
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -50,6 +51,10 @@ public class FusionstorApiInterceptor implements ApiMessageInterceptor {
             validate((APIAddMonToFusionstorBackupStorageMsg) msg);
         } else if (msg instanceof APIAddMonToFusionstorPrimaryStorageMsg) {
             validate((APIAddMonToFusionstorPrimaryStorageMsg) msg);
+        } else if (msg instanceof APIUpdateFusionstorPrimaryStorageMonMsg) {
+            validate((APIUpdateFusionstorPrimaryStorageMonMsg) msg);
+        } else if (msg instanceof APIUpdateFusionstorBackupStorageMonMsg) {
+            validate((APIUpdateFusionstorBackupStorageMonMsg) msg);
         }
         
         return msg;
@@ -150,5 +155,32 @@ public class FusionstorApiInterceptor implements ApiMessageInterceptor {
 
         checkMonUrls(msg.getMonUrls());
         checkExistingBackupStorage(msg.getMonUrls());
+    }
+
+    private void validate(APIUpdateFusionstorBackupStorageMonMsg msg) {
+        if (msg.getHostname() != null && !NetworkUtils.isIpv4Address(msg.getHostname()) && !NetworkUtils.isHostname(msg.getHostname())) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("hostname[%s] is neither an IPv4 address nor a valid hostname", msg.getHostname())
+            ));
+        }
+        SimpleQuery<FusionstorBackupStorageMonVO> q = dbf.createQuery(FusionstorBackupStorageMonVO.class);
+        q.select(FusionstorBackupStorageMonVO_.backupStorageUuid);
+        q.add(FusionstorBackupStorageMonVO_.uuid, Op.EQ, msg.getMonUuid());
+        String bsUuid = q.findValue();
+        msg.setBackupStorageUuid(bsUuid);
+    }
+
+    private void validate(APIUpdateFusionstorPrimaryStorageMonMsg msg) {
+        if (msg.getHostname() != null && !NetworkUtils.isIpv4Address(msg.getHostname()) && !NetworkUtils.isHostname(msg.getHostname())) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("hostname[%s] is neither an IPv4 address nor a valid hostname", msg.getHostname())
+            ));
+        }
+
+        SimpleQuery<FusionstorPrimaryStorageMonVO> q = dbf.createQuery(FusionstorPrimaryStorageMonVO.class);
+        q.select(FusionstorPrimaryStorageMonVO_.primaryStorageUuid);
+        q.add(FusionstorPrimaryStorageMonVO_.uuid, Op.EQ, msg.getMonUuid());
+        String psUuid = q.findValue();
+        msg.setPrimaryStorageUuid(psUuid);
     }
 }
