@@ -56,5 +56,228 @@ CREATE TABLE  `zstack`.`AsyncRestVO` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
+# DiskOfferingEO
+DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_DiskOfferingEO;
+DELIMITER $$
+CREATE TRIGGER trigger_clean_AccountResourceRefVO_for_DiskOfferingEO AFTER UPDATE ON `DiskOfferingEO`
+FOR EACH ROW
+    BEGIN
+        IF OLD.`deleted` IS NULL AND NEW.`deleted` IS NOT NULL THEN
+            DELETE FROM `AccountResourceRefVO` WHERE `resourceUuid` = OLD.`uuid` AND `resourceType` = 'DiskOfferingVO';
+        END IF;
+    END$$
+DELIMITER ;
+
+# EipVO
+DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_EipVO;
+DELIMITER $$
+CREATE TRIGGER trigger_clean_AccountResourceRefVO_for_EipVO AFTER DELETE ON `EipVO`
+FOR EACH ROW
+    BEGIN
+        DELETE FROM `AccountResourceRefVO` WHERE `resourceUuid` = OLD.`uuid` AND `resourceType` = 'EipVO';
+    END$$
+DELIMITER ;
+
+# ImageEO
+DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_ImageEO;
+DELIMITER $$
+CREATE TRIGGER trigger_clean_AccountResourceRefVO_for_ImageEO AFTER UPDATE ON `ImageEO`
+FOR EACH ROW
+    BEGIN
+        IF OLD.`deleted` IS NULL AND NEW.`deleted` IS NOT NULL THEN
+            DELETE FROM `AccountResourceRefVO` WHERE `resourceUuid` = OLD.`uuid` AND `resourceType` = 'ImageVO';
+        END IF;
+    END$$
+DELIMITER ;
+
+# InstanceOfferingEO
+DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_InstanceOfferingEO;
+DELIMITER $$
+CREATE TRIGGER trigger_clean_AccountResourceRefVO_for_InstanceOfferingEO AFTER UPDATE ON `InstanceOfferingEO`
+FOR EACH ROW
+    BEGIN
+        IF OLD.`deleted` IS NULL AND NEW.`deleted` IS NOT NULL THEN
+            DELETE FROM `AccountResourceRefVO` WHERE `resourceUuid` = OLD.`uuid` AND `resourceType` = 'InstanceOfferingVO';
+        END IF;
+    END$$
+DELIMITER ;
+
+# IpRangeEO
+DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_IpRangeEO;
+DELIMITER $$
+CREATE TRIGGER trigger_clean_AccountResourceRefVO_for_IpRangeEO AFTER UPDATE ON `IpRangeEO`
+FOR EACH ROW
+    BEGIN
+        IF OLD.`deleted` IS NULL AND NEW.`deleted` IS NOT NULL THEN
+            DELETE FROM `AccountResourceRefVO` WHERE `resourceUuid` = OLD.`uuid` AND `resourceType` = 'IpRangeVO';
+        END IF;
+    END$$
+DELIMITER ;
+
+# L2NetworkEO
+DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_L2NetworkEO;
+DELIMITER $$
+CREATE TRIGGER trigger_clean_AccountResourceRefVO_for_L2NetworkEO AFTER UPDATE ON `L2NetworkEO`
+FOR EACH ROW
+    BEGIN
+        IF OLD.`deleted` IS NULL AND NEW.`deleted` IS NOT NULL THEN
+            DELETE FROM `AccountResourceRefVO` WHERE `resourceUuid` = OLD.`uuid` AND `resourceType` = 'L2NetworkVO';
+        END IF;
+    END$$
+DELIMITER ;
+
+# L3NetworkEO
+DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_L3NetworkEO;
+DELIMITER $$
+CREATE TRIGGER trigger_clean_AccountResourceRefVO_for_L3NetworkEO AFTER UPDATE ON `L3NetworkEO`
+FOR EACH ROW
+    BEGIN
+        IF OLD.`deleted` IS NULL AND NEW.`deleted` IS NOT NULL THEN
+            DELETE FROM `AccountResourceRefVO` WHERE `resourceUuid` = OLD.`uuid` AND `resourceType` = 'L3NetworkVO';
+        END IF;
+    END$$
+DELIMITER ;
+
+# PolicyVO
+DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_PolicyVO;
+DELIMITER $$
+CREATE TRIGGER trigger_clean_AccountResourceRefVO_for_PolicyVO AFTER DELETE ON `PolicyVO`
+FOR EACH ROW
+    BEGIN
+        DELETE FROM `AccountResourceRefVO` WHERE `resourceUuid` = OLD.`uuid` AND `resourceType` = 'PolicyVO';
+    END$$
+DELIMITER ;
+
+# QuotaVO
+DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_QuotaVO;
+DELIMITER $$
+CREATE TRIGGER trigger_clean_AccountResourceRefVO_for_QuotaVO AFTER DELETE ON `QuotaVO`
+FOR EACH ROW
+    BEGIN
+        DELETE FROM `AccountResourceRefVO` WHERE `resourceUuid` = OLD.`id` AND `resourceType` = 'QuotaVO';
+    END$$
+DELIMITER ;
+
+# SchedulerVO
+DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_SchedulerVO;
+DELIMITER $$
+CREATE TRIGGER trigger_clean_AccountResourceRefVO_for_SchedulerVO AFTER DELETE ON `SchedulerVO`
+FOR EACH ROW
+    BEGIN
+        DELETE FROM `AccountResourceRefVO` WHERE `resourceUuid` = OLD.`uuid` AND `resourceType` = 'SchedulerVO';
+    END$$
+DELIMITER ;
+
+# SecurityGroupVO
+DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_SecurityGroupVO;
+DELIMITER $$
+CREATE TRIGGER trigger_clean_AccountResourceRefVO_for_SecurityGroupVO AFTER DELETE ON `SecurityGroupVO`
+FOR EACH ROW
+    BEGIN
+        DELETE FROM `AccountResourceRefVO` WHERE `resourceUuid` = OLD.`uuid` AND `resourceType` = 'SecurityGroupVO';
+    END$$
+DELIMITER ;
+
+# UserGroupVO
+DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_UserGroupVO;
+DELIMITER $$
+CREATE TRIGGER trigger_clean_AccountResourceRefVO_for_UserGroupVO AFTER DELETE ON `UserGroupVO`
+FOR EACH ROW
+    BEGIN
+        DELETE FROM `AccountResourceRefVO` WHERE `resourceUuid` = OLD.`uuid` AND `resourceType` = 'UserGroupVO';
+    END$$
+DELIMITER ;
+
+# UserVO
+DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_UserVO;
+DELIMITER $$
+CREATE TRIGGER trigger_clean_AccountResourceRefVO_for_UserVO AFTER DELETE ON `UserVO`
+FOR EACH ROW
+    BEGIN
+        DELETE FROM `AccountResourceRefVO` WHERE `resourceUuid` = OLD.`uuid` AND `resourceType` = 'UserVO';
+    END$$
+DELIMITER ;
+
+# VipVO
+DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_VipVO;
+DELIMITER $$
+CREATE TRIGGER trigger_clean_AccountResourceRefVO_for_VipVO AFTER DELETE ON `VipVO`
+FOR EACH ROW
+    BEGIN
+        DELETE FROM `AccountResourceRefVO` WHERE `resourceUuid` = OLD.`uuid` AND `resourceType` = 'VipVO';
+    END$$
+DELIMITER ;
+
+# VmInstanceEO
+DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_VmInstanceEO;
+DELIMITER $$
+CREATE TRIGGER trigger_clean_AccountResourceRefVO_for_VmInstanceEO AFTER UPDATE ON `VmInstanceEO`
+FOR EACH ROW
+    BEGIN
+        IF OLD.`deleted` IS NULL AND NEW.`deleted` IS NOT NULL THEN
+            DELETE FROM `AccountResourceRefVO` WHERE `resourceUuid` = OLD.`uuid` AND `resourceType` = 'VmInstanceVO';
+        END IF;
+    END$$
+DELIMITER ;
+
+# VmNicVO
+DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_VmNicVO;
+DELIMITER $$
+CREATE TRIGGER trigger_clean_AccountResourceRefVO_for_VmNicVO AFTER DELETE ON `VmNicVO`
+FOR EACH ROW
+    BEGIN
+        DELETE FROM `AccountResourceRefVO` WHERE `resourceUuid` = OLD.`uuid` AND `resourceType` = 'VmNicVO';
+    END$$
+DELIMITER ;
+
+# VolumeEO
+DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_VolumeEO;
+DELIMITER $$
+CREATE TRIGGER trigger_clean_AccountResourceRefVO_for_VolumeEO AFTER UPDATE ON `VolumeEO`
+FOR EACH ROW
+    BEGIN
+        IF OLD.`deleted` IS NULL AND NEW.`deleted` IS NOT NULL THEN
+            DELETE FROM `AccountResourceRefVO` WHERE `resourceUuid` = OLD.`uuid` AND `resourceType` = 'VolumeVO';
+        END IF;
+    END$$
+DELIMITER ;
+
+# VolumeSnapshotEO
+DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_VolumeSnapshotEO;
+DELIMITER $$
+CREATE TRIGGER trigger_clean_AccountResourceRefVO_for_VolumeSnapshotEO AFTER UPDATE ON `VolumeSnapshotEO`
+FOR EACH ROW
+    BEGIN
+        IF OLD.`deleted` IS NULL AND NEW.`deleted` IS NOT NULL THEN
+            DELETE FROM `AccountResourceRefVO` WHERE `resourceUuid` = OLD.`uuid` AND `resourceType` = 'VolumeSnapshotVO';
+        END IF;
+    END$$
+DELIMITER ;
+
+# VolumeSnapshotTreeEO
+DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_VolumeSnapshotTreeEO;
+DELIMITER $$
+CREATE TRIGGER trigger_clean_AccountResourceRefVO_for_VolumeSnapshotTreeEO AFTER UPDATE ON `VolumeSnapshotTreeEO`
+FOR EACH ROW
+    BEGIN
+        IF OLD.`deleted` IS NULL AND NEW.`deleted` IS NOT NULL THEN
+            DELETE FROM `AccountResourceRefVO` WHERE `resourceUuid` = OLD.`uuid` AND `resourceType` = 'VolumeSnapshotTreeVO';
+        END IF;
+    END$$
+DELIMITER ;
+
+# ZoneEO
+DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_ZoneEO;
+DELIMITER $$
+CREATE TRIGGER trigger_clean_AccountResourceRefVO_for_ZoneEO AFTER UPDATE ON `ZoneEO`
+FOR EACH ROW
+    BEGIN
+        IF OLD.`deleted` IS NULL AND NEW.`deleted` IS NOT NULL THEN
+            DELETE FROM `AccountResourceRefVO` WHERE `resourceUuid` = OLD.`uuid` AND `resourceType` = 'ZoneVO';
+        END IF;
+    END$$
+DELIMITER ;
+
 ALTER TABLE `zstack`.`SharedResourceVO` ADD UNIQUE INDEX(`ownerAccountUuid`,`receiverAccountUuid`,`resourceUuid`);
 ALTER TABLE `zstack`.`ShareableVolumeVmInstanceRefVO` ADD UNIQUE INDEX(`volumeUuid`,`vmInstanceUuid`);
+
