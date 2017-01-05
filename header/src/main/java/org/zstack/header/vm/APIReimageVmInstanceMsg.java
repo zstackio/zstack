@@ -1,14 +1,15 @@
-package org.zstack.header.storage.snapshot;
+package org.zstack.header.vm;
 
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.vm.VmInstanceVO;
 
 /**
  * Created by miao on 11/3/16.
  */
-@Action(category = VolumeSnapshotConstant.ACTION_CATEGORY)
+@Action(category = VmInstanceConstant.ACTION_CATEGORY)
 public class APIReimageVmInstanceMsg extends APIMessage {
     public String getVmInstanceUuid() {
         return vmInstanceUuid;

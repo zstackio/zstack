@@ -54,3 +54,7 @@ CREATE TABLE  `zstack`.`AsyncRestVO` (
     `createDate` timestamp,
     PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+ALTER TABLE `zstack`.`SharedResourceVO` ADD UNIQUE INDEX(`ownerAccountUuid`,`receiverAccountUuid`);
+ALTER TABLE `zstack`.`ShareableVolumeVmInstanceRefVO` ADD UNIQUE INDEX(`volumeUuid`,`vmInstanceUuid`);

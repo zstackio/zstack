@@ -67,5 +67,19 @@
         <id>1013</id>
         <description>Unable to resume a vm</description>
     </code>
+    <code>
+        <id>1014</id>
+        <description>VM is not in Stopped state, cannot do re-image operation.</description>
+    </code>
+
+    <code>
+        <id>1015</id>
+        <description>Original image media type of VM is ISO, cannot do re-image operation.</description>
+    </code>
+
+    <code>
+        <id>1016</id>
+        <description>Cannot find image cache, cannot do re-image operation.</description>
+    </code>
 </error>
 
