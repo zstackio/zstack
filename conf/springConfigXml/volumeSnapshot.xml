@@ -20,6 +20,7 @@
             <zstack:extension interface="org.zstack.core.cloudbus.ReplyMessagePreSendingExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.identity.ResourceOwnerAfterChangeExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.identity.ReportQuotaExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.vm.AfterReimageVmInstanceExtensionPoint"/>
         </zstack:plugin>
     </bean>
 
