@@ -16,6 +16,6 @@ public class ImageCacheVO_ {
     public static volatile SingularAttribute<ImageCacheVO, Long> size;
     public static volatile SingularAttribute<ImageCacheVO, Timestamp> createDate;
     public static volatile SingularAttribute<ImageCacheVO, Timestamp> lastOpDate;
-    public static volatile SingularAttribute<ImageCacheVO, ImageMediaType> format;
+    public static volatile SingularAttribute<ImageCacheVO, ImageMediaType> mediaType;
     public static volatile SingularAttribute<ImageCacheVO, ImageCacheState> state;
 }
