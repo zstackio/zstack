@@ -503,6 +503,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     public static class GetMd5Cmd extends AgentCommand {
         public List<GetMd5TO> md5s;
         public String sendCommandUrl;
+        public String volumeUuid;
     }
 
     public static class Md5TO {
@@ -520,6 +521,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     public static class CheckMd5sumCmd extends AgentCommand {
         public List<Md5TO> md5s;
         public String sendCommandUrl;
+        public String volumeUuid;
     }
 
     @ApiTimeout(apiClasses = {APILocalStorageMigrateVolumeMsg.class})
@@ -1950,6 +1952,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                         to.resourceUuid = "backing-file";
                         to.path = context.backingFilePath;
                         cmd.md5s = list(to);
+                        cmd.volumeUuid = struct.getVolume().getUuid();
 
                         httpCall(GET_MD5_PATH, struct.getSrcHostUuid(), cmd, false, GetMd5Rsp.class, new ReturnValueCompletion<GetMd5Rsp>(trigger) {
                             @Override
@@ -2100,6 +2103,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
                         CheckMd5sumCmd cmd = new CheckMd5sumCmd();
                         cmd.md5s = list(to);
+                        cmd.volumeUuid = struct.getVolume().getUuid();
 
                         httpCall(CHECK_MD5_PATH, struct.getDestHostUuid(), cmd, false, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
                             @Override
@@ -2124,6 +2128,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             public void run(final FlowTrigger trigger, Map data) {
                 GetMd5Cmd cmd = new GetMd5Cmd();
                 cmd.sendCommandUrl = restf.getSendCommandUrl();
+                cmd.volumeUuid = struct.getVolume().getUuid();
                 cmd.md5s = CollectionUtils.transformToList(struct.getInfos(), new Function<GetMd5TO, ResourceInfo>() {
                     @Override
                     public GetMd5TO call(ResourceInfo arg) {
@@ -2232,6 +2237,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 CheckMd5sumCmd cmd = new CheckMd5sumCmd();
                 cmd.sendCommandUrl = restf.getSendCommandUrl();
                 cmd.md5s = context.getMd5Rsp.md5s;
+                cmd.volumeUuid = struct.getVolume().getUuid();
                 httpCall(CHECK_MD5_PATH, struct.getDestHostUuid(), cmd, false, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
                     @Override
                     public void success(AgentResponse rsp) {
