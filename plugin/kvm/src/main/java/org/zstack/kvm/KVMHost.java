@@ -1393,14 +1393,19 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private String setVolumeWwn(String volumeUUid) {
-        SystemTagCreator creator = KVMSystemTags.VOLUME_WWN.newSystemTagCreator(volumeUUid);
-        creator.ignoreIfExisting = true;
-        creator.inherent = true;
-        creator.setTagByTokens(map(e(KVMSystemTags.VOLUME_WWN_TOKEN, new WwnUtils().getRandomWwn())));
-        SystemTagInventory inv = creator.create();
+        String wwn;
+        String tag = KVMSystemTags.VOLUME_WWN.getTag(volumeUUid);
+        if (tag != null) {
+            wwn = KVMSystemTags.VOLUME_WWN.getTokenByTag(tag, KVMSystemTags.VOLUME_WWN_TOKEN);
+        } else {
+            SystemTagCreator creator = KVMSystemTags.VOLUME_WWN.newSystemTagCreator(volumeUUid);
+            creator.ignoreIfExisting = true;
+            creator.inherent = true;
+            creator.setTagByTokens(map(e(KVMSystemTags.VOLUME_WWN_TOKEN, new WwnUtils().getRandomWwn())));
+            SystemTagInventory inv = creator.create();
+            wwn = KVMSystemTags.VOLUME_WWN.getTokenByTag(inv.getTag(), KVMSystemTags.VOLUME_WWN_TOKEN);
+        }
 
-        String tag = inv != null ? inv.getTag() : KVMSystemTags.VOLUME_WWN.getTag(volumeUUid);
-        String wwn = KVMSystemTags.VOLUME_WWN.getTokenByTag(tag, KVMSystemTags.VOLUME_WWN_TOKEN);
         DebugUtils.Assert(new WwnUtils().isValidWwn(wwn), String.format("Not a valid wwn[%s] for volume[uuid:%s]", wwn, volumeUUid));
         return wwn;
     }
