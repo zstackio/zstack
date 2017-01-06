@@ -1471,7 +1471,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
         final String installPath = ((BackupStorageAskInstallPathReply) br).getInstallPath();
 
-        m.uploadBits(getSelfInventory(), msg.getBackupStorage(), installPath, sp.getPrimaryStorageInstallPath(), hostUuid, new ReturnValueCompletion<String>(completion) {
+        m.uploadBits(null, getSelfInventory(), msg.getBackupStorage(), installPath, sp.getPrimaryStorageInstallPath(), hostUuid, new ReturnValueCompletion<String>(completion) {
             @Override
             public void success(String installPath) {
                 BackupVolumeSnapshotFromPrimaryStorageToBackupStorageReply reply = new BackupVolumeSnapshotFromPrimaryStorageToBackupStorageReply();
@@ -1659,7 +1659,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         BackupStorageInventory bsinv = BackupStorageInventory.valueOf(bs);
 
         LocalStorageBackupStorageMediator m = localStorageFactory.getBackupStorageMediator(KVMConstant.KVM_HYPERVISOR_TYPE, bs.getType());
-        m.uploadBits(getSelfInventory(), bsinv, msg.getBackupStorageInstallPath(), msg.getPrimaryStorageInstallPath(),
+        m.uploadBits(null, getSelfInventory(), bsinv, msg.getBackupStorageInstallPath(), msg.getPrimaryStorageInstallPath(),
                 hostUuid, new ReturnValueCompletion<String>(completion) {
                     @Override
                     public void success(String installPath) {
@@ -2477,7 +2477,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
                         BackupStorageVO bsvo = dbf.findByUuid(msg.getBackupStorageUuid(), BackupStorageVO.class);
                         LocalStorageBackupStorageMediator m = localStorageFactory.getBackupStorageMediator(KVMConstant.KVM_HYPERVISOR_TYPE, bsvo.getType());
-                        m.uploadBits(getSelfInventory(), BackupStorageInventory.valueOf(bsvo), backupStorageInstallPath, temporaryTemplatePath, ref.getHostUuid(), new ReturnValueCompletion<String>(trigger) {
+                        m.uploadBits(null, getSelfInventory(), BackupStorageInventory.valueOf(bsvo), backupStorageInstallPath, temporaryTemplatePath, ref.getHostUuid(), new ReturnValueCompletion<String>(trigger) {
                             @Override
                             public void success(String installPath) {
                                 backupStorageInstallPath = installPath;

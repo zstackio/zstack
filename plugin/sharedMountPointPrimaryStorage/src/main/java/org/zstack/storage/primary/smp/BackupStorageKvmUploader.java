@@ -9,5 +9,5 @@ public abstract class BackupStorageKvmUploader {
     // When uploading an image from 'psPath' to backup storage, the 'bsPath'
     // might be allocated by the backup storage and returned by the completion,
     // instead of being known ahead of time.
-    public abstract void uploadBits(String bsPath, String psPath, ReturnValueCompletion<String> completion);
+    public abstract void uploadBits(String imageUuid, String bsPath, String psPath, ReturnValueCompletion<String> completion);
 }

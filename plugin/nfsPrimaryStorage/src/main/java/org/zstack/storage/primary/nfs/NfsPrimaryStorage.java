@@ -389,7 +389,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
 
         final BackupVolumeSnapshotFromPrimaryStorageToBackupStorageReply reply = new BackupVolumeSnapshotFromPrimaryStorageToBackupStorageReply();
         final String installPath = mediator.makeVolumeSnapshotInstallPath(bs.getUuid(), sinv.getUuid());
-        mediator.uploadBits(getSelfInventory(), bs, installPath, sinv.getPrimaryStorageInstallPath(), new ReturnValueCompletion<String>(msg) {
+        mediator.uploadBits(null, getSelfInventory(), bs, installPath, sinv.getPrimaryStorageInstallPath(), new ReturnValueCompletion<String>(msg) {
             @Override
             public void success(String installPath) {
                 reply.setBackupStorageInstallPath(installPath);
@@ -882,7 +882,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                         DebugUtils.Assert(!ImageMediaType.ISO.toString().equals(image.getMediaType()), String.format("how can this happen? creating an template from an ISO????"));
                         templateBackupStorageInstallPath = ImageMediaType.RootVolumeTemplate.toString().equals(image.getMediaType()) ?
                                 mediator.makeRootVolumeTemplateInstallPath(bsinv.getUuid(), image.getUuid()) : mediator.makeDataVolumeTemplateInstallPath(bsinv.getUuid(), image.getUuid());
-                        mediator.uploadBits(pinv, bsinv, templateBackupStorageInstallPath, templatePrimaryStorageInstallPath, new ReturnValueCompletion<String>(trigger) {
+                        mediator.uploadBits(msg.getImageInventory().getUuid(), pinv, bsinv, templateBackupStorageInstallPath, templatePrimaryStorageInstallPath, new ReturnValueCompletion<String>(trigger) {
                             @Override
                             public void success(String installPath) {
                                 templateBackupStorageInstallPath = installPath;

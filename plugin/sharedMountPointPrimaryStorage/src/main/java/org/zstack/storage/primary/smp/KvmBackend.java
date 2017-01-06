@@ -1108,7 +1108,7 @@ public class KvmBackend extends HypervisorBackend {
                         backupStorageInstallPath = ((BackupStorageAskInstallPathReply) br).getInstallPath();
 
                         BackupStorageKvmUploader uploader = getBackupStorageKvmUploader(msg.getBackupStorageUuid());
-                        uploader.uploadBits(backupStorageInstallPath, temporaryTemplatePath, new ReturnValueCompletion<String>(trigger) {
+                        uploader.uploadBits(msg.getImageInventory().getUuid(), backupStorageInstallPath, temporaryTemplatePath, new ReturnValueCompletion<String>(trigger) {
                             @Override
                             public void success(String bsPath) {
                                 backupStorageInstallPath = bsPath;
@@ -1167,7 +1167,7 @@ public class KvmBackend extends HypervisorBackend {
     @Override
     void handle(UploadBitsToBackupStorageMsg msg, final ReturnValueCompletion<UploadBitsToBackupStorageReply> completion) {
         SftpBackupStorageKvmUploader uploader = new SftpBackupStorageKvmUploader(msg.getBackupStorageUuid());
-        uploader.uploadBits(msg.getBackupStorageInstallPath(), msg.getPrimaryStorageInstallPath(), new ReturnValueCompletion<String>(completion) {
+        uploader.uploadBits(null, msg.getBackupStorageInstallPath(), msg.getPrimaryStorageInstallPath(), new ReturnValueCompletion<String>(completion) {
             @Override
             public void success(String bsPath) {
                 UploadBitsToBackupStorageReply reply = new UploadBitsToBackupStorageReply();
@@ -1236,7 +1236,7 @@ public class KvmBackend extends HypervisorBackend {
         }
 
         @Override
-        public void uploadBits(final String bsPath, final String psPath, final ReturnValueCompletion<String> completion) {
+        public void uploadBits(final String imageUuid, final String bsPath, final String psPath, final ReturnValueCompletion<String> completion) {
             GetSftpBackupStorageDownloadCredentialMsg gmsg = new GetSftpBackupStorageDownloadCredentialMsg();
             gmsg.setBackupStorageUuid(bsUuid);
             bus.makeTargetServiceIdByResourceUuid(gmsg, BackupStorageConstant.SERVICE_ID, bsUuid);
@@ -1446,7 +1446,7 @@ public class KvmBackend extends HypervisorBackend {
 
         final String installPath = ((BackupStorageAskInstallPathReply) br).getInstallPath();
         BackupStorageKvmUploader uploader = getBackupStorageKvmUploader(bsUuid);
-        uploader.uploadBits(installPath, sinv.getPrimaryStorageInstallPath(), new ReturnValueCompletion<String>(completion) {
+        uploader.uploadBits(null, installPath, sinv.getPrimaryStorageInstallPath(), new ReturnValueCompletion<String>(completion) {
             @Override
             public void success(String bsPath) {
                 BackupVolumeSnapshotFromPrimaryStorageToBackupStorageReply reply = new BackupVolumeSnapshotFromPrimaryStorageToBackupStorageReply();
