@@ -88,8 +88,6 @@ public class EipApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(final APIAttachEipMsg msg) {
-        isVmNicUsed(msg.getVmNicUuid());
-
         SimpleQuery<EipVO> q = dbf.createQuery(EipVO.class);
         q.select(EipVO_.state, EipVO_.vmNicUuid, EipVO_.vipIp);
         q.add(EipVO_.uuid, Op.EQ, msg.getEipUuid());
@@ -107,14 +105,6 @@ public class EipApiInterceptor implements ApiMessageInterceptor {
             throw new ApiMessageInterceptionException(errf.stringToOperationError(
                     String.format("eip[uuid: %s] can only be attached when state is %s, current state is %s",
                             msg.getEipUuid(), EipState.Enabled, state)
-            ));
-        }
-
-        q = dbf.createQuery(EipVO.class);
-        q.add(EipVO_.vmNicUuid, Op.EQ, msg.getVmNicUuid());
-        if (q.isExists()) {
-            throw new ApiMessageInterceptionException(errf.stringToOperationError(
-                    String.format("the VM nic[uuid:%s] already has another EIP attached", msg.getVmNicUuid())
             ));
         }
 
@@ -167,18 +157,6 @@ public class EipApiInterceptor implements ApiMessageInterceptor {
         }
     }
 
-    private void isVmNicUsed(String vmNicUuid) {
-        SimpleQuery<EipVO> eq = dbf.createQuery(EipVO.class);
-        eq.select(EipVO_.uuid);
-        eq.add(EipVO_.vmNicUuid, Op.EQ, vmNicUuid);
-        String eipUuid = eq.findValue();
-        if (eipUuid != null) {
-            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
-                    String.format("vm nic[uuid:%s] has attached to another eip[uuid:%s]", vmNicUuid, eipUuid)
-            ));
-        }
-    }
-
     private void isVipInVmNicSubnet(String eipIp, String vmNicUuid) {
         SimpleQuery<VmNicVO> q = dbf.createQuery(VmNicVO.class);
         q.select(VmNicVO_.gateway, VmNicVO_.netmask);
@@ -212,10 +190,6 @@ public class EipApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APICreateEipMsg msg) {
-        if (msg.getVmNicUuid() != null) {
-            isVmNicUsed(msg.getVmNicUuid());
-        }
-
         VipVO vip = dbf.findByUuid(msg.getVipUuid(), VipVO.class);
         if (vip.getUseFor() != null) {
             throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
@@ -230,14 +204,6 @@ public class EipApiInterceptor implements ApiMessageInterceptor {
         }
 
         if (msg.getVmNicUuid() != null) {
-            SimpleQuery<EipVO> q = dbf.createQuery(EipVO.class);
-            q.add(EipVO_.vmNicUuid, Op.EQ, msg.getVmNicUuid());
-            if (q.isExists()) {
-                throw new ApiMessageInterceptionException(errf.stringToOperationError(
-                        String.format("the VM nic[uuid:%s] already has another EIP attached", msg.getVmNicUuid())
-                ));
-            }
-
             isVipInVmNicSubnet(vip.getIp(), msg.getVmNicUuid());
 
             SimpleQuery<VmNicVO> nicq = dbf.createQuery(VmNicVO.class);
