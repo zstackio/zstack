@@ -4,4 +4,5 @@ public enum PrimaryStorageState {
     Enabled,
     Disabled,
     Maintenance,
+    Deleting,
 }

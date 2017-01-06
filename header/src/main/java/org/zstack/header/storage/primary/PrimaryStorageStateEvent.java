@@ -4,4 +4,5 @@ public enum PrimaryStorageStateEvent {
     enable,
     disable,
     maintain,
+    deleting,
 }

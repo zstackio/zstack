@@ -180,8 +180,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
     }
 
     private void forbidOperationWhenPrimaryStorageDisable(String primaryStorageState) {
-        logger.debug("checking primary storage status");
         if (primaryStorageState.equals(PrimaryStorageState.Disabled.toString())) {
+            logger.debug("checking primary storage status whether Disabled");
             String error = "Operation is not permitted when primary storage status is 'Disabled', please check primary storage status";
             ErrorCode errorCode = new ErrorCode();
             errorCode.setCode(PrimaryStorageErrors.ALLOCATE_ERROR.toString());
@@ -192,7 +192,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
     }
 
     private void forbidOperationWhenPrimaryStorageMaintenance(String primaryStorageState) {
-        logger.debug("checking primary storage status");
+        logger.debug("checking primary storage status whether Maintenance");
         if (primaryStorageState.equals(PrimaryStorageState.Maintenance.toString())) {
             String error = "Operation is not permitted when primary storage status is 'Maintenance', please check primary storage status";
             ErrorCode errorCode = new ErrorCode();
@@ -913,8 +913,12 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         final APIDeletePrimaryStorageEvent evt = new APIDeletePrimaryStorageEvent(msg.getId());
         final String issuer = PrimaryStorageVO.class.getSimpleName();
         final List<PrimaryStorageInventory> ctx = PrimaryStorageInventory.valueOf(Arrays.asList(self));
+        self.setState(PrimaryStorageState.Deleting);
+        self = dbf.updateAndRefresh(self);
+
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("delete-primary-storage-%s", msg.getUuid()));
+
         if (msg.getDeletionMode() == APIDeleteMessage.DeletionMode.Permissive) {
             chain.then(new NoRollbackFlow() {
                 @Override
