@@ -175,8 +175,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                 " from VmNicVO nic, VmInstanceVO vm" +
                 " where nic.l3NetworkUuid in (:l3Uuids)" +
                 " and nic.vmInstanceUuid = vm.uuid" +
-                " and vm.type = :vmType and vm.state in (:vmStates)" +
-                " and nic.uuid not in (select eip.vmNicUuid from EipVO eip where eip.vmNicUuid is not null)";
+                " and vm.type = :vmType and vm.state in (:vmStates)";
         TypedQuery<VmNicVO> nq = dbf.getEntityManager().createQuery(sql, VmNicVO.class);
         nq.setParameter("l3Uuids", l3Uuids);
         nq.setParameter("vmType", VmInstanceConstant.USER_VM_TYPE);
