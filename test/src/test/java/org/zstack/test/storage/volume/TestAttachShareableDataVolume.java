@@ -18,26 +18,37 @@ import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.APICreateDataVolumeEvent;
 import org.zstack.header.volume.APICreateDataVolumeMsg;
 import org.zstack.header.volume.VolumeInventory;
+import org.zstack.kvm.KVMAgentCommands;
+import org.zstack.kvm.KVMGlobalConfig;
 import org.zstack.kvm.KVMSystemTags;
 import org.zstack.mevoco.APIQueryShareableVolumeVmInstanceRefMsg;
 import org.zstack.mevoco.ShareableVolumeVmInstanceRefVO;
 import org.zstack.mevoco.ShareableVolumeVmInstanceRefVO_;
+import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.storage.volume.VolumeSystemTags;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSender;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.deployer.Deployer;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
 import java.util.Arrays;
 
-public class TestCreateShareableDataVolume {
+/*
+attach one shareable data volume to two VMs, ensure wwn is all the same
+ */
+public class TestAttachShareableDataVolume {
+    CLogger logger = Utils.getLogger(TestAttachShareableDataVolume.class);
     Deployer deployer;
     Api api;
     ComponentLoader loader;
     CloudBus bus;
     DatabaseFacade dbf;
     SessionInventory session;
+    KVMSimulatorConfig config;
+    String mode = "writethrough";
 
     @Rule
     public ExpectedException thrown = ExpectedException.none();
@@ -45,22 +56,36 @@ public class TestCreateShareableDataVolume {
     @Before
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
-        deployer = new Deployer("deployerXml/volume/TestCreateDataVolume.xml");
+        deployer = new Deployer("deployerXml/volume/TestAttachShareableDataVolume.xml");
         deployer.addSpringConfig("mevocoRelated.xml");
-        deployer.build();
-        api = deployer.getApi();
+        deployer.load();
+
         loader = deployer.getComponentLoader();
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
+
+        KVMGlobalConfig.LIBVIRT_CACHE_MODE.updateValue(mode);
+
+        deployer.build();
+        api = deployer.getApi();
+        config = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
 
     @Test
     public void test() throws ApiSenderException, InterruptedException {
+        KVMAgentCommands.StartVmCmd cmd = config.startVmCmd;
+        for (KVMAgentCommands.VolumeTO to : cmd.getDataVolumes()) {
+            Assert.assertEquals(mode, to.getCacheMode());
+        }
+        Assert.assertEquals(mode, cmd.getRootVolume().getCacheMode());
+
+
         VmInstanceInventory vm = deployer.vms.get("TestVm");
-        DiskOfferingInventory diskOfferingInventory = deployer.diskOfferings.get("TestDataDiskOffering");
-        PrimaryStorageInventory ps1 = deployer.primaryStorages.get("TestPrimaryStorage1");
-        ClusterInventory cluster1 = deployer.clusters.get("TestCluster");
+        VmInstanceInventory vm2 = deployer.vms.get("TestVm2");
+        DiskOfferingInventory diskOfferingInventory = deployer.diskOfferings.get("DiskOffering");
+        PrimaryStorageInventory ps1 = deployer.primaryStorages.get("nfs");
+        ClusterInventory cluster1 = deployer.clusters.get("Cluster1");
 
         ApiSender sender = new ApiSender();
         sender.setTimeout(1200);
@@ -92,32 +117,21 @@ public class TestCreateShareableDataVolume {
         {
             SimpleQuery<ShareableVolumeVmInstanceRefVO> q = dbf.createQuery(ShareableVolumeVmInstanceRefVO.class);
             Assert.assertTrue(q.count() == 1);
+
+            Assert.assertEquals(1, config.attachDataVolumeCmds.size());
+            KVMAgentCommands.AttachDataVolumeCmd acmd = config.attachDataVolumeCmds.get(0);
         }
 
-        {
-            APIQueryShareableVolumeVmInstanceRefMsg msg = new APIQueryShareableVolumeVmInstanceRefMsg();
-            msg.setSession(session);
-            msg.addQueryCondition(ShareableVolumeVmInstanceRefVO_.volumeUuid.getName(), QueryOp.EQ, vol.getUuid());
-            Assert.assertTrue(1 == api.queryCount(msg, session));
-        }
-
-        api.detachVolumeFromVmEx(vol.getUuid(), vm.getUuid(), null);
+        api.attachVolumeToVm(vm2.getUuid(), vol.getUuid());
         {
             SimpleQuery<ShareableVolumeVmInstanceRefVO> q = dbf.createQuery(ShareableVolumeVmInstanceRefVO.class);
-            Assert.assertTrue(q.count() == 0);
-        }
+            Assert.assertTrue(q.count() == 2);
 
-        {
-            APIQueryShareableVolumeVmInstanceRefMsg msg = new APIQueryShareableVolumeVmInstanceRefMsg();
-            msg.setSession(session);
-            msg.addQueryCondition(ShareableVolumeVmInstanceRefVO_.volumeUuid.getName(), QueryOp.EQ, vol.getUuid());
-            Assert.assertTrue(0 == api.queryCount(msg, session));
-        }
-
-        api.attachVolumeToVm(vm.getUuid(), vol.getUuid());
-        {
-            SimpleQuery<ShareableVolumeVmInstanceRefVO> q = dbf.createQuery(ShareableVolumeVmInstanceRefVO.class);
-            Assert.assertTrue(q.count() == 1);
+            Assert.assertEquals(2, config.attachDataVolumeCmds.size());
+            Assert.assertTrue(config.attachDataVolumeCmds.get(0).getVolume().getWwn().equals(
+                    config.attachDataVolumeCmds.get(1).getVolume().getWwn()
+            ));
+            logger.debug("wwn:" + config.attachDataVolumeCmds.get(0).getVolume().getWwn());
         }
 
         thrown.expect(ApiSenderException.class);
