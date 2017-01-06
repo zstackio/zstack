@@ -276,3 +276,7 @@ DELIMITER ;
 ALTER TABLE `zstack`.`SharedResourceVO` ADD UNIQUE INDEX(`ownerAccountUuid`,`receiverAccountUuid`,`resourceUuid`);
 ALTER TABLE `zstack`.`ShareableVolumeVmInstanceRefVO` ADD UNIQUE INDEX(`volumeUuid`,`vmInstanceUuid`);
 
+# Foreign keys for table ShareableVolumeVmInstanceRefVO
+
+ALTER TABLE ShareableVolumeVmInstanceRefVO ADD CONSTRAINT fkShareableVolumeVmInstanceRefVOVmInstanceEO FOREIGN KEY (vmInstanceUuid) REFERENCES VmInstanceEO (uuid) ON DELETE CASCADE;
+ALTER TABLE ShareableVolumeVmInstanceRefVO ADD CONSTRAINT fkShareableVolumeVmInstanceRefVOVolumeEO FOREIGN KEY (volumeUuid) REFERENCES VolumeEO (uuid) ON DELETE CASCADE;
