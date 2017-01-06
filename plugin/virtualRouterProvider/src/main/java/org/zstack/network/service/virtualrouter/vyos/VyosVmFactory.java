@@ -171,8 +171,8 @@ public class VyosVmFactory extends VirtualRouterApplianceVmFactory implements Co
         VirtualRouterGlobalConfig.VYOS_PASSWORD.installValidateExtension(new GlobalConfigValidatorExtensionPoint() {
             @Override
             public void validateGlobalConfig(String category, String name, String oldValue, String newValue) throws GlobalConfigException {
-                if (newValue.isEmpty()) {
-                    throw new GlobalConfigException("the vyos password cannot be an empty string");
+                if (!newValue.matches("[A-Za-z0-9-$@!%*#?&_]{1,}")) {
+                    throw new GlobalConfigException("the vrouter password can only contain alphabet, number and these special character: -$@!%*#?&_");
                 }
             }
         });
