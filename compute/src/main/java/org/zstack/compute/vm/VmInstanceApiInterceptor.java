@@ -32,8 +32,7 @@ import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created with IntelliJ IDEA.
@@ -51,7 +50,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
     private void setServiceId(APIMessage msg) {
         if (msg instanceof VmInstanceMessage) {
-            VmInstanceMessage vmsg = (VmInstanceMessage)msg;
+            VmInstanceMessage vmsg = (VmInstanceMessage) msg;
             bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vmsg.getVmInstanceUuid());
         }
     }
@@ -61,7 +60,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         if (msg instanceof APIDestroyVmInstanceMsg) {
             validate((APIDestroyVmInstanceMsg) msg);
         } else if (msg instanceof APICreateVmInstanceMsg) {
-            validate((APICreateVmInstanceMsg)msg);
+            validate((APICreateVmInstanceMsg) msg);
         } else if (msg instanceof APIGetVmAttachableDataVolumeMsg) {
             validate((APIGetVmAttachableDataVolumeMsg) msg);
         } else if (msg instanceof APIDetachL3NetworkFromVmMsg) {
@@ -304,6 +303,17 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         msg.setVmInstanceUuid(vmUuid);
     }
 
+    private static <T> List<T> getDuplicateElements(List<T> list) {
+        List<T> result = new ArrayList<T>();
+        Set<T> set = new HashSet<T>();
+        for (T e : list) {
+            if (!set.add(e)) {
+                result.add(e);
+            }
+        }
+        return result;
+    }
+
     private void validate(APIGetVmAttachableDataVolumeMsg msg) {
         SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
         q.select(VmInstanceVO_.state);
@@ -383,6 +393,14 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
         SimpleQuery<L3NetworkVO> l3q = dbf.createQuery(L3NetworkVO.class);
         l3q.select(L3NetworkVO_.uuid, L3NetworkVO_.system, L3NetworkVO_.state);
+        List<String> uuids = new ArrayList<>(msg.getL3NetworkUuids());
+        List<String> duplicateElements = new ArrayList<>(getDuplicateElements(uuids));
+        if (duplicateElements.size() > 0) {
+            throw new ApiMessageInterceptionException(errf.stringToOperationError(
+                    String.format("Can't add same uuid in the l3Network,uuid:" + duplicateElements.get(0))
+            ));
+        }
+
         l3q.add(L3NetworkVO_.uuid, Op.IN, msg.getL3NetworkUuids());
         List<Tuple> l3ts = l3q.listTuple();
         for (Tuple t : l3ts) {
