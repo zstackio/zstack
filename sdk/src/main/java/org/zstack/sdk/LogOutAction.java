@@ -70,7 +70,7 @@ public class LogOutAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
-        info.path = "/accounts/sessions/{uuid}";
+        info.path = "/accounts/sessions/{sessionUuid}";
         info.needSession = false;
         info.needPoll = false;
         info.parameterName = "null";

@@ -25,7 +25,7 @@ public class ChangePrimaryStorageStateAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
-    @Param(required = true, validValues = {"enable","disable","maintain"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, validValues = {"enable","disable","maintain","deleting"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String stateEvent;
 
     @Param(required = false)
