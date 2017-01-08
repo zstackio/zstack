@@ -42,12 +42,12 @@ public class FusionstorPrimaryStorageMonInventory  {
         return this.primaryStorageUuid;
     }
 
-    public java.lang.Integer sshPort;
-    public void setSshPort(java.lang.Integer sshPort) {
-        this.sshPort = sshPort;
+    public java.lang.String monAddr;
+    public void setMonAddr(java.lang.String monAddr) {
+        this.monAddr = monAddr;
     }
-    public java.lang.Integer getSshPort() {
-        return this.sshPort;
+    public java.lang.String getMonAddr() {
+        return this.monAddr;
     }
 
     public java.lang.String sshUsername;
@@ -66,12 +66,28 @@ public class FusionstorPrimaryStorageMonInventory  {
         return this.sshPassword;
     }
 
+    public java.lang.Integer sshPort;
+    public void setSshPort(java.lang.Integer sshPort) {
+        this.sshPort = sshPort;
+    }
+    public java.lang.Integer getSshPort() {
+        return this.sshPort;
+    }
+
     public java.lang.String status;
     public void setStatus(java.lang.String status) {
         this.status = status;
     }
     public java.lang.String getStatus() {
         return this.status;
+    }
+
+    public java.lang.String monUuid;
+    public void setMonUuid(java.lang.String monUuid) {
+        this.monUuid = monUuid;
+    }
+    public java.lang.String getMonUuid() {
+        return this.monUuid;
     }
 
 }
