@@ -20,6 +20,9 @@ import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.progress.ProgressConstants;
+import org.zstack.header.core.progress.ProgressVO;
+import org.zstack.header.core.progress.ProgressVO_;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.SysErrors;
@@ -311,6 +314,15 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                         private void migrate(final FlowTrigger trigger) {
                             // sync here for migrating multiple volumes having the same backing file
                             thdf.chainSubmit(new ChainTask(trigger) {
+                                private void deleteProgress(){
+                                    SimpleQuery<ProgressVO> q = dbf.createQuery(ProgressVO.class);
+                                    q.add(ProgressVO_.processType, SimpleQuery.Op.EQ, ProgressConstants.ProgressType.LocalStorageMigrateVolume.toString());
+                                    q.add(ProgressVO_.resourceUuid, SimpleQuery.Op.EQ, rootVolume.getUuid());
+                                    if (q.find() != null) {
+                                        dbf.remove(q.find());
+                                    }
+                                }
+
                                 @Override
                                 public String getSyncSignature() {
                                     return String.format("migrate-backing-file-%s-to-host-%s", backingImage.path, dstHostUuid);
@@ -330,6 +342,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                                             new ReturnValueCompletion<AgentResponse>(trigger, chain) {
                                         @Override
                                         public void success(AgentResponse rsp) {
+                                            deleteProgress();
                                             s = true;
                                             trigger.next();
                                             chain.next();
@@ -337,6 +350,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
 
                                         @Override
                                         public void fail(ErrorCode errorCode) {
+                                            deleteProgress();
                                             trigger.fail(errorCode);
                                             chain.next();
                                         }
@@ -952,6 +966,15 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                 List<VolumeSnapshotInventory> success = new ArrayList<VolumeSnapshotInventory>();
                 KVMHostVO dstHost = dbf.findByUuid(dstHostUuid, KVMHostVO.class);
 
+                private void deleteProgress(){
+                    SimpleQuery<ProgressVO> q = dbf.createQuery(ProgressVO.class);
+                    q.add(ProgressVO_.processType, SimpleQuery.Op.EQ, ProgressConstants.ProgressType.LocalStorageMigrateVolume.toString());
+                    q.add(ProgressVO_.resourceUuid, SimpleQuery.Op.EQ, p.volume.getUuid());
+                    if (q.find() != null) {
+                        dbf.remove(q.find());
+                    }
+                }
+
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
                     CopyBitsFromRemoteCmd cmd = new CopyBitsFromRemoteCmd();
@@ -969,11 +992,13 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                     callKvmHost(srcHostUuid, p.volume.getPrimaryStorageUuid(), COPY_TO_REMOTE_BITS_PATH, cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
                         @Override
                         public void success(AgentResponse returnValue) {
+                            deleteProgress();
                             trigger.next();
                         }
 
                         @Override
                         public void fail(ErrorCode errorCode) {
+                            deleteProgress();
                             trigger.fail(errorCode);
                         }
                     });
