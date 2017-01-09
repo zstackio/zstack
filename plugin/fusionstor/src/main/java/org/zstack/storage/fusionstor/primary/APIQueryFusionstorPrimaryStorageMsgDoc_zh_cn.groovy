@@ -1,6 +1,6 @@
 package org.zstack.storage.fusionstor.primary
 
-org.zstack.header.storage.primary.APIQueryPrimaryStorageReply
+import org.zstack.header.storage.primary.APIQueryPrimaryStorageReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {

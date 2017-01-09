@@ -1,6 +1,6 @@
 package org.zstack.header.vm
 
-org.zstack.header.vm.APIGetVmAttachableL3NetworkReply
+import org.zstack.header.vm.APIGetVmAttachableL3NetworkReply
 
 doc {
     title "GetVmAttachableL3Network"

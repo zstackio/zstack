@@ -1,6 +1,6 @@
 package org.zstack.header.storage.backup
 
-org.zstack.header.storage.backup.APIDeleteExportedImageFromBackupStorageEvent
+import org.zstack.header.storage.backup.APIDeleteExportedImageFromBackupStorageEvent
 
 doc {
     title "DeleteExportedImageFromBackupStorage"

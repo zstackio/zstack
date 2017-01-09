@@ -1,6 +1,6 @@
 package org.zstack.storage.ceph.primary
 
-org.zstack.storage.ceph.primary.APIAddMonToCephPrimaryStorageEvent
+import org.zstack.storage.ceph.primary.APIAddMonToCephPrimaryStorageEvent
 
 doc {
     title "AddMonToCephPrimaryStorage"

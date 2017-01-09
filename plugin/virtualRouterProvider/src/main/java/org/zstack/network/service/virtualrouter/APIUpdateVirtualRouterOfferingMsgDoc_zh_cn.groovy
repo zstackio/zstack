@@ -1,6 +1,6 @@
 package org.zstack.network.service.virtualrouter
 
-org.zstack.header.configuration.APIUpdateInstanceOfferingEvent
+import org.zstack.header.configuration.APIUpdateInstanceOfferingEvent
 
 doc {
     title "UpdateVirtualRouterOffering"

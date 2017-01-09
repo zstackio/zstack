@@ -1,6 +1,6 @@
 package org.zstack.header.simulator
 
-org.zstack.header.host.APIAddHostEvent
+import org.zstack.header.host.APIAddHostEvent
 
 doc {
     title "AddSimulatorHost"

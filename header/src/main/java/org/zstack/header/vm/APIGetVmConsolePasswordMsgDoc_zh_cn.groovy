@@ -1,6 +1,6 @@
 package org.zstack.header.vm
 
-org.zstack.header.vm.APIGetVmConsolePasswordReply
+import org.zstack.header.vm.APIGetVmConsolePasswordReply
 
 doc {
     title "GetVmConsolePassword"

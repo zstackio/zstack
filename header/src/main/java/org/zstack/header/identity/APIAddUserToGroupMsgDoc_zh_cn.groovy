@@ -1,6 +1,6 @@
 package org.zstack.header.identity
 
-org.zstack.header.identity.APIAddUserToGroupEvent
+import org.zstack.header.identity.APIAddUserToGroupEvent
 
 doc {
     title "AddUserToGroup"

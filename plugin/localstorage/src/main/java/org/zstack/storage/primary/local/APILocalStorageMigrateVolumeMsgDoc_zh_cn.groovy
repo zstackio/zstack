@@ -1,6 +1,6 @@
 package org.zstack.storage.primary.local
 
-org.zstack.storage.primary.local.APILocalStorageMigrateVolumeEvent
+import org.zstack.storage.primary.local.APILocalStorageMigrateVolumeEvent
 
 doc {
     title "LocalStorageMigrateVolume"

@@ -1,6 +1,6 @@
 package org.zstack.header.managementnode
 
-org.zstack.header.managementnode.APIGetCurrentTimeReply
+import org.zstack.header.managementnode.APIGetCurrentTimeReply
 
 doc {
     title "GetCurrentTime"

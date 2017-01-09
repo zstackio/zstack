@@ -1,6 +1,6 @@
 package org.zstack.header.image
 
-org.zstack.header.image.APIGetCandidateBackupStorageForCreatingImageReply
+import org.zstack.header.image.APIGetCandidateBackupStorageForCreatingImageReply
 
 doc {
     title "GetCandidateBackupStorageForCreatingImage"

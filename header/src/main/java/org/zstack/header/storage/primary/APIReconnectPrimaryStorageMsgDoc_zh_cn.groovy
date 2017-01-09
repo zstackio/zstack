@@ -1,6 +1,6 @@
 package org.zstack.header.storage.primary
 
-org.zstack.header.storage.primary.APIReconnectPrimaryStorageEvent
+import org.zstack.header.storage.primary.APIReconnectPrimaryStorageEvent
 
 doc {
     title "ReconnectPrimaryStorage"

@@ -1,6 +1,6 @@
 package org.zstack.header.identity
 
-org.zstack.header.identity.APICheckApiPermissionReply
+import org.zstack.header.identity.APICheckApiPermissionReply
 
 doc {
     title "CheckApiPermission"

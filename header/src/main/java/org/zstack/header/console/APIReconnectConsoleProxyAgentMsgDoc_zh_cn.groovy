@@ -1,6 +1,6 @@
 package org.zstack.header.console
 
-org.zstack.header.console.APIReconnectConsoleProxyAgentEvent
+import org.zstack.header.console.APIReconnectConsoleProxyAgentEvent
 
 doc {
     title "ReconnectConsoleProxyAgent"

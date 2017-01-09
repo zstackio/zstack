@@ -1,6 +1,6 @@
 package org.zstack.network.service.virtualrouter
 
-org.zstack.header.vm.APICreateVmInstanceEvent
+import org.zstack.header.vm.APICreateVmInstanceEvent
 
 doc {
     title "CreateVirtualRouterVm"

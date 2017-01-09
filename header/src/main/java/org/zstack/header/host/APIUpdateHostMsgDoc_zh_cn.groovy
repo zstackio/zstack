@@ -1,6 +1,6 @@
 package org.zstack.header.host
 
-org.zstack.header.host.APIUpdateHostEvent
+import org.zstack.header.host.APIUpdateHostEvent
 
 doc {
     title "UpdateHost"

@@ -1,6 +1,6 @@
 package org.zstack.header.network.l3
 
-org.zstack.header.network.l3.APIGetIpAddressCapacityReply
+import org.zstack.header.network.l3.APIGetIpAddressCapacityReply
 
 doc {
     title "GetIpAddressCapacity"

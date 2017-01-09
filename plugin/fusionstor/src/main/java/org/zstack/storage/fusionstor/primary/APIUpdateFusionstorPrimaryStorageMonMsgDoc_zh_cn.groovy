@@ -1,6 +1,6 @@
 package org.zstack.storage.fusionstor.primary
 
-org.zstack.storage.fusionstor.primary.APIUpdateMonToFusionstorPrimaryStorageEvent
+import org.zstack.storage.fusionstor.primary.APIUpdateMonToFusionstorPrimaryStorageEvent
 
 doc {
     title "UpdateFusionstorPrimaryStorageMon"

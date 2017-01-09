@@ -1,6 +1,6 @@
 package org.zstack.storage.ceph.primary
 
-org.zstack.storage.ceph.primary.APIUpdateCephPrimaryStorageMonEvent
+import org.zstack.storage.ceph.primary.APIUpdateCephPrimaryStorageMonEvent
 
 doc {
     title "UpdateCephPrimaryStorageMon"

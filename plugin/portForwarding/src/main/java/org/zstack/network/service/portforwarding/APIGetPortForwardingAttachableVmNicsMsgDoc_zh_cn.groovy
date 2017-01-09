@@ -1,6 +1,6 @@
 package org.zstack.network.service.portforwarding
 
-org.zstack.network.service.portforwarding.APIGetPortForwardingAttachableVmNicsReply
+import org.zstack.network.service.portforwarding.APIGetPortForwardingAttachableVmNicsReply
 
 doc {
     title "GetPortForwardingAttachableVmNics"

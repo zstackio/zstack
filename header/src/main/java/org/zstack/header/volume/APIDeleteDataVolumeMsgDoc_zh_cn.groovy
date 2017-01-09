@@ -1,6 +1,6 @@
 package org.zstack.header.volume
 
-org.zstack.header.volume.APIDeleteDataVolumeEvent
+import org.zstack.header.volume.APIDeleteDataVolumeEvent
 
 doc {
     title "DeleteDataVolume"

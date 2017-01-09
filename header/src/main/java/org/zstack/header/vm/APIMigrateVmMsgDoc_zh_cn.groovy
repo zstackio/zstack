@@ -1,6 +1,6 @@
 package org.zstack.header.vm
 
-org.zstack.header.vm.APIMigrateVmEvent
+import org.zstack.header.vm.APIMigrateVmEvent
 
 doc {
     title "MigrateVm"

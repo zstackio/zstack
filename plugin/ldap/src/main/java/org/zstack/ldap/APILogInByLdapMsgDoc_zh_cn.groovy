@@ -1,6 +1,6 @@
 package org.zstack.ldap
 
-org.zstack.ldap.APILogInByLdapReply
+import org.zstack.ldap.APILogInByLdapReply
 
 doc {
     title "LogInByLdap"

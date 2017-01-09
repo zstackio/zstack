@@ -1,6 +1,6 @@
 package org.zstack.header.network.service
 
-org.zstack.header.network.service.APIQueryNetworkServiceL3NetworkRefReply
+import org.zstack.header.network.service.APIQueryNetworkServiceL3NetworkRefReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {

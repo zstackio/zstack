@@ -1,6 +1,6 @@
 package org.zstack.header.identity
 
-org.zstack.header.identity.APILogInReply
+import org.zstack.header.identity.APILogInReply
 
 doc {
     title "LogInByAccount"

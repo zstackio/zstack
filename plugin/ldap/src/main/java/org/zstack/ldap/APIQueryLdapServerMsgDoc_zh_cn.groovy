@@ -1,6 +1,6 @@
 package org.zstack.ldap
 
-org.zstack.ldap.APIQueryLdapServerReply
+import org.zstack.ldap.APIQueryLdapServerReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {

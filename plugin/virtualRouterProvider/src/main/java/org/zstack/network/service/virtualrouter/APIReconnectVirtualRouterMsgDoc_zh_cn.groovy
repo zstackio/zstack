@@ -1,6 +1,6 @@
 package org.zstack.network.service.virtualrouter
 
-org.zstack.network.service.virtualrouter.APIReconnectVirtualRouterEvent
+import org.zstack.network.service.virtualrouter.APIReconnectVirtualRouterEvent
 
 doc {
     title "ReconnectVirtualRouter"

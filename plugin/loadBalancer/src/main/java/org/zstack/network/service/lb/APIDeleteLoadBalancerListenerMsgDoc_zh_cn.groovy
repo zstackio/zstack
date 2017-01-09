@@ -1,6 +1,6 @@
 package org.zstack.network.service.lb
 
-org.zstack.network.service.lb.APIDeleteLoadBalancerListenerEvent
+import org.zstack.network.service.lb.APIDeleteLoadBalancerListenerEvent
 
 doc {
     title "DeleteLoadBalancerListener"

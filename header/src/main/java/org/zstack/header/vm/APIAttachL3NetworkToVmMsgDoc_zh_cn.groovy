@@ -1,6 +1,6 @@
 package org.zstack.header.vm
 
-org.zstack.header.vm.APIAttachL3NetworkToVmEvent
+import org.zstack.header.vm.APIAttachL3NetworkToVmEvent
 
 doc {
     title "AttachL3NetworkToVm"

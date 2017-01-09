@@ -1,6 +1,6 @@
 package org.zstack.header.vm
 
-org.zstack.header.vm.APICreateRebootVmInstanceSchedulerEvent
+import org.zstack.header.vm.APICreateRebootVmInstanceSchedulerEvent
 
 doc {
     title "CreateRebootVmInstanceScheduler"

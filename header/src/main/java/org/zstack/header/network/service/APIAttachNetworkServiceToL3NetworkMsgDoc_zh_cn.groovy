@@ -1,6 +1,6 @@
 package org.zstack.header.network.service
 
-org.zstack.header.network.service.APIAttachNetworkServiceToL3NetworkEvent
+import org.zstack.header.network.service.APIAttachNetworkServiceToL3NetworkEvent
 
 doc {
     title "AttachNetworkServiceToL3Network"

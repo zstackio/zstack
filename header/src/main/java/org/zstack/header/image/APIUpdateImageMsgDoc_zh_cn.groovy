@@ -1,6 +1,6 @@
 package org.zstack.header.image
 
-org.zstack.header.image.APIUpdateImageEvent
+import org.zstack.header.image.APIUpdateImageEvent
 
 doc {
     title "UpdateImage"

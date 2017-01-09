@@ -1,6 +1,6 @@
 package org.zstack.header.vm
 
-org.zstack.header.vm.APIRecoverVmInstanceEvent
+import org.zstack.header.vm.APIRecoverVmInstanceEvent
 
 doc {
     title "RecoverVmInstance"

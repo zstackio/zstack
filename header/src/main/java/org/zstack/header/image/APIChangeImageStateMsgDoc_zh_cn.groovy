@@ -1,6 +1,6 @@
 package org.zstack.header.image
 
-org.zstack.header.image.APIChangeImageStateEvent
+import org.zstack.header.image.APIChangeImageStateEvent
 
 doc {
     title "ChangeImageState"

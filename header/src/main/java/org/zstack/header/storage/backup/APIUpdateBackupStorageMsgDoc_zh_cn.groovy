@@ -1,6 +1,6 @@
 package org.zstack.header.storage.backup
 
-org.zstack.header.storage.backup.APIUpdateBackupStorageEvent
+import org.zstack.header.storage.backup.APIUpdateBackupStorageEvent
 
 doc {
     title "UpdateBackupStorage"

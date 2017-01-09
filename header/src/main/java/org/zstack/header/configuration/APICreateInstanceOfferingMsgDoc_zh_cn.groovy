@@ -1,6 +1,6 @@
 package org.zstack.header.configuration
 
-org.zstack.header.configuration.APICreateInstanceOfferingEvent
+import org.zstack.header.configuration.APICreateInstanceOfferingEvent
 
 doc {
     title "CreateInstanceOffering"

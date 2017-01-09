@@ -1,6 +1,6 @@
 package org.zstack.header.storage.snapshot
 
-org.zstack.header.storage.snapshot.APIRevertVolumeFromSnapshotEvent
+import org.zstack.header.storage.snapshot.APIRevertVolumeFromSnapshotEvent
 
 doc {
     title "RevertVolumeFromSnapshot"

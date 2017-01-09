@@ -1,6 +1,6 @@
 package org.zstack.storage.backup.sftp
 
-org.zstack.storage.backup.sftp.APIQuerySftpBackupStorageReply
+import org.zstack.storage.backup.sftp.APIQuerySftpBackupStorageReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {

@@ -1,6 +1,6 @@
 package org.zstack.ldap
 
-org.zstack.ldap.APIAddLdapServerEvent
+import org.zstack.ldap.APIAddLdapServerEvent
 
 doc {
     title "AddLdapServer"

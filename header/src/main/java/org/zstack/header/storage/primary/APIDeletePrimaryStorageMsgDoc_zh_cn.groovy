@@ -1,6 +1,6 @@
 package org.zstack.header.storage.primary
 
-org.zstack.header.storage.primary.APIDeletePrimaryStorageEvent
+import org.zstack.header.storage.primary.APIDeletePrimaryStorageEvent
 
 doc {
     title "DeletePrimaryStorage"

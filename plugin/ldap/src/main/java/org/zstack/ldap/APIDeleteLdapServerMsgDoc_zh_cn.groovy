@@ -1,6 +1,6 @@
 package org.zstack.ldap
 
-org.zstack.ldap.APIDeleteLdapServerEvent
+import org.zstack.ldap.APIDeleteLdapServerEvent
 
 doc {
     title "DeleteLdapServer"

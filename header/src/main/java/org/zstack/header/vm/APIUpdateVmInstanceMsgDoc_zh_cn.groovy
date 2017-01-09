@@ -1,6 +1,6 @@
 package org.zstack.header.vm
 
-org.zstack.header.vm.APIUpdateVmInstanceEvent
+import org.zstack.header.vm.APIUpdateVmInstanceEvent
 
 doc {
     title "UpdateVmInstance"

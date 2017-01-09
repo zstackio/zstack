@@ -1,6 +1,6 @@
 package org.zstack.storage.primary.local
 
-org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply
+import org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply
 
 doc {
     title "GetLocalStorageHostDiskCapacity"

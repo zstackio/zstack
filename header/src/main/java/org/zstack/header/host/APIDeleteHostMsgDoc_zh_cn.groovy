@@ -1,6 +1,6 @@
 package org.zstack.header.host
 
-org.zstack.header.host.APIDeleteHostEvent
+import org.zstack.header.host.APIDeleteHostEvent
 
 doc {
     title "DeleteHost"

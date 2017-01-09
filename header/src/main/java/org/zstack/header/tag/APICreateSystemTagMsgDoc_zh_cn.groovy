@@ -1,6 +1,6 @@
 package org.zstack.header.tag
 
-org.zstack.header.tag.APICreateSystemTagEvent
+import org.zstack.header.tag.APICreateSystemTagEvent
 
 doc {
     title "CreateSystemTag"

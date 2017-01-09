@@ -1,6 +1,6 @@
 package org.zstack.header.vm
 
-org.zstack.header.vm.APIGetCandidateVmForAttachingIsoReply
+import org.zstack.header.vm.APIGetCandidateVmForAttachingIsoReply
 
 doc {
     title "GetCandidateVmForAttachingIso"

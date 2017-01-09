@@ -1,6 +1,6 @@
 package org.zstack.header.console
 
-org.zstack.header.console.APIRequestConsoleAccessEvent
+import org.zstack.header.console.APIRequestConsoleAccessEvent
 
 doc {
     title "RequestConsoleAccess"

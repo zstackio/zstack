@@ -1,6 +1,6 @@
 package org.zstack.header.configuration
 
-org.zstack.header.configuration.APIDeleteInstanceOfferingEvent
+import org.zstack.header.configuration.APIDeleteInstanceOfferingEvent
 
 doc {
     title "DeleteInstanceOffering"

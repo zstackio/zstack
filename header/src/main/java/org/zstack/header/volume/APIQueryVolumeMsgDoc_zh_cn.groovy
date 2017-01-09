@@ -1,6 +1,6 @@
 package org.zstack.header.volume
 
-org.zstack.header.volume.APIQueryVolumeReply
+import org.zstack.header.volume.APIQueryVolumeReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {

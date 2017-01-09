@@ -1,6 +1,6 @@
 package org.zstack.header.identity
 
-org.zstack.header.identity.APIQueryPolicyReply
+import org.zstack.header.identity.APIQueryPolicyReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {

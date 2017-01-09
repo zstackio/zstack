@@ -1,6 +1,6 @@
 package org.zstack.header.identity
 
-org.zstack.header.identity.APIDeleteUserGroupEvent
+import org.zstack.header.identity.APIDeleteUserGroupEvent
 
 doc {
     title "DeleteUserGroup"

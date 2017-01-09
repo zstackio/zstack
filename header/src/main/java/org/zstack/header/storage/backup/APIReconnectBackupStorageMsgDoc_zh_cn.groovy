@@ -1,6 +1,6 @@
 package org.zstack.header.storage.backup
 
-org.zstack.header.storage.backup.APIReconnectBackupStorageEvent
+import org.zstack.header.storage.backup.APIReconnectBackupStorageEvent
 
 doc {
     title "ReconnectBackupStorage"

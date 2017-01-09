@@ -1,6 +1,6 @@
 package org.zstack.network.service.vip
 
-org.zstack.network.service.vip.APICreateVipEvent
+import org.zstack.network.service.vip.APICreateVipEvent
 
 doc {
     title "CreateVip"

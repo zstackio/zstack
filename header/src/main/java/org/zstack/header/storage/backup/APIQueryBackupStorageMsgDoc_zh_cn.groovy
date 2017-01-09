@@ -1,6 +1,6 @@
 package org.zstack.header.storage.backup
 
-org.zstack.header.storage.backup.APIQueryBackupStorageReply
+import org.zstack.header.storage.backup.APIQueryBackupStorageReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {

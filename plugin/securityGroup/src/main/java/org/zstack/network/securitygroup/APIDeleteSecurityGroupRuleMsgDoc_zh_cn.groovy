@@ -1,6 +1,6 @@
 package org.zstack.network.securitygroup
 
-org.zstack.network.securitygroup.APIDeleteSecurityGroupRuleEvent
+import org.zstack.network.securitygroup.APIDeleteSecurityGroupRuleEvent
 
 doc {
     title "DeleteSecurityGroupRule"

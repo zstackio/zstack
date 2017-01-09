@@ -1,6 +1,6 @@
 package org.zstack.header.volume
 
-org.zstack.header.volume.APIChangeVolumeStateEvent
+import org.zstack.header.volume.APIChangeVolumeStateEvent
 
 doc {
     title "ChangeVolumeState"

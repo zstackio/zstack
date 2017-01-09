@@ -1,6 +1,6 @@
 package org.zstack.network.service.virtualrouter
 
-org.zstack.network.service.virtualrouter.APIQueryVirtualRouterOfferingReply
+import org.zstack.network.service.virtualrouter.APIQueryVirtualRouterOfferingReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {

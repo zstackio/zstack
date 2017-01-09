@@ -1,6 +1,6 @@
 package org.zstack.header.image
 
-org.zstack.header.image.APISyncImageSizeEvent
+import org.zstack.header.image.APISyncImageSizeEvent
 
 doc {
     title "SyncImageSize"

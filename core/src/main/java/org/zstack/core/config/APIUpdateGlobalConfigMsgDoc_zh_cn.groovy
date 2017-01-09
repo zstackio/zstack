@@ -1,6 +1,6 @@
 package org.zstack.core.config
 
-org.zstack.core.config.APIUpdateGlobalConfigEvent
+import org.zstack.core.config.APIUpdateGlobalConfigEvent
 
 doc {
     title "UpdateGlobalConfig"

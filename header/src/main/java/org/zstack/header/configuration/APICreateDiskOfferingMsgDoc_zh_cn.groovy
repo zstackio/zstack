@@ -1,6 +1,6 @@
 package org.zstack.header.configuration
 
-org.zstack.header.configuration.APICreateDiskOfferingEvent
+import org.zstack.header.configuration.APICreateDiskOfferingEvent
 
 doc {
     title "CreateDiskOffering"

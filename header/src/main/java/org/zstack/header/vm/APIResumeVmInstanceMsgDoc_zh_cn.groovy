@@ -1,6 +1,6 @@
 package org.zstack.header.vm
 
-org.zstack.header.vm.APIResumeVmInstanceEvent
+import org.zstack.header.vm.APIResumeVmInstanceEvent
 
 doc {
     title "ResumeVmInstance"

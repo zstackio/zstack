@@ -1,6 +1,6 @@
 package org.zstack.storage.primary.local
 
-org.zstack.header.storage.primary.APIAddPrimaryStorageEvent
+import org.zstack.header.storage.primary.APIAddPrimaryStorageEvent
 
 doc {
     title "AddLocalPrimaryStorage"

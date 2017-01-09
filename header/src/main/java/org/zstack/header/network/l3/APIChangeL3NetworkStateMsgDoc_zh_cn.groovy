@@ -1,6 +1,6 @@
 package org.zstack.header.network.l3
 
-org.zstack.header.network.l3.APIChangeL3NetworkStateEvent
+import org.zstack.header.network.l3.APIChangeL3NetworkStateEvent
 
 doc {
     title "ChangeL3NetworkState"

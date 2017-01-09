@@ -1,6 +1,6 @@
 package org.zstack.header.network.l3
 
-org.zstack.header.network.l3.APIAddIpRangeEvent
+import org.zstack.header.network.l3.APIAddIpRangeEvent
 
 doc {
     title "AddIpRange"

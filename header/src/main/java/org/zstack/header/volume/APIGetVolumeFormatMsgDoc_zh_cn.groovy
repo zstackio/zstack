@@ -1,6 +1,6 @@
 package org.zstack.header.volume
 
-org.zstack.header.volume.APIGetVolumeFormatReply
+import org.zstack.header.volume.APIGetVolumeFormatReply
 
 doc {
     title "GetVolumeFormat"

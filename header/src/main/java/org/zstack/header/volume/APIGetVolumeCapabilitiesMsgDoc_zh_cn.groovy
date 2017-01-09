@@ -1,6 +1,6 @@
 package org.zstack.header.volume
 
-org.zstack.header.volume.APIGetVolumeCapabilitiesReply
+import org.zstack.header.volume.APIGetVolumeCapabilitiesReply
 
 doc {
     title "GetVolumeCapabilities"

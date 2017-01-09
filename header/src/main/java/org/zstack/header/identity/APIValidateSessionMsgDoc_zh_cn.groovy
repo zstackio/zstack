@@ -1,6 +1,6 @@
 package org.zstack.header.identity
 
-org.zstack.header.identity.APIValidateSessionReply
+import org.zstack.header.identity.APIValidateSessionReply
 
 doc {
     title "ValidateSession"

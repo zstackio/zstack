@@ -1,6 +1,6 @@
 package org.zstack.header.network.l3
 
-org.zstack.header.network.l3.APIRemoveDnsFromL3NetworkEvent
+import org.zstack.header.network.l3.APIRemoveDnsFromL3NetworkEvent
 
 doc {
     title "RemoveDnsFromL3Network"

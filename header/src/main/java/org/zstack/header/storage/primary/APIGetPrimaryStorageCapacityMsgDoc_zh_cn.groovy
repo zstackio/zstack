@@ -1,6 +1,6 @@
 package org.zstack.header.storage.primary
 
-org.zstack.header.storage.primary.APIGetPrimaryStorageCapacityReply
+import org.zstack.header.storage.primary.APIGetPrimaryStorageCapacityReply
 
 doc {
     title "GetPrimaryStorageCapacity"

@@ -1,6 +1,6 @@
 package org.zstack.header.identity
 
-org.zstack.header.identity.APIDeletePolicyEvent
+import org.zstack.header.identity.APIDeletePolicyEvent
 
 doc {
     title "DeletePolicy"

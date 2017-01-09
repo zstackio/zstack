@@ -1,6 +1,6 @@
 package org.zstack.header.configuration
 
-org.zstack.header.configuration.APIUpdateInstanceOfferingEvent
+import org.zstack.header.configuration.APIUpdateInstanceOfferingEvent
 
 doc {
     title "UpdateInstanceOffering"

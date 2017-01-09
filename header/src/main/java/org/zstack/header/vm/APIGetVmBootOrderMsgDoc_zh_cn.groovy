@@ -1,6 +1,6 @@
 package org.zstack.header.vm
 
-org.zstack.header.vm.APIGetVmBootOrderReply
+import org.zstack.header.vm.APIGetVmBootOrderReply
 
 doc {
     title "GetVmBootOrder"

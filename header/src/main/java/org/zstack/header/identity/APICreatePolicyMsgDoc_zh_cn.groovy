@@ -1,6 +1,6 @@
 package org.zstack.header.identity
 
-org.zstack.header.identity.APICreatePolicyEvent
+import org.zstack.header.identity.APICreatePolicyEvent
 
 doc {
     title "CreatePolicy"

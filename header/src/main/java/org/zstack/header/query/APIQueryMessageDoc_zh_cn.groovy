@@ -83,6 +83,7 @@ start=0 limit=100 replyWithCount=true
                     name "conditions"
                     desc "见[查询条件](#query-conditions)。传入一个空List将返回所有记录，返回记录数的上限受限于`limit`字段"
                     type "List"
+                    location "query"
                     optional false
                     since "0.6"
                 }
@@ -91,6 +92,7 @@ start=0 limit=100 replyWithCount=true
                     name "limit"
                     desc "最多返回的记录数，类似MySQL的limit，默认值1000"
                     type "Integer"
+                    location "query"
                     optional true
                     since "0.6"
                 }
@@ -99,6 +101,7 @@ start=0 limit=100 replyWithCount=true
                     name "start"
                     desc "起始查询记录位置，类似MySQL的offset。跟`limit`配合使用可以实现分页"
                     type "Integer"
+                    location "query"
                     optional true
                     since "0.6"
                 }
@@ -107,6 +110,7 @@ start=0 limit=100 replyWithCount=true
                     name "count"
                     desc "计数查询，相当于MySQL中的count()函数。当设置成`true`时，API只返回的是满足查询条件的记录数"
                     type "Boolean"
+                    location "query"
                     optional true
                     since "0.6"
                 }
@@ -115,6 +119,7 @@ start=0 limit=100 replyWithCount=true
                     name "groupBy"
                     desc "以字段分组，相当于MySQL中的group by关键字。例如groupBy=type"
                     type "String"
+                    location "query"
                     optional true
                     since "1.9"
                 }
@@ -123,6 +128,7 @@ start=0 limit=100 replyWithCount=true
                     name "replyWithCount"
                     desc "见上面[分页查询](#query-pagination)"
                     type "Boolean"
+                    location "query"
                     optional true
                     since "0.6"
                 }
@@ -131,6 +137,7 @@ start=0 limit=100 replyWithCount=true
                     name "sortBy"
                     desc "以字段排序，等同于MySQL中的sort by关键字，例如sortBy=ip。必须跟`sortDirection`配合使用"
                     type "String"
+                    location "query"
                     optional true
                     since "0.6"
                 }
@@ -139,6 +146,7 @@ start=0 limit=100 replyWithCount=true
                     name "sortDirection"
                     desc "字段排序方向，必须跟`sortBy`配合使用"
                     type "String"
+                    location "query"
                     optional true
                     since "0.6"
                     values ("asc", "desc")
@@ -148,6 +156,7 @@ start=0 limit=100 replyWithCount=true
                     name "fields"
                     desc "指定返回的字段，等同于MySQL中的select字段功能。例如fields=name,uuid，则只返回满足条件记录的`name`和`uuid`字段"
                     type "List"
+                    location "query"
                     optional true
                     since "0.6"
                 }

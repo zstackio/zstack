@@ -1,6 +1,6 @@
 package org.zstack.storage.fusionstor.primary
 
-org.zstack.storage.fusionstor.primary.APIAddMonToFusionstorPrimaryStorageEvent
+import org.zstack.storage.fusionstor.primary.APIAddMonToFusionstorPrimaryStorageEvent
 
 doc {
     title "AddMonToFusionstorPrimaryStorage"

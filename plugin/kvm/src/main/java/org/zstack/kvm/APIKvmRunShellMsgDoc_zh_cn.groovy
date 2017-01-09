@@ -1,6 +1,6 @@
 package org.zstack.kvm
 
-org.zstack.kvm.APIKvmRunShellEvent
+import org.zstack.kvm.APIKvmRunShellEvent
 
 doc {
     title "KvmRunShell"

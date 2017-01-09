@@ -1,6 +1,6 @@
 package org.zstack.network.securitygroup
 
-org.zstack.network.securitygroup.APIAddSecurityGroupRuleEvent
+import org.zstack.network.securitygroup.APIAddSecurityGroupRuleEvent
 
 doc {
     title "AddSecurityGroupRule"

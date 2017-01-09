@@ -1,6 +1,6 @@
 package org.zstack.network.securitygroup
 
-org.zstack.network.securitygroup.APIDeleteVmNicFromSecurityGroupEvent
+import org.zstack.network.securitygroup.APIDeleteVmNicFromSecurityGroupEvent
 
 doc {
     title "DeleteVmNicFromSecurityGroup"

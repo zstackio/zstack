@@ -1,6 +1,6 @@
 package org.zstack.header.host
 
-org.zstack.header.host.APIReconnectHostEvent
+import org.zstack.header.host.APIReconnectHostEvent
 
 doc {
     title "ReconnectHost"

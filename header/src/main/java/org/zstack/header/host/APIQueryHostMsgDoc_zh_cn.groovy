@@ -1,6 +1,6 @@
 package org.zstack.header.host
 
-org.zstack.header.host.APIQueryHostReply
+import org.zstack.header.host.APIQueryHostReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {

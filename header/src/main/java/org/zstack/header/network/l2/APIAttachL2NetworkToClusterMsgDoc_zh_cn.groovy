@@ -1,6 +1,6 @@
 package org.zstack.header.network.l2
 
-org.zstack.header.network.l2.APIAttachL2NetworkToClusterEvent
+import org.zstack.header.network.l2.APIAttachL2NetworkToClusterEvent
 
 doc {
     title "AttachL2NetworkToCluster"

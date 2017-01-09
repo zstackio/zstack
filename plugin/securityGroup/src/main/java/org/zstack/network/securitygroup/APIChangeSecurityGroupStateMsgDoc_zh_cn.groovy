@@ -1,6 +1,6 @@
 package org.zstack.network.securitygroup
 
-org.zstack.network.securitygroup.APIChangeSecurityGroupStateEvent
+import org.zstack.network.securitygroup.APIChangeSecurityGroupStateEvent
 
 doc {
     title "ChangeSecurityGroupState"

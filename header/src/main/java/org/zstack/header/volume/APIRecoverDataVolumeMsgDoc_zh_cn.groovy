@@ -1,6 +1,6 @@
 package org.zstack.header.volume
 
-org.zstack.header.volume.APIRecoverDataVolumeEvent
+import org.zstack.header.volume.APIRecoverDataVolumeEvent
 
 doc {
     title "RecoverDataVolume"

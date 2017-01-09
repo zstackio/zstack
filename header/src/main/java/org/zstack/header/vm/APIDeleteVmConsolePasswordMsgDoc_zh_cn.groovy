@@ -1,6 +1,6 @@
 package org.zstack.header.vm
 
-org.zstack.header.vm.APIDeleteVmConsolePasswordEvent
+import org.zstack.header.vm.APIDeleteVmConsolePasswordEvent
 
 doc {
     title "DeleteVmConsolePassword"

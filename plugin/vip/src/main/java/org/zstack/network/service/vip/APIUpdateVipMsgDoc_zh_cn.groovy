@@ -1,6 +1,6 @@
 package org.zstack.network.service.vip
 
-org.zstack.network.service.vip.APIUpdateVipEvent
+import org.zstack.network.service.vip.APIUpdateVipEvent
 
 doc {
     title "UpdateVip"

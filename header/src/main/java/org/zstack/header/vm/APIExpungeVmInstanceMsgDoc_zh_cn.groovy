@@ -1,6 +1,6 @@
 package org.zstack.header.vm
 
-org.zstack.header.vm.APIExpungeVmInstanceEvent
+import org.zstack.header.vm.APIExpungeVmInstanceEvent
 
 doc {
     title "ExpungeVmInstance"

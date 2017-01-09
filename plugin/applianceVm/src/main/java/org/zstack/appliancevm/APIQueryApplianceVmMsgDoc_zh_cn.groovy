@@ -1,6 +1,6 @@
 package org.zstack.appliancevm
 
-org.zstack.appliancevm.APIQueryApplianceVmReply
+import org.zstack.appliancevm.APIQueryApplianceVmReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {

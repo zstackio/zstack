@@ -1,6 +1,6 @@
 package org.zstack.header.configuration
 
-org.zstack.header.configuration.APIChangeInstanceOfferingStateEvent
+import org.zstack.header.configuration.APIChangeInstanceOfferingStateEvent
 
 doc {
     title "ChangeInstanceOfferingState"

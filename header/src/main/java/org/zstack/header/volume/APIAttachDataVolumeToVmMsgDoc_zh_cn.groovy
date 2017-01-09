@@ -1,6 +1,6 @@
 package org.zstack.header.volume
 
-org.zstack.header.volume.APIAttachDataVolumeToVmEvent
+import org.zstack.header.volume.APIAttachDataVolumeToVmEvent
 
 doc {
     title "AttachDataVolumeToVm"

@@ -1,6 +1,6 @@
 package org.zstack.header.network.l3
 
-org.zstack.header.network.l3.APICreateL3NetworkEvent
+import org.zstack.header.network.l3.APICreateL3NetworkEvent
 
 doc {
     title "CreateL3Network"

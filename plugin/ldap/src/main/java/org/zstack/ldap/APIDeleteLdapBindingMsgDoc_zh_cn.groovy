@@ -1,6 +1,6 @@
 package org.zstack.ldap
 
-org.zstack.ldap.APIDeleteLdapBindingEvent
+import org.zstack.ldap.APIDeleteLdapBindingEvent
 
 doc {
     title "DeleteLdapBinding"

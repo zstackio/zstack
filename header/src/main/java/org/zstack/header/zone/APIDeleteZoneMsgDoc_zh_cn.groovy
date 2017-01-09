@@ -1,6 +1,6 @@
 package org.zstack.header.zone
 
-org.zstack.header.zone.APIDeleteZoneEvent
+import org.zstack.header.zone.APIDeleteZoneEvent
 
 doc {
     title "DeleteZone"

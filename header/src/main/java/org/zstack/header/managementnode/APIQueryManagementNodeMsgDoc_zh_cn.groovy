@@ -1,6 +1,6 @@
 package org.zstack.header.managementnode
 
-org.zstack.header.managementnode.APIQueryManagementNodeReply
+import org.zstack.header.managementnode.APIQueryManagementNodeReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {

@@ -1,6 +1,6 @@
 package org.zstack.header.cluster
 
-org.zstack.header.cluster.APIDeleteClusterEvent
+import org.zstack.header.cluster.APIDeleteClusterEvent
 
 doc {
     title "DeleteCluster"

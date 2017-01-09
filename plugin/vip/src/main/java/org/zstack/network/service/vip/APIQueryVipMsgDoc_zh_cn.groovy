@@ -1,6 +1,6 @@
 package org.zstack.network.service.vip
 
-org.zstack.network.service.vip.APIQueryVipReply
+import org.zstack.network.service.vip.APIQueryVipReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {

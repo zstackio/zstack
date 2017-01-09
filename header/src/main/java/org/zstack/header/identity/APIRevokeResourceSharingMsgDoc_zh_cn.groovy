@@ -1,6 +1,6 @@
 package org.zstack.header.identity
 
-org.zstack.header.identity.APIRevokeResourceSharingEvent
+import org.zstack.header.identity.APIRevokeResourceSharingEvent
 
 doc {
     title "RevokeResourceSharing"

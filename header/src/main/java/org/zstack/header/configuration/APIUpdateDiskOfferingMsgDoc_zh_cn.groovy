@@ -1,6 +1,6 @@
 package org.zstack.header.configuration
 
-org.zstack.header.configuration.APIUpdateDiskOfferingEvent
+import org.zstack.header.configuration.APIUpdateDiskOfferingEvent
 
 doc {
     title "UpdateDiskOffering"

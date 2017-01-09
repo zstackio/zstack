@@ -1,6 +1,6 @@
 package org.zstack.header.console
 
-org.zstack.header.console.APIQueryConsoleProxyAgentReply
+import org.zstack.header.console.APIQueryConsoleProxyAgentReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {

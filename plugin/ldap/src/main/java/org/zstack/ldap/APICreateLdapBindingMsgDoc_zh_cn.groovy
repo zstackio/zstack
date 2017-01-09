@@ -1,6 +1,6 @@
 package org.zstack.ldap
 
-org.zstack.ldap.APICreateLdapBindingEvent
+import org.zstack.ldap.APICreateLdapBindingEvent
 
 doc {
     title "CreateLdapBinding"

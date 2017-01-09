@@ -1,6 +1,6 @@
 package org.zstack.header.storage.primary
 
-org.zstack.header.storage.primary.APIUpdatePrimaryStorageEvent
+import org.zstack.header.storage.primary.APIUpdatePrimaryStorageEvent
 
 doc {
     title "UpdatePrimaryStorage"

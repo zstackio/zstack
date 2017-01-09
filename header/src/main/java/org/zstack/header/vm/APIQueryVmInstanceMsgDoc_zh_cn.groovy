@@ -1,6 +1,6 @@
 package org.zstack.header.vm
 
-org.zstack.header.vm.APIQueryVmInstanceReply
+import org.zstack.header.vm.APIQueryVmInstanceReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {

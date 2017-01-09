@@ -1,6 +1,6 @@
 package org.zstack.storage.fusionstor.backup
 
-org.zstack.storage.fusionstor.backup.APIUpdateMonToFusionstorBackupStorageEvent
+import org.zstack.storage.fusionstor.backup.APIUpdateMonToFusionstorBackupStorageEvent
 
 doc {
     title "UpdateFusionstorBackupStorageMon"

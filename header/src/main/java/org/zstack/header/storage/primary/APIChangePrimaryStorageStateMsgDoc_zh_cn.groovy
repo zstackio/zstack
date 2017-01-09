@@ -1,6 +1,6 @@
 package org.zstack.header.storage.primary
 
-org.zstack.header.storage.primary.APIChangePrimaryStorageStateEvent
+import org.zstack.header.storage.primary.APIChangePrimaryStorageStateEvent
 
 doc {
     title "ChangePrimaryStorageState"

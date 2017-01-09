@@ -1,6 +1,6 @@
 package org.zstack.network.securitygroup
 
-org.zstack.network.securitygroup.APIGetCandidateVmNicForSecurityGroupReply
+import org.zstack.network.securitygroup.APIGetCandidateVmNicForSecurityGroupReply
 
 doc {
     title "GetCandidateVmNicForSecurityGroup"

@@ -1,6 +1,6 @@
 package org.zstack.header.storage.snapshot
 
-org.zstack.header.storage.snapshot.APIUpdateVolumeSnapshotEvent
+import org.zstack.header.storage.snapshot.APIUpdateVolumeSnapshotEvent
 
 doc {
     title "UpdateVolumeSnapshot"

@@ -1,6 +1,6 @@
 package org.zstack.header.volume
 
-org.zstack.header.volume.APICreateDataVolumeFromVolumeSnapshotEvent
+import org.zstack.header.volume.APICreateDataVolumeFromVolumeSnapshotEvent
 
 doc {
     title "CreateDataVolumeFromVolumeSnapshot"

@@ -1,6 +1,6 @@
 package org.zstack.header.identity
 
-org.zstack.header.identity.APICreateUserGroupEvent
+import org.zstack.header.identity.APICreateUserGroupEvent
 
 doc {
     title "CreateUserGroup"

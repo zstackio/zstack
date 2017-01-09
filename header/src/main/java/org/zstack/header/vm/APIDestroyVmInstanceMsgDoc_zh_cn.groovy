@@ -1,6 +1,6 @@
 package org.zstack.header.vm
 
-org.zstack.header.vm.APIDestroyVmInstanceEvent
+import org.zstack.header.vm.APIDestroyVmInstanceEvent
 
 doc {
     title "DestroyVmInstance"

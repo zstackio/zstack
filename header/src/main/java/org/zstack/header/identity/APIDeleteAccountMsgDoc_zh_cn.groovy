@@ -1,6 +1,6 @@
 package org.zstack.header.identity
 
-org.zstack.header.identity.APIDeleteAccountEvent
+import org.zstack.header.identity.APIDeleteAccountEvent
 
 doc {
     title "DeleteAccount"

@@ -1,6 +1,6 @@
 package org.zstack.header.vm
 
-org.zstack.header.vm.APIGetCandidateZonesClustersHostsForCreatingVmReply
+import org.zstack.header.vm.APIGetCandidateZonesClustersHostsForCreatingVmReply
 
 doc {
     title "GetCandidateZonesClustersHostsForCreatingVm"

@@ -1,6 +1,6 @@
 package org.zstack.network.service.vip
 
-org.zstack.network.service.vip.APIDeleteVipEvent
+import org.zstack.network.service.vip.APIDeleteVipEvent
 
 doc {
     title "DeleteVip"

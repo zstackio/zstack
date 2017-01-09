@@ -1,6 +1,6 @@
 package org.zstack.core.config
 
-org.zstack.core.config.APIQueryGlobalConfigReply
+import org.zstack.core.config.APIQueryGlobalConfigReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {

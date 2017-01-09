@@ -1,6 +1,6 @@
 package org.zstack.header.storage.primary
 
-org.zstack.header.storage.primary.APIGetPrimaryStorageAllocatorStrategiesReply
+import org.zstack.header.storage.primary.APIGetPrimaryStorageAllocatorStrategiesReply
 
 doc {
     title "GetPrimaryStorageAllocatorStrategies"

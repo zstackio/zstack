@@ -1,6 +1,6 @@
 package org.zstack.header.volume
 
-org.zstack.header.volume.APIExpungeDataVolumeEvent
+import org.zstack.header.volume.APIExpungeDataVolumeEvent
 
 doc {
     title "ExpungeDataVolume"

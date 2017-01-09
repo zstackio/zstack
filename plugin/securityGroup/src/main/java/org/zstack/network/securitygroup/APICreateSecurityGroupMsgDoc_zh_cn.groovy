@@ -1,6 +1,6 @@
 package org.zstack.network.securitygroup
 
-org.zstack.network.securitygroup.APICreateSecurityGroupEvent
+import org.zstack.network.securitygroup.APICreateSecurityGroupEvent
 
 doc {
     title "CreateSecurityGroup"

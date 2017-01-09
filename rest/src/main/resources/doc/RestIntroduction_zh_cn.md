@@ -489,3 +489,230 @@ body:
 
 推送的结果之中，*X-Job-Success*指明了API执行成功与否，*X-Job-UUID*包含值跟API调用时的*X-Job-UUID*相同，
 调用者可以对应结果和API。
+
+
+## 查询API
+
+用户可以用`GET`方法对一个资源进行查询，并且可以像MySQL一样指定多个查询条件、排序方式、选择字段、以及进行跨表查询等等。
+ZStack支持超过400万个单项查询条件，以及400万阶乘的组合查询条件。例如：
+
+```
+GET /v1/vm-instances?conditions=name=vm1
+```
+
+查询名字为*vm1*的虚拟机。
+
+```
+GET /v1/vm-instances?conditions=name=vm1&conditions=state=Running
+```
+
+查询名字为*vm1*并且状态为*Running*的虚拟机。这两个例子都是对虚拟机资源本身查询，反应到数据库层面
+还属于单表查询。我们可以通过`.`进行跨表查询，例如：
+
+```
+GET /v1/vm-instances?conditions=vmNics.ip=192.168.10.100
+```
+
+查询IP地址为*192.168.10.100*的虚拟机，这里对虚拟机和网卡两张表进行了跨表查询。又例如：
+
+```
+GET /v1/vm-instances?conditions=host.managementIp=10.10.20.3
+```
+
+查询IP为*10.10.20.3*上运行的所有虚拟机。这里对虚拟机和物理机两张表进行了跨表查询。
+
+所有资源的查询API都支持下列参数：
+
+|名字|类型|位置|描述|可选值|起始版本|
+|---|---|---|---|---|---|
+|conditions (可选)|List|query|见[查询条件](#query-conditions)。省略该该字段将返回所有记录，返回记录数的上限受限于`limit`字段||0.6|
+|limit (可选)|Integer|query|最多返回的记录数，类似MySQL的limit，默认值1000||0.6|
+|start (可选)|Integer|query|起始查询记录位置，类似MySQL的offset。跟`limit`配合使用可以实现分页||0.6|
+|count (可选)|Boolean|query|计数查询，相当于MySQL中的count()函数。当设置成`true`时，API只返回的是满足查询条件的记录数||0.6|
+|groupBy (可选)|String|query|以字段分组，相当于MySQL中的group by关键字。例如groupBy=type||1.9|
+|replyWithCount (可选)|Boolean|query|见上面[分页查询](#query-pagination)||0.6|
+|sortBy (可选)|String|query|以字段排序，等同于MySQL中的sort by关键字，例如sortBy=ip。必须跟`sortDirection`配合使用||0.6|
+|sortDirection (可选)|String|query|字段排序方向，必须跟`sortBy`配合使用|<ul><li>asc</li><li>desc</li></ul>|0.6|
+|fields (可选)|List|query|指定返回的字段，等同于MySQL中的select字段功能。例如fields=name,uuid，则只返回满足条件记录的`name`和`uuid`字段||0.6|
+
+#### <a name="query-conditions">查询条件</a>
+
+ZStack的查询条件类似于MySQL数据库，例如：
+
+```
+uuid=bfa67f956afb430890aa49db14b85153
+totalCapacity>2000
+vmInstanceUuid!=null
+```
+
+> **字段名、查询操作符、匹配值三者之间不能有任何空格**。例如`uuid = 25506342d1384c07b7342373a57475b9`就是一个错误的查询条件，必须写为
+`uuid=25506342d1384c07b7342373a57475b9`。
+
+多个查询条件之间是**与**关系。总共支持10个查询操作符：
+
+- `=`: 等于。可以用`=null`来测试一个字段是否为`null`，例如：
+
+    ```
+    vmInstanceUuid=null
+    ```
+    
+- `!=`: 不等于。可以用`!=null`来测试一个字段是否部位`null`，例如：
+
+    ```
+    vmInstanceUuid!=null
+    ```
+
+- `>`: 大于
+- `<`: 小于
+- `>=`: 大于等于
+- `<=`: 小于等于
+- `?=`: `in`操作符，测试字段值是否在一个集合。集合中的值以`,`分隔。例如测试*uuid*是否属于某个集合：
+    
+    ```
+    uuid?=25506342d1384c07b7342373a57475b9,bc58d68090ac42358c0cb0fe72e3287f
+    ```
+    
+- `!?=`: `not int`操作符，测试字段值是否**不属于**一个集合。集合中的值以`,`分隔，例如测试*name*是否不等于VM1和VM2:
+
+    ```
+    name!?=VM1,VM2
+    ```
+    
+- `~=`: 字符串模糊匹配，相当于MySQL中的`like`操作。使用`%`匹配一个或多个字符，使用`_`匹配一个字符。
+    例如查询一个名字是以*IntelCore*开头的：
+    
+    ```
+    name~=IntelCore%
+    ```
+    
+    或者查询一个名字是以*IntelCore*开头，以*7*结尾，中间模糊匹配一个字符：
+    
+    ```
+    name~=IntelCore_7
+    ```  
+      
+    这样名字是*IntelCoreI7*，*IntelCoreM7*的记录都会匹配上。
+    
+- `!~=`: 模糊匹配非操作。查询一个字段不能模糊匹配到某个字符串，匹配条件与`~=`相同
+
+#### <a name="query-pagination">分页查询</a>
+
+`start`、`limit`、`replyWithCount`三个字段可以配合使用实现分页查询。其中`start`指定其实查询位置，`limit`指定查询返回的最大记录数，而
+`replyWithCount`被设置成true后，查询返回中会包含满足查询条件的记录总数，跟`start`值比较就可以得知还需几次分页。
+
+例如总共有1000记录满足查询条件，使用如下组合:
+
+```
+start=0 limit=100 replyWithCount=true
+```
+
+则API返回将包含头100条记录，以及`total`字段等于1000，表示总共满足条件的记录为1000。
+
+#### 获取资源可查询字段
+
+由于ZStack支持的查询条件数非常巨大，我们无法在文档中枚举所有以查询的条件。用户可以使用我们的命令行工具`zstack-cli`的自动补全功能来查看一个资源可查询的字段以及可跨表查询的字段。
+以查询虚拟机为例，在`zstack-cli`里输入`QueryVmInstance`并按Tab键补全，可以看到提示页面：
+
+```
+- >>>QueryVmInstance 
+[Query Conditions:]
+allVolumes.            cluster.               host.                  image.                 instanceOffering.      rootVolume.
+vmNics.                zone.                  
+
+__systemTag__=         __userTag__=           allocatorStrategy=     clusterUuid=           cpuNum=                cpuSpeed=
+createDate=            defaultL3NetworkUuid=  description=           groupBy=               hostUuid=              hypervisorType=
+imageUuid=             instanceOfferingUuid=  lastHostUuid=          lastOpDate=            memorySize=            name=
+platform=              rootVolumeUuid=        state=                 type=
+uuid=                  zoneUuid=              
+
+[Parameters:]
+count=                 fields=                limit=                 replyWithCount=        sortBy=                sortDirection=
+start=                 timeout=   
+```
+
+这里中间行：
+
+```
+__systemTag__=         __userTag__=           allocatorStrategy=     clusterUuid=           cpuNum=                cpuSpeed=
+createDate=            defaultL3NetworkUuid=  description=           groupBy=               hostUuid=              hypervisorType=
+imageUuid=             instanceOfferingUuid=  lastHostUuid=          lastOpDate=            memorySize=            name=
+platform=              rootVolumeUuid=        state=                 type=
+uuid=                  zoneUuid=     
+```
+
+除`__systemTag__`和`__userTag__`两个特殊查询条件外，其余均为虚拟机表的原生字段，用户可以在API的查询条件里面指定它们，并且可以在`fields`参数中指定这些字段来过滤其它不希望
+API返回的字段。例如：
+
+```
+GET /v1/vm-instances?conditions=cpuNum>5
+```
+返回CPU数量多于5的虚拟机。
+
+```
+GET /v1/vm-instances?conditions=hypervisorType=KVM&fields=uuid&fields=name
+```
+返回虚拟化类型为KVM的虚拟机，由于在`fields`指定了uuid和name两个字段，API返回中只会包含虚拟机的name和uuid。
+
+>只有资源的原生字段可以被`fields`选取，`__systemTag__`，`__userTag__`以及下面讲到的跨表字段均不能出现在`fields`参数中。
+
+提示的第一行：
+
+```
+allVolumes.            cluster.               host.                  image.                 instanceOffering.      rootVolume.
+vmNics. 
+```
+
+指明了虚拟机资源可以跟哪些资源做跨表查询，例如`allVolumes`代表的云盘，`cluster`代表集群，`vmNics`代表网卡等。如需查看这些资源的具体字段，只需输入资源名加`.`号，并按Tab键补全，例如：
+
+```
+- >>>QueryVmInstance vmNics.
+[Query Conditions:]
+vmNics.eip.                   vmNics.l3Network.             vmNics.loadBalancerListener.  vmNics.portForwarding.        vmNics.securityGroup.
+vmNics.vmInstance.            
+
+vmNics.__systemTag__=         vmNics.__userTag__=           vmNics.createDate=            vmNics.deviceId=              vmNics.gateway=
+vmNics.ip=                    vmNics.l3NetworkUuid=         vmNics.lastOpDate=            vmNics.mac=                   vmNics.metaData=
+vmNics.netmask=               vmNics.uuid=                  vmNics.vmInstanceUuid=  
+```
+
+这里我们输入了资源`vmNics`并用`.`号表示我们要做一个跨表查询，Tab键为我们补全了`vmNics`资源的原生字段以及可跨表查询的其它资源。例如这里`vmNics.ip`表示网卡的原生字段`ip`，例如：
+
+```
+GET /v1/vm-instances?conditions=vmNics.ip=192.168.0.100
+```
+
+进行了一个跨表查询，条件是网卡表的`ip`字段，返回的结果是`ip`为*192.168.0.100*的虚拟机。网卡资源同样可以跟其它资源进行跨表查询，例如`vmNics.eip.`将网卡表和EIP表进行跨表，如果我们使用：
+
+```
+GET /v1/vm-instances?conditions=vmNics.eip.ip=192.168.0.100
+```
+
+则进行了跨3表查询，返回的是EIP为*192.168.0.100*的虚拟机。通过资源间连续跨表，一个资源几乎跟系统中多个有逻辑关系的资源进行跨表，例如：
+
+```
+- >>>QueryVmInstance zone.cluster.l2Network.l3Network.
+[Query Conditions:]
+zone.cluster.l2Network.l3Network.ipRanges.         zone.cluster.l2Network.l3Network.l2Network.        zone.cluster.l2Network.l3Network.networkServices.
+zone.cluster.l2Network.l3Network.serviceProvider.  zone.cluster.l2Network.l3Network.vmNic.            zone.cluster.l2Network.l3Network.zone.
+
+
+zone.cluster.l2Network.l3Network.__systemTag__=    zone.cluster.l2Network.l3Network.__userTag__=      zone.cluster.l2Network.l3Network.createDate=
+zone.cluster.l2Network.l3Network.description=      zone.cluster.l2Network.l3Network.dnsDomain=        zone.cluster.l2Network.l3Network.l2NetworkUuid=
+zone.cluster.l2Network.l3Network.lastOpDate=       zone.cluster.l2Network.l3Network.name=             zone.cluster.l2Network.l3Network.state=
+zone.cluster.l2Network.l3Network.system=           zone.cluster.l2Network.l3Network.type=             zone.cluster.l2Network.l3Network.uuid=
+zone.cluster.l2Network.l3Network.zoneUuid= 
+```
+
+分别跟zone, cluster, l2Network, l3Network多个资源进行跨表。
+
+>由于一个资源的逻辑关系存在环路，例如以虚拟机为主体可以跟网卡进行跨表，例如`QueryVmInstance vmNics.`，同时以网卡为查询主体也可以跟虚拟机进行跨表`QueryVmNic vmInstance.`，这样就会存环路路径，例如
+`QueryVmInstance vmNics.vmInstance.name=vm1`通过跨表查询了name=vm1的虚拟机，它的实际效果跟`QueryVmInstance name=vm1`完全等同。这里的跨表是无意义的，只会生产复杂的SQL语句导致低效的数据库查询。
+在使用中应该避免这种环路跨表查询。
+
+`__systemTag__`和`__userTag__`是两个特殊的查询条件，允许用户通过tag查询资源，例如：
+
+```
+QueryVmInstance __systemTag__=staticIp:10.10.1.20
+```
+
+查询具有*staticIp:10.10.1.20*这个tag的虚拟机。

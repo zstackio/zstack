@@ -1,6 +1,6 @@
 package org.zstack.header.tag
 
-org.zstack.header.tag.APICreateUserTagEvent
+import org.zstack.header.tag.APICreateUserTagEvent
 
 doc {
     title "CreateUserTag"

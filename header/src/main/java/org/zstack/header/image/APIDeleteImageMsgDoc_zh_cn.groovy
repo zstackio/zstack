@@ -1,6 +1,6 @@
 package org.zstack.header.image
 
-org.zstack.header.image.APIDeleteImageEvent
+import org.zstack.header.image.APIDeleteImageEvent
 
 doc {
     title "DeleteImage"

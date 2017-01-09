@@ -1,6 +1,6 @@
 package org.zstack.header.cluster
 
-org.zstack.header.cluster.APIChangeClusterStateEvent
+import org.zstack.header.cluster.APIChangeClusterStateEvent
 
 doc {
     title "ChangeClusterState"

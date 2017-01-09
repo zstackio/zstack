@@ -1,6 +1,6 @@
 package org.zstack.ldap
 
-org.zstack.ldap.APIUpdateLdapServerEvent
+import org.zstack.ldap.APIUpdateLdapServerEvent
 
 doc {
     title "UpdateLdapServer"
