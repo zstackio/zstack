@@ -1,6 +1,6 @@
 package org.zstack.header.configuration
 
-org.zstack.header.configuration.APIChangeDiskOfferingStateEvent
+import org.zstack.header.configuration.APIChangeDiskOfferingStateEvent
 
 doc {
     title "ChangeDiskOfferingState"

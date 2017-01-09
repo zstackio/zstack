@@ -1,6 +1,6 @@
 package org.zstack.network.service.virtualrouter
 
-org.zstack.header.configuration.APICreateInstanceOfferingEvent
+import org.zstack.header.configuration.APICreateInstanceOfferingEvent
 
 doc {
     title "CreateVirtualRouterOffering"

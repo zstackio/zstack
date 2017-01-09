@@ -1,6 +1,6 @@
 package org.zstack.header.host
 
-org.zstack.header.host.APIChangeHostStateEvent
+import org.zstack.header.host.APIChangeHostStateEvent
 
 doc {
     title "ChangeHostState"

@@ -1,6 +1,6 @@
 package org.zstack.header.identity
 
-org.zstack.header.identity.APIUpdateAccountEvent
+import org.zstack.header.identity.APIUpdateAccountEvent
 
 doc {
     title "UpdateAccount"

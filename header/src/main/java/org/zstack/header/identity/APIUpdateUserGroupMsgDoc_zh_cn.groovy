@@ -1,6 +1,6 @@
 package org.zstack.header.identity
 
-org.zstack.header.identity.APIUpdateUserGroupEvent
+import org.zstack.header.identity.APIUpdateUserGroupEvent
 
 doc {
     title "UpdateUserGroup"

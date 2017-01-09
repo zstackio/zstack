@@ -1,6 +1,6 @@
 package org.zstack.ldap
 
-org.zstack.ldap.APIQueryLdapBindingReply
+import org.zstack.ldap.APIQueryLdapBindingReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {

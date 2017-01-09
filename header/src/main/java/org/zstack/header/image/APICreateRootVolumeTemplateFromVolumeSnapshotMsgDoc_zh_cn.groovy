@@ -1,6 +1,6 @@
 package org.zstack.header.image
 
-org.zstack.header.image.APICreateRootVolumeTemplateFromVolumeSnapshotEvent
+import org.zstack.header.image.APICreateRootVolumeTemplateFromVolumeSnapshotEvent
 
 doc {
     title "CreateRootVolumeTemplateFromVolumeSnapshot"

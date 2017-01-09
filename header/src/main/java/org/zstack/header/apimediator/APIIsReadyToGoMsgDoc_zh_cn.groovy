@@ -1,6 +1,6 @@
 package org.zstack.header.apimediator
 
-org.zstack.header.apimediator.APIIsReadyToGoReply
+import org.zstack.header.apimediator.APIIsReadyToGoReply
 
 doc {
     title "IsReadyToGo"

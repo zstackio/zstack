@@ -1,6 +1,6 @@
 package org.zstack.header.storage.backup
 
-org.zstack.header.storage.backup.APIGetBackupStorageTypesReply
+import org.zstack.header.storage.backup.APIGetBackupStorageTypesReply
 
 doc {
     title "GetBackupStorageTypes"

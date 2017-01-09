@@ -1,6 +1,6 @@
 package org.zstack.header.network.l3
 
-org.zstack.header.network.l3.APIQueryIpRangeReply
+import org.zstack.header.network.l3.APIQueryIpRangeReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {

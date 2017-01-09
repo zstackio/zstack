@@ -1,6 +1,6 @@
 package org.zstack.network.securitygroup
 
-org.zstack.network.securitygroup.APIAttachSecurityGroupToL3NetworkEvent
+import org.zstack.network.securitygroup.APIAttachSecurityGroupToL3NetworkEvent
 
 doc {
     title "AttachSecurityGroupToL3Network"

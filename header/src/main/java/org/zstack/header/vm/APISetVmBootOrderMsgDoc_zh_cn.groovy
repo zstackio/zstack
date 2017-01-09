@@ -1,6 +1,6 @@
 package org.zstack.header.vm
 
-org.zstack.header.vm.APISetVmBootOrderEvent
+import org.zstack.header.vm.APISetVmBootOrderEvent
 
 doc {
     title "SetVmBootOrder"

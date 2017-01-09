@@ -1,6 +1,6 @@
 package org.zstack.network.service.flat
 
-org.zstack.network.service.flat.APIGetL3NetworkDhcpIpAddressReply
+import org.zstack.network.service.flat.APIGetL3NetworkDhcpIpAddressReply
 
 doc {
     title "GetL3NetworkDhcpIpAddress"

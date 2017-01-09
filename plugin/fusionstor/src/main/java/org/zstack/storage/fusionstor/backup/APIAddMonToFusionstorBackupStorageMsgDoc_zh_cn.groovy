@@ -1,6 +1,6 @@
 package org.zstack.storage.fusionstor.backup
 
-org.zstack.storage.fusionstor.backup.APIAddMonToFusionstorBackupStorageEvent
+import org.zstack.storage.fusionstor.backup.APIAddMonToFusionstorBackupStorageEvent
 
 doc {
     title "AddMonToFusionstorBackupStorage"

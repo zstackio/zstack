@@ -1,6 +1,6 @@
 package org.zstack.header.configuration
 
-org.zstack.header.configuration.APIDeleteDiskOfferingEvent
+import org.zstack.header.configuration.APIDeleteDiskOfferingEvent
 
 doc {
     title "DeleteDiskOffering"

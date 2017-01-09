@@ -1,6 +1,6 @@
 package org.zstack.header.vm
 
-org.zstack.header.vm.APISetVmHostnameEvent
+import org.zstack.header.vm.APISetVmHostnameEvent
 
 doc {
     title "SetVmHostname"

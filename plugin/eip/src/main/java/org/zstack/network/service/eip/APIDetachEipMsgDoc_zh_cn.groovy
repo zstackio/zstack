@@ -1,6 +1,6 @@
 package org.zstack.network.service.eip
 
-org.zstack.network.service.eip.APIDetachEipEvent
+import org.zstack.network.service.eip.APIDetachEipEvent
 
 doc {
     title "DetachEip"

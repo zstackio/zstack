@@ -1,6 +1,6 @@
 package org.zstack.header.vm
 
-org.zstack.header.vm.APIDetachL3NetworkFromVmEvent
+import org.zstack.header.vm.APIDetachL3NetworkFromVmEvent
 
 doc {
     title "DetachL3NetworkFromVm"

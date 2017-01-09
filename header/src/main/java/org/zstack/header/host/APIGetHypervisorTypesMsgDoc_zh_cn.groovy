@@ -1,6 +1,6 @@
 package org.zstack.header.host
 
-org.zstack.header.host.APIGetHypervisorTypesReply
+import org.zstack.header.host.APIGetHypervisorTypesReply
 
 doc {
     title "GetHypervisorTypes"

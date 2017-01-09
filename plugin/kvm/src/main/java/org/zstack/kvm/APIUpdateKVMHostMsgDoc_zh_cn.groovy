@@ -1,6 +1,6 @@
 package org.zstack.kvm
 
-org.zstack.header.host.APIUpdateHostEvent
+import org.zstack.header.host.APIUpdateHostEvent
 
 doc {
     title "UpdateKVMHost"

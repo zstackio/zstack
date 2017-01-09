@@ -1,6 +1,6 @@
 package org.zstack.network.service.lb
 
-org.zstack.network.service.lb.APIQueryLoadBalancerReply
+import org.zstack.network.service.lb.APIQueryLoadBalancerReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {

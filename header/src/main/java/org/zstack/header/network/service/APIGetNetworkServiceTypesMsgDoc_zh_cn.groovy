@@ -1,6 +1,6 @@
 package org.zstack.header.network.service
 
-org.zstack.header.network.service.APIGetNetworkServiceTypesReply
+import org.zstack.header.network.service.APIGetNetworkServiceTypesReply
 
 doc {
     title "GetNetworkServiceTypes"

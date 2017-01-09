@@ -1,6 +1,6 @@
 package org.zstack.header.identity
 
-org.zstack.header.identity.APIShareResourceEvent
+import org.zstack.header.identity.APIShareResourceEvent
 
 doc {
     title "ShareResource"

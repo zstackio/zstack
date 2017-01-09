@@ -1,6 +1,6 @@
 package org.zstack.header.vm
 
-org.zstack.header.vm.APIGetInterdependentL3NetworkImageReply
+import org.zstack.header.vm.APIGetInterdependentL3NetworkImageReply
 
 doc {
     title "GetInterdependentL3NetworksImages"

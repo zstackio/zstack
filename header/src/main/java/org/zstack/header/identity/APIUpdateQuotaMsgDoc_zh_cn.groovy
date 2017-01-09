@@ -1,6 +1,6 @@
 package org.zstack.header.identity
 
-org.zstack.header.identity.APIUpdateQuotaEvent
+import org.zstack.header.identity.APIUpdateQuotaEvent
 
 doc {
     title "UpdateQuota"

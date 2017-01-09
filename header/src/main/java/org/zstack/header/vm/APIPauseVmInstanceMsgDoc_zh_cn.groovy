@@ -1,6 +1,6 @@
 package org.zstack.header.vm
 
-org.zstack.header.vm.APIPauseVmInstanceEvent
+import org.zstack.header.vm.APIPauseVmInstanceEvent
 
 doc {
     title "PauseVmInstance"

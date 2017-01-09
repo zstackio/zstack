@@ -1,6 +1,6 @@
 package org.zstack.storage.primary.local
 
-org.zstack.storage.primary.local.APIQueryLocalStorageResourceRefReply
+import org.zstack.storage.primary.local.APIQueryLocalStorageResourceRefReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {

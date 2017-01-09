@@ -1,6 +1,6 @@
 package org.zstack.header.identity
 
-org.zstack.header.identity.APICreateUserEvent
+import org.zstack.header.identity.APICreateUserEvent
 
 doc {
     title "CreateUser"

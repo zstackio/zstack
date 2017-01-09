@@ -1,6 +1,6 @@
 package org.zstack.network.securitygroup
 
-org.zstack.network.securitygroup.APIUpdateSecurityGroupEvent
+import org.zstack.network.securitygroup.APIUpdateSecurityGroupEvent
 
 doc {
     title "UpdateSecurityGroup"

@@ -1,6 +1,6 @@
 package org.zstack.header.vm
 
-org.zstack.header.vm.APIDeleteVmSshKeyEvent
+import org.zstack.header.vm.APIDeleteVmSshKeyEvent
 
 doc {
     title "DeleteVmSshKey"

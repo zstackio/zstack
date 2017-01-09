@@ -1,6 +1,6 @@
 package org.zstack.header.network.l3
 
-org.zstack.header.network.l3.APIDeleteL3NetworkEvent
+import org.zstack.header.network.l3.APIDeleteL3NetworkEvent
 
 doc {
     title "DeleteL3Network"

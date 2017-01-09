@@ -1,6 +1,6 @@
 package org.zstack.network.securitygroup
 
-org.zstack.network.securitygroup.APIQuerySecurityGroupReply
+import org.zstack.network.securitygroup.APIQuerySecurityGroupReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {

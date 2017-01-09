@@ -1,6 +1,6 @@
 package org.zstack.header.network.l3
 
-org.zstack.header.network.l3.APICheckIpAvailabilityReply
+import org.zstack.header.network.l3.APICheckIpAvailabilityReply
 
 doc {
     title "CheckIpAvailability"

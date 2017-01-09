@@ -1,6 +1,6 @@
 package org.zstack.header.configuration
 
-org.zstack.header.configuration.APIQueryDiskOfferingReply
+import org.zstack.header.configuration.APIQueryDiskOfferingReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {

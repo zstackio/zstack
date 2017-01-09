@@ -1,6 +1,6 @@
 package org.zstack.header.managementnode
 
-org.zstack.header.managementnode.APIGetVersionReply
+import org.zstack.header.managementnode.APIGetVersionReply
 
 doc {
     title "GetVersion"

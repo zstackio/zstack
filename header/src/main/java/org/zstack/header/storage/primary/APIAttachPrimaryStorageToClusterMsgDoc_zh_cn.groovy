@@ -1,6 +1,6 @@
 package org.zstack.header.storage.primary
 
-org.zstack.header.storage.primary.APIAttachPrimaryStorageToClusterEvent
+import org.zstack.header.storage.primary.APIAttachPrimaryStorageToClusterEvent
 
 doc {
     title "AttachPrimaryStorageToCluster"

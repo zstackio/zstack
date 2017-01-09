@@ -1,6 +1,6 @@
 package org.zstack.header.storage.backup
 
-org.zstack.header.storage.backup.APIGetBackupStorageCapacityReply
+import org.zstack.header.storage.backup.APIGetBackupStorageCapacityReply
 
 doc {
     title "GetBackupStorageCapacity"

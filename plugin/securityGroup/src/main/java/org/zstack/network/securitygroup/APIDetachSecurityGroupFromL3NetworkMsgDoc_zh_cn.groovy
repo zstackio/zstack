@@ -1,6 +1,6 @@
 package org.zstack.network.securitygroup
 
-org.zstack.network.securitygroup.APIDetachSecurityGroupFromL3NetworkEvent
+import org.zstack.network.securitygroup.APIDetachSecurityGroupFromL3NetworkEvent
 
 doc {
     title "DetachSecurityGroupFromL3Network"

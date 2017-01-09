@@ -1,6 +1,6 @@
 package org.zstack.storage.fusionstor.primary
 
-org.zstack.storage.fusionstor.primary.APIRemoveMonFromFusionstorPrimaryStorageEvent
+import org.zstack.storage.fusionstor.primary.APIRemoveMonFromFusionstorPrimaryStorageEvent
 
 doc {
     title "RemoveMonFromFusionstorPrimaryStorage"

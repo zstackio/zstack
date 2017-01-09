@@ -1,6 +1,6 @@
 package org.zstack.network.service.lb
 
-org.zstack.network.service.lb.APIGetCandidateVmNicsForLoadBalancerReply
+import org.zstack.network.service.lb.APIGetCandidateVmNicsForLoadBalancerReply
 
 doc {
     title "GetCandidateVmNicsForLoadBalancer"

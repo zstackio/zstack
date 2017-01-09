@@ -1,6 +1,6 @@
 package org.zstack.header.zone
 
-org.zstack.header.zone.APIQueryZoneReply
+import org.zstack.header.zone.APIQueryZoneReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {

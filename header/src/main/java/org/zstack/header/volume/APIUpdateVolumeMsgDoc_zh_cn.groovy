@@ -1,6 +1,6 @@
 package org.zstack.header.volume
 
-org.zstack.header.volume.APIUpdateVolumeEvent
+import org.zstack.header.volume.APIUpdateVolumeEvent
 
 doc {
     title "UpdateVolume"

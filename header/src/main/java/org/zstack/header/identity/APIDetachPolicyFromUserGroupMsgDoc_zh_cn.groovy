@@ -1,6 +1,6 @@
 package org.zstack.header.identity
 
-org.zstack.header.identity.APIDetachPolicyFromUserGroupEvent
+import org.zstack.header.identity.APIDetachPolicyFromUserGroupEvent
 
 doc {
     title "DetachPolicyFromUserGroup"

@@ -1,6 +1,6 @@
 package org.zstack.network.securitygroup
 
-org.zstack.network.securitygroup.APIAddVmNicToSecurityGroupEvent
+import org.zstack.network.securitygroup.APIAddVmNicToSecurityGroupEvent
 
 doc {
     title "AddVmNicToSecurityGroup"

@@ -1,6 +1,6 @@
 package org.zstack.network.service.portforwarding
 
-org.zstack.network.service.portforwarding.APIChangePortForwardingRuleStateEvent
+import org.zstack.network.service.portforwarding.APIChangePortForwardingRuleStateEvent
 
 doc {
     title "ChangePortForwardingRuleState"

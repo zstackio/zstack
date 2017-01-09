@@ -1,6 +1,6 @@
 package org.zstack.network.service.lb
 
-org.zstack.network.service.lb.APIAddVmNicToLoadBalancerEvent
+import org.zstack.network.service.lb.APIAddVmNicToLoadBalancerEvent
 
 doc {
     title "AddVmNicToLoadBalancer"

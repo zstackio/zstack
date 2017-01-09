@@ -1,6 +1,6 @@
 package org.zstack.header.identity
 
-org.zstack.header.identity.APILogOutReply
+import org.zstack.header.identity.APILogOutReply
 
 doc {
     title "LogOut"

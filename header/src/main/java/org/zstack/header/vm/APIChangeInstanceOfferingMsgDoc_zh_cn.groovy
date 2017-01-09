@@ -1,6 +1,6 @@
 package org.zstack.header.vm
 
-org.zstack.header.vm.APIChangeInstanceOfferingEvent
+import org.zstack.header.vm.APIChangeInstanceOfferingEvent
 
 doc {
     title "ChangeInstanceOffering"

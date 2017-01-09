@@ -1,6 +1,6 @@
 package org.zstack.header.allocator
 
-org.zstack.header.allocator.APIGetHostAllocatorStrategiesReply
+import org.zstack.header.allocator.APIGetHostAllocatorStrategiesReply
 
 doc {
     title "GetHostAllocatorStrategies"

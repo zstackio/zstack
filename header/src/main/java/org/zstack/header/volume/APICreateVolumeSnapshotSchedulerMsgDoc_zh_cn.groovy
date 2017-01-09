@@ -1,6 +1,6 @@
 package org.zstack.header.volume
 
-org.zstack.header.volume.APICreateVolumeSnapshotSchedulerEvent
+import org.zstack.header.volume.APICreateVolumeSnapshotSchedulerEvent
 
 doc {
     title "CreateVolumeSnapshotScheduler"

@@ -9,6 +9,7 @@ import org.zstack.header.exception.CloudRuntimeException
 import org.zstack.header.identity.SuppressCredentialCheck
 import org.zstack.header.message.APIParam
 import org.zstack.header.query.APIQueryMessage
+import org.zstack.header.query.AutoQuery
 import org.zstack.header.rest.APINoSee
 import org.zstack.header.rest.RestRequest
 import org.zstack.header.rest.RestResponse
@@ -127,11 +128,20 @@ class RestDocumentationGenerator implements DocumentGenerator {
         }
 
         Set<Class> apiClasses = Platform.getReflections().getTypesAnnotatedWith(RestRequest.class)
+        String specifiedClasses = System.getProperty("classes")
+
+        if (specifiedClasses != null) {
+            def classes = specifiedClasses.split(",") as List
+            apiClasses = apiClasses.findAll {
+                return classes.contains(it.simpleName)
+            }
+        }
+
         apiClasses.each {
             def docPath = getDocTemplatePathFromClass(it)
             System.out.println("processing ${docPath}")
             try {
-                def md = new MarkDown(docPath)
+                def md = APIQueryMessage.class.isAssignableFrom(it) ? new QueryMarkDown(docPath) : new MarkDown(docPath)
                 File f = new File(PathUtil.join(resultDir, md.doc._category, "${it.canonicalName.replaceAll("\\.", "_")}.md"))
                 if (!f.parentFile.exists()) {
                     f.parentFile.mkdirs()
@@ -449,11 +459,175 @@ class RestDocumentationGenerator implements DocumentGenerator {
         return script.run() as Doc
     }
 
+    class QueryMarkDown extends MarkDown {
+        QueryMarkDown(String docTemplatePath) {
+            super(docTemplatePath)
+        }
+
+        @Override
+        String params() {
+            Class clz = doc._rest._request._clz
+
+            String apiName = StringUtils.removeStart(clz.simpleName, "API")
+            apiName = StringUtils.removeEnd(apiName, "Msg")
+
+            return """\
+### 可查询字段
+
+运行`zstack-cli`命令行工具，输入`${apiName}`并按Tab键查看所有可查询字段以及可跨表查询的资源名。
+"""
+        }
+
+        List<String> getQueryConditionExampleOfTheClass(Class clz) {
+            try {
+                Method m = clz.getMethod("__example__")
+                return m.invoke(null) as List<String>
+            } catch (NoSuchMethodException e) {
+                throw new CloudRuntimeException("class[${clz.name}] doesn't have static __example__ method", e)
+            }
+        }
+
+        @Override
+        String javaSdk() {
+            Class clz = doc._rest._request._clz
+
+            String actionName = getSdkActionName()
+
+            def cols = ["${actionName} action = new ${actionName}();"]
+            List<String> conds = getQueryConditionExampleOfTheClass(clz)
+            conds = conds.collect { return "\"" + it + "\""}
+            cols.add("action.conditions = asList(${conds.join(",")});")
+            cols.add("""action.sessionUuid = "${Platform.getUuid()}";""")
+            cols.add("${actionName}.Result res = action.call();")
+
+            return """\
+```
+${cols.join("\n")}
+```
+"""
+        }
+
+        @Override
+        String pythonSdk() {
+            Class clz = doc._rest._request._clz
+
+            String actionName = getSdkActionName()
+
+            def cols = ["${actionName} action = ${actionName}()"]
+            List<String> conds = getQueryConditionExampleOfTheClass(clz)
+            conds = conds.collect { return "\"" + it + "\""}
+            cols.add("action.conditions = [${conds.join(",")}]")
+            cols.add("""action.sessionUuid = "${Platform.getUuid()}\"""")
+            cols.add("${actionName}.Result res = action.call()")
+
+            return """\
+```
+${cols.join("\n")}
+```
+"""
+        }
+
+        String curlExample() {
+            if (doc._rest._request._clz == null) {
+                return ""
+            }
+
+            Class clz = doc._rest._request._clz
+            RestRequest at = clz.getAnnotation(RestRequest.class)
+
+            Set<String> paths = []
+            if (at.path() != "null") {
+                paths.add(at.path())
+            }
+            paths.addAll(at.optionalPaths())
+
+            List<String> examples = paths.collect {
+                def curl = ["curl -H \"Content-Type: application/json\""]
+                curl.add("-H \"${RestConstants.HEADER_OAUTH}: ${Platform.getUuid()}\"")
+
+                curl.add("-X ${at.method()}")
+
+                if (it.contains("uuid")) {
+                    // for "GET /v1/xxx/{uuid}, because the query example
+                    // may not have uuid field specified
+                    String urlPath = substituteUrl("${RestConstants.API_VERSION}${it}", ["uuid": Platform.getUuid()])
+                    curl.add("http://localhost:8080${urlPath}")
+                } else {
+                    List<String> qstr = getQueryConditionExampleOfTheClass(clz)
+                    qstr = qstr.collect {
+                        return "conditions=${it}"
+                    }
+                    curl.add("http://localhost:8080${RestConstants.API_VERSION}${it}?${qstr.join("&")}")
+                }
+
+                return """\
+```
+${curl.join(" ")}
+```
+"""
+            }
+
+
+            return """\
+### Curl示例
+
+${examples.join("\n")}
+
+"""
+        }
+
+
+        @Override
+        String generate() {
+            return  """\
+## ${doc._category} - ${doc._title}
+
+${doc._desc}
+
+## API请求
+
+${url()}
+
+${headers()}
+
+${requestExample()}
+
+${curlExample()}
+
+${params()}
+
+## API返回
+
+${responseDesc()}
+
+${responseExample()}
+
+## SDK示例
+
+### Java SDK
+
+${javaSdk()}
+
+### Python SDK
+
+${pythonSdk()}
+"""
+        }
+    }
+
     class MarkDown {
         Doc doc
 
         MarkDown(String docTemplatePath) {
             doc = createDoc(docTemplatePath)
+
+            if (doc._rest._request._params instanceof RequestParamRef) {
+                Class refClass = (doc._rest._request._params as RequestParamRef).refClass
+                String docFilePath = getDocTemplatePathFromClass(refClass)
+                Doc refDoc = createDoc(docFilePath)
+
+                doc._rest._request._params = refDoc._rest._request._params
+            }
         }
 
         String url() {
@@ -501,14 +675,6 @@ ${hs.join("\n")}
         String params() {
             if (doc._rest._request._params == null) {
                 return ""
-            }
-
-            if (doc._rest._request._params instanceof RequestParamRef) {
-                Class refClass = (doc._rest._request._params as RequestParamRef).refClass
-                String docFilePath = getDocTemplatePathFromClass(refClass)
-                Doc refDoc = createDoc(docFilePath)
-
-                doc._rest._request._params = refDoc._rest._request._params
             }
 
             def cols = doc._rest._request._params?._cloumns
@@ -605,6 +771,7 @@ ${table.join("\n")}
                 curl.add("-X ${at.method()}")
 
                 Map allFields = getApiExampleOfTheClass(clz)
+
                 String urlPath = substituteUrl("${RestConstants.API_VERSION}${it}", allFields)
 
                 if (!queryString) {
@@ -1108,7 +1275,7 @@ ${fieldStr}
             this.apiClass = apiClass
             this.sourceFile = getSourceFile(apiClass.simpleName - ".java")
             at = apiClass.getAnnotation(RestRequest.class)
-            imports.add(at.responseClass().canonicalName)
+            imports.add("import ${at.responseClass().canonicalName}")
         }
 
         String headers() {

@@ -1,6 +1,6 @@
 package org.zstack.header.tag
 
-org.zstack.header.identity.APIQueryUserReply
+import org.zstack.header.identity.APIQueryUserReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {

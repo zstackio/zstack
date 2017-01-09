@@ -1,6 +1,6 @@
 package org.zstack.network.service.vip
 
-org.zstack.network.service.vip.APIChangeVipStateEvent
+import org.zstack.network.service.vip.APIChangeVipStateEvent
 
 doc {
     title "ChangeVipState"

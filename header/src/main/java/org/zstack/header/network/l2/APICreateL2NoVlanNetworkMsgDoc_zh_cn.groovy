@@ -1,6 +1,6 @@
 package org.zstack.header.network.l2
 
-org.zstack.header.network.l2.APICreateL2NetworkEvent
+import org.zstack.header.network.l2.APICreateL2NetworkEvent
 
 doc {
     title "CreateL2NoVlanNetwork"

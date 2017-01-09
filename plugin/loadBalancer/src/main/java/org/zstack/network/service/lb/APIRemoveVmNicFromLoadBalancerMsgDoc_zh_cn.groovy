@@ -1,6 +1,6 @@
 package org.zstack.network.service.lb
 
-org.zstack.network.service.lb.APIRemoveVmNicFromLoadBalancerEvent
+import org.zstack.network.service.lb.APIRemoveVmNicFromLoadBalancerEvent
 
 doc {
     title "RemoveVmNicFromLoadBalancer"

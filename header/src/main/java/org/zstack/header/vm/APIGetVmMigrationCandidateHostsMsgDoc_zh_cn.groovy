@@ -1,6 +1,6 @@
 package org.zstack.header.vm
 
-org.zstack.header.vm.APIGetVmMigrationCandidateHostsReply
+import org.zstack.header.vm.APIGetVmMigrationCandidateHostsReply
 
 doc {
     title "GetVmMigrationCandidateHosts"

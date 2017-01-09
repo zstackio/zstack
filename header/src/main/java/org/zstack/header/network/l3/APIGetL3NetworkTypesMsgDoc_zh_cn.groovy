@@ -1,6 +1,6 @@
 package org.zstack.header.network.l3
 
-org.zstack.header.network.l3.APIGetL3NetworkTypesReply
+import org.zstack.header.network.l3.APIGetL3NetworkTypesReply
 
 doc {
     title "GetL3NetworkTypes"

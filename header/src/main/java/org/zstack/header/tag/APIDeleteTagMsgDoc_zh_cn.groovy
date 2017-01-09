@@ -1,6 +1,6 @@
 package org.zstack.header.tag
 
-org.zstack.header.tag.APIDeleteTagEvent
+import org.zstack.header.tag.APIDeleteTagEvent
 
 doc {
     title "DeleteTag"

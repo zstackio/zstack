@@ -1,6 +1,6 @@
 package org.zstack.header.vm
 
-org.zstack.header.vm.APIGetVmConsoleAddressReply
+import org.zstack.header.vm.APIGetVmConsoleAddressReply
 
 doc {
     title "GetVmConsoleAddress"

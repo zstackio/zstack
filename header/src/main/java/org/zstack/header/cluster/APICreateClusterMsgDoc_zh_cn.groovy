@@ -1,6 +1,6 @@
 package org.zstack.header.cluster
 
-org.zstack.header.cluster.APICreateClusterEvent
+import org.zstack.header.cluster.APICreateClusterEvent
 
 doc {
     title "CreateCluster"

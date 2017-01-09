@@ -1,6 +1,6 @@
 package org.zstack.header.network.l2
 
-org.zstack.header.network.l2.APIDetachL2NetworkFromClusterEvent
+import org.zstack.header.network.l2.APIDetachL2NetworkFromClusterEvent
 
 doc {
     title "DetachL2NetworkFromCluster"

@@ -1,6 +1,6 @@
 package org.zstack.header.image
 
-org.zstack.header.image.APIQueryImageReply
+import org.zstack.header.image.APIQueryImageReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {

@@ -1,6 +1,6 @@
 package org.zstack.header.storage.backup
 
-org.zstack.header.storage.backup.APIDetachBackupStorageFromZoneEvent
+import org.zstack.header.storage.backup.APIDetachBackupStorageFromZoneEvent
 
 doc {
     title "DetachBackupStorageFromZone"

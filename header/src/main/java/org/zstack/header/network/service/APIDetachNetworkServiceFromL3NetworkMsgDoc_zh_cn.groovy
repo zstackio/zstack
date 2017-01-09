@@ -1,6 +1,6 @@
 package org.zstack.header.network.service
 
-org.zstack.header.network.service.APIDetachNetworkServiceFromL3NetworkEvent
+import org.zstack.header.network.service.APIDetachNetworkServiceFromL3NetworkEvent
 
 doc {
     title "DetachNetworkServiceFromL3Network"

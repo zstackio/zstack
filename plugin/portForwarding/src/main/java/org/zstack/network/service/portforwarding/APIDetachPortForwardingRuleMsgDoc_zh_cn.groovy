@@ -1,6 +1,6 @@
 package org.zstack.network.service.portforwarding
 
-org.zstack.network.service.portforwarding.APIDetachPortForwardingRuleEvent
+import org.zstack.network.service.portforwarding.APIDetachPortForwardingRuleEvent
 
 doc {
     title "DetachPortForwardingRule"

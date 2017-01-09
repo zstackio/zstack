@@ -1,6 +1,6 @@
 package org.zstack.header.cluster
 
-org.zstack.header.cluster.APIUpdateClusterEvent
+import org.zstack.header.cluster.APIUpdateClusterEvent
 
 doc {
     title "UpdateCluster"

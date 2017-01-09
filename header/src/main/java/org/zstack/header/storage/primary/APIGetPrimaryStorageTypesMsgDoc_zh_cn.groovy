@@ -1,6 +1,6 @@
 package org.zstack.header.storage.primary
 
-org.zstack.header.storage.primary.APIGetPrimaryStorageTypesReply
+import org.zstack.header.storage.primary.APIGetPrimaryStorageTypesReply
 
 doc {
     title "GetPrimaryStorageTypes"

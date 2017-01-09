@@ -1,6 +1,6 @@
 package org.zstack.storage.backup.sftp
 
-org.zstack.storage.backup.sftp.APIAddSftpBackupStorageEvent
+import org.zstack.storage.backup.sftp.APIAddSftpBackupStorageEvent
 
 doc {
     title "AddSftpBackupStorage"

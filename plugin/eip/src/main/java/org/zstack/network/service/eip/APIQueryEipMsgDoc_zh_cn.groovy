@@ -1,6 +1,6 @@
 package org.zstack.network.service.eip
 
-org.zstack.network.service.eip.APIQueryEipReply
+import org.zstack.network.service.eip.APIQueryEipReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {

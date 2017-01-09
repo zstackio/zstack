@@ -1,6 +1,6 @@
 package org.zstack.header.tag
 
-org.zstack.header.tag.APIUpdateSystemTagEvent
+import org.zstack.header.tag.APIUpdateSystemTagEvent
 
 doc {
     title "UpdateSystemTag"

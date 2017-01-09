@@ -1,6 +1,6 @@
 package org.zstack.header.zone
 
-org.zstack.header.zone.APICreateZoneEvent
+import org.zstack.header.zone.APICreateZoneEvent
 
 doc {
     title "CreateZone"

@@ -1,6 +1,6 @@
 package org.zstack.network.service.eip
 
-org.zstack.network.service.eip.APICreateEipEvent
+import org.zstack.network.service.eip.APICreateEipEvent
 
 doc {
     title "CreateEip"

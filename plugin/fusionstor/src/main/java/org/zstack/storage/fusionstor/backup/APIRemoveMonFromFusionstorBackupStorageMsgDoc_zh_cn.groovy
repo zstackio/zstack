@@ -1,6 +1,6 @@
 package org.zstack.storage.fusionstor.backup
 
-org.zstack.storage.fusionstor.backup.APIRemoveMonFromFusionstorBackupStorageEvent
+import org.zstack.storage.fusionstor.backup.APIRemoveMonFromFusionstorBackupStorageEvent
 
 doc {
     title "RemoveMonFromFusionstorBackupStorage"

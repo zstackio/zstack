@@ -1,6 +1,6 @@
 package org.zstack.header.simulator.storage.backup
 
-org.zstack.header.storage.backup.APIAddBackupStorageEvent
+import org.zstack.header.storage.backup.APIAddBackupStorageEvent
 
 doc {
     title "AddSimulatorBackupStorage"

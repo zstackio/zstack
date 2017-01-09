@@ -1,6 +1,6 @@
 package org.zstack.header.network.l2
 
-org.zstack.header.network.l2.APIDeleteL2NetworkEvent
+import org.zstack.header.network.l2.APIDeleteL2NetworkEvent
 
 doc {
     title "DeleteL2Network"

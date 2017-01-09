@@ -1,6 +1,6 @@
 package org.zstack.header.vm
 
-org.zstack.header.vm.APISetVmConsolePasswordEvent
+import org.zstack.header.vm.APISetVmConsolePasswordEvent
 
 doc {
     title "SetVmConsolePassword"

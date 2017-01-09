@@ -1,6 +1,6 @@
 package org.zstack.header.volume
 
-org.zstack.header.volume.APIDetachDataVolumeFromVmEvent
+import org.zstack.header.volume.APIDetachDataVolumeFromVmEvent
 
 doc {
     title "DetachDataVolumeFromVm"

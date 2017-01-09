@@ -1,6 +1,6 @@
 package org.zstack.header.allocator
 
-org.zstack.header.allocator.APIGetCpuMemoryCapacityReply
+import org.zstack.header.allocator.APIGetCpuMemoryCapacityReply
 
 doc {
     title "GetCpuMemoryCapacity"

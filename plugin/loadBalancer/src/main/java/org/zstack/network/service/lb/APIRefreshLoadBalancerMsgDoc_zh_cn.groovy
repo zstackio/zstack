@@ -1,6 +1,6 @@
 package org.zstack.network.service.lb
 
-org.zstack.network.service.lb.APIRefreshLoadBalancerEvent
+import org.zstack.network.service.lb.APIRefreshLoadBalancerEvent
 
 doc {
     title "RefreshLoadBalancer"

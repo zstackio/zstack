@@ -1,6 +1,6 @@
 package org.zstack.header.volume
 
-org.zstack.header.volume.APIGetDataVolumeAttachableVmReply
+import org.zstack.header.volume.APIGetDataVolumeAttachableVmReply
 
 doc {
     title "GetDataVolumeAttachableVm"

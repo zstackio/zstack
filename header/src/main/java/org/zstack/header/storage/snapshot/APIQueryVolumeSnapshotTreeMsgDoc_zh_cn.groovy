@@ -1,6 +1,6 @@
 package org.zstack.header.storage.snapshot
 
-org.zstack.header.storage.snapshot.APIQueryVolumeSnapshotTreeReply
+import org.zstack.header.storage.snapshot.APIQueryVolumeSnapshotTreeReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {

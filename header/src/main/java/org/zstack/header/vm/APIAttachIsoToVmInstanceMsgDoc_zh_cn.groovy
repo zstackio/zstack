@@ -1,6 +1,6 @@
 package org.zstack.header.vm
 
-org.zstack.header.vm.APIAttachIsoToVmInstanceEvent
+import org.zstack.header.vm.APIAttachIsoToVmInstanceEvent
 
 doc {
     title "AttachIsoToVmInstance"

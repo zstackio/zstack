@@ -1,6 +1,6 @@
 package org.zstack.header.vm
 
-org.zstack.header.vm.APICreateStartVmInstanceSchedulerEvent
+import org.zstack.header.vm.APICreateStartVmInstanceSchedulerEvent
 
 doc {
     title "CreateStartVmInstanceScheduler"

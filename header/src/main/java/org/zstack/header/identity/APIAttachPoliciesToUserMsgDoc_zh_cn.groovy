@@ -1,6 +1,6 @@
 package org.zstack.header.identity
 
-org.zstack.header.identity.APIAttachPoliciesToUserEvent
+import org.zstack.header.identity.APIAttachPoliciesToUserEvent
 
 doc {
     title "AttachPoliciesToUser"

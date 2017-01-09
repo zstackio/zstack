@@ -1,6 +1,6 @@
 package org.zstack.header.storage.snapshot
 
-org.zstack.header.storage.snapshot.APIDeleteVolumeSnapshotEvent
+import org.zstack.header.storage.snapshot.APIDeleteVolumeSnapshotEvent
 
 doc {
     title "DeleteVolumeSnapshot"

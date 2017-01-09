@@ -1,6 +1,6 @@
 package org.zstack.network.service.eip
 
-org.zstack.network.service.eip.APIGetEipAttachableVmNicsReply
+import org.zstack.network.service.eip.APIGetEipAttachableVmNicsReply
 
 doc {
     title "GetEipAttachableVmNics"

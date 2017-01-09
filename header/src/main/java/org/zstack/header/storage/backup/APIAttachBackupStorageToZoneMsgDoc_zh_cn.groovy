@@ -1,6 +1,6 @@
 package org.zstack.header.storage.backup
 
-org.zstack.header.storage.backup.APIAttachBackupStorageToZoneEvent
+import org.zstack.header.storage.backup.APIAttachBackupStorageToZoneEvent
 
 doc {
     title "AttachBackupStorageToZone"

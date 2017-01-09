@@ -1,6 +1,6 @@
 package org.zstack.header.image
 
-org.zstack.header.image.APIExpungeImageEvent
+import org.zstack.header.image.APIExpungeImageEvent
 
 doc {
     title "ExpungeImage"

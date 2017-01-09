@@ -1,6 +1,6 @@
 package org.zstack.header.zone
 
-org.zstack.header.zone.APIChangeZoneStateEvent
+import org.zstack.header.zone.APIChangeZoneStateEvent
 
 doc {
     title "ChangeZoneState"

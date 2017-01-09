@@ -1,6 +1,6 @@
 package org.zstack.storage.ceph.primary
 
-org.zstack.storage.ceph.primary.APIRemoveMonFromCephPrimaryStorageEvent
+import org.zstack.storage.ceph.primary.APIRemoveMonFromCephPrimaryStorageEvent
 
 doc {
     title "RemoveMonFromCephPrimaryStorage"

@@ -1,6 +1,6 @@
 package org.zstack.header.network.l2
 
-org.zstack.header.network.l2.APIGetL2NetworkTypesReply
+import org.zstack.header.network.l2.APIGetL2NetworkTypesReply
 
 doc {
     title "GetL2NetworkTypes"

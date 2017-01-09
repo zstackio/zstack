@@ -1,6 +1,6 @@
 package org.zstack.header.identity
 
-org.zstack.header.identity.APIChangeResourceOwnerEvent
+import org.zstack.header.identity.APIChangeResourceOwnerEvent
 
 doc {
     title "ChangeResourceOwner"

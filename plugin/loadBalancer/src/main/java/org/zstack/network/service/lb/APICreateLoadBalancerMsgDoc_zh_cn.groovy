@@ -1,6 +1,6 @@
 package org.zstack.network.service.lb
 
-org.zstack.network.service.lb.APICreateLoadBalancerEvent
+import org.zstack.network.service.lb.APICreateLoadBalancerEvent
 
 doc {
     title "CreateLoadBalancer"

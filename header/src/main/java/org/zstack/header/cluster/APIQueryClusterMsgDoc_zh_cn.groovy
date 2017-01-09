@@ -1,6 +1,6 @@
 package org.zstack.header.cluster
 
-org.zstack.header.cluster.APIQueryClusterReply
+import org.zstack.header.cluster.APIQueryClusterReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {

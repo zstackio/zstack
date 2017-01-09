@@ -1,6 +1,6 @@
 package org.zstack.header.vm
 
-org.zstack.header.vm.APIGetVmHostnameReply
+import org.zstack.header.vm.APIGetVmHostnameReply
 
 doc {
     title "GetVmHostname"

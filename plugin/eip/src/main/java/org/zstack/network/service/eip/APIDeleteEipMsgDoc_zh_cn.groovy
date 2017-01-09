@@ -1,6 +1,6 @@
 package org.zstack.network.service.eip
 
-org.zstack.network.service.eip.APIDeleteEipEvent
+import org.zstack.network.service.eip.APIDeleteEipEvent
 
 doc {
     title "DeleteEip"

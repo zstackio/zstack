@@ -1,6 +1,6 @@
 package org.zstack.storage.ceph.backup
 
-org.zstack.storage.ceph.backup.APIAddMonToCephBackupStorageEvent
+import org.zstack.storage.ceph.backup.APIAddMonToCephBackupStorageEvent
 
 doc {
     title "AddMonToCephBackupStorage"

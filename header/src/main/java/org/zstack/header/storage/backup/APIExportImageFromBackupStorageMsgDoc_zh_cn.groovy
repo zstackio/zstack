@@ -1,6 +1,6 @@
 package org.zstack.header.storage.backup
 
-org.zstack.header.storage.backup.APIExportImageFromBackupStorageEvent
+import org.zstack.header.storage.backup.APIExportImageFromBackupStorageEvent
 
 doc {
     title "ExportImageFromBackupStorage"

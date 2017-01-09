@@ -1,6 +1,6 @@
 package org.zstack.header.network.l3
 
-org.zstack.header.network.l3.APIUpdateL3NetworkEvent
+import org.zstack.header.network.l3.APIUpdateL3NetworkEvent
 
 doc {
     title "UpdateL3Network"

@@ -1,6 +1,6 @@
 package org.zstack.header.image
 
-org.zstack.header.image.APIAddImageEvent
+import org.zstack.header.image.APIAddImageEvent
 
 doc {
     title "AddImage"

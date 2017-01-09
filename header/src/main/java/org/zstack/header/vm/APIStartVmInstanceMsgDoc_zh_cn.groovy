@@ -1,6 +1,6 @@
 package org.zstack.header.vm
 
-org.zstack.header.vm.APIStartVmInstanceEvent
+import org.zstack.header.vm.APIStartVmInstanceEvent
 
 doc {
     title "StartVmInstance"

@@ -1,6 +1,6 @@
 package org.zstack.header.storage.primary
 
-org.zstack.header.storage.primary.APICleanUpImageCacheOnPrimaryStorageEvent
+import org.zstack.header.storage.primary.APICleanUpImageCacheOnPrimaryStorageEvent
 
 doc {
     title "CleanUpImageCacheOnPrimaryStorage"

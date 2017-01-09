@@ -1,6 +1,6 @@
 package org.zstack.header.vm
 
-org.zstack.header.vm.APIGetVmCapabilitiesReply
+import org.zstack.header.vm.APIGetVmCapabilitiesReply
 
 doc {
     title "GetVmCapabilities"

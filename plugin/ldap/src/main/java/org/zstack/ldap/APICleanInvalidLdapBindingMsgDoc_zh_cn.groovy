@@ -1,6 +1,6 @@
 package org.zstack.ldap
 
-org.zstack.ldap.APICleanInvalidLdapBindingEvent
+import org.zstack.ldap.APICleanInvalidLdapBindingEvent
 
 doc {
     title "CleanInvalidLdapBinding"

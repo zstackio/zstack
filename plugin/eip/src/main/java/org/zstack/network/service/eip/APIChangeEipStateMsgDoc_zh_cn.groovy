@@ -1,6 +1,6 @@
 package org.zstack.network.service.eip
 
-org.zstack.network.service.eip.APIChangeEipStateEvent
+import org.zstack.network.service.eip.APIChangeEipStateEvent
 
 doc {
     title "ChangeEipState"
