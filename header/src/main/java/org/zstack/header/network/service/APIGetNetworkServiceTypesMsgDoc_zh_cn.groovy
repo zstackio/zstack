@@ -1,9 +1,11 @@
 package org.zstack.header.network.service
 
-
+org.zstack.header.network.service.APIGetNetworkServiceTypesReply
 
 doc {
-    title "在这里填写API标题"
+    title "GetNetworkServiceTypes"
+
+    category "network.service"
 
     desc "在这里填写API描述"
 

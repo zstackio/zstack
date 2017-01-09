@@ -1,9 +1,11 @@
 package org.zstack.network.service.vip
 
-
+org.zstack.network.service.vip.APIChangeVipStateEvent
 
 doc {
-    title "在这里填写API标题"
+    title "ChangeVipState"
+
+    category "vip"
 
     desc "在这里填写API描述"
 

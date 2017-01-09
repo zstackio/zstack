@@ -1,9 +1,11 @@
 package org.zstack.storage.ceph.backup
 
-
+org.zstack.header.storage.backup.APIAddBackupStorageEvent
 
 doc {
-    title "在这里填写API标题"
+    title "AddCephBackupStorage"
+
+    category "未知类别"
 
     desc "在这里填写API描述"
 
@@ -76,6 +78,16 @@ doc {
 					desc ""
 					location "body"
 					type "String"
+					optional true
+					since "0.6"
+					
+				}
+				column {
+					name "importImages"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "boolean"
 					optional true
 					since "0.6"
 					

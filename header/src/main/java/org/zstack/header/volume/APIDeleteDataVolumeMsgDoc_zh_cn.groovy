@@ -1,9 +1,11 @@
 package org.zstack.header.volume
 
-
+org.zstack.header.volume.APIDeleteDataVolumeEvent
 
 doc {
-    title "在这里填写API标题"
+    title "DeleteDataVolume"
+
+    category "volume"
 
     desc "在这里填写API描述"
 

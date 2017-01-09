@@ -1,9 +1,12 @@
 package org.zstack.appliancevm
 
+org.zstack.appliancevm.APIQueryApplianceVmReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "在这里填写API标题"
+    title "QueryApplianceVm"
+
+    category "applianceVm"
 
     desc "在这里填写API描述"
 

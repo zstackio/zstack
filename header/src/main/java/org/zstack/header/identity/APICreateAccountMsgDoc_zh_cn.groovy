@@ -1,9 +1,11 @@
 package org.zstack.header.identity
 
-
+org.zstack.header.identity.APICreateAccountEvent
 
 doc {
-    title "在这里填写API标题"
+    title "CreateAccount"
+
+    category "identity"
 
     desc "在这里填写API描述"
 

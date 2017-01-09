@@ -33,12 +33,7 @@ import org.zstack.header.storage.backup.BackupStorageVO;
  * @since 0.1.0
  */
 @Action(category = VolumeConstant.ACTION_CATEGORY)
-@RestRequest(
-        path = "/volumes/{uuid}/actions",
-        method = HttpMethod.PUT,
-        isAction = true,
-        responseClass = APIBackupDataVolumeEvent.class
-)
+@Deprecated
 public class APIBackupDataVolumeMsg extends APIMessage implements VolumeMessage {
     /**
      * @desc data volume uuid

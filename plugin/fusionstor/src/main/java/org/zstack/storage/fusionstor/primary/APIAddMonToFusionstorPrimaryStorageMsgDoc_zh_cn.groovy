@@ -1,9 +1,11 @@
 package org.zstack.storage.fusionstor.primary
 
-
+org.zstack.storage.fusionstor.primary.APIAddMonToFusionstorPrimaryStorageEvent
 
 doc {
-    title "在这里填写API标题"
+    title "AddMonToFusionstorPrimaryStorage"
+
+    category "未知类别"
 
     desc "在这里填写API描述"
 

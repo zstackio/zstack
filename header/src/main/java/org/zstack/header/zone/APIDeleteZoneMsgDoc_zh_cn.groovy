@@ -1,9 +1,11 @@
 package org.zstack.header.zone
 
-
+org.zstack.header.zone.APIDeleteZoneEvent
 
 doc {
-    title "在这里填写API标题"
+    title "DeleteZone"
+
+    category "zone"
 
     desc "在这里填写API描述"
 

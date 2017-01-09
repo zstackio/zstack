@@ -1,9 +1,11 @@
 package org.zstack.network.service.flat
 
-
+org.zstack.network.service.flat.APIGetL3NetworkDhcpIpAddressReply
 
 doc {
-    title "在这里填写API标题"
+    title "GetL3NetworkDhcpIpAddress"
+
+    category "flat.dhcp"
 
     desc "在这里填写API描述"
 

@@ -1,9 +1,11 @@
 package org.zstack.header.volume
 
-
+org.zstack.header.volume.APIDetachDataVolumeFromVmEvent
 
 doc {
-    title "在这里填写API标题"
+    title "DetachDataVolumeFromVm"
+
+    category "volume"
 
     desc "在这里填写API描述"
 
@@ -27,6 +29,16 @@ doc {
 					location "url"
 					type "String"
 					optional false
+					since "0.6"
+					
+				}
+				column {
+					name "vmUuid"
+					enclosedIn ""
+					desc ""
+					location "body"
+					type "String"
+					optional true
 					since "0.6"
 					
 				}

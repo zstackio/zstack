@@ -1,9 +1,11 @@
 package org.zstack.header.identity
 
-
+org.zstack.header.identity.APIAddUserToGroupEvent
 
 doc {
-    title "在这里填写API标题"
+    title "AddUserToGroup"
+
+    category "identity"
 
     desc "在这里填写API描述"
 

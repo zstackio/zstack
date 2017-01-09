@@ -40,9 +40,9 @@ doc {
 		since "0.6"
 	}
 	field {
-		name "sshPort"
+		name "monAddr"
 		desc ""
-		type "Integer"
+		type "String"
 		since "0.6"
 	}
 	field {
@@ -58,7 +58,19 @@ doc {
 		since "0.6"
 	}
 	field {
+		name "sshPort"
+		desc ""
+		type "Integer"
+		since "0.6"
+	}
+	field {
 		name "status"
+		desc ""
+		type "String"
+		since "0.6"
+	}
+	field {
+		name "monUuid"
 		desc ""
 		type "String"
 		since "0.6"

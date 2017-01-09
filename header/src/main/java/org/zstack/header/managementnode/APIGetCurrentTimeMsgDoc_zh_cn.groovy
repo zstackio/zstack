@@ -1,9 +1,11 @@
 package org.zstack.header.managementnode
 
-
+org.zstack.header.managementnode.APIGetCurrentTimeReply
 
 doc {
-    title "在这里填写API标题"
+    title "GetCurrentTime"
+
+    category "managementNode"
 
     desc "在这里填写API描述"
 

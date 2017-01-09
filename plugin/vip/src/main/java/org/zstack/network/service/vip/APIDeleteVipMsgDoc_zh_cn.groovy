@@ -1,9 +1,11 @@
 package org.zstack.network.service.vip
 
-
+org.zstack.network.service.vip.APIDeleteVipEvent
 
 doc {
-    title "在这里填写API标题"
+    title "DeleteVip"
+
+    category "vip"
 
     desc "在这里填写API描述"
 

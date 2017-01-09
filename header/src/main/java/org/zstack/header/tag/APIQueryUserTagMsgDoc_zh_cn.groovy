@@ -1,9 +1,12 @@
 package org.zstack.header.tag
 
+org.zstack.header.identity.APIQueryUserReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "在这里填写API标题"
+    title "QueryUserTag"
+
+    category "tag"
 
     desc "在这里填写API描述"
 

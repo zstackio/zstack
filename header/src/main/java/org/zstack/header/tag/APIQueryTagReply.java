@@ -7,7 +7,6 @@ import java.util.List;
 
 /**
  */
-@RestResponse(allTo = "inventories")
 public class APIQueryTagReply extends APIQueryReply {
     private List<TagInventory> inventories;
 

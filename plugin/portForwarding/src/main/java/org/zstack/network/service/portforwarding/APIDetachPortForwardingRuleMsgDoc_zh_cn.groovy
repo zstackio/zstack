@@ -1,9 +1,11 @@
 package org.zstack.network.service.portforwarding
 
-
+org.zstack.network.service.portforwarding.APIDetachPortForwardingRuleEvent
 
 doc {
-    title "在这里填写API标题"
+    title "DetachPortForwardingRule"
+
+    category "portForwarding"
 
     desc "在这里填写API描述"
 

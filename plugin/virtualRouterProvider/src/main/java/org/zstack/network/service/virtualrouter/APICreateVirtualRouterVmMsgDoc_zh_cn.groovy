@@ -1,9 +1,11 @@
 package org.zstack.network.service.virtualrouter
 
-
+org.zstack.header.vm.APICreateVmInstanceEvent
 
 doc {
-    title "在这里填写API标题"
+    title "CreateVirtualRouterVm"
+
+    category "virtualRouter"
 
     desc "在这里填写API描述"
 

@@ -1,9 +1,11 @@
 package org.zstack.storage.ceph.backup
 
-
+org.zstack.storage.ceph.backup.APIRemoveMonFromCephBackupStorageEvent
 
 doc {
-    title "在这里填写API标题"
+    title "RemoveMonFromCephBackupStorage"
+
+    category "未知类别"
 
     desc "在这里填写API描述"
 

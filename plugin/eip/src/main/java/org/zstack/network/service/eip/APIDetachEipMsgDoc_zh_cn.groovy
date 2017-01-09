@@ -1,9 +1,11 @@
 package org.zstack.network.service.eip
 
-
+org.zstack.network.service.eip.APIDetachEipEvent
 
 doc {
-    title "在这里填写API标题"
+    title "DetachEip"
+
+    category "eip"
 
     desc "在这里填写API描述"
 

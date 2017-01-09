@@ -1,9 +1,12 @@
 package org.zstack.header.configuration
 
+org.zstack.header.configuration.APIQueryInstanceOfferingReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "在这里填写API标题"
+    title "QueryInstanceOffering"
+
+    category "configuration"
 
     desc "在这里填写API描述"
 

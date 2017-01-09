@@ -1,9 +1,11 @@
 package org.zstack.header.host
 
-
+org.zstack.header.host.APIChangeHostStateEvent
 
 doc {
-    title "在这里填写API标题"
+    title "ChangeHostState"
+
+    category "host"
 
     desc "在这里填写API描述"
 

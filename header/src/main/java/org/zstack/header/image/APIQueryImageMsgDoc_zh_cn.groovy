@@ -1,9 +1,12 @@
 package org.zstack.header.image
 
+org.zstack.header.image.APIQueryImageReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "在这里填写API标题"
+    title "QueryImage"
+
+    category "image"
 
     desc "在这里填写API描述"
 
