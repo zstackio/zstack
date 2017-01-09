@@ -244,6 +244,12 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
             ));
         }
 
+        if (ipr.getStartIp().equals(info.getNetworkAddress()) || ipr.getEndIp().equals(info.getBroadcastAddress())){
+            throw new ApiMessageInterceptionException((errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
+                    "ip allocation can not contain network address or broadcast address")
+            ));
+        }
+
         long startip = NetworkUtils.ipv4StringToLong(ipr.getStartIp());
         long endip = NetworkUtils.ipv4StringToLong(ipr.getEndIp());
         if (startip > endip) {
