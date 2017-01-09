@@ -1,9 +1,11 @@
 package org.zstack.header.vm
 
-
+org.zstack.header.vm.APIUpdateVmInstanceEvent
 
 doc {
-    title "在这里填写API标题"
+    title "UpdateVmInstance"
+
+    category "vmInstance"
 
     desc "在这里填写API描述"
 
@@ -79,6 +81,26 @@ doc {
 					optional true
 					since "0.6"
 					values ("Linux","Windows","Other","Paravirtualization","WindowsVirtio")
+				}
+				column {
+					name "cpuNum"
+					enclosedIn "updateVmInstance"
+					desc ""
+					location "body"
+					type "Integer"
+					optional true
+					since "0.6"
+					
+				}
+				column {
+					name "memorySize"
+					enclosedIn "updateVmInstance"
+					desc ""
+					location "body"
+					type "Long"
+					optional true
+					since "0.6"
+					
 				}
 				column {
 					name "systemTags"

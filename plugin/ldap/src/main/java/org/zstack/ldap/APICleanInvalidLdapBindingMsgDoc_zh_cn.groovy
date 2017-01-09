@@ -1,9 +1,11 @@
 package org.zstack.ldap
 
-
+org.zstack.ldap.APICleanInvalidLdapBindingEvent
 
 doc {
-    title "在这里填写API标题"
+    title "CleanInvalidLdapBinding"
+
+    category "ldap"
 
     desc "在这里填写API描述"
 

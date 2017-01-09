@@ -1,9 +1,11 @@
 package org.zstack.header.zone
 
-
+org.zstack.header.zone.APIChangeZoneStateEvent
 
 doc {
-    title "在这里填写API标题"
+    title "ChangeZoneState"
+
+    category "zone"
 
     desc "在这里填写API描述"
 

@@ -1,9 +1,11 @@
 package org.zstack.header.vm
 
-
+org.zstack.header.vm.APIGetInterdependentL3NetworkImageReply
 
 doc {
-    title "在这里填写API标题"
+    title "GetInterdependentL3NetworksImages"
+
+    category "vmInstance"
 
     desc "在这里填写API描述"
 

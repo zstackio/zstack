@@ -1,9 +1,12 @@
 package org.zstack.header.vm
 
+org.zstack.header.vm.APIQueryVmInstanceReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "在这里填写API标题"
+    title "QueryVmInstance"
+
+    category "vmInstance"
 
     desc "在这里填写API描述"
 

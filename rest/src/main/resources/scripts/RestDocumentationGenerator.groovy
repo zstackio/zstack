@@ -34,7 +34,7 @@ import java.util.regex.Pattern
  * Created by xing5 on 2016/12/21.
  */
 class RestDocumentationGenerator implements DocumentGenerator {
-    CLogger logger = Utils.getLogger(RestDocumentationGenerator.class)
+    static CLogger logger = Utils.getLogger(RestDocumentationGenerator.class)
 
     String rootPath
 
@@ -132,7 +132,11 @@ class RestDocumentationGenerator implements DocumentGenerator {
             System.out.println("processing ${docPath}")
             try {
                 def md = new MarkDown(docPath)
-                File f  =new File(PathUtil.join(resultDir, "${it.canonicalName.replaceAll("\\.", "_")}.md"))
+                File f = new File(PathUtil.join(resultDir, md.doc._category, "${it.canonicalName.replaceAll("\\.", "_")}.md"))
+                if (!f.parentFile.exists()) {
+                    f.parentFile.mkdirs()
+                }
+
                 f.write(md.generate())
                 System.out.println("written ${f.absolutePath}")
             } catch (Exception e) {
@@ -380,6 +384,7 @@ class RestDocumentationGenerator implements DocumentGenerator {
 
     class Doc {
         private String _title
+        private String _category
         private String _desc
         private Rest _rest
         private List<DocField> _fields = []
@@ -387,6 +392,10 @@ class RestDocumentationGenerator implements DocumentGenerator {
 
         def title(String v) {
             _title = v
+        }
+
+        def category(String v) {
+            _category = v
         }
 
         def desc(String v) {
@@ -816,7 +825,7 @@ ${cols.join("\n")}
 
         String generate() {
             return  """\
-## ${doc._title}
+## ${doc._category} - ${doc._title}
 
 ${doc._desc}
 
@@ -1077,11 +1086,29 @@ ${fieldStr}
         RestRequest at
 
         List<String> imports = []
+        static Map<String, String> apiCategories = [:]
+
+        static {
+            File apiConfig = PathUtil.findFolderOnClassPath("serviceConfig")
+            apiConfig.list().each {
+                def xml = new XmlSlurper()
+                def f = new File(PathUtil.join(apiConfig.absolutePath, it))
+                if (!it.endsWith(".xml")) {
+                    return
+                }
+
+                def o = xml.parse(f)
+                (o.message as List).each {
+                    apiCategories[(it.name as String).trim()] = (o.id as String).trim()
+                }
+            }
+        }
 
         ApiRequestDocTemplate(Class apiClass) {
             this.apiClass = apiClass
             this.sourceFile = getSourceFile(apiClass.simpleName - ".java")
             at = apiClass.getAnnotation(RestRequest.class)
+            imports.add(at.responseClass().canonicalName)
         }
 
         String headers() {
@@ -1196,12 +1223,22 @@ ${cols.join("\n")}
         String generate() {
             String paramString = params()
 
+            String title = StringUtils.removeStart(apiClass.simpleName, "API")
+            title = StringUtils.removeEnd(title, "Msg")
+            String category = apiCategories[apiClass.name]
+            category = category == null ? at.category() : category
+            if (category == "") {
+                category = "未知类别"
+            }
+
             return """package ${apiClass.package.name}
 
 ${imports()}
 
 doc {
-    title "在这里填写API标题"
+    title "${title}"
+
+    category "${category}"
 
     desc "在这里填写API描述"
 

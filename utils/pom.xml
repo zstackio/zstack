@@ -94,6 +94,10 @@
             <groupId>org.codehaus.groovy</groupId>
             <artifactId>groovy-json</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.codehaus.groovy</groupId>
+            <artifactId>groovy-xml</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

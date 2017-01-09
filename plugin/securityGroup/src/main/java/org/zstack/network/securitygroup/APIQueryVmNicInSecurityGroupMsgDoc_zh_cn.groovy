@@ -1,9 +1,12 @@
 package org.zstack.network.securitygroup
 
+org.zstack.network.securitygroup.APIQueryVmNicInSecurityGroupReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "在这里填写API标题"
+    title "QueryVmNicInSecurityGroup"
+
+    category "securityGroup"
 
     desc "在这里填写API描述"
 

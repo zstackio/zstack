@@ -20,5 +20,5 @@ public @interface RestRequest {
     String parameterName() default "";
     String[] mappingFields() default {};
     Class responseClass();
-    String[] queryParameters() default {};
+    String category() default "";
 }

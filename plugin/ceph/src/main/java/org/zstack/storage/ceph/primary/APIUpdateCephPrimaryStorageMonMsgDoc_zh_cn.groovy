@@ -1,9 +1,11 @@
 package org.zstack.storage.ceph.primary
 
-
+org.zstack.storage.ceph.primary.APIUpdateCephPrimaryStorageMonEvent
 
 doc {
-    title "在这里填写API标题"
+    title "UpdateCephPrimaryStorageMon"
+
+    category "未知类别"
 
     desc "在这里填写API描述"
 

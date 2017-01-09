@@ -1,9 +1,11 @@
 package org.zstack.header.storage.snapshot
 
-
+org.zstack.header.storage.snapshot.APIUpdateVolumeSnapshotEvent
 
 doc {
-    title "在这里填写API标题"
+    title "UpdateVolumeSnapshot"
+
+    category "snapshot.volume"
 
     desc "在这里填写API描述"
 

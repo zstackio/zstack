@@ -1,9 +1,11 @@
 package org.zstack.header.network.l2
 
-
+org.zstack.header.network.l2.APICreateL2NetworkEvent
 
 doc {
-    title "在这里填写API标题"
+    title "CreateL2NoVlanNetwork"
+
+    category "network.l2"
 
     desc "在这里填写API描述"
 

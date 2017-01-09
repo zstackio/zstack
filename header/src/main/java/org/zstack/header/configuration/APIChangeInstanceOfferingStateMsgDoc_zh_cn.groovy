@@ -1,9 +1,11 @@
 package org.zstack.header.configuration
 
-
+org.zstack.header.configuration.APIChangeInstanceOfferingStateEvent
 
 doc {
-    title "在这里填写API标题"
+    title "ChangeInstanceOfferingState"
+
+    category "configuration"
 
     desc "在这里填写API描述"
 

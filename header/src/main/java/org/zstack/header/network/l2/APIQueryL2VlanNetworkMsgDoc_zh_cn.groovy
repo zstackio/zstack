@@ -1,9 +1,12 @@
 package org.zstack.header.network.l2
 
+org.zstack.header.network.l2.APIQueryL2VlanNetworkReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "在这里填写API标题"
+    title "QueryL2VlanNetwork"
+
+    category "network.l2.vlan"
 
     desc "在这里填写API描述"
 

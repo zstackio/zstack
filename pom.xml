@@ -360,7 +360,12 @@
 	       <artifactId>groovy-json</artifactId>
 	       <version>2.4.7</version>
 	   </dependency>
-
+	   <!-- https://mvnrepository.com/artifact/org.codehaus.groovy/groovy-xml -->
+	   <dependency>
+	       <groupId>org.codehaus.groovy</groupId>
+	       <artifactId>groovy-xml</artifactId>
+	       <version>2.4.7</version>
+	   </dependency>
         </dependencies>
     </dependencyManagement>
 

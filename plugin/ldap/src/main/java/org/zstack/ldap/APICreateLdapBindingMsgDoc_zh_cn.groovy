@@ -1,9 +1,11 @@
 package org.zstack.ldap
 
-
+org.zstack.ldap.APICreateLdapBindingEvent
 
 doc {
-    title "在这里填写API标题"
+    title "CreateLdapBinding"
+
+    category "ldap"
 
     desc "在这里填写API描述"
 

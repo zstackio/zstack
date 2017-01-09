@@ -1,9 +1,11 @@
 package org.zstack.header.cluster
 
-
+org.zstack.header.cluster.APICreateClusterEvent
 
 doc {
-    title "在这里填写API标题"
+    title "CreateCluster"
+
+    category "cluster"
 
     desc "在这里填写API描述"
 

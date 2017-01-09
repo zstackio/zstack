@@ -1,9 +1,11 @@
 package org.zstack.header.console
 
-
+org.zstack.header.console.APIReconnectConsoleProxyAgentEvent
 
 doc {
-    title "在这里填写API标题"
+    title "ReconnectConsoleProxyAgent"
+
+    category "console"
 
     desc "在这里填写API描述"
 

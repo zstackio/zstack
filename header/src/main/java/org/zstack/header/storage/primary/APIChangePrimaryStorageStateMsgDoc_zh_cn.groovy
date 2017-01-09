@@ -1,9 +1,11 @@
 package org.zstack.header.storage.primary
 
-
+org.zstack.header.storage.primary.APIChangePrimaryStorageStateEvent
 
 doc {
-    title "在这里填写API标题"
+    title "ChangePrimaryStorageState"
+
+    category "storage.primary"
 
     desc "在这里填写API描述"
 
@@ -38,7 +40,7 @@ doc {
 					type "String"
 					optional false
 					since "0.6"
-					values ("enable","disable","maintain")
+					values ("enable","disable","maintain","deleting")
 				}
 				column {
 					name "systemTags"

@@ -1,9 +1,12 @@
 package org.zstack.network.service.portforwarding
 
+org.zstack.network.service.portforwarding.APIQueryPortForwardingRuleReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "在这里填写API标题"
+    title "QueryPortForwardingRule"
+
+    category "portForwarding"
 
     desc "在这里填写API描述"
 

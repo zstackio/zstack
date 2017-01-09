@@ -63,4 +63,16 @@ doc {
 		type "String"
 		since "0.6"
 	}
+	field {
+		name "monAddr"
+		desc ""
+		type "String"
+		since "0.6"
+	}
+	field {
+		name "monUuid"
+		desc ""
+		type "String"
+		since "0.6"
+	}
 }

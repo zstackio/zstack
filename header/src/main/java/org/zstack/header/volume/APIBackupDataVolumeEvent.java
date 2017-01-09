@@ -34,7 +34,7 @@ import org.zstack.header.rest.RestResponse;
  * }
  * @since 0.1.0
  */
-@RestResponse(allTo = "inventory")
+@Deprecated
 public class APIBackupDataVolumeEvent extends APIEvent {
     /**
      * @desc see :ref:`VolumeInventory`

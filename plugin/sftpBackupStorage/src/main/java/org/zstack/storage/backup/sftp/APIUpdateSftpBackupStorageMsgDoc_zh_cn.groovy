@@ -1,9 +1,11 @@
 package org.zstack.storage.backup.sftp
 
-
+org.zstack.header.storage.backup.APIUpdateBackupStorageEvent
 
 doc {
-    title "在这里填写API标题"
+    title "UpdateSftpBackupStorage"
+
+    category "storage.backup.sftp"
 
     desc "在这里填写API描述"
 

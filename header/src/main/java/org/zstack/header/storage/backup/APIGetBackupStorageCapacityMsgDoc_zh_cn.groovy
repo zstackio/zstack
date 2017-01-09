@@ -1,9 +1,11 @@
 package org.zstack.header.storage.backup
 
-
+org.zstack.header.storage.backup.APIGetBackupStorageCapacityReply
 
 doc {
-    title "在这里填写API标题"
+    title "GetBackupStorageCapacity"
+
+    category "storage.backup"
 
     desc "在这里填写API描述"
 

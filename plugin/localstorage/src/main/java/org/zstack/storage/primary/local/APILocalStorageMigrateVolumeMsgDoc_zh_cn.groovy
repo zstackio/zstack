@@ -1,9 +1,11 @@
 package org.zstack.storage.primary.local
 
-
+org.zstack.storage.primary.local.APILocalStorageMigrateVolumeEvent
 
 doc {
-    title "在这里填写API标题"
+    title "LocalStorageMigrateVolume"
+
+    category "storage.primary"
 
     desc "在这里填写API描述"
 

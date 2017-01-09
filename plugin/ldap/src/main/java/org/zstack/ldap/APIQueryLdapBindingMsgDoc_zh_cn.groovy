@@ -1,9 +1,12 @@
 package org.zstack.ldap
 
+org.zstack.ldap.APIQueryLdapBindingReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "在这里填写API标题"
+    title "QueryLdapBinding"
+
+    category "ldap"
 
     desc "在这里填写API描述"
 

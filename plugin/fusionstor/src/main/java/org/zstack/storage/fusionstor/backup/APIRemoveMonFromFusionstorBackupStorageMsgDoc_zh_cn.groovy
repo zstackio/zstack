@@ -1,9 +1,11 @@
 package org.zstack.storage.fusionstor.backup
 
-
+org.zstack.storage.fusionstor.backup.APIRemoveMonFromFusionstorBackupStorageEvent
 
 doc {
-    title "在这里填写API标题"
+    title "RemoveMonFromFusionstorBackupStorage"
+
+    category "未知类别"
 
     desc "在这里填写API描述"
 

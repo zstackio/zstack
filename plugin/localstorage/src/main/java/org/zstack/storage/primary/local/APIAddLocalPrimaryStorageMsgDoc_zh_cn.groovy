@@ -1,9 +1,11 @@
 package org.zstack.storage.primary.local
 
-
+org.zstack.header.storage.primary.APIAddPrimaryStorageEvent
 
 doc {
-    title "在这里填写API标题"
+    title "AddLocalPrimaryStorage"
+
+    category "storage.primary"
 
     desc "在这里填写API描述"
 

@@ -1,9 +1,11 @@
 package org.zstack.header.storage.primary
 
-
+org.zstack.header.storage.primary.APIGetPrimaryStorageCapacityReply
 
 doc {
-    title "在这里填写API标题"
+    title "GetPrimaryStorageCapacity"
+
+    category "storage.primary"
 
     desc "在这里填写API描述"
 

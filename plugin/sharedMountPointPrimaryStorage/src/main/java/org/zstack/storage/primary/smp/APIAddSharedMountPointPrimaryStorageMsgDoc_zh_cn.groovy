@@ -1,9 +1,11 @@
 package org.zstack.storage.primary.smp
 
-
+org.zstack.header.storage.primary.APIAddPrimaryStorageEvent
 
 doc {
-    title "在这里填写API标题"
+    title "AddSharedMountPointPrimaryStorage"
+
+    category "storage.primary"
 
     desc "在这里填写API描述"
 
