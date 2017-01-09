@@ -3986,17 +3986,6 @@ public class Api implements CloudBusEventListener {
         return evt;
     }
 
-    public APISetNicQosEvent setVmNicQos(String vmUuid, String vmNicUuid, long outbound) throws ApiSenderException {
-        APISetNicQosMsg msg = new APISetNicQosMsg();
-        msg.setUuid(vmNicUuid);
-        msg.setOutboundBandwidth(outbound);
-        msg.setSession(adminSession);
-        ApiSender sender = new ApiSender();
-        sender.setTimeout(timeout);
-        APISetNicQosEvent evt = sender.send(msg, APISetNicQosEvent.class);
-        return evt;
-    }
-
     public APISetNicQosEvent setVmNicQos(String vmUuid, String vmNicUuid, long inbound, long outbound) throws ApiSenderException {
         APISetNicQosMsg msg = new APISetNicQosMsg();
         msg.setUuid(vmNicUuid);
