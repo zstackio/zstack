@@ -72,14 +72,5 @@ public class TestNicQos {
         Assert.assertTrue(reply.isSuccess());
         Assert.assertEquals(1024000l, reply.getOutboundBandwidth());
 
-
-        evt = api.setVmNicQos(uuid, nicUuid, 1024000l);
-        Assert.assertTrue(evt.isSuccess());
-
-        reply = api.getVmNicQos(uuid, nicUuid);
-        Assert.assertTrue(reply.isSuccess());
-        Assert.assertEquals(1024000l, reply.getOutboundBandwidth());
-
-
     }
 }
