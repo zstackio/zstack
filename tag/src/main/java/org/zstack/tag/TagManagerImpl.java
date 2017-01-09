@@ -6,11 +6,8 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.HardDeleteEntityExtensionPoint;
-import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.core.db.SoftDeleteEntityExtensionPoint;
 import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -18,6 +15,7 @@ import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIMessage;
@@ -34,6 +32,7 @@ import javax.persistence.TypedQuery;
 import javax.persistence.metamodel.EntityType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Proxy;
 import java.util.*;
 
 import static org.zstack.utils.CollectionDSL.list;
@@ -180,9 +179,9 @@ public class TagManagerImpl extends AbstractService implements TagManager,
             return count != 0;
         } else {
             SimpleQuery<SystemTagVO> q = dbf.createQuery(SystemTagVO.class);
-            q.add(UserTagVO_.resourceType, SimpleQuery.Op.EQ, resourceType);
-            q.add(UserTagVO_.tag, SimpleQuery.Op.EQ, tag);
-            q.add(UserTagVO_.resourceUuid, SimpleQuery.Op.EQ, resourceUuid);
+            q.add(SystemTagVO_.resourceType, SimpleQuery.Op.EQ, resourceType);
+            q.add(SystemTagVO_.tag, SimpleQuery.Op.EQ, tag);
+            q.add(SystemTagVO_.resourceUuid, SimpleQuery.Op.EQ, resourceUuid);
             long count = q.count();
             return count != 0;
         }
@@ -607,6 +606,20 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         return resourceTypeClassMap.keySet();
     }
 
+    @Transactional(readOnly = true)
+    private void checkIfResourceHasThisTagType(String resourceUuid, String resourceType) {
+        String sql = String.format("select count(vo.uuid) from %s vo where " +
+                " vo.uuid = :resourceUuid", resourceType);
+        TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
+        q.setParameter("resourceUuid", resourceUuid);
+
+        Long size = q.getSingleResult();
+        if (size <= 0) {
+            throw new OperationFailureException(errf.stringToInvalidArgumentError("The argument :'resourceType' doesn't match uuid"));
+        }
+
+    }
+
     @Override
     public void validateSystemTag(String resourceUuid, String resourceType, String tag) {
         boolean checked = false;
@@ -622,6 +635,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
                     String.format("no system tag matches %s", tag)
             ));
         }
+        checkIfResourceHasThisTagType(resourceUuid, resourceType);
     }
 
     @Override
