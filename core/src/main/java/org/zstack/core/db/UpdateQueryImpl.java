@@ -79,11 +79,11 @@ public class UpdateQueryImpl implements UpdateQuery {
         List<String> condstrs = new ArrayList<>();
         for (Cond cond : andConditions.values()) {
             if (Op.IN == cond.op || Op.NOT_IN == cond.op) {
-                condstrs.add(String.format("vo.%s %s (:%s)", cond.attr.getName(), cond.op.toString(), cond.attr.getName()));
+                condstrs.add(String.format("vo.%s %s (:cond_%s)", cond.attr.getName(), cond.op.toString(), cond.attr.getName()));
             } else if (Op.NULL == cond.op || Op.NOT_NULL == cond.op) {
                 condstrs.add(String.format("vo.%s %s", cond.attr.getName(), cond.op));
             } else {
-                condstrs.add(String.format("vo.%s %s :%s", cond.attr.getName(), cond.op.toString(), cond.attr.getName()));
+                condstrs.add(String.format("vo.%s %s :cond_%s", cond.attr.getName(), cond.op.toString(), cond.attr.getName()));
             }
         }
 
@@ -92,7 +92,7 @@ public class UpdateQueryImpl implements UpdateQuery {
 
     private void fillConditions(Query q) {
         for (Cond cond : andConditions.values()) {
-            q.setParameter(cond.attr.getName(), cond.val);
+            q.setParameter("cond_" + cond.attr.getName(), cond.val);
         }
     }
 
