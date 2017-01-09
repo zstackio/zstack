@@ -7,6 +7,7 @@
     <TestCase class="org.zstack.test.tag.TestSystemTag1"/>
     <TestCase class="org.zstack.test.tag.TestSystemTag2"/>
     <TestCase class="org.zstack.test.tag.TestSystemTag3"/>
+    <TestCase class="org.zstack.test.tag.TestSystemTag4"/>
     <TestCase class="org.zstack.test.tag.TestPolicyForTag"/>
     <TestCase class="org.zstack.test.tag.TestEnableChangeVmPassword"/>
 </UnitTestSuiteConfig>
