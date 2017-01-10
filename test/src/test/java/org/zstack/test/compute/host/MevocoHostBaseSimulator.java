@@ -5,6 +5,8 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.header.AbstractService;
 import org.zstack.header.host.ChangeVmPasswordMsg;
 import org.zstack.header.host.ChangeVmPasswordReply;
+import org.zstack.header.host.SetVolumeQosOnKVMHostMsg;
+import org.zstack.header.host.SetVolumeQosOnKvmHostReply;
 import org.zstack.header.message.Message;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -40,6 +42,8 @@ public class MevocoHostBaseSimulator extends AbstractService {
     public void handleMessage(Message msg) {
         if (msg instanceof ChangeVmPasswordMsg) {
             handle((ChangeVmPasswordMsg) msg);
+        } else if (msg instanceof SetVolumeQosOnKVMHostMsg) {
+            handle((SetVolumeQosOnKVMHostMsg) msg);
         } else {
             logger.error(String.format("can't process msg type: %s", msg.getClass().getSimpleName()));
         }
@@ -50,6 +54,13 @@ public class MevocoHostBaseSimulator extends AbstractService {
         ChangeVmPasswordReply reply = new ChangeVmPasswordReply();
         reply.setSuccess(true);
         reply.setVmAccountPreference(msg.getAccountPerference());
+        bus.reply(msg, reply);
+    }
+
+    private void handle(final SetVolumeQosOnKVMHostMsg msg) {
+        logger.debug(String.format("SimulatorHost handle the message, hostid = %s ", msg.getHostUuid()));
+        SetVolumeQosOnKvmHostReply reply = new SetVolumeQosOnKvmHostReply();
+        reply.setSuccess(true);
         bus.reply(msg, reply);
     }
 }
