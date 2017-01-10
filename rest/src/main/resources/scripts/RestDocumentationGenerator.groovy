@@ -1,6 +1,9 @@
 package scripts
 
+import com.google.common.io.Resources
 import groovy.json.JsonBuilder
+import org.apache.commons.io.Charsets
+import org.apache.commons.io.FileUtils
 import org.apache.commons.lang.StringUtils
 import org.springframework.http.HttpMethod
 import org.zstack.core.Platform
@@ -20,6 +23,7 @@ import org.zstack.utils.DebugUtils
 import org.zstack.utils.FieldUtils
 import org.zstack.utils.ShellResult
 import org.zstack.utils.ShellUtils
+import org.zstack.utils.TypeUtils
 import org.zstack.utils.Utils
 import org.zstack.utils.gson.JSONObjectUtil
 import org.zstack.utils.logging.CLogger
@@ -157,6 +161,10 @@ class RestDocumentationGenerator implements DocumentGenerator {
                 }
             }
         }
+
+        URL url = Resources.getResource("doc/RestIntroduction_zh_cn.md")
+        String context = Resources.toString(url, Charsets.UTF_8)
+        new File(PathUtil.join(dir.absolutePath, "RestIntroduction_zh_cn.md")).write(context)
     }
 
     class RequestParamColumn {
@@ -481,6 +489,11 @@ class RestDocumentationGenerator implements DocumentGenerator {
         List<String> getQueryConditionExampleOfTheClass(Class clz) {
             try {
                 Method m = clz.getMethod("__example__")
+
+                if (!Modifier.isStatic(m.modifiers)) {
+                    throw new CloudRuntimeException("__example__() of ${clz.name} must be declared as a static method")
+                }
+
                 return m.invoke(null) as List<String>
             } catch (NoSuchMethodException e) {
                 throw new CloudRuntimeException("class[${clz.name}] doesn't have static __example__ method", e)
@@ -725,6 +738,11 @@ ${table.join("\n")}
         LinkedHashMap getApiExampleOfTheClass(Class clz) {
             try {
                 Method m = clz.getMethod("__example__")
+
+                if (!Modifier.isStatic(m.modifiers)) {
+                    throw new CloudRuntimeException("__example__() of ${clz.name} must be declared as a static method")
+                }
+
                 def example = m.invoke(null)
 
                 LinkedHashMap map = JSONObjectUtil.rehashObject(example, LinkedHashMap.class)
@@ -972,6 +990,24 @@ ${cols.join("\n")}
             cols.addAll(apiFields.collect { k, v ->
                 if (v instanceof String) {
                     return """action.${k} = "${v}";"""
+                } else if (v instanceof Collection) {
+                    Collection c = v as Collection
+                    if (c.isEmpty()) {
+                        return "action.${k} = new ArrayList();"
+                    } else {
+                        def item = c[0]
+
+                        if (item instanceof String) {
+                            def lst = c.collect {
+                                return "\"" + it + "\""
+                            }
+
+                            return "action.${k} = asList(${lst.join(",")});"
+                        } else {
+                            return "action.${k} = asList(${c.join(",")});"
+                        }
+                    }
+
                 } else {
                     return "action.${k} = ${v};"
                 }

@@ -17,6 +17,8 @@ import org.zstack.header.zone.ZoneVO;
 
 import java.util.List;
 
+import static java.util.Arrays.asList;
+
 /**
  * @api create a new vm instance
  * @cli
@@ -265,5 +267,17 @@ public class APICreateVmInstanceMsg extends APICreateMessage {
 
     public void setPrimaryStorageUuidForRootVolume(String primaryStorageUuidForRootVolume) {
         this.primaryStorageUuidForRootVolume = primaryStorageUuidForRootVolume;
+    }
+
+    public static APICreateVmInstanceMsg __example__() {
+        APICreateVmInstanceMsg msg = new APICreateVmInstanceMsg();
+        msg.setName("vm1");
+        msg.setDescription("this is a vm");
+        msg.setClusterUuid(uuid());
+        msg.setDataDiskOfferingUuids(asList(uuid(), uuid()));
+        msg.setImageUuid(uuid());
+        msg.setInstanceOfferingUuid(uuid());
+        msg.setL3NetworkUuids(asList(uuid()));
+        return msg;
     }
 }
