@@ -954,6 +954,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             fireEvent.run();
             bus.reply(msg, reply);
             completion.done();
+            return;
         } else if (operation == VmAbnormalLifeCycleOperation.VmPausedFromRunningStateHostNotChanged) {
             // just synchronize database
             self.setHostUuid(msg.getHostUuid());
@@ -961,6 +962,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             fireEvent.run();
             bus.reply(msg, reply);
             completion.done();
+            return;
         }
 
         List<VmAbnormalLifeCycleExtensionPoint> exts = pluginRgty.getExtensionList(VmAbnormalLifeCycleExtensionPoint.class);
