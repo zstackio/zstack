@@ -26,3 +26,4 @@ premium/
 .project
 .settings
 zstack-api.log
+.vscode/
