@@ -4,4 +4,8 @@
     <message>
         <name>org.zstack.header.host.ChangeVmPasswordMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.header.host.SetVolumeQosOnKVMHostMsg</name>
+    </message>
 </service>
