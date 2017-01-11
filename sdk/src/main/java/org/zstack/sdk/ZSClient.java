@@ -238,7 +238,9 @@ public class ZSClient {
                     .addPathSegment(info.path.replaceFirst("/", ""));
 
             if (!qaction.conditions.isEmpty()) {
-                urlBuilder.addQueryParameter("q", join(qaction.conditions, ","));
+                for (String cond : qaction.conditions) {
+                    urlBuilder.addQueryParameter("q", cond);
+                }
             }
             if (qaction.limit != null) {
                 urlBuilder.addQueryParameter("limit", String.format("%s", qaction.limit));
