@@ -1,6 +1,7 @@
 package org.zstack.storage.primary.local;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
@@ -1400,13 +1401,17 @@ public class LocalStorageBase extends PrimaryStorageBase {
     }
 
     private void createResourceRefVO(String resUuid, String resType, long size, String hostUuid) {
-        LocalStorageResourceRefVO ref = new LocalStorageResourceRefVO();
-        ref.setPrimaryStorageUuid(self.getUuid());
-        ref.setSize(size);
-        ref.setResourceType(resType);
-        ref.setResourceUuid(resUuid);
-        ref.setHostUuid(hostUuid);
-        dbf.persist(ref);
+        try {
+            LocalStorageResourceRefVO ref = new LocalStorageResourceRefVO();
+            ref.setPrimaryStorageUuid(self.getUuid());
+            ref.setSize(size);
+            ref.setResourceType(resType);
+            ref.setResourceUuid(resUuid);
+            ref.setHostUuid(hostUuid);
+            dbf.persist(ref);
+        } catch (DataIntegrityViolationException e) {
+            logger.warn("LocalStorageResourceRefVO Duplicated Entry", e);
+        }
     }
 
     @Override
@@ -1679,14 +1684,12 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 done(new FlowDoneHandler(msg) {
                     @Override
                     public void handle(Map data) {
-                        SimpleQuery<LocalStorageResourceRefVO> q = dbf.createQuery(LocalStorageResourceRefVO.class);
-                        q.add(LocalStorageResourceRefVO_.resourceUuid, Op.EQ, msg.getIsoSpec().getInventory().getUuid());
-                        q.add(LocalStorageResourceRefVO_.primaryStorageUuid, Op.EQ, self.getUuid());
-                        q.add(LocalStorageResourceRefVO_.resourceType, Op.EQ, ImageVO.class.getSimpleName());
-                        if (!q.isExists()) {
-                            createResourceRefVO(msg.getIsoSpec().getInventory().getUuid(), ImageVO.class.getSimpleName(),
-                                    msg.getIsoSpec().getInventory().getActualSize(), msg.getDestHostUuid());
-                        }
+                        createResourceRefVO(
+                                msg.getIsoSpec().getInventory().getUuid(),
+                                ImageVO.class.getSimpleName(),
+                                msg.getIsoSpec().getInventory().getActualSize(),
+                                msg.getDestHostUuid()
+                        );
 
                         bus.reply(msg, reply);
                     }
