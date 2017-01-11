@@ -48,6 +48,7 @@ import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 
 /**
  */
@@ -356,6 +357,13 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                         }
                     }
 
+                    if (ZoneVO.class.getSimpleName().equals(action.getRootIssuer())) {
+                        dbf.removeByPrimaryKeys(vminvs
+                                        .stream()
+                                        .map(p -> p.getInventory().getUuid())
+                                        .collect(Collectors.toList()),
+                                VmInstanceVO.class);
+                    }
                     completion.success();
                 }
             });
