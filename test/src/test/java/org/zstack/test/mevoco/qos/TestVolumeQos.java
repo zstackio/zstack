@@ -12,7 +12,6 @@ import org.zstack.header.volume.APISetVolumeQosEvent;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
-import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -33,9 +32,11 @@ public class TestVolumeQos {
     @Before
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
-        WebBeanConstructor con = new WebBeanConstructor();
-        deployer = new Deployer("deployerXml/vm/TestCreateVm.xml", con);
+//        BeanConstructor con = new BeanConstructor();
+//        con.addXml("mevocoHostBaseServiceSimulator.xml");
+        deployer = new Deployer("deployerXml/vm/TestCreateVm.xml");
         deployer.addSpringConfig("mevocoRelated.xml");
+        deployer.addSpringConfig("mevocoHostBaseSimulator.xml");
         deployer.build();
         api = deployer.getApi();
         loader = deployer.getComponentLoader();
