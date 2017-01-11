@@ -63,6 +63,7 @@ public class TagApiInterceptor implements ApiMessageInterceptor {
             } catch (OperationFailureException oe) {
                 throw new ApiMessageInterceptionException(oe.getErrorCode());
             }
+            checkIfResourceHasThisTagType(msg.getResourceUuid(), msg.getResourceType());
         }
     }
 
@@ -87,6 +88,19 @@ public class TagApiInterceptor implements ApiMessageInterceptor {
         }
     }
 
+    @Transactional(readOnly = true)
+    private void checkIfResourceHasThisTagType(String resourceUuid, String resourceType) {
+        String sql = String.format("select count(vo.uuid) from %s vo where " +
+                " vo.uuid = :resourceUuid", resourceType);
+        TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
+        q.setParameter("resourceUuid", resourceUuid);
+
+        Long size = q.getSingleResult();
+        if (size <= 0) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError("The argument :'resourceType' doesn't match uuid"));
+        }
+
+    }
 
     @Transactional(readOnly = true)
     private void checkAccountForSystemTag(APIDeleteTagMsg msg) {
