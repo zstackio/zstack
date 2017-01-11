@@ -12,7 +12,7 @@
          http://zstack.org/schema/zstack/plugin.xsd"
        default-init-method="init" default-destroy-method="destroy">
 
-    <bean id="mevocoHostBaseService" class="org.zstack.test.compute.host.MevocoHostBaseSimulator">
+    <bean id="MevocoHostBaseService" class="org.zstack.test.compute.host.MevocoHostBaseSimulator">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Service"/>
         </zstack:plugin>

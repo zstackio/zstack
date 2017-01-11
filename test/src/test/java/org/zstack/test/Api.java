@@ -103,6 +103,7 @@ import org.zstack.ipsec.IPsecConnectionInventory;
 import org.zstack.kvm.APIAddKVMHostMsg;
 import org.zstack.kvm.APIUpdateKVMHostMsg;
 import org.zstack.kvm.KVMHostInventory;
+import org.zstack.header.volume.APIDeleteVolumeQosMsg;
 import org.zstack.license.*;
 import org.zstack.license.LicenseInventory;
 import org.zstack.logging.APIDeleteLogEvent;
@@ -3965,6 +3966,16 @@ public class Api implements CloudBusEventListener {
         return evt;
     }
 
+    public APIDeleteVolumeQosEvent deleteDiskQos(String volumeUuid) throws ApiSenderException {
+        APIDeleteVolumeQosMsg msg = new APIDeleteVolumeQosMsg();
+        msg.setUuid(volumeUuid);
+        msg.setSession(adminSession);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIDeleteVolumeQosEvent evt = sender.send(msg, APIDeleteVolumeQosEvent.class);
+        return evt;
+    }
+
     public APIGetVolumeQosReply getVmDiskQos(String volumeUuid) throws ApiSenderException {
         APIGetVolumeQosMsg msg = new APIGetVolumeQosMsg();
         msg.setUuid(volumeUuid);
@@ -3975,7 +3986,7 @@ public class Api implements CloudBusEventListener {
         return reply;
     }
 
-    public APISetNicQosEvent setVmNicQos(String vmUuid, String vmNicUuid, long outbound) throws ApiSenderException {
+    public APISetNicQosEvent setVmNicQos(String vmNicUuid, long outbound) throws ApiSenderException {
         APISetNicQosMsg msg = new APISetNicQosMsg();
         msg.setUuid(vmNicUuid);
         msg.setOutboundBandwidth(outbound);
@@ -3986,7 +3997,18 @@ public class Api implements CloudBusEventListener {
         return evt;
     }
 
-    public APISetNicQosEvent setVmNicQos(String vmUuid, String vmNicUuid, long inbound, long outbound) throws ApiSenderException {
+    public APIDeleteNicQosEvent deleteVmNicQos(String vmUuid, String direction) throws ApiSenderException {
+        APIDeleteNicQosMsg msg = new APIDeleteNicQosMsg();
+        msg.setUuid(vmUuid);
+        msg.setDirection(direction);
+        msg.setSession(adminSession);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIDeleteNicQosEvent evt = sender.send(msg, APIDeleteNicQosEvent.class);
+        return evt;
+    }
+
+    public APISetNicQosEvent setVmNicQos(String vmNicUuid, long inbound, long outbound) throws ApiSenderException {
         APISetNicQosMsg msg = new APISetNicQosMsg();
         msg.setUuid(vmNicUuid);
         msg.setInboundBandwidth(inbound);
@@ -3998,7 +4020,7 @@ public class Api implements CloudBusEventListener {
         return evt;
     }
 
-    public APIGetNicQosReply getVmNicQos(String vmUuid, String vmNicUuid) throws ApiSenderException {
+    public APIGetNicQosReply getVmNicQos(String vmNicUuid) throws ApiSenderException {
         APIGetNicQosMsg msg = new APIGetNicQosMsg();
         msg.setUuid(vmNicUuid);
         msg.setSession(adminSession);
