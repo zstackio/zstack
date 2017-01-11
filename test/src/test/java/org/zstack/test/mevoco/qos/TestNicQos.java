@@ -7,6 +7,8 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.errorcode.SysErrors;
+import org.zstack.header.tag.SystemTagVO;
+import org.zstack.header.vm.APIDeleteNicQosEvent;
 import org.zstack.header.vm.APIGetNicQosReply;
 import org.zstack.header.vm.APISetNicQosEvent;
 import org.zstack.test.Api;
@@ -49,28 +51,41 @@ public class TestNicQos {
         String uuid = deployer.vms.get("TestVm").getUuid();
 
         try {
-            api.setVmNicQos(uuid, nicUuid, 1023l, 2048000l);
+            api.setVmNicQos(nicUuid, 1023l, 2048000l);
             Assert.assertTrue("inbound/outbound must more than 1024", false);
         } catch(ApiSenderException e) {
             Assert.assertEquals(SysErrors.INVALID_ARGUMENT_ERROR.toString(), e.getError().getCode());
         }
 
-        APISetNicQosEvent evt = api.setVmNicQos(uuid, nicUuid, 1024l, 2048000l);
+        APISetNicQosEvent evt = api.setVmNicQos(nicUuid, 1024l, 2048000l);
         Assert.assertTrue(evt.isSuccess());
 
-        APIGetNicQosReply reply = api.getVmNicQos(uuid, nicUuid);
+        APIGetNicQosReply reply = api.getVmNicQos(nicUuid);
         Assert.assertTrue(reply.isSuccess());
 
 
         Assert.assertEquals(1024l, reply.getInboundBandwidth());
         Assert.assertEquals(2048000l, reply.getOutboundBandwidth());
 
-        evt = api.setVmNicQos(uuid, nicUuid, 1024000l);
+        evt = api.setVmNicQos(nicUuid, 1024000l);
         Assert.assertTrue(evt.isSuccess());
 
-        reply = api.getVmNicQos(uuid, nicUuid);
+        reply = api.getVmNicQos(nicUuid);
         Assert.assertTrue(reply.isSuccess());
         Assert.assertEquals(1024000l, reply.getOutboundBandwidth());
+
+        APIDeleteNicQosEvent event = api.deleteVmNicQos(nicUuid, "in");
+        Assert.assertTrue(event.isSuccess());
+
+        reply = api.getVmNicQos(nicUuid);
+        Assert.assertTrue(reply.isSuccess());
+        Assert.assertEquals(1024000l, reply.getOutboundBandwidth());
+        Assert.assertEquals(-1l, reply.getInboundBandwidth());
+
+        event = api.deleteVmNicQos(nicUuid, "out");
+        Assert.assertTrue(event.isSuccess());
+        SystemTagVO tvo = dbf.findByUuid(nicUuid, SystemTagVO.class);
+        Assert.assertNull(tvo);
 
     }
 }
