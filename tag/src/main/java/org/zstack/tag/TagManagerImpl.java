@@ -606,19 +606,6 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         return resourceTypeClassMap.keySet();
     }
 
-    @Transactional(readOnly = true)
-    private void checkIfResourceHasThisTagType(String resourceUuid, String resourceType) {
-        String sql = String.format("select count(vo.uuid) from %s vo where " +
-                " vo.uuid = :resourceUuid", resourceType);
-        TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
-        q.setParameter("resourceUuid", resourceUuid);
-
-        Long size = q.getSingleResult();
-        if (size <= 0) {
-            throw new OperationFailureException(errf.stringToInvalidArgumentError("The argument :'resourceType' doesn't match uuid"));
-        }
-
-    }
 
     @Override
     public void validateSystemTag(String resourceUuid, String resourceType, String tag) {
@@ -635,7 +622,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
                     String.format("no system tag matches %s", tag)
             ));
         }
-        checkIfResourceHasThisTagType(resourceUuid, resourceType);
+
     }
 
     @Override
