@@ -3,6 +3,7 @@
     <TestCase class="org.zstack.test.compute.vm.TestVmAllocateNicFlow"/>
     <TestCase class="org.zstack.test.compute.vm.TestVmCreateOnHypervisorFlow"/>
     <TestCase class="org.zstack.test.compute.vm.TestCreateVm"/>
+    <TestCase class="org.zstack.test.compute.vm.CreateVmForSameL3"/>
     <TestCase class="org.zstack.test.compute.vm.TestDestroyVm"/>
     <TestCase class="org.zstack.test.compute.vm.TestDestroyVm1"/>
     <TestCase class="org.zstack.test.compute.vm.TestRebootVm"/>
