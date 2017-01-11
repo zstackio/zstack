@@ -174,6 +174,8 @@ public class Api implements CloudBusEventListener {
                         .setPort(8989)
                         .setDefaultPollingInterval(100, TimeUnit.MILLISECONDS)
                         .setDefaultPollingTimeout(15, TimeUnit.SECONDS)
+                        .setReadTimeout(10, TimeUnit.MINUTES)
+                        .setWriteTimeout(10, TimeUnit.MINUTES)
                         .build()
         );
     }
