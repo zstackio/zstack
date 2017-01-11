@@ -7,6 +7,8 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.errorcode.SysErrors;
+import org.zstack.header.tag.SystemTagVO;
+import org.zstack.header.volume.APIDeleteVolumeQosEvent;
 import org.zstack.header.volume.APIGetVolumeQosReply;
 import org.zstack.header.volume.APISetVolumeQosEvent;
 import org.zstack.test.Api;
@@ -62,6 +64,12 @@ public class TestVolumeQos {
 
 
         Assert.assertEquals(1024l, reply.getVolumeBandwidth());
+
+        APIDeleteVolumeQosEvent event = api.deleteDiskQos(rootVolumeUuid);
+        Assert.assertTrue(event.isSuccess());
+
+        SystemTagVO tvo = dbf.findByUuid(rootVolumeUuid, SystemTagVO.class);
+        Assert.assertNull(tvo);
 
     }
 }
