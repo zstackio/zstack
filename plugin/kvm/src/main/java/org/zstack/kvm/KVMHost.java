@@ -1315,7 +1315,9 @@ public class KVMHost extends HostBase implements Host {
         final VolumeInventory vol = msg.getInventory();
         final VmInstanceInventory vm = msg.getVmInventory();
         to.setInstallPath(vol.getInstallPath());
-        to.setDeviceId(vol.getDeviceId());
+        if (vol.getDeviceId() != null) {
+            to.setDeviceId(vol.getDeviceId());
+        }
         to.setDeviceType(getVolumeTOType(vol));
         to.setVolumeUuid(vol.getUuid());
         // volumes can only be attached on Windows if the virtio is enabled
@@ -1808,7 +1810,7 @@ public class KVMHost extends HostBase implements Host {
             String platform = q.findValue();
 
             to.setUseVirtio(ImagePlatform.valueOf(platform).isParaVirtualization());
-            if (! (nic.getIp().isEmpty() || nic.getIp() == null) && VmGlobalConfig.VM_CLEAN_TRAFFIC.value(Boolean.class)) {
+            if (!(nic.getIp().isEmpty() || nic.getIp() == null) && VmGlobalConfig.VM_CLEAN_TRAFFIC.value(Boolean.class)) {
                 to.setIp(nic.getIp());
             }
         }
@@ -1905,7 +1907,7 @@ public class KVMHost extends HostBase implements Host {
 
         List<NicTO> nics = new ArrayList<>(spec.getDestNics().size());
         for (VmNicInventory nic : spec.getDestNics()) {
-            if ( ! spec.getVmInventory().getType().equals(VmInstanceConstant.USER_VM_TYPE)) {
+            if (!spec.getVmInventory().getType().equals(VmInstanceConstant.USER_VM_TYPE)) {
                 nic.setIp("");
             }
             nics.add(completeNicInfo(nic));
