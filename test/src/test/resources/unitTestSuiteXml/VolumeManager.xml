@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <UnitTestSuiteConfig xmlns="http://zstack.org/schema/zstack" timeout="600">
-	<TestCase class="org.zstack.test.storage.volume.TestCreateDataVolume"/>
+    <TestCase class="org.zstack.test.storage.volume.TestCreateDataVolume"/>
     <TestCase class="org.zstack.test.storage.volume.TestCreateDataVolume2"/>
     <TestCase class="org.zstack.test.storage.volume.TestCreateDataVolume3"/>
     <TestCase class="org.zstack.test.storage.volume.TestCreateDataVolume4"/>
     <TestCase class="org.zstack.test.storage.volume.TestCreateDataVolume5"/>
-	<TestCase class="org.zstack.test.storage.volume.TestDeleteDataVolume"/>
-	<TestCase class="org.zstack.test.storage.volume.TestQueryVolume"/>
+    <TestCase class="org.zstack.test.storage.volume.TestDeleteDataVolume"/>
+    <TestCase class="org.zstack.test.storage.volume.TestQueryVolume"/>
     <TestCase class="org.zstack.test.storage.volume.TestDataVolumeGetCandidateVm"/>
     <TestCase class="org.zstack.test.storage.volume.TestDataVolumeGetCandidateVm1"/>
     <TestCase class="org.zstack.test.storage.volume.TestVmGetAttachableVolume"/>
@@ -14,4 +14,6 @@
     <TestCase class="org.zstack.test.storage.volume.TestGetVolumeFormat"/>
     <TestCase class="org.zstack.test.storage.volume.TestUpdateVolume"/>
     <TestCase class="org.zstack.test.storage.volume.TestPolicyForVolume"/>
+    <TestCase class="org.zstack.test.storage.volume.TestAttachShareableDataVolume"/>
+    <TestCase class="org.zstack.test.storage.volume.TestDetachShareableDataVolume"/>
 </UnitTestSuiteConfig>
