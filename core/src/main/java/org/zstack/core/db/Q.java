@@ -23,7 +23,7 @@ public class Q {
         q = dbf.createQuery(clz);
     }
 
-    public Q select(SingularAttribute...attrs) {
+    public Q select(SingularAttribute... attrs) {
         q.select(attrs);
         return this;
     }
@@ -46,6 +46,10 @@ public class Q {
     public Q start(int start) {
         q.setStart(start);
         return this;
+    }
+
+    public Long count() {
+        return q.count();
     }
 
     public <T> T find() {
