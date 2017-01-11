@@ -4632,4 +4632,20 @@ public class Api implements CloudBusEventListener {
         sender.send(msg, APIDeleteIPsecConnectionEvent.class);
         return;
     }
+
+    public List<VmNicInventory> getL3NetworkVmNics(String uuid) throws ApiSenderException {
+        QueryVmNicAction a = new QueryVmNicAction();
+        a.conditions = Arrays.asList(
+                String.format("l3NetworkUuid=%s", uuid),
+                String.format("vmInstance.type=%s", VmInstanceConstant.USER_VM_TYPE)
+        );
+        a.sessionId = getSessionUuid(adminSession);
+        QueryVmNicAction.Result r = a.call();
+        throwExceptionIfNeed(r.error);
+        return JSONObjectUtil.toCollection(
+                JSONObjectUtil.toJsonString(r.value.inventories),
+                ArrayList.class,
+                VmNicInventory.class
+        );
+    }
 }

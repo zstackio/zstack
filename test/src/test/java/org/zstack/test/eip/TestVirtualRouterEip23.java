@@ -58,8 +58,10 @@ public class TestVirtualRouterEip23 {
     public void test() throws ApiSenderException {
         L3NetworkInventory publicl3 = deployer.l3Networks.get("PublicNetwork");
         VipInventory vip = api.acquireIp(publicl3.getUuid());
+        L3NetworkInventory l3 = deployer.l3Networks.get("GuestNetwork");
         List<VmNicInventory> nics = api.getEipAttachableVmNicsByVipUuid(vip.getUuid());
-        Assert.assertEquals(0, nics.size());
+        List<VmNicInventory> guestNics = api.getL3NetworkVmNics(l3.getUuid());
+        Assert.assertEquals(guestNics.size(), nics.size());
 
         EipInventory eip = deployer.eips.get("eip");
 
@@ -68,7 +70,6 @@ public class TestVirtualRouterEip23 {
         nics = api.getEipAttachableVmNicsByEipUuid(eip.getUuid());
         Assert.assertEquals(1, nics.size());
         VmNicInventory nic = nics.get(0);
-        L3NetworkInventory l3 = deployer.l3Networks.get("GuestNetwork");
         Assert.assertEquals(l3.getUuid(), nic.getL3NetworkUuid());
 
         nics = api.getEipAttachableVmNicsByVipUuid(vip.getUuid());
