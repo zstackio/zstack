@@ -11,6 +11,8 @@ public class ZSConfig {
     long defaultPollingTimeout = TimeUnit.HOURS.toMillis(3);
     long defaultPollingInterval = TimeUnit.SECONDS.toMillis(1);
     String webHook;
+    Long readTimeout;
+    Long writeTimeout;
 
     public String getHostname() {
         return hostname;
@@ -55,6 +57,17 @@ public class ZSConfig {
             config.defaultPollingInterval = unit.toMillis(value);
             return this;
         }
+
+        public Builder setReadTimeout(long value, TimeUnit unit) {
+            config.readTimeout = unit.toMillis(value);
+            return this;
+        }
+
+        public Builder setWriteTimeout(long value, TimeUnit unit) {
+            config.writeTimeout = unit.toMillis(value);
+            return this;
+        }
+
 
         public ZSConfig build() {
             return config;

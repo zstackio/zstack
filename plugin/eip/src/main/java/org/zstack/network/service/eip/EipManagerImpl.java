@@ -7,6 +7,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.db.UpdateQuery;
@@ -130,7 +131,9 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
 
     @Transactional(readOnly = true)
     private List<VmNicInventory> getAttachableVmNicForEip(String eipUuid, String vipUuid) {
-        String zoneUuid = null;
+        String zoneUuid;
+        String providerType;
+
         if (eipUuid != null) {
             String sql = "select l3.zoneUuid, vip.uuid" +
                     " from L3NetworkVO l3, VipVO vip, EipVO eip" +
@@ -142,6 +145,10 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
             Tuple t = q.getSingleResult();
             zoneUuid = t.get(0, String.class);
             vipUuid = t.get(1, String.class);
+
+            providerType = SQL.New("select v.serviceProvider from VipVO v, EipVO e where e.vipUuid = v.uuid" +
+                    " and e.uuid = :euuid").param("euuid", eipUuid).find();
+
         } else {
             String sql = "select l3.zoneUuid" +
                     " from L3NetworkVO l3, VipVO vip" +
@@ -150,28 +157,53 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
             TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
             q.setParameter("vipUuid", vipUuid);
             zoneUuid = q.getSingleResult();
+
+            providerType = SQL.New("select v.serviceProvider from VipVO v where v.uuid = :uuid")
+                    .param("uuid", vipUuid).find();
         }
 
+        List<String> l3Uuids;
 
-        String sql = "select l3.uuid" +
-                " from L3NetworkVO l3, VipVO vip, NetworkServiceL3NetworkRefVO ref" +
-                " where l3.system = :system" +
-                " and l3.uuid != vip.l3NetworkUuid" +
-                " and l3.uuid = ref.l3NetworkUuid" +
-                " and ref.networkServiceType = :nsType" +
-                " and l3.zoneUuid = :zoneUuid" +
-                " and vip.uuid = :vipUuid";
-        TypedQuery<String> l3q = dbf.getEntityManager().createQuery(sql, String.class);
-        l3q.setParameter("vipUuid", vipUuid);
-        l3q.setParameter("system", false);
-        l3q.setParameter("zoneUuid", zoneUuid);
-        l3q.setParameter("nsType", EipConstant.EIP_NETWORK_SERVICE_TYPE);
-        List<String> l3Uuids = l3q.getResultList();
+        if (providerType != null) {
+            // the eip is created on the backend
+            l3Uuids = SQL.New("select l3.uuid" +
+                    " from L3NetworkVO l3, VipVO vip, NetworkServiceL3NetworkRefVO ref, NetworkServiceProviderVO np" +
+                    " where l3.system = :system" +
+                    " and l3.uuid != vip.l3NetworkUuid" +
+                    " and l3.uuid = ref.l3NetworkUuid" +
+                    " and ref.networkServiceType = :nsType" +
+                    " and l3.zoneUuid = :zoneUuid" +
+                    " and vip.uuid = :vipUuid" +
+                    " and np.uuid = ref.networkServiceProviderUuid" +
+                    " and np.type = :npType")
+                    .param("system", false)
+                    .param("zoneUuid", zoneUuid)
+                    .param("nsType", EipConstant.EIP_NETWORK_SERVICE_TYPE)
+                    .param("npType", providerType)
+                    .param("vipUuid", vipUuid)
+                    .list();
+        } else {
+            // the eip is not created on the backend
+            l3Uuids = SQL.New("select l3.uuid" +
+                    " from L3NetworkVO l3, VipVO vip, NetworkServiceL3NetworkRefVO ref" +
+                    " where l3.system = :system" +
+                    " and l3.uuid != vip.l3NetworkUuid" +
+                    " and l3.uuid = ref.l3NetworkUuid" +
+                    " and ref.networkServiceType = :nsType" +
+                    " and l3.zoneUuid = :zoneUuid" +
+                    " and vip.uuid = :vipUuid")
+                    .param("system", false)
+                    .param("zoneUuid", zoneUuid)
+                    .param("nsType", EipConstant.EIP_NETWORK_SERVICE_TYPE)
+                    .param("vipUuid", vipUuid)
+                    .list();
+        }
+
         if (l3Uuids.isEmpty()) {
-            return new ArrayList<VmNicInventory>();
+            return new ArrayList<>();
         }
 
-        sql = "select nic" +
+        String sql = "select nic" +
                 " from VmNicVO nic, VmInstanceVO vm" +
                 " where nic.l3NetworkUuid in (:l3Uuids)" +
                 " and nic.vmInstanceUuid = vm.uuid" +
