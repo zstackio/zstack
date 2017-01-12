@@ -207,9 +207,10 @@ public class ProgressReportService extends AbstractService implements Management
         q.orderBy(ProgressVO_.lastOpDate, SimpleQuery.Od.ASC);
         List<ProgressVO> vos = q.list();
         if (q.list().size() == 0) {
-            reply.setError(errf.instantiateErrorCode(ProgressError.NO_SUCH_TASK_RUNNING,
-                    "no such task running now"));
-            reply.setSuccess(false);
+//            reply.setError(errf.instantiateErrorCode(ProgressError.NO_SUCH_TASK_RUNNING,
+//                    "no such task running now"));
+//            reply.setSuccess(false);
+            reply.setSuccess(true);
         } else {
             ProgressVO vo = vos.get(vos.size() - 1);
             reply.setProgress(vo.getProgress());
