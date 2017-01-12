@@ -14,7 +14,6 @@ import org.zstack.header.vm.APISetNicQosEvent;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
-import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -35,8 +34,7 @@ public class TestNicQos {
     @Before
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
-        WebBeanConstructor con = new WebBeanConstructor();
-        deployer = new Deployer("deployerXml/vm/TestCreateVm.xml", con);
+        deployer = new Deployer("deployerXml/kvm/TestCreateVmOnKvm.xml");
         deployer.addSpringConfig("mevocoRelated.xml");
         deployer.build();
         api = deployer.getApi();

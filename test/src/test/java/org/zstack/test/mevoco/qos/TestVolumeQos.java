@@ -34,11 +34,8 @@ public class TestVolumeQos {
     @Before
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
-//        BeanConstructor con = new BeanConstructor();
-//        con.addXml("mevocoHostBaseServiceSimulator.xml");
-        deployer = new Deployer("deployerXml/vm/TestCreateVm.xml");
+        deployer = new Deployer("deployerXml/kvm/TestCreateVmOnKvm.xml");
         deployer.addSpringConfig("mevocoRelated.xml");
-        deployer.addSpringConfig("mevocoHostBaseSimulator.xml");
         deployer.build();
         api = deployer.getApi();
         loader = deployer.getComponentLoader();
