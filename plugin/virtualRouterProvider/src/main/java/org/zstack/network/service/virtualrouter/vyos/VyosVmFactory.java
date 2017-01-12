@@ -171,8 +171,8 @@ public class VyosVmFactory extends VirtualRouterApplianceVmFactory implements Co
         VirtualRouterGlobalConfig.VYOS_PASSWORD.installValidateExtension(new GlobalConfigValidatorExtensionPoint() {
             @Override
             public void validateGlobalConfig(String category, String name, String oldValue, String newValue) throws GlobalConfigException {
-                if (!newValue.matches("[A-Za-z0-9-$@!%*#?&_]{1,}")) {
-                    throw new GlobalConfigException("the vrouter password can only contain alphabet, number and these special character: -$@!%*#?&_");
+                if (!newValue.matches("^[a-zA-Z0-9][A-Za-z0-9-_#]*")) {
+                    throw new GlobalConfigException("the vrouter password's first character must be a letter or number, besides no characters other than letters, numbers and these special characters: -_#");
                 }
             }
         });
