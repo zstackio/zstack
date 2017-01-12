@@ -7,7 +7,6 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.Q;
-import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.db.UpdateQuery;
 import org.zstack.core.thread.AsyncThread;
@@ -85,10 +84,10 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
     @Override
     public void detachHook(String clusterUuid, Completion completion) {
-        SimpleQuery<ClusterVO> q = dbf.createQuery(ClusterVO.class);
-        q.select(ClusterVO_.hypervisorType);
-        q.add(ClusterVO_.uuid, Op.EQ, clusterUuid);
-        String hvType = q.findValue();
+        String hvType = Q.New(ClusterVO.class)
+                .select(ClusterVO_.hypervisorType)
+                .eq(ClusterVO_.uuid, clusterUuid)
+                .findValue();
 
         LocalStorageHypervisorFactory f = getHypervisorBackendFactory(hvType);
         final LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
@@ -250,10 +249,10 @@ public class LocalStorageBase extends PrimaryStorageBase {
     private void migrateVolume(MigrateVolumeOnLocalStorageMsg msg, NoErrorCompletion completion) {
         MigrateVolumeOnLocalStorageReply reply = new MigrateVolumeOnLocalStorageReply();
 
-        SimpleQuery<LocalStorageResourceRefVO> refq = dbf.createQuery(LocalStorageResourceRefVO.class);
-        refq.add(LocalStorageResourceRefVO_.resourceUuid, Op.EQ, msg.getVolumeUuid());
-        refq.add(LocalStorageResourceRefVO_.resourceType, Op.EQ, VolumeVO.class.getSimpleName());
-        LocalStorageResourceRefVO ref = refq.find();
+        LocalStorageHostRefVO ref = Q.New(LocalStorageResourceRefVO.class)
+                .eq(LocalStorageResourceRefVO_.resourceUuid, msg.getVolumeUuid())
+                .eq(LocalStorageResourceRefVO_.resourceType, VolumeVO.class.getSimpleName())
+                .find();
         if (ref == null) {
             reply.setError(errf.stringToOperationError(String.format("volume[uuid:%s] is not on the local storage anymore," +
                     "it may have been deleted", msg.getVolumeUuid())));
@@ -284,15 +283,16 @@ public class LocalStorageBase extends PrimaryStorageBase {
             LocalStorageHypervisorBackend bkd;
 
             {
-                SimpleQuery<LocalStorageResourceRefVO> q = dbf.createQuery(LocalStorageResourceRefVO.class);
-                q.add(LocalStorageResourceRefVO_.resourceType, Op.EQ, VolumeVO.class.getSimpleName());
-                q.add(LocalStorageResourceRefVO_.resourceUuid, Op.EQ, msg.getVolumeUuid());
-                volumeRefVO = q.find();
+                volumeRefVO = Q.New(LocalStorageResourceRefVO.class)
+                        .eq(LocalStorageResourceRefVO_.resourceType, VolumeVO.class.getSimpleName())
+                        .eq(LocalStorageResourceRefVO_.resourceUuid, msg.getVolumeUuid())
+                        .find();
+
                 ref = LocalStorageResourceRefInventory.valueOf(volumeRefVO);
 
-                SimpleQuery<VolumeSnapshotVO> sq = dbf.createQuery(VolumeSnapshotVO.class);
-                sq.add(VolumeSnapshotVO_.volumeUuid, Op.EQ, ref.getResourceUuid());
-                snapshots = sq.list();
+                snapshots = Q.New(VolumeSnapshotVO.class)
+                        .eq(VolumeSnapshotVO_.volumeUuid, ref.getResourceUuid())
+                        .list();
 
                 volume = dbf.findByUuid(ref.getResourceUuid(), VolumeVO.class);
 
@@ -316,10 +316,10 @@ public class LocalStorageBase extends PrimaryStorageBase {
                         }
                     });
 
-                    SimpleQuery<LocalStorageResourceRefVO> rq = dbf.createQuery(LocalStorageResourceRefVO.class);
-                    rq.add(LocalStorageResourceRefVO_.resourceType, Op.EQ, VolumeSnapshotVO.class.getSimpleName());
-                    rq.add(LocalStorageResourceRefVO_.resourceUuid, Op.IN, spUuids);
-                    snapshotRefVOS = rq.list();
+                    snapshotRefVOS = Q.New(LocalStorageResourceRefVO.class)
+                            .eq(LocalStorageResourceRefVO_.resourceType, VolumeSnapshotVO.class.getSimpleName())
+                            .in(LocalStorageResourceRefVO_.resourceUuid, spUuids)
+                            .list();
 
                     for (final VolumeSnapshotVO vo : snapshots) {
                         info = new ResourceInfo();
@@ -646,10 +646,10 @@ public class LocalStorageBase extends PrimaryStorageBase {
     private void handle(APIGetLocalStorageHostDiskCapacityMsg msg) {
         APIGetLocalStorageHostDiskCapacityReply reply = new APIGetLocalStorageHostDiskCapacityReply();
         if (msg.getHostUuid() != null) {
-            SimpleQuery<LocalStorageHostRefVO> q = dbf.createQuery(LocalStorageHostRefVO.class);
-            q.add(LocalStorageHostRefVO_.primaryStorageUuid, Op.EQ, msg.getPrimaryStorageUuid());
-            q.add(LocalStorageHostRefVO_.hostUuid, Op.EQ, msg.getHostUuid());
-            LocalStorageHostRefVO ref = q.find();
+            LocalStorageHostRefVO ref = Q.New(LocalStorageHostRefVO.class)
+                    .eq(LocalStorageHostRefVO_.primaryStorageUuid, msg.getPrimaryStorageUuid())
+                    .eq(LocalStorageHostRefVO_.hostUuid, msg.getHostUuid())
+                    .find();
             if (ref == null) {
                 reply.setError(errf.instantiateErrorCode(SysErrors.RESOURCE_NOT_FOUND,
                         String.format("local primary storage[uuid:%s] doesn't have the host[uuid:%s]",
@@ -666,9 +666,9 @@ public class LocalStorageBase extends PrimaryStorageBase {
             c.setTotalPhysicalCapacity(ref.getTotalPhysicalCapacity());
             reply.setInventories(list(c));
         } else {
-            SimpleQuery<LocalStorageHostRefVO> q = dbf.createQuery(LocalStorageHostRefVO.class);
-            q.add(LocalStorageHostRefVO_.primaryStorageUuid, Op.EQ, msg.getPrimaryStorageUuid());
-            List<LocalStorageHostRefVO> refs = q.list();
+            List<LocalStorageHostRefVO> refs = Q.New(LocalStorageHostRefVO.class)
+                    .eq(LocalStorageHostRefVO_.primaryStorageUuid, msg.getPrimaryStorageUuid())
+                    .list();
 
             List<HostDiskCapacity> cs = CollectionUtils.transformToList(refs, new Function<HostDiskCapacity, LocalStorageHostRefVO>() {
                 @Override
@@ -964,10 +964,10 @@ public class LocalStorageBase extends PrimaryStorageBase {
     }
 
     protected String getHostUuidByResourceUuid(String resUuid) {
-        SimpleQuery<LocalStorageResourceRefVO> q = dbf.createQuery(LocalStorageResourceRefVO.class);
-        q.select(LocalStorageResourceRefVO_.hostUuid);
-        q.add(LocalStorageResourceRefVO_.resourceUuid, Op.EQ, resUuid);
-        return q.findValue();
+        return Q.New(LocalStorageResourceRefVO.class)
+                .select(LocalStorageResourceRefVO_.hostUuid)
+                .eq(LocalStorageResourceRefVO_.resourceUuid, resUuid)
+                .findValue();
     }
 
     @Override
@@ -1078,10 +1078,10 @@ public class LocalStorageBase extends PrimaryStorageBase {
     }
 
     void deleteResourceRef(String hostUuid) {
-        SimpleQuery<LocalStorageResourceRefVO> rq = dbf.createQuery(LocalStorageResourceRefVO.class);
-        rq.add(LocalStorageResourceRefVO_.hostUuid, Op.EQ, hostUuid);
-        rq.add(LocalStorageResourceRefVO_.primaryStorageUuid, Op.EQ, self.getUuid());
-        List<LocalStorageResourceRefVO> refs = rq.list();
+        List<LocalStorageResourceRefVO> refs = Q.New(LocalStorageResourceRefVO.class)
+                .eq(LocalStorageResourceRefVO_.hostUuid, hostUuid)
+                .eq(LocalStorageResourceRefVO_.primaryStorageUuid, self.getUuid())
+                .list();
         if (refs.isEmpty()) {
             return;
         }
@@ -1397,10 +1397,10 @@ public class LocalStorageBase extends PrimaryStorageBase {
     }
 
     private void deleteResourceRefVO(String resourceUuid) {
-        SimpleQuery<LocalStorageResourceRefVO> q = dbf.createQuery(LocalStorageResourceRefVO.class);
-        q.add(LocalStorageResourceRefVO_.primaryStorageUuid, Op.EQ, self.getUuid());
-        q.add(LocalStorageResourceRefVO_.resourceUuid, Op.EQ, resourceUuid);
-        LocalStorageResourceRefVO ref = q.find();
+        LocalStorageResourceRefVO ref = Q.New(LocalStorageResourceRefVO.class)
+                .eq(LocalStorageResourceRefVO_.primaryStorageUuid, self.getUuid())
+                .eq(LocalStorageResourceRefVO_.resourceUuid, resourceUuid)
+                .find();
         dbf.remove(ref);
     }
 
@@ -1420,10 +1420,11 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
     @Override
     protected void handle(final DeleteVolumeOnPrimaryStorageMsg msg) {
-        SimpleQuery<LocalStorageResourceRefVO> q = dbf.createQuery(LocalStorageResourceRefVO.class);
-        q.add(LocalStorageResourceRefVO_.resourceUuid, Op.EQ, msg.getVolume().getUuid());
-        q.add(LocalStorageResourceRefVO_.resourceType, Op.EQ, VolumeVO.class.getSimpleName());
-        if (!q.isExists()) {
+        boolean isVolumeOnPs = Q.New(LocalStorageResourceRefVO.class)
+                .eq(LocalStorageResourceRefVO_.resourceUuid, msg.getVolume().getUuid())
+                .eq(LocalStorageResourceRefVO_.resourceType, VolumeVO.class.getSimpleName())
+                .isExists();
+        if (!isVolumeOnPs) {
             logger.debug(String.format("volume[uuid:%s] is not on the local storage[uuid:%s, name:%s]," +
                             "the host the volume is on may have been deleted",
                     msg.getVolume().getUuid(), self.getUuid(), self.getName()));
@@ -1927,11 +1928,10 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        List<String> hostUuids;
-                        SimpleQuery<LocalStorageHostRefVO> q = dbf.createQuery(LocalStorageHostRefVO.class);
-                        q.select(LocalStorageHostRefVO_.hostUuid);
-                        q.add(LocalStorageHostRefVO_.primaryStorageUuid, Op.EQ, self.getUuid());
-                        hostUuids = q.listValue();
+                        List<String> hostUuids = Q.New(LocalStorageHostRefVO.class)
+                                .select(LocalStorageHostRefVO_.hostUuid)
+                                .eq(LocalStorageHostRefVO_.primaryStorageUuid, self.getUuid())
+                                .listValues();
                         if (hostUuids == null || hostUuids.isEmpty()) {
                             trigger.next();
                             return;
@@ -2029,10 +2029,10 @@ public class LocalStorageBase extends PrimaryStorageBase {
     }
 
     protected LocalStorageHypervisorFactory getHypervisorBackendFactoryByHostUuid(String hostUuid) {
-        SimpleQuery<HostVO> q = dbf.createQuery(HostVO.class);
-        q.select(HostVO_.hypervisorType);
-        q.add(HostVO_.uuid, Op.EQ, hostUuid);
-        String hvType = q.findValue();
+        String hvType = Q.New(HostVO.class)
+                .select(HostVO_.hypervisorType)
+                .eq(HostVO_.uuid, hostUuid)
+                .findValue();
         return getHypervisorBackendFactory(hvType);
     }
 
@@ -2077,10 +2077,10 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
     @Override
     public void attachHook(final String clusterUuid, Completion completion) {
-        SimpleQuery<ClusterVO> q = dbf.createQuery(ClusterVO.class);
-        q.select(ClusterVO_.hypervisorType);
-        q.add(ClusterVO_.uuid, Op.EQ, clusterUuid);
-        String hvType = q.findValue();
+        String hvType = Q.New(ClusterVO.class)
+                .select(ClusterVO_.hypervisorType)
+                .eq(ClusterVO_.uuid, clusterUuid)
+                .findValue();
 
         LocalStorageHypervisorFactory f = getHypervisorBackendFactory(hvType);
         LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
