@@ -43,16 +43,12 @@
                 <loadBalancerPort>80</loadBalancerPort>
                 <vmNicRef>TestVm:GuestNetwork</vmNicRef>
             </listener>
-        </lb>
 
-        <lb>
-            <name>lb2</name>
-            <publicL3NetworkRef>PublicNetwork</publicL3NetworkRef>
             <listener>
                 <name>listener2</name>
                 <protocol>http</protocol>
-                <instancePort>80</instancePort>
-                <loadBalancerPort>80</loadBalancerPort>
+                <instancePort>180</instancePort>
+                <loadBalancerPort>180</loadBalancerPort>
                 <vmNicRef>TestVm:GuestNetwork</vmNicRef>
             </listener>
         </lb>

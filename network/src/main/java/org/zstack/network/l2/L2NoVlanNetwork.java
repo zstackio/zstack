@@ -126,7 +126,7 @@ public class L2NoVlanNetwork implements L2Network {
 
         final CheckL2NetworkOnHostReply reply = new CheckL2NetworkOnHostReply();
         L2NetworkRealizationExtensionPoint ext = l2Mgr.getRealizationExtension(l2Type, hvType);
-        ext.check(getSelfInventory(), msg.getHostUuid(), new Completion() {
+        ext.check(getSelfInventory(), msg.getHostUuid(), new Completion(msg) {
             @Override
             public void success() {
                 bus.reply(msg, reply);
