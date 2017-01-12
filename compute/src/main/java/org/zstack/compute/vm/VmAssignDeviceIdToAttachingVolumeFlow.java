@@ -19,6 +19,8 @@ import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.volume.VolumeVO_;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
 import java.util.BitSet;
 import java.util.List;
@@ -26,6 +28,7 @@ import java.util.Map;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmAssignDeviceIdToAttachingVolumeFlow implements Flow {
+    CLogger logger = Utils.getLogger(VmAssignDeviceIdToAttachingVolumeFlow.class);
     @Autowired
     private DatabaseFacade dbf;
     @Autowired
@@ -57,7 +60,7 @@ public class VmAssignDeviceIdToAttachingVolumeFlow implements Flow {
         if (exts == null || exts.isEmpty()) {
             dvol.setDeviceId(getNextVolumeDeviceId(spec.getVmInventory().getUuid()));
         } else if (exts.size() == 1) {
-            exts.get(0).getNextVolumeDeviceId(spec.getVmInventory().getUuid());
+            dvol.setDeviceId(exts.get(0).getNextVolumeDeviceId(spec.getVmInventory().getUuid()));
         } else {
             throw new OperationFailureException(errf.stringToOperationError(
                     "should not be more than one GetNextVolumeDeviceIdExtensionPoint implementation"));
