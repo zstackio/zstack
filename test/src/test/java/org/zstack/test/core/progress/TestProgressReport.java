@@ -115,10 +115,8 @@ public class TestProgressReport {
         q.add(ProgressVO_.resourceUuid, SimpleQuery.Op.EQ, cmd.getResourceUuid());
         Assert.assertFalse(q.isExists());
 
-        try {
-            reply = api.getProgressReport(cmd.getResourceUuid());
-        } catch (ApiSenderException e) {
-            Assert.assertEquals(ProgressError.NO_SUCH_TASK_RUNNING.toString(), e.getError().getCode());
-        }
+        // if no such task running, still return true
+        reply = api.getProgressReport(cmd.getResourceUuid());
+        Assert.assertTrue(reply.isSuccess());
     }
 }
