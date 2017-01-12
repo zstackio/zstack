@@ -65,6 +65,9 @@ public class TestVolumeQos {
         APIDeleteVolumeQosEvent event = api.deleteDiskQos(rootVolumeUuid);
         Assert.assertTrue(event.isSuccess());
 
+        reply = api.getVmDiskQos(rootVolumeUuid);
+        Assert.assertEquals(-1l, reply.getVolumeBandwidth());
+
         SystemTagVO tvo = dbf.findByUuid(rootVolumeUuid, SystemTagVO.class);
         Assert.assertNull(tvo);
 
