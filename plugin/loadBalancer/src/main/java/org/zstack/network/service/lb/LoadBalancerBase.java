@@ -722,10 +722,10 @@ public class LoadBalancerBase {
 
     private LoadBalancerStruct removeListenerStruct(LoadBalancerListenerInventory listener) {
         LoadBalancerStruct s = makeStruct();
-        Iterator<LoadBalancerListenerInventory> it = s.getListeners().iterator();
-        while (it.hasNext()) {
-            if (it.next().getUuid().equals(listener.getUuid())) {
-                it.remove();
+
+        for (LoadBalancerListenerInventory l : s.getListeners()) {
+            if (l.getUuid().equals(listener.getUuid())) {
+                l.setVmNicRefs(new ArrayList<>());
             }
         }
         return s;
