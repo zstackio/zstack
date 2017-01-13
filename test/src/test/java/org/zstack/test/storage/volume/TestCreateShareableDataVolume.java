@@ -15,6 +15,8 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.query.QueryOp;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.volume.APICreateDataVolumeEvent;
 import org.zstack.header.volume.APICreateDataVolumeMsg;
 import org.zstack.header.volume.VolumeInventory;
@@ -145,7 +147,20 @@ public class TestCreateShareableDataVolume {
         Assert.assertTrue(config.detachDataVolumeCmds.size() == 1);
         Assert.assertTrue(config.detachDataVolumeCmds.get(0).getVolume().getDeviceId() == 2);
 
-        //
+
+        // ensure shareable volume still attached after stop and start vm
+        logger.debug("ensure shareable volume still attached after stop and start vm");
+        api.stopVmInstance(vm.getUuid());
+        vm = api.startVmInstance(vm.getUuid());
+        Assert.assertEquals(VmInstanceState.Running.toString(), vm.getState());
+        VmInstanceVO vmvo = dbf.findByUuid(vm.getUuid(), VmInstanceVO.class);
+        Assert.assertNotNull(vmvo);
+        Assert.assertEquals(VmInstanceState.Running, vmvo.getState());
+        Assert.assertNotNull(vmvo.getHostUuid());
+        // one normal data volume, the second shareable data volume, sum up to 2
+        Assert.assertEquals(2, config.startVmCmd.getDataVolumes().size());
+
+        // the end
         api.attachVolumeToVm(vm.getUuid(), vol1.getUuid());
         Assert.assertTrue(Q.New(ShareableVolumeVmInstanceRefVO.class).count() == 3);
 
