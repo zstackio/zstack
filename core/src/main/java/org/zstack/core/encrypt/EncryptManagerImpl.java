@@ -6,17 +6,23 @@ import org.zstack.core.db.SQL;
 import org.reflections.util.ClasspathHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.encrypt.APIUpdateEncryptKeyEvent;
 import org.zstack.header.core.encrypt.APIUpdateEncryptKeyMsg;
 import org.zstack.header.core.encrypt.ENCRYPT;
+import org.zstack.header.core.encrypt.ENCRYPTParam;
 import org.zstack.header.message.Message;
+import org.zstack.header.volume.VolumeType;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import javax.persistence.*;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.security.Key;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -46,6 +52,9 @@ public class EncryptManagerImpl extends AbstractService {
         }
     }
 
+
+    @Autowired
+    private DatabaseFacade dbf;
 
     @Override
     public boolean start() {
