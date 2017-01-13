@@ -1003,7 +1003,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 info.isDefaultL3Network = arg.isDefaultL3Network();
 
                 if (info.isDefaultL3Network) {
-                    if (info.hostname == null) {
+                    if (info.hostname == null && arg.getIp() != null) {
                         info.hostname = arg.getIp().replaceAll("\\.", "-");
                     }
 

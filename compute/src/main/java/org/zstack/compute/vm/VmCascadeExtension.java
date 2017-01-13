@@ -24,9 +24,6 @@ import org.zstack.header.identity.AccountResourceRefVO;
 import org.zstack.header.identity.AccountResourceRefVO_;
 import org.zstack.header.identity.AccountVO;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.l2.L2NetworkConstant;
-import org.zstack.header.network.l2.L2NetworkDetachStruct;
-import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l3.IpRangeInventory;
 import org.zstack.header.network.l3.IpRangeVO;
 import org.zstack.header.network.l3.L3NetworkInventory;
@@ -123,69 +120,9 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
             handleDeletionCleanup(action, completion);
         } else if (action.isActionCode(PrimaryStorageConstant.PRIMARY_STORAGE_DETACH_CODE)) {
             handlePrimaryStorageDetach(action, completion);
-        } else if (action.isActionCode(L2NetworkConstant.DETACH_L2NETWORK_CODE)) {
-            handleL2NetworkDetach(action, completion);
         } else {
             completion.success();
         }
-    }
-
-    @Transactional(readOnly = true)
-    private List<String> getVmUuidFromL2NetworkDetached(List<L2NetworkDetachStruct> structs) {
-        List<String> vmUuids = new ArrayList<>();
-        for (L2NetworkDetachStruct s : structs) {
-            String sql = "select vm.uuid" +
-                    " from VmInstanceVO vm, L2NetworkVO l2, L3NetworkVO l3, VmNicVO nic" +
-                    " where vm.type = :vmType" +
-                    " and vm.clusterUuid = :clusterUuid" +
-                    " and vm.state not in (:vmStates)" +
-                    " and vm.uuid = nic.vmInstanceUuid" +
-                    " and nic.l3NetworkUuid = l3.uuid" +
-                    " and l3.l2NetworkUuid = l2.uuid" +
-                    " and l2.uuid = :l2Uuid";
-            TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
-            q.setParameter("vmType", VmInstanceConstant.USER_VM_TYPE);
-            q.setParameter("vmStates", Arrays.asList(VmInstanceState.Stopped, VmInstanceState.Migrating, VmInstanceState.Stopping));
-            q.setParameter("clusterUuid", s.getClusterUuid());
-            q.setParameter("l2Uuid", s.getL2NetworkUuid());
-            vmUuids.addAll(q.getResultList());
-        }
-
-        return vmUuids;
-    }
-
-    private void handleL2NetworkDetach(CascadeAction action, final Completion completion) {
-        List<L2NetworkDetachStruct> structs = action.getParentIssuerContext();
-        final List<String> vmUuids = getVmUuidFromL2NetworkDetached(structs);
-        if (vmUuids.isEmpty()) {
-            completion.success();
-            return;
-        }
-
-        List<StopVmInstanceMsg> msgs = CollectionUtils.transformToList(vmUuids, new Function<StopVmInstanceMsg, String>() {
-            @Override
-            public StopVmInstanceMsg call(String arg) {
-                StopVmInstanceMsg msg = new StopVmInstanceMsg();
-                msg.setVmInstanceUuid(arg);
-                bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, arg);
-                return msg;
-            }
-        });
-
-        bus.send(msgs, 20, new CloudBusListCallBack(completion) {
-            @Override
-            public void run(List<MessageReply> replies) {
-                for (MessageReply r : replies) {
-                    if (!r.isSuccess()) {
-                        String vmUuid = vmUuids.get(replies.indexOf(r));
-                        logger.warn(String.format("failed to stop vm[uuid:%s] for l2Network detached, %s." +
-                                " However, detaching will go on", vmUuid, r.getError()));
-                    }
-                }
-
-                completion.success();
-            }
-        });
     }
 
     @Transactional(readOnly = true)
@@ -448,7 +385,6 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                 L3NetworkVO.class.getSimpleName(),
                 IpRangeVO.class.getSimpleName(),
                 PrimaryStorageVO.class.getSimpleName(),
-                L2NetworkVO.class.getSimpleName(),
                 InstanceOfferingVO.class.getSimpleName(),
                 AccountVO.class.getSimpleName());
     }
