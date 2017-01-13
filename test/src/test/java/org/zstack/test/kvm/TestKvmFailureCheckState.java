@@ -58,7 +58,7 @@ public class TestKvmFailureCheckState {
     }
 
     @Test
-    public void test() {
+    public void test() throws InterruptedException{
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         String hostUuid = vm.getHostUuid();
         HostInventory host2 = deployer.hosts.get("host2");
@@ -95,6 +95,7 @@ public class TestKvmFailureCheckState {
         cmd = config.checkVmStateCmds.get(0);
         Assert.assertTrue(cmd.vmUuids.contains(vm.getUuid()));
         vmvo = dbf.findByUuid(vm.getUuid(), VmInstanceVO.class);
+        Thread.sleep(500);
         Assert.assertEquals(VmInstanceState.Running, vmvo.getState());
 
         s = false;
