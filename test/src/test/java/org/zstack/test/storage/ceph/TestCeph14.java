@@ -60,7 +60,8 @@ public class TestCeph14 {
     public void test() throws ApiSenderException {
         PrimaryStorageInventory ps = deployer.primaryStorages.get("ceph-pri");
         CephPrimaryStorageConfig c = config.config.get(ps.getName());
-        c.totalCapacity = SizeUnit.GIGABYTE.toByte(500);
+        c.totalCapacity = SizeUnit.TERABYTE.toByte(1);
+        c.availCapacity = SizeUnit.TERABYTE.toByte(1);
 
         api.reconnectPrimaryStorage(ps.getUuid());
 
