@@ -69,6 +69,8 @@ public class Platform {
         return reflections;
     }
 
+    public static Set<Method> encryptedMethodsMap;
+
     private static Map<String, String> linkGlobalPropertyMap(String prefix) {
         Map<String, String> ret = new HashMap<String, String>();
         Map<String, String> map = getGlobalPropertiesStartWith(prefix);
@@ -336,6 +338,7 @@ public class Platform {
             linkGlobalProperty();
             prepareDefaultDbProperties();
             callStaticInitMethods();
+            encryptedMethodsMap = getAllEncryptPassword();
             writePidFile();
         } catch (Throwable e) {
             logger.warn(String.format("unhandled exception when in Platform's static block, %s", e.getMessage()), e);
@@ -349,7 +352,13 @@ public class Platform {
         }
     }
 
-
+    private static Set<Method> getAllEncryptPassword() {
+        Set<Method> encrypteds = reflections.getMethodsAnnotatedWith(ENCRYPT.class);
+        for (Method encrypted: encrypteds) {
+            logger.debug(String.format("found encrypted method[%s:%s]", encrypted.getDeclaringClass(), encrypted.getName()));
+        }
+        return encrypteds;
+    }
 
     private static void callStaticInitMethods() throws InvocationTargetException, IllegalAccessException {
         Set<Method> inits = reflections.getMethodsAnnotatedWith(StaticInit.class);

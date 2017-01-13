@@ -17,7 +17,9 @@ public aspect EncryptAspect {
                 logger.debug(String.format("password before encrypt is: %s", param));
                 param = rsa.encrypt1(param);
             }catch(Exception e){
-                logger.debug(String.format("encrypt aspectj is error..."),e);
+                logger.debug(String.format("encrypt aspectj is error..."));
+                logger.debug(e.getMessage());
+                e.printStackTrace();
             }
 
             logger.debug(String.format("password after encrypt is: %s", param));
