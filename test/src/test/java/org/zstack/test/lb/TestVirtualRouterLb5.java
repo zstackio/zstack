@@ -135,14 +135,14 @@ public class TestVirtualRouterLb5 {
         Assert.assertNull(listenerVO);
         Assert.assertFalse(vconfig.refreshLbCmds.isEmpty());
         cmd = vconfig.refreshLbCmds.get(0);
-        Assert.assertEquals(1, cmd.getLbs().size());
+        Assert.assertEquals(2, cmd.getLbs().size());
         to = CollectionUtils.find(cmd.getLbs(), new Function<LbTO, LbTO>() {
             @Override
             public LbTO call(LbTO arg) {
                 return arg.getInstancePort() == 100 ? arg : null;
             }
         });
-        Assert.assertNull(to);
+        Assert.assertNotNull(to);
 
         listener1 = api.createLoadBalancerListener(listener1, null);
         vconfig.refreshLbSuccess = false;
