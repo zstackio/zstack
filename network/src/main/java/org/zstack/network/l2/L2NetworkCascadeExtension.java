@@ -1,7 +1,6 @@
 package org.zstack.network.l2;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cascade.AbstractAsyncCascadeExtension;
 import org.zstack.core.cascade.CascadeAction;
 import org.zstack.core.cascade.CascadeConstant;
@@ -13,8 +12,6 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.Completion;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
-import org.zstack.header.vm.DetachNicFromVmMsg;
-import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.zone.ZoneInventory;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.utils.CollectionUtils;
@@ -22,12 +19,9 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.Tuple;
-import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  */
@@ -60,31 +54,6 @@ public class L2NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
         }
     }
 
-    @Transactional(readOnly = true)
-    private List<Tuple> getVmNics(String l2NetworkUuid, String clusterUuid) {
-        String sql = "select vm.uuid, nic.uuid from VmInstanceVO vm, VmNicVO nic, L3NetworkVO l3"
-                + " where vm.clusterUuid = :clusterUuid"
-                + " and l3.l2NetworkUuid = :l2NetworkUuid"
-                + " and nic.l3NetworkUuid = l3.uuid "
-                + " and nic.vmInstanceUuid = vm.uuid";
-        TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
-        q.setParameter("clusterUuid", clusterUuid);
-        q.setParameter("l2NetworkUuid", l2NetworkUuid);
-        return q.getResultList();
-    }
-
-    private List<DetachNicFromVmMsg> buildDetachVmNicMsgs(String l2NetworkUuid, String clusterUuid) {
-        List<Tuple> vmNics = getVmNics(l2NetworkUuid, clusterUuid);
-        return vmNics.stream()
-                .map((t) -> {
-                    DetachNicFromVmMsg msg = new DetachNicFromVmMsg();
-                    msg.setVmInstanceUuid(t.get(0, String.class));
-                    msg.setVmNicUuid(t.get(1, String.class));
-                    bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, msg.getVmInstanceUuid());
-                    return msg;
-                }).collect(Collectors.toList());
-    }
-
     private void handleDetach(CascadeAction action, final Completion completion) {
         List<L2NetworkDetachStruct> structs = action.getParentIssuerContext();
         List<DetachL2NetworkFromClusterMsg> msgs = CollectionUtils.transformToList(structs, new Function<DetachL2NetworkFromClusterMsg, L2NetworkDetachStruct>() {
@@ -101,32 +70,14 @@ public class L2NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
         bus.send(msgs, new CloudBusListCallBack(completion) {
             @Override
             public void run(List<MessageReply> replies) {
-                List<DetachNicFromVmMsg> dmsgs = new ArrayList<>();
                 for (MessageReply r : replies) {
                     if (!r.isSuccess()) {
                         completion.fail(r.getError());
                         return;
                     }
-
-                    DetachL2NetworkFromClusterMsg msg = msgs.get(replies.indexOf(r));
-                    dmsgs.addAll(buildDetachVmNicMsgs(msg.getL2NetworkUuid(), msg.getClusterUuid()));
                 }
 
-                bus.send(dmsgs, new CloudBusListCallBack(completion) {
-                    @Override
-                    public void run(List<MessageReply> replies) {
-                        for (MessageReply r : replies) {
-                            if (!r.isSuccess()) {
-                                // TODO GC jobs
-                                DetachNicFromVmMsg msg = dmsgs.get(replies.indexOf(r));
-                                logger.warn(String.format("failed to detach NIC [%s] from VM [%s]",
-                                        msg.getVmNicUuid(), msg.getVmInstanceUuid()));
-                            }
-                        }
-
-                        completion.success();
-                    }
-                });
+                completion.success();
             }
         });
     }
