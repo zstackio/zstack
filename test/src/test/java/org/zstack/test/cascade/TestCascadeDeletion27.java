@@ -60,11 +60,16 @@ public class TestCascadeDeletion27 {
         creator.instanceOfferingUuid = instanceOffering.getUuid();
         VmInstanceInventory vm = creator.create();
 
+        VmInstanceVO vmvo = dbf.findByUuid(vm.getUuid(), VmInstanceVO.class);
+        int nicNumber = vmvo.getVmNics().size();
+        Assert.assertTrue(nicNumber >= 1);
+
         L2NetworkInventory l21 = deployer.l2Networks.get("TestL2Network1");
         ClusterInventory cluster = deployer.clusters.get("TestCluster1");
         api.detachL2NetworkFromCluster(l21.getUuid(), cluster.getUuid());
 
-        VmInstanceVO vmvo = dbf.findByUuid(vm.getUuid(), VmInstanceVO.class);
+        vmvo = dbf.findByUuid(vm.getUuid(), VmInstanceVO.class);
         Assert.assertEquals(VmInstanceState.Stopped, vmvo.getState());
+        Assert.assertTrue(nicNumber > vmvo.getVmNics().size());
     }
 }
