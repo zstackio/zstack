@@ -98,13 +98,13 @@ public class TestLocalStorage52 {
         path.fullPath = c.getInstallUrl();
         path.disassemble();
 
-        config.deleteBitsCmds.clear();
+        config.deleteDirCmds.clear();
         PrimaryStorageGlobalConfig.IMAGE_CACHE_GARBAGE_COLLECTOR_INTERVAL.updateValue(1);
         TimeUnit.SECONDS.sleep(3);
 
-        Assert.assertEquals(1, config.deleteBitsCmds.size());
-        DeleteBitsCmd cmd = config.deleteBitsCmds.get(0);
-        Assert.assertEquals(path.installPath, cmd.getPath());
+        Assert.assertEquals(1, config.deleteDirCmds.size());
+        DeleteBitsCmd cmd = config.deleteDirCmds.get(0);
+        Assert.assertEquals(path.installPath.substring(0, path.installPath.lastIndexOf("/")), cmd.getPath());
         c = q.find();
         Assert.assertNull(c);
 

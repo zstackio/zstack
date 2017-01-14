@@ -375,18 +375,20 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        List<LocalStorageResourceRefVO> refs = new ArrayList<>();
-                        volumeRefVO.setHostUuid(msg.getDestHostUuid());
-                        refs.add(volumeRefVO);
-
+                        List<String> resourceUuids = new ArrayList<>();
+                        resourceUuids.add(volumeRefVO.getResourceUuid());
                         if (snapshotRefVOS != null) {
                             for (LocalStorageResourceRefVO r : snapshotRefVOS) {
-                                r.setHostUuid(msg.getDestHostUuid());
-                                refs.add(r);
+                                resourceUuids.add(r.getResourceUuid());
                             }
                         }
 
-                        dbf.updateCollection(refs);
+                        UpdateQuery.New()
+                                .entity(LocalStorageResourceRefVO.class)
+                                .set(LocalStorageResourceRefVO_.hostUuid, msg.getDestHostUuid())
+                                .condAnd(LocalStorageResourceRefVO_.resourceUuid, Op.IN, resourceUuids)
+                                .update();
+
                         trigger.next();
                     }
                 });
@@ -446,7 +448,12 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 done(new FlowDoneHandler(msg, completion) {
                     @Override
                     public void handle(Map data) {
-                        reply.setInventory(LocalStorageResourceRefInventory.valueOf(dbf.reload(volumeRefVO)));
+                        LocalStorageResourceRefVO vo = Q.New(LocalStorageResourceRefVO.class)
+                                .eq(LocalStorageResourceRefVO_.resourceUuid, volumeRefVO.getResourceUuid())
+                                .eq(LocalStorageResourceRefVO_.primaryStorageUuid, volumeRefVO.getPrimaryStorageUuid())
+                                .eq(LocalStorageResourceRefVO_.hostUuid, msg.getDestHostUuid())
+                                .find();
+                        reply.setInventory(LocalStorageResourceRefInventory.valueOf(vo));
                         bus.reply(msg, reply);
                     }
                 });
@@ -1646,22 +1653,6 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
             @Override
             public void setup() {
-                flow(new Flow() {
-                    String __name__ = "reserve-capacity-on-host";
-
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        reserveCapacityOnHost(msg.getDestHostUuid(), msg.getIsoSpec().getInventory().getActualSize(), self.getUuid());
-                        trigger.next();
-                    }
-
-                    @Override
-                    public void rollback(FlowRollback trigger, Map data) {
-                        returnStorageCapacityToHost(msg.getDestHostUuid(), msg.getIsoSpec().getInventory().getActualSize());
-                        trigger.rollback();
-                    }
-                });
-
                 flow(new NoRollbackFlow() {
                     String __name__ = "download-iso-to-host";
 

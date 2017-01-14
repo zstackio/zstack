@@ -6,6 +6,7 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
@@ -16,6 +17,7 @@ import org.zstack.header.volume.APICreateDataVolumeMsg;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeStatus;
 import org.zstack.storage.primary.local.LocalStorageResourceRefVO;
+import org.zstack.storage.primary.local.LocalStorageResourceRefVO_;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 import org.zstack.storage.primary.local.LocalStorageSystemTags;
@@ -99,12 +101,16 @@ public class TestLocalStorageCreateDataVolume {
         Assert.assertEquals(local.getUuid(), vol.getPrimaryStorageUuid());
         PrimaryStorageCapacityVO nfs1Cap2 = dbf.findByUuid(local.getUuid(), PrimaryStorageCapacityVO.class);
         Assert.assertEquals(vol.getSize(), nfs1Cap1.getAvailableCapacity() - nfs1Cap2.getAvailableCapacity());
-        LocalStorageResourceRefVO ref1 = dbf.findByUuid(vol.getUuid(), LocalStorageResourceRefVO.class);
+        LocalStorageResourceRefVO ref1 = Q.New(LocalStorageResourceRefVO.class)
+                .eq(LocalStorageResourceRefVO_.resourceUuid, vol.getUuid())
+                .find();
         Assert.assertEquals(host1.getUuid(), ref1.getHostUuid());
 
         vol = createDataVolume(local.getUuid(), host2.getUuid());
         Assert.assertEquals(VolumeStatus.Ready.toString(), vol.getStatus());
-        LocalStorageResourceRefVO ref2 = dbf.findByUuid(vol.getUuid(), LocalStorageResourceRefVO.class);
+        LocalStorageResourceRefVO ref2 = Q.New(LocalStorageResourceRefVO.class)
+                .eq(LocalStorageResourceRefVO_.resourceUuid, vol.getUuid())
+                .find();
         Assert.assertEquals(host2.getUuid(), ref2.getHostUuid());
     }
 }

@@ -6,6 +6,7 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.host.HostInventory;
@@ -17,11 +18,8 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotVO_;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
-import org.zstack.storage.primary.local.LocalStorageHostRefVO;
-import org.zstack.storage.primary.local.LocalStorageHostRefVOFinder;
+import org.zstack.storage.primary.local.*;
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.DeleteBitsCmd;
-import org.zstack.storage.primary.local.LocalStorageResourceRefVO;
-import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
@@ -126,7 +124,9 @@ public class TestLocalStorage33 {
 
         Assert.assertFalse(config.deleteBitsCmds.isEmpty());
         for (final VolumeSnapshotVO sp : snapshots) {
-            LocalStorageResourceRefVO spRef = dbf.findByUuid(sp.getUuid(), LocalStorageResourceRefVO.class);
+            LocalStorageResourceRefVO spRef = Q.New(LocalStorageResourceRefVO.class)
+                    .eq(LocalStorageResourceRefVO_.resourceUuid, sp.getUuid())
+                    .find();
             Assert.assertEquals(host1.getUuid(), spRef.getHostUuid());
 
             DeleteBitsCmd deleteBitsCmd = CollectionUtils.find(config.deleteBitsCmds, new Function<DeleteBitsCmd, DeleteBitsCmd>() {
@@ -139,7 +139,9 @@ public class TestLocalStorage33 {
             Assert.assertEquals(host2.getUuid(), deleteBitsCmd.getHostUuid());
         }
 
-        LocalStorageResourceRefVO dref = dbf.findByUuid(data.getUuid(), LocalStorageResourceRefVO.class);
+        LocalStorageResourceRefVO dref = Q.New(LocalStorageResourceRefVO.class)
+                .eq(LocalStorageResourceRefVO_.resourceUuid, data.getUuid())
+                .find();
         Assert.assertEquals(host1.getUuid(), dref.getHostUuid());
 
         LocalStorageHostRefVO hcap11 = new LocalStorageHostRefVOFinder().findByPrimaryKey(host1.getUuid(), local.getUuid());

@@ -280,3 +280,8 @@ ALTER TABLE `zstack`.`ShareableVolumeVmInstanceRefVO` ADD UNIQUE INDEX(`volumeUu
 
 ALTER TABLE ShareableVolumeVmInstanceRefVO ADD CONSTRAINT fkShareableVolumeVmInstanceRefVOVmInstanceEO FOREIGN KEY (vmInstanceUuid) REFERENCES VmInstanceEO (uuid) ON DELETE CASCADE;
 ALTER TABLE ShareableVolumeVmInstanceRefVO ADD CONSTRAINT fkShareableVolumeVmInstanceRefVOVolumeEO FOREIGN KEY (volumeUuid) REFERENCES VolumeEO (uuid) ON DELETE CASCADE;
+
+
+ALTER TABLE `LocalStorageResourceRefVO` DROP INDEX `resourceUuid`;
+ALTER TABLE `LocalStorageResourceRefVO` DROP PRIMARY KEY;
+ALTER TABLE `LocalStorageResourceRefVO` ADD CONSTRAINT `pkLocalStorageResourceRefVO` PRIMARY KEY (`resourceUuid`,`hostUuid`,`primaryStorageUuid`);
