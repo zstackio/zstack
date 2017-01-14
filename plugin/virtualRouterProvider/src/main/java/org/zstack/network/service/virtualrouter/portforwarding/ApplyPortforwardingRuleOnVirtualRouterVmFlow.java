@@ -52,7 +52,7 @@ public class ApplyPortforwardingRuleOnVirtualRouterVmFlow implements Flow {
         VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
         msg.setVmInstanceUuid(vr.getUuid());
         msg.setCommand(cmd);
-        msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "5m"));
+        msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "30m"));
         msg.setPath(VirtualRouterConstant.VR_CREATE_PORT_FORWARDING);
         msg.setCheckStatus(true);
         bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
@@ -99,14 +99,14 @@ public class ApplyPortforwardingRuleOnVirtualRouterVmFlow implements Flow {
             msg.setCheckStatus(true);
             msg.setPath(VirtualRouterConstant.VR_REVOKE_PORT_FORWARDING);
             msg.setCommand(cmd);
-            msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "5m"));
+            msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "30m"));
             msg.setVmInstanceUuid(vr.getUuid());
             bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
             bus.send(msg, new CloudBusCallBack(chain) {
                 @Override
                 public void run(MessageReply reply) {
                     if (!reply.isSuccess()) {
-                        String err = String.format("failed to revoke port forwarding rules %, because %s", JSONObjectUtil.toJsonString(to), reply.getError());
+                        String err = String.format("failed to revoke port forwarding rules %s, because %s", JSONObjectUtil.toJsonString(to), reply.getError());
                         logger.warn(err);
                         //TODO: schedule a job to clean up
                     } else {

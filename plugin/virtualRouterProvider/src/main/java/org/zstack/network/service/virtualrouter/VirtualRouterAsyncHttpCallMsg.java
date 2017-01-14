@@ -70,5 +70,6 @@ public class VirtualRouterAsyncHttpCallMsg extends NeedReplyMessage implements V
 
     public void setCommandTimeout(long commandTimeout) {
         this.commandTimeout = commandTimeout;
+        timeout = getTimeout();
     }
 }

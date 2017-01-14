@@ -271,7 +271,15 @@ public class RESTFacadeImpl implements RESTFacade {
                 cancelTimeout();
 
                 if (logger.isTraceEnabled()) {
-                    logger.trace(String.format("[http response(url: %s)] %s", url, responseEntity.getBody()));
+                    List<String> hs = responseEntity.getHeaders().get(RESTConstant.TASK_UUID);
+                    String taskUuid = hs == null || hs.isEmpty() ? null : hs.get(0);
+
+                    if (taskUuid == null) {
+                        logger.trace(String.format("[http response(url: %s)] %s", url, responseEntity.getBody()));
+                    } else {
+                        logger.trace(String.format("[http response(url: %s, taskUuid: %s)] %s",
+                                url, taskUuid, responseEntity.getBody()));
+                    }
                 }
 
                 if (callback instanceof JsonAsyncRESTCallback) {

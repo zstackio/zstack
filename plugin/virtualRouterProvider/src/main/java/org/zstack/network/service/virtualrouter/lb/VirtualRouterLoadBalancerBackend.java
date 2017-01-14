@@ -236,7 +236,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
         cmd.lbs = makeLbTOs(struct);
 
         msg.setCommand(cmd);
-        msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "5m"));
+        msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "30m"));
         bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
@@ -769,7 +769,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                             msg.setVmInstanceUuid(vr.getUuid());
                             msg.setPath(DELETE_LB_PATH);
                             msg.setCommand(cmd);
-                            msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "5m"));
+                            msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "30m"));
                             bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
                             bus.send(msg, new CloudBusCallBack(trigger) {
                                 @Override
@@ -834,7 +834,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
         VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
         msg.setCommand(cmd);
-        msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "5m"));
+        msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "30m"));
         msg.setPath(REFRESH_LB_PATH);
         msg.setVmInstanceUuid(vr.getUuid());
         msg.setCheckStatus(false);

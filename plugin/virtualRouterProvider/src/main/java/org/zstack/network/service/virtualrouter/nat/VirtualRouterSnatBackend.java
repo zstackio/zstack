@@ -103,7 +103,7 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
                 msg.setVmInstanceUuid(vr.getUuid());
                 msg.setPath(VirtualRouterConstant.VR_SET_SNAT_PATH);
                 msg.setCommand(cmd);
-                msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "5m"));
+                msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "30m"));
                 msg.setCheckStatus(true);
                 bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
                 bus.send(msg, new CloudBusCallBack(completion) {
@@ -183,7 +183,7 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
         msg.setCheckStatus(true);
         msg.setVmInstanceUuid(vr.getUuid());
         msg.setCommand(cmd);
-        msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "5m"));
+        msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "30m"));
         msg.setPath(VirtualRouterConstant.VR_REMOVE_SNAT_PATH);
         bus.makeTargetServiceIdByResourceUuid(msg, VirtualRouterConstant.SERVICE_ID, vr.getUuid());
         bus.send(msg, new CloudBusCallBack(completion) {

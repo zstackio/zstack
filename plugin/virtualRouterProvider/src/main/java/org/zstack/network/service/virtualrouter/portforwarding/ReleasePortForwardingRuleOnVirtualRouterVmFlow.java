@@ -49,7 +49,7 @@ public class ReleasePortForwardingRuleOnVirtualRouterVmFlow extends NoRollbackFl
         msg.setPath(VirtualRouterConstant.VR_REVOKE_PORT_FORWARDING);
         msg.setVmInstanceUuid(vr.getUuid());
         msg.setCommand(cmd);
-        msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "5m"));
+        msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "30m"));
         msg.setCheckStatus(true);
         bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
         bus.send(msg, new CloudBusCallBack(chain) {
