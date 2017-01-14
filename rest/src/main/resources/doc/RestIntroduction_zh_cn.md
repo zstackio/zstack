@@ -497,26 +497,26 @@ body:
 ZStack支持超过400万个单项查询条件，以及400万阶乘的组合查询条件。例如：
 
 ```
-GET /v1/vm-instances?conditions=name=vm1
+GET /v1/vm-instances?q=name=vm1
 ```
 
 查询名字为*vm1*的虚拟机。
 
 ```
-GET /v1/vm-instances?conditions=name=vm1&conditions=state=Running
+GET /v1/vm-instances?q=name=vm1&q=state=Running
 ```
 
 查询名字为*vm1*并且状态为*Running*的虚拟机。这两个例子都是对虚拟机资源本身查询，反应到数据库层面
 还属于单表查询。我们可以通过`.`进行跨表查询，例如：
 
 ```
-GET /v1/vm-instances?conditions=vmNics.ip=192.168.10.100
+GET /v1/vm-instances?q=vmNics.ip=192.168.10.100
 ```
 
 查询IP地址为*192.168.10.100*的虚拟机，这里对虚拟机和网卡两张表进行了跨表查询。又例如：
 
 ```
-GET /v1/vm-instances?conditions=host.managementIp=10.10.20.3
+GET /v1/vm-instances?q=host.managementIp=10.10.20.3
 ```
 
 查询IP为*10.10.20.3*上运行的所有虚拟机。这里对虚拟机和物理机两张表进行了跨表查询。
@@ -525,7 +525,7 @@ GET /v1/vm-instances?conditions=host.managementIp=10.10.20.3
 
 |名字|类型|位置|描述|可选值|起始版本|
 |---|---|---|---|---|---|
-|conditions (可选)|List|query|见[查询条件](#query-conditions)。省略该该字段将返回所有记录，返回记录数的上限受限于`limit`字段||0.6|
+|q (可选)|List|query|见[查询条件](#query-conditions)。省略该该字段将返回所有记录，返回记录数的上限受限于`limit`字段||0.6|
 |limit (可选)|Integer|query|最多返回的记录数，类似MySQL的limit，默认值1000||0.6|
 |start (可选)|Integer|query|起始查询记录位置，类似MySQL的offset。跟`limit`配合使用可以实现分页||0.6|
 |count (可选)|Boolean|query|计数查询，相当于MySQL中的count()函数。当设置成`true`时，API只返回的是满足查询条件的记录数||0.6|
@@ -644,12 +644,12 @@ uuid=                  zoneUuid=
 API返回的字段。例如：
 
 ```
-GET /v1/vm-instances?conditions=cpuNum>5
+GET /v1/vm-instances?q=cpuNum>5
 ```
 返回CPU数量多于5的虚拟机。
 
 ```
-GET /v1/vm-instances?conditions=hypervisorType=KVM&fields=uuid&fields=name
+GET /v1/vm-instances?q=hypervisorType=KVM&fields=uuid&fields=name
 ```
 返回虚拟化类型为KVM的虚拟机，由于在`fields`指定了uuid和name两个字段，API返回中只会包含虚拟机的name和uuid。
 
@@ -678,13 +678,13 @@ vmNics.netmask=               vmNics.uuid=                  vmNics.vmInstanceUui
 这里我们输入了资源`vmNics`并用`.`号表示我们要做一个跨表查询，Tab键为我们补全了`vmNics`资源的原生字段以及可跨表查询的其它资源。例如这里`vmNics.ip`表示网卡的原生字段`ip`，例如：
 
 ```
-GET /v1/vm-instances?conditions=vmNics.ip=192.168.0.100
+GET /v1/vm-instances?q=vmNics.ip=192.168.0.100
 ```
 
 进行了一个跨表查询，条件是网卡表的`ip`字段，返回的结果是`ip`为*192.168.0.100*的虚拟机。网卡资源同样可以跟其它资源进行跨表查询，例如`vmNics.eip.`将网卡表和EIP表进行跨表，如果我们使用：
 
 ```
-GET /v1/vm-instances?conditions=vmNics.eip.ip=192.168.0.100
+GET /v1/vm-instances?q=vmNics.eip.ip=192.168.0.100
 ```
 
 则进行了跨3表查询，返回的是EIP为*192.168.0.100*的虚拟机。通过资源间连续跨表，一个资源几乎跟系统中多个有逻辑关系的资源进行跨表，例如：

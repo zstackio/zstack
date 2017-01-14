@@ -568,7 +568,7 @@ ${cols.join("\n")}
                 } else {
                     List<String> qstr = getQueryConditionExampleOfTheClass(clz)
                     qstr = qstr.collect {
-                        return "conditions=${it}"
+                        return "q=${it}"
                     }
                     curl.add("http://localhost:8080${RestConstants.API_VERSION}${it}?${qstr.join("&")}")
                 }
