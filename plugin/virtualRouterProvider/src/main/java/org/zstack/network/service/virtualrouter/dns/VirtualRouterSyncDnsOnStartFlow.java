@@ -87,7 +87,7 @@ public class VirtualRouterSyncDnsOnStartFlow extends NoRollbackFlow {
         msg.setVmInstanceUuid(vr.getUuid());
         msg.setPath(VirtualRouterConstant.VR_SET_DNS_PATH);
         msg.setCommand(cmd);
-        msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "5m"));
+        msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "30m"));
         bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
         bus.send(msg, new CloudBusCallBack(chain) {
             @Override

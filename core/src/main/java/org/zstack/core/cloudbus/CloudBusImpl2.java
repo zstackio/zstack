@@ -341,7 +341,9 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
                 String correlationId = r.getHeaderEntry(CORRELATION_ID);
                 Envelope e = envelopes.get(correlationId);
                 if (e == null) {
-                    logger.warn(String.format("received a message reply[%s] but no envelope found, maybe the message request has been timeout or sender doesn't care about reply. drop it", r.getClass().getName()));
+                    logger.warn(String.format("received a message reply but no envelope found," +
+                            "maybe the message request has been timeout or sender doesn't care about reply." +
+                            "drop it. reply dump:\n%s", wire.dumpMessage(r)));
                     return;
                 }
 

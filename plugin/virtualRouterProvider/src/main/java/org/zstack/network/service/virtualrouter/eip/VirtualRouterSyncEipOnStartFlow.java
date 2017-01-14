@@ -160,7 +160,7 @@ public class VirtualRouterSyncEipOnStartFlow implements Flow {
         VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
         msg.setPath(VirtualRouterConstant.VR_SYNC_EIP);
         msg.setCommand(cmd);
-        msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "5m"));
+        msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "30m"));
         msg.setVmInstanceUuid(vr.getUuid());
         bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
         bus.send(msg, new CloudBusCallBack(trigger) {

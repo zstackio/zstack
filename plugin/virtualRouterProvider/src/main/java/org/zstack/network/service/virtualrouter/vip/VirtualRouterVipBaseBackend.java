@@ -84,6 +84,12 @@ public class VirtualRouterVipBaseBackend extends VipBaseBackend {
             @Override
             public void fail(ErrorCode errorCode) {
                 logger.warn(errorCode.toString());
+                // NOTE: we don't know if the failure happens before or after the VIP deleted on the real device,
+                // for example, a message timeout failure happens after the VIP gets really deleted, but an internal error
+                // may happen before so. In both cases, we delete the database reference here so next time the backend
+                // will try to apply the VIP again. It's virtualrouter/vyos's responsibility to succeed if a VIP is applied
+                // while it exists
+                dbf.removeByPrimaryKey(vrvip.getUuid(), vrvip.getClass());
                 completion.fail(errorCode);
             }
         });
@@ -114,7 +120,7 @@ public class VirtualRouterVipBaseBackend extends VipBaseBackend {
         VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
         msg.setPath(VirtualRouterConstant.VR_REMOVE_VIP);
         msg.setCommand(cmd);
-        msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "5m"));
+        msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "30m"));
         msg.setVmInstanceUuid(vr.getUuid());
         bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
         bus.send(msg, new CloudBusCallBack(completion) {
@@ -152,7 +158,7 @@ public class VirtualRouterVipBaseBackend extends VipBaseBackend {
         VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
         msg.setVmInstanceUuid(vr.getUuid());
         msg.setCommand(cmd);
-        msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "5m"));
+        msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "30m"));
         msg.setPath(VirtualRouterConstant.VR_CREATE_VIP);
         bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
         bus.send(msg, new CloudBusCallBack(completion) {

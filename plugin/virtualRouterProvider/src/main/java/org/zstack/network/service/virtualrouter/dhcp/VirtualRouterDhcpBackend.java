@@ -83,7 +83,7 @@ public class VirtualRouterDhcpBackend extends AbstractVirtualRouterBackend imple
                 cmd.setDhcpEntries(Arrays.asList(e));
                 VirtualRouterAsyncHttpCallMsg cmsg = new VirtualRouterAsyncHttpCallMsg();
                 cmsg.setCommand(cmd);
-                cmsg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "5m"));
+                cmsg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "30m"));
                 cmsg.setPath(VirtualRouterConstant.VR_ADD_DHCP_PATH);
                 cmsg.setVmInstanceUuid(vr.getUuid());
                 cmsg.setCheckStatus(true);
@@ -167,7 +167,7 @@ public class VirtualRouterDhcpBackend extends AbstractVirtualRouterBackend imple
         msg.setVmInstanceUuid(vr.getUuid());
         msg.setPath(VirtualRouterConstant.VR_REMOVE_DHCP_PATH);
         msg.setCommand(cmd);
-        msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "5m"));
+        msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "30m"));
         bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override

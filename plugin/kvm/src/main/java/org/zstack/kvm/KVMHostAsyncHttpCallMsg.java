@@ -33,6 +33,7 @@ public class KVMHostAsyncHttpCallMsg extends NeedReplyMessage implements HostMes
 
     public void setCommandTimeout(long commandTimeout) {
         this.commandTimeout = commandTimeout;
+        timeout = getTimeout();
     }
 
     public boolean isNoStatusCheck() {

@@ -70,7 +70,7 @@ public class VirtualRouterDnsBackend extends AbstractVirtualRouterBackend implem
         msg.setVmInstanceUuid(vr.getUuid());
         msg.setPath(VirtualRouterConstant.VR_SET_DNS_PATH);
         msg.setCommand(cmd);
-        msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "5m"));
+        msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "30m"));
         msg.setCheckStatus(true);
         bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
         bus.send(msg, new CloudBusCallBack(completion) {
@@ -116,7 +116,7 @@ public class VirtualRouterDnsBackend extends AbstractVirtualRouterBackend implem
         msg.setVmInstanceUuid(vr.getUuid());
         msg.setPath(VirtualRouterConstant.VR_REMOVE_DNS_PATH);
         msg.setCommand(cmd);
-        msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "5m"));
+        msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "30m"));
         msg.setCheckStatus(true);
         bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
         bus.send(msg, new CloudBusCallBack(completion) {
@@ -169,7 +169,7 @@ public class VirtualRouterDnsBackend extends AbstractVirtualRouterBackend implem
                 msg.setVmInstanceUuid(vr.getUuid());
                 msg.setPath(VirtualRouterConstant.VR_SET_DNS_PATH);
                 msg.setCommand(cmd);
-                msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "5m"));
+                msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "30m"));
                 msg.setCheckStatus(true);
                 bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
                 bus.send(msg, new CloudBusCallBack(completion) {
@@ -245,7 +245,7 @@ public class VirtualRouterDnsBackend extends AbstractVirtualRouterBackend implem
         msg.setCheckStatus(true);
         msg.setPath(VirtualRouterConstant.VR_REMOVE_DNS_PATH);
         msg.setCommand(cmd);
-        msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "5m"));
+        msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "30m"));
         msg.setVmInstanceUuid(vr.getUuid());
         bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
         bus.send(msg, new CloudBusCallBack(completion) {
