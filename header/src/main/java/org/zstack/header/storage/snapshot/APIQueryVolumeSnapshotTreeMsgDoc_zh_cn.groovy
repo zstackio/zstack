@@ -1,9 +1,12 @@
 package org.zstack.header.storage.snapshot
 
+import org.zstack.header.storage.snapshot.APIQueryVolumeSnapshotTreeReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "在这里填写API标题"
+    title "QueryVolumeSnapshotTree"
+
+    category "snapshot.volume"
 
     desc "在这里填写API描述"
 

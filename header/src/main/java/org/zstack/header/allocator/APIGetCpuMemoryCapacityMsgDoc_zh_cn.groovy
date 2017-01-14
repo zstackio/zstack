@@ -1,9 +1,11 @@
 package org.zstack.header.allocator
 
-
+import org.zstack.header.allocator.APIGetCpuMemoryCapacityReply
 
 doc {
-    title "在这里填写API标题"
+    title "GetCpuMemoryCapacity"
+
+    category "host.allocator"
 
     desc "在这里填写API描述"
 

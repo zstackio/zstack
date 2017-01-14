@@ -1,9 +1,11 @@
 package org.zstack.network.service.portforwarding
 
-
+import org.zstack.network.service.portforwarding.APIAttachPortForwardingRuleEvent
 
 doc {
-    title "在这里填写API标题"
+    title "AttachPortForwardingRule"
+
+    category "portForwarding"
 
     desc "在这里填写API描述"
 

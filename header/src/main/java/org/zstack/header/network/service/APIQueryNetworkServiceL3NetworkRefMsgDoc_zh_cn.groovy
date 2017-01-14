@@ -1,9 +1,12 @@
 package org.zstack.header.network.service
 
+import org.zstack.header.network.service.APIQueryNetworkServiceL3NetworkRefReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "在这里填写API标题"
+    title "QueryNetworkServiceL3NetworkRef"
+
+    category "network.l3"
 
     desc "在这里填写API描述"
 

@@ -1,9 +1,11 @@
 package org.zstack.header.network.l3
 
-
+import org.zstack.header.network.l3.APIChangeL3NetworkStateEvent
 
 doc {
-    title "在这里填写API标题"
+    title "ChangeL3NetworkState"
+
+    category "network.l3"
 
     desc "在这里填写API描述"
 

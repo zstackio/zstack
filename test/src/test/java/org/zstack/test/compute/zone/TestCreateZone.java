@@ -50,6 +50,10 @@ public class TestCreateZone {
         ZoneVO vo = dbf.findByUuid(inv.getUuid(), ZoneVO.class);
         Assert.assertEquals("newName", vo.getName());
 
+        UpdateQuery.New().entity(ZoneVO.class).set(ZoneVO_.name, "newName1").condAnd(ZoneVO_.name, Op.EQ, vo.getName()).update();
+        vo = dbf.findByUuid(inv.getUuid(), ZoneVO.class);
+        Assert.assertEquals("newName1", vo.getName());
+
         q = UpdateQuery.New();
         q.entity(ZoneVO.class).condAnd(ZoneVO_.uuid, Op.EQ, inv.getUuid()).delete();
         Assert.assertFalse(dbf.isExist(inv.getUuid(), ZoneVO.class));

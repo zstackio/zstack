@@ -74,4 +74,20 @@ public class FusionstorBackupStorageMonInventory  {
         return this.status;
     }
 
+    public java.lang.String monAddr;
+    public void setMonAddr(java.lang.String monAddr) {
+        this.monAddr = monAddr;
+    }
+    public java.lang.String getMonAddr() {
+        return this.monAddr;
+    }
+
+    public java.lang.String monUuid;
+    public void setMonUuid(java.lang.String monUuid) {
+        this.monUuid = monUuid;
+    }
+    public java.lang.String getMonUuid() {
+        return this.monUuid;
+    }
+
 }

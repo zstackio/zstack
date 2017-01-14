@@ -1,9 +1,11 @@
 package org.zstack.header.identity
 
-
+import org.zstack.header.identity.APILogInReply
 
 doc {
-    title "在这里填写API标题"
+    title "LogInByAccount"
+
+    category "identity"
 
     desc "在这里填写API描述"
 

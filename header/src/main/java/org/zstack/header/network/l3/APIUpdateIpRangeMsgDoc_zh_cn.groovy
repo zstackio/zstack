@@ -1,9 +1,11 @@
 package org.zstack.header.network.l3
 
-
+import org.zstack.header.network.l3.APIUpdateIpRangeEvent
 
 doc {
-    title "在这里填写API标题"
+    title "UpdateIpRange"
+
+    category "network.l3"
 
     desc "在这里填写API描述"
 

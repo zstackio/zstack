@@ -19,7 +19,7 @@ import java.util.regex.Pattern;
  * Created by xing5 on 2016/12/9.
  */
 public class ZSClient {
-    private static final OkHttpClient http = new OkHttpClient();
+    private static OkHttpClient http = new OkHttpClient();
 
     static final Gson gson;
     static final Gson prettyGson;
@@ -39,6 +39,19 @@ public class ZSClient {
 
     public static void configure(ZSConfig c) {
         config = c;
+
+        if (c.readTimeout != null || c.writeTimeout != null) {
+            OkHttpClient.Builder b = new OkHttpClient.Builder();
+
+            if (c.readTimeout != null) {
+                b.readTimeout(c.readTimeout, TimeUnit.MILLISECONDS);
+            }
+            if (c.writeTimeout != null) {
+                b.writeTimeout(c.writeTimeout, TimeUnit.MILLISECONDS);
+            }
+
+            http = b.build();
+        }
     }
 
     public static void webHookCallback(HttpServletRequest req, HttpServletResponse rsp) {
@@ -238,7 +251,9 @@ public class ZSClient {
                     .addPathSegment(info.path.replaceFirst("/", ""));
 
             if (!qaction.conditions.isEmpty()) {
-                urlBuilder.addQueryParameter("q", join(qaction.conditions, ","));
+                for (String cond : qaction.conditions) {
+                    urlBuilder.addQueryParameter("q", cond);
+                }
             }
             if (qaction.limit != null) {
                 urlBuilder.addQueryParameter("limit", String.format("%s", qaction.limit));

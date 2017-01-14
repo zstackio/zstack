@@ -7,12 +7,13 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.errorcode.SysErrors;
+import org.zstack.header.tag.SystemTagVO;
+import org.zstack.header.volume.APIDeleteVolumeQosEvent;
 import org.zstack.header.volume.APIGetVolumeQosReply;
 import org.zstack.header.volume.APISetVolumeQosEvent;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
-import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -33,8 +34,7 @@ public class TestVolumeQos {
     @Before
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
-        WebBeanConstructor con = new WebBeanConstructor();
-        deployer = new Deployer("deployerXml/vm/TestCreateVm.xml", con);
+        deployer = new Deployer("deployerXml/kvm/TestCreateVmOnKvm.xml");
         deployer.addSpringConfig("mevocoRelated.xml");
         deployer.build();
         api = deployer.getApi();
@@ -61,6 +61,15 @@ public class TestVolumeQos {
 
 
         Assert.assertEquals(1024l, reply.getVolumeBandwidth());
+
+        APIDeleteVolumeQosEvent event = api.deleteDiskQos(rootVolumeUuid);
+        Assert.assertTrue(event.isSuccess());
+
+        reply = api.getVmDiskQos(rootVolumeUuid);
+        Assert.assertEquals(-1l, reply.getVolumeBandwidth());
+
+        SystemTagVO tvo = dbf.findByUuid(rootVolumeUuid, SystemTagVO.class);
+        Assert.assertNull(tvo);
 
     }
 }

@@ -1,9 +1,11 @@
 package org.zstack.header.configuration
 
-
+import org.zstack.header.configuration.APICreateInstanceOfferingEvent
 
 doc {
-    title "在这里填写API标题"
+    title "CreateInstanceOffering"
+
+    category "configuration"
 
     desc "在这里填写API描述"
 

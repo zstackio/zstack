@@ -1,9 +1,11 @@
 package org.zstack.header.image
 
-
+import org.zstack.header.image.APIRecoverImageEvent
 
 doc {
-    title "在这里填写API标题"
+    title "RecoverImage"
+
+    category "image"
 
     desc "在这里填写API描述"
 

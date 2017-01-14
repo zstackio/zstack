@@ -1,9 +1,12 @@
 package org.zstack.header.console
 
+import org.zstack.header.console.APIQueryConsoleProxyAgentReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "在这里填写API标题"
+    title "QueryConsoleProxyAgent"
+
+    category "console"
 
     desc "在这里填写API描述"
 

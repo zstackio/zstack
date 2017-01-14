@@ -27,6 +27,7 @@ public class KVMApiInterceptor implements ApiMessageInterceptor {
         return msg;
     }
 
+
     private void validate(APIAddKVMHostMsg msg) {
         SimpleQuery<KVMHostVO> q = dbf.createQuery(KVMHostVO.class);
         q.add(KVMHostVO_.managementIp, Op.EQ, msg.getManagementIp());
@@ -36,4 +37,6 @@ public class KVMApiInterceptor implements ApiMessageInterceptor {
             ));
         }
     }
+
+
 }

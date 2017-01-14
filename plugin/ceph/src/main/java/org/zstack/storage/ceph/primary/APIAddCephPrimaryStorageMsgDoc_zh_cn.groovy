@@ -1,9 +1,11 @@
 package org.zstack.storage.ceph.primary
 
-
+import org.zstack.header.storage.primary.APIAddPrimaryStorageEvent
 
 doc {
-    title "在这里填写API标题"
+    title "AddCephPrimaryStorage"
+
+    category "未知类别"
 
     desc "在这里填写API描述"
 

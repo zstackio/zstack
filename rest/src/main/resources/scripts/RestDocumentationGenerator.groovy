@@ -1,6 +1,9 @@
 package scripts
 
+import com.google.common.io.Resources
 import groovy.json.JsonBuilder
+import org.apache.commons.io.Charsets
+import org.apache.commons.io.FileUtils
 import org.apache.commons.lang.StringUtils
 import org.springframework.http.HttpMethod
 import org.zstack.core.Platform
@@ -9,6 +12,7 @@ import org.zstack.header.exception.CloudRuntimeException
 import org.zstack.header.identity.SuppressCredentialCheck
 import org.zstack.header.message.APIParam
 import org.zstack.header.query.APIQueryMessage
+import org.zstack.header.query.AutoQuery
 import org.zstack.header.rest.APINoSee
 import org.zstack.header.rest.RestRequest
 import org.zstack.header.rest.RestResponse
@@ -19,6 +23,7 @@ import org.zstack.utils.DebugUtils
 import org.zstack.utils.FieldUtils
 import org.zstack.utils.ShellResult
 import org.zstack.utils.ShellUtils
+import org.zstack.utils.TypeUtils
 import org.zstack.utils.Utils
 import org.zstack.utils.gson.JSONObjectUtil
 import org.zstack.utils.logging.CLogger
@@ -34,7 +39,7 @@ import java.util.regex.Pattern
  * Created by xing5 on 2016/12/21.
  */
 class RestDocumentationGenerator implements DocumentGenerator {
-    CLogger logger = Utils.getLogger(RestDocumentationGenerator.class)
+    static CLogger logger = Utils.getLogger(RestDocumentationGenerator.class)
 
     String rootPath
 
@@ -127,12 +132,25 @@ class RestDocumentationGenerator implements DocumentGenerator {
         }
 
         Set<Class> apiClasses = Platform.getReflections().getTypesAnnotatedWith(RestRequest.class)
+        String specifiedClasses = System.getProperty("classes")
+
+        if (specifiedClasses != null) {
+            def classes = specifiedClasses.split(",") as List
+            apiClasses = apiClasses.findAll {
+                return classes.contains(it.simpleName)
+            }
+        }
+
         apiClasses.each {
             def docPath = getDocTemplatePathFromClass(it)
             System.out.println("processing ${docPath}")
             try {
-                def md = new MarkDown(docPath)
-                File f  =new File(PathUtil.join(resultDir, "${it.canonicalName.replaceAll("\\.", "_")}.md"))
+                def md = APIQueryMessage.class.isAssignableFrom(it) ? new QueryMarkDown(docPath) : new MarkDown(docPath)
+                File f = new File(PathUtil.join(resultDir, md.doc._category, "${it.canonicalName.replaceAll("\\.", "_")}.md"))
+                if (!f.parentFile.exists()) {
+                    f.parentFile.mkdirs()
+                }
+
                 f.write(md.generate())
                 System.out.println("written ${f.absolutePath}")
             } catch (Exception e) {
@@ -143,6 +161,10 @@ class RestDocumentationGenerator implements DocumentGenerator {
                 }
             }
         }
+
+        URL url = Resources.getResource("doc/RestIntroduction_zh_cn.md")
+        String context = Resources.toString(url, Charsets.UTF_8)
+        new File(PathUtil.join(dir.absolutePath, "RestIntroduction_zh_cn.md")).write(context)
     }
 
     class RequestParamColumn {
@@ -380,6 +402,7 @@ class RestDocumentationGenerator implements DocumentGenerator {
 
     class Doc {
         private String _title
+        private String _category
         private String _desc
         private Rest _rest
         private List<DocField> _fields = []
@@ -387,6 +410,10 @@ class RestDocumentationGenerator implements DocumentGenerator {
 
         def title(String v) {
             _title = v
+        }
+
+        def category(String v) {
+            _category = v
         }
 
         def desc(String v) {
@@ -440,11 +467,180 @@ class RestDocumentationGenerator implements DocumentGenerator {
         return script.run() as Doc
     }
 
+    class QueryMarkDown extends MarkDown {
+        QueryMarkDown(String docTemplatePath) {
+            super(docTemplatePath)
+        }
+
+        @Override
+        String params() {
+            Class clz = doc._rest._request._clz
+
+            String apiName = StringUtils.removeStart(clz.simpleName, "API")
+            apiName = StringUtils.removeEnd(apiName, "Msg")
+
+            return """\
+### 可查询字段
+
+运行`zstack-cli`命令行工具，输入`${apiName}`并按Tab键查看所有可查询字段以及可跨表查询的资源名。
+"""
+        }
+
+        List<String> getQueryConditionExampleOfTheClass(Class clz) {
+            try {
+                Method m = clz.getMethod("__example__")
+
+                if (!Modifier.isStatic(m.modifiers)) {
+                    throw new CloudRuntimeException("__example__() of ${clz.name} must be declared as a static method")
+                }
+
+                return m.invoke(null) as List<String>
+            } catch (NoSuchMethodException e) {
+                throw new CloudRuntimeException("class[${clz.name}] doesn't have static __example__ method", e)
+            }
+        }
+
+        @Override
+        String javaSdk() {
+            Class clz = doc._rest._request._clz
+
+            String actionName = getSdkActionName()
+
+            def cols = ["${actionName} action = new ${actionName}();"]
+            List<String> conds = getQueryConditionExampleOfTheClass(clz)
+            conds = conds.collect { return "\"" + it + "\""}
+            cols.add("action.conditions = asList(${conds.join(",")});")
+            cols.add("""action.sessionUuid = "${Platform.getUuid()}";""")
+            cols.add("${actionName}.Result res = action.call();")
+
+            return """\
+```
+${cols.join("\n")}
+```
+"""
+        }
+
+        @Override
+        String pythonSdk() {
+            Class clz = doc._rest._request._clz
+
+            String actionName = getSdkActionName()
+
+            def cols = ["${actionName} action = ${actionName}()"]
+            List<String> conds = getQueryConditionExampleOfTheClass(clz)
+            conds = conds.collect { return "\"" + it + "\""}
+            cols.add("action.conditions = [${conds.join(",")}]")
+            cols.add("""action.sessionUuid = "${Platform.getUuid()}\"""")
+            cols.add("${actionName}.Result res = action.call()")
+
+            return """\
+```
+${cols.join("\n")}
+```
+"""
+        }
+
+        String curlExample() {
+            if (doc._rest._request._clz == null) {
+                return ""
+            }
+
+            Class clz = doc._rest._request._clz
+            RestRequest at = clz.getAnnotation(RestRequest.class)
+
+            Set<String> paths = []
+            if (at.path() != "null") {
+                paths.add(at.path())
+            }
+            paths.addAll(at.optionalPaths())
+
+            List<String> examples = paths.collect {
+                def curl = ["curl -H \"Content-Type: application/json\""]
+                curl.add("-H \"${RestConstants.HEADER_OAUTH}: ${Platform.getUuid()}\"")
+
+                curl.add("-X ${at.method()}")
+
+                if (it.contains("uuid")) {
+                    // for "GET /v1/xxx/{uuid}, because the query example
+                    // may not have uuid field specified
+                    String urlPath = substituteUrl("${RestConstants.API_VERSION}${it}", ["uuid": Platform.getUuid()])
+                    curl.add("http://localhost:8080${urlPath}")
+                } else {
+                    List<String> qstr = getQueryConditionExampleOfTheClass(clz)
+                    qstr = qstr.collect {
+                        return "q=${it}"
+                    }
+                    curl.add("http://localhost:8080${RestConstants.API_VERSION}${it}?${qstr.join("&")}")
+                }
+
+                return """\
+```
+${curl.join(" ")}
+```
+"""
+            }
+
+
+            return """\
+### Curl示例
+
+${examples.join("\n")}
+
+"""
+        }
+
+
+        @Override
+        String generate() {
+            return  """\
+## ${doc._category} - ${doc._title}
+
+${doc._desc}
+
+## API请求
+
+${url()}
+
+${headers()}
+
+${requestExample()}
+
+${curlExample()}
+
+${params()}
+
+## API返回
+
+${responseDesc()}
+
+${responseExample()}
+
+## SDK示例
+
+### Java SDK
+
+${javaSdk()}
+
+### Python SDK
+
+${pythonSdk()}
+"""
+        }
+    }
+
     class MarkDown {
         Doc doc
 
         MarkDown(String docTemplatePath) {
             doc = createDoc(docTemplatePath)
+
+            if (doc._rest._request._params instanceof RequestParamRef) {
+                Class refClass = (doc._rest._request._params as RequestParamRef).refClass
+                String docFilePath = getDocTemplatePathFromClass(refClass)
+                Doc refDoc = createDoc(docFilePath)
+
+                doc._rest._request._params = refDoc._rest._request._params
+            }
         }
 
         String url() {
@@ -492,14 +688,6 @@ ${hs.join("\n")}
         String params() {
             if (doc._rest._request._params == null) {
                 return ""
-            }
-
-            if (doc._rest._request._params instanceof RequestParamRef) {
-                Class refClass = (doc._rest._request._params as RequestParamRef).refClass
-                String docFilePath = getDocTemplatePathFromClass(refClass)
-                Doc refDoc = createDoc(docFilePath)
-
-                doc._rest._request._params = refDoc._rest._request._params
             }
 
             def cols = doc._rest._request._params?._cloumns
@@ -550,6 +738,11 @@ ${table.join("\n")}
         LinkedHashMap getApiExampleOfTheClass(Class clz) {
             try {
                 Method m = clz.getMethod("__example__")
+
+                if (!Modifier.isStatic(m.modifiers)) {
+                    throw new CloudRuntimeException("__example__() of ${clz.name} must be declared as a static method")
+                }
+
                 def example = m.invoke(null)
 
                 LinkedHashMap map = JSONObjectUtil.rehashObject(example, LinkedHashMap.class)
@@ -596,6 +789,7 @@ ${table.join("\n")}
                 curl.add("-X ${at.method()}")
 
                 Map allFields = getApiExampleOfTheClass(clz)
+
                 String urlPath = substituteUrl("${RestConstants.API_VERSION}${it}", allFields)
 
                 if (!queryString) {
@@ -796,6 +990,24 @@ ${cols.join("\n")}
             cols.addAll(apiFields.collect { k, v ->
                 if (v instanceof String) {
                     return """action.${k} = "${v}";"""
+                } else if (v instanceof Collection) {
+                    Collection c = v as Collection
+                    if (c.isEmpty()) {
+                        return "action.${k} = new ArrayList();"
+                    } else {
+                        def item = c[0]
+
+                        if (item instanceof String) {
+                            def lst = c.collect {
+                                return "\"" + it + "\""
+                            }
+
+                            return "action.${k} = asList(${lst.join(",")});"
+                        } else {
+                            return "action.${k} = asList(${c.join(",")});"
+                        }
+                    }
+
                 } else {
                     return "action.${k} = ${v};"
                 }
@@ -816,7 +1028,7 @@ ${cols.join("\n")}
 
         String generate() {
             return  """\
-## ${doc._title}
+## ${doc._category} - ${doc._title}
 
 ${doc._desc}
 
@@ -1077,11 +1289,29 @@ ${fieldStr}
         RestRequest at
 
         List<String> imports = []
+        static Map<String, String> apiCategories = [:]
+
+        static {
+            File apiConfig = PathUtil.findFolderOnClassPath("serviceConfig")
+            apiConfig.list().each {
+                def xml = new XmlSlurper()
+                def f = new File(PathUtil.join(apiConfig.absolutePath, it))
+                if (!it.endsWith(".xml")) {
+                    return
+                }
+
+                def o = xml.parse(f)
+                (o.message as List).each {
+                    apiCategories[(it.name as String).trim()] = (o.id as String).trim()
+                }
+            }
+        }
 
         ApiRequestDocTemplate(Class apiClass) {
             this.apiClass = apiClass
             this.sourceFile = getSourceFile(apiClass.simpleName - ".java")
             at = apiClass.getAnnotation(RestRequest.class)
+            imports.add("import ${at.responseClass().canonicalName}")
         }
 
         String headers() {
@@ -1196,12 +1426,22 @@ ${cols.join("\n")}
         String generate() {
             String paramString = params()
 
+            String title = StringUtils.removeStart(apiClass.simpleName, "API")
+            title = StringUtils.removeEnd(title, "Msg")
+            String category = apiCategories[apiClass.name]
+            category = category == null ? at.category() : category
+            if (category == "") {
+                category = "未知类别"
+            }
+
             return """package ${apiClass.package.name}
 
 ${imports()}
 
 doc {
-    title "在这里填写API标题"
+    title "${title}"
+
+    category "${category}"
 
     desc "在这里填写API描述"
 

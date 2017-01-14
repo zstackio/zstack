@@ -1,9 +1,11 @@
 package org.zstack.header.storage.snapshot
 
-
+import org.zstack.header.storage.snapshot.APIRevertVolumeFromSnapshotEvent
 
 doc {
-    title "在这里填写API标题"
+    title "RevertVolumeFromSnapshot"
+
+    category "snapshot.volume"
 
     desc "在这里填写API描述"
 

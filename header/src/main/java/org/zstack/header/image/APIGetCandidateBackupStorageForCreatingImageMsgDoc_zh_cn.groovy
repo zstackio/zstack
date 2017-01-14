@@ -1,9 +1,11 @@
 package org.zstack.header.image
 
-
+import org.zstack.header.image.APIGetCandidateBackupStorageForCreatingImageReply
 
 doc {
-    title "在这里填写API标题"
+    title "GetCandidateBackupStorageForCreatingImage"
+
+    category "host.allocator"
 
     desc "在这里填写API描述"
 

@@ -1,9 +1,11 @@
 package org.zstack.storage.backup.sftp
 
-
+import org.zstack.storage.backup.sftp.APIAddSftpBackupStorageEvent
 
 doc {
-    title "在这里填写API标题"
+    title "AddSftpBackupStorage"
+
+    category "storage.backup.sftp"
 
     desc "在这里填写API描述"
 
@@ -96,6 +98,16 @@ doc {
 					desc ""
 					location "body"
 					type "String"
+					optional true
+					since "0.6"
+					
+				}
+				column {
+					name "importImages"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "boolean"
 					optional true
 					since "0.6"
 					

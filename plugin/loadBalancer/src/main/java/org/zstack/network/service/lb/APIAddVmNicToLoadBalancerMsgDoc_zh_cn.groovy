@@ -1,9 +1,11 @@
 package org.zstack.network.service.lb
 
-
+import org.zstack.network.service.lb.APIAddVmNicToLoadBalancerEvent
 
 doc {
-    title "在这里填写API标题"
+    title "AddVmNicToLoadBalancer"
+
+    category "loadBalancer"
 
     desc "在这里填写API描述"
 

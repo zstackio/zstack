@@ -1,9 +1,11 @@
 package org.zstack.ldap
 
-
+import org.zstack.ldap.APIAddLdapServerEvent
 
 doc {
-    title "在这里填写API标题"
+    title "AddLdapServer"
+
+    category "ldap"
 
     desc "在这里填写API描述"
 

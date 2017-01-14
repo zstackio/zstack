@@ -1,9 +1,11 @@
 package org.zstack.header.cluster
 
-
+import org.zstack.header.cluster.APIChangeClusterStateEvent
 
 doc {
-    title "在这里填写API标题"
+    title "ChangeClusterState"
+
+    category "cluster"
 
     desc "在这里填写API描述"
 

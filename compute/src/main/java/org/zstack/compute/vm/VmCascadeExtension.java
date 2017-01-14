@@ -45,9 +45,11 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Query;
+import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 
 /**
  */
@@ -130,55 +132,46 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
     }
 
     @Transactional(readOnly = true)
-    private List<String> getVmUuidFromL2NetworkDetached(List<L2NetworkDetachStruct> structs) {
-        List<String> vmUuids = new ArrayList<>();
+    private List<DetachNicFromVmMsg> getVmNicDetachMsgs(List<L2NetworkDetachStruct> structs) {
+        List<DetachNicFromVmMsg> dmsgs  = new ArrayList<>();
+
         for (L2NetworkDetachStruct s : structs) {
-            String sql = "select vm.uuid" +
-                    " from VmInstanceVO vm, L2NetworkVO l2, L3NetworkVO l3, VmNicVO nic" +
-                    " where vm.type = :vmType" +
-                    " and vm.clusterUuid = :clusterUuid" +
-                    " and vm.state not in (:vmStates)" +
-                    " and vm.uuid = nic.vmInstanceUuid" +
-                    " and nic.l3NetworkUuid = l3.uuid" +
-                    " and l3.l2NetworkUuid = l2.uuid" +
-                    " and l2.uuid = :l2Uuid";
-            TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
-            q.setParameter("vmType", VmInstanceConstant.USER_VM_TYPE);
-            q.setParameter("vmStates", Arrays.asList(VmInstanceState.Stopped, VmInstanceState.Migrating, VmInstanceState.Stopping));
+            String sql = "select vm.uuid, nic.uuid from VmInstanceVO vm, VmNicVO nic, L3NetworkVO l3"
+                    + " where vm.clusterUuid = :clusterUuid"
+                    + " and l3.l2NetworkUuid = :l2NetworkUuid"
+                    + " and nic.l3NetworkUuid = l3.uuid "
+                    + " and nic.vmInstanceUuid = vm.uuid";
+            TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
             q.setParameter("clusterUuid", s.getClusterUuid());
-            q.setParameter("l2Uuid", s.getL2NetworkUuid());
-            vmUuids.addAll(q.getResultList());
+            q.setParameter("l2NetworkUuid", s.getL2NetworkUuid());
+            dmsgs.addAll(q.getResultList().stream().map((t) -> {
+                DetachNicFromVmMsg msg = new DetachNicFromVmMsg();
+                msg.setVmInstanceUuid(t.get(0, String.class));
+                msg.setVmNicUuid(t.get(1, String.class));
+                bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, msg.getVmInstanceUuid());
+                return msg;
+            }).collect(Collectors.toList()));
         }
 
-        return vmUuids;
+        return dmsgs;
     }
 
     private void handleL2NetworkDetach(CascadeAction action, final Completion completion) {
         List<L2NetworkDetachStruct> structs = action.getParentIssuerContext();
-        final List<String> vmUuids = getVmUuidFromL2NetworkDetached(structs);
-        if (vmUuids.isEmpty()) {
+        final List<DetachNicFromVmMsg> dmsgs = getVmNicDetachMsgs(structs);
+        if (dmsgs.isEmpty()) {
             completion.success();
             return;
         }
 
-        List<StopVmInstanceMsg> msgs = CollectionUtils.transformToList(vmUuids, new Function<StopVmInstanceMsg, String>() {
-            @Override
-            public StopVmInstanceMsg call(String arg) {
-                StopVmInstanceMsg msg = new StopVmInstanceMsg();
-                msg.setVmInstanceUuid(arg);
-                bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, arg);
-                return msg;
-            }
-        });
-
-        bus.send(msgs, 20, new CloudBusListCallBack(completion) {
+        bus.send(dmsgs, 20, new CloudBusListCallBack(completion) {
             @Override
             public void run(List<MessageReply> replies) {
                 for (MessageReply r : replies) {
                     if (!r.isSuccess()) {
-                        String vmUuid = vmUuids.get(replies.indexOf(r));
+                        DetachNicFromVmMsg msg = dmsgs.get(replies.indexOf(r));
                         logger.warn(String.format("failed to stop vm[uuid:%s] for l2Network detached, %s." +
-                                " However, detaching will go on", vmUuid, r.getError()));
+                                " However, detaching will go on", msg.getVmInstanceUuid(), r.getError()));
                     }
                 }
 
@@ -356,6 +349,13 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                         }
                     }
 
+                    if (ZoneVO.class.getSimpleName().equals(action.getRootIssuer())) {
+                        dbf.removeByPrimaryKeys(vminvs
+                                        .stream()
+                                        .map(p -> p.getInventory().getUuid())
+                                        .collect(Collectors.toList()),
+                                VmInstanceVO.class);
+                    }
                     completion.success();
                 }
             });

@@ -1,9 +1,11 @@
 package org.zstack.header.host
 
-
+import org.zstack.header.host.APIGetHypervisorTypesReply
 
 doc {
-    title "在这里填写API标题"
+    title "GetHypervisorTypes"
+
+    category "host"
 
     desc "在这里填写API描述"
 

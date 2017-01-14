@@ -86,7 +86,7 @@ public class CreateZoneAction extends AbstractAction {
         info.path = "/zones";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "zone";
+        info.parameterName = "params";
         return info;
     }
 

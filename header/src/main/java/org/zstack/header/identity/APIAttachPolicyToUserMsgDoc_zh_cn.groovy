@@ -1,9 +1,11 @@
 package org.zstack.header.identity
 
-
+import org.zstack.header.identity.APIAttachPolicyToUserEvent
 
 doc {
-    title "在这里填写API标题"
+    title "AttachPolicyToUser"
+
+    category "identity"
 
     desc "在这里填写API描述"
 

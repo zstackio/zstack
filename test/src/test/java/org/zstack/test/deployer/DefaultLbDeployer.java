@@ -61,6 +61,7 @@ public class DefaultLbDeployer implements LbDeployer<LbConfig> {
                 a.protocol = lcfg.getProtocol();
                 a.instancePort = lcfg.getInstancePort().intValue();
                 a.loadBalancerPort = lcfg.getLoadBalancerPort().intValue();
+                a.sessionId = session.getUuid();
                 CreateLoadBalancerListenerAction.Result llres = a.call().throwExceptionIfError();
                 LoadBalancerListenerInventory inv = JSONObjectUtil.rehashObject(llres.value.getInventory(), LoadBalancerListenerInventory.class);
                 deployer.loadBalancerListeners.put(inv.getName(), inv);

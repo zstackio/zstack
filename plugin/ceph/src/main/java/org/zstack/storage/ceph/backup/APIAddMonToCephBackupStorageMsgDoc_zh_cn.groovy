@@ -1,9 +1,11 @@
 package org.zstack.storage.ceph.backup
 
-
+import org.zstack.storage.ceph.backup.APIAddMonToCephBackupStorageEvent
 
 doc {
-    title "在这里填写API标题"
+    title "AddMonToCephBackupStorage"
+
+    category "未知类别"
 
     desc "在这里填写API描述"
 

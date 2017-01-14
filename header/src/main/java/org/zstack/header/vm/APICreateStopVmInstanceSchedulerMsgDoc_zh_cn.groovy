@@ -1,9 +1,11 @@
 package org.zstack.header.vm
 
-
+import org.zstack.header.vm.APICreateStopVmInstanceSchedulerEvent
 
 doc {
-    title "在这里填写API标题"
+    title "CreateStopVmInstanceScheduler"
+
+    category "vmInstance"
 
     desc "在这里填写API描述"
 

@@ -1,9 +1,11 @@
 package org.zstack.kvm
 
-
+import org.zstack.header.host.APIUpdateHostEvent
 
 doc {
-    title "在这里填写API标题"
+    title "UpdateKVMHost"
+
+    category "host"
 
     desc "在这里填写API描述"
 

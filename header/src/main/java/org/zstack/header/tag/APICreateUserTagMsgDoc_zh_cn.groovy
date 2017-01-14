@@ -1,9 +1,11 @@
 package org.zstack.header.tag
 
-
+import org.zstack.header.tag.APICreateUserTagEvent
 
 doc {
-    title "在这里填写API标题"
+    title "CreateUserTag"
+
+    category "tag"
 
     desc "在这里填写API描述"
 

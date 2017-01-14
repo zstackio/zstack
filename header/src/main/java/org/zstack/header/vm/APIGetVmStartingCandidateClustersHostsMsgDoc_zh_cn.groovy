@@ -1,9 +1,11 @@
 package org.zstack.header.vm
 
-
+import org.zstack.header.vm.APIGetVmStartingCandidateClustersHostsReply
 
 doc {
-    title "在这里填写API标题"
+    title "GetVmStartingCandidateClustersHosts"
+
+    category "vmInstance"
 
     desc "在这里填写API描述"
 

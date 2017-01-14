@@ -1,9 +1,11 @@
 package org.zstack.core.config
 
-
+import org.zstack.core.config.APIUpdateGlobalConfigEvent
 
 doc {
-    title "在这里填写API标题"
+    title "UpdateGlobalConfig"
+
+    category "globalConfig"
 
     desc "在这里填写API描述"
 

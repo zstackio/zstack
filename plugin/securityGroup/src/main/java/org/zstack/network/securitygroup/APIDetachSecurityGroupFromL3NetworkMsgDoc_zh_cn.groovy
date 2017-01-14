@@ -1,9 +1,11 @@
 package org.zstack.network.securitygroup
 
-
+import org.zstack.network.securitygroup.APIDetachSecurityGroupFromL3NetworkEvent
 
 doc {
-    title "在这里填写API标题"
+    title "DetachSecurityGroupFromL3Network"
+
+    category "securityGroup"
 
     desc "在这里填写API描述"
 

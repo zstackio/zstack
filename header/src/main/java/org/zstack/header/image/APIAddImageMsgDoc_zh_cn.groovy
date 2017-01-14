@@ -1,9 +1,11 @@
 package org.zstack.header.image
 
-
+import org.zstack.header.image.APIAddImageEvent
 
 doc {
-    title "在这里填写API标题"
+    title "AddImage"
+
+    category "image"
 
     desc "在这里填写API描述"
 

@@ -1,9 +1,12 @@
 package org.zstack.header.configuration
 
+import org.zstack.header.configuration.APIQueryDiskOfferingReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "在这里填写API标题"
+    title "QueryDiskOffering"
+
+    category "configuration"
 
     desc "在这里填写API描述"
 

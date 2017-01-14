@@ -1,15 +1,17 @@
 package org.zstack.header.identity
 
-
+import org.zstack.header.identity.APILogOutReply
 
 doc {
-    title "在这里填写API标题"
+    title "LogOut"
+
+    category "identity"
 
     desc "在这里填写API描述"
 
     rest {
         request {
-			url "DELETE /v1/accounts/sessions/{uuid}"
+			url "DELETE /v1/accounts/sessions/{sessionUuid}"
 
 
             
@@ -24,7 +26,7 @@ doc {
 					name "sessionUuid"
 					enclosedIn ""
 					desc ""
-					location "body"
+					location "url"
 					type "String"
 					optional true
 					since "0.6"

@@ -1,9 +1,11 @@
 package org.zstack.network.securitygroup
 
-
+import org.zstack.network.securitygroup.APICreateSecurityGroupEvent
 
 doc {
-    title "在这里填写API标题"
+    title "CreateSecurityGroup"
+
+    category "securityGroup"
 
     desc "在这里填写API描述"
 

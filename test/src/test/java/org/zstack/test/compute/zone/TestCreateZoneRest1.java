@@ -94,5 +94,9 @@ public class TestCreateZoneRest1 {
         qaction.conditions.add(String.format("uuid=%s", zone.uuid));
         r = qaction.call();
         Assert.assertEquals(0, r.value.inventories.size());
+
+        LogOutAction la = new LogOutAction();
+        la.sessionUuid = api.getAdminSession().getUuid();
+        la.call();
     }
 }

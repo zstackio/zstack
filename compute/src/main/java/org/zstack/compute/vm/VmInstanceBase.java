@@ -954,6 +954,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             fireEvent.run();
             bus.reply(msg, reply);
             completion.done();
+            return;
         } else if (operation == VmAbnormalLifeCycleOperation.VmPausedFromRunningStateHostNotChanged) {
             // just synchronize database
             self.setHostUuid(msg.getHostUuid());
@@ -961,6 +962,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             fireEvent.run();
             bus.reply(msg, reply);
             completion.done();
+            return;
         }
 
         List<VmAbnormalLifeCycleExtensionPoint> exts = pluginRgty.getExtensionList(VmAbnormalLifeCycleExtensionPoint.class);
@@ -3988,6 +3990,12 @@ public class VmInstanceBase extends AbstractVmInstance {
                 dataVols.add(vol);
             }
         }
+
+        List<BuildVolumeSpecExtensionPoint> exts = pluginRgty.getExtensionList(
+                BuildVolumeSpecExtensionPoint.class);
+        String vmUuid = inv.getUuid();
+        exts.forEach(e -> dataVols.addAll(e.supplyAdditionalVolumesForVmInstance(vmUuid)));
+
         spec.setDestDataVolumes(dataVols);
 
         // When starting an imported VM, we might not have an image UUID.

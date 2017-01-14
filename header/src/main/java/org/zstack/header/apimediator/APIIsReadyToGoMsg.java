@@ -8,7 +8,8 @@ import org.zstack.header.rest.RestRequest;
         path = "/management-nodes/ready",
         method = HttpMethod.GET,
         parameterName = "params",
-        responseClass = APIIsReadyToGoReply.class
+        responseClass = APIIsReadyToGoReply.class,
+        category = "other"
 )
 public class APIIsReadyToGoMsg extends APISyncCallMessage {
     private String managementNodeId;

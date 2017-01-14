@@ -1,9 +1,11 @@
 package org.zstack.header.console
 
-
+import org.zstack.header.console.APIRequestConsoleAccessEvent
 
 doc {
-    title "在这里填写API标题"
+    title "RequestConsoleAccess"
+
+    category "console"
 
     desc "在这里填写API描述"
 

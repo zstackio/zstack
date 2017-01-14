@@ -1,9 +1,11 @@
 package org.zstack.header.apimediator
 
-
+import org.zstack.header.apimediator.APIIsReadyToGoReply
 
 doc {
-    title "在这里填写API标题"
+    title "IsReadyToGo"
+
+    category "other"
 
     desc "在这里填写API描述"
 

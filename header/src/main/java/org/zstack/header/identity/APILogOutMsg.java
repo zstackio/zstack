@@ -5,7 +5,7 @@ import org.zstack.header.rest.RestRequest;
 
 @SuppressCredentialCheck
 @RestRequest(
-        path = "/accounts/sessions/{uuid}",
+        path = "/accounts/sessions/{sessionUuid}",
         method = HttpMethod.DELETE,
         responseClass = APILogOutReply.class,
         parameterName = "null"

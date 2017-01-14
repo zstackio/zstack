@@ -1,9 +1,11 @@
 package org.zstack.header.volume
 
-
+import org.zstack.header.volume.APICreateVolumeSnapshotEvent
 
 doc {
-    title "在这里填写API标题"
+    title "CreateVolumeSnapshot"
+
+    category "volume"
 
     desc "在这里填写API描述"
 

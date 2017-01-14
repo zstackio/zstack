@@ -4,6 +4,12 @@ usage() {
     echo "usage:$0 [deploydb|deploy|xml-java-schema|premium|sdk|doc]"
 }
 
+py() {
+    cd test
+    mvn test -Dtest=TestGenerateApiPythonClassAndJsonTemplate
+    cd - > /dev/null
+}
+
 doc() {
     cd test
     mvn test -Dtest=TestGenerateDocTemplate
@@ -43,6 +49,8 @@ run_profile() {
         sdk
     elif test x$1 = x'doc'; then
 	doc
+    elif test x$1 = x'py'; then
+	py
     else
         mvn -pl build -P $1 exec:exec -D$1
     fi

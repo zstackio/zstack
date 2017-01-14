@@ -1,9 +1,12 @@
 package org.zstack.header.volume
 
+import org.zstack.header.volume.APIQueryVolumeReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "在这里填写API标题"
+    title "QueryVolume"
+
+    category "volume"
 
     desc "在这里填写API描述"
 

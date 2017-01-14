@@ -29,7 +29,7 @@ public class TestChangeVmPassword {
         DBUtil.reDeployDB();
         WebBeanConstructor con = new WebBeanConstructor();
         deployer = new Deployer("deployerXml/vm/TestChangeVmPassword.xml", con);
-        deployer.addSpringConfig("KVMRelated.xml");
+        deployer.addSpringConfig("mevocoRelated.xml");
         deployer.build();
         api = deployer.getApi();
         loader = deployer.getComponentLoader();

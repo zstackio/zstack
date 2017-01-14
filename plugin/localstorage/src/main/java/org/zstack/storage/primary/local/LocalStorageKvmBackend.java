@@ -21,6 +21,9 @@ import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.progress.ProgressConstants;
+import org.zstack.header.core.progress.ProgressVO;
+import org.zstack.header.core.progress.ProgressVO_;
 import org.zstack.header.core.validation.Validation;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -2159,6 +2162,15 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
             List<String> migrated;
 
+            private void deleteProgress(){
+                SimpleQuery<ProgressVO> q = dbf.createQuery(ProgressVO.class);
+                q.add(ProgressVO_.processType, SimpleQuery.Op.EQ, ProgressConstants.ProgressType.LocalStorageMigrateVolume.toString());
+                q.add(ProgressVO_.resourceUuid, SimpleQuery.Op.EQ, struct.getInfos().get(0).getResourceRef().getResourceUuid());
+                if (q.find() != null) {
+                    dbf.remove(q.find());
+                }
+            }
+
             @Override
             public void run(final FlowTrigger trigger, Map data) {
                 final CopyBitsFromRemoteCmd cmd = new CopyBitsFromRemoteCmd();
@@ -2179,12 +2191,14 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                         AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
                             @Override
                             public void success(AgentResponse rsp) {
+                                deleteProgress();
                                 migrated = cmd.paths;
                                 trigger.next();
                             }
 
                             @Override
                             public void fail(ErrorCode errorCode) {
+                                deleteProgress();
                                 trigger.fail(errorCode);
                             }
                         });

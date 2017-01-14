@@ -64,13 +64,13 @@ public class MysqlAsyncRestStore implements AsyncRestApiStore, Component {
             AsyncRestVO vo = dbf.findByUuid(evt.getApiId(), AsyncRestVO.class);
 
             if (vo == null) {
-                if (CoreGlobalProperty.UNIT_TEST_ON) {
-                    // some unit test directly send API message which we don't
-                    // have records
-                    return null;
-                } else {
-                    throw new CloudRuntimeException(String.format("cannot find record for the API event %s", JSONObjectUtil.toJsonString(evt)));
+                // for cases that directly send API message which we don't
+                // have records
+                if (logger.isTraceEnabled()) {
+                    logger.warn(String.format("cannot find record for the API event %s", JSONObjectUtil.toJsonString(evt)));
                 }
+
+                return null;
             }
 
             vo.setState(AsyncRestState.done);

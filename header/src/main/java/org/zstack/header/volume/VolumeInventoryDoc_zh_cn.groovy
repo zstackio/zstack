@@ -112,4 +112,10 @@ doc {
 		type "Timestamp"
 		since "0.6"
 	}
+	field {
+		name "isShareable"
+		desc ""
+		type "boolean"
+		since "0.6"
+	}
 }

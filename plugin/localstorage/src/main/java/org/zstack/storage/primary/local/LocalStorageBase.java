@@ -1,10 +1,12 @@
 package org.zstack.storage.primary.local;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.db.UpdateQuery;
@@ -35,10 +37,7 @@ import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshot
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO_;
-import org.zstack.header.volume.VolumeConstant;
-import org.zstack.header.volume.VolumeInventory;
-import org.zstack.header.volume.VolumeVO;
-import org.zstack.header.volume.VolumeVO_;
+import org.zstack.header.volume.*;
 import org.zstack.storage.primary.PrimaryStorageBase;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManager;
@@ -1056,36 +1055,32 @@ public class LocalStorageBase extends PrimaryStorageBase {
         });
     }
 
-    @Transactional
     private void handle(RemoveHostFromLocalStorageMsg msg) {
-        String sqlLocalStorageHostRefVO = "select ref" +
-                " from LocalStorageHostRefVO ref" +
-                " where hostUuid = :hostUuid" +
-                " and primaryStorageUuid = :primaryStorageUuid";
-        TypedQuery<LocalStorageHostRefVO> query = dbf.getEntityManager().
-                createQuery(sqlLocalStorageHostRefVO, LocalStorageHostRefVO.class);
-        query.setParameter("hostUuid", msg.getHostUuid());
-        query.setParameter("primaryStorageUuid", msg.getPrimaryStorageUuid());
-        LocalStorageHostRefVO ref = query.getSingleResult();
-        if (ref == null) {
-            return;
+        LocalStorageHostRefVO ref = Q.New(LocalStorageHostRefVO.class)
+                .eq(LocalStorageHostRefVO_.hostUuid, msg.getHostUuid())
+                .eq(LocalStorageHostRefVO_.primaryStorageUuid, self.getUuid())
+                .find();
+
+        if (ref != null) {
+            // on remove, subtract the capacity from every capacity
+            decreaseCapacity(ref.getTotalCapacity(),
+                    ref.getAvailableCapacity(),
+                    ref.getTotalPhysicalCapacity(),
+                    ref.getAvailablePhysicalCapacity(),
+                    ref.getSystemUsedCapacity());
+
+            dbf.remove(ref);
         }
-        dbf.remove(ref);
 
         deleteResourceRef(msg.getHostUuid());
 
-        // on remove, subtract the capacity from every capacity
-        decreaseCapacity(ref.getTotalCapacity(),
-                ref.getAvailableCapacity(),
-                ref.getTotalPhysicalCapacity(),
-                ref.getAvailablePhysicalCapacity(),
-                ref.getSystemUsedCapacity());
         bus.reply(msg, new RemoveHostFromLocalStorageReply());
     }
 
     void deleteResourceRef(String hostUuid) {
         SimpleQuery<LocalStorageResourceRefVO> rq = dbf.createQuery(LocalStorageResourceRefVO.class);
         rq.add(LocalStorageResourceRefVO_.hostUuid, Op.EQ, hostUuid);
+        rq.add(LocalStorageResourceRefVO_.primaryStorageUuid, Op.EQ, self.getUuid());
         List<LocalStorageResourceRefVO> refs = rq.list();
         if (refs.isEmpty()) {
             return;
@@ -1110,6 +1105,20 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
         // delete volumes
         if (!volumes.isEmpty()) {
+            new Runnable() {
+                @Override
+                @Transactional
+                public void run() {
+                    // delete VMs on the host
+                    String sql = "delete from VmInstanceVO vm where vm.rootVolumeUuid in (select vol.uuid from VolumeVO vol" +
+                            " where vol.uuid in (:volUuids) and vol.type = :volType)";
+                    Query q = dbf.getEntityManager().createQuery(sql);
+                    q.setParameter("volType", VolumeType.Root);
+                    q.setParameter("volUuids", volumes);
+                    q.executeUpdate();
+                }
+            }.run();
+
             uq = UpdateQuery.New();
             uq.entity(VolumeVO.class);
             uq.condAnd(VolumeVO_.uuid, Op.IN, volumes);
@@ -1135,19 +1144,15 @@ public class LocalStorageBase extends PrimaryStorageBase {
         final InitPrimaryStorageOnHostConnectedReply reply = new InitPrimaryStorageOnHostConnectedReply();
         LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(msg.getHostUuid());
         final LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
+
         bkd.handle(msg, new ReturnValueCompletion<PhysicalCapacityUsage>(msg) {
             @Override
-            @Transactional
             public void success(PhysicalCapacityUsage c) {
-                String sqlLocalStorageHostRefVO = "select ref" +
-                        " from LocalStorageHostRefVO ref" +
-                        " where hostUuid = :hostUuid" +
-                        " and primaryStorageUuid = :primaryStorageUuid";
-                TypedQuery<LocalStorageHostRefVO> query = dbf.getEntityManager().
-                        createQuery(sqlLocalStorageHostRefVO, LocalStorageHostRefVO.class);
-                query.setParameter("hostUuid", msg.getHostUuid());
-                query.setParameter("primaryStorageUuid", msg.getPrimaryStorageUuid());
-                List<LocalStorageHostRefVO> refs = query.getResultList();
+                List<LocalStorageHostRefVO> refs = Q.New(LocalStorageHostRefVO.class)
+                        .eq(LocalStorageHostRefVO_.hostUuid, msg.getHostUuid())
+                        .eq(LocalStorageHostRefVO_.primaryStorageUuid, self.getUuid())
+                        .list();
+
                 LocalStorageHostRefVO ref;
                 if (refs == null || refs.isEmpty()) {
                     ref = new LocalStorageHostRefVO();
@@ -1400,13 +1405,17 @@ public class LocalStorageBase extends PrimaryStorageBase {
     }
 
     private void createResourceRefVO(String resUuid, String resType, long size, String hostUuid) {
-        LocalStorageResourceRefVO ref = new LocalStorageResourceRefVO();
-        ref.setPrimaryStorageUuid(self.getUuid());
-        ref.setSize(size);
-        ref.setResourceType(resType);
-        ref.setResourceUuid(resUuid);
-        ref.setHostUuid(hostUuid);
-        dbf.persist(ref);
+        try {
+            LocalStorageResourceRefVO ref = new LocalStorageResourceRefVO();
+            ref.setPrimaryStorageUuid(self.getUuid());
+            ref.setSize(size);
+            ref.setResourceType(resType);
+            ref.setResourceUuid(resUuid);
+            ref.setHostUuid(hostUuid);
+            dbf.persist(ref);
+        } catch (DataIntegrityViolationException e) {
+            logger.warn("LocalStorageResourceRefVO Duplicated Entry", e);
+        }
     }
 
     @Override
@@ -1679,14 +1688,12 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 done(new FlowDoneHandler(msg) {
                     @Override
                     public void handle(Map data) {
-                        SimpleQuery<LocalStorageResourceRefVO> q = dbf.createQuery(LocalStorageResourceRefVO.class);
-                        q.add(LocalStorageResourceRefVO_.resourceUuid, Op.EQ, msg.getIsoSpec().getInventory().getUuid());
-                        q.add(LocalStorageResourceRefVO_.primaryStorageUuid, Op.EQ, self.getUuid());
-                        q.add(LocalStorageResourceRefVO_.resourceType, Op.EQ, ImageVO.class.getSimpleName());
-                        if (!q.isExists()) {
-                            createResourceRefVO(msg.getIsoSpec().getInventory().getUuid(), ImageVO.class.getSimpleName(),
-                                    msg.getIsoSpec().getInventory().getActualSize(), msg.getDestHostUuid());
-                        }
+                        createResourceRefVO(
+                                msg.getIsoSpec().getInventory().getUuid(),
+                                ImageVO.class.getSimpleName(),
+                                msg.getIsoSpec().getInventory().getActualSize(),
+                                msg.getDestHostUuid()
+                        );
 
                         bus.reply(msg, reply);
                     }

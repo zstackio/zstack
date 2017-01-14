@@ -1,9 +1,11 @@
 package org.zstack.header.zone
 
-
+import org.zstack.header.zone.APICreateZoneEvent
 
 doc {
-    title "在这里填写API标题"
+    title "CreateZone"
+
+    category "zone"
 
     desc "在这里填写API描述"
 
@@ -22,7 +24,7 @@ doc {
 
 				column {
 					name "name"
-					enclosedIn "zone"
+					enclosedIn "params"
 					desc "资源名称"
 					location "body"
 					type "String"
@@ -32,7 +34,7 @@ doc {
 				}
 				column {
 					name "description"
-					enclosedIn "zone"
+					enclosedIn "params"
 					desc "资源的详细描述"
 					location "body"
 					type "String"
@@ -42,7 +44,7 @@ doc {
 				}
 				column {
 					name "resourceUuid"
-					enclosedIn "zone"
+					enclosedIn "params"
 					desc ""
 					location "body"
 					type "String"

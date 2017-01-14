@@ -180,9 +180,9 @@ public class TagManagerImpl extends AbstractService implements TagManager,
             return count != 0;
         } else {
             SimpleQuery<SystemTagVO> q = dbf.createQuery(SystemTagVO.class);
-            q.add(UserTagVO_.resourceType, SimpleQuery.Op.EQ, resourceType);
-            q.add(UserTagVO_.tag, SimpleQuery.Op.EQ, tag);
-            q.add(UserTagVO_.resourceUuid, SimpleQuery.Op.EQ, resourceUuid);
+            q.add(SystemTagVO_.resourceType, SimpleQuery.Op.EQ, resourceType);
+            q.add(SystemTagVO_.tag, SimpleQuery.Op.EQ, tag);
+            q.add(SystemTagVO_.resourceUuid, SimpleQuery.Op.EQ, resourceUuid);
             long count = q.count();
             return count != 0;
         }
@@ -607,6 +607,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         return resourceTypeClassMap.keySet();
     }
 
+
     @Override
     public void validateSystemTag(String resourceUuid, String resourceType, String tag) {
         boolean checked = false;
@@ -622,6 +623,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
                     String.format("no system tag matches %s", tag)
             ));
         }
+
     }
 
     @Override

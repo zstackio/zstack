@@ -1,9 +1,11 @@
 package org.zstack.header.tag
 
-
+import org.zstack.header.tag.APIUpdateSystemTagEvent
 
 doc {
-    title "在这里填写API标题"
+    title "UpdateSystemTag"
+
+    category "tag"
 
     desc "在这里填写API描述"
 

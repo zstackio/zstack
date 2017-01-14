@@ -1,9 +1,11 @@
 package org.zstack.header.storage.backup
 
-
+import org.zstack.header.storage.backup.APIChangeBackupStorageStateEvent
 
 doc {
-    title "在这里填写API标题"
+    title "ChangeBackupStorageState"
+
+    category "storage.backup"
 
     desc "在这里填写API描述"
 
