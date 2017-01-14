@@ -6,6 +6,7 @@ import org.zstack.compute.vm.ImageBackupStorageSelector;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.gc.EventBasedGCPersistentContext;
@@ -884,8 +885,12 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                         public void run(MessageReply reply) {
                                             if (reply.isSuccess()) {
                                                 s = true;
+
+                                                reserveCapacityOnHost(hostUuid, image.getActualSize(), self.getUuid());
+
                                                 AllocatePrimaryStorageReply r = reply.castReply();
                                                 psUuid = r.getPrimaryStorageInventory().getUuid();
+
                                                 trigger.next();
                                             } else {
                                                 trigger.fail(reply.getError());
@@ -897,6 +902,8 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                 @Override
                                 public void rollback(FlowRollback trigger, Map data) {
                                     if (s) {
+                                        returnStorageCapacityToHost(hostUuid, image.getActualSize());
+
                                         ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
                                         rmsg.setDiskSize(image.getActualSize());
                                         rmsg.setNoOverProvisioning(true);
@@ -2162,7 +2169,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
             List<String> migrated;
 
-            private void deleteProgress(){
+            private void deleteProgress() {
                 SimpleQuery<ProgressVO> q = dbf.createQuery(ProgressVO.class);
                 q.add(ProgressVO_.processType, SimpleQuery.Op.EQ, ProgressConstants.ProgressType.LocalStorageMigrateVolume.toString());
                 q.add(ProgressVO_.resourceUuid, SimpleQuery.Op.EQ, struct.getInfos().get(0).getResourceRef().getResourceUuid());
@@ -2401,7 +2408,9 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
     @Override
     protected void handle(final CreateTemplateFromVolumeOnPrimaryStorageMsg msg) {
-        final LocalStorageResourceRefVO ref = dbf.findByUuid(msg.getVolumeInventory().getUuid(), LocalStorageResourceRefVO.class);
+        final LocalStorageResourceRefVO ref = Q.New(LocalStorageResourceRefVO.class)
+                .eq(LocalStorageResourceRefVO_.resourceUuid, msg.getVolumeInventory().getUuid())
+                .find();
         final CreateTemplateFromVolumeOnPrimaryStorageReply reply = new CreateTemplateFromVolumeOnPrimaryStorageReply();
 
         FlowChain chain = FlowChainBuilder.newShareFlowChain();

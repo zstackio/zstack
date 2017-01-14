@@ -6,11 +6,13 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageResourceRefVO;
+import org.zstack.storage.primary.local.LocalStorageResourceRefVO_;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 import org.zstack.test.Api;
@@ -73,17 +75,23 @@ public class TestLocalStorage19 {
 
         VolumeSnapshotInventory sp = api.createSnapshot(vm.getRootVolumeUuid());
         Assert.assertFalse(kconfig.snapshotCmds.isEmpty());
-        LocalStorageResourceRefVO ref = dbf.findByUuid(sp.getUuid(), LocalStorageResourceRefVO.class);
+        LocalStorageResourceRefVO ref = Q.New(LocalStorageResourceRefVO.class)
+                .eq(LocalStorageResourceRefVO_.resourceUuid, sp.getUuid())
+                .find();
         Assert.assertNotNull(ref);
         Assert.assertEquals(vm.getHostUuid(), ref.getHostUuid());
 
         sp = api.createSnapshot(vm.getRootVolumeUuid());
-        ref = dbf.findByUuid(sp.getUuid(), LocalStorageResourceRefVO.class);
+        ref = Q.New(LocalStorageResourceRefVO.class)
+                .eq(LocalStorageResourceRefVO_.resourceUuid, sp.getUuid())
+                .find();
         Assert.assertNotNull(ref);
         Assert.assertEquals(vm.getHostUuid(), ref.getHostUuid());
 
         sp = api.createSnapshot(vm.getRootVolumeUuid());
-        ref = dbf.findByUuid(sp.getUuid(), LocalStorageResourceRefVO.class);
+        ref = Q.New(LocalStorageResourceRefVO.class)
+                .eq(LocalStorageResourceRefVO_.resourceUuid, sp.getUuid())
+                .find();
         Assert.assertNotNull(ref);
         Assert.assertEquals(vm.getHostUuid(), ref.getHostUuid());
     }

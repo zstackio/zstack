@@ -6,6 +6,7 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.host.HostInventory;
@@ -233,7 +234,9 @@ public class TestLocalStorage32 {
             }
             Assert.assertTrue(String.format("fails to check snapshot[uuid:%s], getMd5Cmd", sp.getUuid()), s);
 
-            LocalStorageResourceRefVO spRef = dbf.findByUuid(sp.getUuid(), LocalStorageResourceRefVO.class);
+            LocalStorageResourceRefVO spRef = Q.New(LocalStorageResourceRefVO.class)
+                    .eq(LocalStorageResourceRefVO_.resourceUuid, sp.getUuid())
+                    .find();
             Assert.assertEquals(host1.getUuid(), spRef.getHostUuid());
 
             deleteBitsCmd = CollectionUtils.find(config.deleteBitsCmds, new Function<DeleteBitsCmd, DeleteBitsCmd>() {

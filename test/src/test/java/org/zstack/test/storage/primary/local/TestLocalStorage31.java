@@ -6,6 +6,7 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.host.HostInventory;
@@ -24,16 +25,13 @@ import org.zstack.header.volume.VolumeVO;
 import org.zstack.kvm.KVMAgentCommands.MigrateVmCmd;
 import org.zstack.kvm.KVMHostVO;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
-import org.zstack.storage.primary.local.LocalStorageHostRefVO;
-import org.zstack.storage.primary.local.LocalStorageHostRefVOFinder;
+import org.zstack.storage.primary.local.*;
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.CreateEmptyVolumeCmd;
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.DeleteBitsCmd;
 import org.zstack.storage.primary.local.LocalStorageKvmMigrateVmFlow.CopyBitsFromRemoteCmd;
 import org.zstack.storage.primary.local.LocalStorageKvmMigrateVmFlow.RebaseSnapshotBackingFilesCmd;
 import org.zstack.storage.primary.local.LocalStorageKvmMigrateVmFlow.SnapshotTO;
 import org.zstack.storage.primary.local.LocalStorageKvmMigrateVmFlow.VerifySnapshotChainCmd;
-import org.zstack.storage.primary.local.LocalStorageResourceRefVO;
-import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
@@ -184,7 +182,9 @@ public class TestLocalStorage31 {
             }
 
             // the reference to snapshots are changed to the host2
-            LocalStorageResourceRefVO ref = dbf.findByUuid(sp.getUuid(), LocalStorageResourceRefVO.class);
+            LocalStorageResourceRefVO ref = Q.New(LocalStorageResourceRefVO.class)
+                    .eq(LocalStorageResourceRefVO_.resourceUuid, sp.getUuid())
+                    .find();
             Assert.assertEquals(ref.getHostUuid(), host2.getUuid());
 
             // snapshots are rebased
@@ -269,7 +269,9 @@ public class TestLocalStorage31 {
             Assert.assertEquals(vol.getUuid(), createEmptyVolumeCmd.getVolumeUuid());
             Assert.assertEquals(vol.getSize(), createEmptyVolumeCmd.getSize());
 
-            LocalStorageResourceRefVO r = dbf.findByUuid(vol.getUuid(), LocalStorageResourceRefVO.class);
+            LocalStorageResourceRefVO r = Q.New(LocalStorageResourceRefVO.class)
+                    .eq(LocalStorageResourceRefVO_.resourceUuid, vol.getUuid())
+                    .find();
             Assert.assertEquals(host2.getUuid(), r.getHostUuid());
 
             // volumes are deleted on src host

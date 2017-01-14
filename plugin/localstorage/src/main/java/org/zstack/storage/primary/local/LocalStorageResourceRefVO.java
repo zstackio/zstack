@@ -17,6 +17,7 @@ import java.sql.Timestamp;
  */
 @Entity
 @Table
+@IdClass(CompositePrimaryKeyForLocalStorageResourceRefVO.class)
 @SoftDeletionCascades({
         @SoftDeletionCascade(parent = VolumeVO.class, joinColumn = "resourceUuid"),
         @SoftDeletionCascade(parent = VolumeSnapshotVO.class, joinColumn = "resourceUuid")
@@ -27,10 +28,12 @@ public class LocalStorageResourceRefVO {
     private String resourceUuid;
 
     @Column
+    @Id
     @ForeignKey(parentEntityClass = PrimaryStorageEO.class, onDeleteAction = ReferenceOption.CASCADE)
     private String primaryStorageUuid;
 
     @Column
+    @Id
     @ForeignKey(parentEntityClass = HostEO.class, onDeleteAction = ReferenceOption.CASCADE)
     private String hostUuid;
 
