@@ -35,9 +35,9 @@ import static org.zstack.utils.CollectionDSL.list;
 public class DatabaseFacadeImpl implements DatabaseFacade, Component {
     private static final CLogger logger = CLoggerImpl.getLogger(DatabaseFacadeImpl.class);
 
-    @PersistenceUnit(unitName="zstack.jpa")
+    @PersistenceUnit(unitName = "zstack.jpa")
     private EntityManagerFactory entityManagerFactory;
-    @PersistenceContext(unitName="zstack.jpa")
+    @PersistenceContext(unitName = "zstack.jpa")
     private EntityManager entityManager;
 
     @Autowired
@@ -66,7 +66,7 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
         EntityInfo(Class voClazz) {
             voClass = voClazz;
             voPrimaryKeyField = FieldUtils.getAnnotatedField(Id.class, voClass);
-            DebugUtils.Assert(voPrimaryKeyField!=null, String.format("%s has no primary key", voClass));
+            DebugUtils.Assert(voPrimaryKeyField != null, String.format("%s has no primary key", voClass));
             voPrimaryKeyField.setAccessible(true);
 
             EO at = (EO) voClazz.getAnnotation(EO.class);
@@ -465,7 +465,7 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
 
     EntityInfo getEntityInfo(Class clz) {
         EntityInfo info = entityInfoMap.get(clz);
-        DebugUtils.Assert(info!=null, String.format("cannot find entity info for %s", clz.getName()));
+        DebugUtils.Assert(info != null, String.format("cannot find entity info for %s", clz.getName()));
         return info;
     }
 
@@ -597,7 +597,7 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
         }
         return transactionAsyncCallbacks;
     }
-    
+
     private List<TransactionalSyncCallback> getTransactionSyncCallbacks() {
         if (transactionSyncCallbacks == null) {
             transactionSyncCallbacks = new ArrayList<TransactionalSyncCallback>();
@@ -606,7 +606,7 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
         }
         return transactionSyncCallbacks;
     }
-    
+
     @Override
     public void entityForTranscationCallback(Operation op, Class<?>... entityClass) {
         if (TransactionSynchronizationManager.isActualTransactionActive()) {
@@ -614,7 +614,7 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
                 TransactionSynchronizationSyncImpl tsi = new TransactionSynchronizationSyncImpl(cb, op, entityClass);
                 TransactionSynchronizationManager.registerSynchronization(tsi);
             }
-            
+
             for (TransactionalCallback cb : getTransactionAsyncCallbacks()) {
                 TransactionSynchronizationAsyncImpl tsi = new TransactionSynchronizationAsyncImpl(cb, op, entityClass);
                 TransactionSynchronizationManager.registerSynchronization(tsi);
@@ -624,7 +624,7 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
             for (Class<?> c : entityClass) {
                 sb.append(c.getName()).append(",");
             }
-            
+
             String err = String.format("entityForTranscationCallback is called but transcation is not active. Did you forget adding @Transactional to method??? [operation: %s, entity classes: %s]", op, sb.toString());
             logger.warn(err);
         }
@@ -634,10 +634,10 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
         this.dataSource = dataSource;
     }
 
-	@Override
-	public <T> T reload(T entity) {
+    @Override
+    public <T> T reload(T entity) {
         return (T) getEntityInfo(entity.getClass()).reload(entity);
-	}
+    }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     private void doUpdateCollection(Collection entities) {
@@ -672,7 +672,7 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
     public <T> List<T> listByApiMessage(APIListMessage msg, Class<T> clazz) {
         return listByPrimaryKeys(msg.getUuids(), msg.getOffset(), msg.getLength(), clazz);
     }
-    
+
     @Override
     public <T> List<T> listAll(Class<T> clazz) {
         return listAll(0, Integer.MAX_VALUE, clazz);
@@ -711,7 +711,7 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     @DeadlockAutoRestart
     public void eoCleanup(Class VOClazz) {
-        EntityInfo info  = getEntityInfo(VOClazz);
+        EntityInfo info = getEntityInfo(VOClazz);
         if (!info.hasEO()) {
             return;
         }
