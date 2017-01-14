@@ -6,12 +6,14 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.storage.primary.local.LocalStorageResourceRefVO;
+import org.zstack.storage.primary.local.LocalStorageResourceRefVO_;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 import org.zstack.test.Api;
@@ -77,9 +79,13 @@ public class TestLocalStorage9 {
 
         Assert.assertFalse(config.createEmptyVolumeCmds.isEmpty());
 
-        LocalStorageResourceRefVO rootRef = dbf.findByUuid(vm.getRootVolumeUuid(), LocalStorageResourceRefVO.class);
+        LocalStorageResourceRefVO rootRef = Q.New(LocalStorageResourceRefVO.class)
+                .eq(LocalStorageResourceRefVO_.resourceUuid, vm.getRootVolumeUuid())
+                .find();
         Assert.assertNotNull(rootRef);
-        LocalStorageResourceRefVO dataRef = dbf.findByUuid(data.getUuid(), LocalStorageResourceRefVO.class);
+        LocalStorageResourceRefVO dataRef = Q.New(LocalStorageResourceRefVO.class)
+                .eq(LocalStorageResourceRefVO_.resourceUuid, data.getUuid())
+                .find();
         Assert.assertNotNull(dataRef);
         Assert.assertEquals(rootRef.getHostUuid(), dataRef.getHostUuid());
         Assert.assertEquals(data.getSize(), dataRef.getSize());

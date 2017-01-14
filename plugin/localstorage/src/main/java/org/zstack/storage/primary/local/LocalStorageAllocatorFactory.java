@@ -3,6 +3,7 @@ package org.zstack.storage.primary.local;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -132,7 +133,9 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
                 }
             }
         } else if (VmOperation.Start.toString().equals(spec.getVmOperation())) {
-            final LocalStorageResourceRefVO ref = dbf.findByUuid(spec.getVmInstance().getRootVolumeUuid(), LocalStorageResourceRefVO.class);
+            final LocalStorageResourceRefVO ref = Q.New(LocalStorageResourceRefVO.class)
+                    .eq(LocalStorageResourceRefVO_.resourceUuid, spec.getVmInstance().getRootVolumeUuid())
+                    .find();
             if (ref != null) {
                 candidates = CollectionUtils.transformToList(candidates, new Function<HostVO, HostVO>() {
                     @Override

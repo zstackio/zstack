@@ -103,7 +103,6 @@ import org.zstack.ipsec.IPsecConnectionInventory;
 import org.zstack.kvm.APIAddKVMHostMsg;
 import org.zstack.kvm.APIUpdateKVMHostMsg;
 import org.zstack.kvm.KVMHostInventory;
-import org.zstack.header.volume.APIDeleteVolumeQosMsg;
 import org.zstack.license.*;
 import org.zstack.license.LicenseInventory;
 import org.zstack.logging.APIDeleteLogEvent;
@@ -1519,7 +1518,9 @@ public class Api implements CloudBusEventListener {
                                                                    SessionInventory session) throws ApiSenderException {
 
         VmCreator creator = new VmCreator(this);
+        creator.zoneUuid = inv.getZoneUuid();
         creator.clusterUUid = inv.getClusterUuid();
+        creator.hostUuid = inv.getHostUuid();
         creator.diskOfferingUuids = diskOfferingUuids;
         creator.session = session;
         creator.description = inv.getDescription();
@@ -1528,7 +1529,6 @@ public class Api implements CloudBusEventListener {
         creator.instanceOfferingUuid = inv.getInstanceOfferingUuid();
         creator.l3NetworkUuids = l3NetworkUuids;
         creator.name = inv.getName();
-        creator.zoneUuid = inv.getZoneUuid();
         creator.rootDiskOfferingUuid = rootDiskOfferingUuid;
         creator.defaultL3NetworkUuid = inv.getDefaultL3NetworkUuid();
         if (creator.defaultL3NetworkUuid == null && creator.l3NetworkUuids.size() > 1) {
@@ -2025,7 +2025,7 @@ public class Api implements CloudBusEventListener {
         action.userUuid = userUuid;
         action.policyUuids = puuids;
         action.sessionId = getSessionUuid(session);
-        DetachPoliciesFromUserAction.Result  res = action.call();
+        DetachPoliciesFromUserAction.Result res = action.call();
         throwExceptionIfNeed(res.error);
     }
 
@@ -2370,7 +2370,7 @@ public class Api implements CloudBusEventListener {
 
     public SecurityGroupInventory addSecurityGroupRuleByFullConfig(String securityGroupUuid, List<SecurityGroupRuleAO> aos, SessionInventory session)
             throws ApiSenderException {
-        AddSecurityGroupRuleAction action= new AddSecurityGroupRuleAction();
+        AddSecurityGroupRuleAction action = new AddSecurityGroupRuleAction();
         action.rules = aos;
         action.securityGroupUuid = securityGroupUuid;
         action.sessionId = session.getUuid();

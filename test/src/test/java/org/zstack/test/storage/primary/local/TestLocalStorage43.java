@@ -6,6 +6,7 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.MigrateVmOnHypervisorMsg.StorageMigrationPolicy;
@@ -151,7 +152,9 @@ public class TestLocalStorage43 {
                 Assert.assertEquals(lastestSp.getPrimaryStorageInstallPath(), cmd.getBackingFile());
             }
 
-            LocalStorageResourceRefVO r = dbf.findByUuid(vol.getUuid(), LocalStorageResourceRefVO.class);
+            LocalStorageResourceRefVO r = Q.New(LocalStorageResourceRefVO.class)
+                    .eq(LocalStorageResourceRefVO_.resourceUuid, vol.getUuid())
+                    .find();
             Assert.assertEquals(host2.getUuid(), r.getHostUuid());
 
             // volumes are deleted on src host
