@@ -54,4 +54,17 @@ public class ObjectUtils {
             throw new RuntimeException(e);
         }
     }
+
+    public static Map<String, Object> objectToMap(Object obj) throws IllegalAccessException {
+        if (obj == null) {
+            return null;
+        }
+
+        Map<String, Object> map = new HashMap<String, Object>();
+        for (Field field: obj.getClass().getDeclaredFields()) {
+            field.setAccessible(true);
+            map.put(field.getName(), field.get(obj));
+        }
+        return map;
+    }
 }

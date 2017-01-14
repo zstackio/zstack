@@ -67,6 +67,6 @@ public class TestCeph14 {
 
         PrimaryStorageCapacityVO cap = dbf.findByUuid(ps.getUuid(), PrimaryStorageCapacityVO.class);
         Assert.assertEquals(c.totalCapacity, cap.getTotalCapacity());
-        Assert.assertEquals(c.totalCapacity, cap.getAvailableCapacity());
+        Assert.assertEquals(c.availCapacity, cap.getAvailableCapacity());
     }
 }
