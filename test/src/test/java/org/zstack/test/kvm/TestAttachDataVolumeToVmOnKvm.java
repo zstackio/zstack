@@ -16,12 +16,11 @@ import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.test.storage.backup.sftp.TestSftpBackupStorageDeleteImage2;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 public class TestAttachDataVolumeToVmOnKvm {
-    CLogger logger = Utils.getLogger(TestSftpBackupStorageDeleteImage2.class);
+    CLogger logger = Utils.getLogger(TestAttachDataVolumeToVmOnKvm.class);
     Deployer deployer;
     Api api;
     ComponentLoader loader;
