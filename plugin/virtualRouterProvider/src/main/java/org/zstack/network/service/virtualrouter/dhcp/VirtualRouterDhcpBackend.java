@@ -68,6 +68,17 @@ public class VirtualRouterDhcpBackend extends AbstractVirtualRouterBackend imple
                 e.setNetmask(struct.getNetmask());
                 e.setDnsDomain(struct.getDnsDomain());
                 e.setHostname(struct.getHostname());
+
+                if (e.isDefaultL3Network()) {
+                    if (e.getHostname() == null) {
+                        e.setHostname(e.getIp().replaceAll("\\.", "-"));
+                    }
+
+                    if (e.getDnsDomain() != null) {
+                        e.setHostname(String.format("%s.%s", e.getHostname(), e.getDnsDomain()));
+                    }
+                }
+
                 VmNicInventory vrNic = CollectionUtils.find(vr.getVmNics(), new Function<VmNicInventory, VmNicInventory>() {
                     @Override
                     public VmNicInventory call(VmNicInventory arg) {
