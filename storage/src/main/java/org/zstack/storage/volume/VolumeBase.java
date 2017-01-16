@@ -1091,9 +1091,20 @@ public class VolumeBase implements Volume {
         return vms;
     }
 
+    private boolean volumeIsAttached(final String volumeUuid) {
+        SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
+        q.select(VolumeVO_.vmInstanceUuid);
+        q.add(VolumeVO_.uuid, Op.EQ, volumeUuid);
+        return q.findValue() != null;
+    }
+
     private void handle(APIGetDataVolumeAttachableVmMsg msg) {
         APIGetDataVolumeAttachableVmReply reply = new APIGetDataVolumeAttachableVmReply();
-        reply.setInventories(VmInstanceInventory.valueOf(getCandidateVmForAttaching(msg.getSession().getAccountUuid())));
+        if (volumeIsAttached(msg.getVolumeUuid())) {
+            reply.setInventories(VmInstanceInventory.valueOf(new ArrayList<>()));
+        } else {
+            reply.setInventories(VmInstanceInventory.valueOf(getCandidateVmForAttaching(msg.getSession().getAccountUuid())));
+        }
         bus.reply(msg, reply);
     }
 

@@ -63,6 +63,10 @@ public class TestDataVolumeGetCandidateVm1 {
         vms = api.getDataVolumeCandidateVmForAttaching(account1Data1.getUuid(), session1);
         Assert.assertEquals(1, vms.size());
 
+        api.attachVolumeToVm(vms.get(0).getUuid(), account1Data1.getUuid());
+        vms = api.getDataVolumeCandidateVmForAttaching(account1Data1.getUuid(), session1);
+        Assert.assertEquals(0, vms.size());
+
         // for admin
         VolumeInventory adminData1 = api.createDataVolume("admin-data1", dinv.getUuid());
         vms = api.getDataVolumeCandidateVmForAttaching(adminData1.getUuid(), session1);
