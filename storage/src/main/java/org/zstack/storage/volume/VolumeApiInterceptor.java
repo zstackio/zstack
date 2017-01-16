@@ -135,13 +135,8 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
             ));
         }
 
-        String vmUuid = t.get(0, String.class);
-        if (vmUuid != null) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("volume[uuid:%s] has attached to vm[uuid:%s]", msg.getVolumeUuid(), vmUuid)
-            ));
-        }
-
+        // As per issue #1696, we do not report error if the volume has been attached.
+        // Instead, an empty list will be returned later when handling this message.
         VolumeState state = t.get(1, VolumeState.class);
         if (state != VolumeState.Enabled) {
             throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
