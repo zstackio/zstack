@@ -1,8 +1,5 @@
 package org.zstack.header.vm
 
-import org.zstack.header.volume.VolumeInventory
-import org.zstack.header.vm.VmInstanceInventory
-
 doc {
     title "xxx"
 
