@@ -1,58 +1,56 @@
 package org.zstack.header.console
 
-import org.zstack.header.console.APIReconnectConsoleProxyAgentEvent
-
 doc {
     title "ReconnectConsoleProxyAgent"
 
     category "console"
 
-    desc "在这里填写API描述"
+    desc "重连控制台代理Agent"
 
     rest {
         request {
-			url "PUT /v1/consoles/agents"
+            url "PUT /v1/consoles/agents"
 
 
-            header (OAuth: 'the-session-uuid')
+            header(OAuth: 'the-session-uuid')
 
             clz APIReconnectConsoleProxyAgentMsg.class
 
-            desc ""
-            
-			params {
+            desc "重连控制台代理Agent"
 
-				column {
-					name "agentUuids"
-					enclosedIn "params"
-					desc ""
-					location "body"
-					type "List"
-					optional true
-					since "0.6"
-					
-				}
-				column {
-					name "systemTags"
-					enclosedIn ""
-					desc ""
-					location "body"
-					type "List"
-					optional true
-					since "0.6"
-					
-				}
-				column {
-					name "userTags"
-					enclosedIn ""
-					desc ""
-					location "body"
-					type "List"
-					optional true
-					since "0.6"
-					
-				}
-			}
+            params {
+
+                column {
+                    name "agentUuids"
+                    enclosedIn "params"
+                    desc "控制台代理Agent的UUID"
+                    location "body"
+                    type "List"
+                    optional true
+                    since "0.6"
+
+                }
+                column {
+                    name "systemTags"
+                    enclosedIn ""
+                    desc "系统标签"
+                    location "body"
+                    type "List"
+                    optional true
+                    since "0.6"
+
+                }
+                column {
+                    name "userTags"
+                    enclosedIn ""
+                    desc "用户标签"
+                    location "body"
+                    type "List"
+                    optional true
+                    since "0.6"
+
+                }
+            }
         }
 
         response {

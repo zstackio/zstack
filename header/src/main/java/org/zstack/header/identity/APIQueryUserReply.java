@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * Created by frank on 7/14/2015.
  */
-@RestResponse
+@RestResponse(allTo = "inventories")
 public class APIQueryUserReply extends APIQueryReply {
     private List<UserInventory> inventories;
 

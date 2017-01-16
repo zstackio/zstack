@@ -34,8 +34,8 @@ doc {
 				}
 				column {
 					name "systemTags"
-					enclosedIn ""
-					desc ""
+ 					enclosedIn ""
+ 					desc ""
 					location "body"
 					type "List"
 					optional true
@@ -45,7 +45,7 @@ doc {
 				column {
 					name "userTags"
 					enclosedIn ""
-					desc ""
+					desc "用户标签"
 					location "body"
 					type "List"
 					optional true

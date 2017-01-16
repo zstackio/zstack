@@ -1,68 +1,66 @@
 package org.zstack.header.identity
 
-import org.zstack.header.identity.APICheckApiPermissionReply
-
 doc {
     title "CheckApiPermission"
 
     category "identity"
 
-    desc "在这里填写API描述"
+    desc "检查API权限"
 
     rest {
         request {
-			url "PUT /v1/accounts/permissions/actions"
+            url "PUT /v1/accounts/permissions/actions"
 
 
-            header (OAuth: 'the-session-uuid')
+            header(OAuth: 'the-session-uuid')
 
             clz APICheckApiPermissionMsg.class
 
-            desc ""
-            
-			params {
+            desc "检查API权限"
 
-				column {
-					name "userUuid"
-					enclosedIn "checkApiPermission"
-					desc "用户UUID"
-					location "body"
-					type "String"
-					optional true
-					since "0.6"
-					
-				}
-				column {
-					name "apiNames"
-					enclosedIn "checkApiPermission"
-					desc ""
-					location "body"
-					type "List"
-					optional false
-					since "0.6"
-					
-				}
-				column {
-					name "systemTags"
-					enclosedIn ""
-					desc ""
-					location "body"
-					type "List"
-					optional true
-					since "0.6"
-					
-				}
-				column {
-					name "userTags"
-					enclosedIn ""
-					desc ""
-					location "body"
-					type "List"
-					optional true
-					since "0.6"
-					
-				}
-			}
+            params {
+
+                column {
+                    name "userUuid"
+                    enclosedIn "checkApiPermission"
+                    desc "用户UUID"
+                    location "body"
+                    type "String"
+                    optional true
+                    since "0.6"
+
+                }
+                column {
+                    name "apiNames"
+                    enclosedIn "checkApiPermission"
+                    desc "API名称列表"
+                    location "body"
+                    type "List"
+                    optional false
+                    since "0.6"
+
+                }
+                column {
+                    name "systemTags"
+                    enclosedIn ""
+                    desc "系统标签"
+                    location "body"
+                    type "List"
+                    optional true
+                    since "0.6"
+
+                }
+                column {
+                    name "userTags"
+                    enclosedIn ""
+                    desc "用户标签"
+                    location "body"
+                    type "List"
+                    optional true
+                    since "0.6"
+
+                }
+            }
         }
 
         response {

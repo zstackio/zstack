@@ -1,6 +1,5 @@
 package org.zstack.network.service.vip
 
-import org.zstack.network.service.vip.APIQueryVipReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
@@ -8,22 +7,22 @@ doc {
 
     category "vip"
 
-    desc "在这里填写API描述"
+    desc "查询VIP"
 
     rest {
         request {
-			url "GET /v1/vips"
+            url "GET /v1/vips"
 
-			url "GET /v1/vips/{uuid}"
+            url "GET /v1/vips/{uuid}"
 
 
-            header (OAuth: 'the-session-uuid')
+            header(OAuth: 'the-session-uuid')
 
             clz APIQueryVipMsg.class
 
-            desc ""
-            
-			params APIQueryMessage.class
+            desc "查询VIP"
+
+            params APIQueryMessage.class
         }
 
         response {

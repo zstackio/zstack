@@ -1,7 +1,5 @@
 package org.zstack.header.vm
 
-import org.zstack.header.vm.APIGetInterdependentL3NetworkImageReply
-
 doc {
     title "GetInterdependentL3NetworksImages"
 
@@ -11,68 +9,68 @@ doc {
 
     rest {
         request {
-			url "GET /v1/images-l3networks/dependencies"
+            url "GET /v1/images-l3networks/dependencies"
 
 
-            header (OAuth: 'the-session-uuid')
+            header(OAuth: 'the-session-uuid')
 
             clz APIGetInterdependentL3NetworksImagesMsg.class
 
             desc ""
-            
-			params {
 
-				column {
-					name "zoneUuid"
-					enclosedIn "params"
-					desc "区域UUID"
-					location "query"
-					type "String"
-					optional false
-					since "0.6"
-					
-				}
-				column {
-					name "l3NetworkUuids"
-					enclosedIn "params"
-					desc ""
-					location "query"
-					type "List"
-					optional true
-					since "0.6"
-					
-				}
-				column {
-					name "imageUuid"
-					enclosedIn "params"
-					desc "镜像UUID"
-					location "query"
-					type "String"
-					optional true
-					since "0.6"
-					
-				}
-				column {
-					name "systemTags"
-					enclosedIn ""
-					desc ""
-					location "query"
-					type "List"
-					optional true
-					since "0.6"
-					
-				}
-				column {
-					name "userTags"
-					enclosedIn ""
-					desc ""
-					location "query"
-					type "List"
-					optional true
-					since "0.6"
-					
-				}
-			}
+            params {
+
+                column {
+                    name "zoneUuid"
+                    enclosedIn "params"
+                    desc "区域UUID"
+                    location "query"
+                    type "String"
+                    optional false
+                    since "0.6"
+
+                }
+                column {
+                    name "l3NetworkUuids"
+                    enclosedIn "params"
+                    desc ""
+                    location "query"
+                    type "List"
+                    optional true
+                    since "0.6"
+
+                }
+                column {
+                    name "imageUuid"
+                    enclosedIn "params"
+                    desc "镜像UUID"
+                    location "query"
+                    type "String"
+                    optional true
+                    since "0.6"
+
+                }
+                column {
+                    name "systemTags"
+                    enclosedIn ""
+                    desc ""
+                    location "query"
+                    type "List"
+                    optional true
+                    since "0.6"
+
+                }
+                column {
+                    name "userTags"
+                    enclosedIn ""
+                    desc "用户标签"
+                    location "query"
+                    type "List"
+                    optional true
+                    since "0.6"
+
+                }
+            }
         }
 
         response {

@@ -1,7 +1,5 @@
 package org.zstack.header.image
 
-import org.zstack.header.image.APIExpungeImageEvent
-
 doc {
     title "ExpungeImage"
 
@@ -11,58 +9,58 @@ doc {
 
     rest {
         request {
-			url "PUT /v1/images/{imageUuid}/actions"
+            url "PUT /v1/images/{imageUuid}/actions"
 
 
-            header (OAuth: 'the-session-uuid')
+            header(OAuth: 'the-session-uuid')
 
             clz APIExpungeImageMsg.class
 
             desc ""
-            
-			params {
 
-				column {
-					name "imageUuid"
-					enclosedIn "params"
-					desc "镜像UUID"
-					location "url"
-					type "String"
-					optional false
-					since "0.6"
-					
-				}
-				column {
-					name "backupStorageUuids"
-					enclosedIn "params"
-					desc ""
-					location "body"
-					type "List"
-					optional true
-					since "0.6"
-					
-				}
-				column {
-					name "systemTags"
-					enclosedIn ""
-					desc ""
-					location "body"
-					type "List"
-					optional true
-					since "0.6"
-					
-				}
-				column {
-					name "userTags"
-					enclosedIn ""
-					desc ""
-					location "body"
-					type "List"
-					optional true
-					since "0.6"
-					
-				}
-			}
+            params {
+
+                column {
+                    name "imageUuid"
+                    enclosedIn "params"
+                    desc "镜像UUID"
+                    location "url"
+                    type "String"
+                    optional false
+                    since "0.6"
+
+                }
+                column {
+                    name "backupStorageUuids"
+                    enclosedIn "params"
+                    desc ""
+                    location "body"
+                    type "List"
+                    optional true
+                    since "0.6"
+
+                }
+                column {
+                    name "systemTags"
+                    enclosedIn ""
+                    desc ""
+                    location "body"
+                    type "List"
+                    optional true
+                    since "0.6"
+
+                }
+                column {
+                    name "userTags"
+                    enclosedIn ""
+                    desc "用户标签"
+                    location "body"
+                    type "List"
+                    optional true
+                    since "0.6"
+
+                }
+            }
         }
 
         response {

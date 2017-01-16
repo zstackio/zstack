@@ -1,6 +1,5 @@
 package org.zstack.header.configuration
 
-import org.zstack.header.configuration.APIQueryInstanceOfferingReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
@@ -8,22 +7,22 @@ doc {
 
     category "configuration"
 
-    desc "在这里填写API描述"
+    desc "查询云主机规格"
 
     rest {
         request {
-			url "GET /v1/instance-offerings"
+            url "GET /v1/instance-offerings"
 
-			url "GET /v1/instance-offerings/{uuid}"
+            url "GET /v1/instance-offerings/{uuid}"
 
 
-            header (OAuth: 'the-session-uuid')
+            header(OAuth: 'the-session-uuid')
 
             clz APIQueryInstanceOfferingMsg.class
 
-            desc ""
-            
-			params APIQueryMessage.class
+            desc "查询云主机规格"
+
+            params APIQueryMessage.class
         }
 
         response {

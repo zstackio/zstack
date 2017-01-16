@@ -1,68 +1,66 @@
 package org.zstack.header.configuration
 
-import org.zstack.header.configuration.APIChangeInstanceOfferingStateEvent
-
 doc {
     title "ChangeInstanceOfferingState"
 
     category "configuration"
 
-    desc "在这里填写API描述"
+    desc "更改云主机规格的启用状态"
 
     rest {
         request {
-			url "PUT /v1/instance-offerings/{uuid}/actions"
+            url "PUT /v1/instance-offerings/{uuid}/actions"
 
 
-            header (OAuth: 'the-session-uuid')
+            header(OAuth: 'the-session-uuid')
 
             clz APIChangeInstanceOfferingStateMsg.class
 
-            desc ""
-            
-			params {
+            desc "更改云主机规格的启用状态"
 
-				column {
-					name "uuid"
-					enclosedIn "changeInstanceOfferingState"
-					desc "资源的UUID，唯一标示该资源"
-					location "url"
-					type "String"
-					optional false
-					since "0.6"
-					
-				}
-				column {
-					name "stateEvent"
-					enclosedIn "changeInstanceOfferingState"
-					desc ""
-					location "body"
-					type "String"
-					optional false
-					since "0.6"
-					values ("enable","disable")
-				}
-				column {
-					name "systemTags"
-					enclosedIn ""
-					desc ""
-					location "body"
-					type "List"
-					optional true
-					since "0.6"
-					
-				}
-				column {
-					name "userTags"
-					enclosedIn ""
-					desc ""
-					location "body"
-					type "List"
-					optional true
-					since "0.6"
-					
-				}
-			}
+            params {
+
+                column {
+                    name "uuid"
+                    enclosedIn "changeInstanceOfferingState"
+                    desc "资源的UUID，唯一标示该资源"
+                    location "url"
+                    type "String"
+                    optional false
+                    since "0.6"
+
+                }
+                column {
+                    name "stateEvent"
+                    enclosedIn "changeInstanceOfferingState"
+                    desc "状态事件"
+                    location "body"
+                    type "String"
+                    optional false
+                    since "0.6"
+                    values("enable", "disable")
+                }
+                column {
+                    name "systemTags"
+                    enclosedIn ""
+                    desc "系统标签"
+                    location "body"
+                    type "List"
+                    optional true
+                    since "0.6"
+
+                }
+                column {
+                    name "userTags"
+                    enclosedIn ""
+                    desc "用户标签"
+                    location "body"
+                    type "List"
+                    optional true
+                    since "0.6"
+
+                }
+            }
         }
 
         response {
