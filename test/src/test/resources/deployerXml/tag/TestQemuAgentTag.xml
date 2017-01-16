@@ -32,8 +32,6 @@
 		</userVm>
 	</vm>
 
-
-
 	<zones>
 	<zone name="TestZone" description="Test">
 		<clusters>
