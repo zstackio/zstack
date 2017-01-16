@@ -1287,7 +1287,6 @@ public class KvmBackend extends HypervisorBackend {
                     return f.createDownloader(getSelfInventory(), backupStorageUuid);
                 }
             }
-
             throw new CloudRuntimeException(String.format("cannot find any BackupStorageKvmFactory for the type[%s]", bsType));
         }
     }

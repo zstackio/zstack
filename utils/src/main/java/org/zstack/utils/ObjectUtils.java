@@ -1,5 +1,7 @@
 package org.zstack.utils;
 
+import org.zstack.utils.logging.CLogger;
+
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
@@ -7,6 +9,7 @@ import java.util.Map;
 /**
  */
 public class ObjectUtils {
+    public static CLogger logger = Utils.getLogger(ObjectUtils.class);
     public static <T> T copy(T dst, Object src) {
         Class dstClass = dst.getClass();
         Class srcClass = null;
@@ -53,18 +56,5 @@ public class ObjectUtils {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-    }
-
-    public static Map<String, Object> objectToMap(Object obj) throws IllegalAccessException {
-        if (obj == null) {
-            return null;
-        }
-
-        Map<String, Object> map = new HashMap<String, Object>();
-        for (Field field: obj.getClass().getDeclaredFields()) {
-            field.setAccessible(true);
-            map.put(field.getName(), field.get(obj));
-        }
-        return map;
     }
 }
