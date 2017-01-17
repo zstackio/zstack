@@ -1,6 +1,5 @@
 package org.zstack.header.identity
 
-import org.zstack.header.identity.APIQueryAccountReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
@@ -8,22 +7,22 @@ doc {
 
     category "identity"
 
-    desc "在这里填写API描述"
+    desc "查询账户"
 
     rest {
         request {
-			url "GET /v1/accounts"
+            url "GET /v1/accounts"
 
-			url "GET /v1/accounts/{uuid}"
+            url "GET /v1/accounts/{uuid}"
 
 
-            header (OAuth: 'the-session-uuid')
+            header(OAuth: 'the-session-uuid')
 
             clz APIQueryAccountMsg.class
 
-            desc ""
-            
-			params APIQueryMessage.class
+            desc "查询账户"
+
+            params APIQueryMessage.class
         }
 
         response {

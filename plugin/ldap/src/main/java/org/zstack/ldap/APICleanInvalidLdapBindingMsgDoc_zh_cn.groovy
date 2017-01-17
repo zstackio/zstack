@@ -1,48 +1,46 @@
 package org.zstack.ldap
 
-import org.zstack.ldap.APICleanInvalidLdapBindingEvent
-
 doc {
     title "CleanInvalidLdapBinding"
 
     category "ldap"
 
-    desc "在这里填写API描述"
+    desc "清理无效的LDAP绑定"
 
     rest {
         request {
-			url "PUT /v1/ldap/bindings/actions"
+            url "PUT /v1/ldap/bindings/actions"
 
 
-            header (OAuth: 'the-session-uuid')
+            header(OAuth: 'the-session-uuid')
 
             clz APICleanInvalidLdapBindingMsg.class
 
-            desc ""
-            
-			params {
+            desc "清理无效的LDAP绑定"
 
-				column {
-					name "systemTags"
-					enclosedIn ""
-					desc ""
-					location "body"
-					type "List"
-					optional true
-					since "0.6"
-					
-				}
-				column {
-					name "userTags"
-					enclosedIn ""
-					desc ""
-					location "body"
-					type "List"
-					optional true
-					since "0.6"
-					
-				}
-			}
+            params {
+
+                column {
+                    name "systemTags"
+                    enclosedIn ""
+                    desc "系统标签"
+                    location "body"
+                    type "List"
+                    optional true
+                    since "0.6"
+
+                }
+                column {
+                    name "userTags"
+                    enclosedIn ""
+                    desc "用户标签"
+                    location "body"
+                    type "List"
+                    optional true
+                    since "0.6"
+
+                }
+            }
         }
 
         response {

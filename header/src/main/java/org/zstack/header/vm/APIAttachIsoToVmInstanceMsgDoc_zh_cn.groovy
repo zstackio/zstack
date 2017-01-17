@@ -1,7 +1,5 @@
 package org.zstack.header.vm
 
-import org.zstack.header.vm.APIAttachIsoToVmInstanceEvent
-
 doc {
     title "AttachIsoToVmInstance"
 
@@ -11,58 +9,58 @@ doc {
 
     rest {
         request {
-			url "POST /v1/vm-instances/{vmInstanceUuid}/iso/{isoUuid}"
+            url "POST /v1/vm-instances/{vmInstanceUuid}/iso/{isoUuid}"
 
 
-            header (OAuth: 'the-session-uuid')
+            header(OAuth: 'the-session-uuid')
 
             clz APIAttachIsoToVmInstanceMsg.class
 
             desc ""
-            
-			params {
 
-				column {
-					name "vmInstanceUuid"
-					enclosedIn ""
-					desc "云主机UUID"
-					location "url"
-					type "String"
-					optional false
-					since "0.6"
-					
-				}
-				column {
-					name "isoUuid"
-					enclosedIn ""
-					desc ""
-					location "url"
-					type "String"
-					optional false
-					since "0.6"
-					
-				}
-				column {
-					name "systemTags"
-					enclosedIn ""
-					desc ""
-					location "body"
-					type "List"
-					optional true
-					since "0.6"
-					
-				}
-				column {
-					name "userTags"
-					enclosedIn ""
-					desc ""
-					location "body"
-					type "List"
-					optional true
-					since "0.6"
-					
-				}
-			}
+            params {
+
+                column {
+                    name "vmInstanceUuid"
+                    enclosedIn ""
+                    desc "云主机UUID"
+                    location "url"
+                    type "String"
+                    optional false
+                    since "0.6"
+
+                }
+                column {
+                    name "isoUuid"
+                    enclosedIn ""
+                    desc ""
+                    location "url"
+                    type "String"
+                    optional false
+                    since "0.6"
+
+                }
+                column {
+                    name "systemTags"
+                    enclosedIn ""
+                    desc ""
+                    location "body"
+                    type "List"
+                    optional true
+                    since "0.6"
+
+                }
+                column {
+                    name "userTags"
+                    enclosedIn ""
+                    desc "用户标签"
+                    location "body"
+                    type "List"
+                    optional true
+                    since "0.6"
+
+                }
+            }
         }
 
         response {
