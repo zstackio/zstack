@@ -81,6 +81,7 @@ public class APIUpdateFusionstorBackupStorageMonMsg extends APIMessage implement
     public void setMonPort(Integer monPort) {
         this.monPort = monPort;
     }
+
     public String getHostname() {
         return hostname;
     }
@@ -97,13 +98,13 @@ public class APIUpdateFusionstorBackupStorageMonMsg extends APIMessage implement
     public void setBackupStorageUuid(String backupStorageUuid) {
         this.backupStorageUuid = backupStorageUuid;
     }
-}
- 
+
     public static APIUpdateFusionstorBackupStorageMonMsg __example__() {
         APIUpdateFusionstorBackupStorageMonMsg msg = new APIUpdateFusionstorBackupStorageMonMsg();
 
 
         return msg;
     }
+}
 
 

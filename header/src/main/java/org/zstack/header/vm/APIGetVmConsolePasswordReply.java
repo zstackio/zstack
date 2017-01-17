@@ -19,13 +19,12 @@ public class APIGetVmConsolePasswordReply extends APIReply {
     public void setConsolePassword(String consolePassword) {
         this.consolePassword = consolePassword;
     }
-}
- 
+
     public static APIGetVmConsolePasswordReply __example__() {
         APIGetVmConsolePasswordReply reply = new APIGetVmConsolePasswordReply();
 
 
         return reply;
     }
-
+}
 
