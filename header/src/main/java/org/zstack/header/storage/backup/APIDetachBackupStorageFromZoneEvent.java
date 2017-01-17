@@ -47,4 +47,12 @@ public class APIDetachBackupStorageFromZoneEvent extends APIEvent {
     public void setInventory(BackupStorageInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIDetachBackupStorageFromZoneEvent __example__() {
+        APIDetachBackupStorageFromZoneEvent event = new APIDetachBackupStorageFromZoneEvent();
+
+
+        return event;
+    }
+
 }

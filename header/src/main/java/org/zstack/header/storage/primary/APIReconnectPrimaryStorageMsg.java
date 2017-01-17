@@ -30,4 +30,12 @@ public class APIReconnectPrimaryStorageMsg extends APIMessage implements Primary
     public void setUuid(String uuid) {
         this.uuid = uuid;
     }
+ 
+    public static APIReconnectPrimaryStorageMsg __example__() {
+        APIReconnectPrimaryStorageMsg msg = new APIReconnectPrimaryStorageMsg();
+
+
+        return msg;
+    }
+
 }

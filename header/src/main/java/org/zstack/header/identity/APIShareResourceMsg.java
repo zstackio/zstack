@@ -52,4 +52,12 @@ public class APIShareResourceMsg extends APIMessage implements AccountMessage {
     public String getAccountUuid() {
         return getSession().getAccountUuid();
     }
+ 
+    public static APIShareResourceMsg __example__() {
+        APIShareResourceMsg msg = new APIShareResourceMsg();
+
+
+        return msg;
+    }
+
 }

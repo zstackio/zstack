@@ -96,4 +96,12 @@ public class APIUpdateFusionstorPrimaryStorageMonMsg extends APIMessage implemen
     public void setMonUuid(String monUuid) {
         this.monUuid = monUuid;
     }
+ 
+    public static APIUpdateFusionstorPrimaryStorageMonMsg __example__() {
+        APIUpdateFusionstorPrimaryStorageMonMsg msg = new APIUpdateFusionstorPrimaryStorageMonMsg();
+
+
+        return msg;
+    }
+
 }

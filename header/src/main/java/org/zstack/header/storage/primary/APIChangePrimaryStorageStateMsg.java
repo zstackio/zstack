@@ -83,4 +83,12 @@ public class APIChangePrimaryStorageStateMsg extends APIMessage implements Prima
     public void setStateEvent(String stateEvent) {
         this.stateEvent = stateEvent;
     }
+ 
+    public static APIChangePrimaryStorageStateMsg __example__() {
+        APIChangePrimaryStorageStateMsg msg = new APIChangePrimaryStorageStateMsg();
+
+
+        return msg;
+    }
+
 }

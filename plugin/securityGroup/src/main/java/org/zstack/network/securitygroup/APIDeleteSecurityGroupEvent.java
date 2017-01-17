@@ -28,4 +28,12 @@ public class APIDeleteSecurityGroupEvent extends APIEvent {
     public APIDeleteSecurityGroupEvent(String apiId) {
         super(apiId);
     }
+ 
+    public static APIDeleteSecurityGroupEvent __example__() {
+        APIDeleteSecurityGroupEvent event = new APIDeleteSecurityGroupEvent();
+
+
+        return event;
+    }
+
 }

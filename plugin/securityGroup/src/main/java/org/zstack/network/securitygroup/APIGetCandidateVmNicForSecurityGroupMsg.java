@@ -25,4 +25,12 @@ public class APIGetCandidateVmNicForSecurityGroupMsg extends APISyncCallMessage 
     public void setSecurityGroupUuid(String securityGroupUuid) {
         this.securityGroupUuid = securityGroupUuid;
     }
+ 
+    public static APIGetCandidateVmNicForSecurityGroupMsg __example__() {
+        APIGetCandidateVmNicForSecurityGroupMsg msg = new APIGetCandidateVmNicForSecurityGroupMsg();
+
+
+        return msg;
+    }
+
 }

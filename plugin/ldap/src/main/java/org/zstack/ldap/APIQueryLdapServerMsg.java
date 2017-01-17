@@ -13,4 +13,12 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIQueryLdapServerReply.class
 )
 public class APIQueryLdapServerMsg extends APIQueryMessage {
+ 
+    public static APIQueryLdapServerMsg __example__() {
+        APIQueryLdapServerMsg msg = new APIQueryLdapServerMsg();
+
+
+        return msg;
+    }
+
 }

@@ -20,4 +20,12 @@ import org.zstack.header.storage.backup.BackupStorageConstant;
         responseClass = APIQueryBackupStorageReply.class
 )
 public class APIQueryCephBackupStorageMsg extends APIQueryMessage {
+ 
+    public static APIQueryCephBackupStorageMsg __example__() {
+        APIQueryCephBackupStorageMsg msg = new APIQueryCephBackupStorageMsg();
+
+
+        return msg;
+    }
+
 }

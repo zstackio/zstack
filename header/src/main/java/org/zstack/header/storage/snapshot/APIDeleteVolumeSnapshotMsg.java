@@ -90,4 +90,12 @@ public class APIDeleteVolumeSnapshotMsg extends APIDeleteMessage implements Volu
     public void setVolumeUuid(String volumeUuid) {
         this.volumeUuid = volumeUuid;
     }
+ 
+    public static APIDeleteVolumeSnapshotMsg __example__() {
+        APIDeleteVolumeSnapshotMsg msg = new APIDeleteVolumeSnapshotMsg();
+
+
+        return msg;
+    }
+
 }

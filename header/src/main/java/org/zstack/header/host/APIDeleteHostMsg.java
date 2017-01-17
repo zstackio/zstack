@@ -64,4 +64,12 @@ public class APIDeleteHostMsg extends APIDeleteMessage implements HostMessage {
     public String getHostUuid() {
         return getUuid();
     }
+ 
+    public static APIDeleteHostMsg __example__() {
+        APIDeleteHostMsg msg = new APIDeleteHostMsg();
+
+
+        return msg;
+    }
+
 }

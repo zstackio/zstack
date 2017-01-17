@@ -114,4 +114,12 @@ public class APICreateEipMsg extends APICreateMessage {
     public void setDescription(String description) {
         this.description = description;
     }
+ 
+    public static APICreateEipMsg __example__() {
+        APICreateEipMsg msg = new APICreateEipMsg();
+
+
+        return msg;
+    }
+
 }

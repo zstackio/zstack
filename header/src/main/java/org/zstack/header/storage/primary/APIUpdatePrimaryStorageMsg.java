@@ -60,4 +60,12 @@ public class APIUpdatePrimaryStorageMsg extends APIMessage implements PrimarySto
     public String getPrimaryStorageUuid() {
         return uuid;
     }
+ 
+    public static APIUpdatePrimaryStorageMsg __example__() {
+        APIUpdatePrimaryStorageMsg msg = new APIUpdatePrimaryStorageMsg();
+
+
+        return msg;
+    }
+
 }

@@ -118,4 +118,12 @@ public class APICreateL3NetworkMsg extends APICreateMessage {
     public void setL2NetworkUuid(String l2NetworkUuid) {
         this.l2NetworkUuid = l2NetworkUuid;
     }
+ 
+    public static APICreateL3NetworkMsg __example__() {
+        APICreateL3NetworkMsg msg = new APICreateL3NetworkMsg();
+
+
+        return msg;
+    }
+
 }

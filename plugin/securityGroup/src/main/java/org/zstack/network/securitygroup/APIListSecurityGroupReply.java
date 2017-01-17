@@ -14,4 +14,12 @@ public class APIListSecurityGroupReply extends APIReply {
     public void setInventories(List<SecurityGroupInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIListSecurityGroupReply __example__() {
+        APIListSecurityGroupReply reply = new APIListSecurityGroupReply();
+
+
+        return reply;
+    }
+
 }

@@ -40,4 +40,12 @@ public class APIAttachPoliciesToUserMsg extends APIMessage implements AccountMes
     public void setPolicyUuids(List<String> policyUuids) {
         this.policyUuids = policyUuids;
     }
+ 
+    public static APIAttachPoliciesToUserMsg __example__() {
+        APIAttachPoliciesToUserMsg msg = new APIAttachPoliciesToUserMsg();
+
+
+        return msg;
+    }
+
 }

@@ -22,4 +22,12 @@ public class APICreateRootVolumeTemplateFromRootVolumeEvent extends APIEvent {
     public void setInventory(ImageInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APICreateRootVolumeTemplateFromRootVolumeEvent __example__() {
+        APICreateRootVolumeTemplateFromRootVolumeEvent event = new APICreateRootVolumeTemplateFromRootVolumeEvent();
+
+
+        return event;
+    }
+
 }

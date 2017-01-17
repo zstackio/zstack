@@ -14,4 +14,12 @@ public class APIDeleteSchedulerEvent extends APIEvent{
     public APIDeleteSchedulerEvent() {
         super(null);
     }
+ 
+    public static APIDeleteSchedulerEvent __example__() {
+        APIDeleteSchedulerEvent event = new APIDeleteSchedulerEvent();
+
+
+        return event;
+    }
+
 }

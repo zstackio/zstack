@@ -37,4 +37,12 @@ public class APIExportImageFromBackupStorageMsg extends APIMessage implements Ba
     public void setImageUuid(String imageUuid) {
         this.imageUuid = imageUuid;
     }
+ 
+    public static APIExportImageFromBackupStorageMsg __example__() {
+        APIExportImageFromBackupStorageMsg msg = new APIExportImageFromBackupStorageMsg();
+
+
+        return msg;
+    }
+
 }

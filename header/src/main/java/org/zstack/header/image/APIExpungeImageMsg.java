@@ -42,4 +42,12 @@ public class APIExpungeImageMsg extends APIMessage implements ImageMessage {
     public void setBackupStorageUuids(List<String> backupStorageUuids) {
         this.backupStorageUuids = backupStorageUuids;
     }
+ 
+    public static APIExpungeImageMsg __example__() {
+        APIExpungeImageMsg msg = new APIExpungeImageMsg();
+
+
+        return msg;
+    }
+
 }

@@ -14,4 +14,12 @@ public class APIDeleteImageEvent extends APIEvent {
         super(null);
     }
 
+ 
+    public static APIDeleteImageEvent __example__() {
+        APIDeleteImageEvent event = new APIDeleteImageEvent();
+
+
+        return event;
+    }
+
 }

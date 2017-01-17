@@ -48,4 +48,12 @@ public class APIDetachEipEvent extends APIEvent {
     public APIDetachEipEvent() {
         super(null);
     }
+ 
+    public static APIDetachEipEvent __example__() {
+        APIDetachEipEvent event = new APIDetachEipEvent();
+
+
+        return event;
+    }
+
 }

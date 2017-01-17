@@ -31,4 +31,12 @@ public class APIGetTaskProgressMsg extends APISyncCallMessage {
     public void setProcessType(String processType) {
         this.processType = processType;
     }
+ 
+    public static APIGetTaskProgressMsg __example__() {
+        APIGetTaskProgressMsg msg = new APIGetTaskProgressMsg();
+
+
+        return msg;
+    }
+
 }

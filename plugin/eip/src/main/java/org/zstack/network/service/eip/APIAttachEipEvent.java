@@ -49,4 +49,12 @@ public class APIAttachEipEvent extends APIEvent {
     public APIAttachEipEvent() {
         super(null);
     }
+ 
+    public static APIAttachEipEvent __example__() {
+        APIAttachEipEvent event = new APIAttachEipEvent();
+
+
+        return event;
+    }
+
 }

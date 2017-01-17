@@ -53,4 +53,12 @@ public class APICreateVipEvent extends APIEvent {
     public void setInventory(VipInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APICreateVipEvent __example__() {
+        APICreateVipEvent event = new APICreateVipEvent();
+
+
+        return event;
+    }
+
 }

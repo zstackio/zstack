@@ -18,4 +18,12 @@ public class APIQueryApplianceVmReply extends APIQueryReply {
     public void setInventories(List<ApplianceVmInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIQueryApplianceVmReply __example__() {
+        APIQueryApplianceVmReply reply = new APIQueryApplianceVmReply();
+
+
+        return reply;
+    }
+
 }

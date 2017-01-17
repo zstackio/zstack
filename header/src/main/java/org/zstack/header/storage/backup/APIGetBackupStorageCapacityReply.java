@@ -25,4 +25,12 @@ public class APIGetBackupStorageCapacityReply extends APIReply {
     public void setAvailableCapacity(long availableCapacity) {
         this.availableCapacity = availableCapacity;
     }
+ 
+    public static APIGetBackupStorageCapacityReply __example__() {
+        APIGetBackupStorageCapacityReply reply = new APIGetBackupStorageCapacityReply();
+
+
+        return reply;
+    }
+
 }

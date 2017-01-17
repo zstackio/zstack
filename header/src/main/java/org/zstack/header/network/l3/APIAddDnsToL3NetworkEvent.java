@@ -52,4 +52,12 @@ public class APIAddDnsToL3NetworkEvent extends APIEvent {
     public void setInventory(L3NetworkInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIAddDnsToL3NetworkEvent __example__() {
+        APIAddDnsToL3NetworkEvent event = new APIAddDnsToL3NetworkEvent();
+
+
+        return event;
+    }
+
 }

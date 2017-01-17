@@ -16,4 +16,12 @@ public class APIQueryIpRangeReply extends APIQueryReply {
     public void setInventories(List<IpRangeInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIQueryIpRangeReply __example__() {
+        APIQueryIpRangeReply reply = new APIQueryIpRangeReply();
+
+
+        return reply;
+    }
+
 }

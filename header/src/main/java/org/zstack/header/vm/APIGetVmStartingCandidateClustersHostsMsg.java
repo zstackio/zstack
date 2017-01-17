@@ -31,4 +31,12 @@ public class APIGetVmStartingCandidateClustersHostsMsg extends APISyncCallMessag
     public String getVmInstanceUuid() {
         return uuid;
     }
+ 
+    public static APIGetVmStartingCandidateClustersHostsMsg __example__() {
+        APIGetVmStartingCandidateClustersHostsMsg msg = new APIGetVmStartingCandidateClustersHostsMsg();
+
+
+        return msg;
+    }
+
 }

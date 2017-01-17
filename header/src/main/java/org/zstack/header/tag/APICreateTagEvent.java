@@ -23,4 +23,12 @@ public class APICreateTagEvent extends APIEvent {
     public APICreateTagEvent() {
         super(null);
     }
+ 
+    public static APICreateTagEvent __example__() {
+        APICreateTagEvent event = new APICreateTagEvent();
+
+
+        return event;
+    }
+
 }

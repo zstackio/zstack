@@ -75,4 +75,12 @@ public class APICreateSecurityGroupMsg extends APICreateMessage {
     public void setDescription(String description) {
         this.description = description;
     }
+ 
+    public static APICreateSecurityGroupMsg __example__() {
+        APICreateSecurityGroupMsg msg = new APICreateSecurityGroupMsg();
+
+
+        return msg;
+    }
+
 }

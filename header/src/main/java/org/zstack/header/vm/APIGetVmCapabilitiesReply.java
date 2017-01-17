@@ -19,4 +19,12 @@ public class APIGetVmCapabilitiesReply extends APIReply {
     public void setCapabilities(Map<String, Object> capabilities) {
         this.capabilities = capabilities;
     }
+ 
+    public static APIGetVmCapabilitiesReply __example__() {
+        APIGetVmCapabilitiesReply reply = new APIGetVmCapabilitiesReply();
+
+
+        return reply;
+    }
+
 }

@@ -19,4 +19,12 @@ public class APIGetVmMigrationCandidateHostsReply extends APIReply {
     public void setInventories(List<HostInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIGetVmMigrationCandidateHostsReply __example__() {
+        APIGetVmMigrationCandidateHostsReply reply = new APIGetVmMigrationCandidateHostsReply();
+
+
+        return reply;
+    }
+
 }

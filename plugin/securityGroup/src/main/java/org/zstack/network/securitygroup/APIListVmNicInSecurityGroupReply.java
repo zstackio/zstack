@@ -14,4 +14,12 @@ public class APIListVmNicInSecurityGroupReply extends APIReply {
     public void setInventories(List<VmNicSecurityGroupRefInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIListVmNicInSecurityGroupReply __example__() {
+        APIListVmNicInSecurityGroupReply reply = new APIListVmNicInSecurityGroupReply();
+
+
+        return reply;
+    }
+
 }

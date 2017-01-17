@@ -15,4 +15,12 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIQueryApplianceVmReply.class
 )
 public class APIQueryApplianceVmMsg extends APIQueryMessage {
+ 
+    public static APIQueryApplianceVmMsg __example__() {
+        APIQueryApplianceVmMsg msg = new APIQueryApplianceVmMsg();
+
+
+        return msg;
+    }
+
 }

@@ -63,4 +63,12 @@ public class APIDeleteClusterMsg extends APIDeleteMessage implements ClusterMess
     public String getClusterUuid() {
         return getUuid();
     }
+ 
+    public static APIDeleteClusterMsg __example__() {
+        APIDeleteClusterMsg msg = new APIDeleteClusterMsg();
+
+
+        return msg;
+    }
+
 }

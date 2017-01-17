@@ -14,4 +14,12 @@ public class APIGetZoneMsg extends APISyncCallMessage {
     public void setUuid(String uuid) {
         this.uuid = uuid;
     }
+ 
+    public static APIGetZoneMsg __example__() {
+        APIGetZoneMsg msg = new APIGetZoneMsg();
+
+
+        return msg;
+    }
+
 }

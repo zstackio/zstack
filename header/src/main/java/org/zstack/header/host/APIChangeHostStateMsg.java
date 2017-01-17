@@ -85,4 +85,12 @@ public class APIChangeHostStateMsg extends APIMessage implements HostMessage {
     public String getHostUuid() {
         return getUuid();
     }
+ 
+    public static APIChangeHostStateMsg __example__() {
+        APIChangeHostStateMsg msg = new APIChangeHostStateMsg();
+
+
+        return msg;
+    }
+
 }

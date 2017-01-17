@@ -24,4 +24,12 @@ public class APIAddVmNicToLoadBalancerEvent extends APIEvent {
     public void setInventory(LoadBalancerListenerInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIAddVmNicToLoadBalancerEvent __example__() {
+        APIAddVmNicToLoadBalancerEvent event = new APIAddVmNicToLoadBalancerEvent();
+
+
+        return event;
+    }
+
 }

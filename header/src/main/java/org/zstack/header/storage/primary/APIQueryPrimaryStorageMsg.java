@@ -12,4 +12,12 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIQueryPrimaryStorageReply.class
 )
 public class APIQueryPrimaryStorageMsg extends APIQueryMessage {
+ 
+    public static APIQueryPrimaryStorageMsg __example__() {
+        APIQueryPrimaryStorageMsg msg = new APIQueryPrimaryStorageMsg();
+
+
+        return msg;
+    }
+
 }

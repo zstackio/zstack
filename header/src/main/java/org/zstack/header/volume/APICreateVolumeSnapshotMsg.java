@@ -84,4 +84,12 @@ public class APICreateVolumeSnapshotMsg extends APICreateMessage implements Volu
     public void setVolumeUuid(String volumeUuid) {
         this.volumeUuid = volumeUuid;
     }
+ 
+    public static APICreateVolumeSnapshotMsg __example__() {
+        APICreateVolumeSnapshotMsg msg = new APICreateVolumeSnapshotMsg();
+
+
+        return msg;
+    }
+
 }

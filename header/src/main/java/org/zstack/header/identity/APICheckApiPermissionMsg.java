@@ -38,4 +38,12 @@ public class APICheckApiPermissionMsg extends APISyncCallMessage {
     public void setApiNames(List<String> apiNames) {
         this.apiNames = apiNames;
     }
+ 
+    public static APICheckApiPermissionMsg __example__() {
+        APICheckApiPermissionMsg msg = new APICheckApiPermissionMsg();
+
+
+        return msg;
+    }
+
 }

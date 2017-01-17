@@ -130,4 +130,12 @@ public class APIAttachL3NetworkToVmEvent extends APIEvent {
     public void setInventory(VmInstanceInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIAttachL3NetworkToVmEvent __example__() {
+        APIAttachL3NetworkToVmEvent event = new APIAttachL3NetworkToVmEvent();
+
+
+        return event;
+    }
+
 }

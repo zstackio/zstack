@@ -15,4 +15,12 @@ import org.zstack.header.rest.RestRequest;
 )
 public class APIQueryL2VlanNetworkMsg extends APIQueryMessage {
 
+ 
+    public static APIQueryL2VlanNetworkMsg __example__() {
+        APIQueryL2VlanNetworkMsg msg = new APIQueryL2VlanNetworkMsg();
+
+
+        return msg;
+    }
+
 }

@@ -12,4 +12,12 @@ public class APIGenerateSqlVOViewEvent extends APIEvent {
     public APIGenerateSqlVOViewEvent(String apiId) {
         super(apiId);
     }
+ 
+    public static APIGenerateSqlVOViewEvent __example__() {
+        APIGenerateSqlVOViewEvent event = new APIGenerateSqlVOViewEvent();
+
+
+        return event;
+    }
+
 }

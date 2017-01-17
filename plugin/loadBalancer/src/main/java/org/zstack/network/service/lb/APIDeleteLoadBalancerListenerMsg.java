@@ -38,4 +38,12 @@ public class APIDeleteLoadBalancerListenerMsg extends APIMessage implements Load
     public void setUuid(String uuid) {
         this.uuid = uuid;
     }
+ 
+    public static APIDeleteLoadBalancerListenerMsg __example__() {
+        APIDeleteLoadBalancerListenerMsg msg = new APIDeleteLoadBalancerListenerMsg();
+
+
+        return msg;
+    }
+
 }

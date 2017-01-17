@@ -68,4 +68,12 @@ public class APIStopVmInstanceMsg extends APIMessage implements VmInstanceMessag
     public String getVmInstanceUuid() {
         return getUuid();
     }
+ 
+    public static APIStopVmInstanceMsg __example__() {
+        APIStopVmInstanceMsg msg = new APIStopVmInstanceMsg();
+
+
+        return msg;
+    }
+
 }

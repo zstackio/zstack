@@ -64,4 +64,12 @@ public class APIDeletePrimaryStorageMsg extends APIDeleteMessage implements Prim
     public void setUuid(String uuid) {
         this.uuid = uuid;
     }
+ 
+    public static APIDeletePrimaryStorageMsg __example__() {
+        APIDeletePrimaryStorageMsg msg = new APIDeletePrimaryStorageMsg();
+
+
+        return msg;
+    }
+
 }

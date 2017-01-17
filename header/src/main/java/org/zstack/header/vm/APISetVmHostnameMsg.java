@@ -43,4 +43,12 @@ public class APISetVmHostnameMsg extends APIMessage implements VmInstanceMessage
     public String getVmInstanceUuid() {
         return getUuid();
     }
+ 
+    public static APISetVmHostnameMsg __example__() {
+        APISetVmHostnameMsg msg = new APISetVmHostnameMsg();
+
+
+        return msg;
+    }
+
 }

@@ -102,4 +102,12 @@ public class APIUpdateImageMsg extends APIMessage implements ImageMessage {
     public String getImageUuid() {
         return uuid;
     }
+ 
+    public static APIUpdateImageMsg __example__() {
+        APIUpdateImageMsg msg = new APIUpdateImageMsg();
+
+
+        return msg;
+    }
+
 }

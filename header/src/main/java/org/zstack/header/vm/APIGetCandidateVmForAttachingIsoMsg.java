@@ -28,4 +28,12 @@ public class APIGetCandidateVmForAttachingIsoMsg extends APISyncCallMessage {
     public void setIsoUuid(String isoUuid) {
         this.isoUuid = isoUuid;
     }
+ 
+    public static APIGetCandidateVmForAttachingIsoMsg __example__() {
+        APIGetCandidateVmForAttachingIsoMsg msg = new APIGetCandidateVmForAttachingIsoMsg();
+
+
+        return msg;
+    }
+
 }

@@ -29,4 +29,12 @@ public class APIGenerateGroovyClassMsg extends APIMessage {
     public void setBasePackageNames(List<String> basePackageNames) {
         this.basePackageNames = basePackageNames;
     }
+ 
+    public static APIGenerateGroovyClassMsg __example__() {
+        APIGenerateGroovyClassMsg msg = new APIGenerateGroovyClassMsg();
+
+
+        return msg;
+    }
+
 }

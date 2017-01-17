@@ -28,4 +28,12 @@ public class APIChangeInstanceOfferingStateEvent extends APIEvent {
     public void setInventory(InstanceOfferingInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIChangeInstanceOfferingStateEvent __example__() {
+        APIChangeInstanceOfferingStateEvent event = new APIChangeInstanceOfferingStateEvent();
+
+
+        return event;
+    }
+
 }

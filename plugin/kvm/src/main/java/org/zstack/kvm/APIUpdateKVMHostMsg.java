@@ -46,4 +46,12 @@ public class APIUpdateKVMHostMsg extends APIUpdateHostMsg {
     public void setPassword(String password) {
         this.password = password;
     }
+ 
+    public static APIUpdateKVMHostMsg __example__() {
+        APIUpdateKVMHostMsg msg = new APIUpdateKVMHostMsg();
+
+
+        return msg;
+    }
+
 }

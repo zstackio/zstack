@@ -14,4 +14,12 @@ public class APISetVmHostnameEvent extends APIEvent {
     public APISetVmHostnameEvent(String apiId) {
         super(apiId);
     }
+ 
+    public static APISetVmHostnameEvent __example__() {
+        APISetVmHostnameEvent event = new APISetVmHostnameEvent();
+
+
+        return event;
+    }
+
 }

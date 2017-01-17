@@ -33,4 +33,12 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIGetPrimaryStorageAllocatorStrategiesReply.class
 )
 public class APIGetPrimaryStorageAllocatorStrategiesMsg extends APISyncCallMessage {
+ 
+    public static APIGetPrimaryStorageAllocatorStrategiesMsg __example__() {
+        APIGetPrimaryStorageAllocatorStrategiesMsg msg = new APIGetPrimaryStorageAllocatorStrategiesMsg();
+
+
+        return msg;
+    }
+
 }

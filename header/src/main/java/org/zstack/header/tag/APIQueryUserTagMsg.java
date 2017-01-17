@@ -18,4 +18,12 @@ import org.zstack.header.rest.RestRequest;
         method = HttpMethod.GET
 )
 public class APIQueryUserTagMsg extends APIQueryMessage {
+ 
+    public static APIQueryUserTagMsg __example__() {
+        APIQueryUserTagMsg msg = new APIQueryUserTagMsg();
+
+
+        return msg;
+    }
+
 }

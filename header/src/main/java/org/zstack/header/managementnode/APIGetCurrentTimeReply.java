@@ -19,4 +19,12 @@ public class APIGetCurrentTimeReply extends APIReply {
     public void setCurrentTime(Map<String, Long> currentTime) {
         this.currentTime = currentTime;
     }
+ 
+    public static APIGetCurrentTimeReply __example__() {
+        APIGetCurrentTimeReply reply = new APIGetCurrentTimeReply();
+
+
+        return reply;
+    }
+
 }

@@ -68,4 +68,12 @@ public class APIRemoveDnsFromL3NetworkMsg extends APIMessage implements L3Networ
     public void setDns(String dns) {
         this.dns = dns;
     }
+ 
+    public static APIRemoveDnsFromL3NetworkMsg __example__() {
+        APIRemoveDnsFromL3NetworkMsg msg = new APIRemoveDnsFromL3NetworkMsg();
+
+
+        return msg;
+    }
+
 }

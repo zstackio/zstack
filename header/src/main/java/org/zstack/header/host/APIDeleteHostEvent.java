@@ -22,4 +22,12 @@ public class APIDeleteHostEvent extends APIEvent {
         super(apiId);
     }
 
+ 
+    public static APIDeleteHostEvent __example__() {
+        APIDeleteHostEvent event = new APIDeleteHostEvent();
+
+
+        return event;
+    }
+
 }

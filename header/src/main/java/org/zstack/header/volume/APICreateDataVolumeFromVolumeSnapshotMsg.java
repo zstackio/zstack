@@ -98,4 +98,12 @@ public class APICreateDataVolumeFromVolumeSnapshotMsg extends APICreateMessage {
     public void setPrimaryStorageUuid(String primaryStorageUuid) {
         this.primaryStorageUuid = primaryStorageUuid;
     }
+ 
+    public static APICreateDataVolumeFromVolumeSnapshotMsg __example__() {
+        APICreateDataVolumeFromVolumeSnapshotMsg msg = new APICreateDataVolumeFromVolumeSnapshotMsg();
+
+
+        return msg;
+    }
+
 }

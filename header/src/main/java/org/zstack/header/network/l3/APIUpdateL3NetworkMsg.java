@@ -61,4 +61,12 @@ public class APIUpdateL3NetworkMsg extends APIMessage implements L3NetworkMessag
     public String getL3NetworkUuid() {
         return uuid;
     }
+ 
+    public static APIUpdateL3NetworkMsg __example__() {
+        APIUpdateL3NetworkMsg msg = new APIUpdateL3NetworkMsg();
+
+
+        return msg;
+    }
+
 }

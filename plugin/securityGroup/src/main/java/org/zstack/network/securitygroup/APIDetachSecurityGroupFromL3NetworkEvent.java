@@ -76,4 +76,12 @@ public class APIDetachSecurityGroupFromL3NetworkEvent extends APIEvent {
     public void setInventory(SecurityGroupInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIDetachSecurityGroupFromL3NetworkEvent __example__() {
+        APIDetachSecurityGroupFromL3NetworkEvent event = new APIDetachSecurityGroupFromL3NetworkEvent();
+
+
+        return event;
+    }
+
 }

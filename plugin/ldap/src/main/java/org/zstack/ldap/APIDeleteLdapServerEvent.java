@@ -11,4 +11,12 @@ public class APIDeleteLdapServerEvent extends APIEvent {
     public APIDeleteLdapServerEvent(String apiId) {
         super(apiId);
     }
+ 
+    public static APIDeleteLdapServerEvent __example__() {
+        APIDeleteLdapServerEvent event = new APIDeleteLdapServerEvent();
+
+
+        return event;
+    }
+
 }

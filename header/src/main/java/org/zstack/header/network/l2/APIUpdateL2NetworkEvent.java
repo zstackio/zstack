@@ -24,4 +24,12 @@ public class APIUpdateL2NetworkEvent extends APIEvent {
     public APIUpdateL2NetworkEvent(String apiId) {
         super(apiId);
     }
+ 
+    public static APIUpdateL2NetworkEvent __example__() {
+        APIUpdateL2NetworkEvent event = new APIUpdateL2NetworkEvent();
+
+
+        return event;
+    }
+
 }

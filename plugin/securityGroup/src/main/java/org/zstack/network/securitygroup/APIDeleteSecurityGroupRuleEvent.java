@@ -64,4 +64,12 @@ public class APIDeleteSecurityGroupRuleEvent extends APIEvent {
     public void setInventory(SecurityGroupInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIDeleteSecurityGroupRuleEvent __example__() {
+        APIDeleteSecurityGroupRuleEvent event = new APIDeleteSecurityGroupRuleEvent();
+
+
+        return event;
+    }
+
 }

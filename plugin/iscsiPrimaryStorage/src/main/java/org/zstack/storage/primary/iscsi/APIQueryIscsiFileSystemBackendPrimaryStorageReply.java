@@ -17,4 +17,12 @@ public class APIQueryIscsiFileSystemBackendPrimaryStorageReply extends APIQueryR
     public void setInventories(List<IscsiFileSystemBackendPrimaryStorageInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIQueryIscsiFileSystemBackendPrimaryStorageReply __example__() {
+        APIQueryIscsiFileSystemBackendPrimaryStorageReply reply = new APIQueryIscsiFileSystemBackendPrimaryStorageReply();
+
+
+        return reply;
+    }
+
 }

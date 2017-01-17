@@ -34,4 +34,12 @@ public class APIGetL2NetworkTypesReply extends APIReply {
     public void setL2NetworkTypes(List<String> l2NetworkTypes) {
         this.l2NetworkTypes = l2NetworkTypes;
     }
+ 
+    public static APIGetL2NetworkTypesReply __example__() {
+        APIGetL2NetworkTypesReply reply = new APIGetL2NetworkTypesReply();
+
+
+        return reply;
+    }
+
 }

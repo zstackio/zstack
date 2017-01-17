@@ -46,4 +46,12 @@ public class APICreateL2NetworkEvent extends APIEvent {
     public void setInventory(L2NetworkInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APICreateL2NetworkEvent __example__() {
+        APICreateL2NetworkEvent event = new APICreateL2NetworkEvent();
+
+
+        return event;
+    }
+
 }

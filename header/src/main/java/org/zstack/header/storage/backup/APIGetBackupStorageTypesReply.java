@@ -32,4 +32,12 @@ public class APIGetBackupStorageTypesReply extends APIReply {
     public void setBackupStorageTypes(List<String> backupStorageTypes) {
         this.backupStorageTypes = backupStorageTypes;
     }
+ 
+    public static APIGetBackupStorageTypesReply __example__() {
+        APIGetBackupStorageTypesReply reply = new APIGetBackupStorageTypesReply();
+
+
+        return reply;
+    }
+
 }

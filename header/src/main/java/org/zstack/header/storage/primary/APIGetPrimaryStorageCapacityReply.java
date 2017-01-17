@@ -43,4 +43,12 @@ public class APIGetPrimaryStorageCapacityReply extends APIReply {
     public void setAvailableCapacity(long availableCapacity) {
         this.availableCapacity = availableCapacity;
     }
+ 
+    public static APIGetPrimaryStorageCapacityReply __example__() {
+        APIGetPrimaryStorageCapacityReply reply = new APIGetPrimaryStorageCapacityReply();
+
+
+        return reply;
+    }
+
 }

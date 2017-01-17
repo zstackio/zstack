@@ -16,4 +16,12 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIQueryAccountReply.class
 )
 public class APIQueryAccountMsg extends APIQueryMessage {
+ 
+    public static APIQueryAccountMsg __example__() {
+        APIQueryAccountMsg msg = new APIQueryAccountMsg();
+
+
+        return msg;
+    }
+
 }

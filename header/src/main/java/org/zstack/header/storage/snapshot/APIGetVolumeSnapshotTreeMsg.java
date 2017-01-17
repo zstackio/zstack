@@ -63,4 +63,12 @@ public class APIGetVolumeSnapshotTreeMsg extends APISyncCallMessage {
     public void setTreeUuid(String treeUuid) {
         this.treeUuid = treeUuid;
     }
+ 
+    public static APIGetVolumeSnapshotTreeMsg __example__() {
+        APIGetVolumeSnapshotTreeMsg msg = new APIGetVolumeSnapshotTreeMsg();
+
+
+        return msg;
+    }
+
 }

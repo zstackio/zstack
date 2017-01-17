@@ -24,4 +24,12 @@ public class APIRecoverVmInstanceEvent extends APIEvent {
     public void setInventory(VmInstanceInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIRecoverVmInstanceEvent __example__() {
+        APIRecoverVmInstanceEvent event = new APIRecoverVmInstanceEvent();
+
+
+        return event;
+    }
+
 }

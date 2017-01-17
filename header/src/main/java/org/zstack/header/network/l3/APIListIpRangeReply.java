@@ -14,4 +14,12 @@ public class APIListIpRangeReply extends APIReply {
     public void setInventories(List<IpRangeInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIListIpRangeReply __example__() {
+        APIListIpRangeReply reply = new APIListIpRangeReply();
+
+
+        return reply;
+    }
+
 }

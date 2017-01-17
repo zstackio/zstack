@@ -14,4 +14,12 @@ public class APIListGlobalConfigMsg extends APIListMessage {
     public void setIds(List<Long> ids) {
         this.ids = ids;
     }
+
+    public static APIListGlobalConfigMsg __example__() {
+        APIListGlobalConfigMsg msg = new APIListGlobalConfigMsg();
+
+
+        return msg;
+    }
+
 }

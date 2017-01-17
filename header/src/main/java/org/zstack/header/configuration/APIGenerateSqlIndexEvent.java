@@ -12,4 +12,12 @@ public class APIGenerateSqlIndexEvent extends APIEvent {
     public APIGenerateSqlIndexEvent() {
         super(null);
     }
+ 
+    public static APIGenerateSqlIndexEvent __example__() {
+        APIGenerateSqlIndexEvent event = new APIGenerateSqlIndexEvent();
+
+
+        return event;
+    }
+
 }

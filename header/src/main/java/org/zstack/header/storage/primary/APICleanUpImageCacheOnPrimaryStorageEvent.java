@@ -14,4 +14,12 @@ public class APICleanUpImageCacheOnPrimaryStorageEvent extends APIEvent {
     public APICleanUpImageCacheOnPrimaryStorageEvent(String apiId) {
         super(apiId);
     }
+ 
+    public static APICleanUpImageCacheOnPrimaryStorageEvent __example__() {
+        APICleanUpImageCacheOnPrimaryStorageEvent event = new APICleanUpImageCacheOnPrimaryStorageEvent();
+
+
+        return event;
+    }
+
 }

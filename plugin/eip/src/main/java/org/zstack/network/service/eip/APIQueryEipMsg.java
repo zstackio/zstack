@@ -17,4 +17,12 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIQueryEipReply.class
 )
 public class APIQueryEipMsg extends APIQueryMessage {
+ 
+    public static APIQueryEipMsg __example__() {
+        APIQueryEipMsg msg = new APIQueryEipMsg();
+
+
+        return msg;
+    }
+
 }

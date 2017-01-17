@@ -47,4 +47,12 @@ public class APIUpdateSchedulerMsg extends APIMessage implements SchedulerMessag
     }
 
 
+ 
+    public static APIUpdateSchedulerMsg __example__() {
+        APIUpdateSchedulerMsg msg = new APIUpdateSchedulerMsg();
+
+
+        return msg;
+    }
+
 }

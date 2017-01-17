@@ -28,4 +28,12 @@ public class APIGetL3NetworkDhcpIpAddressMsg extends APISyncCallMessage implemen
     public void setL3NetworkUuid(String l3NetworkUuid) {
         this.l3NetworkUuid = l3NetworkUuid;
     }
+ 
+    public static APIGetL3NetworkDhcpIpAddressMsg __example__() {
+        APIGetL3NetworkDhcpIpAddressMsg msg = new APIGetL3NetworkDhcpIpAddressMsg();
+
+
+        return msg;
+    }
+
 }

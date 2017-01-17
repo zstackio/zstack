@@ -24,4 +24,12 @@ public class APIUpdateEipEvent extends APIEvent {
     public void setInventory(EipInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIUpdateEipEvent __example__() {
+        APIUpdateEipEvent event = new APIUpdateEipEvent();
+
+
+        return event;
+    }
+
 }

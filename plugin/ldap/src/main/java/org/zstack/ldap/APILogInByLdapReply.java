@@ -25,4 +25,12 @@ public class APILogInByLdapReply extends APIReply {
     public void setAccountInventory(AccountInventory accountInventory) {
         this.accountInventory = accountInventory;
     }
+ 
+    public static APILogInByLdapReply __example__() {
+        APILogInByLdapReply reply = new APILogInByLdapReply();
+
+
+        return reply;
+    }
+
 }

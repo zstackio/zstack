@@ -77,4 +77,12 @@ public class APIAttachDataVolumeToVmMsg extends APIMessage implements VolumeMess
     public String getVmInstanceUuid() {
         return getVmUuid();
     }
+ 
+    public static APIAttachDataVolumeToVmMsg __example__() {
+        APIAttachDataVolumeToVmMsg msg = new APIAttachDataVolumeToVmMsg();
+
+
+        return msg;
+    }
+
 }

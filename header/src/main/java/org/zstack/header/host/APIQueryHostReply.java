@@ -16,4 +16,12 @@ public class APIQueryHostReply extends APIQueryReply {
     public void setInventories(List<HostInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIQueryHostReply __example__() {
+        APIQueryHostReply reply = new APIQueryHostReply();
+
+
+        return reply;
+    }
+
 }

@@ -22,4 +22,12 @@ public class APIAddLdapServerEvent extends APIEvent {
     public void setInventory(LdapServerInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIAddLdapServerEvent __example__() {
+        APIAddLdapServerEvent event = new APIAddLdapServerEvent();
+
+
+        return event;
+    }
+
 }

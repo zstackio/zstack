@@ -28,4 +28,12 @@ public class APIChangeImageStateEvent extends APIEvent {
     public void setInventory(ImageInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIChangeImageStateEvent __example__() {
+        APIChangeImageStateEvent event = new APIChangeImageStateEvent();
+
+
+        return event;
+    }
+
 }

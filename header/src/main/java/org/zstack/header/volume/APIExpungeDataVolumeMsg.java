@@ -31,4 +31,12 @@ public class APIExpungeDataVolumeMsg extends APIMessage implements VolumeMessage
     public String getVolumeUuid() {
         return uuid;
     }
+ 
+    public static APIExpungeDataVolumeMsg __example__() {
+        APIExpungeDataVolumeMsg msg = new APIExpungeDataVolumeMsg();
+
+
+        return msg;
+    }
+
 }

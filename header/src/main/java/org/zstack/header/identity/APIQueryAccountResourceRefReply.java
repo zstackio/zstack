@@ -19,4 +19,12 @@ public class APIQueryAccountResourceRefReply extends APIQueryReply {
     public void setInventories(List<AccountResourceRefInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIQueryAccountResourceRefReply __example__() {
+        APIQueryAccountResourceRefReply reply = new APIQueryAccountResourceRefReply();
+
+
+        return reply;
+    }
+
 }

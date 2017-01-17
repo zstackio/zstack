@@ -33,4 +33,12 @@ import org.zstack.header.rest.RestRequest;
         parameterName = "null"
 )
 public class APIGetHypervisorTypesMsg extends APISyncCallMessage {
+ 
+    public static APIGetHypervisorTypesMsg __example__() {
+        APIGetHypervisorTypesMsg msg = new APIGetHypervisorTypesMsg();
+
+
+        return msg;
+    }
+
 }

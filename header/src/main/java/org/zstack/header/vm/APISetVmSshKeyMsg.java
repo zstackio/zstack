@@ -44,4 +44,12 @@ public class APISetVmSshKeyMsg extends APIMessage implements VmInstanceMessage {
         return SshKey;
     }
 
+ 
+    public static APISetVmSshKeyMsg __example__() {
+        APISetVmSshKeyMsg msg = new APISetVmSshKeyMsg();
+
+
+        return msg;
+    }
+
 }

@@ -103,4 +103,12 @@ public class APIAddSftpBackupStorageMsg extends APIAddBackupStorageMsg {
         this.sshPort = sshPort;
     }
 
+ 
+    public static APIAddSftpBackupStorageMsg __example__() {
+        APIAddSftpBackupStorageMsg msg = new APIAddSftpBackupStorageMsg();
+
+
+        return msg;
+    }
+
 }

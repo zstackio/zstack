@@ -45,4 +45,12 @@ public class APIRemoveMonFromFusionstorPrimaryStorageMsg extends APIMessage impl
     public String getPrimaryStorageUuid() {
         return uuid;
     }
+ 
+    public static APIRemoveMonFromFusionstorPrimaryStorageMsg __example__() {
+        APIRemoveMonFromFusionstorPrimaryStorageMsg msg = new APIRemoveMonFromFusionstorPrimaryStorageMsg();
+
+
+        return msg;
+    }
+
 }

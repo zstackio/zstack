@@ -22,4 +22,12 @@ public class APICreateLdapBindingEvent extends APIEvent {
     public void setInventory(LdapAccountRefInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APICreateLdapBindingEvent __example__() {
+        APICreateLdapBindingEvent event = new APICreateLdapBindingEvent();
+
+
+        return event;
+    }
+
 }

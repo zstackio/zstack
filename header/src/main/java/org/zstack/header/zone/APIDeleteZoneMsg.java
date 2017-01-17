@@ -65,4 +65,12 @@ public class APIDeleteZoneMsg extends APIDeleteMessage implements ZoneMessage {
     public String getZoneUuid() {
         return getUuid();
     }
+ 
+    public static APIDeleteZoneMsg __example__() {
+        APIDeleteZoneMsg msg = new APIDeleteZoneMsg();
+
+
+        return msg;
+    }
+
 }

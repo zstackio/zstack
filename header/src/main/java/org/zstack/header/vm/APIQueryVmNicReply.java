@@ -16,4 +16,12 @@ public class APIQueryVmNicReply extends APIQueryReply {
     public void setInventories(List<VmNicInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIQueryVmNicReply __example__() {
+        APIQueryVmNicReply reply = new APIQueryVmNicReply();
+
+
+        return reply;
+    }
+
 }

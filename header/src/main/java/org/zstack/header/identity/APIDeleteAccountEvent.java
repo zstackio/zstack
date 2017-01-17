@@ -14,4 +14,12 @@ public class APIDeleteAccountEvent extends APIEvent {
     public APIDeleteAccountEvent(String apiId) {
         super(apiId);
     }
+ 
+    public static APIDeleteAccountEvent __example__() {
+        APIDeleteAccountEvent event = new APIDeleteAccountEvent();
+
+
+        return event;
+    }
+
 }

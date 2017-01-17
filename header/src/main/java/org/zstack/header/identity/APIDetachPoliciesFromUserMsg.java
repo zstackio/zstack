@@ -43,4 +43,12 @@ public class APIDetachPoliciesFromUserMsg extends APIMessage implements AccountM
     public String getAccountUuid() {
         return getSession().getAccountUuid();
     }
+ 
+    public static APIDetachPoliciesFromUserMsg __example__() {
+        APIDetachPoliciesFromUserMsg msg = new APIDetachPoliciesFromUserMsg();
+
+
+        return msg;
+    }
+
 }

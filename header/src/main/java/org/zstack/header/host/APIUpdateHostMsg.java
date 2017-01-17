@@ -60,4 +60,12 @@ public class APIUpdateHostMsg extends APIMessage implements HostMessage {
     public String getHostUuid() {
         return uuid;
     }
+ 
+    public static APIUpdateHostMsg __example__() {
+        APIUpdateHostMsg msg = new APIUpdateHostMsg();
+
+
+        return msg;
+    }
+
 }

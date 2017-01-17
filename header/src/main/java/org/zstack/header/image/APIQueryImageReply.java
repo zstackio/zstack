@@ -16,4 +16,12 @@ public class APIQueryImageReply extends APIQueryReply {
     public void setInventories(List<ImageInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIQueryImageReply __example__() {
+        APIQueryImageReply reply = new APIQueryImageReply();
+
+
+        return reply;
+    }
+
 }

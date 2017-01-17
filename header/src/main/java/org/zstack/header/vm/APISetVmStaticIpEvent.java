@@ -14,4 +14,12 @@ public class APISetVmStaticIpEvent extends APIEvent {
     public APISetVmStaticIpEvent(String apiId) {
         super(apiId);
     }
+ 
+    public static APISetVmStaticIpEvent __example__() {
+        APISetVmStaticIpEvent event = new APISetVmStaticIpEvent();
+
+
+        return event;
+    }
+
 }

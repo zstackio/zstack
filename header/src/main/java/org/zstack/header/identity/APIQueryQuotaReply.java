@@ -19,4 +19,12 @@ public class APIQueryQuotaReply extends APIQueryReply {
     public void setInventories(List<QuotaInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIQueryQuotaReply __example__() {
+        APIQueryQuotaReply reply = new APIQueryQuotaReply();
+
+
+        return reply;
+    }
+
 }

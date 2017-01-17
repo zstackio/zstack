@@ -25,4 +25,12 @@ public class APIDeleteTagMsg extends APIDeleteMessage {
     public void setUuid(String uuid) {
         this.uuid = uuid;
     }
+ 
+    public static APIDeleteTagMsg __example__() {
+        APIDeleteTagMsg msg = new APIDeleteTagMsg();
+
+
+        return msg;
+    }
+
 }

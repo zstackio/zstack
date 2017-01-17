@@ -14,4 +14,12 @@ import org.zstack.header.rest.RestRequest;
 )
 public class APIQueryClusterMsg extends APIQueryMessage {
 
+ 
+    public static APIQueryClusterMsg __example__() {
+        APIQueryClusterMsg msg = new APIQueryClusterMsg();
+
+
+        return msg;
+    }
+
 }

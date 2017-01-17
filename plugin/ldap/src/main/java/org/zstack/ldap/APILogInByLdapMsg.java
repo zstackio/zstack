@@ -34,4 +34,12 @@ public class APILogInByLdapMsg extends APISessionMessage {
     public void setUid(String uid) {
         this.uid = uid;
     }
+ 
+    public static APILogInByLdapMsg __example__() {
+        APILogInByLdapMsg msg = new APILogInByLdapMsg();
+
+
+        return msg;
+    }
+
 }

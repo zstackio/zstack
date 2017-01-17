@@ -16,4 +16,12 @@ public class APIQueryInstanceOfferingReply extends APIQueryReply {
     public void setInventories(List<InstanceOfferingInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIQueryInstanceOfferingReply __example__() {
+        APIQueryInstanceOfferingReply reply = new APIQueryInstanceOfferingReply();
+
+
+        return reply;
+    }
+
 }

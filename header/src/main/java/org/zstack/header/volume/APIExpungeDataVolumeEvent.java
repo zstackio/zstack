@@ -14,4 +14,12 @@ public class APIExpungeDataVolumeEvent extends APIEvent {
     public APIExpungeDataVolumeEvent(String apiId) {
         super(apiId);
     }
+ 
+    public static APIExpungeDataVolumeEvent __example__() {
+        APIExpungeDataVolumeEvent event = new APIExpungeDataVolumeEvent();
+
+
+        return event;
+    }
+
 }

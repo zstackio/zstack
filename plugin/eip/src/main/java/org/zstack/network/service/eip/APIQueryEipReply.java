@@ -18,4 +18,12 @@ public class APIQueryEipReply extends APIQueryReply {
     public void setInventories(List<EipInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIQueryEipReply __example__() {
+        APIQueryEipReply reply = new APIQueryEipReply();
+
+
+        return reply;
+    }
+
 }

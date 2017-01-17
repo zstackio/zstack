@@ -24,4 +24,12 @@ public class APIIsReadyToGoMsg extends APISyncCallMessage {
 
     public APIIsReadyToGoMsg() {
     }
+ 
+    public static APIIsReadyToGoMsg __example__() {
+        APIIsReadyToGoMsg msg = new APIIsReadyToGoMsg();
+
+
+        return msg;
+    }
+
 }

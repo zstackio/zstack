@@ -59,4 +59,12 @@ public class APIDeleteDataVolumeMsg extends APIDeleteMessage implements VolumeMe
     public String getVolumeUuid() {
         return uuid;
     }
+ 
+    public static APIDeleteDataVolumeMsg __example__() {
+        APIDeleteDataVolumeMsg msg = new APIDeleteDataVolumeMsg();
+
+
+        return msg;
+    }
+
 }

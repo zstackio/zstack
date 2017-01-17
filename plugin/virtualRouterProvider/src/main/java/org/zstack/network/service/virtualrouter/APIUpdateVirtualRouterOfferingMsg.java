@@ -39,4 +39,12 @@ public class APIUpdateVirtualRouterOfferingMsg extends APIUpdateInstanceOffering
     public void setIsDefault(Boolean isDefault) {
         this.isDefault = isDefault;
     }
+ 
+    public static APIUpdateVirtualRouterOfferingMsg __example__() {
+        APIUpdateVirtualRouterOfferingMsg msg = new APIUpdateVirtualRouterOfferingMsg();
+
+
+        return msg;
+    }
+
 }

@@ -29,4 +29,12 @@ public class APIReconnectConsoleProxyAgentEvent extends APIEvent {
     public void setInventory(Map<String, Object> inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIReconnectConsoleProxyAgentEvent __example__() {
+        APIReconnectConsoleProxyAgentEvent event = new APIReconnectConsoleProxyAgentEvent();
+
+
+        return event;
+    }
+
 }

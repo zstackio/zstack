@@ -23,4 +23,12 @@ public class APICreateInstanceOfferingEvent extends APIEvent {
         super(apiId);
     }
 
+ 
+    public static APICreateInstanceOfferingEvent __example__() {
+        APICreateInstanceOfferingEvent event = new APICreateInstanceOfferingEvent();
+
+
+        return event;
+    }
+
 }

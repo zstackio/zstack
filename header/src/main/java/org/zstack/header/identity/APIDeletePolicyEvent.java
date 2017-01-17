@@ -14,4 +14,12 @@ public class APIDeletePolicyEvent extends APIEvent {
     public APIDeletePolicyEvent(String apiId) {
         super(apiId);
     }
+ 
+    public static APIDeletePolicyEvent __example__() {
+        APIDeletePolicyEvent event = new APIDeletePolicyEvent();
+
+
+        return event;
+    }
+
 }

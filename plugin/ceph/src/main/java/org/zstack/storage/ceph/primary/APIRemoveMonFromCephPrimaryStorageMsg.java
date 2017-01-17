@@ -45,4 +45,12 @@ public class APIRemoveMonFromCephPrimaryStorageMsg extends APIMessage implements
     public String getPrimaryStorageUuid() {
         return uuid;
     }
+ 
+    public static APIRemoveMonFromCephPrimaryStorageMsg __example__() {
+        APIRemoveMonFromCephPrimaryStorageMsg msg = new APIRemoveMonFromCephPrimaryStorageMsg();
+
+
+        return msg;
+    }
+
 }

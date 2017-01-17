@@ -24,4 +24,12 @@ public class APILocalStorageMigrateVolumeEvent extends APIEvent {
     public void setInventory(LocalStorageResourceRefInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APILocalStorageMigrateVolumeEvent __example__() {
+        APILocalStorageMigrateVolumeEvent event = new APILocalStorageMigrateVolumeEvent();
+
+
+        return event;
+    }
+
 }

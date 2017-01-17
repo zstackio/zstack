@@ -24,4 +24,12 @@ public class APISyncVolumeSizeEvent extends APIEvent {
     public void setInventory(VolumeInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APISyncVolumeSizeEvent __example__() {
+        APISyncVolumeSizeEvent event = new APISyncVolumeSizeEvent();
+
+
+        return event;
+    }
+
 }

@@ -101,4 +101,12 @@ public class APIBackupVolumeSnapshotMsg extends APIMessage implements VolumeSnap
     public void setVolumeUuid(String volumeUuid) {
         this.volumeUuid = volumeUuid;
     }
+ 
+    public static APIBackupVolumeSnapshotMsg __example__() {
+        APIBackupVolumeSnapshotMsg msg = new APIBackupVolumeSnapshotMsg();
+
+
+        return msg;
+    }
+
 }

@@ -75,4 +75,12 @@ public class APIEvent extends Event {
     public final String getSubCategory() {
         return API_EVENT;
     }
+ 
+    public static APIEvent __example__() {
+        APIEvent event = new APIEvent();
+
+
+        return event;
+    }
+
 }

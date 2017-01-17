@@ -61,4 +61,12 @@ public class APIUpdateUserMsg extends APIMessage implements AccountMessage {
     public void setDescription(String description) {
         this.description = description;
     }
+ 
+    public static APIUpdateUserMsg __example__() {
+        APIUpdateUserMsg msg = new APIUpdateUserMsg();
+
+
+        return msg;
+    }
+
 }

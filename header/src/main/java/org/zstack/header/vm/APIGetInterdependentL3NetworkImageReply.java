@@ -19,4 +19,12 @@ public class APIGetInterdependentL3NetworkImageReply extends APIReply {
     public void setInventories(List inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIGetInterdependentL3NetworkImageReply __example__() {
+        APIGetInterdependentL3NetworkImageReply reply = new APIGetInterdependentL3NetworkImageReply();
+
+
+        return reply;
+    }
+
 }

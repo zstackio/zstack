@@ -12,4 +12,12 @@ public class APIGenerateTestLinkDocumentMsg extends APIMessage {
     public void setOutputDir(String outputDir) {
         this.outputDir = outputDir;
     }
+ 
+    public static APIGenerateTestLinkDocumentMsg __example__() {
+        APIGenerateTestLinkDocumentMsg msg = new APIGenerateTestLinkDocumentMsg();
+
+
+        return msg;
+    }
+
 }

@@ -19,4 +19,12 @@ public class APIQueryConsoleProxyAgentReply extends APIQueryReply {
     public void setInventories(List<ConsoleProxyAgentInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIQueryConsoleProxyAgentReply __example__() {
+        APIQueryConsoleProxyAgentReply reply = new APIQueryConsoleProxyAgentReply();
+
+
+        return reply;
+    }
+
 }

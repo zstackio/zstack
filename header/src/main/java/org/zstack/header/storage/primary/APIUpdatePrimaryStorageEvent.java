@@ -24,4 +24,12 @@ public class APIUpdatePrimaryStorageEvent extends APIEvent {
     public APIUpdatePrimaryStorageEvent(String apiId) {
         super(apiId);
     }
+ 
+    public static APIUpdatePrimaryStorageEvent __example__() {
+        APIUpdatePrimaryStorageEvent event = new APIUpdatePrimaryStorageEvent();
+
+
+        return event;
+    }
+
 }

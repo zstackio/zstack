@@ -46,4 +46,12 @@ public class APIChangeImageStateMsg extends APIMessage implements ImageMessage {
     public void setStateEvent(String stateEvent) {
         this.stateEvent = stateEvent;
     }
+ 
+    public static APIChangeImageStateMsg __example__() {
+        APIChangeImageStateMsg msg = new APIChangeImageStateMsg();
+
+
+        return msg;
+    }
+
 }

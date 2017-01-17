@@ -24,4 +24,12 @@ public class APIChangeResourceOwnerEvent extends APIEvent {
     public void setInventory(AccountResourceRefInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIChangeResourceOwnerEvent __example__() {
+        APIChangeResourceOwnerEvent event = new APIChangeResourceOwnerEvent();
+
+
+        return event;
+    }
+
 }

@@ -68,4 +68,12 @@ public class APIAttachSecurityGroupToL3NetworkMsg extends APIMessage {
     public void setL3NetworkUuid(String l3NetworkUuid) {
         this.l3NetworkUuid = l3NetworkUuid;
     }
+ 
+    public static APIAttachSecurityGroupToL3NetworkMsg __example__() {
+        APIAttachSecurityGroupToL3NetworkMsg msg = new APIAttachSecurityGroupToL3NetworkMsg();
+
+
+        return msg;
+    }
+
 }

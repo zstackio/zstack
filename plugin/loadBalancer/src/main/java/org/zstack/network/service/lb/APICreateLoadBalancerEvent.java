@@ -24,4 +24,12 @@ public class APICreateLoadBalancerEvent extends APIEvent {
     public void setInventory(LoadBalancerInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APICreateLoadBalancerEvent __example__() {
+        APICreateLoadBalancerEvent event = new APICreateLoadBalancerEvent();
+
+
+        return event;
+    }
+
 }

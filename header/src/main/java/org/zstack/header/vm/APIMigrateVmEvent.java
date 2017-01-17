@@ -102,4 +102,12 @@ public class APIMigrateVmEvent extends APIEvent {
     public void setInventory(VmInstanceInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIMigrateVmEvent __example__() {
+        APIMigrateVmEvent event = new APIMigrateVmEvent();
+
+
+        return event;
+    }
+
 }

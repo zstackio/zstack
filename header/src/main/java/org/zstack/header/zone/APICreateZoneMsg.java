@@ -82,4 +82,12 @@ public class APICreateZoneMsg extends APICreateMessage {
     public void setDescription(String description) {
         this.description = description;
     }
+ 
+    public static APICreateZoneMsg __example__() {
+        APICreateZoneMsg msg = new APICreateZoneMsg();
+
+
+        return msg;
+    }
+
 }

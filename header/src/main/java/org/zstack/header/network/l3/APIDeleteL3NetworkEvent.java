@@ -22,4 +22,12 @@ public class APIDeleteL3NetworkEvent extends APIEvent {
     public APIDeleteL3NetworkEvent() {
         super(null);
     }
+ 
+    public static APIDeleteL3NetworkEvent __example__() {
+        APIDeleteL3NetworkEvent event = new APIDeleteL3NetworkEvent();
+
+
+        return event;
+    }
+
 }

@@ -87,4 +87,12 @@ public class APIAddVmNicToSecurityGroupMsg extends APIMessage {
     public void setSecurityGroupUuid(String securityGroupUuid) {
         this.securityGroupUuid = securityGroupUuid;
     }
+ 
+    public static APIAddVmNicToSecurityGroupMsg __example__() {
+        APIAddVmNicToSecurityGroupMsg msg = new APIAddVmNicToSecurityGroupMsg();
+
+
+        return msg;
+    }
+
 }

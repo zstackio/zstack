@@ -69,4 +69,12 @@ public class APIDeleteEipMsg extends APIDeleteMessage implements EipMessage {
     public String getEipUuid() {
         return uuid;
     }
+ 
+    public static APIDeleteEipMsg __example__() {
+        APIDeleteEipMsg msg = new APIDeleteEipMsg();
+
+
+        return msg;
+    }
+
 }

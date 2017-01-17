@@ -47,4 +47,12 @@ public class APIUpdatePortForwardingRuleMsg extends APIMessage {
     public void setDescription(String description) {
         this.description = description;
     }
+ 
+    public static APIUpdatePortForwardingRuleMsg __example__() {
+        APIUpdatePortForwardingRuleMsg msg = new APIUpdatePortForwardingRuleMsg();
+
+
+        return msg;
+    }
+
 }

@@ -17,4 +17,12 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIQuerySystemTagReply.class
 )
 public class APIQuerySystemTagMsg extends APIQueryMessage {
+ 
+    public static APIQuerySystemTagMsg __example__() {
+        APIQuerySystemTagMsg msg = new APIQuerySystemTagMsg();
+
+
+        return msg;
+    }
+
 }

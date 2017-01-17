@@ -45,4 +45,12 @@ public class APICreateDataVolumeEvent extends APIEvent {
     public void setInventory(VolumeInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APICreateDataVolumeEvent __example__() {
+        APICreateDataVolumeEvent event = new APICreateDataVolumeEvent();
+
+
+        return event;
+    }
+
 }
