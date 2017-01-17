@@ -1,7 +1,5 @@
 package org.zstack.header.vm
 
-import org.zstack.header.vm.APIGetCandidateVmForAttachingIsoReply
-
 doc {
     title "GetCandidateVmForAttachingIso"
 
@@ -11,48 +9,48 @@ doc {
 
     rest {
         request {
-			url "GET /v1/images/iso/{isoUuid}/vm-candidates"
+            url "GET /v1/images/iso/{isoUuid}/vm-candidates"
 
 
-            header (OAuth: 'the-session-uuid')
+            header(OAuth: 'the-session-uuid')
 
             clz APIGetCandidateVmForAttachingIsoMsg.class
 
             desc ""
-            
-			params {
 
-				column {
-					name "isoUuid"
-					enclosedIn ""
-					desc ""
-					location "url"
-					type "String"
-					optional false
-					since "0.6"
-					
-				}
-				column {
-					name "systemTags"
-					enclosedIn ""
-					desc ""
-					location "query"
-					type "List"
-					optional true
-					since "0.6"
-					
-				}
-				column {
-					name "userTags"
-					enclosedIn ""
-					desc ""
-					location "query"
-					type "List"
-					optional true
-					since "0.6"
-					
-				}
-			}
+            params {
+
+                column {
+                    name "isoUuid"
+                    enclosedIn ""
+                    desc ""
+                    location "url"
+                    type "String"
+                    optional false
+                    since "0.6"
+
+                }
+                column {
+                    name "systemTags"
+                    enclosedIn ""
+                    desc ""
+                    location "query"
+                    type "List"
+                    optional true
+                    since "0.6"
+
+                }
+                column {
+                    name "userTags"
+                    enclosedIn ""
+                    desc "用户标签"
+                    location "query"
+                    type "List"
+                    optional true
+                    since "0.6"
+
+                }
+            }
         }
 
         response {

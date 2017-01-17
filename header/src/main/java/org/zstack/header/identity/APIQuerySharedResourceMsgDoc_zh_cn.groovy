@@ -1,6 +1,5 @@
 package org.zstack.header.identity
 
-import org.zstack.header.identity.APIQuerySharedResourceReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
@@ -8,20 +7,20 @@ doc {
 
     category "identity"
 
-    desc "在这里填写API描述"
+    desc "查询共享资源"
 
     rest {
         request {
-			url "GET /v1/accounts/resources"
+            url "GET /v1/accounts/resources"
 
 
-            header (OAuth: 'the-session-uuid')
+            header(OAuth: 'the-session-uuid')
 
             clz APIQuerySharedResourceMsg.class
 
-            desc ""
-            
-			params APIQueryMessage.class
+            desc "查询共享资源"
+
+            params APIQueryMessage.class
         }
 
         response {

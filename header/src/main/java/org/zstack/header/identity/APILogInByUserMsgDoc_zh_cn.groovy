@@ -1,88 +1,86 @@
 package org.zstack.header.identity
 
-import org.zstack.header.identity.APILogInReply
-
 doc {
     title "LogInByUser"
 
     category "identity"
 
-    desc "在这里填写API描述"
+    desc "使用用户身份登录"
 
     rest {
         request {
-			url "PUT /v1/accounts/users/login"
+            url "PUT /v1/accounts/users/login"
 
 
-            
+
 
             clz APILogInByUserMsg.class
 
-            desc ""
-            
-			params {
+            desc "使用用户身份登录"
 
-				column {
-					name "accountUuid"
-					enclosedIn "logInByUser"
-					desc "账户UUID"
-					location "body"
-					type "String"
-					optional true
-					since "0.6"
-					
-				}
-				column {
-					name "accountName"
-					enclosedIn "logInByUser"
-					desc ""
-					location "body"
-					type "String"
-					optional true
-					since "0.6"
-					
-				}
-				column {
-					name "userName"
-					enclosedIn "logInByUser"
-					desc ""
-					location "body"
-					type "String"
-					optional false
-					since "0.6"
-					
-				}
-				column {
-					name "password"
-					enclosedIn "logInByUser"
-					desc ""
-					location "body"
-					type "String"
-					optional false
-					since "0.6"
-					
-				}
-				column {
-					name "systemTags"
-					enclosedIn ""
-					desc ""
-					location "body"
-					type "List"
-					optional true
-					since "0.6"
-					
-				}
-				column {
-					name "userTags"
-					enclosedIn ""
-					desc ""
-					location "body"
-					type "List"
-					optional true
-					since "0.6"
-					
-				}
-			}
+            params {
+
+                column {
+                    name "accountUuid"
+                    enclosedIn "logInByUser"
+                    desc "账户UUID"
+                    location "body"
+                    type "String"
+                    optional true
+                    since "0.6"
+
+                }
+                column {
+                    name "accountName"
+                    enclosedIn "logInByUser"
+                    desc "账户名称"
+                    location "body"
+                    type "String"
+                    optional true
+                    since "0.6"
+
+                }
+                column {
+                    name "userName"
+                    enclosedIn "logInByUser"
+                    desc "用户名称"
+                    location "body"
+                    type "String"
+                    optional false
+                    since "0.6"
+
+                }
+                column {
+                    name "password"
+                    enclosedIn "logInByUser"
+                    desc "密码"
+                    location "body"
+                    type "String"
+                    optional false
+                    since "0.6"
+
+                }
+                column {
+                    name "systemTags"
+                    enclosedIn ""
+                    desc "系统标签"
+                    location "body"
+                    type "List"
+                    optional true
+                    since "0.6"
+
+                }
+                column {
+                    name "userTags"
+                    enclosedIn ""
+                    desc "用户标签"
+                    location "body"
+                    type "List"
+                    optional true
+                    since "0.6"
+
+                }
+            }
         }
 
         response {

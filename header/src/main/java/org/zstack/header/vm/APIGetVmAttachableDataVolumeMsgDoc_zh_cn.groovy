@@ -1,7 +1,5 @@
 package org.zstack.header.vm
 
-import org.zstack.header.vm.APIGetVmAttachableDataVolumeReply
-
 doc {
     title "GetVmAttachableDataVolume"
 
@@ -11,48 +9,48 @@ doc {
 
     rest {
         request {
-			url "GET /v1/vm-instances/{vmInstanceUuid}/data-volume-candidates"
+            url "GET /v1/vm-instances/{vmInstanceUuid}/data-volume-candidates"
 
 
-            header (OAuth: 'the-session-uuid')
+            header(OAuth: 'the-session-uuid')
 
             clz APIGetVmAttachableDataVolumeMsg.class
 
             desc ""
-            
-			params {
 
-				column {
-					name "vmInstanceUuid"
-					enclosedIn ""
-					desc "云主机UUID"
-					location "url"
-					type "String"
-					optional false
-					since "0.6"
-					
-				}
-				column {
-					name "systemTags"
-					enclosedIn ""
-					desc ""
-					location "query"
-					type "List"
-					optional true
-					since "0.6"
-					
-				}
-				column {
-					name "userTags"
-					enclosedIn ""
-					desc ""
-					location "query"
-					type "List"
-					optional true
-					since "0.6"
-					
-				}
-			}
+            params {
+
+                column {
+                    name "vmInstanceUuid"
+                    enclosedIn ""
+                    desc "云主机UUID"
+                    location "url"
+                    type "String"
+                    optional false
+                    since "0.6"
+
+                }
+                column {
+                    name "systemTags"
+                    enclosedIn ""
+                    desc "系统标签"
+                    location "query"
+                    type "List"
+                    optional true
+                    since "0.6"
+
+                }
+                column {
+                    name "userTags"
+                    enclosedIn ""
+                    desc "用户标签"
+                    location "query"
+                    type "List"
+                    optional true
+                    since "0.6"
+
+                }
+            }
         }
 
         response {

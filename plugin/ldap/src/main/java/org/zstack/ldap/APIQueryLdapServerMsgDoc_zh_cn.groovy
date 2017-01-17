@@ -1,6 +1,5 @@
 package org.zstack.ldap
 
-import org.zstack.ldap.APIQueryLdapServerReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
@@ -8,22 +7,22 @@ doc {
 
     category "ldap"
 
-    desc "在这里填写API描述"
+    desc "查询LDAP服务器"
 
     rest {
         request {
-			url "GET /v1/ldap/servers"
+            url "GET /v1/ldap/servers"
 
-			url "GET /v1/ldap/servers/{uuid}"
+            url "GET /v1/ldap/servers/{uuid}"
 
 
-            header (OAuth: 'the-session-uuid')
+            header(OAuth: 'the-session-uuid')
 
             clz APIQueryLdapServerMsg.class
 
             desc ""
-            
-			params APIQueryMessage.class
+
+            params APIQueryMessage.class
         }
 
         response {

@@ -1,26 +1,25 @@
 package org.zstack.header.identity
 
 import org.zstack.header.errorcode.ErrorCode
-import org.zstack.header.identity.QuotaInventory
 
 doc {
 
-	title "在这里输入结构的名称"
+    title "配额清单列表"
 
-	ref {
-		name "error"
-		path "org.zstack.header.identity.APIQueryQuotaReply.error"
-		desc "错误码，若不为null，则表示操作失败, 操作成功时该字段为null",false
-		type "ErrorCode"
-		since "0.6"
-		clz ErrorCode.class
-	}
-	ref {
-		name "inventories"
-		path "org.zstack.header.identity.APIQueryQuotaReply.inventories"
-		desc "null"
-		type "List"
-		since "0.6"
-		clz QuotaInventory.class
-	}
+    ref {
+        name "error"
+        path "org.zstack.header.identity.APIQueryQuotaReply.error"
+        desc "错误码，若不为null，则表示操作失败, 操作成功时该字段为null", false
+        type "ErrorCode"
+        since "0.6"
+        clz ErrorCode.class
+    }
+    ref {
+        name "inventories"
+        path "org.zstack.header.identity.APIQueryQuotaReply.inventories"
+        desc "配额清单列表"
+        type "List"
+        since "0.6"
+        clz QuotaInventory.class
+    }
 }

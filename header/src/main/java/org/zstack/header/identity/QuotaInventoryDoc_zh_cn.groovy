@@ -1,47 +1,43 @@
 package org.zstack.header.identity
 
-import java.lang.Long
-import java.sql.Timestamp
-import java.sql.Timestamp
-
 doc {
 
-	title "在这里输入结构的名称"
+    title "配额清单"
 
-	field {
-		name "name"
-		desc "资源名称"
-		type "String"
-		since "0.6"
-	}
-	field {
-		name "identityUuid"
-		desc ""
-		type "String"
-		since "0.6"
-	}
-	field {
-		name "identityType"
-		desc ""
-		type "String"
-		since "0.6"
-	}
-	field {
-		name "value"
-		desc ""
-		type "Long"
-		since "0.6"
-	}
-	field {
-		name "lastOpDate"
-		desc "最后一次修改时间"
-		type "Timestamp"
-		since "0.6"
-	}
-	field {
-		name "createDate"
-		desc "创建时间"
-		type "Timestamp"
-		since "0.6"
-	}
+    field {
+        name "name"
+        desc "资源名称"
+        type "String"
+        since "0.6"
+    }
+    field {
+        name "identityUuid"
+        desc "身份UUID（账户UUID，用户UUID）"
+        type "String"
+        since "0.6"
+    }
+    field {
+        name "identityType"
+        desc "身份类型（账户，用户）"
+        type "String"
+        since "0.6"
+    }
+    field {
+        name "value"
+        desc "默认配额值"
+        type "Long"
+        since "0.6"
+    }
+    field {
+        name "lastOpDate"
+        desc "最后一次修改时间"
+        type "Timestamp"
+        since "0.6"
+    }
+    field {
+        name "createDate"
+        desc "创建时间"
+        type "Timestamp"
+        since "0.6"
+    }
 }

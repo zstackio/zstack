@@ -1,7 +1,5 @@
 package org.zstack.header.vm
 
-import org.zstack.header.vm.APIDetachL3NetworkFromVmEvent
-
 doc {
     title "DetachL3NetworkFromVm"
 
@@ -11,48 +9,48 @@ doc {
 
     rest {
         request {
-			url "DELETE /v1/vm-instances/nics/{vmNicUuid}"
+            url "DELETE /v1/vm-instances/nics/{vmNicUuid}"
 
 
-            header (OAuth: 'the-session-uuid')
+            header(OAuth: 'the-session-uuid')
 
             clz APIDetachL3NetworkFromVmMsg.class
 
             desc ""
-            
-			params {
 
-				column {
-					name "vmNicUuid"
-					enclosedIn ""
-					desc "云主机网卡UUID"
-					location "url"
-					type "String"
-					optional false
-					since "0.6"
-					
-				}
-				column {
-					name "systemTags"
-					enclosedIn ""
-					desc ""
-					location "body"
-					type "List"
-					optional true
-					since "0.6"
-					
-				}
-				column {
-					name "userTags"
-					enclosedIn ""
-					desc ""
-					location "body"
-					type "List"
-					optional true
-					since "0.6"
-					
-				}
-			}
+            params {
+
+                column {
+                    name "vmNicUuid"
+                    enclosedIn ""
+                    desc "云主机网卡UUID"
+                    location "url"
+                    type "String"
+                    optional false
+                    since "0.6"
+
+                }
+                column {
+                    name "systemTags"
+                    enclosedIn ""
+                    desc ""
+                    location "body"
+                    type "List"
+                    optional true
+                    since "0.6"
+
+                }
+                column {
+                    name "userTags"
+                    enclosedIn ""
+                    desc "用户标签"
+                    location "body"
+                    type "List"
+                    optional true
+                    since "0.6"
+
+                }
+            }
         }
 
         response {
