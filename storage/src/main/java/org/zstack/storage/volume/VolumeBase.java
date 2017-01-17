@@ -69,6 +69,7 @@ public class VolumeBase implements Volume {
     private static final CLogger logger = Utils.getLogger(VolumeBase.class);
     protected String syncThreadId;
     protected VolumeVO self;
+    public VolumeBase that;
     @Autowired
     private CloudBus bus;
     @Autowired
