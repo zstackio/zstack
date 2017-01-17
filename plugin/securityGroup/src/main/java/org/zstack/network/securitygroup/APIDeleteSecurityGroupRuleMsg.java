@@ -68,4 +68,12 @@ public class APIDeleteSecurityGroupRuleMsg extends APIMessage {
     public void setRuleUuids(List<String> ruleUuids) {
         this.ruleUuids = ruleUuids;
     }
+ 
+    public static APIDeleteSecurityGroupRuleMsg __example__() {
+        APIDeleteSecurityGroupRuleMsg msg = new APIDeleteSecurityGroupRuleMsg();
+
+
+        return msg;
+    }
+
 }

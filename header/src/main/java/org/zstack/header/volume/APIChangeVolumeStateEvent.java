@@ -45,4 +45,12 @@ public class APIChangeVolumeStateEvent extends APIEvent {
     public void setInventory(VolumeInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIChangeVolumeStateEvent __example__() {
+        APIChangeVolumeStateEvent event = new APIChangeVolumeStateEvent();
+
+
+        return event;
+    }
+
 }

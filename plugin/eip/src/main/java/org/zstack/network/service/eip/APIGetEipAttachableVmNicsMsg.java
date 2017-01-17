@@ -38,4 +38,12 @@ public class APIGetEipAttachableVmNicsMsg extends APISyncCallMessage {
     public void setVipUuid(String vipUuid) {
         this.vipUuid = vipUuid;
     }
+ 
+    public static APIGetEipAttachableVmNicsMsg __example__() {
+        APIGetEipAttachableVmNicsMsg msg = new APIGetEipAttachableVmNicsMsg();
+
+
+        return msg;
+    }
+
 }

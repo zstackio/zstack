@@ -43,4 +43,12 @@ public class APIAddMonToCephPrimaryStorageMsg extends APIMessage implements Prim
     public String getPrimaryStorageUuid() {
         return uuid;
     }
+ 
+    public static APIAddMonToCephPrimaryStorageMsg __example__() {
+        APIAddMonToCephPrimaryStorageMsg msg = new APIAddMonToCephPrimaryStorageMsg();
+
+
+        return msg;
+    }
+
 }

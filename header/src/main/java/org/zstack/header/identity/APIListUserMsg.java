@@ -11,4 +11,12 @@ public class APIListUserMsg extends APIListMessage {
     public APIListUserMsg(List<String> uuids) {
         super(uuids);
     }
+ 
+    public static APIListUserMsg __example__() {
+        APIListUserMsg msg = new APIListUserMsg();
+
+
+        return msg;
+    }
+
 }

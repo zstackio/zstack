@@ -18,4 +18,12 @@ public class APIQueryUserTagReply extends APIQueryReply {
     public void setInventories(List<UserTagInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIQueryUserTagReply __example__() {
+        APIQueryUserTagReply reply = new APIQueryUserTagReply();
+
+
+        return reply;
+    }
+
 }

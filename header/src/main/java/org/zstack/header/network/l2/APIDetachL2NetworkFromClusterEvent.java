@@ -48,4 +48,12 @@ public class APIDetachL2NetworkFromClusterEvent extends APIEvent {
         super(null);
     }
 
+ 
+    public static APIDetachL2NetworkFromClusterEvent __example__() {
+        APIDetachL2NetworkFromClusterEvent event = new APIDetachL2NetworkFromClusterEvent();
+
+
+        return event;
+    }
+
 }

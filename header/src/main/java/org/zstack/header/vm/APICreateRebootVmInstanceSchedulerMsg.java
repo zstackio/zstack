@@ -36,4 +36,12 @@ public class APICreateRebootVmInstanceSchedulerMsg extends APICreateSchedulerMes
     public String getVmInstanceUuid() {
         return getVmUuid();
     }
+ 
+    public static APICreateRebootVmInstanceSchedulerMsg __example__() {
+        APICreateRebootVmInstanceSchedulerMsg msg = new APICreateRebootVmInstanceSchedulerMsg();
+
+
+        return msg;
+    }
+
 }

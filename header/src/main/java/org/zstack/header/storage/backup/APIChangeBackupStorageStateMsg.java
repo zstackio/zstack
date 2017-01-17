@@ -82,4 +82,12 @@ public class APIChangeBackupStorageStateMsg extends APIMessage implements Backup
     public String getBackupStorageUuid() {
         return getUuid();
     }
+ 
+    public static APIChangeBackupStorageStateMsg __example__() {
+        APIChangeBackupStorageStateMsg msg = new APIChangeBackupStorageStateMsg();
+
+
+        return msg;
+    }
+
 }

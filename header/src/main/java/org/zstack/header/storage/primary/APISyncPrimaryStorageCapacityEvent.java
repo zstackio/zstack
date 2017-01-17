@@ -22,4 +22,12 @@ public class APISyncPrimaryStorageCapacityEvent extends APIEvent {
     public void setInventory(PrimaryStorageInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APISyncPrimaryStorageCapacityEvent __example__() {
+        APISyncPrimaryStorageCapacityEvent event = new APISyncPrimaryStorageCapacityEvent();
+
+
+        return event;
+    }
+
 }

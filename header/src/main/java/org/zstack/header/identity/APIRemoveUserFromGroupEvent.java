@@ -14,4 +14,12 @@ public class APIRemoveUserFromGroupEvent extends APIEvent {
     public APIRemoveUserFromGroupEvent(String apiId) {
         super(apiId);
     }
+ 
+    public static APIRemoveUserFromGroupEvent __example__() {
+        APIRemoveUserFromGroupEvent event = new APIRemoveUserFromGroupEvent();
+
+
+        return event;
+    }
+
 }

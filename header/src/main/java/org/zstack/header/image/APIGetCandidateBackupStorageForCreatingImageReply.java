@@ -20,4 +20,12 @@ public class APIGetCandidateBackupStorageForCreatingImageReply extends APIReply 
     public void setInventories(List<BackupStorageInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIGetCandidateBackupStorageForCreatingImageReply __example__() {
+        APIGetCandidateBackupStorageForCreatingImageReply reply = new APIGetCandidateBackupStorageForCreatingImageReply();
+
+
+        return reply;
+    }
+
 }

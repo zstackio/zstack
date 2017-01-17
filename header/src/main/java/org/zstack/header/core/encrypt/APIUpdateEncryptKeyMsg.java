@@ -17,4 +17,12 @@ public class APIUpdateEncryptKeyMsg extends APIMessage {
     public void setEncryptKey(String encryptKey) {
         this.encryptKey = encryptKey;
     }
+ 
+    public static APIUpdateEncryptKeyMsg __example__() {
+        APIUpdateEncryptKeyMsg msg = new APIUpdateEncryptKeyMsg();
+
+
+        return msg;
+    }
+
 }

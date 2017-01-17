@@ -12,4 +12,12 @@ public class APIGenerateApiTypeScriptDefinitionEvent extends APIEvent {
     public APIGenerateApiTypeScriptDefinitionEvent() {
         super(null);
     }
+ 
+    public static APIGenerateApiTypeScriptDefinitionEvent __example__() {
+        APIGenerateApiTypeScriptDefinitionEvent event = new APIGenerateApiTypeScriptDefinitionEvent();
+
+
+        return event;
+    }
+
 }

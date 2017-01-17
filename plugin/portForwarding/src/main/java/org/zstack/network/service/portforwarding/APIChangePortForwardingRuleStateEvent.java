@@ -24,4 +24,12 @@ public class APIChangePortForwardingRuleStateEvent extends APIEvent {
     public void setInventory(PortForwardingRuleInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIChangePortForwardingRuleStateEvent __example__() {
+        APIChangePortForwardingRuleStateEvent event = new APIChangePortForwardingRuleStateEvent();
+
+
+        return event;
+    }
+
 }

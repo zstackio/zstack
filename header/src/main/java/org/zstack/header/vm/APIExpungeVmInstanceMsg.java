@@ -33,4 +33,12 @@ public class APIExpungeVmInstanceMsg extends APIMessage implements VmInstanceMes
     public String getVmInstanceUuid() {
         return uuid;
     }
+ 
+    public static APIExpungeVmInstanceMsg __example__() {
+        APIExpungeVmInstanceMsg msg = new APIExpungeVmInstanceMsg();
+
+
+        return msg;
+    }
+
 }

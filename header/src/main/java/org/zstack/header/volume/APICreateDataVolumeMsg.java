@@ -97,4 +97,12 @@ public class APICreateDataVolumeMsg extends APICreateMessage {
     public void setDiskOfferingUuid(String diskOfferingUuid) {
         this.diskOfferingUuid = diskOfferingUuid;
     }
+ 
+    public static APICreateDataVolumeMsg __example__() {
+        APICreateDataVolumeMsg msg = new APICreateDataVolumeMsg();
+
+
+        return msg;
+    }
+
 }

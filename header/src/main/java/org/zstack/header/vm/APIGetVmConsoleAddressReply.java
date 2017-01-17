@@ -35,4 +35,12 @@ public class APIGetVmConsoleAddressReply extends APIReply {
     public void setProtocol(String protocol) {
         this.protocol = protocol;
     }
+ 
+    public static APIGetVmConsoleAddressReply __example__() {
+        APIGetVmConsoleAddressReply reply = new APIGetVmConsoleAddressReply();
+
+
+        return reply;
+    }
+
 }

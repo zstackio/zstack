@@ -17,4 +17,12 @@ public class APIGetL3NetworkDhcpIpAddressReply extends APIReply {
     public void setIp(String ip) {
         this.ip = ip;
     }
+ 
+    public static APIGetL3NetworkDhcpIpAddressReply __example__() {
+        APIGetL3NetworkDhcpIpAddressReply reply = new APIGetL3NetworkDhcpIpAddressReply();
+
+
+        return reply;
+    }
+
 }

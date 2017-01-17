@@ -19,4 +19,12 @@ public class APIDebugSignalMsg extends APIMessage {
     public void setSignals(List<String> signals) {
         this.signals = signals;
     }
+ 
+    public static APIDebugSignalMsg __example__() {
+        APIDebugSignalMsg msg = new APIDebugSignalMsg();
+
+
+        return msg;
+    }
+
 }

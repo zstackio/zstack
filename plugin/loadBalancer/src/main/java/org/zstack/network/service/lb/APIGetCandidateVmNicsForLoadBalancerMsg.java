@@ -37,4 +37,12 @@ public class APIGetCandidateVmNicsForLoadBalancerMsg extends APISyncCallMessage 
     public void setLoadBalancerUuid(String loadBalancerUuid) {
         this.loadBalancerUuid = loadBalancerUuid;
     }
+ 
+    public static APIGetCandidateVmNicsForLoadBalancerMsg __example__() {
+        APIGetCandidateVmNicsForLoadBalancerMsg msg = new APIGetCandidateVmNicsForLoadBalancerMsg();
+
+
+        return msg;
+    }
+
 }

@@ -16,4 +16,12 @@ public class APIQueryLdapBindingReply extends APIQueryReply {
     public void setInventories(List<LdapAccountRefInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIQueryLdapBindingReply __example__() {
+        APIQueryLdapBindingReply reply = new APIQueryLdapBindingReply();
+
+
+        return reply;
+    }
+
 }

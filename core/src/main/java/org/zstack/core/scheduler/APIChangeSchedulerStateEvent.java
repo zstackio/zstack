@@ -24,4 +24,12 @@ public class APIChangeSchedulerStateEvent extends APIEvent {
     public void setInventory(SchedulerInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIChangeSchedulerStateEvent __example__() {
+        APIChangeSchedulerStateEvent event = new APIChangeSchedulerStateEvent();
+
+
+        return event;
+    }
+
 }

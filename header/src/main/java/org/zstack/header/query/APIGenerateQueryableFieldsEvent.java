@@ -21,4 +21,12 @@ public class APIGenerateQueryableFieldsEvent extends APIEvent {
     public void setOutputFolder(String outputFolder) {
         this.outputFolder = outputFolder;
     }
+ 
+    public static APIGenerateQueryableFieldsEvent __example__() {
+        APIGenerateQueryableFieldsEvent event = new APIGenerateQueryableFieldsEvent();
+
+
+        return event;
+    }
+
 }

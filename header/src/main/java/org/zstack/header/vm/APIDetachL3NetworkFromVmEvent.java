@@ -24,4 +24,12 @@ public class APIDetachL3NetworkFromVmEvent extends APIEvent {
     public APIDetachL3NetworkFromVmEvent(String apiId) {
         super(apiId);
     }
+ 
+    public static APIDetachL3NetworkFromVmEvent __example__() {
+        APIDetachL3NetworkFromVmEvent event = new APIDetachL3NetworkFromVmEvent();
+
+
+        return event;
+    }
+
 }

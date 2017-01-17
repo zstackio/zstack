@@ -53,4 +53,12 @@ public class APIAddCephBackupStorageMsg extends APIAddBackupStorageMsg {
     public String getType() {
         return CephConstants.CEPH_BACKUP_STORAGE_TYPE;
     }
+ 
+    public static APIAddCephBackupStorageMsg __example__() {
+        APIAddCephBackupStorageMsg msg = new APIAddCephBackupStorageMsg();
+
+
+        return msg;
+    }
+
 }

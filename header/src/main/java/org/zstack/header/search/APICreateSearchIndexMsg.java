@@ -25,4 +25,12 @@ public class APICreateSearchIndexMsg extends APIMessage {
     public void setRecreate(boolean isRecreate) {
         this.isRecreate = isRecreate;
     }
+ 
+    public static APICreateSearchIndexMsg __example__() {
+        APICreateSearchIndexMsg msg = new APICreateSearchIndexMsg();
+
+
+        return msg;
+    }
+
 }

@@ -43,4 +43,12 @@ public class APISetVmBootOrderMsg extends APIMessage implements VmInstanceMessag
     public void setBootOrder(List<String> bootOrder) {
         this.bootOrder = bootOrder;
     }
+ 
+    public static APISetVmBootOrderMsg __example__() {
+        APISetVmBootOrderMsg msg = new APISetVmBootOrderMsg();
+
+
+        return msg;
+    }
+
 }

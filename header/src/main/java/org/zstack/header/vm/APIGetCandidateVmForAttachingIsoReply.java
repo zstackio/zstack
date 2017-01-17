@@ -19,4 +19,12 @@ public class APIGetCandidateVmForAttachingIsoReply extends APIReply {
     public void setInventories(List<VmInstanceInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIGetCandidateVmForAttachingIsoReply __example__() {
+        APIGetCandidateVmForAttachingIsoReply reply = new APIGetCandidateVmForAttachingIsoReply();
+
+
+        return reply;
+    }
+
 }

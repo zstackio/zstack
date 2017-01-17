@@ -52,4 +52,12 @@ public class APIAddVmNicToLoadBalancerMsg extends APIMessage implements LoadBala
     public void setLoadBalancerUuid(String loadBalancerUuid) {
         this.loadBalancerUuid = loadBalancerUuid;
     }
+ 
+    public static APIAddVmNicToLoadBalancerMsg __example__() {
+        APIAddVmNicToLoadBalancerMsg msg = new APIAddVmNicToLoadBalancerMsg();
+
+
+        return msg;
+    }
+
 }

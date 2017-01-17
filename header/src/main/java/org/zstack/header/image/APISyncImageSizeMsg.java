@@ -32,4 +32,12 @@ public class APISyncImageSizeMsg extends APIMessage implements ImageMessage {
     public String getImageUuid() {
         return uuid;
     }
+ 
+    public static APISyncImageSizeMsg __example__() {
+        APISyncImageSizeMsg msg = new APISyncImageSizeMsg();
+
+
+        return msg;
+    }
+
 }

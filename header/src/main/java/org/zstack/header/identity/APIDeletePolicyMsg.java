@@ -32,4 +32,12 @@ public class APIDeletePolicyMsg extends APIDeleteMessage implements AccountMessa
     public void setUuid(String uuid) {
         this.uuid = uuid;
     }
+ 
+    public static APIDeletePolicyMsg __example__() {
+        APIDeletePolicyMsg msg = new APIDeletePolicyMsg();
+
+
+        return msg;
+    }
+
 }

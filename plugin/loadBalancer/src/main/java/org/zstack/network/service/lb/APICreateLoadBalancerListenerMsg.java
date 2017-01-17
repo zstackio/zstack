@@ -80,4 +80,12 @@ public class APICreateLoadBalancerListenerMsg extends APICreateMessage implement
     public void setProtocol(String protocol) {
         this.protocol = protocol;
     }
+ 
+    public static APICreateLoadBalancerListenerMsg __example__() {
+        APICreateLoadBalancerListenerMsg msg = new APICreateLoadBalancerListenerMsg();
+
+
+        return msg;
+    }
+
 }

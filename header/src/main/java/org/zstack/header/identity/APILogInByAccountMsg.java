@@ -32,4 +32,12 @@ public class APILogInByAccountMsg extends APISessionMessage {
     public void setPassword(String password) {
         this.password = password;
     }
+ 
+    public static APILogInByAccountMsg __example__() {
+        APILogInByAccountMsg msg = new APILogInByAccountMsg();
+
+
+        return msg;
+    }
+
 }

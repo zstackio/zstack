@@ -53,4 +53,12 @@ public class APIAddFusionstorBackupStorageMsg extends APIAddBackupStorageMsg {
     public String getType() {
         return FusionstorConstants.FUSIONSTOR_BACKUP_STORAGE_TYPE;
     }
+ 
+    public static APIAddFusionstorBackupStorageMsg __example__() {
+        APIAddFusionstorBackupStorageMsg msg = new APIAddFusionstorBackupStorageMsg();
+
+
+        return msg;
+    }
+
 }

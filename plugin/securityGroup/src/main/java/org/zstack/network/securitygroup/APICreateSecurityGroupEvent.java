@@ -50,4 +50,12 @@ public class APICreateSecurityGroupEvent extends APIEvent {
     public void setInventory(SecurityGroupInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APICreateSecurityGroupEvent __example__() {
+        APICreateSecurityGroupEvent event = new APICreateSecurityGroupEvent();
+
+
+        return event;
+    }
+
 }

@@ -8,4 +8,12 @@ public class APISearchUserGroupMsg extends APISearchMessage implements AccountMe
     public String getAccountUuid() {
         return this.getSession().getAccountUuid();
     }
+ 
+    public static APISearchUserGroupMsg __example__() {
+        APISearchUserGroupMsg msg = new APISearchUserGroupMsg();
+
+
+        return msg;
+    }
+
 }

@@ -18,4 +18,12 @@ public class APIQueryTagReply extends APIQueryReply {
         this.inventories = inventories;
     }
 }
+ 
+    public static APIQueryTagReply __example__() {
+        APIQueryTagReply reply = new APIQueryTagReply();
+
+
+        return reply;
+    }
+
 

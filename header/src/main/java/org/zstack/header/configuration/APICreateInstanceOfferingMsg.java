@@ -96,4 +96,12 @@ public class APICreateInstanceOfferingMsg extends APICreateMessage {
     public void setType(String type) {
         this.type = type;
     }
+ 
+    public static APICreateInstanceOfferingMsg __example__() {
+        APICreateInstanceOfferingMsg msg = new APICreateInstanceOfferingMsg();
+
+
+        return msg;
+    }
+
 }

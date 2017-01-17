@@ -31,4 +31,12 @@ public class APIRequestConsoleAccessMsg extends APIMessage {
     public void setVmInstanceUuid(String vmInstanceUuid) {
         this.vmInstanceUuid = vmInstanceUuid;
     }
+ 
+    public static APIRequestConsoleAccessMsg __example__() {
+        APIRequestConsoleAccessMsg msg = new APIRequestConsoleAccessMsg();
+
+
+        return msg;
+    }
+
 }

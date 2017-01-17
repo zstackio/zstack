@@ -25,4 +25,12 @@ public class APIDetachNetworkServiceFromL3NetworkEvent extends APIEvent {
     public void setInventory(L3NetworkInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIDetachNetworkServiceFromL3NetworkEvent __example__() {
+        APIDetachNetworkServiceFromL3NetworkEvent event = new APIDetachNetworkServiceFromL3NetworkEvent();
+
+
+        return event;
+    }
+
 }

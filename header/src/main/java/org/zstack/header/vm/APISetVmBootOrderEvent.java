@@ -24,4 +24,12 @@ public class APISetVmBootOrderEvent extends APIEvent {
     public void setInventory(VmInstanceInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APISetVmBootOrderEvent __example__() {
+        APISetVmBootOrderEvent event = new APISetVmBootOrderEvent();
+
+
+        return event;
+    }
+
 }

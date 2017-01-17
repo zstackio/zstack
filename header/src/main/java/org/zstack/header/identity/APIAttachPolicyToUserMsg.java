@@ -37,4 +37,12 @@ public class APIAttachPolicyToUserMsg extends APIMessage implements AccountMessa
     public void setPolicyUuid(String policyUuid) {
         this.policyUuid = policyUuid;
     }
+ 
+    public static APIAttachPolicyToUserMsg __example__() {
+        APIAttachPolicyToUserMsg msg = new APIAttachPolicyToUserMsg();
+
+
+        return msg;
+    }
+
 }

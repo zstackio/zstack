@@ -51,4 +51,12 @@ public class APIAddIscsiFileSystemBackendPrimaryStorageMsg extends APIAddIScsiPr
     public void setFilesystemType(String filesystemType) {
         this.filesystemType = filesystemType;
     }
+ 
+    public static APIAddIscsiFileSystemBackendPrimaryStorageMsg __example__() {
+        APIAddIscsiFileSystemBackendPrimaryStorageMsg msg = new APIAddIscsiFileSystemBackendPrimaryStorageMsg();
+
+
+        return msg;
+    }
+
 }

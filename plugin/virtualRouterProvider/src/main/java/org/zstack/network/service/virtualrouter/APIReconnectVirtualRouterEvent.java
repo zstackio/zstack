@@ -25,4 +25,12 @@ public class APIReconnectVirtualRouterEvent extends APIEvent {
     public void setInventory(ApplianceVmInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIReconnectVirtualRouterEvent __example__() {
+        APIReconnectVirtualRouterEvent event = new APIReconnectVirtualRouterEvent();
+
+
+        return event;
+    }
+
 }

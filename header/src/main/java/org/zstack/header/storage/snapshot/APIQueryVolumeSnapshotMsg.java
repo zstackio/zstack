@@ -17,4 +17,12 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIQueryVolumeSnapshotReply.class
 )
 public class APIQueryVolumeSnapshotMsg extends APIQueryMessage {
+ 
+    public static APIQueryVolumeSnapshotMsg __example__() {
+        APIQueryVolumeSnapshotMsg msg = new APIQueryVolumeSnapshotMsg();
+
+
+        return msg;
+    }
+
 }

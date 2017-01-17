@@ -43,4 +43,12 @@ public class APIAddMonToCephBackupStorageMsg extends APIMessage implements Backu
     public String getBackupStorageUuid() {
         return uuid;
     }
+ 
+    public static APIAddMonToCephBackupStorageMsg __example__() {
+        APIAddMonToCephBackupStorageMsg msg = new APIAddMonToCephBackupStorageMsg();
+
+
+        return msg;
+    }
+
 }

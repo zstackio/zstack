@@ -16,4 +16,12 @@ public class APIListZonesReply extends APIReply {
         this.inventories = inventories;
     }
 
+ 
+    public static APIListZonesReply __example__() {
+        APIListZonesReply reply = new APIListZonesReply();
+
+
+        return reply;
+    }
+
 }

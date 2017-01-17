@@ -22,4 +22,12 @@ public class APIQueryVipReply extends APIQueryReply {
     public void setInventories(List<VipInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIQueryVipReply __example__() {
+        APIQueryVipReply reply = new APIQueryVipReply();
+
+
+        return reply;
+    }
+
 }

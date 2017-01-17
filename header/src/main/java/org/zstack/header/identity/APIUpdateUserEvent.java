@@ -24,4 +24,12 @@ public class APIUpdateUserEvent extends APIEvent {
     public APIUpdateUserEvent(String apiId) {
         super(apiId);
     }
+ 
+    public static APIUpdateUserEvent __example__() {
+        APIUpdateUserEvent event = new APIUpdateUserEvent();
+
+
+        return event;
+    }
+
 }

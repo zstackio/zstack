@@ -20,4 +20,12 @@ public class APIGenerateInventoryQueryDetailsEvent extends APIEvent {
     public void setOutputDir(String outputDir) {
         this.outputDir = outputDir;
     }
+ 
+    public static APIGenerateInventoryQueryDetailsEvent __example__() {
+        APIGenerateInventoryQueryDetailsEvent event = new APIGenerateInventoryQueryDetailsEvent();
+
+
+        return event;
+    }
+
 }

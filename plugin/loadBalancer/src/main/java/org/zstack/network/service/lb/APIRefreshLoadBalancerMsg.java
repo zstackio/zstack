@@ -32,4 +32,12 @@ public class APIRefreshLoadBalancerMsg extends APIMessage implements LoadBalance
     public String getLoadBalancerUuid() {
         return uuid;
     }
+ 
+    public static APIRefreshLoadBalancerMsg __example__() {
+        APIRefreshLoadBalancerMsg msg = new APIRefreshLoadBalancerMsg();
+
+
+        return msg;
+    }
+
 }

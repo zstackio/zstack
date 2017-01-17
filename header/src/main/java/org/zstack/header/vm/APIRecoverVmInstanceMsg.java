@@ -32,4 +32,12 @@ public class APIRecoverVmInstanceMsg extends APIMessage implements VmInstanceMes
     public String getVmInstanceUuid() {
         return uuid;
     }
+ 
+    public static APIRecoverVmInstanceMsg __example__() {
+        APIRecoverVmInstanceMsg msg = new APIRecoverVmInstanceMsg();
+
+
+        return msg;
+    }
+
 }

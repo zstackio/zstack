@@ -38,4 +38,12 @@ public class APIDeleteVmStaticIpMsg extends APIDeleteMessage implements VmInstan
     public void setL3NetworkUuid(String l3NetworkUuid) {
         this.l3NetworkUuid = l3NetworkUuid;
     }
+ 
+    public static APIDeleteVmStaticIpMsg __example__() {
+        APIDeleteVmStaticIpMsg msg = new APIDeleteVmStaticIpMsg();
+
+
+        return msg;
+    }
+
 }

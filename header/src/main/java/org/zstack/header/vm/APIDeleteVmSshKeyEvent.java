@@ -24,4 +24,12 @@ public class APIDeleteVmSshKeyEvent extends APIEvent {
     public VmInstanceInventory getInventory() {
         return inventory;
     }
+ 
+    public static APIDeleteVmSshKeyEvent __example__() {
+        APIDeleteVmSshKeyEvent event = new APIDeleteVmSshKeyEvent();
+
+
+        return event;
+    }
+
 }

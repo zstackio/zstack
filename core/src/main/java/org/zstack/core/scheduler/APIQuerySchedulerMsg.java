@@ -11,4 +11,12 @@ import org.zstack.header.query.AutoQuery;
 @Action(category = SchedulerConstant.ACTION_CATEGORY, names = {"read"})
 @AutoQuery(replyClass = APIQuerySchedulerReply.class, inventoryClass = SchedulerInventory.class)
 public class APIQuerySchedulerMsg extends APIQueryMessage {
+ 
+    public static APIQuerySchedulerMsg __example__() {
+        APIQuerySchedulerMsg msg = new APIQuerySchedulerMsg();
+
+
+        return msg;
+    }
+
 }

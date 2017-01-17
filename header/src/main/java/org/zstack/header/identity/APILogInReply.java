@@ -14,4 +14,12 @@ public class APILogInReply extends APIReply {
     public void setInventory(SessionInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APILogInReply __example__() {
+        APILogInReply reply = new APILogInReply();
+
+
+        return reply;
+    }
+
 }

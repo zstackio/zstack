@@ -17,4 +17,12 @@ import org.zstack.header.rest.RestRequest;
 )
 public class APIQueryL2NetworkMsg extends APIQueryMessage {
 
+ 
+    public static APIQueryL2NetworkMsg __example__() {
+        APIQueryL2NetworkMsg msg = new APIQueryL2NetworkMsg();
+
+
+        return msg;
+    }
+
 }

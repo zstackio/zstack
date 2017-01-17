@@ -58,4 +58,12 @@ public class APICreateVolumeSnapshotSchedulerMsg extends APICreateSchedulerMessa
         this.volumeSnapshotDescription = volumeSnapshotDescription;
     }
 
+ 
+    public static APICreateVolumeSnapshotSchedulerMsg __example__() {
+        APICreateVolumeSnapshotSchedulerMsg msg = new APICreateVolumeSnapshotSchedulerMsg();
+
+
+        return msg;
+    }
+
 }

@@ -15,4 +15,12 @@ import org.zstack.header.rest.RestRequest;
 )
 public class APIQueryBackupStorageMsg extends APIQueryMessage {
 
+ 
+    public static APIQueryBackupStorageMsg __example__() {
+        APIQueryBackupStorageMsg msg = new APIQueryBackupStorageMsg();
+
+
+        return msg;
+    }
+
 }

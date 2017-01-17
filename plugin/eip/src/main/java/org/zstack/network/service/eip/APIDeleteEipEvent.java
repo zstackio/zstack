@@ -26,4 +26,12 @@ public class APIDeleteEipEvent extends APIEvent {
 
     public APIDeleteEipEvent() {
     }
+ 
+    public static APIDeleteEipEvent __example__() {
+        APIDeleteEipEvent event = new APIDeleteEipEvent();
+
+
+        return event;
+    }
+
 }

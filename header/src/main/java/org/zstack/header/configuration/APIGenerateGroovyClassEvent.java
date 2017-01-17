@@ -16,4 +16,12 @@ public class APIGenerateGroovyClassEvent extends APIEvent {
     public APIGenerateGroovyClassEvent() {
         super(null);
     }
+ 
+    public static APIGenerateGroovyClassEvent __example__() {
+        APIGenerateGroovyClassEvent event = new APIGenerateGroovyClassEvent();
+
+
+        return event;
+    }
+
 }

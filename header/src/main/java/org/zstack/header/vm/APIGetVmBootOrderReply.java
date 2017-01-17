@@ -19,4 +19,12 @@ public class APIGetVmBootOrderReply extends APIReply {
     public void setOrder(List<String> order) {
         this.order = order;
     }
+ 
+    public static APIGetVmBootOrderReply __example__() {
+        APIGetVmBootOrderReply reply = new APIGetVmBootOrderReply();
+
+
+        return reply;
+    }
+
 }

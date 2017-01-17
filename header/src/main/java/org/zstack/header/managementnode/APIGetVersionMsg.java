@@ -16,4 +16,12 @@ import org.zstack.header.rest.RestRequest;
         method = HttpMethod.PUT
 )
 public class APIGetVersionMsg extends APISyncCallMessage {
+ 
+    public static APIGetVersionMsg __example__() {
+        APIGetVersionMsg msg = new APIGetVersionMsg();
+
+
+        return msg;
+    }
+
 }

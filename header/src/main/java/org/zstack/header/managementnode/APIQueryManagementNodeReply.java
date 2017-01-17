@@ -18,4 +18,12 @@ public class APIQueryManagementNodeReply extends APIQueryReply {
     public void setInventories(List<ManagementNodeInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIQueryManagementNodeReply __example__() {
+        APIQueryManagementNodeReply reply = new APIQueryManagementNodeReply();
+
+
+        return reply;
+    }
+
 }

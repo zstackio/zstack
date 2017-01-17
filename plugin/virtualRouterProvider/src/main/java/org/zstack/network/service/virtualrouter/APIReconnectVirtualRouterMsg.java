@@ -28,4 +28,12 @@ public class APIReconnectVirtualRouterMsg extends APIMessage implements VmInstan
     public void setVmInstanceUuid(String vmInstanceUuid) {
         this.vmInstanceUuid = vmInstanceUuid;
     }
+ 
+    public static APIReconnectVirtualRouterMsg __example__() {
+        APIReconnectVirtualRouterMsg msg = new APIReconnectVirtualRouterMsg();
+
+
+        return msg;
+    }
+
 }

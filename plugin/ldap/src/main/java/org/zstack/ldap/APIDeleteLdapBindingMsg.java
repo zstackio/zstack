@@ -21,4 +21,12 @@ public class APIDeleteLdapBindingMsg extends APIMessage {
     public void setUuid(String uuid) {
         this.uuid = uuid;
     }
+ 
+    public static APIDeleteLdapBindingMsg __example__() {
+        APIDeleteLdapBindingMsg msg = new APIDeleteLdapBindingMsg();
+
+
+        return msg;
+    }
+
 }

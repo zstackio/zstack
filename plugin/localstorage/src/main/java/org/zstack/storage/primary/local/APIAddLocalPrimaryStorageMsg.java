@@ -19,4 +19,12 @@ public class APIAddLocalPrimaryStorageMsg extends APIAddPrimaryStorageMsg {
     public String getType() {
         return LocalStorageConstants.LOCAL_STORAGE_TYPE;
     }
+ 
+    public static APIAddLocalPrimaryStorageMsg __example__() {
+        APIAddLocalPrimaryStorageMsg msg = new APIAddLocalPrimaryStorageMsg();
+
+
+        return msg;
+    }
+
 }

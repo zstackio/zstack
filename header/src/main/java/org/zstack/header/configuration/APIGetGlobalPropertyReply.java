@@ -17,4 +17,12 @@ public class APIGetGlobalPropertyReply extends APIReply {
     public void setProperties(List<String> properties) {
         this.properties = properties;
     }
+ 
+    public static APIGetGlobalPropertyReply __example__() {
+        APIGetGlobalPropertyReply reply = new APIGetGlobalPropertyReply();
+
+
+        return reply;
+    }
+
 }

@@ -74,4 +74,12 @@ public class APIAddSecurityGroupRuleEvent extends APIEvent {
     public void setInventory(SecurityGroupInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIAddSecurityGroupRuleEvent __example__() {
+        APIAddSecurityGroupRuleEvent event = new APIAddSecurityGroupRuleEvent();
+
+
+        return event;
+    }
+
 }

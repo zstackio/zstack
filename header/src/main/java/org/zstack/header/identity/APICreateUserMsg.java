@@ -48,4 +48,11 @@ public class APICreateUserMsg extends APICreateMessage implements AccountMessage
     public void setPassword(String password) {
         this.password = password;
     }
+
+    public static APICreateUserMsg __example__() {
+        APICreateUserMsg msg = new APICreateUserMsg();
+        msg.setName("testuser");
+        msg.setPassword("testpassword");
+        return msg;
+    }
 }

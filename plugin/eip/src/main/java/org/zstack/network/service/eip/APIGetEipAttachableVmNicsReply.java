@@ -19,4 +19,12 @@ public class APIGetEipAttachableVmNicsReply extends APIReply {
     public void setInventories(List<VmNicInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIGetEipAttachableVmNicsReply __example__() {
+        APIGetEipAttachableVmNicsReply reply = new APIGetEipAttachableVmNicsReply();
+
+
+        return reply;
+    }
+
 }

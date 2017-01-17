@@ -77,4 +77,12 @@ public class APIUpdateVolumeSnapshotMsg extends APIMessage implements VolumeSnap
     public void setTreeUuid(String treeUuid) {
         this.treeUuid = treeUuid;
     }
+ 
+    public static APIUpdateVolumeSnapshotMsg __example__() {
+        APIUpdateVolumeSnapshotMsg msg = new APIUpdateVolumeSnapshotMsg();
+
+
+        return msg;
+    }
+
 }

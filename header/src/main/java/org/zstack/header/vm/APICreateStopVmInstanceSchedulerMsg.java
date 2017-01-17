@@ -35,4 +35,12 @@ public class APICreateStopVmInstanceSchedulerMsg extends APICreateSchedulerMessa
     public String getVmInstanceUuid() {
         return getVmUuid();
     }
+ 
+    public static APICreateStopVmInstanceSchedulerMsg __example__() {
+        APICreateStopVmInstanceSchedulerMsg msg = new APICreateStopVmInstanceSchedulerMsg();
+
+
+        return msg;
+    }
+
 }

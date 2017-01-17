@@ -22,4 +22,12 @@ public class APIChangeVipStateEvent extends APIEvent {
     public void setInventory(VipInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIChangeVipStateEvent __example__() {
+        APIChangeVipStateEvent event = new APIChangeVipStateEvent();
+
+
+        return event;
+    }
+
 }

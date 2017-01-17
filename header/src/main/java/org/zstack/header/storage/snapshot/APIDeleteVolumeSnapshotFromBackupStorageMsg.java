@@ -105,4 +105,12 @@ public class APIDeleteVolumeSnapshotFromBackupStorageMsg extends APIDeleteMessag
     public void setVolumeUuid(String volumeUuid) {
         this.volumeUuid = volumeUuid;
     }
+ 
+    public static APIDeleteVolumeSnapshotFromBackupStorageMsg __example__() {
+        APIDeleteVolumeSnapshotFromBackupStorageMsg msg = new APIDeleteVolumeSnapshotFromBackupStorageMsg();
+
+
+        return msg;
+    }
+
 }

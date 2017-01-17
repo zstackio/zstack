@@ -73,4 +73,12 @@ public class APIAddFusionstorPrimaryStorageMsg extends APIAddPrimaryStorageMsg {
     public void setMonUrls(List<String> monUrls) {
         this.monUrls = monUrls;
     }
+ 
+    public static APIAddFusionstorPrimaryStorageMsg __example__() {
+        APIAddFusionstorPrimaryStorageMsg msg = new APIAddFusionstorPrimaryStorageMsg();
+
+
+        return msg;
+    }
+
 }

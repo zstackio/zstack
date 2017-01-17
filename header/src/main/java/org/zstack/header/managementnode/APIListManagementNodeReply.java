@@ -16,4 +16,12 @@ public class APIListManagementNodeReply extends APIReply {
     public void setInventories(List<ManagementNodeInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIListManagementNodeReply __example__() {
+        APIListManagementNodeReply reply = new APIListManagementNodeReply();
+
+
+        return reply;
+    }
+
 }

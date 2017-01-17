@@ -14,4 +14,12 @@ public class APIListL2VlanNetworkReply extends APIReply {
     public void setInventories(List<L2VlanNetworkInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIListL2VlanNetworkReply __example__() {
+        APIListL2VlanNetworkReply reply = new APIListL2VlanNetworkReply();
+
+
+        return reply;
+    }
+
 }

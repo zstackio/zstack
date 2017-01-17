@@ -52,4 +52,12 @@ public class APIAttachBackupStorageToZoneEvent extends APIEvent {
     public void setInventory(BackupStorageInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIAttachBackupStorageToZoneEvent __example__() {
+        APIAttachBackupStorageToZoneEvent event = new APIAttachBackupStorageToZoneEvent();
+
+
+        return event;
+    }
+
 }

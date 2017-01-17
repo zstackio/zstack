@@ -51,4 +51,12 @@ public class APIDeleteImageMsg extends APIDeleteMessage implements ImageMessage 
     public String getImageUuid() {
         return uuid;
     }
+ 
+    public static APIDeleteImageMsg __example__() {
+        APIDeleteImageMsg msg = new APIDeleteImageMsg();
+
+
+        return msg;
+    }
+
 }

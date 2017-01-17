@@ -52,4 +52,12 @@ public class APIUpdateUserGroupMsg extends APIMessage implements AccountMessage 
     public String getAccountUuid() {
         return getSession().getAccountUuid();
     }
+ 
+    public static APIUpdateUserGroupMsg __example__() {
+        APIUpdateUserGroupMsg msg = new APIUpdateUserGroupMsg();
+
+
+        return msg;
+    }
+
 }

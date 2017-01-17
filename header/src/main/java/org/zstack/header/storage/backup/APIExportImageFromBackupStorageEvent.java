@@ -21,4 +21,12 @@ public class APIExportImageFromBackupStorageEvent extends APIEvent {
     }
 
     private String imageUrl;
+ 
+    public static APIExportImageFromBackupStorageEvent __example__() {
+        APIExportImageFromBackupStorageEvent event = new APIExportImageFromBackupStorageEvent();
+
+
+        return event;
+    }
+
 }

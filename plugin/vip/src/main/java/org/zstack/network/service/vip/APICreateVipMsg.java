@@ -122,4 +122,12 @@ public class APICreateVipMsg extends APICreateMessage implements L3NetworkMessag
     public void setDescription(String description) {
         this.description = description;
     }
+ 
+    public static APICreateVipMsg __example__() {
+        APICreateVipMsg msg = new APICreateVipMsg();
+
+
+        return msg;
+    }
+
 }

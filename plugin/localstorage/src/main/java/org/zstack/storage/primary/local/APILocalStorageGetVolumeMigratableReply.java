@@ -20,4 +20,12 @@ public class APILocalStorageGetVolumeMigratableReply extends APIReply {
     public void setInventories(List<HostInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APILocalStorageGetVolumeMigratableReply __example__() {
+        APILocalStorageGetVolumeMigratableReply reply = new APILocalStorageGetVolumeMigratableReply();
+
+
+        return reply;
+    }
+
 }

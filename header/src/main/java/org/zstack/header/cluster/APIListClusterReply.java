@@ -14,4 +14,12 @@ public class APIListClusterReply extends APIReply {
     public void setInventories(List<ClusterInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIListClusterReply __example__() {
+        APIListClusterReply reply = new APIListClusterReply();
+
+
+        return reply;
+    }
+
 }

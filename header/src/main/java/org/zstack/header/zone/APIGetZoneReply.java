@@ -14,4 +14,12 @@ public class APIGetZoneReply extends APIReply {
     public void setInventories(List<ZoneInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIGetZoneReply __example__() {
+        APIGetZoneReply reply = new APIGetZoneReply();
+
+
+        return reply;
+    }
+
 }

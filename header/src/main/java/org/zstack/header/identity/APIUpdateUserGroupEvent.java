@@ -24,4 +24,12 @@ public class APIUpdateUserGroupEvent extends APIEvent {
     public void setInventory(UserGroupInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIUpdateUserGroupEvent __example__() {
+        APIUpdateUserGroupEvent event = new APIUpdateUserGroupEvent();
+
+
+        return event;
+    }
+
 }

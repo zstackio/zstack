@@ -14,4 +14,12 @@ public class APIListVmNicReply extends APIReply {
     public void setInventories(List<VmNicInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIListVmNicReply __example__() {
+        APIListVmNicReply reply = new APIListVmNicReply();
+
+
+        return reply;
+    }
+
 }

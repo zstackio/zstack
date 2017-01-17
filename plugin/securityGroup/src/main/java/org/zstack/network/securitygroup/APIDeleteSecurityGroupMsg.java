@@ -65,4 +65,12 @@ public class APIDeleteSecurityGroupMsg extends APIDeleteMessage {
     public void setUuid(String securityGroupUuid) {
         this.uuid = securityGroupUuid;
     }
+ 
+    public static APIDeleteSecurityGroupMsg __example__() {
+        APIDeleteSecurityGroupMsg msg = new APIDeleteSecurityGroupMsg();
+
+
+        return msg;
+    }
+
 }

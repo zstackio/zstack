@@ -16,4 +16,11 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIQueryGlobalConfigReply.class
 )
 public class APIQueryGlobalConfigMsg extends APIQueryMessage {
+    public static APIQueryGlobalConfigMsg __example__() {
+        APIQueryGlobalConfigMsg msg = new APIQueryGlobalConfigMsg();
+
+
+        return msg;
+    }
+
 }

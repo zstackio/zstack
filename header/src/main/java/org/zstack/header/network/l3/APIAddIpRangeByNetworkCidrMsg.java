@@ -57,4 +57,12 @@ public class APIAddIpRangeByNetworkCidrMsg extends APICreateMessage implements L
     public void setDescription(String description) {
         this.description = description;
     }
+ 
+    public static APIAddIpRangeByNetworkCidrMsg __example__() {
+        APIAddIpRangeByNetworkCidrMsg msg = new APIAddIpRangeByNetworkCidrMsg();
+
+
+        return msg;
+    }
+
 }

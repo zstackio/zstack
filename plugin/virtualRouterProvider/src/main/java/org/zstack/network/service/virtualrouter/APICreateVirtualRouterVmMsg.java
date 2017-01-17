@@ -42,4 +42,12 @@ public class APICreateVirtualRouterVmMsg extends APICreateVmInstanceMsg {
 		this.networkServicesProvided = networkServicesProvided;
 	}
 	
+ 
+    public static APICreateVirtualRouterVmMsg __example__() {
+        APICreateVirtualRouterVmMsg msg = new APICreateVirtualRouterVmMsg();
+
+
+        return msg;
+    }
+
 }

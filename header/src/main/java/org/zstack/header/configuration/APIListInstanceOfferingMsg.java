@@ -12,4 +12,12 @@ public class APIListInstanceOfferingMsg extends APIListMessage {
     public APIListInstanceOfferingMsg(List<String> uuids) {
         super(uuids);
     }
+ 
+    public static APIListInstanceOfferingMsg __example__() {
+        APIListInstanceOfferingMsg msg = new APIListInstanceOfferingMsg();
+
+
+        return msg;
+    }
+
 }

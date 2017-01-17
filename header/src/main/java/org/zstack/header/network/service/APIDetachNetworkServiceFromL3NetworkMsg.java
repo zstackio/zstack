@@ -50,4 +50,12 @@ public class APIDetachNetworkServiceFromL3NetworkMsg extends APIMessage implemen
     public void setNetworkServices(Map<String, List<String>> networkServices) {
         this.networkServices = networkServices;
     }
+ 
+    public static APIDetachNetworkServiceFromL3NetworkMsg __example__() {
+        APIDetachNetworkServiceFromL3NetworkMsg msg = new APIDetachNetworkServiceFromL3NetworkMsg();
+
+
+        return msg;
+    }
+
 }

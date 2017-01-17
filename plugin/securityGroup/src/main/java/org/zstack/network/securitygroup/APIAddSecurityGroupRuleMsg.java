@@ -212,4 +212,12 @@ public class APIAddSecurityGroupRuleMsg extends APIMessage {
         this.securityGroupUuid = securityGroupUuid;
     }
     
+ 
+    public static APIAddSecurityGroupRuleMsg __example__() {
+        APIAddSecurityGroupRuleMsg msg = new APIAddSecurityGroupRuleMsg();
+
+
+        return msg;
+    }
+
 }

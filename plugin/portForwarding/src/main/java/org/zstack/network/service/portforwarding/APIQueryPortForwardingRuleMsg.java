@@ -16,4 +16,12 @@ import org.zstack.header.rest.RestRequest;
 )
 public class APIQueryPortForwardingRuleMsg extends APIQueryMessage {
 
+ 
+    public static APIQueryPortForwardingRuleMsg __example__() {
+        APIQueryPortForwardingRuleMsg msg = new APIQueryPortForwardingRuleMsg();
+
+
+        return msg;
+    }
+
 }

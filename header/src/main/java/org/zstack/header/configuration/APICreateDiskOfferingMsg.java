@@ -76,4 +76,12 @@ public class APICreateDiskOfferingMsg extends APICreateMessage {
     public void setType(String type) {
         this.type = type;
     }
+ 
+    public static APICreateDiskOfferingMsg __example__() {
+        APICreateDiskOfferingMsg msg = new APICreateDiskOfferingMsg();
+
+
+        return msg;
+    }
+
 }

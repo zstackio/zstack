@@ -14,4 +14,12 @@ public class APIDeleteLoadBalancerEvent extends APIEvent {
     public APIDeleteLoadBalancerEvent(String apiId) {
         super(apiId);
     }
+ 
+    public static APIDeleteLoadBalancerEvent __example__() {
+        APIDeleteLoadBalancerEvent event = new APIDeleteLoadBalancerEvent();
+
+
+        return event;
+    }
+
 }

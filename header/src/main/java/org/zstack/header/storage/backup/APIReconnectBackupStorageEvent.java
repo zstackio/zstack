@@ -24,4 +24,12 @@ public class APIReconnectBackupStorageEvent extends APIEvent {
     public void setInventory(BackupStorageInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIReconnectBackupStorageEvent __example__() {
+        APIReconnectBackupStorageEvent event = new APIReconnectBackupStorageEvent();
+
+
+        return event;
+    }
+
 }

@@ -14,4 +14,12 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIGetVolumeFormatReply.class
 )
 public class APIGetVolumeFormatMsg extends APISyncCallMessage {
+ 
+    public static APIGetVolumeFormatMsg __example__() {
+        APIGetVolumeFormatMsg msg = new APIGetVolumeFormatMsg();
+
+
+        return msg;
+    }
+
 }

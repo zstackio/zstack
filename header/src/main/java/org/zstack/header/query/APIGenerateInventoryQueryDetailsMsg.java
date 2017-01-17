@@ -23,4 +23,12 @@ public class APIGenerateInventoryQueryDetailsMsg extends APIMessage {
     public void setBasePackageNames(List<String> basePackageNames) {
         this.basePackageNames = basePackageNames;
     }
+ 
+    public static APIGenerateInventoryQueryDetailsMsg __example__() {
+        APIGenerateInventoryQueryDetailsMsg msg = new APIGenerateInventoryQueryDetailsMsg();
+
+
+        return msg;
+    }
+
 }

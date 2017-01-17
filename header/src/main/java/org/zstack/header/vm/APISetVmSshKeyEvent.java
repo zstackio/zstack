@@ -24,4 +24,12 @@ public class APISetVmSshKeyEvent extends APIEvent {
     public VmInstanceInventory getInventory() {
         return inventory;
     }
+ 
+    public static APISetVmSshKeyEvent __example__() {
+        APISetVmSshKeyEvent event = new APISetVmSshKeyEvent();
+
+
+        return event;
+    }
+
 }

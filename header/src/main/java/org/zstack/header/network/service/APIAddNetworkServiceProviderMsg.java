@@ -46,4 +46,12 @@ public class APIAddNetworkServiceProviderMsg extends APIMessage {
     public void setType(String type) {
         this.type = type;
     }
+ 
+    public static APIAddNetworkServiceProviderMsg __example__() {
+        APIAddNetworkServiceProviderMsg msg = new APIAddNetworkServiceProviderMsg();
+
+
+        return msg;
+    }
+
 }

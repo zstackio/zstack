@@ -67,4 +67,12 @@ public class APIDeleteL3NetworkMsg extends APIDeleteMessage implements L3Network
     public String getL3NetworkUuid() {
         return getUuid();
     }
+ 
+    public static APIDeleteL3NetworkMsg __example__() {
+        APIDeleteL3NetworkMsg msg = new APIDeleteL3NetworkMsg();
+
+
+        return msg;
+    }
+
 }

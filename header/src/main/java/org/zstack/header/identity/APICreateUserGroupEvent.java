@@ -22,4 +22,12 @@ public class APICreateUserGroupEvent extends APIEvent {
     public void setInventory(UserGroupInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APICreateUserGroupEvent __example__() {
+        APICreateUserGroupEvent event = new APICreateUserGroupEvent();
+
+
+        return event;
+    }
+
 }

@@ -12,4 +12,12 @@ public class APIDeleteDiskOfferingEvent extends APIEvent {
     public APIDeleteDiskOfferingEvent(String apiId) {
         super(apiId);
     }
+ 
+    public static APIDeleteDiskOfferingEvent __example__() {
+        APIDeleteDiskOfferingEvent event = new APIDeleteDiskOfferingEvent();
+
+
+        return event;
+    }
+
 }

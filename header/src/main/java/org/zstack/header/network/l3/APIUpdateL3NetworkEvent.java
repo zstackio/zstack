@@ -24,4 +24,12 @@ public class APIUpdateL3NetworkEvent extends APIEvent {
     public void setInventory(L3NetworkInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIUpdateL3NetworkEvent __example__() {
+        APIUpdateL3NetworkEvent event = new APIUpdateL3NetworkEvent();
+
+
+        return event;
+    }
+
 }

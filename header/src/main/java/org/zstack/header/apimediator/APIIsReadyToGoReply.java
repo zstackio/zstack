@@ -17,4 +17,12 @@ public class APIIsReadyToGoReply extends APIReply {
     public String getManagementNodeId() {
         return managementNodeId;
     }
+ 
+    public static APIIsReadyToGoReply __example__() {
+        APIIsReadyToGoReply reply = new APIIsReadyToGoReply();
+
+
+        return reply;
+    }
+
 }

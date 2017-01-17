@@ -67,4 +67,12 @@ public class APIDetachEipMsg extends APIMessage implements EipMessage {
     public String getEipUuid() {
         return uuid;
     }
+ 
+    public static APIDetachEipMsg __example__() {
+        APIDetachEipMsg msg = new APIDetachEipMsg();
+
+
+        return msg;
+    }
+
 }

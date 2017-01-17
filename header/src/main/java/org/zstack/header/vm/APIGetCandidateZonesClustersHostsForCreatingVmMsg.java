@@ -100,4 +100,12 @@ public class APIGetCandidateZonesClustersHostsForCreatingVmMsg extends APISyncCa
     public void setDataDiskOfferingUuids(List<String> dataDiskOfferingUuids) {
         this.dataDiskOfferingUuids = dataDiskOfferingUuids;
     }
+ 
+    public static APIGetCandidateZonesClustersHostsForCreatingVmMsg __example__() {
+        APIGetCandidateZonesClustersHostsForCreatingVmMsg msg = new APIGetCandidateZonesClustersHostsForCreatingVmMsg();
+
+
+        return msg;
+    }
+
 }

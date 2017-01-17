@@ -11,4 +11,12 @@ public class APIListClusterMsg extends APIListMessage {
     public APIListClusterMsg(List<String> uuids) {
         super(uuids);
     }
+ 
+    public static APIListClusterMsg __example__() {
+        APIListClusterMsg msg = new APIListClusterMsg();
+
+
+        return msg;
+    }
+
 }

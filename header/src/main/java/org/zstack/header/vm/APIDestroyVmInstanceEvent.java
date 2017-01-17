@@ -22,4 +22,12 @@ public class APIDestroyVmInstanceEvent extends APIEvent {
     public APIDestroyVmInstanceEvent() {
         super(null);
     }
+ 
+    public static APIDestroyVmInstanceEvent __example__() {
+        APIDestroyVmInstanceEvent event = new APIDestroyVmInstanceEvent();
+
+
+        return event;
+    }
+
 }

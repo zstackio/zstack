@@ -20,4 +20,12 @@ public class APIGetVmAttachableL3NetworkReply extends APIReply {
     public void setInventories(List<L3NetworkInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIGetVmAttachableL3NetworkReply __example__() {
+        APIGetVmAttachableL3NetworkReply reply = new APIGetVmAttachableL3NetworkReply();
+
+
+        return reply;
+    }
+
 }

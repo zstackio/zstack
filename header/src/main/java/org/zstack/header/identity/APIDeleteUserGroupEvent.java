@@ -14,4 +14,12 @@ public class APIDeleteUserGroupEvent extends APIEvent {
     public APIDeleteUserGroupEvent(String apiId) {
         super(apiId);
     }
+ 
+    public static APIDeleteUserGroupEvent __example__() {
+        APIDeleteUserGroupEvent event = new APIDeleteUserGroupEvent();
+
+
+        return event;
+    }
+
 }

@@ -14,4 +14,12 @@ public class APIListPrimaryStorageReply extends APIReply {
     public void setInventories(List<PrimaryStorageInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIListPrimaryStorageReply __example__() {
+        APIListPrimaryStorageReply reply = new APIListPrimaryStorageReply();
+
+
+        return reply;
+    }
+
 }

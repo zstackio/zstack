@@ -27,4 +27,12 @@ public class APIGetVmAttachableDataVolumeMsg extends APISyncCallMessage implemen
     public void setVmInstanceUuid(String vmInstanceUuid) {
         this.vmInstanceUuid = vmInstanceUuid;
     }
+ 
+    public static APIGetVmAttachableDataVolumeMsg __example__() {
+        APIGetVmAttachableDataVolumeMsg msg = new APIGetVmAttachableDataVolumeMsg();
+
+
+        return msg;
+    }
+
 }

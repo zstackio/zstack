@@ -46,4 +46,12 @@ public class APICreateDataVolumeFromVolumeSnapshotEvent extends APIEvent {
     public void setInventory(VolumeInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APICreateDataVolumeFromVolumeSnapshotEvent __example__() {
+        APICreateDataVolumeFromVolumeSnapshotEvent event = new APICreateDataVolumeFromVolumeSnapshotEvent();
+
+
+        return event;
+    }
+
 }

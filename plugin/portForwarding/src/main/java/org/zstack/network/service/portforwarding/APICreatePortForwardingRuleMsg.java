@@ -191,4 +191,12 @@ public class APICreatePortForwardingRuleMsg extends APICreateMessage {
         this.description = description;
     }
 }
+ 
+    public static APICreatePortForwardingRuleMsg __example__() {
+        APICreatePortForwardingRuleMsg msg = new APICreatePortForwardingRuleMsg();
+
+
+        return msg;
+    }
+
 

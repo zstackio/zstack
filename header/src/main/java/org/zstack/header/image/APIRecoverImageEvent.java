@@ -24,4 +24,12 @@ public class APIRecoverImageEvent extends APIEvent {
     public void setInventory(ImageInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIRecoverImageEvent __example__() {
+        APIRecoverImageEvent event = new APIRecoverImageEvent();
+
+
+        return event;
+    }
+
 }

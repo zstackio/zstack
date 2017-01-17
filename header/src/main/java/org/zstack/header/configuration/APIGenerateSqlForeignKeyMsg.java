@@ -25,4 +25,12 @@ public class APIGenerateSqlForeignKeyMsg extends APIMessage {
     public void setBasePackageNames(List<String> basePackageNames) {
         this.basePackageNames = basePackageNames;
     }
+ 
+    public static APIGenerateSqlForeignKeyMsg __example__() {
+        APIGenerateSqlForeignKeyMsg msg = new APIGenerateSqlForeignKeyMsg();
+
+
+        return msg;
+    }
+
 }

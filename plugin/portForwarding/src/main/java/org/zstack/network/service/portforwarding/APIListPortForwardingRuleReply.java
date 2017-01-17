@@ -14,4 +14,12 @@ public class APIListPortForwardingRuleReply extends APIReply {
     public void setInventories(List<PortForwardingRuleInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIListPortForwardingRuleReply __example__() {
+        APIListPortForwardingRuleReply reply = new APIListPortForwardingRuleReply();
+
+
+        return reply;
+    }
+
 }

@@ -31,4 +31,12 @@ public class APIAddSimulatorHostMsg extends APIAddHostMsg {
     	this.cpuCapacity = cpuCapacity;
     }
 
+ 
+    public static APIAddSimulatorHostMsg __example__() {
+        APIAddSimulatorHostMsg msg = new APIAddSimulatorHostMsg();
+
+
+        return msg;
+    }
+
 }

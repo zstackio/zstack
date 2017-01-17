@@ -50,4 +50,12 @@ public class APIChangeL3NetworkStateEvent extends APIEvent {
     public void setInventory(L3NetworkInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIChangeL3NetworkStateEvent __example__() {
+        APIChangeL3NetworkStateEvent event = new APIChangeL3NetworkStateEvent();
+
+
+        return event;
+    }
+
 }

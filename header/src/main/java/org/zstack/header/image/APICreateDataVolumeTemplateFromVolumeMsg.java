@@ -60,4 +60,12 @@ public class APICreateDataVolumeTemplateFromVolumeMsg extends APICreateMessage {
     public void setVolumeUuid(String volumeUuid) {
         this.volumeUuid = volumeUuid;
     }
+ 
+    public static APICreateDataVolumeTemplateFromVolumeMsg __example__() {
+        APICreateDataVolumeTemplateFromVolumeMsg msg = new APICreateDataVolumeTemplateFromVolumeMsg();
+
+
+        return msg;
+    }
+
 }

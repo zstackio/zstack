@@ -8,4 +8,12 @@ import org.zstack.header.query.AutoQuery;
  */
 @AutoQuery(replyClass = APIQueryIscsiFileSystemBackendPrimaryStorageReply.class, inventoryClass = IscsiFileSystemBackendPrimaryStorageInventory.class)
 public class APIQueryIscsiFileSystemBackendPrimaryStorageMsg extends APIQueryMessage {
+ 
+    public static APIQueryIscsiFileSystemBackendPrimaryStorageMsg __example__() {
+        APIQueryIscsiFileSystemBackendPrimaryStorageMsg msg = new APIQueryIscsiFileSystemBackendPrimaryStorageMsg();
+
+
+        return msg;
+    }
+
 }

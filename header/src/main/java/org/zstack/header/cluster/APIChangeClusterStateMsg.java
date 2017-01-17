@@ -88,4 +88,12 @@ public class APIChangeClusterStateMsg extends APIMessage implements ClusterMessa
     public String getClusterUuid() {
         return getUuid();
     }
+ 
+    public static APIChangeClusterStateMsg __example__() {
+        APIChangeClusterStateMsg msg = new APIChangeClusterStateMsg();
+
+
+        return msg;
+    }
+
 }

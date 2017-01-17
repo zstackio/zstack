@@ -34,4 +34,12 @@ public class APIGetHypervisorTypesReply extends APIReply {
     public void setHypervisorTypes(List<String> hypervisorTypes) {
         this.hypervisorTypes = hypervisorTypes;
     }
+ 
+    public static APIGetHypervisorTypesReply __example__() {
+        APIGetHypervisorTypesReply reply = new APIGetHypervisorTypesReply();
+
+
+        return reply;
+    }
+
 }

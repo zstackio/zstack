@@ -20,4 +20,12 @@ public class APILogOutMsg extends APISessionMessage {
     public void setSessionUuid(String sessionUuid) {
         this.sessionUuid = sessionUuid;
     }
+ 
+    public static APILogOutMsg __example__() {
+        APILogOutMsg msg = new APILogOutMsg();
+
+
+        return msg;
+    }
+
 }

@@ -17,4 +17,12 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIQueryPolicyReply.class
 )
 public class APIQueryPolicyMsg extends APIQueryMessage {
+ 
+    public static APIQueryPolicyMsg __example__() {
+        APIQueryPolicyMsg msg = new APIQueryPolicyMsg();
+
+
+        return msg;
+    }
+
 }

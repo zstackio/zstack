@@ -16,4 +16,12 @@ public class APIQueryNetworkServiceProviderReply extends APIQueryReply {
     public void setInventories(List<NetworkServiceProviderInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIQueryNetworkServiceProviderReply __example__() {
+        APIQueryNetworkServiceProviderReply reply = new APIQueryNetworkServiceProviderReply();
+
+
+        return reply;
+    }
+
 }

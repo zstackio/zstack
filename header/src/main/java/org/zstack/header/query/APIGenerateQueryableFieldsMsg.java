@@ -28,4 +28,12 @@ public class APIGenerateQueryableFieldsMsg extends APIMessage {
     public void setOutputFolder(String outputFolder) {
         this.outputFolder = outputFolder;
     }
+ 
+    public static APIGenerateQueryableFieldsMsg __example__() {
+        APIGenerateQueryableFieldsMsg msg = new APIGenerateQueryableFieldsMsg();
+
+
+        return msg;
+    }
+
 }

@@ -16,4 +16,12 @@ import org.zstack.header.rest.RestRequest;
 )
 public class APIQueryVolumeMsg extends APIQueryMessage {
 
+ 
+    public static APIQueryVolumeMsg __example__() {
+        APIQueryVolumeMsg msg = new APIQueryVolumeMsg();
+
+
+        return msg;
+    }
+
 }
