@@ -970,11 +970,13 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                     dbf.update(ref);
 
                                     if (success.compareAndSet(false, true)) {
-                                        ivo.setMd5Sum(re.getMd5sum());
-                                        ivo.setSize(re.getSize());
-                                        ivo.setActualSize(re.getActualSize());
-                                        ivo.setStatus(ImageStatus.Ready);
-                                        dbf.update(ivo);
+                                        // In case 'Platform' etc. is changed.
+                                        ImageVO vo = dbf.reload(ivo);
+                                        vo.setMd5Sum(re.getMd5sum());
+                                        vo.setSize(re.getSize());
+                                        vo.setActualSize(re.getActualSize());
+                                        vo.setStatus(ImageStatus.Ready);
+                                        dbf.update(vo);
                                     }
 
                                     logger.debug(String.format("successfully downloaded image[uuid:%s, name:%s] to backup storage[uuid:%s]",
