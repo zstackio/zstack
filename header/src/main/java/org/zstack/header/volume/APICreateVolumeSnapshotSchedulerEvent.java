@@ -26,4 +26,12 @@ public class APICreateVolumeSnapshotSchedulerEvent extends APIEvent {
     public APICreateVolumeSnapshotSchedulerEvent() {
         super(null);
     }
+ 
+    public static APICreateVolumeSnapshotSchedulerEvent __example__() {
+        APICreateVolumeSnapshotSchedulerEvent event = new APICreateVolumeSnapshotSchedulerEvent();
+
+
+        return event;
+    }
+
 }

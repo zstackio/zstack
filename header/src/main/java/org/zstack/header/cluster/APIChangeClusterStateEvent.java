@@ -45,4 +45,12 @@ public class APIChangeClusterStateEvent extends APIEvent {
     public void setInventory(ClusterInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIChangeClusterStateEvent __example__() {
+        APIChangeClusterStateEvent event = new APIChangeClusterStateEvent();
+
+
+        return event;
+    }
+
 }

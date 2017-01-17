@@ -24,4 +24,12 @@ public class APIDeleteClusterEvent extends APIEvent {
         super(apiId);
     }
 
+ 
+    public static APIDeleteClusterEvent __example__() {
+        APIDeleteClusterEvent event = new APIDeleteClusterEvent();
+
+
+        return event;
+    }
+
 }

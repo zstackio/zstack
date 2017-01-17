@@ -86,4 +86,12 @@ public class APICreateRootVolumeTemplateFromRootVolumeMsg extends APICreateMessa
     public void setBackupStorageUuids(List<String> backupStorageUuids) {
         this.backupStorageUuids = backupStorageUuids;
     }
+ 
+    public static APICreateRootVolumeTemplateFromRootVolumeMsg __example__() {
+        APICreateRootVolumeTemplateFromRootVolumeMsg msg = new APICreateRootVolumeTemplateFromRootVolumeMsg();
+
+
+        return msg;
+    }
+
 }

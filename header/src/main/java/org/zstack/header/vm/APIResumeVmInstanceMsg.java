@@ -32,4 +32,12 @@ public class APIResumeVmInstanceMsg extends APIMessage implements VmInstanceMess
     public String getVmInstanceUuid() {
         return getUuid();
     }
+ 
+    public static APIResumeVmInstanceMsg __example__() {
+        APIResumeVmInstanceMsg msg = new APIResumeVmInstanceMsg();
+
+
+        return msg;
+    }
+
 }

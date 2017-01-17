@@ -68,4 +68,12 @@ public class APIBackupDataVolumeMsg extends APIMessage implements VolumeMessage 
     public String getVolumeUuid() {
         return uuid;
     }
+ 
+    public static APIBackupDataVolumeMsg __example__() {
+        APIBackupDataVolumeMsg msg = new APIBackupDataVolumeMsg();
+
+
+        return msg;
+    }
+
 }

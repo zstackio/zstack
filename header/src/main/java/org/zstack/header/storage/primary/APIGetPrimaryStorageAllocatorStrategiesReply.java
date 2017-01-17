@@ -32,4 +32,12 @@ public class APIGetPrimaryStorageAllocatorStrategiesReply extends APIReply {
     public void setPrimaryStorageAllocatorStrategies(List<String> primaryStorageAllocatorStrategies) {
         this.primaryStorageAllocatorStrategies = primaryStorageAllocatorStrategies;
     }
+ 
+    public static APIGetPrimaryStorageAllocatorStrategiesReply __example__() {
+        APIGetPrimaryStorageAllocatorStrategiesReply reply = new APIGetPrimaryStorageAllocatorStrategiesReply();
+
+
+        return reply;
+    }
+
 }

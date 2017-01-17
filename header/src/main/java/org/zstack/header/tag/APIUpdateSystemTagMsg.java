@@ -37,4 +37,12 @@ public class APIUpdateSystemTagMsg extends APIMessage {
     public void setTag(String tag) {
         this.tag = tag;
     }
+ 
+    public static APIUpdateSystemTagMsg __example__() {
+        APIUpdateSystemTagMsg msg = new APIUpdateSystemTagMsg();
+
+
+        return msg;
+    }
+
 }

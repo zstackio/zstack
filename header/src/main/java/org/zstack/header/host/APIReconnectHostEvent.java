@@ -49,4 +49,12 @@ public class APIReconnectHostEvent extends APIEvent {
     }
 
 
+ 
+    public static APIReconnectHostEvent __example__() {
+        APIReconnectHostEvent event = new APIReconnectHostEvent();
+
+
+        return event;
+    }
+
 }

@@ -13,4 +13,12 @@ import org.zstack.header.rest.RestRequest;
 )
 public class APIQueryVmNicInSecurityGroupMsg extends APIQueryMessage {
 
+ 
+    public static APIQueryVmNicInSecurityGroupMsg __example__() {
+        APIQueryVmNicInSecurityGroupMsg msg = new APIQueryVmNicInSecurityGroupMsg();
+
+
+        return msg;
+    }
+
 }

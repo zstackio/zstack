@@ -61,4 +61,12 @@ public class APIRevokeResourceSharingMsg extends APIMessage implements AccountMe
     public String getAccountUuid() {
         return getSession().getAccountUuid();
     }
+ 
+    public static APIRevokeResourceSharingMsg __example__() {
+        APIRevokeResourceSharingMsg msg = new APIRevokeResourceSharingMsg();
+
+
+        return msg;
+    }
+
 }

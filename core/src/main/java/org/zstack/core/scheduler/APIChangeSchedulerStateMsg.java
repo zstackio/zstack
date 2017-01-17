@@ -43,4 +43,12 @@ public class APIChangeSchedulerStateMsg  extends APIMessage implements Scheduler
     public String getSchedulerUuid() {
         return uuid;
     }
+ 
+    public static APIChangeSchedulerStateMsg __example__() {
+        APIChangeSchedulerStateMsg msg = new APIChangeSchedulerStateMsg();
+
+
+        return msg;
+    }
+
 }

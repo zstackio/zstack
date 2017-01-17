@@ -26,4 +26,12 @@ public class APIResumeVmInstanceEvent extends APIEvent {
     public void setInventory(VmInstanceInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIResumeVmInstanceEvent __example__() {
+        APIResumeVmInstanceEvent event = new APIResumeVmInstanceEvent();
+
+
+        return event;
+    }
+
 }

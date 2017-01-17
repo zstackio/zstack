@@ -20,4 +20,12 @@ public class APIValidateSessionReply extends APIReply {
     public void setValidSession(boolean validSession) {
         this.validSession = validSession;
     }
+ 
+    public static APIValidateSessionReply __example__() {
+        APIValidateSessionReply reply = new APIValidateSessionReply();
+
+
+        return reply;
+    }
+
 }

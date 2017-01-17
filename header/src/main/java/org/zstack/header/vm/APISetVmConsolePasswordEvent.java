@@ -26,4 +26,12 @@ public class APISetVmConsolePasswordEvent extends APIEvent {
         return inventory;
     }
 
+ 
+    public static APISetVmConsolePasswordEvent __example__() {
+        APISetVmConsolePasswordEvent event = new APISetVmConsolePasswordEvent();
+
+
+        return event;
+    }
+
 }

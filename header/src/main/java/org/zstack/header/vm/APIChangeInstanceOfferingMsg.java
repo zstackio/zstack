@@ -39,4 +39,12 @@ public class APIChangeInstanceOfferingMsg extends APIMessage implements VmInstan
     public void setInstanceOfferingUuid(String instanceOfferingUuid) {
         this.instanceOfferingUuid = instanceOfferingUuid;
     }
+ 
+    public static APIChangeInstanceOfferingMsg __example__() {
+        APIChangeInstanceOfferingMsg msg = new APIChangeInstanceOfferingMsg();
+
+
+        return msg;
+    }
+
 }

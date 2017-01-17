@@ -50,4 +50,12 @@ public class APIGetCandidateBackupStorageForCreatingImageMsg extends APISyncCall
     public void setVolumeSnapshotUuid(String volumeSnapshotUuid) {
         this.volumeSnapshotUuid = volumeSnapshotUuid;
     }
+ 
+    public static APIGetCandidateBackupStorageForCreatingImageMsg __example__() {
+        APIGetCandidateBackupStorageForCreatingImageMsg msg = new APIGetCandidateBackupStorageForCreatingImageMsg();
+
+
+        return msg;
+    }
+
 }

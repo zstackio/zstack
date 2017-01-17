@@ -12,4 +12,12 @@ public class APIListVmInstanceMsg extends APIListMessage {
     public APIListVmInstanceMsg() {
         super(null);
     }
+ 
+    public static APIListVmInstanceMsg __example__() {
+        APIListVmInstanceMsg msg = new APIListVmInstanceMsg();
+
+
+        return msg;
+    }
+
 }

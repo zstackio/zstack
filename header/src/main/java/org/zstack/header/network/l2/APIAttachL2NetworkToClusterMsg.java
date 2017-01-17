@@ -68,4 +68,12 @@ public class APIAttachL2NetworkToClusterMsg extends APIMessage implements L2Netw
     public void setL2NetworkUuid(String l2NetworkUuid) {
         this.l2NetworkUuid = l2NetworkUuid;
     }
+ 
+    public static APIAttachL2NetworkToClusterMsg __example__() {
+        APIAttachL2NetworkToClusterMsg msg = new APIAttachL2NetworkToClusterMsg();
+
+
+        return msg;
+    }
+
 }

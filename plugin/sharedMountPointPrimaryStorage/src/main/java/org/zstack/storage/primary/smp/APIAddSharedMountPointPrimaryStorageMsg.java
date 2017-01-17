@@ -26,4 +26,12 @@ public class APIAddSharedMountPointPrimaryStorageMsg extends APIAddPrimaryStorag
     public String getType() {
         return SMPConstants.SMP_TYPE;
     }
+ 
+    public static APIAddSharedMountPointPrimaryStorageMsg __example__() {
+        APIAddSharedMountPointPrimaryStorageMsg msg = new APIAddSharedMountPointPrimaryStorageMsg();
+
+
+        return msg;
+    }
+
 }

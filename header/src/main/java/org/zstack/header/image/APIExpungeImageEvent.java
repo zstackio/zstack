@@ -14,4 +14,12 @@ public class APIExpungeImageEvent extends APIEvent {
     public APIExpungeImageEvent(String apiId) {
         super(apiId);
     }
+ 
+    public static APIExpungeImageEvent __example__() {
+        APIExpungeImageEvent event = new APIExpungeImageEvent();
+
+
+        return event;
+    }
+
 }

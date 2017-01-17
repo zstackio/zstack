@@ -50,4 +50,12 @@ public class APIUpdateZoneMsg extends APIMessage implements ZoneMessage {
     public String getZoneUuid() {
         return uuid;
     }
+ 
+    public static APIUpdateZoneMsg __example__() {
+        APIUpdateZoneMsg msg = new APIUpdateZoneMsg();
+
+
+        return msg;
+    }
+
 }

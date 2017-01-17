@@ -54,4 +54,12 @@ public class APIDetachPrimaryStorageFromClusterEvent extends APIEvent {
     public void setInventory(PrimaryStorageInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIDetachPrimaryStorageFromClusterEvent __example__() {
+        APIDetachPrimaryStorageFromClusterEvent event = new APIDetachPrimaryStorageFromClusterEvent();
+
+
+        return event;
+    }
+
 }

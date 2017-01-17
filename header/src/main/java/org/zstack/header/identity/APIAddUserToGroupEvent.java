@@ -12,4 +12,12 @@ public class APIAddUserToGroupEvent extends APIEvent {
     public APIAddUserToGroupEvent() {
         super(null);
     }
+ 
+    public static APIAddUserToGroupEvent __example__() {
+        APIAddUserToGroupEvent event = new APIAddUserToGroupEvent();
+
+
+        return event;
+    }
+
 }

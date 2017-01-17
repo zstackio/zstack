@@ -68,4 +68,12 @@ public class APIAddDnsToL3NetworkMsg extends APIMessage implements L3NetworkMess
     public void setDns(String dns) {
         this.dns = dns;
     }
+ 
+    public static APIAddDnsToL3NetworkMsg __example__() {
+        APIAddDnsToL3NetworkMsg msg = new APIAddDnsToL3NetworkMsg();
+
+
+        return msg;
+    }
+
 }

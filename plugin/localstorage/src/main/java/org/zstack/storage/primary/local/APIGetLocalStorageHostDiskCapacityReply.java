@@ -67,4 +67,12 @@ public class APIGetLocalStorageHostDiskCapacityReply extends APIReply {
     public void setInventories(List<HostDiskCapacity> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIGetLocalStorageHostDiskCapacityReply __example__() {
+        APIGetLocalStorageHostDiskCapacityReply reply = new APIGetLocalStorageHostDiskCapacityReply();
+
+
+        return reply;
+    }
+
 }

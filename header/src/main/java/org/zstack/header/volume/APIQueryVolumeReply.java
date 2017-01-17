@@ -16,4 +16,12 @@ public class APIQueryVolumeReply extends APIQueryReply {
     public void setInventories(List<VolumeInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIQueryVolumeReply __example__() {
+        APIQueryVolumeReply reply = new APIQueryVolumeReply();
+
+
+        return reply;
+    }
+
 }

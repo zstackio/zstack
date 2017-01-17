@@ -36,4 +36,12 @@ public class APIChangePortForwardingRuleStateMsg extends APIMessage {
     public void setStateEvent(String stateEvent) {
         this.stateEvent = stateEvent;
     }
+ 
+    public static APIChangePortForwardingRuleStateMsg __example__() {
+        APIChangePortForwardingRuleStateMsg msg = new APIChangePortForwardingRuleStateMsg();
+
+
+        return msg;
+    }
+
 }

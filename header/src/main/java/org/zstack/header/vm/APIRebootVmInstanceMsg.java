@@ -57,4 +57,12 @@ public class APIRebootVmInstanceMsg extends APIMessage implements VmInstanceMess
     public String getVmInstanceUuid() {
         return getUuid();
     }
+ 
+    public static APIRebootVmInstanceMsg __example__() {
+        APIRebootVmInstanceMsg msg = new APIRebootVmInstanceMsg();
+
+
+        return msg;
+    }
+
 }

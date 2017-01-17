@@ -101,4 +101,12 @@ public class APIAddKVMHostMsg extends APIAddHostMsg {
     public void setSshPort(int sshPort) {
         this.sshPort = sshPort;
     }
+ 
+    public static APIAddKVMHostMsg __example__() {
+        APIAddKVMHostMsg msg = new APIAddKVMHostMsg();
+
+
+        return msg;
+    }
+
 }

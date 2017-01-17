@@ -63,4 +63,12 @@ public class APIRemoveDnsFromL3NetworkEvent extends APIEvent {
     public void setInventory(L3NetworkInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIRemoveDnsFromL3NetworkEvent __example__() {
+        APIRemoveDnsFromL3NetworkEvent event = new APIRemoveDnsFromL3NetworkEvent();
+
+
+        return event;
+    }
+
 }

@@ -57,4 +57,12 @@ public class APIGetVolumeFormatReply extends APIReply {
     public void setFormats(List<VolumeFormatReplyStruct> formats) {
         this.formats = formats;
     }
+ 
+    public static APIGetVolumeFormatReply __example__() {
+        APIGetVolumeFormatReply reply = new APIGetVolumeFormatReply();
+
+
+        return reply;
+    }
+
 }

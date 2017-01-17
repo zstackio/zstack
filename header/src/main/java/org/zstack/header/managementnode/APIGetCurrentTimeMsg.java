@@ -16,4 +16,12 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIGetCurrentTimeReply.class
 )
 public class APIGetCurrentTimeMsg extends APISyncCallMessage {
+ 
+    public static APIGetCurrentTimeMsg __example__() {
+        APIGetCurrentTimeMsg msg = new APIGetCurrentTimeMsg();
+
+
+        return msg;
+    }
+
 }

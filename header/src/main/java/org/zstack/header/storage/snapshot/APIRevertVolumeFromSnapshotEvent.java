@@ -22,4 +22,12 @@ public class APIRevertVolumeFromSnapshotEvent extends APIEvent {
     public APIRevertVolumeFromSnapshotEvent() {
         super(null);
     }
+ 
+    public static APIRevertVolumeFromSnapshotEvent __example__() {
+        APIRevertVolumeFromSnapshotEvent event = new APIRevertVolumeFromSnapshotEvent();
+
+
+        return event;
+    }
+
 }

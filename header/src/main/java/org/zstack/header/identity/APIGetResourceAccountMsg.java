@@ -19,4 +19,12 @@ public class APIGetResourceAccountMsg extends APISyncCallMessage {
     public void setResourceUuids(List<String> resourceUuids) {
         this.resourceUuids = resourceUuids;
     }
+ 
+    public static APIGetResourceAccountMsg __example__() {
+        APIGetResourceAccountMsg msg = new APIGetResourceAccountMsg();
+
+
+        return msg;
+    }
+
 }

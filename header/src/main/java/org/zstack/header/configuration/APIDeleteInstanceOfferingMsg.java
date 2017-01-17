@@ -36,4 +36,12 @@ public class APIDeleteInstanceOfferingMsg extends APIDeleteMessage implements In
     public String getInstanceOfferingUuid() {
         return uuid;
     }
+ 
+    public static APIDeleteInstanceOfferingMsg __example__() {
+        APIDeleteInstanceOfferingMsg msg = new APIDeleteInstanceOfferingMsg();
+
+
+        return msg;
+    }
+
 }

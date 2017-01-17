@@ -17,4 +17,12 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIGetHostAllocatorStrategiesReply.class
 )
 public class APIGetHostAllocatorStrategiesMsg extends APISyncCallMessage {
+ 
+    public static APIGetHostAllocatorStrategiesMsg __example__() {
+        APIGetHostAllocatorStrategiesMsg msg = new APIGetHostAllocatorStrategiesMsg();
+
+
+        return msg;
+    }
+
 }

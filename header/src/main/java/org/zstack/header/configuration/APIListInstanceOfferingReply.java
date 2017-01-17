@@ -15,4 +15,12 @@ public class APIListInstanceOfferingReply extends APIReply {
         this.inventories = inventories;
     }
 
+ 
+    public static APIListInstanceOfferingReply __example__() {
+        APIListInstanceOfferingReply reply = new APIListInstanceOfferingReply();
+
+
+        return reply;
+    }
+
 }

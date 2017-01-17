@@ -39,4 +39,12 @@ public class APIAddUserToGroupMsg extends APIMessage implements AccountMessage {
     public void setGroupUuid(String groupUuid) {
         this.groupUuid = groupUuid;
     }
+ 
+    public static APIAddUserToGroupMsg __example__() {
+        APIAddUserToGroupMsg msg = new APIAddUserToGroupMsg();
+
+
+        return msg;
+    }
+
 }

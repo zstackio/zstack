@@ -14,4 +14,12 @@ public class APIDeleteTagEvent extends APIEvent {
     public APIDeleteTagEvent() {
         super(null);
     }
+ 
+    public static APIDeleteTagEvent __example__() {
+        APIDeleteTagEvent event = new APIDeleteTagEvent();
+
+
+        return event;
+    }
+
 }

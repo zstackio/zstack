@@ -20,4 +20,12 @@ public class APIReconnectSftpBackupStorageMsg extends APIMessage implements Back
     public void setUuid(String backupStorageUuid) {
         this.uuid = backupStorageUuid;
     }
+ 
+    public static APIReconnectSftpBackupStorageMsg __example__() {
+        APIReconnectSftpBackupStorageMsg msg = new APIReconnectSftpBackupStorageMsg();
+
+
+        return msg;
+    }
+
 }

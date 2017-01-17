@@ -26,4 +26,12 @@ public class APICreateRebootVmInstanceSchedulerEvent extends APIEvent {
     public APICreateRebootVmInstanceSchedulerEvent() {
         super(null);
     }
+ 
+    public static APICreateRebootVmInstanceSchedulerEvent __example__() {
+        APICreateRebootVmInstanceSchedulerEvent event = new APICreateRebootVmInstanceSchedulerEvent();
+
+
+        return event;
+    }
+
 }

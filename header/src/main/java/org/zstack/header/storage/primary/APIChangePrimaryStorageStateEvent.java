@@ -49,4 +49,12 @@ public class APIChangePrimaryStorageStateEvent extends APIEvent {
     public void setInventory(PrimaryStorageInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIChangePrimaryStorageStateEvent __example__() {
+        APIChangePrimaryStorageStateEvent event = new APIChangePrimaryStorageStateEvent();
+
+
+        return event;
+    }
+
 }

@@ -28,4 +28,12 @@ public class APICleanInvalidLdapBindingEvent extends APIEvent {
     public void setInventories(List<AccountInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APICleanInvalidLdapBindingEvent __example__() {
+        APICleanInvalidLdapBindingEvent event = new APICleanInvalidLdapBindingEvent();
+
+
+        return event;
+    }
+
 }

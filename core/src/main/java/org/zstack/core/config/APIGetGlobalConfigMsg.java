@@ -25,4 +25,12 @@ public class APIGetGlobalConfigMsg extends APISyncCallMessage {
     public String getIdentity() {
         return GlobalConfig.produceIdentity(category, name);
     }
+ 
+    public static APIGetGlobalConfigMsg __example__() {
+        APIGetGlobalConfigMsg msg = new APIGetGlobalConfigMsg();
+
+
+        return msg;
+    }
+
 }

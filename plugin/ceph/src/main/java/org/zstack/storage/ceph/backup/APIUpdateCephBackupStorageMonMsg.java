@@ -94,4 +94,12 @@ public class APIUpdateCephBackupStorageMonMsg extends APIMessage implements Back
         this.backupStorageUuid = backupStorageUuid;
     }
 }
+ 
+    public static APIUpdateCephBackupStorageMonMsg __example__() {
+        APIUpdateCephBackupStorageMonMsg msg = new APIUpdateCephBackupStorageMonMsg();
+
+
+        return msg;
+    }
+
 

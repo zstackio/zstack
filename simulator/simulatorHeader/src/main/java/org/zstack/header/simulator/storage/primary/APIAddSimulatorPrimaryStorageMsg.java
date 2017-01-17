@@ -32,4 +32,12 @@ public class APIAddSimulatorPrimaryStorageMsg extends APIAddPrimaryStorageMsg {
 	public void setTotalCapacity(long totalCapacity) {
     	this.totalCapacity = totalCapacity;
     }
+ 
+    public static APIAddSimulatorPrimaryStorageMsg __example__() {
+        APIAddSimulatorPrimaryStorageMsg msg = new APIAddSimulatorPrimaryStorageMsg();
+
+
+        return msg;
+    }
+
 }

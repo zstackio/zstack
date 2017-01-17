@@ -16,4 +16,12 @@ public class APIQuerySecurityGroupReply extends APIQueryReply {
     public void setInventories(List<SecurityGroupInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIQuerySecurityGroupReply __example__() {
+        APIQuerySecurityGroupReply reply = new APIQuerySecurityGroupReply();
+
+
+        return reply;
+    }
+
 }

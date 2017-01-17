@@ -18,4 +18,12 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIGetL3NetworkTypesReply.class
 )
 public class APIGetL3NetworkTypesMsg extends APISyncCallMessage {
+ 
+    public static APIGetL3NetworkTypesMsg __example__() {
+        APIGetL3NetworkTypesMsg msg = new APIGetL3NetworkTypesMsg();
+
+
+        return msg;
+    }
+
 }

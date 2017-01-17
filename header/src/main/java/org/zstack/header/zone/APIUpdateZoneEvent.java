@@ -24,4 +24,12 @@ public class APIUpdateZoneEvent extends APIEvent {
     public void setInventory(ZoneInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIUpdateZoneEvent __example__() {
+        APIUpdateZoneEvent event = new APIUpdateZoneEvent();
+
+
+        return event;
+    }
+
 }

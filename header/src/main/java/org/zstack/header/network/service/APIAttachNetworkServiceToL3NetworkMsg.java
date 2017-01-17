@@ -83,4 +83,12 @@ public class APIAttachNetworkServiceToL3NetworkMsg extends APIMessage implements
     public void setL3NetworkUuid(String l3NetworkUuid) {
         this.l3NetworkUuid = l3NetworkUuid;
     }
+ 
+    public static APIAttachNetworkServiceToL3NetworkMsg __example__() {
+        APIAttachNetworkServiceToL3NetworkMsg msg = new APIAttachNetworkServiceToL3NetworkMsg();
+
+
+        return msg;
+    }
+
 }

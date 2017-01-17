@@ -24,4 +24,12 @@ public class APIAttachNetworkServiceProviderToL2NetworkMsg extends APIMessage {
     public void setNetworkServiceProviderUuid(String networkServiceProviderUuid) {
         this.networkServiceProviderUuid = networkServiceProviderUuid;
     }
+ 
+    public static APIAttachNetworkServiceProviderToL2NetworkMsg __example__() {
+        APIAttachNetworkServiceProviderToL2NetworkMsg msg = new APIAttachNetworkServiceProviderToL2NetworkMsg();
+
+
+        return msg;
+    }
+
 }

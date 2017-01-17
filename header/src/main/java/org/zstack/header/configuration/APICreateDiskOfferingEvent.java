@@ -23,4 +23,12 @@ public class APICreateDiskOfferingEvent extends APIEvent {
         this.inventory = inventory;
     }
 
+ 
+    public static APICreateDiskOfferingEvent __example__() {
+        APICreateDiskOfferingEvent event = new APICreateDiskOfferingEvent();
+
+
+        return event;
+    }
+
 }

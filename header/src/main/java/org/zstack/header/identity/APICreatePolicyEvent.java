@@ -22,4 +22,12 @@ public class APICreatePolicyEvent extends APIEvent {
     public void setInventory(PolicyInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APICreatePolicyEvent __example__() {
+        APICreatePolicyEvent event = new APICreatePolicyEvent();
+
+
+        return event;
+    }
+
 }

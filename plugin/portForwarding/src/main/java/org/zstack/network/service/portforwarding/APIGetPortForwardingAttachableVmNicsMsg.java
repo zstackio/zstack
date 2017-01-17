@@ -25,4 +25,12 @@ public class APIGetPortForwardingAttachableVmNicsMsg extends APISyncCallMessage 
     public void setRuleUuid(String portForwardingRuleUuid) {
         this.ruleUuid = portForwardingRuleUuid;
     }
+ 
+    public static APIGetPortForwardingAttachableVmNicsMsg __example__() {
+        APIGetPortForwardingAttachableVmNicsMsg msg = new APIGetPortForwardingAttachableVmNicsMsg();
+
+
+        return msg;
+    }
+
 }

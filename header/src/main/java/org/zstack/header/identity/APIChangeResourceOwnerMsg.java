@@ -35,4 +35,12 @@ public class APIChangeResourceOwnerMsg extends APIMessage {
     public void setResourceUuid(String resourceUuid) {
         this.resourceUuid = resourceUuid;
     }
+ 
+    public static APIChangeResourceOwnerMsg __example__() {
+        APIChangeResourceOwnerMsg msg = new APIChangeResourceOwnerMsg();
+
+
+        return msg;
+    }
+
 }

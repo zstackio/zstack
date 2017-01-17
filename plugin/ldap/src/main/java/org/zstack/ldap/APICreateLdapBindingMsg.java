@@ -32,4 +32,12 @@ public class APICreateLdapBindingMsg extends APIMessage {
     public void setAccountUuid(String accountUuid) {
         this.accountUuid = accountUuid;
     }
+ 
+    public static APICreateLdapBindingMsg __example__() {
+        APICreateLdapBindingMsg msg = new APICreateLdapBindingMsg();
+
+
+        return msg;
+    }
+
 }

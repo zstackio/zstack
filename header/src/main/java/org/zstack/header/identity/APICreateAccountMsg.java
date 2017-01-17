@@ -4,7 +4,6 @@ import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
-import org.zstack.header.zone.APICreateZoneEvent;
 
 @RestRequest(
         path = "/accounts",
@@ -52,5 +51,12 @@ public class APICreateAccountMsg extends APICreateMessage {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public static APICreateAccountMsg __example__() {
+        APICreateAccountMsg msg = new APICreateAccountMsg();
+        msg.setName("test");
+        msg.setPassword("password");
+        return msg;
     }
 }

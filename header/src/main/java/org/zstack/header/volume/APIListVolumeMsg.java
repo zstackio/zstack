@@ -11,4 +11,12 @@ public class APIListVolumeMsg extends APIListMessage {
     public APIListVolumeMsg(List<String> uuids) {
         super(uuids);
     }
+ 
+    public static APIListVolumeMsg __example__() {
+        APIListVolumeMsg msg = new APIListVolumeMsg();
+
+
+        return msg;
+    }
+
 }

@@ -12,4 +12,12 @@ public class APIDeleteSearchIndexMsg extends APIMessage {
     public void setIndexName(String indexName) {
         this.indexName = indexName;
     }
+ 
+    public static APIDeleteSearchIndexMsg __example__() {
+        APIDeleteSearchIndexMsg msg = new APIDeleteSearchIndexMsg();
+
+
+        return msg;
+    }
+
 }

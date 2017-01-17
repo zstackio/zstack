@@ -51,4 +51,12 @@ public class APICreateLoadBalancerMsg extends APICreateMessage {
     public void setVipUuid(String vipUuid) {
         this.vipUuid = vipUuid;
     }
+ 
+    public static APICreateLoadBalancerMsg __example__() {
+        APICreateLoadBalancerMsg msg = new APICreateLoadBalancerMsg();
+
+
+        return msg;
+    }
+
 }

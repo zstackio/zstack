@@ -24,4 +24,12 @@ public class APIDetachIsoFromVmInstanceEvent extends APIEvent {
     public void setInventory(VmInstanceInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIDetachIsoFromVmInstanceEvent __example__() {
+        APIDetachIsoFromVmInstanceEvent event = new APIDetachIsoFromVmInstanceEvent();
+
+
+        return event;
+    }
+
 }

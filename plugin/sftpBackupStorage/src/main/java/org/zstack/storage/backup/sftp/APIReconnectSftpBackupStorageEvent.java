@@ -20,4 +20,12 @@ public class APIReconnectSftpBackupStorageEvent extends APIEvent {
     public void setInventory(SftpBackupStorageInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIReconnectSftpBackupStorageEvent __example__() {
+        APIReconnectSftpBackupStorageEvent event = new APIReconnectSftpBackupStorageEvent();
+
+
+        return event;
+    }
+
 }

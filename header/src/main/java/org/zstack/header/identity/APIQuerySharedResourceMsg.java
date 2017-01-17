@@ -15,4 +15,12 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIQuerySharedResourceReply.class
 )
 public class APIQuerySharedResourceMsg extends APIQueryMessage {
+ 
+    public static APIQuerySharedResourceMsg __example__() {
+        APIQuerySharedResourceMsg msg = new APIQuerySharedResourceMsg();
+
+
+        return msg;
+    }
+
 }

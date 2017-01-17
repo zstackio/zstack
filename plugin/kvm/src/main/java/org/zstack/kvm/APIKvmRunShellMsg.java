@@ -38,4 +38,12 @@ public class APIKvmRunShellMsg extends APIMessage {
     public void setScript(String script) {
         this.script = script;
     }
+ 
+    public static APIKvmRunShellMsg __example__() {
+        APIKvmRunShellMsg msg = new APIKvmRunShellMsg();
+
+
+        return msg;
+    }
+
 }

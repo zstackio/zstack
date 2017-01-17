@@ -52,4 +52,12 @@ public class APIUpdateVipMsg extends APIMessage implements VipMessage {
     public String getVipUuid() {
         return uuid;
     }
+ 
+    public static APIUpdateVipMsg __example__() {
+        APIUpdateVipMsg msg = new APIUpdateVipMsg();
+
+
+        return msg;
+    }
+
 }

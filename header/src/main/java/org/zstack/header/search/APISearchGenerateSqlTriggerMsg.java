@@ -12,4 +12,12 @@ public class APISearchGenerateSqlTriggerMsg extends APIMessage {
     public void setResultPath(String resultPath) {
         this.resultPath = resultPath;
     }
+ 
+    public static APISearchGenerateSqlTriggerMsg __example__() {
+        APISearchGenerateSqlTriggerMsg msg = new APISearchGenerateSqlTriggerMsg();
+
+
+        return msg;
+    }
+
 }

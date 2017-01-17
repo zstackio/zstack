@@ -24,4 +24,12 @@ public class APIDeleteVmStaticIpEvent extends APIEvent {
     public void setInventory(VmInstanceInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIDeleteVmStaticIpEvent __example__() {
+        APIDeleteVmStaticIpEvent event = new APIDeleteVmStaticIpEvent();
+
+
+        return event;
+    }
+
 }

@@ -24,4 +24,12 @@ public class APIRemoveVmNicFromLoadBalancerEvent extends APIEvent {
     public void setInventory(LoadBalancerInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIRemoveVmNicFromLoadBalancerEvent __example__() {
+        APIRemoveVmNicFromLoadBalancerEvent event = new APIRemoveVmNicFromLoadBalancerEvent();
+
+
+        return event;
+    }
+
 }

@@ -18,4 +18,12 @@ public class APIQuerySecurityGroupRuleReply extends APIQueryReply {
     public void setInventories(List<SecurityGroupRuleInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIQuerySecurityGroupRuleReply __example__() {
+        APIQuerySecurityGroupRuleReply reply = new APIQuerySecurityGroupRuleReply();
+
+
+        return reply;
+    }
+
 }

@@ -22,4 +22,12 @@ public class APIGetHostAllocatorStrategiesReply extends APIReply {
     public void setHostAllocatorStrategies(List<String> hostAllocatorStrategies) {
         this.hostAllocatorStrategies = hostAllocatorStrategies;
     }
+ 
+    public static APIGetHostAllocatorStrategiesReply __example__() {
+        APIGetHostAllocatorStrategiesReply reply = new APIGetHostAllocatorStrategiesReply();
+
+
+        return reply;
+    }
+
 }

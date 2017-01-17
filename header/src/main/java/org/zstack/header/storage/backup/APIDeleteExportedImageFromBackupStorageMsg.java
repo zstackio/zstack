@@ -39,4 +39,12 @@ public class APIDeleteExportedImageFromBackupStorageMsg extends APIMessage imple
     public void setImageUuid(String imageUuid) {
         this.imageUuid = imageUuid;
     }
+ 
+    public static APIDeleteExportedImageFromBackupStorageMsg __example__() {
+        APIDeleteExportedImageFromBackupStorageMsg msg = new APIDeleteExportedImageFromBackupStorageMsg();
+
+
+        return msg;
+    }
+
 }

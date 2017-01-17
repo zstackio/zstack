@@ -121,4 +121,12 @@ public class APIAddImageMsg extends APICreateMessage {
     public void setType(String imageType) {
         this.type = imageType;
     }
+ 
+    public static APIAddImageMsg __example__() {
+        APIAddImageMsg msg = new APIAddImageMsg();
+
+
+        return msg;
+    }
+
 }

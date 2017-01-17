@@ -15,4 +15,12 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIQueryLocalStorageResourceRefReply.class
 )
 public class APIQueryLocalStorageResourceRefMsg extends APIQueryMessage {
+ 
+    public static APIQueryLocalStorageResourceRefMsg __example__() {
+        APIQueryLocalStorageResourceRefMsg msg = new APIQueryLocalStorageResourceRefMsg();
+
+
+        return msg;
+    }
+
 }

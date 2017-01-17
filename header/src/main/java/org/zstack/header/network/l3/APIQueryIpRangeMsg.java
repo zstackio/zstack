@@ -16,4 +16,12 @@ import org.zstack.header.rest.RestRequest;
 )
 public class APIQueryIpRangeMsg extends APIQueryMessage {
 
+ 
+    public static APIQueryIpRangeMsg __example__() {
+        APIQueryIpRangeMsg msg = new APIQueryIpRangeMsg();
+
+
+        return msg;
+    }
+
 }

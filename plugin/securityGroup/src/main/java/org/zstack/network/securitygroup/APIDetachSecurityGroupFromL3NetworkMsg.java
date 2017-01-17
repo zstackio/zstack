@@ -71,4 +71,12 @@ public class APIDetachSecurityGroupFromL3NetworkMsg extends APIMessage {
     public void setL3NetworkUuid(String l3NetworkUuid) {
         this.l3NetworkUuid = l3NetworkUuid;
     }
+ 
+    public static APIDetachSecurityGroupFromL3NetworkMsg __example__() {
+        APIDetachSecurityGroupFromL3NetworkMsg msg = new APIDetachSecurityGroupFromL3NetworkMsg();
+
+
+        return msg;
+    }
+
 }

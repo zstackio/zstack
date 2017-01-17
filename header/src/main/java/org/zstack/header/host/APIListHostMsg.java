@@ -12,4 +12,12 @@ public class APIListHostMsg extends APIListMessage {
     public APIListHostMsg(List<String> uuids) {
         super(uuids);
     }
+ 
+    public static APIListHostMsg __example__() {
+        APIListHostMsg msg = new APIListHostMsg();
+
+
+        return msg;
+    }
+
 }

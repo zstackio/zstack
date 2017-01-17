@@ -24,4 +24,12 @@ public class APIDeleteLdapServerMsg extends APIDeleteMessage {
         this.uuid = uuid;
     }
 
+ 
+    public static APIDeleteLdapServerMsg __example__() {
+        APIDeleteLdapServerMsg msg = new APIDeleteLdapServerMsg();
+
+
+        return msg;
+    }
+
 }

@@ -16,4 +16,12 @@ import org.zstack.header.rest.RestRequest;
 )
 public class APIQueryInstanceOfferingMsg extends APIQueryMessage {
 
+ 
+    public static APIQueryInstanceOfferingMsg __example__() {
+        APIQueryInstanceOfferingMsg msg = new APIQueryInstanceOfferingMsg();
+
+
+        return msg;
+    }
+
 }

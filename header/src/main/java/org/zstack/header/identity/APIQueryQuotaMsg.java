@@ -16,4 +16,12 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIQueryQuotaReply.class
 )
 public class APIQueryQuotaMsg extends APIQueryMessage {
+ 
+    public static APIQueryQuotaMsg __example__() {
+        APIQueryQuotaMsg msg = new APIQueryQuotaMsg();
+
+
+        return msg;
+    }
+
 }

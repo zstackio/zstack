@@ -21,4 +21,12 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIQueryVipReply.class
 )
 public class APIQueryVipMsg extends APIQueryMessage {
+ 
+    public static APIQueryVipMsg __example__() {
+        APIQueryVipMsg msg = new APIQueryVipMsg();
+
+
+        return msg;
+    }
+
 }

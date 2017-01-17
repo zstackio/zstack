@@ -17,4 +17,12 @@ public class APICheckIpAvailabilityReply extends APIReply {
     public void setAvailable(boolean available) {
         this.available = available;
     }
+ 
+    public static APICheckIpAvailabilityReply __example__() {
+        APICheckIpAvailabilityReply reply = new APICheckIpAvailabilityReply();
+
+
+        return reply;
+    }
+
 }

@@ -30,4 +30,12 @@ public class APIDetachDataVolumeFromVmEvent extends APIEvent {
     public void setInventory(VolumeInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIDetachDataVolumeFromVmEvent __example__() {
+        APIDetachDataVolumeFromVmEvent event = new APIDetachDataVolumeFromVmEvent();
+
+
+        return event;
+    }
+
 }

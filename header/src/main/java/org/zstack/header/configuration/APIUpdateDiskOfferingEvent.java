@@ -24,4 +24,12 @@ public class APIUpdateDiskOfferingEvent extends APIEvent {
     public void setInventory(DiskOfferingInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIUpdateDiskOfferingEvent __example__() {
+        APIUpdateDiskOfferingEvent event = new APIUpdateDiskOfferingEvent();
+
+
+        return event;
+    }
+
 }

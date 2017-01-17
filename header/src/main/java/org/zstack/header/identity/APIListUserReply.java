@@ -14,4 +14,12 @@ public class APIListUserReply extends APIReply {
     public void setInventories(List<UserInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIListUserReply __example__() {
+        APIListUserReply reply = new APIListUserReply();
+
+
+        return reply;
+    }
+
 }

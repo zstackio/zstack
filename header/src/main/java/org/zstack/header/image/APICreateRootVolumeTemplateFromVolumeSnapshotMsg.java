@@ -88,4 +88,12 @@ public class APICreateRootVolumeTemplateFromVolumeSnapshotMsg extends APICreateM
     public String getSnapshotUuid() {
         return snapshotUuid;
     }
+ 
+    public static APICreateRootVolumeTemplateFromVolumeSnapshotMsg __example__() {
+        APICreateRootVolumeTemplateFromVolumeSnapshotMsg msg = new APICreateRootVolumeTemplateFromVolumeSnapshotMsg();
+
+
+        return msg;
+    }
+
 }

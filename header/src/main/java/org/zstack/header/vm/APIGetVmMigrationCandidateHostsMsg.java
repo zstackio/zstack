@@ -25,4 +25,12 @@ public class APIGetVmMigrationCandidateHostsMsg extends APISyncCallMessage imple
     public void setVmInstanceUuid(String vmInstanceUuid) {
         this.vmInstanceUuid = vmInstanceUuid;
     }
+ 
+    public static APIGetVmMigrationCandidateHostsMsg __example__() {
+        APIGetVmMigrationCandidateHostsMsg msg = new APIGetVmMigrationCandidateHostsMsg();
+
+
+        return msg;
+    }
+
 }

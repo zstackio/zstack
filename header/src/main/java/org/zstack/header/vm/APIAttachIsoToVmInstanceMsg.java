@@ -39,4 +39,12 @@ public class APIAttachIsoToVmInstanceMsg extends APIMessage implements VmInstanc
     public void setIsoUuid(String isoUuid) {
         this.isoUuid = isoUuid;
     }
+ 
+    public static APIAttachIsoToVmInstanceMsg __example__() {
+        APIAttachIsoToVmInstanceMsg msg = new APIAttachIsoToVmInstanceMsg();
+
+
+        return msg;
+    }
+
 }

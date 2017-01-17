@@ -24,4 +24,12 @@ public class APISyncImageSizeEvent extends APIEvent {
     public void setInventory(ImageInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APISyncImageSizeEvent __example__() {
+        APISyncImageSizeEvent event = new APISyncImageSizeEvent();
+
+
+        return event;
+    }
+
 }

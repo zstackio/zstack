@@ -17,4 +17,12 @@ import org.zstack.header.rest.RestRequest;
         method = HttpMethod.GET
 )
 public class APIQueryUserMsg extends APIQueryMessage {
+ 
+    public static APIQueryUserMsg __example__() {
+        APIQueryUserMsg msg = new APIQueryUserMsg();
+
+
+        return msg;
+    }
+
 }

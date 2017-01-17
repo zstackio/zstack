@@ -16,4 +16,12 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIQueryConsoleProxyAgentReply.class
 )
 public class APIQueryConsoleProxyAgentMsg extends APIQueryMessage {
+ 
+    public static APIQueryConsoleProxyAgentMsg __example__() {
+        APIQueryConsoleProxyAgentMsg msg = new APIQueryConsoleProxyAgentMsg();
+
+
+        return msg;
+    }
+
 }

@@ -14,4 +14,12 @@ public class APIShareResourceEvent extends APIEvent {
     public APIShareResourceEvent(String apiId) {
         super(apiId);
     }
+ 
+    public static APIShareResourceEvent __example__() {
+        APIShareResourceEvent event = new APIShareResourceEvent();
+
+
+        return event;
+    }
+
 }

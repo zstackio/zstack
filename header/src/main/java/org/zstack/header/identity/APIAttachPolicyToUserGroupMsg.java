@@ -37,4 +37,12 @@ public class APIAttachPolicyToUserGroupMsg extends APIMessage implements Account
     public void setGroupUuid(String groupUuid) {
         this.groupUuid = groupUuid;
     }
+ 
+    public static APIAttachPolicyToUserGroupMsg __example__() {
+        APIAttachPolicyToUserGroupMsg msg = new APIAttachPolicyToUserGroupMsg();
+
+
+        return msg;
+    }
+
 }

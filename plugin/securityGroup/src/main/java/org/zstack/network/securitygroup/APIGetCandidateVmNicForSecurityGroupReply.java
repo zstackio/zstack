@@ -19,4 +19,12 @@ public class APIGetCandidateVmNicForSecurityGroupReply extends APIReply {
     public void setInventories(List<VmNicInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIGetCandidateVmNicForSecurityGroupReply __example__() {
+        APIGetCandidateVmNicForSecurityGroupReply reply = new APIGetCandidateVmNicForSecurityGroupReply();
+
+
+        return reply;
+    }
+
 }

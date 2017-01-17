@@ -67,4 +67,12 @@ public class APICreateRootVolumeTemplateFromVolumeSnapshotEvent extends APIEvent
     public void setInventory(ImageInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APICreateRootVolumeTemplateFromVolumeSnapshotEvent __example__() {
+        APICreateRootVolumeTemplateFromVolumeSnapshotEvent event = new APICreateRootVolumeTemplateFromVolumeSnapshotEvent();
+
+
+        return event;
+    }
+
 }

@@ -19,4 +19,12 @@ public class APIGetVmAttachableDataVolumeReply extends APIReply {
     public void setInventories(List<VolumeInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIGetVmAttachableDataVolumeReply __example__() {
+        APIGetVmAttachableDataVolumeReply reply = new APIGetVmAttachableDataVolumeReply();
+
+
+        return reply;
+    }
+
 }

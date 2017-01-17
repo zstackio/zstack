@@ -81,4 +81,12 @@ public class APIDeleteVmNicFromSecurityGroupMsg extends APIMessage {
     public void setVmNicUuids(List<String> vmNicUuids) {
         this.vmNicUuids = vmNicUuids;
     }
+ 
+    public static APIDeleteVmNicFromSecurityGroupMsg __example__() {
+        APIDeleteVmNicFromSecurityGroupMsg msg = new APIDeleteVmNicFromSecurityGroupMsg();
+
+
+        return msg;
+    }
+
 }

@@ -96,4 +96,12 @@ public class APIUpdateCephPrimaryStorageMonMsg extends APIMessage implements Pri
     public void setMonUuid(String monUuid) {
         this.monUuid = monUuid;
     }
+ 
+    public static APIUpdateCephPrimaryStorageMonMsg __example__() {
+        APIUpdateCephPrimaryStorageMonMsg msg = new APIUpdateCephPrimaryStorageMonMsg();
+
+
+        return msg;
+    }
+
 }

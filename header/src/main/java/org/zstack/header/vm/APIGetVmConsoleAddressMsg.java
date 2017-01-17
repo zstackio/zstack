@@ -30,4 +30,12 @@ public class APIGetVmConsoleAddressMsg extends APISyncCallMessage implements VmI
     public void setUuid(String uuid) {
         this.uuid = uuid;
     }
+ 
+    public static APIGetVmConsoleAddressMsg __example__() {
+        APIGetVmConsoleAddressMsg msg = new APIGetVmConsoleAddressMsg();
+
+
+        return msg;
+    }
+
 }

@@ -24,4 +24,12 @@ public class APIUpdateBackupStorageEvent extends APIEvent {
     public void setInventory(BackupStorageInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIUpdateBackupStorageEvent __example__() {
+        APIUpdateBackupStorageEvent event = new APIUpdateBackupStorageEvent();
+
+
+        return event;
+    }
+
 }

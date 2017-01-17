@@ -18,4 +18,12 @@ public class APIGetVmSshKeyReply extends APIReply {
     public String getSshKey() {
         return sshKey;
     }
+ 
+    public static APIGetVmSshKeyReply __example__() {
+        APIGetVmSshKeyReply reply = new APIGetVmSshKeyReply();
+
+
+        return reply;
+    }
+
 }

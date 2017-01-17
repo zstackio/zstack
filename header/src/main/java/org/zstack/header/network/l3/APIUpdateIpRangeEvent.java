@@ -24,4 +24,12 @@ public class APIUpdateIpRangeEvent extends APIEvent {
     public void setInventory(IpRangeInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIUpdateIpRangeEvent __example__() {
+        APIUpdateIpRangeEvent event = new APIUpdateIpRangeEvent();
+
+
+        return event;
+    }
+
 }

@@ -27,4 +27,12 @@ public class APIDeletePortForwardingRuleEvent extends APIEvent {
     public APIDeletePortForwardingRuleEvent() {
         super(null);
     }
+ 
+    public static APIDeletePortForwardingRuleEvent __example__() {
+        APIDeletePortForwardingRuleEvent event = new APIDeletePortForwardingRuleEvent();
+
+
+        return event;
+    }
+
 }

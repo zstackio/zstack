@@ -14,4 +14,12 @@ import org.zstack.header.rest.RestRequest;
         parameterName = "params"
 )
 public class APICreateSystemTagMsg extends APICreateTagMsg {
+ 
+    public static APICreateSystemTagMsg __example__() {
+        APICreateSystemTagMsg msg = new APICreateSystemTagMsg();
+
+
+        return msg;
+    }
+
 }

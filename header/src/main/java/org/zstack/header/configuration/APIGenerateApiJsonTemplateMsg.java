@@ -23,4 +23,12 @@ public class APIGenerateApiJsonTemplateMsg extends APIMessage {
     public void setBasePackageNames(List<String> basePackageNames) {
         this.basePackageNames = basePackageNames;
     }
+ 
+    public static APIGenerateApiJsonTemplateMsg __example__() {
+        APIGenerateApiJsonTemplateMsg msg = new APIGenerateApiJsonTemplateMsg();
+
+
+        return msg;
+    }
+
 }

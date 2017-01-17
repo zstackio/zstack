@@ -98,4 +98,12 @@ public class APIUpdateFusionstorBackupStorageMonMsg extends APIMessage implement
         this.backupStorageUuid = backupStorageUuid;
     }
 }
+ 
+    public static APIUpdateFusionstorBackupStorageMonMsg __example__() {
+        APIUpdateFusionstorBackupStorageMonMsg msg = new APIUpdateFusionstorBackupStorageMonMsg();
+
+
+        return msg;
+    }
+
 

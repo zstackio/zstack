@@ -52,4 +52,12 @@ public class APICreatePolicyMsg extends APICreateMessage implements AccountMessa
     public void setDescription(String description) {
         this.description = description;
     }
+ 
+    public static APICreatePolicyMsg __example__() {
+        APICreatePolicyMsg msg = new APICreatePolicyMsg();
+
+
+        return msg;
+    }
+
 }

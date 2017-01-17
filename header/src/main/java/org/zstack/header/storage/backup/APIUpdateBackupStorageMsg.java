@@ -50,4 +50,12 @@ public class APIUpdateBackupStorageMsg extends APIMessage implements BackupStora
     public String getBackupStorageUuid() {
         return uuid;
     }
+ 
+    public static APIUpdateBackupStorageMsg __example__() {
+        APIUpdateBackupStorageMsg msg = new APIUpdateBackupStorageMsg();
+
+
+        return msg;
+    }
+
 }

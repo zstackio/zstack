@@ -49,4 +49,12 @@ public class APIAttachL2NetworkToClusterEvent extends APIEvent {
     public void setInventory(L2NetworkInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIAttachL2NetworkToClusterEvent __example__() {
+        APIAttachL2NetworkToClusterEvent event = new APIAttachL2NetworkToClusterEvent();
+
+
+        return event;
+    }
+
 }

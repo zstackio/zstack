@@ -23,4 +23,12 @@ public class APIDeleteIpRangeEvent extends APIEvent {
     public APIDeleteIpRangeEvent() {
         super(null);
     }
+ 
+    public static APIDeleteIpRangeEvent __example__() {
+        APIDeleteIpRangeEvent event = new APIDeleteIpRangeEvent();
+
+
+        return event;
+    }
+
 }

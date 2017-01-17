@@ -28,4 +28,12 @@ public class APIRequestConsoleAccessEvent extends APIEvent {
     public void setInventory(ConsoleInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIRequestConsoleAccessEvent __example__() {
+        APIRequestConsoleAccessEvent event = new APIRequestConsoleAccessEvent();
+
+
+        return event;
+    }
+
 }

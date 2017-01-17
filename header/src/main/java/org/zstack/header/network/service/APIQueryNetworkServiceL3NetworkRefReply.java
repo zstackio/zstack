@@ -19,4 +19,12 @@ public class APIQueryNetworkServiceL3NetworkRefReply extends APIQueryReply {
     }
 
 
+ 
+    public static APIQueryNetworkServiceL3NetworkRefReply __example__() {
+        APIQueryNetworkServiceL3NetworkRefReply reply = new APIQueryNetworkServiceL3NetworkRefReply();
+
+
+        return reply;
+    }
+
 }

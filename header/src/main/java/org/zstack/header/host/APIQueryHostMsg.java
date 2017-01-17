@@ -16,4 +16,12 @@ import org.zstack.header.rest.RestRequest;
 )
 public class APIQueryHostMsg extends APIQueryMessage {
 
+ 
+    public static APIQueryHostMsg __example__() {
+        APIQueryHostMsg msg = new APIQueryHostMsg();
+
+
+        return msg;
+    }
+
 }

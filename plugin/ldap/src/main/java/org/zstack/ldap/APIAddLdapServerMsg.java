@@ -87,4 +87,12 @@ public class APIAddLdapServerMsg extends APIMessage {
     public void setEncryption(String encryption) {
         this.encryption = encryption;
     }
+ 
+    public static APIAddLdapServerMsg __example__() {
+        APIAddLdapServerMsg msg = new APIAddLdapServerMsg();
+
+
+        return msg;
+    }
+
 }

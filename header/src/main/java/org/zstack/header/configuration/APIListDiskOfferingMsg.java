@@ -11,4 +11,12 @@ public class APIListDiskOfferingMsg extends APIListMessage {
 
     public APIListDiskOfferingMsg() {
     }
+ 
+    public static APIListDiskOfferingMsg __example__() {
+        APIListDiskOfferingMsg msg = new APIListDiskOfferingMsg();
+
+
+        return msg;
+    }
+
 }

@@ -19,4 +19,12 @@ public class APIQuerySharedResourceReply extends APIQueryReply {
     public void setInventories(List<SharedResourceInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIQuerySharedResourceReply __example__() {
+        APIQuerySharedResourceReply reply = new APIQuerySharedResourceReply();
+
+
+        return reply;
+    }
+
 }

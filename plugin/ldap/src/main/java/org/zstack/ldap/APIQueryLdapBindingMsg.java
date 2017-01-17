@@ -13,4 +13,12 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIQueryLdapBindingReply.class
 )
 public class APIQueryLdapBindingMsg extends APIQueryMessage {
+ 
+    public static APIQueryLdapBindingMsg __example__() {
+        APIQueryLdapBindingMsg msg = new APIQueryLdapBindingMsg();
+
+
+        return msg;
+    }
+
 }

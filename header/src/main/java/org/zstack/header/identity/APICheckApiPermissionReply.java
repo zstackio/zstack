@@ -19,4 +19,12 @@ public class APICheckApiPermissionReply extends APIReply {
     public void setInventory(Map<String, String> inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APICheckApiPermissionReply __example__() {
+        APICheckApiPermissionReply reply = new APICheckApiPermissionReply();
+
+
+        return reply;
+    }
+
 }

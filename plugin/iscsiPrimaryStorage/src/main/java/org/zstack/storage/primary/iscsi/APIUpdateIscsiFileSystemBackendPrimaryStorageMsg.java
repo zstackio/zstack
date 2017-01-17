@@ -47,4 +47,12 @@ public class APIUpdateIscsiFileSystemBackendPrimaryStorageMsg extends APIUpdateP
     public void setSshPassword(String sshPassword) {
         this.sshPassword = sshPassword;
     }
+ 
+    public static APIUpdateIscsiFileSystemBackendPrimaryStorageMsg __example__() {
+        APIUpdateIscsiFileSystemBackendPrimaryStorageMsg msg = new APIUpdateIscsiFileSystemBackendPrimaryStorageMsg();
+
+
+        return msg;
+    }
+
 }

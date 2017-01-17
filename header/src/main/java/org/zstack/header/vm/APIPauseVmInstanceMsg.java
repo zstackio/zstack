@@ -33,4 +33,12 @@ public class APIPauseVmInstanceMsg extends APIMessage implements VmInstanceMessa
         this.uuid = uuid;
     }
 
+ 
+    public static APIPauseVmInstanceMsg __example__() {
+        APIPauseVmInstanceMsg msg = new APIPauseVmInstanceMsg();
+
+
+        return msg;
+    }
+
 }

@@ -28,4 +28,12 @@ public class APIChangeDiskOfferingStateEvent extends APIEvent {
     public void setInventory(DiskOfferingInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIChangeDiskOfferingStateEvent __example__() {
+        APIChangeDiskOfferingStateEvent event = new APIChangeDiskOfferingStateEvent();
+
+
+        return event;
+    }
+
 }

@@ -43,4 +43,12 @@ public class APIAddMonToFusionstorBackupStorageMsg extends APIMessage implements
     public String getBackupStorageUuid() {
         return uuid;
     }
+ 
+    public static APIAddMonToFusionstorBackupStorageMsg __example__() {
+        APIAddMonToFusionstorBackupStorageMsg msg = new APIAddMonToFusionstorBackupStorageMsg();
+
+
+        return msg;
+    }
+
 }

@@ -33,4 +33,12 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIGetPrimaryStorageTypesReply.class
 )
 public class APIGetPrimaryStorageTypesMsg extends APISyncCallMessage {
+ 
+    public static APIGetPrimaryStorageTypesMsg __example__() {
+        APIGetPrimaryStorageTypesMsg msg = new APIGetPrimaryStorageTypesMsg();
+
+
+        return msg;
+    }
+
 }

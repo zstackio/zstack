@@ -18,4 +18,12 @@ public class APISyncPrimaryStorageCapacityMsg extends APIMessage implements Prim
     public void setPrimaryStorageUuid(String primaryStorageUuid) {
         this.primaryStorageUuid = primaryStorageUuid;
     }
+ 
+    public static APISyncPrimaryStorageCapacityMsg __example__() {
+        APISyncPrimaryStorageCapacityMsg msg = new APISyncPrimaryStorageCapacityMsg();
+
+
+        return msg;
+    }
+
 }

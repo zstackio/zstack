@@ -20,4 +20,12 @@ public class APIGenerateTestLinkDocumentEvent extends APIEvent {
     public void setOutputDir(String outputDir) {
         this.outputDir = outputDir;
     }
+ 
+    public static APIGenerateTestLinkDocumentEvent __example__() {
+        APIGenerateTestLinkDocumentEvent event = new APIGenerateTestLinkDocumentEvent();
+
+
+        return event;
+    }
+
 }

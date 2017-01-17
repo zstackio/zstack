@@ -65,4 +65,12 @@ public class APICreateL2VlanNetworkMsg extends APICreateL2NetworkMsg {
     public String getType() {
         return L2NetworkConstant.L2_VLAN_NETWORK_TYPE;
     }
+ 
+    public static APICreateL2VlanNetworkMsg __example__() {
+        APICreateL2VlanNetworkMsg msg = new APICreateL2VlanNetworkMsg();
+
+
+        return msg;
+    }
+
 }

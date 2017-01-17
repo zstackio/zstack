@@ -20,4 +20,12 @@ public class APIAttachNetworkServiceProviderToL2NetworkEvent extends APIEvent {
     public void setInventory(NetworkServiceProviderInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIAttachNetworkServiceProviderToL2NetworkEvent __example__() {
+        APIAttachNetworkServiceProviderToL2NetworkEvent event = new APIAttachNetworkServiceProviderToL2NetworkEvent();
+
+
+        return event;
+    }
+
 }

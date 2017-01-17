@@ -32,4 +32,12 @@ public class APIGetPrimaryStorageTypesReply extends APIReply {
     public void setPrimaryStorageTypes(List<String> primaryStorageTypes) {
         this.primaryStorageTypes = primaryStorageTypes;
     }
+ 
+    public static APIGetPrimaryStorageTypesReply __example__() {
+        APIGetPrimaryStorageTypesReply reply = new APIGetPrimaryStorageTypesReply();
+
+
+        return reply;
+    }
+
 }

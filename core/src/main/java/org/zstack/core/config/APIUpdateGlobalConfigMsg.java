@@ -46,4 +46,12 @@ public class APIUpdateGlobalConfigMsg extends APIMessage {
     public void setValue(String value) {
         this.value = value;
     }
+
+    public static APIUpdateGlobalConfigMsg __example__() {
+        APIUpdateGlobalConfigMsg msg = new APIUpdateGlobalConfigMsg();
+
+
+        return msg;
+    }
+
 }

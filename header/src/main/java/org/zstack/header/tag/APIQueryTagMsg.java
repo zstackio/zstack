@@ -16,4 +16,12 @@ public class APIQueryTagMsg extends APIQueryMessage {
     public void setSystemTag(boolean systemTag) {
         this.systemTag = systemTag;
     }
+ 
+    public static APIQueryTagMsg __example__() {
+        APIQueryTagMsg msg = new APIQueryTagMsg();
+
+
+        return msg;
+    }
+
 }

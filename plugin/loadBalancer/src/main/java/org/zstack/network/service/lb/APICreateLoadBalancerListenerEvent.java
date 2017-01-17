@@ -24,4 +24,12 @@ public class APICreateLoadBalancerListenerEvent extends APIEvent {
     public LoadBalancerListenerInventory getInventory() {
         return inventory;
     }
+ 
+    public static APICreateLoadBalancerListenerEvent __example__() {
+        APICreateLoadBalancerListenerEvent event = new APICreateLoadBalancerListenerEvent();
+
+
+        return event;
+    }
+
 }

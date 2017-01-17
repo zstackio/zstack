@@ -23,4 +23,12 @@ public class APIDeleteZoneEvent extends APIEvent {
     public APIDeleteZoneEvent() {
         super(null);
     }
+ 
+    public static APIDeleteZoneEvent __example__() {
+        APIDeleteZoneEvent event = new APIDeleteZoneEvent();
+
+
+        return event;
+    }
+
 }

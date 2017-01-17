@@ -79,4 +79,12 @@ public class APIAttachEipMsg extends APIMessage implements EipMessage {
     public void setVmNicUuid(String vmNicUuid) {
         this.vmNicUuid = vmNicUuid;
     }
+ 
+    public static APIAttachEipMsg __example__() {
+        APIAttachEipMsg msg = new APIAttachEipMsg();
+
+
+        return msg;
+    }
+
 }

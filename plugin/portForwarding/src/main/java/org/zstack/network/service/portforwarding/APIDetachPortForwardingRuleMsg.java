@@ -61,4 +61,12 @@ public class APIDetachPortForwardingRuleMsg extends APIMessage {
     public void setUuid(String uuid) {
         this.uuid = uuid;
     }
+ 
+    public static APIDetachPortForwardingRuleMsg __example__() {
+        APIDetachPortForwardingRuleMsg msg = new APIDetachPortForwardingRuleMsg();
+
+
+        return msg;
+    }
+
 }

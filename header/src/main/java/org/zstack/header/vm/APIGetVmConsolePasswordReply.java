@@ -20,4 +20,12 @@ public class APIGetVmConsolePasswordReply extends APIReply {
         this.consolePassword = consolePassword;
     }
 }
+ 
+    public static APIGetVmConsolePasswordReply __example__() {
+        APIGetVmConsolePasswordReply reply = new APIGetVmConsolePasswordReply();
+
+
+        return reply;
+    }
+
 

@@ -67,4 +67,12 @@ public class APIDetachDataVolumeFromVmMsg extends APIMessage implements VolumeMe
     public String getVolumeUuid() {
         return uuid;
     }
+ 
+    public static APIDetachDataVolumeFromVmMsg __example__() {
+        APIDetachDataVolumeFromVmMsg msg = new APIDetachDataVolumeFromVmMsg();
+
+
+        return msg;
+    }
+
 }

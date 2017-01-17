@@ -18,4 +18,12 @@ public class APIGetVmHostnameReply extends APIReply {
     public void setHostname(String hostname) {
         this.hostname = hostname;
     }
+ 
+    public static APIGetVmHostnameReply __example__() {
+        APIGetVmHostnameReply reply = new APIGetVmHostnameReply();
+
+
+        return reply;
+    }
+
 }

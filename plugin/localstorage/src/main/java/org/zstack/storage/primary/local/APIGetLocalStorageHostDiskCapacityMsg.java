@@ -39,4 +39,12 @@ public class APIGetLocalStorageHostDiskCapacityMsg extends APISyncCallMessage im
     public void setPrimaryStorageUuid(String primaryStorageUuid) {
         this.primaryStorageUuid = primaryStorageUuid;
     }
+ 
+    public static APIGetLocalStorageHostDiskCapacityMsg __example__() {
+        APIGetLocalStorageHostDiskCapacityMsg msg = new APIGetLocalStorageHostDiskCapacityMsg();
+
+
+        return msg;
+    }
+
 }

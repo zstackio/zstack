@@ -12,4 +12,12 @@ public class APIGenerateSqlForeignKeyEvent extends APIEvent {
     public APIGenerateSqlForeignKeyEvent() {
         super(null);
     }
+ 
+    public static APIGenerateSqlForeignKeyEvent __example__() {
+        APIGenerateSqlForeignKeyEvent event = new APIGenerateSqlForeignKeyEvent();
+
+
+        return event;
+    }
+
 }

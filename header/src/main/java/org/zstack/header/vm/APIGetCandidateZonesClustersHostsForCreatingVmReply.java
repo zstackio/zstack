@@ -52,4 +52,12 @@ public class APIGetCandidateZonesClustersHostsForCreatingVmReply extends APIRepl
     public void setHosts(List<HostInventory> hosts) {
         this.hosts = hosts;
     }
+ 
+    public static APIGetCandidateZonesClustersHostsForCreatingVmReply __example__() {
+        APIGetCandidateZonesClustersHostsForCreatingVmReply reply = new APIGetCandidateZonesClustersHostsForCreatingVmReply();
+
+
+        return reply;
+    }
+
 }

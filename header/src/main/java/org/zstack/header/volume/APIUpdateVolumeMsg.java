@@ -52,4 +52,12 @@ public class APIUpdateVolumeMsg extends APIMessage implements VolumeMessage {
     public String getVolumeUuid() {
         return uuid;
     }
+ 
+    public static APIUpdateVolumeMsg __example__() {
+        APIUpdateVolumeMsg msg = new APIUpdateVolumeMsg();
+
+
+        return msg;
+    }
+
 }

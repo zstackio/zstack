@@ -36,4 +36,12 @@ public class APIDeleteDiskOfferingMsg extends APIDeleteMessage implements DiskOf
     public String getDiskOfferingUuid() {
         return uuid;
     }
+ 
+    public static APIDeleteDiskOfferingMsg __example__() {
+        APIDeleteDiskOfferingMsg msg = new APIDeleteDiskOfferingMsg();
+
+
+        return msg;
+    }
+
 }

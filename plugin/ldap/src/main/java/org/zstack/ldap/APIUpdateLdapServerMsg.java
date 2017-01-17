@@ -99,4 +99,12 @@ public class APIUpdateLdapServerMsg extends APIMessage {
     public void setEncryption(String encryption) {
         this.encryption = encryption;
     }
+ 
+    public static APIUpdateLdapServerMsg __example__() {
+        APIUpdateLdapServerMsg msg = new APIUpdateLdapServerMsg();
+
+
+        return msg;
+    }
+
 }

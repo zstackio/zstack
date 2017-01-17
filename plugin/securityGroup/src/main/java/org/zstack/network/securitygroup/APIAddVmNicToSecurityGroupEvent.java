@@ -27,4 +27,12 @@ public class APIAddVmNicToSecurityGroupEvent extends APIEvent {
     
     public APIAddVmNicToSecurityGroupEvent() {
     }
+ 
+    public static APIAddVmNicToSecurityGroupEvent __example__() {
+        APIAddVmNicToSecurityGroupEvent event = new APIAddVmNicToSecurityGroupEvent();
+
+
+        return event;
+    }
+
 }

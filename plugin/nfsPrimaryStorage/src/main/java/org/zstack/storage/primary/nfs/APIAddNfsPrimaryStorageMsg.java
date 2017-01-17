@@ -68,4 +68,12 @@ public class APIAddNfsPrimaryStorageMsg extends APIAddPrimaryStorageMsg {
     public String getType() {
         return NfsPrimaryStorageConstant.NFS_PRIMARY_STORAGE_TYPE;
     }
+ 
+    public static APIAddNfsPrimaryStorageMsg __example__() {
+        APIAddNfsPrimaryStorageMsg msg = new APIAddNfsPrimaryStorageMsg();
+
+
+        return msg;
+    }
+
 }

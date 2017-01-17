@@ -19,4 +19,12 @@ public class APIUpdateGlobalConfigEvent extends APIEvent {
 	public void setInventory(GlobalConfigInventory inventory) {
     	this.inventory = inventory;
     }
+ 
+    public static APIUpdateGlobalConfigEvent __example__() {
+        APIUpdateGlobalConfigEvent event = new APIUpdateGlobalConfigEvent();
+
+
+        return event;
+    }
+
 }

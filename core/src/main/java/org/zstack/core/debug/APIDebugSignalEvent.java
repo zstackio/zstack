@@ -12,4 +12,12 @@ public class APIDebugSignalEvent extends APIEvent {
     public APIDebugSignalEvent(String apiId) {
         super(apiId);
     }
+ 
+    public static APIDebugSignalEvent __example__() {
+        APIDebugSignalEvent event = new APIDebugSignalEvent();
+
+
+        return event;
+    }
+
 }

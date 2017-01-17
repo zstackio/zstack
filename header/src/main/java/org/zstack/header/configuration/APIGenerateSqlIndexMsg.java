@@ -25,4 +25,12 @@ public class APIGenerateSqlIndexMsg extends APIMessage {
     public void setBasePackageNames(List<String> basePackageNames) {
         this.basePackageNames = basePackageNames;
     }
+ 
+    public static APIGenerateSqlIndexMsg __example__() {
+        APIGenerateSqlIndexMsg msg = new APIGenerateSqlIndexMsg();
+
+
+        return msg;
+    }
+
 }
