@@ -32,14 +32,12 @@ public class APIGetVmConsolePasswordMsg extends APISyncCallMessage implements Vm
     public String getVmInstanceUuid() {
         return getUuid();
     }
-}
 
- 
     public static APIGetVmConsolePasswordMsg __example__() {
         APIGetVmConsolePasswordMsg msg = new APIGetVmConsolePasswordMsg();
 
 
         return msg;
     }
-
+}
 
