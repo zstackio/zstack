@@ -139,7 +139,7 @@ public class VolumeInventory implements Serializable {
      */
     private Timestamp lastOpDate;
 
-    private boolean isShareable;
+    private Boolean isShareable;
 
     public VolumeInventory() {
     }
