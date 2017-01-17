@@ -77,6 +77,7 @@ public class APIUpdateCephBackupStorageMonMsg extends APIMessage implements Back
     public void setMonPort(Integer monPort) {
         this.monPort = monPort;
     }
+
     public String getHostname() {
         return hostname;
     }
@@ -93,13 +94,14 @@ public class APIUpdateCephBackupStorageMonMsg extends APIMessage implements Back
     public void setBackupStorageUuid(String backupStorageUuid) {
         this.backupStorageUuid = backupStorageUuid;
     }
-}
- 
+
+
     public static APIUpdateCephBackupStorageMonMsg __example__() {
         APIUpdateCephBackupStorageMonMsg msg = new APIUpdateCephBackupStorageMonMsg();
 
 
         return msg;
     }
+}
 
 

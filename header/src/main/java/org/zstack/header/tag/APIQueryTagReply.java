@@ -17,13 +17,13 @@ public class APIQueryTagReply extends APIQueryReply {
     public void setInventories(List<TagInventory> inventories) {
         this.inventories = inventories;
     }
-}
- 
+
+
     public static APIQueryTagReply __example__() {
         APIQueryTagReply reply = new APIQueryTagReply();
 
 
         return reply;
     }
-
+}
 

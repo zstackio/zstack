@@ -100,8 +100,7 @@ public class APICreatePortForwardingRuleMsg extends APICreateMessage {
     private Integer privatePortEnd;
     /**
      * @desc network prototype the rule applies to
-     * @choices
-     * - TCP
+     * @choices - TCP
      * - UDP
      */
     @APIParam(validValues = {"TCP", "UDP"})
@@ -133,70 +132,89 @@ public class APICreatePortForwardingRuleMsg extends APICreateMessage {
     public String getVipUuid() {
         return vipUuid;
     }
+
     public void setVipUuid(String vipUuid) {
         this.vipUuid = vipUuid;
     }
+
     public Integer getVipPortStart() {
         return vipPortStart;
     }
+
     public void setVipPortStart(Integer vipPortStart) {
         this.vipPortStart = vipPortStart;
     }
+
     public Integer getVipPortEnd() {
         return vipPortEnd;
     }
+
     public void setVipPortEnd(Integer vipPortEnd) {
         this.vipPortEnd = vipPortEnd;
     }
+
     public Integer getPrivatePortStart() {
         return privatePortStart;
     }
+
     public void setPrivatePortStart(Integer privatePortStart) {
         this.privatePortStart = privatePortStart;
     }
+
     public Integer getPrivatePortEnd() {
         return privatePortEnd;
     }
+
     public void setPrivatePortEnd(Integer privatePortEnd) {
         this.privatePortEnd = privatePortEnd;
     }
+
     public String getProtocolType() {
         return protocolType;
     }
+
     public void setProtocolType(String protocolType) {
         this.protocolType = protocolType;
     }
+
     public String getVmNicUuid() {
         return vmNicUuid;
     }
+
     public void setVmNicUuid(String vmNicUuid) {
         this.vmNicUuid = vmNicUuid;
     }
+
     public String getAllowedCidr() {
         return allowedCidr;
     }
+
     public void setAllowedCidr(String allowedCidr) {
         this.allowedCidr = allowedCidr;
     }
+
     public String getName() {
         return name;
     }
+
     public void setName(String name) {
         this.name = name;
     }
+
     public String getDescription() {
         return description;
     }
+
     public void setDescription(String description) {
         this.description = description;
     }
-}
- 
+
     public static APICreatePortForwardingRuleMsg __example__() {
         APICreatePortForwardingRuleMsg msg = new APICreatePortForwardingRuleMsg();
 
 
         return msg;
     }
+}
 
 

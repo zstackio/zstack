@@ -14,13 +14,13 @@ public class APIDeleteVmHostnameEvent extends APIEvent {
     public APIDeleteVmHostnameEvent(String apiId) {
         super(apiId);
     }
-}
- 
+
     public static APIDeleteVmHostnameEvent __example__() {
         APIDeleteVmHostnameEvent event = new APIDeleteVmHostnameEvent();
 
 
         return event;
     }
+}
 
 
