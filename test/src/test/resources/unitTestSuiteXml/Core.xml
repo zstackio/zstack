@@ -96,6 +96,7 @@
     <TestCase class="org.zstack.test.core.plugin.TestPluginOrder2"/>
 
     <TestCase class="org.zstack.test.core.config.TestGlobalConfig"/>
+    <TestCase class="org.zstack.test.core.config.TestGlobalConfigForSessionTimeOut"/>
     <TestCase class="org.zstack.test.core.config.TestGlobalConfigUpdatedExtension"/>
     <TestCase class="org.zstack.test.core.config.TestGlobalConfigValidateExtension"/>
     <TestCase class="org.zstack.test.core.config.TestGlobalConfigValidateExtension1"/>
