@@ -885,12 +885,8 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                         public void run(MessageReply reply) {
                                             if (reply.isSuccess()) {
                                                 s = true;
-
-                                                reserveCapacityOnHost(hostUuid, image.getActualSize(), self.getUuid());
-
                                                 AllocatePrimaryStorageReply r = reply.castReply();
                                                 psUuid = r.getPrimaryStorageInventory().getUuid();
-
                                                 trigger.next();
                                             } else {
                                                 trigger.fail(reply.getError());
@@ -902,8 +898,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                 @Override
                                 public void rollback(FlowRollback trigger, Map data) {
                                     if (s) {
-                                        returnStorageCapacityToHost(hostUuid, image.getActualSize());
-
                                         ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
                                         rmsg.setDiskSize(image.getActualSize());
                                         rmsg.setNoOverProvisioning(true);
