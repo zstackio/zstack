@@ -75,4 +75,12 @@ public class APIChangeVolumeStateMsg extends APIMessage implements VolumeMessage
     public void setStateEvent(String stateEvent) {
         this.stateEvent = stateEvent;
     }
+ 
+    public static APIChangeVolumeStateMsg __example__() {
+        APIChangeVolumeStateMsg msg = new APIChangeVolumeStateMsg();
+
+
+        return msg;
+    }
+
 }

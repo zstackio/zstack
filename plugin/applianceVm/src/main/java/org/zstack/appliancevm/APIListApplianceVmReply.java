@@ -16,4 +16,12 @@ public class APIListApplianceVmReply extends APIReply {
     public void setInventories(List<ApplianceVmInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIListApplianceVmReply __example__() {
+        APIListApplianceVmReply reply = new APIListApplianceVmReply();
+
+
+        return reply;
+    }
+
 }

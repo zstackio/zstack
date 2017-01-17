@@ -71,4 +71,12 @@ public class APIAttachNetworkServiceToL3NetworkEvent extends APIEvent {
     public void setInventory(L3NetworkInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIAttachNetworkServiceToL3NetworkEvent __example__() {
+        APIAttachNetworkServiceToL3NetworkEvent event = new APIAttachNetworkServiceToL3NetworkEvent();
+
+
+        return event;
+    }
+
 }

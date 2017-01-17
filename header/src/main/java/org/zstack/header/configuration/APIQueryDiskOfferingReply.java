@@ -16,4 +16,12 @@ public class APIQueryDiskOfferingReply extends APIQueryReply {
     public void setInventories(List<DiskOfferingInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIQueryDiskOfferingReply __example__() {
+        APIQueryDiskOfferingReply reply = new APIQueryDiskOfferingReply();
+
+
+        return reply;
+    }
+
 }

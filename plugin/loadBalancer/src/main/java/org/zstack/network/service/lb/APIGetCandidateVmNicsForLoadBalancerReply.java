@@ -20,4 +20,12 @@ public class APIGetCandidateVmNicsForLoadBalancerReply extends APIReply {
     public void setInventories(List<VmNicInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIGetCandidateVmNicsForLoadBalancerReply __example__() {
+        APIGetCandidateVmNicsForLoadBalancerReply reply = new APIGetCandidateVmNicsForLoadBalancerReply();
+
+
+        return reply;
+    }
+
 }

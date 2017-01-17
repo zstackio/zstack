@@ -15,4 +15,12 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIQueryManagementNodeReply.class
 )
 public class APIQueryManagementNodeMsg extends APIQueryMessage {
+ 
+    public static APIQueryManagementNodeMsg __example__() {
+        APIQueryManagementNodeMsg msg = new APIQueryManagementNodeMsg();
+
+
+        return msg;
+    }
+
 }

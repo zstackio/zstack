@@ -64,4 +64,12 @@ public class APIUpdateIpRangeMsg extends APIMessage implements L3NetworkMessage,
     public String getIpRangeUuid() {
         return uuid;
     }
+ 
+    public static APIUpdateIpRangeMsg __example__() {
+        APIUpdateIpRangeMsg msg = new APIUpdateIpRangeMsg();
+
+
+        return msg;
+    }
+
 }

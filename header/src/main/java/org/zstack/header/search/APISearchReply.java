@@ -12,4 +12,12 @@ public class APISearchReply extends APIReply {
     public void setContent(String content) {
         this.content = content;
     }
+ 
+    public static APISearchReply __example__() {
+        APISearchReply reply = new APISearchReply();
+
+
+        return reply;
+    }
+
 }

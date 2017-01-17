@@ -115,4 +115,12 @@ public class APICreateClusterMsg extends APICreateMessage {
     public void setType(String type) {
         this.type = type;
     }
+ 
+    public static APICreateClusterMsg __example__() {
+        APICreateClusterMsg msg = new APICreateClusterMsg();
+
+
+        return msg;
+    }
+
 }

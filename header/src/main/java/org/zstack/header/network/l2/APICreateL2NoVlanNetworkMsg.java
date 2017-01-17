@@ -16,4 +16,12 @@ public class APICreateL2NoVlanNetworkMsg extends APICreateL2NetworkMsg {
     public String getType() {
         return L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE;
     }
+ 
+    public static APICreateL2NoVlanNetworkMsg __example__() {
+        APICreateL2NoVlanNetworkMsg msg = new APICreateL2NoVlanNetworkMsg();
+
+
+        return msg;
+    }
+
 }

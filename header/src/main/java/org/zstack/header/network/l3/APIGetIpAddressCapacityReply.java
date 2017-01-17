@@ -25,4 +25,12 @@ public class APIGetIpAddressCapacityReply extends APIReply {
     public void setAvailableCapacity(long availableCapacity) {
         this.availableCapacity = availableCapacity;
     }
+ 
+    public static APIGetIpAddressCapacityReply __example__() {
+        APIGetIpAddressCapacityReply reply = new APIGetIpAddressCapacityReply();
+
+
+        return reply;
+    }
+
 }

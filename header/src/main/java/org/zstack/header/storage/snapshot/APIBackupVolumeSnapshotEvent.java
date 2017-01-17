@@ -60,4 +60,12 @@ public class APIBackupVolumeSnapshotEvent extends APIEvent {
     public void setInventory(VolumeSnapshotInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIBackupVolumeSnapshotEvent __example__() {
+        APIBackupVolumeSnapshotEvent event = new APIBackupVolumeSnapshotEvent();
+
+
+        return event;
+    }
+
 }

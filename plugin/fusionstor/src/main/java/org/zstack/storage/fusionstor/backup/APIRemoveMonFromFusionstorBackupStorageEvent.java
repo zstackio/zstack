@@ -24,4 +24,12 @@ public class APIRemoveMonFromFusionstorBackupStorageEvent extends APIEvent {
     public void setInventory(FusionstorBackupStorageInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIRemoveMonFromFusionstorBackupStorageEvent __example__() {
+        APIRemoveMonFromFusionstorBackupStorageEvent event = new APIRemoveMonFromFusionstorBackupStorageEvent();
+
+
+        return event;
+    }
+
 }

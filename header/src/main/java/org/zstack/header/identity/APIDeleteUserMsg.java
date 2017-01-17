@@ -32,4 +32,12 @@ public class APIDeleteUserMsg extends APIDeleteMessage implements AccountMessage
     public void setUuid(String uuid) {
         this.uuid = uuid;
     }
+ 
+    public static APIDeleteUserMsg __example__() {
+        APIDeleteUserMsg msg = new APIDeleteUserMsg();
+
+
+        return msg;
+    }
+
 }

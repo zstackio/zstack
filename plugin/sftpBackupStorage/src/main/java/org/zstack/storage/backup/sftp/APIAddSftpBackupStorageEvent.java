@@ -22,4 +22,12 @@ public class APIAddSftpBackupStorageEvent extends APIEvent {
     public void setInventory(SftpBackupStorageInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIAddSftpBackupStorageEvent __example__() {
+        APIAddSftpBackupStorageEvent event = new APIAddSftpBackupStorageEvent();
+
+
+        return event;
+    }
+
 }

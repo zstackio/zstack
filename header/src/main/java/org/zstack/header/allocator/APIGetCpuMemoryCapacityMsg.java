@@ -56,4 +56,12 @@ public class APIGetCpuMemoryCapacityMsg extends APISyncCallMessage {
     public void setHostUuids(List<String> hostUuids) {
         this.hostUuids = hostUuids;
     }
+ 
+    public static APIGetCpuMemoryCapacityMsg __example__() {
+        APIGetCpuMemoryCapacityMsg msg = new APIGetCpuMemoryCapacityMsg();
+
+
+        return msg;
+    }
+
 }

@@ -45,4 +45,12 @@ public class APIChangeInstanceOfferingStateMsg extends APIMessage implements Ins
     public void setStateEvent(String stateEvent) {
         this.stateEvent = stateEvent;
     }
+ 
+    public static APIChangeInstanceOfferingStateMsg __example__() {
+        APIChangeInstanceOfferingStateMsg msg = new APIChangeInstanceOfferingStateMsg();
+
+
+        return msg;
+    }
+
 }

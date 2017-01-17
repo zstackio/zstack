@@ -43,4 +43,12 @@ public class APIAddMonToFusionstorPrimaryStorageMsg extends APIMessage implement
     public String getPrimaryStorageUuid() {
         return uuid;
     }
+ 
+    public static APIAddMonToFusionstorPrimaryStorageMsg __example__() {
+        APIAddMonToFusionstorPrimaryStorageMsg msg = new APIAddMonToFusionstorPrimaryStorageMsg();
+
+
+        return msg;
+    }
+
 }

@@ -12,4 +12,12 @@ public class APIDeleteLdapBindingEvent extends APIEvent {
     public APIDeleteLdapBindingEvent() {
         super(null);
     }
+ 
+    public static APIDeleteLdapBindingEvent __example__() {
+        APIDeleteLdapBindingEvent event = new APIDeleteLdapBindingEvent();
+
+
+        return event;
+    }
+
 }

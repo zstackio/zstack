@@ -19,4 +19,12 @@ public class APIQueryLocalStorageResourceRefReply extends APIQueryReply {
     public void setInventories(List<LocalStorageResourceRefInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIQueryLocalStorageResourceRefReply __example__() {
+        APIQueryLocalStorageResourceRefReply reply = new APIQueryLocalStorageResourceRefReply();
+
+
+        return reply;
+    }
+
 }

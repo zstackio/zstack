@@ -19,4 +19,12 @@ public class APIGetAccountQuotaUsageReply extends APIReply {
     public void setUsages(List<Quota.QuotaUsage> usages) {
         this.usages = usages;
     }
+ 
+    public static APIGetAccountQuotaUsageReply __example__() {
+        APIGetAccountQuotaUsageReply reply = new APIGetAccountQuotaUsageReply();
+
+
+        return reply;
+    }
+
 }

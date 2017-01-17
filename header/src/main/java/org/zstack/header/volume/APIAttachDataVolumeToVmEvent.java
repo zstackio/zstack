@@ -50,4 +50,12 @@ public class APIAttachDataVolumeToVmEvent extends APIEvent {
     public void setInventory(VolumeInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIAttachDataVolumeToVmEvent __example__() {
+        APIAttachDataVolumeToVmEvent event = new APIAttachDataVolumeToVmEvent();
+
+
+        return event;
+    }
+
 }

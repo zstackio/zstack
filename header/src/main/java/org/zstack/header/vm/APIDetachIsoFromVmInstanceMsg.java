@@ -28,4 +28,12 @@ public class APIDetachIsoFromVmInstanceMsg extends APIMessage implements VmInsta
     public void setVmInstanceUuid(String vmInstanceUuid) {
         this.vmInstanceUuid = vmInstanceUuid;
     }
+ 
+    public static APIDetachIsoFromVmInstanceMsg __example__() {
+        APIDetachIsoFromVmInstanceMsg msg = new APIDetachIsoFromVmInstanceMsg();
+
+
+        return msg;
+    }
+
 }

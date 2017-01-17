@@ -12,4 +12,12 @@ public class APIListNetworkServiceProviderMsg extends APIListMessage {
     public APIListNetworkServiceProviderMsg() {
         super(null);
     }
+ 
+    public static APIListNetworkServiceProviderMsg __example__() {
+        APIListNetworkServiceProviderMsg msg = new APIListNetworkServiceProviderMsg();
+
+
+        return msg;
+    }
+
 }

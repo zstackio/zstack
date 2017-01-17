@@ -49,4 +49,12 @@ public class APIGetNetworkServiceTypesReply extends APIReply {
     public void setServiceAndProviderTypes(Map<String, List<String>> serviceAndProviderTypes) {
         this.serviceAndProviderTypes = serviceAndProviderTypes;
     }
+ 
+    public static APIGetNetworkServiceTypesReply __example__() {
+        APIGetNetworkServiceTypesReply reply = new APIGetNetworkServiceTypesReply();
+
+
+        return reply;
+    }
+
 }

@@ -24,4 +24,12 @@ public class APICreateUserTagEvent extends APIEvent {
     public void setInventory(UserTagInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APICreateUserTagEvent __example__() {
+        APICreateUserTagEvent event = new APICreateUserTagEvent();
+
+
+        return event;
+    }
+
 }

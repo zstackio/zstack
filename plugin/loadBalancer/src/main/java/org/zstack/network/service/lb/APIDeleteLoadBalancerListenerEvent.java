@@ -24,4 +24,12 @@ public class APIDeleteLoadBalancerListenerEvent extends APIEvent {
     public void setInventory(LoadBalancerInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIDeleteLoadBalancerListenerEvent __example__() {
+        APIDeleteLoadBalancerListenerEvent event = new APIDeleteLoadBalancerListenerEvent();
+
+
+        return event;
+    }
+
 }

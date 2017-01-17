@@ -14,4 +14,12 @@ public class APIListBackupStorageReply extends APIReply {
     public void setInventories(List<BackupStorageInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIListBackupStorageReply __example__() {
+        APIListBackupStorageReply reply = new APIListBackupStorageReply();
+
+
+        return reply;
+    }
+
 }

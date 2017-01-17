@@ -31,4 +31,12 @@ public class APIGetVolumeCapabilitiesMsg extends APISyncCallMessage implements V
     public String getVolumeUuid() {
         return uuid;
     }
+ 
+    public static APIGetVolumeCapabilitiesMsg __example__() {
+        APIGetVolumeCapabilitiesMsg msg = new APIGetVolumeCapabilitiesMsg();
+
+
+        return msg;
+    }
+
 }

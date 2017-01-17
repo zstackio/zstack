@@ -24,4 +24,12 @@ public class APIRemoveMonFromCephBackupStorageEvent extends APIEvent {
     public void setInventory(CephBackupStorageInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIRemoveMonFromCephBackupStorageEvent __example__() {
+        APIRemoveMonFromCephBackupStorageEvent event = new APIRemoveMonFromCephBackupStorageEvent();
+
+
+        return event;
+    }
+
 }

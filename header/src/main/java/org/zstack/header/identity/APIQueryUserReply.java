@@ -19,4 +19,12 @@ public class APIQueryUserReply extends APIQueryReply {
     public void setInventories(List<UserInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIQueryUserReply __example__() {
+        APIQueryUserReply reply = new APIQueryUserReply();
+
+
+        return reply;
+    }
+
 }

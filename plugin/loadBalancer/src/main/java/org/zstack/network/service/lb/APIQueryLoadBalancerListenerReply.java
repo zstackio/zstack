@@ -19,4 +19,12 @@ public class APIQueryLoadBalancerListenerReply extends APIQueryReply {
     public void setInventories(List<LoadBalancerListenerInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIQueryLoadBalancerListenerReply __example__() {
+        APIQueryLoadBalancerListenerReply reply = new APIQueryLoadBalancerListenerReply();
+
+
+        return reply;
+    }
+
 }

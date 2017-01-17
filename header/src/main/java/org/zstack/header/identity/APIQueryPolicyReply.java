@@ -19,4 +19,12 @@ public class APIQueryPolicyReply extends APIQueryReply {
     public void setInventories(List<PolicyInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIQueryPolicyReply __example__() {
+        APIQueryPolicyReply reply = new APIQueryPolicyReply();
+
+
+        return reply;
+    }
+
 }

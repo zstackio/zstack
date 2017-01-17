@@ -10,4 +10,12 @@ public class APIDeleteSearchIndexEvent extends APIEvent {
     public APIDeleteSearchIndexEvent() {
         super(null);
     }
+ 
+    public static APIDeleteSearchIndexEvent __example__() {
+        APIDeleteSearchIndexEvent event = new APIDeleteSearchIndexEvent();
+
+
+        return event;
+    }
+
 }

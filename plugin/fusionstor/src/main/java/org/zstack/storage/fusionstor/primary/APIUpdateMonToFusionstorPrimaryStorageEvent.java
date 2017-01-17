@@ -24,4 +24,12 @@ public class APIUpdateMonToFusionstorPrimaryStorageEvent extends APIEvent {
     public void setInventory(FusionstorPrimaryStorageInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIUpdateMonToFusionstorPrimaryStorageEvent __example__() {
+        APIUpdateMonToFusionstorPrimaryStorageEvent event = new APIUpdateMonToFusionstorPrimaryStorageEvent();
+
+
+        return event;
+    }
+
 }

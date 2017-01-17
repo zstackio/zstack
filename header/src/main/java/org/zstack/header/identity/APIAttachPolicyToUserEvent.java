@@ -12,4 +12,12 @@ public class APIAttachPolicyToUserEvent extends APIEvent {
     public APIAttachPolicyToUserEvent(String apiId) {
         super(apiId);
     }
+ 
+    public static APIAttachPolicyToUserEvent __example__() {
+        APIAttachPolicyToUserEvent event = new APIAttachPolicyToUserEvent();
+
+
+        return event;
+    }
+
 }

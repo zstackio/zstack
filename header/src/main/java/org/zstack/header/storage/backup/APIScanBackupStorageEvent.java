@@ -10,4 +10,12 @@ public class APIScanBackupStorageEvent extends APIEvent {
     public APIScanBackupStorageEvent() {
         super(null);
     }
+ 
+    public static APIScanBackupStorageEvent __example__() {
+        APIScanBackupStorageEvent event = new APIScanBackupStorageEvent();
+
+
+        return event;
+    }
+
 }

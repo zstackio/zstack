@@ -19,4 +19,12 @@ public class APIGetVolumeCapabilitiesReply extends APIReply {
     public void setCapabilities(Map<String, Object> capabilities) {
         this.capabilities = capabilities;
     }
+ 
+    public static APIGetVolumeCapabilitiesReply __example__() {
+        APIGetVolumeCapabilitiesReply reply = new APIGetVolumeCapabilitiesReply();
+
+
+        return reply;
+    }
+
 }

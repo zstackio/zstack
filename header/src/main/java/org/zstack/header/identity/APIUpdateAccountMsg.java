@@ -59,4 +59,11 @@ public class APIUpdateAccountMsg extends APIMessage implements AccountMessage {
         this.description = description;
     }
 
+    public static APIUpdateAccountMsg __example__() {
+        APIUpdateAccountMsg msg = new APIUpdateAccountMsg();
+        msg.setName("updatename");
+        msg.setPassword("updatepassword");
+        return msg;
+    }
+
 }

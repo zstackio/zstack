@@ -52,4 +52,12 @@ public class APIAttachPrimaryStorageToClusterEvent extends APIEvent {
     public void setInventory(PrimaryStorageInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIAttachPrimaryStorageToClusterEvent __example__() {
+        APIAttachPrimaryStorageToClusterEvent event = new APIAttachPrimaryStorageToClusterEvent();
+
+
+        return event;
+    }
+
 }

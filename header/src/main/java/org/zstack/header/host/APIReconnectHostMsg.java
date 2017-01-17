@@ -64,4 +64,12 @@ public class APIReconnectHostMsg extends APIMessage implements HostMessage {
         return getUuid();
     }
 
+ 
+    public static APIReconnectHostMsg __example__() {
+        APIReconnectHostMsg msg = new APIReconnectHostMsg();
+
+
+        return msg;
+    }
+
 }

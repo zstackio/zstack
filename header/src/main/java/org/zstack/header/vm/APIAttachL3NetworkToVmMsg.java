@@ -80,4 +80,12 @@ public class APIAttachL3NetworkToVmMsg extends APIMessage implements VmInstanceM
     public void setL3NetworkUuid(String l3NetworkUuid) {
         this.l3NetworkUuid = l3NetworkUuid;
     }
+ 
+    public static APIAttachL3NetworkToVmMsg __example__() {
+        APIAttachL3NetworkToVmMsg msg = new APIAttachL3NetworkToVmMsg();
+
+
+        return msg;
+    }
+
 }

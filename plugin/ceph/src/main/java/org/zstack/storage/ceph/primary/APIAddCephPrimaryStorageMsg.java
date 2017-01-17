@@ -73,4 +73,12 @@ public class APIAddCephPrimaryStorageMsg extends APIAddPrimaryStorageMsg {
     public void setMonUrls(List<String> monUrls) {
         this.monUrls = monUrls;
     }
+ 
+    public static APIAddCephPrimaryStorageMsg __example__() {
+        APIAddCephPrimaryStorageMsg msg = new APIAddCephPrimaryStorageMsg();
+
+
+        return msg;
+    }
+
 }

@@ -25,4 +25,12 @@ public class APIDeleteVmConsolePasswordEvent extends APIEvent {
     public VmInstanceInventory getInventory() {
         return inventory;
     }
+ 
+    public static APIDeleteVmConsolePasswordEvent __example__() {
+        APIDeleteVmConsolePasswordEvent event = new APIDeleteVmConsolePasswordEvent();
+
+
+        return event;
+    }
+
 }

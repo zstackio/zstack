@@ -24,4 +24,12 @@ public class APIUpdateQuotaEvent extends APIEvent {
     public void setInventory(QuotaInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIUpdateQuotaEvent __example__() {
+        APIUpdateQuotaEvent event = new APIUpdateQuotaEvent();
+
+
+        return event;
+    }
+
 }

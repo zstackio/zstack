@@ -59,4 +59,12 @@ public class APIDeleteVolumeSnapshotFromBackupStorageEvent extends APIEvent {
     public void setInventory(VolumeSnapshotInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIDeleteVolumeSnapshotFromBackupStorageEvent __example__() {
+        APIDeleteVolumeSnapshotFromBackupStorageEvent event = new APIDeleteVolumeSnapshotFromBackupStorageEvent();
+
+
+        return event;
+    }
+
 }

@@ -68,4 +68,12 @@ public class APICreateVirtualRouterOfferingMsg extends APICreateInstanceOffering
 	public void setImageUuid(String imageUuid) {
 		this.imageUuid = imageUuid;
 	}
+ 
+    public static APICreateVirtualRouterOfferingMsg __example__() {
+        APICreateVirtualRouterOfferingMsg msg = new APICreateVirtualRouterOfferingMsg();
+
+
+        return msg;
+    }
+
 }

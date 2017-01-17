@@ -29,4 +29,12 @@ public class APIDeleteVipEvent extends APIEvent {
     public APIDeleteVipEvent() {
         super(null);
     }
+ 
+    public static APIDeleteVipEvent __example__() {
+        APIDeleteVipEvent event = new APIDeleteVipEvent();
+
+
+        return event;
+    }
+
 }

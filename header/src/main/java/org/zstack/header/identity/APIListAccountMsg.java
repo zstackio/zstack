@@ -11,4 +11,12 @@ public class APIListAccountMsg extends APIListMessage {
 
     public APIListAccountMsg() {
     }
+ 
+    public static APIListAccountMsg __example__() {
+        APIListAccountMsg msg = new APIListAccountMsg();
+
+
+        return msg;
+    }
+
 }

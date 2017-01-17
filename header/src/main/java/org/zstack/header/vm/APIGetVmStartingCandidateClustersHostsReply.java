@@ -30,4 +30,12 @@ public class APIGetVmStartingCandidateClustersHostsReply extends APIReply {
     public void setClusterInventories(List<ClusterInventory> clusterInventories) {
         this.clusterInventories = clusterInventories;
     }
+ 
+    public static APIGetVmStartingCandidateClustersHostsReply __example__() {
+        APIGetVmStartingCandidateClustersHostsReply reply = new APIGetVmStartingCandidateClustersHostsReply();
+
+
+        return reply;
+    }
+
 }

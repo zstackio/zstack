@@ -28,4 +28,12 @@ public class APIGetVmAttachableL3NetworkMsg extends APISyncCallMessage implement
     public void setVmInstanceUuid(String vmInstanceUuid) {
         this.vmInstanceUuid = vmInstanceUuid;
     }
+ 
+    public static APIGetVmAttachableL3NetworkMsg __example__() {
+        APIGetVmAttachableL3NetworkMsg msg = new APIGetVmAttachableL3NetworkMsg();
+
+
+        return msg;
+    }
+
 }

@@ -16,4 +16,12 @@ public class APIQueryVirtualRouterVmReply extends APIQueryReply {
     public void setInventories(List<VirtualRouterVmInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIQueryVirtualRouterVmReply __example__() {
+        APIQueryVirtualRouterVmReply reply = new APIQueryVirtualRouterVmReply();
+
+
+        return reply;
+    }
+
 }

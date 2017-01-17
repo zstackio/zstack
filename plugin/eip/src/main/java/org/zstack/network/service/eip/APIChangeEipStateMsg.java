@@ -41,4 +41,12 @@ public class APIChangeEipStateMsg extends APIMessage implements EipMessage {
     public String getEipUuid() {
         return uuid;
     }
+ 
+    public static APIChangeEipStateMsg __example__() {
+        APIChangeEipStateMsg msg = new APIChangeEipStateMsg();
+
+
+        return msg;
+    }
+
 }

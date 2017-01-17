@@ -19,4 +19,12 @@ public class APIGetPortForwardingAttachableVmNicsReply extends APIReply {
     public void setInventories(List<VmNicInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIGetPortForwardingAttachableVmNicsReply __example__() {
+        APIGetPortForwardingAttachableVmNicsReply reply = new APIGetPortForwardingAttachableVmNicsReply();
+
+
+        return reply;
+    }
+
 }

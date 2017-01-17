@@ -32,4 +32,12 @@ public class APISyncVolumeSizeMsg extends APIMessage implements VolumeMessage {
     public String getVolumeUuid() {
         return uuid;
     }
+ 
+    public static APISyncVolumeSizeMsg __example__() {
+        APISyncVolumeSizeMsg msg = new APISyncVolumeSizeMsg();
+
+
+        return msg;
+    }
+
 }

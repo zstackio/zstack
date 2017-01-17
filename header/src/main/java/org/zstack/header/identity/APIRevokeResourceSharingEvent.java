@@ -14,4 +14,12 @@ public class APIRevokeResourceSharingEvent extends APIEvent {
     public APIRevokeResourceSharingEvent(String apiId) {
         super(apiId);
     }
+ 
+    public static APIRevokeResourceSharingEvent __example__() {
+        APIRevokeResourceSharingEvent event = new APIRevokeResourceSharingEvent();
+
+
+        return event;
+    }
+
 }

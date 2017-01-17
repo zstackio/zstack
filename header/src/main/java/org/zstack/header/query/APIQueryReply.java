@@ -18,4 +18,12 @@ public class APIQueryReply extends APIReply {
     public void setTotal(long total) {
         this.total = total;
     }
+ 
+    public static APIQueryReply __example__() {
+        APIQueryReply reply = new APIQueryReply();
+
+
+        return reply;
+    }
+
 }

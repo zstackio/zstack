@@ -14,4 +14,12 @@ public class APIGenerateApiTypeScriptDefinitionMsg extends APIMessage {
     public void setOutputPath(String outputPath) {
         this.outputPath = outputPath;
     }
+ 
+    public static APIGenerateApiTypeScriptDefinitionMsg __example__() {
+        APIGenerateApiTypeScriptDefinitionMsg msg = new APIGenerateApiTypeScriptDefinitionMsg();
+
+
+        return msg;
+    }
+
 }

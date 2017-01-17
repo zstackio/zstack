@@ -8,4 +8,12 @@ public class APISearchUserMsg extends APISearchMessage implements AccountMessage
     public String getAccountUuid() {
         return this.getSession().getAccountUuid();
     }
+ 
+    public static APISearchUserMsg __example__() {
+        APISearchUserMsg msg = new APISearchUserMsg();
+
+
+        return msg;
+    }
+
 }

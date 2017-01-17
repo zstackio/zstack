@@ -58,4 +58,12 @@ public class APIGetIpAddressCapacityMsg extends APISyncCallMessage {
     public void setAll(boolean all) {
         this.all = all;
     }
+ 
+    public static APIGetIpAddressCapacityMsg __example__() {
+        APIGetIpAddressCapacityMsg msg = new APIGetIpAddressCapacityMsg();
+
+
+        return msg;
+    }
+
 }

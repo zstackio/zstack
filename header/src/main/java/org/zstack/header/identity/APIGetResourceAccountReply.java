@@ -17,4 +17,12 @@ public class APIGetResourceAccountReply extends APIReply {
     public void setInventories(Map<String, AccountInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIGetResourceAccountReply __example__() {
+        APIGetResourceAccountReply reply = new APIGetResourceAccountReply();
+
+
+        return reply;
+    }
+
 }

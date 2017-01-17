@@ -52,4 +52,12 @@ public class APIUpdateSecurityGroupMsg extends APIMessage implements SecurityGro
     public String getSecurityGroupUuid() {
         return uuid;
     }
+ 
+    public static APIUpdateSecurityGroupMsg __example__() {
+        APIUpdateSecurityGroupMsg msg = new APIUpdateSecurityGroupMsg();
+
+
+        return msg;
+    }
+
 }

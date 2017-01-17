@@ -17,4 +17,12 @@ import org.zstack.header.storage.backup.BackupStorageConstant;
 )
 public class APIQuerySftpBackupStorageMsg extends APIQueryMessage {
 
+ 
+    public static APIQuerySftpBackupStorageMsg __example__() {
+        APIQuerySftpBackupStorageMsg msg = new APIQuerySftpBackupStorageMsg();
+
+
+        return msg;
+    }
+
 }

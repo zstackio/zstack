@@ -37,4 +37,12 @@ public class APICheckIpAvailabilityMsg extends APISyncCallMessage implements L3N
     public void setIp(String ip) {
         this.ip = ip;
     }
+ 
+    public static APICheckIpAvailabilityMsg __example__() {
+        APICheckIpAvailabilityMsg msg = new APICheckIpAvailabilityMsg();
+
+
+        return msg;
+    }
+
 }

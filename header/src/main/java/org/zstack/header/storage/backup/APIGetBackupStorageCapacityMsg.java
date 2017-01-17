@@ -46,4 +46,12 @@ public class APIGetBackupStorageCapacityMsg extends APISyncCallMessage {
     public void setBackupStorageUuids(List<String> backupStorageUuids) {
         this.backupStorageUuids = backupStorageUuids;
     }
+ 
+    public static APIGetBackupStorageCapacityMsg __example__() {
+        APIGetBackupStorageCapacityMsg msg = new APIGetBackupStorageCapacityMsg();
+
+
+        return msg;
+    }
+
 }

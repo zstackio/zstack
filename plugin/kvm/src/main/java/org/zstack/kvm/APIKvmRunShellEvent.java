@@ -67,4 +67,12 @@ public class APIKvmRunShellEvent extends APIEvent {
     public void setInventory(Map<String, ShellResult> inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIKvmRunShellEvent __example__() {
+        APIKvmRunShellEvent event = new APIKvmRunShellEvent();
+
+
+        return event;
+    }
+
 }

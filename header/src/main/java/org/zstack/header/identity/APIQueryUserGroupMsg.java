@@ -18,4 +18,12 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIQueryUserGroupReply.class
 )
 public class APIQueryUserGroupMsg extends APIQueryMessage {
+ 
+    public static APIQueryUserGroupMsg __example__() {
+        APIQueryUserGroupMsg msg = new APIQueryUserGroupMsg();
+
+
+        return msg;
+    }
+
 }

@@ -25,4 +25,12 @@ public class APIUpdateSystemTagEvent extends APIEvent {
     public void setInventory(SystemTagInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIUpdateSystemTagEvent __example__() {
+        APIUpdateSystemTagEvent event = new APIUpdateSystemTagEvent();
+
+
+        return event;
+    }
+
 }

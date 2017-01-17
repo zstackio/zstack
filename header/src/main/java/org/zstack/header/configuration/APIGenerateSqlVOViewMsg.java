@@ -20,4 +20,12 @@ public class APIGenerateSqlVOViewMsg extends APIMessage {
     public void setBasePackageNames(List<String> basePackageNames) {
         this.basePackageNames = basePackageNames;
     }
+ 
+    public static APIGenerateSqlVOViewMsg __example__() {
+        APIGenerateSqlVOViewMsg msg = new APIGenerateSqlVOViewMsg();
+
+
+        return msg;
+    }
+
 }

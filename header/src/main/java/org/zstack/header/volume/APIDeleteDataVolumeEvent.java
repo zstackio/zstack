@@ -22,4 +22,12 @@ public class APIDeleteDataVolumeEvent extends APIEvent {
     public APIDeleteDataVolumeEvent() {
         super(null);
     }
+ 
+    public static APIDeleteDataVolumeEvent __example__() {
+        APIDeleteDataVolumeEvent event = new APIDeleteDataVolumeEvent();
+
+
+        return event;
+    }
+
 }

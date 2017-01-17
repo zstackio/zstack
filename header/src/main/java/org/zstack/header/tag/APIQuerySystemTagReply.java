@@ -18,4 +18,12 @@ public class APIQuerySystemTagReply extends APIQueryReply {
     public void setInventories(List<SystemTagInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIQuerySystemTagReply __example__() {
+        APIQuerySystemTagReply reply = new APIQuerySystemTagReply();
+
+
+        return reply;
+    }
+
 }

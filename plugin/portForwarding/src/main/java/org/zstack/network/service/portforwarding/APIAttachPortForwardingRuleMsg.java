@@ -78,4 +78,12 @@ public class APIAttachPortForwardingRuleMsg extends APIMessage {
     public void setVmNicUuid(String vmNicUuid) {
         this.vmNicUuid = vmNicUuid;
     }
+ 
+    public static APIAttachPortForwardingRuleMsg __example__() {
+        APIAttachPortForwardingRuleMsg msg = new APIAttachPortForwardingRuleMsg();
+
+
+        return msg;
+    }
+
 }

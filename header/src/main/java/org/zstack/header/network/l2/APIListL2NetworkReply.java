@@ -14,4 +14,12 @@ public class APIListL2NetworkReply extends APIReply {
     public void setInventories(List<L2NetworkInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIListL2NetworkReply __example__() {
+        APIListL2NetworkReply reply = new APIListL2NetworkReply();
+
+
+        return reply;
+    }
+
 }

@@ -17,4 +17,12 @@ import org.zstack.header.storage.primary.APIQueryPrimaryStorageReply;
         responseClass = APIQueryPrimaryStorageReply.class
 )
 public class APIQueryCephPrimaryStorageMsg extends APIQueryMessage {
+ 
+    public static APIQueryCephPrimaryStorageMsg __example__() {
+        APIQueryCephPrimaryStorageMsg msg = new APIQueryCephPrimaryStorageMsg();
+
+
+        return msg;
+    }
+
 }

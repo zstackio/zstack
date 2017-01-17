@@ -14,4 +14,12 @@ public class APIExpungeVmInstanceEvent extends APIEvent {
     public APIExpungeVmInstanceEvent(String apiId) {
         super(apiId);
     }
+ 
+    public static APIExpungeVmInstanceEvent __example__() {
+        APIExpungeVmInstanceEvent event = new APIExpungeVmInstanceEvent();
+
+
+        return event;
+    }
+
 }

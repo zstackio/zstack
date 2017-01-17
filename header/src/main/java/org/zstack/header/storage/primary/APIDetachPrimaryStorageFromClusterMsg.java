@@ -75,4 +75,12 @@ public class APIDetachPrimaryStorageFromClusterMsg extends APIMessage implements
     public void setClusterUuid(String clusterUuid) {
         this.clusterUuid = clusterUuid;
     }
+ 
+    public static APIDetachPrimaryStorageFromClusterMsg __example__() {
+        APIDetachPrimaryStorageFromClusterMsg msg = new APIDetachPrimaryStorageFromClusterMsg();
+
+
+        return msg;
+    }
+
 }

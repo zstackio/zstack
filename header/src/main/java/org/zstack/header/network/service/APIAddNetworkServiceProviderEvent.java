@@ -13,4 +13,12 @@ public class APIAddNetworkServiceProviderEvent extends APIEvent {
     public void setInventory(NetworkServiceProviderInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIAddNetworkServiceProviderEvent __example__() {
+        APIAddNetworkServiceProviderEvent event = new APIAddNetworkServiceProviderEvent();
+
+
+        return event;
+    }
+
 }

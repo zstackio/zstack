@@ -13,4 +13,12 @@ public class APIReimageVmInstanceEvent extends APIEvent {
     public APIReimageVmInstanceEvent() {
         super(null);
     }
+ 
+    public static APIReimageVmInstanceEvent __example__() {
+        APIReimageVmInstanceEvent event = new APIReimageVmInstanceEvent();
+
+
+        return event;
+    }
+
 }

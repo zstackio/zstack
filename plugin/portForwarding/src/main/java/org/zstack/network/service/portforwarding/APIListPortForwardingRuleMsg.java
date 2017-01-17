@@ -12,4 +12,12 @@ public class APIListPortForwardingRuleMsg extends APIListMessage {
     public APIListPortForwardingRuleMsg() {
     }
 
+ 
+    public static APIListPortForwardingRuleMsg __example__() {
+        APIListPortForwardingRuleMsg msg = new APIListPortForwardingRuleMsg();
+
+
+        return msg;
+    }
+
 }

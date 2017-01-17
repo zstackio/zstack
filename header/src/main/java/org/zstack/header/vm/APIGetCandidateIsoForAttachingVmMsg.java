@@ -28,4 +28,12 @@ public class APIGetCandidateIsoForAttachingVmMsg extends APISyncCallMessage impl
     public void setVmInstanceUuid(String vmInstanceUuid) {
         this.vmInstanceUuid = vmInstanceUuid;
     }
+ 
+    public static APIGetCandidateIsoForAttachingVmMsg __example__() {
+        APIGetCandidateIsoForAttachingVmMsg msg = new APIGetCandidateIsoForAttachingVmMsg();
+
+
+        return msg;
+    }
+
 }

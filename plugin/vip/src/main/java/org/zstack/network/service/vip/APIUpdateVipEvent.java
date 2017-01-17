@@ -24,4 +24,12 @@ public class APIUpdateVipEvent extends APIEvent {
     public APIUpdateVipEvent(String apiId) {
         super(apiId);
     }
+ 
+    public static APIUpdateVipEvent __example__() {
+        APIUpdateVipEvent event = new APIUpdateVipEvent();
+
+
+        return event;
+    }
+
 }

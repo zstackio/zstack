@@ -144,4 +144,12 @@ public class APIAddIpRangeMsg extends APICreateMessage implements L3NetworkMessa
     public void setGateway(String gateway) {
         this.gateway = gateway;
     }
+ 
+    public static APIAddIpRangeMsg __example__() {
+        APIAddIpRangeMsg msg = new APIAddIpRangeMsg();
+
+
+        return msg;
+    }
+
 }

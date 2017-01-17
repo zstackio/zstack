@@ -16,4 +16,12 @@ import org.zstack.header.rest.RestRequest;
 )
 public class APIQuerySecurityGroupMsg extends APIQueryMessage {
 
+ 
+    public static APIQuerySecurityGroupMsg __example__() {
+        APIQuerySecurityGroupMsg msg = new APIQuerySecurityGroupMsg();
+
+
+        return msg;
+    }
+
 }

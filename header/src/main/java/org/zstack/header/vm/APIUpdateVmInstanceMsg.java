@@ -103,4 +103,12 @@ public class APIUpdateVmInstanceMsg extends APIMessage implements VmInstanceMess
     public void setMemorySize(Long memorySize) {
         this.memorySize = memorySize;
     }
+ 
+    public static APIUpdateVmInstanceMsg __example__() {
+        APIUpdateVmInstanceMsg msg = new APIUpdateVmInstanceMsg();
+
+
+        return msg;
+    }
+
 }

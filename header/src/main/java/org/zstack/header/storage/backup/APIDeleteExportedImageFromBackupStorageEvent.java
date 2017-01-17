@@ -14,4 +14,12 @@ public class APIDeleteExportedImageFromBackupStorageEvent extends APIEvent {
     public APIDeleteExportedImageFromBackupStorageEvent(String apiId) {
         super(apiId);
     }
+ 
+    public static APIDeleteExportedImageFromBackupStorageEvent __example__() {
+        APIDeleteExportedImageFromBackupStorageEvent event = new APIDeleteExportedImageFromBackupStorageEvent();
+
+
+        return event;
+    }
+
 }

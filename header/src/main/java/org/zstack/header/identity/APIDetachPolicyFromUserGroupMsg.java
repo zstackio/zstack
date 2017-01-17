@@ -41,4 +41,12 @@ public class APIDetachPolicyFromUserGroupMsg extends APIMessage implements Accou
     public void setGroupUuid(String groupUuid) {
         this.groupUuid = groupUuid;
     }
+ 
+    public static APIDetachPolicyFromUserGroupMsg __example__() {
+        APIDetachPolicyFromUserGroupMsg msg = new APIDetachPolicyFromUserGroupMsg();
+
+
+        return msg;
+    }
+
 }

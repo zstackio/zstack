@@ -33,4 +33,12 @@ public class APIDeleteVmConsolePasswordMsg extends APIMessage implements VmInsta
         this.uuid = uuid;
     }
 }
+ 
+    public static APIDeleteVmConsolePasswordMsg __example__() {
+        APIDeleteVmConsolePasswordMsg msg = new APIDeleteVmConsolePasswordMsg();
+
+
+        return msg;
+    }
+
 

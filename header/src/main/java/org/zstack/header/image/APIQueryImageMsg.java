@@ -16,4 +16,12 @@ import org.zstack.header.rest.RestRequest;
 )
 public class APIQueryImageMsg extends APIQueryMessage {
 
+ 
+    public static APIQueryImageMsg __example__() {
+        APIQueryImageMsg msg = new APIQueryImageMsg();
+
+
+        return msg;
+    }
+
 }

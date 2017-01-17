@@ -16,4 +16,12 @@ public class APIQueryL2VlanNetworkReply extends APIQueryReply {
     public void setInventories(List<L2VlanNetworkInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIQueryL2VlanNetworkReply __example__() {
+        APIQueryL2VlanNetworkReply reply = new APIQueryL2VlanNetworkReply();
+
+
+        return reply;
+    }
+
 }

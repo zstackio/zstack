@@ -34,4 +34,12 @@ public class APILocalStorageGetVolumeMigratableHostsMsg extends APISyncCallMessa
     public void setPrimaryStorageUuid(String primaryStorageUuid) {
         this.primaryStorageUuid = primaryStorageUuid;
     }
+ 
+    public static APILocalStorageGetVolumeMigratableHostsMsg __example__() {
+        APILocalStorageGetVolumeMigratableHostsMsg msg = new APILocalStorageGetVolumeMigratableHostsMsg();
+
+
+        return msg;
+    }
+
 }

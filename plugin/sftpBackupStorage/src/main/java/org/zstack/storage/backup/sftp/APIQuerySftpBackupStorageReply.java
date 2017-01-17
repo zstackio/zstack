@@ -17,4 +17,12 @@ public class APIQuerySftpBackupStorageReply extends APIQueryReply {
     public void setInventories(List<SftpBackupStorageInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIQuerySftpBackupStorageReply __example__() {
+        APIQuerySftpBackupStorageReply reply = new APIQuerySftpBackupStorageReply();
+
+
+        return reply;
+    }
+
 }

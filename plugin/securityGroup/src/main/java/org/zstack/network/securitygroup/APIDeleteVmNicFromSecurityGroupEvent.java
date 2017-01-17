@@ -29,4 +29,12 @@ public class APIDeleteVmNicFromSecurityGroupEvent extends APIEvent {
     public APIDeleteVmNicFromSecurityGroupEvent(String apiId) {
         super(apiId);
     }
+ 
+    public static APIDeleteVmNicFromSecurityGroupEvent __example__() {
+        APIDeleteVmNicFromSecurityGroupEvent event = new APIDeleteVmNicFromSecurityGroupEvent();
+
+
+        return event;
+    }
+
 }

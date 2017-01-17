@@ -24,4 +24,12 @@ public class APIUpdateHostEvent extends APIEvent {
     public void setInventory(HostInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIUpdateHostEvent __example__() {
+        APIUpdateHostEvent event = new APIUpdateHostEvent();
+
+
+        return event;
+    }
+
 }

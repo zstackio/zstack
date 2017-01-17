@@ -57,4 +57,12 @@ public class APIGetPrimaryStorageCapacityMsg extends APISyncCallMessage {
     public void setAll(boolean all) {
         this.all = all;
     }
+ 
+    public static APIGetPrimaryStorageCapacityMsg __example__() {
+        APIGetPrimaryStorageCapacityMsg msg = new APIGetPrimaryStorageCapacityMsg();
+
+
+        return msg;
+    }
+
 }

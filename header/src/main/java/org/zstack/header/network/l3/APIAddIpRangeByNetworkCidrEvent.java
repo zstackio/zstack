@@ -24,4 +24,12 @@ public class APIAddIpRangeByNetworkCidrEvent extends APIEvent {
     public APIAddIpRangeByNetworkCidrEvent() {
         super(null);
     }
+ 
+    public static APIAddIpRangeByNetworkCidrEvent __example__() {
+        APIAddIpRangeByNetworkCidrEvent event = new APIAddIpRangeByNetworkCidrEvent();
+
+
+        return event;
+    }
+
 }

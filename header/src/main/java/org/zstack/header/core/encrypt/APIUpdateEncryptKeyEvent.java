@@ -17,4 +17,12 @@ public class APIUpdateEncryptKeyEvent extends APIEvent {
 		super(apiId);
 	}
 
+ 
+    public static APIUpdateEncryptKeyEvent __example__() {
+        APIUpdateEncryptKeyEvent event = new APIUpdateEncryptKeyEvent();
+
+
+        return event;
+    }
+
 }

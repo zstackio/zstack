@@ -23,4 +23,12 @@ public class APIDeleteBackupStorageEvent extends APIEvent {
         super(null);
     }
 
+ 
+    public static APIDeleteBackupStorageEvent __example__() {
+        APIDeleteBackupStorageEvent event = new APIDeleteBackupStorageEvent();
+
+
+        return event;
+    }
+
 }

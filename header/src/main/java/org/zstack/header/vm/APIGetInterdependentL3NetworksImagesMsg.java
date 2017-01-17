@@ -52,4 +52,12 @@ public class APIGetInterdependentL3NetworksImagesMsg extends APISyncCallMessage 
     public void setImageUuid(String imageUuid) {
         this.imageUuid = imageUuid;
     }
+ 
+    public static APIGetInterdependentL3NetworksImagesMsg __example__() {
+        APIGetInterdependentL3NetworksImagesMsg msg = new APIGetInterdependentL3NetworksImagesMsg();
+
+
+        return msg;
+    }
+
 }

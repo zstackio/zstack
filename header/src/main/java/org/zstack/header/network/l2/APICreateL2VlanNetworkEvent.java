@@ -47,4 +47,12 @@ public class APICreateL2VlanNetworkEvent extends APIEvent {
     public void setInventory(L2VlanNetworkInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APICreateL2VlanNetworkEvent __example__() {
+        APICreateL2VlanNetworkEvent event = new APICreateL2VlanNetworkEvent();
+
+
+        return event;
+    }
+
 }

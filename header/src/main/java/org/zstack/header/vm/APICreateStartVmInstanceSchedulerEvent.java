@@ -27,4 +27,12 @@ public class APICreateStartVmInstanceSchedulerEvent extends APIEvent {
     public APICreateStartVmInstanceSchedulerEvent() {
         super(null);
     }
+ 
+    public static APICreateStartVmInstanceSchedulerEvent __example__() {
+        APICreateStartVmInstanceSchedulerEvent event = new APICreateStartVmInstanceSchedulerEvent();
+
+
+        return event;
+    }
+
 }

@@ -12,4 +12,12 @@ public class APIAttachPolicyToUserGroupEvent extends APIEvent {
     public APIAttachPolicyToUserGroupEvent() {
         super(null);
     }
+ 
+    public static APIAttachPolicyToUserGroupEvent __example__() {
+        APIAttachPolicyToUserGroupEvent event = new APIAttachPolicyToUserGroupEvent();
+
+
+        return event;
+    }
+
 }

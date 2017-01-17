@@ -43,4 +43,12 @@ public class APIRemoveMonFromFusionstorBackupStorageMsg extends APIMessage imple
     public String getBackupStorageUuid() {
         return uuid;
     }
+ 
+    public static APIRemoveMonFromFusionstorBackupStorageMsg __example__() {
+        APIRemoveMonFromFusionstorBackupStorageMsg msg = new APIRemoveMonFromFusionstorBackupStorageMsg();
+
+
+        return msg;
+    }
+
 }

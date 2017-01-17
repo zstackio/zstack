@@ -41,4 +41,12 @@ public class APIRemoveUserFromGroupMsg extends APIMessage implements AccountMess
     public void setGroupUuid(String groupUuid) {
         this.groupUuid = groupUuid;
     }
+ 
+    public static APIRemoveUserFromGroupMsg __example__() {
+        APIRemoveUserFromGroupMsg msg = new APIRemoveUserFromGroupMsg();
+
+
+        return msg;
+    }
+
 }

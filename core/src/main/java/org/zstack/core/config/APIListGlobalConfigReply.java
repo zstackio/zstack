@@ -12,4 +12,12 @@ public class APIListGlobalConfigReply extends APIReply {
 	public void setInventories(GlobalConfigInventory[] inventories) {
     	this.inventories = inventories;
     }
+
+    public static APIListGlobalConfigReply __example__() {
+        APIListGlobalConfigReply reply = new APIListGlobalConfigReply();
+
+
+        return reply;
+    }
+
 }

@@ -18,4 +18,12 @@ public class APIQueryGlobalConfigReply extends APIQueryReply {
     public void setInventories(List<GlobalConfigInventory> inventories) {
         this.inventories = inventories;
     }
+
+    public static APIQueryGlobalConfigReply __example__() {
+        APIQueryGlobalConfigReply reply = new APIQueryGlobalConfigReply();
+
+
+        return reply;
+    }
+
 }

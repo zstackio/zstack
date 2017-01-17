@@ -31,4 +31,12 @@ public class APIGetVmHostnameMsg extends APISyncCallMessage implements VmInstanc
     public String getVmInstanceUuid() {
         return uuid;
     }
+ 
+    public static APIGetVmHostnameMsg __example__() {
+        APIGetVmHostnameMsg msg = new APIGetVmHostnameMsg();
+
+
+        return msg;
+    }
+
 }

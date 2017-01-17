@@ -33,4 +33,12 @@ public class APIAddSimulatorBackupStorageMsg extends APIAddBackupStorageMsg {
 	public void setTotalCapacity(long totalCapacity) {
     	this.totalCapacity = totalCapacity;
     }
+ 
+    public static APIAddSimulatorBackupStorageMsg __example__() {
+        APIAddSimulatorBackupStorageMsg msg = new APIAddSimulatorBackupStorageMsg();
+
+
+        return msg;
+    }
+
 }

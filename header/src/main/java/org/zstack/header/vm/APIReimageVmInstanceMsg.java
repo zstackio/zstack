@@ -19,4 +19,12 @@ public class APIReimageVmInstanceMsg extends APIMessage implements VmInstanceMes
 
     @APIParam(resourceType = VmInstanceVO.class, checkAccount = true, operationTarget = true)
     private String vmInstanceUuid;
+ 
+    public static APIReimageVmInstanceMsg __example__() {
+        APIReimageVmInstanceMsg msg = new APIReimageVmInstanceMsg();
+
+
+        return msg;
+    }
+
 }

@@ -16,4 +16,12 @@ public class APIQueryLdapServerReply extends APIQueryReply {
     public void setInventories(List<LdapServerInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIQueryLdapServerReply __example__() {
+        APIQueryLdapServerReply reply = new APIQueryLdapServerReply();
+
+
+        return reply;
+    }
+
 }

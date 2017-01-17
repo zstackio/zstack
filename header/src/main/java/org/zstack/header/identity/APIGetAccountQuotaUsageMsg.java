@@ -31,4 +31,12 @@ public class APIGetAccountQuotaUsageMsg extends APISyncCallMessage implements Ac
     public void setUuid(String uuid) {
         this.uuid = uuid;
     }
+ 
+    public static APIGetAccountQuotaUsageMsg __example__() {
+        APIGetAccountQuotaUsageMsg msg = new APIGetAccountQuotaUsageMsg();
+
+
+        return msg;
+    }
+
 }

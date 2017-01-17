@@ -17,4 +17,12 @@ public class APIGetVersionReply extends APIReply {
     public void setVersion(String version) {
         this.version = version;
     }
+ 
+    public static APIGetVersionReply __example__() {
+        APIGetVersionReply reply = new APIGetVersionReply();
+
+
+        return reply;
+    }
+
 }

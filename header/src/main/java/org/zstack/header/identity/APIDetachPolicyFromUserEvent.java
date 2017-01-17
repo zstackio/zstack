@@ -14,4 +14,12 @@ public class APIDetachPolicyFromUserEvent extends APIEvent {
     public APIDetachPolicyFromUserEvent(String apiId) {
         super(apiId);
     }
+ 
+    public static APIDetachPolicyFromUserEvent __example__() {
+        APIDetachPolicyFromUserEvent event = new APIDetachPolicyFromUserEvent();
+
+
+        return event;
+    }
+
 }

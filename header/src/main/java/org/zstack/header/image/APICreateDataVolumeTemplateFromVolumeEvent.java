@@ -24,4 +24,12 @@ public class APICreateDataVolumeTemplateFromVolumeEvent extends APIEvent {
     public void setInventory(ImageInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APICreateDataVolumeTemplateFromVolumeEvent __example__() {
+        APICreateDataVolumeTemplateFromVolumeEvent event = new APICreateDataVolumeTemplateFromVolumeEvent();
+
+
+        return event;
+    }
+
 }

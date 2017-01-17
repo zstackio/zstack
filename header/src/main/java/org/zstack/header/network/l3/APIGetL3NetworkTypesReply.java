@@ -22,4 +22,12 @@ public class APIGetL3NetworkTypesReply extends APIReply {
     public void setL3NetworkTypes(List<String> l3NetworkTypes) {
         this.l3NetworkTypes = l3NetworkTypes;
     }
+ 
+    public static APIGetL3NetworkTypesReply __example__() {
+        APIGetL3NetworkTypesReply reply = new APIGetL3NetworkTypesReply();
+
+
+        return reply;
+    }
+
 }

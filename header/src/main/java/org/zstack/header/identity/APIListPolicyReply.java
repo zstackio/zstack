@@ -14,4 +14,12 @@ public class APIListPolicyReply extends APIReply {
     public void setInventories(List<PolicyInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIListPolicyReply __example__() {
+        APIListPolicyReply reply = new APIListPolicyReply();
+
+
+        return reply;
+    }
+
 }

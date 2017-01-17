@@ -53,4 +53,12 @@ public class APIUpdateInstanceOfferingMsg extends APIMessage implements Instance
     public String getInstanceOfferingUuid() {
         return uuid;
     }
+ 
+    public static APIUpdateInstanceOfferingMsg __example__() {
+        APIUpdateInstanceOfferingMsg msg = new APIUpdateInstanceOfferingMsg();
+
+
+        return msg;
+    }
+
 }

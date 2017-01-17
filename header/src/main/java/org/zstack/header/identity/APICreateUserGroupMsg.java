@@ -38,4 +38,12 @@ public class APICreateUserGroupMsg extends APICreateMessage implements AccountMe
     public void setDescription(String description) {
         this.description = description;
     }
+ 
+    public static APICreateUserGroupMsg __example__() {
+        APICreateUserGroupMsg msg = new APICreateUserGroupMsg();
+
+
+        return msg;
+    }
+
 }

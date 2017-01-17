@@ -22,4 +22,12 @@ public class APIUpdateAccountEvent extends APIEvent {
     public void setInventory(AccountInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIUpdateAccountEvent __example__() {
+        APIUpdateAccountEvent event = new APIUpdateAccountEvent();
+
+
+        return event;
+    }
+
 }

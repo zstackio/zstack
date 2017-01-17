@@ -12,4 +12,12 @@ public class APIListPrimaryStorageMsg extends APIListMessage {
     public APIListPrimaryStorageMsg(List<String> uuids) {
         super(uuids);
     }
+ 
+    public static APIListPrimaryStorageMsg __example__() {
+        APIListPrimaryStorageMsg msg = new APIListPrimaryStorageMsg();
+
+
+        return msg;
+    }
+
 }

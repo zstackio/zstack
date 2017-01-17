@@ -18,4 +18,12 @@ public class APIQuerySchedulerReply extends APIQueryReply {
     public void setInventories(List<SchedulerInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIQuerySchedulerReply __example__() {
+        APIQuerySchedulerReply reply = new APIQuerySchedulerReply();
+
+
+        return reply;
+    }
+
 }

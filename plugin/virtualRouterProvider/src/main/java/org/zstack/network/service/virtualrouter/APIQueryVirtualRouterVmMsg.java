@@ -18,4 +18,12 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIQueryApplianceVmReply.class
 )
 public class APIQueryVirtualRouterVmMsg extends APIQueryApplianceVmMsg {
+ 
+    public static APIQueryVirtualRouterVmMsg __example__() {
+        APIQueryVirtualRouterVmMsg msg = new APIQueryVirtualRouterVmMsg();
+
+
+        return msg;
+    }
+
 }

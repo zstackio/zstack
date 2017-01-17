@@ -16,4 +16,12 @@ public class APIQueryL3NetworkReply extends APIQueryReply {
     public void setInventories(List<L3NetworkInventory> inventories) {
         this.inventories = inventories;
     }
+ 
+    public static APIQueryL3NetworkReply __example__() {
+        APIQueryL3NetworkReply reply = new APIQueryL3NetworkReply();
+
+
+        return reply;
+    }
+
 }

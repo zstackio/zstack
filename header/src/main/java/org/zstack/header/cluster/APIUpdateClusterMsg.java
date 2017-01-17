@@ -50,4 +50,12 @@ public class APIUpdateClusterMsg extends APIMessage implements ClusterMessage {
     public String getClusterUuid() {
         return uuid;
     }
+ 
+    public static APIUpdateClusterMsg __example__() {
+        APIUpdateClusterMsg msg = new APIUpdateClusterMsg();
+
+
+        return msg;
+    }
+
 }

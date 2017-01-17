@@ -24,4 +24,12 @@ public class APIUpdateImageEvent extends APIEvent {
     public void setInventory(ImageInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIUpdateImageEvent __example__() {
+        APIUpdateImageEvent event = new APIUpdateImageEvent();
+
+
+        return event;
+    }
+
 }

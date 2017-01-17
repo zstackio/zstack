@@ -47,4 +47,12 @@ public class APIAddIpRangeEvent extends APIEvent {
     public void setInventory(IpRangeInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIAddIpRangeEvent __example__() {
+        APIAddIpRangeEvent event = new APIAddIpRangeEvent();
+
+
+        return event;
+    }
+
 }

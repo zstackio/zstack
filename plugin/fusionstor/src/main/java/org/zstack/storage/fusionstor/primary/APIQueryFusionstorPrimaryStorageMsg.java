@@ -17,4 +17,12 @@ import org.zstack.header.storage.primary.APIQueryPrimaryStorageReply;
         responseClass = APIQueryPrimaryStorageReply.class
 )
 public class APIQueryFusionstorPrimaryStorageMsg extends APIQueryMessage {
+ 
+    public static APIQueryFusionstorPrimaryStorageMsg __example__() {
+        APIQueryFusionstorPrimaryStorageMsg msg = new APIQueryFusionstorPrimaryStorageMsg();
+
+
+        return msg;
+    }
+
 }

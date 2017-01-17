@@ -46,4 +46,12 @@ public class APIChangeHostStateEvent extends APIEvent {
     public void setInventory(HostInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIChangeHostStateEvent __example__() {
+        APIChangeHostStateEvent event = new APIChangeHostStateEvent();
+
+
+        return event;
+    }
+
 }

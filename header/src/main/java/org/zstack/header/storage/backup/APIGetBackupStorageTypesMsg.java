@@ -33,4 +33,12 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIGetBackupStorageTypesReply.class
 )
 public class APIGetBackupStorageTypesMsg extends APISyncCallMessage {
+ 
+    public static APIGetBackupStorageTypesMsg __example__() {
+        APIGetBackupStorageTypesMsg msg = new APIGetBackupStorageTypesMsg();
+
+
+        return msg;
+    }
+
 }

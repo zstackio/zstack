@@ -28,4 +28,12 @@ public class APIValidateSessionMsg extends APISessionMessage {
     public void setSessionUuid(String sessionUuid) {
         this.sessionUuid = sessionUuid;
     }
+ 
+    public static APIValidateSessionMsg __example__() {
+        APIValidateSessionMsg msg = new APIValidateSessionMsg();
+
+
+        return msg;
+    }
+
 }

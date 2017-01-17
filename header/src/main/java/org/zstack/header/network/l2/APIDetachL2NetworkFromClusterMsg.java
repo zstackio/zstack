@@ -69,4 +69,12 @@ public class APIDetachL2NetworkFromClusterMsg extends APIMessage implements L2Ne
         return l2NetworkUuid;
     }
 
+ 
+    public static APIDetachL2NetworkFromClusterMsg __example__() {
+        APIDetachL2NetworkFromClusterMsg msg = new APIDetachL2NetworkFromClusterMsg();
+
+
+        return msg;
+    }
+
 }

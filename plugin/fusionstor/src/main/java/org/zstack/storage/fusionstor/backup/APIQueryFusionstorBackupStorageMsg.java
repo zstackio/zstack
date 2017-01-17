@@ -20,4 +20,12 @@ import org.zstack.header.storage.backup.BackupStorageConstant;
         responseClass = APIQueryBackupStorageReply.class
 )
 public class APIQueryFusionstorBackupStorageMsg extends APIQueryMessage {
+ 
+    public static APIQueryFusionstorBackupStorageMsg __example__() {
+        APIQueryFusionstorBackupStorageMsg msg = new APIQueryFusionstorBackupStorageMsg();
+
+
+        return msg;
+    }
+
 }

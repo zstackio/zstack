@@ -51,4 +51,12 @@ public class APIGetTaskProgressReply extends APIReply {private String progress;
     public void setLastOpDate(Timestamp lastOpDate) {
         this.lastOpDate = lastOpDate;
     }
+ 
+    public static APIGetTaskProgressReply __example__() {
+        APIGetTaskProgressReply reply = new APIGetTaskProgressReply();
+
+
+        return reply;
+    }
+
 }

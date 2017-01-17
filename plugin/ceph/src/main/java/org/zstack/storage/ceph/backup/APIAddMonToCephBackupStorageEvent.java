@@ -24,4 +24,12 @@ public class APIAddMonToCephBackupStorageEvent extends APIEvent {
     public void setInventory(CephBackupStorageInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIAddMonToCephBackupStorageEvent __example__() {
+        APIAddMonToCephBackupStorageEvent event = new APIAddMonToCephBackupStorageEvent();
+
+
+        return event;
+    }
+
 }

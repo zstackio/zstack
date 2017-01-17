@@ -16,4 +16,12 @@ import org.zstack.header.rest.RestRequest;
 )
 public class APIQueryDiskOfferingMsg extends APIQueryMessage {
 
+ 
+    public static APIQueryDiskOfferingMsg __example__() {
+        APIQueryDiskOfferingMsg msg = new APIQueryDiskOfferingMsg();
+
+
+        return msg;
+    }
+
 }

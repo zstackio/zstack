@@ -55,4 +55,12 @@ public class APIUpdateSftpBackupStorageMsg extends APIUpdateBackupStorageMsg {
     public void setPassword(String password) {
         this.password = password;
     }
+ 
+    public static APIUpdateSftpBackupStorageMsg __example__() {
+        APIUpdateSftpBackupStorageMsg msg = new APIUpdateSftpBackupStorageMsg();
+
+
+        return msg;
+    }
+
 }

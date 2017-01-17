@@ -26,4 +26,12 @@ public class APIGetDataVolumeAttachableVmMsg extends APISyncCallMessage implemen
     public void setVolumeUuid(String volumeUuid) {
         this.volumeUuid = volumeUuid;
     }
+ 
+    public static APIGetDataVolumeAttachableVmMsg __example__() {
+        APIGetDataVolumeAttachableVmMsg msg = new APIGetDataVolumeAttachableVmMsg();
+
+
+        return msg;
+    }
+
 }

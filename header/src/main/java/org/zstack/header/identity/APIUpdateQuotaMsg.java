@@ -50,4 +50,12 @@ public class APIUpdateQuotaMsg extends APIMessage implements AccountMessage {
     public void setValue(long value) {
         this.value = value;
     }
+ 
+    public static APIUpdateQuotaMsg __example__() {
+        APIUpdateQuotaMsg msg = new APIUpdateQuotaMsg();
+
+
+        return msg;
+    }
+
 }

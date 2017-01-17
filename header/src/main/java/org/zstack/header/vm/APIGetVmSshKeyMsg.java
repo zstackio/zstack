@@ -31,4 +31,12 @@ public class APIGetVmSshKeyMsg extends APISyncCallMessage implements VmInstanceM
     public String getUuid() {
         return uuid;
     }
+ 
+    public static APIGetVmSshKeyMsg __example__() {
+        APIGetVmSshKeyMsg msg = new APIGetVmSshKeyMsg();
+
+
+        return msg;
+    }
+
 }

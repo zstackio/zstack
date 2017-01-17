@@ -28,4 +28,12 @@ public class APIReconnectConsoleProxyAgentMsg extends APIMessage implements Cons
     public void setAgentUuids(List<String> agentUuids) {
         this.agentUuids = agentUuids;
     }
+ 
+    public static APIReconnectConsoleProxyAgentMsg __example__() {
+        APIReconnectConsoleProxyAgentMsg msg = new APIReconnectConsoleProxyAgentMsg();
+
+
+        return msg;
+    }
+
 }

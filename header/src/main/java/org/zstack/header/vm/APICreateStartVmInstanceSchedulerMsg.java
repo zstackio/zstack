@@ -59,4 +59,12 @@ public class APICreateStartVmInstanceSchedulerMsg extends APICreateSchedulerMess
         return getVmUuid();
     }
 
+ 
+    public static APICreateStartVmInstanceSchedulerMsg __example__() {
+        APICreateStartVmInstanceSchedulerMsg msg = new APICreateStartVmInstanceSchedulerMsg();
+
+
+        return msg;
+    }
+
 }

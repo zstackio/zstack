@@ -14,4 +14,12 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APICleanInvalidLdapBindingEvent.class
 )
 public class APICleanInvalidLdapBindingMsg extends APIMessage {
+ 
+    public static APICleanInvalidLdapBindingMsg __example__() {
+        APICleanInvalidLdapBindingMsg msg = new APICleanInvalidLdapBindingMsg();
+
+
+        return msg;
+    }
+
 }

@@ -74,4 +74,12 @@ public class APIChangeSecurityGroupStateMsg extends APIMessage {
     public void setStateEvent(String stateEvent) {
         this.stateEvent = stateEvent;
     }
+ 
+    public static APIChangeSecurityGroupStateMsg __example__() {
+        APIChangeSecurityGroupStateMsg msg = new APIChangeSecurityGroupStateMsg();
+
+
+        return msg;
+    }
+
 }

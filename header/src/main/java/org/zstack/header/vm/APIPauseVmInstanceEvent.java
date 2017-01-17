@@ -26,4 +26,12 @@ public class APIPauseVmInstanceEvent extends APIEvent {
     public void setInventory(VmInstanceInventory inventory) {
         this.inventory = inventory;
     }
+ 
+    public static APIPauseVmInstanceEvent __example__() {
+        APIPauseVmInstanceEvent event = new APIPauseVmInstanceEvent();
+
+
+        return event;
+    }
+
 }

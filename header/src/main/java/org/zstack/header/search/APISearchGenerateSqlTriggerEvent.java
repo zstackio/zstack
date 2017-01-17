@@ -20,4 +20,12 @@ public class APISearchGenerateSqlTriggerEvent extends APIEvent {
     public APISearchGenerateSqlTriggerEvent() {
         super(null);
     }
+ 
+    public static APISearchGenerateSqlTriggerEvent __example__() {
+        APISearchGenerateSqlTriggerEvent event = new APISearchGenerateSqlTriggerEvent();
+
+
+        return event;
+    }
+
 }
