@@ -2338,6 +2338,26 @@ public class VmInstanceBase extends AbstractVmInstance {
         bus.publish(evt);
     }
 
+    private boolean ipExists(final String l3uuid, final String ipAddress) {
+        SimpleQuery<VmNicVO> q = dbf.createQuery(VmNicVO.class);
+        q.add(VmNicVO_.l3NetworkUuid, Op.EQ, l3uuid);
+        q.add(VmNicVO_.ip, Op.EQ, ipAddress);
+        return q.isExists();
+    }
+
+    // If the VM is assigned static IP and it is now occupied, we will
+    // remove the static IP tag so that it can acquire IP dynamically.
+    // c.f. issue #1639
+    private void checkIpConflict(final String vmUuid) {
+        StaticIpOperator ipo = new StaticIpOperator();
+
+        for (Map.Entry<String, String> entry: ipo.getStaticIpbyVmUuid(vmUuid).entrySet()) {
+            if (ipExists(entry.getKey(), entry.getValue())) {
+                ipo.deleteStaticIpByVmUuidAndL3Uuid(vmUuid, entry.getKey());
+            }
+        }
+    }
+
     private void recoverVm(final Completion completion) {
         final VmInstanceInventory vm = getSelfInventory();
         final List<RecoverVmExtensionPoint> exts = pluginRgty.getExtensionList(RecoverVmExtensionPoint.class);
@@ -2357,6 +2377,16 @@ public class VmInstanceBase extends AbstractVmInstance {
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "check-ip-conflict";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        checkIpConflict(vm.getUuid());
+                        trigger.next();
+                    }
+                });
+
                 flow(new NoRollbackFlow() {
                     String __name__ = "recover-root-volume";
 
