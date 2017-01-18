@@ -34,8 +34,13 @@ import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageStatus;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.storage.primary.*;
-import org.zstack.header.storage.snapshot.*;
+import org.zstack.header.storage.primary.DownloadImageToPrimaryStorageCacheMsg;
+import org.zstack.header.storage.primary.DownloadImageToPrimaryStorageCacheReply;
+import org.zstack.header.storage.primary.PrimaryStorageConstant;
+import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
+import org.zstack.header.storage.snapshot.VolumeSnapshotTree;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO_;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.volume.VolumeInventory;
@@ -51,7 +56,10 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 
 import static org.zstack.utils.CollectionDSL.list;
@@ -102,6 +110,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
         public String dstPassword;
         public String dstUsername;
         public Integer dstPort = 22;
+        public String stage;
     }
 
     class BackingImage {
@@ -291,6 +300,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                             to.path = backingImage.path;
                             cmd.md5s = list(to);
 
+
                             callKvmHost(srcHostUuid, ref.getPrimaryStorageUuid(), LocalStorageKvmBackend.GET_MD5_PATH, cmd, GetMd5Rsp.class, new ReturnValueCompletion<GetMd5Rsp>(trigger) {
                                 @Override
                                 public void success(GetMd5Rsp rsp) {
@@ -319,7 +329,11 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                                     q.add(ProgressVO_.processType, SimpleQuery.Op.EQ, ProgressConstants.ProgressType.LocalStorageMigrateVolume.toString());
                                     q.add(ProgressVO_.resourceUuid, SimpleQuery.Op.EQ, rootVolume.getUuid());
                                     if (q.find() != null) {
-                                        dbf.remove(q.find());
+                                        try {
+                                            dbf.remove(q.find());
+                                        } catch (Exception e) {
+                                            logger.warn("no need delete, it was deleted...");
+                                        }
                                     }
                                 }
 

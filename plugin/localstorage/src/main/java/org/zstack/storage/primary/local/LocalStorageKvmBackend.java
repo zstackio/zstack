@@ -508,6 +508,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         public List<GetMd5TO> md5s;
         public String sendCommandUrl;
         public String volumeUuid;
+        public String stage;
     }
 
     public static class Md5TO {
@@ -526,6 +527,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         public List<Md5TO> md5s;
         public String sendCommandUrl;
         public String volumeUuid;
+        public String stage;
     }
 
     @ApiTimeout(apiClasses = {APILocalStorageMigrateVolumeMsg.class})
@@ -1835,7 +1837,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     @Override
-    public List<Flow> createMigrateBitsFlow(final MigrateBitsStruct struct) {
+    public List<Flow> createMigrateBitsVolumeFlow(final MigrateBitsStruct struct) {
         List<Flow> flows = new ArrayList<Flow>();
 
         SimpleQuery<KVMHostVO> q = dbf.createQuery(KVMHostVO.class);
@@ -1855,6 +1857,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             Long backingFileSize;
             String backingFileMd5;
             ImageVO image;
+            Boolean hasbackingfile = false;
         }
         final Context context = new Context();
 
@@ -1888,6 +1891,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                     }
                 });
             } else {
+                context.hasbackingfile = true;
                 flows.add(new NoRollbackFlow() {
                     String __name__ = "get-backing-file-of-root-volume";
 
@@ -1957,6 +1961,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                         to.path = context.backingFilePath;
                         cmd.md5s = list(to);
                         cmd.volumeUuid = struct.getVolume().getUuid();
+                        cmd.stage = PrimaryStorageConstant.MIGRATE_VOLUME_BACKING_FILE_GET_MD5_STAGE;
 
                         httpCall(GET_MD5_PATH, struct.getSrcHostUuid(), cmd, false, GetMd5Rsp.class, new ReturnValueCompletion<GetMd5Rsp>(trigger) {
                             @Override
@@ -1995,6 +2000,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                 cmd.dstPort = port;
                                 cmd.paths = list(context.backingFilePath);
                                 cmd.uuid = context.rootVolumeUuid;
+                                cmd.stage = PrimaryStorageConstant.MIGRATE_VOLUME_BACKING_FILE_COPY_STAGE;
 
                                 httpCall(LocalStorageKvmMigrateVmFlow.COPY_TO_REMOTE_BITS_PATH, struct.getSrcHostUuid(), cmd, false,
                                         AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger, chain) {
@@ -2108,6 +2114,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                         CheckMd5sumCmd cmd = new CheckMd5sumCmd();
                         cmd.md5s = list(to);
                         cmd.volumeUuid = struct.getVolume().getUuid();
+                        cmd.stage = PrimaryStorageConstant.MIGRATE_VOLUME_BACKING_FILE_CHECK_MD5_STAGE;
 
                         httpCall(CHECK_MD5_PATH, struct.getDestHostUuid(), cmd, false, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
                             @Override
@@ -2133,6 +2140,11 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 GetMd5Cmd cmd = new GetMd5Cmd();
                 cmd.sendCommandUrl = restf.getSendCommandUrl();
                 cmd.volumeUuid = struct.getVolume().getUuid();
+                if (context.hasbackingfile) {
+                    cmd.stage = PrimaryStorageConstant.MIGRATE_VOLUME_AFTER_BACKING_FILE_GET_MD5_STAGE;
+                } else {
+                    cmd.stage = PrimaryStorageConstant.MIGRATE_VOLUME_GET_MD5_STAGE;
+                }
                 cmd.md5s = CollectionUtils.transformToList(struct.getInfos(), new Function<GetMd5TO, ResourceInfo>() {
                     @Override
                     public GetMd5TO call(ResourceInfo arg) {
@@ -2163,15 +2175,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
             List<String> migrated;
 
-            private void deleteProgress() {
-                SimpleQuery<ProgressVO> q = dbf.createQuery(ProgressVO.class);
-                q.add(ProgressVO_.processType, SimpleQuery.Op.EQ, ProgressConstants.ProgressType.LocalStorageMigrateVolume.toString());
-                q.add(ProgressVO_.resourceUuid, SimpleQuery.Op.EQ, struct.getInfos().get(0).getResourceRef().getResourceUuid());
-                if (q.find() != null) {
-                    dbf.remove(q.find());
-                }
-            }
-
             @Override
             public void run(final FlowTrigger trigger, Map data) {
                 final CopyBitsFromRemoteCmd cmd = new CopyBitsFromRemoteCmd();
@@ -2180,6 +2183,11 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 cmd.dstPassword = password;
                 cmd.dstPort = port;
                 cmd.sendCommandUrl = restf.getSendCommandUrl();
+                if(context.hasbackingfile) {
+                    cmd.stage = PrimaryStorageConstant.MIGRATE_VOLUME_AFTER_BACKING_FILE_COPY_STAGE;
+                } else {
+                    cmd.stage = PrimaryStorageConstant.MIGRATE_VOLUME_COPY_STAGE;
+                }
                 cmd.paths = CollectionUtils.transformToList(struct.getInfos(), new Function<String, ResourceInfo>() {
                     @Override
                     public String call(ResourceInfo arg) {
@@ -2192,14 +2200,12 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                         AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
                             @Override
                             public void success(AgentResponse rsp) {
-                                deleteProgress();
                                 migrated = cmd.paths;
                                 trigger.next();
                             }
 
                             @Override
                             public void fail(ErrorCode errorCode) {
-                                deleteProgress();
                                 trigger.fail(errorCode);
                             }
                         });
@@ -2247,20 +2253,40 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         flows.add(new NoRollbackFlow() {
             String __name__ = "check-md5-on-dst";
 
+            private void deleteProgress() {
+                SimpleQuery<ProgressVO> q = dbf.createQuery(ProgressVO.class);
+                q.add(ProgressVO_.processType, SimpleQuery.Op.EQ, ProgressConstants.ProgressType.LocalStorageMigrateVolume.toString());
+                q.add(ProgressVO_.resourceUuid, SimpleQuery.Op.EQ, struct.getInfos().get(0).getResourceRef().getResourceUuid());
+                if (q.find() != null) {
+                    try {
+                        dbf.remove(q.find());
+                    } catch (Exception e) {
+                        logger.warn("no need delete, it was deleted...");
+                    }
+                }
+            }
+
             @Override
             public void run(final FlowTrigger trigger, Map data) {
                 CheckMd5sumCmd cmd = new CheckMd5sumCmd();
                 cmd.sendCommandUrl = restf.getSendCommandUrl();
                 cmd.md5s = context.getMd5Rsp.md5s;
                 cmd.volumeUuid = struct.getVolume().getUuid();
+                if (context.hasbackingfile) {
+                    cmd.stage = PrimaryStorageConstant.MIGRATE_VOLUME_AFTER_BACKING_FILE_CHECK_MD5_STAGE;
+                } else {
+                    cmd.stage = PrimaryStorageConstant.MIGRATE_VOLUME_CHECK_MD5_STAGE;
+                }
                 httpCall(CHECK_MD5_PATH, struct.getDestHostUuid(), cmd, false, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
                     @Override
                     public void success(AgentResponse rsp) {
+                        deleteProgress();
                         trigger.next();
                     }
 
                     @Override
                     public void fail(ErrorCode errorCode) {
+                        deleteProgress();
                         trigger.fail(errorCode);
                     }
                 });
