@@ -365,7 +365,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     }
                 });
 
-                List<Flow> flows = bkd.createMigrateBitsFlow(struct);
+                List<Flow> flows = bkd.createMigrateBitsVolumeFlow(struct);
                 for (Flow fl : flows) {
                     flow(fl);
                 }

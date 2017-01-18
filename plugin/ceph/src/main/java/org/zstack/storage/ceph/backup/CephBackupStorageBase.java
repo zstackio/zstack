@@ -659,7 +659,11 @@ public class CephBackupStorageBase extends BackupStorageBase {
                 q.add(ProgressVO_.processType, SimpleQuery.Op.EQ, ProgressConstants.ProgressType.AddImage.toString());
                 q.add(ProgressVO_.resourceUuid, SimpleQuery.Op.EQ, msg.getImageInventory().getUuid());
                 if (q.find() != null) {
-                    dbf.remove(q.find());
+                    try {
+                        dbf.remove(q.find());
+                    } catch (Exception e) {
+                        logger.warn("no need delete, it was deleted...");
+                    }
                 }
             }
             @Override
@@ -698,7 +702,11 @@ public class CephBackupStorageBase extends BackupStorageBase {
                 q.add(ProgressVO_.processType, SimpleQuery.Op.EQ, ProgressConstants.ProgressType.AddImage.toString());
                 q.add(ProgressVO_.resourceUuid, SimpleQuery.Op.EQ, msg.getVolume().getUuid());
                 if (q.find() != null) {
-                    dbf.remove(q.find());
+                    try {
+                        dbf.remove(q.find());
+                    } catch (Exception e) {
+                        logger.warn("no need delete, it was deleted...");
+                    }
                 }
             }
             @Override
