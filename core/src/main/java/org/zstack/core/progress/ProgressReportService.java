@@ -140,8 +140,12 @@ public class ProgressReportService extends AbstractService implements Management
         // please notice if there are no conditions that result more than two vo found...
         q.add(ProgressVO_.processType, SimpleQuery.Op.EQ, cmd.getProcessType());
         q.add(ProgressVO_.resourceUuid, SimpleQuery.Op.EQ, cmd.getResourceUuid());
-        if (q.isExists()) {
-            q.list().stream().forEach(p -> dbf.remove(p));
+        if (q.find() != null) {
+            try {
+                dbf.remove(q.find());
+            } catch (Exception e) {
+                logger.warn("no need delete, it was deleted...");
+            }
         }
     }
 
@@ -151,7 +155,7 @@ public class ProgressReportService extends AbstractService implements Management
     }
 
     private void updateProgress(ProgressReportCmd cmd) {
-        logger.debug(String.format("update progress and during processing, progress is: %s", cmd.getProgress()));
+        logger.debug(String.format("update progress and during processing, progress is: %s, resource is: %s", cmd.getProgress(), cmd.getResourceUuid()));
         SimpleQuery<ProgressVO> q = dbf.createQuery(ProgressVO.class);
         q.add(ProgressVO_.processType, SimpleQuery.Op.EQ, cmd.getProcessType());
         q.add(ProgressVO_.resourceUuid, SimpleQuery.Op.EQ, cmd.getResourceUuid());
