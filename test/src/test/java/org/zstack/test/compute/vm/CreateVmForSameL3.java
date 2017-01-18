@@ -1,13 +1,12 @@
 package org.zstack.test.compute.vm;
 
-import junit.framework.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.thread.SyncThread;
-import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.image.ImageInventory;
@@ -18,6 +17,8 @@ import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.deployer.Deployer;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,6 +27,7 @@ import java.util.concurrent.TimeUnit;
 
 // this is called by other unit test cases
 public class CreateVmForSameL3 {
+    CLogger logger = Utils.getLogger(CreateVmForSameL3.class);
     Deployer deployer;
     Api api;
     ComponentLoader loader;
@@ -33,6 +35,9 @@ public class CreateVmForSameL3 {
     DatabaseFacade dbf;
     int vmNum = 1;
     CountDownLatch latch = new CountDownLatch(vmNum);
+
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
 
     @Before
     public void setUp() throws Exception {
@@ -45,14 +50,8 @@ public class CreateVmForSameL3 {
         dbf = loader.getComponent(DatabaseFacade.class);
     }
 
-    @SyncThread(level = 300)
-    private void createVm(VmInstanceInventory vm, String rootDiskUuid, List<String> nws, List<String> disks) throws ApiSenderException {
-        try {
-            api.createVmByFullConfig(vm, rootDiskUuid, nws, disks);
-        } finally {
-            latch.countDown();
-        }
-    }
+
+
 
     @Test
     public void test() throws ApiSenderException, InterruptedException {
@@ -73,13 +72,8 @@ public class CreateVmForSameL3 {
             vm.setType(VmInstanceConstant.USER_VM_TYPE);
             vm.setInstanceOfferingUuid(ioinv.getUuid());
             vm.setImageUuid(iminv.getUuid());
-            try {
-                createVm(vm, dinvs.get(0).getUuid(), nws, disks);
-            } catch (ApiMessageInterceptionException e) {
-                Assert.assertEquals(e instanceof ApiMessageInterceptionException, true);
-            } catch (Throwable t) {
-                Assert.assertEquals(t.toString(), "Unknown error");
-            }
+            thrown.expect(ApiSenderException.class);
+            api.createVmByFullConfig(vm, dinvs.get(0).getUuid(), nws, disks);
         }
         latch.await(1, TimeUnit.MINUTES);
     }
