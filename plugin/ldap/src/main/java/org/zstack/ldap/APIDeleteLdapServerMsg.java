@@ -4,7 +4,6 @@ import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
-import org.zstack.header.rest.RestResponse;
 
 
 @RestRequest(
@@ -27,7 +26,7 @@ public class APIDeleteLdapServerMsg extends APIDeleteMessage {
  
     public static APIDeleteLdapServerMsg __example__() {
         APIDeleteLdapServerMsg msg = new APIDeleteLdapServerMsg();
-
+        msg.setUuid(uuid());
 
         return msg;
     }

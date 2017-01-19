@@ -25,8 +25,13 @@ public class APICreateLdapBindingEvent extends APIEvent {
  
     public static APICreateLdapBindingEvent __example__() {
         APICreateLdapBindingEvent event = new APICreateLdapBindingEvent();
+        LdapAccountRefInventory inventory = new LdapAccountRefInventory();
+        inventory.setUuid(uuid());
+        inventory.setLdapUid("ou=Employee,uid=test");
+        inventory.setAccountUuid(uuid());
+        inventory.setLdapServerUuid(uuid());
 
-
+        event.setInventory(inventory);
         return event;
     }
 
