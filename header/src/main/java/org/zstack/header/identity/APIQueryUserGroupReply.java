@@ -5,6 +5,8 @@ import org.zstack.header.rest.RestResponse;
 
 import java.util.List;
 
+import static org.zstack.utils.CollectionDSL.list;
+
 /**
  * Created by frank on 7/14/2015.
  */
@@ -22,7 +24,11 @@ public class APIQueryUserGroupReply extends APIQueryReply {
  
     public static APIQueryUserGroupReply __example__() {
         APIQueryUserGroupReply reply = new APIQueryUserGroupReply();
-
+        UserGroupInventory inventory = new UserGroupInventory();
+        inventory.setName("usergroup");
+        inventory.setUuid(uuid());
+        inventory.setAccountUuid(uuid());
+        reply.setInventories(list(inventory));
 
         return reply;
     }

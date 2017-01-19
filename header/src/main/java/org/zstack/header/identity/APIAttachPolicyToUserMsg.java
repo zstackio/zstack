@@ -41,6 +41,8 @@ public class APIAttachPolicyToUserMsg extends APIMessage implements AccountMessa
     public static APIAttachPolicyToUserMsg __example__() {
         APIAttachPolicyToUserMsg msg = new APIAttachPolicyToUserMsg();
 
+        msg.setPolicyUuid(uuid());
+        msg.setUserUuid(uuid());
 
         return msg;
     }

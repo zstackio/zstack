@@ -7,6 +7,8 @@ import org.zstack.header.rest.RestRequest;
 
 import java.util.List;
 
+import static org.zstack.utils.CollectionDSL.list;
+
 /**
  * Created by frank on 7/13/2015.
  */
@@ -64,8 +66,10 @@ public class APIRevokeResourceSharingMsg extends APIMessage implements AccountMe
  
     public static APIRevokeResourceSharingMsg __example__() {
         APIRevokeResourceSharingMsg msg = new APIRevokeResourceSharingMsg();
-
-
+        msg.setAccountUuids(list(uuid(), uuid()));
+        msg.setResourceUuids(list(uuid(), uuid()));
+        msg.setToPublic(false);
+        msg.setAll(false);
         return msg;
     }
 

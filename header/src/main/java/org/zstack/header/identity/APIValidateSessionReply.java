@@ -23,8 +23,7 @@ public class APIValidateSessionReply extends APIReply {
  
     public static APIValidateSessionReply __example__() {
         APIValidateSessionReply reply = new APIValidateSessionReply();
-
-
+        reply.setValidSession(true);
         return reply;
     }
 

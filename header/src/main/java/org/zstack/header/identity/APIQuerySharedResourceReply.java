@@ -5,6 +5,8 @@ import org.zstack.header.rest.RestResponse;
 
 import java.util.List;
 
+import static org.zstack.utils.CollectionDSL.list;
+
 /**
  * Created by frank on 2/23/2016.
  */
@@ -22,8 +24,13 @@ public class APIQuerySharedResourceReply extends APIQueryReply {
  
     public static APIQuerySharedResourceReply __example__() {
         APIQuerySharedResourceReply reply = new APIQuerySharedResourceReply();
-
-
+        SharedResourceInventory inventory = new SharedResourceInventory();
+        inventory.setOwnerAccountUuid(uuid());
+        inventory.setReceiverAccountUuid(uuid());
+        inventory.setResourceUuid(uuid());
+        inventory.setResourceType("ImageVO");
+        inventory.setToPublic(false);
+        reply.setInventories(list(inventory));
         return reply;
     }
 

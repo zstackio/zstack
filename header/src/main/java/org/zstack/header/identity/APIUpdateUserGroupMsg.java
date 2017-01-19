@@ -4,7 +4,6 @@ import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
-import org.zstack.header.rest.RestResponse;
 
 /**
  * Created by xing5 on 2016/3/25.
@@ -55,8 +54,8 @@ public class APIUpdateUserGroupMsg extends APIMessage implements AccountMessage 
  
     public static APIUpdateUserGroupMsg __example__() {
         APIUpdateUserGroupMsg msg = new APIUpdateUserGroupMsg();
-
-
+        msg.setName("newname");
+        msg.setUuid(uuid());
         return msg;
     }
 

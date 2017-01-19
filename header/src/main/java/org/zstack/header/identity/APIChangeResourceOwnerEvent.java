@@ -27,8 +27,14 @@ public class APIChangeResourceOwnerEvent extends APIEvent {
  
     public static APIChangeResourceOwnerEvent __example__() {
         APIChangeResourceOwnerEvent event = new APIChangeResourceOwnerEvent();
+        AccountResourceRefInventory inventory = new AccountResourceRefInventory();
+        inventory.setAccountUuid(uuid());
+        inventory.setResourceUuid(uuid());
+        inventory.setShared(false);
+        inventory.setResourceType("ImageVO");
+        inventory.setId(1);
 
-
+        event.setInventory(inventory);
         return event;
     }
 

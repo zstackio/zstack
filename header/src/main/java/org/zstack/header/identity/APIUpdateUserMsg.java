@@ -64,8 +64,8 @@ public class APIUpdateUserMsg extends APIMessage implements AccountMessage {
  
     public static APIUpdateUserMsg __example__() {
         APIUpdateUserMsg msg = new APIUpdateUserMsg();
-
-
+        msg.setName("new");
+        msg.setUuid(uuid());
         return msg;
     }
 
