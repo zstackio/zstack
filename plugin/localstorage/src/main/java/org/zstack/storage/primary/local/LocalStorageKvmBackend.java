@@ -22,9 +22,6 @@ import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
-import org.zstack.header.core.progress.ProgressConstants;
-import org.zstack.header.core.progress.ProgressVO;
-import org.zstack.header.core.progress.ProgressVO_;
 import org.zstack.header.core.validation.Validation;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -2264,19 +2261,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         flows.add(new NoRollbackFlow() {
             String __name__ = "check-md5-on-dst";
 
-            private void deleteProgress() {
-                SimpleQuery<ProgressVO> q = dbf.createQuery(ProgressVO.class);
-                q.add(ProgressVO_.processType, SimpleQuery.Op.EQ, ProgressConstants.ProgressType.LocalStorageMigrateVolume.toString());
-                q.add(ProgressVO_.resourceUuid, SimpleQuery.Op.EQ, struct.getInfos().get(0).getResourceRef().getResourceUuid());
-                if (q.find() != null) {
-                    try {
-                        dbf.remove(q.find());
-                    } catch (Exception e) {
-                        logger.warn("no need delete, it was deleted...");
-                    }
-                }
-            }
-
             @Override
             public void run(final FlowTrigger trigger, Map data) {
                 CheckMd5sumCmd cmd = new CheckMd5sumCmd();
@@ -2291,13 +2275,11 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 httpCall(CHECK_MD5_PATH, struct.getDestHostUuid(), cmd, false, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
                     @Override
                     public void success(AgentResponse rsp) {
-                        deleteProgress();
                         trigger.next();
                     }
 
                     @Override
                     public void fail(ErrorCode errorCode) {
-                        deleteProgress();
                         trigger.fail(errorCode);
                     }
                 });
