@@ -136,6 +136,9 @@ public class VmInstanceBase extends AbstractVmInstance {
                 CheckVmStateOnHypervisorReply r = reply.castReply();
                 String state = r.getStates().get(self.getUuid());
                 self = dbf.reload(self);
+                if (state == null) {
+                    changeVmStateInDb(VmInstanceStateEvent.unknown);
+                }
                 if (VmInstanceState.Running.toString().equals(state)) {
                     self.setHostUuid(hostUuid);
                     changeVmStateInDb(VmInstanceStateEvent.running);
