@@ -37,8 +37,8 @@ public class APILogInByLdapMsg extends APISessionMessage {
  
     public static APILogInByLdapMsg __example__() {
         APILogInByLdapMsg msg = new APILogInByLdapMsg();
-
-
+        msg.setUid("ou=Employee,uid=test");
+        msg.setPassword("password");
         return msg;
     }
 

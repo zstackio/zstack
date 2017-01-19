@@ -25,8 +25,17 @@ public class APIAddLdapServerEvent extends APIEvent {
  
     public static APIAddLdapServerEvent __example__() {
         APIAddLdapServerEvent event = new APIAddLdapServerEvent();
+        LdapServerInventory inventory = new LdapServerInventory();
+        inventory.setUuid(uuid());
+        inventory.setName("miao");
+        inventory.setDescription("miao desc");
+        inventory.setUrl("ldap://localhost:1888");
+        inventory.setBase("dc=example,dc=com");
+        inventory.setUsername("");
+        inventory.setPassword("");
+        inventory.setEncryption("None");
 
-
+        event.setInventory(inventory);
         return event;
     }
 
