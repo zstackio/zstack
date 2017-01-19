@@ -267,6 +267,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     public static class DeleteBitsCmd extends AgentCommand {
         private String hostUuid;
         private String path;
+        private String username;
 
         public String getHostUuid() {
             return hostUuid;
@@ -282,6 +283,14 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
         public void setPath(String path) {
             this.path = path;
+        }
+
+        public String getUsername() {
+            return username;
+        }
+
+        public void setUsername(String username) {
+            this.username = username;
         }
     }
 
@@ -481,6 +490,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
     public static class CheckBitsCmd extends AgentCommand {
         public String path;
+        public String username;
     }
 
     public static class CheckBitsRsp extends AgentResponse {
@@ -2056,6 +2066,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                     private void checkIfExistOnDst(final ReturnValueCompletion<Boolean> completion) {
                         CheckBitsCmd cmd = new CheckBitsCmd();
                         cmd.path = context.backingFilePath;
+                        cmd.username = username;
 
                         httpCall(CHECK_BITS_PATH, struct.getDestHostUuid(), cmd, CheckBitsRsp.class, new ReturnValueCompletion<CheckBitsRsp>(completion) {
                             @Override

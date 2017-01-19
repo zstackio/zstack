@@ -117,10 +117,8 @@ public class ProgressReportService extends AbstractService implements Management
         deleteProgress(cmd);
     }
 
-    @Transactional
     private void insertProgress(ProgressReportCmd cmd) {
-        logger.debug(String.format("insert progress and it begins, processType is: %s", cmd.getProcessType()
-        ));
+        logger.debug(String.format("insert progress and it begins, processType is: %s", cmd.getProcessType()));
         SimpleQuery<ProgressVO> q = dbf.createQuery(ProgressVO.class);
         // please notice if there are no conditions that result more than two vo found...
         q.add(ProgressVO_.processType, SimpleQuery.Op.EQ, cmd.getProcessType());
@@ -136,7 +134,6 @@ public class ProgressReportService extends AbstractService implements Management
         dbf.persistAndRefresh(vo);
     }
 
-    @Transactional
     private void deleteProgress(ProgressReportCmd cmd) {
         logger.debug("delete progress and it's over");
         SimpleQuery<ProgressVO> q = dbf.createQuery(ProgressVO.class);
@@ -169,7 +166,12 @@ public class ProgressReportService extends AbstractService implements Management
             vo.setProgress(cmd.getProgress());
             dbf.updateAndRefresh(vo);
         } else {
-            insertProgress(cmd);
+            logger.debug(String.format("progress is not existed, insert progress and it begins, processType is: %s", cmd.getProcessType()));
+            ProgressVO vo = new ProgressVO();
+            vo.setProgress(cmd.getProgress() == null? "0":cmd.getProgress());
+            vo.setProcessType(cmd.getProcessType());
+            vo.setResourceUuid(cmd.getResourceUuid());
+            dbf.persistAndRefresh(vo);
         }
     }
 
