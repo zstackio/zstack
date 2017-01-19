@@ -102,7 +102,7 @@ public class APIUpdateLdapServerMsg extends APIMessage {
  
     public static APIUpdateLdapServerMsg __example__() {
         APIUpdateLdapServerMsg msg = new APIUpdateLdapServerMsg();
-
+        msg.setName("new name");
 
         return msg;
     }

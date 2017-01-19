@@ -5,6 +5,8 @@ import org.zstack.header.rest.RestResponse;
 
 import java.util.List;
 
+import static org.zstack.utils.CollectionDSL.list;
+
 @RestResponse(allTo = "inventories")
 public class APIQueryLdapServerReply extends APIQueryReply {
     private List<LdapServerInventory> inventories;
@@ -19,8 +21,17 @@ public class APIQueryLdapServerReply extends APIQueryReply {
  
     public static APIQueryLdapServerReply __example__() {
         APIQueryLdapServerReply reply = new APIQueryLdapServerReply();
+        LdapServerInventory inventory = new LdapServerInventory();
+        inventory.setUuid(uuid());
+        inventory.setName("miao");
+        inventory.setDescription("miao desc");
+        inventory.setUrl("ldap://localhost:1888");
+        inventory.setBase("dc=example,dc=com");
+        inventory.setUsername("");
+        inventory.setPassword("");
+        inventory.setEncryption("None");
 
-
+        reply.setInventories(list(inventory));
         return reply;
     }
 

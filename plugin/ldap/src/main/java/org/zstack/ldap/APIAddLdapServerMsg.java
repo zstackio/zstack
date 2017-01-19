@@ -90,7 +90,13 @@ public class APIAddLdapServerMsg extends APIMessage {
  
     public static APIAddLdapServerMsg __example__() {
         APIAddLdapServerMsg msg = new APIAddLdapServerMsg();
-
+        msg.setName("miao");
+        msg.setDescription("miao desc");
+        msg.setUrl("ldap://localhost:1888");
+        msg.setBase("dc=example,dc=com");
+        msg.setUsername("");
+        msg.setPassword("");
+        msg.setEncryption("None");
 
         return msg;
     }
