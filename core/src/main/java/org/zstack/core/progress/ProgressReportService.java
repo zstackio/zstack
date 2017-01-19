@@ -1,6 +1,7 @@
 package org.zstack.core.progress;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.db.DatabaseFacade;
@@ -116,6 +117,7 @@ public class ProgressReportService extends AbstractService implements Management
         deleteProgress(cmd);
     }
 
+    @Transactional
     private void insertProgress(ProgressReportCmd cmd) {
         logger.debug(String.format("insert progress and it begins, processType is: %s", cmd.getProcessType()
         ));
@@ -134,6 +136,7 @@ public class ProgressReportService extends AbstractService implements Management
         dbf.persistAndRefresh(vo);
     }
 
+    @Transactional
     private void deleteProgress(ProgressReportCmd cmd) {
         logger.debug("delete progress and it's over");
         SimpleQuery<ProgressVO> q = dbf.createQuery(ProgressVO.class);
@@ -154,6 +157,7 @@ public class ProgressReportService extends AbstractService implements Management
 
     }
 
+    @Transactional
     private void updateProgress(ProgressReportCmd cmd) {
         logger.debug(String.format("update progress and during processing, progress is: %s, resource is: %s", cmd.getProgress(), cmd.getResourceUuid()));
         SimpleQuery<ProgressVO> q = dbf.createQuery(ProgressVO.class);
