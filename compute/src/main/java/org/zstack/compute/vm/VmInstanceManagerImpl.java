@@ -22,7 +22,6 @@ import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.CancelablePeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
-import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
 import org.zstack.header.allocator.AllocateHostDryRunReply;
 import org.zstack.header.allocator.DesignatedAllocateHostMsg;
@@ -37,7 +36,7 @@ import org.zstack.header.configuration.DiskOfferingVO_;
 import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.scheduler.APICreateSchedulerMessage;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.FlowChain;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
@@ -85,7 +84,6 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 
-import javax.persistence.Query;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.sql.Timestamp;
@@ -293,8 +291,9 @@ public class VmInstanceManagerImpl extends AbstractService implements
     }
 
     private void handle(APIGetInterdependentL3NetworksImagesMsg msg) {
+        final String accountUuid = msg.getSession().getAccountUuid();
         if (msg.getImageUuid() != null) {
-            getInterdependentL3NetworksByImageUuid(msg);
+            getInterdependentL3NetworksByImageUuid(msg, accountUuid);
         } else {
             getInterdependentImagesByL3NetworkUuids(msg);
         }
@@ -387,7 +386,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
     }
 
     @Transactional(readOnly = true)
-    private void getInterdependentL3NetworksByImageUuid(APIGetInterdependentL3NetworksImagesMsg msg) {
+    private void getInterdependentL3NetworksByImageUuid(APIGetInterdependentL3NetworksImagesMsg msg, String accountUuid) {
         APIGetInterdependentL3NetworkImageReply reply = new APIGetInterdependentL3NetworkImageReply();
 
         String sql = "select bs" +
@@ -450,8 +449,15 @@ public class VmInstanceManagerImpl extends AbstractService implements
             }
         }
 
+        SimpleQuery<AccountResourceRefVO> q = dbf.createQuery(AccountResourceRefVO.class);
+        q.add(AccountResourceRefVO_.accountUuid, Op.EQ, accountUuid);
+        q.add(AccountResourceRefVO_.resourceType, Op.EQ, L3NetworkVO.class.getSimpleName());
+        q.select(AccountResourceRefVO_.resourceUuid);
+        List<String> l3sFromAccount = q.listValue();
 
-        reply.setInventories(L3NetworkInventory.valueOf(l3s));
+        reply.setInventories(L3NetworkInventory.valueOf(l3s.stream()
+                .filter(inv -> l3sFromAccount.contains(inv.getUuid()))
+                .collect(Collectors.toList())));
         bus.reply(msg, reply);
     }
 
