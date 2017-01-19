@@ -44,8 +44,8 @@ public class APIDetachPolicyFromUserMsg extends APIMessage implements AccountMes
  
     public static APIDetachPolicyFromUserMsg __example__() {
         APIDetachPolicyFromUserMsg msg = new APIDetachPolicyFromUserMsg();
-
-
+        msg.setPolicyUuid(uuid());
+        msg.setUserUuid(uuid());
         return msg;
     }
 

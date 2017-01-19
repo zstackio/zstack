@@ -26,7 +26,12 @@ public class APICreateAccountEvent extends APIEvent {
     public static APICreateAccountEvent __example__() {
         APICreateAccountEvent event = new APICreateAccountEvent();
 
+        AccountInventory inventory = new AccountInventory();
+        inventory.setName("test");
+        inventory.setType(AccountType.Normal.toString());
+        inventory.setUuid(uuid());
 
+        event.setInventory(inventory);
         return event;
     }
 

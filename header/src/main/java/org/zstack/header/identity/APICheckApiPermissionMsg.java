@@ -7,6 +7,8 @@ import org.zstack.header.rest.RestRequest;
 
 import java.util.List;
 
+import static org.zstack.utils.CollectionDSL.list;
+
 /**
  * Created by xing5 on 2016/3/10.
  */
@@ -41,7 +43,8 @@ public class APICheckApiPermissionMsg extends APISyncCallMessage {
  
     public static APICheckApiPermissionMsg __example__() {
         APICheckApiPermissionMsg msg = new APICheckApiPermissionMsg();
-
+        msg.setApiNames(list("APICheckApiPermissionMsg"));
+        msg.setUserUuid(uuid());
 
         return msg;
     }

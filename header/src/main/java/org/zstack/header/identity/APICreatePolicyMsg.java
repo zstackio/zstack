@@ -5,9 +5,10 @@ import org.zstack.header.identity.PolicyInventory.Statement;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
-import org.zstack.header.rest.RestResponse;
 
 import java.util.List;
+
+import static org.zstack.utils.CollectionDSL.list;
 
 @Action(category = AccountConstant.ACTION_CATEGORY, accountOnly = true)
 @RestRequest(
@@ -56,6 +57,13 @@ public class APICreatePolicyMsg extends APICreateMessage implements AccountMessa
     public static APICreatePolicyMsg __example__() {
         APICreatePolicyMsg msg = new APICreatePolicyMsg();
 
+        msg.setName("USER-RESET-PASSWORD");
+
+        Statement s = new Statement();
+        s.setName(String.format("user-reset-password-%s", uuid()));
+        s.setEffect(AccountConstant.StatementEffect.Allow);
+        s.addAction(String.format("%s:%s", AccountConstant.ACTION_CATEGORY, APIUpdateUserMsg.class.getSimpleName()));
+        msg.setStatements(list(s));
 
         return msg;
     }

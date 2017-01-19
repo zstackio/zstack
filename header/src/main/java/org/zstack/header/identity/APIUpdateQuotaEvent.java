@@ -27,8 +27,11 @@ public class APIUpdateQuotaEvent extends APIEvent {
  
     public static APIUpdateQuotaEvent __example__() {
         APIUpdateQuotaEvent event = new APIUpdateQuotaEvent();
-
-
+        QuotaInventory inventory = new QuotaInventory();
+        inventory.setName("quota");
+        inventory.setValue(20);
+        inventory.setIdentityUuid(uuid());
+        event.setInventory(inventory);
         return event;
     }
 

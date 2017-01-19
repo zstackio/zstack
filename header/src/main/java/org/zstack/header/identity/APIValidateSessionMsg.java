@@ -31,8 +31,7 @@ public class APIValidateSessionMsg extends APISessionMessage {
  
     public static APIValidateSessionMsg __example__() {
         APIValidateSessionMsg msg = new APIValidateSessionMsg();
-
-
+        msg.setSessionUuid(uuid());
         return msg;
     }
 

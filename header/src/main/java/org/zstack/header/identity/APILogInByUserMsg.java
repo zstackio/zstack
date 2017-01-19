@@ -56,6 +56,9 @@ public class APILogInByUserMsg extends APISessionMessage {
     public static APILogInByUserMsg __example__() {
         APILogInByUserMsg msg = new APILogInByUserMsg();
 
+        msg.setAccountName("test");
+        msg.setUserName("user");
+        msg.setPassword("password");
 
         return msg;
     }

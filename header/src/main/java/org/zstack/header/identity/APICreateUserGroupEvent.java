@@ -26,7 +26,12 @@ public class APICreateUserGroupEvent extends APIEvent {
     public static APICreateUserGroupEvent __example__() {
         APICreateUserGroupEvent event = new APICreateUserGroupEvent();
 
+        UserGroupInventory inventory = new UserGroupInventory();
+        inventory.setName("usergroup");
+        inventory.setUuid(uuid());
+        inventory.setAccountUuid(uuid());
 
+        event.setInventory(inventory);
         return event;
     }
 

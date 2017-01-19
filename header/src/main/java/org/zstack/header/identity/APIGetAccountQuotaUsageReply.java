@@ -5,6 +5,8 @@ import org.zstack.header.rest.RestResponse;
 
 import java.util.List;
 
+import static org.zstack.utils.CollectionDSL.list;
+
 /**
  * Created by frank on 2/22/2016.
  */
@@ -22,8 +24,11 @@ public class APIGetAccountQuotaUsageReply extends APIReply {
  
     public static APIGetAccountQuotaUsageReply __example__() {
         APIGetAccountQuotaUsageReply reply = new APIGetAccountQuotaUsageReply();
-
-
+        Quota.QuotaUsage usage = new Quota.QuotaUsage();
+        usage.setName("testquota");
+        usage.setTotal(20L);
+        usage.setUsed(10L);
+        reply.setUsages(list(usage));
         return reply;
     }
 

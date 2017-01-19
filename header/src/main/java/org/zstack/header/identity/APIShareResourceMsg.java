@@ -7,6 +7,8 @@ import org.zstack.header.rest.RestRequest;
 
 import java.util.List;
 
+import static org.zstack.utils.CollectionDSL.list;
+
 /**
  * Created by frank on 7/13/2015.
  */
@@ -55,8 +57,9 @@ public class APIShareResourceMsg extends APIMessage implements AccountMessage {
  
     public static APIShareResourceMsg __example__() {
         APIShareResourceMsg msg = new APIShareResourceMsg();
-
-
+        msg.setAccountUuids(list(uuid(), uuid()));
+        msg.setToPublic(false);
+        msg.setResourceUuids(list(uuid(), uuid()));
         return msg;
     }
 

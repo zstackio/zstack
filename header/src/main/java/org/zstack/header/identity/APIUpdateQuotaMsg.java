@@ -53,8 +53,9 @@ public class APIUpdateQuotaMsg extends APIMessage implements AccountMessage {
  
     public static APIUpdateQuotaMsg __example__() {
         APIUpdateQuotaMsg msg = new APIUpdateQuotaMsg();
-
-
+        msg.setName("quotaname");
+        msg.setIdentityUuid(uuid());
+        msg.setValue(20);
         return msg;
     }
 
