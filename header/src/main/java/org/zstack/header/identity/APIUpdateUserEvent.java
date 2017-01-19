@@ -27,8 +27,10 @@ public class APIUpdateUserEvent extends APIEvent {
  
     public static APIUpdateUserEvent __example__() {
         APIUpdateUserEvent event = new APIUpdateUserEvent();
-
-
+        UserInventory inventory = new UserInventory();
+        inventory.setName("new");
+        inventory.setAccountUuid(uuid());
+        inventory.setUuid(uuid());
         return event;
     }
 

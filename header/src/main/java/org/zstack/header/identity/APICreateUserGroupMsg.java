@@ -42,6 +42,7 @@ public class APICreateUserGroupMsg extends APICreateMessage implements AccountMe
     public static APICreateUserGroupMsg __example__() {
         APICreateUserGroupMsg msg = new APICreateUserGroupMsg();
 
+        msg.setName("usergroup");
 
         return msg;
     }

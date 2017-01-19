@@ -24,7 +24,7 @@ public class APILogOutMsg extends APISessionMessage {
     public static APILogOutMsg __example__() {
         APILogOutMsg msg = new APILogOutMsg();
 
-
+        msg.setSessionUuid(uuid());
         return msg;
     }
 

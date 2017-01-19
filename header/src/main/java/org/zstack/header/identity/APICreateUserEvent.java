@@ -26,7 +26,12 @@ public class APICreateUserEvent extends APIEvent {
     public static APICreateUserEvent __example__() {
         APICreateUserEvent event = new APICreateUserEvent();
 
+        UserInventory inventory = new UserInventory();
+        inventory.setName("testuser");
+        inventory.setUuid(uuid());
+        inventory.setAccountUuid(uuid());
 
+        event.setInventory(inventory);
         return event;
     }
 

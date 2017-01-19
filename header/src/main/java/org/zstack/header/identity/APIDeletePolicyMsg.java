@@ -35,8 +35,7 @@ public class APIDeletePolicyMsg extends APIDeleteMessage implements AccountMessa
  
     public static APIDeletePolicyMsg __example__() {
         APIDeletePolicyMsg msg = new APIDeletePolicyMsg();
-
-
+        msg.setUuid(uuid());
         return msg;
     }
 

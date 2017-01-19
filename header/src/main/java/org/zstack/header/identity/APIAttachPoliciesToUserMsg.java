@@ -7,6 +7,8 @@ import org.zstack.header.rest.RestRequest;
 
 import java.util.List;
 
+import static org.zstack.utils.CollectionDSL.list;
+
 @Action(category = AccountConstant.ACTION_CATEGORY, accountOnly = true)
 @RestRequest(
         path = "/accounts/users/{userUuid}/policy-collection",
@@ -43,7 +45,8 @@ public class APIAttachPoliciesToUserMsg extends APIMessage implements AccountMes
  
     public static APIAttachPoliciesToUserMsg __example__() {
         APIAttachPoliciesToUserMsg msg = new APIAttachPoliciesToUserMsg();
-
+        msg.setPolicyUuids(list(uuid(), uuid()));
+        msg.setUserUuid(uuid());
 
         return msg;
     }

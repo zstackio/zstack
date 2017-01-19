@@ -4,7 +4,6 @@ import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
-import org.zstack.header.rest.RestResponse;
 
 /**
  * Created by frank on 7/9/2015.
@@ -35,8 +34,7 @@ public class APIDeleteUserGroupMsg extends APIDeleteMessage implements AccountMe
  
     public static APIDeleteUserGroupMsg __example__() {
         APIDeleteUserGroupMsg msg = new APIDeleteUserGroupMsg();
-
-
+        msg.setUuid(uuid());
         return msg;
     }
 

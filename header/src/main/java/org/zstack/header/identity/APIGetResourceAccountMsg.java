@@ -5,6 +5,8 @@ import org.zstack.header.message.APISyncCallMessage;
 
 import java.util.List;
 
+import static org.zstack.utils.CollectionDSL.list;
+
 /**
  * Created by xing5 on 2016/4/8.
  */
@@ -22,7 +24,7 @@ public class APIGetResourceAccountMsg extends APISyncCallMessage {
  
     public static APIGetResourceAccountMsg __example__() {
         APIGetResourceAccountMsg msg = new APIGetResourceAccountMsg();
-
+        msg.setResourceUuids(list(uuid(), uuid()));
 
         return msg;
     }

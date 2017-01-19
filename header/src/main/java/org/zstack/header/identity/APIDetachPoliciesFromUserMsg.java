@@ -7,6 +7,8 @@ import org.zstack.header.rest.RestRequest;
 
 import java.util.List;
 
+import static org.zstack.utils.CollectionDSL.list;
+
 /**
  * Created by xing5 on 2016/3/14.
  */
@@ -46,7 +48,8 @@ public class APIDetachPoliciesFromUserMsg extends APIMessage implements AccountM
  
     public static APIDetachPoliciesFromUserMsg __example__() {
         APIDetachPoliciesFromUserMsg msg = new APIDetachPoliciesFromUserMsg();
-
+        msg.setUserUuid(uuid());
+        msg.setPolicyUuids(list(uuid(), uuid()));
 
         return msg;
     }
