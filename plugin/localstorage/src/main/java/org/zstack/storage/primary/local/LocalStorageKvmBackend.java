@@ -22,6 +22,9 @@ import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.progress.ProgressConstants;
+import org.zstack.header.core.progress.ProgressVO;
+import org.zstack.header.core.progress.ProgressVO_;
 import org.zstack.header.core.validation.Validation;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -1843,6 +1846,19 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         }).start();
     }
 
+    private void deleteProgress(String resourceUuid) {
+        final Q q = Q.New(ProgressVO.class)
+                .eq(ProgressVO_.resourceUuid, resourceUuid)
+                .eq(ProgressVO_.processType, ProgressConstants.ProgressType.LocalStorageMigrateVolume.toString());
+        if (q.find() != null) {
+            try {
+                dbf.remove(q.find());
+            } catch (Exception e) {
+                logger.warn("no need delete, it was deleted...");
+            }
+        }
+    }
+
     @Override
     public List<Flow> createMigrateBitsVolumeFlow(final MigrateBitsStruct struct) {
         List<Flow> flows = new ArrayList<Flow>();
@@ -1973,12 +1989,14 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                         httpCall(GET_MD5_PATH, struct.getSrcHostUuid(), cmd, false, GetMd5Rsp.class, new ReturnValueCompletion<GetMd5Rsp>(trigger) {
                             @Override
                             public void success(GetMd5Rsp rsp) {
+                                deleteProgress(cmd.volumeUuid);
                                 context.backingFileMd5 = rsp.md5s.get(0).md5;
                                 trigger.next();
                             }
 
                             @Override
                             public void fail(ErrorCode errorCode) {
+                                deleteProgress(cmd.volumeUuid);
                                 trigger.fail(errorCode);
                             }
                         });
@@ -2013,6 +2031,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                         AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger, chain) {
                                             @Override
                                             public void success(AgentResponse rsp) {
+                                                deleteProgress(cmd.uuid);
                                                 s = true;
                                                 trigger.next();
                                                 chain.next();
@@ -2020,6 +2039,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
                                             @Override
                                             public void fail(ErrorCode errorCode) {
+                                                deleteProgress(cmd.uuid);
                                                 trigger.fail(errorCode);
                                                 chain.next();
                                             }
@@ -2127,11 +2147,13 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                         httpCall(CHECK_MD5_PATH, struct.getDestHostUuid(), cmd, false, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
                             @Override
                             public void success(AgentResponse returnValue) {
+                                deleteProgress(cmd.volumeUuid);
                                 trigger.next();
                             }
 
                             @Override
                             public void fail(ErrorCode errorCode) {
+                                deleteProgress(cmd.volumeUuid);
                                 trigger.fail(errorCode);
                             }
                         });
@@ -2166,12 +2188,14 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 httpCall(GET_MD5_PATH, struct.getSrcHostUuid(), cmd, false, GetMd5Rsp.class, new ReturnValueCompletion<GetMd5Rsp>(trigger) {
                     @Override
                     public void success(GetMd5Rsp rsp) {
+                        deleteProgress(cmd.volumeUuid);
                         context.getMd5Rsp = rsp;
                         trigger.next();
                     }
 
                     @Override
                     public void fail(ErrorCode errorCode) {
+                        deleteProgress(cmd.volumeUuid);
                         trigger.fail(errorCode);
                     }
                 });
@@ -2208,12 +2232,14 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                         AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
                             @Override
                             public void success(AgentResponse rsp) {
+                                deleteProgress(cmd.uuid);
                                 migrated = cmd.paths;
                                 trigger.next();
                             }
 
                             @Override
                             public void fail(ErrorCode errorCode) {
+                                deleteProgress(cmd.uuid);
                                 trigger.fail(errorCode);
                             }
                         });
@@ -2275,11 +2301,13 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 httpCall(CHECK_MD5_PATH, struct.getDestHostUuid(), cmd, false, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
                     @Override
                     public void success(AgentResponse rsp) {
+                        deleteProgress(cmd.volumeUuid);
                         trigger.next();
                     }
 
                     @Override
                     public void fail(ErrorCode errorCode) {
+                        deleteProgress(cmd.volumeUuid);
                         trigger.fail(errorCode);
                     }
                 });
