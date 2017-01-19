@@ -1022,6 +1022,21 @@ public class Api implements CloudBusEventListener {
         throwExceptionIfNeed(res.error);
     }
 
+    public List<L3NetworkInventory> getInterdependentL3NetworksByImageUuid(String imageUuid, String zoneUuid, SessionInventory session) throws ApiSenderException {
+        GetInterdependentL3NetworksImagesAction action = new GetInterdependentL3NetworksImagesAction();
+        action.imageUuid = imageUuid;
+        action.zoneUuid = zoneUuid;
+        action.sessionId = getSessionUuid(session);
+        GetInterdependentL3NetworksImagesAction.Result res = action.call();
+        throwExceptionIfNeed(res.error);
+
+        return JSONObjectUtil.toCollection(
+                JSONObjectUtil.toJsonString(res.value.getInventories()),
+                ArrayList.class,
+                L3NetworkInventory.class
+        );
+    }
+
     public L3NetworkInventory createL3BasicNetwork(String l2NetworkUuid) throws ApiSenderException {
         return createL3BasicNetwork(l2NetworkUuid, null);
     }
