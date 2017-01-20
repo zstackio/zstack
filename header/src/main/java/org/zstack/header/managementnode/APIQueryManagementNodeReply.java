@@ -3,7 +3,10 @@ package org.zstack.header.managementnode;
 import org.zstack.header.query.APIQueryReply;
 import org.zstack.header.rest.RestResponse;
 
+import java.sql.Timestamp;
 import java.util.List;
+
+import static org.zstack.utils.CollectionDSL.list;
 
 /**
  */
@@ -21,8 +24,13 @@ public class APIQueryManagementNodeReply extends APIQueryReply {
  
     public static APIQueryManagementNodeReply __example__() {
         APIQueryManagementNodeReply reply = new APIQueryManagementNodeReply();
+        ManagementNodeInventory inventory = new ManagementNodeInventory();
+        inventory.setUuid(uuid());
+        inventory.setHostName("127.0.0.1");
+        inventory.setJoinDate(new Timestamp(System.currentTimeMillis()));
+        inventory.setHeartBeat(new Timestamp(System.currentTimeMillis()));
 
-
+        reply.setInventories(list(inventory));
         return reply;
     }
 

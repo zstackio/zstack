@@ -20,7 +20,7 @@ public class APIGetVersionReply extends APIReply {
  
     public static APIGetVersionReply __example__() {
         APIGetVersionReply reply = new APIGetVersionReply();
-
+        reply.setVersion("1.9.x");
 
         return reply;
     }

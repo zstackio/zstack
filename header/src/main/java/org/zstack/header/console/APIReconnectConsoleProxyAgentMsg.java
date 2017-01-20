@@ -7,6 +7,8 @@ import org.zstack.header.rest.RestRequest;
 
 import java.util.List;
 
+import static org.zstack.utils.CollectionDSL.list;
+
 /**
  * Created by xing5 on 2016/3/15.
  */
@@ -31,7 +33,7 @@ public class APIReconnectConsoleProxyAgentMsg extends APIMessage implements Cons
  
     public static APIReconnectConsoleProxyAgentMsg __example__() {
         APIReconnectConsoleProxyAgentMsg msg = new APIReconnectConsoleProxyAgentMsg();
-
+        msg.setAgentUuids(list(uuid(), uuid(), uuid()));
 
         return msg;
     }
