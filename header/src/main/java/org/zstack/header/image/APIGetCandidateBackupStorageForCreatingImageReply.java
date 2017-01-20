@@ -23,8 +23,7 @@ public class APIGetCandidateBackupStorageForCreatingImageReply extends APIReply 
  
     public static APIGetCandidateBackupStorageForCreatingImageReply __example__() {
         APIGetCandidateBackupStorageForCreatingImageReply reply = new APIGetCandidateBackupStorageForCreatingImageReply();
-
-
+        reply.setInventories(list(uuid(),uuid()));
         return reply;
     }
 

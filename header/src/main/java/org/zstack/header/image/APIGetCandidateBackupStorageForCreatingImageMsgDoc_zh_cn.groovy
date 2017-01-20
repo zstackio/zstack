@@ -7,7 +7,7 @@ doc {
 
     category "host.allocator"
 
-    desc "在这里填写API描述"
+    desc "获取创建镜像的备份存储候选"
 
     rest {
         request {

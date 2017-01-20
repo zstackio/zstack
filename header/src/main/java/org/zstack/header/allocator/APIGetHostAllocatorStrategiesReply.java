@@ -5,6 +5,8 @@ import org.zstack.header.rest.RestResponse;
 
 import java.util.List;
 
+import static org.zstack.utils.CollectionDSL.list;
+
 /**
  * Created with IntelliJ IDEA.
  * User: frank
@@ -25,7 +27,7 @@ public class APIGetHostAllocatorStrategiesReply extends APIReply {
  
     public static APIGetHostAllocatorStrategiesReply __example__() {
         APIGetHostAllocatorStrategiesReply reply = new APIGetHostAllocatorStrategiesReply();
-
+        reply.setHostAllocatorStrategies(list(uuid(),uuid()));
 
         return reply;
     }
