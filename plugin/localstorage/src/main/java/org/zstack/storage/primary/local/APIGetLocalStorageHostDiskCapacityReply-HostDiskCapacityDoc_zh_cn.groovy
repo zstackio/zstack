@@ -4,7 +4,7 @@ package org.zstack.storage.primary.local
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "主机本地存储磁盘容量清单"
 
 	field {
 		name "hostUuid"

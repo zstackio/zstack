@@ -57,6 +57,8 @@ public class APILocalStorageMigrateVolumeMsg extends APIMessage implements Prima
     public static APILocalStorageMigrateVolumeMsg __example__() {
         APILocalStorageMigrateVolumeMsg msg = new APILocalStorageMigrateVolumeMsg();
 
+        msg.setVolumeUuid(uuid());
+        msg.setDestHostUuid(uuid());
 
         return msg;
     }
