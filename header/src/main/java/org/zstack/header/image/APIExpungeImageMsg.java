@@ -7,6 +7,7 @@ import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.backup.BackupStorageVO;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -46,6 +47,8 @@ public class APIExpungeImageMsg extends APIMessage implements ImageMessage {
     public static APIExpungeImageMsg __example__() {
         APIExpungeImageMsg msg = new APIExpungeImageMsg();
 
+        msg.setBackupStorageUuids(Collections.singletonList(uuid()));
+        msg.setImageUuid(uuid());
 
         return msg;
     }

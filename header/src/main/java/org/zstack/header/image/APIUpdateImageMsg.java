@@ -106,6 +106,8 @@ public class APIUpdateImageMsg extends APIMessage implements ImageMessage {
     public static APIUpdateImageMsg __example__() {
         APIUpdateImageMsg msg = new APIUpdateImageMsg();
 
+        msg.setUuid(uuid());
+        msg.setPlatform(ImagePlatform.Windows.toString());
 
         return msg;
     }

@@ -6,6 +6,9 @@ import org.zstack.header.query.APIQueryMessage;
 import org.zstack.header.query.AutoQuery;
 import org.zstack.header.rest.RestRequest;
 
+import java.util.Collections;
+import java.util.List;
+
 @AutoQuery(replyClass = APIQueryImageReply.class, inventoryClass = ImageInventory.class)
 @Action(category = ImageConstant.ACTION_CATEGORY, names = {"read"})
 @RestRequest(
@@ -17,11 +20,8 @@ import org.zstack.header.rest.RestRequest;
 public class APIQueryImageMsg extends APIQueryMessage {
 
  
-    public static APIQueryImageMsg __example__() {
-        APIQueryImageMsg msg = new APIQueryImageMsg();
-
-
-        return msg;
+    public static List<String> __example__() {
+        return Collections.singletonList("uuid=" + uuid());
     }
 
 }

@@ -7,6 +7,7 @@ import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.backup.BackupStorageVO;
 
+import java.util.Collections;
 import java.util.List;
 
 @Action(category = ImageConstant.ACTION_CATEGORY)
@@ -55,6 +56,8 @@ public class APIDeleteImageMsg extends APIDeleteMessage implements ImageMessage 
     public static APIDeleteImageMsg __example__() {
         APIDeleteImageMsg msg = new APIDeleteImageMsg();
 
+        msg.setBackupStorageUuids(Collections.singletonList(uuid()));
+        msg.setUuid(uuid());
 
         return msg;
     }

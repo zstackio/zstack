@@ -9,6 +9,7 @@ import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.tag.TagResourceType;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @TagResourceType(ImageVO.class)
@@ -125,6 +126,12 @@ public class APIAddImageMsg extends APICreateMessage {
     public static APIAddImageMsg __example__() {
         APIAddImageMsg msg = new APIAddImageMsg();
 
+        msg.setName("TinyLinux");
+        msg.setBackupStorageUuids(Collections.singletonList(uuid()));
+        msg.setUrl("http://192.168.1.20/share/images/tinylinux.qcow2");
+        msg.setFormat(ImageConstant.QCOW2_FORMAT_STRING);
+        msg.setMediaType(ImageConstant.ImageMediaType.RootVolumeTemplate.toString());
+        msg.setPlatform(ImagePlatform.Linux.toString());
 
         return msg;
     }

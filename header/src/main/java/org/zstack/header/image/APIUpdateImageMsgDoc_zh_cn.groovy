@@ -1,13 +1,11 @@
 package org.zstack.header.image
 
-import org.zstack.header.image.APIUpdateImageEvent
-
 doc {
-    title "UpdateImage"
+    title "更新镜像信息(UpdateImage)"
 
     category "image"
 
-    desc "在这里填写API描述"
+    desc "更新镜像信息"
 
     rest {
         request {
@@ -25,7 +23,7 @@ doc {
 				column {
 					name "uuid"
 					enclosedIn "params"
-					desc "资源的UUID，唯一标示该资源"
+					desc "镜像的UUID，唯一标示该镜像"
 					location "url"
 					type "String"
 					optional false
@@ -35,7 +33,7 @@ doc {
 				column {
 					name "name"
 					enclosedIn "params"
-					desc "资源名称"
+					desc "镜像名称"
 					location "body"
 					type "String"
 					optional true
@@ -45,7 +43,7 @@ doc {
 				column {
 					name "description"
 					enclosedIn "params"
-					desc "资源的详细描述"
+					desc "镜像的详细描述"
 					location "body"
 					type "String"
 					optional true
@@ -55,7 +53,7 @@ doc {
 				column {
 					name "guestOsType"
 					enclosedIn "params"
-					desc ""
+					desc "镜像对应的客户机操作系统类型"
 					location "body"
 					type "String"
 					optional true
@@ -65,7 +63,7 @@ doc {
 				column {
 					name "mediaType"
 					enclosedIn "params"
-					desc ""
+					desc "镜像的类型"
 					location "body"
 					type "String"
 					optional true
@@ -75,7 +73,7 @@ doc {
 				column {
 					name "format"
 					enclosedIn "params"
-					desc ""
+					desc "镜像的格式"
 					location "body"
 					type "String"
 					optional true
@@ -85,7 +83,7 @@ doc {
 				column {
 					name "system"
 					enclosedIn "params"
-					desc ""
+					desc "标识是否为系统镜像"
 					location "body"
 					type "Boolean"
 					optional true
@@ -95,7 +93,7 @@ doc {
 				column {
 					name "platform"
 					enclosedIn "params"
-					desc ""
+					desc "镜像的系统平台"
 					location "body"
 					type "String"
 					optional true
@@ -104,7 +102,7 @@ doc {
 				}
 				column {
 					name "systemTags"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "系统标签"
 					location "body"
 					type "List"
@@ -114,7 +112,7 @@ doc {
 				}
 				column {
 					name "userTags"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "用户标签"
 					location "body"
 					type "List"
