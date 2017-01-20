@@ -79,7 +79,8 @@ public class APICreateDiskOfferingMsg extends APICreateMessage {
  
     public static APICreateDiskOfferingMsg __example__() {
         APICreateDiskOfferingMsg msg = new APICreateDiskOfferingMsg();
-
+        msg.setName("diskOffering1");
+        msg.setDiskSize(100);
 
         return msg;
     }

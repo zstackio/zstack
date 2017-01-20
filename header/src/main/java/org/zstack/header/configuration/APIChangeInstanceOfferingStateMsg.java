@@ -48,8 +48,8 @@ public class APIChangeInstanceOfferingStateMsg extends APIMessage implements Ins
  
     public static APIChangeInstanceOfferingStateMsg __example__() {
         APIChangeInstanceOfferingStateMsg msg = new APIChangeInstanceOfferingStateMsg();
-
-
+        msg.setUuid(uuid());
+        msg.setStateEvent("enable");
         return msg;
     }
 
