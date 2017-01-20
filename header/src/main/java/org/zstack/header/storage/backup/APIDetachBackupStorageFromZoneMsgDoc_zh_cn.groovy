@@ -1,13 +1,11 @@
 package org.zstack.header.storage.backup
 
-import org.zstack.header.storage.backup.APIDetachBackupStorageFromZoneEvent
-
 doc {
-    title "DetachBackupStorageFromZone"
+    title "从区域中卸载已经挂载的镜像服务器(DetachBackupStorageFromZone)"
 
     category "storage.backup"
 
-    desc "在这里填写API描述"
+    desc "从区域中卸载已经挂载的镜像服务器"
 
     rest {
         request {
@@ -24,7 +22,7 @@ doc {
 
 				column {
 					name "backupStorageUuid"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "镜像存储UUID"
 					location "url"
 					type "String"
@@ -34,7 +32,7 @@ doc {
 				}
 				column {
 					name "zoneUuid"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "区域UUID"
 					location "url"
 					type "String"
@@ -44,7 +42,7 @@ doc {
 				}
 				column {
 					name "systemTags"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "系统标签"
 					location "body"
 					type "List"
@@ -54,7 +52,7 @@ doc {
 				}
 				column {
 					name "userTags"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "用户标签"
 					location "body"
 					type "List"

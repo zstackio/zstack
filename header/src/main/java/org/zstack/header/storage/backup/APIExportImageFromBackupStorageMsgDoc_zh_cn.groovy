@@ -1,13 +1,11 @@
 package org.zstack.header.storage.backup
 
-import org.zstack.header.storage.backup.APIExportImageFromBackupStorageEvent
-
 doc {
-    title "ExportImageFromBackupStorage"
+    title "从镜像服务器导出镜像(ExportImageFromBackupStorage)"
 
     category "storage.backup"
 
-    desc "在这里填写API描述"
+    desc "从镜像服务器中导出镜像"
 
     rest {
         request {
@@ -29,7 +27,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "0.6"
+					since "1.7"
 					
 				}
 				column {
@@ -39,27 +37,27 @@ doc {
 					location "body"
 					type "String"
 					optional false
-					since "0.6"
+					since "1.7"
 					
 				}
 				column {
 					name "systemTags"
- 					enclosedIn ""
- 					desc ""
+					enclosedIn "params"
+					desc "系统标签"
 					location "body"
 					type "List"
 					optional true
-					since "0.6"
+					since "1.7"
 					
 				}
 				column {
 					name "userTags"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "用户标签"
 					location "body"
 					type "List"
 					optional true
-					since "0.6"
+					since "1.7"
 					
 				}
 			}

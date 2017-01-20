@@ -1,13 +1,11 @@
 package org.zstack.header.storage.backup
 
-import org.zstack.header.storage.backup.APIReconnectBackupStorageEvent
-
 doc {
-    title "ReconnectBackupStorage"
+    title "重连镜像服务器(ReconnectBackupStorage)"
 
     category "storage.backup"
 
-    desc "在这里填写API描述"
+    desc "重连镜像服务器"
 
     rest {
         request {
@@ -34,8 +32,8 @@ doc {
 				}
 				column {
 					name "systemTags"
- 					enclosedIn ""
- 					desc ""
+					enclosedIn "params"
+					desc "系统标签"
 					location "body"
 					type "List"
 					optional true
@@ -44,7 +42,7 @@ doc {
 				}
 				column {
 					name "userTags"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "用户标签"
 					location "body"
 					type "List"

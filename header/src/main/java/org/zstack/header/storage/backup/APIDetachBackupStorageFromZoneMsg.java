@@ -78,6 +78,8 @@ public class APIDetachBackupStorageFromZoneMsg extends APIMessage implements Bac
     public static APIDetachBackupStorageFromZoneMsg __example__() {
         APIDetachBackupStorageFromZoneMsg msg = new APIDetachBackupStorageFromZoneMsg();
 
+        msg.setBackupStorageUuid(uuid());
+        msg.setZoneUuid(uuid());
 
         return msg;
     }

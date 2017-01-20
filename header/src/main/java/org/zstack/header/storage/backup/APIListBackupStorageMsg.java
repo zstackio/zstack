@@ -12,12 +12,4 @@ public class APIListBackupStorageMsg extends APIListMessage {
     public APIListBackupStorageMsg(List<String> uuids) {
         super(uuids);
     }
- 
-    public static APIListBackupStorageMsg __example__() {
-        APIListBackupStorageMsg msg = new APIListBackupStorageMsg();
-
-
-        return msg;
-    }
-
 }

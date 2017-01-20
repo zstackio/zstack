@@ -86,6 +86,8 @@ public class APIChangeBackupStorageStateMsg extends APIMessage implements Backup
     public static APIChangeBackupStorageStateMsg __example__() {
         APIChangeBackupStorageStateMsg msg = new APIChangeBackupStorageStateMsg();
 
+        msg.setUuid(uuid());
+        msg.setStateEvent(BackupStorageState.Disabled.toString());
 
         return msg;
     }

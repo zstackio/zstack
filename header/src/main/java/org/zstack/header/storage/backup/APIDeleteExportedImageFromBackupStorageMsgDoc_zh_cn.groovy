@@ -1,9 +1,7 @@
 package org.zstack.header.storage.backup
 
-import org.zstack.header.storage.backup.APIDeleteExportedImageFromBackupStorageEvent
-
 doc {
-    title "DeleteExportedImageFromBackupStorage"
+    title "从镜像服务器删除导出的镜像(DeleteExportedImageFromBackupStorage)"
 
     category "storage.backup"
 
@@ -24,32 +22,32 @@ doc {
 
 				column {
 					name "backupStorageUuid"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "镜像存储UUID"
 					location "url"
 					type "String"
 					optional false
-					since "0.6"
+					since "1.7"
 					
 				}
 				column {
 					name "imageUuid"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "镜像UUID"
 					location "url"
 					type "String"
 					optional false
-					since "0.6"
+					since "1.7"
 					
 				}
 				column {
 					name "systemTags"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "系统标签"
 					location "body"
 					type "List"
 					optional true
-					since "0.6"
+					since "1.7"
 					
 				}
 				column {
@@ -59,7 +57,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "0.6"
+					since "1.7"
 					
 				}
 			}

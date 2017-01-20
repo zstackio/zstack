@@ -82,6 +82,8 @@ public class APIAttachBackupStorageToZoneMsg extends APIMessage implements Backu
     public static APIAttachBackupStorageToZoneMsg __example__() {
         APIAttachBackupStorageToZoneMsg msg = new APIAttachBackupStorageToZoneMsg();
 
+        msg.setBackupStorageUuid(uuid());
+        msg.setZoneUuid(uuid());
 
         return msg;
     }

@@ -54,6 +54,8 @@ public class APIUpdateBackupStorageMsg extends APIMessage implements BackupStora
     public static APIUpdateBackupStorageMsg __example__() {
         APIUpdateBackupStorageMsg msg = new APIUpdateBackupStorageMsg();
 
+        msg.setUuid(uuid());
+        msg.setName("New Name");
 
         return msg;
     }
