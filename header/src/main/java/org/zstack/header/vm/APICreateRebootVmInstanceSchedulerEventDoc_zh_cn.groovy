@@ -5,14 +5,14 @@ import org.zstack.header.errorcode.ErrorCode
 
 doc {
 
-    title "在这里输入结构的名称"
+    desc "创建重启云主机的定时任务"
 
     ref {
         name "error"
         path "org.zstack.header.vm.APICreateRebootVmInstanceSchedulerEvent.error"
         desc "错误码，若不为null，则表示操作失败, 操作成功时该字段为null", false
         type "ErrorCode"
-        since "0.6"
+        since "1.6"
         clz ErrorCode.class
     }
     ref {
@@ -20,7 +20,7 @@ doc {
         path "org.zstack.header.vm.APICreateRebootVmInstanceSchedulerEvent.inventory"
         desc "null"
         type "SchedulerInventory"
-        since "0.6"
+        since "1.6"
         clz SchedulerInventory.class
     }
 }
