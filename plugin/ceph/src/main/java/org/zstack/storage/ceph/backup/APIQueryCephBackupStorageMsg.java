@@ -4,12 +4,12 @@ import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.query.APIQueryMessage;
 import org.zstack.header.query.AutoQuery;
-import org.zstack.header.query.QueryCondition;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.backup.APIQueryBackupStorageReply;
 import org.zstack.header.storage.backup.BackupStorageConstant;
 
 import java.util.Collections;
+import java.util.List;
 
 /**
  * Created by frank on 8/6/2015.
@@ -23,18 +23,9 @@ import java.util.Collections;
         responseClass = APIQueryBackupStorageReply.class
 )
 public class APIQueryCephBackupStorageMsg extends APIQueryMessage {
- 
-    public static APIQueryCephBackupStorageMsg __example__() {
-        APIQueryCephBackupStorageMsg msg = new APIQueryCephBackupStorageMsg();
 
-        QueryCondition cond = new QueryCondition();
-        cond.setName("uuid");
-        cond.setOp("=");
-        cond.setValue(uuid());
-
-        msg.setConditions(Collections.singletonList(cond));
-
-        return msg;
+    public static List<String> __example__() {
+        return Collections.singletonList("uuid=" + uuid());
     }
 
 }

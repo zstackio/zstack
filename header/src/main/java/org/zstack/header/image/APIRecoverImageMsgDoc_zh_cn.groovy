@@ -1,11 +1,11 @@
 package org.zstack.header.image
 
 doc {
-    title "RecoverImage"
+    title "恢复镜像(RecoverImage)"
 
     category "image"
 
-    desc "在这里填写API描述"
+    desc "恢复被删除（但未彻底删除）的镜像"
 
     rest {
         request {
@@ -33,7 +33,7 @@ doc {
                 column {
                     name "backupStorageUuids"
                     enclosedIn "params"
-                    desc ""
+                    desc "镜像服务器UUID列表"
                     location "body"
                     type "List"
                     optional true
@@ -42,8 +42,8 @@ doc {
                 }
                 column {
                     name "systemTags"
-                    enclosedIn ""
-                    desc ""
+                    enclosedIn "params"
+                    desc "系统标签"
                     location "body"
                     type "List"
                     optional true
@@ -52,7 +52,7 @@ doc {
                 }
                 column {
                     name "userTags"
-                    enclosedIn ""
+                    enclosedIn "params"
                     desc "用户标签"
                     location "body"
                     type "List"

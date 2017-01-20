@@ -6,6 +6,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -44,6 +45,8 @@ public class APIRecoverImageMsg extends APIMessage implements ImageMessage {
     public static APIRecoverImageMsg __example__() {
         APIRecoverImageMsg msg = new APIRecoverImageMsg();
 
+        msg.setBackupStorageUuids(Collections.singletonList(uuid()));
+        msg.setImageUuid(uuid());
 
         return msg;
     }
