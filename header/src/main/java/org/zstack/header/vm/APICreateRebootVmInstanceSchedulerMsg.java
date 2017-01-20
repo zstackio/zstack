@@ -39,8 +39,13 @@ public class APICreateRebootVmInstanceSchedulerMsg extends APICreateSchedulerMes
  
     public static APICreateRebootVmInstanceSchedulerMsg __example__() {
         APICreateRebootVmInstanceSchedulerMsg msg = new APICreateRebootVmInstanceSchedulerMsg();
-
-
+        msg.setSchedulerName("vm-scheduler");
+        msg.setSchedulerDescription("for test restart vm scheduler");
+        msg.setStartTime(0L);
+        msg.setType("simple");
+        msg.setInterval(5);
+        msg.setRepeatCount(10);
+        msg.setVmUuid(uuid());
         return msg;
     }
 
