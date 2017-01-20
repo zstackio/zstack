@@ -286,7 +286,8 @@ public class FusionstorBackupStorageBase extends BackupStorageBase {
                     public void success(T ret) {
                         if (!ret.success) {
                             // not an IO error but an operation error, return it
-                            callback.fail(errf.stringToOperationError(ret.error));
+                            String details = String.format("[mon:%s], %s", base.getSelf().getHostname(), ret.error);
+                            callback.fail(errf.stringToOperationError(details));
                         } else {
                             if (!(cmd instanceof InitCmd)) {
                                 updateCapacityIfNeeded(ret);
@@ -298,6 +299,8 @@ public class FusionstorBackupStorageBase extends BackupStorageBase {
 
                     @Override
                     public void fail(ErrorCode errorCode) {
+                        String details = String.format("[mon:%s], %s", base.getSelf().getHostname(), errorCode.getDetails());
+                        errorCode.setDetails(details);
                         errorCodes.add(errorCode);
                         call();
                     }
