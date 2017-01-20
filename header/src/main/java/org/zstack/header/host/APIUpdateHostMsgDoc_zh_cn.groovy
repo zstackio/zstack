@@ -3,23 +3,23 @@ package org.zstack.header.host
 import org.zstack.header.host.APIUpdateHostEvent
 
 doc {
-    title "UpdateHost"
+	title "UpdateHost"
 
-    category "host"
+	category "host"
 
-    desc "在这里填写API描述"
+	desc "更新云主机信息"
 
-    rest {
-        request {
+	rest {
+		request {
 			url "PUT /v1/hosts/{uuid}/actions"
 
 
-            header (OAuth: 'the-session-uuid')
+			header (OAuth: 'the-session-uuid')
 
-            clz APIUpdateHostMsg.class
+			clz APIUpdateHostMsg.class
 
-            desc ""
-            
+			desc "更新云主机信息"
+
 			params {
 
 				column {
@@ -30,7 +30,7 @@ doc {
 					type "String"
 					optional false
 					since "0.6"
-					
+
 				}
 				column {
 					name "name"
@@ -40,7 +40,7 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
+
 				}
 				column {
 					name "description"
@@ -50,7 +50,7 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
+
 				}
 				column {
 					name "managementIp"
@@ -60,7 +60,7 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
+
 				}
 				column {
 					name "systemTags"
@@ -70,7 +70,7 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
+
 				}
 				column {
 					name "userTags"
@@ -80,13 +80,13 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
+
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIUpdateHostEvent.class
-        }
-    }
+		response {
+			clz APIUpdateHostEvent.class
+		}
+	}
 }

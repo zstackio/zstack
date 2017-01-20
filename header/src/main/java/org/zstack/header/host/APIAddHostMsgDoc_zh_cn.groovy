@@ -7,7 +7,7 @@ doc {
 
     category "host"
 
-    desc "在这里填写API描述"
+    desc "添加物理机"
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIAddHostMsg.class
 
-            desc ""
+            desc "添加物理机请求"
             
 			params {
 
@@ -45,7 +45,7 @@ doc {
 				column {
 					name "managementIp"
 					enclosedIn "params"
-					desc ""
+					desc "管理节点的IP"
 					location "body"
 					type "String"
 					optional false
@@ -65,7 +65,7 @@ doc {
 				column {
 					name "resourceUuid"
 					enclosedIn "params"
-					desc ""
+					desc "资源的UUID"
 					location "body"
 					type "String"
 					optional true

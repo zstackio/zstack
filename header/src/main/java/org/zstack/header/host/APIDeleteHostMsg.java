@@ -6,6 +6,8 @@ import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
 
+import static org.zstack.header.message.APIDeleteMessage.DeletionMode.Permissive;
+
 
 /**
  * @api delete host, vm Running on host will be stopped
@@ -67,8 +69,8 @@ public class APIDeleteHostMsg extends APIDeleteMessage implements HostMessage {
  
     public static APIDeleteHostMsg __example__() {
         APIDeleteHostMsg msg = new APIDeleteHostMsg();
-
-
+        msg.setUuid(uuid());
+        msg.setDeletionMode(Permissive);
         return msg;
     }
 

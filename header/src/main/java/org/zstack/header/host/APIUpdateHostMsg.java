@@ -60,11 +60,13 @@ public class APIUpdateHostMsg extends APIMessage implements HostMessage {
     public String getHostUuid() {
         return uuid;
     }
- 
+
     public static APIUpdateHostMsg __example__() {
         APIUpdateHostMsg msg = new APIUpdateHostMsg();
-
-
+        msg.setUuid(uuid());
+        msg.setDescription("example");
+        msg.setManagementIp("192.168.0.1");
+        msg.setName("example");
         return msg;
     }
 
