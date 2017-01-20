@@ -1,13 +1,11 @@
 package org.zstack.header.image
 
-import org.zstack.header.image.APIAddImageEvent
-
 doc {
-    title "AddImage"
+    title "添加镜像(AddImage)"
 
     category "image"
 
-    desc "在这里填写API描述"
+    desc "向镜像服务器添加镜像"
 
     rest {
         request {
@@ -25,7 +23,7 @@ doc {
 				column {
 					name "name"
 					enclosedIn "params"
-					desc "资源名称"
+					desc "镜像名称"
 					location "body"
 					type "String"
 					optional false
@@ -35,7 +33,7 @@ doc {
 				column {
 					name "description"
 					enclosedIn "params"
-					desc "资源的详细描述"
+					desc "镜像的详细描述"
 					location "body"
 					type "String"
 					optional true
@@ -45,7 +43,7 @@ doc {
 				column {
 					name "url"
 					enclosedIn "params"
-					desc ""
+					desc "被添加镜像的URL地址"
 					location "body"
 					type "String"
 					optional false
@@ -55,7 +53,7 @@ doc {
 				column {
 					name "mediaType"
 					enclosedIn "params"
-					desc ""
+					desc "镜像的类型"
 					location "body"
 					type "String"
 					optional true
@@ -65,7 +63,7 @@ doc {
 				column {
 					name "guestOsType"
 					enclosedIn "params"
-					desc ""
+					desc "镜像对应客户机操作系统的类型"
 					location "body"
 					type "String"
 					optional true
@@ -75,7 +73,7 @@ doc {
 				column {
 					name "system"
 					enclosedIn "params"
-					desc ""
+					desc "是否系统镜像（如，虚拟路由镜像）"
 					location "body"
 					type "boolean"
 					optional true
@@ -85,7 +83,7 @@ doc {
 				column {
 					name "format"
 					enclosedIn "params"
-					desc ""
+					desc "镜像的格式，比如：raw"
 					location "body"
 					type "String"
 					optional false
@@ -95,7 +93,7 @@ doc {
 				column {
 					name "platform"
 					enclosedIn "params"
-					desc ""
+					desc "镜像的系统平台"
 					location "body"
 					type "String"
 					optional true
@@ -105,7 +103,7 @@ doc {
 				column {
 					name "backupStorageUuids"
 					enclosedIn "params"
-					desc ""
+					desc "指定添加镜像的镜像服务器UUID列表"
 					location "body"
 					type "List"
 					optional false
@@ -115,7 +113,7 @@ doc {
 				column {
 					name "type"
 					enclosedIn "params"
-					desc ""
+					desc "内部使用字段"
 					location "body"
 					type "String"
 					optional true
@@ -125,7 +123,7 @@ doc {
 				column {
 					name "resourceUuid"
 					enclosedIn "params"
-					desc ""
+					desc "资源UUID。若指定，镜像会使用该字段值作为UUID。"
 					location "body"
 					type "String"
 					optional true
@@ -134,7 +132,7 @@ doc {
 				}
 				column {
 					name "systemTags"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "系统标签"
 					location "body"
 					type "List"
@@ -144,7 +142,7 @@ doc {
 				}
 				column {
 					name "userTags"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "用户标签"
 					location "body"
 					type "List"

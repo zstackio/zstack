@@ -50,6 +50,8 @@ public class APIChangeImageStateMsg extends APIMessage implements ImageMessage {
     public static APIChangeImageStateMsg __example__() {
         APIChangeImageStateMsg msg = new APIChangeImageStateMsg();
 
+        msg.setUuid(uuid());
+        msg.setStateEvent(ImageState.Disabled.toString());
 
         return msg;
     }

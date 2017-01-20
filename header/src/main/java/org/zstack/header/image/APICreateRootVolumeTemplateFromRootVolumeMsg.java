@@ -8,6 +8,7 @@ import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.volume.VolumeVO;
 
+import java.util.Collections;
 import java.util.List;
 
 @Action(category = ImageConstant.ACTION_CATEGORY)
@@ -90,6 +91,10 @@ public class APICreateRootVolumeTemplateFromRootVolumeMsg extends APICreateMessa
     public static APICreateRootVolumeTemplateFromRootVolumeMsg __example__() {
         APICreateRootVolumeTemplateFromRootVolumeMsg msg = new APICreateRootVolumeTemplateFromRootVolumeMsg();
 
+        msg.setName("My Root Volume Template");
+        msg.setPlatform(ImagePlatform.Linux.toString());
+        msg.setRootVolumeUuid(uuid());
+        msg.setBackupStorageUuids(Collections.singletonList(uuid()));
 
         return msg;
     }

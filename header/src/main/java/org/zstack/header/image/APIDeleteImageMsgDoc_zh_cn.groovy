@@ -1,13 +1,11 @@
 package org.zstack.header.image
 
-import org.zstack.header.image.APIDeleteImageEvent
-
 doc {
-    title "DeleteImage"
+    title "删除镜像(DeleteImage)"
 
     category "image"
 
-    desc "在这里填写API描述"
+    desc "删除镜像"
 
     rest {
         request {
@@ -25,7 +23,7 @@ doc {
 				column {
 					name "uuid"
 					enclosedIn "params"
-					desc "资源的UUID，唯一标示该资源"
+					desc "镜像的UUID，唯一标示该镜像"
 					location "url"
 					type "String"
 					optional false
@@ -35,7 +33,7 @@ doc {
 				column {
 					name "backupStorageUuids"
 					enclosedIn "params"
-					desc ""
+					desc "镜像服务器UUID列表"
 					location "body"
 					type "List"
 					optional true
@@ -45,7 +43,7 @@ doc {
 				column {
 					name "deleteMode"
 					enclosedIn "params"
-					desc "删除模式"
+					desc "删除模式(Permissive 或者 Enforcing, 默认 Permissive)"
 					location "body"
 					type "String"
 					optional true
@@ -54,7 +52,7 @@ doc {
 				}
 				column {
 					name "systemTags"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "系统标签"
 					location "body"
 					type "List"
@@ -64,7 +62,7 @@ doc {
 				}
 				column {
 					name "userTags"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "用户标签"
 					location "body"
 					type "List"

@@ -8,6 +8,7 @@ import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -92,6 +93,9 @@ public class APICreateRootVolumeTemplateFromVolumeSnapshotMsg extends APICreateM
     public static APICreateRootVolumeTemplateFromVolumeSnapshotMsg __example__() {
         APICreateRootVolumeTemplateFromVolumeSnapshotMsg msg = new APICreateRootVolumeTemplateFromVolumeSnapshotMsg();
 
+        msg.setName("My Root Volume Template");
+        msg.setBackupStorageUuids(Collections.singletonList(uuid()));
+        msg.setSnapshotUuid(uuid());
 
         return msg;
     }

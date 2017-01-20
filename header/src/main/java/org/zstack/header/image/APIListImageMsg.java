@@ -13,11 +13,4 @@ public class APIListImageMsg extends APIListMessage {
         super(uuids);
     }
  
-    public static APIListImageMsg __example__() {
-        APIListImageMsg msg = new APIListImageMsg();
-
-
-        return msg;
-    }
-
 }

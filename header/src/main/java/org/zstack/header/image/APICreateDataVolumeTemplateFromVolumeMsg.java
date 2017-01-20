@@ -8,6 +8,7 @@ import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.volume.VolumeVO;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -64,6 +65,9 @@ public class APICreateDataVolumeTemplateFromVolumeMsg extends APICreateMessage {
     public static APICreateDataVolumeTemplateFromVolumeMsg __example__() {
         APICreateDataVolumeTemplateFromVolumeMsg msg = new APICreateDataVolumeTemplateFromVolumeMsg();
 
+        msg.setBackupStorageUuids(Collections.singletonList(uuid()));
+        msg.setName("My Data Volume Template");
+        msg.setVolumeUuid(uuid());
 
         return msg;
     }

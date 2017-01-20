@@ -36,6 +36,7 @@ public class APISyncImageSizeMsg extends APIMessage implements ImageMessage {
     public static APISyncImageSizeMsg __example__() {
         APISyncImageSizeMsg msg = new APISyncImageSizeMsg();
 
+        msg.setUuid(uuid());
 
         return msg;
     }

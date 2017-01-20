@@ -4,7 +4,7 @@ import org.zstack.header.errorcode.ErrorCode
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "从云盘快照创建根云盘错误清单"
 
 	field {
 		name "backupStorageUuid"

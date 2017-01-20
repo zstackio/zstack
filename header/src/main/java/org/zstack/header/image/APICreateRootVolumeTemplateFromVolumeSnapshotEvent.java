@@ -6,6 +6,7 @@ import org.zstack.header.rest.RestResponse;
 import org.zstack.header.rest.SDK;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -71,6 +72,22 @@ public class APICreateRootVolumeTemplateFromVolumeSnapshotEvent extends APIEvent
     public static APICreateRootVolumeTemplateFromVolumeSnapshotEvent __example__() {
         APICreateRootVolumeTemplateFromVolumeSnapshotEvent event = new APICreateRootVolumeTemplateFromVolumeSnapshotEvent();
 
+        ImageInventory inv = new ImageInventory();
+        inv.setUuid(uuid());
+
+        ImageBackupStorageRefInventory ref = new ImageBackupStorageRefInventory();
+        ref.setBackupStorageUuid(uuid());
+        ref.setImageUuid(inv.getUuid());
+        ref.setInstallPath("ceph://zs-images/0cd599ec519249489475112a058bb93a");
+        ref.setStatus(ImageStatus.Ready.toString());
+
+        inv.setName("My Root Volume Template");
+        inv.setBackupStorageRefs(Collections.singletonList(ref));
+        inv.setFormat(ImageConstant.RAW_FORMAT_STRING);
+        inv.setMediaType(ImageConstant.ImageMediaType.RootVolumeTemplate.toString());
+        inv.setPlatform(ImagePlatform.Linux.toString());
+
+        event.setInventory(inv);
 
         return event;
     }
