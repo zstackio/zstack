@@ -3,6 +3,7 @@ package org.zstack.storage.primary.local;
 import org.zstack.header.message.APIReply;
 import org.zstack.header.rest.RestResponse;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -71,7 +72,14 @@ public class APIGetLocalStorageHostDiskCapacityReply extends APIReply {
     public static APIGetLocalStorageHostDiskCapacityReply __example__() {
         APIGetLocalStorageHostDiskCapacityReply reply = new APIGetLocalStorageHostDiskCapacityReply();
 
+        HostDiskCapacity cap = new HostDiskCapacity();
+        cap.setHostUuid(uuid());
+        cap.setAvailableCapacity(1024L * 1024L * 928L);
+        cap.setAvailablePhysicalCapacity(1024L * 1024L * 928L);
+        cap.setTotalCapacity(1024L * 1024L * 1024L);
+        cap.setTotalPhysicalCapacity(1024L * 1024L * 1024L);
 
+        reply.setInventories(Collections.singletonList(cap));
         return reply;
     }
 

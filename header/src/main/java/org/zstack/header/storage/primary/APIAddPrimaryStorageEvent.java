@@ -3,6 +3,8 @@ package org.zstack.header.storage.primary;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.rest.RestResponse;
 
+import java.util.Collections;
+
 /**
  * @apiResult api event for message of *addPrimaryStorage*, for example, :ref:`APIAddNfsPrimaryStorageMsg`
  * @example {
@@ -53,7 +55,15 @@ public class APIAddPrimaryStorageEvent extends APIEvent {
     public static APIAddPrimaryStorageEvent __example__() {
         APIAddPrimaryStorageEvent event = new APIAddPrimaryStorageEvent();
 
+        PrimaryStorageInventory ps = new PrimaryStorageInventory();
+        ps.setName("PS1");
+        ps.setUrl("/zstack_ps");
+        ps.setType("LocalStorage");
+        ps.setAttachedClusterUuids(Collections.singletonList(uuid()));
+        ps.setState(PrimaryStorageState.Enabled.toString());
+        ps.setStatus(PrimaryStorageStatus.Connected.toString());
 
+        event.setInventory(ps);
         return event;
     }
 

@@ -5,7 +5,7 @@ import org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply.
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "主机本地存储磁盘容量清单"
 
 	ref {
 		name "error"
