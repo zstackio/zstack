@@ -61,7 +61,7 @@ public class GCDeleteBitsRunner implements GCRunner {
         amsg.setCommand(cmd);
         amsg.setCommandTimeout(timeoutManager.getTimeout(cmd.getClass()));
         amsg.setHostUuid(ctx.getHostUuid());
-        amsg.setPath(LocalStorageKvmBackend.DELETE_BITS_PATH);
+        amsg.setPath(LocalStorageKvmBackend.DELETE_DIR_PATH);
         bus.makeTargetServiceIdByResourceUuid(amsg, HostConstant.SERVICE_ID, ctx.getHostUuid());
         bus.send(amsg, new CloudBusCallBack(completion) {
             @Override
