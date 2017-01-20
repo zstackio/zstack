@@ -3,10 +3,11 @@ package org.zstack.ldap;
 import org.springframework.http.HttpMethod;
 import org.zstack.header.query.APIQueryMessage;
 import org.zstack.header.query.AutoQuery;
-import org.zstack.header.query.QueryCondition;
 import org.zstack.header.rest.RestRequest;
 
-import static org.zstack.utils.CollectionDSL.list;
+import java.util.List;
+
+import static java.util.Arrays.asList;
 
 @AutoQuery(replyClass = APIQueryLdapServerReply.class, inventoryClass = LdapServerInventory.class)
 @RestRequest(
@@ -16,17 +17,9 @@ import static org.zstack.utils.CollectionDSL.list;
         responseClass = APIQueryLdapServerReply.class
 )
 public class APIQueryLdapServerMsg extends APIQueryMessage {
- 
-    public static APIQueryLdapServerMsg __example__() {
-        APIQueryLdapServerMsg msg = new APIQueryLdapServerMsg();
-        QueryCondition queryCondition = new QueryCondition();
-        queryCondition.setName("name");
-        queryCondition.setOp("=");
-        queryCondition.setValue("ldap server");
 
-        msg.setConditions(list(queryCondition));
-
-        return msg;
+    public static List<String> __example__() {
+        return asList("name=ldap server");
     }
 
 }

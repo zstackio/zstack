@@ -3,10 +3,11 @@ package org.zstack.header.identity;
 import org.springframework.http.HttpMethod;
 import org.zstack.header.query.APIQueryMessage;
 import org.zstack.header.query.AutoQuery;
-import org.zstack.header.query.QueryCondition;
 import org.zstack.header.rest.RestRequest;
 
-import static org.zstack.utils.CollectionDSL.list;
+import java.util.List;
+
+import static java.util.Arrays.asList;
 
 /**
  * Created by frank on 7/14/2015.
@@ -21,16 +22,9 @@ import static org.zstack.utils.CollectionDSL.list;
         responseClass = APIQueryUserGroupReply.class
 )
 public class APIQueryUserGroupMsg extends APIQueryMessage {
- 
-    public static APIQueryUserGroupMsg __example__() {
-        APIQueryUserGroupMsg msg = new APIQueryUserGroupMsg();
-        QueryCondition queryCondition = new QueryCondition();
-        queryCondition.setName("name");
-        queryCondition.setOp("=");
-        queryCondition.setValue("test");
 
-        msg.setConditions(list(queryCondition));
-        return msg;
+    public static List<String> __example__() {
+        return asList("name=test");
     }
 
 }
