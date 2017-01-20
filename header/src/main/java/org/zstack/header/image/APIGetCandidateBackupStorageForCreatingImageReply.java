@@ -6,6 +6,7 @@ import org.zstack.header.storage.backup.BackupStorageInventory;
 
 import java.util.List;
 
+
 /**
  * Created by xing5 on 2016/8/30.
  */
@@ -23,7 +24,6 @@ public class APIGetCandidateBackupStorageForCreatingImageReply extends APIReply 
  
     public static APIGetCandidateBackupStorageForCreatingImageReply __example__() {
         APIGetCandidateBackupStorageForCreatingImageReply reply = new APIGetCandidateBackupStorageForCreatingImageReply();
-        reply.setInventories(list(uuid(),uuid()));
         return reply;
     }
 
