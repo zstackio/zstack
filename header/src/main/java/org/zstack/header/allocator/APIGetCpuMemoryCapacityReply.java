@@ -44,8 +44,10 @@ public class APIGetCpuMemoryCapacityReply extends APIReply {
  
     public static APIGetCpuMemoryCapacityReply __example__() {
         APIGetCpuMemoryCapacityReply reply = new APIGetCpuMemoryCapacityReply();
-
-
+        reply.setAvailableCpu(2);
+        reply.setAvailableMemory(4);
+        reply.setTotalCpu(4);
+        reply.setTotalMemory(8);
         return reply;
     }
 

@@ -5,9 +5,9 @@ import org.zstack.header.allocator.APIGetCpuMemoryCapacityReply
 doc {
     title "GetCpuMemoryCapacity"
 
-    category "host.allocator"
+    category "分配器"
 
-    desc "在这里填写API描述"
+    desc "获取cpu和内存容量"
 
     rest {
         request {
@@ -25,7 +25,7 @@ doc {
 				column {
 					name "zoneUuids"
 					enclosedIn "params"
-					desc ""
+					desc "区域的uuid"
 					location "query"
 					type "List"
 					optional true
@@ -35,7 +35,7 @@ doc {
 				column {
 					name "clusterUuids"
 					enclosedIn "params"
-					desc ""
+					desc "集群的UUID。用于挂载网络、存储等"
 					location "query"
 					type "List"
 					optional true
@@ -45,7 +45,7 @@ doc {
 				column {
 					name "hostUuids"
 					enclosedIn "params"
-					desc ""
+					desc "物理机的UUID。用于添加、删除host等"
 					location "query"
 					type "List"
 					optional true

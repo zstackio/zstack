@@ -10,6 +10,8 @@ import org.zstack.header.zone.ZoneVO;
 
 import java.util.List;
 
+import static org.zstack.utils.CollectionDSL.list;
+
 @RestRequest(
         path = "/hosts/capacities/cpu-memory",
         method = HttpMethod.GET,
@@ -56,11 +58,13 @@ public class APIGetCpuMemoryCapacityMsg extends APISyncCallMessage {
     public void setHostUuids(List<String> hostUuids) {
         this.hostUuids = hostUuids;
     }
- 
+
     public static APIGetCpuMemoryCapacityMsg __example__() {
         APIGetCpuMemoryCapacityMsg msg = new APIGetCpuMemoryCapacityMsg();
-
-
+        msg.setAll(true);
+        msg.setZoneUuids(list(uuid(),uuid()));
+        msg.setClusterUuids(list(uuid(),uuid()));
+        msg.setHostUuids(list(uuid(),uuid()));
         return msg;
     }
 
