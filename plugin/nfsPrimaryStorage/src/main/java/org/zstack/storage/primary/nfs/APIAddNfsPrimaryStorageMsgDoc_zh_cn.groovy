@@ -3,11 +3,11 @@ package org.zstack.storage.primary.nfs
 import org.zstack.header.storage.primary.APIAddPrimaryStorageEvent
 
 doc {
-    title "AddNfsPrimaryStorage"
+    title "添加 NFS 主存储(AddNfsPrimaryStorage)"
 
     category "storage.primary"
 
-    desc "在这里填写API描述"
+    desc "添加 NFS 主存储"
 
     rest {
         request {
@@ -25,7 +25,7 @@ doc {
 				column {
 					name "url"
 					enclosedIn "params"
-					desc ""
+					desc "NFS 公开地址，格式为 nfs-host:/path/to/export"
 					location "body"
 					type "String"
 					optional false
@@ -35,7 +35,7 @@ doc {
 				column {
 					name "name"
 					enclosedIn "params"
-					desc "资源名称"
+					desc "NFS 主存储名称"
 					location "body"
 					type "String"
 					optional false
@@ -45,7 +45,7 @@ doc {
 				column {
 					name "description"
 					enclosedIn "params"
-					desc "资源的详细描述"
+					desc "NFS 主存储的详细描述"
 					location "body"
 					type "String"
 					optional true
@@ -55,7 +55,7 @@ doc {
 				column {
 					name "type"
 					enclosedIn "params"
-					desc ""
+					desc "类型为 NFS"
 					location "body"
 					type "String"
 					optional true
@@ -75,7 +75,7 @@ doc {
 				column {
 					name "resourceUuid"
 					enclosedIn "params"
-					desc ""
+					desc "资源UUID。若指定，NFS 主存储会使用该字段值作为UUID。"
 					location "body"
 					type "String"
 					optional true
@@ -84,7 +84,7 @@ doc {
 				}
 				column {
 					name "systemTags"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "系统标签"
 					location "body"
 					type "List"
@@ -94,7 +94,7 @@ doc {
 				}
 				column {
 					name "userTags"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "用户标签"
 					location "body"
 					type "List"
