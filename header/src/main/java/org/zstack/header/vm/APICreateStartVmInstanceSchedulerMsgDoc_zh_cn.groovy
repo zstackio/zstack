@@ -5,7 +5,7 @@ doc {
 
     category "vmInstance"
 
-    desc "在这里填写API描述"
+    desc "创建启动云主机的定时任务"
 
     rest {
         request {
@@ -23,7 +23,7 @@ doc {
                 column {
                     name "vmUuid"
                     enclosedIn "params"
-                    desc ""
+                    desc "云主机uuid"
                     location "url"
                     type "String"
                     optional false
@@ -53,77 +53,77 @@ doc {
                 column {
                     name "schedulerName"
                     enclosedIn "params"
-                    desc ""
+                    desc "定时任务名称"
                     location "body"
                     type "String"
                     optional false
-                    since "0.6"
+                    since "1.6"
 
                 }
                 column {
                     name "schedulerDescription"
                     enclosedIn "params"
-                    desc ""
+                    desc "定时任务描述"
                     location "body"
                     type "String"
                     optional true
-                    since "0.6"
+                    since "1.6"
 
                 }
                 column {
                     name "type"
                     enclosedIn "params"
-                    desc ""
+                    desc "定时任务类型，simple或者cron"
                     location "body"
                     type "String"
                     optional false
-                    since "0.6"
+                    since "1.6"
                     values("simple", "cron")
                 }
                 column {
                     name "interval"
                     enclosedIn "params"
-                    desc ""
+                    desc "定时任务间隔，单位秒"
                     location "body"
                     type "Integer"
                     optional true
-                    since "0.6"
+                    since "1.6"
 
                 }
                 column {
                     name "repeatCount"
                     enclosedIn "params"
-                    desc ""
+					desc "定时任务重复次数，仅针对simple类型的定时任务生效"
                     location "body"
                     type "Integer"
                     optional true
-                    since "0.6"
+                    since "1.6"
 
                 }
                 column {
                     name "startTime"
                     enclosedIn "params"
-                    desc ""
+                    desc "定时任务启动时间，必须遵循unix timestamp格式，0为从立刻开始"
                     location "body"
                     type "Long"
                     optional true
-                    since "0.6"
+                    since "1.6"
 
                 }
                 column {
                     name "cron"
                     enclosedIn "params"
-                    desc ""
+					desc "cron表达式，需遵循Java Quartz组件cron格式标准"
                     location "body"
                     type "String"
                     optional true
-                    since "0.6"
+                    since "1.6"
 
                 }
                 column {
                     name "resourceUuid"
                     enclosedIn "params"
-                    desc ""
+					desc "用户可指定创建Scheduler所使用的uuid"
                     location "body"
                     type "String"
                     optional true
@@ -133,7 +133,7 @@ doc {
                 column {
                     name "systemTags"
                     enclosedIn ""
-                    desc ""
+                    desc "系统标签"
                     location "body"
                     type "List"
                     optional true
