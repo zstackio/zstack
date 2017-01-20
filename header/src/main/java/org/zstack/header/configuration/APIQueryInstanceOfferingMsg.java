@@ -4,10 +4,11 @@ import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.query.APIQueryMessage;
 import org.zstack.header.query.AutoQuery;
-import org.zstack.header.query.QueryCondition;
 import org.zstack.header.rest.RestRequest;
 
-import static org.zstack.utils.CollectionDSL.list;
+import java.util.List;
+
+import static java.util.Arrays.asList;
 
 @AutoQuery(replyClass = APIQueryInstanceOfferingReply.class, inventoryClass = InstanceOfferingInventory.class)
 @Action(category = ConfigurationConstant.ACTION_CATEGORY, names = {"read"})
@@ -19,16 +20,9 @@ import static org.zstack.utils.CollectionDSL.list;
 )
 public class APIQueryInstanceOfferingMsg extends APIQueryMessage {
 
- 
-    public static APIQueryInstanceOfferingMsg __example__() {
-        APIQueryInstanceOfferingMsg msg = new APIQueryInstanceOfferingMsg();
-        QueryCondition queryCondition = new QueryCondition();
-        queryCondition.setName("uuid");
-        queryCondition.setOp("=");
-        queryCondition.setValue(uuid());
 
-        msg.setConditions(list(queryCondition));
-        return msg;
+    public static List<String> __example__() {
+        return asList("uuid=" + uuid());
     }
 
 }

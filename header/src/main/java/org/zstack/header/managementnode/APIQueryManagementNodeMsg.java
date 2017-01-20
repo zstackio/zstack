@@ -3,10 +3,11 @@ package org.zstack.header.managementnode;
 import org.springframework.http.HttpMethod;
 import org.zstack.header.query.APIQueryMessage;
 import org.zstack.header.query.AutoQuery;
-import org.zstack.header.query.QueryCondition;
 import org.zstack.header.rest.RestRequest;
 
-import static org.zstack.utils.CollectionDSL.list;
+import java.util.List;
+
+import static java.util.Arrays.asList;
 
 /**
  */
@@ -18,16 +19,8 @@ import static org.zstack.utils.CollectionDSL.list;
         responseClass = APIQueryManagementNodeReply.class
 )
 public class APIQueryManagementNodeMsg extends APIQueryMessage {
- 
-    public static APIQueryManagementNodeMsg __example__() {
-        APIQueryManagementNodeMsg msg = new APIQueryManagementNodeMsg();
-        QueryCondition queryCondition = new QueryCondition();
-        queryCondition.setName("uuid");
-        queryCondition.setOp("=");
-        queryCondition.setValue(uuid());
 
-        msg.setConditions(list(queryCondition));
-        return msg;
+    public static List<String> __example__() {
+        return asList("uuid=" + uuid());
     }
-
 }
