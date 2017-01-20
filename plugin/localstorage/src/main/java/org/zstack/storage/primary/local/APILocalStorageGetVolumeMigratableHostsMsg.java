@@ -38,6 +38,7 @@ public class APILocalStorageGetVolumeMigratableHostsMsg extends APISyncCallMessa
     public static APILocalStorageGetVolumeMigratableHostsMsg __example__() {
         APILocalStorageGetVolumeMigratableHostsMsg msg = new APILocalStorageGetVolumeMigratableHostsMsg();
 
+        msg.setVolumeUuid(uuid());
 
         return msg;
     }

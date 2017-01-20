@@ -1,13 +1,11 @@
 package org.zstack.storage.primary.local
 
-import org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply
-
 doc {
-    title "GetLocalStorageHostDiskCapacity"
+    title "获取主机本地存储容量(GetLocalStorageHostDiskCapacity)"
 
     category "storage.primary"
 
-    desc "在这里填写API描述"
+    desc "获取主机的本地存储的磁盘容量"
 
     rest {
         request {
@@ -44,7 +42,7 @@ doc {
 				}
 				column {
 					name "systemTags"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "系统标签"
 					location "query"
 					type "List"
@@ -54,7 +52,7 @@ doc {
 				}
 				column {
 					name "userTags"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "用户标签"
 					location "query"
 					type "List"

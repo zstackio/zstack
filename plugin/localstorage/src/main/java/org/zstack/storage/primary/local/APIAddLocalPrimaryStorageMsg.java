@@ -23,6 +23,8 @@ public class APIAddLocalPrimaryStorageMsg extends APIAddPrimaryStorageMsg {
     public static APIAddLocalPrimaryStorageMsg __example__() {
         APIAddLocalPrimaryStorageMsg msg = new APIAddLocalPrimaryStorageMsg();
 
+        msg.setName("PS1");
+        msg.setUrl("/zstack_ps");
 
         return msg;
     }

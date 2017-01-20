@@ -1,11 +1,10 @@
 package org.zstack.storage.primary.local
 
 import org.zstack.header.errorcode.ErrorCode
-import org.zstack.storage.primary.local.LocalStorageResourceRefInventory
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "本地存储资源引用清单"
 
 	ref {
 		name "error"
