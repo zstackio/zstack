@@ -51,9 +51,14 @@ public class APIReconnectHostEvent extends APIEvent {
 
  
     public static APIReconnectHostEvent __example__() {
+
         APIReconnectHostEvent event = new APIReconnectHostEvent();
-
-
+        HostInventory hi = new HostInventory();
+        hi.setName("example");
+        hi.setClusterUuid(uuid());
+        hi.setManagementIp("192.168.0.1");
+        hi.setAvailableCpuCapacity(100000L);
+        hi.setAvailableMemoryCapacity(100000L);
         return event;
     }
 

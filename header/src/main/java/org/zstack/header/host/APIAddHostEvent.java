@@ -3,6 +3,7 @@ package org.zstack.header.host;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.rest.RestResponse;
 
+
 /**
  * @apiResult api event for '*AddHost*' message, depending on hypervisor the messages vary
  * <p>
@@ -52,8 +53,22 @@ public class APIAddHostEvent extends APIEvent {
  
     public static APIAddHostEvent __example__() {
         APIAddHostEvent event = new APIAddHostEvent();
-
-
+        HostInventory hi = new HostInventory ();
+        hi.setAvailableCpuCapacity(2L);
+        hi.setAvailableMemoryCapacity(4L);
+        hi.setClusterUuid(uuid());
+        hi.setManagementIp("192.168.0.1");
+        hi.setName("example");
+        hi.setState("Enabled");
+        hi.setStatus("Connected");
+        hi.setClusterUuid(uuid());
+        hi.setZoneUuid(uuid());
+        hi.setUuid(uuid());
+        hi.setTotalCpuCapacity(4L);
+        hi.setTotalMemoryCapacity(4L);
+        hi.setHypervisorType("KVM");
+        hi.setDescription("example");
+        event.setInventory(hi);
         return event;
     }
 

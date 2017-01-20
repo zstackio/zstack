@@ -7,7 +7,7 @@ doc {
 
     category "host"
 
-    desc "在这里填写API描述"
+    desc "更新物理机启用状态"
 
     rest {
         request {
@@ -35,7 +35,7 @@ doc {
 				column {
 					name "stateEvent"
 					enclosedIn "changeHostState"
-					desc ""
+					desc "期望的物理机启用状态"
 					location "body"
 					type "String"
 					optional false
