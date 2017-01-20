@@ -4,11 +4,11 @@ import org.zstack.header.storage.backup.APIQueryBackupStorageReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "QueryCephBackupStorage"
+    title "查询 Ceph 镜像服务器(QueryCephBackupStorage)"
 
-    category "未知类别"
+    category "storage.ceph.backup"
 
-    desc "在这里填写API描述"
+    desc "查询 Ceph 镜像服务器"
 
     rest {
         request {

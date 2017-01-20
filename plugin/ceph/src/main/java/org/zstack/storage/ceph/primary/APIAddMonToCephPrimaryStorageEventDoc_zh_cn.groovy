@@ -1,11 +1,10 @@
 package org.zstack.storage.ceph.primary
 
 import org.zstack.header.errorcode.ErrorCode
-import org.zstack.storage.ceph.primary.CephPrimaryStorageInventory
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "Ceph 主存储清单"
 
 	ref {
 		name "error"

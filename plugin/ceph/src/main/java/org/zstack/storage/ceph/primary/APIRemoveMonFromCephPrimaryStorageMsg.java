@@ -7,6 +7,7 @@ import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.primary.PrimaryStorageMessage;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -49,6 +50,8 @@ public class APIRemoveMonFromCephPrimaryStorageMsg extends APIMessage implements
     public static APIRemoveMonFromCephPrimaryStorageMsg __example__() {
         APIRemoveMonFromCephPrimaryStorageMsg msg = new APIRemoveMonFromCephPrimaryStorageMsg();
 
+        msg.setUuid(uuid());
+        msg.setMonHostnames(Collections.singletonList("10.0.1.2"));
 
         return msg;
     }

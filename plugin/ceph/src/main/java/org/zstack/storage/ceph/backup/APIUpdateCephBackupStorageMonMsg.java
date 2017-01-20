@@ -99,6 +99,8 @@ public class APIUpdateCephBackupStorageMonMsg extends APIMessage implements Back
     public static APIUpdateCephBackupStorageMonMsg __example__() {
         APIUpdateCephBackupStorageMonMsg msg = new APIUpdateCephBackupStorageMonMsg();
 
+        msg.setMonUuid(uuid());
+        msg.setHostname("10.0.1.4");
 
         return msg;
     }

@@ -6,6 +6,7 @@ import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.backup.BackupStorageMessage;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -47,6 +48,8 @@ public class APIAddMonToCephBackupStorageMsg extends APIMessage implements Backu
     public static APIAddMonToCephBackupStorageMsg __example__() {
         APIAddMonToCephBackupStorageMsg msg = new APIAddMonToCephBackupStorageMsg();
 
+        msg.setUuid(uuid());
+        msg.setMonUrls(Collections.singletonList("10.0.1.3"));
 
         return msg;
     }

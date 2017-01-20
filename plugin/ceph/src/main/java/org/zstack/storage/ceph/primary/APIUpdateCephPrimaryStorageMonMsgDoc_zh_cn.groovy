@@ -1,13 +1,11 @@
 package org.zstack.storage.ceph.primary
 
-import org.zstack.storage.ceph.primary.APIUpdateCephPrimaryStorageMonEvent
-
 doc {
-    title "UpdateCephPrimaryStorageMon"
+	title "更新 Ceph 主存储 mon 节点(UpdateCephPrimaryStorageMon)"
 
-    category "未知类别"
+	category "storage.ceph.primary"
 
-    desc "在这里填写API描述"
+	desc "更新 Ceph 主存储 mon 节点"
 
     rest {
         request {
@@ -25,7 +23,7 @@ doc {
 				column {
 					name "monUuid"
 					enclosedIn "updateCephPrimaryStorageMon"
-					desc ""
+					desc "mon 节点UUID"
 					location "url"
 					type "String"
 					optional false
@@ -35,7 +33,7 @@ doc {
 				column {
 					name "hostname"
 					enclosedIn "updateCephPrimaryStorageMon"
-					desc ""
+					desc "mon 节点新主机名"
 					location "body"
 					type "String"
 					optional true
@@ -45,7 +43,7 @@ doc {
 				column {
 					name "sshUsername"
 					enclosedIn "updateCephPrimaryStorageMon"
-					desc ""
+					desc "mon 节点主机 ssh 用户名"
 					location "body"
 					type "String"
 					optional true
@@ -55,7 +53,7 @@ doc {
 				column {
 					name "sshPassword"
 					enclosedIn "updateCephPrimaryStorageMon"
-					desc ""
+					desc "mon 节点主机 ssh 用户密码"
 					location "body"
 					type "String"
 					optional true
@@ -65,7 +63,7 @@ doc {
 				column {
 					name "sshPort"
 					enclosedIn "updateCephPrimaryStorageMon"
-					desc ""
+					desc "mon 节点主机 ssh 端口"
 					location "body"
 					type "Integer"
 					optional true
@@ -75,7 +73,7 @@ doc {
 				column {
 					name "monPort"
 					enclosedIn "updateCephPrimaryStorageMon"
-					desc ""
+					desc "mon 的新端口"
 					location "body"
 					type "Integer"
 					optional true
@@ -84,7 +82,7 @@ doc {
 				}
 				column {
 					name "systemTags"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "系统标签"
 					location "body"
 					type "List"
@@ -94,7 +92,7 @@ doc {
 				}
 				column {
 					name "userTags"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "用户标签"
 					location "body"
 					type "List"

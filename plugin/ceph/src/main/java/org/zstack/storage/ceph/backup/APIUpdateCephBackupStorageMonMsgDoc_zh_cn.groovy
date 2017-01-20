@@ -1,15 +1,13 @@
 package org.zstack.storage.ceph.backup
 
-import org.zstack.storage.ceph.backup.APIUpdateCephBackupStorageMonEvent
-
 doc {
-    title "UpdateCephBackupStorageMon"
+    title "更新 Ceph 镜像服务器 mon 节点(UpdateCephBackupStorageMon)"
 
-    category "未知类别"
+    category "storage.ceph.backup"
 
-    desc "在这里填写API描述"
+    desc "更新 Ceph 镜像服务器 mon 节点"
 
-    rest {
+	rest {
         request {
 			url "PUT /v1/backup-storage/ceph/mons/{monUuid}/actions"
 
@@ -25,7 +23,7 @@ doc {
 				column {
 					name "monUuid"
 					enclosedIn "updateCephBackupStorageMon"
-					desc ""
+					desc "mon 节点UUID"
 					location "url"
 					type "String"
 					optional false
@@ -35,7 +33,7 @@ doc {
 				column {
 					name "hostname"
 					enclosedIn "updateCephBackupStorageMon"
-					desc ""
+					desc "mon 节点新主机地址"
 					location "body"
 					type "String"
 					optional true
@@ -45,7 +43,7 @@ doc {
 				column {
 					name "sshUsername"
 					enclosedIn "updateCephBackupStorageMon"
-					desc ""
+					desc "mon 节点主机 ssh 用户名"
 					location "body"
 					type "String"
 					optional true
@@ -55,7 +53,7 @@ doc {
 				column {
 					name "sshPassword"
 					enclosedIn "updateCephBackupStorageMon"
-					desc ""
+					desc "mon 节点主机 ssh 用户密码"
 					location "body"
 					type "String"
 					optional true
@@ -65,7 +63,7 @@ doc {
 				column {
 					name "sshPort"
 					enclosedIn "updateCephBackupStorageMon"
-					desc ""
+					desc "mon 节点主机 ssh 端口"
 					location "body"
 					type "Integer"
 					optional true
@@ -75,7 +73,7 @@ doc {
 				column {
 					name "monPort"
 					enclosedIn "updateCephBackupStorageMon"
-					desc ""
+					desc "mon 节点的端口"
 					location "body"
 					type "Integer"
 					optional true
@@ -84,7 +82,7 @@ doc {
 				}
 				column {
 					name "systemTags"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "系统标签"
 					location "body"
 					type "List"
@@ -94,7 +92,7 @@ doc {
 				}
 				column {
 					name "userTags"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "用户标签"
 					location "body"
 					type "List"
