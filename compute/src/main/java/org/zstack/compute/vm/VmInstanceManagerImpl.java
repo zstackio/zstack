@@ -449,15 +449,14 @@ public class VmInstanceManagerImpl extends AbstractService implements
             }
         }
 
-        SimpleQuery<AccountResourceRefVO> q = dbf.createQuery(AccountResourceRefVO.class);
-        q.add(AccountResourceRefVO_.accountUuid, Op.EQ, accountUuid);
-        q.add(AccountResourceRefVO_.resourceType, Op.EQ, L3NetworkVO.class.getSimpleName());
-        q.select(AccountResourceRefVO_.resourceUuid);
-        List<String> l3sFromAccount = q.listValue();
-
-        reply.setInventories(L3NetworkInventory.valueOf(l3s.stream()
-                .filter(inv -> l3sFromAccount.contains(inv.getUuid()))
-                .collect(Collectors.toList())));
+        List<String> l3sFromAccount = acntMgr.getResourceUuidsCanAccessByAccount(accountUuid, L3NetworkVO.class);
+        if (l3sFromAccount == null) {
+            reply.setInventories(L3NetworkInventory.valueOf(l3s));
+        } else {
+            reply.setInventories(L3NetworkInventory.valueOf(l3s.stream()
+                    .filter(vo -> l3sFromAccount.contains(vo.getUuid()))
+                    .collect(Collectors.toList())));
+        }
         bus.reply(msg, reply);
     }
 
