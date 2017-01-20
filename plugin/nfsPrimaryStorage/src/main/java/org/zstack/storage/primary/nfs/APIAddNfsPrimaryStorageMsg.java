@@ -72,6 +72,8 @@ public class APIAddNfsPrimaryStorageMsg extends APIAddPrimaryStorageMsg {
     public static APIAddNfsPrimaryStorageMsg __example__() {
         APIAddNfsPrimaryStorageMsg msg = new APIAddNfsPrimaryStorageMsg();
 
+        msg.setName("PS1");
+        msg.setUrl("192.168.0.25:/share/nfs");
 
         return msg;
     }
