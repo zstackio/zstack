@@ -5,7 +5,7 @@ import org.zstack.header.storage.backup.BackupStorageInventory
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "创建镜像的备份存储候选"
 
 	ref {
 		name "error"

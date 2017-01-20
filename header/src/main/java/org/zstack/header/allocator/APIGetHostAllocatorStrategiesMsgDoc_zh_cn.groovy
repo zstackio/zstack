@@ -7,7 +7,7 @@ doc {
 
     category "host.allocator"
 
-    desc "在这里填写API描述"
+    desc "获取物理机分配策略"
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIGetHostAllocatorStrategiesMsg.class
 
-            desc ""
+            desc "获取物理机分配策略"
             
 			params {
 

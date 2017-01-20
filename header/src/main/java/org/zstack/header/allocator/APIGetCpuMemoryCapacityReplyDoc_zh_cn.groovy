@@ -5,7 +5,7 @@ import org.zstack.header.errorcode.ErrorCode
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "cpu和内存容量"
 
 	ref {
 		name "error"
@@ -17,31 +17,31 @@ doc {
 	}
 	field {
 		name "totalCpu"
-		desc ""
+		desc "cpu总数"
 		type "long"
 		since "0.6"
 	}
 	field {
 		name "availableCpu"
-		desc ""
+		desc "可用cpu数量"
 		type "long"
 		since "0.6"
 	}
 	field {
 		name "totalMemory"
-		desc ""
+		desc "内存总量"
 		type "long"
 		since "0.6"
 	}
 	field {
 		name "availableMemory"
-		desc ""
+		desc "可用内存"
 		type "long"
 		since "0.6"
 	}
 	field {
 		name "success"
-		desc ""
+		desc "成功"
 		type "boolean"
 		since "0.6"
 	}

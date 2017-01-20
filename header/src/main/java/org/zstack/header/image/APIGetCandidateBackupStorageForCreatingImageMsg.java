@@ -53,8 +53,8 @@ public class APIGetCandidateBackupStorageForCreatingImageMsg extends APISyncCall
  
     public static APIGetCandidateBackupStorageForCreatingImageMsg __example__() {
         APIGetCandidateBackupStorageForCreatingImageMsg msg = new APIGetCandidateBackupStorageForCreatingImageMsg();
-
-
+        msg.setVolumeSnapshotUuid(uuid());
+        msg.setVolumeUuid(uuid());
         return msg;
     }
 

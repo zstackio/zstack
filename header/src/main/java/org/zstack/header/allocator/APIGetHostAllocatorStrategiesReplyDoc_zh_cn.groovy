@@ -4,7 +4,7 @@ import org.zstack.header.errorcode.ErrorCode
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "物理机分配策略"
 
 	ref {
 		name "error"
@@ -16,7 +16,7 @@ doc {
 	}
 	field {
 		name "strategies"
-		desc ""
+		desc "策略"
 		type "List"
 		since "0.6"
 	}
