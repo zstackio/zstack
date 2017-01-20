@@ -1,13 +1,11 @@
 package org.zstack.header.storage.backup
 
-import org.zstack.header.storage.backup.APIGetBackupStorageTypesReply
-
 doc {
-    title "GetBackupStorageTypes"
+    title "获取镜像服务器类型列表(GetBackupStorageTypes)"
 
     category "storage.backup"
 
-    desc "在这里填写API描述"
+    desc "获取镜像服务器类型列表"
 
     rest {
         request {
@@ -24,8 +22,8 @@ doc {
 
 				column {
 					name "systemTags"
- 					enclosedIn ""
- 					desc ""
+					enclosedIn "params"
+					desc "系统标签"
 					location "query"
 					type "List"
 					optional true
@@ -34,7 +32,7 @@ doc {
 				}
 				column {
 					name "userTags"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "用户标签"
 					location "query"
 					type "List"

@@ -41,6 +41,8 @@ public class APIExportImageFromBackupStorageMsg extends APIMessage implements Ba
     public static APIExportImageFromBackupStorageMsg __example__() {
         APIExportImageFromBackupStorageMsg msg = new APIExportImageFromBackupStorageMsg();
 
+        msg.setBackupStorageUuid(uuid());
+        msg.setImageUuid(uuid());
 
         return msg;
     }

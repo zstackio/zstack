@@ -1,11 +1,10 @@
 package org.zstack.header.storage.backup
 
 import org.zstack.header.errorcode.ErrorCode
-import org.zstack.header.storage.backup.BackupStorageInventory
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "镜像服务器清单"
 
 	ref {
 		name "error"

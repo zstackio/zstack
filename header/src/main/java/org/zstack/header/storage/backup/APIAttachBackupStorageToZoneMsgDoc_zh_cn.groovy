@@ -1,13 +1,11 @@
 package org.zstack.header.storage.backup
 
-import org.zstack.header.storage.backup.APIAttachBackupStorageToZoneEvent
-
 doc {
-    title "AttachBackupStorageToZone"
+    title "挂载镜像服务器至区域(AttachBackupStorageToZone)"
 
     category "storage.backup"
 
-    desc "在这里填写API描述"
+    desc "挂载镜像服务器至区域"
 
     rest {
         request {
@@ -24,7 +22,7 @@ doc {
 
 				column {
 					name "zoneUuid"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "区域UUID"
 					location "url"
 					type "String"
@@ -44,8 +42,8 @@ doc {
 				}
 				column {
 					name "systemTags"
- 					enclosedIn ""
- 					desc ""
+					enclosedIn "params"
+					desc "系统标签"
 					location "body"
 					type "List"
 					optional true

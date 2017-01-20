@@ -1,13 +1,11 @@
 package org.zstack.header.storage.backup
 
-import org.zstack.header.storage.backup.APIAddBackupStorageEvent
-
 doc {
-    title "AddBackupStorage"
+    title "添加镜像服务器(AddBackupStorage)"
 
     category "storage.backup"
 
-    desc "在这里填写API描述"
+    desc "添加镜像服务器"
 
     rest {
         request {
@@ -25,7 +23,7 @@ doc {
 				column {
 					name "url"
 					enclosedIn "params"
-					desc ""
+					desc "镜像服务器地址"
 					location "body"
 					type "String"
 					optional false
@@ -35,7 +33,7 @@ doc {
 				column {
 					name "name"
 					enclosedIn "params"
-					desc "资源名称"
+					desc "镜像服务器名字"
 					location "body"
 					type "String"
 					optional false
@@ -45,7 +43,7 @@ doc {
 				column {
 					name "description"
 					enclosedIn "params"
-					desc "资源的详细描述"
+					desc "镜像服务器的详细描述"
 					location "body"
 					type "String"
 					optional true
@@ -55,7 +53,7 @@ doc {
 				column {
 					name "type"
 					enclosedIn "params"
-					desc ""
+					desc "镜像服务器的类型"
 					location "body"
 					type "String"
 					optional true
@@ -65,17 +63,17 @@ doc {
 				column {
 					name "importImages"
 					enclosedIn "params"
-					desc ""
+					desc "标记是否要导入镜像服务器中的镜像"
 					location "body"
 					type "boolean"
 					optional true
-					since "0.6"
+					since "1.9"
 					
 				}
 				column {
 					name "resourceUuid"
 					enclosedIn "params"
-					desc ""
+					desc "资源UUID。若指定，镜像服务器会使用该字段值作为UUID。"
 					location "body"
 					type "String"
 					optional true
@@ -85,7 +83,7 @@ doc {
 				column {
 					name "systemTags"
 					enclosedIn ""
-					desc "系统标签"
+					desc "镜像服务器系统标签"
 					location "body"
 					type "List"
 					optional true
@@ -95,7 +93,7 @@ doc {
 				column {
 					name "userTags"
 					enclosedIn ""
-					desc "用户标签"
+					desc "镜像服务器用户标签"
 					location "body"
 					type "List"
 					optional true

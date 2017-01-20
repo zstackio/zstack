@@ -6,6 +6,7 @@ import org.zstack.header.message.APISyncCallMessage;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.zone.ZoneVO;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -50,6 +51,8 @@ public class APIGetBackupStorageCapacityMsg extends APISyncCallMessage {
     public static APIGetBackupStorageCapacityMsg __example__() {
         APIGetBackupStorageCapacityMsg msg = new APIGetBackupStorageCapacityMsg();
 
+        msg.setZoneUuids(Collections.singletonList(uuid()));
+        msg.setAll(true);
 
         return msg;
     }

@@ -4,7 +4,7 @@ import org.zstack.header.errorcode.ErrorCode
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "获取镜像服务器类型列表"
 
 	ref {
 		name "error"
@@ -16,7 +16,7 @@ doc {
 	}
 	field {
 		name "types"
-		desc ""
+		desc "镜像服务器类型列表"
 		type "List"
 		since "0.6"
 	}

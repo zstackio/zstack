@@ -1,11 +1,10 @@
 package org.zstack.header.storage.backup
 
 import org.zstack.header.errorcode.ErrorCode
-import org.zstack.header.storage.backup.BackupStorageInventory
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "镜像服务器清单"
 
 	ref {
 		name "error"
@@ -18,7 +17,7 @@ doc {
 	ref {
 		name "inventory"
 		path "org.zstack.header.storage.backup.APIAddBackupStorageEvent.inventory"
-		desc "null"
+		desc "镜像服务器信息清单"
 		type "BackupStorageInventory"
 		since "0.6"
 		clz BackupStorageInventory.class
