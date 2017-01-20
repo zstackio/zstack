@@ -64,21 +64,21 @@ public class TestNicQosMixed {
         //2.
         APIGetNicQosReply reply = api.getVmNicQos(nicUuid);
         Assert.assertTrue(reply.isSuccess());
-        Assert.assertEquals(4000l, reply.getInboundBandwidth());
-        Assert.assertEquals(5000l, reply.getOutboundBandwidth());
+        Assert.assertEquals(400000l, reply.getInboundBandwidth());
+        Assert.assertEquals(500000l, reply.getOutboundBandwidth());
         //3.
-        api.setVmNicQos(nicUuid, 6000l);
+        api.setVmNicQos(nicUuid, 600000l);
         reply = api.getVmNicQos(nicUuid);
         Assert.assertTrue(reply.isSuccess());
-        Assert.assertEquals(4000l, reply.getInboundBandwidth());
-        Assert.assertEquals(6000l, reply.getOutboundBandwidth());
+        Assert.assertEquals(400000l, reply.getInboundBandwidth());
+        Assert.assertEquals(600000l, reply.getOutboundBandwidth());
         //4.
-        APISetNicQosEvent event = api.setVmNicQos(nicUuid, 7000l, 8000l);
+        APISetNicQosEvent event = api.setVmNicQos(nicUuid, 700000l, 800000l);
         Assert.assertTrue(event.isSuccess());
         reply = api.getVmNicQos(nicUuid);
         Assert.assertTrue(reply.isSuccess());
-        Assert.assertEquals(7000l, reply.getInboundBandwidth());
-        Assert.assertEquals(8000l, reply.getOutboundBandwidth());
+        Assert.assertEquals(700000l, reply.getInboundBandwidth());
+        Assert.assertEquals(800000l, reply.getOutboundBandwidth());
         //5.
 
         APIDeleteNicQosEvent event1;
@@ -91,15 +91,15 @@ public class TestNicQosMixed {
         Assert.assertTrue(event1.isSuccess());
         reply = api.getVmNicQos(nicUuid);
         Assert.assertTrue(reply.isSuccess());
-        Assert.assertEquals(4000l, reply.getInboundBandwidth());
-        Assert.assertEquals(8000l, reply.getOutboundBandwidth());
+        Assert.assertEquals(400000l, reply.getInboundBandwidth());
+        Assert.assertEquals(800000l, reply.getOutboundBandwidth());
         //6.
         event1 = api.deleteVmNicQos(nicUuid, "out");
         Assert.assertTrue(event1.isSuccess());
         reply = api.getVmNicQos(nicUuid);
         Assert.assertTrue(reply.isSuccess());
-        Assert.assertEquals(4000l, reply.getInboundBandwidth());
-        Assert.assertEquals(5000l, reply.getOutboundBandwidth());
+        Assert.assertEquals(400000l, reply.getInboundBandwidth());
+        Assert.assertEquals(500000l, reply.getOutboundBandwidth());
         //7. TODO get 0 before reboot
 //        event1 = api.deleteVmNicQos(nicUuid, "out");
 //        Assert.assertTrue(event1.isSuccess());
@@ -112,8 +112,8 @@ public class TestNicQosMixed {
         api.rebootVmInstance(vm.getUuid());
         reply = api.getVmNicQos(nicUuid);
         Assert.assertTrue(reply.isSuccess());
-        Assert.assertEquals(4000l, reply.getInboundBandwidth());
-        Assert.assertEquals(5000l, reply.getOutboundBandwidth());
+        Assert.assertEquals(400000l, reply.getInboundBandwidth());
+        Assert.assertEquals(500000l, reply.getOutboundBandwidth());
 
     }
 }
