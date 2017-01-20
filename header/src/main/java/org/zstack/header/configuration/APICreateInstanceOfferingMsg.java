@@ -7,6 +7,8 @@ import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.tag.TagResourceType;
 
+import static org.zstack.header.vm.VmInstanceConstant.USER_VM_TYPE;
+
 @Action(category = ConfigurationConstant.ACTION_CATEGORY)
 @TagResourceType(InstanceOfferingVO.class)
 @RestRequest(
@@ -99,6 +101,11 @@ public class APICreateInstanceOfferingMsg extends APICreateMessage {
  
     public static APICreateInstanceOfferingMsg __example__() {
         APICreateInstanceOfferingMsg msg = new APICreateInstanceOfferingMsg();
+        msg.setName("instanceOffering");
+        msg.setType(USER_VM_TYPE);
+        msg.setCpuNum(2);
+        msg.setCpuSpeed(1);
+        msg.setMemorySize(1000);
 
 
         return msg;

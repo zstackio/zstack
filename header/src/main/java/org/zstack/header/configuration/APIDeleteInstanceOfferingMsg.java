@@ -39,7 +39,7 @@ public class APIDeleteInstanceOfferingMsg extends APIDeleteMessage implements In
  
     public static APIDeleteInstanceOfferingMsg __example__() {
         APIDeleteInstanceOfferingMsg msg = new APIDeleteInstanceOfferingMsg();
-
+        msg.setUuid(uuid());
 
         return msg;
     }

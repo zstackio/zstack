@@ -2,6 +2,7 @@ package org.zstack.header.configuration;
 
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.rest.RestResponse;
+import org.zstack.header.storage.primary.PrimaryStorageConstant;
 
 /**
  * Created with IntelliJ IDEA.
@@ -31,7 +32,15 @@ public class APIChangeDiskOfferingStateEvent extends APIEvent {
  
     public static APIChangeDiskOfferingStateEvent __example__() {
         APIChangeDiskOfferingStateEvent event = new APIChangeDiskOfferingStateEvent();
+        DiskOfferingInventory inventory = new DiskOfferingInventory();
+        inventory.setName("diskOffering1");
+        inventory.setDiskSize(100);
+        inventory.setUuid(uuid());
+        inventory.setAllocatorStrategy(PrimaryStorageConstant.DEFAULT_PRIMARY_STORAGE_ALLOCATION_STRATEGY_TYPE);
+        inventory.setType("DefaultDiskOfferingType");
+        inventory.setState("Enabled");
 
+        event.setInventory(inventory);
 
         return event;
     }
