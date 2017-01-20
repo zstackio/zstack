@@ -85,7 +85,7 @@ public class APIDeleteVipMsg extends APIDeleteMessage implements L3NetworkMessag
  
     public static APIDeleteVipMsg __example__() {
         APIDeleteVipMsg msg = new APIDeleteVipMsg();
-
+        msg.setUuid(uuid());
 
         return msg;
     }

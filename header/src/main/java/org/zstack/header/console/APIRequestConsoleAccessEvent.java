@@ -31,8 +31,13 @@ public class APIRequestConsoleAccessEvent extends APIEvent {
  
     public static APIRequestConsoleAccessEvent __example__() {
         APIRequestConsoleAccessEvent event = new APIRequestConsoleAccessEvent();
+        ConsoleInventory inventory = new ConsoleInventory();
+        inventory.setHostname("127.0.0.1");
+        inventory.setPort(4900);
+        inventory.setScheme("http");
+        inventory.setToken(uuid());
 
-
+        event.setInventory(inventory);
         return event;
     }
 

@@ -3,6 +3,7 @@ package org.zstack.header.managementnode;
 import org.zstack.header.message.APIReply;
 import org.zstack.header.rest.RestResponse;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -22,8 +23,13 @@ public class APIGetCurrentTimeReply extends APIReply {
  
     public static APIGetCurrentTimeReply __example__() {
         APIGetCurrentTimeReply reply = new APIGetCurrentTimeReply();
+        Map<String, Long> ret = new HashMap<String, Long>();
+        long currentTimeMillis = System.currentTimeMillis();
+        long currentTimeSeconds = System.currentTimeMillis() / 1000;
+        ret.put("MillionSeconds", currentTimeMillis);
+        ret.put("Seconds", currentTimeSeconds);
 
-
+        reply.setCurrentTime(ret);
         return reply;
     }
 

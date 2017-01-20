@@ -4,6 +4,7 @@ import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.NoJsonSchema;
 import org.zstack.header.rest.RestResponse;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -32,8 +33,11 @@ public class APIReconnectConsoleProxyAgentEvent extends APIEvent {
  
     public static APIReconnectConsoleProxyAgentEvent __example__() {
         APIReconnectConsoleProxyAgentEvent event = new APIReconnectConsoleProxyAgentEvent();
+        Map<String, Object> inventory = new HashMap<>();
+        inventory.put(uuid(), true);
+        inventory.put(uuid(), true);
 
-
+        event.setInventory(inventory);
         return event;
     }
 

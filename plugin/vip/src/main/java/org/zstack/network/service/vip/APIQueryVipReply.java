@@ -5,6 +5,8 @@ import org.zstack.header.rest.RestResponse;
 
 import java.util.List;
 
+import static org.zstack.utils.CollectionDSL.list;
+
 /**
  * Created with IntelliJ IDEA.
  * User: frank
@@ -25,8 +27,18 @@ public class APIQueryVipReply extends APIQueryReply {
  
     public static APIQueryVipReply __example__() {
         APIQueryVipReply reply = new APIQueryVipReply();
+        VipInventory inventory = new VipInventory();
+        inventory.setName("new name");
+        inventory.setL3NetworkUuid(uuid());
+        inventory.setUuid(uuid());
+        inventory.setGateway("127.0.0.1");
+        inventory.setNetmask("255.255.0.0");
+        inventory.setIp("192.168.0.1");
+        inventory.setIpRangeUuid(uuid());
+        inventory.setPeerL3NetworkUuid(uuid());
+        inventory.setState("enable");
 
-
+        reply.setInventories(list(inventory));
         return reply;
     }
 

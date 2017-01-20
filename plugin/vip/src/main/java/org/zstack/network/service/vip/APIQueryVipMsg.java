@@ -4,7 +4,10 @@ import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.query.APIQueryMessage;
 import org.zstack.header.query.AutoQuery;
+import org.zstack.header.query.QueryCondition;
 import org.zstack.header.rest.RestRequest;
+
+import static org.zstack.utils.CollectionDSL.list;
 
 /**
  * Created with IntelliJ IDEA.
@@ -24,8 +27,12 @@ public class APIQueryVipMsg extends APIQueryMessage {
  
     public static APIQueryVipMsg __example__() {
         APIQueryVipMsg msg = new APIQueryVipMsg();
+        QueryCondition queryCondition = new QueryCondition();
+        queryCondition.setName("uuid");
+        queryCondition.setOp("=");
+        queryCondition.setValue(uuid());
 
-
+        msg.setConditions(list(queryCondition));
         return msg;
     }
 

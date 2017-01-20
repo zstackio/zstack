@@ -1,8 +1,6 @@
 package org.zstack.network.service.vip;
 
-import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIEvent;
-import org.zstack.header.rest.RestRequest;
 import org.zstack.header.rest.RestResponse;
 
 /**
@@ -56,8 +54,18 @@ public class APICreateVipEvent extends APIEvent {
  
     public static APICreateVipEvent __example__() {
         APICreateVipEvent event = new APICreateVipEvent();
+        VipInventory inventory = new VipInventory();
+        inventory.setName("vip1");
+        inventory.setL3NetworkUuid(uuid());
+        inventory.setUuid(uuid());
+        inventory.setGateway("127.0.0.1");
+        inventory.setNetmask("255.255.0.0");
+        inventory.setIp("192.168.0.1");
+        inventory.setIpRangeUuid(uuid());
+        inventory.setPeerL3NetworkUuid(uuid());
+        inventory.setState("enable");
 
-
+        event.setInventory(inventory);
         return event;
     }
 
