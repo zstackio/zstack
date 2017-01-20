@@ -1,14 +1,13 @@
 package org.zstack.header.storage.backup
 
-import org.zstack.header.storage.backup.APIQueryBackupStorageReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "QueryBackupStorage"
+    title "查询镜像服务器(QueryBackupStorage)"
 
     category "storage.backup"
 
-    desc "在这里填写API描述"
+    desc "查询镜像服务器"
 
     rest {
         request {

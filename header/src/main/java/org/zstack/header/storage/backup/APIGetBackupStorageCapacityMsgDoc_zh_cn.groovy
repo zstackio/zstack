@@ -1,13 +1,11 @@
 package org.zstack.header.storage.backup
 
-import org.zstack.header.storage.backup.APIGetBackupStorageCapacityReply
-
 doc {
-    title "GetBackupStorageCapacity"
+    title "获取镜像服务器存储容量(GetBackupStorageCapacity)"
 
     category "storage.backup"
 
-    desc "在这里填写API描述"
+    desc "获取镜像服务器存储容量"
 
     rest {
         request {
@@ -25,7 +23,7 @@ doc {
 				column {
 					name "zoneUuids"
 					enclosedIn "params"
-					desc ""
+					desc "区域UUID列表"
 					location "query"
 					type "List"
 					optional true
@@ -35,7 +33,7 @@ doc {
 				column {
 					name "backupStorageUuids"
 					enclosedIn "params"
-					desc ""
+					desc "镜像服务器UUID列表"
 					location "query"
 					type "List"
 					optional true
@@ -45,7 +43,7 @@ doc {
 				column {
 					name "all"
 					enclosedIn "params"
-					desc ""
+					desc "当镜像服务器UUID列表为空时，该项为真表示查询系统中所有的镜像服务器。"
 					location "query"
 					type "boolean"
 					optional true
@@ -54,8 +52,8 @@ doc {
 				}
 				column {
 					name "systemTags"
- 					enclosedIn ""
- 					desc ""
+					enclosedIn "params"
+					desc "系统标签"
 					location "query"
 					type "List"
 					optional true
@@ -64,7 +62,7 @@ doc {
 				}
 				column {
 					name "userTags"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "用户标签"
 					location "query"
 					type "List"

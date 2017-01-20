@@ -5,6 +5,8 @@ import org.zstack.header.rest.RestResponse;
 
 import java.util.List;
 
+import static java.util.Arrays.asList;
+
 /**
  * @apiResult api reply for message :ref:`APIGetBackupStorageTypesMsg`
  * @example {
@@ -36,6 +38,7 @@ public class APIGetBackupStorageTypesReply extends APIReply {
     public static APIGetBackupStorageTypesReply __example__() {
         APIGetBackupStorageTypesReply reply = new APIGetBackupStorageTypesReply();
 
+        reply.setBackupStorageTypes(asList("Ceph", "ImageStore"));
 
         return reply;
     }

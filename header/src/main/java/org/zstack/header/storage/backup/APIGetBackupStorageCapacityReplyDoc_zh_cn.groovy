@@ -1,11 +1,10 @@
 package org.zstack.header.storage.backup
 
 import org.zstack.header.errorcode.ErrorCode
-import org.zstack.header.errorcode.ErrorCode
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "获取镜像服务器存储容量"
 
 	ref {
 		name "error"
@@ -17,28 +16,20 @@ doc {
 	}
 	field {
 		name "totalCapacity"
-		desc ""
+		desc "总容量（以字节计）"
 		type "long"
 		since "0.6"
 	}
 	field {
 		name "availableCapacity"
-		desc ""
+		desc "可用容量（以字节计）"
 		type "long"
 		since "0.6"
 	}
 	field {
 		name "success"
-		desc ""
+		desc "成功失败标志"
 		type "boolean"
 		since "0.6"
-	}
-	ref {
-		name "error"
-		path "org.zstack.header.storage.backup.APIGetBackupStorageCapacityReply.error"
-		desc "null"
-		type "ErrorCode"
-		since "0.6"
-		clz ErrorCode.class
 	}
 }

@@ -25,6 +25,7 @@ public class APIExportImageFromBackupStorageEvent extends APIEvent {
     public static APIExportImageFromBackupStorageEvent __example__() {
         APIExportImageFromBackupStorageEvent event = new APIExportImageFromBackupStorageEvent();
 
+        event.setImageUrl("http://bs-host-name/path/to/image.qcow2");
 
         return event;
     }

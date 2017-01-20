@@ -3,6 +3,9 @@ package org.zstack.header.storage.backup;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.rest.RestResponse;
 
+import java.sql.Timestamp;
+import java.util.Collections;
+
 /**
  * @apiResult api event for :ref:`APIChangeBackupStorageStateMsg`
  * @example {
@@ -52,7 +55,19 @@ public class APIChangeBackupStorageStateEvent extends APIEvent {
     public static APIChangeBackupStorageStateEvent __example__() {
         APIChangeBackupStorageStateEvent event = new APIChangeBackupStorageStateEvent();
 
+        BackupStorageInventory bs = new BackupStorageInventory();
+        bs.setName("My Backup Storage");
+        bs.setDescription("Public Backup Storage");
+        bs.setCreateDate(new Timestamp(System.currentTimeMillis()));
+        bs.setLastOpDate(new Timestamp(System.currentTimeMillis()));
+        bs.setType("Ceph");
+        bs.setState(BackupStorageState.Disabled.toString());
+        bs.setStatus(BackupStorageStatus.Connected.toString());
+        bs.setAvailableCapacity(924L * 1024L * 1024L);
+        bs.setTotalCapacity(1024L * 1024L * 1024L);
+        bs.setAttachedZoneUuids(Collections.singletonList(uuid()));
 
+        event.setInventory(bs);
         return event;
     }
 

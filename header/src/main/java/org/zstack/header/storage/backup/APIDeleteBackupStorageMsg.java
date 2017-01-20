@@ -67,6 +67,7 @@ public class APIDeleteBackupStorageMsg extends APIDeleteMessage implements Backu
     public static APIDeleteBackupStorageMsg __example__() {
         APIDeleteBackupStorageMsg msg = new APIDeleteBackupStorageMsg();
 
+        msg.setUuid(uuid());
 
         return msg;
     }

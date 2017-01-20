@@ -43,6 +43,8 @@ public class APIDeleteExportedImageFromBackupStorageMsg extends APIMessage imple
     public static APIDeleteExportedImageFromBackupStorageMsg __example__() {
         APIDeleteExportedImageFromBackupStorageMsg msg = new APIDeleteExportedImageFromBackupStorageMsg();
 
+        msg.setBackupStorageUuid(uuid());
+        msg.setImageUuid(uuid());
 
         return msg;
     }

@@ -34,6 +34,7 @@ public class APIReconnectBackupStorageMsg extends APIMessage implements BackupSt
     public static APIReconnectBackupStorageMsg __example__() {
         APIReconnectBackupStorageMsg msg = new APIReconnectBackupStorageMsg();
 
+        msg.setUuid(uuid());
 
         return msg;
     }
