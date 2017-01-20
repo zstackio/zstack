@@ -49,20 +49,20 @@ public class TestNicQos {
         String uuid = deployer.vms.get("TestVm").getUuid();
 
         try {
-            api.setVmNicQos(nicUuid, 1023l, 2048000l);
+            api.setVmNicQos(nicUuid, 8195l, 2048000l);
             Assert.assertTrue("inbound/outbound must more than 1024", false);
         } catch(ApiSenderException e) {
             Assert.assertEquals(SysErrors.INVALID_ARGUMENT_ERROR.toString(), e.getError().getCode());
         }
 
-        APISetNicQosEvent evt = api.setVmNicQos(nicUuid, 1024l, 2048000l);
+        APISetNicQosEvent evt = api.setVmNicQos(nicUuid, 8196l, 2048000l);
         Assert.assertTrue(evt.isSuccess());
 
         APIGetNicQosReply reply = api.getVmNicQos(nicUuid);
         Assert.assertTrue(reply.isSuccess());
 
 
-        Assert.assertEquals(1024l, reply.getInboundBandwidth());
+        Assert.assertEquals(8196l, reply.getInboundBandwidth());
         Assert.assertEquals(2048000l, reply.getOutboundBandwidth());
 
         evt = api.setVmNicQos(nicUuid, 1024000l);
