@@ -3,11 +3,11 @@ package org.zstack.storage.ceph.primary
 import org.zstack.header.storage.primary.APIAddPrimaryStorageEvent
 
 doc {
-    title "AddCephPrimaryStorage"
+    title "添加 Ceph 主存储(AddCephPrimaryStorage)"
 
-    category "未知类别"
+    category "storage.ceph.primary"
 
-    desc "在这里填写API描述"
+    desc "添加 Ceph 主存储"
 
     rest {
         request {
@@ -25,7 +25,7 @@ doc {
 				column {
 					name "monUrls"
 					enclosedIn "params"
-					desc ""
+					desc "Ceph mon 的地址列表"
 					location "body"
 					type "List"
 					optional false
@@ -35,7 +35,7 @@ doc {
 				column {
 					name "rootVolumePoolName"
 					enclosedIn "params"
-					desc ""
+					desc "指定 Root Volume 可使用的 Ceph pool 名字"
 					location "body"
 					type "String"
 					optional true
@@ -45,7 +45,7 @@ doc {
 				column {
 					name "dataVolumePoolName"
 					enclosedIn "params"
-					desc ""
+					desc "指定 Data Volume 可使用的 Ceph pool 名字"
 					location "body"
 					type "String"
 					optional true
@@ -55,7 +55,7 @@ doc {
 				column {
 					name "imageCachePoolName"
 					enclosedIn "params"
-					desc ""
+					desc "指定镜像缓存可使用的 Ceph pool 名字"
 					location "body"
 					type "String"
 					optional true
@@ -65,7 +65,7 @@ doc {
 				column {
 					name "url"
 					enclosedIn "params"
-					desc ""
+					desc "未使用"
 					location "body"
 					type "String"
 					optional false
@@ -75,7 +75,7 @@ doc {
 				column {
 					name "name"
 					enclosedIn "params"
-					desc "资源名称"
+					desc "Ceph 主存储的名称"
 					location "body"
 					type "String"
 					optional false
@@ -85,7 +85,7 @@ doc {
 				column {
 					name "description"
 					enclosedIn "params"
-					desc "资源的详细描述"
+					desc "Ceph 主存储的详细描述"
 					location "body"
 					type "String"
 					optional true
@@ -95,7 +95,7 @@ doc {
 				column {
 					name "type"
 					enclosedIn "params"
-					desc ""
+					desc "Ceph 主存储的类型，此处为 Ceph"
 					location "body"
 					type "String"
 					optional true
@@ -115,7 +115,7 @@ doc {
 				column {
 					name "resourceUuid"
 					enclosedIn "params"
-					desc ""
+					desc "资源UUID。若指定，Ceph 主存储会使用该字段值作为UUID。"
 					location "body"
 					type "String"
 					optional true
@@ -124,7 +124,7 @@ doc {
 				}
 				column {
 					name "systemTags"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "系统标签"
 					location "body"
 					type "List"
@@ -134,7 +134,7 @@ doc {
 				}
 				column {
 					name "userTags"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "用户标签"
 					location "body"
 					type "List"

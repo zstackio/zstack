@@ -3,11 +3,11 @@ package org.zstack.storage.ceph.backup
 import org.zstack.header.storage.backup.APIAddBackupStorageEvent
 
 doc {
-    title "AddCephBackupStorage"
+    title "添加Ceph镜像服务器(AddCephBackupStorage)"
 
-    category "未知类别"
+    category "storage.ceph.backup"
 
-    desc "在这里填写API描述"
+    desc "添加Ceph镜像服务器"
 
     rest {
         request {
@@ -25,7 +25,7 @@ doc {
 				column {
 					name "monUrls"
 					enclosedIn "params"
-					desc ""
+					desc "Ceph mon 的地址列表"
 					location "body"
 					type "List"
 					optional false
@@ -35,7 +35,7 @@ doc {
 				column {
 					name "poolName"
 					enclosedIn "params"
-					desc ""
+					desc "用于存放镜像的 Ceph pool 的名字"
 					location "body"
 					type "String"
 					optional true
@@ -45,7 +45,7 @@ doc {
 				column {
 					name "url"
 					enclosedIn "params"
-					desc ""
+					desc "未使用"
 					location "body"
 					type "String"
 					optional false
@@ -55,7 +55,7 @@ doc {
 				column {
 					name "name"
 					enclosedIn "params"
-					desc "资源名称"
+					desc "镜像服务器名字"
 					location "body"
 					type "String"
 					optional false
@@ -65,7 +65,7 @@ doc {
 				column {
 					name "description"
 					enclosedIn "params"
-					desc "资源的详细描述"
+					desc "镜像服务器的详细描述"
 					location "body"
 					type "String"
 					optional true
@@ -75,7 +75,7 @@ doc {
 				column {
 					name "type"
 					enclosedIn "params"
-					desc ""
+					desc "镜像服务器的类型，此处为 Ceph"
 					location "body"
 					type "String"
 					optional true
@@ -85,17 +85,17 @@ doc {
 				column {
 					name "importImages"
 					enclosedIn "params"
-					desc ""
+					desc "添加后是否导入镜像"
 					location "body"
 					type "boolean"
 					optional true
-					since "0.6"
+					since "1.9"
 					
 				}
 				column {
 					name "resourceUuid"
 					enclosedIn "params"
-					desc ""
+					desc "资源UUID。若指定，镜像服务器会使用该字段值作为UUID。"
 					location "body"
 					type "String"
 					optional true
@@ -104,7 +104,7 @@ doc {
 				}
 				column {
 					name "systemTags"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "系统标签"
 					location "body"
 					type "List"
@@ -114,7 +114,7 @@ doc {
 				}
 				column {
 					name "userTags"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "用户标签"
 					location "body"
 					type "List"

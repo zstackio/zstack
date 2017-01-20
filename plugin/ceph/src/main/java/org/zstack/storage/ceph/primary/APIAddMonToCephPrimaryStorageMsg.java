@@ -6,6 +6,7 @@ import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.primary.PrimaryStorageMessage;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -47,6 +48,8 @@ public class APIAddMonToCephPrimaryStorageMsg extends APIMessage implements Prim
     public static APIAddMonToCephPrimaryStorageMsg __example__() {
         APIAddMonToCephPrimaryStorageMsg msg = new APIAddMonToCephPrimaryStorageMsg();
 
+        msg.setUuid(uuid());
+        msg.setMonUrls(Collections.singletonList("10.0.1.3"));
 
         return msg;
     }

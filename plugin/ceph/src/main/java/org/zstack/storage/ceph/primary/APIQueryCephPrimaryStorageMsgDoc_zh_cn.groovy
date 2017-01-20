@@ -4,11 +4,11 @@ import org.zstack.header.storage.primary.APIQueryPrimaryStorageReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "QueryCephPrimaryStorage"
+    title "查询 Ceph 主存储(QueryCephPrimaryStorage)"
 
-    category "未知类别"
+    category "storage.ceph.primary"
 
-    desc "在这里填写API描述"
+    desc "查询 Ceph 主存储"
 
     rest {
         request {

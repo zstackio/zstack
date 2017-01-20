@@ -1,11 +1,10 @@
 package org.zstack.storage.ceph.backup
 
 import org.zstack.header.errorcode.ErrorCode
-import org.zstack.storage.ceph.backup.CephBackupStorageInventory
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "Ceph 镜像服务器清单"
 
 	ref {
 		name "error"
