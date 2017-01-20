@@ -9,6 +9,7 @@ import org.zstack.header.storage.backup.APIAddBackupStorageEvent;
 import org.zstack.header.storage.backup.APIAddBackupStorageMsg;
 import org.zstack.storage.ceph.CephConstants;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -57,6 +58,9 @@ public class APIAddCephBackupStorageMsg extends APIAddBackupStorageMsg {
     public static APIAddCephBackupStorageMsg __example__() {
         APIAddCephBackupStorageMsg msg = new APIAddCephBackupStorageMsg();
 
+        msg.setName("My Ceph Backup Storage");
+        msg.setMonUrls(Collections.singletonList("10.0.1.2"));
+        msg.setPoolName("zs-images");
 
         return msg;
     }

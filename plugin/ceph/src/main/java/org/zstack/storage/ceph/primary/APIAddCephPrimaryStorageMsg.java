@@ -9,6 +9,7 @@ import org.zstack.header.storage.primary.APIAddPrimaryStorageEvent;
 import org.zstack.header.storage.primary.APIAddPrimaryStorageMsg;
 import org.zstack.storage.ceph.CephConstants;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -77,6 +78,11 @@ public class APIAddCephPrimaryStorageMsg extends APIAddPrimaryStorageMsg {
     public static APIAddCephPrimaryStorageMsg __example__() {
         APIAddCephPrimaryStorageMsg msg = new APIAddCephPrimaryStorageMsg();
 
+        msg.setName("My Ceph Primary Storage");
+        msg.setMonUrls(Collections.singletonList("10.0.1.2"));
+        msg.setRootVolumePoolName("zs-images");
+        msg.setDataVolumePoolName("zs-data-volume");
+        msg.setImageCachePoolName("zs-image-cache");
 
         return msg;
     }

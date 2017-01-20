@@ -2,6 +2,11 @@ package org.zstack.storage.ceph.primary;
 
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.rest.RestResponse;
+import org.zstack.header.storage.primary.PrimaryStorageState;
+import org.zstack.header.storage.primary.PrimaryStorageStatus;
+
+import java.sql.Timestamp;
+import java.util.Collections;
 
 /**
  * Created by frank on 8/6/2015.
@@ -28,6 +33,23 @@ public class APIUpdateCephPrimaryStorageMonEvent extends APIEvent {
     public static APIUpdateCephPrimaryStorageMonEvent __example__() {
         APIUpdateCephPrimaryStorageMonEvent event = new APIUpdateCephPrimaryStorageMonEvent();
 
+        CephPrimaryStorageInventory ps = new CephPrimaryStorageInventory();
+        ps.setName("My Ceph Primary Storage");
+        ps.setDescription("Public Ceph Primary Storage");
+        ps.setCreateDate(new Timestamp(System.currentTimeMillis()));
+        ps.setLastOpDate(new Timestamp(System.currentTimeMillis()));
+        ps.setType("Ceph");
+        CephPrimaryStorageMonInventory mon = new CephPrimaryStorageMonInventory();
+        mon.setMonUuid(uuid());
+        mon.setMonAddr("10.0.1.4");
+        ps.setMons(Collections.singletonList(mon));
+        ps.setState(PrimaryStorageState.Enabled.toString());
+        ps.setStatus(PrimaryStorageStatus.Connected.toString());
+        ps.setAvailableCapacity(924L * 1024L * 1024L);
+        ps.setTotalCapacity(1024L * 1024L * 1024L);
+        ps.setAttachedClusterUuids(Collections.singletonList(uuid()));
+
+        event.setInventory(ps);
 
         return event;
     }

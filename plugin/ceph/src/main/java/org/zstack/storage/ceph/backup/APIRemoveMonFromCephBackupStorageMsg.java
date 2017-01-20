@@ -6,6 +6,7 @@ import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.backup.BackupStorageMessage;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -47,6 +48,8 @@ public class APIRemoveMonFromCephBackupStorageMsg extends APIMessage implements 
     public static APIRemoveMonFromCephBackupStorageMsg __example__() {
         APIRemoveMonFromCephBackupStorageMsg msg = new APIRemoveMonFromCephBackupStorageMsg();
 
+        msg.setUuid(uuid());
+        msg.setMonHostnames(Collections.singletonList("10.0.1.2"));
 
         return msg;
     }

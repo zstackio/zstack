@@ -100,6 +100,8 @@ public class APIUpdateCephPrimaryStorageMonMsg extends APIMessage implements Pri
     public static APIUpdateCephPrimaryStorageMonMsg __example__() {
         APIUpdateCephPrimaryStorageMonMsg msg = new APIUpdateCephPrimaryStorageMonMsg();
 
+        msg.setMonUuid(uuid());
+        msg.setHostname("10.0.1.4");
 
         return msg;
     }

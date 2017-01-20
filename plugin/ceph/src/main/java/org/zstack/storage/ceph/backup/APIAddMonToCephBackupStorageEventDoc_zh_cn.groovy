@@ -1,11 +1,10 @@
 package org.zstack.storage.ceph.backup
 
 import org.zstack.header.errorcode.ErrorCode
-import org.zstack.storage.ceph.backup.CephBackupStorageInventory
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "为Ceph镜像服务器添加 Mon节点"
 
 	ref {
 		name "error"
