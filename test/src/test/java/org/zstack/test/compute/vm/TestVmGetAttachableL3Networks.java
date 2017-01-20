@@ -124,6 +124,6 @@ public class TestVmGetAttachableL3Networks {
         Assert.assertEquals(3, l3s.size());
 
         l3s = api.getInterdependentL3NetworksByImageUuid(vm.getImageUuid(), vm.getZoneUuid(), session2);
-        Assert.assertEquals(1, l3s.size());
+        Assert.assertEquals(2, l3s.size());
     }
 }
