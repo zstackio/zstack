@@ -62,8 +62,13 @@ public class APICreateStartVmInstanceSchedulerMsg extends APICreateSchedulerMess
  
     public static APICreateStartVmInstanceSchedulerMsg __example__() {
         APICreateStartVmInstanceSchedulerMsg msg = new APICreateStartVmInstanceSchedulerMsg();
-
-
+        msg.setSchedulerName("create-vm-scheduler");
+        msg.setSchedulerDescription("for test create vm scheduler");
+        msg.setStartTime(0L);
+        msg.setType("simple");
+        msg.setInterval(5);
+        msg.setRepeatCount(10);
+        msg.setVmUuid(uuid());
         return msg;
     }
 

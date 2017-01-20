@@ -61,8 +61,14 @@ public class APICreateVolumeSnapshotSchedulerMsg extends APICreateSchedulerMessa
  
     public static APICreateVolumeSnapshotSchedulerMsg __example__() {
         APICreateVolumeSnapshotSchedulerMsg msg = new APICreateVolumeSnapshotSchedulerMsg();
-
-
+        msg.setSchedulerName("snapshot-scheduler");
+        msg.setSchedulerDescription("for test snapshot scheduler");
+        msg.setStartTime(0L);
+        msg.setType("simple");
+        msg.setInterval(5);
+        msg.setRepeatCount(10);
+        msg.setSnapShotName("test-snapshot-scheduler");
+        msg.setVolumeUuid(uuid());
         return msg;
     }
 

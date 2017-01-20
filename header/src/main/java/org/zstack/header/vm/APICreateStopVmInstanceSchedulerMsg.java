@@ -38,8 +38,13 @@ public class APICreateStopVmInstanceSchedulerMsg extends APICreateSchedulerMessa
  
     public static APICreateStopVmInstanceSchedulerMsg __example__() {
         APICreateStopVmInstanceSchedulerMsg msg = new APICreateStopVmInstanceSchedulerMsg();
-
-
+        msg.setSchedulerName("vm-scheduler");
+        msg.setSchedulerDescription("for test stop vm scheduler");
+        msg.setStartTime(0L);
+        msg.setType("simple");
+        msg.setInterval(5);
+        msg.setRepeatCount(10);
+        msg.setVmUuid(uuid());
         return msg;
     }
 
