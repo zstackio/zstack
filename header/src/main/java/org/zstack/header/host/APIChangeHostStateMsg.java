@@ -88,8 +88,8 @@ public class APIChangeHostStateMsg extends APIMessage implements HostMessage {
  
     public static APIChangeHostStateMsg __example__() {
         APIChangeHostStateMsg msg = new APIChangeHostStateMsg();
-
-
+        msg.setUuid(uuid());
+        msg.setStateEvent("Enabled");
         return msg;
     }
 

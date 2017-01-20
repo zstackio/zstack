@@ -8,7 +8,7 @@ doc {
 
     category "host"
 
-    desc "在这里填写API描述"
+    desc "查询物理机"
 
     rest {
         request {
@@ -21,7 +21,7 @@ doc {
 
             clz APIQueryHostMsg.class
 
-            desc ""
+            desc "获取物理机清单"
             
 			params APIQueryMessage.class
         }

@@ -5,7 +5,7 @@ import org.zstack.header.host.HostInventory
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "更新后的云主机"
 
 	ref {
 		name "error"
@@ -18,7 +18,7 @@ doc {
 	ref {
 		name "inventory"
 		path "org.zstack.header.host.APIUpdateHostEvent.inventory"
-		desc "null"
+		desc "更新后的云主机信息"
 		type "HostInventory"
 		since "0.6"
 		clz HostInventory.class

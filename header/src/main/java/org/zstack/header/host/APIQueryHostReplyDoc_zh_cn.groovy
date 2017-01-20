@@ -5,7 +5,7 @@ import org.zstack.header.host.HostInventory
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "获取物理机清单"
 
 	ref {
 		name "error"

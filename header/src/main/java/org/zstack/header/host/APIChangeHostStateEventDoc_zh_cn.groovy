@@ -5,7 +5,7 @@ import org.zstack.header.host.HostInventory
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "物理机启动状态消息回复"
 
 	ref {
 		name "error"

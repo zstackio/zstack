@@ -5,7 +5,7 @@ import org.zstack.header.host.HostInventory
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "添加物理机消息回复"
 
 	ref {
 		name "error"
@@ -18,7 +18,7 @@ doc {
 	ref {
 		name "inventory"
 		path "org.zstack.header.host.APIAddHostEvent.inventory"
-		desc "null"
+		desc "被添加的物理机的详细信息"
 		type "HostInventory"
 		since "0.6"
 		clz HostInventory.class

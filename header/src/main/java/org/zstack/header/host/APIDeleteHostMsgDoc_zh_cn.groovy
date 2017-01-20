@@ -5,7 +5,7 @@ doc {
 
     category "host"
 
-    desc "在这里填写API描述"
+    desc "删除物理机"
 
     rest {
         request {
@@ -16,7 +16,7 @@ doc {
 
             clz APIDeleteHostMsg.class
 
-            desc ""
+            desc "删除一个物理机"
 
             params {
 
@@ -33,7 +33,7 @@ doc {
                 column {
                     name "deleteMode"
                     enclosedIn ""
-                    desc ""
+                    desc "删除模式"
                     location "body"
                     type "String"
                     optional true
