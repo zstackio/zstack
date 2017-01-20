@@ -22,6 +22,9 @@ import org.zstack.header.core.AsyncLatch;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.progress.ProgressConstants;
+import org.zstack.header.core.progress.ProgressVO;
+import org.zstack.header.core.progress.ProgressVO_;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -467,8 +470,22 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 });
 
                 Finally(new FlowFinallyHandler(msg, completion) {
+                    @Transactional
+                    private void deleteProgress(){
+                        SimpleQuery<ProgressVO> q = dbf.createQuery(ProgressVO.class);
+                        q.add(ProgressVO_.processType, SimpleQuery.Op.EQ, ProgressConstants.ProgressType.LocalStorageMigrateVolume.toString());
+                        q.add(ProgressVO_.resourceUuid, SimpleQuery.Op.EQ, msg.getVolumeUuid());
+                        if (q.find() != null) {
+                            try {
+                                dbf.remove(q.find());
+                            } catch (Exception e) {
+                                logger.warn("no need delete, it was deleted...");
+                            }
+                        }
+                    }
                     @Override
                     public void Finally() {
+                        deleteProgress();
                         completion.done();
                     }
                 });

@@ -1990,7 +1990,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                         httpCall(GET_MD5_PATH, struct.getSrcHostUuid(), cmd, false, GetMd5Rsp.class, new ReturnValueCompletion<GetMd5Rsp>(trigger) {
                             @Override
                             public void success(GetMd5Rsp rsp) {
-                                deleteProgress(cmd.volumeUuid);
                                 context.backingFileMd5 = rsp.md5s.get(0).md5;
                                 trigger.next();
                             }
@@ -2032,7 +2031,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                         AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger, chain) {
                                             @Override
                                             public void success(AgentResponse rsp) {
-                                                deleteProgress(cmd.uuid);
                                                 s = true;
                                                 trigger.next();
                                                 chain.next();
@@ -2148,7 +2146,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                         httpCall(CHECK_MD5_PATH, struct.getDestHostUuid(), cmd, false, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
                             @Override
                             public void success(AgentResponse returnValue) {
-                                deleteProgress(cmd.volumeUuid);
                                 trigger.next();
                             }
 
@@ -2189,7 +2186,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 httpCall(GET_MD5_PATH, struct.getSrcHostUuid(), cmd, false, GetMd5Rsp.class, new ReturnValueCompletion<GetMd5Rsp>(trigger) {
                     @Override
                     public void success(GetMd5Rsp rsp) {
-                        deleteProgress(cmd.volumeUuid);
                         context.getMd5Rsp = rsp;
                         trigger.next();
                     }
@@ -2233,7 +2229,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                         AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
                             @Override
                             public void success(AgentResponse rsp) {
-                                deleteProgress(cmd.uuid);
                                 migrated = cmd.paths;
                                 trigger.next();
                             }
