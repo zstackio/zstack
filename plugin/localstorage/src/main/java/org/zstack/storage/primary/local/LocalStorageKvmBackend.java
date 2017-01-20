@@ -1213,6 +1213,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     private void submitDeleteBitsGCJob(GCDeleteBitsContext c) {
+        // Warning: this job will delete the whole path of installPath
         EventBasedGCPersistentContext<GCDeleteBitsContext> ctx = new EventBasedGCPersistentContext<GCDeleteBitsContext>();
         ctx.setContextClass(GCDeleteBitsContext.class);
         ctx.setRunnerClass(GCDeleteBitsRunner.class);
