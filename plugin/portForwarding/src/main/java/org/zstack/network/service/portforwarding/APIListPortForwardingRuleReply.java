@@ -17,6 +17,7 @@ public class APIListPortForwardingRuleReply extends APIReply {
  
     public static APIListPortForwardingRuleReply __example__() {
         APIListPortForwardingRuleReply reply = new APIListPortForwardingRuleReply();
+        //deprecated
 
 
         return reply;

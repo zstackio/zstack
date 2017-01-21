@@ -7,7 +7,7 @@ doc {
 
     category "portForwarding"
 
-    desc "在这里填写API描述"
+    desc "更新端口转发规则"
 
     rest {
         request {
@@ -18,8 +18,8 @@ doc {
 
             clz APIUpdatePortForwardingRuleMsg.class
 
-            desc ""
-            
+			desc "更新端口转发规则"
+
 			params {
 
 				column {

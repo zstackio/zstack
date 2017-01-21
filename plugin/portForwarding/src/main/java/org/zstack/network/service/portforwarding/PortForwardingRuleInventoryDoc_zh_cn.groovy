@@ -9,7 +9,7 @@ import java.sql.Timestamp
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "端口转发规则清单"
 
 	field {
 		name "uuid"
@@ -31,13 +31,13 @@ doc {
 	}
 	field {
 		name "vipIp"
-		desc ""
+		desc "VIP的IP地址"
 		type "String"
 		since "0.6"
 	}
 	field {
 		name "guestIp"
-		desc ""
+		desc "虚拟机网卡的IP地址"
 		type "String"
 		since "0.6"
 	}
@@ -49,25 +49,25 @@ doc {
 	}
 	field {
 		name "vipPortStart"
-		desc ""
+		desc "VIP的起始端口号"
 		type "Integer"
 		since "0.6"
 	}
 	field {
 		name "vipPortEnd"
-		desc ""
+		desc "VIP的结束端口号"
 		type "Integer"
 		since "0.6"
 	}
 	field {
 		name "privatePortStart"
-		desc ""
+		desc "客户IP的起始端口号"
 		type "Integer"
 		since "0.6"
 	}
 	field {
 		name "privatePortEnd"
-		desc ""
+		desc "客户IP的结束端口号"
 		type "Integer"
 		since "0.6"
 	}
@@ -79,19 +79,19 @@ doc {
 	}
 	field {
 		name "protocolType"
-		desc ""
+		desc "网络流量的协议类型"
 		type "String"
 		since "0.6"
 	}
 	field {
 		name "state"
-		desc ""
+		desc "规则可用状态, 当前版本中未实现"
 		type "String"
 		since "0.6"
 	}
 	field {
 		name "allowedCidr"
-		desc ""
+		desc "源CIDR; 端口转发规则只作用于源CIDR的流量"
 		type "String"
 		since "0.6"
 	}

@@ -71,8 +71,7 @@ public class APIDeletePortForwardingRuleMsg extends APIDeleteMessage {
  
     public static APIDeletePortForwardingRuleMsg __example__() {
         APIDeletePortForwardingRuleMsg msg = new APIDeletePortForwardingRuleMsg();
-
-
+        msg.setUuid(uuid());
         return msg;
     }
 

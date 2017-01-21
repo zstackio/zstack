@@ -28,8 +28,7 @@ public class APIGetPortForwardingAttachableVmNicsMsg extends APISyncCallMessage 
  
     public static APIGetPortForwardingAttachableVmNicsMsg __example__() {
         APIGetPortForwardingAttachableVmNicsMsg msg = new APIGetPortForwardingAttachableVmNicsMsg();
-
-
+        msg.setRuleUuid(uuid());
         return msg;
     }
 

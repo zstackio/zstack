@@ -7,7 +7,7 @@ doc {
 
     category "portForwarding"
 
-    desc "在这里填写API描述"
+    desc "用户可以使用CreatePortForwardingRule来创建一个端口转发规则, 并可以同时挂载或者不挂载到虚拟机网卡上"
 
     rest {
         request {
@@ -18,8 +18,8 @@ doc {
 
             clz APICreatePortForwardingRuleMsg.class
 
-            desc ""
-            
+			desc "用户可以使用CreatePortForwardingRule来创建一个端口转发规则, 并可以同时挂载或者不挂载到虚拟机网卡上"
+
 			params {
 
 				column {
@@ -35,7 +35,7 @@ doc {
 				column {
 					name "vipPortStart"
 					enclosedIn ""
-					desc ""
+					desc "VIP的起始端口号"
 					location "body"
 					type "Integer"
 					optional false
@@ -45,7 +45,7 @@ doc {
 				column {
 					name "vipPortEnd"
 					enclosedIn ""
-					desc ""
+					desc "VIP的结束端口号; 如果忽略不设置, 会默认设置为vipPortStart"
 					location "body"
 					type "Integer"
 					optional true
@@ -55,7 +55,7 @@ doc {
 				column {
 					name "privatePortStart"
 					enclosedIn ""
-					desc ""
+					desc "客户IP（虚拟机网卡的IP地址）的起始端口号; 如果忽略不设置, 会默认设置为vipPortStart"
 					location "body"
 					type "Integer"
 					optional true
@@ -65,7 +65,7 @@ doc {
 				column {
 					name "privatePortEnd"
 					enclosedIn ""
-					desc ""
+					desc "客户IP（虚拟机网卡的IP地址）的结束端口号; 如果忽略不设置, 会默认设置为vipPortEnd"
 					location "body"
 					type "Integer"
 					optional true
@@ -75,7 +75,7 @@ doc {
 				column {
 					name "protocolType"
 					enclosedIn ""
-					desc ""
+					desc "网络流量协议类型"
 					location "body"
 					type "String"
 					optional false
@@ -95,7 +95,7 @@ doc {
 				column {
 					name "allowedCidr"
 					enclosedIn ""
-					desc ""
+					desc "源CIDR; 端口转发规则只作用于源CIDR的流量; 如果忽略不设置, 会默认设置为to 0.0.0.0/0"
 					location "body"
 					type "String"
 					optional true
@@ -125,7 +125,7 @@ doc {
 				column {
 					name "resourceUuid"
 					enclosedIn ""
-					desc ""
+					desc "用户指定的资源UUID，若指定，系统不会为该资源随机分配UUID"
 					location "body"
 					type "String"
 					optional true

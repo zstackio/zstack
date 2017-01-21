@@ -211,8 +211,11 @@ public class APICreatePortForwardingRuleMsg extends APICreateMessage {
 
     public static APICreatePortForwardingRuleMsg __example__() {
         APICreatePortForwardingRuleMsg msg = new APICreatePortForwardingRuleMsg();
-
-
+        msg.setName("pf1");
+        msg.setVipPortStart(22);
+        msg.setVipUuid(uuid());
+        msg.setProtocolType("TCP");
+        msg.setVmNicUuid(uuid());
         return msg;
     }
 }
