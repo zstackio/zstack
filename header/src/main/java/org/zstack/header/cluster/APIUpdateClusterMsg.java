@@ -53,8 +53,8 @@ public class APIUpdateClusterMsg extends APIMessage implements ClusterMessage {
  
     public static APIUpdateClusterMsg __example__() {
         APIUpdateClusterMsg msg = new APIUpdateClusterMsg();
-
-
+        msg.setName("cluster1");
+        msg.setDescription("test");
         return msg;
     }
 

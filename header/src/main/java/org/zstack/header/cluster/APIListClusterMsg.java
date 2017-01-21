@@ -14,8 +14,7 @@ public class APIListClusterMsg extends APIListMessage {
  
     public static APIListClusterMsg __example__() {
         APIListClusterMsg msg = new APIListClusterMsg();
-
-
+        //deprecated
         return msg;
     }
 

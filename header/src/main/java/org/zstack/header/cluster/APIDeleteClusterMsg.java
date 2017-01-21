@@ -66,8 +66,7 @@ public class APIDeleteClusterMsg extends APIDeleteMessage implements ClusterMess
  
     public static APIDeleteClusterMsg __example__() {
         APIDeleteClusterMsg msg = new APIDeleteClusterMsg();
-
-
+        msg.setUuid(uuid());
         return msg;
     }
 

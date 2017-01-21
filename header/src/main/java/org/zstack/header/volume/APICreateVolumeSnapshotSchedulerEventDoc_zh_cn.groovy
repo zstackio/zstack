@@ -12,7 +12,7 @@ doc {
 		path "org.zstack.header.volume.APICreateVolumeSnapshotSchedulerEvent.error"
 		desc "错误码，若不为null，则表示操作失败, 操作成功时该字段为null",false
 		type "ErrorCode"
-		since "0.6"
+		since "1.6"
 		clz ErrorCode.class
 	}
 	ref {
@@ -20,7 +20,7 @@ doc {
 		path "org.zstack.header.volume.APICreateVolumeSnapshotSchedulerEvent.inventory"
 		desc "null"
 		type "SchedulerInventory"
-		since "0.6"
+		since "1.6"
 		clz SchedulerInventory.class
 	}
 }

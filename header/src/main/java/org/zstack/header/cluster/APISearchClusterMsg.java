@@ -6,8 +6,7 @@ public class APISearchClusterMsg extends APISearchMessage {
  
     public static APISearchClusterMsg __example__() {
         APISearchClusterMsg msg = new APISearchClusterMsg();
-
-
+        //deprecated
         return msg;
     }
 

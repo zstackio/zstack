@@ -5,7 +5,7 @@ import org.zstack.header.cluster.ClusterInventory
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "集群清单"
 
 	ref {
 		name "error"

@@ -7,7 +7,7 @@ doc {
 
     category "cluster"
 
-    desc "在这里填写API描述"
+    desc "管理员可以使用CreateCluster命令来创建一个集群"
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APICreateClusterMsg.class
 
-            desc ""
+            desc "管理员可以使用CreateCluster命令来创建一个集群"
             
 			params {
 
@@ -55,7 +55,7 @@ doc {
 				column {
 					name "hypervisorType"
 					enclosedIn "params"
-					desc ""
+					desc "虚拟机管理程序类型"
 					location "body"
 					type "String"
 					optional false
@@ -65,7 +65,7 @@ doc {
 				column {
 					name "type"
 					enclosedIn "params"
-					desc ""
+					desc "保留域, 请不要使用"
 					location "body"
 					type "String"
 					optional true
@@ -75,7 +75,7 @@ doc {
 				column {
 					name "resourceUuid"
 					enclosedIn "params"
-					desc ""
+					desc "当reourceUuid不等于null, ZStack使用这个值作为被创建资源的UUID; 否则ZStack会自动生成一个UUID"
 					location "body"
 					type "String"
 					optional true

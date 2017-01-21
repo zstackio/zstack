@@ -5,7 +5,7 @@ import java.sql.Timestamp
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "集群清单"
 
 	field {
 		name "name"
@@ -27,13 +27,13 @@ doc {
 	}
 	field {
 		name "state"
-		desc ""
+		desc "集群状态"
 		type "String"
 		since "0.6"
 	}
 	field {
 		name "hypervisorType"
-		desc ""
+		desc "虚拟机管理程序类型"
 		type "String"
 		since "0.6"
 	}
@@ -57,7 +57,7 @@ doc {
 	}
 	field {
 		name "type"
-		desc ""
+		desc "保留域"
 		type "String"
 		since "0.6"
 	}
