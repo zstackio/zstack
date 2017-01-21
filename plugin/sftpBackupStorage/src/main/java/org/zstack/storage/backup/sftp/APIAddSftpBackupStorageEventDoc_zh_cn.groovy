@@ -1,11 +1,10 @@
 package org.zstack.storage.backup.sftp
 
 import org.zstack.header.errorcode.ErrorCode
-import org.zstack.storage.backup.sftp.SftpBackupStorageInventory
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "Sftp镜像服务器清单"
 
 	ref {
 		name "error"

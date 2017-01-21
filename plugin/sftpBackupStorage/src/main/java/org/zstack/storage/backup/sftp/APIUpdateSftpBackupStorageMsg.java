@@ -58,7 +58,11 @@ public class APIUpdateSftpBackupStorageMsg extends APIUpdateBackupStorageMsg {
  
     public static APIUpdateSftpBackupStorageMsg __example__() {
         APIUpdateSftpBackupStorageMsg msg = new APIUpdateSftpBackupStorageMsg();
-
+        msg.setUsername("tester");
+        msg.setSshPort(8000);
+        msg.setHostname("192.168.0.1");
+        msg.setPassword("test1234");
+        msg.setUuid("76d39c6862b840a3aa4568d83db99022");
 
         return msg;
     }
