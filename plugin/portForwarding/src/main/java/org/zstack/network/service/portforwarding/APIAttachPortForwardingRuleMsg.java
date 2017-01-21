@@ -81,8 +81,8 @@ public class APIAttachPortForwardingRuleMsg extends APIMessage {
  
     public static APIAttachPortForwardingRuleMsg __example__() {
         APIAttachPortForwardingRuleMsg msg = new APIAttachPortForwardingRuleMsg();
-
-
+        msg.setVmNicUuid(uuid());
+        msg.setRuleUuid(uuid());
         return msg;
     }
 

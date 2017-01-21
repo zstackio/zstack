@@ -7,7 +7,7 @@ doc {
 
     category "portForwarding"
 
-    desc "在这里填写API描述"
+    desc "用户可以使用DetachPortForwardingRule来从一个虚拟机网卡卸载一个规则"
 
     rest {
         request {
@@ -18,8 +18,8 @@ doc {
 
             clz APIDetachPortForwardingRuleMsg.class
 
-            desc ""
-            
+			desc "用户可以使用DetachPortForwardingRule来从一个虚拟机网卡卸载一个规则"
+
 			params {
 
 				column {

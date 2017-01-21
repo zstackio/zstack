@@ -7,7 +7,7 @@ doc {
 
     category "portForwarding"
 
-    desc "在这里填写API描述"
+    desc "用户可以使用AttachPortForwardingRule来挂载一个规则到虚拟机网卡上"
 
     rest {
         request {
@@ -18,14 +18,14 @@ doc {
 
             clz APIAttachPortForwardingRuleMsg.class
 
-            desc ""
-            
+			desc "用户可以使用AttachPortForwardingRule来挂载一个规则到虚拟机网卡上"
+
 			params {
 
 				column {
 					name "ruleUuid"
 					enclosedIn ""
-					desc ""
+					desc "规则的uuid"
 					location "url"
 					type "String"
 					optional false

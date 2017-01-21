@@ -7,7 +7,7 @@ doc {
 
     category "portForwarding"
 
-    desc "在这里填写API描述"
+    desc "获取可应用端口转发规则的云主机网卡列表"
 
     rest {
         request {
@@ -18,14 +18,14 @@ doc {
 
             clz APIGetPortForwardingAttachableVmNicsMsg.class
 
-            desc ""
-            
+			desc "获取可应用端口转发规则的云主机网卡列表"
+
 			params {
 
 				column {
 					name "ruleUuid"
 					enclosedIn ""
-					desc ""
+					desc "规则的uuid"
 					location "url"
 					type "String"
 					optional false

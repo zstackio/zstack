@@ -6,6 +6,10 @@ import org.zstack.header.query.APIQueryMessage;
 import org.zstack.header.query.AutoQuery;
 import org.zstack.header.rest.RestRequest;
 
+import java.util.List;
+
+import static java.util.Arrays.asList;
+
 @AutoQuery(replyClass = APIQueryPortForwardingRuleReply.class, inventoryClass = PortForwardingRuleInventory.class)
 @Action(category = PortForwardingConstant.ACTION_CATEGORY, names = {"read"})
 @RestRequest(
@@ -16,12 +20,8 @@ import org.zstack.header.rest.RestRequest;
 )
 public class APIQueryPortForwardingRuleMsg extends APIQueryMessage {
 
- 
-    public static APIQueryPortForwardingRuleMsg __example__() {
-        APIQueryPortForwardingRuleMsg msg = new APIQueryPortForwardingRuleMsg();
-
-
-        return msg;
+    public static List<String> __example__() {
+        return asList("name=pf1", "state=Enabled");
     }
 
 }

@@ -3,7 +3,10 @@ package org.zstack.network.service.portforwarding;
 import org.zstack.header.query.APIQueryReply;
 import org.zstack.header.rest.RestResponse;
 
+import java.sql.Timestamp;
 import java.util.List;
+
+import static java.util.Arrays.asList;
 
 @RestResponse(allTo = "inventories")
 public class APIQueryPortForwardingRuleReply extends APIQueryReply {
@@ -19,8 +22,25 @@ public class APIQueryPortForwardingRuleReply extends APIQueryReply {
  
     public static APIQueryPortForwardingRuleReply __example__() {
         APIQueryPortForwardingRuleReply reply = new APIQueryPortForwardingRuleReply();
-
-
+        PortForwardingRuleInventory rule = new PortForwardingRuleInventory();
+        rule.setUuid(uuid());
+        rule.setName("TestAttachRule");
+        rule.setDescription("test atatch rule");
+        rule.setAllowedCidr("0.0.0.0/0");
+        rule.setGuestIp("10.0.0.244");
+        rule.setPrivatePortStart(33);
+        rule.setPrivatePortEnd(33);
+        rule.setProtocolType("TCP");
+        rule.setState("Enabled");
+        rule.setVipPortStart(33);
+        rule.setVipPortEnd(33);
+        rule.setVipIp("192.168.0.187");
+        rule.setVipUuid(uuid());
+        rule.setVmNicUuid(uuid());
+        rule.setCreateDate(new Timestamp(System.currentTimeMillis()));
+        rule.setLastOpDate(new Timestamp(System.currentTimeMillis()));
+        reply.setInventories(asList(rule));
+        reply.setSuccess(true);
         return reply;
     }
 
