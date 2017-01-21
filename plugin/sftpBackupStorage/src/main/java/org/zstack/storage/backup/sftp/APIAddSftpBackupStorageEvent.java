@@ -25,8 +25,10 @@ public class APIAddSftpBackupStorageEvent extends APIEvent {
  
     public static APIAddSftpBackupStorageEvent __example__() {
         APIAddSftpBackupStorageEvent event = new APIAddSftpBackupStorageEvent();
-
-
+        SftpBackupStorageInventory ssInventory = new SftpBackupStorageInventory();
+        ssInventory.setHostname("192.168.0.1");
+        ssInventory.setSshPort(8080);
+        ssInventory.setUsername("tester");
         return event;
     }
 

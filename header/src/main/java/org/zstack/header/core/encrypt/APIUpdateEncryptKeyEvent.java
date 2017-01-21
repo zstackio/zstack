@@ -1,13 +1,13 @@
 package org.zstack.header.core.encrypt;
 
 import org.zstack.header.message.APIEvent;
-import org.zstack.header.rest.RestResponse;
 
 /**
  * Created by mingjian.deng on 16/12/28.
  */
-@RestResponse(allTo = "inventory")
 public class APIUpdateEncryptKeyEvent extends APIEvent {
+	// only for test
+	private EncryptKeyInventory inventory;
 
 	public APIUpdateEncryptKeyEvent() {
 	super(null);
@@ -17,8 +17,15 @@ public class APIUpdateEncryptKeyEvent extends APIEvent {
 		super(apiId);
 	}
 
- 
-    public static APIUpdateEncryptKeyEvent __example__() {
+	public EncryptKeyInventory getInventory() {
+		return inventory;
+	}
+
+	public void setInventory(EncryptKeyInventory inventory) {
+		this.inventory = inventory;
+	}
+
+	public static APIUpdateEncryptKeyEvent __example__() {
         APIUpdateEncryptKeyEvent event = new APIUpdateEncryptKeyEvent();
 
 

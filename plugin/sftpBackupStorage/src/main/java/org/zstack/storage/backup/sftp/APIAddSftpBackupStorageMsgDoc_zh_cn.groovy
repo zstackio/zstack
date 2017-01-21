@@ -1,13 +1,11 @@
 package org.zstack.storage.backup.sftp
 
-import org.zstack.storage.backup.sftp.APIAddSftpBackupStorageEvent
-
 doc {
-    title "AddSftpBackupStorage"
+    title "添加sftp镜像服务器(AddSftpBackupStorage)"
 
     category "storage.backup.sftp"
 
-    desc "在这里填写API描述"
+    desc "添加sftp镜像服务器"
 
     rest {
         request {
@@ -25,7 +23,7 @@ doc {
 				column {
 					name "hostname"
 					enclosedIn "params"
-					desc ""
+					desc "服务器主机地址"
 					location "body"
 					type "String"
 					optional false
@@ -35,7 +33,7 @@ doc {
 				column {
 					name "username"
 					enclosedIn "params"
-					desc ""
+					desc "服务器 SSH 用户名 (用于 Ansible 部署)"
 					location "body"
 					type "String"
 					optional false
@@ -45,7 +43,7 @@ doc {
 				column {
 					name "password"
 					enclosedIn "params"
-					desc ""
+					desc "服务器 SSH 用户密码"
 					location "body"
 					type "String"
 					optional false
@@ -55,7 +53,7 @@ doc {
 				column {
 					name "sshPort"
 					enclosedIn "params"
-					desc ""
+					desc "服务器 SSH 端口"
 					location "body"
 					type "int"
 					optional true
@@ -65,7 +63,7 @@ doc {
 				column {
 					name "url"
 					enclosedIn "params"
-					desc ""
+					desc "sftp数据存放地址"
 					location "body"
 					type "String"
 					optional false
@@ -75,7 +73,7 @@ doc {
 				column {
 					name "name"
 					enclosedIn "params"
-					desc "资源名称"
+					desc "sftp镜像服务器名称"
 					location "body"
 					type "String"
 					optional false
@@ -85,7 +83,7 @@ doc {
 				column {
 					name "description"
 					enclosedIn "params"
-					desc "资源的详细描述"
+					desc "sftp镜像服务器的详细描述"
 					location "body"
 					type "String"
 					optional true
@@ -95,7 +93,7 @@ doc {
 				column {
 					name "type"
 					enclosedIn "params"
-					desc ""
+					desc "这里是 SftpBackupStorage"
 					location "body"
 					type "String"
 					optional true
@@ -105,7 +103,7 @@ doc {
 				column {
 					name "importImages"
 					enclosedIn "params"
-					desc ""
+					desc "是否导入镜像"
 					location "body"
 					type "boolean"
 					optional true
@@ -115,7 +113,7 @@ doc {
 				column {
 					name "resourceUuid"
 					enclosedIn "params"
-					desc ""
+					desc "资源UUID。若指定，镜像服务器会使用该字段值作为UUID"
 					location "body"
 					type "String"
 					optional true

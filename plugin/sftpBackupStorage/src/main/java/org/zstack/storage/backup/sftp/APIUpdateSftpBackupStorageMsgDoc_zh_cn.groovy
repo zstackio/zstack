@@ -3,11 +3,11 @@ package org.zstack.storage.backup.sftp
 import org.zstack.header.storage.backup.APIUpdateBackupStorageEvent
 
 doc {
-    title "UpdateSftpBackupStorage"
+    title "更新Sftp镜像服务器属性(UpdateSftpBackupStorage)"
 
     category "storage.backup.sftp"
 
-    desc "在这里填写API描述"
+    desc "更新Sftp镜像服务器属性"
 
     rest {
         request {
@@ -25,7 +25,7 @@ doc {
 				column {
 					name "username"
 					enclosedIn "updateSftpBackupStorage"
-					desc ""
+					desc "镜像服务器登录用户名"
 					location "body"
 					type "String"
 					optional true
@@ -35,7 +35,7 @@ doc {
 				column {
 					name "password"
 					enclosedIn "updateSftpBackupStorage"
-					desc ""
+					desc "镜像服务器登录密码"
 					location "body"
 					type "String"
 					optional true
@@ -45,7 +45,7 @@ doc {
 				column {
 					name "hostname"
 					enclosedIn "updateSftpBackupStorage"
-					desc ""
+					desc "镜像服务器所在的物理机地址"
 					location "body"
 					type "String"
 					optional true
@@ -55,7 +55,7 @@ doc {
 				column {
 					name "sshPort"
 					enclosedIn "updateSftpBackupStorage"
-					desc ""
+					desc "镜像服务器所在物理机的登录端口"
 					location "body"
 					type "Integer"
 					optional true
@@ -65,7 +65,7 @@ doc {
 				column {
 					name "uuid"
 					enclosedIn "updateSftpBackupStorage"
-					desc "资源的UUID，唯一标示该资源"
+					desc "镜像服务器的UUID，唯一标示该资源"
 					location "url"
 					type "String"
 					optional false
@@ -75,7 +75,7 @@ doc {
 				column {
 					name "name"
 					enclosedIn "updateSftpBackupStorage"
-					desc "资源名称"
+					desc "镜像服务器名称"
 					location "body"
 					type "String"
 					optional true
@@ -85,7 +85,7 @@ doc {
 				column {
 					name "description"
 					enclosedIn "updateSftpBackupStorage"
-					desc "资源的详细描述"
+					desc "镜像服务器的详细描述"
 					location "body"
 					type "String"
 					optional true

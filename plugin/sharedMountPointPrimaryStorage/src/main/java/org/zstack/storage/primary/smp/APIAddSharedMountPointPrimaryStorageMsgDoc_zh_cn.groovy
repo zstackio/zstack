@@ -3,11 +3,11 @@ package org.zstack.storage.primary.smp
 import org.zstack.header.storage.primary.APIAddPrimaryStorageEvent
 
 doc {
-    title "AddSharedMountPointPrimaryStorage"
+    title "添加一个共享挂载点的主存储(AddSharedMountPointPrimaryStorage)"
 
     category "storage.primary"
 
-    desc "在这里填写API描述"
+    desc "添加一个共享挂载点的主存储"
 
     rest {
         request {
@@ -25,7 +25,7 @@ doc {
 				column {
 					name "url"
 					enclosedIn "params"
-					desc ""
+					desc "共享挂载主存储所在的本地路径"
 					location "body"
 					type "String"
 					optional false
@@ -35,7 +35,7 @@ doc {
 				column {
 					name "name"
 					enclosedIn "params"
-					desc "资源名称"
+					desc "共享挂载主存储的名称"
 					location "body"
 					type "String"
 					optional false
@@ -45,7 +45,7 @@ doc {
 				column {
 					name "description"
 					enclosedIn "params"
-					desc "资源的详细描述"
+					desc "共享挂载主存储的详细描述"
 					location "body"
 					type "String"
 					optional true
@@ -55,7 +55,7 @@ doc {
 				column {
 					name "type"
 					enclosedIn "params"
-					desc ""
+					desc "主存储的类型，应为SharedMountPoint"
 					location "body"
 					type "String"
 					optional true
@@ -75,7 +75,7 @@ doc {
 				column {
 					name "resourceUuid"
 					enclosedIn "params"
-					desc ""
+					desc "共享挂载主存储的uuid"
 					location "body"
 					type "String"
 					optional true

@@ -30,7 +30,6 @@ public class APIAddSharedMountPointPrimaryStorageMsg extends APIAddPrimaryStorag
     public static APIAddSharedMountPointPrimaryStorageMsg __example__() {
         APIAddSharedMountPointPrimaryStorageMsg msg = new APIAddSharedMountPointPrimaryStorageMsg();
 
-
         return msg;
     }
 
