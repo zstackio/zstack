@@ -4,11 +4,11 @@ import org.zstack.header.zone.APIQueryZoneReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "QueryZone"
+    title "查询区域(QueryZone)"
 
     category "zone"
 
-    desc "在这里填写API描述"
+    desc "管理员可以使用QueryZone来查询区域"
 
     rest {
         request {
