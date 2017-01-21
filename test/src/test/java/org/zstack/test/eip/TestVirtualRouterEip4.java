@@ -8,6 +8,7 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.eip.EipInventory;
 import org.zstack.network.service.eip.EipVO;
 import org.zstack.network.service.vip.VipVO;
@@ -20,6 +21,8 @@ import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
+
+import java.util.List;
 
 /**
  * @author frank
@@ -76,5 +79,10 @@ public class TestVirtualRouterEip4 {
         EipVO evo = dbf.findByUuid(eip.getUuid(), EipVO.class);
         Assert.assertNull(evo.getVmNicUuid());
         Assert.assertNull(evo.getGuestIp());
+
+        vm = api.recoverVm(vm.getUuid(), null);
+        VmNicInventory vmnic = vm.getVmNics().get(0);
+        List<VmNicInventory> nics = api.getEipAttachableVmNicsByEipUuid(eip.getUuid());
+        Assert.assertFalse(nics.stream().anyMatch(n -> n.getUuid().equals(vmnic.getUuid())));
     }
 }

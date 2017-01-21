@@ -203,16 +203,17 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
             return new ArrayList<>();
         }
 
-        String sql = "select nic" +
+        List<VmNicVO> nics  = SQL.New("select nic" +
                 " from VmNicVO nic, VmInstanceVO vm" +
                 " where nic.l3NetworkUuid in (:l3Uuids)" +
                 " and nic.vmInstanceUuid = vm.uuid" +
-                " and vm.type = :vmType and vm.state in (:vmStates)";
-        TypedQuery<VmNicVO> nq = dbf.getEntityManager().createQuery(sql, VmNicVO.class);
-        nq.setParameter("l3Uuids", l3Uuids);
-        nq.setParameter("vmType", VmInstanceConstant.USER_VM_TYPE);
-        nq.setParameter("vmStates", Arrays.asList(VmInstanceState.Running, VmInstanceState.Stopped));
-        List<VmNicVO> nics = nq.getResultList();
+                " and vm.type = :vmType and vm.state in (:vmStates) " +
+                // IP = null means the VM is just recovered without any IP allocated
+                " and nic.ip is not null")
+                .param("l3Uuids", l3Uuids)
+                .param("vmType", VmInstanceConstant.USER_VM_TYPE)
+                .param("vmStates", Arrays.asList(VmInstanceState.Running, VmInstanceState.Stopped))
+                .list();
         return VmNicInventory.valueOf(nics);
     }
 
