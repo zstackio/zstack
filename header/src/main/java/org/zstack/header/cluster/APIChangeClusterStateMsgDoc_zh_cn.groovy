@@ -1,13 +1,11 @@
 package org.zstack.header.cluster
 
-import org.zstack.header.cluster.APIChangeClusterStateEvent
-
 doc {
     title "ChangeClusterState"
 
     category "cluster"
 
-    desc "在这里填写API描述"
+    desc "管理员可以使用ChangeClusterState来改变一个集群的可用状态"
 
     rest {
         request {
@@ -35,7 +33,7 @@ doc {
 				column {
 					name "stateEvent"
 					enclosedIn "changeClusterState"
-					desc ""
+					desc "可用状态触发事件"
 					location "body"
 					type "String"
 					optional false

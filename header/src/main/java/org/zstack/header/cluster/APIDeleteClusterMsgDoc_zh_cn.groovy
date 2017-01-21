@@ -1,13 +1,11 @@
 package org.zstack.header.cluster
 
-import org.zstack.header.cluster.APIDeleteClusterEvent
-
 doc {
     title "DeleteCluster"
 
     category "cluster"
 
-    desc "在这里填写API描述"
+    desc "管理员可以使用DeleteCluster命令来删除一个集群"
 
     rest {
         request {
@@ -18,7 +16,7 @@ doc {
 
             clz APIDeleteClusterMsg.class
 
-            desc ""
+            desc "管理员可以使用DeleteCluster命令来删除一个集群"
             
 			params {
 
