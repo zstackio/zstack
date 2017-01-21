@@ -7,7 +7,7 @@ doc {
 
     category "globalConfig"
 
-    desc "在这里填写API描述"
+    desc "更新全局配置"
 
     rest {
         request {
@@ -18,14 +18,14 @@ doc {
 
             clz APIUpdateGlobalConfigMsg.class
 
-            desc ""
+            desc "更新全局配置"
             
 			params {
 
 				column {
 					name "category"
 					enclosedIn "updateGlobalConfig"
-					desc ""
+					desc "类型"
 					location "url"
 					type "String"
 					optional false
@@ -45,7 +45,7 @@ doc {
 				column {
 					name "value"
 					enclosedIn "updateGlobalConfig"
-					desc ""
+					desc "值"
 					location "body"
 					type "String"
 					optional true

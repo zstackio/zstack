@@ -4,6 +4,8 @@ import org.zstack.header.message.APIListMessage;
 
 import java.util.List;
 
+import static java.util.Arrays.asList;
+
 public class APIListGlobalConfigMsg extends APIListMessage {
 	private List<Long> ids;
 	
@@ -15,11 +17,5 @@ public class APIListGlobalConfigMsg extends APIListMessage {
         this.ids = ids;
     }
 
-    public static APIListGlobalConfigMsg __example__() {
-        APIListGlobalConfigMsg msg = new APIListGlobalConfigMsg();
-
-
-        return msg;
-    }
 
 }

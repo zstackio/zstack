@@ -15,8 +15,13 @@ public class APIGetGlobalConfigReply extends APIReply {
  
     public static APIGetGlobalConfigReply __example__() {
         APIGetGlobalConfigReply reply = new APIGetGlobalConfigReply();
-
-
+        GlobalConfigInventory inventory= new GlobalConfigInventory();
+        inventory.setCategory("quota");
+        inventory.setName("scheduler.num");
+        inventory.setValue("90");
+        inventory.setDescription("default quota for scheduler.num");
+        inventory.setDefaultValue("80");
+        reply.setInventory(inventory);
         return reply;
     }
 
