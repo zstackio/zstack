@@ -22,8 +22,12 @@ public class APIUpdateGlobalConfigEvent extends APIEvent {
  
     public static APIUpdateGlobalConfigEvent __example__() {
         APIUpdateGlobalConfigEvent event = new APIUpdateGlobalConfigEvent();
-
-
+		GlobalConfigInventory inventory  = new GlobalConfigInventory();
+        inventory.setCategory("quota");
+        inventory.setName("scheduler.num");
+        inventory.setValue("90");
+        inventory.setDescription("default quota for scheduler.num");
+        inventory.setDefaultValue("80");
         return event;
     }
 

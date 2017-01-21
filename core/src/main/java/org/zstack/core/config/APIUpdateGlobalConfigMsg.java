@@ -49,8 +49,9 @@ public class APIUpdateGlobalConfigMsg extends APIMessage {
 
     public static APIUpdateGlobalConfigMsg __example__() {
         APIUpdateGlobalConfigMsg msg = new APIUpdateGlobalConfigMsg();
-
-
+        msg.setCategory("quota");
+        msg.setName("scheduler.num");
+        msg.setValue("90");
         return msg;
     }
 
