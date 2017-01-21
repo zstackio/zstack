@@ -7,7 +7,7 @@ doc {
 
     category "cluster"
 
-    desc "在这里填写API描述"
+    desc "更新集群"
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIUpdateClusterMsg.class
 
-            desc ""
+            desc "更新集群"
             
 			params {
 

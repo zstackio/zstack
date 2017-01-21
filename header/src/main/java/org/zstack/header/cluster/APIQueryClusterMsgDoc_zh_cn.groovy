@@ -8,7 +8,7 @@ doc {
 
     category "cluster"
 
-    desc "在这里填写API描述"
+    desc "管理员可以使用QueryCluster命令来查询集群"
 
     rest {
         request {
@@ -21,7 +21,7 @@ doc {
 
             clz APIQueryClusterMsg.class
 
-            desc ""
+            desc "管理员可以使用QueryCluster命令来查询集群"
             
 			params APIQueryMessage.class
         }
