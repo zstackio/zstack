@@ -13,13 +13,12 @@ doc {
         request {
 			url "POST /v1/hosts"
 
-
             header (OAuth: 'the-session-uuid')
 
             clz APIAddHostMsg.class
 
             desc "添加物理机请求"
-            
+
 			params {
 
 				column {
@@ -45,7 +44,7 @@ doc {
 				column {
 					name "managementIp"
 					enclosedIn "params"
-					desc "管理节点的IP"
+					desc "管理节点IP"
 					location "body"
 					type "String"
 					optional false
@@ -65,7 +64,7 @@ doc {
 				column {
 					name "resourceUuid"
 					enclosedIn "params"
-					desc "资源的UUID"
+					desc "资源UUID"
 					location "body"
 					type "String"
 					optional true
