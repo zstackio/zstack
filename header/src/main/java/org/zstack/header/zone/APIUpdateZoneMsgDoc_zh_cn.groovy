@@ -3,11 +3,11 @@ package org.zstack.header.zone
 import org.zstack.header.zone.APIUpdateZoneEvent
 
 doc {
-    title "UpdateZone"
+    title "更新区域（UpdateZone）"
 
     category "zone"
 
-    desc "在这里填写API描述"
+    desc "更新区域的名称、描述、系统标签或者用户标签"
 
     rest {
         request {
@@ -55,7 +55,7 @@ doc {
 				column {
 					name "systemTags"
  					enclosedIn ""
- 					desc ""
+ 					desc "系统标签"
 					location "body"
 					type "List"
 					optional true

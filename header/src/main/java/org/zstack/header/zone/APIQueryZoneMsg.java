@@ -19,6 +19,6 @@ import static java.util.Arrays.asList;
 public class APIQueryZoneMsg extends APIQueryMessage {
 
     public static List<String> __example__() {
-        return asList("name=zone1", "state=Enabled");
+        return asList("name=TestZone", "state=Enabled");
     }
 }

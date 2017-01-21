@@ -19,8 +19,7 @@ public class APIListZonesReply extends APIReply {
  
     public static APIListZonesReply __example__() {
         APIListZonesReply reply = new APIListZonesReply();
-
-
+        //deprecated
         return reply;
     }
 

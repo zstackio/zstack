@@ -3,6 +3,8 @@ package org.zstack.header.zone;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.rest.RestResponse;
 
+import java.sql.Timestamp;
+
 
 /**
  * @apiResult api event for message :ref:`APIChangeZoneStateMsg`
@@ -49,8 +51,15 @@ public class APIChangeZoneStateEvent extends APIEvent {
  
     public static APIChangeZoneStateEvent __example__() {
         APIChangeZoneStateEvent event = new APIChangeZoneStateEvent();
-
-
+        ZoneInventory zone = new ZoneInventory();
+        zone.setName("TestZone");
+        zone.setUuid(uuid());
+        zone.setDescription("Test");
+        zone.setState("Enabled");
+        zone.setType("zstack");
+        zone.setCreateDate(new Timestamp(System.currentTimeMillis()));
+        zone.setLastOpDate(new Timestamp(System.currentTimeMillis()));
+        event.setInventory(zone);
         return event;
     }
 

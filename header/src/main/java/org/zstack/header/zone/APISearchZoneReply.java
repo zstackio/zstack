@@ -6,8 +6,7 @@ public class APISearchZoneReply extends APISearchReply {
  
     public static APISearchZoneReply __example__() {
         APISearchZoneReply reply = new APISearchZoneReply();
-
-
+        //deprecated
         return reply;
     }
 

@@ -14,6 +14,7 @@ public class APIListZonesMsg extends APIListMessage {
  
     public static APIListZonesMsg __example__() {
         APIListZonesMsg msg = new APIListZonesMsg();
+        //deprecated
 
 
         return msg;

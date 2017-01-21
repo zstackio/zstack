@@ -26,8 +26,7 @@ public class APIDeleteZoneEvent extends APIEvent {
  
     public static APIDeleteZoneEvent __example__() {
         APIDeleteZoneEvent event = new APIDeleteZoneEvent();
-
-
+        event.setSuccess(true);
         return event;
     }
 

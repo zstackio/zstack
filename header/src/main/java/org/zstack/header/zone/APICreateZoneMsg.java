@@ -85,8 +85,8 @@ public class APICreateZoneMsg extends APICreateMessage {
  
     public static APICreateZoneMsg __example__() {
         APICreateZoneMsg msg = new APICreateZoneMsg();
-
-
+        msg.setName("TestZone");
+        msg.setDescription("test zone");
         return msg;
     }
 
