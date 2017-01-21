@@ -5,7 +5,7 @@ import org.zstack.core.config.GlobalConfigInventory
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "更新全局配置返回信息"
 
 	ref {
 		name "error"
