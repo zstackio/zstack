@@ -3,11 +3,11 @@ package org.zstack.header.tag
 import org.zstack.header.tag.APIUpdateSystemTagEvent
 
 doc {
-    title "UpdateSystemTag"
+    title "更新系统标签（UpdateSystemTag)"
 
     category "tag"
 
-    desc "在这里填写API描述"
+    desc "更新系统标签"
 
     rest {
         request {
@@ -18,8 +18,8 @@ doc {
 
             clz APIUpdateSystemTagMsg.class
 
-            desc ""
-            
+			desc "更新系统标签"
+
 			params {
 
 				column {
@@ -35,7 +35,7 @@ doc {
 				column {
 					name "tag"
 					enclosedIn "updateSystemTag"
-					desc ""
+					desc "标签字符串"
 					location "body"
 					type "String"
 					optional false
@@ -45,7 +45,7 @@ doc {
 				column {
 					name "systemTags"
  					enclosedIn ""
- 					desc ""
+ 					desc "系统标签"
 					location "body"
 					type "List"
 					optional true

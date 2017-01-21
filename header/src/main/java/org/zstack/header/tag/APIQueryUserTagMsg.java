@@ -7,6 +7,10 @@ import org.zstack.header.query.APIQueryMessage;
 import org.zstack.header.query.AutoQuery;
 import org.zstack.header.rest.RestRequest;
 
+import java.util.List;
+
+import static java.util.Arrays.asList;
+
 /**
  */
 @AutoQuery(replyClass = APIQueryUserTagReply.class, inventoryClass = UserTagInventory.class)
@@ -19,11 +23,8 @@ import org.zstack.header.rest.RestRequest;
 )
 public class APIQueryUserTagMsg extends APIQueryMessage {
  
-    public static APIQueryUserTagMsg __example__() {
-        APIQueryUserTagMsg msg = new APIQueryUserTagMsg();
-
-
-        return msg;
+    public static List<String> __example__() {
+        return asList("resourceType=DiskOfferingVO","tag=for-large-DB");
     }
 
 }

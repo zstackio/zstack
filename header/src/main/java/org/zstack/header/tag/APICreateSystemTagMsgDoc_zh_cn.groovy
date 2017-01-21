@@ -7,7 +7,7 @@ doc {
 
     category "tag"
 
-    desc "在这里填写API描述"
+    desc "创建系统标签"
 
     rest {
         request {
@@ -18,14 +18,14 @@ doc {
 
             clz APICreateSystemTagMsg.class
 
-            desc ""
-            
+			desc "创建系统标签"
+
 			params {
 
 				column {
 					name "resourceType"
 					enclosedIn "params"
-					desc ""
+					desc "当创建一个标签时, 用户必须制定标签所关联的资源类型"
 					location "body"
 					type "String"
 					optional false
@@ -35,7 +35,7 @@ doc {
 				column {
 					name "resourceUuid"
 					enclosedIn "params"
-					desc ""
+					desc "用户指定的资源UUID，若指定，系统不会为该资源随机分配UUID"
 					location "body"
 					type "String"
 					optional false
@@ -45,7 +45,7 @@ doc {
 				column {
 					name "tag"
 					enclosedIn "params"
-					desc ""
+					desc "标签字符串"
 					location "body"
 					type "String"
 					optional false
