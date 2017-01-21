@@ -50,8 +50,8 @@ public class APIUpdatePortForwardingRuleMsg extends APIMessage {
  
     public static APIUpdatePortForwardingRuleMsg __example__() {
         APIUpdatePortForwardingRuleMsg msg = new APIUpdatePortForwardingRuleMsg();
-
-
+        msg.setName("pf2");
+        msg.setDescription("new rule");
         return msg;
     }
 

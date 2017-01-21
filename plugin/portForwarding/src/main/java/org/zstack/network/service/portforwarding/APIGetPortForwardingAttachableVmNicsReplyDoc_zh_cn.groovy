@@ -5,7 +5,7 @@ import org.zstack.header.vm.VmNicInventory
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "端口转发规则清单"
 
 	ref {
 		name "error"
