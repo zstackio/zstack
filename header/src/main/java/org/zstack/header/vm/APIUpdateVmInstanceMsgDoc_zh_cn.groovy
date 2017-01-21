@@ -1,11 +1,11 @@
 package org.zstack.header.vm
 
 doc {
-    title "UpdateVmInstance"
+    title "更新云主机信息(UpdateVmInstance)"
 
     category "vmInstance"
 
-    desc "在这里填写API描述"
+    desc "更新一个云主机的信息"
 
     rest {
         request {
@@ -23,7 +23,7 @@ doc {
                 column {
                     name "uuid"
                     enclosedIn "updateVmInstance"
-                    desc "资源的UUID，唯一标示该资源"
+                    desc "云主机UUID"
                     location "url"
                     type "String"
                     optional false
@@ -33,7 +33,7 @@ doc {
                 column {
                     name "name"
                     enclosedIn "updateVmInstance"
-                    desc "资源名称"
+                    desc "云主机名"
                     location "body"
                     type "String"
                     optional true
@@ -43,7 +43,7 @@ doc {
                 column {
                     name "description"
                     enclosedIn "updateVmInstance"
-                    desc "资源的详细描述"
+                    desc "云主机详细描述"
                     location "body"
                     type "String"
                     optional true
@@ -53,7 +53,8 @@ doc {
                 column {
                     name "state"
                     enclosedIn "updateVmInstance"
-                    desc ""
+                    desc "云主机状态。**注意**，通常是不应该直接更新云主机状态，否则会导致ZStack对云主机状态发生误判。该字段只应该用在云主机真实状态" +
+                            "和ZStack记录状态发生了不一致，而ZStack的同步机制已经失效时（通常意味着bug），并管理员应该完全理解使用该字段的后果时。"
                     location "body"
                     type "String"
                     optional true
@@ -63,7 +64,7 @@ doc {
                 column {
                     name "defaultL3NetworkUuid"
                     enclosedIn "updateVmInstance"
-                    desc ""
+                    desc "默认三层网络UUID"
                     location "body"
                     type "String"
                     optional true
@@ -73,7 +74,7 @@ doc {
                 column {
                     name "platform"
                     enclosedIn "updateVmInstance"
-                    desc ""
+                    desc "云主机平台类型"
                     location "body"
                     type "String"
                     optional true
@@ -83,7 +84,7 @@ doc {
                 column {
                     name "cpuNum"
                     enclosedIn "updateVmInstance"
-                    desc ""
+                    desc "云主机CPU数量。需停止/启动云主机后生效"
                     location "body"
                     type "Integer"
                     optional true
@@ -93,7 +94,7 @@ doc {
                 column {
                     name "memorySize"
                     enclosedIn "updateVmInstance"
-                    desc ""
+                    desc "云主机内存大小。需停止/启动云主机后生效"
                     location "body"
                     type "Long"
                     optional true

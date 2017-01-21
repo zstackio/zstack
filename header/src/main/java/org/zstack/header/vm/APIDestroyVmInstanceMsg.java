@@ -64,8 +64,7 @@ public class APIDestroyVmInstanceMsg extends APIDeleteMessage implements VmInsta
  
     public static APIDestroyVmInstanceMsg __example__() {
         APIDestroyVmInstanceMsg msg = new APIDestroyVmInstanceMsg();
-
-
+        msg.setUuid(uuid());
         return msg;
     }
 

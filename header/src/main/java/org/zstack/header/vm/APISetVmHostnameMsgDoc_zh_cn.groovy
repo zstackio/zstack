@@ -1,11 +1,11 @@
 package org.zstack.header.vm
 
 doc {
-    title "SetVmHostname"
+    title "设置云主机Hostname(SetVmHostname)"
 
     category "vmInstance"
 
-    desc "在这里填写API描述"
+    desc "设置云主机Hostname。注意，ZStack通过DHCP服务器配置云主机hostname，如果云主机本身采用静态hostname方式，该API配置的hostname不生效。"
 
     rest {
         request {
@@ -23,7 +23,7 @@ doc {
                 column {
                     name "uuid"
                     enclosedIn "setVmHostname"
-                    desc "资源的UUID，唯一标示该资源"
+                    desc "云主机UUID"
                     location "url"
                     type "String"
                     optional false
@@ -33,7 +33,7 @@ doc {
                 column {
                     name "hostname"
                     enclosedIn "setVmHostname"
-                    desc ""
+                    desc "hostname，必须符合RFC 1123标准"
                     location "body"
                     type "String"
                     optional false

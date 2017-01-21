@@ -6,6 +6,8 @@ import org.zstack.header.rest.RestResponse;
 
 import java.util.List;
 
+import static java.util.Arrays.asList;
+
 /**
  */
 @RestResponse(allTo = "inventories")
@@ -23,6 +25,23 @@ public class APIGetVmMigrationCandidateHostsReply extends APIReply {
     public static APIGetVmMigrationCandidateHostsReply __example__() {
         APIGetVmMigrationCandidateHostsReply reply = new APIGetVmMigrationCandidateHostsReply();
 
+        HostInventory hi = new HostInventory ();
+        hi.setAvailableCpuCapacity(2L);
+        hi.setAvailableMemoryCapacity(4L);
+        hi.setClusterUuid(uuid());
+        hi.setManagementIp("192.168.0.1");
+        hi.setName("example");
+        hi.setState("Enabled");
+        hi.setStatus("Connected");
+        hi.setClusterUuid(uuid());
+        hi.setZoneUuid(uuid());
+        hi.setUuid(uuid());
+        hi.setTotalCpuCapacity(4L);
+        hi.setTotalMemoryCapacity(4L);
+        hi.setHypervisorType("KVM");
+        hi.setDescription("example");
+
+        reply.setInventories(asList(hi));
 
         return reply;
     }

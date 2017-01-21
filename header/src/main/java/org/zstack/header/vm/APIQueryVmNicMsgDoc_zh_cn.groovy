@@ -3,7 +3,7 @@ package org.zstack.header.vm
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "QueryVmNic"
+    title "查询云主机网卡(QueryVmNic)"
 
     category "vmInstance"
 

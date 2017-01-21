@@ -106,8 +106,8 @@ public class APIUpdateVmInstanceMsg extends APIMessage implements VmInstanceMess
  
     public static APIUpdateVmInstanceMsg __example__() {
         APIUpdateVmInstanceMsg msg = new APIUpdateVmInstanceMsg();
-
-
+        msg.uuid = uuid();
+        msg.name = "new vm name";
         return msg;
     }
 

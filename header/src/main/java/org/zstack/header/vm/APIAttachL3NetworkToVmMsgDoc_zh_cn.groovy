@@ -1,11 +1,11 @@
 package org.zstack.header.vm
 
 doc {
-    title "AttachL3NetworkToVm"
+    title "加载网络到云主机(AttachL3NetworkToVm)"
 
     category "vmInstance"
 
-    desc "在这里填写API描述"
+    desc "动态添加一个网络到Running或者Stopped的云主机"
 
     rest {
         request {
@@ -43,7 +43,7 @@ doc {
                 column {
                     name "staticIp"
                     enclosedIn "params"
-                    desc ""
+                    desc "指定分配给云主机的IP地址"
                     location "body"
                     type "String"
                     optional true

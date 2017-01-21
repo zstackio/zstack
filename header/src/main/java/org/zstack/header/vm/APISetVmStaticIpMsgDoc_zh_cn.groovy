@@ -1,11 +1,14 @@
 package org.zstack.header.vm
 
 doc {
-    title "SetVmStaticIp"
+    title "指定云主机IP(SetVmStaticIp)"
 
     category "vmInstance"
 
-    desc "在这里填写API描述"
+    desc """给云主机网卡指定IP，用户可以通过该API控制ZStack分配给云主机网卡的IP。
+
+用户要确保指定的IP在指定三层网络，并且IP未被占用。
+"""
 
     rest {
         request {
@@ -43,7 +46,7 @@ doc {
                 column {
                     name "ip"
                     enclosedIn "setVmStaticIp"
-                    desc ""
+                    desc "指定IP地址"
                     location "body"
                     type "String"
                     optional false

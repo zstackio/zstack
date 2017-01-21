@@ -83,8 +83,8 @@ public class APIAttachL3NetworkToVmMsg extends APIMessage implements VmInstanceM
  
     public static APIAttachL3NetworkToVmMsg __example__() {
         APIAttachL3NetworkToVmMsg msg = new APIAttachL3NetworkToVmMsg();
-
-
+        msg.vmInstanceUuid = uuid();
+        msg.l3NetworkUuid = uuid();
         return msg;
     }
 

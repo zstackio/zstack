@@ -53,8 +53,9 @@ public class APISetVmStaticIpMsg extends APIMessage implements VmInstanceMessage
  
     public static APISetVmStaticIpMsg __example__() {
         APISetVmStaticIpMsg msg = new APISetVmStaticIpMsg();
-
-
+        msg.vmInstanceUuid = uuid();
+        msg.l3NetworkUuid = uuid();
+        msg.ip = "192.168.10.10";
         return msg;
     }
 

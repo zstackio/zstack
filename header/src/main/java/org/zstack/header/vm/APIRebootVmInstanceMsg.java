@@ -60,8 +60,7 @@ public class APIRebootVmInstanceMsg extends APIMessage implements VmInstanceMess
  
     public static APIRebootVmInstanceMsg __example__() {
         APIRebootVmInstanceMsg msg = new APIRebootVmInstanceMsg();
-
-
+        msg.setUuid(uuid());
         return msg;
     }
 

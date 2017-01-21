@@ -28,8 +28,7 @@ public class APIGetVmMigrationCandidateHostsMsg extends APISyncCallMessage imple
  
     public static APIGetVmMigrationCandidateHostsMsg __example__() {
         APIGetVmMigrationCandidateHostsMsg msg = new APIGetVmMigrationCandidateHostsMsg();
-
-
+        msg.vmInstanceUuid = uuid();
         return msg;
     }
 

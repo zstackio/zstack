@@ -5,6 +5,8 @@ import org.zstack.header.rest.RestResponse;
 
 import java.util.List;
 
+import static java.util.Arrays.asList;
+
 /**
  * Created by frank on 11/22/2015.
  */
@@ -22,8 +24,7 @@ public class APIGetVmBootOrderReply extends APIReply {
  
     public static APIGetVmBootOrderReply __example__() {
         APIGetVmBootOrderReply reply = new APIGetVmBootOrderReply();
-
-
+        reply.setOrder(asList(VmBootDevice.HardDisk.toString(), VmBootDevice.CdRom.toString()));
         return reply;
     }
 

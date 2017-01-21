@@ -1,11 +1,11 @@
 package org.zstack.header.vm
 
 doc {
-    title "SetVmConsolePassword"
+    title "设置云主机控制台密码(SetVmConsolePassword)"
 
     category "vmInstance"
 
-    desc "在这里填写API描述"
+    desc "设置一个云主机控制台密码"
 
     rest {
         request {
@@ -23,7 +23,7 @@ doc {
                 column {
                     name "uuid"
                     enclosedIn "setVmConsolePassword"
-                    desc "资源的UUID，唯一标示该资源"
+                    desc "云主机UUID"
                     location "url"
                     type "String"
                     optional false
@@ -33,7 +33,7 @@ doc {
                 column {
                     name "consolePassword"
                     enclosedIn "setVmConsolePassword"
-                    desc ""
+                    desc "控制台密码，明文字符串"
                     location "body"
                     type "String"
                     optional false
@@ -43,7 +43,7 @@ doc {
                 column {
                     name "systemTags"
                     enclosedIn ""
-                    desc ""
+                    desc "系统标签"
                     location "body"
                     type "List"
                     optional true

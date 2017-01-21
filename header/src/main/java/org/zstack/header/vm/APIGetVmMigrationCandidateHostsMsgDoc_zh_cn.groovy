@@ -1,11 +1,11 @@
 package org.zstack.header.vm
 
 doc {
-    title "GetVmMigrationCandidateHosts"
+    title "获取可热迁移的物理机列表(GetVmMigrationCandidateHosts)"
 
     category "vmInstance"
 
-    desc "在这里填写API描述"
+    desc "获取一个云主机可以热迁移的物理机列表"
 
     rest {
         request {

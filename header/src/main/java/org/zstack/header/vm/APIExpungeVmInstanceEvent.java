@@ -17,8 +17,6 @@ public class APIExpungeVmInstanceEvent extends APIEvent {
  
     public static APIExpungeVmInstanceEvent __example__() {
         APIExpungeVmInstanceEvent event = new APIExpungeVmInstanceEvent();
-
-
         return event;
     }
 

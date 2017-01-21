@@ -21,8 +21,7 @@ public class APIGetVmHostnameReply extends APIReply {
  
     public static APIGetVmHostnameReply __example__() {
         APIGetVmHostnameReply reply = new APIGetVmHostnameReply();
-
-
+        reply.hostname = "vm1.zstack.orgl";
         return reply;
     }
 

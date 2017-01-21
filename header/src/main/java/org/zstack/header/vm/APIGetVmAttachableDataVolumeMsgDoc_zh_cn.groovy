@@ -1,11 +1,11 @@
 package org.zstack.header.vm
 
 doc {
-    title "GetVmAttachableDataVolume"
+    title "获取云主机可加载云盘列表(GetVmAttachableDataVolume)"
 
     category "vmInstance"
 
-    desc "在这里填写API描述"
+    desc "获取一个云主机可以加载的云盘列表"
 
     rest {
         request {

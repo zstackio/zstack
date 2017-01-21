@@ -42,8 +42,8 @@ public class APIAttachIsoToVmInstanceMsg extends APIMessage implements VmInstanc
  
     public static APIAttachIsoToVmInstanceMsg __example__() {
         APIAttachIsoToVmInstanceMsg msg = new APIAttachIsoToVmInstanceMsg();
-
-
+        msg.vmInstanceUuid = uuid();
+        msg.isoUuid = uuid();
         return msg;
     }
 

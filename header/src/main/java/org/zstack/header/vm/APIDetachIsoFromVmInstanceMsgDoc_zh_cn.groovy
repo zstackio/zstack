@@ -1,11 +1,11 @@
 package org.zstack.header.vm
 
 doc {
-    title "DetachIsoFromVmInstance"
+    title "卸载云主机上的ISO(DetachIsoFromVmInstance)"
 
     category "vmInstance"
 
-    desc "在这里填写API描述"
+    desc "如果云主机上挂载有ISO，卸载它"
 
     rest {
         request {
@@ -33,7 +33,7 @@ doc {
                 column {
                     name "systemTags"
                     enclosedIn ""
-                    desc ""
+                    desc "系统标签"
                     location "body"
                     type "List"
                     optional true

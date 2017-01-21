@@ -35,8 +35,7 @@ public class APIGetVmBootOrderMsg extends APISyncCallMessage implements VmInstan
  
     public static APIGetVmBootOrderMsg __example__() {
         APIGetVmBootOrderMsg msg = new APIGetVmBootOrderMsg();
-
-
+        msg.uuid = uuid();
         return msg;
     }
 

@@ -1,11 +1,11 @@
 package org.zstack.header.vm
 
 doc {
-    title "AttachIsoToVmInstance"
+    title "加载ISO到云主机(AttachIsoToVmInstance)"
 
     category "vmInstance"
 
-    desc "在这里填写API描述"
+    desc "加载一个ISO镜像到Running或Stopped的云主机"
 
     rest {
         request {
@@ -33,7 +33,7 @@ doc {
                 column {
                     name "isoUuid"
                     enclosedIn ""
-                    desc ""
+                    desc "ISO UUID"
                     location "url"
                     type "String"
                     optional false

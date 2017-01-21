@@ -38,8 +38,9 @@ public class APIGetVmConsoleAddressReply extends APIReply {
  
     public static APIGetVmConsoleAddressReply __example__() {
         APIGetVmConsoleAddressReply reply = new APIGetVmConsoleAddressReply();
-
-
+        reply.hostIp = "192.168.10.100";
+        reply.port = 5900;
+        reply.protocol = "vnc";
         return reply;
     }
 
