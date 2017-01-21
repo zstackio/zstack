@@ -7,6 +7,9 @@ import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
 
 import java.util.List;
+
+import static java.util.Arrays.asList;
+
 /**
  * @api
  * api event for :ref:`APIDeleteSecurityGroupRuleEvent`
@@ -71,8 +74,7 @@ public class APIDeleteSecurityGroupRuleMsg extends APIMessage {
  
     public static APIDeleteSecurityGroupRuleMsg __example__() {
         APIDeleteSecurityGroupRuleMsg msg = new APIDeleteSecurityGroupRuleMsg();
-
-
+        msg.setRuleUuids(asList(uuid()));
         return msg;
     }
 

@@ -7,7 +7,7 @@ doc {
 
     category "securityGroup"
 
-    desc "在这里填写API描述"
+    desc "用户可以使用AddVmNicToSecurityGroup来添加虚拟机网卡到安全组"
 
     rest {
         request {
@@ -18,8 +18,8 @@ doc {
 
             clz APIAddVmNicToSecurityGroupMsg.class
 
-            desc ""
-            
+			desc "用户可以使用AddVmNicToSecurityGroup来添加虚拟机网卡到安全组"
+
 			params {
 
 				column {
@@ -35,7 +35,7 @@ doc {
 				column {
 					name "vmNicUuids"
 					enclosedIn "params"
-					desc ""
+					desc "云主机网卡的uuid列表"
 					location "body"
 					type "List"
 					optional false

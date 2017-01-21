@@ -55,8 +55,9 @@ public class APIUpdateSecurityGroupMsg extends APIMessage implements SecurityGro
  
     public static APIUpdateSecurityGroupMsg __example__() {
         APIUpdateSecurityGroupMsg msg = new APIUpdateSecurityGroupMsg();
-
-
+        msg.setUuid(uuid());
+        msg.setName("new sg");
+        msg.setDescription("for test update");
         return msg;
     }
 

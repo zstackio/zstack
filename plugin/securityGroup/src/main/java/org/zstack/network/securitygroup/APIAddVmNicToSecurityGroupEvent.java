@@ -3,6 +3,8 @@ package org.zstack.network.securitygroup;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.rest.RestResponse;
 
+import java.sql.Timestamp;
+
 /**
  *@apiResult
  *
@@ -30,8 +32,7 @@ public class APIAddVmNicToSecurityGroupEvent extends APIEvent {
  
     public static APIAddVmNicToSecurityGroupEvent __example__() {
         APIAddVmNicToSecurityGroupEvent event = new APIAddVmNicToSecurityGroupEvent();
-
-
+        event.setSuccess(true);
         return event;
     }
 

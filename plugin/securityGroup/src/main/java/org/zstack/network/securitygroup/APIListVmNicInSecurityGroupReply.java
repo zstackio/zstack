@@ -17,8 +17,7 @@ public class APIListVmNicInSecurityGroupReply extends APIReply {
  
     public static APIListVmNicInSecurityGroupReply __example__() {
         APIListVmNicInSecurityGroupReply reply = new APIListVmNicInSecurityGroupReply();
-
-
+        //deprecated
         return reply;
     }
 

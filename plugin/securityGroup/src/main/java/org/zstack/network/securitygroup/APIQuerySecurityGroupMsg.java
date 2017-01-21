@@ -6,6 +6,10 @@ import org.zstack.header.query.APIQueryMessage;
 import org.zstack.header.query.AutoQuery;
 import org.zstack.header.rest.RestRequest;
 
+import java.util.List;
+
+import static java.util.Arrays.asList;
+
 @AutoQuery(replyClass = APIQuerySecurityGroupReply.class, inventoryClass = SecurityGroupInventory.class)
 @Action(category = SecurityGroupConstant.ACTION_CATEGORY, names = {"read"})
 @RestRequest(
@@ -16,12 +20,8 @@ import org.zstack.header.rest.RestRequest;
 )
 public class APIQuerySecurityGroupMsg extends APIQueryMessage {
 
- 
-    public static APIQuerySecurityGroupMsg __example__() {
-        APIQuerySecurityGroupMsg msg = new APIQuerySecurityGroupMsg();
-
-
-        return msg;
+    public static List<String> __example__() {
+        return asList("name=web", "state=Enabled");
     }
 
 }
