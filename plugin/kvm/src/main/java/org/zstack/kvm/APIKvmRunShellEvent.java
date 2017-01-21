@@ -67,11 +67,17 @@ public class APIKvmRunShellEvent extends APIEvent {
     public void setInventory(Map<String, ShellResult> inventory) {
         this.inventory = inventory;
     }
- 
+
     public static APIKvmRunShellEvent __example__() {
         APIKvmRunShellEvent event = new APIKvmRunShellEvent();
-
-
+        ShellResult sr = new ShellResult();
+        sr.setErrorCode(new ErrorCode());
+        sr.setReturnCode(100);
+        sr.setStderr(null);
+        sr.setStdout("hello");
+        Map<String, ShellResult> inventory = new HashMap<String, ShellResult>();
+        inventory.put(uuid(), sr);
+        event.setInventory(inventory);
         return event;
     }
 

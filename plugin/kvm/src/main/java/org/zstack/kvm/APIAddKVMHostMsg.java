@@ -104,8 +104,9 @@ public class APIAddKVMHostMsg extends APIAddHostMsg {
  
     public static APIAddKVMHostMsg __example__() {
         APIAddKVMHostMsg msg = new APIAddKVMHostMsg();
-
-
+        msg.setUsername("userName");
+        msg.setPassword("password");
+        msg.setSshPort(22);
         return msg;
     }
 

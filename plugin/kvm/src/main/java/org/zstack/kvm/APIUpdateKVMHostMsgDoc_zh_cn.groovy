@@ -7,7 +7,7 @@ doc {
 
     category "host"
 
-    desc "在这里填写API描述"
+    desc "更新KVM机信息"
 
     rest {
         request {
@@ -25,7 +25,7 @@ doc {
 				column {
 					name "username"
 					enclosedIn "updateKVMHost"
-					desc ""
+					desc "用户名"
 					location "body"
 					type "String"
 					optional true
@@ -35,7 +35,7 @@ doc {
 				column {
 					name "password"
 					enclosedIn "updateKVMHost"
-					desc ""
+					desc "密码"
 					location "body"
 					type "String"
 					optional true
@@ -45,7 +45,7 @@ doc {
 				column {
 					name "sshPort"
 					enclosedIn "updateKVMHost"
-					desc ""
+					desc "ssh端口号"
 					location "body"
 					type "Integer"
 					optional true
@@ -85,7 +85,7 @@ doc {
 				column {
 					name "managementIp"
 					enclosedIn "updateKVMHost"
-					desc ""
+					desc "管理节点IP"
 					location "body"
 					type "String"
 					optional true

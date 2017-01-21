@@ -46,10 +46,12 @@ public class APIUpdateKVMHostMsg extends APIUpdateHostMsg {
     public void setPassword(String password) {
         this.password = password;
     }
- 
+
     public static APIUpdateKVMHostMsg __example__() {
         APIUpdateKVMHostMsg msg = new APIUpdateKVMHostMsg();
-
+        msg.setUsername("userName");
+        msg.setPassword("password");
+        msg.setSshPort(22);
 
         return msg;
     }
