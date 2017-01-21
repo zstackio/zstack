@@ -53,8 +53,9 @@ public class APIUpdateZoneMsg extends APIMessage implements ZoneMessage {
  
     public static APIUpdateZoneMsg __example__() {
         APIUpdateZoneMsg msg = new APIUpdateZoneMsg();
-
-
+        msg.setName("TestZone2");
+        msg.setDescription("test second zone");
+        msg.setUuid(uuid());
         return msg;
     }
 

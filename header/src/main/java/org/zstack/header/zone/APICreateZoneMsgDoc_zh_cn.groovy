@@ -3,11 +3,11 @@ package org.zstack.header.zone
 import org.zstack.header.zone.APICreateZoneEvent
 
 doc {
-    title "CreateZone"
+    title "创建一个新的区域(CreateZone)"
 
     category "zone"
 
-    desc "在这里填写API描述"
+    desc "创建一个新的区域"
 
     rest {
         request {
@@ -18,8 +18,8 @@ doc {
 
             clz APICreateZoneMsg.class
 
-            desc ""
-            
+			desc "创建一个新的区域"
+
 			params {
 
 				column {
@@ -45,7 +45,7 @@ doc {
 				column {
 					name "resourceUuid"
 					enclosedIn "params"
-					desc ""
+					desc "用户指定的资源uuid"
 					location "body"
 					type "String"
 					optional true
@@ -55,7 +55,7 @@ doc {
 				column {
 					name "systemTags"
  					enclosedIn ""
- 					desc ""
+ 					desc "系统标签"
 					location "body"
 					type "List"
 					optional true

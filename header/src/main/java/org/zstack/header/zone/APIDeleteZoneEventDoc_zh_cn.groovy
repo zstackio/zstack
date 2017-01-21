@@ -4,7 +4,7 @@ import org.zstack.header.errorcode.ErrorCode
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "区域（Zone）清单"
 
 	ref {
 		name "error"
