@@ -3,54 +3,54 @@ package org.zstack.kvm
 import org.zstack.header.host.APIAddHostEvent
 
 doc {
-    title "AddKVMHost"
+	title "AddKVMHost"
 
-    category "host"
+	category "host"
 
-    desc "在这里填写API描述"
+	desc "添加KVM主机"
 
-    rest {
-        request {
+	rest {
+		request {
 			url "POST /v1/hosts/kvm"
 
 
-            header (OAuth: 'the-session-uuid')
+			header (OAuth: 'the-session-uuid')
 
-            clz APIAddKVMHostMsg.class
+			clz APIAddKVMHostMsg.class
 
-            desc ""
-            
+			desc "添加KVM主机"
+
 			params {
 
 				column {
 					name "username"
 					enclosedIn "params"
-					desc ""
+					desc "ssh用户名"
 					location "body"
 					type "String"
 					optional false
 					since "0.6"
-					
+
 				}
 				column {
 					name "password"
 					enclosedIn "params"
-					desc ""
+					desc "ssh密码"
 					location "body"
 					type "String"
 					optional false
 					since "0.6"
-					
+
 				}
 				column {
 					name "sshPort"
 					enclosedIn "params"
-					desc ""
+					desc "ssh端口号"
 					location "body"
 					type "int"
 					optional true
 					since "0.6"
-					
+
 				}
 				column {
 					name "name"
@@ -60,7 +60,7 @@ doc {
 					type "String"
 					optional false
 					since "0.6"
-					
+
 				}
 				column {
 					name "description"
@@ -70,17 +70,17 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
+
 				}
 				column {
 					name "managementIp"
 					enclosedIn "params"
-					desc ""
+					desc "物理机管理节点IP"
 					location "body"
 					type "String"
 					optional false
 					since "0.6"
-					
+
 				}
 				column {
 					name "clusterUuid"
@@ -90,17 +90,17 @@ doc {
 					type "String"
 					optional false
 					since "0.6"
-					
+
 				}
 				column {
 					name "resourceUuid"
 					enclosedIn "params"
-					desc ""
+					desc "资源UUID"
 					location "body"
 					type "String"
 					optional true
 					since "0.6"
-					
+
 				}
 				column {
 					name "systemTags"
@@ -110,7 +110,7 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
+
 				}
 				column {
 					name "userTags"
@@ -120,13 +120,13 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
+
 				}
 			}
-        }
+		}
 
-        response {
-            clz APIAddHostEvent.class
-        }
-    }
+		response {
+			clz APIAddHostEvent.class
+		}
+	}
 }

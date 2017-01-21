@@ -7,7 +7,7 @@ doc {
 
     category "host"
 
-    desc "在这里填写API描述"
+    desc "KVM运行命令"
 
     rest {
         request {
@@ -18,14 +18,14 @@ doc {
 
             clz APIKvmRunShellMsg.class
 
-            desc ""
+            desc "KVM运行命令"
             
 			params {
 
 				column {
 					name "hostUuids"
 					enclosedIn "kvmRunShell"
-					desc ""
+					desc "目标机器UUID"
 					location "body"
 					type "Set"
 					optional false
@@ -35,7 +35,7 @@ doc {
 				column {
 					name "script"
 					enclosedIn "kvmRunShell"
-					desc ""
+					desc "脚本"
 					location "body"
 					type "String"
 					optional false
