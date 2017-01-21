@@ -40,8 +40,8 @@ public class APIUpdateSystemTagMsg extends APIMessage {
  
     public static APIUpdateSystemTagMsg __example__() {
         APIUpdateSystemTagMsg msg = new APIUpdateSystemTagMsg();
-
-
+        msg.setUuid(uuid());
+        msg.setTag("for-large-DB");
         return msg;
     }
 

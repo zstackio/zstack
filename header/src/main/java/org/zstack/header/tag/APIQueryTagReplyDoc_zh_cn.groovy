@@ -5,7 +5,7 @@ import org.zstack.header.tag.TagInventory
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "标签清单"
 
 	ref {
 		name "error"

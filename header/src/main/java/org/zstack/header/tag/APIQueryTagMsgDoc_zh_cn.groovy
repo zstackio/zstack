@@ -3,9 +3,9 @@ package org.zstack.header.tag
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "在这里填写API标题"
+    title "QueryTag"
 
-    desc "在这里填写API描述"
+    desc "查询标签"
 
     rest {
         request {
