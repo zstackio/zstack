@@ -74,7 +74,7 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
         inv.setProxyHostname(mgmtIp);
         inv.setAgentIp("127.0.0.1");
         inv.setAgentType(getConsoleBackendType());
-        inv.setToken(vm.getUuid());
+        inv.setToken(session.getUuid() + "_" + vm.getUuid());
         inv.setVmInstanceUuid(vm.getUuid());
         return new ConsoleProxyBase(inv, getAgentPort());
     }
