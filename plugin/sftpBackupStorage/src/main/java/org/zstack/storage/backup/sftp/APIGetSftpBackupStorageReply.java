@@ -8,7 +8,6 @@ public class APIGetSftpBackupStorageReply extends APIGetReply {
     public static APIGetSftpBackupStorageReply __example__() {
         APIGetSftpBackupStorageReply reply = new APIGetSftpBackupStorageReply();
 
-
         return reply;
     }
 

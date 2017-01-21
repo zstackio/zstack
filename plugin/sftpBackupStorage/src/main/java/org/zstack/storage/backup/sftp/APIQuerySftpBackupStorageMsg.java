@@ -7,6 +7,10 @@ import org.zstack.header.query.AutoQuery;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.backup.BackupStorageConstant;
 
+import java.util.List;
+
+import static java.util.Arrays.asList;
+
 @Action(category = BackupStorageConstant.ACTION_CATEGORY, names={"read"})
 @AutoQuery(replyClass = APIQuerySftpBackupStorageReply.class, inventoryClass = SftpBackupStorageInventory.class)
 @RestRequest(
@@ -17,12 +21,9 @@ import org.zstack.header.storage.backup.BackupStorageConstant;
 )
 public class APIQuerySftpBackupStorageMsg extends APIQueryMessage {
 
- 
-    public static APIQuerySftpBackupStorageMsg __example__() {
-        APIQuerySftpBackupStorageMsg msg = new APIQuerySftpBackupStorageMsg();
 
-
-        return msg;
+    public static List<String> __example__() {
+        return asList("sshPort=8000");
     }
 
 }

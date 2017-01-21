@@ -106,7 +106,11 @@ public class APIAddSftpBackupStorageMsg extends APIAddBackupStorageMsg {
  
     public static APIAddSftpBackupStorageMsg __example__() {
         APIAddSftpBackupStorageMsg msg = new APIAddSftpBackupStorageMsg();
-
+        msg.setName("Sftp-Test");
+        msg.setUrl("/data/sftp-data");
+        msg.setHostname("192.168.1.8");
+        msg.setUsername("admin");
+        msg.setPassword("test1234");
 
         return msg;
     }
