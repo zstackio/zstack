@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.LockModeType;
 import javax.persistence.Query;
+import javax.persistence.Tuple;
 import java.util.List;
 
 /**
@@ -24,6 +25,11 @@ public class SQL {
     private SQL(String sql) {
         this.sql = sql;
         query = dbf.getEntityManager().createQuery(this.sql);
+    }
+
+    private SQL(String sql, Class returnClass) {
+        this.sql = sql;
+        query = dbf.getEntityManager().createQuery(this.sql, returnClass);
     }
 
     public SQL transactional() {
@@ -86,5 +92,9 @@ public class SQL {
 
     public static SQL New(String sql) {
         return new SQL(sql);
+    }
+
+    public static SQL New(String sql, Class returnClass) {
+        return new SQL(sql, returnClass);
     }
 }

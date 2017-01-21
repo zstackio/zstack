@@ -2,6 +2,7 @@
 <UnitTestSuiteConfig xmlns="http://zstack.org/schema/zstack" timeout="600">
     <TestCase class="org.zstack.test.lb.vyos.TestVyosLb" />
     <TestCase class="org.zstack.test.eip.vyos.TestVyosEip" />
+    <TestCase class="org.zstack.test.eip.vyos.TestVyosEip1" />
     <TestCase class="org.zstack.test.virtualrouter.vyos.TestVyosPortForwarding" />
     <TestCase class="org.zstack.test.virtualrouter.vyos.TestVyosPortForwarding1" />
     <TestCase class="org.zstack.test.virtualrouter.vyos.TestVyosIPsec1" />

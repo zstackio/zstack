@@ -46,6 +46,7 @@ import org.zstack.utils.logging.CLogger;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -133,18 +134,19 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
     private List<VmNicInventory> getAttachableVmNicForEip(String eipUuid, String vipUuid) {
         String zoneUuid;
         String providerType;
+        String peerL3NetworkUuid = null;
 
         if (eipUuid != null) {
-            String sql = "select l3.zoneUuid, vip.uuid" +
+            Tuple t = SQL.New("select l3.zoneUuid, vip.uuid, vip.peerL3NetworkUuid" +
                     " from L3NetworkVO l3, VipVO vip, EipVO eip" +
                     " where l3.uuid = vip.l3NetworkUuid" +
                     " and eip.vipUuid = vip.uuid" +
-                    " and eip.uuid = :eipUuid";
-            TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
-            q.setParameter("eipUuid", eipUuid);
-            Tuple t = q.getSingleResult();
+                    " and eip.uuid = :eipUuid", Tuple.class)
+                    .param("eipUuid", eipUuid)
+                    .find();
             zoneUuid = t.get(0, String.class);
             vipUuid = t.get(1, String.class);
+            peerL3NetworkUuid = t.get(2, String.class);
 
             providerType = SQL.New("select v.serviceProvider from VipVO v, EipVO e where e.vipUuid = v.uuid" +
                     " and e.uuid = :euuid").param("euuid", eipUuid).find();
@@ -197,6 +199,11 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                     .param("nsType", EipConstant.EIP_NETWORK_SERVICE_TYPE)
                     .param("vipUuid", vipUuid)
                     .list();
+        }
+
+        if (peerL3NetworkUuid != null) {
+            String finalPeerL3NetworkUuid = peerL3NetworkUuid;
+            l3Uuids = l3Uuids.stream().filter(l -> l.equals(finalPeerL3NetworkUuid)).collect(Collectors.toList());
         }
 
         if (l3Uuids.isEmpty()) {
