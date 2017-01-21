@@ -3,11 +3,11 @@ package org.zstack.header.zone
 import org.zstack.header.zone.APIChangeZoneStateEvent
 
 doc {
-    title "ChangeZoneState"
+    title "改变区域的可用状态(ChangeZoneState)"
 
     category "zone"
 
-    desc "在这里填写API描述"
+    desc "改变区域的可用状态"
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIChangeZoneStateMsg.class
 
-            desc ""
+            desc "改变区域的可用状态"
             
 			params {
 
@@ -35,7 +35,7 @@ doc {
 				column {
 					name "stateEvent"
 					enclosedIn "changeZoneState"
-					desc ""
+					desc "状态触发事件"
 					location "body"
 					type "String"
 					optional false
