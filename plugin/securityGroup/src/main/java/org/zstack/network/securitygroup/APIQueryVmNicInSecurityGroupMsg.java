@@ -5,6 +5,10 @@ import org.zstack.header.identity.Action;
 import org.zstack.header.query.APIQueryMessage;
 import org.zstack.header.rest.RestRequest;
 
+import java.util.List;
+
+import static java.util.Arrays.asList;
+
 @Action(category = SecurityGroupConstant.ACTION_CATEGORY, names = {"read"})
 @RestRequest(
         path = "/security-groups/vm-instances/nics",
@@ -13,12 +17,8 @@ import org.zstack.header.rest.RestRequest;
 )
 public class APIQueryVmNicInSecurityGroupMsg extends APIQueryMessage {
 
- 
-    public static APIQueryVmNicInSecurityGroupMsg __example__() {
-        APIQueryVmNicInSecurityGroupMsg msg = new APIQueryVmNicInSecurityGroupMsg();
-
-
-        return msg;
+    public static List<String> __example__() {
+        return asList();
     }
 
 }

@@ -2,8 +2,12 @@ package org.zstack.network.securitygroup;
 
 import org.zstack.header.query.APIQueryReply;
 import org.zstack.header.rest.RestResponse;
+import org.zstack.header.vm.VmNicInventory;
 
+import java.sql.Timestamp;
 import java.util.List;
+
+import static java.util.Arrays.asList;
 
 @RestResponse(allTo = "inventories")
 public class APIQueryVmNicInSecurityGroupReply extends APIQueryReply {
@@ -19,8 +23,15 @@ public class APIQueryVmNicInSecurityGroupReply extends APIQueryReply {
  
     public static APIQueryVmNicInSecurityGroupReply __example__() {
         APIQueryVmNicInSecurityGroupReply reply = new APIQueryVmNicInSecurityGroupReply();
-
-
+        VmNicSecurityGroupRefInventory secRefInv = new VmNicSecurityGroupRefInventory();
+        secRefInv.setUuid(uuid());
+        secRefInv.setSecurityGroupUuid(uuid());
+        secRefInv.setVmInstanceUuid(uuid());
+        secRefInv.setVmNicUuid(uuid());
+        secRefInv.setCreateDate(new Timestamp(System.currentTimeMillis()));
+        secRefInv.setLastOpDate(new Timestamp(System.currentTimeMillis()));
+        reply.setInventories(asList(secRefInv));
+        reply.setSuccess(true);
         return reply;
     }
 

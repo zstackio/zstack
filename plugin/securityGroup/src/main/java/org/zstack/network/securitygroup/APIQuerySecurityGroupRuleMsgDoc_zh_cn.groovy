@@ -8,7 +8,7 @@ doc {
 
     category "securityGroup"
 
-    desc "在这里填写API描述"
+    desc "查询安全组规则"
 
     rest {
         request {
@@ -21,8 +21,8 @@ doc {
 
             clz APIQuerySecurityGroupRuleMsg.class
 
-            desc ""
-            
+            desc "查询安全组规则"
+
 			params APIQueryMessage.class
         }
 

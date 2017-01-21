@@ -7,7 +7,7 @@ doc {
 
     category "securityGroup"
 
-    desc "在这里填写API描述"
+    desc "用户可以使用CreateSecurityGroup来创建一个安全组"
 
     rest {
         request {
@@ -18,8 +18,8 @@ doc {
 
             clz APICreateSecurityGroupMsg.class
 
-            desc ""
-            
+			desc "用户可以使用CreateSecurityGroup来创建一个安全组"
+
 			params {
 
 				column {
@@ -45,7 +45,7 @@ doc {
 				column {
 					name "resourceUuid"
 					enclosedIn ""
-					desc ""
+					desc "用户指定的资源UUID，若指定，系统不会为该资源随机分配UUID"
 					location "body"
 					type "String"
 					optional true

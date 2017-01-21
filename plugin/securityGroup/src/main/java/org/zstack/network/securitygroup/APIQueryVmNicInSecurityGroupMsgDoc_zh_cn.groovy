@@ -8,7 +8,7 @@ doc {
 
     category "securityGroup"
 
-    desc "在这里填写API描述"
+    desc "查询应用了安全组的网卡列表"
 
     rest {
         request {
@@ -19,8 +19,8 @@ doc {
 
             clz APIQueryVmNicInSecurityGroupMsg.class
 
-            desc ""
-            
+            desc "查询应用了安全组的网卡列表"
+
 			params APIQueryMessage.class
         }
 

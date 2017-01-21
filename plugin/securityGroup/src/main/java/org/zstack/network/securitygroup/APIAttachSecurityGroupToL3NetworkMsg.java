@@ -71,8 +71,8 @@ public class APIAttachSecurityGroupToL3NetworkMsg extends APIMessage {
  
     public static APIAttachSecurityGroupToL3NetworkMsg __example__() {
         APIAttachSecurityGroupToL3NetworkMsg msg = new APIAttachSecurityGroupToL3NetworkMsg();
-
-
+        msg.setSecurityGroupUuid(uuid());
+        msg.setL3NetworkUuid(uuid());
         return msg;
     }
 

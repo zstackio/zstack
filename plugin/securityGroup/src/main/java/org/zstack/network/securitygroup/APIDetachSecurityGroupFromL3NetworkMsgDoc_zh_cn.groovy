@@ -7,7 +7,7 @@ doc {
 
     category "securityGroup"
 
-    desc "在这里填写API描述"
+    desc "用户可以使用DetachSecurityGroupFromL3Network来从一个L3网络卸载一个安全组,卸载后, 所有的规则都会从这个L3网络上的并且在这个安全组中的虚拟机网卡上删除. 这个命令是异步执行的, 在它返回后可能规则仍然没有对所有虚拟机网卡生效"
 
     rest {
         request {
@@ -18,8 +18,8 @@ doc {
 
             clz APIDetachSecurityGroupFromL3NetworkMsg.class
 
-            desc ""
-            
+			desc "用户可以使用DetachSecurityGroupFromL3Network来从一个L3网络卸载一个安全组,卸载后, 所有的规则都会从这个L3网络上的并且在这个安全组中的虚拟机网卡上删除. 这个命令是异步执行的, 在它返回后可能规则仍然没有对所有虚拟机网卡生效"
+
 			params {
 
 				column {
