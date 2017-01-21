@@ -24,6 +24,8 @@ public class ApiTimeoutGlobalProperty {
     public static String APICreateVolumeSnapshotMsg;
     @GlobalProperty(name="ApiTimeout.org.zstack.header.vm.APICreateVmInstanceMsg", defaultValue = "timeout::3h")
     public static String APICreateVmInstanceMsg;
-    @GlobalProperty(name="org.zstack.header.storage.snapshot.APIDeleteVolumeSnapshotMsg", defaultValue = "timeout::3h")
+    @GlobalProperty(name="ApiTimeout.org.zstack.header.storage.snapshot.APIDeleteVolumeSnapshotMsg", defaultValue = "timeout::3h")
     public static String APIDeleteVolumeSnapshotMsg;
+    @GlobalProperty(name="ApiTimeout.org.zstack.header.vm.APIExpungeVmInstanceMsg", defaultValue = "timeout::3h")
+    public static String APIExpungeVmInstanceMsg;
 }
