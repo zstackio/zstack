@@ -9,6 +9,8 @@ import org.zstack.header.vm.VmNicVO;
 
 import java.util.List;
 
+import static java.util.Arrays.asList;
+
 /**
  * @api
  *
@@ -84,8 +86,8 @@ public class APIDeleteVmNicFromSecurityGroupMsg extends APIMessage {
  
     public static APIDeleteVmNicFromSecurityGroupMsg __example__() {
         APIDeleteVmNicFromSecurityGroupMsg msg = new APIDeleteVmNicFromSecurityGroupMsg();
-
-
+        msg.setSecurityGroupUuid(uuid());
+        msg.setVmNicUuids(asList(uuid()));
         return msg;
     }
 

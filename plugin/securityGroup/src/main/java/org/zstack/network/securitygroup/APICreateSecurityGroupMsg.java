@@ -78,8 +78,8 @@ public class APICreateSecurityGroupMsg extends APICreateMessage {
  
     public static APICreateSecurityGroupMsg __example__() {
         APICreateSecurityGroupMsg msg = new APICreateSecurityGroupMsg();
-
-
+        msg.setName("sp");
+        msg.setDescription("test create security group");
         return msg;
     }
 

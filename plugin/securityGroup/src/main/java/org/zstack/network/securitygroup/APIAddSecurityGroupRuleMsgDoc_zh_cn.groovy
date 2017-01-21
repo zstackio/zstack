@@ -7,7 +7,7 @@ doc {
 
     category "securityGroup"
 
-    desc "在这里填写API描述"
+    desc "用户可以使用AddSecurityGroupRule添加规则到安全组"
 
     rest {
         request {
@@ -18,8 +18,8 @@ doc {
 
             clz APIAddSecurityGroupRuleMsg.class
 
-            desc ""
-            
+			desc "用户可以使用AddSecurityGroupRule添加规则到安全组"
+
 			params {
 
 				column {
@@ -35,7 +35,7 @@ doc {
 				column {
 					name "rules"
 					enclosedIn "params"
-					desc ""
+					desc "安全组中的规则"
 					location "body"
 					type "List"
 					optional false

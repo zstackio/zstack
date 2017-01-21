@@ -6,6 +6,10 @@ import org.zstack.header.query.APIQueryMessage;
 import org.zstack.header.query.AutoQuery;
 import org.zstack.header.rest.RestRequest;
 
+import java.util.List;
+
+import static java.util.Arrays.asList;
+
 /**
  */
 @AutoQuery(replyClass = APIQuerySecurityGroupRuleReply.class, inventoryClass = SecurityGroupRuleInventory.class)
@@ -17,12 +21,9 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIQuerySecurityGroupRuleReply.class
 )
 public class APIQuerySecurityGroupRuleMsg extends APIQueryMessage {
- 
-    public static APIQuerySecurityGroupRuleMsg __example__() {
-        APIQuerySecurityGroupRuleMsg msg = new APIQuerySecurityGroupRuleMsg();
 
-
-        return msg;
+    public static List<String> __example__() {
+        return asList("endPort=22", "state=Enabled");
     }
 
 }

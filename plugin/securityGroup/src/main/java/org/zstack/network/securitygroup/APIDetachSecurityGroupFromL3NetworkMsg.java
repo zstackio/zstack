@@ -74,8 +74,8 @@ public class APIDetachSecurityGroupFromL3NetworkMsg extends APIMessage {
  
     public static APIDetachSecurityGroupFromL3NetworkMsg __example__() {
         APIDetachSecurityGroupFromL3NetworkMsg msg = new APIDetachSecurityGroupFromL3NetworkMsg();
-
-
+        msg.setSecurityGroupUuid(uuid());
+        msg.setL3NetworkUuid(uuid());
         return msg;
     }
 

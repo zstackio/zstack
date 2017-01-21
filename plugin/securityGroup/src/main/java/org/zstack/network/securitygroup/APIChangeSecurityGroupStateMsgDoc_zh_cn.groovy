@@ -7,7 +7,7 @@ doc {
 
     category "securityGroup"
 
-    desc "在这里填写API描述"
+    desc "改变安全组状态"
 
     rest {
         request {
@@ -18,8 +18,8 @@ doc {
 
             clz APIChangeSecurityGroupStateMsg.class
 
-            desc ""
-            
+			desc "改变安全组状态"
+
 			params {
 
 				column {
@@ -35,7 +35,7 @@ doc {
 				column {
 					name "stateEvent"
 					enclosedIn "changeSecurityGroupState"
-					desc ""
+					desc "安全组状态"
 					location "body"
 					type "String"
 					optional false

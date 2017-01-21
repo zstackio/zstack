@@ -7,7 +7,7 @@ doc {
 
     category "securityGroup"
 
-    desc "在这里填写API描述"
+    desc "获取可应用安全组的网卡列表清单"
 
     rest {
         request {
@@ -18,8 +18,8 @@ doc {
 
             clz APIGetCandidateVmNicForSecurityGroupMsg.class
 
-            desc ""
-            
+			desc "获取可应用安全组的网卡列表清单"
+
 			params {
 
 				column {

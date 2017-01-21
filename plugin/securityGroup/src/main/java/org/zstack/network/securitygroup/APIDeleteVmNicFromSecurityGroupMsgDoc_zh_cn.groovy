@@ -7,7 +7,7 @@ doc {
 
     category "securityGroup"
 
-    desc "在这里填写API描述"
+    desc "用户可以使用DeleteVmNicFromSecurityGroup来从安全组删除虚拟机网卡, 这个命令是异步执行的, 在它返回后可能规则仍然没有对所有虚拟机网卡生效"
 
     rest {
         request {
@@ -18,8 +18,8 @@ doc {
 
             clz APIDeleteVmNicFromSecurityGroupMsg.class
 
-            desc ""
-            
+			desc "用户可以使用DeleteVmNicFromSecurityGroup来从安全组删除虚拟机网卡, 这个命令是异步执行的, 在它返回后可能规则仍然没有对所有虚拟机网卡生效"
+
 			params {
 
 				column {
@@ -35,7 +35,7 @@ doc {
 				column {
 					name "vmNicUuids"
 					enclosedIn ""
-					desc ""
+					desc "网卡的uuid列表"
 					location "body"
 					type "List"
 					optional false

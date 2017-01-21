@@ -31,8 +31,7 @@ public class APIDeleteSecurityGroupEvent extends APIEvent {
  
     public static APIDeleteSecurityGroupEvent __example__() {
         APIDeleteSecurityGroupEvent event = new APIDeleteSecurityGroupEvent();
-
-
+        event.setSuccess(true);
         return event;
     }
 

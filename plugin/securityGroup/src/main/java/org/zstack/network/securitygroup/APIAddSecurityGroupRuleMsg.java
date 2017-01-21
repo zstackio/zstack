@@ -9,6 +9,8 @@ import org.zstack.header.rest.RestRequest;
 
 import java.util.List;
 
+import static java.util.Arrays.asList;
+
 /**
  * @api
  * add rule to a security group
@@ -215,8 +217,14 @@ public class APIAddSecurityGroupRuleMsg extends APIMessage {
  
     public static APIAddSecurityGroupRuleMsg __example__() {
         APIAddSecurityGroupRuleMsg msg = new APIAddSecurityGroupRuleMsg();
-
-
+        msg.setSecurityGroupUuid(uuid());
+        SecurityGroupRuleAO rule = new SecurityGroupRuleAO();
+        rule.setType("Ingress");
+        rule.setAllowedCidr("0.0.0.0/0");
+        rule.setStartPort(22);
+        rule.setEndPort(22);
+        rule.setProtocol("TCP");
+        msg.setRules(asList(rule));
         return msg;
     }
 
