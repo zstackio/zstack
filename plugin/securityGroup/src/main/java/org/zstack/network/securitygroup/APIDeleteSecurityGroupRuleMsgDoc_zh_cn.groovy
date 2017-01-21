@@ -7,7 +7,7 @@ doc {
 
     category "securityGroup"
 
-    desc "在这里填写API描述"
+    desc "删除安全组规则,这个命令是异步执行的, 在它返回后可能规则仍然没有对所有的主机上生效"
 
     rest {
         request {
@@ -18,14 +18,14 @@ doc {
 
             clz APIDeleteSecurityGroupRuleMsg.class
 
-            desc ""
-            
+			desc "删除安全组规则,这个命令是异步执行的, 在它返回后可能规则仍然没有对所有的主机上生效"
+
 			params {
 
 				column {
 					name "ruleUuids"
 					enclosedIn "params"
-					desc ""
+					desc "安全组规则的uuid列表"
 					location "body"
 					type "List"
 					optional false

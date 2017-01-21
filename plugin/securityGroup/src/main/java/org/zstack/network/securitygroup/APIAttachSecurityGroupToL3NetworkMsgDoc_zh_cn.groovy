@@ -7,7 +7,7 @@ doc {
 
     category "securityGroup"
 
-    desc "在这里填写API描述"
+    desc "用户可以使用AttachSecurityGroupToL3Network来挂载一个安全组到L3网络"
 
     rest {
         request {
@@ -18,8 +18,8 @@ doc {
 
             clz APIAttachSecurityGroupToL3NetworkMsg.class
 
-            desc ""
-            
+			desc "用户可以使用AttachSecurityGroupToL3Network来挂载一个安全组到L3网络"
+
 			params {
 
 				column {

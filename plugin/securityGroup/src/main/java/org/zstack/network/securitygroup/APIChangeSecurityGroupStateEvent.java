@@ -3,6 +3,8 @@ package org.zstack.network.securitygroup;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.rest.RestResponse;
 
+import java.sql.Timestamp;
+
 /**
  *@apiResult
  * api event for :ref:`APIChangeSecurityGroupStateMsg`
@@ -57,8 +59,15 @@ public class APIChangeSecurityGroupStateEvent extends APIEvent {
  
     public static APIChangeSecurityGroupStateEvent __example__() {
         APIChangeSecurityGroupStateEvent event = new APIChangeSecurityGroupStateEvent();
-
-
+        SecurityGroupInventory sec = new SecurityGroupInventory();
+        sec.setUuid(uuid());
+        sec.setName("web");
+        sec.setDescription("for test");
+        sec.setState("Enabled");
+        sec.setCreateDate(new Timestamp(System.currentTimeMillis()));
+        sec.setLastOpDate(new Timestamp(System.currentTimeMillis()));
+        event.setInventory(sec);
+        event.setSuccess(true);
         return event;
     }
 

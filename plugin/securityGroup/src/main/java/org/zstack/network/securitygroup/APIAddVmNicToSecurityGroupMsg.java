@@ -9,6 +9,8 @@ import org.zstack.header.rest.RestResponse;
 
 import java.util.List;
 
+import static java.util.Arrays.asList;
+
 /**
  * @api
  * add vm nic to a security group
@@ -90,8 +92,8 @@ public class APIAddVmNicToSecurityGroupMsg extends APIMessage {
  
     public static APIAddVmNicToSecurityGroupMsg __example__() {
         APIAddVmNicToSecurityGroupMsg msg = new APIAddVmNicToSecurityGroupMsg();
-
-
+        msg.setSecurityGroupUuid(uuid());
+        msg.setVmNicUuids(asList(uuid()));
         return msg;
     }
 

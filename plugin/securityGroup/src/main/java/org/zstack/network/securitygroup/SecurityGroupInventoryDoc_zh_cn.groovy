@@ -6,7 +6,7 @@ import org.zstack.network.securitygroup.SecurityGroupRuleInventory
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "安全组规则的清单（Security Group Rule Inventory）"
 
 	field {
 		name "uuid"

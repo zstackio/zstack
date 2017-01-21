@@ -7,7 +7,7 @@ doc {
 
     category "securityGroup"
 
-    desc "在这里填写API描述"
+    desc "更新安全组"
 
     rest {
         request {
@@ -18,8 +18,8 @@ doc {
 
             clz APIUpdateSecurityGroupMsg.class
 
-            desc ""
-            
+			desc "更新安全组"
+
 			params {
 
 				column {

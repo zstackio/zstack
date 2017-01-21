@@ -77,8 +77,8 @@ public class APIChangeSecurityGroupStateMsg extends APIMessage {
  
     public static APIChangeSecurityGroupStateMsg __example__() {
         APIChangeSecurityGroupStateMsg msg = new APIChangeSecurityGroupStateMsg();
-
-
+        msg.setUuid(uuid());
+        msg.setStateEvent("disable");
         return msg;
     }
 

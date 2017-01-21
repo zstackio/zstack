@@ -28,8 +28,7 @@ public class APIGetCandidateVmNicForSecurityGroupMsg extends APISyncCallMessage 
  
     public static APIGetCandidateVmNicForSecurityGroupMsg __example__() {
         APIGetCandidateVmNicForSecurityGroupMsg msg = new APIGetCandidateVmNicForSecurityGroupMsg();
-
-
+        msg.setSecurityGroupUuid(uuid());
         return msg;
     }
 

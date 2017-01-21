@@ -3,6 +3,8 @@ package org.zstack.network.securitygroup;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.rest.RestResponse;
 
+import java.sql.Timestamp;
+
 /**
  *@apiResult
  *
@@ -32,8 +34,7 @@ public class APIDeleteVmNicFromSecurityGroupEvent extends APIEvent {
  
     public static APIDeleteVmNicFromSecurityGroupEvent __example__() {
         APIDeleteVmNicFromSecurityGroupEvent event = new APIDeleteVmNicFromSecurityGroupEvent();
-
-
+        event.setSuccess(true);
         return event;
     }
 
