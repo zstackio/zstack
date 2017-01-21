@@ -3,6 +3,8 @@ package org.zstack.header.cluster;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.rest.RestResponse;
 
+import java.sql.Timestamp;
+
 /**
  * @apiResult
  * @example {
@@ -27,8 +29,7 @@ public class APIDeleteClusterEvent extends APIEvent {
  
     public static APIDeleteClusterEvent __example__() {
         APIDeleteClusterEvent event = new APIDeleteClusterEvent();
-
-
+        event.setSuccess(true);
         return event;
     }
 

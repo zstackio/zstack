@@ -118,8 +118,10 @@ public class APICreateClusterMsg extends APICreateMessage {
  
     public static APICreateClusterMsg __example__() {
         APICreateClusterMsg msg = new APICreateClusterMsg();
-
-
+        msg.setClusterName("cluster1");
+        msg.setDescription("test");
+        msg.setHypervisorType("KVM");
+        msg.setZoneUuid(uuid());
         return msg;
     }
 
