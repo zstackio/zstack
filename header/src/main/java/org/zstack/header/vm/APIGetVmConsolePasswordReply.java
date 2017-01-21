@@ -22,8 +22,7 @@ public class APIGetVmConsolePasswordReply extends APIReply {
 
     public static APIGetVmConsolePasswordReply __example__() {
         APIGetVmConsolePasswordReply reply = new APIGetVmConsolePasswordReply();
-
-
+        reply.consolePassword = "password";
         return reply;
     }
 }

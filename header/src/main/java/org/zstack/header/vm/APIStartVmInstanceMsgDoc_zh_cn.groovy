@@ -1,11 +1,11 @@
 package org.zstack.header.vm
 
 doc {
-    title "StartVmInstance"
+    title "启动云主机(StartVmInstance)"
 
     category "vmInstance"
 
-    desc "在这里填写API描述"
+    desc "启动一个云主机"
 
     rest {
         request {
@@ -23,7 +23,7 @@ doc {
                 column {
                     name "uuid"
                     enclosedIn "startVmInstance"
-                    desc "资源的UUID，唯一标示该资源"
+                    desc "云主机UUID"
                     location "url"
                     type "String"
                     optional false
@@ -33,7 +33,7 @@ doc {
                 column {
                     name "clusterUuid"
                     enclosedIn "startVmInstance"
-                    desc "集群UUID"
+                    desc "集群UUID。若指定，云主机将在该集群启动"
                     location "body"
                     type "String"
                     optional true
@@ -43,7 +43,7 @@ doc {
                 column {
                     name "hostUuid"
                     enclosedIn "startVmInstance"
-                    desc "物理机UUID"
+                    desc "物理机UUID。若指定，云主机将在该物理机启动。该字段覆盖`clusterUuid`字段"
                     location "body"
                     type "String"
                     optional true

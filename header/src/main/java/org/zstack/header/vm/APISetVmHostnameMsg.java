@@ -46,8 +46,8 @@ public class APISetVmHostnameMsg extends APIMessage implements VmInstanceMessage
  
     public static APISetVmHostnameMsg __example__() {
         APISetVmHostnameMsg msg = new APISetVmHostnameMsg();
-
-
+        msg.uuid = uuid();
+        msg.hostname = "vm1.zstack.org";
         return msg;
     }
 

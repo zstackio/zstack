@@ -41,8 +41,8 @@ public class APIDeleteVmStaticIpMsg extends APIDeleteMessage implements VmInstan
  
     public static APIDeleteVmStaticIpMsg __example__() {
         APIDeleteVmStaticIpMsg msg = new APIDeleteVmStaticIpMsg();
-
-
+        msg.vmInstanceUuid = uuid();
+        msg.l3NetworkUuid = uuid();
         return msg;
     }
 

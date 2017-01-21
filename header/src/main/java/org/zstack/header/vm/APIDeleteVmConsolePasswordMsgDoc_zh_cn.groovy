@@ -1,11 +1,11 @@
 package org.zstack.header.vm
 
 doc {
-    title "DeleteVmConsolePassword"
+    title "删除云主机控制台密码(DeleteVmConsolePassword)"
 
     category "vmInstance"
 
-    desc "在这里填写API描述"
+    desc "删除一个云主机的控制台密码"
 
     rest {
         request {
@@ -23,7 +23,7 @@ doc {
                 column {
                     name "uuid"
                     enclosedIn ""
-                    desc "资源的UUID，唯一标示该资源"
+                    desc "云主机UUID"
                     location "url"
                     type "String"
                     optional false

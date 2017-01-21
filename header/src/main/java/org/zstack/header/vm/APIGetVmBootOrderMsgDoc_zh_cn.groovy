@@ -1,11 +1,11 @@
 package org.zstack.header.vm
 
 doc {
-    title "GetVmBootOrder"
+    title "获得云主机启动设备列表(GetVmBootOrder)"
 
     category "vmInstance"
 
-    desc "在这里填写API描述"
+    desc "获得一个云主机的启动设备列表"
 
     rest {
         request {
@@ -23,7 +23,7 @@ doc {
                 column {
                     name "uuid"
                     enclosedIn ""
-                    desc "资源的UUID，唯一标示该资源"
+                    desc "云主机UUID"
                     location "url"
                     type "String"
                     optional false
@@ -33,7 +33,7 @@ doc {
                 column {
                     name "systemTags"
                     enclosedIn ""
-                    desc ""
+                    desc "系统标签"
                     location "query"
                     type "List"
                     optional true

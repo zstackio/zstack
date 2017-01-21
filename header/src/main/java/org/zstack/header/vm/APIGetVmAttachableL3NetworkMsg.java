@@ -31,8 +31,7 @@ public class APIGetVmAttachableL3NetworkMsg extends APISyncCallMessage implement
  
     public static APIGetVmAttachableL3NetworkMsg __example__() {
         APIGetVmAttachableL3NetworkMsg msg = new APIGetVmAttachableL3NetworkMsg();
-
-
+        msg.vmInstanceUuid = uuid();
         return msg;
     }
 

@@ -82,8 +82,8 @@ public class APIMigrateVmMsg extends APIMessage implements VmInstanceMessage {
  
     public static APIMigrateVmMsg __example__() {
         APIMigrateVmMsg msg = new APIMigrateVmMsg();
-
-
+        msg.vmInstanceUuid = uuid();
+        msg.hostUuid = uuid();
         return msg;
     }
 

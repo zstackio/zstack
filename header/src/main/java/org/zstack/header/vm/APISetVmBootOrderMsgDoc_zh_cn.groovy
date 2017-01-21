@@ -1,11 +1,11 @@
 package org.zstack.header.vm
 
 doc {
-    title "SetVmBootOrder"
+    title "指定云主机启动设备(SetVmBootOrder)"
 
     category "vmInstance"
 
-    desc "在这里填写API描述"
+    desc "指定一个云主机的启动设备"
 
     rest {
         request {
@@ -23,7 +23,7 @@ doc {
                 column {
                     name "uuid"
                     enclosedIn "setVmBootOrder"
-                    desc "资源的UUID，唯一标示该资源"
+                    desc "云主机UUID"
                     location "url"
                     type "String"
                     optional false
@@ -33,7 +33,7 @@ doc {
                 column {
                     name "bootOrder"
                     enclosedIn "setVmBootOrder"
-                    desc ""
+                    desc "启动设备。`CdRom`：光驱，`HardDisk`：磁盘。若该字段不指定，则表示使用系统默认启动设备顺序(HardDisk, CdRom)"
                     location "body"
                     type "List"
                     optional true

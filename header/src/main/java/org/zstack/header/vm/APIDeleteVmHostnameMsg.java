@@ -34,8 +34,7 @@ public class APIDeleteVmHostnameMsg extends APIDeleteMessage implements VmInstan
  
     public static APIDeleteVmHostnameMsg __example__() {
         APIDeleteVmHostnameMsg msg = new APIDeleteVmHostnameMsg();
-
-
+        msg.uuid = uuid();
         return msg;
     }
 

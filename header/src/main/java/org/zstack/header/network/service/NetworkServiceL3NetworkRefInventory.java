@@ -41,6 +41,9 @@ public class NetworkServiceL3NetworkRefInventory implements Serializable {
      */
     private String networkServiceType;
 
+    public NetworkServiceL3NetworkRefInventory() {
+    }
+
     protected NetworkServiceL3NetworkRefInventory(NetworkServiceL3NetworkRefVO vo) {
         this.setL3NetworkUuid(vo.getL3NetworkUuid());
         this.setNetworkServiceProviderUuid(vo.getNetworkServiceProviderUuid());

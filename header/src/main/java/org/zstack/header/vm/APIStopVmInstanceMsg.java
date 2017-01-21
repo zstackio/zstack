@@ -71,8 +71,7 @@ public class APIStopVmInstanceMsg extends APIMessage implements VmInstanceMessag
  
     public static APIStopVmInstanceMsg __example__() {
         APIStopVmInstanceMsg msg = new APIStopVmInstanceMsg();
-
-
+        msg.setUuid(uuid());
         return msg;
     }
 

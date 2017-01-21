@@ -47,8 +47,8 @@ public class APISetVmConsolePasswordMsg extends APIMessage implements VmInstance
  
     public static APISetVmConsolePasswordMsg __example__() {
         APISetVmConsolePasswordMsg msg = new APISetVmConsolePasswordMsg();
-
-
+        msg.uuid = uuid();
+        msg.consolePassword = "password";
         return msg;
     }
 

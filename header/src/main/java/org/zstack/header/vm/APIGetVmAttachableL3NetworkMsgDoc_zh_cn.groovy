@@ -1,11 +1,11 @@
 package org.zstack.header.vm
 
 doc {
-    title "GetVmAttachableL3Network"
+    title "获取云主机可加载三层网络列表(GetVmAttachableL3Network)"
 
     category "vmInstance"
 
-    desc "在这里填写API描述"
+    desc "获取一个云主机可加载网络三层网络列表"
 
     rest {
         request {

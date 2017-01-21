@@ -1,11 +1,11 @@
 package org.zstack.header.vm
 
 doc {
-    title "StopVmInstance"
+    title "停止云主机(StopVmInstance)"
 
     category "vmInstance"
 
-    desc "在这里填写API描述"
+    desc """停止一个云主机"""
 
     rest {
         request {
@@ -23,7 +23,7 @@ doc {
                 column {
                     name "uuid"
                     enclosedIn "stopVmInstance"
-                    desc "资源的UUID，唯一标示该资源"
+                    desc "云主机UUID"
                     location "url"
                     type "String"
                     optional false
@@ -33,7 +33,7 @@ doc {
                 column {
                     name "type"
                     enclosedIn "stopVmInstance"
-                    desc ""
+                    desc "停止云主机的方式。`grace`：优雅关机，需要云主机里安装了相关ACPI驱动；`cold`：冷关机，相当于直接断电"
                     location "body"
                     type "String"
                     optional true

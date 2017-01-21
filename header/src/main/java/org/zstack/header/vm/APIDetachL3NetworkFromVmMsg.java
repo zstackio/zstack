@@ -42,8 +42,7 @@ public class APIDetachL3NetworkFromVmMsg extends APIMessage implements VmInstanc
  
     public static APIDetachL3NetworkFromVmMsg __example__() {
         APIDetachL3NetworkFromVmMsg msg = new APIDetachL3NetworkFromVmMsg();
-
-
+        msg.vmNicUuid = uuid();
         return msg;
     }
 

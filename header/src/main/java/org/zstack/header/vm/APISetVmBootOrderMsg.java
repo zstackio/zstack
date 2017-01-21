@@ -8,6 +8,8 @@ import org.zstack.header.rest.RestRequest;
 
 import java.util.List;
 
+import static java.util.Arrays.asList;
+
 /**
  * Created by frank on 11/22/2015.
  */
@@ -46,8 +48,8 @@ public class APISetVmBootOrderMsg extends APIMessage implements VmInstanceMessag
  
     public static APISetVmBootOrderMsg __example__() {
         APISetVmBootOrderMsg msg = new APISetVmBootOrderMsg();
-
-
+        msg.uuid = uuid();
+        msg.bootOrder = asList(VmBootDevice.CdRom.toString(), VmBootDevice.HardDisk.toString());
         return msg;
     }
 
