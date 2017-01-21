@@ -21,6 +21,7 @@ public class APIQueryTagMsg extends APIQueryMessage {
         APIQueryTagMsg msg = new APIQueryTagMsg();
 
 
+
         return msg;
     }
 

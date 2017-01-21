@@ -17,8 +17,9 @@ public class APICreateSystemTagMsg extends APICreateTagMsg {
  
     public static APICreateSystemTagMsg __example__() {
         APICreateSystemTagMsg msg = new APICreateSystemTagMsg();
-
-
+        msg.setResourceType("HostVO");
+        msg.setResourceUuid(uuid());
+        msg.setTag("reservedMemory::1G");
         return msg;
     }
 

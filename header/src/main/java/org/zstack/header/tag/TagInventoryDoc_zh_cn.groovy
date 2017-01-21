@@ -5,7 +5,7 @@ import java.sql.Timestamp
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "标签清单"
 
 	field {
 		name "uuid"
@@ -15,25 +15,25 @@ doc {
 	}
 	field {
 		name "resourceUuid"
-		desc ""
+		desc "用户指定的资源UUID，若指定，系统不会为该资源随机分配UUID"
 		type "String"
 		since "0.6"
 	}
 	field {
 		name "resourceType"
-		desc ""
+		desc "当创建一个标签时, 用户必须制定标签所关联的资源类型"
 		type "String"
 		since "0.6"
 	}
 	field {
 		name "tag"
-		desc ""
+		desc "标签字符串"
 		type "String"
 		since "0.6"
 	}
 	field {
 		name "type"
-		desc ""
+		desc "保留域, 请不要使用它"
 		type "String"
 		since "0.6"
 	}
