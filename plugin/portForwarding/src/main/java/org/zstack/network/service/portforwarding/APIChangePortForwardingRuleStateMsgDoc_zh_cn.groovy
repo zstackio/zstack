@@ -7,7 +7,7 @@ doc {
 
     category "portForwarding"
 
-    desc "在这里填写API描述"
+    desc "改变端口转发规则的状态"
 
     rest {
         request {
@@ -18,8 +18,8 @@ doc {
 
             clz APIChangePortForwardingRuleStateMsg.class
 
-            desc ""
-            
+			desc "改变端口转发规则的状态"
+
 			params {
 
 				column {
@@ -35,7 +35,7 @@ doc {
 				column {
 					name "stateEvent"
 					enclosedIn "changePortForwardingRuleState"
-					desc ""
+					desc "端口转发规则的状态"
 					location "body"
 					type "String"
 					optional false
