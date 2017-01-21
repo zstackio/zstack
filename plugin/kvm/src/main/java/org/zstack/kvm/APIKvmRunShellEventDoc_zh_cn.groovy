@@ -5,7 +5,7 @@ import org.zstack.kvm.APIKvmRunShellEvent.ShellResult
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "KVM执行shell结果"
 
 	ref {
 		name "error"

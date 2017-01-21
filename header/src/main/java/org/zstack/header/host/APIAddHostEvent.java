@@ -50,7 +50,7 @@ public class APIAddHostEvent extends APIEvent {
     public void setInventory(HostInventory inventory) {
         this.inventory = inventory;
     }
- 
+
     public static APIAddHostEvent __example__() {
         APIAddHostEvent event = new APIAddHostEvent();
         HostInventory hi = new HostInventory ();

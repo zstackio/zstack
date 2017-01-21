@@ -6,7 +6,10 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
 
+import java.util.HashSet;
 import java.util.Set;
+
+
 
 /**
  * Created by xing5 on 2016/3/14.
@@ -41,8 +44,11 @@ public class APIKvmRunShellMsg extends APIMessage {
  
     public static APIKvmRunShellMsg __example__() {
         APIKvmRunShellMsg msg = new APIKvmRunShellMsg();
-
-
+        Set <String >set = new HashSet();
+        set.add(uuid());
+        set.add(uuid());
+        msg.setHostUuids(set);
+        msg.setScript("ls");
         return msg;
     }
 
