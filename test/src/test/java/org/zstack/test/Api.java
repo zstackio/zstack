@@ -3870,12 +3870,16 @@ public class Api implements CloudBusEventListener {
     }
 
     public void expungeVm(String vmUuid, SessionInventory session) throws ApiSenderException {
-        APIExpungeVmInstanceMsg msg = new APIExpungeVmInstanceMsg();
-        msg.setUuid(vmUuid);
-        msg.setSession(session == null ? adminSession : session);
-        ApiSender sender = new ApiSender();
-        sender.setTimeout(timeout);
-        sender.send(msg, APIExpungeVmInstanceEvent.class);
+        MessageCommandRecorder.reset();
+        MessageCommandRecorder.start(APIExpungeVmInstanceMsg.class);
+
+        ExpungeVmInstanceAction a = new ExpungeVmInstanceAction();
+        a.sessionId = getSessionUuid(session);
+        a.uuid = vmUuid;
+        ExpungeVmInstanceAction.Result res = a.call();
+        throwExceptionIfNeed(res.error);
+
+        logger.debug(MessageCommandRecorder.endAndToString());
     }
 
     public VolumeInventory recoverVolume(String volUuid, SessionInventory session) throws ApiSenderException {

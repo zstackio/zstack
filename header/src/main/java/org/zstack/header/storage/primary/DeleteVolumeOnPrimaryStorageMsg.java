@@ -1,8 +1,11 @@
 package org.zstack.header.storage.primary;
 
+import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.message.NeedReplyMessage;
+import org.zstack.header.vm.APIExpungeVmInstanceMsg;
 import org.zstack.header.volume.VolumeInventory;
 
+@ApiTimeout(apiClasses = {APIExpungeVmInstanceMsg.class})
 public class DeleteVolumeOnPrimaryStorageMsg extends NeedReplyMessage implements PrimaryStorageMessage {
     private String uuid;
     private VolumeInventory volume;

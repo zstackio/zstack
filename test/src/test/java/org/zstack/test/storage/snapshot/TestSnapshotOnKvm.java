@@ -67,6 +67,9 @@ public class TestSnapshotOnKvm {
         Assert.assertNotNull(cvo);
 
         snapshotKvmSimulator.validate(inv);
+
+        api.destroyVmInstance(vm.getUuid());
+        api.expungeVm(vm.getUuid(), null);
     }
 
 }

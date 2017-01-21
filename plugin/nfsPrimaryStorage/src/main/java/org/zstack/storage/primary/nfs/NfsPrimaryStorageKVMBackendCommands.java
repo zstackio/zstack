@@ -7,6 +7,7 @@ import org.zstack.header.image.APICreateRootVolumeTemplateFromRootVolumeMsg;
 import org.zstack.header.image.APICreateRootVolumeTemplateFromVolumeSnapshotMsg;
 import org.zstack.header.storage.snapshot.APIDeleteVolumeSnapshotMsg;
 import org.zstack.header.vm.APICreateVmInstanceMsg;
+import org.zstack.header.vm.APIExpungeVmInstanceMsg;
 import org.zstack.header.volume.APICreateDataVolumeFromVolumeSnapshotMsg;
 import org.zstack.kvm.KVMAgentCommands.AgentCommand;
 import org.zstack.kvm.KVMAgentCommands.AgentResponse;
@@ -318,7 +319,7 @@ public class NfsPrimaryStorageKVMBackendCommands {
     public static class CreateEmptyVolumeResponse extends NfsPrimaryStorageAgentResponse {
     }
 
-    @ApiTimeout(apiClasses = {APICreateDataVolumeFromVolumeSnapshotMsg.class})
+    @ApiTimeout(apiClasses = {APICreateDataVolumeFromVolumeSnapshotMsg.class, APIExpungeVmInstanceMsg.class})
     public static class DeleteCmd extends NfsPrimaryStorageAgentCommand {
         private boolean isFolder;
         private String installPath;

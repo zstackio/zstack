@@ -2,10 +2,11 @@ package org.zstack.header.storage.snapshot;
 
 import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.message.DeletionMessage;
+import org.zstack.header.vm.APIExpungeVmInstanceMsg;
 
 /**
  */
-@ApiTimeout(apiClasses = {APIDeleteVolumeSnapshotMsg.class})
+@ApiTimeout(apiClasses = {APIDeleteVolumeSnapshotMsg.class, APIExpungeVmInstanceMsg.class})
 public class VolumeSnapshotDeletionMsg extends DeletionMessage implements VolumeSnapshotMessage {
     private String snapshotUuid;
     private String volumeUuid;
