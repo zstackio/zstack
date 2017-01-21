@@ -129,7 +129,6 @@ public class TestMevoco21 {
         List<PolicyVO> ps = q.list();
 
 
-        validate(ps, "TAG.ENABLE-PASSWORD", "instance:APIEnableChangeVmPasswordMsg", AccountConstant.StatementEffect.Allow);
         validate(ps, "VM.USER-PASSWORD.CHANGE", "instance:APIChangeVmPasswordMsg", AccountConstant.StatementEffect.Allow);
         validate(ps, "VM.CREATE", "instance:APICreateVmInstanceMsg", AccountConstant.StatementEffect.Allow);
         validate(ps, "VM.UPDATE", "instance:APIUpdateVmInstanceMsg", AccountConstant.StatementEffect.Allow);

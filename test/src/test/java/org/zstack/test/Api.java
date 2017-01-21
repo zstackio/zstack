@@ -86,8 +86,6 @@ import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.storage.snapshot.VolumeSnapshotTreeInventory;
-import org.zstack.header.tag.APIEnableChangeVmPasswordEvent;
-import org.zstack.header.tag.APIEnableChangeVmPasswordMsg;
 import org.zstack.header.tag.TagInventory;
 import org.zstack.header.tag.TagType;
 import org.zstack.header.vm.*;
@@ -3153,18 +3151,6 @@ public class Api implements CloudBusEventListener {
         sender.setTimeout(timeout);
         APIGetVmQgaEnableReply reply = sender.call(msg, APIGetVmQgaEnableReply.class);
         return reply;
-    }
-
-    public APIEnableChangeVmPasswordEvent enableChangeVmPassword(String resourceUuid, String resourceType, boolean enable) throws ApiSenderException {
-        APIEnableChangeVmPasswordMsg msg = new APIEnableChangeVmPasswordMsg();
-        msg.setEnable(enable);
-        msg.setResourceUuid(resourceUuid);
-        msg.setResourceType(resourceType);
-        msg.setSession(adminSession);
-        ApiSender sender = new ApiSender();
-        sender.setTimeout(timeout);
-        APIEnableChangeVmPasswordEvent evt = sender.send(msg, APIEnableChangeVmPasswordEvent.class);
-        return evt;
     }
 
     public TagInventory createUserTag(String resourceUuid, String tag, Class entitiClass) throws ApiSenderException {
