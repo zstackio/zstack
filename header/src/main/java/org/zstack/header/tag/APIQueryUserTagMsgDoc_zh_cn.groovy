@@ -8,7 +8,7 @@ doc {
 
     category "tag"
 
-    desc "在这里填写API描述"
+    desc "查询用户标签"
 
     rest {
         request {
@@ -21,8 +21,8 @@ doc {
 
             clz APIQueryUserTagMsg.class
 
-            desc ""
-            
+            desc "查询用户标签"
+
 			params APIQueryMessage.class
         }
 

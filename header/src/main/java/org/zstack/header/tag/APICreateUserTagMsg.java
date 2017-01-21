@@ -17,8 +17,9 @@ public class APICreateUserTagMsg extends APICreateTagMsg {
  
     public static APICreateUserTagMsg __example__() {
         APICreateUserTagMsg msg = new APICreateUserTagMsg();
-
-
+        msg.setResourceType("DiskOfferingVO");
+        msg.setResourceUuid(uuid());
+        msg.setTag("for-large-DB");
         return msg;
     }
 
