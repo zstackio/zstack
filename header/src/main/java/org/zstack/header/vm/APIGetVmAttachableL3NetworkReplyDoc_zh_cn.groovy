@@ -5,7 +5,7 @@ import org.zstack.header.network.l3.L3NetworkInventory
 
 doc {
 
-    title "在这里输入结构的名称"
+    title "可加载三层网络"
 
     ref {
         name "error"

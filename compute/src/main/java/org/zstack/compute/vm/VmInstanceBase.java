@@ -4579,7 +4579,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     }
                 });
 
-                done(new FlowDoneHandler(msg) {
+                done(new FlowDoneHandler(msg, completion) {
                     @Override
                     public void handle(Map data) {
                         rootVolume.setInstallPath(newVolumeInstallPath);
@@ -4591,12 +4591,14 @@ public class VmInstanceBase extends AbstractVmInstance {
                             ext.afterReimageVmInstance(rootVolumeInventory);
                         }
 
+                        self = dbf.reload(self);
+                        evt.setInventory(VmInstanceInventory.valueOf(self));
                         bus.publish(evt);
                         completion.done();
                     }
                 });
 
-                error(new FlowErrorHandler(msg) {
+                error(new FlowErrorHandler(msg, completion) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
                         logger.warn(String.format("failed to restore volume[uuid:%s] to image[uuid:%s], %s",

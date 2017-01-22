@@ -561,7 +561,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                                 m.put(clusterUuid, new ArrayList<>());
                             }
                         }
-                        areply.setClusterPsMap(m);
+                        areply.setClusterPrimaryStorageRefs(m);
 
                         List<String> zoneUuids = re.getHosts().stream().
                                 map(HostInventory::getZoneUuid).collect(Collectors.toList());
@@ -570,7 +570,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         areply.setHosts(new ArrayList<>());
                         areply.setClusters(new ArrayList<>());
                         areply.setZones(new ArrayList<>());
-                        areply.setClusterPsMap(new HashMap<>());
+                        areply.setClusterPrimaryStorageRefs(new HashMap<>());
                     }
                 }
 

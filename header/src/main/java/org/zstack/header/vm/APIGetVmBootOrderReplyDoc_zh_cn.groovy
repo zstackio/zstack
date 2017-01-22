@@ -4,7 +4,7 @@ import org.zstack.header.errorcode.ErrorCode
 
 doc {
 
-    title "在这里输入结构的名称"
+    title "云主机清单"
 
     ref {
         name "error"
@@ -16,7 +16,7 @@ doc {
     }
     field {
         name "orders"
-        desc ""
+        desc "启动设备列表"
         type "List"
         since "0.6"
     }

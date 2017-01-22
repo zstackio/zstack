@@ -1,13 +1,22 @@
 package org.zstack.header.vm;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
 /**
  * Created by miao on 11/3/16.
  */
 @Action(category = VmInstanceConstant.ACTION_CATEGORY)
+@RestRequest(
+        path = "/vm-instances/{vmInstanceUuid}/actions",
+        method = HttpMethod.PUT,
+        isAction = true,
+        responseClass = APIReimageVmInstanceEvent.class,
+        category = "vmInstance"
+)
 public class APIReimageVmInstanceMsg extends APIMessage implements VmInstanceMessage {
     public String getVmInstanceUuid() {
         return vmInstanceUuid;
@@ -22,8 +31,7 @@ public class APIReimageVmInstanceMsg extends APIMessage implements VmInstanceMes
  
     public static APIReimageVmInstanceMsg __example__() {
         APIReimageVmInstanceMsg msg = new APIReimageVmInstanceMsg();
-
-
+        msg.vmInstanceUuid = uuid();
         return msg;
     }
 

@@ -7,7 +7,7 @@ import org.zstack.header.zone.ZoneInventory
 
 doc {
 
-    title "在这里输入结构的名称"
+    title "可创建云主机目的地结果"
 
     ref {
         name "error"
@@ -20,7 +20,7 @@ doc {
     ref {
         name "zones"
         path "org.zstack.header.vm.APIGetCandidateZonesClustersHostsForCreatingVmReply.zones"
-        desc "null"
+        desc "可创建该云主机的区域清单"
         type "List"
         since "0.6"
         clz ZoneInventory.class
@@ -28,7 +28,7 @@ doc {
     ref {
         name "clusters"
         path "org.zstack.header.vm.APIGetCandidateZonesClustersHostsForCreatingVmReply.clusters"
-        desc "null"
+        desc "可创建云主机的集群清单"
         type "List"
         since "0.6"
         clz ClusterInventory.class
@@ -36,27 +36,21 @@ doc {
     ref {
         name "hosts"
         path "org.zstack.header.vm.APIGetCandidateZonesClustersHostsForCreatingVmReply.hosts"
-        desc "null"
+        desc "创建云主机物理机清单"
         type "List"
         since "0.6"
         clz HostInventory.class
     }
     field {
-        name "clusterPsMap"
-        desc ""
-        type "Map"
-        since "0.6"
-    }
-    field {
         name "success"
-        desc ""
+        desc "操作是否成功"
         type "boolean"
         since "0.6"
     }
     ref {
         name "error"
         path "org.zstack.header.vm.APIGetCandidateZonesClustersHostsForCreatingVmReply.error"
-        desc "null"
+        desc "错误码，若不为null，则表示操作失败, 操作成功时该字段为nul"
         type "ErrorCode"
         since "0.6"
         clz ErrorCode.class

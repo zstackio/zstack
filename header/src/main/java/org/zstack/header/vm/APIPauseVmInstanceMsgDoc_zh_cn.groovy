@@ -1,11 +1,11 @@
 package org.zstack.header.vm
 
 doc {
-    title "PauseVmInstance"
+    title "暂停云主机(PauseVmInstance)"
 
     category "vmInstance"
 
-    desc "在这里填写API描述"
+    desc "暂停一个云主机，云主机状态仍然存在内存里面，稍后可以恢复"
 
     rest {
         request {
@@ -23,7 +23,7 @@ doc {
                 column {
                     name "uuid"
                     enclosedIn "pauseVmInstance"
-                    desc "资源的UUID，唯一标示该资源"
+                    desc "云主机UUID"
                     location "url"
                     type "String"
                     optional false
@@ -33,7 +33,7 @@ doc {
                 column {
                     name "systemTags"
                     enclosedIn ""
-                    desc ""
+                    desc "系统标签"
                     location "body"
                     type "List"
                     optional true

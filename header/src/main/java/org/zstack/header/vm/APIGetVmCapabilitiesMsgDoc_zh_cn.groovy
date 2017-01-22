@@ -1,11 +1,17 @@
 package org.zstack.header.vm
 
 doc {
-    title "GetVmCapabilities"
+    title "获取云主机能力(GetVmCapabilities)"
 
     category "vmInstance"
 
-    desc "在这里填写API描述"
+    desc """获取一个云主机的能力，用于判断云主机是否能做某些特定操作。目前已定义能力包括:
+    
+|名称|描述|类型|
+|---|---|---|
+|LiveMigration|是否支持热迁移|Boolean|
+|VolumeMigration|是否支持根磁盘迁移|Boolean|
+"""
 
     rest {
         request {
@@ -23,7 +29,7 @@ doc {
                 column {
                     name "uuid"
                     enclosedIn ""
-                    desc "资源的UUID，唯一标示该资源"
+                    desc "云主机UUID"
                     location "url"
                     type "String"
                     optional false
@@ -33,7 +39,7 @@ doc {
                 column {
                     name "systemTags"
                     enclosedIn ""
-                    desc ""
+                    desc "系统标签"
                     location "query"
                     type "List"
                     optional true

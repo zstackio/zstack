@@ -4,6 +4,7 @@ import org.zstack.header.host.HostInventory;
 import org.zstack.header.message.APIReply;
 import org.zstack.header.rest.RestResponse;
 
+import java.sql.Timestamp;
 import java.util.List;
 
 import static java.util.Arrays.asList;
@@ -40,6 +41,8 @@ public class APIGetVmMigrationCandidateHostsReply extends APIReply {
         hi.setTotalMemoryCapacity(4L);
         hi.setHypervisorType("KVM");
         hi.setDescription("example");
+        hi.setCreateDate(new Timestamp(System.currentTimeMillis()));
+        hi.setLastOpDate(new Timestamp(System.currentTimeMillis()));
 
         reply.setInventories(asList(hi));
 

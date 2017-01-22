@@ -12,6 +12,8 @@ import org.zstack.header.rest.RestRequest;
 
 import java.util.List;
 
+import static java.util.Arrays.asList;
+
 /**
  * Created by xing5 on 2016/8/17.
  */
@@ -103,8 +105,11 @@ public class APIGetCandidateZonesClustersHostsForCreatingVmMsg extends APISyncCa
  
     public static APIGetCandidateZonesClustersHostsForCreatingVmMsg __example__() {
         APIGetCandidateZonesClustersHostsForCreatingVmMsg msg = new APIGetCandidateZonesClustersHostsForCreatingVmMsg();
-
-
+        msg.setClusterUuid(uuid());
+        msg.setDataDiskOfferingUuids(asList(uuid(), uuid()));
+        msg.setImageUuid(uuid());
+        msg.setInstanceOfferingUuid(uuid());
+        msg.setL3NetworkUuids(asList(uuid()));
         return msg;
     }
 

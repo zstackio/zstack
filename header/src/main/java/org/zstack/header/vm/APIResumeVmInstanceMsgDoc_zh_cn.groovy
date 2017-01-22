@@ -1,11 +1,11 @@
 package org.zstack.header.vm
 
 doc {
-    title "ResumeVmInstance"
+    title "恢复暂停的云主机(ResumeVmInstance)"
 
     category "vmInstance"
 
-    desc "在这里填写API描述"
+    desc "恢复一个被暂停的云主机，云主机从内存中恢复运行"
 
     rest {
         request {
@@ -23,7 +23,7 @@ doc {
                 column {
                     name "uuid"
                     enclosedIn "resumeVmInstance"
-                    desc "资源的UUID，唯一标示该资源"
+                    desc "云主机UUID"
                     location "url"
                     type "String"
                     optional false

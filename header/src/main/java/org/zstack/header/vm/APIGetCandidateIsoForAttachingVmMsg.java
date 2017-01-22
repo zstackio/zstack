@@ -31,8 +31,7 @@ public class APIGetCandidateIsoForAttachingVmMsg extends APISyncCallMessage impl
  
     public static APIGetCandidateIsoForAttachingVmMsg __example__() {
         APIGetCandidateIsoForAttachingVmMsg msg = new APIGetCandidateIsoForAttachingVmMsg();
-
-
+        msg.vmInstanceUuid = uuid();
         return msg;
     }
 

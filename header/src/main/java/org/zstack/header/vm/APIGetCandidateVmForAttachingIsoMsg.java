@@ -31,8 +31,7 @@ public class APIGetCandidateVmForAttachingIsoMsg extends APISyncCallMessage {
  
     public static APIGetCandidateVmForAttachingIsoMsg __example__() {
         APIGetCandidateVmForAttachingIsoMsg msg = new APIGetCandidateVmForAttachingIsoMsg();
-
-
+        msg.isoUuid = uuid();
         return msg;
     }
 

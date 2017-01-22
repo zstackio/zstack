@@ -5,7 +5,7 @@ import org.zstack.header.volume.VolumeInventory
 
 doc {
 
-    title "在这里输入结构的名称"
+    title "可加载云盘"
 
     ref {
         name "error"

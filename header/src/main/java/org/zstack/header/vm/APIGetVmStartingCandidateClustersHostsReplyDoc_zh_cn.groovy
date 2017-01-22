@@ -6,7 +6,7 @@ import org.zstack.header.host.HostInventory
 
 doc {
 
-    title "在这里输入结构的名称"
+    title "云主机可启动目的地结果"
 
     ref {
         name "error"
@@ -19,7 +19,7 @@ doc {
     ref {
         name "hosts"
         path "org.zstack.header.vm.APIGetVmStartingCandidateClustersHostsReply.hostInventories"
-        desc "null"
+        desc "云主机可启动的物理机清单"
         type "List"
         since "0.6"
         clz HostInventory.class
@@ -27,7 +27,7 @@ doc {
     ref {
         name "clusters"
         path "org.zstack.header.vm.APIGetVmStartingCandidateClustersHostsReply.clusterInventories"
-        desc "null"
+        desc "云主机可启动的集群清单"
         type "List"
         since "0.6"
         clz ClusterInventory.class

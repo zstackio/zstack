@@ -5,7 +5,7 @@ import org.zstack.header.image.ImageInventory
 
 doc {
 
-    title "在这里输入结构的名称"
+    title "ISO清单"
 
     ref {
         name "error"
@@ -18,7 +18,7 @@ doc {
     ref {
         name "inventories"
         path "org.zstack.header.vm.APIGetCandidateIsoForAttachingVmReply.inventories"
-        desc "null"
+        desc "ISO清单"
         type "List"
         since "0.6"
         clz ImageInventory.class

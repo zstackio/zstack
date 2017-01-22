@@ -7,8 +7,11 @@ import org.zstack.header.rest.RestResponse;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.zone.ZoneInventory;
 
+import java.sql.Timestamp;
 import java.util.List;
 import java.util.Map;
+
+import static org.codehaus.groovy.runtime.InvokerHelper.asList;
 
 /**
  * Created by xing5 on 2016/8/17.
@@ -19,15 +22,15 @@ public class APIGetCandidateZonesClustersHostsForCreatingVmReply extends APIRepl
     private List<ClusterInventory> clusters;
     private List<HostInventory> hosts;
 
-    public Map<String, List<PrimaryStorageInventory>> getClusterPsMap() {
-        return clusterPsMap;
+    public Map<String, List<PrimaryStorageInventory>> getClusterPrimaryStorageRefs() {
+        return clusterPrimaryStorageRefs;
     }
 
-    public void setClusterPsMap(Map<String, List<PrimaryStorageInventory>> clusterPsMap) {
-        this.clusterPsMap = clusterPsMap;
+    public void setClusterPrimaryStorageRefs(Map<String, List<PrimaryStorageInventory>> clusterPrimaryStorageRefs) {
+        this.clusterPrimaryStorageRefs = clusterPrimaryStorageRefs;
     }
 
-    private Map<String, List<PrimaryStorageInventory>> clusterPsMap;
+    private Map<String, List<PrimaryStorageInventory>> clusterPrimaryStorageRefs;
 
     public List<ZoneInventory> getZones() {
         return zones;
@@ -56,6 +59,44 @@ public class APIGetCandidateZonesClustersHostsForCreatingVmReply extends APIRepl
     public static APIGetCandidateZonesClustersHostsForCreatingVmReply __example__() {
         APIGetCandidateZonesClustersHostsForCreatingVmReply reply = new APIGetCandidateZonesClustersHostsForCreatingVmReply();
 
+        String zoneUuid = uuid();
+        String clusterUuid = uuid();
+
+        HostInventory hi = new HostInventory ();
+        hi.setAvailableCpuCapacity(2L);
+        hi.setAvailableMemoryCapacity(4L);
+        hi.setClusterUuid(clusterUuid);
+        hi.setManagementIp("192.168.0.1");
+        hi.setName("example");
+        hi.setState("Enabled");
+        hi.setStatus("Connected");
+        hi.setClusterUuid(uuid());
+        hi.setZoneUuid(zoneUuid);
+        hi.setUuid(uuid());
+        hi.setTotalCpuCapacity(4L);
+        hi.setTotalMemoryCapacity(4L);
+        hi.setHypervisorType("KVM");
+        hi.setDescription("example");
+        hi.setCreateDate(new Timestamp(System.currentTimeMillis()));
+        hi.setLastOpDate(new Timestamp(System.currentTimeMillis()));
+
+        reply.setHosts(asList(hi));
+
+        ClusterInventory cl = new ClusterInventory();
+        cl.setName("cluster1");
+        cl.setUuid(clusterUuid);
+        cl.setZoneUuid(uuid());
+        cl.setCreateDate(new Timestamp(System.currentTimeMillis()));
+        cl.setLastOpDate(new Timestamp(System.currentTimeMillis()));
+        cl.setHypervisorType("KVM");
+
+        reply.setClusters(asList(cl));
+
+        ZoneInventory z = new ZoneInventory();
+        z.setName("zone");
+        z.setUuid(zoneUuid);
+
+        reply.setZones(asList(z));
 
         return reply;
     }
