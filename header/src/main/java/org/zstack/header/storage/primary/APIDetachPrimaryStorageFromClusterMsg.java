@@ -79,6 +79,8 @@ public class APIDetachPrimaryStorageFromClusterMsg extends APIMessage implements
     public static APIDetachPrimaryStorageFromClusterMsg __example__() {
         APIDetachPrimaryStorageFromClusterMsg msg = new APIDetachPrimaryStorageFromClusterMsg();
 
+        msg.setClusterUuid(uuid());
+        msg.setPrimaryStorageUuid(uuid());
 
         return msg;
     }

@@ -3,6 +3,8 @@ package org.zstack.header.storage.primary;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.rest.RestResponse;
 
+import java.util.Collections;
+
 /**
  * @apiResult api event for message :ref:`APIChangePrimaryStorageStateMsg`
  * @example {
@@ -53,7 +55,14 @@ public class APIChangePrimaryStorageStateEvent extends APIEvent {
     public static APIChangePrimaryStorageStateEvent __example__() {
         APIChangePrimaryStorageStateEvent event = new APIChangePrimaryStorageStateEvent();
 
+        PrimaryStorageInventory ps = new PrimaryStorageInventory();
+        ps.setName("PS1");
+        ps.setUrl("/zstack_ps");
+        ps.setType("LocalStorage");
+        ps.setAttachedClusterUuids(Collections.singletonList(uuid()));
+        ps.setState(PrimaryStorageState.Disabled.toString());
 
+        event.setInventory(ps);
         return event;
     }
 

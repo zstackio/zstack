@@ -1,13 +1,11 @@
 package org.zstack.header.storage.primary
 
-import org.zstack.header.storage.primary.APIUpdatePrimaryStorageEvent
-
 doc {
-    title "UpdatePrimaryStorage"
+    title "根系更新主存储信息(UpdatePrimaryStorage)"
 
     category "storage.primary"
 
-    desc "在这里填写API描述"
+    desc "更新主存储信息"
 
     rest {
         request {
@@ -25,7 +23,7 @@ doc {
 				column {
 					name "uuid"
 					enclosedIn "updatePrimaryStorage"
-					desc "资源的UUID，唯一标示该资源"
+					desc "主存储的UUID，唯一标示该资源"
 					location "url"
 					type "String"
 					optional false
@@ -35,7 +33,7 @@ doc {
 				column {
 					name "name"
 					enclosedIn "updatePrimaryStorage"
-					desc "资源名称"
+					desc "主存储的新名称"
 					location "body"
 					type "String"
 					optional true
@@ -45,7 +43,7 @@ doc {
 				column {
 					name "description"
 					enclosedIn "updatePrimaryStorage"
-					desc "资源的详细描述"
+					desc "主存储的新详细描述"
 					location "body"
 					type "String"
 					optional true
@@ -55,7 +53,7 @@ doc {
 				column {
 					name "url"
 					enclosedIn "updatePrimaryStorage"
-					desc ""
+					desc "主存储的新地址"
 					location "body"
 					type "String"
 					optional true
@@ -64,8 +62,8 @@ doc {
 				}
 				column {
 					name "systemTags"
- 					enclosedIn ""
- 					desc ""
+ 					enclosedIn "params"
+ 					desc "系统标签"
 					location "body"
 					type "List"
 					optional true
@@ -74,7 +72,7 @@ doc {
 				}
 				column {
 					name "userTags"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "用户标签"
 					location "body"
 					type "List"

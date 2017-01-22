@@ -64,6 +64,8 @@ public class APIUpdatePrimaryStorageMsg extends APIMessage implements PrimarySto
     public static APIUpdatePrimaryStorageMsg __example__() {
         APIUpdatePrimaryStorageMsg msg = new APIUpdatePrimaryStorageMsg();
 
+        msg.setUuid(uuid());
+        msg.setName("New PS1");
 
         return msg;
     }

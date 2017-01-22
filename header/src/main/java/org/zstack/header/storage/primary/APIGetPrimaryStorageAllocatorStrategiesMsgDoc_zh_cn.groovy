@@ -1,13 +1,11 @@
 package org.zstack.header.storage.primary
 
-import org.zstack.header.storage.primary.APIGetPrimaryStorageAllocatorStrategiesReply
-
 doc {
-    title "GetPrimaryStorageAllocatorStrategies"
+    title "获取主存储分配策略清单(GetPrimaryStorageAllocatorStrategies)"
 
     category "storage.primary"
 
-    desc "在这里填写API描述"
+    desc "获取主存储分配策略清单"
 
     rest {
         request {
@@ -24,8 +22,8 @@ doc {
 
 				column {
 					name "systemTags"
- 					enclosedIn ""
- 					desc ""
+ 					enclosedIn "params"
+ 					desc "系统标签"
 					location "query"
 					type "List"
 					optional true
@@ -34,7 +32,7 @@ doc {
 				}
 				column {
 					name "userTags"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "用户标签"
 					location "query"
 					type "List"

@@ -47,6 +47,10 @@ public class APIGetPrimaryStorageCapacityReply extends APIReply {
     public static APIGetPrimaryStorageCapacityReply __example__() {
         APIGetPrimaryStorageCapacityReply reply = new APIGetPrimaryStorageCapacityReply();
 
+        reply.setAvailableCapacity(1024L * 1024L * 928L);
+        reply.setAvailablePhysicalCapacity(1024L * 1024L * 928L);
+        reply.setTotalCapacity(1024L * 1024L * 1024L);
+        reply.setTotalPhysicalCapacity(1024L * 1024L * 1024L);
 
         return reply;
     }

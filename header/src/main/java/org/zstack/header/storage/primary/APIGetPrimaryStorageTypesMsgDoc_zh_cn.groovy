@@ -1,13 +1,11 @@
 package org.zstack.header.storage.primary
 
-import org.zstack.header.storage.primary.APIGetPrimaryStorageTypesReply
-
 doc {
-    title "GetPrimaryStorageTypes"
+    title "获取主存储类型列表(GetPrimaryStorageTypes)"
 
     category "storage.primary"
 
-    desc "在这里填写API描述"
+    desc "获取主存储类型列表"
 
     rest {
         request {
@@ -24,7 +22,7 @@ doc {
 
 				column {
 					name "systemTags"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "系统标签"
 					location "query"
 					type "List"
@@ -34,7 +32,7 @@ doc {
 				}
 				column {
 					name "userTags"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "用户标签"
 					location "query"
 					type "List"
