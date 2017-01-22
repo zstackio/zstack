@@ -3,11 +3,11 @@ package org.zstack.header.network.l3
 import org.zstack.header.network.l3.APIGetIpAddressCapacityReply
 
 doc {
-    title "GetIpAddressCapacity"
+    title "获取IP网络地址容量(GetIpAddressCapacity)"
 
-    category "network.l3"
+    category "三层网络"
 
-    desc "在这里填写API描述"
+    desc "获取IP网络地址容量"
 
     rest {
         request {
@@ -25,7 +25,7 @@ doc {
 				column {
 					name "zoneUuids"
 					enclosedIn "params"
-					desc ""
+					desc "区域UUID"
 					location "query"
 					type "List"
 					optional true
@@ -35,7 +35,7 @@ doc {
 				column {
 					name "l3NetworkUuids"
 					enclosedIn "params"
-					desc ""
+					desc "三层网络UUID"
 					location "query"
 					type "List"
 					optional true
@@ -45,7 +45,7 @@ doc {
 				column {
 					name "ipRangeUuids"
 					enclosedIn "params"
-					desc ""
+					desc "IP地址范围UUID"
 					location "query"
 					type "List"
 					optional true
@@ -55,7 +55,7 @@ doc {
 				column {
 					name "all"
 					enclosedIn "params"
-					desc ""
+					desc "系统全局"
 					location "query"
 					type "boolean"
 					optional true
@@ -65,7 +65,7 @@ doc {
 				column {
 					name "systemTags"
  					enclosedIn ""
- 					desc ""
+ 					desc "系统标签"
 					location "query"
 					type "List"
 					optional true

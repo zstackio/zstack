@@ -5,7 +5,7 @@ import org.zstack.header.errorcode.ErrorCode
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "可用性结果"
 
 	ref {
 		name "error"
@@ -17,13 +17,13 @@ doc {
 	}
 	field {
 		name "available"
-		desc ""
+		desc "可用"
 		type "boolean"
 		since "0.6"
 	}
 	field {
 		name "success"
-		desc ""
+		desc "成功"
 		type "boolean"
 		since "0.6"
 	}

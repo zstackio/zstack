@@ -3,11 +3,11 @@ package org.zstack.header.network.l3
 import org.zstack.header.network.l3.APIDeleteIpRangeEvent
 
 doc {
-    title "DeleteIpRange"
+    title "删除IP地址范围(DeleteIpRange)"
 
-    category "network.l3"
+    category "三层网络"
 
-    desc "在这里填写API描述"
+    desc "删除IP地址范围"
 
     rest {
         request {
@@ -35,7 +35,7 @@ doc {
 				column {
 					name "deleteMode"
  					enclosedIn ""
- 					desc ""
+ 					desc "删除模式"
 					location "body"
 					type "String"
 					optional true
@@ -45,7 +45,7 @@ doc {
 				column {
 					name "systemTags"
  					enclosedIn ""
- 					desc ""
+ 					desc "系统标签"
 					location "body"
 					type "List"
 					optional true

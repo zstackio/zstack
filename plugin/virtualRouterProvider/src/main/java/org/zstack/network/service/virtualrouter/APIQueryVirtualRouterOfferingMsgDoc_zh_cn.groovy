@@ -4,11 +4,11 @@ import org.zstack.network.service.virtualrouter.APIQueryVirtualRouterOfferingRep
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "QueryVirtualRouterOffering"
+    title "查询虚拟路由器规格(QueryVirtualRouterOffering)"
 
-    category "virtualRouter"
+    category "虚拟路由器"
 
-    desc "在这里填写API描述"
+    desc "查询虚拟路由器规格"
 
     rest {
         request {

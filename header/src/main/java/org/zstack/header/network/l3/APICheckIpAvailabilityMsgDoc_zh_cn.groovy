@@ -3,11 +3,11 @@ package org.zstack.header.network.l3
 import org.zstack.header.network.l3.APICheckIpAvailabilityReply
 
 doc {
-    title "CheckIpAvailability"
+    title "检查IP可用性(CheckIpAvailability)"
 
-    category "network.l3"
+    category "三层网络"
 
-    desc "在这里填写API描述"
+    desc "检查IP可用性"
 
     rest {
         request {
@@ -35,7 +35,7 @@ doc {
 				column {
 					name "ip"
 					enclosedIn ""
-					desc ""
+					desc "IP地址"
 					location "url"
 					type "String"
 					optional false
@@ -45,7 +45,7 @@ doc {
 				column {
 					name "systemTags"
  					enclosedIn ""
- 					desc ""
+ 					desc "系统标签"
 					location "query"
 					type "List"
 					optional true

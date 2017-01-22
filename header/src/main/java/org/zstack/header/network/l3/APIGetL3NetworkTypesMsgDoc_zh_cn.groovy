@@ -3,11 +3,11 @@ package org.zstack.header.network.l3
 import org.zstack.header.network.l3.APIGetL3NetworkTypesReply
 
 doc {
-    title "GetL3NetworkTypes"
+    title "获取三层网络类型(GetL3NetworkTypes)"
 
-    category "network.l3"
+    category "三层网络"
 
-    desc "在这里填写API描述"
+    desc "获取三层网络类型"
 
     rest {
         request {
@@ -25,7 +25,7 @@ doc {
 				column {
 					name "systemTags"
  					enclosedIn ""
- 					desc ""
+ 					desc "系统标签"
 					location "query"
 					type "List"
 					optional true

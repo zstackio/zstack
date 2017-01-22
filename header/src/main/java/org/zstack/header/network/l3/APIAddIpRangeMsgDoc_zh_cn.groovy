@@ -3,11 +3,11 @@ package org.zstack.header.network.l3
 import org.zstack.header.network.l3.APIAddIpRangeEvent
 
 doc {
-    title "AddIpRange"
+    title "添加IP地址范围(AddIpRange)"
 
-    category "network.l3"
+    category "三层网络"
 
-    desc "在这里填写API描述"
+    desc "添加IP地址范围"
 
     rest {
         request {
@@ -35,7 +35,7 @@ doc {
 				column {
 					name "name"
 					enclosedIn "params"
-					desc "资源名称"
+					desc "三层网络的名称"
 					location "body"
 					type "String"
 					optional false
@@ -45,7 +45,7 @@ doc {
 				column {
 					name "description"
 					enclosedIn "params"
-					desc "资源的详细描述"
+					desc "三层网络的详细描述"
 					location "body"
 					type "String"
 					optional true
@@ -55,7 +55,7 @@ doc {
 				column {
 					name "startIp"
 					enclosedIn "params"
-					desc ""
+					desc "起始地址"
 					location "body"
 					type "String"
 					optional false
@@ -65,7 +65,7 @@ doc {
 				column {
 					name "endIp"
 					enclosedIn "params"
-					desc ""
+					desc "结束地址"
 					location "body"
 					type "String"
 					optional false
@@ -75,7 +75,7 @@ doc {
 				column {
 					name "netmask"
 					enclosedIn "params"
-					desc ""
+					desc "网络掩码"
 					location "body"
 					type "String"
 					optional false
@@ -85,7 +85,7 @@ doc {
 				column {
 					name "gateway"
 					enclosedIn "params"
-					desc ""
+					desc "网关"
 					location "body"
 					type "String"
 					optional false
@@ -95,7 +95,7 @@ doc {
 				column {
 					name "resourceUuid"
 					enclosedIn "params"
-					desc ""
+					desc "资源UUID。若指定，三层网络会使用该字段值作为UUID"
 					location "body"
 					type "String"
 					optional true
@@ -105,7 +105,7 @@ doc {
 				column {
 					name "systemTags"
  					enclosedIn ""
- 					desc ""
+ 					desc "系统标签"
 					location "body"
 					type "List"
 					optional true

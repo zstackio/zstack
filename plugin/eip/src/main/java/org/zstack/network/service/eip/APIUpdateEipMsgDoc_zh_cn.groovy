@@ -3,11 +3,11 @@ package org.zstack.network.service.eip
 import org.zstack.network.service.eip.APIUpdateEipEvent
 
 doc {
-    title "UpdateEip"
+    title "更新弹性IP(UpdateEip)"
 
-    category "eip"
+    category "弹性IP"
 
-    desc "在这里填写API描述"
+    desc "更新弹性IP"
 
     rest {
         request {
@@ -25,7 +25,7 @@ doc {
 				column {
 					name "uuid"
 					enclosedIn "updateEip"
-					desc "资源的UUID，唯一标示该资源"
+					desc "弹性IP的UUID，唯一标示该资源"
 					location "url"
 					type "String"
 					optional false
@@ -35,7 +35,7 @@ doc {
 				column {
 					name "name"
 					enclosedIn "updateEip"
-					desc "资源名称"
+					desc "弹性IP名称"
 					location "body"
 					type "String"
 					optional true
@@ -45,7 +45,7 @@ doc {
 				column {
 					name "description"
 					enclosedIn "updateEip"
-					desc "资源的详细描述"
+					desc "弹性IP的详细描述"
 					location "body"
 					type "String"
 					optional true

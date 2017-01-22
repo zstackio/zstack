@@ -4,11 +4,11 @@ import org.zstack.header.network.l2.APIQueryL2NetworkReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "QueryL2Network"
+    title "查询二层网络(QueryL2Network)"
 
-    category "network.l2"
+    category "二层网络"
 
-    desc "在这里填写API描述"
+    desc "查询二层网络"
 
     rest {
         request {

@@ -4,11 +4,11 @@ import org.zstack.network.service.lb.APIQueryLoadBalancerReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "QueryLoadBalancer"
+    title "查询负载均衡器(QueryLoadBalancer)"
 
-    category "loadBalancer"
+    category "负载均衡"
 
-    desc "在这里填写API描述"
+    desc "查询负载均衡器"
 
     rest {
         request {

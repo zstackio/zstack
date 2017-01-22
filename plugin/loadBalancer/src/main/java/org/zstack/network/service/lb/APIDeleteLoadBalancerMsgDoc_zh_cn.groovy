@@ -3,11 +3,11 @@ package org.zstack.network.service.lb
 import org.zstack.network.service.lb.APIDeleteLoadBalancerEvent
 
 doc {
-    title "DeleteLoadBalancer"
+    title "删除负载均衡器(DeleteLoadBalancer)"
 
-    category "loadBalancer"
+    category "负载均衡"
 
-    desc "在这里填写API描述"
+    desc "删除负载均衡器"
 
     rest {
         request {
@@ -35,7 +35,7 @@ doc {
 				column {
 					name "deleteMode"
  					enclosedIn ""
- 					desc ""
+ 					desc "删除模式"
 					location "body"
 					type "String"
 					optional true

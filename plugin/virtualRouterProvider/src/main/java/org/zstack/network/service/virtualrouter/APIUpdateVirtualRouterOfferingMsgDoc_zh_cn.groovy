@@ -3,11 +3,11 @@ package org.zstack.network.service.virtualrouter
 import org.zstack.header.configuration.APIUpdateInstanceOfferingEvent
 
 doc {
-    title "UpdateVirtualRouterOffering"
+    title "更新虚拟路由器规格(UpdateVirtualRouterOffering)"
 
-    category "virtualRouter"
+    category "虚拟路由器"
 
-    desc "在这里填写API描述"
+    desc "更新虚拟路由器规格"
 
     rest {
         request {
@@ -25,7 +25,7 @@ doc {
 				column {
 					name "isDefault"
 					enclosedIn "params"
-					desc ""
+					desc "默认"
 					location "body"
 					type "Boolean"
 					optional true

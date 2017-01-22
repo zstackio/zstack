@@ -5,7 +5,7 @@ import org.zstack.network.service.lb.LoadBalancerInventory
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "从负载均衡移除云主机网卡返回值"
 
 	ref {
 		name "error"

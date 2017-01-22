@@ -5,7 +5,7 @@ import org.zstack.network.service.virtualrouter.VirtualRouterOfferingInventory
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "虚拟路由器规格清单"
 
 	ref {
 		name "error"

@@ -3,11 +3,11 @@ package org.zstack.header.network.l3
 import org.zstack.header.network.l3.APIAddDnsToL3NetworkEvent
 
 doc {
-    title "AddDnsToL3Network"
+    title "向三层网络添加DNS(AddDnsToL3Network)"
 
-    category "network.l3"
+    category "三层网络"
 
-    desc "在这里填写API描述"
+    desc "向三层网络添加DNS"
 
     rest {
         request {
@@ -35,7 +35,7 @@ doc {
 				column {
 					name "dns"
 					enclosedIn "params"
-					desc ""
+					desc "DNS地址"
 					location "body"
 					type "String"
 					optional false

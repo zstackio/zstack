@@ -3,11 +3,11 @@ package org.zstack.network.service.virtualrouter
 import org.zstack.header.vm.APICreateVmInstanceEvent
 
 doc {
-    title "CreateVirtualRouterVm"
+    title "创建虚拟路由器(CreateVirtualRouterVm)"
 
-    category "virtualRouter"
+    category "虚拟路由器"
 
-    desc "在这里填写API描述"
+    desc "创建虚拟路由器"
 
     rest {
         request {
@@ -25,7 +25,7 @@ doc {
 				column {
 					name "managementNetworkUuid"
 					enclosedIn "params"
-					desc ""
+					desc "管理L3网络UUID"
 					location "body"
 					type "String"
 					optional false
@@ -35,7 +35,7 @@ doc {
 				column {
 					name "publicNetworkUuid"
 					enclosedIn "params"
-					desc ""
+					desc "公有L3网络UUID"
 					location "body"
 					type "String"
 					optional false
@@ -45,7 +45,7 @@ doc {
 				column {
 					name "networkServicesProvided"
 					enclosedIn "params"
-					desc ""
+					desc "网络服务模块"
 					location "body"
 					type "Set"
 					optional false
@@ -85,7 +85,7 @@ doc {
 				column {
 					name "l3NetworkUuids"
 					enclosedIn "params"
-					desc ""
+					desc "三层网络UUID"
 					location "body"
 					type "List"
 					optional false
@@ -95,7 +95,7 @@ doc {
 				column {
 					name "type"
 					enclosedIn "params"
-					desc ""
+					desc "类型"
 					location "body"
 					type "String"
 					optional true
@@ -105,7 +105,7 @@ doc {
 				column {
 					name "rootDiskOfferingUuid"
 					enclosedIn "params"
-					desc ""
+					desc "根磁盘规格UUID"
 					location "body"
 					type "String"
 					optional true
@@ -115,7 +115,7 @@ doc {
 				column {
 					name "dataDiskOfferingUuids"
 					enclosedIn "params"
-					desc ""
+					desc "数据盘规格UUID"
 					location "body"
 					type "List"
 					optional true
@@ -155,7 +155,7 @@ doc {
 				column {
 					name "primaryStorageUuidForRootVolume"
 					enclosedIn "params"
-					desc ""
+					desc "根磁盘主存储UUID"
 					location "body"
 					type "String"
 					optional true
@@ -175,7 +175,7 @@ doc {
 				column {
 					name "defaultL3NetworkUuid"
 					enclosedIn "params"
-					desc ""
+					desc "默认三层网络UUID"
 					location "body"
 					type "String"
 					optional true
@@ -185,7 +185,7 @@ doc {
 				column {
 					name "strategy"
 					enclosedIn "params"
-					desc ""
+					desc "策略"
 					location "body"
 					type "String"
 					optional true
@@ -195,7 +195,7 @@ doc {
 				column {
 					name "resourceUuid"
 					enclosedIn "params"
-					desc ""
+					desc "资源UUID"
 					location "body"
 					type "String"
 					optional true

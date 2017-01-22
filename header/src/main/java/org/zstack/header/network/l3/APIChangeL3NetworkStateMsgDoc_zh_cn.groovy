@@ -3,11 +3,10 @@ package org.zstack.header.network.l3
 import org.zstack.header.network.l3.APIChangeL3NetworkStateEvent
 
 doc {
-    title "ChangeL3NetworkState"
+    title "改变三层网络状态(ChangeL3NetworkState)"
+    category "三层网络"
 
-    category "network.l3"
-
-    desc "在这里填写API描述"
+    desc "改变三层网络状态"
 
     rest {
         request {
@@ -35,7 +34,7 @@ doc {
 				column {
 					name "stateEvent"
 					enclosedIn "changeL3NetworkState"
-					desc ""
+					desc "状态，可选 enable 与 disable"
 					location "body"
 					type "String"
 					optional false
@@ -45,7 +44,7 @@ doc {
 				column {
 					name "systemTags"
  					enclosedIn ""
- 					desc ""
+ 					desc "系统标签"
 					location "body"
 					type "List"
 					optional true
