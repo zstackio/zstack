@@ -1,13 +1,11 @@
 package org.zstack.header.volume
 
-import org.zstack.header.volume.APIGetDataVolumeAttachableVmReply
-
 doc {
     title "GetDataVolumeAttachableVm"
 
     category "volume"
 
-    desc "在这里填写API描述"
+    desc "获取云盘是否能被加载"
 
     rest {
         request {

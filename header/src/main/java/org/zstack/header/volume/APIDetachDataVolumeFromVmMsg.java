@@ -70,7 +70,8 @@ public class APIDetachDataVolumeFromVmMsg extends APIMessage implements VolumeMe
  
     public static APIDetachDataVolumeFromVmMsg __example__() {
         APIDetachDataVolumeFromVmMsg msg = new APIDetachDataVolumeFromVmMsg();
-
+        msg.setUuid(uuid());
+        msg.setVmUuid(uuid());
 
         return msg;
     }

@@ -1,13 +1,11 @@
 package org.zstack.header.volume
 
-import org.zstack.header.volume.APIDeleteDataVolumeEvent
-
 doc {
     title "DeleteDataVolume"
 
     category "volume"
 
-    desc "在这里填写API描述"
+    desc "删除云盘"
 
     rest {
         request {
@@ -25,7 +23,7 @@ doc {
 				column {
 					name "uuid"
 					enclosedIn ""
-					desc "资源的UUID，唯一标示该资源"
+					desc "云盘的资源Uuid"
 					location "url"
 					type "String"
 					optional false
@@ -35,7 +33,7 @@ doc {
 				column {
 					name "deleteMode"
  					enclosedIn ""
- 					desc ""
+ 					desc "删除模式：Permissive(删除前检查)或Enforcing(强行删除)"
 					location "body"
 					type "String"
 					optional true

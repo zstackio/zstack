@@ -100,7 +100,11 @@ public class APICreateDataVolumeMsg extends APICreateMessage {
  
     public static APICreateDataVolumeMsg __example__() {
         APICreateDataVolumeMsg msg = new APICreateDataVolumeMsg();
-
+        msg.setResourceUuid(uuid());
+        msg.setDescription("test-data-volume");
+        msg.setDiskOfferingUuid(uuid());
+        msg.setPrimaryStorageUuid(uuid());
+        msg.setName("test-volume");
 
         return msg;
     }
