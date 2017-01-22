@@ -58,7 +58,14 @@ public class APIDetachPrimaryStorageFromClusterEvent extends APIEvent {
     public static APIDetachPrimaryStorageFromClusterEvent __example__() {
         APIDetachPrimaryStorageFromClusterEvent event = new APIDetachPrimaryStorageFromClusterEvent();
 
+        PrimaryStorageInventory ps = new PrimaryStorageInventory();
+        ps.setName("PS1");
+        ps.setUrl("/zstack_ps");
+        ps.setType("LocalStorage");
+        ps.setState(PrimaryStorageState.Enabled.toString());
+        ps.setStatus(PrimaryStorageStatus.Connected.toString());
 
+        event.setInventory(ps);
         return event;
     }
 

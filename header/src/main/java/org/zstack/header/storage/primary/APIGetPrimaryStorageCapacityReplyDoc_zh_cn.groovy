@@ -1,11 +1,10 @@
 package org.zstack.header.storage.primary
 
 import org.zstack.header.errorcode.ErrorCode
-import org.zstack.header.errorcode.ErrorCode
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "主存储容量信息"
 
 	ref {
 		name "error"

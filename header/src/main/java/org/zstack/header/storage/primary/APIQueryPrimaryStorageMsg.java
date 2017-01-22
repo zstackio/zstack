@@ -5,6 +5,9 @@ import org.zstack.header.query.APIQueryMessage;
 import org.zstack.header.query.AutoQuery;
 import org.zstack.header.rest.RestRequest;
 
+import java.util.Collections;
+import java.util.List;
+
 @AutoQuery(replyClass = APIQueryPrimaryStorageReply.class, inventoryClass = PrimaryStorageInventory.class)
 @RestRequest(
         path = "/primary-storage",
@@ -13,11 +16,8 @@ import org.zstack.header.rest.RestRequest;
 )
 public class APIQueryPrimaryStorageMsg extends APIQueryMessage {
  
-    public static APIQueryPrimaryStorageMsg __example__() {
-        APIQueryPrimaryStorageMsg msg = new APIQueryPrimaryStorageMsg();
-
-
-        return msg;
+    public static List<String> __example__() {
+        return Collections.singletonList("uuid=" + uuid());
     }
 
 }

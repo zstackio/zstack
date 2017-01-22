@@ -27,7 +27,6 @@ public class APIDeletePrimaryStorageEvent extends APIEvent {
     public static APIDeletePrimaryStorageEvent __example__() {
         APIDeletePrimaryStorageEvent event = new APIDeletePrimaryStorageEvent();
 
-
         return event;
     }
 

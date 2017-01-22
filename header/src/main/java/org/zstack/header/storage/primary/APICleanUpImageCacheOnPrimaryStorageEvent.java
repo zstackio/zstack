@@ -18,7 +18,6 @@ public class APICleanUpImageCacheOnPrimaryStorageEvent extends APIEvent {
     public static APICleanUpImageCacheOnPrimaryStorageEvent __example__() {
         APICleanUpImageCacheOnPrimaryStorageEvent event = new APICleanUpImageCacheOnPrimaryStorageEvent();
 
-
         return event;
     }
 

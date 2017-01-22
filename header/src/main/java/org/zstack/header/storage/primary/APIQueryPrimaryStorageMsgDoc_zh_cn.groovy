@@ -1,6 +1,5 @@
 package org.zstack.header.storage.primary
 
-import org.zstack.header.storage.primary.APIQueryPrimaryStorageReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
@@ -8,7 +7,7 @@ doc {
 
     category "storage.primary"
 
-    desc "在这里填写API描述"
+    desc "查询主存储"
 
     rest {
         request {

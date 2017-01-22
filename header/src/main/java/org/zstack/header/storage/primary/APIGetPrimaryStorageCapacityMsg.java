@@ -7,6 +7,7 @@ import org.zstack.header.message.APISyncCallMessage;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.zone.ZoneVO;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -61,6 +62,7 @@ public class APIGetPrimaryStorageCapacityMsg extends APISyncCallMessage {
     public static APIGetPrimaryStorageCapacityMsg __example__() {
         APIGetPrimaryStorageCapacityMsg msg = new APIGetPrimaryStorageCapacityMsg();
 
+        msg.setPrimaryStorageUuids(Collections.singletonList(uuid()));
 
         return msg;
     }

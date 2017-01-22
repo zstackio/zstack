@@ -37,7 +37,6 @@ public class APIGetPrimaryStorageTypesMsg extends APISyncCallMessage {
     public static APIGetPrimaryStorageTypesMsg __example__() {
         APIGetPrimaryStorageTypesMsg msg = new APIGetPrimaryStorageTypesMsg();
 
-
         return msg;
     }
 

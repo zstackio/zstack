@@ -5,6 +5,8 @@ import org.zstack.header.rest.RestResponse;
 
 import java.util.List;
 
+import static java.util.Arrays.asList;
+
 /**
  * @apiResult api reply for message :ref:`APIGetPrimaryStorageTypesMsg`
  * @example {
@@ -36,6 +38,9 @@ public class APIGetPrimaryStorageTypesReply extends APIReply {
     public static APIGetPrimaryStorageTypesReply __example__() {
         APIGetPrimaryStorageTypesReply reply = new APIGetPrimaryStorageTypesReply();
 
+        reply.setPrimaryStorageTypes(asList(
+                "LocalStorage", "NFS", "SharedMountPoint", "Ceph"
+        ));
 
         return reply;
     }

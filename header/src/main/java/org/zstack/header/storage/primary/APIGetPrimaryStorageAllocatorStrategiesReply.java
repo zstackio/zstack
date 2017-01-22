@@ -5,6 +5,8 @@ import org.zstack.header.rest.RestResponse;
 
 import java.util.List;
 
+import static java.util.Arrays.asList;
+
 /**
  * @apiResult api reply for message :ref:`APIGetPrimaryStorageAllocatorStrategiesMsg`
  * @example {
@@ -36,6 +38,9 @@ public class APIGetPrimaryStorageAllocatorStrategiesReply extends APIReply {
     public static APIGetPrimaryStorageAllocatorStrategiesReply __example__() {
         APIGetPrimaryStorageAllocatorStrategiesReply reply = new APIGetPrimaryStorageAllocatorStrategiesReply();
 
+        reply.setPrimaryStorageAllocatorStrategies(
+                asList("DefaultPrimaryStorageAllocationStrategy",
+                        "LocalStorageAllocatorStrategy"));
 
         return reply;
     }

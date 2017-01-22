@@ -68,6 +68,7 @@ public class APIDeletePrimaryStorageMsg extends APIDeleteMessage implements Prim
     public static APIDeletePrimaryStorageMsg __example__() {
         APIDeletePrimaryStorageMsg msg = new APIDeletePrimaryStorageMsg();
 
+        msg.setUuid(uuid());
 
         return msg;
     }

@@ -1,13 +1,11 @@
 package org.zstack.header.storage.primary
 
-import org.zstack.header.storage.primary.APICleanUpImageCacheOnPrimaryStorageEvent
-
 doc {
-    title "CleanUpImageCacheOnPrimaryStorage"
+    title "清楚主存储镜像缓存(CleanUpImageCacheOnPrimaryStorage)"
 
     category "storage.primary"
 
-    desc "在这里填写API描述"
+    desc "尝试从主存储清除镜像缓存"
 
     rest {
         request {
@@ -25,7 +23,7 @@ doc {
 				column {
 					name "uuid"
 					enclosedIn "cleanUpImageCacheOnPrimaryStorage"
-					desc "资源的UUID，唯一标示该资源"
+					desc "主存储的UUID，唯一标示该资源"
 					location "url"
 					type "String"
 					optional false
@@ -34,8 +32,8 @@ doc {
 				}
 				column {
 					name "systemTags"
- 					enclosedIn ""
- 					desc ""
+ 					enclosedIn "params"
+ 					desc "系统标签"
 					location "body"
 					type "List"
 					optional true
@@ -44,7 +42,7 @@ doc {
 				}
 				column {
 					name "userTags"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "用户标签"
 					location "body"
 					type "List"
