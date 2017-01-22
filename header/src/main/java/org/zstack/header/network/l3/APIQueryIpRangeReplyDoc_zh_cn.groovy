@@ -5,7 +5,7 @@ import org.zstack.header.network.l3.IpRangeInventory
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "三层网络清单"
 
 	ref {
 		name "error"

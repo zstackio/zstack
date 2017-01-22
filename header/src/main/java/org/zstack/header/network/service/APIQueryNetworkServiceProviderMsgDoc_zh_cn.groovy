@@ -4,11 +4,11 @@ import org.zstack.header.network.service.APIQueryNetworkServiceProviderReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "QueryNetworkServiceProvider"
+    title "查询网络服务模块(QueryNetworkServiceProvider)"
 
     category "network.service"
 
-    desc "在这里填写API描述"
+    desc "查询网络服务模块"
 
     rest {
         request {

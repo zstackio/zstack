@@ -5,7 +5,7 @@ import org.zstack.header.errorcode.ErrorCode
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "IP地址容量返回值"
 
 	ref {
 		name "error"
@@ -17,19 +17,19 @@ doc {
 	}
 	field {
 		name "totalCapacity"
-		desc ""
+		desc "IP地址容量"
 		type "long"
 		since "0.6"
 	}
 	field {
 		name "availableCapacity"
-		desc ""
+		desc "可用IP地址容量"
 		type "long"
 		since "0.6"
 	}
 	field {
 		name "success"
-		desc ""
+		desc "成功"
 		type "boolean"
 		since "0.6"
 	}

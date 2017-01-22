@@ -3,11 +3,11 @@ package org.zstack.header.network.l3
 import org.zstack.header.network.l3.APIUpdateIpRangeEvent
 
 doc {
-    title "UpdateIpRange"
+    title "更新IP地址范围(UpdateIpRange)"
 
-    category "network.l3"
+    category "三层网络"
 
-    desc "在这里填写API描述"
+    desc "更新IP地址范围"
 
     rest {
         request {
@@ -35,7 +35,7 @@ doc {
 				column {
 					name "name"
 					enclosedIn "updateIpRange"
-					desc "资源名称"
+					desc "三层网络的名称"
 					location "body"
 					type "String"
 					optional true
@@ -45,7 +45,7 @@ doc {
 				column {
 					name "description"
 					enclosedIn "updateIpRange"
-					desc "资源的详细描述"
+					desc "三层网络的详细描述"
 					location "body"
 					type "String"
 					optional true
@@ -55,7 +55,7 @@ doc {
 				column {
 					name "systemTags"
  					enclosedIn ""
- 					desc ""
+ 					desc "系统标签"
 					location "body"
 					type "List"
 					optional true

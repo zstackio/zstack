@@ -5,7 +5,7 @@ import org.zstack.appliancevm.ApplianceVmInventory
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "重连虚拟路由器返回值"
 
 	ref {
 		name "error"

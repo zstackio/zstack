@@ -3,11 +3,11 @@ package org.zstack.header.network.service
 import org.zstack.header.network.service.APIGetNetworkServiceTypesReply
 
 doc {
-    title "GetNetworkServiceTypes"
+    title "获取网络服务类型(GetNetworkServiceTypes)"
 
     category "network.service"
 
-    desc "在这里填写API描述"
+    desc "获取网络服务类型"
 
     rest {
         request {

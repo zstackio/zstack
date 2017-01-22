@@ -5,7 +5,7 @@ import org.zstack.network.service.eip.EipInventory
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "Eip清单"
 
 	ref {
 		name "error"

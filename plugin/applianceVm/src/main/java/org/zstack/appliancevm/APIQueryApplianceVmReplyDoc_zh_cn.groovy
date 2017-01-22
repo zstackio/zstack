@@ -5,7 +5,7 @@ import org.zstack.appliancevm.ApplianceVmInventory
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "系统云主机清单"
 
 	ref {
 		name "error"

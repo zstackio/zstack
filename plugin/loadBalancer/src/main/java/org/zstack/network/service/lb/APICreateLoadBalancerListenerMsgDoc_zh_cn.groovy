@@ -3,11 +3,11 @@ package org.zstack.network.service.lb
 import org.zstack.network.service.lb.APICreateLoadBalancerListenerEvent
 
 doc {
-    title "CreateLoadBalancerListener"
+    title "创建负载均衡监听器(CreateLoadBalancerListener)"
 
-    category "loadBalancer"
+    category "负载均衡"
 
-    desc "在这里填写API描述"
+    desc "创建负载均衡监听器"
 
     rest {
         request {
@@ -53,7 +53,7 @@ doc {
 					
 				}
 				column {
-					name "instancePort"
+					name "云主机端口"
 					enclosedIn "params"
 					desc ""
 					location "body"
@@ -65,7 +65,7 @@ doc {
 				column {
 					name "loadBalancerPort"
 					enclosedIn "params"
-					desc ""
+					desc "负载均衡器端口"
 					location "body"
 					type "int"
 					optional false
@@ -75,7 +75,7 @@ doc {
 				column {
 					name "protocol"
 					enclosedIn "params"
-					desc ""
+					desc "协议"
 					location "body"
 					type "String"
 					optional true
@@ -85,7 +85,7 @@ doc {
 				column {
 					name "resourceUuid"
 					enclosedIn "params"
-					desc ""
+					desc "资源UUID"
 					location "body"
 					type "String"
 					optional true

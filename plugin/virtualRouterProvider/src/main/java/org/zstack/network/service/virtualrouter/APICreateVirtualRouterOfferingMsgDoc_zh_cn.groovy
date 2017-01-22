@@ -3,11 +3,11 @@ package org.zstack.network.service.virtualrouter
 import org.zstack.header.configuration.APICreateInstanceOfferingEvent
 
 doc {
-    title "CreateVirtualRouterOffering"
+    title "创建虚拟路由器规格(CreateVirtualRouterOffering)"
 
-    category "virtualRouter"
+    category "虚拟路由器"
 
-    desc "在这里填写API描述"
+    desc "创建虚拟路由器规格"
 
     rest {
         request {
@@ -35,7 +35,7 @@ doc {
 				column {
 					name "managementNetworkUuid"
 					enclosedIn "params"
-					desc ""
+					desc "管理L3网络UUID"
 					location "body"
 					type "String"
 					optional false
@@ -55,7 +55,7 @@ doc {
 				column {
 					name "publicNetworkUuid"
 					enclosedIn "params"
-					desc ""
+					desc "公有L3网络UUID"
 					location "body"
 					type "String"
 					optional true
@@ -65,7 +65,7 @@ doc {
 				column {
 					name "isDefault"
 					enclosedIn "params"
-					desc ""
+					desc "默认"
 					location "body"
 					type "Boolean"
 					optional true
@@ -95,7 +95,7 @@ doc {
 				column {
 					name "cpuNum"
 					enclosedIn "params"
-					desc ""
+					desc "CPU数量"
 					location "body"
 					type "int"
 					optional false
@@ -115,7 +115,7 @@ doc {
 				column {
 					name "memorySize"
 					enclosedIn "params"
-					desc ""
+					desc "内存大小"
 					location "body"
 					type "long"
 					optional false
@@ -125,7 +125,7 @@ doc {
 				column {
 					name "allocatorStrategy"
 					enclosedIn "params"
-					desc ""
+					desc "分配策略"
 					location "body"
 					type "String"
 					optional true
@@ -135,7 +135,7 @@ doc {
 				column {
 					name "sortKey"
 					enclosedIn "params"
-					desc ""
+					desc "排序主键"
 					location "body"
 					type "int"
 					optional true
@@ -145,7 +145,7 @@ doc {
 				column {
 					name "type"
 					enclosedIn "params"
-					desc ""
+					desc "类型"
 					location "body"
 					type "String"
 					optional true
@@ -155,7 +155,7 @@ doc {
 				column {
 					name "resourceUuid"
 					enclosedIn "params"
-					desc ""
+					desc "资源UUID"
 					location "body"
 					type "String"
 					optional true

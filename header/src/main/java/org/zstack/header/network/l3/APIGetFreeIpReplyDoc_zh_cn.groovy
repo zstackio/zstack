@@ -5,7 +5,7 @@ import org.zstack.header.network.l3.FreeIpInventory
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "空闲IP清单"
 
 	ref {
 		name "error"

@@ -3,11 +3,11 @@ package org.zstack.header.network.service
 import org.zstack.header.network.service.APIDetachNetworkServiceFromL3NetworkEvent
 
 doc {
-    title "DetachNetworkServiceFromL3Network"
+    title "从三层网络卸载网络服务(DetachNetworkServiceFromL3Network)"
 
-    category "network.l3"
+    category "三层网络"
 
-    desc "在这里填写API描述"
+    desc "从三层网络卸载网络服务"
 
     rest {
         request {
@@ -35,7 +35,7 @@ doc {
 				column {
 					name "networkServices"
 					enclosedIn "params"
-					desc ""
+					desc "网络服务"
 					location "body"
 					type "Map"
 					optional false
@@ -45,7 +45,7 @@ doc {
 				column {
 					name "systemTags"
  					enclosedIn ""
- 					desc ""
+ 					desc "系统标签"
 					location "body"
 					type "List"
 					optional true

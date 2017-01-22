@@ -3,11 +3,11 @@ package org.zstack.network.service.lb
 import org.zstack.network.service.lb.APICreateLoadBalancerEvent
 
 doc {
-    title "CreateLoadBalancer"
+    title "创建负载均衡器(CreateLoadBalancer)"
 
-    category "loadBalancer"
+    category "负载均衡"
 
-    desc "在这里填写API描述"
+    desc "创建负载均衡器"
 
     rest {
         request {
@@ -55,7 +55,7 @@ doc {
 				column {
 					name "resourceUuid"
 					enclosedIn ""
-					desc ""
+					desc "资源UUID"
 					location "body"
 					type "String"
 					optional true

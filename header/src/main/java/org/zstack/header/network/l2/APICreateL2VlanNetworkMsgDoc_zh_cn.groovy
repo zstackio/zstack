@@ -3,11 +3,11 @@ package org.zstack.header.network.l2
 import org.zstack.header.network.l2.APICreateL2NetworkEvent
 
 doc {
-    title "CreateL2VlanNetwork"
+    title "创建Vlan二层网络(CreateL2VlanNetwork)"
 
-    category "network.l2"
+    category "二层网络"
 
-    desc "在这里填写API描述"
+    desc "创建Vlan二层网络"
 
     rest {
         request {
@@ -25,7 +25,7 @@ doc {
 				column {
 					name "vlan"
 					enclosedIn "params"
-					desc ""
+					desc "Vlan号"
 					location "body"
 					type "Integer"
 					optional false
@@ -35,7 +35,7 @@ doc {
 				column {
 					name "name"
 					enclosedIn "params"
-					desc "资源名称"
+					desc "普通二层网络名称"
 					location "body"
 					type "String"
 					optional false
@@ -45,7 +45,7 @@ doc {
 				column {
 					name "description"
 					enclosedIn "params"
-					desc "资源的详细描述"
+					desc "普通二层网络的详细描述"
 					location "body"
 					type "String"
 					optional true
@@ -65,7 +65,7 @@ doc {
 				column {
 					name "physicalInterface"
 					enclosedIn "params"
-					desc ""
+					desc "物理网卡"
 					location "body"
 					type "String"
 					optional false
@@ -75,7 +75,7 @@ doc {
 				column {
 					name "type"
 					enclosedIn "params"
-					desc ""
+					desc "二层网络类型"
 					location "body"
 					type "String"
 					optional true
@@ -85,7 +85,7 @@ doc {
 				column {
 					name "resourceUuid"
 					enclosedIn "params"
-					desc ""
+					desc "资源UUID。若指定，二层网络会使用该字段值作为UUID"
 					location "body"
 					type "String"
 					optional true
@@ -95,7 +95,7 @@ doc {
 				column {
 					name "systemTags"
  					enclosedIn ""
- 					desc ""
+ 					desc "系统标签"
 					location "body"
 					type "List"
 					optional true

@@ -3,11 +3,11 @@ package org.zstack.network.service.lb
 import org.zstack.network.service.lb.APIDeleteLoadBalancerListenerEvent
 
 doc {
-    title "DeleteLoadBalancerListener"
+    title "删除负载均衡监听器(DeleteLoadBalancerListener)"
 
-    category "loadBalancer"
+    category "负载均衡"
 
-    desc "在这里填写API描述"
+    desc "删除负载均衡监听器"
 
     rest {
         request {

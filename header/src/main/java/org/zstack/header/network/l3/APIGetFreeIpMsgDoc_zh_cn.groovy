@@ -3,11 +3,11 @@ package org.zstack.header.network.l3
 import org.zstack.header.network.l3.APIGetFreeIpReply
 
 doc {
-    title "GetFreeIp"
+    title "获取空闲IP(GetFreeIp)"
 
-    category "network.l3"
+    category "三层网络"
 
-    desc "在这里填写API描述"
+    desc "获取空闲IP"
 
     rest {
         request {
@@ -47,7 +47,7 @@ doc {
 				column {
 					name "start"
 					enclosedIn "params"
-					desc ""
+					desc "起始值"
 					location "query"
 					type "String"
 					optional true
@@ -57,7 +57,7 @@ doc {
 				column {
 					name "limit"
 					enclosedIn "params"
-					desc ""
+					desc "数量限制"
 					location "query"
 					type "int"
 					optional true
