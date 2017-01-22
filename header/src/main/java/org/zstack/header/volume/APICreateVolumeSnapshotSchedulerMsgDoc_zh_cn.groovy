@@ -9,8 +9,7 @@ doc {
 
     rest {
         request {
-			url "POST /v1/volumes/schedulers/create-volume-snapshots"
-
+			url "POST /v1/volumes/{volumeUuid}/schedulers/creating-volume-snapshots"
 
             header (OAuth: 'the-session-uuid')
 

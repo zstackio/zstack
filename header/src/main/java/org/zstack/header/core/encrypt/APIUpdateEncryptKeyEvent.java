@@ -1,6 +1,7 @@
 package org.zstack.header.core.encrypt;
 
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.rest.RestResponse;
 
 /**
  * Created by mingjian.deng on 16/12/28.
