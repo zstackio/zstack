@@ -37,7 +37,6 @@ public class APIGetPrimaryStorageAllocatorStrategiesMsg extends APISyncCallMessa
     public static APIGetPrimaryStorageAllocatorStrategiesMsg __example__() {
         APIGetPrimaryStorageAllocatorStrategiesMsg msg = new APIGetPrimaryStorageAllocatorStrategiesMsg();
 
-
         return msg;
     }
 

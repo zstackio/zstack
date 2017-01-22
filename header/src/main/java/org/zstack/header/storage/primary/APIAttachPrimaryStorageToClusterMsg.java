@@ -80,6 +80,8 @@ public class APIAttachPrimaryStorageToClusterMsg extends APIMessage implements P
     public static APIAttachPrimaryStorageToClusterMsg __example__() {
         APIAttachPrimaryStorageToClusterMsg msg = new APIAttachPrimaryStorageToClusterMsg();
 
+        msg.setPrimaryStorageUuid(uuid());
+        msg.setClusterUuid(uuid());
 
         return msg;
     }

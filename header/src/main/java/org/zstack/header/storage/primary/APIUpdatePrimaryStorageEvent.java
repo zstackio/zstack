@@ -3,6 +3,8 @@ package org.zstack.header.storage.primary;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.rest.RestResponse;
 
+import java.util.Collections;
+
 /**
  * Created by frank on 6/14/2015.
  */
@@ -28,7 +30,15 @@ public class APIUpdatePrimaryStorageEvent extends APIEvent {
     public static APIUpdatePrimaryStorageEvent __example__() {
         APIUpdatePrimaryStorageEvent event = new APIUpdatePrimaryStorageEvent();
 
+        PrimaryStorageInventory ps = new PrimaryStorageInventory();
+        ps.setName("New PS1");
+        ps.setUrl("/zstack_ps");
+        ps.setType("LocalStorage");
+        ps.setAttachedClusterUuids(Collections.singletonList(uuid()));
+        ps.setState(PrimaryStorageState.Enabled.toString());
+        ps.setStatus(PrimaryStorageStatus.Connected.toString());
 
+        event.setInventory(ps);
         return event;
     }
 

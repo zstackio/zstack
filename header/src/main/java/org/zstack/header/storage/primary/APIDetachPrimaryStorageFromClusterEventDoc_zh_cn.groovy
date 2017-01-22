@@ -1,11 +1,10 @@
 package org.zstack.header.storage.primary
 
 import org.zstack.header.errorcode.ErrorCode
-import org.zstack.header.storage.primary.PrimaryStorageInventory
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "主存储清单"
 
 	ref {
 		name "error"

@@ -87,6 +87,8 @@ public class APIChangePrimaryStorageStateMsg extends APIMessage implements Prima
     public static APIChangePrimaryStorageStateMsg __example__() {
         APIChangePrimaryStorageStateMsg msg = new APIChangePrimaryStorageStateMsg();
 
+        msg.setUuid(uuid());
+        msg.setStateEvent(PrimaryStorageState.Disabled.toString());
 
         return msg;
     }

@@ -1,11 +1,11 @@
 package org.zstack.header.storage.primary
 
 doc {
-    title "重连主存储(ReconnectPrimaryStorage)"
+    title "刷新主存储容量(SyncPrimaryStorageCapacity)"
 
     category "storage.primary"
 
-    desc "重连主存储"
+    desc "刷新主存储容量"
 
     rest {
         request {
@@ -14,17 +14,17 @@ doc {
 
             header (OAuth: 'the-session-uuid')
 
-            clz APIReconnectPrimaryStorageMsg.class
+            clz APISyncPrimaryStorageCapacityMsg.class
 
             desc ""
             
 			params {
 
 				column {
-					name "uuid"
-					enclosedIn "reconnectPrimaryStorage"
-					desc "主存储的UUID，唯一标示该资源"
-					location "url"
+					name "primaryStorageUuid"
+					enclosedIn "syncPrimaryStorageCapacity"
+					desc "主存储UUID"
+					location "body"
 					type "String"
 					optional false
 					since "0.6"
@@ -54,7 +54,7 @@ doc {
         }
 
         response {
-            clz APIReconnectPrimaryStorageEvent.class
+            clz APISyncPrimaryStorageCapacityEvent.class
         }
     }
 }

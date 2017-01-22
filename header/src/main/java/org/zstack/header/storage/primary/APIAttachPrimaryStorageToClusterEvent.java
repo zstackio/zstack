@@ -1,8 +1,9 @@
 package org.zstack.header.storage.primary;
 
 import org.zstack.header.message.APIEvent;
-import org.zstack.header.rest.RestRequest;
 import org.zstack.header.rest.RestResponse;
+
+import java.util.Collections;
 
 /**
  * @apiResult api event for message :ref:`APIAttachPrimaryStorageMsg`
@@ -56,7 +57,15 @@ public class APIAttachPrimaryStorageToClusterEvent extends APIEvent {
     public static APIAttachPrimaryStorageToClusterEvent __example__() {
         APIAttachPrimaryStorageToClusterEvent event = new APIAttachPrimaryStorageToClusterEvent();
 
+        PrimaryStorageInventory ps = new PrimaryStorageInventory();
+        ps.setName("PS1");
+        ps.setUrl("/zstack_ps");
+        ps.setType("LocalStorage");
+        ps.setAttachedClusterUuids(Collections.singletonList(uuid()));
+        ps.setState(PrimaryStorageState.Enabled.toString());
+        ps.setStatus(PrimaryStorageStatus.Connected.toString());
 
+        event.setInventory(ps);
         return event;
     }
 

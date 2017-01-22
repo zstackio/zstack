@@ -1,13 +1,11 @@
 package org.zstack.header.storage.primary
 
-import org.zstack.header.storage.primary.APIAttachPrimaryStorageToClusterEvent
-
 doc {
-    title "AttachPrimaryStorageToCluster"
+    title "向集群添加主存储(AttachPrimaryStorageToCluster)"
 
     category "storage.primary"
 
-    desc "在这里填写API描述"
+    desc "向集群添加主存储"
 
     rest {
         request {
@@ -24,7 +22,7 @@ doc {
 
 				column {
 					name "clusterUuid"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "集群UUID"
 					location "url"
 					type "String"
@@ -34,7 +32,7 @@ doc {
 				}
 				column {
 					name "primaryStorageUuid"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "主存储UUID"
 					location "url"
 					type "String"
@@ -44,7 +42,7 @@ doc {
 				}
 				column {
 					name "systemTags"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "系统标签"
 					location "body"
 					type "List"
@@ -54,7 +52,7 @@ doc {
 				}
 				column {
 					name "userTags"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "用户标签"
 					location "body"
 					type "List"

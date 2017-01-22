@@ -1,13 +1,11 @@
 package org.zstack.header.storage.primary
 
-import org.zstack.header.storage.primary.APIAddPrimaryStorageEvent
-
 doc {
-    title "AddPrimaryStorage"
+    title "添加主存储(AddPrimaryStorage)"
 
     category "storage.primary"
 
-    desc "在这里填写API描述"
+    desc "添加主存储"
 
     rest {
         request {
@@ -25,7 +23,7 @@ doc {
 				column {
 					name "url"
 					enclosedIn "params"
-					desc ""
+					desc "主存储路径"
 					location "body"
 					type "String"
 					optional false
@@ -35,7 +33,7 @@ doc {
 				column {
 					name "name"
 					enclosedIn "params"
-					desc "资源名称"
+					desc "主存储名称"
 					location "body"
 					type "String"
 					optional false
@@ -45,7 +43,7 @@ doc {
 				column {
 					name "description"
 					enclosedIn "params"
-					desc "资源的详细描述"
+					desc "主存储的详细描述"
 					location "body"
 					type "String"
 					optional true
@@ -55,7 +53,7 @@ doc {
 				column {
 					name "type"
 					enclosedIn "params"
-					desc ""
+					desc "主存储类型"
 					location "body"
 					type "String"
 					optional true
@@ -75,7 +73,7 @@ doc {
 				column {
 					name "resourceUuid"
 					enclosedIn "params"
-					desc ""
+					desc "资源UUID。若指定，主存储会使用该字段值作为UUID。"
 					location "body"
 					type "String"
 					optional true
@@ -84,7 +82,7 @@ doc {
 				}
 				column {
 					name "systemTags"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "系统标签"
 					location "body"
 					type "List"
@@ -94,7 +92,7 @@ doc {
 				}
 				column {
 					name "userTags"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "用户标签"
 					location "body"
 					type "List"

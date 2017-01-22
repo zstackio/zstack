@@ -34,6 +34,7 @@ public class APIReconnectPrimaryStorageMsg extends APIMessage implements Primary
     public static APIReconnectPrimaryStorageMsg __example__() {
         APIReconnectPrimaryStorageMsg msg = new APIReconnectPrimaryStorageMsg();
 
+        msg.setUuid(uuid());
 
         return msg;
     }

@@ -13,11 +13,4 @@ public class APIListPrimaryStorageMsg extends APIListMessage {
         super(uuids);
     }
  
-    public static APIListPrimaryStorageMsg __example__() {
-        APIListPrimaryStorageMsg msg = new APIListPrimaryStorageMsg();
-
-
-        return msg;
-    }
-
 }

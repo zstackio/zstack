@@ -4,21 +4,21 @@ import org.zstack.header.errorcode.ErrorCode
 
 doc {
 
-	title "主存储清单列表"
+	title "主存储清单"
 
 	ref {
 		name "error"
-		path "org.zstack.header.storage.primary.APIQueryPrimaryStorageReply.error"
+		path "org.zstack.header.storage.primary.APISyncPrimaryStorageCapacityEvent.error"
 		desc "错误码，若不为null，则表示操作失败, 操作成功时该字段为null",false
 		type "ErrorCode"
 		since "0.6"
 		clz ErrorCode.class
 	}
 	ref {
-		name "inventories"
-		path "org.zstack.header.storage.primary.APIQueryPrimaryStorageReply.inventories"
+		name "inventory"
+		path "org.zstack.header.storage.primary.APISyncPrimaryStorageCapacityEvent.inventory"
 		desc "null"
-		type "List"
+		type "PrimaryStorageInventory"
 		since "0.6"
 		clz PrimaryStorageInventory.class
 	}
