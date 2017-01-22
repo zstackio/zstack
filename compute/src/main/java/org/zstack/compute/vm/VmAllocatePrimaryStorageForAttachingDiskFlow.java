@@ -17,6 +17,8 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.volume.VolumeInventory;
+import org.zstack.utils.DebugUtils;
+import org.zstack.utils.gson.JSONObjectUtil;
 
 import java.util.Map;
 
@@ -34,7 +36,9 @@ public class VmAllocatePrimaryStorageForAttachingDiskFlow implements Flow {
         final VolumeInventory volume = (VolumeInventory) data.get(VmInstanceConstant.Params.AttachingVolumeInventory.toString());
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
         String hostUuid = spec.getVmInventory().getHostUuid() == null ? spec.getVmInventory().getLastHostUuid() : spec.getVmInventory().getHostUuid();
-        assert hostUuid != null;
+        DebugUtils.Assert(hostUuid != null, String.format(
+                "hostUuid from VmInventory should not be null, the vmInventory is [%s]",
+                JSONObjectUtil.toJsonString(spec.getVmInventory())));
         HostVO hvo = dbf.findByUuid(hostUuid, HostVO.class);
         HostInventory hinv = HostInventory.valueOf(hvo);
         spec.setDestHost(hinv);
