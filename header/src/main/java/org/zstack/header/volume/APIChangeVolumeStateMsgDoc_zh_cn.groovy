@@ -1,13 +1,11 @@
 package org.zstack.header.volume
 
-import org.zstack.header.volume.APIChangeVolumeStateEvent
-
 doc {
     title "ChangeVolumeState"
 
     category "volume"
 
-    desc "在这里填写API描述"
+    desc "开启或关闭云盘"
 
     rest {
         request {
@@ -25,7 +23,7 @@ doc {
 				column {
 					name "uuid"
 					enclosedIn "changeVolumeState"
-					desc "资源的UUID，唯一标示该资源"
+					desc "云盘资源Uuid"
 					location "url"
 					type "String"
 					optional false
@@ -35,7 +33,7 @@ doc {
 				column {
 					name "stateEvent"
 					enclosedIn "changeVolumeState"
-					desc ""
+					desc "开启或关闭"
 					location "body"
 					type "String"
 					optional false

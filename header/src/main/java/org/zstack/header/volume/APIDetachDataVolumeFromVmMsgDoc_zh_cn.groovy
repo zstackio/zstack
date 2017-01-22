@@ -1,13 +1,11 @@
 package org.zstack.header.volume
 
-import org.zstack.header.volume.APIDetachDataVolumeFromVmEvent
-
 doc {
     title "DetachDataVolumeFromVm"
 
     category "volume"
 
-    desc "在这里填写API描述"
+    desc "从云主机上卸载云盘"
 
     rest {
         request {
@@ -25,7 +23,7 @@ doc {
 				column {
 					name "uuid"
 					enclosedIn ""
-					desc "资源的UUID，唯一标示该资源"
+					desc "云盘的UUID，唯一标示该资源"
 					location "url"
 					type "String"
 					optional false
@@ -35,7 +33,7 @@ doc {
 				column {
 					name "vmUuid"
 					enclosedIn ""
-					desc ""
+					desc "云主机的UUID"
 					location "body"
 					type "String"
 					optional true

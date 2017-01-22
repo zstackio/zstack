@@ -4,7 +4,7 @@ import org.zstack.header.errorcode.ErrorCode
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "获取到的任务进度"
 
 	ref {
 		name "error"
@@ -34,13 +34,13 @@ doc {
 	}
 	field {
 		name "createDate"
-		desc "创建时间"
+		desc "任务第一次汇报的时间"
 		type "Timestamp"
 		since "0.6"
 	}
 	field {
 		name "lastOpDate"
-		desc "最后一次修改时间"
+		desc "最后一次任务汇报时间"
 		type "Timestamp"
 		since "0.6"
 	}

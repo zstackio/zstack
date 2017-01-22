@@ -5,7 +5,7 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotInventory
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "快照清单"
 
 	ref {
 		name "error"
@@ -18,7 +18,7 @@ doc {
 	ref {
 		name "inventory"
 		path "org.zstack.header.volume.APICreateVolumeSnapshotEvent.inventory"
-		desc "null"
+		desc "快照清单"
 		type "VolumeSnapshotInventory"
 		since "0.6"
 		clz VolumeSnapshotInventory.class
