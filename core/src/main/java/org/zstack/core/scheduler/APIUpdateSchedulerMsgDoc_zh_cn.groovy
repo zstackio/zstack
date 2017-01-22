@@ -7,7 +7,7 @@ doc {
 
     category "core.scheduler"
 
-    desc "在这里填写API描述"
+    desc "更新定时任务"
 
     rest {
         request {
@@ -18,8 +18,8 @@ doc {
 
             clz APIUpdateSchedulerMsg.class
 
-            desc ""
-            
+			desc "更新定时任务"
+
 			params {
 
 				column {
@@ -35,7 +35,7 @@ doc {
 				column {
 					name "schedulerName"
 					enclosedIn ""
-					desc ""
+					desc "定时任务名称"
 					location "body"
 					type "String"
 					optional true
@@ -45,7 +45,7 @@ doc {
 				column {
 					name "schedulerDescription"
 					enclosedIn ""
-					desc ""
+					desc "定时任务描述"
 					location "body"
 					type "String"
 					optional true
@@ -55,7 +55,7 @@ doc {
 				column {
 					name "systemTags"
 					enclosedIn ""
-					desc ""
+					desc "系统标签"
 					location "body"
 					type "List"
 					optional true
@@ -65,7 +65,7 @@ doc {
 				column {
 					name "userTags"
 					enclosedIn ""
-					desc ""
+					desc "用户标签"
 					location "body"
 					type "List"
 					optional true

@@ -7,7 +7,7 @@ doc {
 
     category "core.scheduler"
 
-    desc "在这里填写API描述"
+    desc "改变定时任务状态"
 
     rest {
         request {
@@ -18,8 +18,8 @@ doc {
 
             clz APIChangeSchedulerStateMsg.class
 
-            desc ""
-            
+			desc "改变定时任务状态"
+
 			params {
 
 				column {
@@ -35,7 +35,7 @@ doc {
 				column {
 					name "stateEvent"
 					enclosedIn "changeSchedulerState"
-					desc ""
+					desc "要设置的定时任务状态"
 					location "body"
 					type "String"
 					optional false
@@ -45,7 +45,7 @@ doc {
 				column {
 					name "systemTags"
 					enclosedIn ""
-					desc ""
+					desc "系统标签"
 					location "body"
 					type "List"
 					optional true
@@ -55,7 +55,7 @@ doc {
 				column {
 					name "userTags"
 					enclosedIn ""
-					desc ""
+					desc "用户标签"
 					location "body"
 					type "List"
 					optional true

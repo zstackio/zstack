@@ -54,8 +54,8 @@ public class APIChangeSchedulerStateMsg  extends APIMessage implements Scheduler
  
     public static APIChangeSchedulerStateMsg __example__() {
         APIChangeSchedulerStateMsg msg = new APIChangeSchedulerStateMsg();
-
-
+        msg.setUuid(uuid());
+        msg.setStateEvent("disable");
         return msg;
     }
 
