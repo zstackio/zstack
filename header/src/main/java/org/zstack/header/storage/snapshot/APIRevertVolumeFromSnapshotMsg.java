@@ -96,6 +96,7 @@ public class APIRevertVolumeFromSnapshotMsg extends APIMessage implements Volume
     public static APIRevertVolumeFromSnapshotMsg __example__() {
         APIRevertVolumeFromSnapshotMsg msg = new APIRevertVolumeFromSnapshotMsg();
 
+        msg.setUuid(uuid());
 
         return msg;
     }

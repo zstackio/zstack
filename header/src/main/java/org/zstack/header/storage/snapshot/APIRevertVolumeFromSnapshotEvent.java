@@ -26,7 +26,6 @@ public class APIRevertVolumeFromSnapshotEvent extends APIEvent {
     public static APIRevertVolumeFromSnapshotEvent __example__() {
         APIRevertVolumeFromSnapshotEvent event = new APIRevertVolumeFromSnapshotEvent();
 
-
         return event;
     }
 

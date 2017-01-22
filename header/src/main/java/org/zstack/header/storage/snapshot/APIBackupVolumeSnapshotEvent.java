@@ -1,7 +1,6 @@
 package org.zstack.header.storage.snapshot;
 
 import org.zstack.header.message.APIEvent;
-import org.zstack.header.rest.RestResponse;
 
 /**
  * @apiResult api event for message :ref:`APIBackupVolumeSnapshotMsg`
@@ -61,11 +60,4 @@ public class APIBackupVolumeSnapshotEvent extends APIEvent {
         this.inventory = inventory;
     }
  
-    public static APIBackupVolumeSnapshotEvent __example__() {
-        APIBackupVolumeSnapshotEvent event = new APIBackupVolumeSnapshotEvent();
-
-
-        return event;
-    }
-
 }
