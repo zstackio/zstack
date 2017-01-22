@@ -14,6 +14,7 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/schedulers/{uuid}/actions",
         responseClass = APIUpdateSchedulerEvent.class,
+        isAction = true,
         method = HttpMethod.PUT
 )
 public class APIUpdateSchedulerMsg extends APIMessage implements SchedulerMessage {
