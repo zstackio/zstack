@@ -48,6 +48,10 @@ public class Q {
         return this;
     }
 
+    public boolean isExists() {
+        return q.count() > 0;
+    }
+
     public Long count() {
         return q.count();
     }
