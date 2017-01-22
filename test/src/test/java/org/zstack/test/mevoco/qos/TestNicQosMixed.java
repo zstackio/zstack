@@ -29,10 +29,8 @@ import org.zstack.utils.logging.CLogger;
  * 2. assert the qos as instance_offering
  * 3. set out and assert it
  * 4. set in and out and assert it
- * 5. delete in and assert it reset to qos as instance_offering
- * 6. delete out and assert it reset to qos as instance_offering
- * 7. delete out again and assert it set to 0
- * 8. reboot vm and assert it back to qos as instance_offering
+ * 5. delete in and assert it reset to qos as -1
+ * 6. delete out and assert it reset to qos as -1
  */
 public class TestNicQosMixed {
     Deployer deployer;
@@ -83,7 +81,7 @@ public class TestNicQosMixed {
 
         APIDeleteNicQosEvent event1;
         try {
-            event1 = api.deleteVmNicQos(nicUuid, "net");
+            api.deleteVmNicQos(nicUuid, "net");
         } catch(ApiSenderException e) {
             Assert.assertEquals(SysErrors.INVALID_ARGUMENT_ERROR.toString(), e.getError().getCode());
         }
@@ -91,29 +89,14 @@ public class TestNicQosMixed {
         Assert.assertTrue(event1.isSuccess());
         reply = api.getVmNicQos(nicUuid);
         Assert.assertTrue(reply.isSuccess());
-        Assert.assertEquals(4096000l, reply.getInboundBandwidth());
+        Assert.assertEquals(-1l, reply.getInboundBandwidth());
         Assert.assertEquals(409600l, reply.getOutboundBandwidth());
         //6.
         event1 = api.deleteVmNicQos(nicUuid, "out");
         Assert.assertTrue(event1.isSuccess());
         reply = api.getVmNicQos(nicUuid);
         Assert.assertTrue(reply.isSuccess());
-        Assert.assertEquals(4096000l, reply.getInboundBandwidth());
-        Assert.assertEquals(2048000l, reply.getOutboundBandwidth());
-        //7. TODO get -1 before reboot
-//        event1 = api.deleteVmNicQos(nicUuid, "out");
-//        Assert.assertTrue(event1.isSuccess());
-//        reply = api.getVmNicQos(nicUuid);
-//        Assert.assertTrue(reply.isSuccess());
-//        Assert.assertEquals(4000l, reply.getInboundBandwidth());
-//        Assert.assertEquals(0l, reply.getOutboundBandwidth());
-
-        //8.
-        api.rebootVmInstance(vm.getUuid());
-        reply = api.getVmNicQos(nicUuid);
-        Assert.assertTrue(reply.isSuccess());
-        Assert.assertEquals(4096000l, reply.getInboundBandwidth());
-        Assert.assertEquals(2048000l, reply.getOutboundBandwidth());
-
+        Assert.assertEquals(-1l, reply.getInboundBandwidth());
+        Assert.assertEquals(-1l, reply.getOutboundBandwidth());
     }
 }
