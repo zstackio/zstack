@@ -30,8 +30,7 @@ import org.zstack.utils.logging.CLogger;
  * 3. attatch new disk
  * 4. assert the qos as instance_offering
  * 5. set qos and assert it
- * 6. delete qos and assert it, it's important
- * 7. delete qos and assert it, it's important
+ * 6. delete qos and assert it, it's back to -1
  */
 public class TestVolumeQosMixed {
     Deployer deployer;
@@ -85,14 +84,8 @@ public class TestVolumeQosMixed {
         Assert.assertTrue(event1.isSuccess());
         reply = api.getVmDiskQos(dataVolume1Uuid);
         Assert.assertTrue(reply.isSuccess());
-        // here should be equal 0 and equal 3000 after restart vm, but we could't simulate it...
-        Assert.assertEquals(3000l, reply.getVolumeBandwidth());
-        //7.
-        event1 = api.deleteDiskQos(dataVolume1Uuid);
-        Assert.assertTrue(event1.isSuccess());
-        reply = api.getVmDiskQos(dataVolume1Uuid);
-        Assert.assertTrue(reply.isSuccess());
-        Assert.assertEquals(3000l, reply.getVolumeBandwidth());
+        // here should be equal -1
+        Assert.assertEquals(-1l, reply.getVolumeBandwidth());
 
     }
 }
