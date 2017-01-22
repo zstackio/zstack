@@ -2,9 +2,12 @@ package org.zstack.core.scheduler;
 
 import org.zstack.header.core.scheduler.SchedulerInventory;
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.rest.RestResponse;
+
 /**
  * Created by Mei Lei<meilei007@gmail.com> on 7/18/16.
  */
+@RestResponse(allTo = "inventory")
 public class APIUpdateSchedulerEvent extends  APIEvent{
     private SchedulerInventory inventory;
 

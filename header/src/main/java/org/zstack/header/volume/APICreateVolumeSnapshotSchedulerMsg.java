@@ -11,7 +11,7 @@ import org.zstack.header.rest.RestRequest;
  */
 @Action(category = VolumeConstant.ACTION_CATEGORY)
 @RestRequest(
-        path = "/volumes/schedulers/create-volume-snapshots",
+        path = "/volumes/{volumeUuid}/schedulers/creating-volume-snapshots",
         method = HttpMethod.POST,
         responseClass = APICreateVolumeSnapshotSchedulerEvent.class,
         parameterName = "params"

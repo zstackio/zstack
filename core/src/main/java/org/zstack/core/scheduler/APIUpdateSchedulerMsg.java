@@ -1,14 +1,21 @@
 package org.zstack.core.scheduler;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.core.scheduler.SchedulerVO;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
 /**
  * Created by Mei Lei<meilei007@gmail.com> on 7/18/16.
  */
 @Action(category = SchedulerConstant.ACTION_CATEGORY)
+@RestRequest(
+        path = "/schedulers/{uuid}/actions",
+        responseClass = APIUpdateSchedulerEvent.class,
+        method = HttpMethod.PUT
+)
 public class APIUpdateSchedulerMsg extends APIMessage implements SchedulerMessage {
     @APIParam(resourceType = SchedulerVO.class)
     private String uuid;
