@@ -18,7 +18,7 @@ doc {
 
             clz APIChangeHostStateMsg.class
 
-            desc ""
+            desc "更新物理机启用状态"
             
 			params {
 
