@@ -1,11 +1,10 @@
 package org.zstack.header.volume
 
 import org.zstack.header.errorcode.ErrorCode
-import org.zstack.header.volume.VolumeInventory
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "云盘清单"
 
 	ref {
 		name "error"
@@ -18,7 +17,7 @@ doc {
 	ref {
 		name "inventory"
 		path "org.zstack.header.volume.APIChangeVolumeStateEvent.inventory"
-		desc "null"
+		desc "云盘清单"
 		type "VolumeInventory"
 		since "0.6"
 		clz VolumeInventory.class

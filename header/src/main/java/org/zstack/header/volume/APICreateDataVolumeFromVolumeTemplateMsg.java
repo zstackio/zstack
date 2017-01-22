@@ -72,7 +72,11 @@ public class APICreateDataVolumeFromVolumeTemplateMsg extends APICreateMessage {
  
     public static APICreateDataVolumeFromVolumeTemplateMsg __example__() {
         APICreateDataVolumeFromVolumeTemplateMsg msg = new APICreateDataVolumeFromVolumeTemplateMsg();
-
+        msg.setDescription("dataVolume-from-volume-template");
+        msg.setName("data-volume-1");
+        msg.setPrimaryStorageUuid(uuid());
+        msg.setHostUuid(uuid());
+        msg.setImageUuid(uuid());
 
         return msg;
     }

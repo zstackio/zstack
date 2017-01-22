@@ -29,7 +29,7 @@ public class APIGetDataVolumeAttachableVmMsg extends APISyncCallMessage implemen
  
     public static APIGetDataVolumeAttachableVmMsg __example__() {
         APIGetDataVolumeAttachableVmMsg msg = new APIGetDataVolumeAttachableVmMsg();
-
+        msg.setVolumeUuid(uuid());
 
         return msg;
     }

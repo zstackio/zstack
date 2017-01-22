@@ -1,17 +1,15 @@
 package org.zstack.header.volume
 
-import org.zstack.header.volume.APIAttachDataVolumeToVmEvent
-
 doc {
     title "AttachDataVolumeToVm"
 
     category "volume"
 
-    desc "在这里填写API描述"
+    desc "挂载云盘到云主机上"
 
     rest {
         request {
-			url "POST /v1/volumes/{volumeUuid}/vm-instances/{vmInstanceUuid}"
+			url "POST /v1/volumes/{vmeUuid}/vm-instances/{vmInstanceUuid}"
 
 
             header (OAuth: 'the-session-uuid')

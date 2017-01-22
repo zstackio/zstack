@@ -101,7 +101,10 @@ public class APICreateDataVolumeFromVolumeSnapshotMsg extends APICreateMessage {
  
     public static APICreateDataVolumeFromVolumeSnapshotMsg __example__() {
         APICreateDataVolumeFromVolumeSnapshotMsg msg = new APICreateDataVolumeFromVolumeSnapshotMsg();
-
+        msg.setDescription("dataVolume-from-snapshot");
+        msg.setName("DataVolume-1");
+        msg.setPrimaryStorageUuid(uuid());
+        msg.setVolumeSnapshotUuid(uuid());
 
         return msg;
     }

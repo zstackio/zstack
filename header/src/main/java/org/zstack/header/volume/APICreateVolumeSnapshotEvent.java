@@ -3,6 +3,9 @@ package org.zstack.header.volume;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.rest.RestResponse;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
+import org.zstack.utils.data.SizeUnit;
+
+import java.sql.Timestamp;
 
 /**
  * @apiResult api event for message :ref:`APICreateVolumeSnapshotMsg`
@@ -58,7 +61,28 @@ public class APICreateVolumeSnapshotEvent extends APIEvent {
  
     public static APICreateVolumeSnapshotEvent __example__() {
         APICreateVolumeSnapshotEvent event = new APICreateVolumeSnapshotEvent();
+        String volumeUuid= uuid();
+        String snapshotUuid = uuid();
+        VolumeSnapshotInventory inv = new VolumeSnapshotInventory();
+        inv.setName("Snapshot-1");
+        inv.setCreateDate(new Timestamp(System.currentTimeMillis()));
+        inv.setLastOpDate(new Timestamp(System.currentTimeMillis()));
+        inv.setParentUuid(uuid());
+        inv.setDescription("create-snapshot-from-volume");
+        inv.setState("Enabled");
+        inv.setType("Hypervisor");
+        inv.setVolumeUuid(volumeUuid);
+        inv.setFormat("qcow2");
+        inv.setUuid(snapshotUuid);
+        inv.setStatus("Ready");
+        inv.setPrimaryStorageUuid(uuid());
+        inv.setPrimaryStorageInstallPath(String.format("/zstack_ps/rootVolumes/acct-36c27e8ff05c4780bf6d2fa65700f22e/vol-%s/snapshots/%s.qcow2", volumeUuid, snapshotUuid));
+        inv.setLatest(true);
+        inv.setSize(SizeUnit.GIGABYTE.toByte(1));
+        inv.setVolumeType(VolumeType.Root.toString());
+        inv.setTreeUuid(uuid());
 
+        event.setInventory(inv);
 
         return event;
     }

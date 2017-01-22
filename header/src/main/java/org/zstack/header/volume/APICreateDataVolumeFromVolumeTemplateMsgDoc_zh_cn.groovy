@@ -1,13 +1,11 @@
 package org.zstack.header.volume
 
-import org.zstack.header.volume.APICreateDataVolumeFromVolumeTemplateEvent
-
 doc {
-    title "CreateDataVolumeFromVolumeTemplate"
+    title "从镜像创建云盘(CreateDataVolumeFromVolumeTemplate)"
 
     category "volume"
 
-    desc "在这里填写API描述"
+    desc "从镜像创建云盘"
 
     rest {
         request {
@@ -35,7 +33,7 @@ doc {
 				column {
 					name "name"
 					enclosedIn "params"
-					desc "资源名称"
+					desc "云盘名称"
 					location "body"
 					type "String"
 					optional false
@@ -45,7 +43,7 @@ doc {
 				column {
 					name "description"
 					enclosedIn "params"
-					desc "资源的详细描述"
+					desc "云盘的详细描述"
 					location "body"
 					type "String"
 					optional true

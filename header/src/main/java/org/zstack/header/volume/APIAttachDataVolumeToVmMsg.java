@@ -52,10 +52,6 @@ public class APIAttachDataVolumeToVmMsg extends APIMessage implements VolumeMess
     @APIParam(resourceType = VolumeVO.class, checkAccount = true, operationTarget = true)
     private String volumeUuid;
 
-    public void setVmInstanceUuid(String vmInstanceUuid) {
-        this.vmInstanceUuid = vmInstanceUuid;
-    }
-
     public String getVmUuid() {
         return vmInstanceUuid;
     }
@@ -64,6 +60,9 @@ public class APIAttachDataVolumeToVmMsg extends APIMessage implements VolumeMess
         this.vmInstanceUuid = vmInstanceUuid;
     }
 
+    public void setVmInstanceUuid(String vmInstanceUuid) {
+        this.vmInstanceUuid = vmInstanceUuid;
+    }
 
     public String getVolumeUuid() {
         return volumeUuid;
@@ -80,7 +79,8 @@ public class APIAttachDataVolumeToVmMsg extends APIMessage implements VolumeMess
  
     public static APIAttachDataVolumeToVmMsg __example__() {
         APIAttachDataVolumeToVmMsg msg = new APIAttachDataVolumeToVmMsg();
-
+        msg.setVolumeUuid(uuid());
+        msg.setVmUuid(uuid());
 
         return msg;
     }

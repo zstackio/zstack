@@ -87,7 +87,9 @@ public class APICreateVolumeSnapshotMsg extends APICreateMessage implements Volu
  
     public static APICreateVolumeSnapshotMsg __example__() {
         APICreateVolumeSnapshotMsg msg = new APICreateVolumeSnapshotMsg();
-
+        msg.setName("snapshot-volume");
+        msg.setDescription("a snapshot for volume");
+        msg.setVolumeUuid(uuid());
 
         return msg;
     }

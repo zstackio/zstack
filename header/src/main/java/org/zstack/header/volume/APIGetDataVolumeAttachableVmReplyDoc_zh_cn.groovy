@@ -5,7 +5,7 @@ import org.zstack.header.vm.VmInstanceInventory
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "云主机列表"
 
 	ref {
 		name "error"
@@ -18,7 +18,7 @@ doc {
 	ref {
 		name "inventories"
 		path "org.zstack.header.volume.APIGetDataVolumeAttachableVmReply.inventories"
-		desc "null"
+		desc "可加载的云主机列表"
 		type "List"
 		since "0.6"
 		clz VmInstanceInventory.class

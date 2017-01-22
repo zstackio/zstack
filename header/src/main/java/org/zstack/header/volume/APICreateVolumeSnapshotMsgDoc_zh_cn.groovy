@@ -1,13 +1,11 @@
 package org.zstack.header.volume
 
-import org.zstack.header.volume.APICreateVolumeSnapshotEvent
-
 doc {
     title "CreateVolumeSnapshot"
 
     category "volume"
 
-    desc "在这里填写API描述"
+    desc "从云盘创建快照"
 
     rest {
         request {
@@ -35,7 +33,7 @@ doc {
 				column {
 					name "name"
 					enclosedIn "params"
-					desc "资源名称"
+					desc "快照名称"
 					location "body"
 					type "String"
 					optional false
@@ -45,7 +43,7 @@ doc {
 				column {
 					name "description"
 					enclosedIn "params"
-					desc "资源的详细描述"
+					desc "快照的详细描述"
 					location "body"
 					type "String"
 					optional true
@@ -55,7 +53,7 @@ doc {
 				column {
 					name "resourceUuid"
 					enclosedIn "params"
-					desc ""
+					desc "资源的Uuid"
 					location "body"
 					type "String"
 					optional true
@@ -65,7 +63,7 @@ doc {
 				column {
 					name "systemTags"
  					enclosedIn ""
- 					desc ""
+ 					desc "系统标签"
 					location "body"
 					type "List"
 					optional true

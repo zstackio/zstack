@@ -62,7 +62,8 @@ public class APIDeleteDataVolumeMsg extends APIDeleteMessage implements VolumeMe
  
     public static APIDeleteDataVolumeMsg __example__() {
         APIDeleteDataVolumeMsg msg = new APIDeleteDataVolumeMsg();
-
+        msg.setUuid(uuid());
+        msg.setDeletionMode(DeletionMode.Permissive);
 
         return msg;
     }
