@@ -58,8 +58,9 @@ public class APIUpdateSchedulerMsg extends APIMessage implements SchedulerMessag
  
     public static APIUpdateSchedulerMsg __example__() {
         APIUpdateSchedulerMsg msg = new APIUpdateSchedulerMsg();
-
-
+        msg.setUuid(uuid());
+        msg.setSchedulerName("Test2");
+        msg.setSchedulerDescription("new test");
         return msg;
     }
 
