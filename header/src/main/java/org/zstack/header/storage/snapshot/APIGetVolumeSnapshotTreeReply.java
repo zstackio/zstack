@@ -1,7 +1,6 @@
 package org.zstack.header.storage.snapshot;
 
 import org.zstack.header.message.APIReply;
-import org.zstack.header.rest.RestResponse;
 
 import java.util.List;
 
@@ -158,13 +157,6 @@ public class APIGetVolumeSnapshotTreeReply extends APIReply {
 
     public void setInventories(List<VolumeSnapshotTreeInventory> inventories) {
         this.inventories = inventories;
-    }
- 
-    public static APIGetVolumeSnapshotTreeReply __example__() {
-        APIGetVolumeSnapshotTreeReply reply = new APIGetVolumeSnapshotTreeReply();
-
-
-        return reply;
     }
 
 }

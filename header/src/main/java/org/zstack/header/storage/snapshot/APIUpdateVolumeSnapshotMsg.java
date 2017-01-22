@@ -81,6 +81,8 @@ public class APIUpdateVolumeSnapshotMsg extends APIMessage implements VolumeSnap
     public static APIUpdateVolumeSnapshotMsg __example__() {
         APIUpdateVolumeSnapshotMsg msg = new APIUpdateVolumeSnapshotMsg();
 
+        msg.setUuid(uuid());
+        msg.setName("My Snapshot");
 
         return msg;
     }

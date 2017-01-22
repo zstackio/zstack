@@ -94,6 +94,7 @@ public class APIDeleteVolumeSnapshotMsg extends APIDeleteMessage implements Volu
     public static APIDeleteVolumeSnapshotMsg __example__() {
         APIDeleteVolumeSnapshotMsg msg = new APIDeleteVolumeSnapshotMsg();
 
+        msg.setUuid(uuid());
 
         return msg;
     }

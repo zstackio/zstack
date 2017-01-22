@@ -1,11 +1,10 @@
 package org.zstack.header.storage.snapshot
 
 import org.zstack.header.errorcode.ErrorCode
-import org.zstack.header.storage.snapshot.VolumeSnapshotInventory
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "云盘快照清单"
 
 	ref {
 		name "error"
