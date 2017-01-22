@@ -38,8 +38,7 @@ public class APIDeleteSchedulerMsg extends APIDeleteMessage {
  
     public static APIDeleteSchedulerMsg __example__() {
         APIDeleteSchedulerMsg msg = new APIDeleteSchedulerMsg();
-
-
+        msg.setUuid(uuid());
         return msg;
     }
 

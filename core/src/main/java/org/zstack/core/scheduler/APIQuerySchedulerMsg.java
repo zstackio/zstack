@@ -22,9 +22,8 @@ import static java.util.Arrays.asList;
         responseClass = APIQuerySchedulerReply.class
 )
 public class APIQuerySchedulerMsg extends APIQueryMessage {
- 
-    public static List<String> __example__() {
-        return asList("schedulerJob=StopVmInstanceJob");
-    }
 
+    public static List<String> __example__() {
+        return asList("name=TestScheduler", "state=Enabled");
+    }
 }

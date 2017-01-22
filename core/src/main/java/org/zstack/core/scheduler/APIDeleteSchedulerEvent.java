@@ -19,8 +19,7 @@ public class APIDeleteSchedulerEvent extends APIEvent{
  
     public static APIDeleteSchedulerEvent __example__() {
         APIDeleteSchedulerEvent event = new APIDeleteSchedulerEvent();
-
-
+        event.setSuccess(true);
         return event;
     }
 
