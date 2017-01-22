@@ -6,6 +6,9 @@ import org.zstack.header.query.APIQueryMessage;
 import org.zstack.header.query.AutoQuery;
 import org.zstack.header.rest.RestRequest;
 
+import java.util.Collections;
+import java.util.List;
+
 /**
  */
 @AutoQuery(replyClass = APIQueryVolumeSnapshotReply.class, inventoryClass = VolumeSnapshotInventory.class)
@@ -18,11 +21,8 @@ import org.zstack.header.rest.RestRequest;
 )
 public class APIQueryVolumeSnapshotMsg extends APIQueryMessage {
  
-    public static APIQueryVolumeSnapshotMsg __example__() {
-        APIQueryVolumeSnapshotMsg msg = new APIQueryVolumeSnapshotMsg();
-
-
-        return msg;
+    public static List<String> __example__() {
+        return Collections.singletonList("uuid=" + uuid());
     }
 
 }

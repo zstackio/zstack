@@ -1,9 +1,7 @@
 package org.zstack.header.storage.snapshot;
 
-import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.message.APISyncCallMessage;
-import org.zstack.header.rest.RestRequest;
 import org.zstack.header.volume.VolumeVO;
 
 /**
@@ -62,13 +60,6 @@ public class APIGetVolumeSnapshotTreeMsg extends APISyncCallMessage {
 
     public void setTreeUuid(String treeUuid) {
         this.treeUuid = treeUuid;
-    }
- 
-    public static APIGetVolumeSnapshotTreeMsg __example__() {
-        APIGetVolumeSnapshotTreeMsg msg = new APIGetVolumeSnapshotTreeMsg();
-
-
-        return msg;
     }
 
 }

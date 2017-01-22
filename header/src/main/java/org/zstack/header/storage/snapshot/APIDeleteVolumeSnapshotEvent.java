@@ -26,7 +26,6 @@ public class APIDeleteVolumeSnapshotEvent extends APIEvent {
     public static APIDeleteVolumeSnapshotEvent __example__() {
         APIDeleteVolumeSnapshotEvent event = new APIDeleteVolumeSnapshotEvent();
 
-
         return event;
     }
 
