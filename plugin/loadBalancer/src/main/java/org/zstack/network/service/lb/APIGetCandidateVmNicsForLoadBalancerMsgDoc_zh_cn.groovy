@@ -3,11 +3,11 @@ package org.zstack.network.service.lb
 import org.zstack.network.service.lb.APIGetCandidateVmNicsForLoadBalancerReply
 
 doc {
-    title "GetCandidateVmNicsForLoadBalancer"
+    title "获取可供负载均衡器添加的云主机网卡(GetCandidateVmNicsForLoadBalancer)"
 
-    category "loadBalancer"
+    category "负载均衡"
 
-    desc "在这里填写API描述"
+    desc "获取可供负载均衡器添加的云主机网卡"
 
     rest {
         request {
@@ -25,7 +25,7 @@ doc {
 				column {
 					name "listenerUuid"
 					enclosedIn ""
-					desc ""
+					desc "负载均衡监听器UUID"
 					location "url"
 					type "String"
 					optional false

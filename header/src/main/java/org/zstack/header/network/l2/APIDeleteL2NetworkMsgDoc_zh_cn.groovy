@@ -3,11 +3,11 @@ package org.zstack.header.network.l2
 import org.zstack.header.network.l2.APIDeleteL2NetworkEvent
 
 doc {
-    title "DeleteL2Network"
+    title "删除二层网络(DeleteL2Network)"
 
-    category "network.l2"
+    category "二层网络"
 
-    desc "在这里填写API描述"
+    desc "删除二层网络"
 
     rest {
         request {
@@ -35,7 +35,7 @@ doc {
 				column {
 					name "deleteMode"
  					enclosedIn ""
- 					desc ""
+ 					desc "删除模式"
 					location "body"
 					type "String"
 					optional true

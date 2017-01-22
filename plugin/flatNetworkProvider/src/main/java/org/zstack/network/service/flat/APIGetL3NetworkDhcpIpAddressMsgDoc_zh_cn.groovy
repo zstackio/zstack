@@ -3,11 +3,11 @@ package org.zstack.network.service.flat
 import org.zstack.network.service.flat.APIGetL3NetworkDhcpIpAddressReply
 
 doc {
-    title "GetL3NetworkDhcpIpAddress"
+    title "获取网络DHCP服务所用地址(GetL3NetworkDhcpIpAddress)"
 
-    category "flat.dhcp"
+    category "三层网络"
 
-    desc "在这里填写API描述"
+    desc "获取网络DHCP服务所用地址"
 
     rest {
         request {
@@ -35,7 +35,7 @@ doc {
 				column {
 					name "systemTags"
  					enclosedIn ""
- 					desc ""
+ 					desc "系统标签"
 					location "query"
 					type "List"
 					optional true

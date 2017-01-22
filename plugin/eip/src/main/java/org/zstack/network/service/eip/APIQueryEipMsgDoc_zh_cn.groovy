@@ -4,11 +4,11 @@ import org.zstack.network.service.eip.APIQueryEipReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "QueryEip"
+    title "查询弹性IP(QueryEip)"
 
-    category "eip"
+    category "弹性IP"
 
-    desc "在这里填写API描述"
+    desc "查询弹性IP"
 
     rest {
         request {

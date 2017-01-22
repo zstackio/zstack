@@ -3,11 +3,11 @@ package org.zstack.network.service.eip
 import org.zstack.network.service.eip.APICreateEipEvent
 
 doc {
-    title "CreateEip"
+    title "创建弹性IP(CreateEip)"
 
-    category "eip"
+    category "弹性IP"
 
-    desc "在这里填写API描述"
+    desc "创建弹性IP"
 
     rest {
         request {
@@ -25,7 +25,7 @@ doc {
 				column {
 					name "name"
 					enclosedIn "params"
-					desc "资源名称"
+					desc "弹性IP名称"
 					location "body"
 					type "String"
 					optional false
@@ -35,7 +35,7 @@ doc {
 				column {
 					name "description"
 					enclosedIn "params"
-					desc "资源的详细描述"
+					desc "弹性IP的详细描述"
 					location "body"
 					type "String"
 					optional true
@@ -65,7 +65,7 @@ doc {
 				column {
 					name "resourceUuid"
 					enclosedIn "params"
-					desc ""
+					desc "资源UUID。若指定，云主机会使用该字段值作为UUID"
 					location "body"
 					type "String"
 					optional true
@@ -75,7 +75,7 @@ doc {
 				column {
 					name "systemTags"
  					enclosedIn ""
- 					desc ""
+ 					desc "EIP的系统标签"
 					location "body"
 					type "List"
 					optional true
@@ -85,7 +85,7 @@ doc {
 				column {
 					name "userTags"
 					enclosedIn ""
-					desc "用户标签"
+					desc "EIP的用户标签"
 					location "body"
 					type "List"
 					optional true

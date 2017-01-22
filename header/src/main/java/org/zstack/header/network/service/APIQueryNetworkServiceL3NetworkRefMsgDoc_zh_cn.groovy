@@ -4,11 +4,11 @@ import org.zstack.header.network.service.APIQueryNetworkServiceL3NetworkRefReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "QueryNetworkServiceL3NetworkRef"
+    title "查询网络服务与三层网络引用(QueryNetworkServiceL3NetworkRef)"
 
-    category "network.l3"
+    category "三层网络"
 
-    desc "在这里填写API描述"
+    desc "查询网络服务与三层网络引用"
 
     rest {
         request {

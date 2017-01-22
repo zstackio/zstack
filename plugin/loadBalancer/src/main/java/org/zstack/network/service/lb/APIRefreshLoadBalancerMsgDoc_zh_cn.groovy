@@ -3,11 +3,11 @@ package org.zstack.network.service.lb
 import org.zstack.network.service.lb.APIRefreshLoadBalancerEvent
 
 doc {
-    title "RefreshLoadBalancer"
+    title "刷新负载均衡器(RefreshLoadBalancer)"
 
-    category "loadBalancer"
+    category "负载均衡"
 
-    desc "在这里填写API描述"
+    desc "刷新负载均衡器"
 
     rest {
         request {

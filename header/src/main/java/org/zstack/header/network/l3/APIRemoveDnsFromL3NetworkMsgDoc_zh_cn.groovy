@@ -3,11 +3,11 @@ package org.zstack.header.network.l3
 import org.zstack.header.network.l3.APIRemoveDnsFromL3NetworkEvent
 
 doc {
-    title "RemoveDnsFromL3Network"
+    title "从三层网络移除DNS(RemoveDnsFromL3Network)"
 
-    category "network.l3"
+    category "三层网络"
 
-    desc "在这里填写API描述"
+    desc "从三层网络移除DNS"
 
     rest {
         request {
@@ -35,7 +35,7 @@ doc {
 				column {
 					name "dns"
 					enclosedIn ""
-					desc ""
+					desc "DNS地址"
 					location "url"
 					type "String"
 					optional false

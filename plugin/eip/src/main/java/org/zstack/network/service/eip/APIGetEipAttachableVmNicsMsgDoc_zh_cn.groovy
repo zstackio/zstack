@@ -3,11 +3,11 @@ package org.zstack.network.service.eip
 import org.zstack.network.service.eip.APIGetEipAttachableVmNicsReply
 
 doc {
-    title "GetEipAttachableVmNics"
+    title "获取可绑定指定弹性IP的云主机网卡(GetEipAttachableVmNics)"
 
-    category "eip"
+    category "弹性IP"
 
-    desc "在这里填写API描述"
+    desc "获取可绑定指定弹性IP的云主机网卡"
 
     rest {
         request {

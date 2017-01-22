@@ -5,7 +5,7 @@ import org.zstack.header.network.service.NetworkServiceProviderInventory
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "网络服务模块清单"
 
 	ref {
 		name "error"

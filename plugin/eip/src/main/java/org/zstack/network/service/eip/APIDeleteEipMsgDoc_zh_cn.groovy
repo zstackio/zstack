@@ -3,11 +3,11 @@ package org.zstack.network.service.eip
 import org.zstack.network.service.eip.APIDeleteEipEvent
 
 doc {
-    title "DeleteEip"
+    title "删除弹性IP(DeleteEip)"
 
-    category "eip"
+    category "弹性IP"
 
-    desc "在这里填写API描述"
+    desc "删除弹性IP"
 
     rest {
         request {
@@ -25,7 +25,7 @@ doc {
 				column {
 					name "uuid"
 					enclosedIn ""
-					desc "资源的UUID，唯一标示该资源"
+					desc "弹性IP的UUID，唯一标示该资源"
 					location "url"
 					type "String"
 					optional false
@@ -35,7 +35,7 @@ doc {
 				column {
 					name "deleteMode"
  					enclosedIn ""
- 					desc ""
+ 					desc "删除模式"
 					location "body"
 					type "String"
 					optional true
@@ -45,7 +45,7 @@ doc {
 				column {
 					name "systemTags"
  					enclosedIn ""
- 					desc ""
+ 					desc "系统标签"
 					location "body"
 					type "List"
 					optional true

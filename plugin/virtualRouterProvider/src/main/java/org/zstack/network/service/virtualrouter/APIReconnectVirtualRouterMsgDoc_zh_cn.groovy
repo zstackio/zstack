@@ -3,11 +3,11 @@ package org.zstack.network.service.virtualrouter
 import org.zstack.network.service.virtualrouter.APIReconnectVirtualRouterEvent
 
 doc {
-    title "ReconnectVirtualRouter"
+    title "重连虚拟路由器(ReconnectVirtualRouter)"
 
-    category "virtualRouter"
+    category "虚拟路由器"
 
-    desc "在这里填写API描述"
+    desc "重连虚拟路由器"
 
     rest {
         request {

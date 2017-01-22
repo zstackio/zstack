@@ -3,11 +3,11 @@ package org.zstack.network.service.eip
 import org.zstack.network.service.eip.APIAttachEipEvent
 
 doc {
-    title "AttachEip"
+    title "绑定弹性IP(AttachEip)"
 
-    category "eip"
+    category "弹性IP"
 
-    desc "在这里填写API描述"
+    desc "绑定弹性IP"
 
     rest {
         request {
@@ -45,7 +45,7 @@ doc {
 				column {
 					name "systemTags"
  					enclosedIn ""
- 					desc ""
+ 					desc "系统标签"
 					location "body"
 					type "List"
 					optional true

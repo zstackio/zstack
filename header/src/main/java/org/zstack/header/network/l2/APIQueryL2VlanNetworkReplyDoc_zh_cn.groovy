@@ -5,7 +5,7 @@ import org.zstack.header.network.l2.L2VlanNetworkInventory
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "二层Vlan网络清单"
 
 	ref {
 		name "error"
