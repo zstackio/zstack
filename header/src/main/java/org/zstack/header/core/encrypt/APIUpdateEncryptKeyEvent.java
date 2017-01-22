@@ -5,6 +5,7 @@ import org.zstack.header.message.APIEvent;
 /**
  * Created by mingjian.deng on 16/12/28.
  */
+@RestResponse
 public class APIUpdateEncryptKeyEvent extends APIEvent {
 	// only for test
 	private EncryptKeyInventory inventory;
@@ -27,8 +28,6 @@ public class APIUpdateEncryptKeyEvent extends APIEvent {
 
 	public static APIUpdateEncryptKeyEvent __example__() {
         APIUpdateEncryptKeyEvent event = new APIUpdateEncryptKeyEvent();
-
-
         return event;
     }
 

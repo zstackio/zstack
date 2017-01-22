@@ -34,8 +34,7 @@ public class APIGetVmStartingCandidateClustersHostsMsg extends APISyncCallMessag
  
     public static APIGetVmStartingCandidateClustersHostsMsg __example__() {
         APIGetVmStartingCandidateClustersHostsMsg msg = new APIGetVmStartingCandidateClustersHostsMsg();
-
-
+        msg.uuid = uuid();
         return msg;
     }
 

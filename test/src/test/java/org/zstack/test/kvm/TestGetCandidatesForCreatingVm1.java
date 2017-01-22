@@ -77,8 +77,8 @@ public class TestGetCandidatesForCreatingVm1 {
         HostInventory host1 = deployer.hosts.get("host2");
         Assert.assertEquals(host1.getUuid(), reply.getHosts().get(0).getUuid());
 
-        Assert.assertEquals(1, reply.getClusterPsMap().size());
-        Assert.assertTrue(reply.getClusterPsMap().containsKey(cluster1.getUuid()));
-        Assert.assertEquals(1, reply.getClusterPsMap().get(cluster1.getUuid()).size());
+        Assert.assertEquals(1, reply.getClusterPrimaryStorageRefs().size());
+        Assert.assertTrue(reply.getClusterPrimaryStorageRefs().containsKey(cluster1.getUuid()));
+        Assert.assertEquals(1, reply.getClusterPrimaryStorageRefs().get(cluster1.getUuid()).size());
     }
 }

@@ -5,7 +5,7 @@ import org.zstack.header.host.HostInventory
 
 doc {
 
-    title "在这里输入结构的名称"
+    title "可迁移物理机"
 
     ref {
         name "error"

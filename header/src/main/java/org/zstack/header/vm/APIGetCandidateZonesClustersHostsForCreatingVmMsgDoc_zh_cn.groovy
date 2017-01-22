@@ -1,11 +1,11 @@
 package org.zstack.header.vm
 
 doc {
-    title "GetCandidateZonesClustersHostsForCreatingVm"
+    title "获取可创建云主机的目的地列表(GetCandidateZonesClustersHostsForCreatingVm)"
 
     category "vmInstance"
 
-    desc "在这里填写API描述"
+    desc "获取可以创建指定云主机参数的目的区域、集群、物理机。用户可以使用该API，通过指定云主机参数获得可以创建满足参数云主机的目的地。"
 
     rest {
         request {
@@ -43,7 +43,7 @@ doc {
                 column {
                     name "l3NetworkUuids"
                     enclosedIn "params"
-                    desc ""
+                    desc "三层网络列表"
                     location "query"
                     type "List"
                     optional false
@@ -53,7 +53,7 @@ doc {
                 column {
                     name "rootDiskOfferingUuid"
                     enclosedIn "params"
-                    desc ""
+                    desc "根磁盘规格。仅在`imageUuid`指定的镜像是ISO时需要指定"
                     location "query"
                     type "String"
                     optional true
@@ -63,7 +63,7 @@ doc {
                 column {
                     name "dataDiskOfferingUuids"
                     enclosedIn "params"
-                    desc ""
+                    desc "云盘规格列表"
                     location "query"
                     type "List"
                     optional true
@@ -93,7 +93,7 @@ doc {
                 column {
                     name "defaultL3NetworkUuid"
                     enclosedIn "params"
-                    desc ""
+                    desc "默认三层网络UUID"
                     location "query"
                     type "String"
                     optional true

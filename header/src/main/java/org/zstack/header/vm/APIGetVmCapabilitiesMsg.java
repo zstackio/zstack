@@ -35,8 +35,7 @@ public class APIGetVmCapabilitiesMsg extends APISyncCallMessage implements VmIns
  
     public static APIGetVmCapabilitiesMsg __example__() {
         APIGetVmCapabilitiesMsg msg = new APIGetVmCapabilitiesMsg();
-
-
+        msg.uuid = uuid();
         return msg;
     }
 

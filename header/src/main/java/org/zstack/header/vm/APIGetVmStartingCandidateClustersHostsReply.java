@@ -5,7 +5,10 @@ import org.zstack.header.host.HostInventory;
 import org.zstack.header.message.APIReply;
 import org.zstack.header.rest.RestResponse;
 
+import java.sql.Timestamp;
 import java.util.List;
+
+import static org.codehaus.groovy.runtime.InvokerHelper.asList;
 
 /**
  * Created by xing5 on 2016/5/14.
@@ -33,6 +36,38 @@ public class APIGetVmStartingCandidateClustersHostsReply extends APIReply {
  
     public static APIGetVmStartingCandidateClustersHostsReply __example__() {
         APIGetVmStartingCandidateClustersHostsReply reply = new APIGetVmStartingCandidateClustersHostsReply();
+
+        String clusterUuid = uuid();
+
+        HostInventory hi = new HostInventory ();
+        hi.setAvailableCpuCapacity(2L);
+        hi.setAvailableMemoryCapacity(4L);
+        hi.setClusterUuid(clusterUuid);
+        hi.setManagementIp("192.168.0.1");
+        hi.setName("example");
+        hi.setState("Enabled");
+        hi.setStatus("Connected");
+        hi.setClusterUuid(uuid());
+        hi.setZoneUuid(uuid());
+        hi.setUuid(uuid());
+        hi.setTotalCpuCapacity(4L);
+        hi.setTotalMemoryCapacity(4L);
+        hi.setHypervisorType("KVM");
+        hi.setDescription("example");
+        hi.setCreateDate(new Timestamp(System.currentTimeMillis()));
+        hi.setLastOpDate(new Timestamp(System.currentTimeMillis()));
+
+        reply.setHostInventories(asList(hi));
+
+        ClusterInventory cl = new ClusterInventory();
+        cl.setName("cluster1");
+        cl.setUuid(clusterUuid);
+        cl.setZoneUuid(uuid());
+        cl.setCreateDate(new Timestamp(System.currentTimeMillis()));
+        cl.setLastOpDate(new Timestamp(System.currentTimeMillis()));
+        cl.setHypervisorType("KVM");
+
+        reply.setClusterInventories(asList(cl));
 
 
         return reply;

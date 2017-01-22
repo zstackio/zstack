@@ -1,5 +1,6 @@
 package org.zstack.header.vm;
 
+import org.apache.commons.collections.map.HashedMap;
 import org.zstack.header.message.APIReply;
 import org.zstack.header.rest.RestResponse;
 
@@ -22,8 +23,12 @@ public class APIGetVmCapabilitiesReply extends APIReply {
  
     public static APIGetVmCapabilitiesReply __example__() {
         APIGetVmCapabilitiesReply reply = new APIGetVmCapabilitiesReply();
-
-
+        reply.setCapabilities(new HashedMap() {
+            {
+                put("LiveMigration", false);
+                put("VolumeMigration", true);
+            }
+        });
         return reply;
     }
 

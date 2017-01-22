@@ -33,8 +33,7 @@ public class APIDeleteVmSshKeyMsg extends APIMessage implements VmInstanceMessag
  
     public static APIDeleteVmSshKeyMsg __example__() {
         APIDeleteVmSshKeyMsg msg = new APIDeleteVmSshKeyMsg();
-
-
+        msg.uuid = uuid();
         return msg;
     }
 

@@ -1,11 +1,11 @@
 package org.zstack.header.vm
 
 doc {
-    title "GetCandidateVmForAttachingIso"
+    title "获取ISO可加载云主机列表(GetCandidateVmForAttachingIso)"
 
     category "vmInstance"
 
-    desc "在这里填写API描述"
+    desc "获取一个ISO可以加载到的云主机列表"
 
     rest {
         request {
@@ -23,7 +23,7 @@ doc {
                 column {
                     name "isoUuid"
                     enclosedIn ""
-                    desc ""
+                    desc "ISO UUID"
                     location "url"
                     type "String"
                     optional false
@@ -33,7 +33,7 @@ doc {
                 column {
                     name "systemTags"
                     enclosedIn ""
-                    desc ""
+                    desc "系统标签"
                     location "query"
                     type "List"
                     optional true

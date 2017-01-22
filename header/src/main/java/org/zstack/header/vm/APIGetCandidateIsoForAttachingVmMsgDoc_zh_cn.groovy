@@ -1,11 +1,11 @@
 package org.zstack.header.vm
 
 doc {
-    title "GetCandidateIsoForAttachingVm"
+    title "获取云主机可加载ISO列表(GetCandidateIsoForAttachingVm)"
 
     category "vmInstance"
 
-    desc "在这里填写API描述"
+    desc "获取一个云主机以加载的ISO列表"
 
     rest {
         request {

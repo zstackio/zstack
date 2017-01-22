@@ -1,11 +1,11 @@
 package org.zstack.header.vm
 
 doc {
-    title "GetVmStartingCandidateClustersHosts"
+    title "获取云主机可启动目的地列表(GetVmStartingCandidateClustersHosts)"
 
     category "vmInstance"
 
-    desc "在这里填写API描述"
+    desc "获取一个停止的云主机可以启动的集群、物理机列表。用户可以用该API判断一个停止可以在哪些集群、物理机上启动。"
 
     rest {
         request {
@@ -23,7 +23,7 @@ doc {
                 column {
                     name "uuid"
                     enclosedIn ""
-                    desc "资源的UUID，唯一标示该资源"
+                    desc "云主机UUID"
                     location "url"
                     type "String"
                     optional false
@@ -33,7 +33,7 @@ doc {
                 column {
                     name "systemTags"
                     enclosedIn ""
-                    desc ""
+                    desc "系统标签"
                     location "query"
                     type "List"
                     optional true

@@ -5,6 +5,7 @@ import java.lang.Long
 import java.lang.Integer
 import java.sql.Timestamp
 import java.sql.Timestamp
+import java.lang.Boolean
 
 doc {
 
@@ -115,7 +116,7 @@ doc {
 	field {
 		name "isShareable"
 		desc ""
-		type "boolean"
+		type "Boolean"
 		since "0.6"
 	}
 }

@@ -4,7 +4,7 @@ import org.zstack.header.errorcode.ErrorCode
 
 doc {
 
-    title "在这里输入结构的名称"
+    title "云主机控制台密码"
 
     ref {
         name "error"
@@ -16,7 +16,7 @@ doc {
     }
     field {
         name "password"
-        desc ""
+        desc "控制台密码"
         type "String"
         since "0.6"
     }

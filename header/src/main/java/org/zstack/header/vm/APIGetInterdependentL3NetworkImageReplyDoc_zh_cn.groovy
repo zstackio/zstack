@@ -4,7 +4,7 @@ import org.zstack.header.errorcode.ErrorCode
 
 doc {
 
-    title "在这里输入结构的名称"
+    title "三层网络、镜像清单"
 
     ref {
         name "error"
@@ -16,7 +16,7 @@ doc {
     }
     field {
         name "inventories"
-        desc ""
+        desc "若输入参数是`l3NetworkUuids`，为镜像清单;若输入参数是`imageUuid`，为三层网络清单"
         type "List"
         since "0.6"
     }
