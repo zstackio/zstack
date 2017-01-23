@@ -23,9 +23,8 @@ import java.util.List;
  * confirm hosts returned correctly
  * <p>
  * 2. detach the nic from the vm
- * 3. get target hosts for migration
  * <p>
- * confirm hosts returned correctly
+ * confirm the exception because we cannot allow migrate without nic
  */
 public class TestMigrateVm4 {
     Deployer deployer;
@@ -57,12 +56,10 @@ public class TestMigrateVm4 {
 
         VmNicInventory nic = vm.getVmNics().get(0);
         api.detachNic(nic.getUuid());
-        hosts = api.getMigrationTargetHost(vm.getUuid());
-        Assert.assertEquals(2, hosts.size());
-        for (HostInventory host : hosts) {
-            if (host.getUuid().equals(vm.getUuid())) {
-                Assert.fail();
-            }
+        try {
+            api.getMigrationTargetHost(vm.getUuid());
+            Assert.assertTrue(false);
+        } catch (ApiSenderException e) {
         }
     }
 }
