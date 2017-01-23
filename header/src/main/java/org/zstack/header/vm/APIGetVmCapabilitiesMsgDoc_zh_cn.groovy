@@ -10,7 +10,7 @@ doc {
 |名称|描述|类型|
 |---|---|---|
 |LiveMigration|是否支持热迁移|Boolean|
-|VolumeMigration|是否支持根磁盘迁移|Boolean|
+|VolumeMigration|是否支持根云盘迁移|Boolean|
 """
 
     rest {

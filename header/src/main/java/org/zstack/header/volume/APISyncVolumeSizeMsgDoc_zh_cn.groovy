@@ -1,13 +1,11 @@
 package org.zstack.header.volume
 
-import org.zstack.header.volume.APISyncVolumeSizeEvent
-
 doc {
-    title "SyncVolumeSize"
+    title "同步云盘大小(SyncVolumeSize)"
 
     category "volume"
 
-    desc "在这里填写API描述"
+    desc "同步云盘大小"
 
     rest {
         request {
@@ -25,7 +23,7 @@ doc {
 				column {
 					name "uuid"
 					enclosedIn "syncVolumeSize"
-					desc "资源的UUID，唯一标示该资源"
+					desc "云盘的UUID，唯一标示该资源"
 					location "url"
 					type "String"
 					optional false

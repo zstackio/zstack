@@ -4,7 +4,7 @@ import org.zstack.header.errorcode.ErrorCode
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "云盘支持的类型的列表"
 
 	ref {
 		name "error"
@@ -16,7 +16,7 @@ doc {
 	}
 	field {
 		name "capabilities"
-		desc ""
+		desc "云盘支持的类型列表"
 		type "Map"
 		since "0.6"
 	}
