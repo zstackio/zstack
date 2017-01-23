@@ -1851,11 +1851,10 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         final Q q = Q.New(ProgressVO.class)
                 .eq(ProgressVO_.resourceUuid, resourceUuid)
                 .eq(ProgressVO_.processType, ProgressConstants.ProgressType.LocalStorageMigrateVolume.toString());
-        if (q.find() != null) {
-            try {
-                dbf.remove(q.find());
-            } catch (Exception e) {
-                logger.warn("no need delete, it was deleted...");
+        List<ProgressVO> list = q.list();
+        if (list.size() > 0) {
+            for (ProgressVO p : list) {
+                dbf.remove(p);
             }
         }
     }

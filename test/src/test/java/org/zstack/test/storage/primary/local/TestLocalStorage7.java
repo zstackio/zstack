@@ -102,6 +102,16 @@ public class TestLocalStorage7 {
         TimeUnit.SECONDS.sleep(5);
         PrimaryStorageInventory local1 = deployer.primaryStorages.get("local");
         PrimaryStorageInventory local2 = deployer.primaryStorages.get("local2");
+
+        {
+            PrimaryStorageVO lvo1 = dbf.findByUuid(local1.getUuid(), PrimaryStorageVO.class);
+            Assert.assertEquals(totalSize * 2, lvo1.getCapacity().getTotalCapacity());
+            Assert.assertEquals(totalSize * 2, lvo1.getCapacity().getAvailableCapacity());
+            Assert.assertEquals(totalSize * 2, lvo1.getCapacity().getTotalPhysicalCapacity());
+            Assert.assertEquals(totalSize * 2, lvo1.getCapacity().getAvailablePhysicalCapacity());
+        }
+
+
         {
             Assert.assertTrue(new LocalStorageHostRefVOFinder().isExist(host1.getUuid(), local1.getUuid()));
             Assert.assertTrue(new LocalStorageHostRefVOFinder().isExist(host1.getUuid(), local2.getUuid()));
