@@ -477,7 +477,11 @@ public class LocalStorageBase extends PrimaryStorageBase {
                         List<ProgressVO> list = q.list();
                         if (list.size() > 0) {
                             for (ProgressVO p : list) {
-                                dbf.remove(p);
+                                try {
+                                    dbf.remove(p);
+                                } catch (Exception e) {
+                                    logger.warn("no need delete, it was deleted...");
+                                }
                             }
                         }
                     }
