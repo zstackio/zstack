@@ -474,11 +474,10 @@ public class LocalStorageBase extends PrimaryStorageBase {
                         SimpleQuery<ProgressVO> q = dbf.createQuery(ProgressVO.class);
                         q.add(ProgressVO_.processType, SimpleQuery.Op.EQ, ProgressConstants.ProgressType.LocalStorageMigrateVolume.toString());
                         q.add(ProgressVO_.resourceUuid, SimpleQuery.Op.EQ, msg.getVolumeUuid());
-                        if (q.find() != null) {
-                            try {
-                                dbf.remove(q.find());
-                            } catch (Exception e) {
-                                logger.warn("no need delete, it was deleted...");
+                        List<ProgressVO> list = q.list();
+                        if (list.size() > 0) {
+                            for (ProgressVO p : list) {
+                                dbf.remove(p);
                             }
                         }
                     }

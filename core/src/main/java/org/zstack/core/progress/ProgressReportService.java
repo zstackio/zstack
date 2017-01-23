@@ -117,6 +117,7 @@ public class ProgressReportService extends AbstractService implements Management
         deleteProgress(cmd);
     }
 
+    @Transactional
     private void insertProgress(ProgressReportCmd cmd) {
         logger.debug(String.format("insert progress and it begins, processType is: %s", cmd.getProcessType()));
         SimpleQuery<ProgressVO> q = dbf.createQuery(ProgressVO.class);
@@ -134,6 +135,7 @@ public class ProgressReportService extends AbstractService implements Management
         dbf.persistAndRefresh(vo);
     }
 
+    @Transactional
     private void deleteProgress(ProgressReportCmd cmd) {
         logger.debug("delete progress and it's over");
         SimpleQuery<ProgressVO> q = dbf.createQuery(ProgressVO.class);
@@ -217,9 +219,6 @@ public class ProgressReportService extends AbstractService implements Management
         q.orderBy(ProgressVO_.lastOpDate, SimpleQuery.Od.ASC);
         List<ProgressVO> vos = q.list();
         if (q.list().size() == 0) {
-//            reply.setError(errf.instantiateErrorCode(ProgressError.NO_SUCH_TASK_RUNNING,
-//                    "no such task running now"));
-//            reply.setSuccess(false);
             reply.setSuccess(true);
         } else {
             ProgressVO vo = vos.get(vos.size() - 1);
