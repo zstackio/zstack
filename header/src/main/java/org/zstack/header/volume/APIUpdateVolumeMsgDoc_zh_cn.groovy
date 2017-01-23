@@ -1,17 +1,15 @@
 package org.zstack.header.volume
 
-import org.zstack.header.volume.APIUpdateVolumeEvent
-
 doc {
-    title "UpdateVolume"
+    title "修改云盘属性(UpdateVolume)"
 
     category "volume"
 
-    desc "在这里填写API描述"
+    desc "修改云盘属性"
 
     rest {
         request {
-			url "PUT /v1/volumes/{uuid}/actions"
+			url "PUT /v1/volus/{uuid}/actions"
 
 
             header (OAuth: 'the-session-uuid')
@@ -25,7 +23,7 @@ doc {
 				column {
 					name "uuid"
 					enclosedIn "updateVolume"
-					desc "资源的UUID，唯一标示该资源"
+					desc "云盘的UUID，唯一标示该资源"
 					location "url"
 					type "String"
 					optional false
@@ -35,7 +33,7 @@ doc {
 				column {
 					name "name"
 					enclosedIn "updateVolume"
-					desc "资源名称"
+					desc "云盘名称"
 					location "body"
 					type "String"
 					optional true
@@ -45,7 +43,7 @@ doc {
 				column {
 					name "description"
 					enclosedIn "updateVolume"
-					desc "资源的详细描述"
+					desc "云盘的详细描述"
 					location "body"
 					type "String"
 					optional true

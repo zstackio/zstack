@@ -55,7 +55,9 @@ public class APIUpdateVolumeMsg extends APIMessage implements VolumeMessage {
  
     public static APIUpdateVolumeMsg __example__() {
         APIUpdateVolumeMsg msg = new APIUpdateVolumeMsg();
-
+        msg.setName("volume-1");
+        msg.setDescription("data-volume");
+        msg.setUuid(uuid());
 
         return msg;
     }

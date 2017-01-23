@@ -35,7 +35,7 @@ public class APISyncVolumeSizeMsg extends APIMessage implements VolumeMessage {
  
     public static APISyncVolumeSizeMsg __example__() {
         APISyncVolumeSizeMsg msg = new APISyncVolumeSizeMsg();
-
+        msg.setUuid(uuid());
 
         return msg;
     }

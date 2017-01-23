@@ -43,7 +43,7 @@ doc {
                 column {
                     name "diskSize"
                     enclosedIn "params"
-                    desc "磁盘大小"
+                    desc "云盘大小"
                     location "body"
                     type "long"
                     optional false

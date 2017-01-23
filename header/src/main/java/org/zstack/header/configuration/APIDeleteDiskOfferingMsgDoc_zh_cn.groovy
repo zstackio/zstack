@@ -5,7 +5,7 @@ doc {
 
     category "configuration"
 
-    desc "删除磁盘规格"
+    desc "删除云盘规格"
 
     rest {
         request {
@@ -16,7 +16,7 @@ doc {
 
             clz APIDeleteDiskOfferingMsg.class
 
-            desc "删除磁盘规格"
+            desc "删除云盘规格"
 
             params {
 

@@ -3,6 +3,7 @@ package org.zstack.header.volume;
 import org.zstack.header.message.APIReply;
 import org.zstack.header.rest.RestResponse;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -60,7 +61,18 @@ public class APIGetVolumeFormatReply extends APIReply {
  
     public static APIGetVolumeFormatReply __example__() {
         APIGetVolumeFormatReply reply = new APIGetVolumeFormatReply();
+        VolumeFormatReplyStruct struct = new VolumeFormatReplyStruct();
+        struct.setFormat("iso");
+        struct.setMasterHypervisorType("KVM");
+        List<String> supportingHypervisorTypes = new ArrayList<>();
+        supportingHypervisorTypes.add("ESX");
+        supportingHypervisorTypes.add("KVM");
+        struct.setSupportingHypervisorTypes(supportingHypervisorTypes);
 
+        List<VolumeFormatReplyStruct> structs = new ArrayList<>();
+        structs.add(struct);
+
+        reply.setFormats(structs);
 
         return reply;
     }
