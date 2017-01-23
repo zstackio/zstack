@@ -657,15 +657,15 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
         final DownloadImageReply reply = new DownloadImageReply();
         httpCall(DOWNLOAD_IMAGE_PATH, cmd, DownloadRsp.class, new ReturnValueCompletion<DownloadRsp>(msg) {
+            @Transactional
             private void deleteProgress(){
                 SimpleQuery<ProgressVO> q = dbf.createQuery(ProgressVO.class);
                 q.add(ProgressVO_.processType, SimpleQuery.Op.EQ, ProgressConstants.ProgressType.AddImage.toString());
                 q.add(ProgressVO_.resourceUuid, SimpleQuery.Op.EQ, msg.getImageInventory().getUuid());
-                if (q.find() != null) {
-                    try {
-                        dbf.remove(q.find());
-                    } catch (Exception e) {
-                        logger.warn("no need delete, it was deleted...");
+                List<ProgressVO> list = q.list();
+                if (list.size() > 0) {
+                    for (ProgressVO p : list) {
+                        dbf.remove(p);
                     }
                 }
             }
@@ -700,15 +700,15 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
         final DownloadVolumeReply reply = new DownloadVolumeReply();
         httpCall(DOWNLOAD_IMAGE_PATH, cmd, DownloadRsp.class, new ReturnValueCompletion<DownloadRsp>(msg) {
+            @Transactional
             private void deleteProgress(){
                 SimpleQuery<ProgressVO> q = dbf.createQuery(ProgressVO.class);
                 q.add(ProgressVO_.processType, SimpleQuery.Op.EQ, ProgressConstants.ProgressType.AddImage.toString());
                 q.add(ProgressVO_.resourceUuid, SimpleQuery.Op.EQ, msg.getVolume().getUuid());
-                if (q.find() != null) {
-                    try {
-                        dbf.remove(q.find());
-                    } catch (Exception e) {
-                        logger.warn("no need delete, it was deleted...");
+                List<ProgressVO> list = q.list();
+                if (list.size() > 0) {
+                    for (ProgressVO p : list) {
+                        dbf.remove(p);
                     }
                 }
             }
