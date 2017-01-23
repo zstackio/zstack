@@ -166,10 +166,12 @@ public class ProgressReportService extends AbstractService implements Management
         q.add(ProgressVO_.processType, SimpleQuery.Op.EQ, cmd.getProcessType());
         q.add(ProgressVO_.resourceUuid, SimpleQuery.Op.EQ, cmd.getResourceUuid());
         if (q.isExists()) {
-            assert q.list().size() == 1;
-            ProgressVO vo = q.find();
-            vo.setProgress(cmd.getProgress());
-            dbf.updateAndRefresh(vo);
+            List<ProgressVO> list = q.list();
+            if (list.size() > 0) {
+                ProgressVO vo = list.get(list.size() - 1);
+                vo.setProgress(cmd.getProgress());
+                dbf.updateAndRefresh(vo);
+            }
         } else {
             logger.debug(String.format("progress is not existed, insert progress and it begins, processType is: %s", cmd.getProcessType()));
             ProgressVO vo = new ProgressVO();
