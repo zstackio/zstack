@@ -5,7 +5,7 @@ doc {
 
     category "storage.primary"
 
-    desc "获取主机的本地存储的磁盘容量"
+    desc "获取主机的本地存储的云盘容量"
 
     rest {
         request {

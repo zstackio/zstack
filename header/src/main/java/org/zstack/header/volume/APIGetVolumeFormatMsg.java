@@ -18,7 +18,6 @@ public class APIGetVolumeFormatMsg extends APISyncCallMessage {
     public static APIGetVolumeFormatMsg __example__() {
         APIGetVolumeFormatMsg msg = new APIGetVolumeFormatMsg();
 
-
         return msg;
     }
 

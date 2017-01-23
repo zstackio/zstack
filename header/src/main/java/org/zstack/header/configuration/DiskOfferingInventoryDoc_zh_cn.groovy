@@ -24,7 +24,7 @@ doc {
     }
     field {
         name "diskSize"
-        desc "磁盘大小"
+        desc "云盘大小"
         type "Long"
         since "0.6"
     }

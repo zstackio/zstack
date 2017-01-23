@@ -53,7 +53,7 @@ doc {
                 column {
                     name "rootDiskOfferingUuid"
                     enclosedIn "params"
-                    desc "根磁盘规格。仅在`imageUuid`指定的镜像是ISO时需要指定"
+                    desc "根云盘规格。仅在`imageUuid`指定的镜像是ISO时需要指定"
                     location "query"
                     type "String"
                     optional true

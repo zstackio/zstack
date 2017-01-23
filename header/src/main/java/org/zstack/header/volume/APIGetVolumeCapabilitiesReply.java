@@ -3,6 +3,7 @@ package org.zstack.header.volume;
 import org.zstack.header.message.APIReply;
 import org.zstack.header.rest.RestResponse;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -22,7 +23,10 @@ public class APIGetVolumeCapabilitiesReply extends APIReply {
  
     public static APIGetVolumeCapabilitiesReply __example__() {
         APIGetVolumeCapabilitiesReply reply = new APIGetVolumeCapabilitiesReply();
-
+        Map<String, Object> ret = new HashMap<String, Object>();
+        ret.put(VolumeConstant.Capability.MigrationInCurrentPrimaryStorage.toString(), true);
+        ret.put(VolumeConstant.Capability.MigrationToOtherPrimaryStorage.toString(), true);
+        reply.setCapabilities(ret);
 
         return reply;
     }

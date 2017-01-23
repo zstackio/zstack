@@ -35,7 +35,7 @@ public class APIRecoverDataVolumeMsg extends APIMessage implements VolumeMessage
  
     public static APIRecoverDataVolumeMsg __example__() {
         APIRecoverDataVolumeMsg msg = new APIRecoverDataVolumeMsg();
-
+        msg.setUuid(uuid());
 
         return msg;
     }
