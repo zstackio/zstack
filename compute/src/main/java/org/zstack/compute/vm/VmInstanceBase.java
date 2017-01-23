@@ -863,6 +863,11 @@ public class VmInstanceBase extends AbstractVmInstance {
             return VmAbnormalLifeCycleOperation.VmMigrateToAnotherHost;
         }
 
+        if (originalState == VmInstanceState.Paused && currentState == VmInstanceState.Running &&
+                currentHostUuid.equals(originalHostUuid)) {
+            return VmAbnormalLifeCycleOperation.VmRunningFromPausedStateHostNotChanged;
+        }
+
         throw new CloudRuntimeException(String.format("unknown VM[uuid:%s] abnormal state combination[original state: %s," +
                         " current state: %s, original host:%s, current host:%s]",
                 self.getUuid(), originalState, currentState, originalHostUuid, currentHostUuid));
@@ -962,6 +967,14 @@ public class VmInstanceBase extends AbstractVmInstance {
             // just synchronize database
             self.setHostUuid(msg.getHostUuid());
             changeVmStateInDb(VmInstanceStateEvent.paused);
+            fireEvent.run();
+            bus.reply(msg, reply);
+            completion.done();
+            return;
+        } else if (operation == VmAbnormalLifeCycleOperation.VmRunningFromPausedStateHostNotChanged) {
+            // just synchronize database
+            self.setHostUuid(msg.getHostUuid());
+            changeVmStateInDb(VmInstanceStateEvent.running);
             fireEvent.run();
             bus.reply(msg, reply);
             completion.done();
