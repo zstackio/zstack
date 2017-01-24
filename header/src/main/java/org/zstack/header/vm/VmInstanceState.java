@@ -88,7 +88,7 @@ public enum VmInstanceState {
 
         Paused.transactions(
                 new Transaction(VmInstanceStateEvent.resuming, VmInstanceState.Resuming),
-                //new Transaction(VmInstanceStateEvent.stopped, VmInstanceState.Stopped),
+                new Transaction(VmInstanceStateEvent.stopped, VmInstanceState.Stopped),
                 new Transaction(VmInstanceStateEvent.running, VmInstanceState.Running),
                 new Transaction(VmInstanceStateEvent.stopping, VmInstanceState.Stopping),
                 new Transaction(VmInstanceStateEvent.destroying, VmInstanceState.Destroying),
