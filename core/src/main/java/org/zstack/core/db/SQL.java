@@ -7,8 +7,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.LockModeType;
 import javax.persistence.Query;
-import javax.persistence.Tuple;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by xing5 on 2017/1/11.
@@ -22,6 +23,12 @@ public class SQL {
     private Query query;
     private boolean useTransaction;
 
+    private Class entityClass;
+    private Map<String, Object> params = new HashMap<>();
+    private Integer first;
+    private Integer max;
+    private LockModeType lockMode;
+
     private SQL(String sql) {
         this.sql = sql;
         query = dbf.getEntityManager().createQuery(this.sql);
@@ -29,6 +36,7 @@ public class SQL {
 
     private SQL(String sql, Class returnClass) {
         this.sql = sql;
+        entityClass = returnClass;
         query = dbf.getEntityManager().createQuery(this.sql, returnClass);
     }
 
@@ -39,26 +47,31 @@ public class SQL {
 
     public SQL param(String key, Object o) {
         query.setParameter(key, o);
+        params.put(key, o);
         return this;
     }
 
     public SQL first(int offset) {
         query.setFirstResult(offset);
+        first = offset;
         return this;
     }
 
     public SQL max(int max) {
         query.setMaxResults(max);
+        this.max = max;
         return this;
     }
 
     public SQL lock(LockModeType mode) {
         query.setLockMode(mode);
+        lockMode = mode;
         return this;
     }
 
     @Transactional(readOnly = true)
     private List transactionalList() {
+        rebuildQueryInTransaction();
         return query.getResultList();
     }
 
@@ -68,8 +81,25 @@ public class SQL {
 
     @Transactional(readOnly = true)
     private <K> K transactionalFind() {
+        rebuildQueryInTransaction();
         List lst = query.getResultList();
         return lst.isEmpty() ? null : (K) lst.get(0);
+    }
+
+    private void rebuildQueryInTransaction() {
+        query = entityClass == null ? dbf.getEntityManager().createQuery(sql) : dbf.getEntityManager().createQuery(sql, entityClass);
+        if (first != null) {
+            query.setFirstResult(first);
+        }
+        if (lockMode != null) {
+            query.setLockMode(lockMode);
+        }
+        if (max != null) {
+            query.setMaxResults(max);
+        }
+        for (Map.Entry<String, Object> e : params.entrySet()) {
+            query.setParameter(e.getKey(), e.getValue());
+        }
     }
 
     public <K> K find() {
@@ -81,8 +111,9 @@ public class SQL {
         }
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     private int transactionalExecute() {
+        rebuildQueryInTransaction();
         return query.executeUpdate();
     }
 
