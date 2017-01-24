@@ -13,7 +13,6 @@ import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.eip.EipInventory;
 import org.zstack.network.service.eip.EipVO;
 import org.zstack.network.service.vip.VipVO;
-import org.zstack.network.service.virtualrouter.VirtualRouter;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmVO;
 import org.zstack.network.service.virtualrouter.eip.EipTO;
 import org.zstack.network.service.virtualrouter.eip.VirtualRouterEipRefVO;
@@ -28,13 +27,14 @@ import org.zstack.test.deployer.Deployer;
 import java.util.List;
 
 /**
- * @author frank
- * @condition 1. create a vm
+ * 1. create a vm
  * 2. set eip
- * 3. destroy vm
- * @test confirm eip removed on vr
+ * 3. stop the vr
+ * 4. destroy vm
+ *
+ * confirm eip removed on vr
  */
-public class TestVirtualRouterEip4 {
+public class TestVirtualRouterEip33 {
     Deployer deployer;
     Api api;
     ComponentLoader loader;
@@ -72,6 +72,9 @@ public class TestVirtualRouterEip4 {
         VipVO vipvo = dbf.findByUuid(eip.getVipUuid(), VipVO.class);
         Assert.assertEquals(vipvo.getIp(), to.getVipIp());
 
+        VirtualRouterVmVO vr = Q.New(VirtualRouterVmVO.class).find();
+        api.stopVmInstance(vr.getUuid());
+
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         api.destroyVmInstance(vm.getUuid());
 
@@ -79,9 +82,6 @@ public class TestVirtualRouterEip4 {
         Assert.assertNull(evo.getVmNicUuid());
         Assert.assertNull(evo.getGuestIp());
 
-        Assert.assertEquals(1, vconfig.removedEips.size());
-        to = vconfig.removedEips.get(0);
-        Assert.assertEquals(vipvo.getIp(), to.getVipIp());
         long count = dbf.count(VirtualRouterEipRefVO.class);
         Assert.assertEquals(0, count);
 
