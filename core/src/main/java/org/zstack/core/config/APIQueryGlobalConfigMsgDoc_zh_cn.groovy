@@ -8,7 +8,7 @@ doc {
 
     category "globalConfig"
 
-    desc "在这里填写API描述"
+    desc "查询全局配置"
 
     rest {
         request {
@@ -19,7 +19,7 @@ doc {
 
             clz APIQueryGlobalConfigMsg.class
 
-            desc ""
+            desc "查询全局配置"
             
 			params APIQueryMessage.class
         }
