@@ -25,7 +25,7 @@ doc {
 				column {
 					name "category"
 					enclosedIn "updateGlobalConfig"
-					desc "配置类别"
+					desc "类型"
 					location "url"
 					type "String"
 					optional false
@@ -35,7 +35,7 @@ doc {
 				column {
 					name "name"
 					enclosedIn "updateGlobalConfig"
-					desc "配置名字"
+					desc "资源名称"
 					location "url"
 					type "String"
 					optional false
