@@ -868,6 +868,11 @@ public class VmInstanceBase extends AbstractVmInstance {
             return VmAbnormalLifeCycleOperation.VmRunningFromPausedStateHostNotChanged;
         }
 
+        if (originalState == VmInstanceState.Paused && currentState == VmInstanceState.Stopped &&
+                currentHostUuid.equals(originalHostUuid)) {
+            return VmAbnormalLifeCycleOperation.VmStoppedFromPausedStateHostNotChanged;
+        }
+
         throw new CloudRuntimeException(String.format("unknown VM[uuid:%s] abnormal state combination[original state: %s," +
                         " current state: %s, original host:%s, current host:%s]",
                 self.getUuid(), originalState, currentState, originalHostUuid, currentHostUuid));
@@ -950,6 +955,13 @@ public class VmInstanceBase extends AbstractVmInstance {
             // it happens when an operation failure led the vm from the stopped state to the unknown state,
             // and later on the vm was detected as stopped on the host again
             self.setHostUuid(null);
+            changeVmStateInDb(VmInstanceStateEvent.stopped);
+            fireEvent.run();
+            bus.reply(msg, reply);
+            completion.done();
+            return;
+        } else if (operation == VmAbnormalLifeCycleOperation.VmStoppedFromPausedStateHostNotChanged) {
+            self.setHostUuid(msg.getHostUuid());
             changeVmStateInDb(VmInstanceStateEvent.stopped);
             fireEvent.run();
             bus.reply(msg, reply);
