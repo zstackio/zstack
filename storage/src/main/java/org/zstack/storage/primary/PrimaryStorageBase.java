@@ -220,9 +220,6 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             forbidOperationWhenPrimaryStorageMaintenance(self.getState().toString());
         } else if (msg instanceof DeleteBitsOnPrimaryStorageMsg) {
             forbidOperationWhenPrimaryStorageMaintenance(self.getState().toString());
-        } else if (msg instanceof DownloadIsoToPrimaryStorageMsg) {
-            forbidOperationWhenPrimaryStorageDisable(self.getState().toString());
-            forbidOperationWhenPrimaryStorageMaintenance(self.getState().toString());
         } else if (msg instanceof DeleteIsoFromPrimaryStorageMsg) {
             forbidOperationWhenPrimaryStorageMaintenance(self.getState().toString());
         } else if (msg instanceof AskVolumeSnapshotCapabilityMsg) {
