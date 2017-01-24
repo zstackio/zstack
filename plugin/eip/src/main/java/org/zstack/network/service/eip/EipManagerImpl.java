@@ -704,8 +704,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
 
                         @Override
                         public void run(FlowTrigger trigger, Map data) {
-                            UpdateQuery q = UpdateQuery.New();
-                            q.entity(EipVO.class);
+                            UpdateQuery q = UpdateQuery.New(EipVO.class);
                             q.condAnd(EipVO_.uuid, Op.EQ, eip.getUuid());
                             q.set(EipVO_.vmNicUuid, null);
                             q.set(EipVO_.guestIp, null);

@@ -45,6 +45,7 @@ import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManager;
 import org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply.HostDiskCapacity;
 import org.zstack.storage.primary.local.MigrateBitsStruct.ResourceInfo;
+import org.zstack.storage.snapshot.VolumeSnapshot;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
@@ -385,8 +386,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                             }
                         }
 
-                        UpdateQuery.New()
-                                .entity(LocalStorageResourceRefVO.class)
+                        UpdateQuery.New(LocalStorageResourceRefVO.class)
                                 .set(LocalStorageResourceRefVO_.hostUuid, msg.getDestHostUuid())
                                 .condAnd(LocalStorageResourceRefVO_.resourceUuid, Op.IN, resourceUuids)
                                 .update();
@@ -1123,8 +1123,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
         }
 
         // delete items in image cache
-        UpdateQuery uq = UpdateQuery.New();
-        uq.entity(ImageCacheVO.class);
+        UpdateQuery uq = UpdateQuery.New(ImageCacheVO.class);
         uq.condAnd(ImageCacheVO_.primaryStorageUuid, Op.EQ, self.getUuid());
         uq.condAnd(ImageCacheVO_.installUrl, Op.LIKE, String.format("%%%s%%", hostUuid));
         uq.delete();
@@ -1145,8 +1144,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 }
             }.run();
 
-            uq = UpdateQuery.New();
-            uq.entity(VolumeVO.class);
+            uq = UpdateQuery.New(VolumeVO.class);
             uq.condAnd(VolumeVO_.uuid, Op.IN, volumes);
             uq.delete();
             logger.debug(String.format("delete volumes%s because the host[uuid:%s] is removed from" +
@@ -1155,8 +1153,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
         // delete snapshots
         if (!snapshots.isEmpty()) {
-            uq = UpdateQuery.New();
-            uq.entity(VolumeSnapshotVO.class);
+            uq = UpdateQuery.New(VolumeSnapshotVO.class);
             uq.condAnd(VolumeSnapshotVO_.uuid, Op.IN, snapshots);
             uq.delete();
             logger.debug(String.format("delete volume snapshots%s because the host[uuid:%s] is removed from" +

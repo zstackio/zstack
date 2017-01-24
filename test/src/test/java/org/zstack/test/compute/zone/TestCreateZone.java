@@ -44,18 +44,18 @@ public class TestCreateZone {
 
         ZoneInventory inv = zones.get(0);
 
-        UpdateQuery q = UpdateQuery.New();
-        q.entity(ZoneVO.class).set(ZoneVO_.name, "newName").condAnd(ZoneVO_.uuid, Op.EQ, inv.getUuid()).update();
+        UpdateQuery q = UpdateQuery.New(ZoneVO.class);
+        q.set(ZoneVO_.name, "newName").condAnd(ZoneVO_.uuid, Op.EQ, inv.getUuid()).update();
 
         ZoneVO vo = dbf.findByUuid(inv.getUuid(), ZoneVO.class);
         Assert.assertEquals("newName", vo.getName());
 
-        UpdateQuery.New().entity(ZoneVO.class).set(ZoneVO_.name, "newName1").condAnd(ZoneVO_.name, Op.EQ, vo.getName()).update();
+        UpdateQuery.New(ZoneVO.class).set(ZoneVO_.name, "newName1").condAnd(ZoneVO_.name, Op.EQ, vo.getName()).update();
         vo = dbf.findByUuid(inv.getUuid(), ZoneVO.class);
         Assert.assertEquals("newName1", vo.getName());
 
-        q = UpdateQuery.New();
-        q.entity(ZoneVO.class).condAnd(ZoneVO_.uuid, Op.EQ, inv.getUuid()).delete();
+        q = UpdateQuery.New(ZoneVO.class);
+        q.condAnd(ZoneVO_.uuid, Op.EQ, inv.getUuid()).delete();
         Assert.assertFalse(dbf.isExist(inv.getUuid(), ZoneVO.class));
 
         APICreateZoneMsg msg = new APICreateZoneMsg();

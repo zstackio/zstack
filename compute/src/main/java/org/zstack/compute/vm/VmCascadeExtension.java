@@ -395,8 +395,7 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
 
                     if (action.getParentIssuer().equals(L3NetworkVO.class.getSimpleName())) {
                         if (!vmNicUuids.isEmpty()) {
-                            UpdateQuery q = UpdateQuery.New()
-                                    .entity(AccountResourceRefVO.class)
+                            UpdateQuery q = UpdateQuery.New(AccountResourceRefVO.class)
                                     .condAnd(AccountResourceRefVO_.resourceUuid, Op.IN, vmNicUuids)
                                     .condAnd(AccountResourceRefVO_.resourceType, Op.EQ, VmNicVO.class.getSimpleName());
                             q.delete();

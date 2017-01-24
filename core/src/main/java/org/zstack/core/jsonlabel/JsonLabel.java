@@ -90,8 +90,7 @@ public class JsonLabel {
     }
 
     public void delete(String key) {
-        UpdateQuery q = UpdateQuery.New();
-        q.entity(JsonLabelVO.class);
+        UpdateQuery q = UpdateQuery.New(JsonLabelVO.class);
         q.condAnd(JsonLabelVO_.labelKey, Op.EQ, key);
         q.delete();
     }

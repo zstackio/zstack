@@ -151,8 +151,7 @@ public class ImageUpgradeExtension implements Component {
                         }
 
                         for (Map.Entry<String, Long> entry: res.entrySet()) {
-                            UpdateQuery.New()
-                                    .entity(ImageCacheVO.class)
+                            UpdateQuery.New(ImageCacheVO.class)
                                     .set(ImageCacheVO_.size, entry.getValue())
                                     .condAnd(ImageCacheVO_.imageUuid, SimpleQuery.Op.EQ, entry.getKey())
                                     .update();

@@ -116,8 +116,7 @@ public class TestBilling2 {
         msg.setResourceUnit("m");
         api.createPrice(msg);
 
-        UpdateQuery uq = UpdateQuery.New();
-        uq.entity(VmUsageVO.class);
+        UpdateQuery uq = UpdateQuery.New(VmUsageVO.class);
         uq.condAnd(VmUsageVO_.accountUuid, Op.EQ, AccountConstant.INITIAL_SYSTEM_ADMIN_UUID);
         uq.delete();
 

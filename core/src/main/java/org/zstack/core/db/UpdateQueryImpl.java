@@ -36,8 +36,7 @@ public class UpdateQueryImpl implements UpdateQuery {
         Object val;
     }
 
-    @Override
-    public UpdateQuery entity(Class clazz) {
+    UpdateQuery entity(Class clazz) {
         entityClass = clazz;
         return this;
     }
@@ -68,6 +67,78 @@ public class UpdateQueryImpl implements UpdateQuery {
         cond.val = val;
 
         andConditions.put(attr, cond);
+        return this;
+    }
+
+    @Override
+    public UpdateQuery eq(SingularAttribute attr, Object val) {
+        condAnd(attr, Op.EQ, val);
+        return this;
+    }
+
+    @Override
+    public UpdateQuery notEq(SingularAttribute attr, Object val) {
+        condAnd(attr, Op.NOT_EQ, val);
+        return this;
+    }
+
+    @Override
+    public UpdateQuery in(SingularAttribute attr, Collection val) {
+        condAnd(attr, Op.IN, val);
+        return this;
+    }
+
+    @Override
+    public UpdateQuery notIn(SingularAttribute attr, Collection val) {
+        condAnd(attr, Op.NOT_IN, val);
+        return this;
+    }
+
+    @Override
+    public UpdateQuery isNull(SingularAttribute attr) {
+        condAnd(attr, Op.NULL, null);
+        return this;
+    }
+
+    @Override
+    public UpdateQuery notNull(SingularAttribute attr) {
+        condAnd(attr, Op.NOT_NULL, null);
+        return this;
+    }
+
+    @Override
+    public UpdateQuery gt(SingularAttribute attr, Object val) {
+        condAnd(attr, Op.GT, val);
+        return this;
+    }
+
+    @Override
+    public UpdateQuery gte(SingularAttribute attr, Object val) {
+        condAnd(attr, Op.GTE, val);
+        return this;
+    }
+
+    @Override
+    public UpdateQuery lt(SingularAttribute attr, Object val) {
+        condAnd(attr, Op.LT, val);
+        return this;
+    }
+
+    @Override
+    public UpdateQuery lte(SingularAttribute attr, Object val) {
+        condAnd(attr, Op.LTE, val);
+        return this;
+    }
+
+    @Override
+    public UpdateQuery like(SingularAttribute attr, Object val) {
+        condAnd(attr, Op.LIKE, val);
+        return this;
+    }
+
+    @Override
+    public UpdateQuery notLike(SingularAttribute attr, Object val) {
+        condAnd(attr, Op.NOT_LIKE, val);
         return this;
     }
 

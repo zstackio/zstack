@@ -815,7 +815,7 @@ public class LoadBalancerBase {
         bkd.removeVmNics(removeNicStruct(listenerUuid, vmNicUuids), nics, new Completion(completion) {
             @Override
             public void success() {
-                UpdateQuery.New().entity(LoadBalancerListenerVmNicRefVO.class)
+                UpdateQuery.New(LoadBalancerListenerVmNicRefVO.class)
                         .condAnd(LoadBalancerListenerVmNicRefVO_.vmNicUuid, Op.IN, vmNicUuids)
                         .condAnd(LoadBalancerListenerVmNicRefVO_.listenerUuid, Op.EQ, listenerUuid)
                         .delete();

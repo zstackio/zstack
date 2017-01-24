@@ -6,12 +6,15 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.eip.EipInventory;
 import org.zstack.network.service.eip.EipVO;
 import org.zstack.network.service.vip.VipVO;
+import org.zstack.network.service.virtualrouter.VirtualRouter;
+import org.zstack.network.service.virtualrouter.VirtualRouterVmVO;
 import org.zstack.network.service.virtualrouter.eip.EipTO;
 import org.zstack.network.service.virtualrouter.eip.VirtualRouterEipRefVO;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
@@ -68,17 +71,22 @@ public class TestVirtualRouterEip4 {
         EipInventory eip = deployer.eips.get("eip");
         VipVO vipvo = dbf.findByUuid(eip.getVipUuid(), VipVO.class);
         Assert.assertEquals(vipvo.getIp(), to.getVipIp());
+
+        VirtualRouterVmVO vr = Q.New(VirtualRouterVmVO.class).find();
+        api.stopVmInstance(vr.getUuid());
+
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         api.destroyVmInstance(vm.getUuid());
-        Assert.assertEquals(1, vconfig.removedEips.size());
-        to = vconfig.removedEips.get(0);
-        Assert.assertEquals(vipvo.getIp(), to.getVipIp());
-        long count = dbf.count(VirtualRouterEipRefVO.class);
-        Assert.assertEquals(0, count);
 
         EipVO evo = dbf.findByUuid(eip.getUuid(), EipVO.class);
         Assert.assertNull(evo.getVmNicUuid());
         Assert.assertNull(evo.getGuestIp());
+
+        //Assert.assertEquals(1, vconfig.removedEips.size());
+        //to = vconfig.removedEips.get(0);
+        //Assert.assertEquals(vipvo.getIp(), to.getVipIp());
+        long count = dbf.count(VirtualRouterEipRefVO.class);
+        Assert.assertEquals(0, count);
 
         vm = api.recoverVm(vm.getUuid(), null);
         VmNicInventory vmnic = vm.getVmNics().get(0);
