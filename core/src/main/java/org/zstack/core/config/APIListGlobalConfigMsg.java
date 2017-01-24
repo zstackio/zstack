@@ -7,8 +7,8 @@ import java.util.List;
 import static java.util.Arrays.asList;
 
 public class APIListGlobalConfigMsg extends APIListMessage {
-	private List<Long> ids;
-	
+    private List<Long> ids;
+
     public List<Long> getIds() {
         return ids;
     }
@@ -17,5 +17,9 @@ public class APIListGlobalConfigMsg extends APIListMessage {
         this.ids = ids;
     }
 
-
+    public static APIListGlobalConfigMsg __example__() {
+        APIListGlobalConfigMsg msg = new APIListGlobalConfigMsg();
+        msg.setUuids(asList(uuid(), uuid()));
+        return msg;
+    }
 }

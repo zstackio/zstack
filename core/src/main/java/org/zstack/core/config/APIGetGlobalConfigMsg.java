@@ -26,5 +26,9 @@ public class APIGetGlobalConfigMsg extends APISyncCallMessage {
         return GlobalConfig.produceIdentity(category, name);
     }
 
-
+    public static  APIGetGlobalConfigMsg  __example__(){
+        APIGetGlobalConfigMsg msg = new APIGetGlobalConfigMsg();
+        msg.setCategory("quota");
+        msg.setName("scheduler.num");
+    }
 }
