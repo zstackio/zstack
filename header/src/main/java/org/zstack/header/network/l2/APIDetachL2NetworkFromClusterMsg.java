@@ -72,7 +72,8 @@ public class APIDetachL2NetworkFromClusterMsg extends APIMessage implements L2Ne
  
     public static APIDetachL2NetworkFromClusterMsg __example__() {
         APIDetachL2NetworkFromClusterMsg msg = new APIDetachL2NetworkFromClusterMsg();
-
+        msg.setL2NetworkUuid(uuid());
+        msg.setClusterUuid(uuid());
 
         return msg;
     }

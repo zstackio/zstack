@@ -27,8 +27,16 @@ public class APICreateLoadBalancerListenerEvent extends APIEvent {
  
     public static APICreateLoadBalancerListenerEvent __example__() {
         APICreateLoadBalancerListenerEvent event = new APICreateLoadBalancerListenerEvent();
+        LoadBalancerListenerInventory l = new LoadBalancerListenerInventory();
 
+        l.setUuid(uuid());
+        l.setLoadBalancerUuid(uuid());
+        l.setName("Test-Listener");
+        l.setLoadBalancerPort(80);
+        l.setInstancePort(80);
+        l.setProtocol(LoadBalancerConstants.LB_PROTOCOL_HTTP);
 
+        event.setInventory(l);
         return event;
     }
 

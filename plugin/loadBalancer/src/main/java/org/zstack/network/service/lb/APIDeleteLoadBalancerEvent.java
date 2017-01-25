@@ -17,8 +17,7 @@ public class APIDeleteLoadBalancerEvent extends APIEvent {
  
     public static APIDeleteLoadBalancerEvent __example__() {
         APIDeleteLoadBalancerEvent event = new APIDeleteLoadBalancerEvent();
-
-
+        event.setSuccess(true);
         return event;
     }
 

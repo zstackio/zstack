@@ -10,6 +10,7 @@ import org.zstack.header.message.APIParam;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.tag.TagResourceType;
+import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.zone.ZoneVO;
 
 @Action(category = VirtualRouterConstant.ACTION_CATEGORY)
@@ -72,6 +73,16 @@ public class APICreateVirtualRouterOfferingMsg extends APICreateInstanceOffering
     public static APICreateVirtualRouterOfferingMsg __example__() {
         APICreateVirtualRouterOfferingMsg msg = new APICreateVirtualRouterOfferingMsg();
 
+		msg.setName("VirtualRouter-Offering");
+		msg.setType(VirtualRouterConstant.VIRTUAL_ROUTER_VM_TYPE);
+		msg.setCpuNum(2);
+		msg.setCpuSpeed(1);
+		msg.setMemorySize(1024);
+        msg.setZoneUuid(uuid());
+        msg.setManagementNetworkUuid(uuid());
+        msg.setImageUuid(uuid());
+        msg.setPublicNetworkUuid(uuid());
+        msg.setDefault(true);
 
         return msg;
     }

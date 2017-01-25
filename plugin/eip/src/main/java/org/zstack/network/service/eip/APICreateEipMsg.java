@@ -118,6 +118,9 @@ public class APICreateEipMsg extends APICreateMessage {
     public static APICreateEipMsg __example__() {
         APICreateEipMsg msg = new APICreateEipMsg();
 
+        msg.setName("Test-EIP");
+        msg.setVipUuid(uuid());
+        msg.setVmNicUuid(uuid());
 
         return msg;
     }

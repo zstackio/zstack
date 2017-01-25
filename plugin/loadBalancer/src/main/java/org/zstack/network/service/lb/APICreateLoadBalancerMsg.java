@@ -55,6 +55,8 @@ public class APICreateLoadBalancerMsg extends APICreateMessage {
     public static APICreateLoadBalancerMsg __example__() {
         APICreateLoadBalancerMsg msg = new APICreateLoadBalancerMsg();
 
+        msg.setName("Test-Lb");
+        msg.setVipUuid(uuid());
 
         return msg;
     }

@@ -22,7 +22,6 @@ public class APIQueryLoadBalancerListenerMsg extends APIQueryMessage {
     public static APIQueryLoadBalancerListenerMsg __example__() {
         APIQueryLoadBalancerListenerMsg msg = new APIQueryLoadBalancerListenerMsg();
 
-
         return msg;
     }
 

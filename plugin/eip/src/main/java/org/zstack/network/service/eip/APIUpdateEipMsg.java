@@ -55,7 +55,8 @@ public class APIUpdateEipMsg extends APIMessage implements EipMessage {
  
     public static APIUpdateEipMsg __example__() {
         APIUpdateEipMsg msg = new APIUpdateEipMsg();
-
+        msg.setUuid(uuid());
+        msg.setName("Test-EIP");
 
         return msg;
     }

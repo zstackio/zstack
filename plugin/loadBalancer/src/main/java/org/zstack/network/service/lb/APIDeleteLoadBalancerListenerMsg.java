@@ -41,8 +41,7 @@ public class APIDeleteLoadBalancerListenerMsg extends APIMessage implements Load
  
     public static APIDeleteLoadBalancerListenerMsg __example__() {
         APIDeleteLoadBalancerListenerMsg msg = new APIDeleteLoadBalancerListenerMsg();
-
-
+        msg.setUuid(uuid());
         return msg;
     }
 

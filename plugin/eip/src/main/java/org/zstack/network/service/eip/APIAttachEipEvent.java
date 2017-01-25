@@ -52,7 +52,9 @@ public class APIAttachEipEvent extends APIEvent {
  
     public static APIAttachEipEvent __example__() {
         APIAttachEipEvent event = new APIAttachEipEvent();
-
+        EipInventory eip = new EipInventory();
+        eip.setVipUuid(uuid());
+        eip.setVmNicUuid(uuid());
 
         return event;
     }

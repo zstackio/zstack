@@ -54,8 +54,13 @@ public class APICreateEipEvent extends APIEvent {
  
     public static APICreateEipEvent __example__() {
         APICreateEipEvent event = new APICreateEipEvent();
+        EipInventory eip = new EipInventory();
 
+        eip.setName("Test-EIP");
+        eip.setVipUuid(uuid());
+        eip.setVmNicUuid(uuid());
 
+        event.setInventory(eip);
         return event;
     }
 

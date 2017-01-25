@@ -122,6 +122,8 @@ public class APICreateL3NetworkMsg extends APICreateMessage {
     public static APICreateL3NetworkMsg __example__() {
         APICreateL3NetworkMsg msg = new APICreateL3NetworkMsg();
 
+        msg.setName("Test-L3Network");
+        msg.setL2NetworkUuid(uuid());
 
         return msg;
     }

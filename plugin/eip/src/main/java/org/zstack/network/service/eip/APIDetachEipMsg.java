@@ -70,7 +70,7 @@ public class APIDetachEipMsg extends APIMessage implements EipMessage {
  
     public static APIDetachEipMsg __example__() {
         APIDetachEipMsg msg = new APIDetachEipMsg();
-
+        msg.setUuid(uuid());
 
         return msg;
     }

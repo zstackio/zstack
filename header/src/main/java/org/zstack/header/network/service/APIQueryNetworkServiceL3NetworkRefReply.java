@@ -4,6 +4,7 @@ import org.zstack.header.query.APIQueryReply;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.rest.RestResponse;
 
+import java.util.Arrays;
 import java.util.List;
 
 @RestResponse(allTo = "inventories")
@@ -22,7 +23,13 @@ public class APIQueryNetworkServiceL3NetworkRefReply extends APIQueryReply {
  
     public static APIQueryNetworkServiceL3NetworkRefReply __example__() {
         APIQueryNetworkServiceL3NetworkRefReply reply = new APIQueryNetworkServiceL3NetworkRefReply();
+        NetworkServiceL3NetworkRefInventory ns = new NetworkServiceL3NetworkRefInventory();
 
+        ns.setL3NetworkUuid(uuid());
+        ns.setNetworkServiceProviderUuid(uuid());
+        ns.setNetworkServiceType("PortForwarding");
+
+        reply.setInventories(Arrays.asList(ns));
 
         return reply;
     }

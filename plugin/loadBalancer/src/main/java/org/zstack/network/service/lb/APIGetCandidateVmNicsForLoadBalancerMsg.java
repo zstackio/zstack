@@ -41,6 +41,8 @@ public class APIGetCandidateVmNicsForLoadBalancerMsg extends APISyncCallMessage 
     public static APIGetCandidateVmNicsForLoadBalancerMsg __example__() {
         APIGetCandidateVmNicsForLoadBalancerMsg msg = new APIGetCandidateVmNicsForLoadBalancerMsg();
 
+        msg.setListenerUuid(uuid());
+        msg.setLoadBalancerUuid(uuid());
 
         return msg;
     }

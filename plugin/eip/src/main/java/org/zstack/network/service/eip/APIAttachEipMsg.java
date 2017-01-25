@@ -82,7 +82,8 @@ public class APIAttachEipMsg extends APIMessage implements EipMessage {
  
     public static APIAttachEipMsg __example__() {
         APIAttachEipMsg msg = new APIAttachEipMsg();
-
+        msg.setEipUuid(uuid());
+        msg.setVmNicUuid(uuid());
 
         return msg;
     }

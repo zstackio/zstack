@@ -4,6 +4,8 @@ import org.zstack.header.message.APIReply;
 import org.zstack.header.rest.RestResponse;
 import org.zstack.header.vm.VmNicInventory;
 
+import java.sql.Timestamp;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -23,8 +25,21 @@ public class APIGetCandidateVmNicsForLoadBalancerReply extends APIReply {
  
     public static APIGetCandidateVmNicsForLoadBalancerReply __example__() {
         APIGetCandidateVmNicsForLoadBalancerReply reply = new APIGetCandidateVmNicsForLoadBalancerReply();
+        VmNicInventory nic = new VmNicInventory();
 
+        nic.setVmInstanceUuid(uuid());
+        nic.setCreateDate(new Timestamp(System.currentTimeMillis()));
+        nic.setLastOpDate(new Timestamp(System.currentTimeMillis()));
+        nic.setDeviceId(0);
+        nic.setGateway("192.168.1.1");
+        nic.setIp("192.168.1.10");
+        nic.setL3NetworkUuid(uuid());
+        nic.setNetmask("255.255.255.0");
+        nic.setMac("00:0c:29:bd:99:fc");
+        nic.setUsedIpUuid(uuid());
+        nic.setUuid(uuid());
 
+        reply.setInventories(Arrays.asList(nic));
         return reply;
     }
 

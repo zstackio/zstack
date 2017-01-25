@@ -27,8 +27,13 @@ public class APIAddIpRangeByNetworkCidrEvent extends APIEvent {
  
     public static APIAddIpRangeByNetworkCidrEvent __example__() {
         APIAddIpRangeByNetworkCidrEvent event = new APIAddIpRangeByNetworkCidrEvent();
+        IpRangeInventory ipRange = new IpRangeInventory();
 
+        ipRange.setName("Test-IPRange");
+        ipRange.setL3NetworkUuid(uuid());
+        ipRange.setNetworkCidr("192.168.10.0/24");
 
+        event.setInventory(ipRange);
         return event;
     }
 

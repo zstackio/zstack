@@ -3,6 +3,8 @@ package org.zstack.header.network.service;
 import org.zstack.header.message.APIReply;
 import org.zstack.header.rest.RestResponse;
 
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -53,7 +55,10 @@ public class APIGetNetworkServiceTypesReply extends APIReply {
     public static APIGetNetworkServiceTypesReply __example__() {
         APIGetNetworkServiceTypesReply reply = new APIGetNetworkServiceTypesReply();
 
+        Map<String, List<String>> serviceAndProviderTypes = new HashMap<>();
+        serviceAndProviderTypes.put("SecurityGroup", Arrays.asList(uuid()));
 
+        reply.setServiceAndProviderTypes(serviceAndProviderTypes);
         return reply;
     }
 

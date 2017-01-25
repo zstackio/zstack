@@ -3,6 +3,8 @@ package org.zstack.header.network.l3;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.rest.RestResponse;
 
+import java.util.Arrays;
+
 /**
  * @apiResult api event for message :ref:`APIAddDnsToL3NetworkMsg`
  * @category l3network
@@ -55,8 +57,13 @@ public class APIAddDnsToL3NetworkEvent extends APIEvent {
  
     public static APIAddDnsToL3NetworkEvent __example__() {
         APIAddDnsToL3NetworkEvent event = new APIAddDnsToL3NetworkEvent();
+        L3NetworkInventory l3 = new L3NetworkInventory();
 
+        l3.setName("Test-L3Network");
+        l3.setL2NetworkUuid(uuid());
+        l3.setDns(Arrays.asList("8.8.8.8"));
 
+        event.setInventory(l3);
         return event;
     }
 

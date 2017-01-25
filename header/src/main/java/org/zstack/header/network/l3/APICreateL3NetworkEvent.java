@@ -53,8 +53,12 @@ public class APICreateL3NetworkEvent extends APIEvent {
  
     public static APICreateL3NetworkEvent __example__() {
         APICreateL3NetworkEvent event = new APICreateL3NetworkEvent();
+        L3NetworkInventory l3 = new L3NetworkInventory();
 
+        l3.setName("Test-L3Network");
+        l3.setL2NetworkUuid(uuid());
 
+        event.setInventory(l3);
         return event;
     }
 

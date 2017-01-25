@@ -72,6 +72,8 @@ public class APIRemoveDnsFromL3NetworkMsg extends APIMessage implements L3Networ
     public static APIRemoveDnsFromL3NetworkMsg __example__() {
         APIRemoveDnsFromL3NetworkMsg msg = new APIRemoveDnsFromL3NetworkMsg();
 
+        msg.setL3NetworkUuid(uuid());
+        msg.setDns("8.8.4.4");
 
         return msg;
     }

@@ -50,8 +50,16 @@ public class APICreateL2VlanNetworkEvent extends APIEvent {
  
     public static APICreateL2VlanNetworkEvent __example__() {
         APICreateL2VlanNetworkEvent event = new APICreateL2VlanNetworkEvent();
+        L2VlanNetworkInventory net = new L2VlanNetworkInventory();
 
+        net.setName("Test-Net");
+        net.setVlan(10);
+        net.setDescription("Test");
+        net.setZoneUuid(uuid());
+        net.setPhysicalInterface("eth0");
+        net.setType("L2VlanNetwork");
 
+        event.setInventory(net);
         return event;
     }
 

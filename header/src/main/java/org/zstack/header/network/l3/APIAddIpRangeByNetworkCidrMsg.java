@@ -61,6 +61,9 @@ public class APIAddIpRangeByNetworkCidrMsg extends APICreateMessage implements L
     public static APIAddIpRangeByNetworkCidrMsg __example__() {
         APIAddIpRangeByNetworkCidrMsg msg = new APIAddIpRangeByNetworkCidrMsg();
 
+        msg.setName("Test-IPRange");
+        msg.setL3NetworkUuid(uuid());
+        msg.setNetworkCidr("192.168.10.0/24");
 
         return msg;
     }

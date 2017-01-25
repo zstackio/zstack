@@ -8,6 +8,8 @@ import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.vm.VmNicVO;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -56,6 +58,9 @@ public class APIAddVmNicToLoadBalancerMsg extends APIMessage implements LoadBala
     public static APIAddVmNicToLoadBalancerMsg __example__() {
         APIAddVmNicToLoadBalancerMsg msg = new APIAddVmNicToLoadBalancerMsg();
 
+        msg.setVmNicUuids(Arrays.asList(uuid()));
+        msg.setListenerUuid(uuid());
+        msg.setLoadBalancerUuid(uuid());
 
         return msg;
     }

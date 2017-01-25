@@ -28,8 +28,8 @@ public class APIGetIpAddressCapacityReply extends APIReply {
  
     public static APIGetIpAddressCapacityReply __example__() {
         APIGetIpAddressCapacityReply reply = new APIGetIpAddressCapacityReply();
-
-
+        reply.setAvailableCapacity(229L);
+        reply.setTotalCapacity(245L);
         return reply;
     }
 

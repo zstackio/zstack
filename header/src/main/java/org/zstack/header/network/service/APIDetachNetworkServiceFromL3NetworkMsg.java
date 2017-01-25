@@ -9,6 +9,8 @@ import org.zstack.header.network.l3.L3NetworkMessage;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.rest.RestRequest;
 
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -54,6 +56,11 @@ public class APIDetachNetworkServiceFromL3NetworkMsg extends APIMessage implemen
     public static APIDetachNetworkServiceFromL3NetworkMsg __example__() {
         APIDetachNetworkServiceFromL3NetworkMsg msg = new APIDetachNetworkServiceFromL3NetworkMsg();
 
+        Map<String, List<String>> m = new HashMap<>();
+        m.put(uuid(), Arrays.asList("PortForwarding"));
+
+        msg.setL3NetworkUuid(uuid());
+        msg.setNetworkServices(m);
 
         return msg;
     }

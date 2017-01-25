@@ -22,7 +22,6 @@ public class APIQueryLoadBalancerMsg extends APIQueryMessage {
     public static APIQueryLoadBalancerMsg __example__() {
         APIQueryLoadBalancerMsg msg = new APIQueryLoadBalancerMsg();
 
-
         return msg;
     }
 

@@ -28,6 +28,8 @@ public class APIAttachNetworkServiceProviderToL2NetworkMsg extends APIMessage {
     public static APIAttachNetworkServiceProviderToL2NetworkMsg __example__() {
         APIAttachNetworkServiceProviderToL2NetworkMsg msg = new APIAttachNetworkServiceProviderToL2NetworkMsg();
 
+        msg.setNetworkServiceProviderUuid(uuid());
+        msg.setL2NetworkUuid(uuid());
 
         return msg;
     }

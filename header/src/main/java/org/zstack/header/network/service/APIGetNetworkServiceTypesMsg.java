@@ -41,7 +41,6 @@ public class APIGetNetworkServiceTypesMsg extends APISyncCallMessage {
     public static APIGetNetworkServiceTypesMsg __example__() {
         APIGetNetworkServiceTypesMsg msg = new APIGetNetworkServiceTypesMsg();
 
-
         return msg;
     }
 

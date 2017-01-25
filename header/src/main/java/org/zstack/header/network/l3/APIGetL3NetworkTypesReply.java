@@ -3,6 +3,7 @@ package org.zstack.header.network.l3;
 import org.zstack.header.message.APIReply;
 import org.zstack.header.rest.RestResponse;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -25,8 +26,7 @@ public class APIGetL3NetworkTypesReply extends APIReply {
  
     public static APIGetL3NetworkTypesReply __example__() {
         APIGetL3NetworkTypesReply reply = new APIGetL3NetworkTypesReply();
-
-
+        reply.setL3NetworkTypes(Arrays.asList("L3BasicNetwork"));
         return reply;
     }
 

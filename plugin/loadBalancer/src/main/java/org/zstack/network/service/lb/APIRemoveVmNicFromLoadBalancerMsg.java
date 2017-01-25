@@ -8,6 +8,7 @@ import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.vm.VmNicVO;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -56,6 +57,8 @@ public class APIRemoveVmNicFromLoadBalancerMsg extends APIMessage implements Loa
     public static APIRemoveVmNicFromLoadBalancerMsg __example__() {
         APIRemoveVmNicFromLoadBalancerMsg msg = new APIRemoveVmNicFromLoadBalancerMsg();
 
+        msg.setListenerUuid(uuid());
+        msg.setVmNicUuids(Arrays.asList(uuid()));
 
         return msg;
     }

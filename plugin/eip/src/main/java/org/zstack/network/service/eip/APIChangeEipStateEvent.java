@@ -27,8 +27,14 @@ public class APIChangeEipStateEvent extends APIEvent {
  
     public static APIChangeEipStateEvent __example__() {
         APIChangeEipStateEvent event = new APIChangeEipStateEvent();
+        EipInventory eip = new EipInventory();
 
+        eip.setName("Test-EIP");
+        eip.setVipUuid(uuid());
+        eip.setVmNicUuid(uuid());
+        eip.setState("enable");
 
+        event.setInventory(eip);
         return event;
     }
 

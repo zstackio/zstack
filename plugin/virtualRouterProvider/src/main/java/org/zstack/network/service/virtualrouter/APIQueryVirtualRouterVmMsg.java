@@ -7,6 +7,10 @@ import org.zstack.header.identity.Action;
 import org.zstack.header.query.AutoQuery;
 import org.zstack.header.rest.RestRequest;
 
+import java.util.List;
+
+import static java.util.Arrays.asList;
+
 /**
  */
 @AutoQuery(replyClass = APIQueryVirtualRouterVmReply.class, inventoryClass = VirtualRouterVmInventory.class)
@@ -18,12 +22,9 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIQueryApplianceVmReply.class
 )
 public class APIQueryVirtualRouterVmMsg extends APIQueryApplianceVmMsg {
- 
-    public static APIQueryVirtualRouterVmMsg __example__() {
-        APIQueryVirtualRouterVmMsg msg = new APIQueryVirtualRouterVmMsg();
 
-
-        return msg;
+    public static List<String> __example__() {
+        return asList("name=Test-Router");
     }
 
 }
