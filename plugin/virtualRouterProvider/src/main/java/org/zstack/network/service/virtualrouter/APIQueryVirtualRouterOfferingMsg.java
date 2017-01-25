@@ -21,7 +21,6 @@ public class APIQueryVirtualRouterOfferingMsg extends APIQueryMessage {
     public static APIQueryVirtualRouterOfferingMsg __example__() {
         APIQueryVirtualRouterOfferingMsg msg = new APIQueryVirtualRouterOfferingMsg();
 
-
         return msg;
     }
 

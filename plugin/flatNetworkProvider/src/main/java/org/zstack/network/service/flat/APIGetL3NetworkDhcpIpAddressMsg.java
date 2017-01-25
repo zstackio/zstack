@@ -32,6 +32,7 @@ public class APIGetL3NetworkDhcpIpAddressMsg extends APISyncCallMessage implemen
     public static APIGetL3NetworkDhcpIpAddressMsg __example__() {
         APIGetL3NetworkDhcpIpAddressMsg msg = new APIGetL3NetworkDhcpIpAddressMsg();
 
+        msg.setL3NetworkUuid(uuid());
 
         return msg;
     }

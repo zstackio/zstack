@@ -20,8 +20,7 @@ public class APICheckIpAvailabilityReply extends APIReply {
  
     public static APICheckIpAvailabilityReply __example__() {
         APICheckIpAvailabilityReply reply = new APICheckIpAvailabilityReply();
-
-
+        reply.setAvailable(true);
         return reply;
     }
 

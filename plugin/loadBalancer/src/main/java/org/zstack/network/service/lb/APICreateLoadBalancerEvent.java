@@ -27,7 +27,11 @@ public class APICreateLoadBalancerEvent extends APIEvent {
  
     public static APICreateLoadBalancerEvent __example__() {
         APICreateLoadBalancerEvent event = new APICreateLoadBalancerEvent();
+        LoadBalancerInventory lb = new LoadBalancerInventory();
 
+        lb.setName("Test-Lb");
+        lb.setVipUuid(uuid());
+        lb.setUuid(uuid());
 
         return event;
     }

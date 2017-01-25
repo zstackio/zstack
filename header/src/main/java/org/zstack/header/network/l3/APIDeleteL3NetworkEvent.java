@@ -25,8 +25,7 @@ public class APIDeleteL3NetworkEvent extends APIEvent {
  
     public static APIDeleteL3NetworkEvent __example__() {
         APIDeleteL3NetworkEvent event = new APIDeleteL3NetworkEvent();
-
-
+        event.setSuccess(true);
         return event;
     }
 

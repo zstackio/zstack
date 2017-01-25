@@ -9,6 +9,8 @@ import org.zstack.header.vm.APICreateVmInstanceMsg;
 
 import java.util.Set;
 
+import static java.util.Arrays.asList;
+
 @RestRequest(
 		path = "/vm-instances/appliances/virtual-routers",
 		method = HttpMethod.POST,
@@ -46,6 +48,13 @@ public class APICreateVirtualRouterVmMsg extends APICreateVmInstanceMsg {
     public static APICreateVirtualRouterVmMsg __example__() {
         APICreateVirtualRouterVmMsg msg = new APICreateVirtualRouterVmMsg();
 
+		msg.setName("Test-Router");
+		msg.setDescription("this is a virtual router vm");
+		msg.setClusterUuid(uuid());
+		msg.setImageUuid(uuid());
+		msg.setInstanceOfferingUuid(uuid());
+        msg.setManagementNetworkUuid(uuid());
+        msg.setPublicNetworkUuid(uuid());
 
         return msg;
     }

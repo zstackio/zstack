@@ -28,8 +28,17 @@ public class APIReconnectVirtualRouterEvent extends APIEvent {
  
     public static APIReconnectVirtualRouterEvent __example__() {
         APIReconnectVirtualRouterEvent event = new APIReconnectVirtualRouterEvent();
+        ApplianceVmInventory vm = new ApplianceVmInventory();
 
+        vm.setManagementNetworkUuid(uuid());
+        vm.setName("Test-Router");
+        vm.setDescription("this is a virtual router vm");
+        vm.setClusterUuid(uuid());
+        vm.setImageUuid(uuid());
+        vm.setInstanceOfferingUuid(uuid());
+        vm.setManagementNetworkUuid(uuid());
 
+        event.setInventory(vm);
         return event;
     }
 

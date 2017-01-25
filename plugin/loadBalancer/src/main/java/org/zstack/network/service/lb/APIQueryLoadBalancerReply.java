@@ -3,6 +3,7 @@ package org.zstack.network.service.lb;
 import org.zstack.header.query.APIQueryReply;
 import org.zstack.header.rest.RestResponse;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -22,8 +23,13 @@ public class APIQueryLoadBalancerReply extends APIQueryReply {
  
     public static APIQueryLoadBalancerReply __example__() {
         APIQueryLoadBalancerReply reply = new APIQueryLoadBalancerReply();
+        LoadBalancerInventory lb = new LoadBalancerInventory();
 
+        lb.setName("Test-Lb");
+        lb.setVipUuid(uuid());
+        lb.setUuid(uuid());
 
+        reply.setInventories(Arrays.asList(lb));
         return reply;
     }
 

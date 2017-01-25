@@ -3,6 +3,8 @@ package org.zstack.header.network.l2;
 import org.zstack.header.message.APIReply;
 import org.zstack.header.rest.RestResponse;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -37,8 +39,7 @@ public class APIGetL2NetworkTypesReply extends APIReply {
  
     public static APIGetL2NetworkTypesReply __example__() {
         APIGetL2NetworkTypesReply reply = new APIGetL2NetworkTypesReply();
-
-
+        reply.setL2NetworkTypes(Arrays.asList("L2VlanNetwork", "L2NoVlanNetwork"));
         return reply;
     }
 

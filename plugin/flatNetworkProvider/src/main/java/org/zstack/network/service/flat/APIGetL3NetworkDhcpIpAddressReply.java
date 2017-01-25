@@ -21,6 +21,7 @@ public class APIGetL3NetworkDhcpIpAddressReply extends APIReply {
     public static APIGetL3NetworkDhcpIpAddressReply __example__() {
         APIGetL3NetworkDhcpIpAddressReply reply = new APIGetL3NetworkDhcpIpAddressReply();
 
+        reply.setIp("192.168.100.3");
 
         return reply;
     }

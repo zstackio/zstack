@@ -65,6 +65,8 @@ public class APIUpdateL3NetworkMsg extends APIMessage implements L3NetworkMessag
     public static APIUpdateL3NetworkMsg __example__() {
         APIUpdateL3NetworkMsg msg = new APIUpdateL3NetworkMsg();
 
+        msg.setUuid(uuid());
+        msg.setName("Test-L3Network");
 
         return msg;
     }

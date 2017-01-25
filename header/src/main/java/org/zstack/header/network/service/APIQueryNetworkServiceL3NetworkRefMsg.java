@@ -20,7 +20,6 @@ public class APIQueryNetworkServiceL3NetworkRefMsg extends APIQueryMessage {
     public static APIQueryNetworkServiceL3NetworkRefMsg __example__() {
         APIQueryNetworkServiceL3NetworkRefMsg msg = new APIQueryNetworkServiceL3NetworkRefMsg();
 
-
         return msg;
     }
 

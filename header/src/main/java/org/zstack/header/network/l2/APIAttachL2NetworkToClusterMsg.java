@@ -72,6 +72,8 @@ public class APIAttachL2NetworkToClusterMsg extends APIMessage implements L2Netw
     public static APIAttachL2NetworkToClusterMsg __example__() {
         APIAttachL2NetworkToClusterMsg msg = new APIAttachL2NetworkToClusterMsg();
 
+        msg.setL2NetworkUuid(uuid());
+        msg.setClusterUuid(uuid());
 
         return msg;
     }

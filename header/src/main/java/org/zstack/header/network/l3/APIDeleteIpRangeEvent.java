@@ -26,8 +26,7 @@ public class APIDeleteIpRangeEvent extends APIEvent {
  
     public static APIDeleteIpRangeEvent __example__() {
         APIDeleteIpRangeEvent event = new APIDeleteIpRangeEvent();
-
-
+        event.setSuccess(true);
         return event;
     }
 

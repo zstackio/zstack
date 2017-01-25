@@ -20,6 +20,10 @@ public class APICreateL2NoVlanNetworkMsg extends APICreateL2NetworkMsg {
     public static APICreateL2NoVlanNetworkMsg __example__() {
         APICreateL2NoVlanNetworkMsg msg = new APICreateL2NoVlanNetworkMsg();
 
+        msg.setName("Test-Net");
+        msg.setDescription("Test");
+        msg.setZoneUuid(uuid());
+        msg.setPhysicalInterface("eth0");
 
         return msg;
     }

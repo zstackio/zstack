@@ -52,7 +52,12 @@ public class APIDetachEipEvent extends APIEvent {
     public static APIDetachEipEvent __example__() {
         APIDetachEipEvent event = new APIDetachEipEvent();
 
+        EipInventory eip = new EipInventory();
+        eip.setVipUuid(uuid());
+        eip.setVmNicUuid(uuid());
+        eip.setName("Test-EIP");
 
+        event.setInventory(eip);
         return event;
     }
 

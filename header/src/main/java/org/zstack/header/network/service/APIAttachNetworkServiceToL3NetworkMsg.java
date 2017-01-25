@@ -9,8 +9,7 @@ import org.zstack.header.network.l3.L3NetworkMessage;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.rest.RestRequest;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @api attach network service to l3Network
@@ -87,6 +86,11 @@ public class APIAttachNetworkServiceToL3NetworkMsg extends APIMessage implements
     public static APIAttachNetworkServiceToL3NetworkMsg __example__() {
         APIAttachNetworkServiceToL3NetworkMsg msg = new APIAttachNetworkServiceToL3NetworkMsg();
 
+        Map<String, List<String>> m = new HashMap<>();
+        m.put(uuid(), Arrays.asList("PortForwarding"));
+
+        msg.setL3NetworkUuid(uuid());
+        msg.setNetworkServices(m);
 
         return msg;
     }

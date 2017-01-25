@@ -5,6 +5,10 @@ import org.zstack.header.query.APIQueryMessage;
 import org.zstack.header.query.AutoQuery;
 import org.zstack.header.rest.RestRequest;
 
+import java.util.List;
+
+import static java.util.Arrays.asList;
+
 /**
  */
 @AutoQuery(replyClass = APIQueryApplianceVmReply.class, inventoryClass = ApplianceVmInventory.class)
@@ -15,12 +19,9 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIQueryApplianceVmReply.class
 )
 public class APIQueryApplianceVmMsg extends APIQueryMessage {
- 
-    public static APIQueryApplianceVmMsg __example__() {
-        APIQueryApplianceVmMsg msg = new APIQueryApplianceVmMsg();
 
-
-        return msg;
+    public static List<String> __example__() {
+        return asList("uuid=" + uuid());
     }
 
 }

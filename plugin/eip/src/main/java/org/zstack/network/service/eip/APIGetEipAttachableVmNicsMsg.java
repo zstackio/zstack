@@ -41,7 +41,7 @@ public class APIGetEipAttachableVmNicsMsg extends APISyncCallMessage {
  
     public static APIGetEipAttachableVmNicsMsg __example__() {
         APIGetEipAttachableVmNicsMsg msg = new APIGetEipAttachableVmNicsMsg();
-
+        msg.setEipUuid(uuid());
 
         return msg;
     }

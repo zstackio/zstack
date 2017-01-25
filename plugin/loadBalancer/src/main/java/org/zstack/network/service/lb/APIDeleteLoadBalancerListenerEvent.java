@@ -27,8 +27,7 @@ public class APIDeleteLoadBalancerListenerEvent extends APIEvent {
  
     public static APIDeleteLoadBalancerListenerEvent __example__() {
         APIDeleteLoadBalancerListenerEvent event = new APIDeleteLoadBalancerListenerEvent();
-
-
+        event.setSuccess(true);
         return event;
     }
 

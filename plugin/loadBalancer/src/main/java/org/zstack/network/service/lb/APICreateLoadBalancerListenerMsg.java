@@ -84,6 +84,11 @@ public class APICreateLoadBalancerListenerMsg extends APICreateMessage implement
     public static APICreateLoadBalancerListenerMsg __example__() {
         APICreateLoadBalancerListenerMsg msg = new APICreateLoadBalancerListenerMsg();
 
+        msg.setLoadBalancerUuid(uuid());
+        msg.setName("Test-Listener");
+        msg.setLoadBalancerPort(80);
+        msg.setInstancePort(80);
+        msg.setProtocol(LoadBalancerConstants.LB_PROTOCOL_HTTP);
 
         return msg;
     }

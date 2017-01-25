@@ -148,6 +148,12 @@ public class APIAddIpRangeMsg extends APICreateMessage implements L3NetworkMessa
     public static APIAddIpRangeMsg __example__() {
         APIAddIpRangeMsg msg = new APIAddIpRangeMsg();
 
+        msg.setL3NetworkUuid(uuid());
+        msg.setName("Test-IP-Range");
+        msg.setStartIp("192.168.100.10");
+        msg.setEndIp("192.168.100.250");
+        msg.setNetmask("255.255.255.0");
+        msg.setGateway("192.168.100.1");
 
         return msg;
     }

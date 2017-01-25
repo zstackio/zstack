@@ -51,8 +51,16 @@ public class APIDetachL2NetworkFromClusterEvent extends APIEvent {
  
     public static APIDetachL2NetworkFromClusterEvent __example__() {
         APIDetachL2NetworkFromClusterEvent event = new APIDetachL2NetworkFromClusterEvent();
+        L2VlanNetworkInventory net = new L2VlanNetworkInventory();
 
+        net.setName("Test-Net");
+        net.setVlan(10);
+        net.setDescription("Test");
+        net.setZoneUuid(uuid());
+        net.setPhysicalInterface("eth0");
+        net.setType("L2VlanNetwork");
 
+        event.setInventory(net);
         return event;
     }
 

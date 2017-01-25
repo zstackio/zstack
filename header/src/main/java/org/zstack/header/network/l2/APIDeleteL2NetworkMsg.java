@@ -60,7 +60,7 @@ public class APIDeleteL2NetworkMsg extends APIDeleteMessage implements L2Network
  
     public static APIDeleteL2NetworkMsg __example__() {
         APIDeleteL2NetworkMsg msg = new APIDeleteL2NetworkMsg();
-
+        msg.setUuid(uuid());
 
         return msg;
     }

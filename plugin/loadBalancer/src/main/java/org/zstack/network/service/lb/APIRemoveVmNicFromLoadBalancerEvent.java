@@ -27,8 +27,13 @@ public class APIRemoveVmNicFromLoadBalancerEvent extends APIEvent {
  
     public static APIRemoveVmNicFromLoadBalancerEvent __example__() {
         APIRemoveVmNicFromLoadBalancerEvent event = new APIRemoveVmNicFromLoadBalancerEvent();
+        LoadBalancerInventory lb = new LoadBalancerInventory();
 
+        lb.setName("Test-Lb");
+        lb.setVipUuid(uuid());
+        lb.setUuid(uuid());
 
+        event.setInventory(lb);
         return event;
     }
 

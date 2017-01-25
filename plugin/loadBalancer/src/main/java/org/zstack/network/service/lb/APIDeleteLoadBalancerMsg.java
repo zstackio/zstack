@@ -34,8 +34,7 @@ public class APIDeleteLoadBalancerMsg extends APIDeleteMessage implements LoadBa
  
     public static APIDeleteLoadBalancerMsg __example__() {
         APIDeleteLoadBalancerMsg msg = new APIDeleteLoadBalancerMsg();
-
-
+        msg.setUuid(uuid());
         return msg;
     }
 

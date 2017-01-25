@@ -81,8 +81,7 @@ public class APIChangeL3NetworkStateMsg extends APIMessage implements L3NetworkM
  
     public static APIChangeL3NetworkStateMsg __example__() {
         APIChangeL3NetworkStateMsg msg = new APIChangeL3NetworkStateMsg();
-
-
+        msg.setStateEvent("enable");
         return msg;
     }
 

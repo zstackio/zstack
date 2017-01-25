@@ -27,8 +27,13 @@ public class APIRefreshLoadBalancerEvent extends APIEvent {
  
     public static APIRefreshLoadBalancerEvent __example__() {
         APIRefreshLoadBalancerEvent event = new APIRefreshLoadBalancerEvent();
+        LoadBalancerInventory lb = new LoadBalancerInventory();
 
+        lb.setName("Test-Lb");
+        lb.setVipUuid(uuid());
+        lb.setUuid(uuid());
 
+        event.setInventory(lb);
         return event;
     }
 
