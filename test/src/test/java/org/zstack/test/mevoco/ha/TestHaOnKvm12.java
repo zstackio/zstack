@@ -7,11 +7,14 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.ha.HaGlobalConfig;
+import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
+import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageBase.KvmCancelSelfFencerCmd;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageBase.KvmSetupSelfFencerCmd;
+import org.zstack.storage.ceph.primary.CephPrimaryStorageInventory;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
@@ -68,7 +71,6 @@ public class TestHaOnKvm12 {
         TimeUnit.SECONDS.sleep(2);
 
         Assert.assertEquals(1, cconfig.kvmCancelSelfFencerCmds.size());
-
         KvmCancelSelfFencerCmd cmd = cconfig.kvmCancelSelfFencerCmds.stream().filter(c -> c.hostUuid.equals(host1.getUuid())).findAny().get();
         Assert.assertNotNull(cmd);
 
@@ -77,6 +79,24 @@ public class TestHaOnKvm12 {
 
         Assert.assertEquals(1, cconfig.kvmSetupSelfFencerCmds.size());
         KvmSetupSelfFencerCmd scmd = cconfig.kvmSetupSelfFencerCmds.stream().filter(c -> c.hostUuid.equals(host1.getUuid())).findAny().get();
+        Assert.assertNotNull(scmd);
+
+        // detach ceph, self fencer is cancelled
+        PrimaryStorageInventory ceph = deployer.primaryStorages.get("ceph-pri");
+        ClusterInventory cluster = deployer.clusters.get("Cluster1");
+        cconfig.kvmCancelSelfFencerCmds.clear();
+        api.detachPrimaryStorage(ceph.getUuid(), cluster.getUuid());
+        TimeUnit.SECONDS.sleep(2);
+        Assert.assertEquals(1, cconfig.kvmCancelSelfFencerCmds.size());
+        cmd = cconfig.kvmCancelSelfFencerCmds.stream().filter(c -> c.hostUuid.equals(host1.getUuid())).findAny().get();
+        Assert.assertNotNull(cmd);
+
+        // attach ceph, self-fencer is setup
+        cconfig.kvmSetupSelfFencerCmds.clear();
+        api.attachPrimaryStorage(cluster.getUuid(), ceph.getUuid());
+        TimeUnit.SECONDS.sleep(2);
+        Assert.assertEquals(1, cconfig.kvmSetupSelfFencerCmds.size());
+        scmd = cconfig.kvmSetupSelfFencerCmds.stream().filter(c -> c.hostUuid.equals(host1.getUuid())).findAny().get();
         Assert.assertNotNull(scmd);
     }
 }
