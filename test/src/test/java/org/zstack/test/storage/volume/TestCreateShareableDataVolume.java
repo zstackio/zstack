@@ -93,6 +93,9 @@ public class TestCreateShareableDataVolume {
             msg.setSystemTags(Arrays.asList(tag, tag2));
             APICreateDataVolumeEvent e = sender.send(msg, APICreateDataVolumeEvent.class);
             vol1 = e.getInventory();
+
+            thrown.expect(ApiSenderException.class);
+            api.setDiskQos(vol1.getUuid(), 5000l);
         }
 
         VolumeInventory vol2;
@@ -165,7 +168,7 @@ public class TestCreateShareableDataVolume {
         Assert.assertTrue(Q.New(ShareableVolumeVmInstanceRefVO.class).count() == 3);
 
         thrown.expect(ApiSenderException.class);
-        thrown.expectMessage("you need detach all vm for shareable volume manually before delete.");
+//        thrown.expectMessage("you need detach all vm for shareable volume manually before delete.");
         api.detachPrimaryStorage(ps1.getUuid(), cluster1.getUuid());
         api.deletePrimaryStorage(ps1.getUuid());
     }

@@ -135,7 +135,7 @@ public class TestAttachShareableDataVolume {
         }
 
         thrown.expect(ApiSenderException.class);
-        thrown.expectMessage("you need detach all vm for shareable volume manually before delete.");
+//        thrown.expectMessage("you need detach all vm for shareable volume manually before delete.");
         api.detachPrimaryStorage(ps1.getUuid(), cluster1.getUuid());
         api.deletePrimaryStorage(ps1.getUuid());
     }
