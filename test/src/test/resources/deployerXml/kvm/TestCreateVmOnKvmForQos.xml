@@ -10,8 +10,8 @@
     </instanceOfferings>
 
     <backupStorages>
-        <sftpBackupStorage name="sftp" description="Test"
-                                url="nfs://test" />
+        <imageStoreBackupStorage name="imagestore" description="Test"
+                                 url="/imagestore" />
     </backupStorages>
 
 
@@ -22,7 +22,7 @@
 
     <images>
         <image name="Image_1" description="Image_1" >
-            <backupStorageRef>sftp</backupStorageRef>
+            <backupStorageRef>imagestore</backupStorageRef>
         </image>
     </images>
     <vm>
@@ -41,9 +41,9 @@
                 <cluster name="TestCluster" description="Test" hypervisorType="KVM">
                     <hosts>
                         <kvmHost name="host1" description="Test" managementIp="localhost"
-                                 memoryCapacity="8G" cpuNum="4" cpuSpeed="2600" />
+                                 memoryCapacity="16G" cpuNum="4" cpuSpeed="2600" />
                     </hosts>
-                    <primaryStorageRef>TestPrimaryStorage</primaryStorageRef>
+                    <primaryStorageRef>nfs</primaryStorageRef>
                     <l2NetworkRef>TestL2Network</l2NetworkRef>
                 </cluster>
             </clusters>
@@ -57,10 +57,10 @@
                     </l3Networks>
                 </l2NoVlanNetwork>
             </l2Networks>
-            <backupStorageRef>sftp</backupStorageRef>
+            <backupStorageRef>imagestore</backupStorageRef>
             <primaryStorages>
-                <nfsPrimaryStorage name="TestPrimaryStorage"
-                                         description="Test" totalCapacity="1T" url="nfs://test" />
+                <nfsPrimaryStorage name="nfs" description="Test"
+                                   totalCapacity="1T" url="nfs://test" />
             </primaryStorages>
         </zone>
     </zones>
