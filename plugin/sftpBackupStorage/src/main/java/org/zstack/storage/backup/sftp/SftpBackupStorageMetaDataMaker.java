@@ -143,12 +143,11 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
         SimpleQuery<SftpBackupStorageVO> q2 = dbf.createQuery(SftpBackupStorageVO.class);
         q2.select(SftpBackupStorageVO_.url);
         q2.add(SftpBackupStorageVO_.uuid, SimpleQuery.Op.EQ, bsUuid);
-        List<SftpBackupStorageVO> urls = q2.listValue();
+        List<String> urls = q2.listValue();
         if (urls.isEmpty()) {
             return null;
         }
-        SftpBackupStorageVO bsVO = urls.get(0);
-        return bsVO.getUrl();
+        return urls.get(0);
     }
 
     private String getHostNameFromImageInventory(ImageInventory img) {
@@ -162,14 +161,13 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
         String bsUuid = bsUuids.get(0);
 
         SimpleQuery<SftpBackupStorageVO> q2 = dbf.createQuery(SftpBackupStorageVO.class);
-        q.select(SftpBackupStorageVO_.hostname);
-        q.add(SftpBackupStorageVO_.uuid, SimpleQuery.Op.EQ, bsUuid);
-        List<SftpBackupStorageVO> hostNames = q2.listValue();
+        q2.select(SftpBackupStorageVO_.hostname);
+        q2.add(SftpBackupStorageVO_.uuid, SimpleQuery.Op.EQ, bsUuid);
+        List<String> hostNames = q2.listValue();
         if (hostNames.isEmpty()) {
             throw new CloudRuntimeException("Didn't find any available hostname");
         }
-        SftpBackupStorageVO bsVO = hostNames.get(0);
-        return bsVO.getHostname();
+        return hostNames.get(0);
     }
 
     @Transactional
