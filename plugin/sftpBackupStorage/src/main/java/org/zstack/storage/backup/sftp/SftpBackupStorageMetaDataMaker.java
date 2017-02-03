@@ -141,8 +141,8 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
         String bsUuid = bsUuids.get(0);
 
         SimpleQuery<SftpBackupStorageVO> q2 = dbf.createQuery(SftpBackupStorageVO.class);
-        q.select(SftpBackupStorageVO_.url);
-        q.add(SftpBackupStorageVO_.uuid, SimpleQuery.Op.EQ, bsUuid);
+        q2.select(SftpBackupStorageVO_.url);
+        q2.add(SftpBackupStorageVO_.uuid, SimpleQuery.Op.EQ, bsUuid);
         List<SftpBackupStorageVO> urls = q2.listValue();
         if (urls.isEmpty()) {
             return null;
