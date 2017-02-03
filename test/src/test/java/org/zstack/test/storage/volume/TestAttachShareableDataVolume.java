@@ -133,9 +133,7 @@ public class TestAttachShareableDataVolume {
             ));
             logger.debug("wwn:" + config.attachDataVolumeCmds.get(0).getVolume().getWwn());
         }
-
-        thrown.expect(ApiSenderException.class);
-//        thrown.expectMessage("you need detach all vm for shareable volume manually before delete.");
+        
         api.detachPrimaryStorage(ps1.getUuid(), cluster1.getUuid());
         api.deletePrimaryStorage(ps1.getUuid());
     }
