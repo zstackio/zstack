@@ -162,6 +162,11 @@ public class VolumeBase implements Volume {
     private void doInstantiateVolume(InstantiateVolumeMsg msg, NoErrorCompletion completion) {
         InstantiateVolumeReply reply = new InstantiateVolumeReply();
 
+        List<PreInstantiateVolumeExtensionPoint> exts = pluginRgty.getExtensionList(PreInstantiateVolumeExtensionPoint.class);
+        for (PreInstantiateVolumeExtensionPoint ext : exts) {
+            ext.preInstantiateVolume(msg);
+        }
+
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("instantiate-volume-%s", self.getUuid()));
         chain.then(new ShareFlow() {
