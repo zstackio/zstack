@@ -12,6 +12,18 @@
             <DefaultRolloverStrategy max="20"/>
         </RollingFile>
 
+	<RollingFile name="ApiRequestLogger" fileName="${sys:catalina.home}/logs/zstack-api.log"
+            filePattern="zstack-api-%d{yyyy-MM-dd}-%i.log" >
+            <PatternLayout>
+                <pattern>%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{1}] (%t) %m%n</pattern>
+            </PatternLayout>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="150 MB" />
+            </Policies>
+            <DefaultRolloverStrategy max="20"/>
+        </RollingFile>
+
+
         <RollingFile name="DiskCapacityLogger" fileName="${sys:catalina.home}/logs/zstack-disk-capacity.log"
                      filePattern="${sys:catalina.home}/logs/zstack-disk-capacity-%d{yyyy-MM-dd}-%i.log">
             <PatternLayout>
@@ -48,6 +60,10 @@
 
         <Logger name="org.zstack.storage.primary.DiskCapacityTracerDetails" level="DEBUG" additivity="TRUE">
             <AppenderRef ref="DiskCapacityLoggerDetails" level="DEBUG"/>
+        </Logger>
+
+        <Logger name="api.request" level="TRACE" additivity="TRUE">
+            <AppenderRef ref="ApiRequestLogger" level="TRACE" />
         </Logger>
 
         <Logger name="org.zstack" level="debug"/>

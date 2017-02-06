@@ -35,7 +35,7 @@
         </RollingFile>
 
         <RollingFile name="ApiRequestLogger" fileName="zstack-api.log"
-            filePattern="zstack-api-request-%d{yyyy-MM-dd}-%i.log" >
+            filePattern="zstack-api-%d{yyyy-MM-dd}-%i.log" >
             <PatternLayout>
                 <pattern>%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{1}] (%t) %m%n</pattern>
             </PatternLayout>
