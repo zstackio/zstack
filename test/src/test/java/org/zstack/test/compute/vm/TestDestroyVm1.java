@@ -3,10 +3,14 @@ package org.zstack.test.compute.vm;
 import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.zstack.compute.vm.VmGlobalConfig;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.header.image.ImageEO;
 import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.storage.backup.BackupStorageInventory;
+import org.zstack.header.vm.VmInstanceDeletionPolicyManager;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
@@ -14,6 +18,8 @@ import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.deployer.Deployer;
+
+import java.util.stream.Collectors;
 
 /**
  * 1. a vm with a single L3
@@ -58,5 +64,23 @@ public class TestDestroyVm1 {
 
         VmInstanceVO vmvo = dbf.findByUuid(vm1.getUuid(), VmInstanceVO.class);
         Assert.assertEquals(VmInstanceState.Stopped, vmvo.getState());
+
+        // The code below is to test the MySQL trigger for ImageEO
+        ImageEO eo;
+
+        api.deleteImage(vm1.getImageUuid());
+        api.expungeImage(vm1.getImageUuid(),
+                deployer.backupStorages.values().stream()
+                        .map(BackupStorageInventory::getUuid)
+                        .collect(Collectors.toList()),
+                null);
+        eo = dbf.findByUuid(vm1.getImageUuid(), ImageEO.class);
+        Assert.assertNotNull("ImageEO should still exist", eo);
+
+        VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy.Direct.toString());
+        api.destroyVmInstance(vm1.getUuid());
+
+        eo = dbf.findByUuid(vm1.getImageUuid(), ImageEO.class);
+        Assert.assertNull("ImageEO should have been cleaned up by trigger", eo);
     }
 }
