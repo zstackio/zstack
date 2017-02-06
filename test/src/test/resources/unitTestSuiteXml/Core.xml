@@ -39,6 +39,8 @@
     <TestCase class="org.zstack.test.core.db.TestSimpleQuery"/>
     <TestCase class="org.zstack.test.core.db.TestGlobalDbLock"/>
 
+    <TestCase class="org.zstack.test.core.debug.TestDebugManager"/>
+
     <TestCase class="org.zstack.test.core.thread.TestThreadFacadeCancel"/>
     <TestCase class="org.zstack.test.core.thread.TestThreadFacadeCancelSyncThread"/>
     <TestCase class="org.zstack.test.core.thread.TestThreadFacadeReturnValue"/>
