@@ -56,6 +56,8 @@ public class TestCreateShareableDataVolume {
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
         deployer = new Deployer("deployerXml/volume/TestAttachShareableDataVolume.xml");
+        deployer.addSpringConfig("ceph.xml");
+        deployer.addSpringConfig("cephSimulator.xml");
         deployer.addSpringConfig("mevocoRelated.xml");
         deployer.load();
 
@@ -73,7 +75,7 @@ public class TestCreateShareableDataVolume {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         VmInstanceInventory vm2 = deployer.vms.get("TestVm2");
         DiskOfferingInventory diskOfferingInventory = deployer.diskOfferings.get("DiskOffering");
-        PrimaryStorageInventory ps1 = deployer.primaryStorages.get("nfs");
+        PrimaryStorageInventory ps1 = deployer.primaryStorages.get("ceph-pri");
         ClusterInventory cluster1 = deployer.clusters.get("Cluster1");
 
         ApiSender sender = new ApiSender();
@@ -93,6 +95,15 @@ public class TestCreateShareableDataVolume {
             msg.setSystemTags(Arrays.asList(tag, tag2));
             APICreateDataVolumeEvent e = sender.send(msg, APICreateDataVolumeEvent.class);
             vol1 = e.getInventory();
+
+            boolean cannotSetDiskQosForShareableVolume = false;
+            try {
+                api.setDiskQos(vol1.getUuid(), 5000l);
+            } catch (ApiSenderException e1) {
+                logger.debug(e1.toString());
+                cannotSetDiskQosForShareableVolume = true;
+            }
+            Assert.assertTrue(cannotSetDiskQosForShareableVolume);
         }
 
         VolumeInventory vol2;
@@ -164,8 +175,6 @@ public class TestCreateShareableDataVolume {
         api.attachVolumeToVm(vm.getUuid(), vol1.getUuid());
         Assert.assertTrue(Q.New(ShareableVolumeVmInstanceRefVO.class).count() == 3);
 
-        thrown.expect(ApiSenderException.class);
-        thrown.expectMessage("you need detach all vm for shareable volume manually before delete.");
         api.detachPrimaryStorage(ps1.getUuid(), cluster1.getUuid());
         api.deletePrimaryStorage(ps1.getUuid());
     }

@@ -8,7 +8,6 @@ import org.junit.rules.ExpectedException;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.configuration.DiskOfferingInventory;
@@ -16,7 +15,9 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.query.QueryOp;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.volume.*;
+import org.zstack.header.volume.APICreateDataVolumeEvent;
+import org.zstack.header.volume.APICreateDataVolumeMsg;
+import org.zstack.header.volume.VolumeInventory;
 import org.zstack.kvm.KVMAgentCommands;
 import org.zstack.kvm.KVMGlobalConfig;
 import org.zstack.kvm.KVMSystemTags;
@@ -34,7 +35,6 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.Arrays;
-import java.util.List;
 
 
 public class TestDetachShareableDataVolume {
@@ -55,6 +55,8 @@ public class TestDetachShareableDataVolume {
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
         deployer = new Deployer("deployerXml/volume/TestAttachShareableDataVolume.xml");
+        deployer.addSpringConfig("ceph.xml");
+        deployer.addSpringConfig("cephSimulator.xml");
         deployer.addSpringConfig("mevocoRelated.xml");
         deployer.load();
 
@@ -82,7 +84,7 @@ public class TestDetachShareableDataVolume {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         VmInstanceInventory vm2 = deployer.vms.get("TestVm2");
         DiskOfferingInventory diskOfferingInventory = deployer.diskOfferings.get("DiskOffering");
-        PrimaryStorageInventory ps1 = deployer.primaryStorages.get("nfs");
+        PrimaryStorageInventory ps1 = deployer.primaryStorages.get("ceph-pri");
         ClusterInventory cluster1 = deployer.clusters.get("Cluster1");
 
         ApiSender sender = new ApiSender();

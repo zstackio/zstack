@@ -58,6 +58,8 @@ public class TestAttachShareableDataVolume {
         DBUtil.reDeployDB();
         deployer = new Deployer("deployerXml/volume/TestAttachShareableDataVolume.xml");
         deployer.addSpringConfig("mevocoRelated.xml");
+        deployer.addSpringConfig("ceph.xml");
+        deployer.addSpringConfig("cephSimulator.xml");
         deployer.load();
 
         loader = deployer.getComponentLoader();
@@ -84,7 +86,7 @@ public class TestAttachShareableDataVolume {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         VmInstanceInventory vm2 = deployer.vms.get("TestVm2");
         DiskOfferingInventory diskOfferingInventory = deployer.diskOfferings.get("DiskOffering");
-        PrimaryStorageInventory ps1 = deployer.primaryStorages.get("nfs");
+        PrimaryStorageInventory ps1 = deployer.primaryStorages.get("ceph-pri");
         ClusterInventory cluster1 = deployer.clusters.get("Cluster1");
 
         ApiSender sender = new ApiSender();
