@@ -13,6 +13,7 @@ public class ZSConfig {
     String webHook;
     Long readTimeout;
     Long writeTimeout;
+    String webAppName;
 
     public String getHostname() {
         return hostname;
@@ -65,6 +66,11 @@ public class ZSConfig {
 
         public Builder setWriteTimeout(long value, TimeUnit unit) {
             config.writeTimeout = unit.toMillis(value);
+            return this;
+        }
+
+        public Builder setWebAppName(String name) {
+            config.webAppName = name;
             return this;
         }
 

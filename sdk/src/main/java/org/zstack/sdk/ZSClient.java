@@ -247,8 +247,13 @@ public class ZSClient {
             HttpUrl.Builder urlBuilder = new HttpUrl.Builder().scheme("http")
                     .host(config.hostname)
                     .port(config.port)
-                    .addPathSegment("v1")
-                    .addPathSegments(info.path.replaceFirst("/", ""));
+                    .addPathSegment("v1");
+
+            if (config.webAppName != null) {
+                urlBuilder.addPathSegments(config.webAppName);
+            }
+
+            urlBuilder.addPathSegments(info.path.replaceFirst("/", ""));
 
             if (!qaction.conditions.isEmpty()) {
                 for (String cond : qaction.conditions) {
@@ -295,6 +300,10 @@ public class ZSClient {
                     // so /v1/zones will become //v1//zones
                     // we remove the extra / here
                     .addPathSegment("v1");
+
+            if (config.webAppName != null) {
+                builder.addPathSegments(config.webAppName);
+            }
 
             List<String> varNames = getVarNamesFromUrl(info.path);
             if (!varNames.isEmpty()) {
