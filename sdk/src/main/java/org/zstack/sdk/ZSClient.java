@@ -246,14 +246,14 @@ public class ZSClient {
 
             HttpUrl.Builder urlBuilder = new HttpUrl.Builder().scheme("http")
                     .host(config.hostname)
-                    .port(config.port)
-                    .addPathSegment("v1");
+                    .port(config.port);
 
             if (config.webAppName != null) {
                 urlBuilder.addPathSegments(config.webAppName);
             }
 
-            urlBuilder.addPathSegments(info.path.replaceFirst("/", ""));
+            urlBuilder.addPathSegment("v1")
+                    .addPathSegments(info.path.replaceFirst("/", ""));
 
             if (!qaction.conditions.isEmpty()) {
                 for (String cond : qaction.conditions) {
@@ -295,15 +295,16 @@ public class ZSClient {
             HttpUrl.Builder builder = new HttpUrl.Builder()
                     .scheme("http")
                     .host(config.hostname)
-                    .port(config.port)
-                    // HttpUrl will add an extra / to the path segment
-                    // so /v1/zones will become //v1//zones
-                    // we remove the extra / here
-                    .addPathSegment("v1");
+                    .port(config.port);
 
             if (config.webAppName != null) {
                 builder.addPathSegments(config.webAppName);
             }
+
+            // HttpUrl will add an extra / to the path segment
+            // so /v1/zones will become //v1//zones
+            // we remove the extra / here
+            builder.addPathSegment("v1");
 
             List<String> varNames = getVarNamesFromUrl(info.path);
             if (!varNames.isEmpty()) {
