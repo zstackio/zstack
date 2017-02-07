@@ -3,7 +3,6 @@ package org.zstack.sdk;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import okhttp3.*;
-import okhttp3.internal.http.HttpMethod;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -248,8 +247,8 @@ public class ZSClient {
                     .host(config.hostname)
                     .port(config.port);
 
-            if (config.webAppName != null) {
-                urlBuilder.addPathSegments(config.webAppName);
+            if (config.contextPath != null) {
+                urlBuilder.addPathSegments(config.contextPath);
             }
 
             urlBuilder.addPathSegment("v1")
@@ -297,8 +296,8 @@ public class ZSClient {
                     .host(config.hostname)
                     .port(config.port);
 
-            if (config.webAppName != null) {
-                builder.addPathSegments(config.webAppName);
+            if (config.contextPath != null) {
+                builder.addPathSegments(config.contextPath);
             }
 
             // HttpUrl will add an extra / to the path segment
