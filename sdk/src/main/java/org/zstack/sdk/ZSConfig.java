@@ -13,7 +13,7 @@ public class ZSConfig {
     String webHook;
     Long readTimeout;
     Long writeTimeout;
-    String webAppName;
+    String contextPath;
 
     public String getHostname() {
         return hostname;
@@ -69,8 +69,8 @@ public class ZSConfig {
             return this;
         }
 
-        public Builder setWebAppName(String name) {
-            config.webAppName = name;
+        public Builder setContextPath(String name) {
+            config.contextPath = name;
             return this;
         }
 

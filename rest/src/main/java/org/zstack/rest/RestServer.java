@@ -449,7 +449,11 @@ public class RestServer implements Component, CloudBusEventListener {
 
     private String getDecodedUrl(HttpServletRequest req) {
         try {
-            return URLDecoder.decode(req.getRequestURI(), "UTF-8");
+            if (req.getContextPath() == null) {
+                return URLDecoder.decode(req.getRequestURI(), "UTF-8");
+            } else {
+                return URLDecoder.decode(StringUtils.removeStart(req.getRequestURI(), req.getContextPath()), "UTF-8");
+            }
         } catch (UnsupportedEncodingException e) {
             throw new CloudRuntimeException(e);
         }
