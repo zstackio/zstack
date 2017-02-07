@@ -247,8 +247,8 @@ public class ZSClient {
             HttpUrl.Builder urlBuilder = new HttpUrl.Builder().scheme("http")
                     .host(config.hostname)
                     .port(config.port)
-                    .addPathSegment("/v1".replaceFirst("/", ""))
-                    .addPathSegment(info.path.replaceFirst("/", ""));
+                    .addPathSegment("v1")
+                    .addPathSegments(info.path.replaceFirst("/", ""));
 
             if (!qaction.conditions.isEmpty()) {
                 for (String cond : qaction.conditions) {
@@ -294,7 +294,7 @@ public class ZSClient {
                     // HttpUrl will add an extra / to the path segment
                     // so /v1/zones will become //v1//zones
                     // we remove the extra / here
-                    .addPathSegment("/v1".replaceFirst("/", ""));
+                    .addPathSegment("v1");
 
             List<String> varNames = getVarNamesFromUrl(info.path);
             if (!varNames.isEmpty()) {
@@ -310,9 +310,9 @@ public class ZSClient {
                 }
 
                 String path = substituteUrl(info.path, vars);
-                builder.addPathSegment(path.replaceFirst("/", ""));
+                builder.addPathSegments(path.replaceFirst("/", ""));
             } else {
-                builder.addPathSegment(info.path.replaceFirst("/", ""));
+                builder.addPathSegments(info.path.replaceFirst("/", ""));
             }
 
             final Map<String, Object> params = new HashMap<>();
