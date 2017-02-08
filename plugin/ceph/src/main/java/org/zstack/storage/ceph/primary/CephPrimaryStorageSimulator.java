@@ -23,16 +23,20 @@ import org.zstack.storage.ceph.primary.CephPrimaryStorageBase.*;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonBase.PingCmd;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonBase.PingRsp;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageSimulatorConfig.CephPrimaryStorageConfig;
+import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
+import org.zstack.utils.logging.CLogger;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by frank on 7/28/2015.
  */
 @Controller
 public class CephPrimaryStorageSimulator {
+    CLogger logger = Utils.getLogger(CephPrimaryStorageSimulator.class);
     @Autowired
     private DatabaseFacade dbf;
     @Autowired
@@ -140,12 +144,33 @@ public class CephPrimaryStorageSimulator {
 
     @RequestMapping(value= CephPrimaryStorageBase.CREATE_VOLUME_PATH, method= RequestMethod.POST)
     public @ResponseBody
-    String createEmptyVolume(HttpEntity<String> entity) {
+    String createEmptyVolume(HttpEntity<String> entity) throws InterruptedException {
+        if (config.synchronizedCreateEmptyVolume) {
+            synchronized (config) {
+                doCreateEmptyVolume(entity);
+            }
+        } else {
+            doCreateEmptyVolume(entity);
+        }
+        return null;
+    }
+
+    String doCreateEmptyVolume(HttpEntity<String> entity) throws InterruptedException {
         CreateEmptyVolumeCmd cmd = JSONObjectUtil.toObject(entity.getBody(), CreateEmptyVolumeCmd.class);
         config.createEmptyVolumeCmds.add(cmd);
 
         CreateEmptyVolumeRsp rsp = new CreateEmptyVolumeRsp();
         //setCapacity(cmd, rsp, -cmd.getSize());
+        for (String path : bitSizeMap.keySet()) {
+            if (!path.equals(cmd.getInstallPath())) {
+                continue;
+            }
+            rsp.error = String.format("File exists[%s]", cmd.getInstallPath());
+            rsp.setSuccess(false);
+            reply(entity, rsp);
+            return null;
+        }
+        TimeUnit.SECONDS.sleep(2);
         bitSizeMap.put(cmd.getInstallPath(), cmd.getSize());
         reply(entity, rsp);
         return null;
