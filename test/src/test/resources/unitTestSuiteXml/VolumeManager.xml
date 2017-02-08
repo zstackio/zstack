@@ -17,4 +17,5 @@
     <TestCase class="org.zstack.test.storage.volume.TestPolicyForVolume"/>
     <TestCase class="org.zstack.test.storage.volume.TestCreateShareableDataVolume"/>
     <TestCase class="org.zstack.test.storage.volume.TestAttachShareableDataVolume"/>
+    <TestCase class="org.zstack.test.storage.volume.TestAttachNotInstantiatedShareableDataVolumeToMultiVMsSimultaneously"/>
 </UnitTestSuiteConfig>
