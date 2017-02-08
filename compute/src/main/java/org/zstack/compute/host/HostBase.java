@@ -779,36 +779,6 @@ public abstract class HostBase extends AbstractHost {
     private void handle(final ConnectHostMsg msg) {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
-            public String getName() {
-                return "host-connect-to-hypervisor-" + self.getUuid();
-            }
-
-            @Override
-            public String getSyncSignature() {
-                return id;
-            }
-
-            @Override
-            public void run(final SyncTaskChain chain) {
-                connectHost(msg, new NoErrorCompletion(chain) {
-                    @Override
-                    public void done() {
-                        chain.next();
-                    }
-                });
-            }
-
-            @Override
-            public int getSyncLevel() {
-                return getHostSyncLevel();
-            }
-
-        });
-    }
-
-    private void connectHost(final ConnectHostMsg msg, final NoErrorCompletion completion) {
-        thdf.chainSubmit(new ChainTask(msg, completion) {
-            @Override
             public String getSyncSignature() {
                 return String.format("connect-host-%s", self.getUuid());
             }
@@ -868,7 +838,7 @@ public abstract class HostBase extends AbstractHost {
                             }
                         });
 
-                        done(new FlowDoneHandler(completion, msg) {
+                        done(new FlowDoneHandler(msg) {
                             @Override
                             public void handle(Map data) {
                                 changeConnectionState(HostStatusEvent.connected);
@@ -886,7 +856,7 @@ public abstract class HostBase extends AbstractHost {
                             }
                         });
 
-                        error(new FlowErrorHandler(completion, msg) {
+                        error(new FlowErrorHandler(msg) {
                             @Override
                             public void handle(ErrorCode errCode, Map data) {
                                 changeConnectionState(HostStatusEvent.disconnected);
@@ -898,11 +868,10 @@ public abstract class HostBase extends AbstractHost {
                             }
                         });
 
-                        Finally(new FlowFinallyHandler(completion, msg) {
+                        Finally(new FlowFinallyHandler(msg) {
                             @Override
                             public void Finally() {
                                 chain.next();
-                                completion.done();
                             }
                         });
                     }
@@ -914,8 +883,6 @@ public abstract class HostBase extends AbstractHost {
                 return "connect-host";
             }
         });
-
-
     }
 
     private void changeStateByLocalMessage(final ChangeHostStateMsg msg, final NoErrorCompletion completion) {
