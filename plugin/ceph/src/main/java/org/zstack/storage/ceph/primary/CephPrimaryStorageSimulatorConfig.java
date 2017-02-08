@@ -51,4 +51,5 @@ public class CephPrimaryStorageSimulatorConfig {
     public List<KvmCancelSelfFencerCmd> kvmCancelSelfFencerCmds = new ArrayList<>();
     public List<DeleteImageCacheCmd> deleteImageCacheCmds = new ArrayList<>();
     public Map<String, String> monAddr = new HashMap<>();
+    public boolean synchronizedCreateEmptyVolume = false;
 }

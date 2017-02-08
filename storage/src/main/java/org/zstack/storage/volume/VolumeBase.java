@@ -1122,6 +1122,7 @@ public class VolumeBase implements Volume {
 
             @Override
             public void run(SyncTaskChain chain) {
+                self = dbf.reload(self);
                 self.setVmInstanceUuid(msg.getVmInstanceUuid());
                 self = dbf.updateAndRefresh(self);
 
