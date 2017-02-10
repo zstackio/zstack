@@ -1,1 +1,0 @@
-../../../../conf/db/trigger.sql
