@@ -1,6 +1,6 @@
 package org.zstack.header.core;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -24,7 +24,8 @@ public abstract class AbstractCompletion implements AsyncBackup {
 
     protected AbstractCompletion(AsyncBackup one, AsyncBackup... others) {
         if (one != null) {
-            backups = Collections.singletonList(one);
+            backups = new ArrayList<>();
+            backups.add(one);
             Collections.addAll(backups, others);
         } else {
             backups = asList(others);
