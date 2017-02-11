@@ -5,12 +5,12 @@ import org.zstack.header.errorcode.ErrorCode;
 /**
  */
 public class NopeReturnValueCompletion extends ReturnValueCompletion {
-    public NopeReturnValueCompletion(AsyncBackup... completion) {
-        super(completion);
+    public NopeReturnValueCompletion(AsyncBackup one, AsyncBackup... others) {
+        super(one, others);
     }
 
-    public NopeReturnValueCompletion() {
-        super();
+    public NopeReturnValueCompletion(AsyncBackup... others) {
+        super(null, others);
     }
 
     @Override

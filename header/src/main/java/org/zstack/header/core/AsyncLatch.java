@@ -11,6 +11,7 @@ public class AsyncLatch extends AbstractCompletion {
     private NoErrorCompletion completion;
 
     public AsyncLatch(int count, NoErrorCompletion completion) {
+        super(completion);
         this.count = count;
         this.completion = completion;
     }

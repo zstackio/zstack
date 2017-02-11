@@ -44,7 +44,7 @@ public class SnatExtension extends AbstractNetworkServiceExtension implements Co
         Map.Entry<NetworkServiceSnatBackend, List<SnatStruct>> e = it.next();
         NetworkServiceSnatBackend bkd = e.getKey();
         List<SnatStruct> structs = e.getValue();
-        bkd.applySnatService(structs, spec, new Completion() {
+        bkd.applySnatService(structs, spec, new Completion(complete) {
             @Override
             public void success() {
                 doSnat(it, spec, complete);

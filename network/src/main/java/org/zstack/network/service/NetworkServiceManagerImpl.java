@@ -305,7 +305,7 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
                 @Override
                 public void run(final FlowTrigger chain, Map data) {
                     logger.debug(String.format("NetworkServiceExtensionPoint[%s] is asking back ends to apply network service[%s] if needed", ns.getClass().getName(), ns.getNetworkServiceType()));
-                    ns.applyNetworkService(spec, data, new Completion() {
+                    ns.applyNetworkService(spec, data, new Completion(chain) {
                         @Override
                         public void success() {
                             chain.next();
@@ -333,12 +333,12 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
             schain.then(flow);
         }
 
-        schain.error(new FlowErrorHandler() {
+        schain.error(new FlowErrorHandler(completion) {
             @Override
             public void handle(ErrorCode err, Map data) {
                 completion.fail(err);
             }
-        }).done(new FlowDoneHandler() {
+        }).done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
                 completion.success();

@@ -22,11 +22,8 @@ public abstract class AsyncBatch extends AbstractCompletion {
     private List<AsyncBatchRunner> runners = new ArrayList<>();
     protected List<ErrorCode> errors = new ArrayList<>();
 
-    public AsyncBatch(AsyncBackup... backups) {
-        super(backups);
-    }
-
-    public AsyncBatch() {
+    public AsyncBatch(AsyncBackup one, AsyncBackup... others) {
+        super(one, others);
     }
 
     protected void batch(AsyncBatchRunner runner) {

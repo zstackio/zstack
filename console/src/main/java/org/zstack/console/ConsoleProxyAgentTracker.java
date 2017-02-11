@@ -73,7 +73,7 @@ public class ConsoleProxyAgentTracker extends PingTracker {
 
             ConsoleBackend bkd = cmgr.getConsoleBackend();
             rmsg.setServiceId(bkd.returnServiceIdForConsoleAgentMsg(rmsg, resourceUuid));
-            bus.send(rmsg, new CloudBusCallBack() {
+            bus.send(rmsg, new CloudBusCallBack(null) {
                 @Override
                 public void run(MessageReply reply) {
                     //TODO

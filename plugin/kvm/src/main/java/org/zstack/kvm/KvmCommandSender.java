@@ -8,6 +8,7 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusSteppingCallback;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
+import org.zstack.header.core.AsyncBackup;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -39,6 +40,10 @@ public class KvmCommandSender {
 
     public static abstract class SteppingSendCallback<T> extends ReturnValueCompletion<T> {
         String hostUuid;
+
+        public SteppingSendCallback() {
+            super(null);
+        }
 
         protected String getHostUuid() {
             return hostUuid;

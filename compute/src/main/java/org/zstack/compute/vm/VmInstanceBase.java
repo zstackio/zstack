@@ -1346,7 +1346,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     private void handle(final MigrateVmMsg msg) {
         final MigrateVmReply reply = new MigrateVmReply();
-        thdf.chainSubmit(new ChainTask() {
+        thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
                 return syncThreadName;
@@ -1529,7 +1529,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     private void handle(final VmAttachNicMsg msg) {
         final VmAttachNicReply reply = new VmAttachNicReply();
-        attachNic(msg, msg.getL3NetworkUuid(), new ReturnValueCompletion<VmNicInventory>() {
+        attachNic(msg, msg.getL3NetworkUuid(), new ReturnValueCompletion<VmNicInventory>(msg) {
             @Override
             public void success(VmNicInventory nic) {
                 reply.setInventroy(nic);
@@ -3142,7 +3142,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         hmsg.setHostUuid(self.getHostUuid());
         hmsg.setInstanceOfferingInventory(inv);
         bus.makeTargetServiceIdByResourceUuid(hmsg, HostConstant.SERVICE_ID, self.getHostUuid());
-        bus.send(hmsg, new CloudBusCallBack() {
+        bus.send(hmsg, new CloudBusCallBack(null) {
             @Override
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {
@@ -3902,7 +3902,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     protected void handle(final APIDestroyVmInstanceMsg msg) {
         final APIDestroyVmInstanceEvent evt = new APIDestroyVmInstanceEvent(msg.getId());
-        destroyVm(msg, new Completion() {
+        destroyVm(msg, new Completion(msg) {
             @Override
             public void success() {
                 bus.publish(evt);

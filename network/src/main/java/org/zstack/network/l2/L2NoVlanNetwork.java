@@ -102,7 +102,7 @@ public class L2NoVlanNetwork implements L2Network {
 
     private void handle(final PrepareL2NetworkOnHostMsg msg) {
         final PrepareL2NetworkOnHostReply reply = new PrepareL2NetworkOnHostReply();
-        prepareL2NetworkOnHosts(Arrays.asList(msg.getHost()), new Completion() {
+        prepareL2NetworkOnHosts(Arrays.asList(msg.getHost()), new Completion(msg) {
             @Override
             public void success() {
                 bus.reply(msg, reply);
@@ -237,7 +237,7 @@ public class L2NoVlanNetwork implements L2Network {
                     return;
                 }
 
-                bus.send(cmsgs, new CloudBusListCallBack() {
+                bus.send(cmsgs, new CloudBusListCallBack(trigger) {
                     @Override
                     public void run(List<MessageReply> replies) {
                         for (MessageReply r : replies) {
@@ -259,7 +259,7 @@ public class L2NoVlanNetwork implements L2Network {
                 }
 
                 HostInventory host = it.next();
-                realizeNetwork(host.getUuid(), host.getHypervisorType(), new Completion() {
+                realizeNetwork(host.getUuid(), host.getHypervisorType(), new Completion(trigger) {
                     @Override
                     public void success() {
                         realize(it, trigger);

@@ -205,4 +205,12 @@ public aspect AsyncBackupAspect {
             backup(completion.getBackups(), t);
         }
     }
+
+    void around(org.zstack.header.core.AbstractCompletion completion) : this(completion) && execution(void org.zstack.header.core.workflow.FlowFinallyHandler+.Finally(..)) {
+        try {
+            proceed(completion);
+        } catch (Throwable  t) {
+            backup(completion.getBackups(), t);
+        }
+    }
 }

@@ -1,8 +1,11 @@
 package org.zstack.header.core;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static java.util.Arrays.asList;
 
 /**
  */
@@ -19,12 +22,13 @@ public abstract class AbstractCompletion implements AsyncBackup {
         this.backups = backups;
     }
 
-    protected AbstractCompletion(AsyncBackup... backups) {
-        this.backups = Arrays.asList(backups);
-    }
-
-    protected AbstractCompletion() {
-        backups = null;
+    protected AbstractCompletion(AsyncBackup one, AsyncBackup... others) {
+        if (one != null) {
+            backups = Collections.singletonList(one);
+            Collections.addAll(backups, others);
+        } else {
+            backups = asList(others);
+        }
     }
 
     public final AtomicBoolean getSuccessCalled() {

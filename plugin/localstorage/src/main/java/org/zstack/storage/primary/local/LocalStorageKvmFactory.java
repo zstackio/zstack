@@ -123,7 +123,7 @@ public class LocalStorageKvmFactory implements LocalStorageHypervisorFactory, KV
             RecalculatePrimaryStorageCapacityMsg msg = new RecalculatePrimaryStorageCapacityMsg();
             msg.setPrimaryStorageUuid(priUUid);
             bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, priUUid);
-            bus.send(msg, new CloudBusCallBack() {
+            bus.send(msg, new CloudBusCallBack(null) {
                 @Override
                 public void run(MessageReply reply) {
                     if (!reply.isSuccess()) {

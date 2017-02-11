@@ -311,7 +311,7 @@ public class JobQueueFacadeImpl2 implements JobQueueFacade, CloudBusEventListene
                 final Job job = ret.get(1);
 
                 logger.debug(String.format("[Job Start] start executing job[id:%s, name:%s]", e.getId(), e.getName()));
-                job.run(new ReturnValueCompletion<Object>() {
+                job.run(new ReturnValueCompletion<Object>(null) {
                     @Override
                     public void success(Object returnValue) {
                         try {

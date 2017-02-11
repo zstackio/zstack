@@ -41,7 +41,7 @@ public abstract class AsyncLoop<T>  {
         Collection<T> items = collectionForLoop();
         DebugUtils.Assert(items != null, "collectionForLoop cannot return null");
 
-        runItem(items.iterator(), new Completion(backups) {
+        runItem(items.iterator(), new Completion(null, backups) {
             @Override
             public void success() {
                 done();

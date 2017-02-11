@@ -312,7 +312,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
 
         if (msg.isDryRun()) {
             final AllocateHostDryRunReply reply = new AllocateHostDryRunReply();
-            strategy.dryRun(spec, new ReturnValueCompletion<List<HostInventory>>() {
+            strategy.dryRun(spec, new ReturnValueCompletion<List<HostInventory>>(msg) {
                 @Override
                 public void success(List<HostInventory> returnValue) {
                     reply.setHosts(returnValue);

@@ -22,12 +22,8 @@ public class FutureCompletion extends Completion {
         this.timeout = timeout;
     }
 
-    public FutureCompletion(AsyncBackup... backups) {
-        super(backups);
-    }
-
-    public FutureCompletion() {
-        super();
+    public FutureCompletion(AsyncBackup one, AsyncBackup... others) {
+        super(one, others);
     }
 
     @Override

@@ -1654,7 +1654,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 GetVolumeSizeRsp rsp = wrapper.getResponse(GetVolumeSizeRsp.class);
                 return rsp.isSuccess() ? null : errf.stringToOperationError(rsp.getError());
             }
-        }, new ReturnValueCompletion<KvmResponseWrapper>() {
+        }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
             @Override
             public void success(KvmResponseWrapper returnValue) {
                 GetVolumeSizeRsp rsp = returnValue.getResponse(GetVolumeSizeRsp.class);
@@ -1927,7 +1927,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                         GetBackingFileCmd cmd = new GetBackingFileCmd();
                         cmd.path = struct.getVolume().getInstallPath();
                         cmd.volumeUuid = struct.getVolume().getUuid();
-                        httpCall(GET_BACKING_FILE_PATH, struct.getSrcHostUuid(), cmd, GetBackingFileRsp.class, new ReturnValueCompletion<GetBackingFileRsp>() {
+                        httpCall(GET_BACKING_FILE_PATH, struct.getSrcHostUuid(), cmd, GetBackingFileRsp.class, new ReturnValueCompletion<GetBackingFileRsp>(trigger) {
                             @Override
                             public void success(GetBackingFileRsp rsp) {
                                 context.backingFilePath = rsp.backingFilePath;
@@ -2106,7 +2106,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
                         if (s) {
-                            deleteBits(context.backingFilePath, struct.getDestHostUuid(), new Completion() {
+                            deleteBits(context.backingFilePath, struct.getDestHostUuid(), new Completion(null) {
                                 @Override
                                 public void success() {
                                     // ignore
@@ -2260,7 +2260,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                             }
 
                             final String path = it.next();
-                            deleteBits(path, struct.getDestHostUuid(), new Completion() {
+                            deleteBits(path, struct.getDestHostUuid(), new Completion(trigger) {
                                 @Override
                                 public void success() {
                                     doDelete(it);

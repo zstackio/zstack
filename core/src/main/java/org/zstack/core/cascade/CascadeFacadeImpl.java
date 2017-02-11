@@ -203,7 +203,7 @@ public class CascadeFacadeImpl implements CascadeFacade, Component {
                 public void run(final FlowTrigger trigger, Map data) {
                     logger.debug(String.format("[Async cascade (%s)]: %s --> %s",
                             caction.getActionCode(), caction.getParentIssuer(), node.getName()));
-                    node.getExtension().asyncCascade(caction, new Completion() {
+                    node.getExtension().asyncCascade(caction, new Completion(trigger) {
                         @Override
                         public void success() {
                             trigger.next();
@@ -218,12 +218,12 @@ public class CascadeFacadeImpl implements CascadeFacade, Component {
             });
         }
 
-        chain.done(new FlowDoneHandler() {
+        chain.done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
                 completion.success();
             }
-        }).error(new FlowErrorHandler() {
+        }).error(new FlowErrorHandler(completion) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
                 completion.fail(errCode);

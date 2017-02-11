@@ -551,7 +551,7 @@ public class VolumeSnapshotTreeBase {
                     }
                 });
 
-                Finally(new FlowFinallyHandler() {
+                Finally(new FlowFinallyHandler(msg, completion) {
                     @Override
                     public void Finally() {
                         completion.done();
@@ -928,7 +928,7 @@ public class VolumeSnapshotTreeBase {
     }
 
     private void handle(final APIBackupVolumeSnapshotMsg msg) {
-        thdf.chainSubmit(new ChainTask() {
+        thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
                 return syncSignature;

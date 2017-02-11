@@ -89,7 +89,7 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
                     msg.setHostUuid(hostUuid);
                     msg.setSkipIfHostConnected(true);
                     bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
-                    bus.send(msg, new CloudBusCallBack() {
+                    bus.send(msg, new CloudBusCallBack(null) {
                         @Override
                         public void run(MessageReply reply) {
                             inReconnectingHost.remove(hostUuid);
@@ -126,7 +126,8 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
                     return;
                 }
 
-                bus.send(msgs, HostGlobalConfig.HOST_TRACK_PARALLELISM_DEGREE.value(Integer.class), new CloudBusSteppingCallback() {
+                bus.send(msgs, HostGlobalConfig.HOST_TRACK_PARALLELISM_DEGREE.value(Integer.class),
+                        new CloudBusSteppingCallback(null) {
                     @Override
                     public void run(NeedReplyMessage msg, MessageReply reply) {
                         PingHostMsg pmsg = (PingHostMsg)msg;

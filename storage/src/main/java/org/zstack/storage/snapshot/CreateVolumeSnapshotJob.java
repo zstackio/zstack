@@ -47,7 +47,7 @@ public class CreateVolumeSnapshotJob extends AbstractSchedulerJob {
         bus.makeTargetServiceIdByResourceUuid(cmsg, VolumeConstant.SERVICE_ID, getVolumeUuid());
         if (SchedulerFacadeImpl.taskRunning.get(volumeUuid) == null || ! SchedulerFacadeImpl.taskRunning.get(volumeUuid)) {
             SchedulerFacadeImpl.taskRunning.put(volumeUuid, true);
-            bus.send(cmsg, new CloudBusCallBack() {
+            bus.send(cmsg, new CloudBusCallBack(null) {
                 @Override
                 public void run(MessageReply reply) {
                     if (reply.isSuccess()) {

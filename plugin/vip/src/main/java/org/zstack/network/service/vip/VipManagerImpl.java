@@ -261,7 +261,7 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
                     }
                 });
 
-                error(new FlowErrorHandler() {
+                error(new FlowErrorHandler(msg) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
                         evt.setError(errCode);

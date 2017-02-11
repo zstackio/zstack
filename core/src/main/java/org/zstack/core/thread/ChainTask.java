@@ -4,12 +4,8 @@ import org.zstack.header.core.AbstractCompletion;
 import org.zstack.header.core.AsyncBackup;
 
 public abstract class ChainTask extends AbstractCompletion {
-    public ChainTask(AsyncBackup...backup) {
-        super(backup);
-    }
-
-    public ChainTask() {
-        super();
+    public ChainTask(AsyncBackup one, AsyncBackup...others) {
+        super(one, others);
     }
 
     public abstract String getSyncSignature();

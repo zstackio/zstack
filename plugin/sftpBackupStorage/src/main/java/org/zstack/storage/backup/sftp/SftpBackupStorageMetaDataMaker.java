@@ -214,7 +214,7 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
             hostName = getHostNameFromImageInventory(img);
         }
         restf.asyncJsonPost(buildUrl(SftpBackupStorageConstant.DUMP_IMAGE_METADATA_TO_FILE, hostName), dumpCmd,
-                new JsonAsyncRESTCallback<SftpBackupStorageCommands.DumpImageInfoToMetaDataFileRsp>() {
+                new JsonAsyncRESTCallback<SftpBackupStorageCommands.DumpImageInfoToMetaDataFileRsp>(null) {
                     @Override
                     public void fail(ErrorCode err) {
                         logger.error("dump image metadata failed" + err.toString());
@@ -268,7 +268,7 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
                         SftpBackupStorageCommands.CheckImageMetaDataFileExistCmd cmd = new SftpBackupStorageCommands.CheckImageMetaDataFileExistCmd();
                         cmd.setBackupStoragePath(getBsUrlFromImageInventory(img));
                         restf.asyncJsonPost(buildUrl(SftpBackupStorageConstant.CHECK_IMAGE_METADATA_FILE_EXIST, getHostNameFromImageInventory(img)), cmd,
-                                new JsonAsyncRESTCallback<SftpBackupStorageCommands.CheckImageMetaDataFileExistRsp>() {
+                                new JsonAsyncRESTCallback<SftpBackupStorageCommands.CheckImageMetaDataFileExistRsp>(null) {
                                     @Override
                                     public void fail(ErrorCode err) {
                                         logger.error("check image metadata file exist failed" + err.toString());
@@ -316,7 +316,7 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
                             SftpBackupStorageCommands.GenerateImageMetaDataFileCmd generateCmd = new SftpBackupStorageCommands.GenerateImageMetaDataFileCmd();
                             generateCmd.setBackupStoragePath(getBsUrlFromImageInventory(img));
                             restf.asyncJsonPost(buildUrl(SftpBackupStorageConstant.GENERATE_IMAGE_METADATA_FILE, getHostNameFromImageInventory(img)), generateCmd,
-                                    new JsonAsyncRESTCallback<SftpBackupStorageCommands.GenerateImageMetaDataFileRsp>() {
+                                    new JsonAsyncRESTCallback<SftpBackupStorageCommands.GenerateImageMetaDataFileRsp>(trigger) {
                                         @Override
                                         public void fail(ErrorCode err) {
                                             logger.error("create image metadata file failed" + err.toString());
@@ -358,10 +358,10 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
                 });
 
 
-                done(new FlowDoneHandler() {
+                done(new FlowDoneHandler(null) {
                     @Override
                     public void handle(Map data) {
-
+                        // do nothing
                     }
                 });
 
@@ -396,7 +396,7 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
         SftpBackupStorageCommands.GetImagesMetaDataCmd cmd = new SftpBackupStorageCommands.GetImagesMetaDataCmd();
         cmd.setBackupStoragePath(inv.getUrl());
         restf.asyncJsonPost(buildUrl(SftpBackupStorageConstant.GET_IMAGES_METADATA, inv.getHostname()), cmd,
-                new JsonAsyncRESTCallback<SftpBackupStorageCommands.GetImagesMetaDataRsp>() {
+                new JsonAsyncRESTCallback<SftpBackupStorageCommands.GetImagesMetaDataRsp>(null) {
                     @Override
                     public void fail(ErrorCode err) {
                         logger.error("check image metadata file exist failed" + err.toString());
@@ -453,7 +453,7 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
                         SftpBackupStorageCommands.CheckImageMetaDataFileExistCmd cmd = new SftpBackupStorageCommands.CheckImageMetaDataFileExistCmd();
                         cmd.setBackupStoragePath(bsUrl);
                         restf.asyncJsonPost(buildUrl(SftpBackupStorageConstant.CHECK_IMAGE_METADATA_FILE_EXIST, hostName), cmd,
-                                new JsonAsyncRESTCallback<SftpBackupStorageCommands.CheckImageMetaDataFileExistRsp>() {
+                                new JsonAsyncRESTCallback<SftpBackupStorageCommands.CheckImageMetaDataFileExistRsp>(trigger) {
                                     @Override
                                     public void fail(ErrorCode err) {
                                         logger.error("check image metadata file exist failed" + err.toString());
@@ -503,7 +503,7 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
                         deleteCmd.setImageBackupStorageUuid(backupStorageUuid);
                         deleteCmd.setBackupStoragePath(bsUrl);
                         restf.asyncJsonPost(buildUrl(SftpBackupStorageConstant.DELETE_IMAGES_METADATA, hostName), deleteCmd,
-                                new JsonAsyncRESTCallback<SftpBackupStorageCommands.DeleteImageInfoFromMetaDataFileRsp>() {
+                                new JsonAsyncRESTCallback<SftpBackupStorageCommands.DeleteImageInfoFromMetaDataFileRsp>(trigger) {
                                     @Override
                                     public void fail(ErrorCode err) {
                                         logger.error("delete image metadata file failed" + err.toString());
@@ -537,10 +537,10 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
                     }
                 });
 
-                done(new FlowDoneHandler() {
+                done(new FlowDoneHandler(null) {
                     @Override
                     public void handle(Map data) {
-
+                        // do nothing
                     }
                 });
 

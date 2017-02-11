@@ -505,7 +505,7 @@ public abstract class HostBase extends AbstractHost {
     }
 
     protected void handle(final APIChangeHostStateMsg msg) {
-        thdf.chainSubmit(new ChainTask() {
+        thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getName() {
                 return "change-host-state-" + self.getUuid();

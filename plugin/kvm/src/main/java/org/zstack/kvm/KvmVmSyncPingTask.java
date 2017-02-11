@@ -107,7 +107,7 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
     public boolean start() {
         restf.registerSyncHttpCallHandler(KVMConstant.KVM_REPORT_VM_STATE, ReportVmStateCmd.class, new SyncHttpCallHandler<ReportVmStateCmd>() {
             private void reportState(final ReportVmStateCmd cmd) {
-                thdf.chainSubmit(new ChainTask() {
+                thdf.chainSubmit(new ChainTask(null) {
                     @Override
                     public String getSyncSignature() {
                         return String.format("report-state-of-vm-%s", cmd.vmUuid);
@@ -180,7 +180,7 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
             msg.setVmInstanceUuids(vmUuids);
             msg.setHostUuid(host.getUuid());
             bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, host.getUuid());
-            bus.send(msg, new CloudBusCallBack() {
+            bus.send(msg, new CloudBusCallBack(null) {
                 @Override
                 public void run(MessageReply reply) {
                     if (!reply.isSuccess()) {

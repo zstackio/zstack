@@ -14,12 +14,8 @@ public class FutureReturnValueCompletion extends ReturnValueCompletion {
     private volatile boolean done;
     private Object result;
 
-    public FutureReturnValueCompletion(AsyncBackup... backups) {
-        super(backups);
-    }
-
-    public FutureReturnValueCompletion() {
-        super();
+    public FutureReturnValueCompletion(AsyncBackup one, AsyncBackup... others) {
+        super(one, others);
     }
 
     @Override

@@ -9,11 +9,8 @@ import org.zstack.header.message.NeedReplyMessage;
 /**
  */
 public abstract class CloudBusSteppingCallback extends AbstractCompletion {
-    public CloudBusSteppingCallback(AsyncBackup...backup) {
-        super(backup);
-    }
-
-    public CloudBusSteppingCallback() {
+    public CloudBusSteppingCallback(AsyncBackup one, AsyncBackup... others) {
+        super(one, others);
     }
 
     public abstract void run(NeedReplyMessage msg, MessageReply reply);

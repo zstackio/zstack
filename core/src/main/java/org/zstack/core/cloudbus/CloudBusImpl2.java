@@ -1518,7 +1518,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
         }
 
         final NeedReplyMessage fmsg = msg;
-        send(fmsg, new CloudBusCallBack() {
+        send(fmsg, new CloudBusCallBack(completion) {
             @Override
             public void run(MessageReply reply) {
                 int replyNum;
@@ -1557,7 +1557,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
         final List<MessageReply> replies = new ArrayList<MessageReply>();
         final int retNum = msgs.size();
         for (NeedReplyMessage nmsg : init) {
-            send(nmsg, new CloudBusCallBack() {
+            send(nmsg, new CloudBusCallBack(null) {
 
                 private MessageReply findReply(final Message msg) {
                     return CollectionUtils.find(replies, new Function<MessageReply, MessageReply>() {
@@ -1611,7 +1611,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
         }
 
         final NeedReplyMessage fmsg = msg;
-        send(msg, new CloudBusCallBack() {
+        send(msg, new CloudBusCallBack(null) {
             @Override
             public void run(MessageReply reply) {
                 try {
@@ -1642,7 +1642,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
 
         final Iterator<NeedReplyMessage> it = copy.iterator();
         for (final NeedReplyMessage msg : init) {
-            send(msg, new CloudBusCallBack() {
+            send(msg, new CloudBusCallBack(null) {
                 @Override
                 public void run(MessageReply reply) {
                     try {

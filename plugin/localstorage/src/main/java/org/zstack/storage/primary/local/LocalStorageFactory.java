@@ -388,7 +388,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
                 }
             });
 
-            final FutureCompletion completion = new FutureCompletion();
+            final FutureCompletion completion = new FutureCompletion(null);
             bus.send(msgs, new CloudBusListCallBack(completion) {
                 @Override
                 public void run(List<MessageReply> replies) {
@@ -440,7 +440,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
                 }
             });
 
-            final FutureCompletion completion = new FutureCompletion();
+            final FutureCompletion completion = new FutureCompletion(null);
             bus.send(msgs, new CloudBusListCallBack(completion) {
                 @Override
                 public void run(List<MessageReply> replies) {

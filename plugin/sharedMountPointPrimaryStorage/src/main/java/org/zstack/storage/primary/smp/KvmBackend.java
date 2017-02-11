@@ -341,7 +341,7 @@ public class KvmBackend extends HypervisorBackend {
             DebugUtils.Assert(primaryStorageInstallPath != null, "primaryStorageInstallPath cannot be null");
             DebugUtils.Assert(backupStorageInstallPath != null, "backupStorageInstallPath cannot be null");
 
-            thdf.chainSubmit(new ChainTask() {
+            thdf.chainSubmit(new ChainTask(completion) {
                 @Override
                 public String getSyncSignature() {
                     return String.format("download-image-%s-to-shared-mountpoint-storage-%s-cache", image.getUuid(), self.getUuid());
@@ -512,7 +512,7 @@ public class KvmBackend extends HypervisorBackend {
         cmd.size = volume.getSize();
         cmd.volumeUuid = volume.getUuid();
 
-        new Do(hostUuid).go(CREATE_EMPTY_VOLUME_PATH, cmd, new ReturnValueCompletion<AgentRsp>() {
+        new Do(hostUuid).go(CREATE_EMPTY_VOLUME_PATH, cmd, new ReturnValueCompletion<AgentRsp>(completion) {
             @Override
             public void success(AgentRsp returnValue) {
                 InstantiateVolumeOnPrimaryStorageReply reply = new InstantiateVolumeOnPrimaryStorageReply();
@@ -1071,7 +1071,7 @@ public class KvmBackend extends HypervisorBackend {
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
                         if (success) {
-                            deleteBits(temporaryTemplatePath, new Completion() {
+                            deleteBits(temporaryTemplatePath, new Completion(trigger) {
                                 @Override
                                 public void success() {
                                     // pass
@@ -1381,7 +1381,7 @@ public class KvmBackend extends HypervisorBackend {
                 GetVolumeSizeRsp rsp = wrapper.getResponse(GetVolumeSizeRsp.class);
                 return rsp.success ? null : errf.stringToOperationError(rsp.error);
             }
-        }, new ReturnValueCompletion<KvmResponseWrapper>() {
+        }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
             @Override
             public void success(KvmResponseWrapper returnValue) {
                 SyncVolumeSizeOnPrimaryStorageReply reply = new SyncVolumeSizeOnPrimaryStorageReply();

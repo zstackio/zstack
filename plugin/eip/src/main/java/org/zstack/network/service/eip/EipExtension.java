@@ -153,7 +153,7 @@ public class EipExtension extends AbstractNetworkServiceExtension implements Com
 
         Map.Entry<String, List<EipStruct>> e = it.next();
         String providerType = e.getKey();
-        applyNetworkService(providerType, e.getValue().iterator(), applieds, new Completion() {
+        applyNetworkService(providerType, e.getValue().iterator(), applieds, new Completion(completion) {
             @Override
             public void success() {
                 applyNetworkService(it, applieds, completion);

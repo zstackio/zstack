@@ -12,12 +12,8 @@ import java.util.Map;
  * To change this template use File | Settings | File Templates.
  */
 public abstract class FlowDoneHandler extends AbstractCompletion {
-    public FlowDoneHandler(AsyncBackup... backup) {
-        super(backup);
-    }
-
-    public FlowDoneHandler() {
-        super();
+    public FlowDoneHandler(AsyncBackup one, AsyncBackup... others) {
+        super(one, others);
     }
 
     public abstract void handle(Map data);

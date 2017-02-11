@@ -6,11 +6,8 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedReplyMessage;
 
 public abstract class CloudBusCallBack extends AbstractCompletion {
-    public CloudBusCallBack(AsyncBackup...backup) {
-        super(backup);
-    }
-
-    public CloudBusCallBack() {
+    public CloudBusCallBack(AsyncBackup one, AsyncBackup...others) {
+        super(one, others);
     }
 
 	public abstract void run(MessageReply reply);

@@ -188,7 +188,7 @@ public class LoadBalancerBase {
 
     private void handle(final RefreshLoadBalancerMsg msg) {
         final RefreshLoadBalancerReply reply = new RefreshLoadBalancerReply();
-        thdf.chainSubmit(new ChainTask() {
+        thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
                 return getSyncId();

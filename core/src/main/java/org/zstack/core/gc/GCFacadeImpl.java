@@ -214,7 +214,7 @@ public class GCFacadeImpl implements GCFacade, ManagementNodeChangeListener, Man
 
         final RunningOnce once = new RunningOnce();
 
-        final GCCompletion completion = new GCCompletion() {
+        final GCCompletion completion = new GCCompletion(null) {
             @Override
             public void success() {
                 vo.setStatus(GCStatus.Done);
@@ -274,7 +274,7 @@ public class GCFacadeImpl implements GCFacade, ManagementNodeChangeListener, Man
     private void scheduleTask(final TimeBasedGCPersistentContext context, final GarbageCollectorVO vo, boolean instant, final boolean updateDb) {
         final RunningOnce once = new RunningOnce();
 
-        final GCCompletion completion = new GCCompletion() {
+        final GCCompletion completion = new GCCompletion(null) {
             @Override
             public void success() {
                 vo.setStatus(GCStatus.Done);
@@ -363,7 +363,7 @@ public class GCFacadeImpl implements GCFacade, ManagementNodeChangeListener, Man
 
         final RunningOnce once = new RunningOnce();
 
-        final GCCompletion completion = new GCCompletion() {
+        final GCCompletion completion = new GCCompletion(null) {
             @Override
             public void success() {
                 logger.debug(String.format("GC ephemeral job[name:%s] is done", context.getName()));
@@ -417,7 +417,7 @@ public class GCFacadeImpl implements GCFacade, ManagementNodeChangeListener, Man
     private void scheduleTask(final TimeBasedGCEphemeralContext context, boolean instant) {
         final RunningOnce once = new RunningOnce();
 
-        final GCCompletion completion = new GCCompletion() {
+        final GCCompletion completion = new GCCompletion(null) {
             @Override
             public void success() {
                 logger.debug(String.format("GC ephemeral job[name:%s] is done", context.getName()));

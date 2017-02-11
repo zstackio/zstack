@@ -131,7 +131,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                     return null;
                 }
 
-                FutureCompletion completion = new FutureCompletion();
+                FutureCompletion completion = new FutureCompletion(null);
 
                 PrimaryStorageInventory psinv = getSelfInventory();
 
@@ -699,7 +699,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                                     nfsMgr.findHypervisorTypeByImageFormatAndPrimaryStorageUuid(image.getFormat(), self.getUuid())
                             );
 
-                            mediator.createVolumeFromImageCache(primaryStorage, imageCache, volume, new ReturnValueCompletion<String>() {
+                            mediator.createVolumeFromImageCache(primaryStorage, imageCache, volume, new ReturnValueCompletion<String>(trigger) {
                                 @Override
                                 public void success(String returnValue) {
                                     volumeInstallPath = returnValue;
@@ -1087,7 +1087,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                     return false;
                 }
 
-                FutureCompletion future = new FutureCompletion();
+                FutureCompletion future = new FutureCompletion(null);
 
                 ConnectParam p = new ConnectParam();
                 p.setNewAdded(false);

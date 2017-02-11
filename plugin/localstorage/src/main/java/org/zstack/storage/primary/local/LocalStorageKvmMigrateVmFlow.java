@@ -419,7 +419,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                                 msg.setHostUuid(dstHostUuid);
                                 msg.setPrimaryStorageUuid(ref.getPrimaryStorageUuid());
                                 bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, ref.getPrimaryStorageUuid());
-                                bus.send(msg, new CloudBusCallBack() {
+                                bus.send(msg, new CloudBusCallBack(null) {
                                     @Override
                                     public void run(MessageReply reply) {
                                         if (!reply.isSuccess()) {
@@ -663,7 +663,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                                 }
                             });
 
-                            bus.send(msgs, new CloudBusListCallBack() {
+                            bus.send(msgs, new CloudBusListCallBack(null) {
                                 @Override
                                 public void run(List<MessageReply> replies) {
                                     for (MessageReply r : replies) {
@@ -699,7 +699,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                             }
                         });
 
-                        bus.send(msgs, new CloudBusListCallBack() {
+                        bus.send(msgs, new CloudBusListCallBack(null) {
                             @Override
                             public void run(List<MessageReply> replies) {
                                 for (MessageReply r : replies) {
@@ -729,7 +729,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                         msg.setPrimaryStorageUuid(ref.getPrimaryStorageUuid());
                         msg.setSize(requiredSize);
                         bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, ref.getPrimaryStorageUuid());
-                        bus.send(msg, new CloudBusCallBack() {
+                        bus.send(msg, new CloudBusCallBack(null) {
                             @Override
                             public void run(MessageReply reply) {
                                 //TODO
@@ -758,7 +758,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                     }
                 });
 
-                Finally(new FlowFinallyHandler() {
+                Finally(new FlowFinallyHandler(next) {
                     @Transactional
                     private void deleteProgress(){
                         SimpleQuery<ProgressVO> q = dbf.createQuery(ProgressVO.class);
@@ -790,7 +790,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
         msg.setSize(size);
         msg.setPrimaryStorageUuid(primaryStorageUuid);
         bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, primaryStorageUuid);
-        bus.send(msg, new CloudBusCallBack() {
+        bus.send(msg, new CloudBusCallBack(null) {
             @Override
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {
@@ -1030,7 +1030,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                             }
                         });
 
-                        bus.send(msgs, new CloudBusListCallBack() {
+                        bus.send(msgs, new CloudBusListCallBack(null) {
                             @Override
                             public void run(List<MessageReply> replies) {
                                 for (MessageReply r : replies) {
@@ -1111,7 +1111,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                         msg.setPath(p.volume.getInstallPath());
                         bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, p.volume.getPrimaryStorageUuid());
 
-                        bus.send(msg, new CloudBusCallBack() {
+                        bus.send(msg, new CloudBusCallBack(null) {
                             @Override
                             public void run(MessageReply reply) {
                                 //TODO
@@ -1217,7 +1217,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                         msg.setPath(vol.getInstallPath());
                         msg.setPrimaryStorageUuid(vol.getPrimaryStorageUuid());
                         bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, vol.getPrimaryStorageUuid());
-                        bus.send(msg, new CloudBusCallBack() {
+                        bus.send(msg, new CloudBusCallBack(null) {
                             @Override
                             public void run(MessageReply r) {
                                 if (!r.isSuccess()) {

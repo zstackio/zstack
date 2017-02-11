@@ -202,7 +202,7 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
                 throw new CloudRuntimeException(String.format("unable to find NetworkServiceDhcpBackend[provider type: %s]", ptype));
             }
 
-            bkd.vmDefaultL3NetworkChanged(vm, previousL3, nowL3, new Completion() {
+            bkd.vmDefaultL3NetworkChanged(vm, previousL3, nowL3, new Completion(null) {
                 @Override
                 public void success() {
                     // pass

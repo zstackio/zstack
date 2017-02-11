@@ -863,7 +863,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
     private void applyRules(Collection<HostRuleTO> htos) {
         for (final HostRuleTO h : htos) {
             SecurityGroupHypervisorBackend bkend = hypervisorBackends.get(h.getHypervisorType());
-            bkend.applyRules(h, new Completion() {
+            bkend.applyRules(h, new Completion(null) {
                 private void copeWithFailureHost() {
                     createFailureHostTask(h.getHostUuid());
                 }
@@ -1033,7 +1033,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         applyRules(htos);
 
         SecurityGroupHypervisorBackend bkd = getHypervisorBackend(inv.getHypervisorType());
-        bkd.cleanUpUnusedRuleOnHost(inv.getLastHostUuid(), new Completion() {
+        bkd.cleanUpUnusedRuleOnHost(inv.getLastHostUuid(), new Completion(null) {
             @Override
             public void success() {
                 logger.debug(String.format("vm[uuid:%s, name:%s] migrated to host[uuid:%s], cleanup its old rules on host[uuid:%s] if needed",
@@ -1149,7 +1149,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                 final HostRuleTO hto = htos.get(0);
                 hto.setRefreshHost(true);
                 SecurityGroupHypervisorBackend bd = getHypervisorBackend(hto.getHypervisorType());
-                bd.applyRules(hto, new Completion() {
+                bd.applyRules(hto, new Completion(null) {
                     @Override
                     public void success() {
                         logger.debug(String.format("successfully re-apply security group rules to host[uuid:%s]", hto.getHostUuid()));

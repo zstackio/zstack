@@ -371,7 +371,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
     private void handle(final AddHostMsg msg) {
         final AddHostReply reply = new AddHostReply();
 
-        doAddHost(msg, new ReturnValueCompletion<HostInventory>() {
+        doAddHost(msg, new ReturnValueCompletion<HostInventory>(msg) {
             @Override
             public void success(HostInventory returnValue) {
                 reply.setInventory(returnValue);
@@ -390,7 +390,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
     private void handle(final APIAddHostMsg msg) {
         final APIAddHostEvent evt = new APIAddHostEvent(msg.getId());
 
-        doAddHost(msg, new ReturnValueCompletion<HostInventory>() {
+        doAddHost(msg, new ReturnValueCompletion<HostInventory>(msg) {
             @Override
             public void success(HostInventory inventory) {
                 evt.setInventory(inventory);
@@ -541,7 +541,8 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
             msgs.add(connectMsg);
         }
 
-        bus.send(msgs, HostGlobalConfig.HOST_LOAD_PARALLELISM_DEGREE.value(Integer.class), new CloudBusSteppingCallback() {
+        bus.send(msgs, HostGlobalConfig.HOST_LOAD_PARALLELISM_DEGREE.value(Integer.class),
+                new CloudBusSteppingCallback(null) {
             @Override
             public void run(NeedReplyMessage msg, MessageReply reply) {
                 ConnectHostMsg cmsg = (ConnectHostMsg) msg;

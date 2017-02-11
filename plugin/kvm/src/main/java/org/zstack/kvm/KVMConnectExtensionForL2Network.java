@@ -146,7 +146,7 @@ public class KVMConnectExtensionForL2Network implements KVMHostConnectExtensionP
             return;
         }
 
-        FutureCompletion completion = new FutureCompletion();
+        FutureCompletion completion = new FutureCompletion(null);
         prepareNetwork(l2s.iterator(), inv.getUuid(), completion);
         completion.await(TimeUnit.SECONDS.toMillis(600));
         if (!completion.isSuccess()) {

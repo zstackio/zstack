@@ -107,7 +107,7 @@ public class SftpBackupStorage extends BackupStorageBase {
             cmd.setInstallPath(installPath);
             cmd.setTimeout(timeoutManager.getTimeout(cmd.getClass(), "3h"));
 
-            restf.asyncJsonPost(buildUrl(SftpBackupStorageConstant.DOWNLOAD_IMAGE_PATH), cmd, new JsonAsyncRESTCallback<DownloadResponse>() {
+            restf.asyncJsonPost(buildUrl(SftpBackupStorageConstant.DOWNLOAD_IMAGE_PATH), cmd, new JsonAsyncRESTCallback<DownloadResponse>(completion) {
                 @Override
                 public void fail(ErrorCode err) {
                     completion.fail(err);
@@ -210,7 +210,7 @@ public class SftpBackupStorage extends BackupStorageBase {
     protected void handle(final DownloadVolumeMsg msg) {
         final DownloadVolumeReply reply = new DownloadVolumeReply();
         final String installPath = PathUtil.join(getSelf().getUrl(), BackupStoragePathMaker.makeVolumeInstallPath(msg.getUrl(), msg.getVolume()));
-        download(msg.getUrl(), installPath, msg.getVolume().getUuid(), new ReturnValueCompletion<DownloadResult>() {
+        download(msg.getUrl(), installPath, msg.getVolume().getUuid(), new ReturnValueCompletion<DownloadResult>(msg) {
             @Override
             public void success(DownloadResult res) {
                 reply.setInstallPath(installPath);

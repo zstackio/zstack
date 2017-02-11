@@ -38,7 +38,7 @@ public class StartVmInstanceJob extends AbstractSchedulerJob {
         smsg.setVmInstanceUuid(vmUuid);
         smsg.setAccountUuid(getAccountUuid());
         bus.makeTargetServiceIdByResourceUuid(smsg, VmInstanceConstant.SERVICE_ID, vmUuid);
-        bus.send(smsg, new CloudBusCallBack() {
+        bus.send(smsg, new CloudBusCallBack(null) {
             @Override
             public void run(MessageReply reply) {
                 if (reply.isSuccess()) {

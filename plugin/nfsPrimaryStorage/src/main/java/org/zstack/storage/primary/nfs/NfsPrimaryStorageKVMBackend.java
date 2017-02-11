@@ -984,7 +984,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
 
         String options = NfsSystemTags.MOUNT_OPTIONS.getTokenByResourceUuid(pinv.getUuid(), NfsSystemTags.MOUNT_OPTIONS_TOKEN);
 
-        new LoopAsyncBatch<String>() {
+        new LoopAsyncBatch<String>(completion) {
             @Override
             protected Collection<String> collect() {
                 return huuids;

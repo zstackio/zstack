@@ -6,11 +6,8 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 
 public abstract class JsonAsyncRESTCallback<T> extends AsyncRESTCallback {
-    public JsonAsyncRESTCallback() {
-    }
-
-    public JsonAsyncRESTCallback(AsyncBackup... backup) {
-        super(backup);
+    public JsonAsyncRESTCallback(AsyncBackup one, AsyncBackup... others) {
+        super(one, others);
     }
 
     public abstract void fail(ErrorCode err);

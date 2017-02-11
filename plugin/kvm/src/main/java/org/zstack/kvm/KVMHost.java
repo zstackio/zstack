@@ -404,7 +404,7 @@ public class KVMHost extends HostBase implements Host {
 
         GetVncPortCmd cmd = new GetVncPortCmd();
         cmd.setVmUuid(msg.getVmInstanceUuid());
-        restf.asyncJsonPost(getConsolePortPath, cmd, new JsonAsyncRESTCallback<GetVncPortResponse>() {
+        restf.asyncJsonPost(getConsolePortPath, cmd, new JsonAsyncRESTCallback<GetVncPortResponse>(msg) {
             @Override
             public void fail(ErrorCode err) {
                 reply.setError(err);

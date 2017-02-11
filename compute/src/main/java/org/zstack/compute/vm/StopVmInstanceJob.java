@@ -41,7 +41,7 @@ public class StopVmInstanceJob extends AbstractSchedulerJob {
         StopVmInstanceMsg smsg = new StopVmInstanceMsg();
         smsg.setVmInstanceUuid(vmUuid);
         bus.makeTargetServiceIdByResourceUuid(smsg, VmInstanceConstant.SERVICE_ID, vmUuid);
-        bus.send(smsg, new CloudBusCallBack() {
+        bus.send(smsg, new CloudBusCallBack(null) {
             @Override
             public void run(MessageReply reply) {
                 if (reply.isSuccess()) {

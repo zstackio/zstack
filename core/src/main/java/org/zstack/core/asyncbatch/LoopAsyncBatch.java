@@ -9,11 +9,8 @@ import java.util.Collection;
  * Created by xing5 on 2016/6/26.
  */
 public abstract class LoopAsyncBatch<T> extends AsyncBatch {
-    public LoopAsyncBatch(AsyncBackup... backups) {
-        super(backups);
-    }
-
-    public LoopAsyncBatch() {
+    public LoopAsyncBatch(AsyncBackup one, AsyncBackup... others) {
+        super(one, others);
     }
 
     protected abstract Collection<T> collect();

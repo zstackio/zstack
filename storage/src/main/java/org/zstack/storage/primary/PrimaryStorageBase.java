@@ -842,7 +842,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             msgs.add(msg);
         }
 
-        bus.send(msgs, new CloudBusListCallBack() {
+        bus.send(msgs, new CloudBusListCallBack(null) {
             @Override
             public void run(List<MessageReply> replies) {
                 StringBuilder sb = new StringBuilder();

@@ -665,7 +665,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                         ExpungeVolumeMsg msg = new ExpungeVolumeMsg();
                         msg.setVolumeUuid(uuid);
                         bus.makeTargetServiceIdByResourceUuid(msg, VolumeConstant.SERVICE_ID, uuid);
-                        bus.send(msg, new CloudBusCallBack() {
+                        bus.send(msg, new CloudBusCallBack(null) {
                             @Override
                             public void run(MessageReply reply) {
                                 if (!reply.isSuccess()) {

@@ -101,7 +101,7 @@ public class VolumeUpgradeExtension implements Component {
                 });
 
                 for (final GetVolumeRootImageUuidFromPrimaryStorageMsg msg : msgs) {
-                    bus.send(msg, new CloudBusCallBack() {
+                    bus.send(msg, new CloudBusCallBack(null) {
                         @Override
                         public void run(MessageReply reply) {
                             if (reply.isSuccess()) {

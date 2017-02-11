@@ -488,12 +488,12 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                     evtf.fire(ManagementNodeCanonicalEvent.NODE_LIFECYCLE_PATH, d);
                     trigger.next();
                 }
-            }).done(new FlowDoneHandler() {
+            }).done(new FlowDoneHandler(null) {
                 @Override
                 public void handle(Map data) {
                     ret.success = true;
                 }
-            }).error(new FlowErrorHandler() {
+            }).error(new FlowErrorHandler(null) {
                 @Override
                 public void handle(ErrorCode errCode, Map data) {
                     new BootErrorLog().write(errCode.toString());

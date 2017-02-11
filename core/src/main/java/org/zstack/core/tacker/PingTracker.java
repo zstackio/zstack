@@ -77,7 +77,7 @@ public abstract class PingTracker implements Component {
                         return;
                     }
 
-                    bus.send(msgs, getParallelismDegree(), new CloudBusSteppingCallback() {
+                    bus.send(msgs, getParallelismDegree(), new CloudBusSteppingCallback(null) {
                         @Override
                         public void run(NeedReplyMessage msg, MessageReply reply) {
                             String resUuid = tmp.get(msg);

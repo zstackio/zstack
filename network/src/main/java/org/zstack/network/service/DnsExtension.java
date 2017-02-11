@@ -55,7 +55,7 @@ public class DnsExtension extends AbstractNetworkServiceExtension implements Com
         NetworkServiceDnsBackend bkd = e.getKey();
         List<DnsStruct> structs = e.getValue();
         logger.debug(String.format("%s is applying DNS service", bkd.getClass().getName()));
-        bkd.applyDnsService(structs, spec, new Completion() {
+        bkd.applyDnsService(structs, spec, new Completion(complete) {
             @Override
             public void success() {
                 doDns(it, spec, complete);

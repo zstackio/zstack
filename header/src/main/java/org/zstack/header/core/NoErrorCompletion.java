@@ -8,11 +8,7 @@ package org.zstack.header.core;
  */
 public abstract class NoErrorCompletion extends AbstractCompletion {
     public NoErrorCompletion(AsyncBackup... completion) {
-        super(completion);
-    }
-
-    public NoErrorCompletion() {
-        super();
+        super(null, completion);
     }
 
     public abstract void done();

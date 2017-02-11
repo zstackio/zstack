@@ -37,7 +37,7 @@ public class RebootVmInstanceJob  extends AbstractSchedulerJob {
         RebootVmInstanceMsg rmsg = new RebootVmInstanceMsg();
         rmsg.setVmInstanceUuid(vmUuid);
         bus.makeTargetServiceIdByResourceUuid(rmsg, VmInstanceConstant.SERVICE_ID, vmUuid);
-        bus.send(rmsg, new CloudBusCallBack() {
+        bus.send(rmsg, new CloudBusCallBack(null) {
             @Override
             public void run(MessageReply reply) {
                 if (reply.isSuccess()) {

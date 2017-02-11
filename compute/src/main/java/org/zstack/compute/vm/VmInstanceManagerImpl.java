@@ -711,7 +711,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
     }
 
     private void handle(final CreateVmInstanceMsg msg) {
-        doCreateVmInstance(msg, null, new ReturnValueCompletion<VmInstanceInventory>() {
+        doCreateVmInstance(msg, null, new ReturnValueCompletion<VmInstanceInventory>(msg) {
             @Override
             public void success(VmInstanceInventory inv) {
                 CreateVmInstanceReply reply = new CreateVmInstanceReply();
@@ -757,7 +757,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
     }
 
     private void handle(final APICreateVmInstanceMsg msg) {
-        doCreateVmInstance(fromAPICreateVmInstanceMsg(msg), msg, new ReturnValueCompletion<VmInstanceInventory>() {
+        doCreateVmInstance(fromAPICreateVmInstanceMsg(msg), msg, new ReturnValueCompletion<VmInstanceInventory>(msg) {
             APICreateVmInstanceEvent evt = new APICreateVmInstanceEvent(msg.getId());
 
             @Override
@@ -1794,7 +1794,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     VmCheckOwnStateMsg msg = new VmCheckOwnStateMsg();
                     msg.setVmInstanceUuid(uuid);
                     bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, uuid);
-                    bus.send(msg, new CloudBusCallBack() {
+                    bus.send(msg, new CloudBusCallBack(completion) {
                         @Override
                         public void run(MessageReply reply) {
                             if (reply.isSuccess()) {
@@ -1895,7 +1895,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     return false;
                 }
 
-                bus.send(msgs, 100, new CloudBusListCallBack() {
+                bus.send(msgs, 100, new CloudBusListCallBack(null) {
                     @Override
                     public void run(List<MessageReply> replies) {
                         for (MessageReply r : replies) {

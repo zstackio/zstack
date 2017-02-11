@@ -45,12 +45,12 @@ public class DefaultBackupStorageAllocatorStrategy implements BackupStorageAlloc
         final Result ret = new Result();
         allocatorChain.setName(String.format("allocate-backup-storage-msg-%s", spec.getAllocationMessage().getId()));
         allocatorChain.setData(map(e(AllocatorParams.SPEC, spec)));
-        allocatorChain.done(new FlowDoneHandler() {
+        allocatorChain.done(new FlowDoneHandler(null) {
             @Override
             public void handle(Map data) {
                 ret.results = (List<BackupStorageVO>) data.get(AllocatorParams.CANDIDATES);
             }
-        }).error(new FlowErrorHandler() {
+        }).error(new FlowErrorHandler(null) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
                 ret.errorCode = errCode;

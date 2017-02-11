@@ -65,7 +65,7 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
     protected abstract boolean isAgentConnected();
 
     private void establishNewProxy(ConsoleProxy proxy, SessionInventory session, final VmInstanceInventory vm, final ReturnValueCompletion<ConsoleInventory> complete) {
-        proxy.establishProxy(session, vm, new ReturnValueCompletion<ConsoleProxyInventory>() {
+        proxy.establishProxy(session, vm, new ReturnValueCompletion<ConsoleProxyInventory>(complete) {
             @Override
             public void success(ConsoleProxyInventory ret) {
                 ConsoleProxyVO vo = new ConsoleProxyVO();

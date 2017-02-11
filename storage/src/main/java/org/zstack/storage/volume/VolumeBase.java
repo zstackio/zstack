@@ -761,7 +761,7 @@ public class VolumeBase implements Volume {
                     }
                 });
 
-                Finally(new FlowFinallyHandler() {
+                Finally(new FlowFinallyHandler(msg) {
                     @Override
                     public void Finally() {
                         completion.done();
@@ -772,7 +772,7 @@ public class VolumeBase implements Volume {
     }
 
     private void handle(final VolumeDeletionMsg msg) {
-        thdf.chainSubmit(new ChainTask() {
+        thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
                 return syncThreadId;

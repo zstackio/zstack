@@ -98,7 +98,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
         bkd.detachHook(clusterUuid, new Completion(completion) {
             @Override
             public void success() {
-                syncPhysicalCapacity(new ReturnValueCompletion<PhysicalCapacityUsage>() {
+                syncPhysicalCapacity(new ReturnValueCompletion<PhysicalCapacityUsage>(null) {
                     @Override
                     public void success(PhysicalCapacityUsage returnValue) {
                         setCapacity(null, null, returnValue.totalPhysicalSize, returnValue.availablePhysicalSize);
@@ -426,7 +426,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                                 }
 
                                 final String path = it.next();
-                                bkd.deleteBits(path, struct.getSrcHostUuid(), new Completion() {
+                                bkd.deleteBits(path, struct.getSrcHostUuid(), new Completion(trigger) {
                                     @Override
                                     public void success() {
                                         run();
@@ -598,7 +598,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
         String hostUuid = getHostUuidByResourceUuid(msg.getSnapshot().getUuid());
         LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(hostUuid);
         LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
-        bkd.handle(msg, hostUuid, new ReturnValueCompletion<CreateTemporaryVolumeFromSnapshotReply>() {
+        bkd.handle(msg, hostUuid, new ReturnValueCompletion<CreateTemporaryVolumeFromSnapshotReply>(msg) {
             @Override
             public void success(CreateTemporaryVolumeFromSnapshotReply returnValue) {
                 bus.reply(msg, returnValue);
@@ -654,7 +654,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
     private void handle(final LocalStorageCreateEmptyVolumeMsg msg) {
         LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(msg.getHostUuid());
         LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
-        bkd.handle(msg, new ReturnValueCompletion<LocalStorageCreateEmptyVolumeReply>() {
+        bkd.handle(msg, new ReturnValueCompletion<LocalStorageCreateEmptyVolumeReply>(msg) {
             @Override
             public void success(LocalStorageCreateEmptyVolumeReply returnValue) {
                 bus.reply(msg, returnValue);
@@ -1974,7 +1974,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     }
                 });
 
-                done(new FlowDoneHandler() {
+                done(new FlowDoneHandler(completion) {
                     @Override
                     public void handle(Map data) {
                         RecalculatePrimaryStorageCapacityMsg rmsg = new RecalculatePrimaryStorageCapacityMsg();

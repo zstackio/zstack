@@ -117,7 +117,7 @@ public class ImageCacheGarbageCollector implements Component, ManagementNodeChan
         PrimaryStorageRemoveCachedImageMsg msg = new PrimaryStorageRemoveCachedImageMsg();
         msg.setInventory(ImageCacheInventory.valueOf(ic));
         bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, ic.getPrimaryStorageUuid());
-        bus.send(msg, new CloudBusCallBack() {
+        bus.send(msg, new CloudBusCallBack(null) {
             private void fail(String error) {
                 ic.setState(ImageCacheState.ready);
                 dbf.update(ic);

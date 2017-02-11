@@ -58,6 +58,7 @@ import java.util.*;
 /**
  * Created by frank on 4/19/2015.
  */
+@Deprecated
 public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
     private CLogger logger = Utils.getLogger(IscsiFilesystemBackendPrimaryStorage.class);
 

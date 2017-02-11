@@ -257,7 +257,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         struct.setNic(nicInventory);
         struct.setEip(EipInventory.valueOf(vo));
         struct.setSnatInboundTraffic(EipGlobalConfig.SNAT_INBOUND_TRAFFIC.value(Boolean.class));
-        detachEipAndUpdateDb(struct, providerType.toString(), new Completion() {
+        detachEipAndUpdateDb(struct, providerType.toString(), new Completion(msg) {
             @Override
             public void success() {
                 evt.setInventory(EipInventory.valueOf(dbf.reload(vo)));
