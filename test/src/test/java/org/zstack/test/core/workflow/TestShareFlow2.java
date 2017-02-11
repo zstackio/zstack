@@ -58,7 +58,7 @@ public class TestShareFlow2 {
                     }
                 });
 
-                done(new FlowDoneHandler() {
+                done(new FlowDoneHandler(null) {
                     @Override
                     public void handle(Map data) {
                         success = true;

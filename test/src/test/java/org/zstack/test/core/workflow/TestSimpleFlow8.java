@@ -49,7 +49,7 @@ public class TestSimpleFlow8 {
                         chain.next();
                     }
                 })
-                .error(new FlowErrorHandler() {
+                .error(new FlowErrorHandler(null) {
                     @Override
                     public void handle(ErrorCode err, Map data) {
                         success = true;

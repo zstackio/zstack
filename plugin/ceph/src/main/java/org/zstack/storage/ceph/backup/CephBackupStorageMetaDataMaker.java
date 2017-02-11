@@ -173,7 +173,7 @@ public class CephBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
         }
         Integer monPort = CephGlobalProperty.BACKUP_STORAGE_AGENT_PORT;
         restf.asyncJsonPost(buildUrl(hostName, monPort, CephBackupStorageBase.DUMP_IMAGE_METADATA_TO_FILE), dumpCmd,
-                new JsonAsyncRESTCallback<CephBackupStorageBase.DumpImageInfoToMetaDataFileRsp >() {
+                new JsonAsyncRESTCallback<CephBackupStorageBase.DumpImageInfoToMetaDataFileRsp >(null) {
                     @Override
                     public void fail(ErrorCode err) {
                         logger.error("Dump image metadata failed" + err.toString());
@@ -221,7 +221,7 @@ public class CephBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
         msg.setBackupStorageUuid(getBackupStorageUuidFromImageInventory(img));
         msg.setPoolName(inv.getPoolName());
         bus.makeLocalServiceId(msg, BackupStorageConstant.SERVICE_ID);
-        bus.send(msg, new CloudBusCallBack() {
+        bus.send(msg, new CloudBusCallBack(msg) {
             @Override
             public void run(MessageReply reply) {
                 if (reply.isSuccess()) {
@@ -266,7 +266,7 @@ public class CephBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
         msg.setOperation(CephConstants.AFTER_ADD_BACKUPSTORAGE);
         msg.setPoolName(inv.getPoolName());
         bus.makeLocalServiceId(msg, BackupStorageConstant.SERVICE_ID);
-        bus.send(msg, new CloudBusCallBack() {
+        bus.send(msg, new CloudBusCallBack(msg) {
             @Override
             public void run(MessageReply reply) {
                 if (reply.isSuccess()) {
@@ -308,7 +308,7 @@ public class CephBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
         msg.setOperation(CephConstants.AFTER_EXPUNGE_IMAGE);
         msg.setPoolName(inv.getPoolName());
         bus.makeLocalServiceId(msg, BackupStorageConstant.SERVICE_ID);
-        bus.send(msg, new CloudBusCallBack() {
+        bus.send(msg, new CloudBusCallBack(msg) {
             @Override
             public void run(MessageReply reply) {
                 if (reply.isSuccess()) {

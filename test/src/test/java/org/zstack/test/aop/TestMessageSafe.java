@@ -73,7 +73,7 @@ public class TestMessageSafe {
         HelloWorldMsg msg = new HelloWorldMsg();
         msg.setServiceId(FakeService.class.getCanonicalName());
         msg.setTimeout(TimeUnit.SECONDS.toMillis(10));
-        bus.send(msg, new CloudBusCallBack() {
+        bus.send(msg, new CloudBusCallBack(null) {
             @Override
             public void run(MessageReply reply) {
                 if (!reply.isSuccess() && !SysErrors.TIMEOUT.toString().equals(reply.getError().getCode())) {

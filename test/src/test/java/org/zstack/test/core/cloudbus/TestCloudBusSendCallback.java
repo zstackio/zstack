@@ -98,7 +98,7 @@ public class TestCloudBusSendCallback {
         msg.setGreet("Hello");
         msg.setServiceId(FakeService.class.getCanonicalName());
         msg.setTimeout(TimeUnit.SECONDS.toMillis(10));
-        bus.send(msg, new CloudBusCallBack() {
+        bus.send(msg, new CloudBusCallBack(null) {
             @Override
             public void run(MessageReply reply) {
                 if (reply instanceof HelloWorldReply) {

@@ -96,7 +96,7 @@ public class TestCloudBusSendCallbackTimeout {
         msg.setGreet("Hello");
         msg.setServiceId(FakeService.class.getCanonicalName());
         msg.setTimeout(TimeUnit.SECONDS.toMillis(3));
-        bus.send(msg, new CloudBusCallBack() {
+        bus.send(msg, new CloudBusCallBack(null) {
             @Override
             public void run(MessageReply reply) {
                 if (SysErrors.TIMEOUT.toString().equals(reply.getError().getCode())) {

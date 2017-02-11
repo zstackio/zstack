@@ -52,7 +52,7 @@ public class TestAsyncBackup4 {
 
     @Test
     public void test() throws InterruptedException {
-        testMethod(new Completion() {
+        testMethod(new Completion(null) {
             @Override
             public void success() {
             }
@@ -93,7 +93,7 @@ public class TestAsyncBackup4 {
 
     @Test
     public void test1() throws InterruptedException {
-        testMethod1(new Completion() {
+        testMethod1(new Completion(null) {
             @Override
             public void success() {
             }
@@ -131,7 +131,7 @@ public class TestAsyncBackup4 {
     @Test
     public void test2() throws InterruptedException {
         success = false;
-        testMethod2(new Completion() {
+        testMethod2(new Completion(null) {
             @Override
             public void success() {
             }

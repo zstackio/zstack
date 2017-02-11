@@ -100,7 +100,7 @@ public class TestCreateApplianceVmKvm {
         nic2.setL3NetworkUuid(l33.getUuid());
         spec.getAdditionalNics().add(nic2);
 
-        apvmf.createApplianceVm(spec, new ReturnValueCompletion<ApplianceVmInventory>() {
+        apvmf.createApplianceVm(spec, new ReturnValueCompletion<ApplianceVmInventory>(null) {
             private VmNicInventory findNic(List<VmNicInventory> lst, String l3Uuid) {
                 for (VmNicInventory nic : lst) {
                     if (l3Uuid.equals(nic.getL3NetworkUuid())) {

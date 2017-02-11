@@ -71,7 +71,7 @@ public class VirtualRouterPingTracker extends PingTracker implements ManagementN
         ReconnectVirtualRouterVmMsg msg = new ReconnectVirtualRouterVmMsg();
         msg.setVirtualRouterVmUuid(resourceUuid);
         bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, resourceUuid);
-        bus.send(msg, new CloudBusCallBack() {
+        bus.send(msg, new CloudBusCallBack(null) {
             @Override
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {

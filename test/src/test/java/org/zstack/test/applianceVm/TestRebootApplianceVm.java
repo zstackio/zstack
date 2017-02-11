@@ -82,7 +82,7 @@ public class TestRebootApplianceVm {
         nic2.setL3NetworkUuid(l33.getUuid());
         spec.getAdditionalNics().add(nic2);
 
-        apvmf.createApplianceVm(spec, new ReturnValueCompletion<ApplianceVmInventory>() {
+        apvmf.createApplianceVm(spec, new ReturnValueCompletion<ApplianceVmInventory>(null) {
             private VmNicInventory findNic(List<VmNicInventory> lst, String l3Uuid) {
                 for (VmNicInventory nic : lst) {
                     if (l3Uuid.equals(nic.getL3NetworkUuid())) {
@@ -124,7 +124,7 @@ public class TestRebootApplianceVm {
 
 
         final CountDownLatch sslatch = new CountDownLatch(1);
-        apvmf.rebootApplianceVm(target.getUuid(), new ReturnValueCompletion<ApplianceVmInventory>() {
+        apvmf.rebootApplianceVm(target.getUuid(), new ReturnValueCompletion<ApplianceVmInventory>(null) {
             @Override
             public void success(ApplianceVmInventory vm) {
                 Assert.assertEquals(VmInstanceState.Running.toString(), vm.getState());

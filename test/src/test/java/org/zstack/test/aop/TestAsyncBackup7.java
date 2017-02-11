@@ -51,7 +51,7 @@ public class TestAsyncBackup7 {
                 return syncName;
             }
         });
-        thdf.chainSubmit(new ChainTask() {
+        thdf.chainSubmit(new ChainTask(null) {
             @Override
             public String getSyncSignature() {
                 return syncName;

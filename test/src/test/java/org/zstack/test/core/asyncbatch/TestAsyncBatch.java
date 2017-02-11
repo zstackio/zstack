@@ -24,9 +24,9 @@ public class TestAsyncBatch {
 
     @Test
     public void test() {
-        FutureCompletion completion = new FutureCompletion();
+        FutureCompletion completion = new FutureCompletion(null);
 
-        new AsyncBatch() {
+        new AsyncBatch(null) {
             @Override
             protected void setup() {
                 for (int i = 0; i < num; i++) {
@@ -52,8 +52,8 @@ public class TestAsyncBatch {
 
         count = 0;
 
-        FutureCompletion completion1 = new FutureCompletion();
-        new AsyncBatch() {
+        FutureCompletion completion1 = new FutureCompletion(null);
+        new AsyncBatch(null) {
             @Override
             protected void setup() {
                 for (int i = 0; i < num; i++) {
@@ -80,7 +80,7 @@ public class TestAsyncBatch {
         completion1.await();
         Assert.assertTrue(completion1.isSuccess());
 
-        FutureCompletion completion2 = new FutureCompletion();
+        FutureCompletion completion2 = new FutureCompletion(null);
 
         new AsyncBatch(completion2) {
             @Override

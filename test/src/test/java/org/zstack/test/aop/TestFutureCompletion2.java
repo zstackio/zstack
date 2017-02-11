@@ -36,13 +36,13 @@ public class TestFutureCompletion2 {
 
     @Test
     public void test() throws InterruptedException {
-        FutureCompletion completion = new FutureCompletion();
+        FutureCompletion completion = new FutureCompletion(null);
         complete(completion);
         completion.await(TimeUnit.SECONDS.toMillis(1));
         Assert.assertFalse(completion.isSuccess());
         Assert.assertEquals(SysErrors.TIMEOUT.toString(), completion.getErrorCode().getCode());
 
-        final FutureCompletion completion1 = new FutureCompletion();
+        final FutureCompletion completion1 = new FutureCompletion(null);
         new Runnable() {
             @Override
             @AsyncThread

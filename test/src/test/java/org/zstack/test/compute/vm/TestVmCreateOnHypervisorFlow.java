@@ -57,13 +57,13 @@ public class TestVmCreateOnHypervisorFlow {
         spec.setDestHost(hinv);
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain().then(new VmCreateOnHypervisorFlow());
         chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
-        chain.done(new FlowDoneHandler() {
+        chain.done(new FlowDoneHandler(null) {
             @Override
             public void handle(Map data) {
                 isSuccess = true;
                 latch.countDown();
             }
-        }).error(new FlowErrorHandler() {
+        }).error(new FlowErrorHandler(null) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
                 isSuccess = false;

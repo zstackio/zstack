@@ -33,7 +33,7 @@ public class TestAsyncSafe {
 
     @Test
     public void test() {
-        throwError(new Completion() {
+        throwError(new Completion(null) {
             @Override
             public void success() {
             }

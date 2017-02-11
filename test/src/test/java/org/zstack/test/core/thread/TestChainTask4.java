@@ -28,6 +28,7 @@ public class TestChainTask4 {
         int index;
 
         Tester(int index) {
+            super(null);
             this.index = index;
         }
 

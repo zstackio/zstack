@@ -68,7 +68,7 @@ public class TestShareFlow1 {
                     }
                 });
             }
-        }).error(new FlowErrorHandler() {
+        }).error(new FlowErrorHandler(null) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
                 success = true;

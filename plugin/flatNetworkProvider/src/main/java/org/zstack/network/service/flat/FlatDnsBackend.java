@@ -97,7 +97,7 @@ public class FlatDnsBackend implements NetworkServiceDnsBackend, KVMHostConnectE
 
     @Override
     public void connectionReestablished(HostInventory inv) throws HostException {
-        setDnsOnHost(inv, new Completion() {
+        setDnsOnHost(inv, new Completion(null) {
             @Override
             public void success() {
                 // ignore

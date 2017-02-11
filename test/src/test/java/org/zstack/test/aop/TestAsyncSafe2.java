@@ -29,7 +29,7 @@ public class TestAsyncSafe2 {
 
     @Test
     public void test() {
-        throwError(new Completion() {
+        throwError(new Completion(null) {
             @Override
             public void success() {
             }
@@ -39,7 +39,7 @@ public class TestAsyncSafe2 {
                 logger.debug(errorCode.toString());
                 called1 = true;
             }
-        }, new ReturnValueCompletion() {
+        }, new ReturnValueCompletion(null) {
             @Override
             public void fail(ErrorCode errorCode) {
                 logger.debug(errorCode.toString());

@@ -81,7 +81,7 @@ public class TestVmAllocateNicFlow {
         spec.setL3Networks(l3Networks);
         spec.getImageSpec().setInventory(iminv);
         chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
-        chain.done(new FlowDoneHandler() {
+        chain.done(new FlowDoneHandler(null) {
             @Override
             public void handle(Map data) {
                 try {
@@ -101,7 +101,7 @@ public class TestVmAllocateNicFlow {
                     latch.countDown();
                 }
             }
-        }).error(new FlowErrorHandler() {
+        }).error(new FlowErrorHandler(null) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
                 isSuccess = false;

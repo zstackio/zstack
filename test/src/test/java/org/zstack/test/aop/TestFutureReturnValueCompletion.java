@@ -31,7 +31,7 @@ public class TestFutureReturnValueCompletion {
 
     @Test
     public void test() throws InterruptedException {
-        FutureReturnValueCompletion completion = new FutureReturnValueCompletion();
+        FutureReturnValueCompletion completion = new FutureReturnValueCompletion(null);
         complete(completion);
         completion.await();
         Assert.assertTrue(completion.isSuccess());

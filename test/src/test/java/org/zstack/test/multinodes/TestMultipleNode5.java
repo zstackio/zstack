@@ -74,7 +74,7 @@ public class TestMultipleNode5 {
 
             NeedReplySilentMsg smsg = new NeedReplySilentMsg();
             bus.makeServiceIdByManagementNodeId(smsg, SilentService.SERVICE_ID, target.getUuid());
-            bus.send(smsg, new CloudBusCallBack() {
+            bus.send(smsg, new CloudBusCallBack(null) {
                 @Override
                 public void run(MessageReply reply) {
                     if (!reply.isSuccess() && reply.getError().getCode().equals(SysErrors.MANAGEMENT_NODE_UNAVAILABLE_ERROR.toString())) {

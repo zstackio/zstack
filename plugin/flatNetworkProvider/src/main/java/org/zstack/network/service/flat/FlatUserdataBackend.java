@@ -254,7 +254,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                     CleanupUserdataRsp rsp = w.getResponse(CleanupUserdataRsp.class);
                     return rsp.isSuccess() ? null : errf.stringToOperationError(rsp.getError());
                 }
-            }, new ReturnValueCompletion<KvmResponseWrapper>() {
+            }, new ReturnValueCompletion<KvmResponseWrapper>(null) {
                 @Override
                 public void success(KvmResponseWrapper w) {
                     logger.debug(String.format("successfully cleanup userdata service on the host[uuid:%s] for the deleted L3 network[uuid:%s, name:%s]",

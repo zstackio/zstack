@@ -127,7 +127,7 @@ public class TestApplianceVmFirewallStart {
         rule.setL3NetworkUuid(mgmtNic.getL3NetworkUuid());
         spec.getFirewallRules().add(rule);
 
-        apvmf.createApplianceVm(spec, new ReturnValueCompletion<ApplianceVmInventory>() {
+        apvmf.createApplianceVm(spec, new ReturnValueCompletion<ApplianceVmInventory>(null) {
             private VmNicInventory findNic(List<VmNicInventory> lst, String l3Uuid) {
                 for (VmNicInventory nic : lst) {
                     if (l3Uuid.equals(nic.getL3NetworkUuid())) {
@@ -192,7 +192,7 @@ public class TestApplianceVmFirewallStart {
         Assert.assertTrue(success);
 
         final CountDownLatch slatch = new CountDownLatch(1);
-        apvmf.stopApplianceVm(target.getUuid(), new ReturnValueCompletion<ApplianceVmInventory>() {
+        apvmf.stopApplianceVm(target.getUuid(), new ReturnValueCompletion<ApplianceVmInventory>(null) {
             @Override
             public void success(ApplianceVmInventory vm) {
                 Assert.assertEquals(VmInstanceState.Stopped.toString(), vm.getState());
@@ -210,7 +210,7 @@ public class TestApplianceVmFirewallStart {
         Assert.assertTrue(success);
 
         final CountDownLatch sslatch = new CountDownLatch(1);
-        apvmf.startApplianceVm(target.getUuid(), new ReturnValueCompletion<ApplianceVmInventory>() {
+        apvmf.startApplianceVm(target.getUuid(), new ReturnValueCompletion<ApplianceVmInventory>(null) {
             @Override
             public void success(ApplianceVmInventory vm) {
                 Assert.assertEquals(VmInstanceState.Running.toString(), vm.getState());

@@ -163,7 +163,7 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
 
     @Override
     public void destroyApplianceVm(String vmUuid) {
-        destroyApplianceVm(vmUuid, new ReturnValueCompletion<ApplianceVmInventory>() {
+        destroyApplianceVm(vmUuid, new ReturnValueCompletion<ApplianceVmInventory>(null) {
             @Override
             public void success(ApplianceVmInventory returnValue) {
             }

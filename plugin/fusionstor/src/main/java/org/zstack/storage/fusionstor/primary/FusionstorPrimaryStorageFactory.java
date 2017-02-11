@@ -386,7 +386,7 @@ public class FusionstorPrimaryStorageFactory implements PrimaryStorageFactory, F
                     msg.setInstallPath(c.getInstallUrl().split("@")[0]);
                     msg.setPrimaryStorageUuid(c.getPrimaryStorageUuid());
                     bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, c.getPrimaryStorageUuid());
-                    bus.send(msg, new CloudBusCallBack() {
+                    bus.send(msg, new CloudBusCallBack(null) {
                         @Override
                         public void run(MessageReply reply) {
                             if (reply.isSuccess()) {

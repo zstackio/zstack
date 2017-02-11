@@ -28,6 +28,7 @@ public class TestChainTaskExceptionNotCallRunNext {
         int index;
 
         Tester(int index) {
+            super(null);
             this.index = index;
         }
 

@@ -305,7 +305,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                 }
                             });
 
-                            bus.send(rmsgs, new CloudBusListCallBack() {
+                            bus.send(rmsgs, new CloudBusListCallBack(null) {
                                 @Override
                                 public void run(List<MessageReply> replies) {
                                     for (MessageReply r : replies) {
@@ -1133,7 +1133,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                         msg.setImageUuid(imageUuid);
                         msg.setBackupStorageUuid(bsUuid);
                         bus.makeTargetServiceIdByResourceUuid(msg, ImageConstant.SERVICE_ID, imageUuid);
-                        bus.send(msg, new CloudBusCallBack() {
+                        bus.send(msg, new CloudBusCallBack(null) {
                             @Override
                             public void run(MessageReply reply) {
                                 if (!reply.isSuccess()) {

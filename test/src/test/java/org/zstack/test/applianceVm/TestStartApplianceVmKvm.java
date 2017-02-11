@@ -103,7 +103,7 @@ public class TestStartApplianceVmKvm {
 
 
         final CountDownLatch slatch = new CountDownLatch(1);
-        apvmf.createApplianceVm(spec, new ReturnValueCompletion<ApplianceVmInventory>() {
+        apvmf.createApplianceVm(spec, new ReturnValueCompletion<ApplianceVmInventory>(null) {
             @Override
             public void success(ApplianceVmInventory returnValue) {
                 target = returnValue;
@@ -120,7 +120,7 @@ public class TestStartApplianceVmKvm {
         Assert.assertNotNull(target);
 
         final CountDownLatch stopLatch = new CountDownLatch(1);
-        apvmf.stopApplianceVm(target.getUuid(), new ReturnValueCompletion<ApplianceVmInventory>() {
+        apvmf.stopApplianceVm(target.getUuid(), new ReturnValueCompletion<ApplianceVmInventory>(null) {
             @Override
             public void success(ApplianceVmInventory returnValue) {
                 success = true;
@@ -138,7 +138,7 @@ public class TestStartApplianceVmKvm {
         Assert.assertTrue(success);
         success = false;
 
-        apvmf.startApplianceVm(target.getUuid(), new ReturnValueCompletion<ApplianceVmInventory>() {
+        apvmf.startApplianceVm(target.getUuid(), new ReturnValueCompletion<ApplianceVmInventory>(null) {
             private VmNicInventory findNic(List<VmNicInventory> lst, String l3Uuid) {
                 for (VmNicInventory nic : lst) {
                     if (l3Uuid.equals(nic.getL3NetworkUuid())) {

@@ -84,7 +84,7 @@ public class TestCloudBusSendMultiMsg7 {
             msgs.add(msg);
         }
 
-        bus.send(msgs, 2, new CloudBusSteppingCallback() {
+        bus.send(msgs, 2, new CloudBusSteppingCallback(null) {
 
             @Override
             public void run(NeedReplyMessage msg, MessageReply reply) {

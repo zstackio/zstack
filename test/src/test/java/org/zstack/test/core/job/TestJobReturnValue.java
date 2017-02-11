@@ -38,7 +38,7 @@ public class TestJobReturnValue {
     @AsyncThread
     private void startJob(final long index) {
         FakeJobReturnValue fjob = new FakeJobReturnValue(index);
-        jobf.execute("fake-job", "TestJob", fjob, new ReturnValueCompletion<Long>() {
+        jobf.execute("fake-job", "TestJob", fjob, new ReturnValueCompletion<Long>(null) {
             @Override
             public void success(Long returnValue) {
                 logger.debug(String.format("get return value[%s]", returnValue));

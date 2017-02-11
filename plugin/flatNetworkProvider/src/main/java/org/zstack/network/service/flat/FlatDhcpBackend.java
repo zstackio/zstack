@@ -597,7 +597,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             return;
         }
 
-        FutureCompletion completion = new FutureCompletion();
+        FutureCompletion completion = new FutureCompletion(null);
         applyDhcpToHosts(info, destHostUuid, false, completion);
         completion.await(TimeUnit.MINUTES.toMillis(30));
         if (!completion.isSuccess()) {
@@ -778,7 +778,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                     releaseDhcpService(info, vm.getUuid(), struct.getOriginalHostUuid(), new NopeNoErrorCompletion());
                 }
                 if (applyHostUuidForRollback != null) {
-                    applyDhcpToHosts(info, struct.getCurrentHostUuid(), false, new Completion() {
+                    applyDhcpToHosts(info, struct.getCurrentHostUuid(), false, new Completion(null) {
                         @Override
                         public void success() {
                             //ignore

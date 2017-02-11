@@ -50,7 +50,7 @@ public class TestCloudBusProxy {
 
         msg = new FakeNeedReplyMessage();
         msg.setServiceId("A fake service id not needed");
-        bus.send(msg, new CloudBusCallBack() {
+        bus.send(msg, new CloudBusCallBack(null) {
             @Override
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {

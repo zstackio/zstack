@@ -281,7 +281,7 @@ public class FusionstorBackupStorageBase extends BackupStorageBase {
                 }
 
                 FusionstorBackupStorageMonBase base = it.next();
-                base.httpCall(path, cmd, retClass, new ReturnValueCompletion<T>() {
+                base.httpCall(path, cmd, retClass, new ReturnValueCompletion<T>(callback) {
                     @Override
                     public void success(T ret) {
                         if (!ret.success) {
@@ -423,7 +423,7 @@ public class FusionstorBackupStorageBase extends BackupStorageBase {
         DeleteCmd cmd = new DeleteCmd();
         cmd.installPath = msg.getInstallPath();
 
-        httpCall(DELETE_IMAGE_PATH, cmd, DeleteRsp.class, new ReturnValueCompletion<DeleteRsp>() {
+        httpCall(DELETE_IMAGE_PATH, cmd, DeleteRsp.class, new ReturnValueCompletion<DeleteRsp>(msg) {
             @Override
             public void fail(ErrorCode err) {
                 //TODO

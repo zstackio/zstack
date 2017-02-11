@@ -101,7 +101,7 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
 
     @Override
     public void connect(final Completion completion) {
-        thdf.chainSubmit(new ChainTask() {
+        thdf.chainSubmit(new ChainTask(completion) {
             @Override
             public String getSyncSignature() {
                 return syncId;
@@ -252,7 +252,7 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
 
     @Override
     public void ping(final ReturnValueCompletion<PingResult> completion) {
-        thdf.chainSubmit(new ChainTask() {
+        thdf.chainSubmit(new ChainTask(completion) {
             @Override
             public String getSyncSignature() {
                 return syncId;

@@ -93,7 +93,7 @@ public class TestCreateApplianceVmKvm2 {
         nic2.setL3NetworkUuid(l33.getUuid());
         spec.getAdditionalNics().add(nic2);
 
-        apvmf.createApplianceVm(spec, new ReturnValueCompletion<ApplianceVmInventory>() {
+        apvmf.createApplianceVm(spec, new ReturnValueCompletion<ApplianceVmInventory>(null) {
 
             @Override
             public void success(ApplianceVmInventory vm) {

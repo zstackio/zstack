@@ -194,7 +194,7 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
         acquireVirtualRouterVm(s, new ReturnValueCompletion<VirtualRouterVmInventory>(completion) {
             @Override
             public void success(final VirtualRouterVmInventory vr) {
-                applyEip(vr, struct, new Completion() {
+                applyEip(vr, struct, new Completion(completion) {
                     @Override
                     public void success() {
                         SimpleQuery<VirtualRouterEipRefVO> q = dbf.createQuery(VirtualRouterEipRefVO.class);
@@ -301,7 +301,7 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
         }).then(new NoRollbackFlow() {
             @Override
             public void run(final FlowTrigger trigger, Map data) {
-                asf.removeFirewall(vr.getUuid(), struct.getVip().getL3NetworkUuid(), getFirewallRules(struct), new Completion() {
+                asf.removeFirewall(vr.getUuid(), struct.getVip().getL3NetworkUuid(), getFirewallRules(struct), new Completion(trigger) {
                     @Override
                     public void success() {
                         trigger.next();

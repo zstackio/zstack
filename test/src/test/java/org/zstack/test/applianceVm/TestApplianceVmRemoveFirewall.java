@@ -93,7 +93,7 @@ public class TestApplianceVmRemoveFirewall {
         nic2.setL3NetworkUuid(l33.getUuid());
         spec.getAdditionalNics().add(nic2);
 
-        apvmf.createApplianceVm(spec, new ReturnValueCompletion<ApplianceVmInventory>() {
+        apvmf.createApplianceVm(spec, new ReturnValueCompletion<ApplianceVmInventory>(null) {
             private VmNicInventory findNic(List<VmNicInventory> lst, String l3Uuid) {
                 for (VmNicInventory nic : lst) {
                     if (l3Uuid.equals(nic.getL3NetworkUuid())) {
@@ -151,7 +151,7 @@ public class TestApplianceVmRemoveFirewall {
         rule.setL3NetworkUuid(nic1.getL3NetworkUuid());
         rule.setApplianceVmUuid(targetVm.getUuid());
         rule.setProtocol(ApplianceVmFirewallProtocol.tcp.toString());
-        apvmf.openFirewall(targetVm.getUuid(), nic1.getL3NetworkUuid(), Arrays.asList(rule), new Completion() {
+        apvmf.openFirewall(targetVm.getUuid(), nic1.getL3NetworkUuid(), Arrays.asList(rule), new Completion(null) {
             @Override
             public void success() {
                 try {
@@ -187,7 +187,7 @@ public class TestApplianceVmRemoveFirewall {
 
         latch = new CountDownLatch(1);
         success = false;
-        apvmf.removeFirewall(targetVm.getUuid(), nic1.getL3NetworkUuid(), Arrays.asList(rule), new Completion() {
+        apvmf.removeFirewall(targetVm.getUuid(), nic1.getL3NetworkUuid(), Arrays.asList(rule), new Completion(null) {
             @Override
             public void success() {
                 try {

@@ -41,7 +41,7 @@ public class TestRestAsyncCallback2 {
         String url = wbean.buildUrl(RESTBeanForTest.ROOT, RESTBeanForTest.CALLBACK_JSON_PATH);
         final Map<String, String> hi = new HashMap<String, String>();
         hi.put("hello", "world");
-        restf.asyncJsonPost(url, hi, new JsonAsyncRESTCallback<Map>() {
+        restf.asyncJsonPost(url, hi, new JsonAsyncRESTCallback<Map>(null) {
 
             @Override
             public void fail(ErrorCode err) {

@@ -59,7 +59,7 @@ public class TestKVMRealizeL2NoVlanNetworkBackendFailure {
         L2NetworkInventory l2inv = deployer.l2Networks.get("l2novlan");
         HostInventory host = deployer.hosts.get("kvm");
         config.createL2NoVlanNetworkSuccess = false;
-        backend.realize(l2inv, host.getUuid(), new Completion() {
+        backend.realize(l2inv, host.getUuid(), new Completion(null) {
             @Override
             public void success() {
                 success = true;

@@ -46,7 +46,7 @@ public class TestShareFlow4 {
                     }
                 });
             }
-        }).done(new FlowDoneHandler() {
+        }).done(new FlowDoneHandler(null) {
             @Override
             public void handle(Map data) {
             }
@@ -79,11 +79,11 @@ public class TestShareFlow4 {
                     }
                 });
             }
-        }).done(new FlowDoneHandler() {
+        }).done(new FlowDoneHandler(null) {
             @Override
             public void handle(Map data) {
             }
-        }).error(new FlowErrorHandler() {
+        }).error(new FlowErrorHandler(null) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
             }
@@ -116,11 +116,11 @@ public class TestShareFlow4 {
                     }
                 });
             }
-        }).done(new FlowDoneHandler() {
+        }).done(new FlowDoneHandler(null) {
             @Override
             public void handle(Map data) {
             }
-        }).error(new FlowErrorHandler() {
+        }).error(new FlowErrorHandler(null) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
             }

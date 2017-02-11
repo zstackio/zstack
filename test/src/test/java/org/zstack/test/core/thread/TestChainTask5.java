@@ -33,6 +33,7 @@ public class TestChainTask5 {
         int index;
 
         Tester(int index) {
+            super(null);
             this.index = index;
         }
 

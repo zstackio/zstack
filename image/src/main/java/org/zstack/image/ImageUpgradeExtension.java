@@ -131,7 +131,7 @@ public class ImageUpgradeExtension implements Component {
                     }
                 });
 
-                bus.send(msgs, new CloudBusListCallBack() {
+                bus.send(msgs, new CloudBusListCallBack(null) {
                     @Override
                     public void run(List<MessageReply> replies) {
                         Map<String, Long> res = new HashMap<>();

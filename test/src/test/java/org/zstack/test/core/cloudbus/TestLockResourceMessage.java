@@ -148,7 +148,7 @@ public class TestLockResourceMessage {
 
         TestMsg tmsg = new TestMsg();
         bus.makeLocalServiceId(tmsg, serviceId);
-        bus.send(tmsg, new CloudBusCallBack() {
+        bus.send(tmsg, new CloudBusCallBack(null) {
             @Override
             public void run(MessageReply reply) {
                 if (reply.isSuccess()) {

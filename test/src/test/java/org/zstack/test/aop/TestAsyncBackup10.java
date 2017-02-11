@@ -18,7 +18,7 @@ public class TestAsyncBackup10 {
 
     @Test
     public void test() throws InterruptedException {
-        Completion completion = new Completion() {
+        Completion completion = new Completion(null) {
             @Override
             public void success() {
             }

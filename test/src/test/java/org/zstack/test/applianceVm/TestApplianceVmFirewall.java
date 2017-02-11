@@ -108,7 +108,7 @@ public class TestApplianceVmFirewall {
         rule.setL3NetworkUuid(mgmtNic.getL3NetworkUuid());
         spec.getFirewallRules().add(rule);
 
-        apvmf.createApplianceVm(spec, new ReturnValueCompletion<ApplianceVmInventory>() {
+        apvmf.createApplianceVm(spec, new ReturnValueCompletion<ApplianceVmInventory>(null) {
             private VmNicInventory findNic(List<VmNicInventory> lst, String l3Uuid) {
                 for (VmNicInventory nic : lst) {
                     if (l3Uuid.equals(nic.getL3NetworkUuid())) {

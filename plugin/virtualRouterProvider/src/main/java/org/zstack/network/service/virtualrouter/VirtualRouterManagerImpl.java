@@ -151,7 +151,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     }
 
     private void handle(final CreateVirtualRouterVmMsg msg) {
-        thdf.chainSubmit(new ChainTask() {
+        thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
                 return String.format("create-vr-for-l3-%s", msg.getL3Network().getUuid());

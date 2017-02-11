@@ -125,7 +125,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
         }
 
         batchDeleteEips(eips, srcHostUuid, new NopeCompletion());
-        batchApplyEips(eips, inv.getHostUuid(), new Completion() {
+        batchApplyEips(eips, inv.getHostUuid(), new Completion(null) {
             @Override
             public void success() {
                 // pass
@@ -278,7 +278,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
                     batchDeleteEips(eips, releaseHostUuidForRollback, new NopeCompletion());
                 }
                 if (applyHostUuidForRollback != null) {
-                    batchApplyEips(eips, applyHostUuidForRollback, new Completion() {
+                    batchApplyEips(eips, applyHostUuidForRollback, new Completion(null) {
                         @Override
                         public void success() {
                             // pass

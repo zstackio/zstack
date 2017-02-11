@@ -33,7 +33,7 @@ public class TestAsyncSafe1 {
 
     @Test
     public void test() {
-        throwError(new ReturnValueCompletion() {
+        throwError(new ReturnValueCompletion(null) {
             @Override
             public void fail(ErrorCode errorCode) {
                 logger.debug(errorCode.toString());

@@ -42,7 +42,7 @@ public class TestRestAsyncCallback1 {
         final String url = wbean.buildUrl(RESTBeanForTest.ROOT, RESTBeanForTest.CALLBACK_PATH);
         final String hi = Platform.getUuid();
         final TestRestAsyncCallback1 self = this;
-        restf.asyncJsonPost(url, hi, new JsonAsyncRESTCallback<String>() {
+        restf.asyncJsonPost(url, hi, new JsonAsyncRESTCallback<String>(null) {
 
             @Override
             public void fail(ErrorCode err) {

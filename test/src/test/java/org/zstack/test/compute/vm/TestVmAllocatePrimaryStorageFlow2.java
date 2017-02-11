@@ -125,7 +125,7 @@ public class TestVmAllocatePrimaryStorageFlow2 {
         spec.setDestHost(hinv);
 
         chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
-        chain.done(new FlowDoneHandler() {
+        chain.done(new FlowDoneHandler(null) {
             @Override
             public void handle(Map data) {
                 try {
@@ -160,7 +160,7 @@ public class TestVmAllocatePrimaryStorageFlow2 {
                     latch.countDown();
                 }
             }
-        }).error(new FlowErrorHandler() {
+        }).error(new FlowErrorHandler(null) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
                 isSuccess = false;

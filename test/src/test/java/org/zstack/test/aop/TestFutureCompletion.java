@@ -33,7 +33,7 @@ public class TestFutureCompletion {
 
     @Test
     public void test() throws InterruptedException {
-        FutureCompletion completion = new FutureCompletion();
+        FutureCompletion completion = new FutureCompletion(null);
         complete(completion);
         completion.await();
         Assert.assertTrue(success);

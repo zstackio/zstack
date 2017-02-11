@@ -82,7 +82,7 @@ public class TestCreateApplianceVm2 {
             @Override
             public void run() {
                 for (int i = 0; i < num; i++) {
-                    apvmf.createApplianceVm(spec, new ReturnValueCompletion<ApplianceVmInventory>() {
+                    apvmf.createApplianceVm(spec, new ReturnValueCompletion<ApplianceVmInventory>(null) {
                         private VmNicInventory findNic(List<VmNicInventory> lst, String l3Uuid) {
                             for (VmNicInventory nic : lst) {
                                 if (l3Uuid.equals(nic.getL3NetworkUuid())) {

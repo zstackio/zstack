@@ -28,7 +28,7 @@ public class TestAsyncBatch1 {
 
     @Test
     public void test() {
-        FutureCompletion completion = new FutureCompletion();
+        FutureCompletion completion = new FutureCompletion(null);
 
         List<Integer> nums = asList(1, 2, 3);
         new LoopAsyncBatch<Integer>(completion) {
@@ -59,7 +59,7 @@ public class TestAsyncBatch1 {
         Assert.assertEquals(1 + 2 + 3, count);
 
         count = 0;
-        FutureCompletion completion1 = new FutureCompletion();
+        FutureCompletion completion1 = new FutureCompletion(null);
         new LoopAsyncBatch<Integer>(completion1) {
             @Override
             protected Collection<Integer> collect() {
@@ -91,7 +91,7 @@ public class TestAsyncBatch1 {
         completion1.await();
         Assert.assertEquals(1 + 3, count);
 
-        FutureCompletion completion2 = new FutureCompletion();
+        FutureCompletion completion2 = new FutureCompletion(null);
         new LoopAsyncBatch<Integer>(completion2) {
             @Override
             protected Collection<Integer> collect() {

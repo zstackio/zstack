@@ -36,7 +36,7 @@ public class TestJobReturnValueFail {
     @AsyncThread
     private void startJob(final long index) {
         FakeJobReturnValueFail fjob = new FakeJobReturnValueFail(index);
-        jobf.execute("fake-job", "TestJob", fjob, new ReturnValueCompletion<Long>() {
+        jobf.execute("fake-job", "TestJob", fjob, new ReturnValueCompletion<Long>(null) {
             @Override
             public void success(Long returnValue) {
                 logger.debug(String.format("job[%s] unwanted success", returnValue));

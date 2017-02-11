@@ -61,7 +61,7 @@ public class TestKVMRealizeL2VlanNetworkBackendFailure {
         HostInventory host = deployer.hosts.get("kvm");
         config.createL2VlanNetworkSuccess = false;
         final CountDownLatch latch = new CountDownLatch(1);
-        backend.realize(l2inv, host.getUuid(), new Completion() {
+        backend.realize(l2inv, host.getUuid(), new Completion(null) {
             @Override
             public void success() {
                 success = true;

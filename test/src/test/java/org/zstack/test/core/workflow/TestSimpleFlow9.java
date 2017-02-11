@@ -43,7 +43,7 @@ public class TestSimpleFlow9 {
             });
         }
 
-        schain.done(new FlowDoneHandler() {
+        schain.done(new FlowDoneHandler(null) {
             @Override
             public void handle(Map data) {
                 success = true;

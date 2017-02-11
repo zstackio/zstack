@@ -155,7 +155,7 @@ public class TestAsyncCascade {
         });
 
         bootstrap(map);
-        casf.asyncCascade("test", "zone", null, new Completion() {
+        casf.asyncCascade("test", "zone", null, new Completion(null) {
             @Override
             public void success() {
                 success5 = true;

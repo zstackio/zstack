@@ -38,7 +38,7 @@ public class TestRestAsyncCallbackMissingTaskUuid {
     public void test() throws InterruptedException {
         String url = wbean.buildUrl(RESTBeanForTest.ROOT, RESTBeanForTest.CALLBACK_MISSING_TASKUUID_PATH);
         final String hi = "hello";
-        restf.asyncJsonPost(url, hi, new JsonAsyncRESTCallback<String>() {
+        restf.asyncJsonPost(url, hi, new JsonAsyncRESTCallback<String>(null) {
 
             @Override
             public void fail(ErrorCode err) {

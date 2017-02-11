@@ -29,7 +29,7 @@ public class TestCompletionCallOnce1 {
 
     @Test
     public void test() throws InterruptedException {
-        ReturnValueCompletion<Void> completion = new ReturnValueCompletion<Void>() {
+        ReturnValueCompletion<Void> completion = new ReturnValueCompletion<Void>(null) {
             @Override
             public void success(Void returnValue) {
                 success++;

@@ -243,7 +243,7 @@ public class ImageBase implements Image {
         msg.setBackupStorageUuid(bsUuid);
         msg.setSize(size);
         bus.makeTargetServiceIdByResourceUuid(msg, BackupStorageConstant.SERVICE_ID, bsUuid);
-        bus.send(msg, new CloudBusCallBack() {
+        bus.send(msg, new CloudBusCallBack(null) {
             @Override
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {
@@ -573,7 +573,6 @@ public class ImageBase implements Image {
         context.setName("gc-expunge-image");
         context.setInterval(10);
         context.setTimeUnit(TimeUnit.SECONDS);
-
         gcf.schedule(context);
     }
 

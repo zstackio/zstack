@@ -1166,7 +1166,7 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
                             if (deleteOnRollback && cachePath != null) {
                                 DeleteCmd cmd = new DeleteCmd();
                                 cmd.installPath = cachePath;
-                                httpCall(DELETE_PATH, cmd, DeleteRsp.class, new ReturnValueCompletion<DeleteRsp>() {
+                                httpCall(DELETE_PATH, cmd, DeleteRsp.class, new ReturnValueCompletion<DeleteRsp>(null) {
                                     @Override
                                     public void success(DeleteRsp returnValue) {
                                         logger.debug(String.format("successfully deleted %s", cachePath));
@@ -1214,7 +1214,7 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
                             if (needCleanup) {
                                 DeleteSnapshotCmd cmd = new DeleteSnapshotCmd();
                                 cmd.snapshotPath = snapshotPath;
-                                httpCall(DELETE_SNAPSHOT_PATH, cmd, DeleteSnapshotRsp.class, new ReturnValueCompletion<DeleteSnapshotRsp>() {
+                                httpCall(DELETE_SNAPSHOT_PATH, cmd, DeleteSnapshotRsp.class, new ReturnValueCompletion<DeleteSnapshotRsp>(null) {
                                     @Override
                                     public void success(DeleteSnapshotRsp returnValue) {
                                         logger.debug(String.format("successfully deleted the snapshot %s", snapshotPath));
@@ -1913,7 +1913,7 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
                         }
                     }
 
-                    mon.connect(new Completion() {
+                    mon.connect(new Completion(releaseLock) {
                         @Override
                         public void success() {
                             logger.debug(String.format("successfully reconnected the mon[uuid:%s] of the fusionstor primary" +
@@ -2451,7 +2451,7 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
                         if (sq.count() == 0) {
                             DeleteCmd cmd = new DeleteCmd();
                             cmd.installPath = originalVolumePath;
-                            httpCall(DELETE_PATH, cmd, DeleteRsp.class, new ReturnValueCompletion<DeleteRsp>() {
+                            httpCall(DELETE_PATH, cmd, DeleteRsp.class, new ReturnValueCompletion<DeleteRsp>(null) {
                                 @Override
                                 public void success(DeleteRsp returnValue) {
                                     logger.debug(String.format("successfully deleted %s", originalVolumePath));
@@ -2543,7 +2543,7 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
                         if (sq.count() == 0) {
                             DeleteCmd cmd = new DeleteCmd();
                             cmd.installPath = originalVolumePath;
-                            httpCall(DELETE_PATH, cmd, DeleteRsp.class, new ReturnValueCompletion<DeleteRsp>() {
+                            httpCall(DELETE_PATH, cmd, DeleteRsp.class, new ReturnValueCompletion<DeleteRsp>(null) {
                                 @Override
                                 public void success(DeleteRsp returnValue) {
                                     logger.debug(String.format("successfully deleted %s", originalVolumePath));
@@ -2674,7 +2674,7 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
         if (FusionstorGlobalConfig.PRIMARY_STORAGE_DELETE_POOL.value(Boolean.class)) {
             DeletePoolCmd cmd = new DeletePoolCmd();
             cmd.poolNames = list(getSelf().getImageCachePoolName(), getSelf().getDataVolumePoolName(), getSelf().getRootVolumePoolName());
-            FutureReturnValueCompletion completion = new FutureReturnValueCompletion();
+            FutureReturnValueCompletion completion = new FutureReturnValueCompletion(null);
             httpCall(DELETE_POOL_PATH, cmd, DeletePoolRsp.class, completion);
             completion.await(TimeUnit.MINUTES.toMillis(30));
             if (!completion.isSuccess()) {

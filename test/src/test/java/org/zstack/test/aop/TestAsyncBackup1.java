@@ -47,7 +47,7 @@ public class TestAsyncBackup1 {
 
     @Test
     public void test() throws InterruptedException {
-        testMethod(new Completion() {
+        testMethod(new Completion(null) {
             @Override
             public void success() {
             }

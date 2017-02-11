@@ -34,7 +34,7 @@ public class TestFutureCompletion1 {
 
     @Test
     public void test() throws InterruptedException {
-        FutureCompletion completion = new FutureCompletion();
+        FutureCompletion completion = new FutureCompletion(null);
         complete(completion);
         completion.await();
         Assert.assertFalse(completion.isSuccess());

@@ -86,7 +86,7 @@ public class TestCreateApplianceVmKvm1 {
         spec.getAdditionalNics().add(nic2);
 
         config.prepareBootstrapInfoSuccess = false;
-        apvmf.createApplianceVm(spec, new ReturnValueCompletion<ApplianceVmInventory>() {
+        apvmf.createApplianceVm(spec, new ReturnValueCompletion<ApplianceVmInventory>(null) {
 
             @Override
             public void success(ApplianceVmInventory vm) {

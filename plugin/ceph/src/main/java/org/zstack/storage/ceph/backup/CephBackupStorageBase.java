@@ -451,7 +451,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
                 }
 
                 CephBackupStorageMonBase base = it.next();
-                base.httpCall(path, cmd, retClass, new ReturnValueCompletion<T>() {
+                base.httpCall(path, cmd, retClass, new ReturnValueCompletion<T>(callback) {
                     @Override
                     public void success(T ret) {
                         if (!ret.success) {
@@ -587,7 +587,8 @@ public class CephBackupStorageBase extends BackupStorageBase {
             deleteCmd.setImageUuid(msg.getImg().getUuid());
             deleteCmd.setBackupStorageUuid(msg.getBackupStorageUuid());
             deleteCmd.setPoolName(msg.getPoolName());
-            httpCall(DELETE_IMAGES_METADATA, deleteCmd, DeleteImageInfoFromMetaDataFileRsp.class, new ReturnValueCompletion<DeleteImageInfoFromMetaDataFileRsp>() {
+            httpCall(DELETE_IMAGES_METADATA, deleteCmd, DeleteImageInfoFromMetaDataFileRsp.class,
+                    new ReturnValueCompletion<DeleteImageInfoFromMetaDataFileRsp>(msg, chain) {
                 @Override
                 public void success(DeleteImageInfoFromMetaDataFileRsp returnValue) {
                     bus.reply(msg, reply);
@@ -759,7 +760,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
         DeleteCmd cmd = new DeleteCmd();
         cmd.installPath = msg.getInstallPath();
 
-        httpCall(DELETE_IMAGE_PATH, cmd, DeleteRsp.class, new ReturnValueCompletion<DeleteRsp>() {
+        httpCall(DELETE_IMAGE_PATH, cmd, DeleteRsp.class, new ReturnValueCompletion<DeleteRsp>(msg) {
             @Override
             public void fail(ErrorCode err) {
                 //TODO

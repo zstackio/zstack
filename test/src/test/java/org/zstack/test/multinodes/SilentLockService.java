@@ -34,7 +34,7 @@ public class SilentLockService extends AbstractService {
             smsg.setUnlockKey(Platform.getUuid());
             smsg.setReason("test");
             bus.makeServiceIdByManagementNodeId(smsg, dmsg.toLockServiceId, dmsg.toManagementNodeUuid);
-            bus.send(smsg, new CloudBusCallBack() {
+            bus.send(smsg, new CloudBusCallBack(null) {
                 @Override
                 public void run(MessageReply reply) {
                     MessageReply r = new MessageReply();

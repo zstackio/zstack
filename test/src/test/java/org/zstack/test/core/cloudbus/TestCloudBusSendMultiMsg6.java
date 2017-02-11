@@ -76,7 +76,7 @@ public class TestCloudBusSendMultiMsg6 {
             msgs.add(msg);
         }
 
-        bus.send(msgs, 10, new CloudBusSteppingCallback() {
+        bus.send(msgs, 10, new CloudBusSteppingCallback(null) {
             @Override
             public void run(NeedReplyMessage msg, MessageReply reply) {
                 if (!reply.isSuccess()) {
