@@ -1417,18 +1417,57 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     @Override
     void handle(final DeleteSnapshotOnPrimaryStorageMsg msg, final String hostUuid, final ReturnValueCompletion<DeleteSnapshotOnPrimaryStorageReply> completion) {
         final DeleteSnapshotOnPrimaryStorageReply reply = new DeleteSnapshotOnPrimaryStorageReply();
-        deleteBits(msg.getSnapshot().getPrimaryStorageInstallPath(), hostUuid, new Completion(completion) {
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName(String.format("delete-Snapshot-%s", msg.getSnapshot().getUuid()));
+        chain.then(new NoRollbackFlow() {
             @Override
-            public void success() {
-                completion.success(reply);
-            }
+            public void run(FlowTrigger trigger, Map data) {
+                String __name__ = "delete snapshot ";
+                deleteBits(msg.getSnapshot().getPrimaryStorageInstallPath(), hostUuid, new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
 
-            @Override
-            public void fail(ErrorCode errorCode) {
-                completion.fail(errorCode);
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
             }
         });
+
+        chain.then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                String __name__ = "delete imf2  file in rootVolume";
+                String filePath = msg.getSnapshot().getPrimaryStorageInstallPath();
+                String imfFilePath = filePath.replace("qcow2", "imf2");
+                deleteBits(imfFilePath, hostUuid, new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+        });
+        chain.done(new FlowDoneHandler(msg) {
+            public void handle(Map data) {
+                completion.success(reply);
+            }
+        }).error(new FlowErrorHandler(msg) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                completion.fail(errCode);
+            }
+        }).start();
     }
+
 
     @Override
     void handle(RevertVolumeFromSnapshotOnPrimaryStorageMsg msg, String hostUuid, final ReturnValueCompletion<RevertVolumeFromSnapshotOnPrimaryStorageReply> completion) {
@@ -2215,7 +2254,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 cmd.dstPassword = password;
                 cmd.dstPort = port;
                 cmd.sendCommandUrl = restf.getSendCommandUrl();
-                if(context.hasbackingfile) {
+                if (context.hasbackingfile) {
                     cmd.stage = PrimaryStorageConstant.MIGRATE_VOLUME_AFTER_BACKING_FILE_COPY_STAGE;
                 } else {
                     cmd.stage = PrimaryStorageConstant.MIGRATE_VOLUME_COPY_STAGE;
