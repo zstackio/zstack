@@ -23,7 +23,6 @@ public class ConvergedOfferingDeployer implements InstanceOfferingDeployer<Conve
             action.sessionId = session.getUuid();
             action.allocatorStrategy = ic.getAllocatorStrategy();
             action.cpuNum = (int) ic.getCpuNum();
-            action.cpuSpeed = (int) ic.getCpuSpeed();
             action.description = ic.getDescription();
             action.memorySize = deployer.parseSizeCapacity(ic.getMemoryCapacity());
             action.name = ic.getName();

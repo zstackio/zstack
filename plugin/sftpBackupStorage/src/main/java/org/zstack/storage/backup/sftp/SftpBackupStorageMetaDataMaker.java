@@ -268,7 +268,7 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
                         SftpBackupStorageCommands.CheckImageMetaDataFileExistCmd cmd = new SftpBackupStorageCommands.CheckImageMetaDataFileExistCmd();
                         cmd.setBackupStoragePath(getBsUrlFromImageInventory(img));
                         restf.asyncJsonPost(buildUrl(SftpBackupStorageConstant.CHECK_IMAGE_METADATA_FILE_EXIST, getHostNameFromImageInventory(img)), cmd,
-                                new JsonAsyncRESTCallback<SftpBackupStorageCommands.CheckImageMetaDataFileExistRsp>(null) {
+                                new JsonAsyncRESTCallback<SftpBackupStorageCommands.CheckImageMetaDataFileExistRsp>(trigger) {
                                     @Override
                                     public void fail(ErrorCode err) {
                                         logger.error("check image metadata file exist failed" + err.toString());
@@ -395,6 +395,7 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
         logger.debug("starting to import images metadata");
         SftpBackupStorageCommands.GetImagesMetaDataCmd cmd = new SftpBackupStorageCommands.GetImagesMetaDataCmd();
         cmd.setBackupStoragePath(inv.getUrl());
+        cmd.uuid = inv.getUuid();
         restf.asyncJsonPost(buildUrl(SftpBackupStorageConstant.GET_IMAGES_METADATA, inv.getHostname()), cmd,
                 new JsonAsyncRESTCallback<SftpBackupStorageCommands.GetImagesMetaDataRsp>(null) {
                     @Override
@@ -452,6 +453,7 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
                     public void run(FlowTrigger trigger, Map data) {
                         SftpBackupStorageCommands.CheckImageMetaDataFileExistCmd cmd = new SftpBackupStorageCommands.CheckImageMetaDataFileExistCmd();
                         cmd.setBackupStoragePath(bsUrl);
+                        cmd.uuid = backupStorageUuid;
                         restf.asyncJsonPost(buildUrl(SftpBackupStorageConstant.CHECK_IMAGE_METADATA_FILE_EXIST, hostName), cmd,
                                 new JsonAsyncRESTCallback<SftpBackupStorageCommands.CheckImageMetaDataFileExistRsp>(trigger) {
                                     @Override

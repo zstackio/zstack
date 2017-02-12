@@ -69,6 +69,18 @@ public interface KVMConstant {
         Crashed,
         Suspended;
 
+        public static KvmVmState fromVmInstanceState(VmInstanceState state) {
+            if (state == VmInstanceState.Running) {
+                return Running;
+            } else if (state == VmInstanceState.Stopped) {
+                return null;
+            } else if (state == VmInstanceState.Paused) {
+                return Paused;
+            } else {
+                return null;
+            }
+        }
+
         public VmInstanceState toVmInstanceState() {
             if (this == Running) {
                 return VmInstanceState.Running;

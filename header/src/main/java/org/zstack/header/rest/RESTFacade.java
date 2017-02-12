@@ -9,9 +9,15 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public interface RESTFacade {
+    void asyncJsonPost(String url, Object body, Map<String, String> headers, AsyncRESTCallback callback, TimeUnit unit, long timeout);
+
     void asyncJsonPost(String url, Object body, AsyncRESTCallback callback, TimeUnit unit, long timeout);
 
     void asyncJsonPost(String url, String body, AsyncRESTCallback callback, TimeUnit unit, long timeout);
+
+    void asyncJsonPost(String url, String body, Map<String, String> headers, AsyncRESTCallback callback, TimeUnit unit, long timeout);
+
+    void asyncJsonPost(String url, Object body, Map<String, String> headers, AsyncRESTCallback callback);
 
     void asyncJsonPost(String url, Object body, AsyncRESTCallback callback);
 

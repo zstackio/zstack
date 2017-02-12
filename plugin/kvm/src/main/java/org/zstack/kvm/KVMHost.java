@@ -25,10 +25,12 @@ import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
+import org.zstack.header.Constants;
 import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.core.AsyncLatch;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -219,6 +221,69 @@ public class KVMHost extends HostBase implements Host {
         deleteConsoleFirewall = ub.build().toString();
     }
 
+    class Http<T> {
+        String path;
+        AgentCommand cmd;
+        Class<T> responseClass;
+        String commandStr;
+        TimeUnit unit;
+        Long timeout;
+
+        public Http(String path, String cmd, Class<T> rspClz, TimeUnit unit, Long timeout) {
+            this.path = path;
+            this.commandStr = cmd;
+            this.responseClass = rspClz;
+            this.unit = unit;
+            this.timeout = timeout;
+        }
+
+        public Http(String path, AgentCommand cmd, Class<T> rspClz) {
+            this.path = path;
+            this.cmd = cmd;
+            this.responseClass = rspClz;
+        }
+
+        void call(ReturnValueCompletion<T> completion)  {
+            Map<String, String> header = new HashMap<>();
+            header.put(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID, self.getUuid());
+            if (commandStr != null) {
+                restf.asyncJsonPost(path, commandStr, header, new JsonAsyncRESTCallback<T>(completion) {
+                    @Override
+                    public void fail(ErrorCode err) {
+                        completion.fail(err);
+                    }
+
+                    @Override
+                    public void success(T ret) {
+                        completion.success(ret);
+                    }
+
+                    @Override
+                    public Class<T> getReturnClass() {
+                        return responseClass;
+                    }
+                }, unit, timeout);
+            } else {
+                restf.asyncJsonPost(path, cmd, header, new JsonAsyncRESTCallback<T>(completion) {
+                    @Override
+                    public void fail(ErrorCode err) {
+                        completion.fail(err);
+                    }
+
+                    @Override
+                    public void success(T ret) {
+                        completion.success(ret);
+                    }
+
+                    @Override
+                    public Class<T> getReturnClass() {
+                        return responseClass;
+                    }
+                }); // DO NOT pass unit, timeout here, they are null
+            }
+        }
+    }
+
     @Override
     protected void handleApiMessage(APIMessage msg) {
         super.handleApiMessage(msg);
@@ -285,14 +350,7 @@ public class KVMHost extends HostBase implements Host {
         final VmDirectlyDestroyOnHypervisorReply reply = new VmDirectlyDestroyOnHypervisorReply();
         DestroyVmCmd cmd = new DestroyVmCmd();
         cmd.setUuid(msg.getVmUuid());
-        restf.asyncJsonPost(destroyVmPath, cmd, new JsonAsyncRESTCallback<DestroyVmResponse>(msg, completion) {
-            @Override
-            public void fail(ErrorCode err) {
-                reply.setError(err);
-                bus.reply(msg, reply);
-                completion.done();
-            }
-
+        new Http<>(destroyVmPath, cmd, DestroyVmResponse.class).call(new ReturnValueCompletion<DestroyVmResponse>(completion) {
             @Override
             public void success(DestroyVmResponse ret) {
                 if (!ret.isSuccess()) {
@@ -304,8 +362,10 @@ public class KVMHost extends HostBase implements Host {
             }
 
             @Override
-            public Class<DestroyVmResponse> getReturnClass() {
-                return DestroyVmResponse.class;
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+                completion.done();
             }
         });
     }
@@ -371,13 +431,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setVmUuid(msg.getVmInstanceUuid());
         cmd.setCpuNum(msg.getInstanceOfferingInventory().getCpuNum());
         cmd.setMemorySize(msg.getInstanceOfferingInventory().getMemorySize());
-        restf.asyncJsonPost(onlineChangeCpuMemoryPath, cmd, new JsonAsyncRESTCallback<ChangeCpuMemoryResponse>(msg) {
-            @Override
-            public void fail(ErrorCode err) {
-                reply.setError(err);
-                bus.reply(msg, reply);
-            }
-
+        new Http<>(onlineChangeCpuMemoryPath, cmd, ChangeCpuMemoryResponse.class).call(new ReturnValueCompletion<ChangeCpuMemoryResponse>(msg) {
             @Override
             public void success(ChangeCpuMemoryResponse ret) {
                 if (!ret.isSuccess()) {
@@ -393,8 +447,9 @@ public class KVMHost extends HostBase implements Host {
             }
 
             @Override
-            public Class<ChangeCpuMemoryResponse> getReturnClass() {
-                return ChangeCpuMemoryResponse.class;
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
             }
         });
     }
@@ -404,13 +459,7 @@ public class KVMHost extends HostBase implements Host {
 
         GetVncPortCmd cmd = new GetVncPortCmd();
         cmd.setVmUuid(msg.getVmInstanceUuid());
-        restf.asyncJsonPost(getConsolePortPath, cmd, new JsonAsyncRESTCallback<GetVncPortResponse>(msg) {
-            @Override
-            public void fail(ErrorCode err) {
-                reply.setError(err);
-                bus.reply(msg, reply);
-            }
-
+        new Http<>(getConsolePortPath, cmd, GetVncPortResponse.class).call(new ReturnValueCompletion<GetVncPortResponse>(msg) {
             @Override
             public void success(GetVncPortResponse ret) {
                 if (!ret.isSuccess()) {
@@ -424,8 +473,9 @@ public class KVMHost extends HostBase implements Host {
             }
 
             @Override
-            public Class<GetVncPortResponse> getReturnClass() {
-                return GetVncPortResponse.class;
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
             }
         });
     }
@@ -446,13 +496,7 @@ public class KVMHost extends HostBase implements Host {
         CheckVmStateCmd cmd = new CheckVmStateCmd();
         cmd.vmUuids = msg.getVmInstanceUuids();
         cmd.hostUuid = self.getUuid();
-        restf.asyncJsonPost(checkVmStatePath, cmd, new JsonAsyncRESTCallback<CheckVmStateRsp>(msg) {
-            @Override
-            public void fail(ErrorCode err) {
-                reply.setError(err);
-                bus.reply(msg, reply);
-            }
-
+        new Http<>(checkVmStatePath, cmd, CheckVmStateRsp.class).call(new ReturnValueCompletion<CheckVmStateRsp>(msg) {
             @Override
             public void success(CheckVmStateRsp ret) {
                 if (!ret.isSuccess()) {
@@ -469,8 +513,9 @@ public class KVMHost extends HostBase implements Host {
             }
 
             @Override
-            public Class<CheckVmStateRsp> getReturnClass() {
-                return CheckVmStateRsp.class;
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
             }
         });
     }
@@ -515,14 +560,7 @@ public class KVMHost extends HostBase implements Host {
             ext.preDetachIsoExtensionPoint(inv, cmd);
         }
 
-        restf.asyncJsonPost(detachIsoPath, cmd, new JsonAsyncRESTCallback<DetachIsoRsp>(msg, completion) {
-            @Override
-            public void fail(ErrorCode err) {
-                reply.setError(err);
-                bus.reply(msg, reply);
-                completion.done();
-            }
-
+        new Http<>(detachIsoPath, cmd, DetachIsoRsp.class).call(new ReturnValueCompletion<DetachIsoRsp>(msg, completion) {
             @Override
             public void success(DetachIsoRsp ret) {
                 if (!ret.isSuccess()) {
@@ -534,8 +572,10 @@ public class KVMHost extends HostBase implements Host {
             }
 
             @Override
-            public Class<DetachIsoRsp> getReturnClass() {
-                return DetachIsoRsp.class;
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+                completion.done();
             }
         });
     }
@@ -585,14 +625,7 @@ public class KVMHost extends HostBase implements Host {
             ext.preAttachIsoExtensionPoint(inv, cmd);
         }
 
-        restf.asyncJsonPost(attachIsoPath, cmd, new JsonAsyncRESTCallback<AttachIsoRsp>(msg, completion) {
-            @Override
-            public void fail(ErrorCode err) {
-                reply.setError(err);
-                bus.reply(msg, reply);
-                completion.done();
-            }
-
+        new Http<>(attachIsoPath, cmd, AttachIsoRsp.class).call(new ReturnValueCompletion<AttachIsoRsp>(msg, completion) {
             @Override
             public void success(AttachIsoRsp ret) {
                 if (!ret.isSuccess()) {
@@ -604,8 +637,10 @@ public class KVMHost extends HostBase implements Host {
             }
 
             @Override
-            public Class<AttachIsoRsp> getReturnClass() {
-                return AttachIsoRsp.class;
+            public void fail(ErrorCode err) {
+                reply.setError(err);
+                bus.reply(msg, reply);
+                completion.done();
             }
         });
     }
@@ -647,14 +682,7 @@ public class KVMHost extends HostBase implements Host {
         DetachNicCommand cmd = new DetachNicCommand();
         cmd.setVmUuid(msg.getVmInstanceUuid());
         cmd.setNic(to);
-        restf.asyncJsonPost(detachNicPath, cmd, new JsonAsyncRESTCallback<DetachNicRsp>(msg, completion) {
-            @Override
-            public void fail(ErrorCode err) {
-                reply.setError(err);
-                bus.reply(msg, reply);
-                completion.done();
-            }
-
+        new Http<>(detachNicPath, cmd, DetachNicRsp.class).call(new ReturnValueCompletion<DetachNicRsp>(msg, completion) {
             @Override
             public void success(DetachNicRsp ret) {
                 if (!ret.isSuccess()) {
@@ -665,8 +693,10 @@ public class KVMHost extends HostBase implements Host {
             }
 
             @Override
-            public Class<DetachNicRsp> getReturnClass() {
-                return DetachNicRsp.class;
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+                completion.done();
             }
         });
     }
@@ -706,7 +736,9 @@ public class KVMHost extends HostBase implements Host {
         }
         String url = buildUrl(msg.getPath());
         MessageCommandRecorder.record(msg.getCommandClassName());
-        LinkedHashMap rsp = restf.syncJsonPost(url, msg.getCommand(), LinkedHashMap.class);
+        Map<String, String> headers = new HashMap<>();
+        headers.put(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID, self.getUuid());
+        LinkedHashMap rsp = restf.syncJsonPost(url, msg.getCommand(), headers, LinkedHashMap.class);
         KVMHostSyncHttpCallReply reply = new KVMHostSyncHttpCallReply();
         reply.setResponse(rsp);
         bus.reply(msg, reply);
@@ -761,20 +793,8 @@ public class KVMHost extends HostBase implements Host {
 
         String url = buildUrl(msg.getPath());
         MessageCommandRecorder.record(msg.getCommandClassName());
-        restf.asyncJsonPost(url, msg.getCommand(), new JsonAsyncRESTCallback<LinkedHashMap>(msg, completion) {
-            @Override
-            public void fail(ErrorCode err) {
-                KVMHostAsyncHttpCallReply reply = new KVMHostAsyncHttpCallReply();
-                if (err.isError(SysErrors.HTTP_ERROR, SysErrors.IO_ERROR)) {
-                    reply.setError(errf.instantiateErrorCode(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE, "cannot do the operation on the KVM host", err));
-                } else {
-                    reply.setError(reply.getError());
-                }
-
-                bus.reply(msg, reply);
-                completion.done();
-            }
-
+        new Http<>(url, msg.getCommand(), LinkedHashMap.class, TimeUnit.SECONDS, msg.getCommandTimeout())
+                .call(new ReturnValueCompletion<LinkedHashMap>(msg, completion) {
             @Override
             public void success(LinkedHashMap ret) {
                 KVMHostAsyncHttpCallReply reply = new KVMHostAsyncHttpCallReply();
@@ -784,10 +804,18 @@ public class KVMHost extends HostBase implements Host {
             }
 
             @Override
-            public Class<LinkedHashMap> getReturnClass() {
-                return LinkedHashMap.class;
+            public void fail(ErrorCode err) {
+                KVMHostAsyncHttpCallReply reply = new KVMHostAsyncHttpCallReply();
+                if (err.isError(SysErrors.HTTP_ERROR, SysErrors.IO_ERROR)) {
+                    reply.setError(errf.instantiateErrorCode(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE, "cannot do the operation on the KVM host", err));
+                } else {
+                    reply.setError(err);
+                }
+
+                bus.reply(msg, reply);
+                completion.done();
             }
-        }, TimeUnit.SECONDS, msg.getCommandTimeout());
+        });
     }
 
     private void handle(final MergeVolumeSnapshotOnKvmMsg msg) {
@@ -859,14 +887,8 @@ public class KVMHost extends HostBase implements Host {
         cmd.setSrcPath(snapshot.getPrimaryStorageInstallPath());
         cmd.setVmUuid(volume.getVmInstanceUuid());
         cmd.setDeviceId(volume.getDeviceId());
-        restf.asyncJsonPost(mergeSnapshotPath, cmd, new JsonAsyncRESTCallback<MergeSnapshotRsp>(msg, completion) {
-            @Override
-            public void fail(ErrorCode err) {
-                reply.setError(err);
-                bus.reply(msg, reply);
-                completion.done();
-            }
-
+        new Http<>(mergeSnapshotPath, cmd, MergeSnapshotRsp.class)
+                .call(new ReturnValueCompletion<MergeSnapshotRsp>(msg, completion) {
             @Override
             public void success(MergeSnapshotRsp ret) {
                 if (!ret.isSuccess()) {
@@ -877,8 +899,10 @@ public class KVMHost extends HostBase implements Host {
             }
 
             @Override
-            public Class<MergeSnapshotRsp> getReturnClass() {
-                return MergeSnapshotRsp.class;
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+                completion.done();
             }
         });
     }
@@ -947,14 +971,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setVolumeInstallPath(msg.getVolume().getInstallPath());
         cmd.setInstallPath(msg.getInstallPath());
         cmd.setFullSnapshot(msg.isFullSnapshot());
-        restf.asyncJsonPost(snapshotPath, cmd, new JsonAsyncRESTCallback<TakeSnapshotResponse>(msg, completion) {
-            @Override
-            public void fail(ErrorCode err) {
-                reply.setError(err);
-                bus.reply(msg, reply);
-                completion.done();
-            }
-
+        new Http<>(snapshotPath, cmd, TakeSnapshotResponse.class).call(new ReturnValueCompletion<TakeSnapshotResponse>(msg, completion) {
             @Override
             public void success(TakeSnapshotResponse ret) {
                 if (ret.isSuccess()) {
@@ -969,8 +986,10 @@ public class KVMHost extends HostBase implements Host {
             }
 
             @Override
-            public Class<TakeSnapshotResponse> getReturnClass() {
-                return TakeSnapshotResponse.class;
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+                completion.done();
             }
         });
     }
@@ -1012,12 +1031,7 @@ public class KVMHost extends HostBase implements Host {
                         cmd.setSrcHostIp(self.getManagementIp());
                         cmd.setStorageMigrationPolicy(storageMigrationPolicy == null ? null : storageMigrationPolicy.toString());
                         cmd.setVmUuid(vmUuid);
-                        restf.asyncJsonPost(migrateVmPath, cmd, new JsonAsyncRESTCallback<MigrateVmResponse>(trigger) {
-                            @Override
-                            public void fail(ErrorCode err) {
-                                completion.fail(err);
-                            }
-
+                        new Http<>(migrateVmPath, cmd, MigrateVmResponse.class).call(new ReturnValueCompletion<MigrateVmResponse>(trigger) {
                             @Override
                             public void success(MigrateVmResponse ret) {
                                 if (!ret.isSuccess()) {
@@ -1037,8 +1051,8 @@ public class KVMHost extends HostBase implements Host {
                             }
 
                             @Override
-                            public Class<MigrateVmResponse> getReturnClass() {
-                                return MigrateVmResponse.class;
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
                             }
                         });
                     }
@@ -1061,14 +1075,7 @@ public class KVMHost extends HostBase implements Host {
                         ub.path(KVMConstant.KVM_HARDEN_CONSOLE_PATH);
                         String url = ub.build().toString();
 
-                        restf.asyncJsonPost(url, cmd, new JsonAsyncRESTCallback<AgentResponse>(trigger) {
-                            @Override
-                            public void fail(ErrorCode err) {
-                                //TODO
-                                logger.warn(String.format("failed to harden VM[uuid:%s]'s console, %s", vmUuid, err));
-                                trigger.next();
-                            }
-
+                        new Http<>(url, cmd, AgentResponse.class).call(new ReturnValueCompletion<AgentResponse>(trigger) {
                             @Override
                             public void success(AgentResponse ret) {
                                 if (!ret.isSuccess()) {
@@ -1080,8 +1087,11 @@ public class KVMHost extends HostBase implements Host {
                             }
 
                             @Override
-                            public Class<AgentResponse> getReturnClass() {
-                                return AgentResponse.class;
+                            public void fail(ErrorCode errorCode) {
+                                //TODO
+                                logger.warn(String.format("failed to harden VM[uuid:%s]'s console, %s", vmUuid, errorCode));
+                                // continue
+                                trigger.next();
                             }
                         });
                     }
@@ -1096,16 +1106,7 @@ public class KVMHost extends HostBase implements Host {
                         cmd.vmInternalId = vmInternalId;
                         cmd.vmUuid = vmUuid;
                         cmd.hostManagementIp = self.getManagementIp();
-
-                        restf.asyncJsonPost(deleteConsoleFirewall, cmd, new JsonAsyncRESTCallback<AgentResponse>(trigger) {
-                            @Override
-                            public void fail(ErrorCode err) {
-                                //TODO
-                                logger.warn(String.format("failed to delete console firewall rule for the vm[uuid:%s] on" +
-                                        " the source host[uuid:%s, ip:%s], %s", vmUuid, self.getUuid(), self.getManagementIp(), err));
-                                trigger.next();
-                            }
-
+                        new Http<>(deleteConsoleFirewall, cmd, AgentResponse.class).call(new ReturnValueCompletion<AgentResponse>(trigger) {
                             @Override
                             public void success(AgentResponse ret) {
                                 if (!ret.isSuccess()) {
@@ -1117,8 +1118,11 @@ public class KVMHost extends HostBase implements Host {
                             }
 
                             @Override
-                            public Class<AgentResponse> getReturnClass() {
-                                return AgentResponse.class;
+                            public void fail(ErrorCode errorCode) {
+                                //TODO
+                                logger.warn(String.format("failed to delete console firewall rule for the vm[uuid:%s] on" +
+                                        " the source host[uuid:%s, ip:%s], %s", vmUuid, self.getUuid(), self.getManagementIp(), errorCode));
+                                trigger.next();
                             }
                         });
                     }
@@ -1250,14 +1254,7 @@ public class KVMHost extends HostBase implements Host {
             ext.preAttachNicExtensionPoint(inv, cmd);
         }
 
-        restf.asyncJsonPost(attachNicPath, cmd, new JsonAsyncRESTCallback<AttachNicResponse>(msg, completion) {
-            @Override
-            public void fail(ErrorCode err) {
-                reply.setError(err);
-                bus.reply(msg, reply);
-                completion.done();
-            }
-
+        new Http<>(attachNicPath, cmd, AttachNicResponse.class).call(new ReturnValueCompletion<AttachNicResponse>(msg, completion) {
             @Override
             public void success(AttachNicResponse ret) {
                 if (!ret.isSuccess()) {
@@ -1271,8 +1268,10 @@ public class KVMHost extends HostBase implements Host {
             }
 
             @Override
-            public Class<AttachNicResponse> getReturnClass() {
-                return AttachNicResponse.class;
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+                completion.done();
             }
         });
     }
@@ -1333,16 +1332,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setVolume(to);
         cmd.setVmUuid(vm.getUuid());
         extEmitter.beforeDetachVolume((KVMHostInventory) getSelfInventory(), vm, vol, cmd);
-        restf.asyncJsonPost(detachDataVolumePath, cmd, new JsonAsyncRESTCallback<DetachDataVolumeResponse>(msg, completion) {
-
-            @Override
-            public void fail(ErrorCode err) {
-                reply.setError(err);
-                bus.reply(msg, reply);
-                extEmitter.detachVolumeFailed((KVMHostInventory) getSelfInventory(), vm, vol, cmd, err);
-                completion.done();
-            }
-
+        new Http<>(detachDataVolumePath, cmd, DetachDataVolumeResponse.class).call(new ReturnValueCompletion<DetachDataVolumeResponse>(msg, completion) {
             @Override
             public void success(DetachDataVolumeResponse ret) {
                 if (!ret.isSuccess()) {
@@ -1359,8 +1349,11 @@ public class KVMHost extends HostBase implements Host {
             }
 
             @Override
-            public Class<DetachDataVolumeResponse> getReturnClass() {
-                return DetachDataVolumeResponse.class;
+            public void fail(ErrorCode err) {
+                reply.setError(err);
+                bus.reply(msg, reply);
+                extEmitter.detachVolumeFailed((KVMHostInventory) getSelfInventory(), vm, vol, cmd, err);
+                completion.done();
             }
         });
     }
@@ -1436,15 +1429,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setVolume(to);
         cmd.setVmUuid(msg.getVmInventory().getUuid());
         extEmitter.beforeAttachVolume((KVMHostInventory) getSelfInventory(), vm, vol, cmd);
-        restf.asyncJsonPost(attachDataVolumePath, cmd, new JsonAsyncRESTCallback<AttachDataVolumeResponse>(msg, completion) {
-            @Override
-            public void fail(ErrorCode err) {
-                extEmitter.attachVolumeFailed((KVMHostInventory) getSelfInventory(), vm, vol, cmd, err);
-                reply.setError(err);
-                bus.reply(msg, reply);
-                completion.done();
-            }
-
+        new Http<>(attachDataVolumePath, cmd, AttachDataVolumeResponse.class).call(new ReturnValueCompletion<AttachDataVolumeResponse>(msg, completion) {
             @Override
             public void success(AttachDataVolumeResponse ret) {
                 if (!ret.isSuccess()) {
@@ -1463,10 +1448,12 @@ public class KVMHost extends HostBase implements Host {
             }
 
             @Override
-            public Class<AttachDataVolumeResponse> getReturnClass() {
-                return AttachDataVolumeResponse.class;
+            public void fail(ErrorCode err) {
+                extEmitter.attachVolumeFailed((KVMHostInventory) getSelfInventory(), vm, vol, cmd, err);
+                reply.setError(err);
+                bus.reply(msg, reply);
+                completion.done();
             }
-
         });
     }
 
@@ -1515,21 +1502,7 @@ public class KVMHost extends HostBase implements Host {
 
         DestroyVmCmd cmd = new DestroyVmCmd();
         cmd.setUuid(vminv.getUuid());
-        restf.asyncJsonPost(destroyVmPath, cmd, new JsonAsyncRESTCallback<DestroyVmResponse>(msg, completion) {
-            @Override
-            public void fail(ErrorCode err) {
-                DestroyVmOnHypervisorReply reply = new DestroyVmOnHypervisorReply();
-
-                if (err.isError(SysErrors.HTTP_ERROR, SysErrors.IO_ERROR)) {
-                    err = errf.instantiateErrorCode(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE, "unable to destroy a vm", err);
-                }
-
-                reply.setError(err);
-                extEmitter.destroyVmOnKvmFailed(KVMHostInventory.valueOf(getSelf()), vminv, reply.getError());
-                bus.reply(msg, reply);
-                completion.done();
-            }
-
+        new Http<>(destroyVmPath, cmd, DestroyVmResponse.class).call(new ReturnValueCompletion<DestroyVmResponse>(msg, completion) {
             @Override
             public void success(DestroyVmResponse ret) {
                 DestroyVmOnHypervisorReply reply = new DestroyVmOnHypervisorReply();
@@ -1547,8 +1520,17 @@ public class KVMHost extends HostBase implements Host {
             }
 
             @Override
-            public Class<DestroyVmResponse> getReturnClass() {
-                return DestroyVmResponse.class;
+            public void fail(ErrorCode err) {
+                DestroyVmOnHypervisorReply reply = new DestroyVmOnHypervisorReply();
+
+                if (err.isError(SysErrors.HTTP_ERROR, SysErrors.IO_ERROR)) {
+                    err = errf.instantiateErrorCode(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE, "unable to destroy a vm", err);
+                }
+
+                reply.setError(err);
+                extEmitter.destroyVmOnKvmFailed(KVMHostInventory.valueOf(getSelf()), vminv, reply.getError());
+                bus.reply(msg, reply);
+                completion.done();
             }
         });
     }
@@ -1616,16 +1598,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setUuid(vminv.getUuid());
         cmd.setTimeout(timeout);
         cmd.setBootDev(toKvmBootDev(msg.getBootOrders()));
-        restf.asyncJsonPost(rebootVmPath, cmd, new JsonAsyncRESTCallback<RebootVmResponse>(msg, completion) {
-            @Override
-            public void fail(ErrorCode err) {
-                RebootVmOnHypervisorReply reply = new RebootVmOnHypervisorReply();
-                reply.setError(err);
-                extEmitter.rebootVmOnKvmFailed(KVMHostInventory.valueOf(getSelf()), vminv, err);
-                bus.reply(msg, reply);
-                completion.done();
-            }
-
+        new Http<>(rebootVmPath, cmd, RebootVmResponse.class).call(new ReturnValueCompletion<RebootVmResponse>(msg, completion) {
             @Override
             public void success(RebootVmResponse ret) {
                 RebootVmOnHypervisorReply reply = new RebootVmOnHypervisorReply();
@@ -1642,10 +1615,13 @@ public class KVMHost extends HostBase implements Host {
             }
 
             @Override
-            public Class<RebootVmResponse> getReturnClass() {
-                return RebootVmResponse.class;
+            public void fail(ErrorCode err) {
+                RebootVmOnHypervisorReply reply = new RebootVmOnHypervisorReply();
+                reply.setError(err);
+                extEmitter.rebootVmOnKvmFailed(KVMHostInventory.valueOf(getSelf()), vminv, err);
+                bus.reply(msg, reply);
+                completion.done();
             }
-
         });
     }
 
@@ -1695,20 +1671,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setUuid(vminv.getUuid());
         cmd.setType(msg.getType());
         cmd.setTimeout(120);
-        restf.asyncJsonPost(stopVmPath, cmd, new JsonAsyncRESTCallback<StopVmResponse>(msg, completion) {
-            @Override
-            public void fail(ErrorCode err) {
-                StopVmOnHypervisorReply reply = new StopVmOnHypervisorReply();
-                if (err.isError(SysErrors.IO_ERROR, SysErrors.HTTP_ERROR)) {
-                    err = errf.instantiateErrorCode(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE, "unable to stop a vm", err);
-                }
-
-                reply.setError(err);
-                extEmitter.stopVmOnKvmFailed(KVMHostInventory.valueOf(getSelf()), vminv, err);
-                bus.reply(msg, reply);
-                completion.done();
-            }
-
+        new Http<>(stopVmPath, cmd, StopVmResponse.class).call(new ReturnValueCompletion<StopVmResponse>(msg, completion) {
             @Override
             public void success(StopVmResponse ret) {
                 StopVmOnHypervisorReply reply = new StopVmOnHypervisorReply();
@@ -1726,10 +1689,17 @@ public class KVMHost extends HostBase implements Host {
             }
 
             @Override
-            public Class<StopVmResponse> getReturnClass() {
-                return StopVmResponse.class;
-            }
+            public void fail(ErrorCode err) {
+                StopVmOnHypervisorReply reply = new StopVmOnHypervisorReply();
+                if (err.isError(SysErrors.IO_ERROR, SysErrors.HTTP_ERROR)) {
+                    err = errf.instantiateErrorCode(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE, "unable to stop a vm", err);
+                }
 
+                reply.setError(err);
+                extEmitter.stopVmOnKvmFailed(KVMHostInventory.valueOf(getSelf()), vminv, err);
+                bus.reply(msg, reply);
+                completion.done();
+            }
         });
     }
 
@@ -1871,16 +1841,15 @@ public class KVMHost extends HostBase implements Host {
         cmd.setVideoType(VmGlobalConfig.VM_VIDEO_TYPE.value(String.class));
 
         VolumeTO rootVolume = new VolumeTO();
-        {
-            rootVolume.setInstallPath(spec.getDestRootVolume().getInstallPath());
-            rootVolume.setDeviceId(spec.getDestRootVolume().getDeviceId());
-            rootVolume.setDeviceType(getVolumeTOType(spec.getDestRootVolume()));
-            rootVolume.setVolumeUuid(spec.getDestRootVolume().getUuid());
-            rootVolume.setUseVirtio(virtio);
-            rootVolume.setUseVirtioSCSI(KVMSystemTags.VOLUME_VIRTIO_SCSI.hasTag(spec.getDestRootVolume().getUuid()));
-            rootVolume.setWwn(setVolumeWwn(spec.getDestRootVolume().getUuid()));
-            rootVolume.setCacheMode(KVMGlobalConfig.LIBVIRT_CACHE_MODE.value());
-        }
+        rootVolume.setInstallPath(spec.getDestRootVolume().getInstallPath());
+        rootVolume.setDeviceId(spec.getDestRootVolume().getDeviceId());
+        rootVolume.setDeviceType(getVolumeTOType(spec.getDestRootVolume()));
+        rootVolume.setVolumeUuid(spec.getDestRootVolume().getUuid());
+        rootVolume.setUseVirtio(virtio);
+        rootVolume.setUseVirtioSCSI(KVMSystemTags.VOLUME_VIRTIO_SCSI.hasTag(spec.getDestRootVolume().getUuid()));
+        rootVolume.setWwn(setVolumeWwn(spec.getDestRootVolume().getUuid()));
+        rootVolume.setCacheMode(KVMGlobalConfig.LIBVIRT_CACHE_MODE.value());
+
         consoleMode = KVMGlobalConfig.VM_CONSOLE_MODE.value(String.class);
         nestedVirtualization = KVMGlobalConfig.NESTED_VIRTUALIZATION.value(String.class);
         cmd.setConsoleMode(consoleMode);
@@ -1940,17 +1909,7 @@ public class KVMHost extends HostBase implements Host {
 
         extEmitter.addOn(khinv, spec, cmd);
 
-        restf.asyncJsonPost(startVmPath, cmd, new JsonAsyncRESTCallback<StartVmResponse>(msg, completion) {
-            @Override
-            public void fail(ErrorCode err) {
-                StartVmOnHypervisorReply reply = new StartVmOnHypervisorReply();
-                reply.setError(err);
-                reply.setSuccess(false);
-                extEmitter.startVmOnKvmFailed(KVMHostInventory.valueOf(getSelf()), spec, err);
-                bus.reply(msg, reply);
-                completion.done();
-            }
-
+        new Http<>(startVmPath, cmd, StartVmResponse.class).call(new ReturnValueCompletion<StartVmResponse>(msg, completion) {
             @Override
             public void success(StartVmResponse ret) {
                 StartVmOnHypervisorReply reply = new StartVmOnHypervisorReply();
@@ -1973,8 +1932,13 @@ public class KVMHost extends HostBase implements Host {
             }
 
             @Override
-            public Class<StartVmResponse> getReturnClass() {
-                return StartVmResponse.class;
+            public void fail(ErrorCode err) {
+                StartVmOnHypervisorReply reply = new StartVmOnHypervisorReply();
+                reply.setError(err);
+                reply.setSuccess(false);
+                extEmitter.startVmOnKvmFailed(KVMHostInventory.valueOf(getSelf()), spec, err);
+                bus.reply(msg, reply);
+                completion.done();
             }
         });
     }
@@ -1982,8 +1946,8 @@ public class KVMHost extends HostBase implements Host {
     private void addons(final VmInstanceSpec spec, StartVmCmd cmd) {
         KVMAddons.Channel chan = new KVMAddons.Channel();
         chan.setSocketPath(makeChannelSocketPath(spec.getVmInventory().getUuid()));
-        chan.setTargetName(String.format("org.qemu.guest_agent.0"));
-        cmd.getAddons().put(chan.NAME, chan);
+        chan.setTargetName("org.qemu.guest_agent.0");
+        cmd.getAddons().put(KVMAddons.Channel.NAME, chan);
         logger.debug(String.format("make kvm channel device[path:%s, target:%s]", chan.getSocketPath(), chan.getTargetName()));
 
     }
@@ -2057,14 +2021,7 @@ public class KVMHost extends HostBase implements Host {
         PauseVmCmd cmd = new PauseVmCmd();
         cmd.setUuid(vminv.getUuid());
         cmd.setTimeout(120);
-        restf.asyncJsonPost(pauseVmPath, cmd, new JsonAsyncRESTCallback<PauseVmResponse>(msg, completion) {
-            @Override
-            public void fail(ErrorCode err) {
-                reply.setError(err);
-                bus.reply(msg, reply);
-                completion.done();
-            }
-
+        new Http<>(pauseVmPath, cmd, PauseVmResponse.class).call(new ReturnValueCompletion<PauseVmResponse>(msg, completion) {
             @Override
             public void success(PauseVmResponse ret) {
                 if (!ret.isSuccess()) {
@@ -2078,11 +2035,12 @@ public class KVMHost extends HostBase implements Host {
             }
 
             @Override
-            public Class<PauseVmResponse> getReturnClass() {
-                return PauseVmResponse.class;
+            public void fail(ErrorCode err) {
+                reply.setError(err);
+                bus.reply(msg, reply);
+                completion.done();
             }
         });
-
     }
 
     private void handle(final PauseVmOnHypervisorMsg msg) {
@@ -2150,14 +2108,8 @@ public class KVMHost extends HostBase implements Host {
         ResumeVmCmd cmd = new ResumeVmCmd();
         cmd.setUuid(vminv.getUuid());
         cmd.setTimeout(120);
-        restf.asyncJsonPost(resumeVmPath, cmd, new JsonAsyncRESTCallback<ResumeVmResponse>(msg, completion) {
-            @Override
-            public void fail(ErrorCode err) {
-                reply.setError(err);
-                bus.reply(msg, reply);
-                completion.done();
-            }
 
+        new Http<>(resumeVmPath, cmd, ResumeVmResponse.class).call(new ReturnValueCompletion<ResumeVmResponse>(msg, completion) {
             @Override
             public void success(ResumeVmResponse ret) {
                 if (!ret.isSuccess()) {
@@ -2171,11 +2123,12 @@ public class KVMHost extends HostBase implements Host {
             }
 
             @Override
-            public Class<ResumeVmResponse> getReturnClass() {
-                return ResumeVmResponse.class;
+            public void fail(ErrorCode err) {
+                reply.setError(err);
+                bus.reply(msg, reply);
+                completion.done();
             }
         });
-
     }
 
     private void checkPhysicalInterface(CheckNetworkPhysicalInterfaceMsg msg, NoErrorCompletion completion) {
@@ -2673,12 +2626,8 @@ public class KVMHost extends HostBase implements Host {
                             new Log(self.getUuid()).log(KVMHostLabel.COLLECT_HOST_FACTS);
 
                             HostFactCmd cmd = new HostFactCmd();
-                            restf.asyncJsonPost(hostFactPath, cmd, new JsonAsyncRESTCallback<HostFactResponse>(trigger) {
-                                @Override
-                                public void fail(ErrorCode err) {
-                                    trigger.fail(err);
-                                }
-
+                            new Http<>(hostFactPath, cmd, HostFactResponse.class)
+                                    .call(new ReturnValueCompletion<HostFactResponse>(trigger) {
                                 @Override
                                 public void success(HostFactResponse ret) {
                                     if (!ret.isSuccess()) {
@@ -2718,8 +2667,8 @@ public class KVMHost extends HostBase implements Host {
                                 }
 
                                 @Override
-                                public Class<HostFactResponse> getReturnClass() {
-                                    return HostFactResponse.class;
+                                public void fail(ErrorCode errorCode) {
+                                    trigger.fail(errorCode);
                                 }
                             });
                         }

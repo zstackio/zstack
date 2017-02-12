@@ -36,6 +36,7 @@
         <module>tag</module>
         <module>rest</module>
         <module>sdk</module>
+        <module>testlib</module>
     </modules>
 
     <dependencyManagement>
@@ -113,8 +114,8 @@
             </dependency>
             <dependency>
                 <groupId>org.codehaus.groovy</groupId>
-                <artifactId>groovy</artifactId>
-                <version>2.4.5</version>
+                <artifactId>groovy-all</artifactId>
+                <version>2.4.8</version>
             </dependency>
             <dependency>
                 <groupId>org.hibernate.javax.persistence</groupId>
@@ -354,18 +355,6 @@
    	        <artifactId>okhttp</artifactId>
    	        <version>3.5.0</version>
    	    </dependency>
-	   <!-- https://mvnrepository.com/artifact/org.codehaus.groovy/groovy-json -->
-	   <dependency>
-	       <groupId>org.codehaus.groovy</groupId>
-	       <artifactId>groovy-json</artifactId>
-	       <version>2.4.7</version>
-	   </dependency>
-	   <!-- https://mvnrepository.com/artifact/org.codehaus.groovy/groovy-xml -->
-	   <dependency>
-	       <groupId>org.codehaus.groovy</groupId>
-	       <artifactId>groovy-xml</artifactId>
-	       <version>2.4.7</version>
-	   </dependency>
         </dependencies>
     </dependencyManagement>
 

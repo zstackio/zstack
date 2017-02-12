@@ -90,6 +90,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
 
     public static class AgentCommand {
+        public String uuid;
     }
 
     public static class AgentResponse {
@@ -725,6 +726,8 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     protected <T extends AgentResponse> void httpCall(String path, final String hostUuid, AgentCommand cmd, boolean noCheckStatus, final Class<T> rspType, final ReturnValueCompletion<T> completion) {
+        cmd.uuid = self.getUuid();
+
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setHostUuid(hostUuid);
         msg.setPath(path);

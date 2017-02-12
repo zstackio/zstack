@@ -541,8 +541,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     public static class CpRsp extends AgentResponse {
-        Long size;
-        Long actualSize;
+        public Long size;
+        public Long actualSize;
     }
 
     public static class RollbackSnapshotCmd extends AgentCommand {

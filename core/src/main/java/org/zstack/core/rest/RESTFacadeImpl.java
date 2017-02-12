@@ -194,7 +194,7 @@ public class RESTFacadeImpl implements RESTFacade {
     }
 
     @Override
-    public void asyncJsonPost(String url, Object body, AsyncRESTCallback callback, TimeUnit unit, long timeout) {
+    public void asyncJsonPost(String url, Object body, Map<String, String> headers, AsyncRESTCallback callback, TimeUnit unit, long timeout) {
         for (BeforeAsyncJsonPostInterceptor ic : interceptors) {
             ic.beforeAsyncJsonPost(url, body, unit, timeout);
         }
@@ -202,11 +202,21 @@ public class RESTFacadeImpl implements RESTFacade {
         // for unit test finding invocation chain
         MessageCommandRecorder.record(body.getClass());
         String bodyStr = JSONObjectUtil.toJsonString(body);
-        asyncJsonPost(url, bodyStr, callback, unit, timeout);
+        asyncJsonPost(url, bodyStr, headers, callback, unit, timeout);
+    }
+
+    @Override
+    public void asyncJsonPost(String url, Object body, AsyncRESTCallback callback, TimeUnit unit, long timeout) {
+        asyncJsonPost(url, body, null, callback, unit, timeout);
     }
 
     @Override
     public void asyncJsonPost(final String url, final String body, final AsyncRESTCallback callback, final TimeUnit unit, final long timeout) {
+        asyncJsonPost(url, body, null, callback, unit, timeout);
+    }
+
+    @Override
+    public void asyncJsonPost(final String url, final String body, Map<String, String> headers, final AsyncRESTCallback callback, final TimeUnit unit, final long timeout) {
         for (BeforeAsyncJsonPostInterceptor ic : interceptors) {
             ic.beforeAsyncJsonPost(url, body, unit, timeout);
         }
@@ -310,6 +320,13 @@ public class RESTFacadeImpl implements RESTFacade {
             requestHeaders.setContentLength(body.length());
             requestHeaders.set(RESTConstant.TASK_UUID, taskUuid);
             requestHeaders.set(RESTConstant.CALLBACK_URL, callbackUrl);
+
+            if (headers != null) {
+                for (Map.Entry<String, String> e : headers.entrySet()) {
+                    requestHeaders.set(e.getKey(), e.getValue());
+                }
+            }
+
             HttpEntity<String> req = new HttpEntity<String>(body, requestHeaders);
             if (logger.isTraceEnabled()) {
                 logger.trace(String.format("json post[%s], %s", url, req.toString()));
@@ -332,6 +349,12 @@ public class RESTFacadeImpl implements RESTFacade {
             logger.warn(String.format("Unable to post to %s", url), e);
             wrapper.fail(ExceptionDSL.isCausedBy(e, IOException.class) ? errf.instantiateErrorCode(SysErrors.IO_ERROR, e.getMessage()) : errf.throwableToInternalError(e));
         }
+    }
+
+    @Override
+    public void asyncJsonPost(String url, Object body, Map<String, String> headers, AsyncRESTCallback callback) {
+        Long timeout = timeoutMgr.getTimeout(body.getClass());
+        asyncJsonPost(url, body, headers, callback, TimeUnit.MILLISECONDS, timeout == null ? 300000 : timeout);
     }
 
     @Override

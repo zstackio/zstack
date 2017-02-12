@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration status="WARN">
+    <properties>
+      <property name="filters">org.apache.catalina,org.apache.tomcat,sun.reflect,javax.servlet.http,java.lang.reflect,org.codehaus.groovy,org.junit.runners,org.apache.maven.surefire,groovy.lang,org.eclipse.jetty,org.springframework.web</property>
+    </properties>
+
     <Appenders>
         <RollingFile name="RollingFile" fileName="management-server.log"
             filePattern="management-server-%d{yyyy-MM-dd}-%i.log" >
@@ -51,7 +55,7 @@
 
         <Console name="Console" target="SYSTEM_OUT" ignoreExceptions="false">
             <PatternLayout>
-                <pattern>%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{1}] (%t) %m%n</pattern>
+                <pattern>%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{1}] (%t) %m%xEx{filters(${filters})}%n</pattern>
             </PatternLayout>
         </Console>
     </Appenders>

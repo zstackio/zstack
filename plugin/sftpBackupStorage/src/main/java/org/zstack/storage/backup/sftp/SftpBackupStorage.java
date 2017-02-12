@@ -101,7 +101,8 @@ public class SftpBackupStorage extends BackupStorageBase {
             }
 
             DownloadCmd cmd = new DownloadCmd();
-            cmd.setUuid(uuid);
+            cmd.setUuid(self.getUuid());
+            cmd.setImageUuid(uuid);
             cmd.setUrl(url);
             cmd.setUrlScheme(scheme);
             cmd.setInstallPath(installPath);
@@ -144,6 +145,7 @@ public class SftpBackupStorage extends BackupStorageBase {
         final GetImageSizeOnBackupStorageReply reply = new GetImageSizeOnBackupStorageReply();
 
         GetImageSizeCmd cmd = new GetImageSizeCmd();
+        cmd.uuid = self.getUuid();
         cmd.imageUuid = msg.getImageUuid();
         cmd.installPath = msg.getImageUrl();
 
@@ -381,6 +383,7 @@ public class SftpBackupStorage extends BackupStorageBase {
         final DeleteBitsOnBackupStorageReply reply = new DeleteBitsOnBackupStorageReply();
 
         DeleteCmd cmd = new DeleteCmd();
+        cmd.uuid = self.getUuid();
         cmd.setInstallUrl(msg.getInstallPath());
         restf.asyncJsonPost(buildUrl(SftpBackupStorageConstant.DELETE_PATH), cmd, new JsonAsyncRESTCallback<DeleteResponse>(msg) {
             @Override
@@ -423,6 +426,7 @@ public class SftpBackupStorage extends BackupStorageBase {
         ImageInventory image = msg.getImage();
         GetImageSizeCmd cmd = new GetImageSizeCmd();
         cmd.imageUuid = image.getUuid();
+        cmd.uuid = self.getUuid();
 
         ImageBackupStorageRefInventory ref = CollectionUtils.find(image.getBackupStorageRefs(), new Function<ImageBackupStorageRefInventory, ImageBackupStorageRefInventory>() {
             @Override

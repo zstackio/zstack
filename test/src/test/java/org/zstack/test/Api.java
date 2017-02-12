@@ -786,7 +786,6 @@ public class Api implements CloudBusEventListener {
         action.sessionId = session == null ? adminSession.getUuid() : session.getUuid();
         action.name = inv.getName();
         action.cpuNum = inv.getCpuNum();
-        action.cpuSpeed = inv.getCpuSpeed();
         action.memorySize = inv.getMemorySize();
         action.description = inv.getDescription();
         action.allocatorStrategy = inv.getAllocatorStrategy();

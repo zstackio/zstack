@@ -4,6 +4,7 @@ import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.tag.TagResourceType;
 
@@ -24,7 +25,7 @@ public class APICreateInstanceOfferingMsg extends APICreateMessage {
     private String description;
     @APIParam(numberRange = {1, 1024})
     private int cpuNum;
-    @APIParam(numberRange = {1, Integer.MAX_VALUE})
+    @APINoSee
     private int cpuSpeed;
     @APIParam(numberRange = {1, Long.MAX_VALUE})
     private long memorySize;

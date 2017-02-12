@@ -76,8 +76,8 @@ public class SftpBackupStorageSimulator {
             rsp.setSuccess(false);
             rsp.setError("Fail download on purpose");
         } else {
-            Long size = config.imageSizes.get(cmd.getUuid());
-            Long asize = config.imageActualSizes.get(cmd.getUuid());
+            Long size = config.imageSizes.get(cmd.getImageUuid());
+            Long asize = config.imageActualSizes.get(cmd.getImageUuid());
             rsp.setSize(size == null ? 0 : size);
             rsp.setActualSize(asize == null ? 0 : asize);
             rsp.setMd5Sum(config.imageMd5sum);

@@ -89,12 +89,6 @@ public class ConfigurationApiInterceptor implements ApiMessageInterceptor {
             ));
         }
 
-        if (msg.getCpuSpeed() <= 0) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("cpu speed[%s] is less than 0", msg.getCpuSpeed())
-            ));
-        }
-
         if (msg.getMemorySize() < SizeUnit.MEGABYTE.toByte(16)) {
             throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
                     String.format("memory size[%s bytes] is less than 16M, no modern operating system is likely able to boot with such small memory size", msg.getMemorySize())

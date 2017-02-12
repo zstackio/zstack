@@ -35,5 +35,4 @@ public class APIAddVmNicToSecurityGroupEvent extends APIEvent {
         event.setSuccess(true);
         return event;
     }
-
 }
