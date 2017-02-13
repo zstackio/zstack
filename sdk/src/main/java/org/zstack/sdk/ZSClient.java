@@ -337,7 +337,7 @@ public class ZSClient {
                 }
             }
 
-            if (info.httpMethod.equals("GET")) {
+            if (info.httpMethod.equals("GET") || info.httpMethod.equals("DELETE")) {
                 for (Map.Entry<String, Object> e : params.entrySet()) {
                     String k = e.getKey();
                     Object v = e.getValue();
@@ -347,13 +347,20 @@ public class ZSClient {
                             builder.addQueryParameter(k, o.toString());
                         }
                     } else if (v instanceof Map) {
-                        throw new ApiException(String.format("GET won't support map as a parameter type. %s.%s", action.getClass(), k));
+                        throw new ApiException(String.format("%s won't support map as a parameter type. %s.%s",
+                                info.httpMethod, action.getClass(), k));
                     } else {
                         builder.addQueryParameter(k, v.toString());
                     }
                 }
 
-                reqBuilder.url(builder.build().url().toString()).get();
+                if (info.httpMethod.equals("GET")) {
+                    reqBuilder.url(builder.build().url().toString()).get();
+                } else if (info.httpMethod.equals("DELETE")) {
+                    reqBuilder.url(builder.build().url().toString()).delete();
+                } else {
+                    throw new RuntimeException("should not be here");
+                }
             } else {
                 Map m = new HashMap();
                 m.put(info.parameterName, params);

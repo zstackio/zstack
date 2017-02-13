@@ -6,6 +6,7 @@ import org.junit.Test;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.zone.ZoneState;
 import org.zstack.rest.RestConstants;
@@ -87,6 +88,7 @@ public class TestCreateZoneRest1 {
         DeleteZoneAction da = new DeleteZoneAction();
         da.uuid = zone.uuid;
         da.sessionId = api.getAdminSession().getUuid();
+        da.deleteMode = APIDeleteMessage.DeletionMode.Enforcing.toString();
         da.call();
 
         qaction = new QueryZoneAction();

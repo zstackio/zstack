@@ -627,7 +627,7 @@ public class RestServer implements Component, CloudBusEventListener {
         }
 
         Object parameter;
-        if (req.getMethod().equals(HttpMethod.GET.toString())) {
+        if (req.getMethod().equals(HttpMethod.GET.toString()) || req.getMethod().equals(HttpMethod.DELETE.toString())) {
             // GET uses query string to pass parameters
             Map<String, Object> m = new HashMap<>();
 
@@ -659,7 +659,7 @@ public class RestServer implements Component, CloudBusEventListener {
 
         if (requestInfo.get().headers.containsKey(RestConstants.HEADER_JOB_UUID)) {
             String jobUuid = requestInfo.get().headers.get(RestConstants.HEADER_JOB_UUID).get(0);
-            if (!StringDSL.isZstackUuid(jobUuid)) {
+            if (jobUuid.length() != 32) {
                 throw new RestException(HttpStatus.BAD_REQUEST.value(), String.format("Invalid header[%s], it" +
                         " must be a UUID with '-' stripped", RestConstants.HEADER_JOB_UUID));
             }
@@ -673,7 +673,7 @@ public class RestServer implements Component, CloudBusEventListener {
             msg.setSession(session);
         }
 
-        if (!req.getMethod().equals(HttpMethod.GET.toString())) {
+        if (!req.getMethod().equals(HttpMethod.GET.toString()) && !req.getMethod().equals(HttpMethod.DELETE.toString())) {
             Object systemTags = body.get("systemTags");
             if (systemTags != null) {
                 msg.setSystemTags((List<String>) systemTags);
