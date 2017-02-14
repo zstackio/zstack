@@ -6,6 +6,10 @@ import org.zstack.header.query.APIQueryMessage;
 import org.zstack.header.query.AutoQuery;
 import org.zstack.header.rest.RestRequest;
 
+import java.util.List;
+
+import static java.util.Arrays.asList;
+
 /**
  */
 @AutoQuery(replyClass = APIQueryGlobalConfigReply.class, inventoryClass = GlobalConfigInventory.class)
@@ -16,11 +20,8 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIQueryGlobalConfigReply.class
 )
 public class APIQueryGlobalConfigMsg extends APIQueryMessage {
-    public static APIQueryGlobalConfigMsg __example__() {
-        APIQueryGlobalConfigMsg msg = new APIQueryGlobalConfigMsg();
-
-
-        return msg;
+    public static List<String> __example__() {
+        return asList();
     }
 
 }

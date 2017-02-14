@@ -7,6 +7,10 @@ import org.zstack.header.query.APIQueryMessage;
 import org.zstack.header.query.AutoQuery;
 import org.zstack.header.rest.RestRequest;
 
+import java.util.List;
+
+import static java.util.Arrays.asList;
+
 @AutoQuery(replyClass = APIQueryNetworkServiceProviderReply.class, inventoryClass = NetworkServiceProviderInventory.class)
 @Action(category = L3NetworkConstant.ACTION_CATEGORY, names = {"read"})
 @RestRequest(
@@ -17,10 +21,8 @@ import org.zstack.header.rest.RestRequest;
 public class APIQueryNetworkServiceProviderMsg extends APIQueryMessage {
 
  
-    public static APIQueryNetworkServiceProviderMsg __example__() {
-        APIQueryNetworkServiceProviderMsg msg = new APIQueryNetworkServiceProviderMsg();
-
-        return msg;
+    public static List<String> __example__() {
+        return asList();
     }
 
 }

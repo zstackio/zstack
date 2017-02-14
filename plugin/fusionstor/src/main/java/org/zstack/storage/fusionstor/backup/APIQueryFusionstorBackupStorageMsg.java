@@ -8,6 +8,10 @@ import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.backup.APIQueryBackupStorageReply;
 import org.zstack.header.storage.backup.BackupStorageConstant;
 
+import java.util.List;
+
+import static java.util.Arrays.asList;
+
 /**
  * Created by frank on 8/6/2015.
  */
@@ -20,12 +24,9 @@ import org.zstack.header.storage.backup.BackupStorageConstant;
         responseClass = APIQueryBackupStorageReply.class
 )
 public class APIQueryFusionstorBackupStorageMsg extends APIQueryMessage {
- 
-    public static APIQueryFusionstorBackupStorageMsg __example__() {
-        APIQueryFusionstorBackupStorageMsg msg = new APIQueryFusionstorBackupStorageMsg();
 
-
-        return msg;
+    public static List<String> __example__() {
+        return asList();
     }
 
 }

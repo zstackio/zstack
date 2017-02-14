@@ -5,6 +5,10 @@ import org.zstack.header.query.APIQueryMessage;
 import org.zstack.header.query.AutoQuery;
 import org.zstack.header.rest.RestRequest;
 
+import java.util.List;
+
+import static java.util.Arrays.asList;
+
 @AutoQuery(replyClass = APIQueryL2VlanNetworkReply.class, inventoryClass = L2VlanNetworkInventory.class)
 @RestRequest(
         path = "/l2-vlan-networks",
@@ -15,12 +19,9 @@ import org.zstack.header.rest.RestRequest;
 )
 public class APIQueryL2VlanNetworkMsg extends APIQueryMessage {
 
- 
-    public static APIQueryL2VlanNetworkMsg __example__() {
-        APIQueryL2VlanNetworkMsg msg = new APIQueryL2VlanNetworkMsg();
 
-
-        return msg;
+    public static List<String> __example__() {
+        return asList();
     }
 
 }
