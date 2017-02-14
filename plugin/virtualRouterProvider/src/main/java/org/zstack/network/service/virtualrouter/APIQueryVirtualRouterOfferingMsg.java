@@ -7,6 +7,10 @@ import org.zstack.header.query.APIQueryMessage;
 import org.zstack.header.query.AutoQuery;
 import org.zstack.header.rest.RestRequest;
 
+import java.util.List;
+
+import static java.util.Arrays.asList;
+
 @AutoQuery(replyClass = APIQueryVirtualRouterOfferingReply.class, inventoryClass = VirtualRouterOfferingInventory.class)
 @Action(category = VirtualRouterConstant.ACTION_CATEGORY, names = {"read"})
 @RestRequest(
@@ -17,11 +21,9 @@ import org.zstack.header.rest.RestRequest;
 )
 public class APIQueryVirtualRouterOfferingMsg extends APIQueryMessage {
 
- 
-    public static APIQueryVirtualRouterOfferingMsg __example__() {
-        APIQueryVirtualRouterOfferingMsg msg = new APIQueryVirtualRouterOfferingMsg();
 
-        return msg;
+    public static List<String> __example__() {
+        return asList();
     }
 
 }

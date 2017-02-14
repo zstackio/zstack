@@ -6,6 +6,10 @@ import org.zstack.header.query.AutoQuery;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.primary.APIQueryPrimaryStorageReply;
 
+import java.util.List;
+
+import static java.util.Arrays.asList;
+
 /**
  * Created by frank on 8/6/2015.
  */
@@ -17,12 +21,9 @@ import org.zstack.header.storage.primary.APIQueryPrimaryStorageReply;
         responseClass = APIQueryPrimaryStorageReply.class
 )
 public class APIQueryFusionstorPrimaryStorageMsg extends APIQueryMessage {
- 
-    public static APIQueryFusionstorPrimaryStorageMsg __example__() {
-        APIQueryFusionstorPrimaryStorageMsg msg = new APIQueryFusionstorPrimaryStorageMsg();
 
-
-        return msg;
+    public static List<String> __example__() {
+        return asList();
     }
 
 }

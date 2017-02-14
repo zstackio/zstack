@@ -6,6 +6,10 @@ import org.zstack.header.query.APIQueryMessage;
 import org.zstack.header.query.AutoQuery;
 import org.zstack.header.rest.RestRequest;
 
+import java.util.List;
+
+import static java.util.Arrays.asList;
+
 @AutoQuery(replyClass = APIQueryL3NetworkReply.class, inventoryClass = L3NetworkInventory.class)
 @Action(category = L3NetworkConstant.ACTION_CATEGORY, names = {"read"})
 @RestRequest(
@@ -16,11 +20,9 @@ import org.zstack.header.rest.RestRequest;
 )
 public class APIQueryL3NetworkMsg extends APIQueryMessage {
 
- 
-    public static APIQueryL3NetworkMsg __example__() {
-        APIQueryL3NetworkMsg msg = new APIQueryL3NetworkMsg();
 
-        return msg;
+    public static List<String> __example__() {
+        return asList();
     }
 
 }

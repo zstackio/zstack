@@ -6,6 +6,10 @@ import org.zstack.header.query.APIQueryMessage;
 import org.zstack.header.query.AutoQuery;
 import org.zstack.header.rest.RestRequest;
 
+import java.util.List;
+
+import static java.util.Arrays.asList;
+
 /**
  * Created by frank on 8/18/2015.
  */
@@ -18,11 +22,9 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIQueryLoadBalancerListenerReply.class
 )
 public class APIQueryLoadBalancerListenerMsg extends APIQueryMessage {
- 
-    public static APIQueryLoadBalancerListenerMsg __example__() {
-        APIQueryLoadBalancerListenerMsg msg = new APIQueryLoadBalancerListenerMsg();
 
-        return msg;
+    public static List<String> __example__() {
+        return asList();
     }
 
 }
