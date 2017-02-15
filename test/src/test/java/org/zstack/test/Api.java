@@ -3103,10 +3103,30 @@ public class Api implements CloudBusEventListener {
         return evt;
     }
 
+    public APISetImageQgaDisableEvent disableImageQga(SessionInventory session, String uuid) throws ApiSenderException {
+        APISetImageQgaDisableMsg msg = new APISetImageQgaDisableMsg();
+        msg.setUuid(uuid);
+        msg.setSession(session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APISetImageQgaDisableEvent evt = sender.send(msg, APISetImageQgaDisableEvent.class);
+        return evt;
+    }
+
     public APISetImageQgaEnableEvent enableImageQga(String uuid) throws ApiSenderException {
         APISetImageQgaEnableMsg msg = new APISetImageQgaEnableMsg();
         msg.setUuid(uuid);
         msg.setSession(adminSession);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APISetImageQgaEnableEvent evt = sender.send(msg, APISetImageQgaEnableEvent.class);
+        return evt;
+    }
+
+    public APISetImageQgaEnableEvent enableImageQga(SessionInventory session, String uuid) throws ApiSenderException {
+        APISetImageQgaEnableMsg msg = new APISetImageQgaEnableMsg();
+        msg.setUuid(uuid);
+        msg.setSession(session);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APISetImageQgaEnableEvent evt = sender.send(msg, APISetImageQgaEnableEvent.class);
@@ -3630,6 +3650,8 @@ public class Api implements CloudBusEventListener {
     public void shareResource(List<String> resUuids, List<String> accountUuids, boolean toPublic) throws ApiSenderException {
         shareResource(resUuids, accountUuids, toPublic, null);
     }
+
+
 
     public void shareResource(List<String> resUuids, List<String> accountUuids, boolean toPublic, SessionInventory session) throws ApiSenderException {
         APIShareResourceMsg msg = new APIShareResourceMsg();
