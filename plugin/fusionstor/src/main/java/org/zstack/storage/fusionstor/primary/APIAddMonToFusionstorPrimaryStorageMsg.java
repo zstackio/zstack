@@ -8,6 +8,8 @@ import org.zstack.header.storage.primary.PrimaryStorageMessage;
 
 import java.util.List;
 
+import static java.util.Arrays.asList;
+
 /**
  * Created by frank on 8/6/2015.
  */
@@ -46,8 +48,8 @@ public class APIAddMonToFusionstorPrimaryStorageMsg extends APIMessage implement
  
     public static APIAddMonToFusionstorPrimaryStorageMsg __example__() {
         APIAddMonToFusionstorPrimaryStorageMsg msg = new APIAddMonToFusionstorPrimaryStorageMsg();
-
-
+        msg.setUuid(uuid());
+        msg.setMonUrls(asList("root:password@localhost/?monPort=7777"));
         return msg;
     }
 

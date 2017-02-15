@@ -9,7 +9,7 @@ import org.zstack.header.rest.RestRequest;
  * Created by frank on 6/18/2015.
  */
 @RestRequest(
-        path = "/primary-storage/{uuid}/actions",
+        path = "/primary-storage/{primaryStorageUuid}/actions",
         responseClass = APISyncPrimaryStorageCapacityEvent.class,
         method = HttpMethod.PUT,
         isAction = true

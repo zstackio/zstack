@@ -99,8 +99,8 @@ public class APIUpdateFusionstorPrimaryStorageMonMsg extends APIMessage implemen
  
     public static APIUpdateFusionstorPrimaryStorageMonMsg __example__() {
         APIUpdateFusionstorPrimaryStorageMonMsg msg = new APIUpdateFusionstorPrimaryStorageMonMsg();
-
-
+        msg.setMonUuid(uuid());
+        msg.setMonPort(1234);
         return msg;
     }
 
