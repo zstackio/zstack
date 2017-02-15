@@ -48,7 +48,7 @@ public class APIRemoveMonFromFusionstorPrimaryStorageMsg extends APIMessage impl
  
     public static APIRemoveMonFromFusionstorPrimaryStorageMsg __example__() {
         APIRemoveMonFromFusionstorPrimaryStorageMsg msg = new APIRemoveMonFromFusionstorPrimaryStorageMsg();
-
+        msg.setUuid(uuid());
 
         return msg;
     }

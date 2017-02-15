@@ -9,7 +9,7 @@ doc {
 
     rest {
         request {
-			url "PUT /v1/primary-storage/{uuid}/actions"
+			url "PUT /v1/primary-storage/{primaryStorageUuid}/actions"
 
 
             header (OAuth: 'the-session-uuid')

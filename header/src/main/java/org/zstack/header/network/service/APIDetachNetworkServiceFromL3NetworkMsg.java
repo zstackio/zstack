@@ -57,7 +57,7 @@ public class APIDetachNetworkServiceFromL3NetworkMsg extends APIMessage implemen
         APIDetachNetworkServiceFromL3NetworkMsg msg = new APIDetachNetworkServiceFromL3NetworkMsg();
 
         Map<String, List<String>> m = new HashMap<>();
-        m.put(uuid(), Arrays.asList("PortForwarding"));
+        m.put(uuid(), Arrays.asList("PortForwarding","EIP"));
 
         msg.setL3NetworkUuid(uuid());
         msg.setNetworkServices(m);

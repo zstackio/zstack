@@ -56,6 +56,7 @@ public class APIUpdateVipMsg extends APIMessage implements VipMessage {
     public static APIUpdateVipMsg __example__() {
         APIUpdateVipMsg msg = new APIUpdateVipMsg();
         msg.setName("new name");
+        msg.setUuid(uuid());
 
         return msg;
     }
