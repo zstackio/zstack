@@ -77,6 +77,12 @@ public class GCFacadeImpl implements GCFacade, ManagementNodeChangeListener, Man
         scanJobIntervalInMillis = TimeUtils.parseTimeInMillis(GCGlobalProperty.SCAN_JOB_INTERVAL);
     }
 
+    private static void checkTimeBasedGCEphemeralContext(TimeBasedGCEphemeralContext context) {
+        DebugUtils.Assert(context.getTimeUnit() != null, "timeUnit cannot be null");
+        DebugUtils.Assert(context.getInterval() > 0, "interval must be greater than 0");
+        DebugUtils.Assert(context.getRunner() != null, "runner cannot be null");
+    }
+
     private GarbageCollectorVO save(TimeBasedGCPersistentContext context) {
         DebugUtils.Assert(context.getTimeUnit() != null, "timeUnit cannot be null");
         DebugUtils.Assert(context.getInterval() > 0, "interval must be greater than 0");
@@ -342,6 +348,7 @@ public class GCFacadeImpl implements GCFacade, ManagementNodeChangeListener, Man
         } else if (context instanceof EventBasedGCPersistentContext) {
             scheduleTask((EventBasedGCPersistentContext) context, save((EventBasedGCPersistentContext) context), true);
         } else if (context instanceof TimeBasedGCEphemeralContext) {
+            checkTimeBasedGCEphemeralContext((TimeBasedGCEphemeralContext) context);
             scheduleTask((TimeBasedGCEphemeralContext) context, false);
         } else if (context instanceof EventBasedGCEphemeralContext) {
             scheduleTask((EventBasedGCEphemeralContext) context);

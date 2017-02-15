@@ -54,6 +54,9 @@ public class TestGC {
         context.setName("test");
 
         gcf.scheduleImmediately(context);
+        GarbageCollectorVO vo = dbf.listAll(GarbageCollectorVO.class).get(0);
+        TimeBasedGCPersistentContext ctx = new TimeBasedGCPersistentContextInternal(vo).toGCContext();
+        Assert.assertNotNull("TimeUnit should not be null.", ctx.getTimeUnit());
 
         TimeUtils.loopExecuteUntilTimeoutIgnoreException(5, 1, TimeUnit.SECONDS, new Callable<Boolean>() {
             @Override

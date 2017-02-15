@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Created by frank on 8/5/2015.
  */
-class TimeBasedGCPersistentContextInternal {
+public class TimeBasedGCPersistentContextInternal {
     String runnerClassName;
     String contextClassName;
     LinkedHashMap context;
