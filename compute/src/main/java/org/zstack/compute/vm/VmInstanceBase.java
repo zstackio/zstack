@@ -157,7 +157,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     protected void destroy(final VmInstanceDeletionPolicy deletionPolicy, final Completion completion) {
         if (VmInstanceState.Created == self.getState()) {
-            // the vm is only created in DB, no need to go through normal destroying process
+            dbf.remove(self);
             completion.success();
             return;
         }
@@ -1597,6 +1597,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     chain.next();
                     return;
                 }
+
 
                 final VmInstanceDeletionPolicy deletionPolicy = msg.getDeletionPolicy() == null ?
                         deletionPolicyMgr.getDeletionPolicy(self.getUuid()) : VmInstanceDeletionPolicy.valueOf(msg.getDeletionPolicy());
