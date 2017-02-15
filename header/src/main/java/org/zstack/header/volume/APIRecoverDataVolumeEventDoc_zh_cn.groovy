@@ -20,6 +20,6 @@ doc {
 		desc "恢复的云盘清单"
 		type "VolumeInventory"
 		since "0.6"
-		clzolumeInventory.class
+		clz VolumeInventory.class
 	}
 }
