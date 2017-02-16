@@ -6,6 +6,8 @@ import org.zstack.core.db.Q
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.sdk.CephPrimaryStorageInventory
 import org.zstack.sdk.PrimaryStorageInventory
+import org.zstack.storage.ceph.backup.CephBackupStorageBase
+import org.zstack.storage.ceph.backup.CephBackupStorageMonBase
 import org.zstack.storage.ceph.primary.CephPrimaryStorageBase
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonBase
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonVO
@@ -168,8 +170,17 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
             return new CephPrimaryStorageBase.AgentResponse()
         }
 
+
         simulator(CephPrimaryStorageBase.ADD_POOL_PATH) {
             return new CephPrimaryStorageBase.AddPoolRsp()
+        }
+        simulator(CephPrimaryStorageBase.CHECK_BITS_PATH) {
+            return new CephPrimaryStorageBase.CheckIsBitsExistingRsp()
+        }
+        simulator(CephPrimaryStorageMonBase.PING_PATH) {
+            CephPrimaryStorageMonBase.PingRsp rsp = new CephPrimaryStorageMonBase.PingRsp()
+            rsp.success = true
+            return rsp
         }
     }
 

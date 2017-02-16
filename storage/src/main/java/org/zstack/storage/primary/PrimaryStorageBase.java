@@ -11,6 +11,7 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -178,6 +179,23 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             bus.replyErrorByMessageType(msg, e);
         }
     }
+    // if new kind of storage is added , override it
+    protected void checkImageIfNeedToDownload(String ImageUuid){
+        logger.debug("check if image exist in Maintenance primary storage");
+        if(self.getState() != PrimaryStorageState.Disabled){
+            return ;
+        }
+        if( Q.New(ImageCacheVO.class)
+                .eq(ImageCacheVO_.primaryStorageUuid, self.getUuid())
+                .eq(ImageCacheVO_.imageUuid, ImageUuid)
+                .select(ImageCacheVO_.installUrl)
+                .findValue() == null){
+
+            throw new OperationFailureException(errf.stringToOperationError(
+                    String.format("cannot attach ISO to a primary storage[uuid:%s] which is disabled",
+                            self.getUuid())));
+        }
+    }
 
     private void forbidOperationWhenPrimaryStorageDisable(String primaryStorageState) {
         if (primaryStorageState.equals(PrimaryStorageState.Disabled.toString())) {
@@ -332,6 +350,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
     private void handleBase(DownloadIsoToPrimaryStorageMsg msg) {
         checkIfBackupStorageAttachedToMyZone(msg.getIsoSpec().getSelectedBackupStorage().getBackupStorageUuid());
+        checkImageIfNeedToDownload(msg.getIsoSpec().getInventory().getUuid());
         handle(msg);
     }
 
