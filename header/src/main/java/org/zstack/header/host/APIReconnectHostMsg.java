@@ -67,7 +67,7 @@ public class APIReconnectHostMsg extends APIMessage implements HostMessage {
  
     public static APIReconnectHostMsg __example__() {
         APIReconnectHostMsg msg = new APIReconnectHostMsg();
-
+        msg.setUuid(uuid());
 
         return msg;
     }
