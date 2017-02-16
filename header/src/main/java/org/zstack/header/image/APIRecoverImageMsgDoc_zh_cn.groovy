@@ -9,7 +9,7 @@ doc {
 
     rest {
         request {
-            url "PUT /v1/images/{uuid}/actions"
+            url "PUT /v1/images/{imageUuid}/actions"
 
 
             header(OAuth: 'the-session-uuid')
@@ -22,7 +22,7 @@ doc {
 
                 column {
                     name "imageUuid"
-                    enclosedIn "params"
+                    enclosedIn "url"
                     desc "镜像UUID"
                     location "body"
                     type "String"

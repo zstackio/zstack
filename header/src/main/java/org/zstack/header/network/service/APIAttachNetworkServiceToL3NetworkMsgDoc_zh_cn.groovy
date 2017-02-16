@@ -1,7 +1,5 @@
 package org.zstack.header.network.service
 
-import org.zstack.header.network.service.APIAttachNetworkServiceToL3NetworkEvent
-
 doc {
     title "挂载网络服务到三层网络(AttachNetworkServiceToL3Network)"
 
@@ -24,7 +22,7 @@ doc {
 
 				column {
 					name "l3NetworkUuid"
-					enclosedIn "params"
+					enclosedIn "url"
 					desc "三层网络UUID"
 					location "url"
 					type "String"
