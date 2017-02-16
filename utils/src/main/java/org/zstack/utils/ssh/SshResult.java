@@ -17,7 +17,7 @@ public class SshResult {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("\nssh command failed");
-        sb.append(String.format("\ncommand: %s", commandToExecute));
+//        sb.append(String.format("\ncommand: %s", commandToExecute));
         sb.append(String.format("\nreturn code: %s", returnCode));
         sb.append(String.format("\nstdout: %s", stdout));
         sb.append(String.format("\nstderr: %s", stderr));
