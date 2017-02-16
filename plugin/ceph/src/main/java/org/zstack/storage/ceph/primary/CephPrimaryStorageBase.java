@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.AsyncThread;
@@ -571,6 +572,18 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static class RollbackSnapshotRsp extends AgentResponse {
     }
 
+    public static class CheckIsBitsExistingCmd extends AgentCommand {
+        String installPath;
+
+        public void setInstallPath(String installPath) {
+            this.installPath = installPath;
+        }
+
+        public String getInstallPath() {
+            return installPath;
+        }
+    }
+
     public static class CreateKvmSecretCmd extends KVMAgentCommands.AgentCommand {
         String userKey;
         String uuid;
@@ -657,6 +670,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static final String GET_FACTS = "/ceph/primarystorage/facts";
     public static final String DELETE_IMAGE_CACHE = "/ceph/primarystorage/deleteimagecache";
     public static final String ADD_POOL_PATH = "/ceph/primarystorage/addpool";
+    public static final String CHECK_BITS_PATH = "/ceph/primarystorage/snapshot/checkbits";
 
     private final Map<String, BackupStorageMediator> backupStorageMediators = new HashMap<String, BackupStorageMediator>();
 
@@ -1137,17 +1151,15 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     class DownloadToCache {
         ImageSpec image;
-
         private void doDownload(final ReturnValueCompletion<ImageCacheVO> completion) {
-            SimpleQuery<ImageCacheVO> q = dbf.createQuery(ImageCacheVO.class);
-            q.add(ImageCacheVO_.imageUuid, Op.EQ, image.getInventory().getUuid());
-            q.add(ImageCacheVO_.primaryStorageUuid, Op.EQ, self.getUuid());
-            ImageCacheVO cache = q.find();
+            ImageCacheVO cache = Q.New(ImageCacheVO.class)
+                    .eq(ImageCacheVO_.primaryStorageUuid, self.getUuid())
+                    .eq(ImageCacheVO_.imageUuid, image.getInventory().getUuid())
+                    .find();
             if (cache != null) {
                 completion.success(cache);
                 return;
             }
-
             final FlowChain chain = FlowChainBuilder.newShareFlowChain();
             chain.setName(String.format("prepare-image-cache-ceph-%s", self.getUuid()));
             chain.then(new ShareFlow() {
@@ -1354,19 +1366,72 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
                 @Override
                 public void run(final SyncTaskChain chain) {
-                    doDownload(new ReturnValueCompletion<ImageCacheVO>(chain) {
-                        @Override
-                        public void success(ImageCacheVO returnValue) {
-                            completion.success(returnValue);
-                            chain.next();
-                        }
+                    ImageCacheVO cache = Q.New(ImageCacheVO.class)
+                            .eq(ImageCacheVO_.primaryStorageUuid, self.getUuid())
+                            .eq(ImageCacheVO_.imageUuid, image.getInventory().getUuid())
+                            .find();
 
-                        @Override
-                        public void fail(ErrorCode errorCode) {
-                            completion.fail(errorCode);
-                            chain.next();
-                        }
-                    });
+                    if (cache != null ){
+                        final CheckIsBitsExistingCmd cmd = new CheckIsBitsExistingCmd();
+                        cmd.setInstallPath(cache.getInstallUrl());
+                        httpCall(CHECK_BITS_PATH, cmd, CheckIsBitsExistingRsp.class, new ReturnValueCompletion<CheckIsBitsExistingRsp>(chain) {
+                            @Override
+                            public void success(CheckIsBitsExistingRsp returnValue) {
+                                if(returnValue.isExisting()) {
+                                    logger.debug("ISO has been existing");
+                                    completion.success(cache);
+                                }else{
+                                    logger.debug("image not found, remove vo and re-download");
+                                    SimpleQuery<ImageCacheVO> q = dbf.createQuery(ImageCacheVO.class);
+                                    q.add(ImageCacheVO_.primaryStorageUuid, Op.EQ, self.getUuid());
+                                    q.add(ImageCacheVO_.imageUuid, Op.EQ, image.getInventory().getUuid());
+                                    ImageCacheVO cvo = q.find();
+
+                                    ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
+                                    rmsg.setDiskSize(cvo.getSize());
+                                    rmsg.setPrimaryStorageUuid(cvo.getPrimaryStorageUuid());
+                                    bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, cvo.getPrimaryStorageUuid());
+                                    bus.send(rmsg);
+                                    dbf.remove(cvo);
+
+                                    doDownload(new ReturnValueCompletion<ImageCacheVO>(chain) {
+                                        @Override
+                                        public void success(ImageCacheVO returnValue) {
+                                            completion.success(returnValue);
+                                            chain.next();
+                                        }
+
+                                        @Override
+                                        public void fail(ErrorCode errorCode) {
+                                            completion.fail(errorCode);
+                                            chain.next();
+                                        }
+                                    });
+                                }
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                completion.fail(errorCode);
+                            }
+                        });
+
+                    }else{
+                        doDownload(new ReturnValueCompletion<ImageCacheVO>(chain) {
+                            @Override
+                            public void success(ImageCacheVO returnValue) {
+                                completion.success(returnValue);
+                                chain.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                completion.fail(errorCode);
+                                chain.next();
+                            }
+                        });
+                    }
+
                 }
 
                 @Override
@@ -1575,6 +1640,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
             @Override
             public void fail(ErrorCode errorCode) {
+
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
             }
@@ -2396,6 +2462,17 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         public String vmUuid;
         public String account;
         public String password;
+    }
+    public static class CheckIsBitsExistingRsp extends AgentResponse {
+        private boolean existing;
+
+        public void setExisting(boolean existing) {
+            this.existing = existing;
+        }
+
+        public boolean isExisting() {
+            return existing;
+        }
     }
 
     private void handle(DeleteImageCacheOnPrimaryStorageMsg msg) {
