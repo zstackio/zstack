@@ -1,5 +1,7 @@
 package org.zstack.test.integration.storage
 
+import org.zstack.test.integration.storage.primary.ceph.AttachIsoCase
+import org.zstack.test.integration.storage.primary.ceph.AttachIsoCase2
 import org.zstack.test.integration.storage.primary.local.LocalStorageMigrateVolumeCase
 import org.zstack.test.integration.storage.primary.smp.SMPCapacityCase
 import org.zstack.testlib.SpringSpec
@@ -34,7 +36,9 @@ class StorageTest extends Test {
     void test() {
         runSubCases([
                 new LocalStorageMigrateVolumeCase(),
-                new SMPCapacityCase()
+                new SMPCapacityCase(),
+                new AttachIsoCase(),
+                new AttachIsoCase2()
         ])
     }
 }

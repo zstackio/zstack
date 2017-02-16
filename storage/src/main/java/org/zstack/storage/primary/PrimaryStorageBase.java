@@ -179,6 +179,28 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         }
     }
 
+    protected void checkIfIsoExistInDisabledPrimaryStorage(DownloadIsoToPrimaryStorageMsg msg){
+        logger.debug("check if ISO exist in disabled primary storage");
+        if(self.getState() == PrimaryStorageState.Enabled){
+            logger.debug("PS is enabled");
+            return ;
+        }
+        String isoUuid = msg.getIsoSpec().getInventory().getUuid();
+
+        SimpleQuery<ImageCacheVO> q = dbf.createQuery(ImageCacheVO.class);
+        q.select(ImageCacheVO_.installUrl);
+        q.add(ImageCacheVO_.primaryStorageUuid, Op.EQ, self.getUuid());
+        q.add(ImageCacheVO_.imageUuid, Op.EQ, isoUuid);
+        String fullPath = q.findValue();
+        if( fullPath == null){
+            logger.debug("iso not existing");
+            throw new OperationFailureException(errf.stringToOperationError(
+                    String.format("cannot attach ISO to a primary storage[uuid:%s] which is not 'enabled'",
+                            msg.getPrimaryStorageUuid())));
+        }
+        logger.debug("check pass");
+    }
+
     private void forbidOperationWhenPrimaryStorageDisable(String primaryStorageState) {
         if (primaryStorageState.equals(PrimaryStorageState.Disabled.toString())) {
             logger.debug("checking primary storage status whether Disabled");
@@ -230,6 +252,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         } else if (msg instanceof DeleteSnapshotOnPrimaryStorageMsg) {
             forbidOperationWhenPrimaryStorageMaintenance(self.getState().toString());
         } else if (msg instanceof RevertVolumeFromSnapshotOnPrimaryStorageMsg) {
+            forbidOperationWhenPrimaryStorageMaintenance(self.getState().toString());
+        } else if (msg instanceof DownloadIsoToPrimaryStorageMsg) {
             forbidOperationWhenPrimaryStorageMaintenance(self.getState().toString());
         } else if (msg instanceof ReInitRootVolumeFromTemplateOnPrimaryStorageMsg) {
             forbidOperationWhenPrimaryStorageMaintenance(self.getState().toString());
@@ -332,6 +356,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
     private void handleBase(DownloadIsoToPrimaryStorageMsg msg) {
         checkIfBackupStorageAttachedToMyZone(msg.getIsoSpec().getSelectedBackupStorage().getBackupStorageUuid());
+        checkIfIsoExistInDisabledPrimaryStorage(msg);
         handle(msg);
     }
 

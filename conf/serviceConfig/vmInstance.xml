@@ -79,6 +79,8 @@
     </message>
     <message>
         <name>org.zstack.header.vm.APIAttachIsoToVmInstanceMsg</name>
+        <interceptor>PrimaryStorageApiInterceptor</interceptor>
+        <interceptor>VmInstanceApiInterceptor</interceptor>
     </message>
     <message>
         <name>org.zstack.header.vm.APIDetachIsoFromVmInstanceMsg</name>
