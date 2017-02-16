@@ -351,4 +351,17 @@ public class CephPrimaryStorageSimulator {
         reply(entity, new AgentResponse());
         return null;
     }
+
+    @RequestMapping(value= CephPrimaryStorageBase.CHECK_BITS_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String checkBitsPath(HttpEntity<String> entity) {
+        CheckIsBitsExistingCmd cmd = JSONObjectUtil.toObject(entity.getBody(), CheckIsBitsExistingCmd.class);
+        config.checkBitsPathCmds.add(cmd);
+
+        CheckIsBitsExistingRsp rsp = new CheckIsBitsExistingRsp();
+        rsp.setExisting(true);
+
+        reply(entity, rsp);
+        return null;
+    }
 }

@@ -1,6 +1,10 @@
 package org.zstack.test.integration.storage
 
+
 import org.zstack.test.integration.storage.primary.local.LocalStorageHostRefVOCase
+
+import org.zstack.test.integration.storage.primary.ceph.AttachIsoCase
+
 import org.zstack.test.integration.storage.primary.local.LocalStorageMigrateVolumeCase
 import org.zstack.test.integration.storage.primary.nfs.NfsGCCase
 import org.zstack.test.integration.storage.primary.local.LocalStorageRecalculateAvailableCapacityCase
