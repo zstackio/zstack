@@ -11,8 +11,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.image.APIGetImageQgaEnableReply;
-import org.zstack.header.image.APISetImageQgaDisableEvent;
-import org.zstack.header.image.APISetImageQgaEnableEvent;
+import org.zstack.header.image.APISetImageQgaEvent;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
@@ -66,13 +65,13 @@ public class TestImageQgaEnable2 {
 
 
         thrown.expect(ApiSenderException.class);
-        APISetImageQgaEnableEvent evt = api.enableImageQga(session, image.getUuid());
+        APISetImageQgaEvent evt = api.enableImageQga(session, image.getUuid());
 
         reply = api.getEnableImageQga(image.getUuid());
         Assert.assertTrue(reply.isSuccess());
 
         thrown.expect(ApiSenderException.class);
-        APISetImageQgaDisableEvent disableEvent = api.disableImageQga(session, image.getUuid());
+        APISetImageQgaEvent disableEvent = api.disableImageQga(session, image.getUuid());
         Assert.assertFalse(disableEvent.isSuccess());
 
     }

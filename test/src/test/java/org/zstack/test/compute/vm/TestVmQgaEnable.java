@@ -18,6 +18,8 @@ import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.header.vm.*;
 
+
+
 /**
  * Created by mingjian.deng on 17/1/4.
  */
@@ -49,7 +51,7 @@ public class TestVmQgaEnable {
         Assert.assertTrue(reply.isSuccess());
         Assert.assertFalse(reply.isEnable());
 
-        APISetVmQgaEnableEvent evt = api.enableVmQga(vm.getUuid());
+        APISetVmQgaEvent evt = api.enableVmQga(vm.getUuid());
         Assert.assertTrue(evt.isSuccess());
         String tag = getResourceUuidTag(vm.getUuid());
         Assert.assertEquals(VmSystemTags.VM_INJECT_QEMUGA_TOKEN, tag);
@@ -58,7 +60,7 @@ public class TestVmQgaEnable {
         Assert.assertTrue(reply.isSuccess());
         Assert.assertTrue(reply.isEnable());
 
-        APISetVmQgaDisableEvent disableEvent = api.disableVmQga(vm.getUuid());
+        APISetVmQgaEvent disableEvent = api.disableVmQga(vm.getUuid());
         Assert.assertTrue(disableEvent.isSuccess());
         tag = getResourceUuidTag(vm.getUuid());
         Assert.assertNull(tag);

@@ -3093,43 +3093,47 @@ public class Api implements CloudBusEventListener {
         }
     }
 
-    public APISetImageQgaDisableEvent disableImageQga(String uuid) throws ApiSenderException {
-        APISetImageQgaDisableMsg msg = new APISetImageQgaDisableMsg();
+    public APISetImageQgaEvent disableImageQga(String uuid) throws ApiSenderException {
+        APISetImageQgaMsg msg = new APISetImageQgaMsg();
         msg.setUuid(uuid);
+        msg.setEnable(false);
         msg.setSession(adminSession);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
-        APISetImageQgaDisableEvent evt = sender.send(msg, APISetImageQgaDisableEvent.class);
+        APISetImageQgaEvent evt = sender.send(msg, APISetImageQgaEvent.class);
         return evt;
     }
 
-    public APISetImageQgaDisableEvent disableImageQga(SessionInventory session, String uuid) throws ApiSenderException {
-        APISetImageQgaDisableMsg msg = new APISetImageQgaDisableMsg();
+    public APISetImageQgaEvent disableImageQga(SessionInventory session, String uuid) throws ApiSenderException {
+        APISetImageQgaMsg msg = new APISetImageQgaMsg();
         msg.setUuid(uuid);
+        msg.setEnable(false);
         msg.setSession(session);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
-        APISetImageQgaDisableEvent evt = sender.send(msg, APISetImageQgaDisableEvent.class);
+        APISetImageQgaEvent evt = sender.send(msg, APISetImageQgaEvent.class);
         return evt;
     }
 
-    public APISetImageQgaEnableEvent enableImageQga(String uuid) throws ApiSenderException {
-        APISetImageQgaEnableMsg msg = new APISetImageQgaEnableMsg();
+    public APISetImageQgaEvent enableImageQga(String uuid) throws ApiSenderException {
+        APISetImageQgaMsg msg = new APISetImageQgaMsg();
         msg.setUuid(uuid);
+        msg.setEnable(true);
         msg.setSession(adminSession);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
-        APISetImageQgaEnableEvent evt = sender.send(msg, APISetImageQgaEnableEvent.class);
+        APISetImageQgaEvent evt = sender.send(msg, APISetImageQgaEvent.class);
         return evt;
     }
 
-    public APISetImageQgaEnableEvent enableImageQga(SessionInventory session, String uuid) throws ApiSenderException {
-        APISetImageQgaEnableMsg msg = new APISetImageQgaEnableMsg();
+    public APISetImageQgaEvent enableImageQga(SessionInventory session, String uuid) throws ApiSenderException {
+        APISetImageQgaMsg msg = new APISetImageQgaMsg();
         msg.setUuid(uuid);
+        msg.setEnable(true);
         msg.setSession(session);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
-        APISetImageQgaEnableEvent evt = sender.send(msg, APISetImageQgaEnableEvent.class);
+        APISetImageQgaEvent evt = sender.send(msg, APISetImageQgaEvent.class);
         return evt;
     }
 
@@ -3143,23 +3147,25 @@ public class Api implements CloudBusEventListener {
         return reply;
     }
 
-    public APISetVmQgaDisableEvent disableVmQga(String uuid) throws ApiSenderException {
-        APISetVmQgaDisableMsg msg = new APISetVmQgaDisableMsg();
+    public APISetVmQgaEvent disableVmQga(String uuid) throws ApiSenderException {
+        APISetVmQgaMsg msg = new APISetVmQgaMsg();
         msg.setUuid(uuid);
+        msg.setEnable(false);
         msg.setSession(adminSession);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
-        APISetVmQgaDisableEvent evt = sender.send(msg, APISetVmQgaDisableEvent.class);
+        APISetVmQgaEvent evt = sender.send(msg, APISetVmQgaEvent.class);
         return evt;
     }
 
-    public APISetVmQgaEnableEvent enableVmQga(String uuid) throws ApiSenderException {
-        APISetVmQgaEnableMsg msg = new APISetVmQgaEnableMsg();
+    public APISetVmQgaEvent enableVmQga(String uuid) throws ApiSenderException {
+        APISetVmQgaMsg msg = new APISetVmQgaMsg();
         msg.setUuid(uuid);
+        msg.setEnable(true);
         msg.setSession(adminSession);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
-        APISetVmQgaEnableEvent evt = sender.send(msg, APISetVmQgaEnableEvent.class);
+        APISetVmQgaEvent evt = sender.send(msg, APISetVmQgaEvent.class);
         return evt;
     }
 
