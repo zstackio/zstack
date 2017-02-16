@@ -339,7 +339,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         }).done(new FlowDoneHandler(amsg) {
             @Override
             public void handle(Map data) {
-                HostInventory inv = factory.getHostInventory(vo.getUuid());
+                HostInventory inv = HostInventory.valueOf(dbf.reload(vo));
                 inv.setStatus(HostStatus.Connected.toString());
                 completion.success(inv);
 
@@ -351,8 +351,10 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
             public void handle(ErrorCode errCode, Map data) {
                 // delete host totally through the database, so other tables
                 // refer to the host table will clean up themselves
-                dbf.remove(vo);
+                HostVO nvo = dbf.reload(vo);
+                dbf.remove(nvo);
                 dbf.eoCleanup(HostVO.class);
+                HostInventory inv = HostInventory.valueOf(nvo);
 
                 CollectionUtils.safeForEach(pluginRgty.getExtensionList(FailToAddHostExtensionPoint.class), new ForEachFunction<FailToAddHostExtensionPoint>() {
                     @Override
