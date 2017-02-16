@@ -14,7 +14,7 @@ import java.util.List;
  */
 @Action(category = ImageConstant.ACTION_CATEGORY)
 @RestRequest(
-        path = "/images/{uuid}/actions",
+        path = "/images/{imageUuid}/actions",
         method = HttpMethod.PUT,
         responseClass = APIRecoverImageEvent.class,
         parameterName = "params",
