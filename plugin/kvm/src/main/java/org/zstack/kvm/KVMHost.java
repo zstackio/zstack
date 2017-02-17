@@ -1868,6 +1868,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setMemory(spec.getVmInventory().getMemorySize());
         cmd.setUseVirtio(virtio);
         cmd.setClock(ImagePlatform.isType(platform, ImagePlatform.Windows, ImagePlatform.WindowsVirtio) ? "localtime" : "utc");
+        cmd.setVideoType(VmGlobalConfig.VM_VIDEO_TYPE.value(String.class));
 
         VolumeTO rootVolume = new VolumeTO();
         {
