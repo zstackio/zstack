@@ -42,8 +42,8 @@ public class APIChangeInstanceOfferingMsg extends APIMessage implements VmInstan
  
     public static APIChangeInstanceOfferingMsg __example__() {
         APIChangeInstanceOfferingMsg msg = new APIChangeInstanceOfferingMsg();
-
-
+        msg.setVmInstanceUuid(uuid());
+        msg.setInstanceOfferingUuid(uuid());
         return msg;
     }
 

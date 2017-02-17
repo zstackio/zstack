@@ -88,7 +88,6 @@ public class APIAttachNetworkServiceToL3NetworkMsg extends APIMessage implements
 
         Map<String, List<String>> m = new HashMap<>();
         m.put(uuid(), Arrays.asList("PortForwarding"));
-
         msg.setL3NetworkUuid(uuid());
         msg.setNetworkServices(m);
 
