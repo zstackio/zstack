@@ -342,6 +342,7 @@ public abstract class HostBase extends AbstractHost {
 
         final String issuer = HostVO.class.getSimpleName();
         final List<HostInventory> ctx = Arrays.asList(HostInventory.valueOf(self));
+
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("delete-host-%s", msg.getUuid()));
         if (msg.getDeletionMode() == APIDeleteMessage.DeletionMode.Permissive) {
