@@ -1553,7 +1553,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             public void success() {
                 extEmitter.afterDestroyVm(inv);
                 logger.debug(String.format("successfully deleted vm instance[name:%s, uuid:%s]", self.getName(), self.getUuid()));
-                if (deletionPolicy == VmInstanceDeletionPolicy.Direct) {
+                if (deletionPolicy == VmInstanceDeletionPolicy.Direct || deletionPolicy == VmInstanceDeletionPolicy.DBOnly) {
                     dbf.remove(getSelf());
                 } else if (deletionPolicy == VmInstanceDeletionPolicy.Delay) {
                     self = dbf.reload(self);

@@ -7,7 +7,7 @@ public interface VmInstanceDeletionPolicyManager {
     enum VmInstanceDeletionPolicy {
         Direct,
         Delay,
-        VolumeDeletionPolicy, Never
+        DBOnly, Never
     }
 
     VmInstanceDeletionPolicy getDeletionPolicy(String vmUuid);
