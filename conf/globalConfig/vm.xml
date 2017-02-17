@@ -47,4 +47,11 @@
 		<type>java.lang.Boolean</type>
 	</config>
 
+	<config>
+		<name>videoType</name>
+		<description>switch for vm video type</description>
+		<category>vm</category>
+		<defaultValue>cirrus</defaultValue>
+		<type>java.lang.String</type>
+	</config>
 </globalConfig>
