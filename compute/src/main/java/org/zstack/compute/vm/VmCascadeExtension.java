@@ -328,8 +328,10 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
             List<VmInstanceDeletionMsg> msgs = new ArrayList<>();
             for (VmDeletionStruct inv : vminvs) {
                 VmInstanceDeletionMsg msg = new VmInstanceDeletionMsg();
+                // Upon primary storage deletion, the VM instance records will be deleted
+                // accordingly.  However, the VMs are still kept in their hosts.
                 if (PrimaryStorageVO.class.getSimpleName().equals(action.getParentIssuer())) {
-                    msg.setDeletionPolicy(VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy.Direct.toString());
+                    msg.setDeletionPolicy(VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy.DBOnly.toString());
                 }
                 msg.setForceDelete(action.isActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE));
                 msg.setVmInstanceUuid(inv.getInventory().getUuid());
