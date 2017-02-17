@@ -32,6 +32,7 @@ import org.zstack.utils.path.PathUtil
 import java.lang.reflect.Field
 import java.lang.reflect.Method
 import java.lang.reflect.Modifier
+import java.util.concurrent.TimeUnit
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 
@@ -944,7 +945,7 @@ ${dmd.generate()}
 
             def apiFields = getApiExampleOfTheClass(doc._rest._request._clz)
             def e = apiFields.find { k, v ->
-                return !v.class.name.startsWith("java.")
+                return !v.getClass().name.startsWith("java.")
             }
 
             if (e != null) {
@@ -980,7 +981,8 @@ ${cols.join("\n")}
 
             def apiFields = getApiExampleOfTheClass(doc._rest._request._clz)
             def e = apiFields.find { k, v ->
-                return !v.class.name.startsWith("java.")
+                // don't use v.class here, things break if the v is of type Map
+                return !v.getClass().name.startsWith("java.")
             }
 
             if (e != null) {
