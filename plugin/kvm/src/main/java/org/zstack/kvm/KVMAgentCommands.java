@@ -702,6 +702,15 @@ public class KVMAgentCommands {
         private String nestedVirtualization;
         private String hostManagementIp;
         private String clock;
+        private String videoType;
+
+        public String getVideoType() {
+            return videoType;
+        }
+
+        public void setVideoType(String videoType) {
+            this.videoType = videoType;
+        }
 
         public String getClock() {
             return clock;
