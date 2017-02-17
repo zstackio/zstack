@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class BackupDataVolumeAction extends AbstractAction {
+public class DeleteVolumeQosAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public BackupDataVolumeResult value;
+        public DeleteVolumeQosResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -24,9 +24,6 @@ public class BackupDataVolumeAction extends AbstractAction {
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String backupStorageUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -50,8 +47,8 @@ public class BackupDataVolumeAction extends AbstractAction {
             return ret;
         }
         
-        BackupDataVolumeResult value = res.getResult(BackupDataVolumeResult.class);
-        ret.value = value == null ? new BackupDataVolumeResult() : value;
+        DeleteVolumeQosResult value = res.getResult(DeleteVolumeQosResult.class);
+        ret.value = value == null ? new DeleteVolumeQosResult() : value;
         return ret;
     }
 
@@ -66,8 +63,8 @@ public class BackupDataVolumeAction extends AbstractAction {
                     return;
                 }
                 
-                BackupDataVolumeResult value = res.getResult(BackupDataVolumeResult.class);
-                ret.value = value == null ? new BackupDataVolumeResult() : value;
+                DeleteVolumeQosResult value = res.getResult(DeleteVolumeQosResult.class);
+                ret.value = value == null ? new DeleteVolumeQosResult() : value;
                 completion.complete(ret);
             }
         });
@@ -79,11 +76,11 @@ public class BackupDataVolumeAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/volumes/{uuid}/actions";
+        info.httpMethod = "DELETE";
+        info.path = "/volumes/{uuid}/qos";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "backupDataVolume";
+        info.parameterName = "params";
         return info;
     }
 

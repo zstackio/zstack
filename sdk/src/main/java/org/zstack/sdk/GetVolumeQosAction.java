@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class QueryTagAction extends QueryAction {
+public class GetVolumeQosAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public QueryTagResult value;
+        public GetVolumeQosResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -22,6 +22,17 @@ public class QueryTagAction extends QueryAction {
         }
     }
 
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String uuid;
+
+    @Param(required = false)
+    public java.util.List systemTags;
+
+    @Param(required = false)
+    public java.util.List userTags;
+
+    @Param(required = true)
+    public String sessionId;
 
 
     public Result call() {
@@ -32,8 +43,8 @@ public class QueryTagAction extends QueryAction {
             return ret;
         }
         
-        QueryTagResult value = res.getResult(QueryTagResult.class);
-        ret.value = value == null ? new QueryTagResult() : value;
+        GetVolumeQosResult value = res.getResult(GetVolumeQosResult.class);
+        ret.value = value == null ? new GetVolumeQosResult() : value;
         return ret;
     }
 
@@ -48,8 +59,8 @@ public class QueryTagAction extends QueryAction {
                     return;
                 }
                 
-                QueryTagResult value = res.getResult(QueryTagResult.class);
-                ret.value = value == null ? new QueryTagResult() : value;
+                GetVolumeQosResult value = res.getResult(GetVolumeQosResult.class);
+                ret.value = value == null ? new GetVolumeQosResult() : value;
                 completion.complete(ret);
             }
         });
@@ -62,7 +73,7 @@ public class QueryTagAction extends QueryAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/tags";
+        info.path = "/volumes/{uuid}/qos";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";

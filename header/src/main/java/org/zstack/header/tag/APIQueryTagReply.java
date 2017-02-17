@@ -10,6 +10,7 @@ import static java.util.Arrays.asList;
 
 /**
  */
+@RestResponse(allTo = "inventories")
 public class APIQueryTagReply extends APIQueryReply {
     private List<TagInventory> inventories;
 

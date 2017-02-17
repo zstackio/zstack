@@ -27,6 +27,7 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.identity.SuppressCredentialCheck;
 import org.zstack.header.message.*;
 import org.zstack.header.query.APIQueryMessage;
+import org.zstack.header.query.APIQueryReply;
 import org.zstack.header.query.QueryCondition;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RESTFacade;
@@ -827,6 +828,14 @@ public class RestServer implements Component, CloudBusEventListener {
             for (Map.Entry<String, String> e : w.responseMappingFields.entrySet()) {
                 response.put(e.getKey(),
                         PropertyUtils.getProperty(replyOrEvent, e.getValue()));
+            }
+        }
+
+        // TODO: fix hard code hack
+        if (APIQueryReply.class.isAssignableFrom(w.apiResponseClass)) {
+            Object total = PropertyUtils.getProperty(replyOrEvent, "total");
+            if (total != null) {
+                response.put("total", total);
             }
         }
 
