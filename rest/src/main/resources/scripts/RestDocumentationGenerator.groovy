@@ -89,7 +89,7 @@ class RestDocumentationGenerator implements DocumentGenerator {
         boolean inner = clz.getEnclosingClass() != null
         String fname
         if (inner) {
-            fname = clz.getEnclosingClass().simpleName - ".java" + "-${clz.simpleName}" + "Doc_${CHINESE_CN}.groovy"
+            fname = clz.getEnclosingClass().simpleName - ".java" + "_${clz.simpleName}" + "Doc_${CHINESE_CN}.groovy"
         } else {
             fname = clz.simpleName - ".java" + "Doc_${CHINESE_CN}.groovy"
         }
@@ -156,6 +156,7 @@ class RestDocumentationGenerator implements DocumentGenerator {
             } catch (Exception e) {
                 if (ignoreError()) {
                     System.out.println("failed to process ${docPath}, ${e.message}")
+                    logger.warn(e.message, e)
                 } else {
                     throw e
                 }

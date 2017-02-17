@@ -42,9 +42,8 @@ public class APIUpdateVirtualRouterOfferingMsg extends APIUpdateInstanceOffering
  
     public static APIUpdateVirtualRouterOfferingMsg __example__() {
         APIUpdateVirtualRouterOfferingMsg msg = new APIUpdateVirtualRouterOfferingMsg();
-
+        msg.setUuid(uuid());
         msg.setIsDefault(false);
-
         return msg;
     }
 

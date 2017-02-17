@@ -101,7 +101,8 @@ public class APIUpdateFusionstorBackupStorageMonMsg extends APIMessage implement
 
     public static APIUpdateFusionstorBackupStorageMonMsg __example__() {
         APIUpdateFusionstorBackupStorageMonMsg msg = new APIUpdateFusionstorBackupStorageMonMsg();
-
+        msg.setMonUuid(uuid());
+        msg.setMonPort(7798);
 
         return msg;
     }

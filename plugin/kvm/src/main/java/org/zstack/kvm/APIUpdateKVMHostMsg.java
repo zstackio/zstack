@@ -49,6 +49,7 @@ public class APIUpdateKVMHostMsg extends APIUpdateHostMsg {
 
     public static APIUpdateKVMHostMsg __example__() {
         APIUpdateKVMHostMsg msg = new APIUpdateKVMHostMsg();
+        msg.setUuid(uuid());
         msg.setUsername("userName");
         msg.setPassword("password");
         msg.setSshPort(22);
