@@ -79,7 +79,7 @@ public class CalculateAccountSpendingAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/billings/accounts/{uuid}/actions";
+        info.path = "/billings/accounts/{accountUuid}/actions";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "calculateAccountSpending";

@@ -107,7 +107,7 @@ public class CreateVolumeSnapshotSchedulerAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/volumes/schedulers/create-volume-snapshots";
+        info.path = "/volumes/{volumeUuid}/schedulers/creating-volume-snapshots";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";

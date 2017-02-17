@@ -4,6 +4,7 @@ import org.apache.commons.lang.StringUtils
 import org.reflections.Reflections
 import org.zstack.core.Platform
 import org.zstack.header.exception.CloudRuntimeException
+import org.zstack.header.query.APIQueryReply
 import org.zstack.header.rest.APINoSee
 import org.zstack.header.rest.RestResponse
 import org.zstack.header.rest.SDK
@@ -219,6 +220,11 @@ ${output.join("\n")}
                     addToFields(dst, f)
                 }
             }
+        }
+
+        // hack
+        if (APIQueryReply.class.isAssignableFrom(responseClass)) {
+            addToFields("total", responseClass.superclass.getDeclaredField("total"))
         }
         
         def output = []

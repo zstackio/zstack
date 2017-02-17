@@ -69,6 +69,7 @@ public class TestCreateZoneRest1 {
         QueryZoneAction qaction = new QueryZoneAction();
         qaction.sessionId = api.getAdminSession().getUuid();
         qaction.conditions.add("name=zone1");
+        qaction.replyWithCount = true;
         QueryZoneAction.Result r = qaction.call();
         Assert.assertNull(r.error);
 
