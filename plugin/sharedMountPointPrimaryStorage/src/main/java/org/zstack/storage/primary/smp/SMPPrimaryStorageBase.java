@@ -272,7 +272,6 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
             completion.success();
             return;
         }
-
         new LoopAsyncBatch<String>(completion) {
             boolean success;
 
