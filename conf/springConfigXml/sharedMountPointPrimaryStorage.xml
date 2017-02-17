@@ -15,6 +15,7 @@
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.storage.primary.PrimaryStorageFactory" />
             <zstack:extension interface="org.zstack.header.storage.snapshot.CreateTemplateFromVolumeSnapshotExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.host.HostDeleteExtensionPoint"/>
         </zstack:plugin>
     </bean>
 
