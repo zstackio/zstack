@@ -98,6 +98,11 @@ public class TestCreateZoneRest1 {
         r = qaction.call();
         Assert.assertEquals(0, r.value.inventories.size());
 
+        qaction = new QueryZoneAction();
+        qaction.sessionId = api.getAdminSession().getUuid();
+        qaction.conditions.add(String.format("name!=%s", zone.name));
+        r = qaction.call();
+
         LogOutAction la = new LogOutAction();
         la.sessionUuid = api.getAdminSession().getUuid();
         la.call();
