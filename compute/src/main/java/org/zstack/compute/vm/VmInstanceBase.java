@@ -157,7 +157,6 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     protected void destroy(final VmInstanceDeletionPolicy deletionPolicy, final Completion completion) {
         if (VmInstanceState.Created == self.getState()) {
-            dbf.remove(self);
             completion.success();
             return;
         }
@@ -1599,8 +1598,14 @@ public class VmInstanceBase extends AbstractVmInstance {
                 }
 
 
-                final VmInstanceDeletionPolicy deletionPolicy = msg.getDeletionPolicy() == null ?
-                        deletionPolicyMgr.getDeletionPolicy(self.getUuid()) : VmInstanceDeletionPolicy.valueOf(msg.getDeletionPolicy());
+                final VmInstanceDeletionPolicy deletionPolicy;
+
+                if (self.getState() == VmInstanceState.Created) {
+                    deletionPolicy = VmInstanceDeletionPolicy.DBOnly;
+                } else {
+                    deletionPolicy = msg.getDeletionPolicy() == null ?
+                            deletionPolicyMgr.getDeletionPolicy(self.getUuid()) : VmInstanceDeletionPolicy.valueOf(msg.getDeletionPolicy());
+                }
 
                 destroyHook(deletionPolicy, new Completion(msg, chain) {
                     @Override
