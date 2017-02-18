@@ -146,10 +146,26 @@ public class PathUtil {
 
         try {
             File folder = new File(folderUrl.toURI());
-            String[] files = folder.list();
-            List<String> ret = new ArrayList<String>(files.length);
-            for (String f : files) {
-                ret.add(PathUtil.join(folder.getAbsolutePath(), f));
+            List<String> ret = new ArrayList<>();
+            scanFolder(ret, folder.getAbsolutePath());
+            return ret;
+        } catch (Exception e) {
+            throw new RuntimeException(String.format("Unable to locate service portal configure files"), e);
+        }
+    }
+
+    public static List<String> scanFolder(List<String> ret, String folderName) {
+        try {
+            File folder = new File(folderName);
+            if (folder.isDirectory()) {
+                File[] fileArray = folder.listFiles();
+                for(File f: fileArray) {
+                    if (f.isDirectory()) {
+                        scanFolder(ret, f.getAbsolutePath());
+                    } else {
+                        ret.add(PathUtil.join(folder.getAbsolutePath(), f.getName()));
+                    }
+                }
             }
             return ret;
         } catch (Exception e) {
