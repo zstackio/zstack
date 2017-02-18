@@ -699,7 +699,11 @@ public class RestServer implements Component, CloudBusEventListener {
     }
 
     static final String[] QUERY_OP = {
-            "=", "!=", ">", "<", ">=", "<=", "?=", "!?=", "~=", "!~="
+            // DO NOT change the order
+            // an operator contained by another operator must be placed
+            // after the containing operator. For example, "=" is contained
+            // by "!=" so it must sit after "!="
+            "!=", ">=", "<=", "!?=", "!~=", "~=", "?=", "=", ">", "<",
     };
 
     private void handleQueryApi(Api api, String sessionId, HttpServletRequest req, HttpServletResponse rsp) throws IllegalAccessException, InstantiationException, RestException, IOException, NoSuchMethodException, InvocationTargetException {
@@ -776,10 +780,10 @@ public class RestServer implements Component, CloudBusEventListener {
                     if (OP == null) {
                         throw new RestException(HttpStatus.BAD_REQUEST.value(), String.format("Invalid query parameter." +
                                 " The '%s' in the parameter[q] doesn't contain any query operator. Valid query operators are" +
-                                " %s", QUERY_OP));
+                                " %s", cond, Arrays.asList(QUERY_OP)));
                     }
 
-                    String[] ks = cond.split(OP, 2);
+                    String[] ks = StringUtils.split(cond, OP, 2);
                     if (ks.length != 2) {
                         throw new RestException(HttpStatus.BAD_REQUEST.value(), String.format("Invalid query parameter." +
                                 " The '%s' in parameter[q] is not a key-value pair split by %s", cond, OP));
