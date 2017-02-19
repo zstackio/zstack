@@ -26,4 +26,7 @@
     <TestCase class="org.zstack.test.image.TestImageQgaEnable2"/>
     <TestCase class="org.zstack.test.image.TestCreateTemplateFromRootVolumeTimeoutManagement"/>
     <TestCase class="org.zstack.test.image.TestSyncImageSize"/>
+    <TestCase class="org.zstack.test.image.TestQuotaUsageForActualSize"/>
+    <TestCase class="org.zstack.test.image.TestQuotaUsageForImageOnCephBackupStorage"/>
+    <TestCase class="org.zstack.test.image.TestQuotaUsageForImageOnSftpBackupStorage"/>
 </UnitTestSuiteConfig>
