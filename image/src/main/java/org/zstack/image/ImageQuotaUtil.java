@@ -75,8 +75,8 @@ public class ImageQuotaUtil {
 
     @Transactional(readOnly = true)
     public long getUsedImageSize(String accountUuid) {
-        String sql = "select sum(image.size) " +
-                " from ImageVO image, AccountResourceRefVO ref " +
+        String sql = "select sum(image.actualSize) " +
+                " from ImageVO image ,AccountResourceRefVO ref " +
                 " where image.uuid = ref.resourceUuid " +
                 " and ref.accountUuid = :auuid " +
                 " and ref.resourceType = :rtype ";
