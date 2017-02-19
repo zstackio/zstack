@@ -46,7 +46,11 @@ import org.zstack.test.deployer.Deployer;
  *         <p>
  *         confirm the vip is unlocked
  *         <p>
- *         5. query the vr
+ *         5. delete vip on lb
+ *         <p>
+ *         confirm the lb is deleted
+ *         <p>
+ *         6. query the vr
  *         <p>
  *         confirm the result is right
  */
@@ -131,6 +135,11 @@ public class TestVyosLb {
         vip1vo = dbf.findByUuid(vip1.getUuid(), VipVO.class);
         Assert.assertNull(vip1vo.getUseFor());
         Assert.assertFalse(dbf.isExist(lb2.getUuid(), LoadBalancerVO.class));
+
+        vip1 = api.acquireIp(pubNw.getUuid());
+        LoadBalancerInventory lb3 = api.createLoadBalancer("lb3", vip1.getUuid(), null, null);
+        api.releaseIp(lb3.getVipUuid());
+        Assert.assertFalse(dbf.isExist(lb3.getUuid(), LoadBalancerVO.class));
 
         APIQueryVirtualRouterVmMsg msg = new APIQueryVirtualRouterVmMsg();
         msg.addQueryCondition("__systemTag__", QueryOp.EQ, "role::LoadBalancer");
