@@ -27,6 +27,7 @@ public class APIGetVmCapabilitiesReply extends APIReply {
             {
                 put("LiveMigration", false);
                 put("VolumeMigration", true);
+                put("Reimage", false);
             }
         });
         return reply;
