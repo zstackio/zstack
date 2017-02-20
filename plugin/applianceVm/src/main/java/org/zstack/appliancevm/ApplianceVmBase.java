@@ -740,4 +740,9 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
             }
         }
     }
+
+    @Override
+    protected void selectDefaultL3(VmNicInventory nic) {
+        return;
+    }
 }
