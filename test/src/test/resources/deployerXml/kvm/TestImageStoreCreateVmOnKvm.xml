@@ -20,6 +20,11 @@
         </instanceOffering>
     </instanceOfferings>
 
+    <diskOffering name="TestDataDiskOffering" description="Test"
+                  diskSize="20G">
+        <accountRef>test</accountRef>
+    </diskOffering>
+
     <vm>
         <userVm name="TestVm" description="Test">
             <imageRef>TestImage</imageRef>
@@ -28,6 +33,7 @@
             <l3NetworkRef>TestL3Network2</l3NetworkRef>
             <l3NetworkRef>TestL3Network3</l3NetworkRef>
             <defaultL3NetworkRef>TestL3Network1</defaultL3NetworkRef>
+            <diskOfferingRef>TestDataDiskOffering</diskOfferingRef>
             <accountRef>test</accountRef>
         </userVm>
     </vm>
