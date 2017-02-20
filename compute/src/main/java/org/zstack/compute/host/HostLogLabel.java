@@ -19,6 +19,12 @@ public class HostLogLabel {
     public static String ADD_HOST_CONNECT = "add.host.connect";
 
     @LogLabel(messages = {
+            "en_US = check cpu and memory configuration of the host",
+            "zh_CN = 检查物理机的cpu和内存配置"
+    })
+    public static String CHECK_HOST_CPU_AND_MEMORY_CONFIGURATION = "add.host.checkHostCpuAndMemoryConfiguration";
+
+    @LogLabel(messages = {
             "en_US = check if the operating system version on the host matches others in the same cluster",
             "zh_CN = 检查物理机操作系统版本是否与集群中其它物理机一致"
     })
