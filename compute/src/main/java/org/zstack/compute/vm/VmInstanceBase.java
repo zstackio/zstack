@@ -41,11 +41,8 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
+import org.zstack.header.image.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
-import org.zstack.header.image.ImageEO;
-import org.zstack.header.image.ImageInventory;
-import org.zstack.header.image.ImageStatus;
-import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.*;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.storage.primary.*;
@@ -2146,6 +2143,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         APIGetVmCapabilitiesReply reply = new APIGetVmCapabilitiesReply();
         Map<String, Object> ret = new HashMap<>();
         checkPrimaryStorageCapabilities(ret);
+        checkImageMediaTypeCapabilities(ret);
         reply.setCapabilities(ret);
         bus.reply(msg, reply);
     }
@@ -2165,6 +2163,17 @@ public class VmInstanceBase extends AbstractVmInstance {
             PrimaryStorageType psType = PrimaryStorageType.valueOf(type);
             ret.put(Capability.LiveMigration.toString(), psType.isSupportVmLiveMigration());
             ret.put(Capability.VolumeMigration.toString(), psType.isSupportVolumeMigration());
+        }
+    }
+
+    private void checkImageMediaTypeCapabilities(Map<String, Object> ret) {
+        ImageVO vo = dbf.findByUuid(self.getImageUuid(), ImageVO.class);
+        ImageMediaType imageMediaType = vo.getMediaType();
+
+        if (imageMediaType != ImageMediaType.ISO) {
+            ret.put(Capability.Reimage.toString(), true);
+        } else {
+            ret.put(Capability.Reimage.toString(), false);
         }
     }
 
