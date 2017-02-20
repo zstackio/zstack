@@ -2899,6 +2899,49 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 
+    protected void selectDefaultL3(VmNicInventory nic) {
+        if (self.getDefaultL3NetworkUuid() != null && self.getDefaultL3NetworkUuid().equals(nic.getL3NetworkUuid())) {
+            return;
+        }
+
+        final VmInstanceInventory vm = getSelfInventory();
+        final String previousDefaultL3 = vm.getDefaultL3NetworkUuid();
+
+        // the nic has been removed, reload
+        self = dbf.reload(self);
+
+        final VmNicVO candidate = CollectionUtils.find(self.getVmNics(), new Function<VmNicVO, VmNicVO>() {
+            @Override
+            public VmNicVO call(VmNicVO arg) {
+                return arg.getL3NetworkUuid().equals(nic.getUuid()) ? null : arg;
+            }
+        });
+
+        if (candidate != null) {
+            CollectionUtils.safeForEach(
+                    pluginRgty.getExtensionList(VmDefaultL3NetworkChangedExtensionPoint.class),
+                    new ForEachFunction<VmDefaultL3NetworkChangedExtensionPoint>() {
+                        @Override
+                        public void run(VmDefaultL3NetworkChangedExtensionPoint ext) {
+                            ext.vmDefaultL3NetworkChanged(vm, previousDefaultL3, candidate.getL3NetworkUuid());
+                        }
+                    });
+
+            self.setDefaultL3NetworkUuid(candidate.getL3NetworkUuid());
+            logger.debug(String.format(
+                    "after detaching the nic[uuid:%s, L3 uuid:%s], change the default L3 of the VM[uuid:%s]" +
+                            " to the L3 network[uuid: %s]", nic.getUuid(), nic.getL3NetworkUuid(), self.getUuid(),
+                    candidate.getL3NetworkUuid()));
+        } else {
+            self.setDefaultL3NetworkUuid(null);
+            logger.debug(String.format(
+                    "after detaching the nic[uuid:%s, L3 uuid:%s], change the default L3 of the VM[uuid:%s]" +
+                            " to null, as the VM has no other nics", nic.getUuid(), nic.getL3NetworkUuid(), self.getUuid()));
+        }
+
+        self = dbf.updateAndRefresh(self);
+    }
+
     private void detachNic(final String nicUuid, final Completion completion) {
         final VmNicInventory nic = VmNicInventory.valueOf(
                 CollectionUtils.find(self.getVmNics(), new Function<VmNicVO, VmNicVO>() {
@@ -2938,7 +2981,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         flowChain.done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
-                selectDefaultL3();
+                selectDefaultL3(nic);
                 removeStaticIp();
                 CollectionUtils.safeForEach(pluginRgty.getExtensionList(VmDetachNicExtensionPoint.class),
                         new ForEachFunction<VmDetachNicExtensionPoint>() {
@@ -2954,48 +2997,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 new StaticIpOperator().deleteStaticIpByVmUuidAndL3Uuid(self.getUuid(), nic.getL3NetworkUuid());
             }
 
-            private void selectDefaultL3() {
-                if (!self.getDefaultL3NetworkUuid().equals(nic.getL3NetworkUuid())) {
-                    return;
-                }
 
-                final VmInstanceInventory vm = getSelfInventory();
-                final String previousDefaultL3 = vm.getDefaultL3NetworkUuid();
-
-                // the nic has been removed, reload
-                self = dbf.reload(self);
-
-                final VmNicVO candidate = CollectionUtils.find(self.getVmNics(), new Function<VmNicVO, VmNicVO>() {
-                    @Override
-                    public VmNicVO call(VmNicVO arg) {
-                        return arg.getL3NetworkUuid().equals(nic.getUuid()) ? null : arg;
-                    }
-                });
-
-                if (candidate != null) {
-                    CollectionUtils.safeForEach(
-                            pluginRgty.getExtensionList(VmDefaultL3NetworkChangedExtensionPoint.class),
-                            new ForEachFunction<VmDefaultL3NetworkChangedExtensionPoint>() {
-                                @Override
-                                public void run(VmDefaultL3NetworkChangedExtensionPoint ext) {
-                                    ext.vmDefaultL3NetworkChanged(vm, previousDefaultL3, candidate.getL3NetworkUuid());
-                                }
-                            });
-
-                    self.setDefaultL3NetworkUuid(candidate.getL3NetworkUuid());
-                    logger.debug(String.format(
-                            "after detaching the nic[uuid:%s, L3 uuid:%s], change the default L3 of the VM[uuid:%s]" +
-                                    " to the L3 network[uuid: %s]", nic.getUuid(), nic.getL3NetworkUuid(), self.getUuid(),
-                            candidate.getL3NetworkUuid()));
-                } else {
-                    self.setDefaultL3NetworkUuid(null);
-                    logger.debug(String.format(
-                            "after detaching the nic[uuid:%s, L3 uuid:%s], change the default L3 of the VM[uuid:%s]" +
-                                    " to null, as the VM has no other nics", nic.getUuid(), nic.getL3NetworkUuid(), self.getUuid()));
-                }
-
-                self = dbf.updateAndRefresh(self);
-            }
         }).error(new FlowErrorHandler(completion) {
             @Override
             public void handle(final ErrorCode errCode, Map data) {

@@ -9,4 +9,5 @@
     <TestCase class="org.zstack.test.virtualrouter.vyos.TestVyosIPsec2" />
     <TestCase class="org.zstack.test.virtualrouter.vyos.TestVyosIPsec3" />
     <TestCase class="org.zstack.test.virtualrouter.vyos.TestVyosIPsec4" />
+    <TestCase class="org.zstack.test.virtualrouter.vyos.TestVyosAfterL2NetworkDetach" />
 </UnitTestSuiteConfig>

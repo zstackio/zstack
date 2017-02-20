@@ -29,8 +29,9 @@ public class VmDetachNicFlow extends NoRollbackFlow {
     public void run(FlowTrigger trigger, Map data) {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
         final VmNicInventory nic = spec.getDestNics().get(0);
+        String defaultL3Uuid = dbf.findByUuid(spec.getVmInventory().getUuid(), VmInstanceVO.class).getDefaultL3NetworkUuid();
 
-        if (spec.getVmInventory().getDefaultL3NetworkUuid().equals(nic.getL3NetworkUuid())) {
+        if (defaultL3Uuid != null && defaultL3Uuid.equals(nic.getL3NetworkUuid())) {
             // reset the default L3 to a l3 network; if there is no other l3, the default l3 will be null
             String l3Uuid = CollectionUtils.find(spec.getVmInventory().getVmNics(), new Function<String, VmNicInventory>() {
                 @Override
