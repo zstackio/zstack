@@ -41,6 +41,11 @@ public class SimulatorBackupStorage extends BackupStorageBase {
     }
 
     @Override
+    protected void exceptionIfImageSizeGreaterThanAvailableCapacity(String url) {
+        // To override the behavior of the base class, thus avoid real HEAD request.
+    }
+
+    @Override
     protected void handle(GetImageSizeOnBackupStorageMsg msg) {
         GetImageSizeOnBackupStorageReply reply = new GetImageSizeOnBackupStorageReply();
         reply.setSize(233);
