@@ -59,6 +59,14 @@ public class TestImageStoreExportImage {
 
             ImageVO imageVO = dbf.findByUuid(img.getUuid(), ImageVO.class);
             Assert.assertTrue(imageVO.getExportUrl() != null);
+
+            api.delExportedImage(bs.getUuid(), img.getUuid());
+            callingChain = MessageCommandRecorder.endAndToString();
+            logger.debug(callingChain);
+
+            imageVO = dbf.findByUuid(img.getUuid(), ImageVO.class);
+            Assert.assertTrue(imageVO.getExportUrl() == null);
+
         } catch (ApiSenderException e) {
             Assert.fail(e.toString());
         }
