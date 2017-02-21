@@ -1,7 +1,7 @@
 package org.zstack.test.integration.l3network.getfreeip
 
 import org.zstack.sdk.FreeIpInventory
-import org.zstack.test.integration.Desc
+
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.IpRangeSpec
 import org.zstack.testlib.L3NetworkSpec
@@ -11,7 +11,7 @@ import org.zstack.utils.network.NetworkUtils
 /**
  * Created by xing5 on 2017/2/22.
  */
-class OneL3OneIpRangeWithNoIpUsed extends SubCase {
+class OneL3OneIpRangeNoIpUsed extends SubCase {
     EnvSpec env
 
     @Override
@@ -58,7 +58,6 @@ class OneL3OneIpRangeWithNoIpUsed extends SubCase {
     }
 
 
-    @Desc
     void useIpRangeUuidWithStartBeyondTheEndIp() {
         IpRangeSpec ipr = env.specByName("ipr")
 
@@ -82,7 +81,7 @@ class OneL3OneIpRangeWithNoIpUsed extends SubCase {
         assert ip1.ip == "10.223.110.20"
     }
 
-    @Desc
+
     void useL3NetworkUuidWithStartBeyondTheEndIp() {
         L3NetworkSpec l3 = env.specByName("l3")
         List<FreeIpInventory> freeIps = getFreeIpOfL3Network {
