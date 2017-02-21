@@ -47,7 +47,7 @@ public class TestVmQgaEnable {
     public void test() throws ApiSenderException, InterruptedException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
 
-        APIGetVmQgaEnableReply reply = api.getEnableVmQga(vm.getUuid());
+        APIGetVmQgaReply reply = api.getEnableVmQga(vm.getUuid());
         Assert.assertTrue(reply.isSuccess());
         Assert.assertFalse(reply.isEnable());
 

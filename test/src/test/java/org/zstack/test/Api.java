@@ -3137,13 +3137,13 @@ public class Api implements CloudBusEventListener {
         return evt;
     }
 
-    public APIGetImageQgaEnableReply getEnableImageQga(String uuid) throws ApiSenderException {
+    public APIGetImageQgaReply getEnableImageQga(String uuid) throws ApiSenderException {
         APIGetImageQgaMsg msg = new APIGetImageQgaMsg();
         msg.setUuid(uuid);
         msg.setSession(adminSession);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
-        APIGetImageQgaEnableReply reply = sender.call(msg, APIGetImageQgaEnableReply.class);
+        APIGetImageQgaReply reply = sender.call(msg, APIGetImageQgaReply.class);
         return reply;
     }
 
@@ -3169,13 +3169,13 @@ public class Api implements CloudBusEventListener {
         return evt;
     }
 
-    public APIGetVmQgaEnableReply getEnableVmQga(String uuid) throws ApiSenderException {
-        APIGetVmQgaEnableMsg msg = new APIGetVmQgaEnableMsg();
+    public APIGetVmQgaReply getEnableVmQga(String uuid) throws ApiSenderException {
+        APIGetVmQgaMsg msg = new APIGetVmQgaMsg();
         msg.setUuid(uuid);
         msg.setSession(adminSession);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
-        APIGetVmQgaEnableReply reply = sender.call(msg, APIGetVmQgaEnableReply.class);
+        APIGetVmQgaReply reply = sender.call(msg, APIGetVmQgaReply.class);
         return reply;
     }
 
