@@ -89,6 +89,31 @@ trait Node {
         seen.pop()
     }
 
+    void delete(String sessionId = null) {
+        def sid = sessionId == null ? Test.deployer.envSpec.session?.uuid : sessionId
+        assert sid != null : "Not login yet!!! You need either call deploy() with a session uuid or call login() method" +
+                " in environment() of the test case"
+
+        def allNodes = []
+
+        walk {
+            allNodes.add(it)
+        }
+
+        LinkedHashSet<Node> resolvedNodes = new LinkedHashSet<>()
+        allNodes.each {
+            resolveDependency(it as Node, resolvedNodes, [])
+        }
+
+        def reversedNodes = resolvedNodes.toList()
+        Collections.reverse(reversedNodes)
+        reversedNodes.each { Node n ->
+            if (n instanceof DeleteAction) {
+                n.delete(sessionId)
+            }
+        }
+    }
+
     void deploy(String sessionId = null) {
         def sid = sessionId == null ? Test.deployer.envSpec.session?.uuid : sessionId
         assert sid != null : "Not login yet!!! You need either call deploy() with a session uuid or call login() method" +

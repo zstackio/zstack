@@ -14,4 +14,16 @@ abstract class PrimaryStorageSpec implements Spec {
     Long availableCapacity = SizeUnit.TERABYTE.toByte(100)
 
     PrimaryStorageInventory inventory
+
+    @Override
+    void delete(String sessionId) {
+        if (inventory != null) {
+            deletePrimaryStorage {
+                delegate.uuid = inventory.uuid
+                delegate.sessionId = sessionId
+            }
+
+            inventory = null
+        }
+    }
 }

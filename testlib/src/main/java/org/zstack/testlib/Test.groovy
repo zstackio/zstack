@@ -51,7 +51,6 @@ abstract class Test implements CreationSpec {
     protected boolean NEED_WEB_SERVER = true
     protected boolean API_PORTAL = true
     protected boolean INCLUDE_CORE_SERVICES = true
-    protected boolean DOC = ""
 
     protected Map<Class, Tuple> messageHandlers = [:]
 
@@ -219,6 +218,9 @@ abstract class Test implements CreationSpec {
             prepare()
             nextPhase()
             test()
+        } catch (AssertionError e) {
+            logger.warn("\n${e.message}", e)
+            System.exit(1)
         } catch (Throwable t) {
             logger.warn(t.message, t)
             System.exit(1)

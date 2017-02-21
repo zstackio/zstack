@@ -1,5 +1,6 @@
 package org.zstack.testlib
 
+import org.codehaus.groovy.runtime.InvokerHelper
 import org.zstack.header.identity.AccountConstant
 import org.zstack.sdk.AttachBackupStorageToZoneAction
 import org.zstack.sdk.LogInByAccountAction
@@ -109,10 +110,24 @@ class EnvSpec implements Node {
         return specsByName[name]
     }
 
-    EnvSpec create() {
+    EnvSpec create(Closure cl = null) {
         adminLogin()
         deploy()
 
+        if (cl != null) {
+            cl()
+        }
+
         return this
+    }
+
+    void delete() {
+        delete(Test.deployer.envSpec.session.uuid)
+    }
+
+    EnvSpec copy() {
+        def n = new EnvSpec()
+        InvokerHelper.setProperties(n, this.properties)
+        return n
     }
 }

@@ -21,4 +21,17 @@ abstract class L2NetworkSpec implements Spec {
 
         return l3
     }
+
+    @Override
+    void delete(String sessionId) {
+        if (inventory != null) {
+            deleteL2Network {
+                delegate.uuid = inventory.uuid
+                delegate.sessionId = sessionId
+            }
+
+            inventory = null
+        }
+    }
+
 }

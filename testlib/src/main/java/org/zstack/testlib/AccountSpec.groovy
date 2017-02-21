@@ -51,4 +51,16 @@ class AccountSpec implements Spec {
             return session
         }
     }
+
+    @Override
+    void delete(String sessionId) {
+        if (inventory != null) {
+            deleteAccount {
+                delegate.uuid = inventory.uuid
+                delegate.sessionId = sessionId
+            }
+
+            inventory = null
+        }
+    }
 }

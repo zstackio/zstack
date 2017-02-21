@@ -76,4 +76,16 @@ class EipSpec implements Spec, HasSession {
             return nic.uuid
         }
     }
+
+    @Override
+    void delete(String sessionId) {
+        if (inventory != null) {
+            deleteEip {
+                delegate.uuid = inventory.uuid
+                delegate.sessionId = sessionId
+            }
+
+            inventory = null
+        }
+    }
 }

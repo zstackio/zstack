@@ -58,4 +58,16 @@ class LoadBalancerListenerSpec implements Spec, HasSession {
             return nic.uuid
         }
     }
+
+    @Override
+    void delete(String sessionId) {
+        if (inventory != null) {
+            deleteLoadBalancerListener {
+                delegate.uuid = inventory.uuid
+                delegate.sessionId = sessionId
+            }
+
+            inventory = null
+        }
+    }
 }

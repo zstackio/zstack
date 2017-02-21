@@ -23,4 +23,16 @@ abstract class BackupStorageSpec implements Spec {
         addChild(i)
         return i
     }
+
+    @Override
+    void delete(String sessionId) {
+        if (inventory != null) {
+            deleteBackupStorage {
+                delegate.uuid = inventory.uuid
+                delegate.sessionId = sessionId
+            }
+
+            inventory = null
+        }
+    }
 }

@@ -34,4 +34,16 @@ class InstanceOfferingSpec implements Spec, HasSession {
 
         return id(name, inventory.uuid)
     }
+
+    @Override
+    void delete(String sessionId) {
+        if (inventory != null) {
+            deleteInstanceOffering {
+                delegate.uuid = inventory.uuid
+                delegate.sessionId = sessionId
+            }
+
+            inventory = null
+        }
+    }
 }

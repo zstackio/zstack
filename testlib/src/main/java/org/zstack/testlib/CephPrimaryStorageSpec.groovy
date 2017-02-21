@@ -147,4 +147,16 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
             return new CephPrimaryStorageBase.AgentResponse()
         }
     }
+
+    @Override
+    void delete(String sessionId) {
+        if (inventory != null) {
+            deletePrimaryStorage {
+                delegate.uuid = inventory.uuid
+                delegate.sessionId = sessionId
+            }
+
+            inventory = null
+        }
+    }
 }

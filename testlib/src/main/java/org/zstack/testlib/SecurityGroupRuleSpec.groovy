@@ -24,4 +24,9 @@ class SecurityGroupRuleSpec implements Spec {
 
         return null
     }
+
+    @Override
+    void delete(String sessionId) {
+        // do nothing
+    }
 }

@@ -181,4 +181,16 @@ class ZoneSpec implements Spec {
 
         return id(name, inventory.uuid)
     }
+
+    @Override
+    void delete(String sessionId) {
+        if (inventory != null) {
+            deleteZone {
+                delegate.uuid = inventory.uuid
+                delegate.sessionId = sessionId
+            }
+
+            inventory = null
+        }
+    }
 }

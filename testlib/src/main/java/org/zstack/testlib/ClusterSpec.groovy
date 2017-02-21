@@ -95,4 +95,16 @@ class ClusterSpec implements Spec {
 
         return id(name, inventory.uuid)
     }
+
+    @Override
+    void delete(String sessionId) {
+        if (inventory != null) {
+            deleteCluster {
+                delegate.uuid = inventory.uuid
+                delegate.sessionId = sessionId
+            }
+
+            inventory = null
+        }
+    }
 }

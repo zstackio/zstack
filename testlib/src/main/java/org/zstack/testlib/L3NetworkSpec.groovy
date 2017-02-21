@@ -45,4 +45,16 @@ class L3NetworkSpec implements Spec, HasSession {
         addChild(spec)
         return spec
     }
+
+    @Override
+    void delete(String sessionId) {
+        if (inventory != null) {
+            deleteL3Network {
+                delegate.uuid = inventory.uuid
+                delegate.sessionId = sessionId
+            }
+
+            inventory = null
+        }
+    }
 }
