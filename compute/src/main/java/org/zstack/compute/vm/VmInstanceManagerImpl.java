@@ -546,23 +546,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
                                 map(HostInventory::getClusterUuid).collect(Collectors.toList());
                         areply.setClusters(ClusterInventory.valueOf(dbf.listByPrimaryKeys(clusterUuids, ClusterVO.class)));
 
-                        Map<String, List<PrimaryStorageInventory>> m = new HashMap<>();
-                        for (String clusterUuid : clusterUuids) {
-                            SimpleQuery<PrimaryStorageClusterRefVO> sq = dbf.createQuery(PrimaryStorageClusterRefVO.class);
-                            sq.add(PrimaryStorageClusterRefVO_.clusterUuid, Op.EQ, clusterUuid);
-                            List<PrimaryStorageClusterRefVO> refs = sq.list();
-                            if (refs != null && !refs.isEmpty()) {
-                                List<PrimaryStorageInventory> l = refs.stream().map(
-                                        ref -> PrimaryStorageInventory.valueOf(
-                                                dbf.findByUuid(ref.getPrimaryStorageUuid(), PrimaryStorageVO.class))
-                                ).collect(Collectors.toList());
-                                m.put(clusterUuid, l);
-                            } else {
-                                m.put(clusterUuid, new ArrayList<>());
-                            }
-                        }
-                        areply.setClusterPrimaryStorageRefs(m);
-
                         List<String> zoneUuids = re.getHosts().stream().
                                 map(HostInventory::getZoneUuid).collect(Collectors.toList());
                         areply.setZones(ZoneInventory.valueOf(dbf.listByPrimaryKeys(zoneUuids, ZoneVO.class)));
@@ -570,7 +553,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         areply.setHosts(new ArrayList<>());
                         areply.setClusters(new ArrayList<>());
                         areply.setZones(new ArrayList<>());
-                        areply.setClusterPrimaryStorageRefs(new HashMap<>());
                     }
                 }
 
