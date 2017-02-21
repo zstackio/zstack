@@ -1202,15 +1202,6 @@ trait CreationSpec {
     }
 
 
-    def queryTag(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = org.zstack.sdk.QueryTagAction.class) Closure c) {
-        def a = new org.zstack.sdk.QueryTagAction()
-        a.sessionId = Test.deployer.envSpec.session?.uuid
-        def code = c.rehydrate(a, this, this)
-        code()
-        return errorOut(a.call())
-    }
-
-
     def deleteDataVolume(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = org.zstack.sdk.DeleteDataVolumeAction.class) Closure c) {
         def a = new org.zstack.sdk.DeleteDataVolumeAction()
         a.sessionId = Test.deployer.envSpec.session?.uuid
@@ -1492,15 +1483,6 @@ trait CreationSpec {
 
     def recoverImage(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = org.zstack.sdk.RecoverImageAction.class) Closure c) {
         def a = new org.zstack.sdk.RecoverImageAction()
-        a.sessionId = Test.deployer.envSpec.session?.uuid
-        def code = c.rehydrate(a, this, this)
-        code()
-        return errorOut(a.call())
-    }
-
-
-    def backupDataVolume(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = org.zstack.sdk.BackupDataVolumeAction.class) Closure c) {
-        def a = new org.zstack.sdk.BackupDataVolumeAction()
         a.sessionId = Test.deployer.envSpec.session?.uuid
         def code = c.rehydrate(a, this, this)
         code()
