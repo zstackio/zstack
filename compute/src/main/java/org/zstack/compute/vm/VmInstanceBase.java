@@ -20,10 +20,7 @@ import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
-import org.zstack.header.allocator.AllocateHostDryRunReply;
-import org.zstack.header.allocator.DesignatedAllocateHostMsg;
-import org.zstack.header.allocator.HostAllocatorConstant;
-import org.zstack.header.allocator.HostAllocatorError;
+import org.zstack.header.allocator.*;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.cluster.ClusterVO;
@@ -2400,7 +2397,7 @@ public class VmInstanceBase extends AbstractVmInstance {
     private void checkIpConflict(final String vmUuid) {
         StaticIpOperator ipo = new StaticIpOperator();
 
-        for (Map.Entry<String, String> entry: ipo.getStaticIpbyVmUuid(vmUuid).entrySet()) {
+        for (Map.Entry<String, String> entry : ipo.getStaticIpbyVmUuid(vmUuid).entrySet()) {
             if (ipExists(entry.getKey(), entry.getValue())) {
                 ipo.deleteStaticIpByVmUuidAndL3Uuid(vmUuid, entry.getKey());
             }
