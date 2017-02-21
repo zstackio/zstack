@@ -3138,7 +3138,7 @@ public class Api implements CloudBusEventListener {
     }
 
     public APIGetImageQgaEnableReply getEnableImageQga(String uuid) throws ApiSenderException {
-        APIGetImageQgaEnableMsg msg = new APIGetImageQgaEnableMsg();
+        APIGetImageQgaMsg msg = new APIGetImageQgaMsg();
         msg.setUuid(uuid);
         msg.setSession(adminSession);
         ApiSender sender = new ApiSender();
