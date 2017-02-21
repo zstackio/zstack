@@ -61,7 +61,6 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
-import javax.persistence.Tuple;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -1871,14 +1870,13 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         List<Flow> flows = new ArrayList<Flow>();
 
         SimpleQuery<KVMHostVO> q = dbf.createQuery(KVMHostVO.class);
-        q.select(KVMHostVO_.managementIp, KVMHostVO_.username, KVMHostVO_.password, KVMHostVO_.port);
+        KVMHostVO kvmHostVO = q.find();
         q.add(KVMHostVO_.uuid, Op.EQ, struct.getDestHostUuid());
-        Tuple t = q.findTuple();
 
-        final String mgmtIp = t.get(0, String.class);
-        final String username = t.get(1, String.class);
-        final String password = t.get(2, String.class);
-        final int port = t.get(3, Integer.class);
+        final String mgmtIp = kvmHostVO.getManagementIp();
+        final String username = kvmHostVO.getUsername();
+        final String password = kvmHostVO.getPassword();
+        final int port = kvmHostVO.getPort();
 
         class Context {
             GetMd5Rsp getMd5Rsp;
