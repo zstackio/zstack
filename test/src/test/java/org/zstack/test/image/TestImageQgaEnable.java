@@ -7,12 +7,10 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
-import org.zstack.header.image.APIGetImageQgaEnableReply;
-import org.zstack.header.image.APISetImageQgaEvent;
-import org.zstack.header.image.ImageInventory;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.image.ImageSystemTags;
+import org.zstack.header.image.*;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
@@ -44,7 +42,7 @@ public class TestImageQgaEnable {
     public void test() throws ApiSenderException, InterruptedException {
         ImageInventory image = deployer.images.get("TestImage");
 
-        APIGetImageQgaEnableReply reply = api.getEnableImageQga(image.getUuid());
+        APIGetImageQgaReply reply = api.getEnableImageQga(image.getUuid());
         Assert.assertTrue(reply.isSuccess());
         Assert.assertFalse(reply.isEnable());
 
