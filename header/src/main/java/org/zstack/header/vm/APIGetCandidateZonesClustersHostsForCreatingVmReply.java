@@ -4,12 +4,10 @@ import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.message.APIReply;
 import org.zstack.header.rest.RestResponse;
-import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.zone.ZoneInventory;
 
 import java.sql.Timestamp;
 import java.util.List;
-import java.util.Map;
 
 import static org.codehaus.groovy.runtime.InvokerHelper.asList;
 
@@ -21,16 +19,6 @@ public class APIGetCandidateZonesClustersHostsForCreatingVmReply extends APIRepl
     private List<ZoneInventory> zones;
     private List<ClusterInventory> clusters;
     private List<HostInventory> hosts;
-
-    public Map<String, List<PrimaryStorageInventory>> getClusterPrimaryStorageRefs() {
-        return clusterPrimaryStorageRefs;
-    }
-
-    public void setClusterPrimaryStorageRefs(Map<String, List<PrimaryStorageInventory>> clusterPrimaryStorageRefs) {
-        this.clusterPrimaryStorageRefs = clusterPrimaryStorageRefs;
-    }
-
-    private Map<String, List<PrimaryStorageInventory>> clusterPrimaryStorageRefs;
 
     public List<ZoneInventory> getZones() {
         return zones;
