@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<deployerConfig xmlns="http://zstack.org/schema/zstack">
+    <account name="test" password="password"></account>
+
+    <backupStorages>
+        <imageStoreBackupStorage name="imagestore" description="Test" url="/imagestore" />
+    </backupStorages>
+
+    <images>
+	    <image name="TestImage" description="Test" url="http://my/test-image.qcow2" >
+            <backupStorageRef>imagestore</backupStorageRef>
+            <accountRef>test</accountRef>
+        </image>
+    </images>
+
+    <instanceOfferings>
+        <instanceOffering name="TestInstanceOffering"
+            description="Test" memoryCapacity="768M" cpuNum="2" cpuSpeed="3000">
+            <accountRef>test</accountRef>
+        </instanceOffering>
+    </instanceOfferings>
+
+    <vm>
+        <userVm name="TestVm" description="Test">
+            <imageRef>TestImage</imageRef>
+            <instanceOfferingRef>TestInstanceOffering</instanceOfferingRef>
+            <l3NetworkRef>TestL3Network</l3NetworkRef>
+            <defaultL3NetworkRef>TestL3Network</defaultL3NetworkRef>
+            <accountRef>test</accountRef>
+        </userVm>
+    </vm>
+
+    <zones>
+        <zone name="Zone1" description="Test">
+            <clusters>
+                <cluster name="Cluster1" description="Test" hypervisorType="KVM">
+                    <hosts>
+                        <kvmHost name="host" description="Test" managementIp="localhost"
+                            memoryCapacity="1G" cpuNum="4" cpuSpeed="2600" />
+                    </hosts>
+                    <primaryStorageRef>nfs</primaryStorageRef>
+                    <l2NetworkRef>TestL2Network</l2NetworkRef>
+                </cluster>
+            </clusters>
+
+            <l2Networks>
+                <l2NoVlanNetwork name="TestL2Network" description="Test"
+                    physicalInterface="eth0">
+                    <l3Networks>
+                        <l3BasicNetwork name="TestL3Network" description="Test">
+                            <ipRange name="TestIpRange" description="Test" startIp="10.0.0.100"
+                                endIp="10.10.1.200" gateway="10.0.0.1" netmask="255.0.0.0" />
+
+                            <dns>1.1.1.1</dns>
+                            <networkService provider="Flat">
+                                <serviceType>DHCP</serviceType>
+                                <serviceType>Userdata</serviceType>
+                            </networkService>
+
+                            <accountRef>test</accountRef>
+                        </l3BasicNetwork>
+                    </l3Networks>
+                </l2NoVlanNetwork>
+            </l2Networks>
+
+            <backupStorageRef>imagestore</backupStorageRef>
+            <primaryStorages>
+                <nfsPrimaryStorage name="nfs" description="Test"
+                    totalCapacity="200G" url="nfs://test" />
+            </primaryStorages>
+        </zone>
+    </zones>
+</deployerConfig>
