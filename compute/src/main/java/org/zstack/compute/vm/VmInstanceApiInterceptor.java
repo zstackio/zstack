@@ -4,9 +4,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.header.allocator.HostCapacityVO;
+import org.zstack.header.allocator.HostCapacityVO_;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
@@ -14,6 +18,7 @@ import org.zstack.header.cluster.ClusterState;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.configuration.*;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostState;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
@@ -85,10 +90,43 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             validate((APICreateRebootVmInstanceSchedulerMsg) msg);
         } else if (msg instanceof APIGetInterdependentL3NetworksImagesMsg) {
             validate((APIGetInterdependentL3NetworksImagesMsg) msg);
+        } else if (msg instanceof APIUpdateVmInstanceMsg) {
+            validate((APIUpdateVmInstanceMsg) msg);
         }
         setServiceId(msg);
         return msg;
     }
+
+    @Transactional(readOnly = true)
+    private void validate(APIUpdateVmInstanceMsg msg) {
+        Integer cpuSum = msg.getCpuNum();
+        Long memorySize = msg.getMemorySize();
+        if (cpuSum == null && memorySize == null) {
+            return;
+        }
+        VmInstanceState vmState = Q.New(VmInstanceVO.class).select(VmInstanceVO_.state).eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid()).findValue();
+        if (VmInstanceState.Stopped.equals(vmState)) {
+            return;
+        }
+        Tuple result = SQL.New("select sum(hc.availableCpu), sum(hc.availableMemory), vm.cpuNum, vm.memorySize" +
+                " from HostCapacityVO hc, HostVO host, VmInstanceVO vm" +
+                " where hc.uuid = host.uuid" +
+                " and host.state = :hstate" +
+                " and host.status = :hstatus", Tuple.class)
+                .param("hstate", HostState.Enabled).param("hstatus", HostStatus.Connected)
+                .find();
+        Long availableCpu = (Long) result.get(0);
+        Long availableMemory = (Long) result.get(1);
+        Integer usedCpu = (Integer) result.get(2);
+        Long usedMemory = (Long) result.get(3);
+
+        if ((cpuSum != null && cpuSum > (usedCpu + availableCpu) || (memorySize != null && memorySize > (usedMemory + availableMemory)))) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    "the host doesn't have enough capacity"
+            ));
+        }
+    }
+
 
     private void validate(APIGetInterdependentL3NetworksImagesMsg msg) {
         if (msg.getL3NetworkUuids() == null && msg.getImageUuid() == null) {
