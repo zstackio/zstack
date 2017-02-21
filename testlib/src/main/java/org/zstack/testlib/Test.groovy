@@ -27,10 +27,11 @@ abstract class Test implements CreationSpec {
     private int phase = PHASE_NONE
 
     protected EnvSpec env(@DelegatesTo(strategy=Closure.DELEGATE_FIRST, value=EnvSpec.class) Closure c) {
-        c.delegate = deployer.envSpec
+        def spec = new EnvSpec()
+        c.delegate = spec
         c.resolveStrategy = Closure.DELEGATE_FIRST
         c()
-        return deployer.envSpec
+        return spec
     }
 
     protected void spring(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = SpringSpec.class) Closure c) {
@@ -197,14 +198,6 @@ abstract class Test implements CreationSpec {
     protected <T> T bean(Class<T> clz) {
         assert phase > PHASE_SETUP : "getBean() can only be called in method environment() or test()"
         return deployer.componentLoader.getComponent(clz)
-    }
-
-    protected <T> T specByName(String name) {
-        return deployer.envSpec.specByName(name) as T
-    }
-
-    protected <T> T specByUuid(String uuid) {
-        return deployer.envSpec.specByUuid(uuid) as T
     }
 
     protected <T> T dbFindByUuid(String uuid, Class<T> voClz) {

@@ -12,5 +12,5 @@ import java.lang.annotation.Target
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.SOURCE)
 @interface Desc {
-    String value()
+    String value() default ""
 }

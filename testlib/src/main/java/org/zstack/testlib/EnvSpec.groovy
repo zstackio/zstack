@@ -2,10 +2,8 @@ package org.zstack.testlib
 
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.zstack.header.identity.AccountConstant
-import org.zstack.sdk.AttachBackupStorageToZoneAction
 import org.zstack.sdk.LogInByAccountAction
 import org.zstack.sdk.SessionInventory
-import org.zstack.storage.ceph.backup.CephBackupStorageBase
 import org.zstack.utils.gson.JSONObjectUtil
 
 /**
@@ -19,6 +17,8 @@ class EnvSpec implements Node {
 
     Map specsByName = [:]
     Map specsByUuid = [:]
+
+    private boolean hasCreated
 
     void zone(String name, String description) {
         zones.add(new ZoneSpec(name, description))
@@ -111,10 +111,16 @@ class EnvSpec implements Node {
     }
 
     EnvSpec create(Closure cl = null) {
+        hasCreated = true
+
         adminLogin()
         deploy()
 
+        Test.deployer.envSpec = this
+
         if (cl != null) {
+            cl.delegate = this
+            cl.resolveStrategy = Closure.DELEGATE_FIRST
             cl()
         }
 
@@ -126,6 +132,8 @@ class EnvSpec implements Node {
     }
 
     EnvSpec copy() {
+        assert !hasCreated: "copy() can not be called after the create() is called"
+
         def n = new EnvSpec()
         InvokerHelper.setProperties(n, this.properties)
         return n

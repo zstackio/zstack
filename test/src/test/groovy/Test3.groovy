@@ -267,7 +267,6 @@ class Test3 extends TestPremium {
 
     @Override
     void test() {
-        LocalStorageSpec local = specByName("local")
         assert local.inventory.availableCapacity == SizeUnit.GIGABYTE.toByte(1)
         assert local.inventory.totalCapacity == SizeUnit.GIGABYTE.toByte(1)
     }
