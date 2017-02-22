@@ -236,11 +236,16 @@ abstract class Test implements ApiHelper {
             prepare()
             nextPhase()
             test()
+
+            if (this instanceof SubCase) {
+                this.clean()
+            }
+
         } catch (AssertionError e) {
             logger.warn("\n${e.message}", e)
             System.exit(1)
         } catch (Throwable t) {
-            logger.warn(t.message, t)
+            logger.warn("", t)
             System.exit(1)
         }
     }

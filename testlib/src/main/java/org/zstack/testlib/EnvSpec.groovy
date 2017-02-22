@@ -1,16 +1,13 @@
 package org.zstack.testlib
 
 import org.codehaus.groovy.runtime.InvokerHelper
-import org.springframework.http.HttpEntity
-import org.springframework.http.HttpHeaders
-import org.springframework.http.HttpMethod
-import org.springframework.http.HttpStatus
-import org.springframework.http.MediaType
+import org.springframework.http.*
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory
 import org.springframework.web.client.RestTemplate
 import org.zstack.core.CoreGlobalProperty
 import org.zstack.core.Platform
-import org.zstack.core.componentloader.ComponentLoader
+import org.zstack.core.db.DatabaseFacade
+import org.zstack.core.db.SQL
 import org.zstack.header.identity.AccountConstant
 import org.zstack.header.rest.RESTConstant
 import org.zstack.sdk.LogInByAccountAction
@@ -183,9 +180,29 @@ class EnvSpec implements Node {
                 }
             }
 
-            SpecID id = (it as CreateAction).create(uuid, suuid)
-            if (id != null) {
-                specsByName[id.name] = it
+            try {
+                SpecID id = (it as CreateAction).create(uuid, suuid)
+                if (id != null) {
+                    specsByName[id.name] = it
+                }
+            } catch (Throwable t) {
+                String name = null
+                if (it.hasProperty("name")) {
+                    name = it.name
+                } else {
+                    // the node doesn't have a name, use its parent name + its class name
+                    Node n = it
+                    while (n != null) {
+                        if (n.hasProperty("name")) {
+                            name = "${n.name}->${it.class.simpleName}"
+                            break
+                        }
+
+                        n = n.parent
+                    }
+                }
+
+                throw new Exception("failed to create a spec[name: $name, spec type: ${it.class.simpleName}], ${t.message}", t)
             }
         }
 
@@ -215,9 +232,31 @@ class EnvSpec implements Node {
         return this
     }
 
+    private void makeSureAllEntitiesDeleted() {
+        DatabaseFacade dbf = Test.componentLoader.getComponent(DatabaseFacade.class)
+        def entityTypes = dbf.entityManager.metamodel.entities
+        entityTypes.each { type ->
+            if (type.name in ["ManagementNodeVO", "SessionVO", "GlobalConfigVO", "AsyncRestVO", "AccountVO"]) {
+                // those tables will continue having entries during running a test suite
+                return
+            }
+
+            long count = SQL.New("select count(*) from ${type.name}".toString(), Long.class).find()
+
+            if (count > 0) {
+                logger.fatal("[${this.class}] EnvSpec.delete() didn't cleanup the environment, there are still records in database" +
+                        " table ${type.name}, go fix it immediately!!! Abort the system")
+                // abort the system
+                System.exit(1)
+            }
+        }
+    }
+
     void delete() {
         try {
             delete(session.uuid)
+
+            makeSureAllEntitiesDeleted()
         } finally {
             // set the currentEnvSpec to null anyway
             // because the current sub case may fail but

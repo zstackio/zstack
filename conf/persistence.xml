@@ -64,7 +64,6 @@
         <class>org.zstack.appliancevm.ApplianceVmFirewallRuleVO</class>
         <class>org.zstack.header.vm.VmNicVO</class>
         <class>org.zstack.header.identity.SessionVO</class>
-        <class>org.zstack.header.identity.CurrentDateVO</class>
         <class>org.zstack.header.identity.AccountVO</class>
         <class>org.zstack.header.identity.AccountResourceRefVO</class>
         <class>org.zstack.header.identity.UserVO</class>

@@ -41,7 +41,7 @@ class Test1 extends TestPremium {
             }
 
             diskOffering {
-                name = "diskOffering"
+                //name = "diskOffering"
                 diskSize = SizeUnit.GIGABYTE.toByte(10)
                 useAccount("xin")
             }

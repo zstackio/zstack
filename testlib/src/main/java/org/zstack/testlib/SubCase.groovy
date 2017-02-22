@@ -5,9 +5,12 @@ package org.zstack.testlib
  */
 abstract class SubCase extends Test {
     final void run() {
-        environment()
-        test()
-        clean()
+        try {
+            environment()
+            test()
+        } finally {
+            clean()
+        }
     }
 
     @Override
