@@ -143,7 +143,7 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
         q.select(HostVO_.uuid);
         q.add(HostVO_.clusterUuid, Op.IN, clusterUuids);
         final List<String> avoidHostUuids = q.listValue();
-        final List<VmInstanceVO> toStop = new ArrayList<>();
+        final List<VmInstanceVO> toDelete = new ArrayList<>();
 
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("handle-appliance-vm-for-cluster-detach"));
@@ -173,8 +173,8 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
                                 for (MessageReply r : replies) {
                                     if (!r.isSuccess()) {
                                         VmInstanceVO apvm = toMigrate.get(replies.indexOf(r));
-                                        toStop.add(apvm);
-                                        logger.warn(String.format("failed to migrate appliance vm[uuid:%s, name:%s], %s. will try stopping it", apvm.getUuid(), r.getError(), apvm.getName()));
+                                        toDelete.add(apvm);
+                                        logger.warn(String.format("failed to migrate appliance vm[uuid:%s, name:%s], %s. will try to delete it", apvm.getUuid(), r.getError(), apvm.getName()));
                                     }
                                 }
 
@@ -185,19 +185,19 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
                 });
 
                 flow(new NoRollbackFlow() {
-                    String __name__ = "stop-appliance-vm";
+                    String __name__ = "delete-appliance-vm";
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        if (toStop.isEmpty()) {
+                        if (toDelete.isEmpty()) {
                             trigger.next();
                             return;
                         }
 
-                        List<StopVmInstanceMsg> msgs = CollectionUtils.transformToList(toStop, new Function<StopVmInstanceMsg, VmInstanceVO>() {
+                        List<VmInstanceDeletionMsg> msgs = CollectionUtils.transformToList(toDelete, new Function<VmInstanceDeletionMsg, VmInstanceVO>() {
                             @Override
-                            public StopVmInstanceMsg call(VmInstanceVO arg) {
-                                StopVmInstanceMsg msg = new StopVmInstanceMsg();
+                            public VmInstanceDeletionMsg call(VmInstanceVO arg) {
+                                VmInstanceDeletionMsg msg = new VmInstanceDeletionMsg();
                                 msg.setVmInstanceUuid(arg.getUuid());
                                 bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, arg.getUuid());
                                 return msg;
@@ -209,8 +209,8 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
                             public void run(List<MessageReply> replies) {
                                 for (MessageReply r : replies) {
                                     if (!r.isSuccess()) {
-                                        VmInstanceVO apvm = toStop.get(replies.indexOf(r));
-                                        logger.warn(String.format("failed to stop vm[uuid:%s] for cluster detached, %s. However, detaching will go on", apvm.getUuid(), r.getError()));
+                                        VmInstanceVO apvm = toDelete.get(replies.indexOf(r));
+                                        logger.warn(String.format("failed to delete vm[uuid:%s] for cluster detached, %s. However, detaching will go on", apvm.getUuid(), r.getError()));
                                     }
                                 }
 
