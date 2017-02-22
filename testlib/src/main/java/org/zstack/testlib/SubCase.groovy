@@ -7,11 +7,12 @@ abstract class SubCase extends Test {
     final void run() {
         environment()
         test()
+        clean()
     }
 
     @Override
-    final void setup() {
-        // do nothing
+    protected void runSubCases(List<SubCase> cases) {
+        throw new Exception("runSubCases() cannot be called in a SubCase")
     }
 
     abstract void environment()

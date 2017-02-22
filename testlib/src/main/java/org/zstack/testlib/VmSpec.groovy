@@ -5,7 +5,7 @@ import org.zstack.sdk.VmInstanceInventory
 /**
  * Created by xing5 on 2017/2/16.
  */
-class VmSpec implements Spec, HasSession {
+class VmSpec extends Spec implements HasSession {
     private Closure instanceOffering = {}
     private Closure image = {}
     private Closure rootDiskOffering = {}
@@ -18,6 +18,10 @@ class VmSpec implements Spec, HasSession {
     String description
 
     VmInstanceInventory inventory
+
+    VmSpec(EnvSpec envSpec) {
+        super(envSpec)
+    }
 
     void useInstanceOffering(String name) {
         preCreate {

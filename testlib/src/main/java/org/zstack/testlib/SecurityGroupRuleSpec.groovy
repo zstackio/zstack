@@ -2,12 +2,16 @@ package org.zstack.testlib
 /**
  * Created by xing5 on 2017/2/20.
  */
-class SecurityGroupRuleSpec implements Spec {
+class SecurityGroupRuleSpec extends Spec {
     String type
     String protocol
     Integer startPort
     Integer endPort
     String allowedCidr
+
+    SecurityGroupRuleSpec(EnvSpec envSpec) {
+        super(envSpec)
+    }
 
     SpecID create(String uuid, String sessionId) {
         addSecurityGroupRule {

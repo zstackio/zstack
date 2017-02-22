@@ -8,11 +8,11 @@ import java.lang.reflect.Modifier
 /**
  * Created by xing5 on 2017/2/14.
  */
-class CreationSpecGenerator {
+class ApiHelperGenerator {
     Set<Class> actions
     List<String> groovyActions = []
 
-    CreationSpecGenerator() {
+    ApiHelperGenerator() {
         def reflections = Platform.getReflections()
         actions = reflections.getSubTypesOf(AbstractAction.class)
     }
@@ -26,11 +26,12 @@ class CreationSpecGenerator {
             String funcName = actionClass.simpleName - "Action"
             funcName = "${Character.toLowerCase(funcName.charAt(0))}${funcName.substring(1)}"
             groovyActions.add("""\
-    def $funcName(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = ${actionClass.typeName}.class) Closure c) {
+    def $funcName(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = ${actionClass.typeName}.class) Closure c) {
         def a = new ${actionClass.typeName}()
-        ${actionClass.fields.find {it.name == "sessionId"} != null ? "a.sessionId = Test.deployer.envSpec.session?.uuid" : ""}
-        def code = c.rehydrate(a, this, this)
-        code()
+        ${actionClass.fields.find {it.name == "sessionId"} != null ? "a.sessionId = Test.currentEnvSpec.session.uuid" : ""}
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
         return errorOut(a.call())
     }
 

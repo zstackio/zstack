@@ -1,6 +1,5 @@
 import org.zstack.testlib.DiskOfferingSpec
 import org.zstack.testlib.EnvSpec
-import org.zstack.testlib.Test
 import org.zstack.testlib.premium.TestPremium
 import org.zstack.utils.data.SizeUnit
 

@@ -1,5 +1,14 @@
 package org.zstack.testlib
 
+import org.springframework.http.HttpEntity
+import org.zstack.appliancevm.ApplianceVmCommands
+import org.zstack.appliancevm.ApplianceVmConstant
+import org.zstack.appliancevm.ApplianceVmKvmCommands
+import org.zstack.network.service.virtualrouter.VirtualRouterCommands
+import org.zstack.network.service.virtualrouter.VirtualRouterConstant
+import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend
+import org.zstack.utils.gson.JSONObjectUtil
+
 /**
  * Created by xing5 on 2017/2/15.
  */
@@ -10,8 +19,13 @@ class VirtualRouterOfferingSpec extends InstanceOfferingSpec {
     Closure zone
     Boolean isDefault
 
-    // cause VirtualRouterSimulator to be loaded
-    private VirtualRouterSimulator simulator = new VirtualRouterSimulator()
+    VirtualRouterOfferingSpec(EnvSpec envSpec) {
+        super(envSpec)
+
+        preCreate {
+            setupSimulator()
+        }
+    }
 
     @Override
     SpecID create(String uuid, String sessionId) {
@@ -68,6 +82,107 @@ class VirtualRouterOfferingSpec extends InstanceOfferingSpec {
             ImageSpec i = findSpec(name, ImageSpec.class)
             assert i != null: "cannot find the image[$name] defined in VirtualRouterOfferingSpec"
             return i.inventory.uuid
+        }
+    }
+
+    private void setupSimulator() {
+        simulator(ApplianceVmConstant.INIT_PATH) {
+            return new ApplianceVmCommands.InitRsp()
+        }
+
+        simulator(ApplianceVmConstant.REFRESH_FIREWALL_PATH) {
+            return new ApplianceVmCommands.RefreshFirewallRsp()
+        }
+
+        simulator(ApplianceVmKvmCommands.PrepareBootstrapInfoCmd.PATH) {
+            return new ApplianceVmKvmCommands.PrepareBootstrapInfoRsp()
+        }
+
+        simulator(ApplianceVmConstant.ECHO_PATH) {
+            return [:]
+        }
+
+        simulator(VirtualRouterConstant.VR_INIT) {
+            return new VirtualRouterCommands.InitRsp()
+        }
+
+        simulator(VirtualRouterConstant.VR_ADD_DHCP_PATH) {
+            return new VirtualRouterCommands.AddDhcpEntryRsp()
+        }
+
+        simulator(VirtualRouterConstant.VR_REVOKE_PORT_FORWARDING) {
+            return new VirtualRouterCommands.RevokePortForwardingRuleRsp()
+        }
+
+        simulator(VirtualRouterConstant.VR_CREATE_EIP) {
+            return new VirtualRouterCommands.CreateEipRsp()
+        }
+
+        simulator(VirtualRouterConstant.VR_REMOVE_EIP) {
+            return new VirtualRouterCommands.RemoveEipRsp()
+        }
+
+        simulator(VirtualRouterConstant.VR_SYNC_EIP) {
+            return new VirtualRouterCommands.SyncEipRsp()
+        }
+
+        simulator(VirtualRouterConstant.VR_CREATE_VIP) {
+            return new VirtualRouterCommands.CreateVipRsp()
+        }
+
+        simulator(VirtualRouterConstant.VR_REMOVE_VIP) {
+            return new VirtualRouterCommands.RemoveVipRsp()
+        }
+
+        simulator(VirtualRouterConstant.VR_SYNC_PORT_FORWARDING) {
+            return new VirtualRouterCommands.SyncPortForwardingRuleRsp()
+        }
+
+        simulator(VirtualRouterConstant.VR_CREATE_PORT_FORWARDING) {
+            return new VirtualRouterCommands.CreatePortForwardingRuleRsp()
+        }
+
+        simulator(VirtualRouterConstant.VR_ECHO_PATH) {
+            return [:]
+        }
+
+        simulator(VirtualRouterConstant.VR_PING) { HttpEntity<String> e ->
+            VirtualRouterCommands.PingCmd cmd = JSONObjectUtil.toObject(e.body, VirtualRouterCommands.PingCmd.class)
+            VirtualRouterCommands.PingRsp rsp = new VirtualRouterCommands.PingRsp()
+            rsp.uuid = cmd.uuid
+            return rsp
+        }
+
+        simulator(VirtualRouterConstant.VR_SYNC_SNAT_PATH) {
+            return new VirtualRouterCommands.SyncSNATRsp()
+        }
+
+        simulator(VirtualRouterLoadBalancerBackend.REFRESH_LB_PATH) {
+            return new VirtualRouterLoadBalancerBackend.RefreshLbRsp()
+        }
+
+        simulator(VirtualRouterLoadBalancerBackend.DELETE_LB_PATH) {
+            return new VirtualRouterLoadBalancerBackend.DeleteLbRsp()
+        }
+
+        simulator(VirtualRouterConstant.VR_SET_SNAT_PATH) {
+            return new VirtualRouterCommands.SetSNATRsp()
+        }
+
+        simulator(VirtualRouterConstant.VR_REMOVE_DNS_PATH) {
+            return new VirtualRouterCommands.RemoveDnsRsp()
+        }
+
+        simulator(VirtualRouterConstant.VR_SET_DNS_PATH) {
+            return new VirtualRouterCommands.SetDnsRsp()
+        }
+
+        simulator(VirtualRouterConstant.VR_CONFIGURE_NIC_PATH) {
+            return new VirtualRouterCommands.ConfigureNicRsp()
+        }
+
+        simulator(VirtualRouterConstant.VR_REMOVE_DHCP_PATH) {
+            return new VirtualRouterCommands.RemoveDhcpEntryRsp()
         }
     }
 }

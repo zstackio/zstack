@@ -89,11 +89,7 @@ trait Node {
         seen.pop()
     }
 
-    void delete(String sessionId = null) {
-        def sid = sessionId == null ? Test.deployer.envSpec.session?.uuid : sessionId
-        assert sid != null : "Not login yet!!! You need either call deploy() with a session uuid or call login() method" +
-                " in environment() of the test case"
-
+    void delete(String sessionId) {
         def allNodes = []
 
         walk {
@@ -110,75 +106,6 @@ trait Node {
         reversedNodes.each { Node n ->
             if (n instanceof DeleteAction) {
                 n.delete(sessionId)
-            }
-        }
-    }
-
-    void deploy(String sessionId = null) {
-        def sid = sessionId == null ? Test.deployer.envSpec.session?.uuid : sessionId
-        assert sid != null : "Not login yet!!! You need either call deploy() with a session uuid or call login() method" +
-                " in environment() of the test case"
-
-        def allNodes = []
-
-        walk {
-            if (it instanceof CreateAction) {
-                it.preOperations.each { it() }
-            }
-
-            allNodes.add(it)
-        }
-
-        Set<Node> resolvedNodes = new LinkedHashSet<>()
-        allNodes.each {
-            resolveDependency(it as Node, resolvedNodes, [])
-        }
-
-        def names = resolvedNodes.collect { sn ->
-            return sn.hasProperty("name") ? sn.name : sn.toString()
-        }
-
-        System.out.println("deploying path: ${names.join(" --> ")} ")
-
-        resolvedNodes.each {
-            if (!(it instanceof CreateAction)) {
-                return
-            }
-
-            def uuid = Platform.getUuid()
-            Test.deployer.envSpec.specsByUuid[uuid] = it
-
-            def suuid = sid
-            if (it instanceof HasSession) {
-                if (it.accountName != null) {
-                    AccountSpec aspec = Test.deployer.envSpec.find(it.accountName, AccountSpec.class)
-                    assert aspec != null: "cannot find the account[$it.accountName] defined in environment()"
-                    suuid = aspec.session.uuid
-                } else {
-                    def n = it.parent
-                    while (n != null) {
-                        if (!(n instanceof HasSession) || n.accountName == null) {
-                            n = n.parent
-                        } else {
-                            // one of the parent has the accountName set, use it
-                            AccountSpec aspec = Test.deployer.envSpec.find(n.accountName, AccountSpec.class)
-                            assert aspec != null: "cannot find the account[$n.accountName] defined in environment()"
-                            suuid = aspec.session.uuid
-                            break
-                        }
-                    }
-                }
-            }
-
-            SpecID id = (it as CreateAction).create(uuid, suuid)
-            if (id != null) {
-                Test.deployer.envSpec.specsByName[id.name] = it
-            }
-        }
-
-        allNodes.each {
-            if (it instanceof CreateAction) {
-                it.postOperations.each { it() }
             }
         }
     }

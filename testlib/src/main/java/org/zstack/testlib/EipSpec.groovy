@@ -8,7 +8,7 @@ import org.zstack.sdk.VmNicInventory
 /**
  * Created by xing5 on 2017/2/20.
  */
-class EipSpec implements Spec, HasSession {
+class EipSpec extends Spec implements HasSession {
     String name
     String description
     String requiredIp
@@ -16,6 +16,10 @@ class EipSpec implements Spec, HasSession {
     private Closure vmNic
 
     EipInventory inventory
+
+    EipSpec(EnvSpec envSpec) {
+        super(envSpec)
+    }
 
     SpecID create(String uuid, String sessionId) {
         inventory = createEip {

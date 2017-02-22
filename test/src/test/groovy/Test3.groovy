@@ -1,13 +1,11 @@
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.header.host.ConnectHostMsg
-import org.zstack.header.host.ConnectHostReply
 import org.zstack.kvm.KVMConstant
 import org.zstack.storage.primary.local.LocalStorageKvmBackend
-import org.zstack.testlib.Deployer
+import org.zstack.test.deployer.Deployer
 import org.zstack.testlib.DiskOfferingSpec
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.HttpError
-import org.zstack.testlib.LocalStorageSpec
 import org.zstack.testlib.premium.TestPremium
 import org.zstack.utils.data.SizeUnit
 

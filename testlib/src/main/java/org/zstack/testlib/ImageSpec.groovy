@@ -6,7 +6,7 @@ import org.zstack.utils.data.SizeUnit
 /**
  * Created by xing5 on 2017/2/15.
  */
-class ImageSpec implements Spec, HasSession {
+class ImageSpec extends Spec implements HasSession {
     String name
     String description
     Long size = SizeUnit.GIGABYTE.toByte(10)
@@ -18,6 +18,10 @@ class ImageSpec implements Spec, HasSession {
     String format = "qcow2"
 
     ImageInventory inventory
+
+    ImageSpec(EnvSpec envSpec) {
+        super(envSpec)
+    }
 
     SpecID create(String uuid, String sessionId) {
         inventory = addImage {

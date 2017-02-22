@@ -15,6 +15,14 @@ import org.zstack.utils.gson.JSONObjectUtil
  */
 class NfsPrimaryStorageSpec extends PrimaryStorageSpec {
 
+    NfsPrimaryStorageSpec(EnvSpec envSpec) {
+        super(envSpec)
+
+        preCreate {
+            setupSimulator()
+        }
+    }
+
     SpecID create(String uuid, String sessionId) {
         inventory = addNfsPrimaryStorage {
             delegate.resourceUuid = uuid
@@ -36,18 +44,18 @@ class NfsPrimaryStorageSpec extends PrimaryStorageSpec {
         return id(name, inventory.uuid)
     }
 
-    static {
-        Deployer.simulator(NfsPrimaryStorageKVMBackend.GET_VOLUME_BASE_IMAGE_PATH) {
+    private void setupSimulator() {
+        simulator(NfsPrimaryStorageKVMBackend.GET_VOLUME_BASE_IMAGE_PATH) {
             def rsp = new LocalStorageKvmBackend.GetVolumeBaseImagePathRsp()
             rsp.path = "/some/fake/path"
             return rsp
         }
 
-        Deployer.simulator(NfsPrimaryStorageKVMBackend.UNMOUNT_PRIMARY_STORAGE_PATH) {
+        simulator(NfsPrimaryStorageKVMBackend.UNMOUNT_PRIMARY_STORAGE_PATH) {
             return new KVMAgentCommands.AgentResponse()
         }
 
-        Deployer.simulator(NfsPrimaryStorageKVMBackend.MOUNT_PRIMARY_STORAGE_PATH) { HttpEntity<String> e, EnvSpec espec ->
+        simulator(NfsPrimaryStorageKVMBackend.MOUNT_PRIMARY_STORAGE_PATH) { HttpEntity<String> e, EnvSpec espec ->
             def cmd = JSONObjectUtil.toObject(e.getBody(), NfsPrimaryStorageKVMBackendCommands.MountCmd.class)
             NfsPrimaryStorageSpec spec = espec.specByUuid(cmd.uuid) as NfsPrimaryStorageSpec
             def rsp = new NfsPrimaryStorageKVMBackendCommands.MountAgentResponse()
@@ -56,7 +64,7 @@ class NfsPrimaryStorageSpec extends PrimaryStorageSpec {
             return rsp
         }
 
-        Deployer.simulator(NfsPrimaryStorageKVMBackend.GET_CAPACITY_PATH) { HttpEntity<String> e, EnvSpec espec ->
+        simulator(NfsPrimaryStorageKVMBackend.GET_CAPACITY_PATH) { HttpEntity<String> e, EnvSpec espec ->
             def cmd = JSONObjectUtil.toObject(e.getBody(), NfsPrimaryStorageKVMBackendCommands.GetCapacityCmd.class)
             NfsPrimaryStorageSpec spec = espec.specByUuid(cmd.uuid)
             def rsp = new NfsPrimaryStorageKVMBackendCommands.GetCapacityResponse()
@@ -65,72 +73,72 @@ class NfsPrimaryStorageSpec extends PrimaryStorageSpec {
             return rsp
         }
 
-        Deployer.simulator(NfsPrimaryStorageKVMBackend.CREATE_EMPTY_VOLUME_PATH) {
+        simulator(NfsPrimaryStorageKVMBackend.CREATE_EMPTY_VOLUME_PATH) {
             return NfsPrimaryStorageKVMBackendCommands.CreateRootVolumeFromTemplateResponse()
         }
 
-        Deployer.simulator(NfsPrimaryToSftpBackupKVMBackend.DOWNLOAD_FROM_SFTP_PATH) {
+        simulator(NfsPrimaryToSftpBackupKVMBackend.DOWNLOAD_FROM_SFTP_PATH) {
             return new NfsPrimaryStorageKVMBackendCommands.DownloadBitsFromSftpBackupStorageResponse()
         }
 
-        Deployer.simulator(NfsPrimaryStorageKVMBackend.PING_PATH) {
+        simulator(NfsPrimaryStorageKVMBackend.PING_PATH) {
             return new NfsPrimaryStorageKVMBackendCommands.NfsPrimaryStorageAgentResponse()
         }
 
-        Deployer.simulator(NfsPrimaryStorageKVMBackend.DELETE_PATH) {
+        simulator(NfsPrimaryStorageKVMBackend.DELETE_PATH) {
             return new NfsPrimaryStorageKVMBackendCommands.DeleteResponse()
         }
 
-        Deployer.simulator(NfsPrimaryStorageKVMBackend.MOVE_BITS_PATH) {
+        simulator(NfsPrimaryStorageKVMBackend.MOVE_BITS_PATH) {
             return new NfsPrimaryStorageKVMBackendCommands.MoveBitsRsp()
         }
 
-        Deployer.simulator(NfsPrimaryToSftpBackupKVMBackend.UPLOAD_TO_SFTP_PATH) {
+        simulator(NfsPrimaryToSftpBackupKVMBackend.UPLOAD_TO_SFTP_PATH) {
             return new NfsPrimaryStorageKVMBackendCommands.UploadToSftpResponse()
         }
 
-        Deployer.simulator(NfsPrimaryStorageKVMBackend.OFFLINE_SNAPSHOT_MERGE) {
+        simulator(NfsPrimaryStorageKVMBackend.OFFLINE_SNAPSHOT_MERGE) {
             return new NfsPrimaryStorageKVMBackendCommands.OfflineMergeSnapshotRsp()
         }
 
-        Deployer.simulator(NfsPrimaryStorageKVMBackend.CHECK_BITS_PATH) {
+        simulator(NfsPrimaryStorageKVMBackend.CHECK_BITS_PATH) {
             return new NfsPrimaryStorageKVMBackendCommands.CheckIsBitsExistingRsp()
         }
 
-        Deployer.simulator(NfsPrimaryStorageKVMBackend.CREATE_EMPTY_VOLUME_PATH) {
+        simulator(NfsPrimaryStorageKVMBackend.CREATE_EMPTY_VOLUME_PATH) {
             return new NfsPrimaryStorageKVMBackendCommands.CreateEmptyVolumeResponse()
         }
 
-        Deployer.simulator(NfsPrimaryStorageKVMBackend.CREATE_TEMPLATE_FROM_VOLUME_PATH) {
+        simulator(NfsPrimaryStorageKVMBackend.CREATE_TEMPLATE_FROM_VOLUME_PATH) {
             return new NfsPrimaryStorageKVMBackendCommands.CreateTemplateFromVolumeRsp()
         }
 
-        Deployer.simulator(NfsPrimaryStorageKVMBackend.REVERT_VOLUME_FROM_SNAPSHOT_PATH) {
+        simulator(NfsPrimaryStorageKVMBackend.REVERT_VOLUME_FROM_SNAPSHOT_PATH) {
             return new NfsPrimaryStorageKVMBackendCommands.RevertVolumeFromSnapshotResponse()
         }
 
-        Deployer.simulator(NfsPrimaryStorageKVMBackend.REBASE_MERGE_SNAPSHOT_PATH) {
+        simulator(NfsPrimaryStorageKVMBackend.REBASE_MERGE_SNAPSHOT_PATH) {
             def rsp = new NfsPrimaryStorageKVMBackendCommands.RebaseAndMergeSnapshotsResponse()
             rsp.size = 0
             rsp.actualSize = 0
             return rsp
         }
 
-        Deployer.simulator(NfsPrimaryStorageKVMBackend.GET_VOLUME_SIZE_PATH) {
+        simulator(NfsPrimaryStorageKVMBackend.GET_VOLUME_SIZE_PATH) {
             def rsp = new NfsPrimaryStorageKVMBackendCommands.GetVolumeActualSizeRsp()
             rsp.size = 0
             rsp.actualSize = 0
             return rsp
         }
 
-        Deployer.simulator(NfsPrimaryStorageKVMBackend.MERGE_SNAPSHOT_PATH) {
+        simulator(NfsPrimaryStorageKVMBackend.MERGE_SNAPSHOT_PATH) {
             def rsp = new NfsPrimaryStorageKVMBackendCommands.MergeSnapshotResponse()
             rsp.size = 0
             rsp.actualSize = 0
             return rsp
         }
 
-        Deployer.simulator(NfsPrimaryStorageKVMBackend.REMOUNT_PATH) { HttpEntity<String> e, EnvSpec espec ->
+        simulator(NfsPrimaryStorageKVMBackend.REMOUNT_PATH) { HttpEntity<String> e, EnvSpec espec ->
             def cmd = JSONObjectUtil.toObject(e.getBody(), NfsPrimaryStorageKVMBackendCommands.RemountCmd.class)
             NfsPrimaryStorageSpec spec = espec.specByUuid(cmd.uuid) as NfsPrimaryStorageSpec
             def rsp = new NfsPrimaryStorageKVMBackendCommands.NfsPrimaryStorageAgentResponse()
@@ -139,7 +147,7 @@ class NfsPrimaryStorageSpec extends PrimaryStorageSpec {
             return rsp
         }
 
-        Deployer.simulator(NfsPrimaryStorageKVMBackend.UPDATE_MOUNT_POINT_PATH) { HttpEntity<String> e, EnvSpec espec ->
+        simulator(NfsPrimaryStorageKVMBackend.UPDATE_MOUNT_POINT_PATH) { HttpEntity<String> e, EnvSpec espec ->
             def cmd = JSONObjectUtil.toObject(e.getBody(), NfsPrimaryStorageKVMBackendCommands.UpdateMountPointCmd.class)
             NfsPrimaryStorageSpec spec = espec.specByUuid(cmd.uuid) as NfsPrimaryStorageSpec
             def rsp = new NfsPrimaryStorageKVMBackendCommands.UpdateMountPointRsp()
@@ -148,7 +156,7 @@ class NfsPrimaryStorageSpec extends PrimaryStorageSpec {
             return rsp
         }
 
-        Deployer.simulator(NfsPrimaryToSftpBackupKVMBackend.CREATE_VOLUME_FROM_TEMPLATE_PATH) {
+        simulator(NfsPrimaryToSftpBackupKVMBackend.CREATE_VOLUME_FROM_TEMPLATE_PATH) {
             return new NfsPrimaryStorageKVMBackendCommands.CreateRootVolumeFromTemplateResponse()
         }
     }

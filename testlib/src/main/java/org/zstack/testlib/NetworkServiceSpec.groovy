@@ -5,9 +5,13 @@ import org.zstack.sdk.NetworkServiceProviderInventory
 /**
  * Created by xing5 on 2017/2/15.
  */
-class NetworkServiceSpec implements Spec, HasSession {
+class NetworkServiceSpec extends Spec implements HasSession {
     String provider
     List<String> types
+
+    NetworkServiceSpec(EnvSpec envSpec) {
+        super(envSpec)
+    }
 
     SpecID create(String uuid, String sessionId) {
         List<NetworkServiceProviderInventory> providers = queryNetworkServiceProvider {

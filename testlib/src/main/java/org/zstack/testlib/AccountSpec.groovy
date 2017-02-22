@@ -6,12 +6,16 @@ import org.zstack.sdk.SessionInventory
 /**
  * Created by xing5 on 2017/2/15.
  */
-class AccountSpec implements Spec {
+class AccountSpec extends Spec {
     String name
     String password
 
     AccountInventory inventory
     SessionInventory session
+
+    AccountSpec(EnvSpec envSpec) {
+        super(envSpec)
+    }
 
     SpecID create(String uuid, String sessionId) {
         inventory = createAccount {

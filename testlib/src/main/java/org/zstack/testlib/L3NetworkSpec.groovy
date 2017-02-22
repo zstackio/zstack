@@ -2,11 +2,15 @@ package org.zstack.testlib
 
 import org.zstack.sdk.L3NetworkInventory
 
-class L3NetworkSpec implements Spec, HasSession {
+class L3NetworkSpec extends Spec implements HasSession {
     String name
     String description
 
     L3NetworkInventory inventory
+
+    L3NetworkSpec(EnvSpec envSpec) {
+        super(envSpec)
+    }
 
     SpecID create(String uuid, String sessionId) {
         inventory = createL3Network {
@@ -29,7 +33,7 @@ class L3NetworkSpec implements Spec, HasSession {
     }
 
     NetworkServiceSpec service(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = NetworkServiceSpec.class) Closure c) {
-        def spec = new NetworkServiceSpec()
+        def spec = new NetworkServiceSpec(envSpec)
         c.delegate = spec
         c.resolveStrategy = Closure.DELEGATE_FIRST
         c()
@@ -38,7 +42,7 @@ class L3NetworkSpec implements Spec, HasSession {
     }
 
     IpRangeSpec ip(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = IpRangeSpec.class) Closure c) {
-        def spec = new IpRangeSpec()
+        def spec = new IpRangeSpec(envSpec)
         c.delegate = spec
         c.resolveStrategy = Closure.DELEGATE_FIRST
         c()

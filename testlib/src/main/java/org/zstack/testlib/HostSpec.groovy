@@ -6,7 +6,7 @@ import org.zstack.utils.data.SizeUnit
 /**
  * Created by xing5 on 2017/2/12.
  */
-abstract class HostSpec implements Spec {
+abstract class HostSpec extends Spec {
     String name
     String description
     String managementIp = "127.0.0.1"
@@ -17,7 +17,8 @@ abstract class HostSpec implements Spec {
 
     HostInventory inventory
 
-    HostSpec() {
+    HostSpec(EnvSpec envSpec) {
+        super(envSpec)
     }
 
     @Override

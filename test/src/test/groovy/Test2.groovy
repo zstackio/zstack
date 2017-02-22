@@ -1,4 +1,5 @@
 import org.junit.Test
+import org.zstack.testlib.ApiHelperGenerator
 
 /**
  * Created by xing5 on 2017/2/17.
@@ -7,11 +8,6 @@ class Test2 {
 
     @Test
     void test() {
-        def lst = ["t":[1, 2, 3]]
-        def p = { v ->
-            println("${v.class}")
-        }
-
-        p(lst)
+        new ApiHelperGenerator().generate("/root/CreationSpec.groovy")
     }
 }

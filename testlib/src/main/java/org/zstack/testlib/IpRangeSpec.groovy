@@ -5,7 +5,7 @@ import org.zstack.sdk.IpRangeInventory
 /**
  * Created by xing5 on 2017/2/15.
  */
-class IpRangeSpec implements Spec, HasSession {
+class IpRangeSpec extends Spec implements HasSession {
     String name = "ip-range"
     String description
     String startIp
@@ -14,6 +14,10 @@ class IpRangeSpec implements Spec, HasSession {
     String gateway
 
     IpRangeInventory inventory
+
+    IpRangeSpec(EnvSpec envSpec) {
+        super(envSpec)
+    }
 
     SpecID create(String uuid, String sessionId) {
         inventory = addIpRange {

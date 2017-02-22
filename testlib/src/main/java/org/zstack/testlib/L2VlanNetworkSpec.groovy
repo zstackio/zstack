@@ -8,6 +8,10 @@ import org.zstack.sdk.L2NetworkInventory
 class L2VlanNetworkSpec extends L2NetworkSpec {
     Integer vlan
 
+    L2VlanNetworkSpec(EnvSpec envSpec) {
+        super(envSpec)
+    }
+
     SpecID create(String uuid, String sessionId) {
         inventory = createL2VlanNetwork {
             delegate.name = name

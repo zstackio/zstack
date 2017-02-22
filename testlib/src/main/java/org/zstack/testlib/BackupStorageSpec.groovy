@@ -6,7 +6,7 @@ import org.zstack.utils.data.SizeUnit
 /**
  * Created by xing5 on 2017/2/15.
  */
-abstract class BackupStorageSpec implements Spec {
+abstract class BackupStorageSpec extends Spec {
     String name
     String description
     String url
@@ -15,8 +15,12 @@ abstract class BackupStorageSpec implements Spec {
 
     BackupStorageInventory inventory
 
+    BackupStorageSpec(EnvSpec envSpec) {
+        super(envSpec)
+    }
+
     ImageSpec image(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = ImageSpec.class) Closure c) {
-        def i = new ImageSpec()
+        def i = new ImageSpec(envSpec)
         c.delegate = i
         c.resolveStrategy = Closure.DELEGATE_FIRST
         c()

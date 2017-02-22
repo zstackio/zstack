@@ -5,15 +5,19 @@ import org.zstack.sdk.L2NetworkInventory
 /**
  * Created by xing5 on 2017/2/15.
  */
-abstract class L2NetworkSpec implements Spec {
+abstract class L2NetworkSpec extends Spec {
     String name
     String description
     String physicalInterface
 
     L2NetworkInventory inventory
 
+    L2NetworkSpec(EnvSpec envSpec) {
+        super(envSpec)
+    }
+
     L3NetworkSpec l3Network(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = L3NetworkSpec.class) Closure c) {
-        def l3 = new L3NetworkSpec()
+        def l3 = new L3NetworkSpec(envSpec)
         c.delegate = l3
         c.resolveStrategy = Closure.DELEGATE_FIRST
         c()

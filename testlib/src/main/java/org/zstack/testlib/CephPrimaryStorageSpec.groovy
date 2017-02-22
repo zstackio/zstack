@@ -19,6 +19,14 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
     List<String> monUrls
     Map<String, String> monAddrs = [:]
 
+    CephPrimaryStorageSpec(EnvSpec envSpec) {
+        super(envSpec)
+
+        preCreate {
+            setupSimulator()
+        }
+    }
+
     SpecID create(String uuid, String sessionId) {
         inventory = addCephPrimaryStorage {
             delegate.resourceUuid = uuid
@@ -41,8 +49,8 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
         return id(name, inventory.uuid)
     }
 
-    static {
-        Deployer.simulator(CephPrimaryStorageBase.GET_FACTS) { HttpEntity<String> e, EnvSpec spec ->
+    private void setupSimulator() {
+        simulator(CephPrimaryStorageBase.GET_FACTS) { HttpEntity<String> e, EnvSpec spec ->
             CephPrimaryStorageBase.GetFactsCmd cmd = JSONObjectUtil.toObject(e.body, CephPrimaryStorageBase.GetFactsCmd.class)
             CephPrimaryStorageSpec cspec = spec.specByUuid(cmd.uuid)
             assert cspec != null: "cannot find ceph primary storage[uuid:${cmd.uuid}], check your environment()"
@@ -58,11 +66,11 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
             return rsp
         }
 
-        Deployer.simulator(CephPrimaryStorageBase.DELETE_POOL_PATH) {
+        simulator(CephPrimaryStorageBase.DELETE_POOL_PATH) {
             return new CephPrimaryStorageBase.DeletePoolRsp()
         }
 
-        Deployer.simulator(CephPrimaryStorageBase.INIT_PATH) { HttpEntity<String> e, EnvSpec spec ->
+        simulator(CephPrimaryStorageBase.INIT_PATH) { HttpEntity<String> e, EnvSpec spec ->
             def cmd = JSONObjectUtil.toObject(e.body, CephPrimaryStorageBase.InitCmd.class)
             CephPrimaryStorageSpec cspec = spec.specByUuid(cmd.uuid)
             assert cspec != null: "cannot find ceph primary storage[uuid:${cmd.uuid}], check your environment()"
@@ -75,75 +83,75 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
             return rsp
         }
 
-        Deployer.simulator(CephPrimaryStorageMonBase.PING_PATH) {
+        simulator(CephPrimaryStorageMonBase.PING_PATH) {
             return new CephPrimaryStorageMonBase.PingRsp()
         }
 
-        Deployer.simulator(CephPrimaryStorageBase.CREATE_VOLUME_PATH) {
+        simulator(CephPrimaryStorageBase.CREATE_VOLUME_PATH) {
             return new CephPrimaryStorageBase.CreateEmptyVolumeRsp()
         }
 
-        Deployer.simulator(CephPrimaryStorageBase.KVM_CREATE_SECRET_PATH) {
+        simulator(CephPrimaryStorageBase.KVM_CREATE_SECRET_PATH) {
             return new  KVMAgentCommands.AgentResponse()
         }
 
-        Deployer.simulator(CephPrimaryStorageBase.DELETE_PATH) {
+        simulator(CephPrimaryStorageBase.DELETE_PATH) {
             return new CephPrimaryStorageBase.DeleteRsp()
         }
 
-        Deployer.simulator(CephPrimaryStorageBase.CREATE_SNAPSHOT_PATH) {
+        simulator(CephPrimaryStorageBase.CREATE_SNAPSHOT_PATH) {
             def rsp = new CephPrimaryStorageBase.CreateSnapshotRsp()
             rsp.size = 0
             return rsp
         }
 
-        Deployer.simulator(CephPrimaryStorageBase.DELETE_SNAPSHOT_PATH) {
+        simulator(CephPrimaryStorageBase.DELETE_SNAPSHOT_PATH) {
             return new CephPrimaryStorageBase.DeleteSnapshotRsp()
         }
 
-        Deployer.simulator(CephPrimaryStorageBase.PROTECT_SNAPSHOT_PATH) {
+        simulator(CephPrimaryStorageBase.PROTECT_SNAPSHOT_PATH) {
             return new CephPrimaryStorageBase.ProtectSnapshotRsp()
         }
 
-        Deployer.simulator(CephPrimaryStorageBase.UNPROTECT_SNAPSHOT_PATH) {
+        simulator(CephPrimaryStorageBase.UNPROTECT_SNAPSHOT_PATH) {
             return new CephPrimaryStorageBase.UnprotectedSnapshotRsp()
         }
 
-        Deployer.simulator(CephPrimaryStorageBase.CLONE_PATH) {
+        simulator(CephPrimaryStorageBase.CLONE_PATH) {
             return new CephPrimaryStorageBase.CloneRsp()
         }
 
-        Deployer.simulator(CephPrimaryStorageBase.FLATTEN_PATH) {
+        simulator(CephPrimaryStorageBase.FLATTEN_PATH) {
             return new CephPrimaryStorageBase.FlattenRsp()
         }
 
-        Deployer.simulator(CephPrimaryStorageBase.CP_PATH) {
+        simulator(CephPrimaryStorageBase.CP_PATH) {
             def rsp = new CephPrimaryStorageBase.CpRsp()
             rsp.size = 0
             rsp.actualSize = 0
             return rsp
         }
 
-        Deployer.simulator(CephPrimaryStorageBase.GET_VOLUME_SIZE_PATH) {
+        simulator(CephPrimaryStorageBase.GET_VOLUME_SIZE_PATH) {
             def rsp = new CephPrimaryStorageBase.GetVolumeSizeRsp()
             rsp.actualSize = 0
             rsp.size = 0
             return rsp
         }
 
-        Deployer.simulator(CephPrimaryStorageBase.ROLLBACK_SNAPSHOT_PATH) {
+        simulator(CephPrimaryStorageBase.ROLLBACK_SNAPSHOT_PATH) {
             return new CephPrimaryStorageBase.RollbackSnapshotRsp()
         }
 
-        Deployer.simulator(CephPrimaryStorageBase.KVM_HA_SETUP_SELF_FENCER) {
+        simulator(CephPrimaryStorageBase.KVM_HA_SETUP_SELF_FENCER) {
             return new CephPrimaryStorageBase.AgentResponse()
         }
 
-        Deployer.simulator(CephPrimaryStorageBase.KVM_HA_CANCEL_SELF_FENCER) {
+        simulator(CephPrimaryStorageBase.KVM_HA_CANCEL_SELF_FENCER) {
             return new CephPrimaryStorageBase.AgentResponse()
         }
 
-        Deployer.simulator(CephPrimaryStorageBase.DELETE_IMAGE_CACHE) {
+        simulator(CephPrimaryStorageBase.DELETE_IMAGE_CACHE) {
             return new CephPrimaryStorageBase.AgentResponse()
         }
     }

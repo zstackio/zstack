@@ -8,13 +8,21 @@ import org.zstack.sdk.VmNicInventory
 /**
  * Created by xing5 on 2017/2/20.
  */
-class SecurityGroupSpec implements Spec, HasSession {
+class SecurityGroupSpec extends Spec implements HasSession {
     String name
     String description
     private List<Closure> l3Networks = []
     private List<Closure> vmNics = []
 
     SecurityGroupInventory inventory
+
+    SecurityGroupSpec(EnvSpec envSpec) {
+        super(envSpec)
+
+        preCreate {
+            setupSimulator()
+        }
+    }
 
     SpecID create(String uuid, String sessionId) {
         inventory = createSecurityGroup {
@@ -85,7 +93,7 @@ class SecurityGroupSpec implements Spec, HasSession {
     }
 
     SecurityGroupRuleSpec rule(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = SecurityGroupRuleSpec.class) Closure c) {
-        def spec = new SecurityGroupRuleSpec()
+        def spec = new SecurityGroupRuleSpec(envSpec)
         c.delegate = spec
         c.resolveStrategy = Closure.DELEGATE_FIRST
         c()
@@ -93,16 +101,16 @@ class SecurityGroupSpec implements Spec, HasSession {
         return spec
     }
 
-    static {
-        Deployer.simulator(KVMSecurityGroupBackend.SECURITY_GROUP_APPLY_RULE_PATH) {
+    private void setupSimulator() {
+        simulator(KVMSecurityGroupBackend.SECURITY_GROUP_APPLY_RULE_PATH) {
             return new KVMAgentCommands.ApplySecurityGroupRuleResponse()
         }
 
-        Deployer.simulator(KVMSecurityGroupBackend.SECURITY_GROUP_REFRESH_RULE_ON_HOST_PATH) {
+        simulator(KVMSecurityGroupBackend.SECURITY_GROUP_REFRESH_RULE_ON_HOST_PATH) {
             return new KVMAgentCommands.RefreshAllRulesOnHostResponse()
         }
 
-        Deployer.simulator(KVMSecurityGroupBackend.SECURITY_GROUP_CLEANUP_UNUSED_RULE_ON_HOST_PATH) {
+        simulator(KVMSecurityGroupBackend.SECURITY_GROUP_CLEANUP_UNUSED_RULE_ON_HOST_PATH) {
             return new KVMAgentCommands.CleanupUnusedRulesOnHostResponse()
         }
     }

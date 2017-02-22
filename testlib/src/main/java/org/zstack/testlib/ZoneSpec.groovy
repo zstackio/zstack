@@ -7,7 +7,7 @@ import org.zstack.utils.gson.JSONObjectUtil
 /**
  * Created by xing5 on 2017/2/12.
  */
-class ZoneSpec implements Spec {
+class ZoneSpec extends Spec {
     String name
     String description
     List<ClusterSpec> clusters = []
@@ -19,16 +19,12 @@ class ZoneSpec implements Spec {
 
     ZoneInventory inventory
 
-    ZoneSpec(String name, String description) {
-        this.name = name
-        this.description = description
-    }
-
-    ZoneSpec() {
+    ZoneSpec(EnvSpec envSpec) {
+        super(envSpec)
     }
 
     ClusterSpec cluster(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = ClusterSpec.class) Closure c) {
-        def cspec = new ClusterSpec()
+        def cspec = new ClusterSpec(envSpec)
         c.delegate = cspec
         c.resolveStrategy = Closure.DELEGATE_FIRST
         c()
@@ -38,7 +34,7 @@ class ZoneSpec implements Spec {
     }
 
     PrimaryStorageSpec nfsPrimaryStorage(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = NfsPrimaryStorageSpec.class) Closure c) {
-        def nspec = new NfsPrimaryStorageSpec()
+        def nspec = new NfsPrimaryStorageSpec(envSpec)
         c.delegate = nspec
         c.resolveStrategy = Closure.DELEGATE_FIRST
         c()
@@ -48,7 +44,7 @@ class ZoneSpec implements Spec {
     }
 
     PrimaryStorageSpec localPrimaryStorage(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = LocalStorageSpec.class) Closure c) {
-        def nspec = new LocalStorageSpec()
+        def nspec = new LocalStorageSpec(envSpec)
         c.delegate = nspec
         c.resolveStrategy = Closure.DELEGATE_FIRST
         c()
@@ -58,7 +54,7 @@ class ZoneSpec implements Spec {
     }
 
     PrimaryStorageSpec cephPrimaryStorage(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = CephPrimaryStorageSpec.class) Closure c) {
-        def nspec = new CephPrimaryStorageSpec()
+        def nspec = new CephPrimaryStorageSpec(envSpec)
         c.delegate = nspec
         c.resolveStrategy = Closure.DELEGATE_FIRST
         c()
@@ -68,7 +64,7 @@ class ZoneSpec implements Spec {
     }
 
     PrimaryStorageSpec smpPrimaryStorage(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = SharedMountPointPrimaryStorageSpec.class) Closure c) {
-        def nspec = new SharedMountPointPrimaryStorageSpec()
+        def nspec = new SharedMountPointPrimaryStorageSpec(envSpec)
         c.delegate = nspec
         c.resolveStrategy = Closure.DELEGATE_FIRST
         c()
@@ -78,7 +74,7 @@ class ZoneSpec implements Spec {
     }
 
     L2NetworkSpec l2NoVlanNetwork(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = L2NoVlanNetworkSpec.class) Closure c) {
-        def lspec = new L2NoVlanNetworkSpec()
+        def lspec = new L2NoVlanNetworkSpec(envSpec)
         c.delegate = lspec
         c.resolveStrategy = Closure.DELEGATE_FIRST
         c()
@@ -88,7 +84,7 @@ class ZoneSpec implements Spec {
     }
 
     L2NetworkSpec l2VlanNetwork(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = L2VlanNetworkSpec.class) Closure c) {
-        def lspec = new L2VlanNetworkSpec()
+        def lspec = new L2VlanNetworkSpec(envSpec)
         c.delegate = lspec
         c.resolveStrategy = Closure.DELEGATE_FIRST
         c()
@@ -98,7 +94,7 @@ class ZoneSpec implements Spec {
     }
 
     SecurityGroupSpec securityGroup(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = SecurityGroupSpec.class) Closure c) {
-        def spec = new SecurityGroupSpec()
+        def spec = new SecurityGroupSpec(envSpec)
         c.delegate = spec
         c.resolveStrategy = Closure.DELEGATE_FIRST
         c()
@@ -117,7 +113,7 @@ class ZoneSpec implements Spec {
     }
 
     VirtualRouterOfferingSpec virtualRouterOffering(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = VirtualRouterOfferingSpec.class) Closure c) {
-        def spec = new VirtualRouterOfferingSpec()
+        def spec = new VirtualRouterOfferingSpec(envSpec)
         c.delegate = spec
         c.resolveStrategy = Closure.DELEGATE_FIRST
         c()
@@ -127,7 +123,7 @@ class ZoneSpec implements Spec {
     }
 
     EipSpec eip(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = EipSpec.class) Closure c) {
-        def spec = new EipSpec()
+        def spec = new EipSpec(envSpec)
         c.delegate = spec
         c.resolveStrategy = Closure.DELEGATE_FIRST
         c()
@@ -136,7 +132,7 @@ class ZoneSpec implements Spec {
     }
 
     PortForwardingSpec portForwarding(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = PortForwardingSpec.class) Closure c) {
-        def spec = new PortForwardingSpec()
+        def spec = new PortForwardingSpec(envSpec)
         c.delegate = spec
         c.resolveStrategy = Closure.DELEGATE_FIRST
         c()
@@ -145,7 +141,7 @@ class ZoneSpec implements Spec {
     }
 
     LoadBalancerSpec lb(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = LoadBalancerSpec.class) Closure cl) {
-        def spec = new LoadBalancerSpec()
+        def spec = new LoadBalancerSpec(envSpec)
         cl.delegate = spec
         cl.resolveStrategy = Closure.DELEGATE_FIRST
         cl()
@@ -168,7 +164,7 @@ class ZoneSpec implements Spec {
             def a = new AttachBackupStorageToZoneAction()
             a.zoneUuid = inventory.uuid
             a.backupStorageUuid = bs.inventory.uuid
-            a.sessionId = Test.deployer.envSpec.session.uuid
+            a.sessionId = sessionId
             def res = a.call()
             assert res.error == null : "AttachBackupStorageToZoneAction failure: ${JSONObjectUtil.toJsonString(res.error)}"
         }

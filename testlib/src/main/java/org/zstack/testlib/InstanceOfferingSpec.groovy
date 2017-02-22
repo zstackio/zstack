@@ -5,7 +5,7 @@ import org.zstack.sdk.InstanceOfferingInventory
 /**
  * Created by xing5 on 2017/2/15.
  */
-class InstanceOfferingSpec implements Spec, HasSession {
+class InstanceOfferingSpec extends Spec implements HasSession {
     String name
     String description
     Long memory
@@ -13,6 +13,10 @@ class InstanceOfferingSpec implements Spec, HasSession {
     String allocatorStrategy
 
     public InstanceOfferingInventory inventory
+
+    InstanceOfferingSpec(EnvSpec envSpec) {
+        super(envSpec)
+    }
 
     SpecID create(String uuid, String sessionId) {
         inventory = createInstanceOffering {

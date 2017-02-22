@@ -5,13 +5,17 @@ import org.zstack.sdk.DiskOfferingInventory
 /**
  * Created by xing5 on 2017/2/16.
  */
-class DiskOfferingSpec implements Spec, HasSession {
+class DiskOfferingSpec extends Spec implements HasSession {
     String name
     String description
     Long diskSize
     String allocatorStrategy
 
     DiskOfferingInventory inventory
+
+    DiskOfferingSpec(EnvSpec envSpec) {
+        super(envSpec)
+    }
 
     SpecID create(String uuid, String sessionId) {
         inventory = createDiskOffering {

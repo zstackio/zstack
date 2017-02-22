@@ -15,6 +15,13 @@ class OneL3OneIpRangeNoIpUsed extends SubCase {
     EnvSpec env
 
     @Override
+    void setup() {
+        spring {
+            include("vip.xml")
+        }
+    }
+
+    @Override
     void environment() {
         env = env {
             zone {

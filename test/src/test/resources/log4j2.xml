@@ -19,7 +19,7 @@
         <RollingFile name="DiskCapacityLogger" fileName="disk-capacity.log"
             filePattern="disk-capacity-%d{yyyy-MM-dd}-%i.log" >
             <PatternLayout>
-                <pattern>%highlight{%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{1}] (%t) %m%xEx{filters(${filters})}%n}{FATAL=red,ERROR=red,WARN=Yellow,INFO=white,DEBUG=white,TRACE=white}</pattern>
+                <pattern>%highlight{%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{1}] (%t) %m%xEx{filters(${filters})}%n}{FATAL=red,ERROR=red,WARN=Yellow,INFO=blue,DEBUG=white,TRACE=white}</pattern>
             </PatternLayout>
             <Policies>
                 <SizeBasedTriggeringPolicy size="150 MB" />
@@ -30,7 +30,7 @@
         <RollingFile name="DiskCapacityLoggerDetails" fileName="disk-capacity-details.log"
             filePattern="disk-capacity-details-%d{yyyy-MM-dd}-%i.log" >
             <PatternLayout>
-                <pattern>%highlight{%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{1}] (%t) %m%xEx{filters(${filters})}%n}{FATAL=red,ERROR=red,WARN=Yellow,INFO=white,DEBUG=white,TRACE=white}</pattern>
+                <pattern>%highlight{%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{1}] (%t) %m%xEx{filters(${filters})}%n}{FATAL=red,ERROR=red,WARN=Yellow,INFO=blue,DEBUG=white,TRACE=white}</pattern>
             </PatternLayout>
             <Policies>
                 <SizeBasedTriggeringPolicy size="150 MB" />
@@ -41,7 +41,7 @@
         <RollingFile name="ApiRequestLogger" fileName="zstack-api.log"
             filePattern="zstack-api-%d{yyyy-MM-dd}-%i.log" >
             <PatternLayout>
-                <pattern>%highlight{%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{1}] (%t) %m%xEx{filters(${filters})}%n}{FATAL=red,ERROR=red,WARN=Yellow,INFO=white,DEBUG=white,TRACE=white}</pattern>
+                <pattern>%highlight{%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{1}] (%t) %m%xEx{filters(${filters})}%n}{FATAL=red,ERROR=red,WARN=Yellow,INFO=blue,DEBUG=white,TRACE=white}</pattern>
             </PatternLayout>
             <Policies>
                 <SizeBasedTriggeringPolicy size="150 MB" />
@@ -55,7 +55,7 @@
 
         <Console name="Console" target="SYSTEM_OUT" ignoreExceptions="false">
             <PatternLayout>
-                <pattern>%highlight{%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{1}] (%t) %m%xEx{filters(${filters})}%n}{FATAL=red,ERROR=red,WARN=Yellow,INFO=white,DEBUG=white,TRACE=white}</pattern>
+                <pattern>%highlight{%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{1}] (%t) %m%xEx{filters(${filters})}%n}{FATAL=red,ERROR=red,WARN=Yellow,INFO=blue,DEBUG=white,TRACE=white}</pattern>
             </PatternLayout>
         </Console>
     </Appenders>

@@ -7,7 +7,7 @@ import org.zstack.sdk.VmNicInventory
 /**
  * Created by xing5 on 2017/2/20.
  */
-class PortForwardingSpec implements Spec, HasSession {
+class PortForwardingSpec extends Spec implements HasSession {
     String name
     String description
     Integer vipPortStart
@@ -20,6 +20,10 @@ class PortForwardingSpec implements Spec, HasSession {
     private Closure vmNic
 
     PortForwardingRuleInventory inventory
+
+    PortForwardingSpec(EnvSpec envSpec) {
+        super(envSpec)
+    }
 
     SpecID create(String uuid, String sessionId) {
         inventory = createPortForwardingRule {

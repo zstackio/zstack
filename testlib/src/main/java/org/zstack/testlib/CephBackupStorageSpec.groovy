@@ -17,6 +17,14 @@ class CephBackupStorageSpec extends BackupStorageSpec {
     List<String> monUrls
     Map<String, String> monAddrs = [:]
 
+    CephBackupStorageSpec(EnvSpec envSpec) {
+        super(envSpec)
+
+        preCreate {
+            setupSimulator()
+        }
+    }
+
     SpecID create(String uuid, String sessionId) {
         inventory = addCephBackupStorage {
             delegate.resourceUuid = uuid
@@ -38,8 +46,8 @@ class CephBackupStorageSpec extends BackupStorageSpec {
         return id(name, inventory.uuid)
     }
 
-    static {
-        Deployer.simulator(CephBackupStorageBase.GET_FACTS) { HttpEntity<String> e, EnvSpec spec ->
+    private void setupSimulator() {
+        simulator(CephBackupStorageBase.GET_FACTS) { HttpEntity<String> e, EnvSpec spec ->
             CephBackupStorageBase.GetFactsCmd cmd = JSONObjectUtil.toObject(e.body, CephBackupStorageBase.GetFactsCmd.class)
             CephBackupStorageSpec bspec = spec.specByUuid(cmd.uuid)
             assert bspec != null: "cannot find the backup storage[uuid:${cmd.uuid}}, check your environment()"
@@ -54,18 +62,18 @@ class CephBackupStorageSpec extends BackupStorageSpec {
             return rsp
         }
 
-        Deployer.simulator(CephBackupStorageMonBase.PING_PATH) {
+        simulator(CephBackupStorageMonBase.PING_PATH) {
             return new CephPrimaryStorageMonBase.PingRsp()
         }
 
-        Deployer.simulator(CephBackupStorageBase.GET_IMAGE_SIZE_PATH) {
+        simulator(CephBackupStorageBase.GET_IMAGE_SIZE_PATH) {
             def rsp = new CephBackupStorageBase.GetImageSizeRsp()
             rsp.size = 0
             rsp.actualSize = 0
             return rsp
         }
 
-        Deployer.simulator(CephBackupStorageBase.INIT_PATH) { HttpEntity<String> e, EnvSpec spec ->
+        simulator(CephBackupStorageBase.INIT_PATH) { HttpEntity<String> e, EnvSpec spec ->
             def cmd = JSONObjectUtil.toObject(e.body, CephBackupStorageBase.InitCmd.class)
             CephBackupStorageSpec bspec = spec.specByUuid(cmd.uuid)
             assert bspec != null: "cannot find the backup storage[uuid:${cmd.uuid}}, check your environment()"
@@ -77,36 +85,36 @@ class CephBackupStorageSpec extends BackupStorageSpec {
             return rsp
         }
 
-        Deployer.simulator(CephBackupStorageBase.DOWNLOAD_IMAGE_PATH) {
+        simulator(CephBackupStorageBase.DOWNLOAD_IMAGE_PATH) {
             def rsp = new CephBackupStorageBase.DownloadRsp()
             rsp.size = 0
             rsp.actualSize = 0
             return rsp
         }
 
-        Deployer.simulator(CephBackupStorageBase.DELETE_IMAGE_PATH) {
+        simulator(CephBackupStorageBase.DELETE_IMAGE_PATH) {
             return new CephBackupStorageBase.DeleteRsp()
         }
 
-        Deployer.simulator(CephBackupStorageBase.CHECK_IMAGE_METADATA_FILE_EXIST) {
+        simulator(CephBackupStorageBase.CHECK_IMAGE_METADATA_FILE_EXIST) {
             def rsp = new CephBackupStorageBase.CheckImageMetaDataFileExistRsp()
             rsp.exist = true
             rsp.backupStorageMetaFileName = "bs_ceph_info.json"
             return rsp
         }
 
-        Deployer.simulator(CephBackupStorageBase.DELETE_IMAGES_METADATA) {
+        simulator(CephBackupStorageBase.DELETE_IMAGES_METADATA) {
             def rsp = new CephBackupStorageBase.DeleteImageInfoFromMetaDataFileRsp()
             rsp.out = "success delete"
             rsp.ret = 0
             return rsp
         }
 
-        Deployer.simulator(CephBackupStorageBase.DUMP_IMAGE_METADATA_TO_FILE) {
+        simulator(CephBackupStorageBase.DUMP_IMAGE_METADATA_TO_FILE) {
             return new CephBackupStorageBase.DumpImageInfoToMetaDataFileRsp()
         }
 
-        Deployer.simulator(CephBackupStorageBase.GET_IMAGES_METADATA) {
+        simulator(CephBackupStorageBase.GET_IMAGES_METADATA) {
             def rsp = new CephBackupStorageBase.GetImagesMetaDataRsp()
             rsp.imagesMetadata = "{\"uuid\":\"a603e80ea18f424f8a5f00371d484537\",\"name\":\"test\",\"description\":\"\",\"state\":\"Enabled\",\"status\":\"Ready\",\"size\":19862528,\"actualSize\":15794176,\"md5Sum\":\"not calculated\",\"url\":\"http://192.168.200.1/mirror/diskimages/zstack-image-1.2.qcow2\",\"mediaType\":\"RootVolumeTemplate\",\"type\":\"zstack\",\"platform\":\"Linux\",\"format\":\"qcow2\",\"system\":false,\"createDate\":\"Dec 22, 2016 5:10:06 PM\",\"lastOpDate\":\"Dec 22, 2016 5:10:08 PM\",\"backupStorageRefs\":[{\"id\":45,\"imageUuid\":\"a603e80ea18f424f8a5f00371d484537\",\"backupStorageUuid\":\"63879ceb90764f839d3de772aa646c83\",\"installPath\":\"/bs-sftp/rootVolumeTemplates/acct-36c27e8ff05c4780bf6d2fa65700f22e/a603e80ea18f424f8a5f00371d484537/zstack-image-1.2.template\",\"status\":\"Ready\",\"createDate\":\"Dec 22, 2016 5:10:08 PM\",\"lastOpDate\":\"Dec 22, 2016 5:10:08 PM\"}]}"
             return rsp

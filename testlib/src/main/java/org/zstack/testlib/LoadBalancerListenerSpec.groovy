@@ -6,7 +6,7 @@ import org.zstack.sdk.VmNicInventory
 /**
  * Created by xing5 on 2017/2/20.
  */
-class LoadBalancerListenerSpec implements Spec, HasSession {
+class LoadBalancerListenerSpec extends Spec implements HasSession {
     String name = "lb-listener"
     String description
     String protocol
@@ -15,6 +15,10 @@ class LoadBalancerListenerSpec implements Spec, HasSession {
     private List<Closure> vmNics = []
 
     LoadBalancerListenerInventory inventory
+
+    LoadBalancerListenerSpec(EnvSpec envSpec) {
+        super(envSpec)
+    }
 
     SpecID create(String uuid, String sessionId) {
         inventory = createLoadBalancerListener {

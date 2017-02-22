@@ -4,6 +4,10 @@ package org.zstack.testlib
  * Created by xing5 on 2017/2/15.
  */
 class L2NoVlanNetworkSpec extends L2NetworkSpec {
+    L2NoVlanNetworkSpec(EnvSpec envSpec) {
+        super(envSpec)
+    }
+
     SpecID create(String uuid, String sessionId) {
         inventory = createL2NoVlanNetwork {
             delegate.name = name

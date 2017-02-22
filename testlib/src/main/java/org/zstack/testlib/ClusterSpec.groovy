@@ -7,7 +7,7 @@ import org.zstack.sdk.ClusterInventory
 /**
  * Created by xing5 on 2017/2/12.
  */
-class ClusterSpec implements Spec {
+class ClusterSpec extends Spec {
     String name
     String description
     String hypervisorType
@@ -18,17 +18,12 @@ class ClusterSpec implements Spec {
 
     ClusterInventory inventory
 
-    ClusterSpec() {
-    }
-
-    ClusterSpec(String name, String description, String hypervisorType) {
-        this.name = name
-        this.description = description
-        this.hypervisorType = hypervisorType
+    ClusterSpec(EnvSpec envSpec) {
+        super(envSpec)
     }
 
     KVMHostSpec kvm(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = KVMHostSpec.class) Closure c) {
-        def hspec = new KVMHostSpec()
+        def hspec = new KVMHostSpec(envSpec)
         c.delegate = hspec
         c.resolveStrategy = Closure.DELEGATE_FIRST
         c()
@@ -74,7 +69,7 @@ class ClusterSpec implements Spec {
             def a = new AttachPrimaryStorageToClusterAction()
             a.clusterUuid = inventory.uuid
             a.primaryStorageUuid = ps.inventory.uuid
-            a.sessionId = Test.deployer.envSpec.session.uuid
+            a.sessionId = sessionId
             errorOut(a.call())
         }
 
@@ -83,7 +78,7 @@ class ClusterSpec implements Spec {
             def a = new AttachL2NetworkToClusterAction()
             a.clusterUuid = inventory.uuid
             a.l2NetworkUuid = l2.inventory.uuid
-            a.sessionId = Test.deployer.envSpec.session.uuid
+            a.sessionId = sessionId
             errorOut(a.call())
         }
 

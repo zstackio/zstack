@@ -6,12 +6,16 @@ import org.zstack.sdk.VipInventory
 /**
  * Created by xing5 on 2017/2/20.
  */
-class LoadBalancerSpec implements Spec, HasSession {
+class LoadBalancerSpec extends Spec implements HasSession {
     String name
     String description
     private Closure vip
 
     LoadBalancerInventory inventory
+
+    LoadBalancerSpec(EnvSpec envSpec) {
+        super(envSpec)
+    }
 
     SpecID create(String uuid, String sessionId) {
         inventory = createLoadBalancer {
@@ -53,7 +57,7 @@ class LoadBalancerSpec implements Spec, HasSession {
     }
 
     LoadBalancerListenerSpec listener(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = LoadBalancerListenerSpec.class) Closure c) {
-        def spec = new LoadBalancerListenerSpec()
+        def spec = new LoadBalancerListenerSpec(envSpec)
         c.delegate = spec
         c.resolveStrategy = Closure.DELEGATE_FIRST
         c()

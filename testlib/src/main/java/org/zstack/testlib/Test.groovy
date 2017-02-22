@@ -1,6 +1,7 @@
 package org.zstack.testlib
 
 import org.zstack.core.cloudbus.CloudBus
+import org.zstack.core.componentloader.ComponentLoader
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.header.AbstractService
 import org.zstack.header.exception.CloudRuntimeException
@@ -11,20 +12,33 @@ import org.zstack.utils.ShellUtils
 import org.zstack.utils.Utils
 import org.zstack.utils.logging.CLogger
 
+import javax.servlet.http.HttpServletRequest
+import javax.servlet.http.HttpServletResponse
+
 /**
  * Created by xing5 on 2017/2/12.
  */
-abstract class Test implements CreationSpec {
+abstract class Test implements ApiHelper {
     static final CLogger logger = Utils.getLogger(this.getClass())
+
+    static Object deployer
 
     private final int PHASE_NONE = 0
     private final int PHASE_SETUP = 1
     private final int PHASE_ENV = 2
     private final int PHASE_TEST = 3
 
-    static Deployer deployer = new Deployer()
+    // these are global variables
+    static EnvSpec currentEnvSpec
+    static ComponentLoader componentLoader
 
     private int phase = PHASE_NONE
+    protected BeanConstructor beanConstructor
+    protected SpringSpec springSpec
+
+    Test() {
+        springSpec = new SpringSpec()
+    }
 
     protected EnvSpec env(@DelegatesTo(strategy=Closure.DELEGATE_FIRST, value=EnvSpec.class) Closure c) {
         def spec = new EnvSpec()
@@ -35,13 +49,9 @@ abstract class Test implements CreationSpec {
     }
 
     protected void spring(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = SpringSpec.class) Closure c) {
-        def code = c.rehydrate(deployer.springSpec, this, this)
-        code.resolveStrategy = Closure.DELEGATE_FIRST
-        code()
-    }
-
-    protected void simulator(String path, Closure c) {
-        Deployer.simulator(path, c)
+        c.delegate = springSpec
+        c.resolveStrategy = Closure.DELEGATE_FIRST
+        c()
     }
 
     abstract void setup()
@@ -165,6 +175,21 @@ abstract class Test implements CreationSpec {
         }
     }
 
+    void buildBeanConstructor(boolean useWeb = true) {
+        beanConstructor = useWeb ? new WebBeanConstructor() : new BeanConstructor()
+        if (springSpec.all) {
+            beanConstructor.loadAll = true
+        } else {
+            springSpec.xmls.each { beanConstructor.addXml(it) }
+        }
+
+        componentLoader = beanConstructor.build()
+    }
+
+    protected String adminSession() {
+        return currentEnvSpec.session.uuid
+    }
+
     private void prepare() {
         nextPhase()
         if (API_PORTAL) {
@@ -187,7 +212,7 @@ abstract class Test implements CreationSpec {
             deployDB()
         }
 
-        deployer.buildBeanConstructor(NEED_WEB_SERVER)
+        buildBeanConstructor(NEED_WEB_SERVER)
 
         nextPhase()
 
@@ -197,7 +222,7 @@ abstract class Test implements CreationSpec {
 
     protected <T> T bean(Class<T> clz) {
         assert phase > PHASE_SETUP : "getBean() can only be called in method environment() or test()"
-        return deployer.componentLoader.getComponent(clz)
+        return componentLoader.getComponent(clz)
     }
 
     protected <T> T dbFindByUuid(String uuid, Class<T> voClz) {
@@ -217,6 +242,22 @@ abstract class Test implements CreationSpec {
         } catch (Throwable t) {
             logger.warn(t.message, t)
             System.exit(1)
+        }
+    }
+
+    static void handleHttp(HttpServletRequest request, HttpServletResponse response) {
+        currentEnvSpec.handleSimulatorHttpRequests(request, response)
+    }
+
+    protected void runSubCases(List<SubCase> cases) {
+        for (SubCase c in cases) {
+            logger.info("starts running a sub case[${c.class}] of suite[${this.class}]")
+            try {
+                c.run()
+                logger.info("a sub case[${c.class}] of suite[${this.class}] completes without any error")
+            } catch (Throwable t) {
+                logger.error("a sub case [${c.class}] of suite[${this.class}] fails, ${t.message}", t)
+            }
         }
     }
 }
