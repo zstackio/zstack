@@ -650,6 +650,7 @@ public class VolumeBase implements Volume {
                             } else {
                                 vmUuid = dmsg.getVmInstanceUuid();
                             }
+                            dmsg.setVmInstanceUuid(vmUuid);
                             bus.makeTargetServiceIdByResourceUuid(dmsg, VmInstanceConstant.SERVICE_ID, vmUuid);
                             bus.send(dmsg, new CloudBusCallBack(trigger) {
                                 @Override
