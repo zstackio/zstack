@@ -103,7 +103,6 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
 
     @ApiTimeout(apiClasses = {APILocalStorageMigrateVolumeMsg.class})
     public static class CopyBitsFromRemoteCmd extends LocalStorageKvmBackend.AgentCommand {
-        public String uuid; // for progress_report
         public String sendCommandUrl;
         public List<String> paths;
         public String dstIp;
