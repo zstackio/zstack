@@ -236,7 +236,10 @@ class EnvSpec implements Node {
         DatabaseFacade dbf = Test.componentLoader.getComponent(DatabaseFacade.class)
         def entityTypes = dbf.entityManager.metamodel.entities
         entityTypes.each { type ->
-            if (type.name in ["ManagementNodeVO", "SessionVO", "GlobalConfigVO", "AsyncRestVO", "AccountVO"]) {
+            if (type.name in ["ManagementNodeVO", "SessionVO",
+                              "GlobalConfigVO", "AsyncRestVO",
+                              "AccountVO", "NetworkServiceProviderVO",
+                              "NetworkServiceTypeVO", "VmInstanceSequenceNumberVO"]) {
                 // those tables will continue having entries during running a test suite
                 return
             }
@@ -244,7 +247,7 @@ class EnvSpec implements Node {
             long count = SQL.New("select count(*) from ${type.name}".toString(), Long.class).find()
 
             if (count > 0) {
-                logger.fatal("[${this.class}] EnvSpec.delete() didn't cleanup the environment, there are still records in database" +
+                logger.fatal("[${this.class}] EnvSpec.delete() didn't cleanup the environment, there are still records in the database" +
                         " table ${type.name}, go fix it immediately!!! Abort the system")
                 // abort the system
                 System.exit(1)
@@ -254,7 +257,7 @@ class EnvSpec implements Node {
 
     void delete() {
         try {
-            delete(session.uuid)
+            destroy(session.uuid)
 
             makeSureAllEntitiesDeleted()
         } finally {
@@ -340,7 +343,7 @@ class EnvSpec implements Node {
             if (postHandler != null) {
                 if (postHandler.maximumNumberOfParameters <= 1) {
                     ret = postHandler(ret)
-                } else if (handler.maximumNumberOfParameters == 2) {
+                } else if (postHandler.maximumNumberOfParameters == 2) {
                     ret = postHandler(ret, entity)
                 } else {
                     ret = postHandler(ret, entity, this)

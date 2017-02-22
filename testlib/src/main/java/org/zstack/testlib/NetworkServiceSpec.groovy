@@ -29,4 +29,9 @@ class NetworkServiceSpec extends Spec implements HasSession {
 
         return null
     }
+
+    @Override
+    void delete(String sessionId) {
+        // do nothing
+    }
 }

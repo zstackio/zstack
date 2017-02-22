@@ -51,6 +51,13 @@ class SpringSpec {
         include("vyos.xml")
     }
 
+    void virtualRouter() {
+        include("ApplianceVmFacade.xml")
+        include("VirtualRouter.xml")
+        include("NetworkService.xml")
+        include("vip.xml")
+    }
+
     void sftpBackupStorage() {
         include("SftpBackupStorage.xml")
     }

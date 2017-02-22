@@ -71,7 +71,7 @@ class WebBeanConstructor extends BeanConstructor {
                         .setPort(port)
                         .setWebHook(WEB_HOOK_PATH)
                         .setDefaultPollingInterval(100, TimeUnit.MILLISECONDS)
-                        .setDefaultPollingTimeout(15, TimeUnit.SECONDS)
+                        .setDefaultPollingTimeout(15000, TimeUnit.SECONDS)
                         .setReadTimeout(10, TimeUnit.MINUTES)
                         .setWriteTimeout(10, TimeUnit.MINUTES)
                         .build()

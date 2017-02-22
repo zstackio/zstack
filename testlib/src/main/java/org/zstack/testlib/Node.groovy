@@ -1,6 +1,5 @@
 package org.zstack.testlib
 
-import org.zstack.core.Platform
 import org.zstack.utils.Utils
 import org.zstack.utils.logging.CLogger
 
@@ -89,7 +88,7 @@ trait Node {
         seen.pop()
     }
 
-    void delete(String sessionId) {
+    void destroy(String sessionId) {
         def allNodes = []
 
         walk {
