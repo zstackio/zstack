@@ -6,6 +6,7 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.db.UpdateQuery;
@@ -39,6 +40,8 @@ import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshot
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO_;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.*;
 import org.zstack.storage.primary.PrimaryStorageBase;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
@@ -1128,29 +1131,6 @@ public class LocalStorageBase extends PrimaryStorageBase {
         uq.condAnd(ImageCacheVO_.installUrl, Op.LIKE, String.format("%%%s%%", hostUuid));
         uq.delete();
 
-        // delete volumes
-        if (!volumes.isEmpty()) {
-            new Runnable() {
-                @Override
-                @Transactional
-                public void run() {
-                    // delete VMs on the host
-                    String sql = "delete from VmInstanceVO vm where vm.rootVolumeUuid in (select vol.uuid from VolumeVO vol" +
-                            " where vol.uuid in (:volUuids) and vol.type = :volType)";
-                    Query q = dbf.getEntityManager().createQuery(sql);
-                    q.setParameter("volType", VolumeType.Root);
-                    q.setParameter("volUuids", volumes);
-                    q.executeUpdate();
-                }
-            }.run();
-
-            uq = UpdateQuery.New(VolumeVO.class);
-            uq.condAnd(VolumeVO_.uuid, Op.IN, volumes);
-            uq.delete();
-            logger.debug(String.format("delete volumes%s because the host[uuid:%s] is removed from" +
-                    " the local storage[name:%s, uuid:%s]", volumes, hostUuid, self.getName(), self.getUuid()));
-        }
-
         // delete snapshots
         if (!snapshots.isEmpty()) {
             uq = UpdateQuery.New(VolumeSnapshotVO.class);
@@ -1158,6 +1138,35 @@ public class LocalStorageBase extends PrimaryStorageBase {
             uq.delete();
             logger.debug(String.format("delete volume snapshots%s because the host[uuid:%s] is removed from" +
                     " the local storage[name:%s, uuid:%s]", snapshots, hostUuid, self.getName(), self.getUuid()));
+        }
+
+        // delete volumes
+        if (!volumes.isEmpty()) {
+            List<String> vmUuidsToDelete =
+                    SQL.New("select vm.uuid from VmInstanceVO vm where vm.rootVolumeUuid in" +
+                            " (select vol.uuid from VolumeVO vol where vol.uuid in (:volUuids)" +
+                            " and vol.type = :volType)", String.class)
+                            .param("volUuids", volumes).param("volType", VolumeType.Root).list();
+
+            // we must delete the volume first
+            // mysql doesn't support trigger on cascade delete,
+            // deleting VMs will delete volumes cascadingly, which
+            // make triggers on AccountResourceRefVO and SystemTagVO
+            // not working
+            uq = UpdateQuery.New(VolumeVO.class);
+            uq.condAnd(VolumeVO_.uuid, Op.IN, volumes);
+            uq.delete();
+
+            logger.debug(String.format("delete volumes%s because the host[uuid:%s] is removed from" +
+                    " the local storage[name:%s, uuid:%s]", volumes, hostUuid, self.getName(), self.getUuid()));
+
+            // now delete the vms
+            uq = UpdateQuery.New(VmInstanceVO.class);
+            uq.condAnd(VmInstanceVO_.uuid, Op.IN, vmUuidsToDelete);
+            uq.delete();
+
+            logger.debug(String.format("delete VMs%s because the host[uuid:%s] is removed from" +
+                    " the local storage[name:%s, uuid:%s]", vmUuidsToDelete, hostUuid, self.getName(), self.getUuid()));
         }
 
         dbf.removeCollection(refs, LocalStorageResourceRefVO.class);

@@ -1,5 +1,6 @@
 package org.zstack.testlib
 
+import org.codehaus.groovy.runtime.StackTraceUtils
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.componentloader.ComponentLoader
 import org.zstack.core.db.DatabaseFacade
@@ -10,6 +11,7 @@ import org.zstack.header.message.Event
 import org.zstack.header.message.Message
 import org.zstack.utils.ShellUtils
 import org.zstack.utils.Utils
+import org.zstack.utils.gson.JSONObjectUtil
 import org.zstack.utils.logging.CLogger
 
 import javax.servlet.http.HttpServletRequest
@@ -229,7 +231,7 @@ abstract class Test implements ApiHelper {
     }
 
     protected <T> T bean(Class<T> clz) {
-        assert phase > PHASE_SETUP : "getBean() can only be called in method environment() or test()"
+        assert componentLoader != null : "componentLoader is null!!!"
         return componentLoader.getComponent(clz)
     }
 
@@ -244,11 +246,6 @@ abstract class Test implements ApiHelper {
             prepare()
             nextPhase()
             test()
-
-            if (this instanceof SubCase) {
-                this.clean()
-            }
-
         } catch (AssertionError e) {
             logger.warn("\n${e.message}", e)
             System.exit(1)
@@ -262,15 +259,73 @@ abstract class Test implements ApiHelper {
         currentEnvSpec.handleSimulatorHttpRequests(request, response)
     }
 
+    static class SubCaseResult {
+        boolean success
+        String error
+        String name
+    }
+
     protected void runSubCases(List<SubCase> cases) {
+        String resultDir = System.getProperty("resultDir")
+        if (resultDir == null) {
+            resultDir = [System.getProperty("user.dir"), "zstack-integration-test-result"].join("/")
+        }
+
+        resultDir = [resultDir, this.class.name.replace(".", "_")].join("/")
+
+        def dir = new File(resultDir)
+        dir.deleteDir()
+        dir.mkdirs()
+
+        List<SubCaseResult> allResults = []
+
         for (SubCase c in cases) {
+            def caseResult = new SubCaseResult()
+            caseResult.name = c.class.simpleName
+
+            allResults.add(caseResult)
+
             logger.info("starts running a sub case[${c.class}] of suite[${this.class}]")
             try {
                 c.run()
+
+                caseResult.success = true
                 logger.info("a sub case[${c.class}] of suite[${this.class}] completes without any error")
             } catch (Throwable t) {
+                caseResult.success = false
+                caseResult.error = t.message
+
                 logger.error("a sub case [${c.class}] of suite[${this.class}] fails, ${t.message}", t)
+            } finally {
+                def fname = c.class.name.replace(".", "_") + "." + (caseResult.success ? "success" : "failure")
+                def rfile = new File([dir.absolutePath, fname].join("/"))
+                rfile.write(JSONObjectUtil.toJsonString(caseResult))
+
+                logger.info("write test result of a sub case [${c.class}] of suite[${this.class}] to $fname")
             }
+        }
+
+        int success = 0
+        int failure = 0
+        allResults.each {
+            if (it.success) {
+                success ++
+            } else {
+                failure ++
+            }
+        }
+
+        def summary = new File([dir.absolutePath, "summary"].join("/"))
+        summary.write(JSONObjectUtil.toJsonString([
+                "total" : allResults.size(),
+                "success": success,
+                "failure": failure,
+                "passRate": ((float)success / (float)allResults.size()) * 100
+        ]))
+
+        if (failure != 0) {
+            // some cases failed, exit with code 1
+            System.exit(1)
         }
     }
 }
