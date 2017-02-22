@@ -131,6 +131,7 @@
 
     <TestCase class="org.zstack.test.core.cascade.TestAsyncCascade"/>
     <TestCase class="org.zstack.test.core.cascade.TestAsyncCascade2"/>
+    <TestCase class="org.zstack.test.core.cascade.TestAsyncCascade3"/>
 
     <TestCase class="org.zstack.test.core.keyvalue.TestKeyValue1"/>
 

@@ -21,10 +21,15 @@ import java.util.concurrent.Callable;
 public class CascadeFacadeImpl implements CascadeFacade, Component {
     private static final CLogger logger = Utils.getLogger(CascadeFacadeImpl.class);
 
-    private class Node {
+    private class Node implements Comparable<Node> {
         private CascadeExtensionPoint extension;
-        private List<Node> edges;
+        private TreeSet<Node> edges;
         private String name;
+
+        @Override
+        public int compareTo(Node n) {
+            return this.getName().compareTo(n.getName());
+        }
 
         public CascadeExtensionPoint getExtension() {
             return extension;
@@ -34,11 +39,11 @@ public class CascadeFacadeImpl implements CascadeFacade, Component {
             this.extension = extension;
         }
 
-        public List<Node> getEdges() {
+        public TreeSet<Node> getEdges() {
             return edges;
         }
 
-        public void setEdges(List<Node> edges) {
+        public void setEdges(TreeSet<Node> edges) {
             this.edges = edges;
         }
 
@@ -51,9 +56,14 @@ public class CascadeFacadeImpl implements CascadeFacade, Component {
         }
     }
 
-    private static class TreeNode {
+    private static class TreeNode implements Comparable<TreeNode> {
         private Node node;
-        private HashSet<TreeNode> leafs;
+        private TreeSet<TreeNode> leafs;
+
+        @Override
+        public int compareTo(TreeNode t) {
+            return this.node.getName().compareTo(t.node.getName());
+        }
     }
 
     @Autowired
@@ -329,7 +339,7 @@ public class CascadeFacadeImpl implements CascadeFacade, Component {
                 if (tn == null) {
                     tn = new TreeNode();
                     tn.node = n;
-                    tn.leafs = new HashSet<>();
+                    tn.leafs = new TreeSet<>();
                     curr.put(n.getName(), tn);
                 }
 
@@ -358,7 +368,7 @@ public class CascadeFacadeImpl implements CascadeFacade, Component {
                 n = new Node();
                 n.setName(ext.getCascadeResourceName());
                 n.setExtension(ext);
-                n.setEdges(new ArrayList<>());
+                n.setEdges(new TreeSet<>());
                 nodes.put(n.getName(), n);
             }
 
@@ -367,7 +377,7 @@ public class CascadeFacadeImpl implements CascadeFacade, Component {
                 if (p == null) {
                     p = new Node();
                     p.setName(parent);
-                    p.setEdges(new ArrayList<>());
+                    p.setEdges(new TreeSet<>());
                     CascadeExtensionPoint dext = exts.get(parent);
                     if (dext == null) {
                         throw new CloudRuntimeException(
