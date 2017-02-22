@@ -10,7 +10,7 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.identity.SessionInventory;
-import org.zstack.header.image.APIGetImageQgaEnableReply;
+import org.zstack.header.image.APIGetImageQgaReply;
 import org.zstack.header.image.APISetImageQgaEvent;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.tag.SystemTagVO;
@@ -54,7 +54,7 @@ public class TestImageQgaEnable2 {
         ImageInventory image = deployer.images.get("TestImage");
         SessionInventory session = api.loginByAccount("test", "password");
 
-        APIGetImageQgaEnableReply reply = api.getEnableImageQga(image.getUuid());
+        APIGetImageQgaReply reply = api.getEnableImageQga(image.getUuid());
         Assert.assertTrue(reply.isSuccess());
 
         ArrayList resourceUuids = new ArrayList<String >();
