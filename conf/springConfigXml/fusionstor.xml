@@ -44,4 +44,9 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="KVMPingAgentExtensionForCheck" class="org.zstack.storage.fusionstor.KVMPingAgentExtensionForCheck">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.kvm.KVMPingAgentExtensionPoint" />
+        </zstack:plugin>
+    </bean>
 </beans>
