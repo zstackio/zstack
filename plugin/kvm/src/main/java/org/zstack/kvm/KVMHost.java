@@ -341,7 +341,7 @@ public class KVMHost extends HostBase implements Host {
                     reply.setError(errf.stringToOperationError(ret.getError()));
                 } else {
                     reply.setHostIp(self.getManagementIp());
-                    reply.setProtocol(KVMGlobalConfig.VM_CONSOLE_MODE.value());
+                    reply.setProtocol(ret.getProtocol());
                     reply.setPort(ret.getPort());
                 }
                 bus.reply(msg, reply);

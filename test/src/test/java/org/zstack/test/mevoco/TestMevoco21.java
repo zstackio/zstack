@@ -183,6 +183,8 @@ public class TestMevoco21 {
         validate(ps, "EIP.CREATE", "eip:APICreateEipMsg", AccountConstant.StatementEffect.Allow);
         validate(ps, "EIP.DELETE", "eip:APIDeleteEipMsg", AccountConstant.StatementEffect.Allow);
         validate(ps, "EIP.UPDATE", "eip:APIUpdateEipMsg", AccountConstant.StatementEffect.Allow);
+        validate(ps, "EIP.ATTACH", "eip:APIAttachEipMsg", AccountConstant.StatementEffect.Allow);
+        validate(ps, "EIP.DETACH", "eip:APIDetachEipMsg", AccountConstant.StatementEffect.Allow);
 
         APIQueryPolicyMsg qmsg = new APIQueryPolicyMsg();
         qmsg.addQueryCondition("accountUuid", QueryOp.EQ, test.getUuid());

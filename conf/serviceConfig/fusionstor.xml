@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <interceptor>FusionstorApiInterceptor</interceptor>
+
+    <message>
+        <name>org.zstack.storage.fusionstor.backup.APIAddFusionstorBackupStorageMsg</name>
+        <serviceId>storage.backup</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.storage.fusionstor.backup.APIAddMonToFusionstorBackupStorageMsg</name>
+        <serviceId>storage.backup</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.storage.fusionstor.backup.APIRemoveMonFromFusionstorBackupStorageMsg</name>
+        <serviceId>storage.backup</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.storage.fusionstor.backup.APIQueryFusionstorBackupStorageMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.storage.fusionstor.primary.APIAddFusionstorPrimaryStorageMsg</name>
+        <serviceId>storage.primary</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.storage.fusionstor.primary.APIAddMonToFusionstorPrimaryStorageMsg</name>
+        <serviceId>storage.primary</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.storage.fusionstor.primary.APIRemoveMonFromFusionstorPrimaryStorageMsg</name>
+        <serviceId>storage.primary</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.storage.fusionstor.primary.APIQueryFusionstorPrimaryStorageMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+</service>
