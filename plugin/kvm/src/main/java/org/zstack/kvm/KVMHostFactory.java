@@ -184,7 +184,34 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
                 }
             }
         });
-
+        KVMGlobalConfig.RESERVED_MEMORY_CAPACITY.installValidateExtension(new GlobalConfigValidatorExtensionPoint() {
+            @Override
+            public void validateGlobalConfig(String category, String name, String oldValue, String value) throws GlobalConfigException {
+                Long valueLong = SizeUtils.sizeStringToBytes(value);
+                if (valueLong > 1024 * 1024 * 1024 * 1024) {
+                    throw new GlobalConfigException(String.format("Value %s  cannot be greater than the 1TB" + " but got %s",
+                            KVMGlobalConfig.RESERVED_MEMORY_CAPACITY.getCanonicalName(), value));
+                }
+//                String unit = value.substring(value.length() - 1);
+//                Long valueLong = Long.valueOf(value.substring(0, value.length() - 1));
+//                if ((unit.equals("T") || unit.equals("t")) && valueLong > 1) {
+//                    throw new GlobalConfigException(String.format("Value %s  cannot be greater than the 1TB" + " but got %s",
+//                            KVMGlobalConfig.RESERVED_MEMORY_CAPACITY.getCanonicalName(), value));
+//                } else if ((unit.equals("G") || unit.equals("g")) && valueLong > 1024) {
+//                    throw new GlobalConfigException(String.format("Value %s  cannot be greater than the 1TB" + " but got %s",
+//                            KVMGlobalConfig.RESERVED_MEMORY_CAPACITY.getCanonicalName(), value));
+//                } else if ((unit.equals("M") || unit.equals("m")) && valueLong > 1024 * 1024) {
+//                    throw new GlobalConfigException(String.format("Value %s  cannot be greater than the 1TB" + " but got %s",
+//                            KVMGlobalConfig.RESERVED_MEMORY_CAPACITY.getCanonicalName(), value));
+//                } else if ((unit.equals("K") || unit.equals("k")) && valueLong > 1024 * 1024 * 1024) {
+//                    throw new GlobalConfigException(String.format("Value %s  cannot be greater than the 1TB" + " but got %s",
+//                            KVMGlobalConfig.RESERVED_MEMORY_CAPACITY.getCanonicalName(), value));
+//                } else if ((unit.equals("B") || unit.equals("b")) && valueLong > 1024 * 1024 * 1024 * 1024) {
+//                    throw new GlobalConfigException(String.format("Value %s  cannot be greater than the 1TB" + " but got %s",
+//                            KVMGlobalConfig.RESERVED_MEMORY_CAPACITY.getCanonicalName(), value));
+//                }
+            }
+        });
         restf.registerSyncHttpCallHandler(KVMConstant.KVM_RECONNECT_ME, ReconnectMeCmd.class, new SyncHttpCallHandler<ReconnectMeCmd>() {
             @Override
             public String handleSyncHttpCall(ReconnectMeCmd cmd) {
