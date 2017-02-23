@@ -90,7 +90,6 @@ public class TestCephBackupStorage {
         bmsg.setName("ceph-bs");
         bmsg.setImportImages(true);
         ApiSender sender = api.getApiSender();
-        boolean s = false;
         try {
             sender.send(bmsg, APIAddBackupStorageEvent.class);
             Assert.assertTrue(false);
