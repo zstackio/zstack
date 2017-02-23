@@ -59,11 +59,11 @@ public class TestReconnectHost {
 
     @Test
     public void test() throws ApiSenderException, InterruptedException {
-        HostInventory vm = deployer.hosts.get("host1");
+        HostInventory inv = deployer.hosts.get("host1");
         //VmInstanceVO vmvo = dbf.findByUuid(vm.getUuid(), VmInstanceVO.class);
-        HostVO hovo = dbf.findByUuid(vm.getUuid(),HostVO.class);
+        HostVO hovo = dbf.findByUuid(inv.getUuid(),HostVO.class);
 
-        String hostUuid = vm.getUuid();
+        String hostUuid = inv.getUuid();
         APIReconnectHostMsg msg=new APIReconnectHostMsg();
         msg.setSession(session);
         msg.setTimeout(1500);
