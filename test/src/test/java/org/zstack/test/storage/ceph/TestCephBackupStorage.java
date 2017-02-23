@@ -93,8 +93,9 @@ public class TestCephBackupStorage {
         boolean s = false;
         try {
             sender.send(bmsg, APIAddBackupStorageEvent.class);
+            Assert.assertTrue(false);
         } catch (ApiSenderException e) {
-            Assert.assertTrue(true);
+
         }
     }
 }
