@@ -18,11 +18,10 @@
         </zstack:plugin>
 
         <property name="apiWorkerNum" value="${ApiMediator.apiWorkerNum:5}" />
-		<property name="serviceConfigFolders">
+	<property name="serviceConfigFolders">
             <list>
                 <value>serviceConfig</value>
-                <value>testServiceConfig</value>
             </list>
-		</property>
+	</property>
     </bean>
 </beans>

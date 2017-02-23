@@ -16,6 +16,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.query.QueryCondition;
 import org.zstack.ldap.*;
+import org.zstack.sdk.LdapServerInventory;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSender;
 import org.zstack.test.ApiSenderException;
@@ -66,7 +67,7 @@ public class TestLdapServerEmbedded {
         msg12.setConditions(new ArrayList<QueryCondition>());
         msg12.setSession(session);
         APIQueryLdapServerReply reply12 = sender.call(msg12, APIQueryLdapServerReply.class);
-        logger.debug(reply12.getInventories().stream().map(LdapServerInventory::getUrl).collect(Collectors.joining(", ")));
+        //logger.debug(reply12.getInventories().stream().map(LdapServerInventory::getUrl).collect(Collectors.joining(", ")));
     }
 
     @Test

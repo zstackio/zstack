@@ -75,10 +75,14 @@ abstract class Test implements ApiHelper {
 
     protected Map<Class, Tuple> messageHandlers = [:]
 
+    protected String getDeployDBScriptBaseDir() {
+        String home = System.getProperty("user.dir")
+        return  [home, "../"].join("/")
+    }
+
     private void deployDB() {
         logger.info("Deploying database ...")
-        String home = System.getProperty("user.dir")
-        String baseDir = [home, "../"].join("/")
+        String baseDir = getDeployDBScriptBaseDir()
         Properties prop = new Properties()
 
         try {

@@ -103,8 +103,6 @@ import org.zstack.kvm.APIUpdateKVMHostMsg;
 import org.zstack.kvm.KVMHostInventory;
 import org.zstack.license.*;
 import org.zstack.license.LicenseInventory;
-import org.zstack.logging.APIDeleteLogEvent;
-import org.zstack.logging.APIDeleteLogMsg;
 import org.zstack.network.securitygroup.APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO;
 import org.zstack.network.securitygroup.*;
 import org.zstack.network.securitygroup.SecurityGroupInventory;
@@ -4422,15 +4420,6 @@ public class Api implements CloudBusEventListener {
         sender.setTimeout(timeout);
         APIGetVolumeCapabilitiesReply reply = sender.call(msg, APIGetVolumeCapabilitiesReply.class);
         return reply.getCapabilities();
-    }
-
-    public void deleteLog(String uuid, SessionInventory session) throws ApiSenderException {
-        APIDeleteLogMsg msg = new APIDeleteLogMsg();
-        msg.setUuids(list(uuid));
-        msg.setSession(session == null ? adminSession : session);
-        ApiSender sender = new ApiSender();
-        sender.setTimeout(timeout);
-        APIDeleteLogEvent evt = sender.send(msg, APIDeleteLogEvent.class);
     }
 
     public void debugSignal(DebugSignal... ds) throws ApiSenderException {

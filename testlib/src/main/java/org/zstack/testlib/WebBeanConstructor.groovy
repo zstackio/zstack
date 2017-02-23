@@ -29,6 +29,9 @@ class WebBeanConstructor extends BeanConstructor {
     static int port = 8989
     static String WEB_HOOK_PATH = "http://127.0.0.1:$port/sdk/webook"
 
+    static final String WEB_XML_PATH = "webXmlPath"
+    static final String WEB_SERVLET_CONTEXT_FILE_PATH = "webServletContextFilePath"
+
     WebBeanConstructor() {
         // initialize static block in Platform
         Platform.getUuid()
@@ -40,8 +43,19 @@ class WebBeanConstructor extends BeanConstructor {
 
     private void generateWarFile() {
         WebArchive war = ShrinkWrap.create(WebArchive.class, "zstack.war")
-        war.setWebXML(new File("src/test/resources/webapp/WEB-INF/web.xml"))
-        war.addAsWebInfResource(new File("src/test/resources/webapp/WEB-INF/zstack-servlet-context-groovy.xml"), "classes/zstack-servlet-context.xml")
+
+        def webXmlPath = System.getProperty(WEB_XML_PATH)
+        if (webXmlPath == null) {
+            webXmlPath = "src/test/resources/webapp/WEB-INF/web.xml"
+        }
+
+        def servletContextFilePath = System.getProperty(WEB_SERVLET_CONTEXT_FILE_PATH)
+        if (servletContextFilePath == null) {
+            servletContextFilePath = "src/test/resources/webapp/WEB-INF/zstack-servlet-context-groovy.xml"
+        }
+
+        war.setWebXML(new File(webXmlPath))
+        war.addAsWebInfResource(new File(servletContextFilePath), "classes/zstack-servlet-context.xml")
         new ZipExporterImpl(war).exportTo(new File(Utils.getPathUtil().join(BASE_DIR, war.getName())), true)
     }
 
