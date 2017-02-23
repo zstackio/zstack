@@ -52,7 +52,9 @@ public class TestImageStoreExportImage {
 
             BackupStorageInventory bs = deployer.backupStorages.get("imagestore");
             ImageInventory img = deployer.images.get("TestImage");
-            api.exportImage(bs.getUuid(), img.getUuid());
+            String imageUrl = api.exportImage(bs.getUuid(), img.getUuid());
+
+            Assert.assertTrue(imageUrl != null);
 
             String callingChain = MessageCommandRecorder.endAndToString();
             logger.debug(callingChain);
