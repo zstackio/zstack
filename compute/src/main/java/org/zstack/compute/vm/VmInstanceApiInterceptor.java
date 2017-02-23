@@ -4,9 +4,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.header.allocator.HostCapacityVO;
+import org.zstack.header.allocator.HostCapacityVO_;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
@@ -14,6 +17,7 @@ import org.zstack.header.cluster.ClusterState;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.configuration.*;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostState;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
@@ -85,10 +89,33 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             validate((APICreateRebootVmInstanceSchedulerMsg) msg);
         } else if (msg instanceof APIGetInterdependentL3NetworksImagesMsg) {
             validate((APIGetInterdependentL3NetworksImagesMsg) msg);
+        } else if (msg instanceof APIUpdateVmInstanceMsg) {
+            validate((APIUpdateVmInstanceMsg) msg);
         }
         setServiceId(msg);
         return msg;
     }
+
+    private void validate(APIUpdateVmInstanceMsg msg) {
+        Long memorySize = msg.getMemorySize();
+        Integer cpuNum = msg.getCpuNum();
+        Long availableMemoryNum = 0L;
+        Long availableCpuNum = 0L;
+        List<HostCapacityVO> vos = Q.New(HostCapacityVO.class).list();
+        for (HostCapacityVO vo : vos) {
+            availableMemoryNum += vo.getAvailableMemory();
+            availableCpuNum += vo.getAvailableCpu();
+        }
+        //Long availableMemoryNum = Q.New(HostCapacityVO.class).select(HostCapacityVO_.availableMemory).count();
+        //Long availableCpuNum = Q.New(HostCapacityVO.class).select(HostCapacityVO_.availableCpu).count();
+
+        if ((cpuNum != null && cpuNum > availableCpuNum) || (memorySize != null && memorySize > availableMemoryNum)) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    "the host doesn't have enough capacity"
+            ));
+        }
+    }
+
 
     private void validate(APIGetInterdependentL3NetworksImagesMsg msg) {
         if (msg.getL3NetworkUuids() == null && msg.getImageUuid() == null) {
