@@ -10,18 +10,19 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.image.ImageDeletionPolicyManager.ImageDeletionPolicy;
 import org.zstack.header.image.ImageInventory;
+import org.zstack.header.storage.backup.APIAddBackupStorageEvent;
 import org.zstack.image.ImageGlobalConfig;
+import org.zstack.storage.ceph.backup.APIAddCephBackupStorageMsg;
 import org.zstack.storage.ceph.backup.CephBackupStorageMonVO;
 import org.zstack.storage.ceph.backup.CephBackupStorageSimulatorConfig;
 import org.zstack.storage.ceph.backup.CephBackupStorageVO;
-import org.zstack.test.Api;
-import org.zstack.test.ApiSenderException;
-import org.zstack.test.DBUtil;
-import org.zstack.test.WebBeanConstructor;
+import org.zstack.test.*;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.logging.CLogger;
+
+import static org.zstack.utils.CollectionDSL.list;
 
 /**
  * 1. add a ceph backup storage
@@ -35,6 +36,9 @@ import org.zstack.utils.logging.CLogger;
  * 3. delete the image
  * <p>
  * confirm the image deleted successfully
+ * 4.add a ceph backup storage
+ * <p>
+ * require the poolName when importImages is true
  */
 public class TestCephBackupStorage {
     CLogger logger = Utils.getLogger(TestCephBackupStorage.class);
@@ -79,5 +83,19 @@ public class TestCephBackupStorage {
         ImageInventory img = deployer.images.get("TestImage");
         api.deleteImage(img.getUuid());
         Assert.assertFalse(config.deleteCmds.isEmpty());
+
+        APIAddCephBackupStorageMsg bmsg = new APIAddCephBackupStorageMsg();
+        bmsg.setMonUrls(list("root:password@127.0.0.1:2222/?monPort=1234", "root1:password1@localhost:3322/?monPort=5678"));
+        bmsg.setSession(api.getAdminSession());
+        bmsg.setName("ceph-bs");
+        bmsg.setImportImages(true);
+        ApiSender sender = api.getApiSender();
+        boolean s = false;
+        try {
+            sender.send(bmsg, APIAddBackupStorageEvent.class);
+        } catch (ApiSenderException e) {
+            s=true;
+        }
+        Assert.assertEquals(true,s);
     }
 }

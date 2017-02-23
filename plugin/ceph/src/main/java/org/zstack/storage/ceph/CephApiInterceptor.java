@@ -170,8 +170,8 @@ public class CephApiInterceptor implements ApiMessageInterceptor {
                     "poolName can be null but cannot be an empty string"
             ));
         }else if(msg.getPoolName() == null && msg.isImportImages() == true){
-            throw new ApiMessageInterceptionException(errf.throwableToInternalError(
-                    new Throwable("poolName is required when importImages is true")
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    "poolName is required when importImages is true"
             ));
         }
 
