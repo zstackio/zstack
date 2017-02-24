@@ -7,12 +7,19 @@ import org.zstack.utils.data.SizeUnit
  * Created by xing5 on 2017/2/12.
  */
 abstract class HostSpec extends Spec {
+    @SpecParam(required = true)
     String name
+    @SpecParam
     String description
+    @SpecParam
     String managementIp = "127.0.0.1"
+    @SpecParam
     Long totalMem = SizeUnit.GIGABYTE.toByte(32)
+    @SpecParam
     Long usedMem = 0
+    @SpecParam
     Integer totalCpu = 32
+    @SpecParam
     Integer usedCpu = 0
 
     HostInventory inventory

@@ -3,6 +3,7 @@ package org.zstack.testlib
 import org.zstack.sdk.L3NetworkInventory
 
 class L3NetworkSpec extends Spec implements HasSession {
+    @SpecParam(required = true)
     String name
     String description
 

@@ -15,7 +15,9 @@ import org.zstack.utils.gson.JSONObjectUtil
  * Created by xing5 on 2017/2/20.
  */
 class CephPrimaryStorageSpec extends PrimaryStorageSpec {
+    @SpecParam(required = true)
     String fsid
+    @SpecParam(required = true)
     List<String> monUrls
     Map<String, String> monAddrs = [:]
 

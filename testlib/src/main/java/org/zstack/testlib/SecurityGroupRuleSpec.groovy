@@ -3,10 +3,15 @@ package org.zstack.testlib
  * Created by xing5 on 2017/2/20.
  */
 class SecurityGroupRuleSpec extends Spec {
+    @SpecParam(required = true)
     String type
+    @SpecParam(required = true)
     String protocol
+    @SpecParam(required = true)
     Integer startPort
+    @SpecParam(required = true)
     Integer endPort
+    @SpecParam
     String allowedCidr
 
     SecurityGroupRuleSpec(EnvSpec envSpec) {

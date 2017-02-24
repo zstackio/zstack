@@ -8,8 +8,11 @@ import org.zstack.sdk.ClusterInventory
  * Created by xing5 on 2017/2/12.
  */
 class ClusterSpec extends Spec {
+    @SpecParam(required = true)
     String name
+    @SpecParam
     String description
+    @SpecParam(required = true)
     String hypervisorType
     List<HostSpec> hosts = []
 

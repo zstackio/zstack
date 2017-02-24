@@ -7,10 +7,15 @@ import org.zstack.sdk.VmNicInventory
  * Created by xing5 on 2017/2/20.
  */
 class LoadBalancerListenerSpec extends Spec implements HasSession {
+    @SpecParam(required = true)
     String name = "lb-listener"
+    @SpecParam
     String description
+    @SpecParam(required = true)
     String protocol
+    @SpecParam(required = true)
     Integer loadBalancerPort
+    @SpecParam(required = true)
     Integer instancePort
     private List<Closure> vmNics = []
 

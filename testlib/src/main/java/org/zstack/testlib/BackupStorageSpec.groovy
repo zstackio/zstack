@@ -7,10 +7,15 @@ import org.zstack.utils.data.SizeUnit
  * Created by xing5 on 2017/2/15.
  */
 abstract class BackupStorageSpec extends Spec {
+    @SpecParam(required = true)
     String name
+    @SpecParam
     String description
+    @SpecParam(required = true)
     String url
+    @SpecParam
     Long totalCapacity = SizeUnit.GIGABYTE.toByte(1000)
+    @SpecParam
     Long availableCapacity = SizeUnit.GIGABYTE.toByte(1000)
 
     BackupStorageInventory inventory

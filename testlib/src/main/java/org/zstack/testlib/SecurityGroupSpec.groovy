@@ -9,7 +9,9 @@ import org.zstack.sdk.VmNicInventory
  * Created by xing5 on 2017/2/20.
  */
 class SecurityGroupSpec extends Spec implements HasSession {
+    @SpecParam(required = true)
     String name
+    @SpecParam
     String description
     private List<Closure> l3Networks = []
     private List<Closure> vmNics = []
@@ -59,6 +61,7 @@ class SecurityGroupSpec extends Spec implements HasSession {
         return id(name, inventory.uuid)
     }
 
+    @SpecMethod
     void useL3Network(String...names) {
         names.each { String name ->
             preCreate {
@@ -72,6 +75,7 @@ class SecurityGroupSpec extends Spec implements HasSession {
         }
     }
 
+    @SpecMethod
     void useVmNic(String vmName, String l3NetworkName) {
         assert vmName != null: "vmName must be set when calling securityGroup.useVmNic()"
         assert l3NetworkName != null: "l3NetworkName must be set when calling securityGroup.useVmNic()"

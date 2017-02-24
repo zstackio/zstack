@@ -7,7 +7,9 @@ import org.zstack.sdk.SessionInventory
  * Created by xing5 on 2017/2/15.
  */
 class AccountSpec extends Spec {
+    @SpecParam(required = true)
     String name
+    @SpecParam(required = true)
     String password
 
     AccountInventory inventory

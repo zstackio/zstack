@@ -6,10 +6,15 @@ import org.zstack.sdk.InstanceOfferingInventory
  * Created by xing5 on 2017/2/15.
  */
 class InstanceOfferingSpec extends Spec implements HasSession {
+    @SpecParam(required = true)
     String name
+    @SpecParam
     String description
+    @SpecParam
     Long memory
+    @SpecParam
     Long cpu
+    @SpecParam
     String allocatorStrategy
 
     public InstanceOfferingInventory inventory

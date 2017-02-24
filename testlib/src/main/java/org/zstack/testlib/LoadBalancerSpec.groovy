@@ -7,7 +7,9 @@ import org.zstack.sdk.VipInventory
  * Created by xing5 on 2017/2/20.
  */
 class LoadBalancerSpec extends Spec implements HasSession {
+    @SpecParam(required = true)
     String name
+    @SpecParam
     String description
     private Closure vip
 
@@ -37,6 +39,7 @@ class LoadBalancerSpec extends Spec implements HasSession {
         return id(name, inventory.uuid)
     }
 
+    @SpecMethod
     void useVip(String vipL3NetworkName) {
         preCreate {
             addDependency(vipL3NetworkName, L3NetworkSpec.class)

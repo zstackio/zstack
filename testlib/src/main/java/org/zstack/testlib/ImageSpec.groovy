@@ -7,14 +7,22 @@ import org.zstack.utils.data.SizeUnit
  * Created by xing5 on 2017/2/15.
  */
 class ImageSpec extends Spec implements HasSession {
+    @SpecParam(required = true)
     String name
+    @SpecParam
     String description
+    @SpecParam
     Long size = SizeUnit.GIGABYTE.toByte(10)
+    @SpecParam
     Long actualSize = SizeUnit.GIGABYTE.toByte(1)
     String md5sum
+    @SpecParam(required = true)
     String url
+    @SpecParam
     String mediaType = "RootVolumeTemplate"
+    @SpecParam
     String platform = "Linux"
+    @SpecParam
     String format = "qcow2"
 
     ImageInventory inventory

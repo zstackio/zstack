@@ -8,6 +8,7 @@ trait HasSession {
 
     String accountName
 
+    @SpecMethod
     void useAccount(String name) {
         accountName = name
 

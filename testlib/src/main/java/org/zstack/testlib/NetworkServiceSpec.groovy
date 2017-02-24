@@ -6,7 +6,9 @@ import org.zstack.sdk.NetworkServiceProviderInventory
  * Created by xing5 on 2017/2/15.
  */
 class NetworkServiceSpec extends Spec implements HasSession {
+    @SpecParam(required = true)
     String provider
+    @SpecParam(required = true)
     List<String> types
 
     NetworkServiceSpec(EnvSpec envSpec) {

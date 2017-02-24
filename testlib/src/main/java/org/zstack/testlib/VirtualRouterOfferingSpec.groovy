@@ -13,10 +13,13 @@ import org.zstack.utils.gson.JSONObjectUtil
  * Created by xing5 on 2017/2/15.
  */
 class VirtualRouterOfferingSpec extends InstanceOfferingSpec {
+    @SpecParam(required = true)
     Closure managementL3Network
+    @SpecParam
     Closure publicL3Network
     private Closure image
     Closure zone
+    @SpecParam
     Boolean isDefault
 
     VirtualRouterOfferingSpec(EnvSpec envSpec) {
@@ -65,14 +68,17 @@ class VirtualRouterOfferingSpec extends InstanceOfferingSpec {
         }
     }
 
+    @SpecMethod
     void useManagementL3Network(String name) {
         managementL3Network = l3Network(name)
     }
 
+    @SpecMethod
     void usePublicL3Network(String name) {
         publicL3Network = l3Network(name)
     }
 
+    @SpecMethod
     void useImage(String name) {
         preCreate {
             addDependency(name, ImageSpec.class)

@@ -9,8 +9,11 @@ import org.zstack.sdk.VmNicInventory
  * Created by xing5 on 2017/2/20.
  */
 class EipSpec extends Spec implements HasSession {
+    @SpecParam(required = true)
     String name
+    @SpecParam
     String description
+    @SpecParam
     String requiredIp
     private Closure vip
     private Closure vmNic
@@ -42,6 +45,7 @@ class EipSpec extends Spec implements HasSession {
         return id(name, inventory.uuid)
     }
 
+    @SpecMethod
     void useVip(String vipL3NetworkName) {
         preCreate {
             addDependency(vipL3NetworkName, L3NetworkSpec.class)
@@ -61,6 +65,7 @@ class EipSpec extends Spec implements HasSession {
         }
     }
 
+    @SpecMethod
     void useVmNic(String vmName, String l3NetworkName) {
         assert vmName != null: "vmName must be set when calling eip.useVmNic()"
         assert l3NetworkName != null: "l3NetworkName must be set when calling eip.useVmNic()"

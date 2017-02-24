@@ -6,8 +6,11 @@ import org.zstack.sdk.L2NetworkInventory
  * Created by xing5 on 2017/2/15.
  */
 abstract class L2NetworkSpec extends Spec {
+    @SpecParam(required = true)
     String name
+    @SpecParam
     String description
+    @SpecParam(required = true)
     String physicalInterface
 
     L2NetworkInventory inventory

@@ -6,6 +6,7 @@ import org.zstack.sdk.L2NetworkInventory
  * Created by xing5 on 2017/2/15.
  */
 class L2VlanNetworkSpec extends L2NetworkSpec {
+    @SpecParam(required = true)
     Integer vlan
 
     L2VlanNetworkSpec(EnvSpec envSpec) {

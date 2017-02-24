@@ -8,7 +8,9 @@ import org.zstack.utils.gson.JSONObjectUtil
  * Created by xing5 on 2017/2/12.
  */
 class ZoneSpec extends Spec {
+    @SpecParam(required = true)
     String name
+    @SpecParam
     String description
     List<ClusterSpec> clusters = []
     List<PrimaryStorageSpec> primaryStorage = []

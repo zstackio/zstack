@@ -6,11 +6,17 @@ import org.zstack.sdk.IpRangeInventory
  * Created by xing5 on 2017/2/15.
  */
 class IpRangeSpec extends Spec implements HasSession {
+    @SpecParam
     String name = "ip-range"
+    @SpecParam
     String description
+    @SpecParam(required = true)
     String startIp
+    @SpecParam(required = true)
     String endIp
+    @SpecParam(required = true)
     String netmask
+    @SpecParam(required = true)
     String gateway
 
     IpRangeInventory inventory

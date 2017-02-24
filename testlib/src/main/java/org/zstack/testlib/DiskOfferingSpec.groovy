@@ -6,9 +6,13 @@ import org.zstack.sdk.DiskOfferingInventory
  * Created by xing5 on 2017/2/16.
  */
 class DiskOfferingSpec extends Spec implements HasSession {
+    @SpecParam(required = true)
     String name
+    @SpecParam
     String description
+    @SpecParam(required = true)
     Long diskSize
+    @SpecParam
     String allocatorStrategy
 
     DiskOfferingInventory inventory

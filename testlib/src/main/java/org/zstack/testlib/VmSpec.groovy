@@ -14,7 +14,9 @@ class VmSpec extends Spec implements HasSession {
     private Closure diskOfferings = {}
     private Closure l3Networks = {}
     private Closure defaultL3Network = {}
+    @SpecParam(required = true)
     String name
+    @SpecParam
     String description
 
     VmInstanceInventory inventory
@@ -23,6 +25,7 @@ class VmSpec extends Spec implements HasSession {
         super(envSpec)
     }
 
+    @SpecMethod
     void useInstanceOffering(String name) {
         preCreate {
             addDependency(name, InstanceOfferingSpec.class)
@@ -35,6 +38,7 @@ class VmSpec extends Spec implements HasSession {
         }
     }
 
+    @SpecMethod
     void useImage(String name) {
         preCreate {
             addDependency(name, ImageSpec.class)
@@ -47,6 +51,7 @@ class VmSpec extends Spec implements HasSession {
         }
     }
 
+    @SpecMethod
     void useRootDiskOffering(String name) {
         preCreate {
             addDependency(name, DiskOfferingSpec.class)
@@ -59,6 +64,7 @@ class VmSpec extends Spec implements HasSession {
         }
     }
 
+    @SpecMethod
     void useCluster(String name) {
         preCreate {
             addDependency(name, ClusterSpec.class)
@@ -71,6 +77,7 @@ class VmSpec extends Spec implements HasSession {
         }
     }
 
+    @SpecMethod
     void useHost(String name) {
         preCreate {
             addDependency(name, HostSpec.class)
@@ -83,6 +90,7 @@ class VmSpec extends Spec implements HasSession {
         }
     }
 
+    @SpecMethod
     void useDiskOfferings(String... names) {
         names.each { String name ->
             preCreate {
@@ -99,6 +107,7 @@ class VmSpec extends Spec implements HasSession {
         }
     }
 
+    @SpecMethod
     void useL3Networks(String... names) {
         names.each { String name ->
             preCreate {
@@ -115,6 +124,7 @@ class VmSpec extends Spec implements HasSession {
         }
     }
 
+    @SpecMethod
     void useDefaultL3Network(String name) {
         preCreate {
             addDependency(name, L3NetworkSpec.class)

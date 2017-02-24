@@ -8,13 +8,21 @@ import org.zstack.sdk.VmNicInventory
  * Created by xing5 on 2017/2/20.
  */
 class PortForwardingSpec extends Spec implements HasSession {
+    @SpecParam(required = true)
     String name
+    @SpecParam
     String description
+    @SpecParam(required = true)
     Integer vipPortStart
+    @SpecParam(required = true)
     Integer vipPortEnd
+    @SpecParam(required = true)
     Integer privatePortStart
+    @SpecParam(required = true)
     Integer privatePortEnd
+    @SpecParam
     String allowedCidr
+    @SpecParam(required = true)
     String protocolType
     private Closure vip
     private Closure vmNic
@@ -52,6 +60,7 @@ class PortForwardingSpec extends Spec implements HasSession {
         return id(name, inventory.uuid)
     }
 
+    @SpecMethod
     void useVip(String vipL3NetworkName) {
         preCreate {
             addDependency(vipL3NetworkName, L3NetworkSpec.class)
@@ -71,6 +80,7 @@ class PortForwardingSpec extends Spec implements HasSession {
         }
     }
 
+    @SpecMethod
     void useVmNic(String vmName, String l3NetworkName) {
         assert vmName != null: "vmName must be set when calling portForwarding.useVmNic()"
         assert l3NetworkName != null: "l3NetworkName must be set when calling portForwarding.useVmNic()"
