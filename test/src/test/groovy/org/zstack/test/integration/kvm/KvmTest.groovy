@@ -1,5 +1,6 @@
 package org.zstack.test.integration.kvm
 
+import org.zstack.test.integration.kvm.capacity.CannotUseHostReservedResource
 import org.zstack.test.integration.kvm.capacity.CheckHostCapacityWhenAddHostCase
 import org.zstack.test.integration.kvm.lifecycle.OneVmBasicLifeCycleCase
 import org.zstack.testlib.Test
@@ -27,7 +28,8 @@ class KvmTest extends Test {
     void test() {
         runSubCases([
                 new OneVmBasicLifeCycleCase(),
-                new CheckHostCapacityWhenAddHostCase()
+                new CheckHostCapacityWhenAddHostCase(),
+                new CannotUseHostReservedResource()
         ])
     }
 }
