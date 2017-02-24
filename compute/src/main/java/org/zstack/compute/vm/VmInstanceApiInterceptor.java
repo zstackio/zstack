@@ -2,8 +2,11 @@ package org.zstack.compute.vm;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.compute.allocator.HostCapacityReserveManager;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -28,6 +31,7 @@ import org.zstack.header.vm.*;
 import org.zstack.header.zone.ZoneState;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.header.zone.ZoneVO_;
+import org.zstack.utils.SizeUtils;
 import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.Tuple;
@@ -334,6 +338,20 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         if (istate == InstanceOfferingState.Disabled) {
             throw new ApiMessageInterceptionException(errf.stringToOperationError(
                     String.format("instance offering[uuid:%s] is Disabled, can't create vm from it", msg.getInstanceOfferingUuid())
+            ));
+        }
+
+        Tuple result = SQL.New("select sum(hc.availableMemory),gf.value, io.memorySize " +
+                "from HostCapacityVO hc, HostVO host, GlobalConfigVO gf, InstanceOfferingVO io" +
+                " where hc.uuid = host.uuid and host.state = :hstate and host.status = :hstatus and gf.name =:gfName and io.uuid =:ioUuid", Tuple.class)
+                .param("hstate", HostState.Enabled).param("hstatus", HostStatus.Connected).param("gfName", "reservedMemory").param("ioUuid", msg.getInstanceOfferingUuid())
+                .find();
+        Long avaliableMemory = (Long) result.get(0);
+        Long reserveMemory = SizeUtils.sizeStringToBytes((String) result.get(1));
+        Long memorySize = (Long) result.get(2);
+        if (memorySize > (avaliableMemory - reserveMemory)) {
+            throw new ApiMessageInterceptionException(errf.stringToOperationError(
+                    String.format("the host doesn't have enough memory")
             ));
         }
 
