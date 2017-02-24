@@ -36,4 +36,9 @@ FOR EACH ROW
     END $$
 DELIMITER ;
 
+ALTER TABLE `zstack`.`SharedResourceVO` DROP foreign key fkSharedResourceVOAccountVO;
+ALTER TABLE `zstack`.`SharedResourceVO` DROP INDEX `ownerAccountUuid`;
+ALTER TABLE `zstack`.`SharedResourceVO` ADD CONSTRAINT fkSharedResourceVOAccountVO FOREIGN KEY (ownerAccountUuid) REFERENCES AccountVO (uuid) ON DELETE CASCADE;
+ALTER TABLE `zstack`.`SharedResourceVO` ADD UNIQUE INDEX(`ownerAccountUuid`,`receiverAccountUuid`,`resourceUuid`,`toPublic`);
+
 
