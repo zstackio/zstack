@@ -1,5 +1,6 @@
 package org.zstack.core.progress;
 
+import org.aspectj.lang.annotation.Before;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
@@ -19,7 +20,10 @@ import org.zstack.header.rest.SyncHttpCallHandler;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.List;
+import java.sql.Time;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 
 /**
@@ -39,39 +43,125 @@ public class ProgressReportService extends AbstractService implements Management
     @Autowired
     private CloudBus bus;
 
+    private static List<ProgressReportCmd> cmdList =  Collections.synchronizedList(new ArrayList());
+
+    static Timer timer = new Timer();
+    static boolean timerHasInit = false;
+
+    public void initTimer() {
+        try {
+            if (timerHasInit == false) {
+                timer.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        ConcurrentHashMap<String, ProgressReportCmd> hashMap = new ConcurrentHashMap<String, ProgressReportCmd>();
+                        ConcurrentHashMap<String, ProgressReportCmd> finishHashMap = new ConcurrentHashMap<String, ProgressReportCmd>();
+                        ConcurrentHashMap<String,ProgressReportCmd> processHashMap = new ConcurrentHashMap<String, ProgressReportCmd>();
+                        ConcurrentHashMap<String,ProgressReportCmd> startHashMap = new ConcurrentHashMap<String, ProgressReportCmd>();
+
+
+                        for (int i = 0; i < cmdList.size(); i++) {
+
+                            ProgressReportCmd cmdPending = cmdList.get(i);
+
+                            //list progress stage
+                            if (cmdPending.getProgressStage().equals("finish")){
+                                if (!finishHashMap.containsKey(cmdPending.getResourceUuid() + cmdPending.getProcessType())){
+                                    finishHashMap.put(cmdPending.getResourceUuid() + cmdPending.getProcessType(), cmdPending);
+                                }
+                            }else if (cmdPending.getProgressStage().equals("process")){
+                                if (!processHashMap.containsKey(cmdPending.getResourceUuid() + cmdPending.getProcessType())){
+                                    processHashMap.put(cmdPending.getResourceUuid() + cmdPending.getProcessType(), cmdPending);
+                                }
+                            }else if (cmdPending.getProgressStage().equals("start")){
+                                if (!startHashMap.containsKey(cmdPending.getResourceUuid() + cmdPending.getProcessType())){
+                                    startHashMap.put(cmdPending.getResourceUuid() + cmdPending.getProcessType(), cmdPending);
+                                }
+                            }
+                        }
+                        
+
+                        for (Map.Entry<String,ProgressReportCmd> entry:startHashMap.entrySet()){
+                            if (!finishHashMap.containsKey(entry.getKey())){
+                                startProcess(entry.getValue());
+                            }
+                        }
+                        
+                        for (Map.Entry<String,ProgressReportCmd> entry:processHashMap.entrySet()){
+                            if (!finishHashMap.containsKey(entry.getKey())){
+                                process(entry.getValue());
+                            }
+                        }
+
+                        finishHashMap.clear();
+                        startHashMap.clear();
+                        processHashMap.clear();
+                        cmdList.clear();
+                    }
+                }, 1000, 1000);
+
+                timerHasInit = true;
+            }
+        }catch (Exception e){
+            logger.debug(String.format("time init failed!"));
+            logger.debug(e.getMessage());
+        }
+
+    }
+
+
+
     @Override
     public boolean start() {
-        restf.registerSyncHttpCallHandler(ProgressConstants.PROGRESS_START_PATH, ProgressReportCmd.class, new SyncHttpCallHandler<ProgressReportCmd>() {
-            @Override
-            public String handleSyncHttpCall(ProgressReportCmd cmd) {
-                //TODO
-                logger.debug(String.format("call PROGRESS_START_PATH by %s, uuid: %s", cmd.getProcessType(), cmd.getResourceUuid()));
-                startProcess(cmd);
-                return null;
-            }
-        });
+        try {
 
-        restf.registerSyncHttpCallHandler(ProgressConstants.PROGRESS_REPORT_PATH, ProgressReportCmd.class, new SyncHttpCallHandler<ProgressReportCmd>() {
-            @Override
-            public String handleSyncHttpCall(ProgressReportCmd cmd) {
-                //TODO
-                logger.debug(String.format("call PROGRESS_REPORT_PATH by %s, uuid: %s", cmd.getProcessType(), cmd.getResourceUuid()));
-                process(cmd);
-                return null;
+            if (timerHasInit == false) {
+                initTimer();
             }
-        });
 
-        restf.registerSyncHttpCallHandler(ProgressConstants.PROGRESS_FINISH_PATH, ProgressReportCmd.class, new SyncHttpCallHandler<ProgressReportCmd>() {
-            @Override
-            public String handleSyncHttpCall(ProgressReportCmd cmd) {
-                //TODO
-                logger.debug(String.format("call PROGRESS_FINISH_PATH by %s, uuid: %s", cmd.getProcessType(), cmd.getResourceUuid()));
-                finishProcess(cmd);
-                return null;
-            }
-        });
+            restf.registerSyncHttpCallHandler(ProgressConstants.PROGRESS_START_PATH, ProgressReportCmd.class, new SyncHttpCallHandler<ProgressReportCmd>() {
+                @Override
+                public String handleSyncHttpCall(ProgressReportCmd cmd) {
+                    //TODO
+                    logger.debug(String.format("call PROGRESS_START_PATH by %s, uuid: %s", cmd.getProcessType(), cmd.getResourceUuid()));
+                    cmd.setProgressStage("start");
+                    cmdList.add(cmd);
+                    //startProcess(cmd);
+                    return null;
+                }
+            });
 
-        return true;
+            restf.registerSyncHttpCallHandler(ProgressConstants.PROGRESS_REPORT_PATH, ProgressReportCmd.class, new SyncHttpCallHandler<ProgressReportCmd>() {
+                @Override
+                public String handleSyncHttpCall(ProgressReportCmd cmd) {
+                    //TODO
+                    logger.debug(String.format("call PROGRESS_REPORT_PATH by %s, uuid: %s", cmd.getProcessType(), cmd.getResourceUuid()));
+                    cmd.setProgressStage("process");
+                    //process(cmd);
+                    cmdList.add(cmd);
+                    return null;
+                }
+            });
+
+            restf.registerSyncHttpCallHandler(ProgressConstants.PROGRESS_FINISH_PATH, ProgressReportCmd.class, new SyncHttpCallHandler<ProgressReportCmd>() {
+                @Override
+                public String handleSyncHttpCall(ProgressReportCmd cmd) {
+                    //TODO
+                    logger.debug(String.format("call PROGRESS_FINISH_PATH by %s, uuid: %s", cmd.getProcessType(), cmd.getResourceUuid()));
+                    cmd.setProgressStage("finish");
+                    //finishProcess(cmd);
+                    cmdList.add(cmd);
+                    return null;
+                }
+            });
+
+            return true;
+
+        }catch (Exception e){
+            logger.debug(String.format("start failed!"));
+            logger.debug(e.getMessage());
+            return false;
+        }
     }
 
     @Override
