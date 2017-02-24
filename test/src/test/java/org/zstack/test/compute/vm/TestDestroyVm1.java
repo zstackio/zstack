@@ -8,12 +8,10 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.image.ImageEO;
+import org.zstack.header.image.ImageVO;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.storage.backup.BackupStorageInventory;
-import org.zstack.header.vm.VmInstanceDeletionPolicyManager;
-import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.vm.VmInstanceState;
-import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.*;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
@@ -76,11 +74,14 @@ public class TestDestroyVm1 {
                 null);
         eo = dbf.findByUuid(vm1.getImageUuid(), ImageEO.class);
         Assert.assertNotNull("ImageEO should still exist", eo);
+        Assert.assertNotNull("ImageEO should be marked as deleted", eo.getDeleted());
+        Assert.assertFalse("ImageVO should have been deleted", dbf.isExist(eo.getUuid(), ImageVO.class));
 
         VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy.Direct.toString());
         api.destroyVmInstance(vm1.getUuid());
 
         eo = dbf.findByUuid(vm1.getImageUuid(), ImageEO.class);
         Assert.assertNull("ImageEO should have been cleaned up by trigger", eo);
+        Assert.assertFalse("VmInstanceEO should have been cleaned", dbf.isExist(vm1.getUuid(), VmInstanceEO.class));
     }
 }
