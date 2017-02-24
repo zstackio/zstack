@@ -37,7 +37,6 @@ public class EncryptRSA {
 			EncryptGlobalConfig.ENCRYPT_ALGORITHM.updateValue(key);
 			String keyString = EncryptGlobalConfig.ENCRYPT_ALGORITHM.value();
 
-			//logger.debug(String.format("key is : %s",keyString));
 			byte[] srcBytes = encodeUTF8(keyString);
 			key1 = Base64.decodeBase64(srcBytes);
 			key2 = toKey(key1);
@@ -54,7 +53,6 @@ public class EncryptRSA {
 		try {
 			if (key1 == null && key2 == null){
 				String keyString = EncryptGlobalConfig.ENCRYPT_ALGORITHM.value();
-				//logger.debug(String.format("key is : %s",keyString));
 
 				byte[] srcBytes = encodeUTF8(keyString);
 				key1 = Base64.decodeBase64(srcBytes);
@@ -151,7 +149,6 @@ public class EncryptRSA {
 		try {
 			password = appendString+password;
 
-			//logger.debug(String.format("key is : %s",keyString));
 			byte[] srcBytes = encodeUTF8(keyString);
 			byte[] newKey1 = Base64.decodeBase64(srcBytes);
 			Key newKey2 = toKey(newKey1);
@@ -170,9 +167,7 @@ public class EncryptRSA {
 			byte[] srcBytes = encodeUTF8(password);
 			byte[] desBytes = decrypt(Base64.decodeBase64(srcBytes), key2);
 			String tempdecodeUTF8 = decodeUTF8(desBytes);
-			//logger.debug(String.format("tempUTF8 first is: %s",tempdecodeUTF8.substring(0, appendString.length())));
 			if (tempdecodeUTF8.substring(0, appendString.length()).equals(appendString)){
-				//logger.debug(String.format("tempUTF8 after is: %s",tempdecodeUTF8.substring(appendString.length(), tempdecodeUTF8.length())));
 				return tempdecodeUTF8.substring(appendString.length(),tempdecodeUTF8.length());
 			}
 			return password;
@@ -185,7 +180,6 @@ public class EncryptRSA {
 
 	public Object decrypt(String password,String keyString) throws Exception{
 		try {
-			//logger.debug(String.format("key is : %s",keyString));
 			byte[] keySrcBytes = encodeUTF8(keyString);
 			byte[] newKey1 = Base64.decodeBase64(keySrcBytes);
 			Key newKey2 = toKey(newKey1);
@@ -193,9 +187,7 @@ public class EncryptRSA {
 			byte[] srcBytes = encodeUTF8(password);
 			byte[] desBytes = decrypt(Base64.decodeBase64(srcBytes), newKey2);
 			String tempdecodeUTF8 = decodeUTF8(desBytes);
-			//logger.debug(String.format("tempUTF8 first is: %s",tempdecodeUTF8.substring(0, appendString.length())));
 			if (tempdecodeUTF8.substring(0, appendString.length()).equals(appendString)){
-				//logger.debug(String.format("tempUTF8 after is: %s",tempdecodeUTF8.substring(appendString.length(), tempdecodeUTF8.length())));
 				return tempdecodeUTF8.substring(appendString.length(),tempdecodeUTF8.length());
 			}
 			return password;

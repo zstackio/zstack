@@ -70,17 +70,12 @@ public class EncryptManagerImpl extends AbstractService {
             String className = tempClass.getSimpleName();
             String paramName = "password";
 
-            logger.debug(String.format("className is : %s",className));
-            logger.debug(String.format("paramName is: %s ",paramName));
-
             String sql1 = "select uuid from "+className;
-            logger.debug(String.format("sql1 is: %s ",sql1));
             Query q1 = dbf.getEntityManager().createNativeQuery(sql1);
             List uuidList = q1.getResultList();
 
             for (int i=0; i<uuidList.size(); i++){
                 String sql2 = "select "+paramName+" from "+className+" where uuid = \""+uuidList.get(i)+"\"";
-                logger.debug(String.format("sql2 is: %s ",sql2));
                 Query q2 = dbf.getEntityManager().createNativeQuery(sql2);
                 String preEncrypttxt = q2.getResultList().get(0).toString();
                 try {
@@ -94,14 +89,6 @@ public class EncryptManagerImpl extends AbstractService {
                     query.setParameter("uuid",uuidList.get(i));
 
                     query.executeUpdate();
-
-                    /*String sql4 = "select "+paramName+" from "+className+" where uuid = \""+uuidList.get(i)+"\"";
-                    logger.debug(String.format("sql2 is: %s ",sql4));
-                    Query q4 = dbf.getEntityManager().createNativeQuery(sql4);
-                    String updateEncrypt = q4.getResultList().get(0).toString();
-                    String updateEncryptdecrypt = (String)rsa.decrypt(updateEncrypt,msg.getEncryptKey());
-                    logger.debug(String.format("updateEncrypt is: %s ",updateEncrypt));
-                    logger.debug(String.format("updateEncryptdecrypt is: %s ",updateEncryptdecrypt));*/
 
                 }catch (Exception e){
                     logger.debug("sql exec error");

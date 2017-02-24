@@ -14,15 +14,12 @@ public aspect EncryptAspect {
     void around(String param) : args(param) && execution(@org.zstack.header.core.encrypt.ENCRYPT * *(..)){
         if(param.length() > 0){
             try{
-                //logger.debug(String.format("password before encrypt is: %s", param));
                 param = rsa.encrypt1(param);
             }catch(Exception e){
                 logger.debug(String.format("encrypt aspectj is error..."));
                 logger.debug(e.getMessage());
                 e.printStackTrace();
             }
-
-            //logger.debug(String.format("password after encrypt is: %s", param));
             proceed(param);
         }
     }
