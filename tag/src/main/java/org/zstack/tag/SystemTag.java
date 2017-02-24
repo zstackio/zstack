@@ -284,6 +284,27 @@ public class SystemTag {
                     uuid = Platform.getUuid();
                 }
 
+                /**
+                 * fix issues 1706
+                 *
+                 * Check whether the data exists, if there is no longer insert (another recreate for true will not touch this logic, it will not change the original code behavior),
+                 * This reduces the vast majority of Hibernate redundant error logs.
+                 *
+                 * Background: If we insert duplicate data, hibernate will produce an error log, resulting in a large number of redundant error log.
+                 */
+                String sql = "select t from SystemTagVO t where t.uuid = :uuid";
+                TypedQuery<SystemTagVO> q = dbf.getEntityManager().createQuery(sql, SystemTagVO.class);
+                q.setParameter("uuid", uuid);
+                SystemTagVO vos = q.getSingleResult();
+                if(vos != null && uuid.equals(vos.getUuid())){ // tag exists
+                    if (!ignoreIfExisting) {
+                        throw new CloudRuntimeException(String.format("duplicate system tag[uuid: %s]", uuid));
+                    } else {
+                        exceptionCanBeIgnored = true;
+                        return null;
+                    }
+                }
+
                 SystemTagVO vo = new SystemTagVO();
                 vo.setResourceType(resourceClass.getSimpleName());
                 vo.setUuid(uuid);
@@ -295,6 +316,7 @@ public class SystemTag {
                 tagMgr.preTagCreated(SystemTagInventory.valueOf(vo));
 
                 try {
+                    // If execution fails, hibernate will generate an error log
                     dbf.getEntityManager().persist(vo);
                     dbf.getEntityManager().flush();
                     dbf.getEntityManager().refresh(vo);
@@ -307,6 +329,7 @@ public class SystemTag {
                             throw new CloudRuntimeException(String.format("duplicate system tag[resourceUuid: %s," +
                                     "resourceType: %s, tag: %s", resourceUuid, resourceClass.getSimpleName(), tag), e);
                         } else {
+                            logger.debug(String.format("please ignore this error log: Duplicate entry '%s' for key 'PRIMARY'", uuid));
                             exceptionCanBeIgnored = true;
                             return null;
                         }
