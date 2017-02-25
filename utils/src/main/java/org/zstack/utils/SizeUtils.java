@@ -1,6 +1,7 @@
 package org.zstack.utils;
 
 import org.zstack.utils.data.SizeUnit;
+import org.zstack.utils.data.SizeUnitPlus;
 
 import java.util.Arrays;
 import java.util.List;
@@ -64,6 +65,28 @@ public class SizeUtils {
             return SizeUnit.KILOBYTE.toByte(size);
         } else if (suffix.equals(B_SUFFIX) || suffix.equals(b_SUFFIX)) {
             return SizeUnit.BYTE.toByte(size);
+        }
+
+        throw new RuntimeException("should not be here," + str);
+    }
+    public static double sizeStringToTerabytes(String str) {
+        String numStr = str.substring(0, str.length() - 1);
+        String suffix = str.substring(str.length() - 1);
+        if (!validSuffix.contains(suffix)) {
+            return Double.valueOf(str);
+        }
+
+        Double size = Double.valueOf(numStr);
+        if (suffix.equals(T_SUFFIX) || suffix.equals(t_SUFFIX)) {
+            return SizeUnitPlus.TERABYTE.toTeraByte(size);
+        } else if (suffix.equals(G_SUFFIX) || suffix.equals(g_SUFFIX)) {
+            return SizeUnitPlus.GIGABYTE.toTeraByte(size);
+        } else if (suffix.equals(M_SUFFIX) || suffix.equals(m_SUFFIX)) {
+            return SizeUnitPlus.MEGABYTE.toTeraByte(size);
+        } else if (suffix.equals(K_SUFFIX) || suffix.equals(k_SUFFIX)) {
+            return SizeUnitPlus.KILOBYTE.toTeraByte(size);
+        } else if (suffix.equals(B_SUFFIX) || suffix.equals(b_SUFFIX)) {
+            return SizeUnitPlus.BYTE.toTeraByte(size);
         }
 
         throw new RuntimeException("should not be here," + str);
