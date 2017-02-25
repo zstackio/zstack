@@ -206,6 +206,9 @@ abstract class Test implements ApiHelper {
 
     private void prepare() {
         nextPhase()
+
+        setup()
+
         if (API_PORTAL) {
             spring {
                 include("ManagementNodeManager.xml")
@@ -219,8 +222,6 @@ abstract class Test implements ApiHelper {
                 includeCoreServices()
             }
         }
-
-        setup()
 
         if (DEPLOY_DB) {
             deployDB()
