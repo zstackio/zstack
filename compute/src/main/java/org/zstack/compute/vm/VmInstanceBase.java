@@ -2164,8 +2164,12 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     private void checkImageMediaTypeCapabilities(Map<String, Object> ret) {
-        ImageVO vo = dbf.findByUuid(self.getImageUuid(), ImageVO.class);
+        ImageVO vo = null;
         ImageMediaType imageMediaType;
+
+        if (self.getImageUuid() != null) {
+            vo = dbf.findByUuid(self.getImageUuid(), ImageVO.class);
+        }
 
         if (vo == null) {
             imageMediaType = null;
