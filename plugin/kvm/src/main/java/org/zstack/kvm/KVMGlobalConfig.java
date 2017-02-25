@@ -14,7 +14,7 @@ public class KVMGlobalConfig {
     public static GlobalConfig VM_MIGRATION_QUANTITY = new GlobalConfig(CATEGORY, "vm.migrationQuantity");
     @GlobalConfigValidation(numberGreaterThan = -1)
     public static GlobalConfig RESERVED_CPU_CAPACITY = new GlobalConfig(CATEGORY, "reservedCpu");
-    @GlobalConfigValidation
+    @GlobalConfigValidation(numberGreaterThan = 0, numberLessThan = 1099511627776L)// 1099511627776B = 1TB
     public static GlobalConfig RESERVED_MEMORY_CAPACITY = new GlobalConfig(CATEGORY, "reservedMemory");
     @GlobalConfigValidation(inNumberRange = {0, 24})
     public static GlobalConfig MAX_DATA_VOLUME_NUM = new GlobalConfig(CATEGORY, "dataVolume.maxNum");
