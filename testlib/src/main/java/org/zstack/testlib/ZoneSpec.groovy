@@ -104,6 +104,7 @@ class ZoneSpec extends Spec {
         return spec
     }
 
+    @SpecMethod
     void attachBackupStorage(String...names) {
         names.each { String bsName ->
             preCreate {

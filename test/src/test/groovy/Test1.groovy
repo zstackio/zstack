@@ -226,7 +226,7 @@ class Test1 extends TestPremium {
 
                 securityGroup {
                     name = "sg"
-                    useL3Network("l3")
+                    attachL3Network("l3")
                     useAccount("xin")
 
                     rule {

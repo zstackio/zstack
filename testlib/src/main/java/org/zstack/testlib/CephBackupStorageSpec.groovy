@@ -17,6 +17,7 @@ class CephBackupStorageSpec extends BackupStorageSpec {
     String fsid
     @SpecParam(required = true)
     List<String> monUrls
+    @SpecParam
     Map<String, String> monAddrs = [:]
 
     CephBackupStorageSpec(EnvSpec envSpec) {

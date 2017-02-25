@@ -35,6 +35,7 @@ class ClusterSpec extends Spec {
         return hspec
     }
 
+    @SpecMethod
     void attachPrimaryStorage(String... names) {
         names.each { String primaryStorageName ->
             preCreate {
@@ -45,6 +46,7 @@ class ClusterSpec extends Spec {
         }
     }
 
+    @SpecMethod
     void attachL2Network(String ...names) {
         names.each { String l2NetworkName ->
             preCreate {

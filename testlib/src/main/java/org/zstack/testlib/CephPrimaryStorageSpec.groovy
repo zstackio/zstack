@@ -19,6 +19,7 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
     String fsid
     @SpecParam(required = true)
     List<String> monUrls
+    @SpecParam
     Map<String, String> monAddrs = [:]
 
     CephPrimaryStorageSpec(EnvSpec envSpec) {
