@@ -69,15 +69,6 @@ public class TestEncrypt {
         loader = con1.build();
         rsa = loader.getComponent(EncryptRSA.class);
 
-        /*deployer = new Deployer("deployerXml/mevoco/TestMevoco.xml", con);
-        deployer.addSpringConfig("mevocoRelated.xml");
-        deployer.addSpringConfig("billing.xml");
-        deployer.load();
-
-        loader = deployer.getComponentLoader();
-        //bus = loader.getComponent(CloudBus.class);
-        dbf = loader.getComponent(DatabaseFacade.class);*/
-
     }
 
     private HostInventory addHost() throws ApiSenderException {
@@ -165,8 +156,5 @@ public class TestEncrypt {
         HostCapacityVO hvo1 = dbf.findByUuid(uuid1, HostCapacityVO.class);
 
         String result = updateKey();
-        //logger.debug("result is: "+result);
-
-        //dbf.persist(kvmHostVO);
     }
 }

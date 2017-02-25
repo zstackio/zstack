@@ -41,37 +41,20 @@ public class EncryptRSA {
 	public String updateKey(String key) throws Exception{
 		try {
 			EncryptGlobalConfig.ENCRYPT_ALGORITHM.updateValue(key);
-
 			String keyString = EncryptGlobalConfig.ENCRYPT_ALGORITHM.value();
-			//String keyString2 = EncryptGlobalConfig.ENCRYPT_ALGORITHM.getDefaultValue()
+
 			logger.debug(String.format("key is : %s",keyString));
 			byte[] srcBytes = encodeUTF8(keyString);
 			key1 = Base64.decodeBase64(srcBytes);
-
-			//key1 = Base64.decodeBase64(encodeUTF8(keyString));
 			key2 = toKey(key1);
 			return "success";
 		}catch (Exception e){
-			logger.debug("change key failed");
-			logger.debug(e.getStackTrace().toString());
+			logger.debug(String.format("change key failed"),e);
 			return "failed";
 		}
 	}
 
 	public void initKey() throws Exception{
-		/*KeyGenerator kg = null;
-		try {
-			kg = KeyGenerator.getInstance(KEY_ALGORITHM);
-		} catch (NoSuchAlgorithmException e) {
-			logger.debug(e.getMessage());
-			e.printStackTrace();
-		}
-		//init keygenerator's size
-		kg.init(128);
-		//generator a key
-		SecretKey  secretKey = kg.generateKey();
-		key1 = secretKey.getEncoded();
-		key2 = toKey(key1);*/
 		try {
 			if (key1 == null && key2 == null){
 				String keyString = EncryptGlobalConfig.ENCRYPT_ALGORITHM.value();
@@ -79,12 +62,10 @@ public class EncryptRSA {
 				logger.debug(String.format("key is : %s",keyString));
 				byte[] srcBytes = encodeUTF8(keyString);
 				key1 = Base64.decodeBase64(srcBytes);
-
-				//key1 = Base64.decodeBase64(encodeUTF8(keyString));
 				key2 = toKey(key1);
 			}
 		}catch (Exception e){
-			logger.debug(e.getMessage());
+			logger.debug(String.format("init key failed"),e);
 		}
 
 
@@ -167,7 +148,7 @@ public class EncryptRSA {
 			byte[] base64EncryptData = Base64.encodeBase64(encryptData);
 			return decodeUTF8(base64EncryptData);
 		}catch (Exception e){
-			logger.debug(e.getMessage());
+			logger.debug(String.format("encrypt by default key error"),e);
 			return password;
 		}
 	}
@@ -184,7 +165,7 @@ public class EncryptRSA {
 			byte[] base64EncryptData = Base64.encodeBase64(encryptData);
 			return decodeUTF8(base64EncryptData);
 		}catch (Exception e){
-			logger.debug(e.getMessage());
+			logger.debug(String.format("encrypt by provided key error"),e);
 			return password;
 		}
 	}
@@ -202,7 +183,7 @@ public class EncryptRSA {
 			}
 			return password;
 		}catch (Exception e){
-			logger.debug(e.getMessage());
+			logger.debug(String.format("decrypt by default key error"),e);
 			return password;
 		}
 
@@ -225,7 +206,7 @@ public class EncryptRSA {
 			}
 			return password;
 		}catch (Exception e){
-			logger.debug(e.getMessage());
+			logger.debug(String.format("decrypt by provided key error"),e);
 			return password;
 		}
 
