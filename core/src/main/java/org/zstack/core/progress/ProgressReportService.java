@@ -20,6 +20,7 @@ import org.zstack.header.rest.SyncHttpCallHandler;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import java.sql.Time;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -42,63 +43,66 @@ public class ProgressReportService extends AbstractService implements Management
     @Autowired
     private CloudBus bus;
 
-    private static List<ProgressReportCmd> startCmdList =  Collections.synchronizedList(new ArrayList());
-    private static List<ProgressReportCmd> processCmdList =  Collections.synchronizedList(new ArrayList());
-    private static List<ProgressReportCmd> finishCmdList =  Collections.synchronizedList(new ArrayList());
+    private static List<ProgressReportCmd> cmdList =  Collections.synchronizedList(new ArrayList());
 
-    static Timer startTimer = new Timer();
-    static Timer processTimer = new Timer();
-    static Timer finishTimer = new Timer();
+    static Timer timer = new Timer();
     static boolean timerHasInit = false;
 
     public void initTimer() {
         try {
             if (timerHasInit == false) {
-                startTimer.schedule(new TimerTask() {
+                timer.schedule(new TimerTask() {
                     @Override
                     public void run() {
                         ConcurrentHashMap<String, ProgressReportCmd> hashMap = new ConcurrentHashMap<String, ProgressReportCmd>();
-                        for (int i = 0; i < startCmdList.size(); i++) {
-                            ProgressReportCmd cmdPending = startCmdList.get(i);
-                            if (!hashMap.containsKey(cmdPending.getResourceUuid() + cmdPending.getProcessType())) {
-                                hashMap.put(cmdPending.getResourceUuid() + cmdPending.getProcessType(), cmdPending);
-                                startProcess(cmdPending);
+                        ConcurrentHashMap<String, ProgressReportCmd> finishHashMap = new ConcurrentHashMap<String, ProgressReportCmd>();
+                        ConcurrentHashMap<String,ProgressReportCmd> processHashMap = new ConcurrentHashMap<String, ProgressReportCmd>();
+                        ConcurrentHashMap<String,ProgressReportCmd> startHashMap = new ConcurrentHashMap<String, ProgressReportCmd>();
+
+
+                        for (int i = 0; i < cmdList.size(); i++) {
+
+                            ProgressReportCmd cmdPending = cmdList.get(i);
+
+                            //list progress stage
+                            if (cmdPending.getProgressStage().equals("finish")){
+                                if (!finishHashMap.containsKey(cmdPending.getResourceUuid() + cmdPending.getProcessType())){
+                                    finishHashMap.put(cmdPending.getResourceUuid() + cmdPending.getProcessType(), cmdPending);
+                                }
+                            }else if (cmdPending.getProgressStage().equals("process")){
+                                if (!processHashMap.containsKey(cmdPending.getResourceUuid() + cmdPending.getProcessType())){
+                                    processHashMap.put(cmdPending.getResourceUuid() + cmdPending.getProcessType(), cmdPending);
+                                }
+                            }else if (cmdPending.getProgressStage().equals("start")){
+                                if (!startHashMap.containsKey(cmdPending.getResourceUuid() + cmdPending.getProcessType())){
+                                    startHashMap.put(cmdPending.getResourceUuid() + cmdPending.getProcessType(), cmdPending);
+                                }
                             }
                         }
-                        hashMap.clear();
-                        startCmdList.clear();
-                    }
-                }, 1000, 1000);//per second exec once
+                        
 
-                processTimer.schedule(new TimerTask() {
-                    @Override
-                    public void run() {
-                        ConcurrentHashMap<String, ProgressReportCmd> hashMap = new ConcurrentHashMap<String, ProgressReportCmd>();
-
-                        for (int i = 0; i < processCmdList.size(); i++) {
-                            ProgressReportCmd cmdPending = processCmdList.get(i);
-                            if (!hashMap.containsKey(cmdPending.getResourceUuid() + cmdPending.getProcessType())) {
-                                hashMap.put(cmdPending.getResourceUuid() + cmdPending.getProcessType(), cmdPending);
-                                process(cmdPending);
+                        for (Map.Entry<String,ProgressReportCmd> entry:startHashMap.entrySet()){
+                            if (finishHashMap.containsKey(entry.getKey())){
+                                startHashMap.remove(entry.getKey());
+                            }else{
+                                startProcess(entry.getValue());
                             }
                         }
-                        hashMap.clear();
-                        processCmdList.clear();
-                    }
-                }, 1000, 1000);//per second exec once
-
-                finishTimer.schedule(new TimerTask() {
-                    @Override
-                    public void run() {
-                        ConcurrentHashMap<String, ProgressReportCmd> hashMap = new ConcurrentHashMap<String, ProgressReportCmd>();
-
-                        for (int i = 0; i < finishCmdList.size(); i++) {
-                            finishProcess(finishCmdList.get(i));
+                        
+                        for (Map.Entry<String,ProgressReportCmd> entry:processHashMap.entrySet()){
+                            if (finishHashMap.containsKey(entry.getKey())){
+                                processHashMap.remove(entry.getKey());
+                            }else{
+                                process(entry.getValue());
+                            }
                         }
-                        hashMap.clear();
-                        finishCmdList.clear();
+                        finishHashMap.clear();
+                        startHashMap.clear();
+                        processHashMap.clear();
+                        cmdList.clear();
                     }
-                }, 1000, 1000);//per second exec once
+                }, 1000, 1000);
+
                 timerHasInit = true;
             }
         }catch (Exception e){
@@ -123,7 +127,8 @@ public class ProgressReportService extends AbstractService implements Management
                 public String handleSyncHttpCall(ProgressReportCmd cmd) {
                     //TODO
                     logger.debug(String.format("call PROGRESS_START_PATH by %s, uuid: %s", cmd.getProcessType(), cmd.getResourceUuid()));
-                    startCmdList.add(cmd);
+                    cmd.setProgressStage("start");
+                    cmdList.add(cmd);
                     //startProcess(cmd);
                     return null;
                 }
@@ -134,8 +139,9 @@ public class ProgressReportService extends AbstractService implements Management
                 public String handleSyncHttpCall(ProgressReportCmd cmd) {
                     //TODO
                     logger.debug(String.format("call PROGRESS_REPORT_PATH by %s, uuid: %s", cmd.getProcessType(), cmd.getResourceUuid()));
+                    cmd.setProgressStage("process");
                     //process(cmd);
-                    processCmdList.add(cmd);
+                    cmdList.add(cmd);
                     return null;
                 }
             });
@@ -145,8 +151,9 @@ public class ProgressReportService extends AbstractService implements Management
                 public String handleSyncHttpCall(ProgressReportCmd cmd) {
                     //TODO
                     logger.debug(String.format("call PROGRESS_FINISH_PATH by %s, uuid: %s", cmd.getProcessType(), cmd.getResourceUuid()));
+                    cmd.setProgressStage("finish");
                     //finishProcess(cmd);
-                    finishCmdList.add(cmd);
+                    cmdList.add(cmd);
                     return null;
                 }
             });
