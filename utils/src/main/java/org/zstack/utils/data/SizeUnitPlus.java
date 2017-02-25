@@ -1,134 +1,134 @@
 package org.zstack.utils.data;
 
-public enum SizeUnit {
+public enum SizeUnitPlus {
     BYTE {
-        public long toByte(long s) {
+        public double toByte(double s) {
             return s;
         }
 
-        public long toKiloByte(long s) {
+        public double toKiloByte(double s) {
             return (s / (k / b));
         }
 
-        public long toMegaByte(long s) {
+        public double toMegaByte(double s) {
             return (s / (m / b));
         }
 
-        public long toGigaByte(long s) {
+        public double toGigaByte(double s) {
             return (s / (g / b));
         }
 
-        public long toTeraByte(long s) {
+        public double toTeraByte(double s) {
             return (s / (t / b));
         }
 
-        public long convert(long s, SizeUnit src) {
+        public double convert(double s, SizeUnitPlus src) {
             return src.toByte(s);
         }
     },
     KILOBYTE {
-        public long toByte(long s) {
+        public double toByte(double s) {
             return (s * (k / b));
         }
 
-        public long toKiloByte(long s) {
+        public double toKiloByte(double s) {
             return s;
         }
 
-        public long toMegaByte(long s) {
+        public double toMegaByte(double s) {
             return (s / (m / k));
         }
 
-        public long toGigaByte(long s) {
+        public double toGigaByte(double s) {
             return (s / (g / k));
         }
 
-        public long toTeraByte(long s) {
+        public double toTeraByte(double s) {
             return (s / (t / k));
         }
 
-        public long convert(long s, SizeUnit src) {
+        public double convert(double s, SizeUnitPlus src) {
             return src.toKiloByte(s);
         }
     },
     MEGABYTE {
-        public long toByte(long s) {
+        public double toByte(double s) {
             return (s * (m / b));
         }
 
-        public long toKiloByte(long s) {
+        public double toKiloByte(double s) {
             return (s * (m / k));
         }
 
-        public long toMegaByte(long s) {
+        public double toMegaByte(double s) {
             return s;
         }
 
-        public long toGigaByte(long s) {
+        public double toGigaByte(double s) {
             return (s / (g / m));
         }
 
-        public long toTeraByte(long s) {
+        public double toTeraByte(double s) {
             return (s / (t / m));
         }
 
-        public long convert(long s, SizeUnit src) {
+        public double convert(double s, SizeUnitPlus src) {
             return src.toMegaByte(s);
         }
     },
     GIGABYTE {
-        public long toByte(long s) {
+        public double toByte(double s) {
             return (s * (g / b));
         }
 
-        public long toKiloByte(long s) {
+        public double toKiloByte(double s) {
             return (s * (g / k));
         }
 
-        public long toMegaByte(long s) {
+        public double toMegaByte(double s) {
             return (s * (g / m));
         }
 
-        public long toGigaByte(long s) {
+        public double toGigaByte(double s) {
             return s;
         }
 
-        public long toTeraByte(long s) {
+        public double toTeraByte(double s) {
             return (s / (t / g));
         }
 
-        public long convert(long s, SizeUnit src) {
+        public double convert(double s, SizeUnitPlus src) {
             return src.toGigaByte(s);
         }
     },
     TERABYTE {
-        public long toByte(long s) {
+        public double toByte(double s) {
             return (s * (t / b));
         }
 
-        public long toKiloByte(long s) {
+        public double toKiloByte(double s) {
             return (s * (t / k));
         }
 
-        public long toMegaByte(long s) {
+        public double toMegaByte(double s) {
             return (s * (t / m));
         }
 
-        public long toGigaByte(long s) {
+        public double toGigaByte(double s) {
             return (s * (t / g));
         }
 
-        public long toTeraByte(long s) {
+        public double toTeraByte(double s) {
             return s;
         }
 
-        public long convert(long s, SizeUnit src) {
+        public double convert(double s, SizeUnitPlus src) {
             return src.toTeraByte(s);
         }
 
     };
 
-    public static SizeUnit fromString(String s) {
+    public static SizeUnitPlus fromString(String s) {
         if ("b".equalsIgnoreCase(s)) {
             return BYTE;
         } else if ("k".equalsIgnoreCase(s)) {
@@ -144,29 +144,29 @@ public enum SizeUnit {
         }
     }
 
-    private static final long b = 1;
-    private static final long k = b * 1024;
-    private static final long m = k * 1024;
-    private static final long g = m * 1024;
-    private static final long t = g * 1024;
+    private static final double b = 1;
+    private static final double k = b * 1024;
+    private static final double m = k * 1024;
+    private static final double g = m * 1024;
+    private static final double t = g * 1024;
 
-    public long toByte(long s) {
+    public double toByte(double s) {
         throw new AbstractMethodError();
     }
-    public long toKiloByte(long s) {
+    public double toKiloByte(double s) {
         throw new AbstractMethodError();
     }
-    public long toMegaByte(long s) {
+    public double toMegaByte(double s) {
         throw new AbstractMethodError();
     }
-    public long toGigaByte(long s) {
+    public double toGigaByte(double s) {
         throw new AbstractMethodError();
     }
-    public long toTeraByte(long s) {
+    public double toTeraByte(double s) {
         throw new AbstractMethodError();
     }
 
-    public long convert(long s, SizeUnit src) {
+    public double convert(double s, SizeUnitPlus src) {
         throw new AbstractMethodError();
     }
 }
