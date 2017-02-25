@@ -7,7 +7,7 @@ import org.zstack.test.integration.kvm.vm.OneVmBasicLifeCycleCase
 import org.zstack.test.integration.kvm.vm.VmGCCase
 import org.zstack.testlib.SpringSpec
 import org.zstack.test.integration.kvm.status.MaintainHostCase
-
+import org.zstack.test.integration.kvm.globalconfig.KvmGlobalConfigCase
 import org.zstack.testlib.Test
 
 /**
@@ -39,7 +39,8 @@ class KvmTest extends Test {
                 new VmGCCase(),
                 new HostStateCase(),
                 new MaintainHostCase(),
-                new DBOnlyCase()
+                new DBOnlyCase(),
+                new KvmGlobalConfigCase()
         ])
     }
 }
