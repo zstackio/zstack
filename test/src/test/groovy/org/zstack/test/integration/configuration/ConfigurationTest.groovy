@@ -28,4 +28,5 @@ class ConfigurationTest extends Test {
             new SystemTagCase()
         ])
     }
+
 }
