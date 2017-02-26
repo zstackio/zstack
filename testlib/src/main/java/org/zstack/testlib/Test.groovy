@@ -345,4 +345,8 @@ abstract class Test implements ApiHelper {
             System.exit(1)
         }
     }
+
+    protected static <T> T json(String str, Class<T> type) {
+        return JSONObjectUtil.toObject(str, type)
+    }
 }
