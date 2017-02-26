@@ -3,6 +3,7 @@ package org.zstack.testlib
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.springframework.http.*
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory
+import org.springframework.security.access.method.P
 import org.springframework.web.client.RestTemplate
 import org.zstack.core.CoreGlobalProperty
 import org.zstack.core.Platform
@@ -34,12 +35,18 @@ class EnvSpec implements Node {
     private static Map<String, Closure> httpHandlers = [:]
     private static Map<String, Closure> httpPostHandlers = [:]
     private static RestTemplate restTemplate
+    private static Set<Class> simulatorClasses = Platform.reflections.getSubTypesOf(Simulator.class)
 
-    {
+    EnvSpec() {
         HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory()
         factory.setReadTimeout(CoreGlobalProperty.REST_FACADE_READ_TIMEOUT)
         factory.setConnectTimeout(CoreGlobalProperty.REST_FACADE_CONNECT_TIMEOUT)
         restTemplate = new RestTemplate(factory)
+
+        simulatorClasses.each {
+            Simulator sim = it.newInstance() as Simulator
+            sim.registerSimulators(this)
+        }
     }
 
     ZoneSpec zone(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = ZoneSpec.class) Closure c)  {
@@ -348,6 +355,10 @@ class EnvSpec implements Node {
                 } else {
                     ret = postHandler(ret, entity, this)
                 }
+            }
+
+            if (ret == null) {
+                ret = [:]
             }
 
             replyHttpCall(entity, rsp, ret)

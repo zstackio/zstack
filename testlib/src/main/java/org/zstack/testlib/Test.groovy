@@ -50,6 +50,14 @@ abstract class Test implements ApiHelper {
         return spec
     }
 
+    static SpringSpec makeSpring(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = SpringSpec.class) Closure c) {
+        def spec = new SpringSpec()
+        c.delegate = spec
+        c.resolveStrategy = Closure.DELEGATE_FIRST
+        c()
+        return spec
+    }
+
     protected EnvSpec env(@DelegatesTo(strategy=Closure.DELEGATE_FIRST, value=EnvSpec.class) Closure c) {
         def spec = new EnvSpec()
         c.delegate = spec
@@ -202,6 +210,10 @@ abstract class Test implements ApiHelper {
 
     protected String adminSession() {
         return currentEnvSpec.session.uuid
+    }
+
+    protected void useSpring(SpringSpec spec) {
+        springSpec = spec
     }
 
     private void prepare() {
