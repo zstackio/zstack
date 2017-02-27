@@ -1,11 +1,9 @@
-import org.zstack.core.cloudbus.CloudBus
-import org.zstack.header.host.ConnectHostMsg
-import org.zstack.kvm.KVMConstant
-import org.zstack.storage.primary.local.LocalStorageKvmBackend
-import org.zstack.test.deployer.Deployer
+import org.zstack.header.vm.APIStopVmInstanceMsg
+import org.zstack.header.vm.StopVmInstanceMsg
 import org.zstack.testlib.DiskOfferingSpec
 import org.zstack.testlib.EnvSpec
-import org.zstack.testlib.HttpError
+import org.zstack.testlib.Test
+import org.zstack.testlib.VmSpec
 import org.zstack.testlib.premium.TestPremium
 import org.zstack.utils.data.SizeUnit
 
@@ -14,7 +12,7 @@ import org.zstack.utils.data.SizeUnit
  * 1. 2
  * 3
  */
-class Test3 extends TestPremium {
+class Test3 extends Test {
     boolean success
     DiskOfferingSpec diskOfferingSpec
     EnvSpec envSpec
@@ -29,15 +27,10 @@ class Test3 extends TestPremium {
             sftpBackupStorage()
             portForwarding()
             lb()
-            ipsec()
             ceph()
             smp()
             localStorage()
             securityGroup()
-        }
-
-        message(ConnectHostMsg.class, { false }) { msg, CloudBus bus ->
-            throw new Exception("on purpose")
         }
     }
 
@@ -217,14 +210,6 @@ class Test3 extends TestPremium {
                     }
                 }
 
-                ipsec {
-                    name = "ipsec"
-                    peerAddress = "1.1.1.1"
-                    peerCidrs = ["10.10.0.0/24"]
-                    useVip("pubL3")
-                    useL3Network("l3")
-                }
-
                 securityGroup {
                     name = "sg"
                     attachL3Network("l3")
@@ -250,22 +235,29 @@ class Test3 extends TestPremium {
             }
         }
 
-        Deployer.simulator(KVMConstant.KVM_CONNECT_PATH) {
-            throw new HttpError(403, "on purpose")
-        }
-
-        Deployer.afterSimulator(LocalStorageKvmBackend.INIT_PATH) { LocalStorageKvmBackend.AgentResponse rsp ->
-            rsp.totalCapacity = SizeUnit.GIGABYTE.toByte(1)
-            rsp.availableCapacity = SizeUnit.GIGABYTE.toByte(1)
-            return rsp
-        }
-
         envSpec.create()
     }
 
     @Override
     void test() {
-        assert local.inventory.availableCapacity == SizeUnit.GIGABYTE.toByte(1)
-        assert local.inventory.totalCapacity == SizeUnit.GIGABYTE.toByte(1)
+        VmSpec vm = envSpec.specByName("vm")
+
+        envSpec.message(APIStopVmInstanceMsg.class) {
+            throw new Exception("on purpose")
+        }
+
+        try {
+            stopVmInstance {
+                uuid = vm.inventory.uuid
+            }
+        } catch (Throwable e){
+            logger.warn(e.message, e)
+        }
+
+        envSpec.cleanSimulatorAndMessageHandlers()
+
+        stopVmInstance {
+            uuid = vm.inventory.uuid
+        }
     }
 }
