@@ -1,18 +1,20 @@
-package org.zstack.test.integration.networkservice.provider.flat
+package org.zstack.test.integration.storage
 
 import org.zstack.testlib.SpringSpec
 import org.zstack.testlib.Test
 
 /**
- * Created by xing5 on 2017/2/26.
+ * Created by xing5 on 2017/2/27.
  */
-class FlatNetworkProviderTest extends Test {
+class StorageTest extends Test {
     static SpringSpec springSpec = makeSpring {
-        flatNetwork()
-        kvm()
         localStorage()
+        nfsPrimaryStorage()
         sftpBackupStorage()
-        eip()
+        smp()
+        ceph()
+        virtualRouter()
+        vyos()
     }
 
     @Override
@@ -27,7 +29,7 @@ class FlatNetworkProviderTest extends Test {
     @Override
     void test() {
         runSubCases([
-                new OneVmDhcp()
+
         ])
     }
 }

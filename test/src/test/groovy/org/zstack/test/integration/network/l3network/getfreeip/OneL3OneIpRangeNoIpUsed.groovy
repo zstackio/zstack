@@ -1,7 +1,7 @@
-package org.zstack.test.integration.l3network.getfreeip
+package org.zstack.test.integration.network.l3network.getfreeip
 
 import org.zstack.sdk.FreeIpInventory
-
+import org.zstack.test.integration.network.NetworkTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.IpRangeSpec
 import org.zstack.testlib.L3NetworkSpec
@@ -16,9 +16,7 @@ class OneL3OneIpRangeNoIpUsed extends SubCase {
 
     @Override
     void setup() {
-        spring {
-            include("vip.xml")
-        }
+        useSpring(NetworkTest.springSpec)
     }
 
     @Override

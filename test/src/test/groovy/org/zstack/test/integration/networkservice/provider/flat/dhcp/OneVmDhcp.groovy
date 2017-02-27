@@ -1,4 +1,4 @@
-package org.zstack.test.integration.networkservice.provider.flat
+package org.zstack.test.integration.networkservice.provider.flat.dhcp
 
 import org.springframework.http.HttpEntity
 import org.zstack.header.network.l3.UsedIpVO
@@ -9,6 +9,9 @@ import org.zstack.network.service.flat.FlatNetworkSystemTags
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.VmNicInventory
+import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
+import org.zstack.test.integration.networkservice.provider.flat.Env
+
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.ImageSpec
 import org.zstack.testlib.InstanceOfferingSpec
@@ -24,7 +27,7 @@ class OneVmDhcp extends SubCase {
 
     @Override
     void setup() {
-        useSpring(FlatNetworkProviderTest.springSpec)
+        useSpring(NetworkServiceProviderTest.springSpec)
     }
 
     @Override

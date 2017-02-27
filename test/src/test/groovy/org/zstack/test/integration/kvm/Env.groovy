@@ -10,7 +10,7 @@ import org.zstack.utils.data.SizeUnit
 /**
  * Created by xing5 on 2017/2/22.
  */
-class OneVmBasicEnv {
+class Env {
     def DOC = """
 use:
 1. sftp backup storage
@@ -20,7 +20,7 @@ use:
 5. security group
 """
 
-    static EnvSpec env() {
+    static EnvSpec oneVmBasicEnv() {
         return Test.makeEnv {
             instanceOffering {
                 name = "instanceOffering"

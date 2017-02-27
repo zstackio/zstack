@@ -1,4 +1,4 @@
-package org.zstack.test.integration.networkservice.provider.flat
+package org.zstack.test.integration.networkservice.provider.flat.userdata
 
 import org.springframework.http.HttpEntity
 import org.zstack.compute.vm.VmSystemTags
@@ -9,6 +9,8 @@ import org.zstack.network.service.userdata.UserdataGlobalProperty
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.VmNicInventory
+import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
+import org.zstack.test.integration.networkservice.provider.flat.Env
 import org.zstack.testlib.*
 
 /**
@@ -23,7 +25,7 @@ class OneVmUserdata extends SubCase {
 
     @Override
     void setup() {
-        useSpring(FlatNetworkProviderTest.springSpec)
+        useSpring(NetworkServiceProviderTest.springSpec)
     }
 
     @Override
