@@ -56,7 +56,31 @@ public class ApiResult {
                 }
 
                 Class dstClz = Class.forName(dst);
-                Object source = PropertyUtils.getProperty(m, path);
+
+                Object source;
+                if (path.contains("[")) {
+                    // there is a list in the path,
+                    // to get list in a map, we must use the path like
+                    // (inventories)[0]
+                    String[] pps = path.split("\\.");
+                    List<String> lst = new ArrayList<>(pps.length);
+                    for (String pp : pps) {
+                        if (!pp.contains("[")) {
+                            lst.add(pp);
+                            continue;
+                        }
+
+                        String[] word = pp.split("\\[");
+                        lst.add(String.format("(%s)[%s", word[0], word[1]));
+                    }
+
+                    String nPath = ZSClient.join(lst, ".");
+
+                    source = PropertyUtils.getProperty(m, nPath);
+                } else {
+                    source = PropertyUtils.getProperty(m, path);
+                }
+
                 Object dstBean = ZSClient.gson.fromJson(ZSClient.gson.toJson(source), dstClz);
                 PropertyUtils.setProperty(ret, path, dstBean);
             }

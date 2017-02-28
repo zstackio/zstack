@@ -51,4 +51,19 @@
         <name>org.zstack.storage.ceph.primary.APIQueryCephPrimaryStorageMsg</name>
         <serviceId>query</serviceId>
     </message>
+
+    <message>
+        <name>org.zstack.storage.ceph.primary.APIAddCephPrimaryStoragePoolMsg</name>
+        <serviceId>storage.primary</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.storage.ceph.primary.APIDeleteCephPrimaryStoragePoolMsg</name>
+        <serviceId>storage.primary</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.storage.ceph.primary.APIQueryCephPrimaryStoragePoolMsg</name>
+        <serviceId>query</serviceId>
+    </message>
 </service>

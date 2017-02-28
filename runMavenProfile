@@ -10,6 +10,15 @@ py() {
     cd - > /dev/null
 }
 
+apihelper() {
+    cd test
+    mvn test -Dtest=TestGenerateApiHelper
+    cd - > /dev/null
+
+    echo "ApiHelper.groovy is generated at ~/ApiHelper.groovy"
+}
+
+
 doc() {
     cd test
     mvn test -Dtest=TestGenerateDocTemplate
@@ -51,6 +60,8 @@ run_profile() {
 	doc
     elif test x$1 = x'py'; then
 	py
+    elif test x$1 = x'apihelper'; then
+	apihelper
     else
         mvn -pl build -P $1 exec:exec -D$1
     fi

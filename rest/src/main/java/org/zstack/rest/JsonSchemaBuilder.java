@@ -97,8 +97,28 @@ public class JsonSchemaBuilder {
                 Map m = (Map) object;
                 for (Object o : m.entrySet()) {
                     Map.Entry e = (Map.Entry) o;
+                    if (e.getValue() == null) {
+                        continue;
+                    }
 
-                    if (e.getValue() != null && !e.getValue().getClass().getName().startsWith("java.")) {
+                    if (e.getValue().getClass().getName().startsWith("java.") &&
+                            !Collection.class.isAssignableFrom(e.getValue().getClass())) {
+                        continue;
+                    }
+
+                    if (Collection.class.isAssignableFrom(e.getValue().getClass())) {
+                        Collection c = (Collection) e.getValue();
+                        Iterator it = c.iterator();
+                        int i = 0;
+                        while (it.hasNext()) {
+                            build(it.next(), new Stack<String>() {
+                                {
+                                    add(String.format("%s[%s]", e.getKey(), i));
+                                }
+                            });
+                        }
+
+                    } else {
                         build(e.getValue(), new Stack<String>() {
                             {
                                 add(e.getKey().toString());

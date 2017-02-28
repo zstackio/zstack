@@ -18,10 +18,10 @@ import javax.persistence.Tuple
  * Created by xing5 on 2017/2/12.
  */
 class KVMHostSpec extends HostSpec {
-    @SpecParam(required = true)
-    String username
-    @SpecParam(required = true)
-    String password
+    @SpecParam
+    String username = "root"
+    @SpecParam
+    String password = "password"
 
     KVMHostSpec(EnvSpec envSpec) {
         super(envSpec)

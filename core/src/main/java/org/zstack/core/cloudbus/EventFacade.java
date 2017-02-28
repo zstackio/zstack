@@ -28,4 +28,5 @@ public interface EventFacade {
     boolean isFromThisManagementNode(Map tokens);
 
     String META_DATA_MANAGEMENT_NODE_ID = "metadata::managementNodeId";
+    String META_DATA_PATH = "metadata::path";
 }

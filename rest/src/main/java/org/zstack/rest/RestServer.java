@@ -843,7 +843,9 @@ public class RestServer implements Component, CloudBusEventListener {
             }
         }
 
-        if (requestInfo.get().headers.containsKey(RestConstants.HEADER_JSON_SCHEMA)) {
+        if (requestInfo.get().headers.containsKey(RestConstants.HEADER_JSON_SCHEMA)
+                // set schema anyway if it's a query API
+                || APIQueryReply.class.isAssignableFrom(w.apiResponseClass)) {
             response.setSchema(new JsonSchemaBuilder(response).build());
         }
     }

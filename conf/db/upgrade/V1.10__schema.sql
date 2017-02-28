@@ -42,3 +42,14 @@ ALTER TABLE `zstack`.`SharedResourceVO` ADD CONSTRAINT fkSharedResourceVOAccount
 ALTER TABLE `zstack`.`SharedResourceVO` ADD UNIQUE INDEX(`ownerAccountUuid`,`receiverAccountUuid`,`resourceUuid`,`toPublic`);
 
 
+CREATE TABLE  `zstack`.`CephPrimaryStoragePoolVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE,
+    `primaryStorageUuid` varchar(32) NOT NULL,
+    `name` varchar(255) NOT NULL,
+    `description` varchar(2048) DEFAULT NULL,
+    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp,
+    PRIMARY KEY  (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE GarbageCollectorVO ADD name varchar(1024) NOT NULL;

@@ -105,6 +105,23 @@ public class ZSClient {
         }
     }
 
+
+    static String join(Collection lst, String sep) {
+        String ret = "";
+        boolean first = true;
+        for (Object s : lst) {
+            if (first) {
+                ret = s.toString();
+                first = false;
+                continue;
+            }
+
+            ret = ret + sep + s.toString();
+        }
+
+        return ret;
+    }
+
     static class Api {
         AbstractAction action;
         RestInfo info;
@@ -224,21 +241,6 @@ public class ZSClient {
             }
         }
 
-        private String join(Collection lst, String sep) {
-            String ret = "";
-            boolean first = true;
-            for (Object s : lst) {
-                if (first) {
-                    ret = s.toString();
-                    first = false;
-                    continue;
-                }
-
-                ret = ret + sep + s.toString();
-            }
-
-            return ret;
-        }
 
         private void fillQueryApiRequestBuilder(Request.Builder reqBuilder) {
             QueryAction qaction = (QueryAction) action;

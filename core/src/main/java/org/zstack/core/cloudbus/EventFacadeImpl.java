@@ -54,6 +54,7 @@ public class EventFacadeImpl implements EventFacade, CloudBusEventListener, Comp
             } else {
                 Map<String, String> tokens = tokenize(e.getPath(), path);
                 tokens.put(EventFacade.META_DATA_MANAGEMENT_NODE_ID, e.getManagementNodeId());
+                tokens.put(EventFacade.META_DATA_PATH, e.getPath());
                 Object data = null;
                 if (e.getContent() != null) {
                     data = e.getContent();

@@ -251,9 +251,19 @@ abstract class Test implements ApiHelper {
         return componentLoader.getComponent(clz)
     }
 
+    protected <T> T dbFindById(Long id, Class<T> voClz) {
+        DatabaseFacade dbf = bean(DatabaseFacade.class)
+        return dbf.findById(id, voClz)
+    }
+
     protected <T> T dbFindByUuid(String uuid, Class<T> voClz) {
         DatabaseFacade dbf = bean(DatabaseFacade.class)
         return dbf.findByUuid(uuid, voClz)
+    }
+
+    protected boolean dbIsExists(Object primaryKey, Class clz) {
+        DatabaseFacade dbf = bean(DatabaseFacade.class)
+        return dbf.isExist(primaryKey, clz)
     }
 
     @org.junit.Test

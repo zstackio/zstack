@@ -42,7 +42,7 @@ class ApiHelperGenerator {
 
 import org.zstack.utils.gson.JSONObjectUtil
 
-trait CreationSpec {
+trait ApiHelper {
     def errorOut(res) {
         assert res.error == null : "API failure: \${JSONObjectUtil.toJsonString(res.error)}"
         if (res.value.hasProperty("inventory")) {

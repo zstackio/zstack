@@ -2,6 +2,7 @@ package org.zstack.storage.ceph;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -47,9 +48,18 @@ public class CephApiInterceptor implements ApiMessageInterceptor {
             validate((APIAddMonToCephPrimaryStorageMsg) msg);
         } else if (msg instanceof APIUpdateCephPrimaryStorageMonMsg) {
             validate((APIUpdateCephPrimaryStorageMonMsg) msg);
+        } else if (msg instanceof APIDeleteCephPrimaryStoragePoolMsg) {
+            validate((APIDeleteCephPrimaryStoragePoolMsg) msg);
         }
         
         return msg;
+    }
+
+    private void validate(APIDeleteCephPrimaryStoragePoolMsg msg) {
+        msg.setPrimaryStorageUuid(
+                Q.New(CephPrimaryStoragePoolVO.class).select(CephPrimaryStoragePoolVO_.primaryStorageUuid)
+                .eq(CephPrimaryStoragePoolVO_.uuid, msg.getUuid()).findValue()
+        );
     }
 
     private void checkExistingPrimaryStorage(List<String> monUrls) {

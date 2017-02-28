@@ -4,6 +4,7 @@ import org.springframework.http.HttpEntity
 import org.zstack.core.Platform
 import org.zstack.core.db.Q
 import org.zstack.kvm.KVMAgentCommands
+import org.zstack.sdk.CephPrimaryStorageInventory
 import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.storage.ceph.primary.CephPrimaryStorageBase
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonBase
@@ -50,6 +51,15 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
         }
 
         return id(name, inventory.uuid)
+    }
+
+    CephPrimaryStoragePoolSpec pool(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = CephPrimaryStoragePoolSpec.class) Closure c) {
+        def spec = new CephPrimaryStoragePoolSpec(envSpec)
+        c.resolveStrategy = Closure.DELEGATE_FIRST
+        c.delegate = spec
+        c()
+        addChild(spec)
+        return spec
     }
 
     private void setupSimulator() {
@@ -156,6 +166,10 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
 
         simulator(CephPrimaryStorageBase.DELETE_IMAGE_CACHE) {
             return new CephPrimaryStorageBase.AgentResponse()
+        }
+
+        simulator(CephPrimaryStorageBase.ADD_POOL_PATH) {
+            return new CephPrimaryStorageBase.AddPoolRsp()
         }
     }
 

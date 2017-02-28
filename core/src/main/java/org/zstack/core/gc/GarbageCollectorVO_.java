@@ -10,6 +10,7 @@ import java.sql.Timestamp;
 @StaticMetamodel(GarbageCollectorVO.class)
 public class GarbageCollectorVO_ {
     public static volatile SingularAttribute<GarbageCollectorVO, Long> id;
+    public static volatile SingularAttribute<GarbageCollectorVO, Long> name;
     public static volatile SingularAttribute<GarbageCollectorVO, String> runnerClass;
     public static volatile SingularAttribute<GarbageCollectorVO, GCStatus> status;
     public static volatile SingularAttribute<GarbageCollectorVO, String> managementNodeUuid;

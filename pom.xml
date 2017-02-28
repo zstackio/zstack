@@ -37,6 +37,7 @@
         <module>rest</module>
         <module>sdk</module>
         <module>testlib</module>
+        <module>coregroovy</module>
     </modules>
 
     <dependencyManagement>

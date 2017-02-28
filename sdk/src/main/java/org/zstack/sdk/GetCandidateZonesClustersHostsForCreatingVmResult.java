@@ -25,12 +25,4 @@ public class GetCandidateZonesClustersHostsForCreatingVmResult {
         return this.hosts;
     }
 
-    public java.util.Map clusterPrimaryStorageRefs;
-    public void setClusterPrimaryStorageRefs(java.util.Map clusterPrimaryStorageRefs) {
-        this.clusterPrimaryStorageRefs = clusterPrimaryStorageRefs;
-    }
-    public java.util.Map getClusterPrimaryStorageRefs() {
-        return this.clusterPrimaryStorageRefs;
-    }
-
 }

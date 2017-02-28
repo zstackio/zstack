@@ -15,6 +15,9 @@ public class GarbageCollectorVO {
     private long id;
 
     @Column
+    private String name;
+
+    @Column
     private String runnerClass;
 
     @Column
@@ -35,6 +38,14 @@ public class GarbageCollectorVO {
 
     @Column
     private Timestamp lastOpDate;
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
 
     public String getType() {
         return type;

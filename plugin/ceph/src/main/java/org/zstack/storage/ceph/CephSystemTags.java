@@ -15,6 +15,9 @@ public class CephSystemTags {
     public static PatternedSystemTag PREDEFINED_PRIMARY_STORAGE_ROOT_VOLUME_POOL = new PatternedSystemTag("ceph::predefinedRootVolumePool", PrimaryStorageVO.class);
     public static PatternedSystemTag PREDEFINED_PRIMARY_STORAGE_DATA_VOLUME_POOL = new PatternedSystemTag("ceph::predefinedDataVolumePool", PrimaryStorageVO.class);
 
+    public static final String USE_CEPH_PRIMARY_STORAGE_POOL_TOKEN = "poolName";
+    public static PatternedSystemTag USE_CEPH_PRIMARY_STORAGE_POOL = new PatternedSystemTag(String.format("ceph::pool::{%s}", USE_CEPH_PRIMARY_STORAGE_POOL_TOKEN), PrimaryStorageVO.class);
+
     public static final String KVM_SECRET_UUID_TOKEN = "uuid";
     public static PatternedSystemTag KVM_SECRET_UUID = new PatternedSystemTag(String.format("ceph::kvm::secret::{%s}", KVM_SECRET_UUID_TOKEN), PrimaryStorageVO.class);
 }

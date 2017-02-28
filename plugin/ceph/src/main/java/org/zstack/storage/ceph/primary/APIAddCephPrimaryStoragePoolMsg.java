@@ -1,0 +1,67 @@
+package org.zstack.storage.ceph.primary;
+
+import org.springframework.http.HttpMethod;
+import org.zstack.header.message.APICreateMessage;
+import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
+import org.zstack.header.storage.primary.PrimaryStorageMessage;
+import org.zstack.header.storage.primary.PrimaryStorageVO;
+
+/**
+ * Created by xing5 on 2017/2/28.
+ */
+@RestRequest(
+        path = "/primary-storage/ceph/{primaryStorageUuid}/pools",
+        method = HttpMethod.POST,
+        responseClass = APIAddCephPrimaryStoragePoolEvent.class
+)
+public class APIAddCephPrimaryStoragePoolMsg extends APICreateMessage implements PrimaryStorageMessage {
+    @APIParam(resourceType = PrimaryStorageVO.class)
+    private String primaryStorageUuid;
+    @APIParam(maxLength = 255)
+    private String name;
+    @APIParam(maxLength = 2048, required = false)
+    private String description;
+    private boolean errorIfNotExist;
+
+    public boolean isErrorIfNotExist() {
+        return errorIfNotExist;
+    }
+
+    public void setErrorIfNotExist(boolean errorIfNotExist) {
+        this.errorIfNotExist = errorIfNotExist;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    @Override
+    public String getPrimaryStorageUuid() {
+        return primaryStorageUuid;
+    }
+
+    public void setPrimaryStorageUuid(String primaryStorageUuid) {
+        this.primaryStorageUuid = primaryStorageUuid;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public static APIAddCephPrimaryStoragePoolMsg __example__() {
+        APIAddCephPrimaryStoragePoolMsg msg = new APIAddCephPrimaryStoragePoolMsg();
+        msg.setName("highPerformance");
+        msg.setDescription("for high performance data volumes");
+        msg.setPrimaryStorageUuid(uuid());
+        return msg;
+    }
+}

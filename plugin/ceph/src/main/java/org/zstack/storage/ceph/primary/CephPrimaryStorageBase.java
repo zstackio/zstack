@@ -64,6 +64,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static java.util.Arrays.asList;
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
@@ -153,6 +154,17 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         public void setAvailableCapacity(Long availableCapacity) {
             this.availableCapacity = availableCapacity;
         }
+    }
+
+    public static class AddPoolCmd extends AgentCommand {
+        public String poolName;
+        public boolean errorIfNotExist;
+    }
+
+    public static class AddPoolRsp extends AgentResponse {
+    }
+
+    public static class DeletePoolRsp extends AgentResponse {
     }
 
     public static class GetVolumeSizeCmd extends AgentCommand {
@@ -597,9 +609,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         }
     }
 
-    public static class DeletePoolRsp extends AgentResponse {
-    }
-
     public static class KvmSetupSelfFencerCmd extends AgentCommand {
         public String heartbeatImagePath;
         public String hostUuid;
@@ -648,6 +657,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static final String KVM_HA_CANCEL_SELF_FENCER = "/ha/ceph/cancelselffencer";
     public static final String GET_FACTS = "/ceph/primarystorage/facts";
     public static final String DELETE_IMAGE_CACHE = "/ceph/primarystorage/deleteimagecache";
+    public static final String ADD_POOL_PATH = "/ceph/primarystorage/addpool";
 
     private final Map<String, BackupStorageMediator> backupStorageMediators = new HashMap<String, BackupStorageMediator>();
 
@@ -1044,8 +1054,12 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 System.currentTimeMillis());
     }
 
+    private String makeDataVolumeInstallPath(String volUuid, String poolName) {
+        return String.format("ceph://%s/%s", poolName, volUuid);
+    }
+
     private String makeDataVolumeInstallPath(String volUuid) {
-        return String.format("ceph://%s/%s", getSelf().getDataVolumePoolName(), volUuid);
+        return makeDataVolumeInstallPath(volUuid, getSelf().getDataVolumePoolName());
     }
 
     private String makeCacheInstallPath(String uuid) {
@@ -1066,8 +1080,23 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     private void createEmptyVolume(final InstantiateVolumeOnPrimaryStorageMsg msg) {
         final CreateEmptyVolumeCmd cmd = new CreateEmptyVolumeCmd();
-        cmd.installPath = VolumeType.Root.toString().equals(msg.getVolume().getType()) ?
-                makeRootVolumeInstallPath(msg.getVolume().getUuid()) : makeDataVolumeInstallPath(msg.getVolume().getUuid());
+
+        if (VolumeType.Root.toString().equals(msg.getVolume().getType())) {
+            cmd.installPath = makeRootVolumeInstallPath(msg.getVolume().getUuid());
+        } else {
+            if (msg.getSystemTags() != null && !msg.getSystemTags().isEmpty()) {
+                Optional<String> opt = msg.getSystemTags().stream().filter(s -> CephSystemTags.USE_CEPH_PRIMARY_STORAGE_POOL.isMatch(s))
+                        .findAny();
+                cmd.installPath = opt.isPresent() ?
+                        makeDataVolumeInstallPath(
+                                msg.getVolume().getUuid(),
+                                CephSystemTags.USE_CEPH_PRIMARY_STORAGE_POOL.getTokenByTag(opt.get(), CephSystemTags.USE_CEPH_PRIMARY_STORAGE_POOL_TOKEN)
+                        ) : makeDataVolumeInstallPath(msg.getVolume().getUuid());
+            } else {
+                cmd.installPath = makeDataVolumeInstallPath(msg.getVolume().getUuid());
+            }
+        }
+
         cmd.size = msg.getVolume().getSize();
         cmd.setShareable(msg.getVolume().isShareable());
 
@@ -2090,9 +2119,52 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             handle((APIRemoveMonFromCephPrimaryStorageMsg) msg);
         } else if (msg instanceof APIUpdateCephPrimaryStorageMonMsg) {
             handle((APIUpdateCephPrimaryStorageMonMsg) msg);
+        } else if (msg instanceof APIAddCephPrimaryStoragePoolMsg) {
+            handle((APIAddCephPrimaryStoragePoolMsg) msg);
+        } else if (msg instanceof APIDeleteCephPrimaryStoragePoolMsg) {
+            handle((APIDeleteCephPrimaryStoragePoolMsg) msg);
         } else {
             super.handleApiMessage(msg);
         }
+    }
+
+    private void handle(APIDeleteCephPrimaryStoragePoolMsg msg) {
+        APIDeleteCephPrimaryStoragePoolEvent evt = new APIDeleteCephPrimaryStoragePoolEvent(msg.getId());
+
+        CephPrimaryStoragePoolVO vo = dbf.findByUuid(msg.getUuid(), CephPrimaryStoragePoolVO.class);
+        dbf.remove(vo);
+        bus.publish(evt);
+    }
+
+    private void handle(APIAddCephPrimaryStoragePoolMsg msg) {
+        CephPrimaryStoragePoolVO vo = new CephPrimaryStoragePoolVO();
+        vo.setUuid(msg.getResourceUuid() == null ? Platform.getUuid() : msg.getResourceUuid());
+        vo.setDescription(msg.getDescription());
+        vo.setName(msg.getName());
+        vo.setDescription(msg.getDescription());
+        vo.setPrimaryStorageUuid(self.getUuid());
+        vo = dbf.persistAndRefresh(vo);
+
+        AddPoolCmd cmd = new AddPoolCmd();
+        cmd.errorIfNotExist = msg.isErrorIfNotExist();
+        cmd.poolName = msg.getName();
+
+        APIAddCephPrimaryStoragePoolEvent evt = new APIAddCephPrimaryStoragePoolEvent(msg.getId());
+        CephPrimaryStoragePoolVO finalVo = vo;
+        httpCall(ADD_POOL_PATH, cmd, AddPoolRsp.class, new ReturnValueCompletion<AddPoolRsp>(msg) {
+            @Override
+            public void success(AddPoolRsp rsp) {
+                evt.setInventory(CephPrimaryStoragePoolInventory.valueOf(finalVo));
+                bus.publish(evt);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                dbf.remove(finalVo);
+                evt.setError(errorCode);
+                bus.publish(evt);
+            }
+        });
     }
 
     private void handle(APIRemoveMonFromCephPrimaryStorageMsg msg) {

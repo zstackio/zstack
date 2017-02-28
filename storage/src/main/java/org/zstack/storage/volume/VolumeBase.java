@@ -260,6 +260,7 @@ public class VolumeBase implements Volume {
                         if (msg.getHostUuid() != null) {
                             imsg.setDestHost(HostInventory.valueOf(dbf.findByUuid(msg.getHostUuid(), HostVO.class)));
                         }
+                        imsg.setSystemTags(msg.getSystemTags());
                         imsg.setTemplateSpec(msg.getTemplateSpec());
                         bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
                         bus.send(imsg, new CloudBusCallBack(trigger) {
@@ -283,6 +284,7 @@ public class VolumeBase implements Volume {
                         InstantiateVolumeOnPrimaryStorageMsg imsg = new InstantiateVolumeOnPrimaryStorageMsg();
                         imsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
                         imsg.setVolume(getSelfInventory());
+                        imsg.setSystemTags(msg.getSystemTags());
                         if (msg.getHostUuid() != null) {
                             imsg.setDestHost(HostInventory.valueOf(dbf.findByUuid(msg.getHostUuid(), HostVO.class)));
                         }
