@@ -43,13 +43,13 @@ class SystemTagTest extends SubCase{
         CreateSystemTagAction a = new CreateSystemTagAction()
         a.resourceType = ZoneVO.getSimpleName()
         a.resourceUuid = zone.inventory.uuid
-        a.tag = "tag"
+        a.tag = "host::reservedCpu::{capacity}"
         a.sessionId = Test.currentEnvSpec.session.uuid
         CreateSystemTagAction.Result res = a.call()
 
         assert res.error == null
         System.out.println(JSONObjectUtil.toJsonString(res))
-        System.out.println(res.value);
+        System.out.println(res.value)
 
     }
 
