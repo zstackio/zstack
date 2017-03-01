@@ -1,11 +1,13 @@
 package org.zstack.test.integration.configuration.systemTag
 
+import org.json.JSONObject
 import org.zstack.header.zone.Zone
 import org.zstack.sdk.CreateSystemTagAction
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.testlib.Test
-import org.zstack.testlib.ZoneSpec;
+import org.zstack.testlib.ZoneSpec
+import org.zstack.utils.gson.JSONObjectUtil;
 
 /**
  * Created by lining on 02/03/2017.
@@ -42,7 +44,12 @@ class SystemTagTest extends SubCase{
         a.resourceUuid = zone.inventory.uuid
         a.tag = "tag"
         a.sessionId = Test.currentEnvSpec.session.uuid
-        CreateSystemTagAction.Result r = a.call()
+        CreateSystemTagAction.Result res = a.call()
+
+        assert res.error == null
+        System.out.println(JSONObjectUtil.toJsonString(res))
+        System.out.println(res.value);
+
     }
 
     @Override
