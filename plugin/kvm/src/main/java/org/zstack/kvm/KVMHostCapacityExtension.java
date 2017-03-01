@@ -1,10 +1,12 @@
 package org.zstack.kvm;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.compute.host.HostLogLabel;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.logging.Log;
 import org.zstack.header.allocator.HostAllocatorConstant;
+import org.zstack.header.allocator.UnableToReserveHostCapacityException;
 import org.zstack.header.cluster.ReportHostCapacityMessage;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowTrigger;
@@ -14,6 +16,7 @@ import org.zstack.header.host.*;
 import org.zstack.header.message.MessageReply;
 import org.zstack.kvm.KVMAgentCommands.HostCapacityCmd;
 import org.zstack.kvm.KVMAgentCommands.HostCapacityResponse;
+import org.zstack.utils.SizeUtils;
 
 import java.util.Map;
 
@@ -40,6 +43,14 @@ public class KVMHostCapacityExtension implements KVMHostConnectExtensionPoint, H
         if (!rsp.isSuccess()) {
             throw new OperationFailureException(errf.stringToOperationError(rsp.getError()));
         }
+
+        if (rsp.getTotalMemory() < SizeUtils.sizeStringToBytes(KVMGlobalConfig.RESERVED_MEMORY_CAPACITY.value())) {
+            throw new UnableToReserveHostCapacityException(String.format("The host[uuid:%s]'s memory capacity[%s] is lower than the minimal required capacity[%s]",
+                    host.getUuid(), rsp.getTotalMemory(), SizeUtils.sizeStringToBytes(KVMGlobalConfig.RESERVED_MEMORY_CAPACITY.value())));
+        } else {
+            new Log(host.getUuid()).log(HostLogLabel.CHECK_HOST_CPU_AND_MEMORY_CONFIGURATION);
+        }
+
         ReportHostCapacityMessage rmsg = new ReportHostCapacityMessage();
         rmsg.setHostUuid(host.getUuid());
         rmsg.setCpuNum((int) rsp.getCpuNum());
