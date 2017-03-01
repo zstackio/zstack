@@ -20,7 +20,6 @@ class SystemTagTest extends SubCase{
     void environment() {
         env = env{
             zone{
-                resourceUuid = "14d087f6d59a4d639094e6c2c9032161"
                 name = "zone"
             }
         }
@@ -39,7 +38,7 @@ class SystemTagTest extends SubCase{
 
         CreateSystemTagAction a = new CreateSystemTagAction()
         a.resourceType = Zone.getSimpleName()
-        a.resourceUuid = "14d087f6d59a4d639094e6c2c9032161"
+        a.resourceUuid = zone.inventory.uuid
         a.tag = "tag"
         CreateSystemTagAction.Result r = a.call()
     }
