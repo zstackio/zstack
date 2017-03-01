@@ -58,6 +58,10 @@ class SpringSpec {
         include("vip.xml")
     }
 
+    void flatNetwork() {
+        include("flatNetworkProvider.xml")
+    }
+
     void sftpBackupStorage() {
         include("SftpBackupStorage.xml")
     }

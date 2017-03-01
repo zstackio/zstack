@@ -50,6 +50,14 @@ abstract class Test implements ApiHelper {
         return spec
     }
 
+    static SpringSpec makeSpring(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = SpringSpec.class) Closure c) {
+        def spec = new SpringSpec()
+        c.delegate = spec
+        c.resolveStrategy = Closure.DELEGATE_FIRST
+        c()
+        return spec
+    }
+
     protected EnvSpec env(@DelegatesTo(strategy=Closure.DELEGATE_FIRST, value=EnvSpec.class) Closure c) {
         def spec = new EnvSpec()
         c.delegate = spec
@@ -72,8 +80,6 @@ abstract class Test implements ApiHelper {
     protected boolean NEED_WEB_SERVER = true
     protected boolean API_PORTAL = true
     protected boolean INCLUDE_CORE_SERVICES = true
-
-    protected Map<Class, Tuple> messageHandlers = [:]
 
     protected String getDeployDBScriptBaseDir() {
         String home = System.getProperty("user.dir")
@@ -117,14 +123,6 @@ abstract class Test implements ApiHelper {
         }
     }
 
-    protected void message(Class<? extends Message> msgClz, Closure condition, Closure handler) {
-        messageHandlers[(msgClz)] = new Tuple(condition, handler)
-    }
-
-    protected void message(Class<? extends Message> msgClz, Closure handler) {
-        message(msgClz, null, handler)
-    }
-
     private void nextPhase() {
         phase ++
     }
@@ -136,8 +134,12 @@ abstract class Test implements ApiHelper {
         def service = new AbstractService() {
             @Override
             void handleMessage(Message msg) {
+                if (currentEnvSpec == null) {
+                    return
+                }
+
                 try {
-                    def entry = messageHandlers.find { k, _ -> k.isAssignableFrom(msg.getClass()) }
+                    def entry = currentEnvSpec.messageHandlers.find { k, _ -> k.isAssignableFrom(msg.getClass()) }
                     if (entry != null) {
                         Tuple t = entry.value
                         Closure handler = t[1]
@@ -170,23 +172,28 @@ abstract class Test implements ApiHelper {
 
         bus.registerService(service)
 
-        messageHandlers.each { Class clz, Tuple t ->
-            if (!Event.isAssignableFrom(clz)) {
-                bus.installBeforeSendMessageInterceptor(new AbstractBeforeSendMessageInterceptor() {
-                    @Override
-                    void intercept(Message msg) {
-                        Closure condition = t[0]
+        bus.installBeforeSendMessageInterceptor(new AbstractBeforeSendMessageInterceptor() {
+            @Override
+            void intercept(Message msg) {
+                if (Event.class.isAssignableFrom(msg.class) || currentEnvSpec == null) {
+                    return
+                }
 
-                        if (condition != null && !condition(msg)) {
-                            // the condition closure tells us not to hijack this message
-                            return
-                        }
+                Tuple t = currentEnvSpec.messageHandlers[msg.class]
+                if (t == null) {
+                    return
+                }
 
-                        bus.makeLocalServiceId(msg, serviceId)
-                    }
-                }, clz)
+                Closure condition = t[0]
+
+                if (condition != null && !condition(msg)) {
+                    // the condition closure tells us not to hijack this message
+                    return
+                }
+
+                bus.makeLocalServiceId(msg, serviceId)
             }
-        }
+        })
     }
 
     void buildBeanConstructor(boolean useWeb = true) {
@@ -204,8 +211,15 @@ abstract class Test implements ApiHelper {
         return currentEnvSpec.session.uuid
     }
 
+    protected void useSpring(SpringSpec spec) {
+        springSpec = spec
+    }
+
     private void prepare() {
         nextPhase()
+
+        setup()
+
         if (API_PORTAL) {
             spring {
                 include("ManagementNodeManager.xml")
@@ -219,8 +233,6 @@ abstract class Test implements ApiHelper {
                 includeCoreServices()
             }
         }
-
-        setup()
 
         if (DEPLOY_DB) {
             deployDB()
@@ -331,5 +343,9 @@ abstract class Test implements ApiHelper {
             // some cases failed, exit with code 1
             System.exit(1)
         }
+    }
+
+    protected static <T> T json(String str, Class<T> type) {
+        return JSONObjectUtil.toObject(str, type)
     }
 }

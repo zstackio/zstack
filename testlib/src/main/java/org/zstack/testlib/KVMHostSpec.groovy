@@ -144,12 +144,22 @@ class KVMHostSpec extends HostSpec {
             def hostUuid = e.getHeaders().getFirst(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID)
 
             List<Tuple> states = Q.New(VmInstanceVO.class)
-                    .select(VmInstanceVO_.uuid, VmInstanceVO_.state).eq(VmInstanceVO_.state, VmInstanceState.Running)
+                    .select(VmInstanceVO_.uuid, VmInstanceVO_.state)
+                    .in(VmInstanceVO_.state, [VmInstanceState.Running, VmInstanceState.Unknown])
                     .eq(VmInstanceVO_.hostUuid, hostUuid).listTuple()
 
             def rsp = new KVMAgentCommands.VmSyncResponse()
-            rsp.states = states.collectEntries {
-                [(it.get(0, String.class)) : KVMConstant.KvmVmState.fromVmInstanceState(it.get(1, VmInstanceState.class)).toString()]
+            rsp.states = [:]
+            states.each {
+                String vmUuid = it.get(0, String.class)
+                VmInstanceState state = it.get(1, VmInstanceState.class)
+                if (state == VmInstanceState.Unknown) {
+                    // host reconnecting will set VMs to Unknown in DB
+                    // the simulator treat them as Running by default
+                    rsp.states[(vmUuid)] = KVMConstant.KvmVmState.Running.toString()
+                } else {
+                    rsp.states[(vmUuid)] = KVMConstant.KvmVmState.fromVmInstanceState(state).toString()
+                }
             }
 
             return rsp

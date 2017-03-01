@@ -6,7 +6,7 @@ import org.zstack.header.vm.VmInstanceVO
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
 import org.zstack.sdk.VmInstanceInventory
-import org.zstack.test.integration.kvm.OneVmBasicEnv
+import org.zstack.test.integration.kvm.Env
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.testlib.VmSpec
@@ -35,7 +35,7 @@ test a VM's start/stop/reboot/destroy/recover operations
 
     @Override
     void environment() {
-        env = OneVmBasicEnv.env()
+        env = Env.oneVmBasicEnv()
     }
 
     @Override

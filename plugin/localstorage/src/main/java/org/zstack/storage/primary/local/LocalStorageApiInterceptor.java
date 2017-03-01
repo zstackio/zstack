@@ -11,6 +11,9 @@ import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.message.APIMessage;
+import org.zstack.header.storage.primary.PrimaryStorageState;
+import org.zstack.header.storage.primary.PrimaryStorageStatus;
+import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
@@ -72,6 +75,19 @@ public class LocalStorageApiInterceptor implements ApiMessageInterceptor {
         if (ref.getHostUuid().equals(msg.getDestHostUuid())) {
             throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
                     String.format("the volume[uuid:%s] is already on the host[uuid:%s]", msg.getVolumeUuid(), msg.getDestHostUuid())
+            ));
+        }
+
+        PrimaryStorageVO vo = dbf.findByUuid(ref.getPrimaryStorageUuid(), PrimaryStorageVO.class);
+        if (vo == null) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("the primary storage[uuid:%s] is not found", msg.getPrimaryStorageUuid())
+            ));
+        }
+
+        if (vo.getState() == PrimaryStorageState.Disabled) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("the primary storage[uuid:%s] is disabled cold migrate is not allowed", ref.getPrimaryStorageUuid())
             ));
         }
 

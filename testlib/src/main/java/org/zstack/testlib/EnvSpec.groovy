@@ -9,6 +9,7 @@ import org.zstack.core.Platform
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.SQL
 import org.zstack.header.identity.AccountConstant
+import org.zstack.header.message.Message
 import org.zstack.header.rest.RESTConstant
 import org.zstack.sdk.LogInByAccountAction
 import org.zstack.sdk.SessionInventory
@@ -17,6 +18,7 @@ import org.zstack.utils.gson.JSONObjectUtil
 
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Created by xing5 on 2017/2/12.
@@ -31,15 +33,44 @@ class EnvSpec implements Node {
     Map specsByUuid = [:]
 
     private boolean hasCreated
-    private static Map<String, Closure> httpHandlers = [:]
-    private static Map<String, Closure> httpPostHandlers = [:]
+    private ConcurrentHashMap<String, Closure> httpHandlers = [:]
+    private ConcurrentHashMap<String, Closure> httpPostHandlers = [:]
+    private ConcurrentHashMap<String, Closure> defaultHttpHandlers = [:]
+    private ConcurrentHashMap<String, Closure> defaultHttpPostHandlers = [:]
+    protected ConcurrentHashMap<Class, Tuple> messageHandlers = [:]
     private static RestTemplate restTemplate
+    private static Set<Class> simulatorClasses = Platform.reflections.getSubTypesOf(Simulator.class)
 
-    {
+    EnvSpec() {
         HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory()
         factory.setReadTimeout(CoreGlobalProperty.REST_FACADE_READ_TIMEOUT)
         factory.setConnectTimeout(CoreGlobalProperty.REST_FACADE_CONNECT_TIMEOUT)
         restTemplate = new RestTemplate(factory)
+
+        simulatorClasses.each {
+            Simulator sim = it.newInstance() as Simulator
+            sim.registerSimulators(this)
+        }
+    }
+
+    void cleanSimulatorHandlers() {
+        httpHandlers.clear()
+        httpHandlers.putAll(defaultHttpHandlers)
+    }
+
+    void cleanAfterSimulatorHandlers() {
+        httpPostHandlers.clear()
+        httpPostHandlers.putAll(defaultHttpPostHandlers)
+    }
+
+    void cleanMessageHandlers() {
+        messageHandlers.clear()
+    }
+
+    void cleanSimulatorAndMessageHandlers() {
+        cleanSimulatorHandlers()
+        cleanAfterSimulatorHandlers()
+        cleanMessageHandlers()
     }
 
     ZoneSpec zone(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = ZoneSpec.class) Closure c)  {
@@ -223,6 +254,11 @@ class EnvSpec implements Node {
         adminLogin()
         deploy()
 
+        defaultHttpHandlers = [:]
+        defaultHttpHandlers.putAll(httpHandlers)
+        defaultHttpPostHandlers = [:]
+        defaultHttpPostHandlers.putAll(httpPostHandlers)
+
         if (cl != null) {
             cl.delegate = this
             cl.resolveStrategy = Closure.DELEGATE_FIRST
@@ -311,7 +347,7 @@ class EnvSpec implements Node {
 
         def handler = httpHandlers[url]
         if (handler == null) {
-            rsp.sendError(HttpStatus.NOT_FOUND.value(), "not handler found for the path $url")
+            rsp.sendError(HttpStatus.NOT_FOUND.value(), "no handler found for the path $url")
             return
         }
 
@@ -350,6 +386,10 @@ class EnvSpec implements Node {
                 }
             }
 
+            if (ret == null) {
+                ret = [:]
+            }
+
             replyHttpCall(entity, rsp, ret)
         } catch (HttpError he) {
             logger.warn("the simulator[$url] reports a http error[status code:${he.status}, message:${he.message}]", he)
@@ -358,5 +398,13 @@ class EnvSpec implements Node {
             logger.warn("error happened when handlign $url", t)
             rsp.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(), t.message)
         }
+    }
+
+    void message(Class<? extends Message> msgClz, Closure condition, Closure handler) {
+        messageHandlers[(msgClz)] = new Tuple(condition, handler)
+    }
+
+    void message(Class<? extends Message> msgClz, Closure handler) {
+        message(msgClz, null, handler)
     }
 }

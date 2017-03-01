@@ -9,9 +9,12 @@ import org.zstack.utils.gson.JSONObjectUtil
  * Created by xing5 on 2017/2/15.
  */
 class SftpBackupStorageSpec extends BackupStorageSpec {
-    String hostname
-    String username
-    String password
+    @SpecParam
+    String hostname = "127.0.0.1"
+    @SpecParam
+    String username = "root"
+    @SpecParam
+    String password = "password"
 
     SftpBackupStorageSpec(EnvSpec envSpec) {
         super(envSpec)

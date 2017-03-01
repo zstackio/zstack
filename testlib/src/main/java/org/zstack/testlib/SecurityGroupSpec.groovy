@@ -62,7 +62,7 @@ class SecurityGroupSpec extends Spec implements HasSession {
     }
 
     @SpecMethod
-    void useL3Network(String...names) {
+    void attachL3Network(String...names) {
         names.each { String name ->
             preCreate {
                 addDependency(name, L3NetworkSpec.class)

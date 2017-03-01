@@ -13,12 +13,9 @@ import org.zstack.utils.gson.JSONObjectUtil
  * Created by xing5 on 2017/2/15.
  */
 class VirtualRouterOfferingSpec extends InstanceOfferingSpec {
-    @SpecParam(required = true)
-    Closure managementL3Network
-    @SpecParam
-    Closure publicL3Network
+    private Closure managementL3Network
+    private Closure publicL3Network
     private Closure image
-    Closure zone
     @SpecParam
     Boolean isDefault
 

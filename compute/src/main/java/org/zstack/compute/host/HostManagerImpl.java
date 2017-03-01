@@ -36,10 +36,7 @@ import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.search.GetQuery;
 import org.zstack.search.SearchQuery;
 import org.zstack.tag.TagManager;
-import org.zstack.utils.Bucket;
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.ObjectUtils;
-import org.zstack.utils.Utils;
+import org.zstack.utils.*;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 
@@ -339,7 +336,8 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         }).done(new FlowDoneHandler(amsg) {
             @Override
             public void handle(Map data) {
-                HostInventory inv = HostInventory.valueOf(dbf.reload(vo));
+                HostVO nvo = dbf.reload(vo);
+                HostInventory inv = factory.getHostInventory(nvo.getUuid());
                 inv.setStatus(HostStatus.Connected.toString());
                 completion.success(inv);
 

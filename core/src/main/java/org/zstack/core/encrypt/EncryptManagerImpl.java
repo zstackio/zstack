@@ -83,14 +83,10 @@ public class EncryptManagerImpl extends AbstractService {
                 logger.debug(String.format("sql2 is: %s ",sql2));
                 Query q2 = dbf.getEntityManager().createNativeQuery(sql2);
                 String preEncrypttxt = q2.getResultList().get(0).toString();
-                logger.debug(String.format("preEncrypttxt is: %s ",preEncrypttxt));
                 try {
 
                     String password = (String) rsa.decrypt1(preEncrypttxt);
-                   //rsa.updateKey(msg.getEncryptKey());
                     String newencrypttxt = (String) rsa.encrypt(password,msg.getEncryptKey());
-
-                    logger.debug(String.format("new encrypt text is: %s",newencrypttxt));
                     String sql3 = "update "+className+" set "+paramName+" = :newencrypttxt where uuid = :uuid";
 
                     Query query = dbf.getEntityManager().createQuery(sql3);

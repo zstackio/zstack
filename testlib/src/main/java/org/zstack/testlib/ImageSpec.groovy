@@ -15,6 +15,7 @@ class ImageSpec extends Spec implements HasSession {
     Long size = SizeUnit.GIGABYTE.toByte(10)
     @SpecParam
     Long actualSize = SizeUnit.GIGABYTE.toByte(1)
+    @SpecParam
     String md5sum
     @SpecParam(required = true)
     String url
