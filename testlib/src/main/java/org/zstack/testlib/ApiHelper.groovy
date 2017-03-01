@@ -2643,6 +2643,14 @@ trait ApiHelper {
         return errorOut(a.call())
     }
 
+    def reclaimImageStorageSpace(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ReclaimSpaceFromImageStoreAction.class) Closure c) {
+        def a = new org.zstack.sdk.ReclaimSpaceFromImageStoreAction()
+        a.sessionId = Test.currentEnvSpec.session.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        return errorOut(a.call())
+    }
 
     def addNfsPrimaryStorage(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.AddNfsPrimaryStorageAction.class) Closure c) {
         def a = new org.zstack.sdk.AddNfsPrimaryStorageAction()
