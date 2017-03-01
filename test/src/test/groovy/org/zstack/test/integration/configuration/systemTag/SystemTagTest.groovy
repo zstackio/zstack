@@ -4,6 +4,7 @@ import org.zstack.header.zone.Zone
 import org.zstack.sdk.CreateSystemTagAction
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
+import org.zstack.testlib.Test
 import org.zstack.testlib.ZoneSpec;
 
 /**
@@ -40,6 +41,7 @@ class SystemTagTest extends SubCase{
         a.resourceType = Zone.getSimpleName()
         a.resourceUuid = zone.inventory.uuid
         a.tag = "tag"
+        a.sessionId = Test.currentEnvSpec.session.uuid
         CreateSystemTagAction.Result r = a.call()
     }
 
