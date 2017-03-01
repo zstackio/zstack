@@ -39,7 +39,7 @@ class SystemTagTest extends SubCase{
 
         CreateSystemTagAction a = new CreateSystemTagAction()
         a.resourceType = Zone.getSimpleName()
-        a.resourceUuid = zone.inventory.uuid
+        a.resourceUuid = "14d087f6d59a4d639094e6c2c9032161"
         a.tag = "tag"
         CreateSystemTagAction.Result r = a.call()
     }
