@@ -14,7 +14,7 @@ trait ApiHelper {
         }
     }
     
-        def queryCluster(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryClusterAction.class) Closure c) {
+    def queryCluster(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryClusterAction.class) Closure c) {
         def a = new org.zstack.sdk.QueryClusterAction()
         a.sessionId = Test.currentEnvSpec.session.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
