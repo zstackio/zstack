@@ -1870,8 +1870,8 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         List<Flow> flows = new ArrayList<Flow>();
 
         SimpleQuery<KVMHostVO> q = dbf.createQuery(KVMHostVO.class);
-        KVMHostVO kvmHostVO = q.find();
         q.add(KVMHostVO_.uuid, Op.EQ, struct.getDestHostUuid());
+        KVMHostVO kvmHostVO = q.find();
 
         final String mgmtIp = kvmHostVO.getManagementIp();
         final String username = kvmHostVO.getUsername();
