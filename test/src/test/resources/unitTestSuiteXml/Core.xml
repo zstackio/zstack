@@ -144,15 +144,15 @@
     <TestCase class="org.zstack.test.aop.TestFutureReturnValueCompletion2"/>
     <TestCase class="org.zstack.test.aop.TestFutureReturnValueCompletion3"/>
 
-    <TestCase class="org.zstack.test.core.org.zstack.core.groovy.gc.TestGC"/>
-    <TestCase class="org.zstack.test.core.org.zstack.core.groovy.gc.TestGC1"/>
-    <TestCase class="org.zstack.test.core.org.zstack.core.groovy.gc.TestGC2"/>
-    <TestCase class="org.zstack.test.core.org.zstack.core.groovy.gc.TestGC3"/>
-    <TestCase class="org.zstack.test.core.org.zstack.core.groovy.gc.TestGC4"/>
-    <TestCase class="org.zstack.test.core.org.zstack.core.groovy.gc.TestGC5"/>
-    <TestCase class="org.zstack.test.core.org.zstack.core.groovy.gc.TestGC6"/>
-    <TestCase class="org.zstack.test.core.org.zstack.core.groovy.gc.TestGC7"/>
-    <TestCase class="org.zstack.test.core.org.zstack.core.groovy.gc.TestGC10"/>
+    <TestCase class="org.zstack.test.core.gc.TestGC"/>
+    <TestCase class="org.zstack.test.core.gc.TestGC1"/>
+    <TestCase class="org.zstack.test.core.gc.TestGC2"/>
+    <TestCase class="org.zstack.test.core.gc.TestGC3"/>
+    <TestCase class="org.zstack.test.core.gc.TestGC4"/>
+    <TestCase class="org.zstack.test.core.gc.TestGC5"/>
+    <TestCase class="org.zstack.test.core.gc.TestGC6"/>
+    <TestCase class="org.zstack.test.core.gc.TestGC7"/>
+    <TestCase class="org.zstack.test.core.gc.TestGC10"/>
 
     <TestCase class="org.zstack.test.core.asyncbatch.TestAsyncBatch"/>
     <TestCase class="org.zstack.test.core.asyncbatch.TestAsyncBatch1"/>
