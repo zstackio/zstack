@@ -1306,9 +1306,10 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
     @Transactional
     protected void returnStorageCapacityToHost(String hostUuid, long size) {
-        String sql = "select ref from LocalStorageHostRefVO ref where ref.hostUuid = :huuid";
+        String sql = "select ref from LocalStorageHostRefVO ref where ref.hostUuid = :huuid and ref.primaryStorageUuid = :primaryStorageUuid";
         TypedQuery<LocalStorageHostRefVO> q = dbf.getEntityManager().createQuery(sql, LocalStorageHostRefVO.class);
         q.setParameter("huuid", hostUuid);
+        q.setParameter("primaryStorageUuid", self.getUuid());
         q.setLockMode(LockModeType.PESSIMISTIC_WRITE);
         List<LocalStorageHostRefVO> refs = q.getResultList();
 
