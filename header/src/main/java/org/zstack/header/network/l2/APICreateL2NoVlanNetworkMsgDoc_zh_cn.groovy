@@ -11,7 +11,7 @@ doc {
 
     rest {
         request {
-			url "POST /v1/l2-no-vlan-networks"
+			url "POST /v1/l2-networks/no-vlan"
 
 
             header (OAuth: 'the-session-uuid')

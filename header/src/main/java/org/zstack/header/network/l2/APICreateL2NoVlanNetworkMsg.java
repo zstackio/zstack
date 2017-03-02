@@ -6,7 +6,7 @@ import org.zstack.header.rest.RestRequest;
 /**
  */
 @RestRequest(
-        path = "/l2-no-vlan-networks",
+        path = "/l2-networks/no-vlan",
         method = HttpMethod.POST,
         responseClass = APICreateL2NetworkEvent.class,
         parameterName = "params"

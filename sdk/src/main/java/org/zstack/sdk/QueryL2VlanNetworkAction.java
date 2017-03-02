@@ -62,7 +62,7 @@ public class QueryL2VlanNetworkAction extends QueryAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/l2-vlan-networks";
+        info.path = "/l2-networks/vlan";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "null";
