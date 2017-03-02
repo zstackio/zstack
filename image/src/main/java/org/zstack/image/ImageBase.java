@@ -3,6 +3,7 @@ package org.zstack.image;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
@@ -10,10 +11,12 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.gc.*;
+import org.zstack.core.gc.GCFacade;
+import org.zstack.core.gc.TimeBasedGCPersistentContext;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NopeCompletion;
@@ -36,7 +39,9 @@ import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
+import java.sql.Timestamp;
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -283,6 +288,8 @@ public class ImageBase implements Image {
                 }
         );
 
+        List<Object> refs = new ArrayList<>();
+
         for (final ImageBackupStorageRefVO ref : toDelete) {
             chain.then(new NoRollbackFlow() {
                 String __name__ = String.format("delete-image-%s-from-backup-storage-%s", self.getUuid(), ref.getBackupStorageUuid());
@@ -317,7 +324,8 @@ public class ImageBase implements Image {
                         trigger.next();
                     } else {
                         ref.setStatus(ImageStatus.Deleted);
-                        dbf.update(ref);
+                        refs.add(ref);
+
                         trigger.next();
                     }
                 }
@@ -329,7 +337,25 @@ public class ImageBase implements Image {
             public void handle(Map data) {
                 self = dbf.reload(self);
                 if (self.getBackupStorageRefs().isEmpty()) {
-                    dbf.remove(self);
+                    new Callable<Void>() {
+                        @Override
+                        @Transactional
+                        public Void call() {
+                            // Our trigger for ImageEO in AccoutResourceRefVO is triggered
+                            // by the 'UPDATE' action.  We can not directly use a 'DELETE'
+                            // expression here.
+                            SQL.New("update ImageEO set status = :status, deleted = :deleted where uuid = :uuid")
+                                    .param("status", ImageStatus.Deleted)
+                                    .param("deleted", new Timestamp(new Date().getTime()).toString())
+                                    .param("uuid", self.getUuid())
+                                    .execute();
+                            for (Object e : refs) {
+                                dbf.getEntityManager().merge(e);
+                            }
+                            return null;
+                        }
+                    }.call();
+
                     if (deletionPolicy == ImageDeletionPolicy.DeleteReference) {
                         logger.debug(String.format("successfully directly deleted the image[uuid:%s, name:%s] from the database," +
                                 " as the policy is DeleteReference, it's still on the physical backup storage", self.getUuid(), self.getName()));
@@ -337,15 +363,13 @@ public class ImageBase implements Image {
                         logger.debug(String.format("successfully directly deleted the image[uuid:%s, name:%s]", self.getUuid(), self.getName()));
                     }
                 } else {
-                    int deleteCount = 0;
-                    for (ImageBackupStorageRefVO ref : self.getBackupStorageRefs()) {
-                        if (ref.getStatus() == ImageStatus.Deleted) {
-                            deleteCount++;
-                        }
-                    }
-                    if (deleteCount == self.getBackupStorageRefs().size()) {
+                    if (refs.size() == self.getBackupStorageRefs().size()) {
+                        // To make the ImageStatus always consistent with that from RefVO.
                         self.setStatus(ImageStatus.Deleted);
-                        self = dbf.updateAndRefresh(self);
+                        refs.add(self);
+                        dbf.updateCollection(refs);
+
+                        self = dbf.reload(self);
                         logger.debug(String.format("successfully deleted the image[uuid:%s, name:%s] with deletion policy[%s]",
                                 self.getUuid(), self.getName(), deletionPolicy));
                     }
