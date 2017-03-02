@@ -1,5 +1,6 @@
 package org.zstack.test.integration.configuration
 
+import org.zstack.test.integration.configuration.systemTag.SystemTagCase
 import org.zstack.testlib.SpringSpec
 import org.zstack.testlib.Test
 
@@ -24,7 +25,7 @@ class ConfigurationTest extends Test {
     @Override
     void test() {
         runSubCases([
-
+            new SystemTagCase()
         ])
     }
 }
