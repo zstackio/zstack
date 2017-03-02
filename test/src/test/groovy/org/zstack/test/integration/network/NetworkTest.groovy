@@ -13,7 +13,9 @@ class NetworkTest extends Test {
         kvm()
         localStorage()
         sftpBackupStorage()
+        flatNetwork()
         include("vip.xml")
+        include("vxlan.xml")
     }
 
     @Override

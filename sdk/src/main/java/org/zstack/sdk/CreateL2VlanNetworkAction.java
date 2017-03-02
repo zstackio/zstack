@@ -9,7 +9,7 @@ public class CreateL2VlanNetworkAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateL2NetworkResult value;
+        public CreateL2VlanNetworkResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -22,7 +22,7 @@ public class CreateL2VlanNetworkAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,4094L}, noTrim = false)
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,4094L}, noTrim = false)
     public java.lang.Integer vlan;
 
     @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
@@ -64,8 +64,8 @@ public class CreateL2VlanNetworkAction extends AbstractAction {
             return ret;
         }
         
-        CreateL2NetworkResult value = res.getResult(CreateL2NetworkResult.class);
-        ret.value = value == null ? new CreateL2NetworkResult() : value; 
+        CreateL2VlanNetworkResult value = res.getResult(CreateL2VlanNetworkResult.class);
+        ret.value = value == null ? new CreateL2VlanNetworkResult() : value; 
 
         return ret;
     }

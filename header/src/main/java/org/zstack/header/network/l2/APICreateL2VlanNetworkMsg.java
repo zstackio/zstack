@@ -43,14 +43,14 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/l2-networks/vlan",
         method = HttpMethod.POST,
-        responseClass = APICreateL2NetworkEvent.class,
+        responseClass = APICreateL2VlanNetworkEvent.class,
         parameterName = "params"
 )
 public class APICreateL2VlanNetworkMsg extends APICreateL2NetworkMsg {
     /**
      * @desc vlan id
      */
-    @APIParam(numberRange = {0, 4094})
+    @APIParam(numberRange = {1, 4094})
     private Integer vlan;
 
     public int getVlan() {
