@@ -5,5 +5,9 @@
         <id>1000</id>
         <description>Unable to attach L2Network to a cluster</description>
     </code>
+    <code>
+        <id>1001</id>
+        <description>Unable to allocate a vni from L2Network</description>
+    </code>
 </error>
 

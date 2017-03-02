@@ -82,9 +82,110 @@ public class L2NoVlanNetwork implements L2Network {
             handle((PrepareL2NetworkOnHostMsg) msg);
         } else if (msg instanceof DetachL2NetworkFromClusterMsg) {
             handle((DetachL2NetworkFromClusterMsg) msg);
+        } else if (msg instanceof DeleteL2NetworkMsg) {
+            handle((DeleteL2NetworkMsg) msg);
+        } else if (msg instanceof L2NetworkDetachFromClusterMsg) {
+            handle((L2NetworkDetachFromClusterMsg) msg);
         } else  {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(L2NetworkDetachFromClusterMsg msg) {
+        L2NetworkDetachFromClusterReply reply = new L2NetworkDetachFromClusterReply();
+
+        String issuer = L2NetworkVO.class.getSimpleName();
+        List<L2NetworkDetachStruct> ctx = new ArrayList<L2NetworkDetachStruct>();
+        L2NetworkDetachStruct struct = new L2NetworkDetachStruct();
+        struct.setClusterUuid(msg.getClusterUuid());
+        struct.setL2NetworkUuid(msg.getL2NetworkUuid());
+        ctx.add(struct);
+        casf.asyncCascade(L2NetworkConstant.DETACH_L2NETWORK_CODE, issuer, ctx, new Completion(msg) {
+            @Override
+            public void success() {
+                logger.debug(String.format("successfully detached L2Network[uuid:%s] to cluster [uuid:%s]", self.getUuid(), msg.getClusterUuid()));
+                self = dbf.reload(self);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(DeleteL2NetworkMsg msg) {
+        DeleteL2NetworkReply reply = new DeleteL2NetworkReply();
+        final String issuer = L2NetworkVO.class.getSimpleName();
+        final List<L2NetworkInventory> ctx = L2NetworkInventory.valueOf(Arrays.asList(self));
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName(String.format("delete-l2Network-%s", msg.getL2NetworkUuid()));
+        if (msg.isForceDelete() == false) {
+            chain.then(new NoRollbackFlow() {
+                @Override
+                public void run(final FlowTrigger trigger, Map data) {
+                    casf.asyncCascade(CascadeConstant.DELETION_CHECK_CODE, issuer, ctx, new Completion(trigger) {
+                        @Override
+                        public void success() {
+                            trigger.next();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            trigger.fail(errorCode);
+                        }
+                    });
+                }
+            }).then(new NoRollbackFlow() {
+                @Override
+                public void run(final FlowTrigger trigger, Map data) {
+                    casf.asyncCascade(CascadeConstant.DELETION_DELETE_CODE, issuer, ctx, new Completion(trigger) {
+                        @Override
+                        public void success() {
+                            trigger.next();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            trigger.fail(errorCode);
+                        }
+                    });
+                }
+            });
+        } else {
+            chain.then(new NoRollbackFlow() {
+                @Override
+                public void run(final FlowTrigger trigger, Map data) {
+                    casf.asyncCascade(CascadeConstant.DELETION_FORCE_DELETE_CODE, issuer, ctx, new Completion(trigger) {
+                        @Override
+                        public void success() {
+                            trigger.next();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            trigger.fail(errorCode);
+                        }
+                    });
+                }
+            });
+        }
+
+        chain.done(new FlowDoneHandler(msg) {
+            @Override
+            public void handle(Map data) {
+                casf.asyncCascadeFull(CascadeConstant.DELETION_CLEANUP_CODE, issuer, ctx, new NopeCompletion());
+                bus.reply(msg, reply);
+            }
+        }).error(new FlowErrorHandler(msg) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                reply.setError(errf.instantiateErrorCode(SysErrors.DELETE_RESOURCE_ERROR, errCode));
+                bus.reply(msg, reply);
+            }
+        }).start();
     }
 
     private void handle(DetachL2NetworkFromClusterMsg msg) {
