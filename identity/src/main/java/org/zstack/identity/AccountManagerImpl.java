@@ -599,9 +599,19 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         }
     }
 
+    private void addResourceType() {
+        for (AddtionalResourceTypeExtensionPoint ext: pluginRgty.getExtensionList(AddtionalResourceTypeExtensionPoint.class)) {
+            List<String> list = ext.getAddtionalResourceType();
+            if (list != null && list.size() > 0) {
+                resourceTypeForAccountRef.addAll(list);
+            }
+        }
+    }
+
     @Override
     public boolean start() {
         try {
+            addResourceType();
             buildResourceTypes();
             buildActions();
             startExpiredSessionCollector();
