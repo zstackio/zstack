@@ -27,6 +27,7 @@
         <module>flatNetworkProvider</module>
         <module>sharedMountPointPrimaryStorage</module>
         <module>ldap</module>
+        <module>vxlan</module>
     </modules>
     <dependencies>
         <dependency>

@@ -41,7 +41,6 @@ ALTER TABLE `zstack`.`SharedResourceVO` DROP INDEX `ownerAccountUuid`;
 ALTER TABLE `zstack`.`SharedResourceVO` ADD CONSTRAINT fkSharedResourceVOAccountVO FOREIGN KEY (ownerAccountUuid) REFERENCES AccountVO (uuid) ON DELETE CASCADE;
 ALTER TABLE `zstack`.`SharedResourceVO` ADD UNIQUE INDEX(`ownerAccountUuid`,`receiverAccountUuid`,`resourceUuid`,`toPublic`);
 
-
 CREATE TABLE  `zstack`.`CephPrimaryStoragePoolVO` (
     `uuid` varchar(32) NOT NULL UNIQUE,
     `primaryStorageUuid` varchar(32) NOT NULL,
@@ -62,3 +61,44 @@ UPDATE GarbageCollectorVO SET uuid = REPLACE(UUID(),'-','') WHERE uuid IS NULL;
 ALTER TABLE GarbageCollectorVO MODIFY uuid varchar(32) UNIQUE NOT NULL PRIMARY KEY;
 
 ALTER TABLE HostCapacityVO ADD cpuSockets int unsigned NOT NULL;
+
+# VxlanNetwork
+CREATE TABLE `zstack`.`VxlanNetworkPoolVO` (
+  `uuid` varchar(32) NOT NULL UNIQUE,
+  `vtepCidr` varchar(32),
+  `startVni` int NOT NULL,
+  `endVni` int NOT NULL,
+  PRIMARY KEY  (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `zstack`.`VtepVO` (
+  `uuid` varchar(32) NOT NULL UNIQUE,
+  `hostUuid` varchar(32),
+  `vtepIp` int NOT NULL,
+  `port` int NOT NULL,
+  `physicalInterface` varchar(32) NOT NULL,
+  `vtepCidr` varchar(32) NOT NULL,
+  `clusterUuid` varchar(32) NOT NULL,
+  PRIMARY KEY  (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `zstack`.`VxlanNetwork` (
+  `uuid` varchar(32) NOT NULL UNIQUE,
+  `vni` int NOT NULL,
+  `poolUuid` varchar(32),
+  `vtepCidr` varchar(32),
+  PRIMARY KEY  (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `zstack`.`VtepL2NetworkRefVO` (
+  `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+  `l2NetworkUuid` varchar(32) NOT NULL,
+  `vtepUuid` VARCHAR(32) NOT NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE VtepVO ADD CONSTRAINT fkVtepVOHostEO FOREIGN KEY (hostUuid) REFERENCES HostEO (uuid) ON DELETE RESTRICT;
+ALTER TABLE VtepVO ADD CONSTRAINT fkVtepVOClusterEO FOREIGN KEY (clusterUuid) REFERENCES ClusterEO (uuid) ON DELETE RESTRICT;
+
+ALTER TABLE VtepL2NetworkRefVO ADD CONSTRAINT fkVtepNetworkRefVOL2NetworkEO FOREIGN KEY (l2NetworkUuid) REFERENCES L2NetworkEO (uuid) ON DELETE CASCADE;
+ALTER TABLE VtepL2NetworkRefVO ADD CONSTRAINT fkVtepNetworkRefVOVtepVO FOREIGN KEY (vtepUuid) REFERENCES VtepVO (uuid) ON DELETE CASCADE;
