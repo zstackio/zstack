@@ -11,8 +11,8 @@ import static java.util.Arrays.asList;
 
 @AutoQuery(replyClass = APIQueryL2VlanNetworkReply.class, inventoryClass = L2VlanNetworkInventory.class)
 @RestRequest(
-        path = "/l2-vlan-networks",
-        optionalPaths = {"/l2-vlan-networks/{uuid}"},
+        path = "/l2-networks/vlan",
+        optionalPaths = {"/l2-networks/vlan/{uuid}"},
         method = HttpMethod.GET,
         responseClass = APIQueryL2VlanNetworkReply.class,
         parameterName = "null"

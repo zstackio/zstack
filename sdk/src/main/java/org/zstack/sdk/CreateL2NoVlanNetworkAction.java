@@ -92,7 +92,7 @@ public class CreateL2NoVlanNetworkAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/l2-no-vlan-networks";
+        info.path = "/l2-networks/no-vlan";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";
