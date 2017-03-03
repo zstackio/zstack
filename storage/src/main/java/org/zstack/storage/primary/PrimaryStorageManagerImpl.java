@@ -343,11 +343,9 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                     String sql = "select sum(vol.size), vol.primaryStorageUuid" +
                             " from VolumeVO vol" +
                             " where vol.primaryStorageUuid in (:psUuids)" +
-                            " and vol.status = :volStatus" +
                             " group by vol.primaryStorageUuid";
                     TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
                     q.setParameter("psUuids", psUuids);
-                    q.setParameter("volStatus", VolumeStatus.Ready);
                     List<Tuple> ts = q.getResultList();
 
                     for (Tuple t : ts) {
