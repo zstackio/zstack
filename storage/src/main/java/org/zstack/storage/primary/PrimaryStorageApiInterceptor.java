@@ -7,12 +7,22 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.storage.primary.*;
+import org.zstack.header.vm.APIAttachIsoToVmInstanceMsg;
+import org.zstack.header.vm.VmInstanceAO_;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
+import org.zstack.header.volume.Volume;
+import org.zstack.header.volume.VolumeType;
+import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.volume.VolumeVO_;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.header.zone.ZoneVO_;
 import org.zstack.utils.CollectionUtils;
@@ -52,6 +62,8 @@ public class PrimaryStorageApiInterceptor implements ApiMessageInterceptor {
             validate((APIDetachPrimaryStorageFromClusterMsg) msg);
         } else if (msg instanceof APIGetPrimaryStorageCapacityMsg) {
             validate((APIGetPrimaryStorageCapacityMsg) msg);
+        } else if (msg instanceof APIAttachIsoToVmInstanceMsg) {
+            validate((APIAttachIsoToVmInstanceMsg) msg);
         }
 
         setServiceId(msg);
@@ -158,6 +170,19 @@ public class PrimaryStorageApiInterceptor implements ApiMessageInterceptor {
                                     "being attached to cluster[uuid:%s].",
                             msg.getPrimaryStorageUuid(), clusterUuidsString)
             ));
+        }
+    }
+    private void validate(APIAttachIsoToVmInstanceMsg msg) {
+
+        SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
+        q.add(VolumeVO_.vmInstanceUuid, Op.EQ, msg.getVmInstanceUuid()).
+                add(VolumeVO_.type, Op.EQ, VolumeType.Root);
+        q.select(VolumeVO_.primaryStorageUuid);
+        final String psUuid = q.findValue();
+
+        if(dbf.findByUuid(psUuid,PrimaryStorageVO.class).getState() == PrimaryStorageState.Maintenance){
+            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
+                    String.format("ISO cannot be attach to a vm whose primary storage[uuid:%s] is 'Maintenance'",psUuid)));
         }
     }
 }
