@@ -3,7 +3,7 @@ package org.zstack.testlib
 /**
  * Created by xing5 on 2017/2/22.
  */
-abstract class SubCase extends Test {
+abstract class SubCase extends Test implements Case {
     final void run() {
         try {
             environment()
@@ -14,11 +14,7 @@ abstract class SubCase extends Test {
     }
 
     @Override
-    protected void runSubCases(List<SubCase> cases) {
+    protected void runSubCases(List<Case> cases) {
         throw new Exception("runSubCases() cannot be called in a SubCase")
     }
-
-    abstract void environment()
-    abstract void test()
-    abstract void clean()
 }

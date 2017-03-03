@@ -1,6 +1,5 @@
 package org.zstack.testlib
 
-import org.codehaus.groovy.runtime.StackTraceUtils
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.componentloader.ComponentLoader
 import org.zstack.core.db.DatabaseFacade
@@ -36,10 +35,10 @@ abstract class Test implements ApiHelper {
 
     private int phase = PHASE_NONE
     protected BeanConstructor beanConstructor
-    protected SpringSpec springSpec
+    protected SpringSpec _springSpec
 
     Test() {
-        springSpec = new SpringSpec()
+        _springSpec = new SpringSpec()
     }
 
     static EnvSpec makeEnv(@DelegatesTo(strategy=Closure.DELEGATE_FIRST, value=EnvSpec.class) Closure c) {
@@ -67,7 +66,7 @@ abstract class Test implements ApiHelper {
     }
 
     protected void spring(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = SpringSpec.class) Closure c) {
-        c.delegate = springSpec
+        c.delegate = _springSpec
         c.resolveStrategy = Closure.DELEGATE_FIRST
         c()
     }
@@ -198,10 +197,10 @@ abstract class Test implements ApiHelper {
 
     void buildBeanConstructor(boolean useWeb = true) {
         beanConstructor = useWeb ? new WebBeanConstructor() : new BeanConstructor()
-        if (springSpec.all) {
+        if (_springSpec.all) {
             beanConstructor.loadAll = true
         } else {
-            springSpec.xmls.each { beanConstructor.addXml(it) }
+            _springSpec.xmls.each { beanConstructor.addXml(it) }
         }
 
         componentLoader = beanConstructor.build()
@@ -212,7 +211,7 @@ abstract class Test implements ApiHelper {
     }
 
     protected void useSpring(SpringSpec spec) {
-        springSpec = spec
+        _springSpec = spec
     }
 
     private void prepare() {
@@ -291,7 +290,7 @@ abstract class Test implements ApiHelper {
         String name
     }
 
-    protected void runSubCases(List<SubCase> cases) {
+    protected void runSubCases(List<Case> cases) {
         String resultDir = System.getProperty("resultDir")
         if (resultDir == null) {
             resultDir = [System.getProperty("user.dir"), "zstack-integration-test-result"].join("/")
@@ -305,7 +304,7 @@ abstract class Test implements ApiHelper {
 
         List<SubCaseResult> allResults = []
 
-        for (SubCase c in cases) {
+        for (Case c in cases) {
             def caseResult = new SubCaseResult()
             caseResult.name = c.class.simpleName
 
