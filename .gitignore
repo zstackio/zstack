@@ -27,5 +27,5 @@ premium/
 .settings
 zstack-api.log
 .vscode/
-zstack-integration-test-result/
+test-premium/zstack-integration-test-result/
 envDSLTree
