@@ -5,6 +5,7 @@ import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
 import org.zstack.kvm.KVMGlobalConfig
 import org.zstack.sdk.AddKVMHostAction
+import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.ClusterSpec
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
@@ -19,13 +20,7 @@ class CheckHostCapacityWhenAddHostCase extends SubCase {
 
     @Override
     void setup() {
-        spring {
-            sftpBackupStorage()
-            localStorage()
-            virtualRouter()
-            securityGroup()
-            kvm()
-        }
+        useSpring(KvmTest.springSpec)
     }
 
     @Override
@@ -56,7 +51,7 @@ class CheckHostCapacityWhenAddHostCase extends SubCase {
         action.name = "addHost"
         action.managementIp = "localhost"
         action.clusterUuid = clusterSpec.inventory.uuid
-        action.sessionId = Test.currentEnvSpec.session.uuid
+        action.sessionId = adminSession()
 
         AddKVMHostAction.Result res = action.call()
         assert res.error != null

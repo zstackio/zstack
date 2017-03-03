@@ -29,6 +29,7 @@ import org.zstack.header.message.*;
 import org.zstack.header.query.APIQueryMessage;
 import org.zstack.header.query.APIQueryReply;
 import org.zstack.header.query.QueryCondition;
+import org.zstack.header.query.QueryOp;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.rest.RestRequest;
@@ -698,13 +699,25 @@ public class RestServer implements Component, CloudBusEventListener {
         sendMessage(msg, api, rsp);
     }
 
-    static final String[] QUERY_OP = {
-            // DO NOT change the order
-            // an operator contained by another operator must be placed
-            // after the containing operator. For example, "=" is contained
-            // by "!=" so it must sit after "!="
-            "!=", ">=", "<=", "!?=", "!~=", "~=", "?=", "=", ">", "<",
-    };
+    private static final LinkedHashMap<String, String> QUERY_OP_MAPPING = new LinkedHashMap();
+
+    static {
+        // DO NOT change the order
+        // an operator contained by another operator must be placed
+        // after the containing operator. For example, "=" is contained
+        // by "!=" so it must sit after "!="
+
+        QUERY_OP_MAPPING.put("!=", QueryOp.NOT_EQ.toString());
+        QUERY_OP_MAPPING.put(">=", QueryOp.GT_AND_EQ.toString());
+        QUERY_OP_MAPPING.put("<=", QueryOp.LT_AND_EQ.toString());
+        QUERY_OP_MAPPING.put("!?=", QueryOp.NOT_IN.toString());
+        QUERY_OP_MAPPING.put("!~=", QueryOp.NOT_LIKE.toString());
+        QUERY_OP_MAPPING.put("~=", QueryOp.LIKE.toString());
+        QUERY_OP_MAPPING.put("?=", QueryOp.IN.toString());
+        QUERY_OP_MAPPING.put("=", QueryOp.EQ.toString());
+        QUERY_OP_MAPPING.put(">", QueryOp.GT.toString());
+        QUERY_OP_MAPPING.put("<", QueryOp.LT.toString());
+    }
 
     private void handleQueryApi(Api api, String sessionId, HttpServletRequest req, HttpServletResponse rsp) throws IllegalAccessException, InstantiationException, RestException, IOException, NoSuchMethodException, InvocationTargetException {
         Map<String, String[]> vars = req.getParameterMap();
@@ -770,9 +783,11 @@ public class RestServer implements Component, CloudBusEventListener {
 
                 for (String cond : conds) {
                     String OP = null;
-                    for (String op : QUERY_OP) {
+                    String delimiter = null;
+                    for (String op : QUERY_OP_MAPPING.keySet()) {
                         if (cond.contains(op)) {
-                            OP = op;
+                            OP = QUERY_OP_MAPPING.get(op);
+                            delimiter = op;
                             break;
                         }
                     }
@@ -780,10 +795,10 @@ public class RestServer implements Component, CloudBusEventListener {
                     if (OP == null) {
                         throw new RestException(HttpStatus.BAD_REQUEST.value(), String.format("Invalid query parameter." +
                                 " The '%s' in the parameter[q] doesn't contain any query operator. Valid query operators are" +
-                                " %s", cond, Arrays.asList(QUERY_OP)));
+                                " %s", cond, Arrays.asList(QUERY_OP_MAPPING.keySet())));
                     }
 
-                    String[] ks = StringUtils.split(cond, OP, 2);
+                    String[] ks = StringUtils.split(cond, delimiter, 2);
                     if (ks.length != 2) {
                         throw new RestException(HttpStatus.BAD_REQUEST.value(), String.format("Invalid query parameter." +
                                 " The '%s' in parameter[q] is not a key-value pair split by %s", cond, OP));

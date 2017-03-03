@@ -7,4 +7,12 @@
 		<category>nfsPrimaryStorage</category>
 		<validatorRegularExpression>^/(.*)</validatorRegularExpression>
 	</config>
+
+	<config>
+		<name>deletion.gcInterval</name>
+		<description>the interval to garbage collect stale volumes and snapshots, in seconds</description>
+		<defaultValue>3600</defaultValue>
+		<category>nfsPrimaryStorage</category>
+		<type>java.lang.Integer</type>
+	</config>
 </globalConfig>

@@ -16,12 +16,21 @@
 	</config>
 
 	<config>
-		<name>expungeInterval</name>
-        <description>the interval the expunging image task runs, in seconds</description>
+		<name>deletion.gcInterval</name>
+        	<description>the interval the garbage collector to delete stale images</description>
 		<category>image</category>
 		<defaultValue>3600</defaultValue>
 		<type>java.lang.Long</type>
 	</config>
+
+	<config>
+		<name>expungeInterval</name>
+        	<description>the interval the expunging image task runs, in seconds</description>
+		<category>image</category>
+		<defaultValue>3600</defaultValue>
+		<type>java.lang.Long</type>
+	</config>
+
     <config>
         <name>enableResetPassword</name>
         <description>enable reset password</description>

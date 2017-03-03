@@ -14,7 +14,6 @@ import org.zstack.core.db.DbEntityLister;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.gc.*;
 import org.zstack.core.jsonlabel.JsonLabel;
 import org.zstack.core.scheduler.SchedulerConstant;
 import org.zstack.core.scheduler.SchedulerFacade;
@@ -60,7 +59,8 @@ import org.zstack.header.network.l3.*;
 import org.zstack.header.search.SearchOp;
 import org.zstack.header.storage.backup.BackupStorageType;
 import org.zstack.header.storage.backup.BackupStorageVO;
-import org.zstack.header.storage.primary.*;
+import org.zstack.header.storage.primary.PrimaryStorageType;
+import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.tag.SystemTagCreateMessageValidator;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagValidator;
@@ -152,8 +152,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
     private ErrorFacade errf;
     @Autowired
     private ResourceDestinationMaker destMaker;
-    @Autowired
-    private GCFacade gcf;
     @Autowired
     private ThreadFacade thdf;
     @Autowired
@@ -1758,40 +1756,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
             }
         }
         return ret;
-    }
-
-    private void checkUnknownVm() {
-        List<String> unknownVmUuids = getVmInUnknownStateManagedByUs();
-        if (unknownVmUuids.isEmpty()) {
-            return;
-        }
-
-        for (final String uuid : unknownVmUuids) {
-            TimeBasedGCEphemeralContext<Void> context = new TimeBasedGCEphemeralContext<>();
-            context.setInterval(5);
-            context.setTimeUnit(TimeUnit.SECONDS);
-            context.setRunner(new GCRunner() {
-                @Override
-                public void run(GCContext context, final GCCompletion completion) {
-                    VmCheckOwnStateMsg msg = new VmCheckOwnStateMsg();
-                    msg.setVmInstanceUuid(uuid);
-                    bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, uuid);
-                    bus.send(msg, new CloudBusCallBack(completion) {
-                        @Override
-                        public void run(MessageReply reply) {
-                            if (reply.isSuccess()) {
-                                completion.success();
-                            } else {
-                                completion.fail(errf.stringToOperationError(
-                                        String.format("unable to check the vm[uuid:%s]'s state, %s", uuid, reply.getError())
-                                ));
-                            }
-                        }
-                    });
-                }
-            });
-            gcf.scheduleImmediately(context);
-        }
     }
 
     @Override

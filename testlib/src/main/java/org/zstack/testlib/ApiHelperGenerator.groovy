@@ -2,6 +2,7 @@ package org.zstack.testlib
 
 import org.zstack.core.Platform
 import org.zstack.sdk.AbstractAction
+import org.zstack.sdk.QueryAction
 
 import java.lang.reflect.Modifier
 
@@ -23,15 +24,26 @@ class ApiHelperGenerator {
                 return
             }
 
+            String queryConditionManipulate = {
+                if (!QueryAction.isAssignableFrom(actionClass)) {
+                    return ""
+                }
+
+                return """
+        a.conditions = a.conditions.collect { it.toString() }
+"""
+            }()
+
             String funcName = actionClass.simpleName - "Action"
             funcName = "${Character.toLowerCase(funcName.charAt(0))}${funcName.substring(1)}"
             groovyActions.add("""\
     def $funcName(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = ${actionClass.typeName}.class) Closure c) {
         def a = new ${actionClass.typeName}()
-        ${actionClass.fields.find {it.name == "sessionId"} != null ? "a.sessionId = Test.currentEnvSpec.session.uuid" : ""}
+        ${actionClass.fields.find {it.name == "sessionId"} != null ? "a.sessionId = Test.currentEnvSpec?.session?.uuid" : ""}
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
         c()
+        $queryConditionManipulate
         return errorOut(a.call())
     }
 

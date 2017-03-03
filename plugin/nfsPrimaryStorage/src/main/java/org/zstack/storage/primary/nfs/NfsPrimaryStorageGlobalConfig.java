@@ -12,4 +12,7 @@ public class NfsPrimaryStorageGlobalConfig {
 
     @GlobalConfigValidation
     public static GlobalConfig MOUNT_BASE = new GlobalConfig(CATEGORY, "mount.base");
+
+    @GlobalConfigValidation
+    public static GlobalConfig GC_INTERVAL = new GlobalConfig(CATEGORY, "deletion.gcInterval");
 }

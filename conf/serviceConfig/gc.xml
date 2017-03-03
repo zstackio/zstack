@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>gc</id>
+    <interceptor>GCApiInterceptor</interceptor>
+
+    <message>
+        <name>org.zstack.core.gc.APIQueryGCJobMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.core.gc.APITriggerGCJobMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.core.gc.APIDeleteGCJobMsg</name>
+    </message>
+</service>

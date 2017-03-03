@@ -5,9 +5,13 @@ import org.zstack.core.componentloader.ComponentLoader
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.header.AbstractService
 import org.zstack.header.exception.CloudRuntimeException
+import org.zstack.header.identity.AccountConstant
 import org.zstack.header.message.AbstractBeforeSendMessageInterceptor
 import org.zstack.header.message.Event
 import org.zstack.header.message.Message
+import org.zstack.sdk.LogInByAccountAction
+import org.zstack.sdk.SessionInventory
+import org.zstack.sdk.ZSClient
 import org.zstack.utils.ShellUtils
 import org.zstack.utils.Utils
 import org.zstack.utils.gson.JSONObjectUtil
@@ -281,7 +285,11 @@ abstract class Test implements ApiHelper {
     }
 
     static void handleHttp(HttpServletRequest request, HttpServletResponse response) {
-        currentEnvSpec.handleSimulatorHttpRequests(request, response)
+        if (WebBeanConstructor.WEB_HOOK_PATH.toString().contains(request.getRequestURI())) {
+            ZSClient.webHookCallback(request, response)
+        } else {
+            currentEnvSpec.handleSimulatorHttpRequests(request, response)
+        }
     }
 
     static class SubCaseResult {
@@ -289,6 +297,8 @@ abstract class Test implements ApiHelper {
         String error
         String name
     }
+
+    static Case CURRENT_SUB_CASE
 
     protected void runSubCases(List<Case> cases) {
         String resultDir = System.getProperty("resultDir")
@@ -312,6 +322,7 @@ abstract class Test implements ApiHelper {
 
             logger.info("starts running a sub case[${c.class}] of suite[${this.class}]")
             try {
+                CURRENT_SUB_CASE = c
                 c.run()
 
                 caseResult.success = true
@@ -356,5 +367,12 @@ abstract class Test implements ApiHelper {
 
     protected static <T> T json(String str, Class<T> type) {
         return JSONObjectUtil.toObject(str, type)
+    }
+
+    SessionInventory loginAsAdmin() {
+        return logInByAccount {
+            accountName = AccountConstant.INITIAL_SYSTEM_ADMIN_NAME
+            password = AccountConstant.INITIAL_SYSTEM_ADMIN_PASSWORD
+        } as SessionInventory
     }
 }

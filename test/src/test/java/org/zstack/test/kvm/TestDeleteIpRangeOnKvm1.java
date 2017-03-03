@@ -3,7 +3,6 @@ package org.zstack.test.kvm;
 import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.zstack.compute.vm.GCStopVmRunner;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
@@ -68,7 +67,6 @@ public class TestDeleteIpRangeOnKvm1 {
 
     @Test
     public void test() throws ApiSenderException, InterruptedException {
-        VmInstanceInventory vm = deployer.vms.get("TestVm");
         HostInventory host = deployer.hosts.get("host1");
         config.pingSuccess = false;
         HostVO hvo = dbf.findByUuid(host.getUuid(), HostVO.class);
@@ -77,11 +75,5 @@ public class TestDeleteIpRangeOnKvm1 {
 
         IpRangeInventory ipr = deployer.ipRanges.get("TestIpRange");
         api.deleteIpRange(ipr.getUuid());
-        api.deleteHost(host.getUuid());
-        TimeUnit.SECONDS.sleep(3);
-        SimpleQuery<GarbageCollectorVO> q = dbf.createQuery(GarbageCollectorVO.class);
-        q.add(GarbageCollectorVO_.runnerClass, Op.EQ, GCStopVmRunner.class.getName());
-        GarbageCollectorVO vo = q.find();
-        Assert.assertEquals(GCStatus.Done, vo.getStatus());
     }
 }

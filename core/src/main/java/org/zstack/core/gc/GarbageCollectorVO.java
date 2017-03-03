@@ -11,8 +11,7 @@ import java.sql.Timestamp;
 public class GarbageCollectorVO {
     @Id
     @Column
-    @GeneratedValue(strategy= GenerationType.IDENTITY)
-    private long id;
+    private String uuid;
 
     @Column
     private String name;
@@ -55,12 +54,12 @@ public class GarbageCollectorVO {
         this.type = type;
     }
 
-    public long getId() {
-        return id;
+    public String getUuid() {
+        return uuid;
     }
 
-    public void setId(long id) {
-        this.id = id;
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
     }
 
     public String getRunnerClass() {

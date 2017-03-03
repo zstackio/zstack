@@ -26,7 +26,7 @@ class LocalStorageMigrateVolumeCase extends SubCase{
 
     @Override
     void environment() {
-        env = Env.localStorateOneVmEnv()
+        env = Env.localStorageOneVmEnv()
     }
 
     @Override

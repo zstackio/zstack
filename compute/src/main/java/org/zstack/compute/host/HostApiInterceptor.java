@@ -6,6 +6,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
@@ -42,9 +43,19 @@ public class HostApiInterceptor implements ApiMessageInterceptor {
             validate((APIAddHostMsg) msg);
         } else if (msg instanceof APIUpdateHostMsg) {
             validate((APIUpdateHostMsg) msg);
+        } else if (msg instanceof APIDeleteHostMsg) {
+            validate((APIDeleteHostMsg) msg);
         }
 
         return msg;
+    }
+
+    private void validate(APIDeleteHostMsg msg) {
+        if (!dbf.isExist(msg.getUuid(), HostVO.class)) {
+            APIDeleteHostEvent evt = new APIDeleteHostEvent(msg.getId());
+            bus.publish(evt);
+            throw new StopRoutingException();
+        }
     }
 
     private void validate(APIUpdateHostMsg msg) {

@@ -78,7 +78,7 @@ class KVMHostSpec extends HostSpec {
         simulator(KVMConstant.KVM_VM_CHECK_STATE) { HttpEntity<String> e ->
             KVMAgentCommands.CheckVmStateCmd cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.CheckVmStateCmd.class)
             List<VmInstanceState> states = Q.New(VmInstanceVO.class)
-                    .select(VmInstanceVO_.state).in(VmInstanceVO_.uuid, cmd.vmUuids).findValue()
+                    .select(VmInstanceVO_.state).in(VmInstanceVO_.uuid, cmd.vmUuids).listValues()
             KVMAgentCommands.CheckVmStateRsp rsp = new KVMAgentCommands.CheckVmStateRsp()
             rsp.states = [:]
             states.each {
@@ -113,6 +113,8 @@ class KVMHostSpec extends HostSpec {
 
         simulator(KVMConstant.KVM_TAKE_VOLUME_SNAPSHOT_PATH) {
             def rsp = new KVMAgentCommands.TakeSnapshotResponse()
+            rsp.newVolumeInstallPath = "/new/volume/install/path"
+            rsp.snapshotInstallPath = "/snapshot/install/path"
             rsp.size = 1
             return rsp
         }

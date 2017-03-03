@@ -31,7 +31,8 @@ class ImageTest extends Test {
     @Override
     void test() {
         runSubCases([
-                new ImageOperationsCase()
+                new ImageOperationsCase(),
+                new ImageGCCase()
         ])
     }
 }

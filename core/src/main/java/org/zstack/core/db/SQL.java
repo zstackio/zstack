@@ -121,6 +121,10 @@ public class SQL {
         return useTransaction ? transactionalExecute() : query.executeUpdate();
     }
 
+    public static UpdateQuery New(Class entityClass) {
+        return UpdateQuery.New(entityClass);
+    }
+
     public static SQL New(String sql) {
         return new SQL(sql);
     }

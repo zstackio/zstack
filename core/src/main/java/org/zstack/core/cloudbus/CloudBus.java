@@ -15,6 +15,7 @@ public interface CloudBus extends Component {
     
     void send(NeedReplyMessage msg, CloudBusCallBack callback);
 
+    @Deprecated
     void send(List<? extends NeedReplyMessage> msgs, CloudBusListCallBack callBack);
 
     void send(List<? extends NeedReplyMessage> msgs, int parallelLevel, CloudBusListCallBack callBack);

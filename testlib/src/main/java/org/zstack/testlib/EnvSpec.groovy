@@ -11,14 +11,20 @@ import org.zstack.core.db.SQL
 import org.zstack.header.identity.AccountConstant
 import org.zstack.header.message.Message
 import org.zstack.header.rest.RESTConstant
+import org.zstack.sdk.ErrorCode
+import org.zstack.sdk.GlobalConfigInventory
 import org.zstack.sdk.LogInByAccountAction
+import org.zstack.sdk.QueryGlobalConfigAction
 import org.zstack.sdk.SessionInventory
+import org.zstack.sdk.UpdateGlobalConfigAction
 import org.zstack.sdk.ZSClient
 import org.zstack.utils.gson.JSONObjectUtil
 
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 /**
  * Created by xing5 on 2017/2/12.
@@ -159,6 +165,33 @@ class EnvSpec implements Node {
         return specsByName[name]
     }
 
+    private String retrieveSessionUuid(Node it) {
+        String suuid = session.uuid
+
+        if (it instanceof HasSession) {
+            if (it.accountName != null) {
+                AccountSpec aspec = find(it.accountName, AccountSpec.class)
+                assert aspec != null: "cannot find the account[$it.accountName] defined in environment()"
+                suuid = aspec.session.uuid
+            } else {
+                def n = it.parent
+                while (n != null) {
+                    if (!(n instanceof HasSession) || n.accountName == null) {
+                        n = n.parent
+                    } else {
+                        // one of the parent has the accountName set, use it
+                        AccountSpec aspec = find(n.accountName, AccountSpec.class)
+                        assert aspec != null: "cannot find the account[$n.accountName] defined in environment()"
+                        suuid = aspec.session.uuid
+                        break
+                    }
+                }
+            }
+        }
+
+        return suuid
+    }
+
     private void deploy() {
         def allNodes = []
 
@@ -189,27 +222,8 @@ class EnvSpec implements Node {
             def uuid = Platform.getUuid()
             specsByUuid[uuid] = it
 
-            def suuid = session.uuid
-            if (it instanceof HasSession) {
-                if (it.accountName != null) {
-                    AccountSpec aspec = find(it.accountName, AccountSpec.class)
-                    assert aspec != null: "cannot find the account[$it.accountName] defined in environment()"
-                    suuid = aspec.session.uuid
-                } else {
-                    def n = it.parent
-                    while (n != null) {
-                        if (!(n instanceof HasSession) || n.accountName == null) {
-                            n = n.parent
-                        } else {
-                            // one of the parent has the accountName set, use it
-                            AccountSpec aspec = find(n.accountName, AccountSpec.class)
-                            assert aspec != null: "cannot find the account[$n.accountName] defined in environment()"
-                            suuid = aspec.session.uuid
-                            break
-                        }
-                    }
-                }
-            }
+
+            def suuid = retrieveSessionUuid(it)
 
             try {
                 SpecID id = (it as CreateAction).create(uuid, suuid)
@@ -244,6 +258,56 @@ class EnvSpec implements Node {
         }
     }
 
+    void resetAllGlobalConfig() {
+        def a = new QueryGlobalConfigAction()
+        a.sessionId = session.uuid
+        QueryGlobalConfigAction.Result res = a.call()
+        assert res.error == null: res.error.toString()
+        CountDownLatch latch = new CountDownLatch(res.value.inventories.size())
+        List<ErrorCode> errors = []
+        res.value.inventories.each { GlobalConfigInventory config ->
+            Thread.start {
+                try {
+                    def ua = new UpdateGlobalConfigAction()
+                    ua.category = config.category
+                    ua.name = config.name
+                    ua.value = config.defaultValue
+                    ua.sessionId = session.uuid
+                    UpdateGlobalConfigAction.Result r = ua.call()
+                    if (r.error != null) {
+                        errors.add(r.error)
+                    }
+                } finally {
+                    latch.countDown()
+                }
+            }
+        }
+
+        assert latch.await(1, TimeUnit.MINUTES): "global configs not all updated after 1 minutes timeout"
+        assert errors.isEmpty(): "some global configs fail to update, see ${errors.collect {it.toString()}}"
+    }
+
+    def recreate(String specName) {
+        def spec = specByName(specName)
+        assert spec != null: "cannot find the spec[name:$specName]"
+
+        walkNode(spec) {
+            if (!(it instanceof CreateAction)) {
+                return
+            }
+
+            String uuid = Platform.getUuid()
+            specsByUuid[uuid] = it
+
+            SpecID id = it.create(uuid, retrieveSessionUuid(it as Node))
+            if (id != null) {
+                specsByName[id.name] = it
+            }
+        }
+
+        return spec
+    }
+
     EnvSpec create(Closure cl = null) {
         assert Test.currentEnvSpec == null: "There is another EnvSpec created but not deleted. There can be only one EnvSpec" +
                 " in used, you must delete the previous one"
@@ -252,6 +316,7 @@ class EnvSpec implements Node {
         Test.currentEnvSpec = this
 
         adminLogin()
+        resetAllGlobalConfig()
         deploy()
 
         defaultHttpHandlers = [:]
@@ -283,7 +348,7 @@ class EnvSpec implements Node {
             long count = SQL.New("select count(*) from ${type.name}".toString(), Long.class).find()
 
             if (count > 0) {
-                logger.fatal("[${this.class}] EnvSpec.delete() didn't cleanup the environment, there are still records in the database" +
+                logger.fatal("[${Test.CURRENT_SUB_CASE != null ? Test.CURRENT_SUB_CASE.class : this.class}] EnvSpec.delete() didn't cleanup the environment, there are still records in the database" +
                         " table ${type.name}, go fix it immediately!!! Abort the system")
                 // abort the system
                 System.exit(1)
@@ -340,11 +405,6 @@ class EnvSpec implements Node {
 
     void handleSimulatorHttpRequests(HttpServletRequest req, HttpServletResponse rsp) {
         def url = req.getRequestURI()
-        if (WebBeanConstructor.WEB_HOOK_PATH.toString().contains(url)) {
-            ZSClient.webHookCallback(req, rsp)
-            return
-        }
-
         def handler = httpHandlers[url]
         if (handler == null) {
             rsp.sendError(HttpStatus.NOT_FOUND.value(), "no handler found for the path $url")

@@ -11,9 +11,6 @@ import org.zstack.core.db.GLock;
 import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.gc.EventBasedGCPersistentContext;
-import org.zstack.core.gc.GCEventTrigger;
-import org.zstack.core.gc.GCFacade;
 import org.zstack.core.logging.Event;
 import org.zstack.core.logging.Log;
 import org.zstack.core.thread.SyncTask;
@@ -28,10 +25,8 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.host.HostCanonicalEvents;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostErrors;
-import org.zstack.header.host.HostStatus;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
@@ -64,7 +59,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 import static org.zstack.utils.CollectionDSL.*;
-import static org.zstack.utils.StringDSL.ln;
 
 /**
  * Created by frank on 9/15/2015.
@@ -84,8 +78,6 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     private ThreadFacade thdf;
     @Autowired
     private ApiTimeoutManager timeoutMgr;
-    @Autowired
-    private GCFacade gcf;
 
     public static final String APPLY_DHCP_PATH = "/flatnetworkprovider/dhcp/apply";
     public static final String PREPARE_DHCP_PATH = "/flatnetworkprovider/dhcp/prepare";
@@ -451,44 +443,11 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                     return;
                 }
 
-                GCFlatDHCPDeleteNamespaceContext c = new GCFlatDHCPDeleteNamespaceContext();
-                c.setHostUuid(getHostUuid());
-                c.setCommand(cmd);
-                c.setTriggerHostStatus(HostStatus.Connected.toString());
-
-                EventBasedGCPersistentContext<GCFlatDHCPDeleteNamespaceContext> ctx = new EventBasedGCPersistentContext<GCFlatDHCPDeleteNamespaceContext>();
-                ctx.setRunnerClass(GCFlatDHCPDeleteNamespaceRunner.class);
-                ctx.setContextClass(GCFlatDHCPDeleteNamespaceContext.class);
-                ctx.setName(String.format("delete-namespace-for-l3-%s", inventory.getUuid()));
-                ctx.setContext(c);
-
-                GCEventTrigger trigger = new GCEventTrigger();
-                trigger.setCodeName("gc-delete-vm-on-host-connected");
-                trigger.setEventPath(HostCanonicalEvents.HOST_STATUS_CHANGED_PATH);
-                String code = ln(
-                        "import org.zstack.header.host.HostCanonicalEvents.HostStatusChangedData",
-                        "import org.zstack.network.service.flat.GCFlatDHCPDeleteNamespaceContext",
-                        "HostStatusChangedData d = (HostStatusChangedData) data",
-                        "GCFlatDHCPDeleteNamespaceContext c = (GCFlatDHCPDeleteNamespaceContext) context",
-                        "return c.hostUuid == d.hostUuid && d.newStatus == c.triggerHostStatus"
-                ).toString();
-                trigger.setCode(code);
-                ctx.addTrigger(trigger);
-
-                trigger = new GCEventTrigger();
-                trigger.setCodeName("gc-delete-vm-on-host-deleted");
-                trigger.setEventPath(HostCanonicalEvents.HOST_DELETED_PATH);
-                code = ln(
-                        "import org.zstack.header.host.HostCanonicalEvents.HostDeletedData",
-                        "import org.zstack.network.service.flat.GCFlatDHCPDeleteNamespaceContext",
-                        "HostDeletedData d = (HostDeletedData) data",
-                        "GCFlatDHCPDeleteNamespaceContext c = (GCFlatDHCPDeleteNamespaceContext) context",
-                        "return c.hostUuid == d.hostUuid"
-                ).toString();
-                trigger.setCode(code);
-                ctx.addTrigger(trigger);
-
-                gcf.schedule(ctx);
+                FlatDHCPDeleteNamespaceGC gc = new FlatDHCPDeleteNamespaceGC();
+                gc.hostUuid = getHostUuid();
+                gc.command = cmd;
+                gc.NAME = String.format("gc-namespace-on-host-%s", getHostUuid());
+                gc.submit();
             }
         });
     }

@@ -6,6 +6,6 @@ package org.zstack.testlib
 trait Case {
     abstract void environment()
     abstract void test()
-    abstract void clean()
     abstract void run()
+    abstract void clean()
 }

@@ -6,9 +6,6 @@ import org.zstack.core.cloudbus.AutoOffEventCallback;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.gc.EventBasedGCPersistentContext;
-import org.zstack.core.gc.GCEventTrigger;
-import org.zstack.core.gc.GCFacade;
 import org.zstack.core.logging.Event;
 import org.zstack.header.Component;
 import org.zstack.header.errorcode.ErrorCode;
@@ -34,8 +31,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static org.zstack.utils.StringDSL.ln;
-
 /**
  * Created by xing5 on 2016/6/25.
  */
@@ -46,8 +41,6 @@ public class FlatDhcpUpgradeExtension implements Component {
     private DatabaseFacade dbf;
     @Autowired
     private EventFacade evtf;
-    @Autowired
-    private GCFacade gcf;
     @Autowired
     private ErrorFacade errf;
 
@@ -146,44 +139,11 @@ public class FlatDhcpUpgradeExtension implements Component {
                                 return;
                             }
 
-                            GCFlatDHCPDeleteNamespaceContext c = new GCFlatDHCPDeleteNamespaceContext();
-                            c.setHostUuid(getHostUuid());
-                            c.setCommand(cmd);
-                            c.setTriggerHostStatus(HostStatus.Connected.toString());
-
-                            EventBasedGCPersistentContext<GCFlatDHCPDeleteNamespaceContext> ctx = new EventBasedGCPersistentContext<GCFlatDHCPDeleteNamespaceContext>();
-                            ctx.setRunnerClass(GCFlatDHCPDeleteNamespaceRunner.class);
-                            ctx.setContextClass(GCFlatDHCPDeleteNamespaceContext.class);
-                            ctx.setName(String.format("delete-namespace-for-l3-%s", l3.getUuid()));
-                            ctx.setContext(c);
-
-                            GCEventTrigger trigger = new GCEventTrigger();
-                            trigger.setCodeName("gc-delete-vm-on-host-connected");
-                            trigger.setEventPath(HostCanonicalEvents.HOST_STATUS_CHANGED_PATH);
-                            String code = ln(
-                                    "import org.zstack.header.host.HostCanonicalEvents.HostStatusChangedData",
-                                    "import org.zstack.network.service.flat.GCFlatDHCPDeleteNamespaceContext",
-                                    "HostStatusChangedData d = (HostStatusChangedData) data",
-                                    "GCFlatDHCPDeleteNamespaceContext c = (GCFlatDHCPDeleteNamespaceContext) context",
-                                    "return c.hostUuid == d.hostUuid && d.newStatus == c.triggerHostStatus"
-                            ).toString();
-                            trigger.setCode(code);
-                            ctx.addTrigger(trigger);
-
-                            trigger = new GCEventTrigger();
-                            trigger.setCodeName("gc-delete-vm-on-host-deleted");
-                            trigger.setEventPath(HostCanonicalEvents.HOST_DELETED_PATH);
-                            code = ln(
-                                    "import org.zstack.header.host.HostCanonicalEvents.HostDeletedData",
-                                    "import org.zstack.network.service.flat.GCFlatDHCPDeleteNamespaceContext",
-                                    "HostDeletedData d = (HostDeletedData) data",
-                                    "GCFlatDHCPDeleteNamespaceContext c = (GCFlatDHCPDeleteNamespaceContext) context",
-                                    "return c.hostUuid == d.hostUuid"
-                            ).toString();
-                            trigger.setCode(code);
-                            ctx.addTrigger(trigger);
-
-                            gcf.schedule(ctx);
+                            FlatDHCPDeleteNamespaceGC gc = new FlatDHCPDeleteNamespaceGC();
+                            gc.hostUuid = getHostUuid();
+                            gc.command = cmd;
+                            gc.NAME = String.format("gc-namespace-on-host-%s", getHostUuid());
+                            gc.submit();
                         }
                     });
 

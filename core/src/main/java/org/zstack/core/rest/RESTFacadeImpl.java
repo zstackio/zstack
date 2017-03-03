@@ -4,6 +4,7 @@ import org.apache.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -332,13 +333,25 @@ public class RESTFacadeImpl implements RESTFacade {
                 logger.trace(String.format("json post[%s], %s", url, req.toString()));
             }
 
-            ResponseEntity<String> rsp = new Retry<ResponseEntity<String>>() {
-                @Override
-                @RetryCondition(onExceptions = {IOException.class, RestClientException.class})
-                protected ResponseEntity<String> call() {
-                    return template.exchange(url, HttpMethod.POST, req, String.class);
+            ResponseEntity<String> rsp;
+
+            try {
+                if (CoreGlobalProperty.UNIT_TEST_ON) {
+                    rsp = template.exchange(url, HttpMethod.POST, req, String.class);
+                } else {
+                    rsp = new Retry<ResponseEntity<String>>() {
+                        @Override
+                        @RetryCondition(onExceptions = {IOException.class, RestClientException.class, HttpClientErrorException.class})
+                        protected ResponseEntity<String> call() {
+                            return template.exchange(url, HttpMethod.POST, req, String.class);
+                        }
+                    }.run();
                 }
-            }.run();
+            } catch (HttpClientErrorException e) {
+                String err = String.format("http status: %s, response body:%s", e.getStatusCode(), e.getResponseBodyAsString());
+                wrapper.fail(errf.instantiateErrorCode(SysErrors.HTTP_ERROR, err));
+                return;
+            }
 
             if (rsp.getStatusCode() != org.springframework.http.HttpStatus.OK) {
                 String err = String.format("http status: %s, response body:%s", rsp.getStatusCode().toString(), rsp.getBody());

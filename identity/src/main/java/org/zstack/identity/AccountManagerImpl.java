@@ -76,6 +76,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     private PluginRegistry pluginRgty;
     @Autowired
     private EventFacade evtf;
+    @Autowired
+    private GlobalConfigFacade gcf;
 
     private List<String> resourceTypeForAccountRef;
     private List<Class> resourceTypes;
@@ -815,8 +817,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             }
         }
 
-        if (!quotaConfigs.isEmpty()) {
-            dbf.persistCollection(quotaConfigs);
+        for (GlobalConfigVO vo : quotaConfigs) {
+            gcf.createGlobalConfig(vo);
         }
 
         //

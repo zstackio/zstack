@@ -1,11 +1,13 @@
 package org.zstack.test.integration.core.gc
 
 import org.zstack.core.db.DatabaseFacade
+import org.zstack.core.gc.GCCompletion
 import org.zstack.core.gc.GCGlobalConfig
 import org.zstack.core.gc.GCStatus
 import org.zstack.core.gc.GarbageCollectorVO
-import org.zstack.core.groovy.gc.GarbageCollectorManagerImpl
-import org.zstack.core.groovy.gc.TimeBasedGarbageCollector
+import org.zstack.core.gc.GarbageCollectorManagerImpl
+import org.zstack.core.gc.TimeBasedGarbageCollector
+import org.zstack.sdk.GarbageCollectorInventory
 import org.zstack.testlib.SubCase
 
 import java.util.concurrent.TimeUnit
@@ -16,6 +18,7 @@ import java.util.concurrent.TimeUnit
 class TimeBasedGarbageCollectorCase extends SubCase {
     DatabaseFacade dbf
     GarbageCollectorManagerImpl gcMgr
+    String adminSessionUuid
 
     static enum Behavior {
         SUCCESS,
@@ -26,38 +29,37 @@ class TimeBasedGarbageCollectorCase extends SubCase {
     class TimeBasedGC1 extends TimeBasedGarbageCollector {
         Closure triggerNowLogic
 
+        void doCancel() {
+            cancel()
+        }
+
         @Override
-        protected void triggerNow() {
+        protected void triggerNow(GCCompletion completion) {
             def ret = triggerNowLogic()
             if (ret == Behavior.SUCCESS) {
-                success()
+                completion.success()
             } else if (ret == Behavior.FAILURE) {
-                fail(errf.stringToOperationError("failure"))
+                completion.fail(errf.stringToOperationError("failure"))
             } else if (ret == Behavior.CANCEL) {
-                cancel()
+                completion.cancel()
             } else {
                 assert false: "unknown behavior $ret"
             }
-        }
-
-        void doCancel() {
-            cancel()
         }
     }
 
     static Closure<Behavior> triggerNowLogicInDb
 
     static class TimeBasedGCInDb extends TimeBasedGarbageCollector {
-
         @Override
-        protected void triggerNow() {
+        protected void triggerNow(GCCompletion completion) {
             def ret = triggerNowLogicInDb()
             if (ret == Behavior.SUCCESS) {
-                success()
+                completion.success()
             } else if (ret == Behavior.FAILURE) {
-                fail(errf.stringToOperationError("on purpose"))
+                completion.fail(errf.stringToOperationError("failure"))
             } else if (ret == Behavior.CANCEL) {
-                cancel()
+                completion.cancel()
             } else {
                 assert false: "unknown behavior $ret"
             }
@@ -74,7 +76,7 @@ class TimeBasedGarbageCollectorCase extends SubCase {
 
     @Override
     void environment() {
-
+        adminSessionUuid = loginAsAdmin().uuid
     }
 
     void testGCSuccess() {
@@ -90,7 +92,7 @@ class TimeBasedGarbageCollectorCase extends SubCase {
 
         TimeUnit.SECONDS.sleep(1)
         assert count == 1
-        assert !dbIsExists(gc.id, GarbageCollectorVO.class)
+        assert dbFindByUuid(gc.uuid, GarbageCollectorVO.class).status == GCStatus.Done
 
         // confirm the GC is not called anymore
         TimeUnit.SECONDS.sleep(1)
@@ -110,7 +112,7 @@ class TimeBasedGarbageCollectorCase extends SubCase {
 
         TimeUnit.SECONDS.sleep(2)
 
-        GarbageCollectorVO vo = dbFindById(gc.id, GarbageCollectorVO.class)
+        GarbageCollectorVO vo = dbFindByUuid(gc.uuid, GarbageCollectorVO.class)
         assert vo != null
         assert count > 1
         gc.doCancel()
@@ -129,7 +131,7 @@ class TimeBasedGarbageCollectorCase extends SubCase {
 
         TimeUnit.SECONDS.sleep(1)
         assert called
-        assert !dbIsExists(gc.id, GarbageCollectorVO.class)
+        assert dbFindByUuid(gc.uuid, GarbageCollectorVO.class).status == GCStatus.Done
     }
 
     void testGCException() {
@@ -145,7 +147,7 @@ class TimeBasedGarbageCollectorCase extends SubCase {
         TimeUnit.SECONDS.sleep(2)
 
         // confirm the job is still there
-        GarbageCollectorVO vo = dbFindById(gc.id, GarbageCollectorVO.class)
+        GarbageCollectorVO vo = dbFindByUuid(gc.uuid, GarbageCollectorVO.class)
         assert count > 1
         assert vo != null
         gc.doCancel()
@@ -160,7 +162,7 @@ class TimeBasedGarbageCollectorCase extends SubCase {
         gc.NAME = "testGCLoadedFromDbSuccess"
         gc.save()
 
-        GarbageCollectorVO vo = dbFindById(gc.id, GarbageCollectorVO.class)
+        GarbageCollectorVO vo = dbFindByUuid(gc.uuid, GarbageCollectorVO.class)
         vo.setManagementNodeUuid(null)
         dbf.update(vo)
 
@@ -173,7 +175,7 @@ class TimeBasedGarbageCollectorCase extends SubCase {
 
         TimeUnit.SECONDS.sleep(1)
         assert called
-        assert !dbIsExists(gc.id, GarbageCollectorVO.class)
+        assert dbFindByUuid(gc.uuid, GarbageCollectorVO.class).status == GCStatus.Done
     }
 
     void testGCLoadedFromDbFailure() {
@@ -183,7 +185,7 @@ class TimeBasedGarbageCollectorCase extends SubCase {
         gc.NEXT_TIME_UNIT = TimeUnit.MILLISECONDS
         gc.save()
 
-        GarbageCollectorVO vo = dbFindById(gc.id, GarbageCollectorVO.class)
+        GarbageCollectorVO vo = dbFindByUuid(gc.uuid, GarbageCollectorVO.class)
         vo.setManagementNodeUuid(null)
         dbf.update(vo)
 
@@ -194,7 +196,7 @@ class TimeBasedGarbageCollectorCase extends SubCase {
         gcMgr.managementNodeReady()
 
         TimeUnit.SECONDS.sleep(1)
-        vo = dbFindById(gc.id, GarbageCollectorVO.class)
+        vo = dbFindByUuid(gc.uuid, GarbageCollectorVO.class)
         assert vo != null
         assert vo.status == GCStatus.Idle
     }
@@ -207,7 +209,7 @@ class TimeBasedGarbageCollectorCase extends SubCase {
         gc.NEXT_TIME_UNIT = TimeUnit.MILLISECONDS
         gc.save()
 
-        GarbageCollectorVO vo = dbFindById(gc.id, GarbageCollectorVO.class)
+        GarbageCollectorVO vo = dbFindByUuid(gc.uuid, GarbageCollectorVO.class)
         vo.setManagementNodeUuid(null)
         dbf.update(vo)
 
@@ -220,7 +222,7 @@ class TimeBasedGarbageCollectorCase extends SubCase {
 
         TimeUnit.SECONDS.sleep(1)
         assert called
-        assert !dbIsExists(gc.id, GarbageCollectorVO.class)
+        assert dbFindByUuid(gc.uuid, GarbageCollectorVO.class).status == GCStatus.Done
     }
 
     void testGCScanOrphan() {
@@ -231,7 +233,7 @@ class TimeBasedGarbageCollectorCase extends SubCase {
         gc.NAME = "testGCScanOrphan"
         gc.save()
 
-        GarbageCollectorVO vo = dbFindById(gc.id, GarbageCollectorVO.class)
+        GarbageCollectorVO vo = dbFindByUuid(gc.uuid, GarbageCollectorVO.class)
         vo.setManagementNodeUuid(null)
         dbf.update(vo)
 
@@ -245,7 +247,77 @@ class TimeBasedGarbageCollectorCase extends SubCase {
 
         TimeUnit.SECONDS.sleep(1)
         assert called
-        assert !dbIsExists(gc.id, GarbageCollectorVO.class)
+        assert dbFindByUuid(gc.uuid, GarbageCollectorVO.class).status == GCStatus.Done
+    }
+
+    void testGCInDBTriggeredByApiWithMgmtUuidNull() {
+        boolean called = false
+        def gc = new TimeBasedGCInDb()
+        gc.NEXT_TIME = 500
+        gc.NEXT_TIME_UNIT = TimeUnit.MILLISECONDS
+        gc.NAME = "testGCInDBTriggeredByApi"
+        gc.save()
+
+        GarbageCollectorVO vo = dbFindByUuid(gc.uuid, GarbageCollectorVO.class)
+        vo.setManagementNodeUuid(null)
+        dbf.update(vo)
+
+        triggerNowLogicInDb = {
+            called = true
+            return Behavior.SUCCESS
+        }
+
+        triggerGCJob {
+            uuid = gc.uuid
+            sessionId = adminSessionUuid
+        }
+
+        TimeUnit.SECONDS.sleep(1)
+        assert called
+        assert dbFindByUuid(gc.uuid, GarbageCollectorVO.class).status == GCStatus.Done
+    }
+
+    void testGCInDBTriggeredByApiWithMgmtUuidNotNull() {
+        boolean called = false
+        def gc = new TimeBasedGCInDb()
+        gc.NEXT_TIME = 500
+        gc.NEXT_TIME_UNIT = TimeUnit.MILLISECONDS
+        gc.NAME = "testGCInDBTriggeredByApi"
+        gc.save()
+
+        triggerNowLogicInDb = {
+            called = true
+            return Behavior.SUCCESS
+        }
+
+        triggerGCJob {
+            uuid = gc.uuid
+            sessionId = adminSessionUuid
+        }
+
+        TimeUnit.SECONDS.sleep(1)
+        assert called
+        assert dbFindByUuid(gc.uuid, GarbageCollectorVO.class).status == GCStatus.Done
+    }
+
+    void testQueryGCJob() {
+        int count = 0
+
+        def gc = new TimeBasedGC1()
+        gc.NAME = "testQueryGCJob"
+        gc.triggerNowLogic = {
+            count ++
+            return Behavior.SUCCESS
+        }
+        gc.submit(500, TimeUnit.DAYS)
+
+        GarbageCollectorInventory inv = queryGCJob {
+            conditions = ["name=${gc.NAME}".toString()]
+            sessionId = adminSessionUuid
+        }[0]
+
+        assert inv.uuid == gc.uuid
+        assert inv.status == GCStatus.Idle.toString()
     }
 
     @Override
@@ -261,6 +333,9 @@ class TimeBasedGarbageCollectorCase extends SubCase {
         testGCLoadedFromDbCancel()
         testGCLoadedFromDbFailure()
         testGCScanOrphan()
+        testGCInDBTriggeredByApiWithMgmtUuidNull()
+        testGCInDBTriggeredByApiWithMgmtUuidNotNull()
+        testQueryGCJob()
     }
 
     @Override

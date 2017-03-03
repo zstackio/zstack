@@ -8,4 +8,6 @@ public interface GlobalConfigFacade {
 	Map<String, GlobalConfig> getAllConfig();
 
     <T> T getConfigValue(String category, String name, Class<T> clz);
+
+    GlobalConfig createGlobalConfig(GlobalConfigVO vo);
 }

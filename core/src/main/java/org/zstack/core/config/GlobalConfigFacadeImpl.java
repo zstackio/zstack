@@ -26,6 +26,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -40,7 +41,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
     private ErrorFacade errf;
 
     private JAXBContext context;
-    private Map<String, GlobalConfig> allConfigs = new HashMap<String, GlobalConfig>();
+    private Map<String, GlobalConfig> allConfigs = new ConcurrentHashMap<>();
 
     private static final String CONFIG_FOLDER = "globalConfig";
     private static final String OTHER_CATEGORY = "Others";
@@ -94,7 +95,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
         APIUpdateGlobalConfigEvent evt = new APIUpdateGlobalConfigEvent(msg.getId());
         GlobalConfig c = allConfigs.get(msg.getIdentity());
         if (c == null) {
-            String err = String.format("Unable to find GlobalConfig[category: %s, value: %s]", msg.getCategory(), msg.getName());
+            String err = String.format("Unable to find GlobalConfig[category: %s, name: %s]", msg.getCategory(), msg.getName());
             evt.setError(errf.stringToInvalidArgumentError(err));
             bus.publish(evt);
             return;
@@ -556,6 +557,14 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
         GlobalConfig c = allConfigs.get(GlobalConfig.produceIdentity(category, name));
         DebugUtils.Assert(c!=null, String.format("cannot find GlobalConfig[category:%s, name:%s]", category, name));
         return c.value(clz);
+    }
+
+    @Override
+    public GlobalConfig createGlobalConfig(GlobalConfigVO vo) {
+        vo = dbf.persistAndRefresh(vo);
+        GlobalConfig c = GlobalConfig.valueOf(vo);
+        allConfigs.put(GlobalConfig.produceIdentity(vo.getCategory(), vo.getName()), c);
+        return c;
     }
 
     @Override

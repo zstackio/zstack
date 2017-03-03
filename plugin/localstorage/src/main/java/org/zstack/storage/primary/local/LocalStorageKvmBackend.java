@@ -9,9 +9,6 @@ import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.core.gc.EventBasedGCPersistentContext;
-import org.zstack.core.gc.GCEventTrigger;
-import org.zstack.core.gc.GCFacade;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
@@ -69,7 +66,6 @@ import java.util.List;
 import java.util.Map;
 
 import static org.zstack.utils.CollectionDSL.list;
-import static org.zstack.utils.StringDSL.ln;
 
 /**
  * Created by frank on 6/30/2015.
@@ -83,8 +79,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     private LocalStorageFactory localStorageFactory;
     @Autowired
     private ApiTimeoutManager timeoutMgr;
-    @Autowired
-    private GCFacade gcf;
     @Autowired
     private RESTFacade restf;
 
@@ -1189,9 +1183,9 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         cmd.setPath(path);
         cmd.setHostUuid(hostUuid);
 
-        String delete_path = dir ? DELETE_DIR_PATH : DELETE_BITS_PATH;
+        String deletePath = dir ? DELETE_DIR_PATH : DELETE_BITS_PATH;
 
-        httpCall(delete_path, hostUuid, cmd, DeleteBitsRsp.class, new ReturnValueCompletion<DeleteBitsRsp>(completion) {
+        httpCall(deletePath, hostUuid, cmd, DeleteBitsRsp.class, new ReturnValueCompletion<DeleteBitsRsp>(completion) {
             @Override
             public void success(DeleteBitsRsp returnValue) {
                 completion.success();
@@ -1204,65 +1198,17 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                     return;
                 }
 
-                GCDeleteBitsContext c = new GCDeleteBitsContext();
-                c.setPrimaryStorageUuid(self.getUuid());
-                c.setHostUuid(hostUuid);
-                c.setInstallPath(path);
+                LocalStorageDeleteBitsGC gc = new LocalStorageDeleteBitsGC();
+                gc.isDir = dir;
+                gc.primaryStorageUuid = self.getUuid();
+                gc.hostUuid = hostUuid;
+                gc.installPath = path;
+                gc.NAME = String.format("gc-local-storage-%s-delete-bits-on-host-%s", self.getUuid(), hostUuid);
+                gc.submit();
 
-                submitDeleteBitsGCJob(c);
                 completion.success();
             }
         });
-    }
-
-    private void submitDeleteBitsGCJob(GCDeleteBitsContext c) {
-        // Warning: this job will delete the whole path of installPath
-        EventBasedGCPersistentContext<GCDeleteBitsContext> ctx = new EventBasedGCPersistentContext<GCDeleteBitsContext>();
-        ctx.setContextClass(GCDeleteBitsContext.class);
-        ctx.setRunnerClass(GCDeleteBitsRunner.class);
-        ctx.setName(String.format("local-storage-delete-%s-%s", self.getUuid(), c.getInstallPath()));
-        ctx.setContext(c);
-
-        GCEventTrigger trigger = new GCEventTrigger();
-        trigger.setCodeName("local-storage-delete-bits");
-        trigger.setEventPath(HostCanonicalEvents.HOST_STATUS_CHANGED_PATH);
-        String code = ln(
-                "import org.zstack.header.host.HostCanonicalEvents.HostStatusChangedData",
-                "import org.zstack.storage.primary.local.GCDeleteBitsContext",
-                "HostStatusChangedData d = (HostStatusChangedData) data",
-                "GCDeleteBitsContext ctx = (GCDeleteBitsContext) context",
-                "return d.hostUuid == ctx.hostUuid && d.newStatus == \"Connected\""
-        ).toString();
-        trigger.setCode(code);
-        ctx.addTrigger(trigger);
-
-        trigger = new GCEventTrigger();
-        trigger.setEventPath(HostCanonicalEvents.HOST_DELETED_PATH);
-        trigger.setCodeName("local-storage-delete-bits-on-host-deleted");
-        code = ln(
-                "import org.zstack.header.host.HostCanonicalEvents.HostDeletedData",
-                "import org.zstack.storage.primary.local.GCDeleteBitsContext",
-                "HostDeletedData d = (HostDeletedData) data",
-                "GCDeleteBitsContext ctx = (GCDeleteBitsContext) context",
-                "return d.hostUuid == ctx.hostUuid"
-        ).toString();
-        trigger.setCode(code);
-        ctx.addTrigger(trigger);
-
-        trigger = new GCEventTrigger();
-        trigger.setEventPath(PrimaryStorageCanonicalEvent.PRIMARY_STORAGE_DELETED_PATH);
-        trigger.setCodeName("local-storage-delete-bit-on-primary-storage-deleted");
-        code = ln(
-                "import org.zstack.header.storage.primary.PrimaryStorageCanonicalEvent.PrimaryStorageDeletedData",
-                "import org.zstack.storage.primary.local.GCDeleteBitsContext",
-                "PrimaryStorageDeletedData d = (PrimaryStorageDeletedData) data",
-                "GCDeleteBitsContext ctx = (GCDeleteBitsContext) context",
-                "return d.primaryStorageUuid == ctx.primaryStorageUuid"
-        ).toString();
-        trigger.setCode(code);
-        ctx.addTrigger(trigger);
-
-        gcf.schedule(ctx);
     }
 
     @Override

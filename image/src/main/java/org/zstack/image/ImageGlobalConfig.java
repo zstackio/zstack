@@ -20,4 +20,7 @@ public class ImageGlobalConfig {
     @GlobalConfigValidation(numberGreaterThan = 0)
     public static GlobalConfig EXPUNGE_PERIOD = new GlobalConfig(CATEGORY, "expungePeriod");
 
+    @GlobalConfigValidation(numberGreaterThan = 0)
+    public static GlobalConfig DELETION_GARBAGE_COLLECTION_INTERVAL = new GlobalConfig(CATEGORY, "deletion.gcInterval");
+
 }

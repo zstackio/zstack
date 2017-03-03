@@ -12,17 +12,17 @@
     http://zstack.org/schema/zstack/plugin.xsd"
     default-init-method="init" default-destroy-method="destroy">
 
-    <bean id="GCFacade" class="org.zstack.core.gc.GCFacadeImpl" >
-        <zstack:plugin>
-            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeChangeListener"/>
-            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint"/>
-        </zstack:plugin>
-    </bean>
-
-    <bean id="GarbageCollectorManager" class="org.zstack.core.groovy.gc.GarbageCollectorManagerImpl" >
+    <bean id="GarbageCollectorManager" class="org.zstack.core.gc.GarbageCollectorManagerImpl" >
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.Component"/>
+            <zstack:extension interface="org.zstack.header.Service"/>
+        </zstack:plugin>
+    </bean>
+
+    <bean id="GCApiInterceptor" class="org.zstack.core.gc.GCApiInterceptor" >
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor"/>
         </zstack:plugin>
     </bean>
 </beans>
