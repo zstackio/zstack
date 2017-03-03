@@ -18,12 +18,12 @@ public class CephPrimaryStoragePoolInventory  {
         return this.primaryStorageUuid;
     }
 
-    public java.lang.String name;
-    public void setName(java.lang.String name) {
-        this.name = name;
+    public java.lang.String poolName;
+    public void setPoolName(java.lang.String poolName) {
+        this.poolName = poolName;
     }
-    public java.lang.String getName() {
-        return this.name;
+    public java.lang.String getPoolName() {
+        return this.poolName;
     }
 
     public java.lang.String description;

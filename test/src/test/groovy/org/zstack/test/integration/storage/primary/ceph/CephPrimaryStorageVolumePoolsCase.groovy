@@ -66,7 +66,7 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
                     monUrls = ["root:password@localhost/?monPort=7777", "root:password@127.0.0.1/?monPort=7777"]
 
                     pool {
-                        name = HIGH_POOL_NAME
+                        poolName = HIGH_POOL_NAME
                     }
                 }
 
@@ -164,11 +164,11 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
         }
 
         CephPrimaryStoragePoolInventory inv = addCephPrimaryStoragePool {
-            name = LOW_POOL_NAME
+            poolName = LOW_POOL_NAME
             primaryStorageUuid = primaryStorage.uuid
         }
 
-        assert inv.name == LOW_POOL_NAME
+        assert inv.poolName == LOW_POOL_NAME
         assert acmd != null
         assert !acmd.errorIfNotExist
         assert acmd.poolName == LOW_POOL_NAME
@@ -202,25 +202,25 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
 
         AddCephPrimaryStoragePoolAction a = new AddCephPrimaryStoragePoolAction()
         a.errorIfNotExist = true
-        a.name = LOW_POOL_NAME
+        a.poolName = LOW_POOL_NAME
         a.primaryStorageUuid = primaryStorage.uuid
         a.sessionId = adminSession()
         def res = a.call()
 
         assert res.error != null
-        assert !Q.New(CephPrimaryStoragePoolVO.class).eq(CephPrimaryStoragePoolVO_.name, LOW_POOL_NAME).isExists()
+        assert !Q.New(CephPrimaryStoragePoolVO.class).eq(CephPrimaryStoragePoolVO_.poolName, LOW_POOL_NAME).isExists()
         assert acmd != null
         assert acmd.errorIfNotExist
     }
 
     void testQueryPool() {
         List<CephPrimaryStoragePoolInventory> invs = queryCephPrimaryStoragePool {
-            conditions = ["name=${HIGH_POOL_NAME}".toString()]
+            conditions = ["poolName=${HIGH_POOL_NAME}".toString()]
         }
 
         assert invs.size() == 1
         CephPrimaryStoragePoolInventory inv = invs[0]
-        assert inv.name == HIGH_POOL_NAME
+        assert inv.poolName == HIGH_POOL_NAME
         assert inv.primaryStorageUuid == primaryStorage.uuid
     }
 

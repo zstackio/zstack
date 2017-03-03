@@ -22,7 +22,7 @@ public class CephPrimaryStoragePoolVO {
     @ForeignKey(parentEntityClass = PrimaryStorageEO.class, parentKey = "uuid", onDeleteAction = ForeignKey.ReferenceOption.CASCADE)
     private String primaryStorageUuid;
     @Column
-    private String name;
+    private String poolName;
     @Column
     private String description;
     @Column
@@ -46,12 +46,12 @@ public class CephPrimaryStoragePoolVO {
         this.uuid = uuid;
     }
 
-    public String getName() {
-        return name;
+    public String getPoolName() {
+        return poolName;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setPoolName(String poolName) {
+        this.poolName = poolName;
     }
 
     public String getDescription() {

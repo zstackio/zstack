@@ -14,7 +14,7 @@ import java.util.List;
 public class CephPrimaryStoragePoolInventory {
     private String uuid;
     private String primaryStorageUuid;
-    private String name;
+    private String poolName;
     private String description;
     private Timestamp createDate;
     private Timestamp lastOpDate;
@@ -23,7 +23,7 @@ public class CephPrimaryStoragePoolInventory {
         CephPrimaryStoragePoolInventory inv = new CephPrimaryStoragePoolInventory();
         inv.uuid = vo.getUuid();
         inv.primaryStorageUuid = vo.getPrimaryStorageUuid();
-        inv.name = vo.getName();
+        inv.poolName = vo.getPoolName();
         inv.description = vo.getDescription();
         inv.createDate = vo.getCreateDate();
         inv.lastOpDate = vo.getLastOpDate();
@@ -54,12 +54,12 @@ public class CephPrimaryStoragePoolInventory {
         this.primaryStorageUuid = primaryStorageUuid;
     }
 
-    public String getName() {
-        return name;
+    public String getPoolName() {
+        return poolName;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setPoolName(String poolName) {
+        this.poolName = poolName;
     }
 
     public String getDescription() {

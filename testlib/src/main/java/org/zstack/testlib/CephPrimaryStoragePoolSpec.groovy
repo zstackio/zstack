@@ -8,7 +8,7 @@ import org.zstack.sdk.CephPrimaryStoragePoolInventory
  */
 class CephPrimaryStoragePoolSpec extends Spec {
     @SpecParam(required = true)
-    String name
+    String poolName
     @SpecParam
     String description
 
@@ -30,7 +30,7 @@ class CephPrimaryStoragePoolSpec extends Spec {
     SpecID create(String uuid, String sessionId) {
 
         inventory = addCephPrimaryStoragePool {
-            delegate.name = name
+            delegate.poolName = poolName
             delegate.primaryStorageUuid = (parent as PrimaryStorageSpec).inventory.uuid
             delegate.description = description
             delegate.systemTags = systemTags
@@ -39,6 +39,6 @@ class CephPrimaryStoragePoolSpec extends Spec {
             delegate.sessionId = sessionId
         }
 
-        return id(name, inventory.uuid)
+        return id(poolName, inventory.uuid)
     }
 }

@@ -64,7 +64,6 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static java.util.Arrays.asList;
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
@@ -2140,14 +2139,14 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         CephPrimaryStoragePoolVO vo = new CephPrimaryStoragePoolVO();
         vo.setUuid(msg.getResourceUuid() == null ? Platform.getUuid() : msg.getResourceUuid());
         vo.setDescription(msg.getDescription());
-        vo.setName(msg.getName());
+        vo.setPoolName(msg.getPoolName());
         vo.setDescription(msg.getDescription());
         vo.setPrimaryStorageUuid(self.getUuid());
         vo = dbf.persistAndRefresh(vo);
 
         AddPoolCmd cmd = new AddPoolCmd();
         cmd.errorIfNotExist = msg.isErrorIfNotExist();
-        cmd.poolName = msg.getName();
+        cmd.poolName = msg.getPoolName();
 
         APIAddCephPrimaryStoragePoolEvent evt = new APIAddCephPrimaryStoragePoolEvent(msg.getId());
         CephPrimaryStoragePoolVO finalVo = vo;

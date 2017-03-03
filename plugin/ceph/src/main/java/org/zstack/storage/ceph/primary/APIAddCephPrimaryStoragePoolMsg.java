@@ -19,7 +19,7 @@ public class APIAddCephPrimaryStoragePoolMsg extends APICreateMessage implements
     @APIParam(resourceType = PrimaryStorageVO.class)
     private String primaryStorageUuid;
     @APIParam(maxLength = 255)
-    private String name;
+    private String poolName;
     @APIParam(maxLength = 2048, required = false)
     private String description;
     private boolean errorIfNotExist;
@@ -49,17 +49,17 @@ public class APIAddCephPrimaryStoragePoolMsg extends APICreateMessage implements
         this.primaryStorageUuid = primaryStorageUuid;
     }
 
-    public String getName() {
-        return name;
+    public String getPoolName() {
+        return poolName;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setPoolName(String poolName) {
+        this.poolName = poolName;
     }
 
     public static APIAddCephPrimaryStoragePoolMsg __example__() {
         APIAddCephPrimaryStoragePoolMsg msg = new APIAddCephPrimaryStoragePoolMsg();
-        msg.setName("highPerformance");
+        msg.setPoolName("highPerformance");
         msg.setDescription("for high performance data volumes");
         msg.setPrimaryStorageUuid(uuid());
         return msg;

@@ -45,7 +45,7 @@ ALTER TABLE `zstack`.`SharedResourceVO` ADD UNIQUE INDEX(`ownerAccountUuid`,`rec
 CREATE TABLE  `zstack`.`CephPrimaryStoragePoolVO` (
     `uuid` varchar(32) NOT NULL UNIQUE,
     `primaryStorageUuid` varchar(32) NOT NULL,
-    `name` varchar(255) NOT NULL,
+    `poolName` varchar(255) NOT NULL,
     `description` varchar(2048) DEFAULT NULL,
     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp,
