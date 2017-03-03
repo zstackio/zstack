@@ -48,9 +48,10 @@ class LocalStorageMigrateVolumeCase extends SubCase{
         assert vmSpec.inventory.rootVolumeUuid
         assert hostSpec.inventory.uuid
 
-        PrimaryStorageVO vo = dbf.findByUuid(primaryStorageSpec.inventory.uuid, PrimaryStorageVO.class)
-        vo.state = PrimaryStorageState.Disabled
-        dbf.updateAndRefresh(vo)
+        changePrimaryStorageState {
+            uuid = primaryStorageSpec.inventory.uuid
+            stateEvent = PrimaryStorageState.Disabled.toString()
+        }
 
         assert dbf.findByUuid(primaryStorageSpec.inventory.uuid, PrimaryStorageVO.class).state == PrimaryStorageState.Disabled
 
@@ -65,17 +66,25 @@ class LocalStorageMigrateVolumeCase extends SubCase{
 
         LocalStorageMigrateVolumeAction.Result res = action.call()
         assert res.error != null
+    }
 
-        // confirm migrate could be execute when ps is enable
-        vo.state = PrimaryStorageState.Enabled
-        dbf.updateAndRefresh(vo)
+    void testLocalStorageMigrateVolume() {
+        PrimaryStorageSpec primaryStorageSpec = env.specByName("local")
+        VmSpec vmSpec = env.specByName("vm")
+        HostSpec hostSpec1 = env.specByName("kvm1")
+        DatabaseFacade dbf = bean(DatabaseFacade.class)
+
+        changePrimaryStorageState {
+            uuid = primaryStorageSpec.inventory.uuid
+            stateEvent = PrimaryStorageState.Enabled.toString()
+        }
+
         assert dbf.findByUuid(primaryStorageSpec.inventory.uuid, PrimaryStorageVO.class).state == PrimaryStorageState.Enabled
         localStorageMigrateVolume {
             volumeUuid = vmSpec.inventory.rootVolumeUuid
             destHostUuid = hostSpec1.inventory.uuid
         }
     }
-
     @Override
     void clean() {
         env.delete()

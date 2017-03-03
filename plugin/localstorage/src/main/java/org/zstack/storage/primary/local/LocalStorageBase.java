@@ -15,6 +15,7 @@ import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
@@ -202,6 +203,13 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
     private void handle(final APILocalStorageMigrateVolumeMsg msg) {
         final APILocalStorageMigrateVolumeEvent evt = new APILocalStorageMigrateVolumeEvent(msg.getId());
+        
+        if (self.getState() == PrimaryStorageState.Disabled) {
+            evt.setError(errf.stringToOperationError(String.format("The primary storage[uuid:%s] is disabled cold migrate is not allowed", msg.getPrimaryStorageUuid())));
+            bus.publish(evt);
+            return;
+        }
+
         MigrateVolumeOnLocalStorageMsg mmsg = new MigrateVolumeOnLocalStorageMsg();
         mmsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
         mmsg.setDestHostUuid(msg.getDestHostUuid());
