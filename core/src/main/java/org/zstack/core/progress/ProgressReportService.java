@@ -19,7 +19,9 @@ import org.zstack.header.rest.SyncHttpCallHandler;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 
 /**
@@ -39,6 +41,12 @@ public class ProgressReportService extends AbstractService implements Management
     @Autowired
     private CloudBus bus;
 
+    private static List<ProgressReportCmd> startCmdList =  Collections.synchronizedList(new ArrayList());
+    private static List<ProgressReportCmd> processCmdList =  Collections.synchronizedList(new ArrayList());
+    private static List<ProgressReportCmd> finishCmdList =  Collections.synchronizedList(new ArrayList());
+
+    static Timer timer = new Timer();
+
     @Override
     public boolean start() {
         restf.registerSyncHttpCallHandler(ProgressConstants.PROGRESS_START_PATH, ProgressReportCmd.class, new SyncHttpCallHandler<ProgressReportCmd>() {
@@ -46,7 +54,9 @@ public class ProgressReportService extends AbstractService implements Management
             public String handleSyncHttpCall(ProgressReportCmd cmd) {
                 //TODO
                 logger.debug(String.format("call PROGRESS_START_PATH by %s, uuid: %s", cmd.getProcessType(), cmd.getResourceUuid()));
-                startProcess(cmd);
+                startManagecmd(cmd);
+
+                //startProcess(cmd);
                 return null;
             }
         });
@@ -56,7 +66,8 @@ public class ProgressReportService extends AbstractService implements Management
             public String handleSyncHttpCall(ProgressReportCmd cmd) {
                 //TODO
                 logger.debug(String.format("call PROGRESS_REPORT_PATH by %s, uuid: %s", cmd.getProcessType(), cmd.getResourceUuid()));
-                process(cmd);
+                //process(cmd);
+                processManagecmd(cmd);
                 return null;
             }
         });
@@ -66,13 +77,67 @@ public class ProgressReportService extends AbstractService implements Management
             public String handleSyncHttpCall(ProgressReportCmd cmd) {
                 //TODO
                 logger.debug(String.format("call PROGRESS_FINISH_PATH by %s, uuid: %s", cmd.getProcessType(), cmd.getResourceUuid()));
-                finishProcess(cmd);
+                //finishProcess(cmd);
+                finishManagecmd(cmd);
                 return null;
             }
         });
 
         return true;
     }
+
+    public synchronized void startManagecmd(ProgressReportCmd cmd){
+        startCmdList.add(cmd);
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                ConcurrentHashMap<String,ProgressReportCmd> hashMap = new ConcurrentHashMap<String, ProgressReportCmd>();
+                for (int i=0; i<startCmdList.size();i++){
+                    ProgressReportCmd cmdPending = startCmdList.get(i);
+                    if (!hashMap.containsKey(cmdPending.getResourceUuid()+cmdPending.getProcessType())){
+                        hashMap.put(cmdPending.getResourceUuid()+cmdPending.getProcessType(),cmdPending);
+                        startProcess(cmdPending);
+                    }
+                }
+                startCmdList.clear();
+            }
+        },1000,1000);//per second exec once
+    }
+
+    public synchronized void processManagecmd(ProgressReportCmd cmd){
+        processCmdList.add(cmd);
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                ConcurrentHashMap<String,ProgressReportCmd> hashMap = new ConcurrentHashMap<String, ProgressReportCmd>();
+
+                for (int i=0; i<processCmdList.size();i++){
+                    ProgressReportCmd cmdPending = processCmdList.get(i);
+                    if (!hashMap.containsKey(cmdPending.getResourceUuid()+cmdPending.getProcessType())){
+                        hashMap.put(cmdPending.getResourceUuid()+cmdPending.getProcessType(),cmdPending);
+                        process(cmdPending);
+                    }
+                }
+                processCmdList.clear();
+            }
+        },1000,1000);//per second exec once
+    }
+
+    public synchronized void finishManagecmd(ProgressReportCmd cmd){
+        finishCmdList.add(cmd);
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                ConcurrentHashMap<String,ProgressReportCmd> hashMap = new ConcurrentHashMap<String, ProgressReportCmd>();
+
+                for (int i=0; i<finishCmdList.size();i++){
+                    finishProcess(finishCmdList.get(i));
+                }
+                finishCmdList.clear();
+            }
+        },1000,1000);//per second exec once
+    }
+    
 
     @Override
     public boolean stop() {
