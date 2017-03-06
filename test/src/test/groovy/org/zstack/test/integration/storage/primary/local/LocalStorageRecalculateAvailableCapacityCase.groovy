@@ -70,12 +70,12 @@ class LocalStorageRecalculateAvailableCapacityCase extends SubCase{
      */
     void testPSAvailableCapacity(){
 
-        // 1: Build PS, host, VM by default
+        // 1.Build PS, host, VM by default
         PrimaryStorageSpec primaryStorageSpec = env.specByName("local")
         KVMHostSpec kvmHostSpec = env.specByName("kvm")
 
 
-        // 2: Create a 10GB cloud disk
+        // 2.Create a 10GB cloud disk
         String localStorageSystemTag = LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME.instantiateTag(
                 map(e(LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME_TOKEN, kvmHostSpec.inventory.uuid))
         )
@@ -90,7 +90,7 @@ class LocalStorageRecalculateAvailableCapacityCase extends SubCase{
         assert volumeInventory.size == volumeBitSize
 
 
-        // step_3: Check primary storage available capacity
+        // 3.Check primary storage available capacity
         PrimaryStorageInventory primaryStorageInventory =  queryPrimaryStorage {
                 conditions=["uuid=${primaryStorageSpec.inventory.uuid}".toString()]
         }[0]
