@@ -29,6 +29,7 @@ import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.tag.SystemTagValidator;
+import org.zstack.header.volume.Volume;
 import org.zstack.header.volume.VolumeStatus;
 import org.zstack.search.GetQuery;
 import org.zstack.search.SearchQuery;
@@ -343,9 +344,12 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                     String sql = "select sum(vol.size), vol.primaryStorageUuid" +
                             " from VolumeVO vol" +
                             " where vol.primaryStorageUuid in (:psUuids)" +
+                            " and vol.status in (:volStatus)" +
                             " group by vol.primaryStorageUuid";
                     TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
                     q.setParameter("psUuids", psUuids);
+                    ArrayList<String> needCountVolumeStates = new ArrayList(Arrays.asList(VolumeStatus.Creating, VolumeStatus.Ready, VolumeStatus.Deleted));
+                    q.setParameter("volStatus", needCountVolumeStates);
                     List<Tuple> ts = q.getResultList();
 
                     for (Tuple t : ts) {
