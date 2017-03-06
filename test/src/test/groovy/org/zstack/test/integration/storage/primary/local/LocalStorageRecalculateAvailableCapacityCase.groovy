@@ -1,13 +1,9 @@
 package org.zstack.test.integration.storage.primary.local
 
-import groovy.transform.TypeChecked
 import org.zstack.header.storage.primary.PrimaryStorageState
 import org.zstack.header.storage.primary.PrimaryStorageStatus
-import org.zstack.sdk.CreateDataVolumeAction
-import org.zstack.sdk.DeleteDataVolumeAction
 import org.zstack.sdk.ExpungeDataVolumeAction
 import org.zstack.sdk.PrimaryStorageInventory
-import org.zstack.sdk.ReconnectPrimaryStorageAction
 import org.zstack.sdk.VolumeInventory
 import org.zstack.storage.primary.local.LocalStorageSystemTags
 import org.zstack.test.integration.kvm.Env
@@ -102,12 +98,9 @@ class LocalStorageRecalculateAvailableCapacityCase extends SubCase{
 
 
         // 4.Delete cloud disk
-        DeleteDataVolumeAction deleteDataVolumeAction = new DeleteDataVolumeAction(
-                uuid: volumeInventory.uuid,
-                sessionId: Test.currentEnvSpec.session.uuid,
-        )
-        DeleteDataVolumeAction.Result deleteDataVolumeActionResult= deleteDataVolumeAction.call()
-        assert deleteDataVolumeActionResult.error == null
+        deleteDataVolume{
+            uuid = volumeInventory.uuid
+        }
 
 
         // 5.Check primary storage available capacity
@@ -118,14 +111,11 @@ class LocalStorageRecalculateAvailableCapacityCase extends SubCase{
 
 
         // 6.Reconnect primary storage
-        ReconnectPrimaryStorageAction reconnectPrimaryStorageAction = new ReconnectPrimaryStorageAction(
-                uuid: primaryStorageInventory.uuid,
-                sessionId: Test.currentEnvSpec.session.uuid
-        )
-        ReconnectPrimaryStorageAction.Result reconnectPrimaryStorageActionResult = reconnectPrimaryStorageAction.call()
-        assert null == reconnectPrimaryStorageActionResult.error
-        assert PrimaryStorageState.Enabled.name() == reconnectPrimaryStorageActionResult.value.inventory.state
-        assert PrimaryStorageStatus.Connected.name() == reconnectPrimaryStorageActionResult.value.inventory.status
+        primaryStorageInventory = reconnectPrimaryStorage{
+            uuid = primaryStorageInventory.uuid
+        }
+        assert PrimaryStorageState.Enabled.name() == primaryStorageInventory.state
+        assert PrimaryStorageStatus.Connected.name() == primaryStorageInventory.status
 
 
         // 7.Check primary storage available capacity
@@ -137,7 +127,7 @@ class LocalStorageRecalculateAvailableCapacityCase extends SubCase{
 
         // 8.Completely remove the cloud disk
         ExpungeDataVolumeAction expungeDataVolumeAction = new ExpungeDataVolumeAction(
-                uuid: createDataVolumeActionResult.value.inventory.uuid,
+                uuid: volumeInventory.uuid,
                 sessionId: Test.currentEnvSpec.session.uuid
         )
         ExpungeDataVolumeAction.Result expungeDataVolumeActionResult = expungeDataVolumeAction.call()
