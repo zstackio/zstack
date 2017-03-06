@@ -1,5 +1,6 @@
 package org.zstack.test.integration.storage.primary.local
 
+import groovy.transform.TypeChecked
 import org.zstack.header.storage.primary.PrimaryStorageState
 import org.zstack.header.storage.primary.PrimaryStorageStatus
 import org.zstack.sdk.CreateDataVolumeAction
@@ -83,16 +84,12 @@ class LocalStorageRecalculateAvailableCapacityCase extends SubCase{
                 map(e(LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME_TOKEN, kvmHostSpec.inventory.uuid))
         )
         DiskOfferingSpec diskOfferingSpec = env.specByName("diskOffering")
-        CreateDataVolumeAction action = new CreateDataVolumeAction(
-                sessionId: Test.currentEnvSpec.session.uuid,
-                primaryStorageUuid: primaryStorageSpec.inventory.uuid,
-                name: "dataVolume",
-                systemTags:[localStorageSystemTag],
-                diskOfferingUuid: diskOfferingSpec.inventory.uuid
-        )
-        CreateDataVolumeAction.Result createDataVolumeActionResult = action.call()
-        VolumeInventory volumeInventory = createDataVolumeActionResult.value.inventory
-        assert createDataVolumeActionResult.error == null
+        VolumeInventory volumeInventory = createDataVolume{
+            primaryStorageUuid = primaryStorageSpec.inventory.uuid
+            name = "dataVolume"
+            systemTags = [localStorageSystemTag]
+            diskOfferingUuid = diskOfferingSpec.inventory.uuid
+        }
         assert volumeInventory.uuid != null
         assert volumeInventory.size == volumeBitSize
 
