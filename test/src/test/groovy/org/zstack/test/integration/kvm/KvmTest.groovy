@@ -5,6 +5,8 @@ import org.zstack.test.integration.kvm.host.HostStateCase
 import org.zstack.test.integration.kvm.vm.OneVmBasicLifeCycleCase
 import org.zstack.test.integration.kvm.vm.VmGCCase
 import org.zstack.testlib.SpringSpec
+import org.zstack.test.integration.kvm.status.MaintainHostCase
+
 import org.zstack.testlib.Test
 
 /**
@@ -35,6 +37,7 @@ class KvmTest extends Test {
                 new CheckHostCapacityWhenAddHostCase(),
                 new VmGCCase(),
                 new HostStateCase(),
+                new MaintainHostCase()
         ])
     }
 }

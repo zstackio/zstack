@@ -3,6 +3,7 @@ package org.zstack.compute.host;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -45,6 +46,8 @@ public class HostApiInterceptor implements ApiMessageInterceptor {
             validate((APIUpdateHostMsg) msg);
         } else if (msg instanceof APIDeleteHostMsg) {
             validate((APIDeleteHostMsg) msg);
+        } else if (msg instanceof APIChangeHostStateMsg){
+            validate((APIChangeHostStateMsg) msg);
         }
 
         return msg;
@@ -82,6 +85,18 @@ public class HostApiInterceptor implements ApiMessageInterceptor {
         if (q.isExists()) {
             throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
                     String.format("there has been a host having managementIp[%s]", msg.getManagementIp())
+            ));
+        }
+    }
+
+    private void validate(APIChangeHostStateMsg msg){
+        HostStatus hostStatus = Q.New(HostVO.class)
+                .select(HostVO_.status)
+                .eq(HostVO_.uuid,msg.getHostUuid())
+                .findValue();
+        if (hostStatus == HostStatus.Connecting){
+            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
+                    String.format("can not maintain host[uuid:%s]which is connecting", msg.getHostUuid())
             ));
         }
     }
