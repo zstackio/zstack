@@ -36,7 +36,7 @@ public class VxlanNetworkFactory implements L2NetworkFactory {
 
     @Override
     public L2NetworkInventory createL2Network(L2NetworkVO ovo, APICreateL2NetworkMsg msg) {
-        APICreateVxlanNetworkMsg amsg = (APICreateVxlanNetworkMsg) msg;
+        APICreateL2VxlanNetworkMsg amsg = (APICreateL2VxlanNetworkMsg) msg;
         VxlanNetworkVO vo = new VxlanNetworkVO(ovo);
         // todo ...
         vo = dbf.persistAndRefresh(vo);

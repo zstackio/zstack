@@ -19,6 +19,7 @@ import java.util.List;
  * "description": "Test",
  * "zoneUuid": "c74f8ff8a4c5456b852713b82c034074",
  * "physicalInterface": "eth0.1100",
+ * "vtepCidr": "172.20.0.0/24",
  * "type": "L2VxlanNetwork",
  * "poolUuid": "",
  * "createDate": "May 4, 2014 4:31:47 PM",
@@ -33,7 +34,7 @@ import java.util.List;
 public class L2VxlanNetworkInventory extends L2NetworkInventory {
     /**
      * @desc vlan id
-     * @choices [0, 16777215]
+     * @choices [1, 16777215]
      */
     private Integer vni;
 

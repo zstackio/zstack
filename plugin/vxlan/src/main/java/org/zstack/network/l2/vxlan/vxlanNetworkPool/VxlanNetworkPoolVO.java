@@ -40,7 +40,7 @@ public class VxlanNetworkPoolVO extends L2NetworkVO {
         return startVni;
     }
 
-    public int getendVni() {
+    public int getEndVni() {
         return endVni;
     }
 

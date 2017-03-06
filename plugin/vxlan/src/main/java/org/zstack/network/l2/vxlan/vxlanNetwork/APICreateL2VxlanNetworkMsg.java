@@ -2,10 +2,8 @@ package org.zstack.network.l2.vxlan.vxlanNetwork;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIParam;
-import org.zstack.header.network.l2.APICreateL2NetworkEvent;
 import org.zstack.header.network.l2.APICreateL2NetworkMsg;
 import org.zstack.header.rest.RestRequest;
-import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPool;
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolVO;
 
 /**
@@ -54,7 +52,7 @@ import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolVO;
         responseClass = APICreateL2VxlanNetworkEvent.class,
         parameterName = "params"
 )
-public class APICreateVxlanNetworkMsg extends APICreateL2NetworkMsg {
+public class APICreateL2VxlanNetworkMsg extends APICreateL2NetworkMsg {
     @APIParam(required = false, numberRange = {1, 16777215})
     private Integer vni;
 
@@ -93,8 +91,8 @@ public class APICreateVxlanNetworkMsg extends APICreateL2NetworkMsg {
         this.poolUuid = poolUuid;
     }
 
-    public static APICreateVxlanNetworkMsg __example__() {
-        APICreateVxlanNetworkMsg msg = new APICreateVxlanNetworkMsg();
+    public static APICreateL2VxlanNetworkMsg __example__() {
+        APICreateL2VxlanNetworkMsg msg = new APICreateL2VxlanNetworkMsg();
 
         msg.setName("Test-Net");
         msg.setVni(10);
