@@ -68,4 +68,26 @@ public class SizeUtils {
 
         throw new RuntimeException("should not be here," + str);
     }
+    public static long sizeStringToTerabytes(String str) {
+        String numStr = str.substring(0, str.length() - 1);
+        String suffix = str.substring(str.length() - 1);
+        if (!validSuffix.contains(suffix)) {
+            return Long.valueOf(str);
+        }
+
+        Long size = Long.valueOf(numStr);
+        if (suffix.equals(T_SUFFIX) || suffix.equals(t_SUFFIX)) {
+            return SizeUnit.TERABYTE.toTeraByte(size);
+        } else if (suffix.equals(G_SUFFIX) || suffix.equals(g_SUFFIX)) {
+            return SizeUnit.GIGABYTE.toTeraByte(size);
+        } else if (suffix.equals(M_SUFFIX) || suffix.equals(m_SUFFIX)) {
+            return SizeUnit.MEGABYTE.toTeraByte(size);
+        } else if (suffix.equals(K_SUFFIX) || suffix.equals(k_SUFFIX)) {
+            return SizeUnit.KILOBYTE.toTeraByte(size);
+        } else if (suffix.equals(B_SUFFIX) || suffix.equals(b_SUFFIX)) {
+            return SizeUnit.BYTE.toTeraByte(size);
+        }
+
+        throw new RuntimeException("should not be here," + str);
+    }
 }
