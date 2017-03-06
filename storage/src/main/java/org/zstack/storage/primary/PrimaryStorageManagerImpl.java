@@ -29,6 +29,7 @@ import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.tag.SystemTagValidator;
+import org.zstack.header.volume.Volume;
 import org.zstack.header.volume.VolumeStatus;
 import org.zstack.search.GetQuery;
 import org.zstack.search.SearchQuery;
@@ -36,11 +37,11 @@ import org.zstack.tag.TagManager;
 import org.zstack.utils.*;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
-
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
+import static java.util.Arrays.asList;
 
 public class PrimaryStorageManagerImpl extends AbstractService implements PrimaryStorageManager,
         ManagementNodeChangeListener, ManagementNodeReadyExtensionPoint {
@@ -343,11 +344,12 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                     String sql = "select sum(vol.size), vol.primaryStorageUuid" +
                             " from VolumeVO vol" +
                             " where vol.primaryStorageUuid in (:psUuids)" +
-                            " and vol.status = :volStatus" +
+                            " and vol.status in (:volStatus)" +
                             " group by vol.primaryStorageUuid";
                     TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
                     q.setParameter("psUuids", psUuids);
-                    q.setParameter("volStatus", VolumeStatus.Ready);
+                    List<VolumeStatus> needCountVolumeStates = asList(VolumeStatus.Creating, VolumeStatus.Ready, VolumeStatus.Deleted);
+                    q.setParameter("volStatus", needCountVolumeStates);
                     List<Tuple> ts = q.getResultList();
 
                     for (Tuple t : ts) {
