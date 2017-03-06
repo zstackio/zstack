@@ -21,7 +21,6 @@ public class SQL {
 
     private String sql;
     private Query query;
-    private boolean useTransaction;
 
     private Class entityClass;
     private Map<String, Object> params = new HashMap<>();
@@ -40,24 +39,19 @@ public class SQL {
         query = dbf.getEntityManager().createQuery(this.sql, returnClass);
     }
 
-    public SQL transactional() {
-        useTransaction = true;
-        return this;
-    }
-
     public SQL param(String key, Object o) {
         query.setParameter(key, o);
         params.put(key, o);
         return this;
     }
 
-    public SQL first(int offset) {
+    public SQL offset(int offset) {
         query.setFirstResult(offset);
         first = offset;
         return this;
     }
 
-    public SQL max(int max) {
+    public SQL limit(int max) {
         query.setMaxResults(max);
         this.max = max;
         return this;
@@ -76,7 +70,7 @@ public class SQL {
     }
 
     public <T> List<T> list()  {
-        return useTransaction ? transactionalList() : query.getResultList();
+        return transactionalList();
     }
 
     @Transactional(readOnly = true)
@@ -103,12 +97,7 @@ public class SQL {
     }
 
     public <K> K find() {
-        if (useTransaction) {
-            return transactionalFind();
-        } else {
-            List lst = query.getResultList();
-            return lst.isEmpty() ? null : (K) lst.get(0);
-        }
+        return transactionalFind();
     }
 
     @Transactional
@@ -118,7 +107,7 @@ public class SQL {
     }
 
     public int execute() {
-        return useTransaction ? transactionalExecute() : query.executeUpdate();
+        return transactionalExecute();
     }
 
     public static UpdateQuery New(Class entityClass) {

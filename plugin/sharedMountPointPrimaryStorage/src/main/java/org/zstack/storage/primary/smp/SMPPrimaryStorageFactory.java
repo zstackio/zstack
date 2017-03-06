@@ -250,12 +250,12 @@ public class SMPPrimaryStorageFactory implements PrimaryStorageFactory, CreateTe
 
     private List<String> getSMPPrimaryStorageInCluster(String clusterUuid) {
         return SQL.New("select pri.uuid" +
-                                    " from PrimaryStorageVO pri, PrimaryStorageClusterRefVO ref" +
-                                    " where pri.uuid = ref.primaryStorageUuid" +
-                                    " and ref.clusterUuid = :cuuid" +
-                                    " and pri.type = :ptype").transactional()
-                                    .param("cuuid", clusterUuid)
-                                    .param("ptype", SMPConstants.SMP_TYPE)
-                                    .list();
+                " from PrimaryStorageVO pri, PrimaryStorageClusterRefVO ref" +
+                " where pri.uuid = ref.primaryStorageUuid" +
+                " and ref.clusterUuid = :cuuid" +
+                " and pri.type = :ptype")
+                .param("cuuid", clusterUuid)
+                .param("ptype", SMPConstants.SMP_TYPE)
+                .list();
     }
 }

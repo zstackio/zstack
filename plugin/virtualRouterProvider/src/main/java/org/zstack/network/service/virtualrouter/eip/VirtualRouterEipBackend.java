@@ -239,7 +239,7 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
         VirtualRouterVmVO vrvo = dbf.findByUuid(ref.getVirtualRouterVmUuid(), VirtualRouterVmVO.class);
         if (vrvo.getState() != VmInstanceState.Running) {
             // rule will be synced when vr state changes to Running
-            SQL.New("delete from VirtualRouterEipRefVO ref where ref.eipUuid = :eipUuid").transactional()
+            SQL.New("delete from VirtualRouterEipRefVO ref where ref.eipUuid = :eipUuid")
                     .param("eipUuid", struct.getEip().getUuid()).execute();
             completion.success();
             return;

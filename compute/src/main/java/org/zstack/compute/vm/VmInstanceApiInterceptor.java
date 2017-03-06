@@ -108,13 +108,13 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         if (VmInstanceState.Stopped.equals(vmState)) {
             return;
         }
-        Tuple result = SQL.New("select sum(hc.availableCpu), sum(hc.availableMemory), vm.cpuNum, vm.memorySize" +
+        Tuple result = SQL.New(
+                "select sum(hc.availableCpu), sum(hc.availableMemory), vm.cpuNum, vm.memorySize" +
                 " from HostCapacityVO hc, HostVO host, VmInstanceVO vm" +
                 " where hc.uuid = host.uuid" +
                 " and host.state = :hstate" +
-                " and host.status = :hstatus", Tuple.class)
-                .param("hstate", HostState.Enabled).param("hstatus", HostStatus.Connected)
-                .find();
+                " and host.status = :hstatus", Tuple.class
+        ).param("hstate", HostState.Enabled).param("hstatus", HostStatus.Connected).find();
         Long availableCpu = (Long) result.get(0);
         Long availableMemory = (Long) result.get(1);
         Integer usedCpu = (Integer) result.get(2);
