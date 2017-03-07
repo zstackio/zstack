@@ -14,7 +14,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.zstack</groupId>
     <artifactId>zstack</artifactId>
-    <version>1.9.0</version>
+    <version>1.10.0</version>
     <packaging>pom</packaging>
     <name>zstack</name>
     <modules>
