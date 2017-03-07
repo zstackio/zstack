@@ -1,39 +1,31 @@
-package org.zstack.header.network.l2
+package org.zstack.core.gc
+
+import org.zstack.core.gc.APIDeleteGCJobEvent
 
 doc {
-    title "AttachL2NetworkToCluster"
+    title "DeleteGCJob"
 
-    category "network.l2"
+    category "gc"
 
     desc "在这里填写API描述"
 
     rest {
         request {
-			url "POST /v1/l2-networks/{l2NetworkUuid}/clusters/{clusterUuid}"
+			url "DELETE /v1/gc-jobs/{uuid}"
 
 
             header (OAuth: 'the-session-uuid')
 
-            clz APIAttachL2NetworkToClusterMsg.class
+            clz APIDeleteGCJobMsg.class
 
             desc ""
             
 			params {
 
 				column {
-					name "l2NetworkUuid"
+					name "uuid"
 					enclosedIn ""
-					desc "二层网络UUID"
-					location "url"
-					type "String"
-					optional false
-					since "0.6"
-					
-				}
-				column {
-					name "clusterUuid"
-					enclosedIn ""
-					desc "集群UUID"
+					desc "资源的UUID，唯一标示该资源"
 					location "url"
 					type "String"
 					optional false
@@ -64,7 +56,7 @@ doc {
         }
 
         response {
-            clz APIAttachL2NetworkToClusterEvent.class
+            clz APIDeleteGCJobEvent.class
         }
     }
 }

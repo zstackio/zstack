@@ -1,39 +1,31 @@
-package org.zstack.header.network.l2
+package org.zstack.core.gc
+
+import org.zstack.core.gc.APITriggerGCJobEvent
 
 doc {
-    title "AttachL2NetworkToCluster"
+    title "TriggerGCJob"
 
-    category "network.l2"
+    category "gc"
 
     desc "在这里填写API描述"
 
     rest {
         request {
-			url "POST /v1/l2-networks/{l2NetworkUuid}/clusters/{clusterUuid}"
+			url "PUT /v1/gc-jobs/{uuid}/actions"
 
 
             header (OAuth: 'the-session-uuid')
 
-            clz APIAttachL2NetworkToClusterMsg.class
+            clz APITriggerGCJobMsg.class
 
             desc ""
             
 			params {
 
 				column {
-					name "l2NetworkUuid"
-					enclosedIn ""
-					desc "二层网络UUID"
-					location "url"
-					type "String"
-					optional false
-					since "0.6"
-					
-				}
-				column {
-					name "clusterUuid"
-					enclosedIn ""
-					desc "集群UUID"
+					name "uuid"
+					enclosedIn "triggerGCJob"
+					desc "资源的UUID，唯一标示该资源"
 					location "url"
 					type "String"
 					optional false
@@ -64,7 +56,7 @@ doc {
         }
 
         response {
-            clz APIAttachL2NetworkToClusterEvent.class
+            clz APITriggerGCJobEvent.class
         }
     }
 }

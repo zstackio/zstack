@@ -1,6 +1,7 @@
-package org.zstack.header.network.l2
+package org.zstack.core.gc
 
 import org.zstack.header.errorcode.ErrorCode
+import org.zstack.core.gc.GarbageCollectorInventory
 
 doc {
 
@@ -8,16 +9,18 @@ doc {
 
 	ref {
 		name "error"
-		path "org.zstack.header.network.l2.APIGetL2NetworkTypesReply.error"
+		path "org.zstack.core.gc.APIQueryGCJobReply.error"
 		desc "错误码，若不为null，则表示操作失败, 操作成功时该字段为null",false
 		type "ErrorCode"
 		since "0.6"
 		clz ErrorCode.class
 	}
-	field {
-		name "types"
-		desc ""
+	ref {
+		name "inventories"
+		path "org.zstack.core.gc.APIQueryGCJobReply.inventories"
+		desc "null"
 		type "List"
 		since "0.6"
+		clz GarbageCollectorInventory.class
 	}
 }

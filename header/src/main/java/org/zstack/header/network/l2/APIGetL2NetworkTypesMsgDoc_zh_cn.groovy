@@ -3,11 +3,11 @@ package org.zstack.header.network.l2
 import org.zstack.header.network.l2.APIGetL2NetworkTypesReply
 
 doc {
-    title "获取二层网络类型(GetL2NetworkTypes)"
+    title "GetL2NetworkTypes"
 
-    category "二层网络"
+    category "network.l2"
 
-    desc "获取二层网络类型"
+    desc "在这里填写API描述"
 
     rest {
         request {
@@ -24,8 +24,8 @@ doc {
 
 				column {
 					name "systemTags"
- 					enclosedIn ""
- 					desc "系统标签"
+					enclosedIn ""
+					desc ""
 					location "query"
 					type "List"
 					optional true
@@ -35,7 +35,7 @@ doc {
 				column {
 					name "userTags"
 					enclosedIn ""
-					desc "用户标签"
+					desc ""
 					location "query"
 					type "List"
 					optional true

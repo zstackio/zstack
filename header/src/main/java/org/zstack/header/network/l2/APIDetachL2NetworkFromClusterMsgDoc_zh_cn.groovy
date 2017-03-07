@@ -3,11 +3,11 @@ package org.zstack.header.network.l2
 import org.zstack.header.network.l2.APIDetachL2NetworkFromClusterEvent
 
 doc {
-    title "从集群上卸载二层网络(DetachL2NetworkFromCluster)"
+    title "DetachL2NetworkFromCluster"
 
-    category "二层网络"
+    category "network.l2"
 
-    desc "从集群上卸载二层网络"
+    desc "在这里填写API描述"
 
     rest {
         request {
@@ -44,8 +44,8 @@ doc {
 				}
 				column {
 					name "systemTags"
- 					enclosedIn ""
- 					desc "系统标签"
+					enclosedIn ""
+					desc ""
 					location "body"
 					type "List"
 					optional true
@@ -55,7 +55,7 @@ doc {
 				column {
 					name "userTags"
 					enclosedIn ""
-					desc "用户标签"
+					desc ""
 					location "body"
 					type "List"
 					optional true
