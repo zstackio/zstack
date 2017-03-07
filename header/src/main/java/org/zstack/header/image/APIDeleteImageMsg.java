@@ -18,7 +18,7 @@ import java.util.List;
         responseClass = APIDeleteImageEvent.class
 )
 public class APIDeleteImageMsg extends APIDeleteMessage implements ImageMessage {
-    @APIParam(resourceType = ImageVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(checkAccount = true, operationTarget = true)
     private String uuid;
     @APIParam(required = false, nonempty = true, resourceType = BackupStorageVO.class)
     private List<String> backupStorageUuids;
