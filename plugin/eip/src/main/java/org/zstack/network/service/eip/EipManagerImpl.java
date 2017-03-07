@@ -708,7 +708,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                             q.condAnd(EipVO_.uuid, Op.EQ, eip.getUuid());
                             q.set(EipVO_.vmNicUuid, null);
                             q.set(EipVO_.guestIp, null);
-                            q.update();;
+                            q.update();
 
                             trigger.next();
                         }

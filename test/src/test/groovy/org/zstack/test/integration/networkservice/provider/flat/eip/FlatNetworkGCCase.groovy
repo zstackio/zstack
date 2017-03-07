@@ -9,7 +9,7 @@ import org.zstack.sdk.GarbageCollectorInventory
 import org.zstack.sdk.HostInventory
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
-import org.zstack.test.integration.networkservice.provider.flat.NetworkServiceEnv
+import org.zstack.test.integration.networkservice.provider.flat.FlatNetworkServiceEnv
 import org.zstack.testlib.EipSpec
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.HostSpec
@@ -41,7 +41,7 @@ class FlatNetworkGCCase extends SubCase {
 
     @Override
     void environment() {
-        env = NetworkServiceEnv.oneFlatEipEnv()
+        env = FlatNetworkServiceEnv.oneFlatEipEnv()
     }
 
 
