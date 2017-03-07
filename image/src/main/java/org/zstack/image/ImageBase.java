@@ -240,8 +240,15 @@ public class ImageBase implements Image {
 
                         if (count == 0) {
                             // the image is expunged on all backup storage
-                            sql("delete from ImageVO img where img.uuid = :uuid")
-                                    .param("uuid", msg.getImageUuid()).execute();
+                            //
+                            // Our trigger for ImageEO in AccoutResourceRefVO is triggered
+                            // by the 'UPDATE' action.  We can not directly use a 'DELETE'
+                            // expression here.
+                            sql("update ImageEO set status = :status, deleted = :deleted where uuid = :uuid")
+                                    .param("status", ImageStatus.Deleted)
+                                    .param("deleted", new Timestamp(new Date().getTime()).toString())
+                                    .param("uuid", msg.getImageUuid())
+                                    .execute();
 
                             logger.debug(String.format("the image[uuid:%s, name:%s] has been expunged on all backup storage, remove it from database",
                                     self.getUuid(), self.getName()));
