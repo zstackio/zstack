@@ -150,7 +150,7 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     protected void destroy(final VmInstanceDeletionPolicy deletionPolicy, final Completion completion) {
-        if (VmInstanceState.Created == self.getState()) {
+        if (deletionPolicy == VmInstanceDeletionPolicy.DBOnly) {
             completion.success();
             return;
         }
@@ -1573,6 +1573,16 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 
+    private VmInstanceDeletionPolicy getVmDeletionPolicy(final VmInstanceDeletionMsg msg) {
+        if (self.getState() == VmInstanceState.Created) {
+            return VmInstanceDeletionPolicy.DBOnly;
+        }
+
+        return msg.getDeletionPolicy() == null ?
+                deletionPolicyMgr.getDeletionPolicy(self.getUuid()) :
+                VmInstanceDeletionPolicy.valueOf(msg.getDeletionPolicy());
+    }
+
     private void handle(final VmInstanceDeletionMsg msg) {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
@@ -1583,22 +1593,16 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void run(SyncTaskChain chain) {
                 final VmInstanceDeletionReply r = new VmInstanceDeletionReply();
+                final VmInstanceDeletionPolicy deletionPolicy = getVmDeletionPolicy(msg);
+
                 self = dbf.findByUuid(self.getUuid(), VmInstanceVO.class);
                 if (self == null || self.getState() == VmInstanceState.Destroyed) {
                     // the vm has been destroyed, most likely by rollback
-                    bus.reply(msg, r);
-                    chain.next();
-                    return;
-                }
-
-
-                final VmInstanceDeletionPolicy deletionPolicy;
-
-                if (self.getState() == VmInstanceState.Created) {
-                    deletionPolicy = VmInstanceDeletionPolicy.DBOnly;
-                } else {
-                    deletionPolicy = msg.getDeletionPolicy() == null ?
-                            deletionPolicyMgr.getDeletionPolicy(self.getUuid()) : VmInstanceDeletionPolicy.valueOf(msg.getDeletionPolicy());
+                    if (deletionPolicy != VmInstanceDeletionPolicy.DBOnly) {
+                        bus.reply(msg, r);
+                        chain.next();
+                        return;
+                    }
                 }
 
                 destroyHook(deletionPolicy, new Completion(msg, chain) {
