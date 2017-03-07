@@ -125,7 +125,6 @@ public enum SizeUnit {
         public long convert(long s, SizeUnit src) {
             return src.toTeraByte(s);
         }
-
     };
 
     public static SizeUnit fromString(String s) {
@@ -149,7 +148,7 @@ public enum SizeUnit {
     private static final long m = k * 1024;
     private static final long g = m * 1024;
     private static final long t = g * 1024;
-
+    
     public long toByte(long s) {
         throw new AbstractMethodError();
     }
@@ -157,7 +156,7 @@ public enum SizeUnit {
         throw new AbstractMethodError();
     }
     public long toMegaByte(long s) {
-        throw new AbstractMethodError();
+        throw new AbstractMethodError();        
     }
     public long toGigaByte(long s) {
         throw new AbstractMethodError();
@@ -165,7 +164,6 @@ public enum SizeUnit {
     public long toTeraByte(long s) {
         throw new AbstractMethodError();
     }
-
     public long convert(long s, SizeUnit src) {
         throw new AbstractMethodError();
     }
