@@ -340,7 +340,8 @@ class EnvSpec implements Node {
             if (type.name in ["ManagementNodeVO", "SessionVO",
                               "GlobalConfigVO", "AsyncRestVO",
                               "AccountVO", "NetworkServiceProviderVO",
-                              "NetworkServiceTypeVO", "VmInstanceSequenceNumberVO"]) {
+                              "NetworkServiceTypeVO", "VmInstanceSequenceNumberVO",
+                              "GarbageCollectorVO"]) {
                 // those tables will continue having entries during running a test suite
                 return
             }
