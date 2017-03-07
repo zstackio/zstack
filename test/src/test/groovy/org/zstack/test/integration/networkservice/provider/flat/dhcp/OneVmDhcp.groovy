@@ -10,7 +10,7 @@ import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.VmNicInventory
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
-import org.zstack.test.integration.networkservice.provider.flat.NetworkServiceEnv
+import org.zstack.test.integration.networkservice.provider.flat.FlatNetworkServiceEnv
 
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.ImageSpec
@@ -32,7 +32,7 @@ class OneVmDhcp extends SubCase {
 
     @Override
     void environment() {
-        env = NetworkServiceEnv.oneHostNoVmEnv()
+        env = FlatNetworkServiceEnv.oneHostNoVmEnv()
     }
 
     @Override

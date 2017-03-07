@@ -138,6 +138,12 @@ public class VipBase {
     }
 
     private void deleteFromBackend(Completion completion) {
+        if (self.getServiceProvider() == null) {
+            // this VIP has not bean created on backend yet
+            completion.success();
+            return;
+        }
+
         VipFactory f = vipMgr.getVipFactory(self.getServiceProvider());
         VipBaseBackend vip = f.getVip(getSelf());
         vip.releaseVipOnBackend(new Completion(completion) {

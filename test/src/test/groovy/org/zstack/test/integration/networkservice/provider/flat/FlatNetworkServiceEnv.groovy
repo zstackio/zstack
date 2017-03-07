@@ -11,7 +11,7 @@ import org.zstack.utils.data.SizeUnit
 /**
  * Created by xing5 on 2017/2/26.
  */
-class NetworkServiceEnv {
+class FlatNetworkServiceEnv {
     static EnvSpec oneHostNoVmEnv() {
         Test.makeEnv {
             instanceOffering {
