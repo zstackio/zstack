@@ -51,10 +51,6 @@ public class VmDeleteVolumeFlow extends NoRollbackFlow {
         }
 
         final VmInstanceDeletionPolicy deletionPolicy = (VmInstanceDeletionPolicy) data.get(Params.DeletionPolicy);
-        if (deletionPolicy == VmInstanceDeletionPolicy.DBOnly) {
-            trigger.next();
-            return;
-        }
 
         List<VolumeDeletionStruct> ctx = CollectionUtils.transformToList(spec.getVmInventory().getAllVolumes(), new Function<VolumeDeletionStruct, VolumeInventory>() {
             @Override

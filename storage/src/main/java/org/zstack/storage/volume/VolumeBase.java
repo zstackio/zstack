@@ -733,6 +733,9 @@ public class VolumeBase implements Volume {
                             self.setStatus(VolumeStatus.Deleted);
                             self = dbf.updateAndRefresh(self);
                             new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(oldStatus, getSelfInventory());
+                        } else if (deletionPolicy == VolumeDeletionPolicy.DBOnly) {
+                            new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(oldStatus, getSelfInventory());
+                            dbf.remove(self);
                         } else {
                             throw new CloudRuntimeException(String.format("Invalid deletionPolicy:%s", deletionPolicy));
                         }

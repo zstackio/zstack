@@ -7,7 +7,8 @@ public interface VolumeDeletionPolicyManager {
     enum VolumeDeletionPolicy {
         Direct,
         Delay,
-        Never
+        Never,
+        DBOnly
     }
 
     VolumeDeletionPolicy getDeletionPolicy(String volumeUuid);
