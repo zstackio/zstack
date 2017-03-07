@@ -165,6 +165,12 @@ class EnvSpec implements Node {
         return specsByName[name]
     }
 
+    def inventoryByName(String name) {
+        def spec = specByName(name)
+        assert spec.hasProperty("inventory"): "${spec.class} doesn't have inventory"
+        return spec.inventory
+    }
+
     private String retrieveSessionUuid(Node it) {
         String suuid = session.uuid
 

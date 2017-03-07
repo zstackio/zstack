@@ -37,7 +37,7 @@ class ImageGCCase extends SubCase {
     }
 
     void testImageGCWhenBackupStorageDisconnect() {
-        ImageInventory image = (env.specByName("image") as ImageSpec).inventory
+        ImageInventory image = env.inventoryByName("image")
 
         env.afterSimulator(SftpBackupStorageConstant.DELETE_PATH) {
             throw new HttpError(403, "on purpose")
@@ -82,7 +82,7 @@ class ImageGCCase extends SubCase {
     }
 
     void testImageGCCancelledAfterBackupStorageDeleted() {
-        ImageInventory image = (env.specByName("image") as ImageSpec).inventory
+        ImageInventory image = env.inventoryByName("image")
 
         env.afterSimulator(SftpBackupStorageConstant.DELETE_PATH) {
             throw new HttpError(403, "on purpose")
