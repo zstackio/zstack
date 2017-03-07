@@ -127,6 +127,18 @@ public class SchedulerApiInterceptor implements ApiMessageInterceptor {
                         String.format("repeatCount must be positive integer")
                 ));
             }
+            
+            if (msg.getInterval() * msg.getRepeatCount() * 1000 < 0) {
+                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
+                        String.format("schedule job time out of range")
+                ));
+            }
+
+            if ((msg.getStartTime() + msg.getInterval() * msg.getRepeatCount() * 1000) > 2147454847) {
+                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
+                        String.format("stop time out of range")
+                ));
+            }
         }
 
         if (msg.getType().equals("cron")) {
