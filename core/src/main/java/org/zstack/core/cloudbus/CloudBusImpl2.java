@@ -5,6 +5,7 @@ import com.rabbitmq.client.*;
 import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
 import com.rabbitmq.client.impl.recovery.RecoveryAwareAMQConnection;
 import org.apache.commons.lang.StringUtils;
+import org.apache.logging.log4j.ThreadContext;
 import org.mvel2.MVEL;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.MessageCommandRecorder;
@@ -101,6 +102,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
     private final String MESSAGE_META_DATA = "metaData";
     private final long DEFAULT_MESSAGE_TIMEOUT = TimeUnit.MINUTES.toMillis(30);
     private final String DEAD_LETTER = "dead-message";
+    private final String API_ID = "apiId";
 
     private final String AMQP_PROPERTY_HEADER__COMPRESSED = "compressed";
 
@@ -409,6 +411,8 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
 
             void send() throws IOException {
                 try {
+                    evalThreadContextToMessage(msg);
+
                     chan.basicPublish(exchange.toString(), serviceId,
                             true, msg.getAMQPProperties(), data);
                 } catch (ShutdownSignalException e) {
@@ -1936,6 +1940,21 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
         return res;
     }
 
+    private void setThreadLoggingContext(Message msg) {
+        if (msg instanceof APIMessage) {
+            ThreadContext.put("api", msg.getId());
+        } else if (msg.getHeaders().containsKey(API_ID)){
+            ThreadContext.put("api", msg.getHeaders().get(API_ID).toString());
+        }
+    }
+
+    private void evalThreadContextToMessage(Message msg) {
+        String apiId = ThreadContext.get("api");
+        if (apiId != null) {
+            msg.putHeaderEntry(API_ID, apiId);
+        }
+    }
+
     @Override
     public void registerService(final Service serv) throws CloudConfigureFailException {
         final List<String> alias = serv.getAliasIds();
@@ -1960,6 +1979,8 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
                     public void handleDelivery(String s, com.rabbitmq.client.Envelope envelope, AMQP.BasicProperties basicProperties, byte[] bytes) throws IOException {
                         try {
                             final Message msg = wire.toMessage(bytes, basicProperties);
+
+                            setThreadLoggingContext(msg);
 
                             if (logger.isTraceEnabled() && wire.logMessage(msg)) {
                                 logger.trace(String.format("[msg received]: %s", wire.dumpMessage(msg)));

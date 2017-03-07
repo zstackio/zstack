@@ -1,5 +1,7 @@
 package org.zstack.header.core;
 
+import org.zstack.header.HasThreadContext;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -9,7 +11,7 @@ import static java.util.Arrays.asList;
 
 /**
  */
-public abstract class AbstractCompletion implements AsyncBackup {
+public abstract class AbstractCompletion implements AsyncBackup, HasThreadContext {
     protected List<AsyncBackup> backups;
     private final AtomicBoolean successCalled = new AtomicBoolean(false);
     private final AtomicBoolean failCalled = new AtomicBoolean(false);
