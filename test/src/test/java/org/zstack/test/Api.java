@@ -3,13 +3,9 @@ package org.zstack.test;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.zstack.alert.APIDeleteAlarmEvent;
-import org.zstack.alert.APIDeleteAlarmMsg;
 import org.zstack.appliancevm.APIListApplianceVmMsg;
 import org.zstack.appliancevm.APIListApplianceVmReply;
 import org.zstack.appliancevm.ApplianceVmInventory;
-import org.zstack.billing.*;
-import org.zstack.billing.PriceInventory;
 import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
@@ -25,10 +21,6 @@ import org.zstack.core.debug.APIDebugSignalEvent;
 import org.zstack.core.debug.APIDebugSignalMsg;
 import org.zstack.core.debug.DebugSignal;
 import org.zstack.core.scheduler.*;
-import org.zstack.ha.APIDeleteVmInstanceHaLevelMsg;
-import org.zstack.ha.APISetVmInstanceHaLevelEvent;
-import org.zstack.ha.APISetVmInstanceHaLevelMsg;
-import org.zstack.ha.VmHaLevel;
 import org.zstack.header.allocator.APIGetCpuMemoryCapacityReply;
 import org.zstack.header.apimediator.APIIsReadyToGoMsg;
 import org.zstack.header.apimediator.ApiMediatorConstant;
@@ -96,13 +88,9 @@ import org.zstack.header.volume.APIGetVolumeFormatReply.VolumeFormatReplyStruct;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.zone.*;
 import org.zstack.header.zone.ZoneInventory;
-import org.zstack.ipsec.*;
-import org.zstack.ipsec.IPsecConnectionInventory;
 import org.zstack.kvm.APIAddKVMHostMsg;
 import org.zstack.kvm.APIUpdateKVMHostMsg;
 import org.zstack.kvm.KVMHostInventory;
-import org.zstack.license.*;
-import org.zstack.license.LicenseInventory;
 import org.zstack.network.securitygroup.APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO;
 import org.zstack.network.securitygroup.*;
 import org.zstack.network.securitygroup.SecurityGroupInventory;
@@ -116,8 +104,10 @@ import org.zstack.network.service.lb.LoadBalancerInventory;
 import org.zstack.network.service.lb.LoadBalancerListenerInventory;
 import org.zstack.network.service.portforwarding.*;
 import org.zstack.network.service.portforwarding.PortForwardingRuleInventory;
-import org.zstack.network.service.vip.*;
+import org.zstack.network.service.vip.APIUpdateVipEvent;
+import org.zstack.network.service.vip.APIUpdateVipMsg;
 import org.zstack.network.service.vip.VipInventory;
+import org.zstack.network.service.vip.VipStateEvent;
 import org.zstack.network.service.virtualrouter.APICreateVirtualRouterOfferingMsg;
 import org.zstack.network.service.virtualrouter.APIUpdateVirtualRouterOfferingMsg;
 import org.zstack.network.service.virtualrouter.VirtualRouterOfferingInventory;
@@ -3090,92 +3080,6 @@ public class Api implements CloudBusEventListener {
         }
     }
 
-    public APISetImageQgaEvent disableImageQga(String uuid) throws ApiSenderException {
-        APISetImageQgaMsg msg = new APISetImageQgaMsg();
-        msg.setUuid(uuid);
-        msg.setEnable(false);
-        msg.setSession(adminSession);
-        ApiSender sender = new ApiSender();
-        sender.setTimeout(timeout);
-        APISetImageQgaEvent evt = sender.send(msg, APISetImageQgaEvent.class);
-        return evt;
-    }
-
-    public APISetImageQgaEvent disableImageQga(SessionInventory session, String uuid) throws ApiSenderException {
-        APISetImageQgaMsg msg = new APISetImageQgaMsg();
-        msg.setUuid(uuid);
-        msg.setEnable(false);
-        msg.setSession(session);
-        ApiSender sender = new ApiSender();
-        sender.setTimeout(timeout);
-        APISetImageQgaEvent evt = sender.send(msg, APISetImageQgaEvent.class);
-        return evt;
-    }
-
-    public APISetImageQgaEvent enableImageQga(String uuid) throws ApiSenderException {
-        APISetImageQgaMsg msg = new APISetImageQgaMsg();
-        msg.setUuid(uuid);
-        msg.setEnable(true);
-        msg.setSession(adminSession);
-        ApiSender sender = new ApiSender();
-        sender.setTimeout(timeout);
-        APISetImageQgaEvent evt = sender.send(msg, APISetImageQgaEvent.class);
-        return evt;
-    }
-
-    public APISetImageQgaEvent enableImageQga(SessionInventory session, String uuid) throws ApiSenderException {
-        APISetImageQgaMsg msg = new APISetImageQgaMsg();
-        msg.setUuid(uuid);
-        msg.setEnable(true);
-        msg.setSession(session);
-        ApiSender sender = new ApiSender();
-        sender.setTimeout(timeout);
-        APISetImageQgaEvent evt = sender.send(msg, APISetImageQgaEvent.class);
-        return evt;
-    }
-
-    public APIGetImageQgaReply getEnableImageQga(String uuid) throws ApiSenderException {
-        APIGetImageQgaMsg msg = new APIGetImageQgaMsg();
-        msg.setUuid(uuid);
-        msg.setSession(adminSession);
-        ApiSender sender = new ApiSender();
-        sender.setTimeout(timeout);
-        APIGetImageQgaReply reply = sender.call(msg, APIGetImageQgaReply.class);
-        return reply;
-    }
-
-    public APISetVmQgaEvent disableVmQga(String uuid) throws ApiSenderException {
-        APISetVmQgaMsg msg = new APISetVmQgaMsg();
-        msg.setUuid(uuid);
-        msg.setEnable(false);
-        msg.setSession(adminSession);
-        ApiSender sender = new ApiSender();
-        sender.setTimeout(timeout);
-        APISetVmQgaEvent evt = sender.send(msg, APISetVmQgaEvent.class);
-        return evt;
-    }
-
-    public APISetVmQgaEvent enableVmQga(String uuid) throws ApiSenderException {
-        APISetVmQgaMsg msg = new APISetVmQgaMsg();
-        msg.setUuid(uuid);
-        msg.setEnable(true);
-        msg.setSession(adminSession);
-        ApiSender sender = new ApiSender();
-        sender.setTimeout(timeout);
-        APISetVmQgaEvent evt = sender.send(msg, APISetVmQgaEvent.class);
-        return evt;
-    }
-
-    public APIGetVmQgaReply getEnableVmQga(String uuid) throws ApiSenderException {
-        APIGetVmQgaMsg msg = new APIGetVmQgaMsg();
-        msg.setUuid(uuid);
-        msg.setSession(adminSession);
-        ApiSender sender = new ApiSender();
-        sender.setTimeout(timeout);
-        APIGetVmQgaReply reply = sender.call(msg, APIGetVmQgaReply.class);
-        return reply;
-    }
-
     public TagInventory createUserTag(String resourceUuid, String tag, Class entitiClass) throws ApiSenderException {
         return createUserTag(resourceUuid, tag, entitiClass, null);
     }
@@ -3986,81 +3890,6 @@ public class Api implements CloudBusEventListener {
         return evt.getInventory();
     }
 
-    public APISetVolumeQosEvent setDiskQos(String volumeUuid, long bandWidth) throws ApiSenderException {
-        APISetVolumeQosMsg msg = new APISetVolumeQosMsg();
-        msg.setUuid(volumeUuid);
-        msg.setVolumeBandwidth(bandWidth);
-        msg.setSession(adminSession);
-        ApiSender sender = new ApiSender();
-        sender.setTimeout(timeout);
-        APISetVolumeQosEvent evt = sender.send(msg, APISetVolumeQosEvent.class);
-        return evt;
-    }
-
-    public APIDeleteVolumeQosEvent deleteDiskQos(String volumeUuid) throws ApiSenderException {
-        APIDeleteVolumeQosMsg msg = new APIDeleteVolumeQosMsg();
-        msg.setUuid(volumeUuid);
-        msg.setSession(adminSession);
-        ApiSender sender = new ApiSender();
-        sender.setTimeout(timeout);
-        APIDeleteVolumeQosEvent evt = sender.send(msg, APIDeleteVolumeQosEvent.class);
-        return evt;
-    }
-
-    public APIGetVolumeQosReply getVmDiskQos(String volumeUuid) throws ApiSenderException {
-        APIGetVolumeQosMsg msg = new APIGetVolumeQosMsg();
-        msg.setUuid(volumeUuid);
-        msg.setSession(adminSession);
-        ApiSender sender = new ApiSender();
-        sender.setTimeout(timeout);
-        APIGetVolumeQosReply reply = sender.call(msg, APIGetVolumeQosReply.class);
-        return reply;
-    }
-
-    public APISetNicQosEvent setVmNicQos(String vmNicUuid, long outbound) throws ApiSenderException {
-        APISetNicQosMsg msg = new APISetNicQosMsg();
-        msg.setUuid(vmNicUuid);
-        msg.setOutboundBandwidth(outbound);
-        msg.setSession(adminSession);
-        ApiSender sender = new ApiSender();
-        sender.setTimeout(timeout);
-        APISetNicQosEvent evt = sender.send(msg, APISetNicQosEvent.class);
-        return evt;
-    }
-
-    public APIDeleteNicQosEvent deleteVmNicQos(String vmUuid, String direction) throws ApiSenderException {
-        APIDeleteNicQosMsg msg = new APIDeleteNicQosMsg();
-        msg.setUuid(vmUuid);
-        msg.setDirection(direction);
-        msg.setSession(adminSession);
-        ApiSender sender = new ApiSender();
-        sender.setTimeout(timeout);
-        APIDeleteNicQosEvent evt = sender.send(msg, APIDeleteNicQosEvent.class);
-        return evt;
-    }
-
-    public APISetNicQosEvent setVmNicQos(String vmNicUuid, long inbound, long outbound) throws ApiSenderException {
-        APISetNicQosMsg msg = new APISetNicQosMsg();
-        msg.setUuid(vmNicUuid);
-        msg.setInboundBandwidth(inbound);
-        msg.setOutboundBandwidth(outbound);
-        msg.setSession(adminSession);
-        ApiSender sender = new ApiSender();
-        sender.setTimeout(timeout);
-        APISetNicQosEvent evt = sender.send(msg, APISetNicQosEvent.class);
-        return evt;
-    }
-
-    public APIGetNicQosReply getVmNicQos(String vmNicUuid) throws ApiSenderException {
-        APIGetNicQosMsg msg = new APIGetNicQosMsg();
-        msg.setUuid(vmNicUuid);
-        msg.setSession(adminSession);
-        ApiSender sender = new ApiSender();
-        sender.setTimeout(timeout);
-        APIGetNicQosReply reply = sender.call(msg, APIGetNicQosReply.class);
-        return reply;
-    }
-
 
     public List<String> getVmBootOrder(String vmUuid, SessionInventory session) throws ApiSenderException {
         APIGetVmBootOrderMsg msg = new APIGetVmBootOrderMsg();
@@ -4134,15 +3963,6 @@ public class Api implements CloudBusEventListener {
         return evt.getInventory();
     }
 
-    public LicenseInventory getLicenseInfo() throws ApiSenderException {
-        APIGetLicenseInfoMsg msg = new APIGetLicenseInfoMsg();
-        msg.setSession(adminSession);
-        ApiSender sender = new ApiSender();
-        sender.setTimeout(timeout);
-        APIGetLicenseInfoReply r = sender.call(msg, APIGetLicenseInfoReply.class);
-        return r.getInventory();
-    }
-
     public KVMHostInventory addKvmHost(String name, String mgmtIp, String clusterUuid) throws ApiSenderException {
         APIAddKVMHostMsg msg = new APIAddKVMHostMsg();
         msg.setName(name);
@@ -4155,15 +3975,6 @@ public class Api implements CloudBusEventListener {
         sender.setTimeout(timeout);
         APIAddHostEvent evt = sender.send(msg, APIAddHostEvent.class);
         return (KVMHostInventory) evt.getInventory();
-    }
-
-    public Map<String, String> getLicenseCapabilities() throws ApiSenderException {
-        APIGetLicenseCapabilitiesMsg msg = new APIGetLicenseCapabilitiesMsg();
-        msg.setSession(adminSession);
-        ApiSender sender = new ApiSender();
-        sender.setTimeout(timeout);
-        APIGetLicenseCapabilitiesReply reply = sender.call(msg, APIGetLicenseCapabilitiesReply.class);
-        return reply.getCapabilities();
     }
 
     public String exportImage(String bsUuid, String imageUuid) throws ApiSenderException {
@@ -4260,39 +4071,6 @@ public class Api implements CloudBusEventListener {
         return reply.getInventory();
     }
 
-    public APICalculateAccountSpendingReply calculateSpending(String accountUuid, Long start, Long end, SessionInventory session) throws ApiSenderException {
-        APICalculateAccountSpendingMsg msg = new APICalculateAccountSpendingMsg();
-        msg.setAccountUuid(accountUuid);
-        msg.setSession(session == null ? adminSession : session);
-        msg.setDateStart(start);
-        msg.setDateEnd(end);
-        ApiSender sender = new ApiSender();
-        sender.setTimeout(timeout);
-        APICalculateAccountSpendingReply reply = sender.call(msg, APICalculateAccountSpendingReply.class);
-        return reply;
-    }
-
-    public APICalculateAccountSpendingReply calculateSpending(String accountUuid, SessionInventory session) throws ApiSenderException {
-        return calculateSpending(accountUuid, null, null, session);
-    }
-
-    public PriceInventory createPrice(APICreateResourcePriceMsg msg) throws ApiSenderException {
-        msg.setSession(adminSession);
-        ApiSender sender = new ApiSender();
-        sender.setTimeout(timeout);
-        APICreateResourcePriceEvent evt = sender.send(msg, APICreateResourcePriceEvent.class);
-        return evt.getInventory();
-    }
-
-    public void deletePrice(String uuid) throws ApiSenderException {
-        APIDeleteResourcePriceMsg msg = new APIDeleteResourcePriceMsg();
-        msg.setSession(adminSession);
-        msg.setUuid(uuid);
-        ApiSender sender = new ApiSender();
-        sender.setTimeout(timeout);
-        sender.send(msg, APIDeleteResourcePriceEvent.class);
-    }
-
     public AccountInventory updateAccount(AccountInventory acnt, String password, SessionInventory session) throws ApiSenderException {
         APIUpdateAccountMsg msg = new APIUpdateAccountMsg();
         msg.setName(acnt.getName());
@@ -4329,27 +4107,6 @@ public class Api implements CloudBusEventListener {
         sender.setTimeout(timeout);
         APIUpdateUserEvent evt = sender.send(msg, APIUpdateUserEvent.class);
         return evt.getInventory();
-    }
-
-    public void setVmHaLevel(String vmUuid, VmHaLevel level, SessionInventory session) throws ApiSenderException {
-        APISetVmInstanceHaLevelMsg msg = new APISetVmInstanceHaLevelMsg();
-        msg.setUuid(vmUuid);
-        msg.setLevel(level.toString());
-        msg.setSession(session == null ? adminSession : session);
-        ApiSender sender = new ApiSender();
-        sender.setTimeout(timeout);
-        sender.send(msg, APISetVmInstanceHaLevelEvent.class);
-        return;
-    }
-
-    public void deleteVmHaLevel(String vmUuid, SessionInventory session) throws ApiSenderException {
-        APIDeleteVmInstanceHaLevelMsg msg = new APIDeleteVmInstanceHaLevelMsg();
-        msg.setUuid(vmUuid);
-        msg.setSession(session == null ? adminSession : session);
-        ApiSender sender = new ApiSender();
-        sender.setTimeout(timeout);
-        sender.send(msg, APIDeleteVmHostnameEvent.class);
-        return;
     }
 
     public Map<String, AccountInventory> getResourceAccount(List<String> resUuids) throws ApiSenderException {
@@ -4611,15 +4368,6 @@ public class Api implements CloudBusEventListener {
         }
     }
 
-    public void deleteAlarm(String alarmUuid, SessionInventory session) throws ApiSenderException {
-        APIDeleteAlarmMsg msg = new APIDeleteAlarmMsg();
-        msg.setUuid(alarmUuid);
-        msg.setSession(session == null ? adminSession : session);
-        ApiSender sender = new ApiSender();
-        sender.setTimeout(timeout);
-        sender.send(msg, APIDeleteAlarmEvent.class);
-    }
-
     public List<VmInstanceInventory> getCandidateVmForAttachingIso(String isoUuid, SessionInventory session) throws ApiSenderException {
         APIGetCandidateVmForAttachingIsoMsg msg = new APIGetCandidateVmForAttachingIsoMsg();
         msg.setIsoUuid(isoUuid);
@@ -4638,43 +4386,6 @@ public class Api implements CloudBusEventListener {
         sender.setTimeout(timeout);
         APIGetCandidateIsoForAttachingVmReply reply = sender.call(msg, APIGetCandidateIsoForAttachingVmReply.class);
         return reply.getInventories();
-    }
-
-    public IPsecConnectionInventory createIPsecConnection(IPsecConnectionInventory inv, List<String> peerCidrs, SessionInventory session) throws ApiSenderException {
-        APICreateIPsecConnectionMsg msg = new APICreateIPsecConnectionMsg();
-        msg.setName(inv.getName());
-        msg.setDescription(inv.getDescription());
-        msg.setSession(session == null ? adminSession : session);
-        msg.setAuthKey(inv.getAuthKey());
-        msg.setAuthMode(inv.getAuthMode());
-        msg.setIkeAuthAlgorithm(inv.getIkeAuthAlgorithm());
-        msg.setIkeDhGroup(inv.getIkeDhGroup());
-        msg.setIkeEncryptionAlgorithm(inv.getIkeEncryptionAlgorithm());
-        msg.setL3NetworkUuid(inv.getL3NetworkUuid());
-        msg.setPeerAddress(inv.getPeerAddress());
-        msg.setPeerCidrs(peerCidrs);
-        msg.setPfs(inv.getPfs());
-        msg.setPolicyAuthAlgorithm(inv.getPolicyAuthAlgorithm());
-        msg.setPolicyMode(inv.getPolicyMode());
-        msg.setPolicyEncryptionAlgorithm(inv.getPolicyEncryptionAlgorithm());
-        msg.setPolicyAuthAlgorithm(inv.getPolicyAuthAlgorithm());
-        msg.setVipUuid(inv.getVipUuid());
-        msg.setTransformProtocol(inv.getTransformProtocol());
-        msg.setSystemTags(asList(VipSystemTags.DELETE_ON_FAILURE.getTagFormat()));
-        ApiSender sender = new ApiSender();
-        sender.setTimeout(timeout);
-        APICreateIPsecConnectionEvent evt = sender.send(msg, APICreateIPsecConnectionEvent.class);
-        return evt.getInventory();
-    }
-
-    public void deleteIPsecConnection(String uuid, SessionInventory session) throws ApiSenderException {
-        APIDeleteIPsecConnectionMsg msg = new APIDeleteIPsecConnectionMsg();
-        msg.setUuid(uuid);
-        msg.setSession(session == null ? adminSession : session);
-        ApiSender sender = new ApiSender();
-        sender.setTimeout(timeout);
-        sender.send(msg, APIDeleteIPsecConnectionEvent.class);
-        return;
     }
 
     public List<VmNicInventory> getL3NetworkVmNics(String uuid) throws ApiSenderException {

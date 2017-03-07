@@ -5,9 +5,5 @@
     <TestCase class="org.zstack.test.eip.vyos.TestVyosEip1" />
     <TestCase class="org.zstack.test.virtualrouter.vyos.TestVyosPortForwarding" />
     <TestCase class="org.zstack.test.virtualrouter.vyos.TestVyosPortForwarding1" />
-    <TestCase class="org.zstack.test.virtualrouter.vyos.TestVyosIPsec1" />
-    <TestCase class="org.zstack.test.virtualrouter.vyos.TestVyosIPsec2" />
-    <TestCase class="org.zstack.test.virtualrouter.vyos.TestVyosIPsec3" />
-    <TestCase class="org.zstack.test.virtualrouter.vyos.TestVyosIPsec4" />
     <TestCase class="org.zstack.test.virtualrouter.vyos.TestVyosAfterL2NetworkDetach" />
 </UnitTestSuiteConfig>

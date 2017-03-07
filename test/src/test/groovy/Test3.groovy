@@ -1,10 +1,8 @@
 import org.zstack.header.vm.APIStopVmInstanceMsg
-import org.zstack.header.vm.StopVmInstanceMsg
 import org.zstack.testlib.DiskOfferingSpec
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.Test
 import org.zstack.testlib.VmSpec
-import org.zstack.testlib.premium.TestPremium
 import org.zstack.utils.data.SizeUnit
 
 /**

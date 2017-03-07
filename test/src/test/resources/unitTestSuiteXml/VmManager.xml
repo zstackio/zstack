@@ -68,7 +68,6 @@
     <TestCase class="org.zstack.test.compute.vm.TestVmGetAttachableL3Networks"/>
     <TestCase class="org.zstack.test.compute.vm.TestQuotaUsageForVm"/>
     <TestCase class="org.zstack.test.compute.vm.TestVmHostname"/>
-    <TestCase class="org.zstack.test.compute.vm.TestVmQgaEnable"/>
     <TestCase class="org.zstack.test.compute.vm.TestGetInterdependentL3NetworksImages"/>
     <TestCase class="org.zstack.test.compute.vm.TestGetVmAttachableDataVolume"/>
     <TestCase class="org.zstack.test.compute.vm.TestDeleteCreatedVm"/>

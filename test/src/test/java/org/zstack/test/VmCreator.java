@@ -5,6 +5,7 @@ import org.zstack.header.apimediator.ApiMediatorConstant;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.vm.*;
 import org.zstack.sdk.ApiException;
+import org.zstack.sdk.CloneVmInstanceResults;
 import org.zstack.sdk.CreateVmInstanceAction;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -81,18 +82,5 @@ public class VmCreator {
         logger.debug(callingChain);
 
         return JSONObjectUtil.rehashObject(res.value.getInventory(), VmInstanceInventory.class);
-    }
-
-    public CloneVmInstanceResults cloneVm(List<String> names, String instanceUuid) throws ApiSenderException {
-        APICloneVmInstanceMsg msg = new APICloneVmInstanceMsg();
-        msg.setNames(names);
-        msg.setVmInstanceUuid(instanceUuid);
-        msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
-        msg.setSession(session == null ? api.getAdminSession() : session);
-        ApiSender sender = new ApiSender();
-        sender.setTimeout(timeout);
-        APICloneVmInstanceEvent evt = sender.send(msg, APICloneVmInstanceEvent.class);
-
-        return evt.getResult();
     }
 }
