@@ -52,9 +52,11 @@ CREATE TABLE  `zstack`.`CephPrimaryStoragePoolVO` (
     PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+DELETE FROM GarbageCollectorVO;
 ALTER TABLE GarbageCollectorVO ADD name varchar(1024) NOT NULL;
 ALTER TABLE GarbageCollectorVO MODIFY COLUMN id INT;
 ALTER TABLE GarbageCollectorVO DROP PRIMARY KEY;
 ALTER TABLE GarbageCollectorVO DROP id;
+ALTER TABLE GarbageCollectorVO ADD uuid varchar(32);
+UPDATE GarbageCollectorVO SET uuid = REPLACE(UUID(),'-','') WHERE uuid IS NULL;
 ALTER TABLE GarbageCollectorVO ADD uuid varchar(32) UNIQUE NOT NULL PRIMARY KEY;
-UPDATE GarbageCollectorVO set uuid = REPLACE(UUID(),'-','') WHERE uuid IS NULL;
