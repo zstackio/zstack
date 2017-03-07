@@ -30,4 +30,9 @@ public class APITriggerGCJobMsg extends APIMessage implements GarbageCollectorMe
     public String getGCJobUuid() {
         return uuid;
     }
+    public static APITriggerGCJobMsg __example__() {
+        APITriggerGCJobMsg msg = new APITriggerGCJobMsg();
+        msg.setUuid(uuid());
+        return msg;
+    }
 }

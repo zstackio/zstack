@@ -14,4 +14,10 @@ public class APITriggerGCJobEvent extends APIEvent {
     public APITriggerGCJobEvent(String apiId) {
         super(apiId);
     }
+
+    public static APITriggerGCJobEvent __example__() {
+        APITriggerGCJobEvent event = new APITriggerGCJobEvent();
+        event.setSuccess(true);
+        return event;
+    }
 }
