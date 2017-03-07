@@ -608,6 +608,11 @@ public class RestServer implements Component, CloudBusEventListener {
     }
 
     private void handleApi(Api api, Map body, String parameterName, HttpEntity<String> entity, HttpServletRequest req, HttpServletResponse rsp) throws RestException, IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException, IOException {
+        if (body == null) {
+            // for some POST request, the body may be null, for example, attach primary storage to a cluster
+            body = new HashMap();
+        }
+
         String sessionId = null;
         if (!api.apiClass.isAnnotationPresent(SuppressCredentialCheck.class)) {
             String auth = entity.getHeaders().getFirst("Authorization");
