@@ -59,4 +59,4 @@ ALTER TABLE GarbageCollectorVO DROP PRIMARY KEY;
 ALTER TABLE GarbageCollectorVO DROP id;
 ALTER TABLE GarbageCollectorVO ADD uuid varchar(32);
 UPDATE GarbageCollectorVO SET uuid = REPLACE(UUID(),'-','') WHERE uuid IS NULL;
-ALTER TABLE GarbageCollectorVO ADD uuid varchar(32) UNIQUE NOT NULL PRIMARY KEY;
+ALTER TABLE GarbageCollectorVO MODIFY uuid varchar(32) UNIQUE NOT NULL PRIMARY KEY;
