@@ -31,11 +31,6 @@ class NetworkTest extends Test {
 
     @Override
     void test() {
-        runSubCases([
-                // get free ip
-                new OneL3OneIpRangeNoIpUsed(),
-                new OneL3OneIpRangeSomeIpUsed(),
-                new OneL3TwoIpRanges()
-        ])
+        runSubCases()
     }
 }

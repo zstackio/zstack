@@ -39,13 +39,6 @@ class StorageTest extends Test {
 
     @Override
     void test() {
-        runSubCases([
-                new LocalStorageMigrateVolumeCase(),
-                new SMPCapacityCase(),
-                new NfsGCCase(),
-                new LocalStorageRecalculateAvailableCapacityCase(),
-                new LocalStorageHostRefVOCase(),
-                new AttachIsoCase()
-        ])
+        runSubCases()
     }
 }

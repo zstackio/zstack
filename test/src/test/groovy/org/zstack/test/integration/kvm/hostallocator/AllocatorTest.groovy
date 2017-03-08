@@ -25,8 +25,6 @@ class AllocatorTest extends Test {
 
     @Override
     void test() {
-        runSubCases([
-                new LeastVmPreferredAllocatorCase()
-        ])
+        runSubCases()
     }
 }

@@ -1,5 +1,17 @@
 package org.zstack.testlib
 
+import org.reflections.Reflections
+import org.reflections.scanners.FieldAnnotationsScanner
+import org.reflections.scanners.MemberUsageScanner
+import org.reflections.scanners.MethodAnnotationsScanner
+import org.reflections.scanners.MethodParameterNamesScanner
+import org.reflections.scanners.MethodParameterScanner
+import org.reflections.scanners.ResourcesScanner
+import org.reflections.scanners.SubTypesScanner
+import org.reflections.scanners.TypeAnnotationsScanner
+import org.reflections.scanners.TypeElementsScanner
+import org.reflections.util.ClasspathHelper
+import org.zstack.core.Platform
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.componentloader.ComponentLoader
 import org.zstack.core.db.DatabaseFacade
@@ -300,7 +312,7 @@ abstract class Test implements ApiHelper {
 
     static Case CURRENT_SUB_CASE
 
-    protected void runSubCases(List<Case> cases) {
+    protected void runSubCases() {
         String resultDir = System.getProperty("resultDir")
         if (resultDir == null) {
             resultDir = [System.getProperty("user.dir"), "zstack-integration-test-result"].join("/")
@@ -314,7 +326,16 @@ abstract class Test implements ApiHelper {
 
         List<SubCaseResult> allResults = []
 
-        for (Case c in cases) {
+        def caseTypes = Platform.reflections.getSubTypesOf(Case.class)
+        caseTypes = caseTypes.findAll { it.package.name.startsWith(this.class.package.name) }
+        caseTypes = caseTypes.sort()
+
+        if (caseTypes.isEmpty()) {
+            return
+        }
+
+        for (Class type in caseTypes) {
+            def c = type.newInstance() as Case
             def caseResult = new SubCaseResult()
             caseResult.name = c.class.simpleName
 

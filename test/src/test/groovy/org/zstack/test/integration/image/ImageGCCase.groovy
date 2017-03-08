@@ -10,7 +10,6 @@ import org.zstack.storage.backup.sftp.SftpBackupStorageCommands
 import org.zstack.storage.backup.sftp.SftpBackupStorageConstant
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.HttpError
-import org.zstack.testlib.ImageSpec
 import org.zstack.testlib.SubCase
 
 import java.util.concurrent.TimeUnit

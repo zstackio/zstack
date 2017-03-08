@@ -35,14 +35,6 @@ class NetworkServiceProviderTest extends Test {
 
     @Override
     void test() {
-        runSubCases([
-                // flat network provider
-                new OneVmDhcp(),
-                new OneVmUserdata(),
-                new FlatNetworkGCCase(),
-
-                // virtual router/vyos provider
-                new VirtualRouterEipCase()
-        ])
+        runSubCases()
     }
 }

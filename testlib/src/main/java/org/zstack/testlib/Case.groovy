@@ -3,9 +3,9 @@ package org.zstack.testlib
 /**
  * Created by xing5 on 2017/3/3.
  */
-trait Case {
-    abstract void environment()
-    abstract void test()
-    abstract void run()
-    abstract void clean()
+interface Case {
+    void environment()
+    void test()
+    void run()
+    void clean()
 }

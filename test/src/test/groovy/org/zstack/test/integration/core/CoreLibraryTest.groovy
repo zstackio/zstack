@@ -20,9 +20,6 @@ class CoreLibraryTest extends Test {
 
     @Override
     void test() {
-        runSubCases([
-                new EventBasedGarbageCollectorCase(),
-                new TimeBasedGarbageCollectorCase()
-        ])
+        runSubCases()
     }
 }

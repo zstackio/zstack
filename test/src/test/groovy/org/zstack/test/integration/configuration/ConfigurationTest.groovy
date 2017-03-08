@@ -24,9 +24,7 @@ class ConfigurationTest extends Test {
 
     @Override
     void test() {
-        runSubCases([
-            new SystemTagCase()
-        ])
+        runSubCases()
     }
 
 }
