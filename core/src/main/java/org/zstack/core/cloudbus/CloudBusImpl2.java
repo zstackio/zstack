@@ -102,7 +102,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
     private final String MESSAGE_META_DATA = "metaData";
     private final long DEFAULT_MESSAGE_TIMEOUT = TimeUnit.MINUTES.toMillis(30);
     private final String DEAD_LETTER = "dead-message";
-    private final String API_ID = "apiId";
+    private final String API_ID = "api-id";
 
     private final String AMQP_PROPERTY_HEADER__COMPRESSED = "compressed";
 
@@ -292,6 +292,8 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
                 }
 
                 private void handleNoRouteLetter(Message msg) {
+                    setThreadLoggingContext(msg);
+
                     if (msg instanceof APIIsReadyToGoMsg) {
                         APIIsReadyToGoReply reply = new APIIsReadyToGoReply();
                         reply.setManagementNodeId(Platform.getManagementServerId());
@@ -334,6 +336,8 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
         @AsyncThread
         @MessageSafe
         private void handle(Message msg) {
+            setThreadLoggingContext(msg);
+
             if (logger.isTraceEnabled() && wire.logMessage(msg))  {
                 logger.trace(String.format("[msg received]: %s", wire.dumpMessage(msg)));
             }
@@ -411,8 +415,6 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
 
             void send() throws IOException {
                 try {
-                    evalThreadContextToMessage(msg);
-
                     chan.basicPublish(exchange.toString(), serviceId,
                             true, msg.getAMQPProperties(), data);
                 } catch (ShutdownSignalException e) {
@@ -554,6 +556,8 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
                 logger.trace(String.format("[msg send]: %s", wire.dumpMessage(msg)));
             }
 
+            evalThreadContextToMessage(msg);
+
             Channel chan = channelPool.acquire();
             try {
                 new RecoverableSend(chan, msg, serviceId, outboundQueue.getBusExchange()).send();
@@ -575,6 +579,8 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
             */
 
             buildSchema(evt);
+
+            evalThreadContextToMessage(evt);
 
             if (logger.isTraceEnabled() && logMessage(evt)) {
                 logger.trace(String.format("[event publish]: %s", wire.dumpMessage(evt)));
@@ -798,6 +804,8 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
         @SyncThread(level = 10)
         @MessageSafe
         private void dispatch(Event evt, EventListenerWrapper l) {
+            setThreadLoggingContext(evt);
+
             l.callEventListener(evt);
         }
 
