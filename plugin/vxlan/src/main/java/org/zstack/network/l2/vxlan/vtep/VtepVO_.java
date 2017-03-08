@@ -12,8 +12,8 @@ public class VtepVO_ {
    public static volatile SingularAttribute<VtepVO, String> hostUuid;
    public static volatile SingularAttribute<VtepVO, String> vtepIp;
    public static volatile SingularAttribute<VtepVO, Integer> port;
-   public static volatile SingularAttribute<VtepVO, String> physicalInterface;
-   public static volatile SingularAttribute<VtepVO, String> vtepCidr;
    public static volatile SingularAttribute<VtepVO, String> clusterUuid;
+   public static volatile SingularAttribute<VtepVO, String> type;
+   public static volatile SingularAttribute<VtepVO, String> poolUuid;
 
 }

@@ -33,18 +33,13 @@ public class VtepVO {
     private String vtepIp;
 
     @Column
-    private String vtepCidr;
-
-    @Column
     private Integer port;
 
     @Column
-    private String physicalInterface;
+    private String poolUuid;
 
-    @OneToMany(fetch = FetchType.EAGER)
-    @JoinColumn(name = "VtepUuid", insertable = false, updatable = false)
-    @NoView
-    private Set<VtepL2NetworkRefVO> attachedNetworkRefs = new HashSet<>();
+    @Column
+    private String type;
 
     public String getUuid() {
         return uuid;
@@ -78,14 +73,6 @@ public class VtepVO {
         this.vtepIp = vtepIp;
     }
 
-    public String getVtepCidr() {
-        return vtepCidr;
-    }
-
-    public void setVtepCidr(String vtepCidr) {
-        this.vtepCidr = vtepCidr;
-    }
-
     public Integer getPort() {
         return port;
     }
@@ -94,19 +81,19 @@ public class VtepVO {
         this.port = port;
     }
 
-    public String getPhysicalInterface() {
-        return physicalInterface;
+    public String getPoolUuid() {
+        return poolUuid;
     }
 
-    public void setPhysicalInterface(String physicalInterface) {
-        this.physicalInterface = physicalInterface;
+    public void setPoolUuid(String poolUuid) {
+        this.poolUuid = poolUuid;
     }
 
-    public Set<VtepL2NetworkRefVO> getAttachedNetworkRefs() {
-        return attachedNetworkRefs;
+    public String getType() {
+        return type;
     }
 
-    public void setAttachedNetworkRefs(Set<VtepL2NetworkRefVO> attachedNetworkRefs) {
-        this.attachedNetworkRefs = attachedNetworkRefs;
+    public void setType(String type) {
+        this.type = type;
     }
 }

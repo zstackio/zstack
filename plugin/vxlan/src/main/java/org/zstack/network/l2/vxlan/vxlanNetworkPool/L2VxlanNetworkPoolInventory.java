@@ -1,69 +1,58 @@
 package org.zstack.network.l2.vxlan.vxlanNetworkPool;
 
+import com.mchange.v2.collection.MapEntry;
+import org.zstack.header.cluster.ClusterVO;
+import org.zstack.header.configuration.PythonClassInventory;
 import org.zstack.header.network.l2.L2NetworkInventory;
+import org.zstack.header.query.ExpandedQueries;
+import org.zstack.header.query.ExpandedQuery;
 import org.zstack.header.query.Queryable;
-import org.zstack.network.l2.vxlan.vtep.VtepL2NetworkRefInventory;
-import org.zstack.network.l2.vxlan.vtep.VtepL2NetworkRefVO;
+import org.zstack.header.search.Inventory;
+import org.zstack.header.search.Parent;
+import org.zstack.network.l2.vxlan.vtep.VtepInventory;
+import org.zstack.network.l2.vxlan.vtep.VtepVO;
+import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory;
+import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetwork;
+import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
 
 import javax.persistence.JoinColumn;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
-/**
- * @inventory
- * @category
- * @example {
- * "org.zstack.header.network.l2.APICreateL2VxlanNetworkPoolEvent": {
- * "inventory": {
- * "startVni": 10,
- * "endVni": 100,
- * "uuid": "14a01b0978684b2ea6e5a355c7c7fd73",
- * "name": "TestL2VxlanNetworkPool",
- * "description": "Test",
- * "zoneUuid": "c74f8ff8a4c5456b852713b82c034074",
- * "physicalInterface": "eth0.1100",
- * "vtepCidr": "172.20.0.0/24",
- * "type": "L2VxlanNetwork",
- * "createDate": "May 4, 2014 4:31:47 PM",
- * "lastOpDate": "May 4, 2014 4:31:47 PM",
- * "attachedClusterUuids": []
- * },
- * "success": true
- * }
- * }
- * @since 1.10.0
- */
+@PythonClassInventory
+@Inventory(mappingVOClass = VxlanNetworkPoolVO.class, collectionValueOfMethod = "valueOf1",
+        parent = {@Parent(inventoryClass = L2NetworkInventory.class, type = VxlanNetworkPoolConstant.VXLAN_NETWORK_POOL_TYPE)})
+@ExpandedQueries({
+        @ExpandedQuery(expandedField = "vniRange", inventoryClass = VniRangeInventory.class,
+                foreignKey = "uuid", expandedInventoryKey = "poolUuid"),
+        @ExpandedQuery(expandedField = "l2VxlanNetwork", inventoryClass = L2VxlanNetworkInventory.class,
+                foreignKey = "uuid", expandedInventoryKey = "poolUuid"),
+        @ExpandedQuery(expandedField = "vtep", inventoryClass = VtepInventory.class,
+                foreignKey = "uuid", expandedInventoryKey = "poolUuid")
+})
 public class L2VxlanNetworkPoolInventory extends L2NetworkInventory {
-    /**
-     * @desc vni start
-     * @choices [1, 16777215]
-     */
-    private Integer startVni;
+    @Queryable(mappingClass = VtepVO.class,
+            joinColumn = @JoinColumn(name = "poolUuid", referencedColumnName = "uuid"))
+    private Set<VtepVO> attachedVtepRefs;
 
-    /**
-     * @desc vni end
-     * @choices [1, 16777215]
-     */
-    private Integer endVni;
+    @Queryable(mappingClass = VxlanNetworkVO.class,
+            joinColumn = @JoinColumn(name = "poolUuid", referencedColumnName = "uuid"))
+    private Set<VxlanNetworkVO> attachedVxlanNetworkRefs;
 
-    private String vtepCidr;
+    @Queryable(mappingClass = VniRangeVO.class,
+            joinColumn = @JoinColumn(name = "poolUuid", referencedColumnName = "uuid"))
+    private Set<VniRangeVO> attachedVniRanges;
 
-    @Queryable(mappingClass = VtepL2NetworkRefInventory.class,
-            joinColumn = @JoinColumn(name = "l2NetworkUuid", referencedColumnName = "l2NetworkUuid"))
-    private List<String> attachedVtepUuids;
+    private Map<String, String> attachedCidrs;
 
     public L2VxlanNetworkPoolInventory() {
     }
 
     protected L2VxlanNetworkPoolInventory(VxlanNetworkPoolVO vo) {
         super(vo);
-        this.setStartVni(vo.getStartVni());
-        this.setEndVni(vo.getEndVni());
-        this.setVtepCidr(vo.getVtepCidr());
-        for (VtepL2NetworkRefVO ref : vo.getAttachedVtepRefs()) {
-            this.attachedVtepUuids.add(ref.getVtepUuid());
-        }
+        this.attachedCidrs = VxlanSystemTags.VXLAN_POOL_CLUSTER_VTEP_CIDR.getTokensByResourceUuid(vo.getUuid());
+        this.attachedVniRanges = vo.getAttachedVniRanges();
+        this.attachedVtepRefs = vo.getAttachedVtepRefs();
+        this.attachedVxlanNetworkRefs = vo.getAttachedVxlanNetworkRefs();
     }
 
     public static L2VxlanNetworkPoolInventory valueOf(VxlanNetworkPoolVO vo) {
@@ -78,28 +67,35 @@ public class L2VxlanNetworkPoolInventory extends L2NetworkInventory {
         return invs;
     }
 
-    public Integer getStartVni() {
-        return startVni;
+    public Set<VtepVO> getAttachedVtepRefs() {
+        return attachedVtepRefs;
     }
 
-    public void setStartVni(Integer startVni) {
-        this.startVni = startVni;
+    public void setAttachedVtepRefs(Set<VtepVO> attachedVtepRefs) {
+        this.attachedVtepRefs = attachedVtepRefs;
     }
 
-    public Integer getEndVni() {
-        return endVni;
+    public Set<VxlanNetworkVO> getAttachedVxlanNetworkRefs() {
+        return attachedVxlanNetworkRefs;
     }
 
-    public void setEndVni(Integer endVni) {
-        this.endVni = endVni;
+    public void setAttachedVxlanNetworkRefs(Set<VxlanNetworkVO> attachedVxlanNetworkRefs) {
+        this.attachedVxlanNetworkRefs = attachedVxlanNetworkRefs;
     }
 
-    public String getVtepCidr() {
-        return vtepCidr;
+    public Set<VniRangeVO> getAttachedVniRanges() {
+        return attachedVniRanges;
     }
 
-    public void setVtepCidr(String vtepCidr) {
-        this.vtepCidr = vtepCidr;
+    public void setAttachedVniRanges(Set<VniRangeVO> attachedVniRanges) {
+        this.attachedVniRanges = attachedVniRanges;
     }
 
+    public Map<String, String> getAttachedCidrs() {
+        return attachedCidrs;
+    }
+
+    public void setAttachedCidrs(Map<String, String> attachedCidrs) {
+        this.attachedCidrs = attachedCidrs;
+    }
 }

@@ -1,6 +1,11 @@
 package org.zstack.network.l2.vxlan.vtep;
 
+import org.zstack.header.configuration.PythonClassInventory;
+import org.zstack.header.query.ExpandedQueries;
+import org.zstack.header.query.ExpandedQuery;
 import org.zstack.header.query.Queryable;
+import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
+import org.zstack.network.l2.vxlan.vxlanNetworkPool.L2VxlanNetworkPoolInventory;
 
 import javax.persistence.JoinColumn;
 import java.util.ArrayList;
@@ -10,22 +15,25 @@ import java.util.List;
 /**
  * Created by weiwang on 06/03/2017.
  */
+@PythonClassInventory
+@ExpandedQueries({
+        @ExpandedQuery(expandedField = "vxlanPool", inventoryClass = L2VxlanNetworkPoolInventory.class,
+                foreignKey = "poolUuid", expandedInventoryKey = "uuid")
+})
 public class VtepInventory {
     private String uuid;
 
     private String hostUuid;
 
-    private String vtepCidr;
-
     private String vtepIp;
 
     private Integer port;
 
-    private String physicalInterface;
+    private String type;
 
-    @Queryable(mappingClass = VtepL2NetworkRefInventory.class,
-        joinColumn = @JoinColumn(name = "vtepUuid", referencedColumnName = "l2NetworkUuid"))
-    private List<String> attachedNetworkUuids;
+    @Queryable(mappingClass = VxlanNetworkVO.class,
+            joinColumn = @JoinColumn(name = "uuid", referencedColumnName = "poolUuid"))
+    private String poolUuid;
 
     public VtepInventory() {
     }
@@ -33,14 +41,10 @@ public class VtepInventory {
     protected VtepInventory(VtepVO vo) {
         this.setUuid(vo.getUuid());
         this.setHostUuid(vo.getHostUuid());
-        this.setVtepCidr(vo.getVtepCidr());
         this.setVtepIp(vo.getVtepIp());
         this.setPort(vo.getPort());
-        this.setPhysicalInterface(vo.getPhysicalInterface());
-        this.attachedNetworkUuids = new ArrayList<String>(vo.getAttachedNetworkRefs().size());
-        for (VtepL2NetworkRefVO ref : vo.getAttachedNetworkRefs()) {
-            this.attachedNetworkUuids.add(ref.getL2NetworkUuid());
-        }
+        this.setPoolUuid(vo.getPoolUuid());
+        this.setType(vo.getType());
     }
 
     public static VtepInventory valueOf(VtepVO vo) {
@@ -71,14 +75,6 @@ public class VtepInventory {
         this.hostUuid = hostUuid;
     }
 
-    public String getVtepCidr() {
-        return vtepCidr;
-    }
-
-    public void setVtepCidr(String vtepCidr) {
-        this.vtepCidr = vtepCidr;
-    }
-
     public String getVtepIp() {
         return vtepIp;
     }
@@ -95,19 +91,20 @@ public class VtepInventory {
         this.port = port;
     }
 
-    public String getPhysicalInterface() {
-        return physicalInterface;
+    public String getType() {
+        return type;
     }
 
-    public void setPhysicalInterface(String physicalInterface) {
-        this.physicalInterface = physicalInterface;
+    public void setType(String type) {
+        this.type = type;
     }
 
-    public List<String> getAttachedNetworkUuids() {
-        return attachedNetworkUuids;
+    public String getPoolUuid() {
+        return poolUuid;
     }
 
-    public void setAttachedNetworkUuids(List<String> attachedNetworkUuids) {
-        this.attachedNetworkUuids = attachedNetworkUuids;
+    public void setPoolUuid(String poolUuid) {
+        this.poolUuid = poolUuid;
     }
+
 }

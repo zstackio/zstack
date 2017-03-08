@@ -21,13 +21,10 @@ import javax.persistence.Table;
 @AutoDeleteTag
 public class VxlanNetworkVO extends L2NetworkVO {
     @Column
-    private int vni;
+    private Integer vni;
 
     @Column
     private String poolUuid;
-
-    @Column
-    private String vtepCidr;
 
     public VxlanNetworkVO() {
     }
@@ -44,20 +41,12 @@ public class VxlanNetworkVO extends L2NetworkVO {
         return poolUuid;
     }
 
-    public String getVtepCidr() {
-        return vtepCidr;
-    }
-
     public void setVni(int vni) {
         this.vni = vni;
     }
 
     public void setPoolUuid(String poolUuid) {
         this.poolUuid = poolUuid;
-    }
-
-    public void setVtepCidr(String vtepCidr) {
-        this.vtepCidr = vtepCidr;
     }
 
 }

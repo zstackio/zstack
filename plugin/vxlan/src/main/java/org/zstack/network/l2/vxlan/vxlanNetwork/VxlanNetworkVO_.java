@@ -12,5 +12,4 @@ import javax.persistence.metamodel.StaticMetamodel;
 public class VxlanNetworkVO_ extends L2NetworkVO_ {
     public static volatile SingularAttribute<VxlanNetworkVO, Integer> vni;
     public static volatile SingularAttribute<VxlanNetworkVO, String> poolUuid;
-    public static volatile SingularAttribute<VxlanNetworkVO, String> vtepCidr;
 }

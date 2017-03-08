@@ -1,36 +1,28 @@
 package org.zstack.network.l2.vxlan.vxlanNetwork;
 
 
+import org.zstack.header.cluster.ClusterInventory;
+import org.zstack.header.configuration.PythonClassInventory;
 import org.zstack.header.network.l2.L2NetworkInventory;
+import org.zstack.header.query.ExpandedQueries;
+import org.zstack.header.query.ExpandedQuery;
+import org.zstack.header.query.Queryable;
+import org.zstack.header.search.Inventory;
+import org.zstack.header.search.Parent;
+import org.zstack.network.l2.vxlan.vxlanNetworkPool.L2VxlanNetworkPoolInventory;
 
+import javax.persistence.JoinColumn;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-/**
- * @inventory
- * @category
- * @example {
- * "org.zstack.header.network.l2.APICreateL2VxlanNetworkEvent": {
- * "inventory": {
- * "vni": 10,
- * "uuid": "14a01b0978684b2ea6e5a355c7c7fd73",
- * "name": "TestL2VxlanNetwork",
- * "description": "Test",
- * "zoneUuid": "c74f8ff8a4c5456b852713b82c034074",
- * "physicalInterface": "eth0.1100",
- * "vtepCidr": "172.20.0.0/24",
- * "type": "L2VxlanNetwork",
- * "poolUuid": "",
- * "createDate": "May 4, 2014 4:31:47 PM",
- * "lastOpDate": "May 4, 2014 4:31:47 PM",
- * "attachedClusterUuids": []
- * },
- * "success": true
- * }
- * }
- * @since 0.1.0
- */
+@PythonClassInventory
+@Inventory(mappingVOClass = VxlanNetworkVO.class, collectionValueOfMethod = "valueOf1",
+        parent = {@Parent(inventoryClass = L2NetworkInventory.class, type = VxlanNetworkConstant.VXLAN_NETWORK_TYPE)})
+@ExpandedQueries({
+        @ExpandedQuery(expandedField = "vxlanPool", inventoryClass = L2VxlanNetworkPoolInventory.class,
+                foreignKey = "poolUuid", expandedInventoryKey = "uuid")
+})
 public class L2VxlanNetworkInventory extends L2NetworkInventory {
     /**
      * @desc vlan id
@@ -38,8 +30,8 @@ public class L2VxlanNetworkInventory extends L2NetworkInventory {
      */
     private Integer vni;
 
-    private String vtepCidr;
-
+    @Queryable(mappingClass = VxlanNetworkVO.class,
+            joinColumn = @JoinColumn(name = "uuid", referencedColumnName = "poolUuid"))
     private String poolUuid;
 
     public L2VxlanNetworkInventory() {
@@ -48,6 +40,7 @@ public class L2VxlanNetworkInventory extends L2NetworkInventory {
     protected L2VxlanNetworkInventory (VxlanNetworkVO vo) {
         super(vo);
         this.setVni(vo.getVni());
+        this.setPoolUuid(vo.getPoolUuid());
     }
 
     public static L2VxlanNetworkInventory valueOf(VxlanNetworkVO vo) {
@@ -70,10 +63,6 @@ public class L2VxlanNetworkInventory extends L2NetworkInventory {
         this.vni = vni;
     }
 
-    public String getVtepCidr() {
-        return vtepCidr;
-    }
-
     public String getPoolUuid() {
         return poolUuid;
     }
@@ -82,7 +71,4 @@ public class L2VxlanNetworkInventory extends L2NetworkInventory {
         this.poolUuid = poolUuid;
     }
 
-    public void setVtepCidr(String vtepCidr) {
-        this.vtepCidr = vtepCidr;
-    }
 }
