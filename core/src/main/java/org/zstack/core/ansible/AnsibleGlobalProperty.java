@@ -11,7 +11,7 @@ public class AnsibleGlobalProperty {
     public static String EXECUTABLE;
     @GlobalProperty(name = "Ansible.zstacklibPackageName", defaultValue = "zstacklib-1.9.tar.gz")
     public static String ZSTACKLIB_PACKAGE_NAME;
-    @GlobalProperty(name = "Ansible.zstackRoot", defaultValue = "/var/lib/zstack/")
+    @GlobalProperty(name = "Ansible.zstackRoot", defaultValue = "/var/lib/zstack")
     public static String ZSTACK_ROOT;
     @GlobalProperty(name = "Ansible.var.zstack_repo", defaultValue = "false")
     public static String ZSTACK_REPO;
