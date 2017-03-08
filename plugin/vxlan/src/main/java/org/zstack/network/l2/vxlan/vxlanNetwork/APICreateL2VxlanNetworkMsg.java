@@ -59,8 +59,11 @@ public class APICreateL2VxlanNetworkMsg extends APICreateL2NetworkMsg {
     @APIParam(required = false, maxLength = 32)
     private String vtepCidr;
 
-    @APIParam(required = false, resourceType = VxlanNetworkPoolVO.class)
+    @APIParam(required = true, resourceType = VxlanNetworkPoolVO.class)
     private String poolUuid;
+
+    @APIParam(required = false, maxLength = 1024)
+    private String physicalInterface;
 
     @Override
     public String getType() {
@@ -91,6 +94,15 @@ public class APICreateL2VxlanNetworkMsg extends APICreateL2NetworkMsg {
         this.poolUuid = poolUuid;
     }
 
+    @Override
+    public String getPhysicalInterface() {
+        return physicalInterface;
+    }
+
+    @Override
+    public void setPhysicalInterface(String physicalInterface) {
+        this.physicalInterface = physicalInterface;
+    }
     public static APICreateL2VxlanNetworkMsg __example__() {
         APICreateL2VxlanNetworkMsg msg = new APICreateL2VxlanNetworkMsg();
 
@@ -98,9 +110,7 @@ public class APICreateL2VxlanNetworkMsg extends APICreateL2NetworkMsg {
         msg.setVni(10);
         msg.setDescription("Test");
         msg.setZoneUuid(uuid());
-        msg.setPhysicalInterface("eth0");
-        msg.setVtepCidr("172.20.0.0/24");
-        msg.setPoolUuid("");
+        msg.setPoolUuid(uuid());
 
         return msg;
     }

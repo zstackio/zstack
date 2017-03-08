@@ -1,7 +1,11 @@
 package org.zstack.network.l2.vxlan.vxlanNetworkPool;
 
 import org.zstack.header.network.l2.L2NetworkInventory;
+import org.zstack.header.query.Queryable;
+import org.zstack.network.l2.vxlan.vtep.VtepL2NetworkRefInventory;
+import org.zstack.network.l2.vxlan.vtep.VtepL2NetworkRefVO;
 
+import javax.persistence.JoinColumn;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -45,6 +49,10 @@ public class L2VxlanNetworkPoolInventory extends L2NetworkInventory {
 
     private String vtepCidr;
 
+    @Queryable(mappingClass = VtepL2NetworkRefInventory.class,
+            joinColumn = @JoinColumn(name = "l2NetworkUuid", referencedColumnName = "l2NetworkUuid"))
+    private List<String> attachedVtepUuids;
+
     public L2VxlanNetworkPoolInventory() {
     }
 
@@ -53,6 +61,9 @@ public class L2VxlanNetworkPoolInventory extends L2NetworkInventory {
         this.setStartVni(vo.getStartVni());
         this.setEndVni(vo.getEndVni());
         this.setVtepCidr(vo.getVtepCidr());
+        for (VtepL2NetworkRefVO ref : vo.getAttachedVtepRefs()) {
+            this.attachedVtepUuids.add(ref.getVtepUuid());
+        }
     }
 
     public static L2VxlanNetworkPoolInventory valueOf(VxlanNetworkPoolVO vo) {

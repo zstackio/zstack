@@ -8,6 +8,7 @@ import javax.persistence.metamodel.StaticMetamodel;
  */
 @StaticMetamodel(VtepVO.class)
 public class VtepVO_ {
+   public static volatile SingularAttribute<VtepVO, String> uuid;
    public static volatile SingularAttribute<VtepVO, String> hostUuid;
    public static volatile SingularAttribute<VtepVO, String> vtepIp;
    public static volatile SingularAttribute<VtepVO, Integer> port;
