@@ -1,10 +1,13 @@
 package org.zstack.test.integration.storage.primary.smp
 
 import org.zstack.header.storage.primary.PrimaryStorageCapacityVO
+import org.zstack.header.storage.primary.PrimaryStorageVO
 import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.test.integration.storage.SMPEnv
+import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.HostSpec
+import org.zstack.testlib.PrimaryStorageSpec
 import org.zstack.testlib.SubCase
 
 /**
@@ -15,13 +18,7 @@ class SMPCapacityCase extends SubCase{
 
     @Override
     void setup() {
-        spring {
-            sftpBackupStorage()
-            smp()
-            virtualRouter()
-            vyos()
-            kvm()
-        }
+        useSpring(StorageTest.springSpec)
     }
 
     @Override
@@ -38,19 +35,25 @@ class SMPCapacityCase extends SubCase{
 
     private void testReleaseSMPCapacityWithNoHostInCase() {
         HostSpec hostSpec =  env.specByName("kvm")
-        PrimaryStorageInventory inv = env.specByName("smp")
+        PrimaryStorageSpec primaryStorageSpec = env.specByName("smp")
 
         deleteHost {
             uuid = hostSpec.inventory.uuid
         }
 
-        PrimaryStorageCapacityVO vo = dbFindByUuid(inv.uuid, PrimaryStorageCapacityVO.class)
-
+        PrimaryStorageCapacityVO vo = dbFindByUuid(primaryStorageSpec.inventory.uuid, PrimaryStorageCapacityVO.class)
         assert vo.getAvailablePhysicalCapacity() == 0L
         assert vo.getAvailableCapacity() == 0L
         assert vo.getTotalPhysicalCapacity() == 0L
         assert vo.getTotalCapacity() == 0L
         assert vo.getSystemUsedCapacity() == 0L
+
+        PrimaryStorageVO primaryStorageVO = dbFindByUuid(primaryStorageSpec.inventory.uuid, PrimaryStorageVO.class)
+        assert primaryStorageVO.getCapacity().getTotalCapacity() == 0L
+        assert primaryStorageVO.getCapacity().getSystemUsedCapacity() == 0L
+        assert primaryStorageVO.getCapacity().getAvailableCapacity() == 0L
+        assert primaryStorageVO.getCapacity().getTotalPhysicalCapacity() == 0L
+        assert primaryStorageVO.getCapacity().getAvailablePhysicalCapacity() == 0L
     }
 
     @Override

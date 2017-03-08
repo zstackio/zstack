@@ -226,26 +226,32 @@ public class SMPPrimaryStorageFactory implements PrimaryStorageFactory, CreateTe
 
     private void checkClusterHostsStatus(String clusterUuid) {
         final List<String> psUuids = getSMPPrimaryStorageInCluster(clusterUuid);
-        if (psUuids == null || psUuids.isEmpty() || clusterUuid == null) {
+        if(psUuids == null || psUuids.isEmpty() || clusterUuid == null) {
             return;
         }
 
-        PrimaryStorageCapacityUpdater primaryStorageCapacityUpdater;
-        for (String psUuid : psUuids) {
-             primaryStorageCapacityUpdater = new PrimaryStorageCapacityUpdater(psUuid);
+        final List<String> hostUuids = getConnectedHostInCluster(clusterUuid);
+        if(hostUuids == null || hostUuids.isEmpty()) {
+            for(String psUuid : psUuids) {
+                PrimaryStorageVO primaryStorageVO = dbf.findByUuid(psUuid, PrimaryStorageVO.class);
+                PrimaryStorageCapacityVO primaryStorageCapacityVO = primaryStorageVO.getCapacity();
+                primaryStorageCapacityVO.setAvailableCapacity(0L);
+                primaryStorageCapacityVO.setSystemUsedCapacity(0L);
+                primaryStorageCapacityVO.setTotalPhysicalCapacity(0L);
+                primaryStorageCapacityVO.setAvailablePhysicalCapacity(0L);
+                primaryStorageCapacityVO.setTotalCapacity(0L);
 
-             primaryStorageCapacityUpdater.run(new PrimaryStorageCapacityUpdaterRunnable() {
-                 @Override
-                 public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
-                    cap.setAvailablePhysicalCapacity(0L);
-                    cap.setSystemUsedCapacity(0L);
-                    cap.setTotalCapacity(0L);
-                    cap.setTotalPhysicalCapacity(0L);
-                    cap.setAvailableCapacity(0L);
-                    return cap;
-                 }
-             });
+                dbf.updateAndRefresh(primaryStorageCapacityVO);
+                dbf.updateAndRefresh(primaryStorageVO);
+            }
         }
+    }
+
+    private List<String> getConnectedHostInCluster(String clusterUuid) {
+        return SQL.New("select host.uuid" +
+                " from HostVO host where host.clusterUuid = :clusterUuid")
+                .param("clusterUuid", clusterUuid)
+                .list();
     }
 
     private List<String> getSMPPrimaryStorageInCluster(String clusterUuid) {
