@@ -1,10 +1,10 @@
 package org.zstack.storage.primary.smp;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.workflow.Flow;
@@ -24,7 +24,6 @@ import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.TypedQuery;
 import java.util.List;
 import java.util.Map;
 
@@ -226,26 +225,35 @@ public class SMPPrimaryStorageFactory implements PrimaryStorageFactory, CreateTe
 
     private void checkClusterHostsStatus(String clusterUuid) {
         final List<String> psUuids = getSMPPrimaryStorageInCluster(clusterUuid);
-        if (psUuids == null || psUuids.isEmpty() || clusterUuid == null) {
+        if(psUuids == null || psUuids.isEmpty() || clusterUuid == null) {
+            return;
+        }
+
+        final List<String> hostUuids = getConnectedHostInCluster(clusterUuid);
+        if (!hostUuids.isEmpty()) {
             return;
         }
 
         PrimaryStorageCapacityUpdater primaryStorageCapacityUpdater;
         for (String psUuid : psUuids) {
-             primaryStorageCapacityUpdater = new PrimaryStorageCapacityUpdater(psUuid);
-
-             primaryStorageCapacityUpdater.run(new PrimaryStorageCapacityUpdaterRunnable() {
-                 @Override
-                 public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
+            primaryStorageCapacityUpdater = new PrimaryStorageCapacityUpdater(psUuid);
+            primaryStorageCapacityUpdater.run(new PrimaryStorageCapacityUpdaterRunnable() {
+                @Override
+                public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
                     cap.setAvailablePhysicalCapacity(0L);
                     cap.setSystemUsedCapacity(0L);
                     cap.setTotalCapacity(0L);
                     cap.setTotalPhysicalCapacity(0L);
                     cap.setAvailableCapacity(0L);
                     return cap;
-                 }
-             });
+                }
+            });
         }
+    }
+
+    private List<String> getConnectedHostInCluster(String clusterUuid) {
+        return Q.New(HostVO.class)
+                .select(HostVO_.uuid).eq(HostVO_.clusterUuid, clusterUuid).listValues();
     }
 
     private List<String> getSMPPrimaryStorageInCluster(String clusterUuid) {
