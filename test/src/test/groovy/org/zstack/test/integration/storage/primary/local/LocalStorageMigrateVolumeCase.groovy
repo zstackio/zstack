@@ -2,6 +2,7 @@ package org.zstack.test.integration.storage.primary.local
 
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.header.storage.primary.PrimaryStorageState
+import org.zstack.header.storage.primary.PrimaryStorageStateEvent
 import org.zstack.header.storage.primary.PrimaryStorageVO
 import org.zstack.sdk.LocalStorageMigrateVolumeAction
 import org.zstack.test.integration.storage.Env
@@ -50,7 +51,7 @@ class LocalStorageMigrateVolumeCase extends SubCase{
 
         changePrimaryStorageState {
             uuid = primaryStorageSpec.inventory.uuid
-            stateEvent = PrimaryStorageState.Disabled.toString()
+            stateEvent = PrimaryStorageStateEvent.disable.toString()
         }
 
         assert dbf.findByUuid(primaryStorageSpec.inventory.uuid, PrimaryStorageVO.class).state == PrimaryStorageState.Disabled
@@ -76,7 +77,7 @@ class LocalStorageMigrateVolumeCase extends SubCase{
 
         changePrimaryStorageState {
             uuid = primaryStorageSpec.inventory.uuid
-            stateEvent = PrimaryStorageState.Enabled.toString()
+            stateEvent = PrimaryStorageStateEvent.enable.toString()
         }
 
         assert dbf.findByUuid(primaryStorageSpec.inventory.uuid, PrimaryStorageVO.class).state == PrimaryStorageState.Enabled
