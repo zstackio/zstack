@@ -27,6 +27,7 @@ public class ProgressCommands {
         private String resourceUuid;
         private String progress;
         private String processType;
+        private String progressStage;
 
         public String getServerUuid() {
             return serverUuid;
@@ -67,6 +68,15 @@ public class ProgressCommands {
         public void setProcessType(String processType) {
             this.processType = processType;
         }
+
+        public String getProgressStage() {
+            return progressStage;
+        }
+
+        public void setProgressStage(String progressStage) {
+            this.progressStage = progressStage;
+        }
+
     }
 
     public static class ProgressReportResponse extends AgentResponse {

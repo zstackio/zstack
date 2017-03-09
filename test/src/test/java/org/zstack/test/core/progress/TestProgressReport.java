@@ -79,44 +79,47 @@ public class TestProgressReport {
 
         ImageInventory image = deployer.images.get("TestImage");
 	    HostInventory host = deployer.hosts.get("host1");
-        ProgressReportCmd cmd = new ProgressReportCmd();
-        cmd.setResourceUuid(image.getUuid());
-        cmd.setServerUuid(host.getUuid());
-        cmd.setProgress("0%");
-        cmd.setProcessType("AddImage");
-        cmd.setServerType(BackupStorage.class.getTypeName());
-        restf.syncJsonPost(url, JSONObjectUtil.toJsonString(cmd), header, ProgressReportResponse.class);
-        TimeUnit.MILLISECONDS.sleep(1);
+	    for (int i=0; i<100; i++) {
+            ProgressReportCmd cmd = new ProgressReportCmd();
+            cmd.setResourceUuid(image.getUuid());
+            cmd.setServerUuid(host.getUuid());
+            cmd.setProgress("0%");
+            cmd.setProcessType("AddImage");
+            cmd.setServerType(BackupStorage.class.getTypeName());
+            restf.syncJsonPost(url, JSONObjectUtil.toJsonString(cmd), header, ProgressReportResponse.class);
+            TimeUnit.MILLISECONDS.sleep(1);
 
-        SimpleQuery<ProgressVO> q = dbf.createQuery(ProgressVO.class);
-        q.add(ProgressVO_.processType, SimpleQuery.Op.EQ, cmd.getProcessType());
-        q.add(ProgressVO_.resourceUuid, SimpleQuery.Op.EQ, cmd.getResourceUuid());
-        ProgressVO vo = q.find();
-        Assert.assertEquals("0%", vo.getProgress());
+            SimpleQuery<ProgressVO> q = dbf.createQuery(ProgressVO.class);
+            q.add(ProgressVO_.processType, SimpleQuery.Op.EQ, cmd.getProcessType());
+            q.add(ProgressVO_.resourceUuid, SimpleQuery.Op.EQ, cmd.getResourceUuid());
+            ProgressVO vo = q.find();
+            Assert.assertEquals("0%", vo.getProgress());
 
-        TimeUnit.MILLISECONDS.sleep(1);
-        header = map(e(RESTConstant.COMMAND_PATH, ProgressConstants.PROGRESS_REPORT_PATH));
-        cmd.setProgress("50%");
-        restf.syncJsonPost(url, JSONObjectUtil.toJsonString(cmd), header, ProgressReportResponse.class);
-        q = dbf.createQuery(ProgressVO.class);
-        q.add(ProgressVO_.processType, SimpleQuery.Op.EQ, cmd.getProcessType());
-        q.add(ProgressVO_.resourceUuid, SimpleQuery.Op.EQ, cmd.getResourceUuid());
-        vo = q.find();
-        Assert.assertEquals("50%", vo.getProgress());
+            TimeUnit.MILLISECONDS.sleep(1);
+            header = map(e(RESTConstant.COMMAND_PATH, ProgressConstants.PROGRESS_REPORT_PATH));
+            cmd.setProgress("50%");
+            restf.syncJsonPost(url, JSONObjectUtil.toJsonString(cmd), header, ProgressReportResponse.class);
+            q = dbf.createQuery(ProgressVO.class);
+            q.add(ProgressVO_.processType, SimpleQuery.Op.EQ, cmd.getProcessType());
+            q.add(ProgressVO_.resourceUuid, SimpleQuery.Op.EQ, cmd.getResourceUuid());
+            vo = q.find();
+            Assert.assertEquals("50%", vo.getProgress());
 
-        APIGetTaskProgressReply reply = api.getProgressReport(cmd.getResourceUuid());
-        Assert.assertEquals("50%", reply.getProgress());
+            APIGetTaskProgressReply reply = api.getProgressReport(cmd.getResourceUuid());
+            Assert.assertEquals("50%", reply.getProgress());
 
-        TimeUnit.MILLISECONDS.sleep(1);
-        header = map(e(RESTConstant.COMMAND_PATH, ProgressConstants.PROGRESS_FINISH_PATH));
-        restf.syncJsonPost(url, JSONObjectUtil.toJsonString(cmd), header, ProgressReportResponse.class);
-        q = dbf.createQuery(ProgressVO.class);
-        q.add(ProgressVO_.processType, SimpleQuery.Op.EQ, cmd.getProcessType());
-        q.add(ProgressVO_.resourceUuid, SimpleQuery.Op.EQ, cmd.getResourceUuid());
-        Assert.assertFalse(q.isExists());
+            TimeUnit.MILLISECONDS.sleep(1);
+            header = map(e(RESTConstant.COMMAND_PATH, ProgressConstants.PROGRESS_FINISH_PATH));
+            restf.syncJsonPost(url, JSONObjectUtil.toJsonString(cmd), header, ProgressReportResponse.class);
+            q = dbf.createQuery(ProgressVO.class);
+            q.add(ProgressVO_.processType, SimpleQuery.Op.EQ, cmd.getProcessType());
+            q.add(ProgressVO_.resourceUuid, SimpleQuery.Op.EQ, cmd.getResourceUuid());
+            Assert.assertFalse(q.isExists());
 
-        // if no such task running, still return true
-        reply = api.getProgressReport(cmd.getResourceUuid());
-        Assert.assertTrue(reply.isSuccess());
+            // if no such task running, still return true
+            reply = api.getProgressReport(cmd.getResourceUuid());
+            Assert.assertTrue(reply.isSuccess());
+        }
+
     }
 }
