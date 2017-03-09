@@ -90,7 +90,7 @@ CREATE TABLE `zstack`.`VniRangeVO` (
   `uuid` varchar(32) NOT NULL UNIQUE COMMENT 'uuid',
   `name` varchar(255) DEFAULT NULL COMMENT 'name',
   `description` varchar(2048) DEFAULT NULL COMMENT 'description',
-  `poolUuid` varchar(32) NOT NULL COMMENT 'l3 network uuid',
+  `l2NetworkUuid` varchar(32) NOT NULL COMMENT 'l3 network uuid',
   `startVni` INT NOT NULL COMMENT 'start vni',
   `endVni` INT NOT NULL COMMENT 'end vni'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -104,4 +104,4 @@ ALTER TABLE VtepVO ADD CONSTRAINT fkVtepVOClusterEO FOREIGN KEY (clusterUuid) RE
 ALTER TABLE VtepL2NetworkRefVO ADD CONSTRAINT fkVtepNetworkRefVOL2NetworkEO FOREIGN KEY (poolUuid) REFERENCES L2NetworkEO (uuid) ON DELETE CASCADE;
 ALTER TABLE VtepL2NetworkRefVO ADD CONSTRAINT fkVtepNetworkRefVOVtepVO FOREIGN KEY (vtepUuid) REFERENCES VtepVO (uuid) ON DELETE CASCADE;
 
-ALTER TABLE VniRangeVO ADD CONSTRAINT fkVniRangeVOL2NetworkEO  FOREIGN KEY (poolUuid) REFERENCES L2NetworkEO (uuid) ON DELETE CASCADE;
+ALTER TABLE VniRangeVO ADD CONSTRAINT fkVniRangeVOL2NetworkEO  FOREIGN KEY (l2NetworkUuid) REFERENCES L2NetworkEO (uuid) ON DELETE CASCADE;

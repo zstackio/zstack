@@ -13,20 +13,12 @@ import org.zstack.header.rest.RestRequest;
 )
 public class APICreateL2VxlanNetworkPoolMsg extends APICreateL2NetworkMsg {
 
-    @APIParam(required = false, maxLength = 32)
-    private String vtepCidr;
+    @APIParam(required = false, maxLength = 1024)
+    private String physicalInterface;
 
     @Override
     public String getType() {
         return VxlanNetworkPoolConstant.VXLAN_NETWORK_POOL_TYPE;
-    }
-
-    public String getVtepCidr() {
-        return vtepCidr;
-    }
-
-    public void setVtepCidr(String vtepCidr) {
-        this.vtepCidr = vtepCidr;
     }
 
     public static APICreateL2VxlanNetworkPoolMsg __example__() {
@@ -35,7 +27,6 @@ public class APICreateL2VxlanNetworkPoolMsg extends APICreateL2NetworkMsg {
         msg.setName("Test-NetPool");
         msg.setDescription("Test");
         msg.setZoneUuid(uuid());
-        msg.setVtepCidr("172.20.0.0/24");
 
         return msg;
     }

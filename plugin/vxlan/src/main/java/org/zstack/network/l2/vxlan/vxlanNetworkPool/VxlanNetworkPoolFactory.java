@@ -30,9 +30,7 @@ public class VxlanNetworkPoolFactory implements L2NetworkFactory {
 
     @Override
     public L2NetworkInventory createL2Network(L2NetworkVO ovo, APICreateL2NetworkMsg msg) {
-        APICreateL2VxlanNetworkPoolMsg amsg = (APICreateL2VxlanNetworkPoolMsg) msg;
         VxlanNetworkPoolVO vo = new VxlanNetworkPoolVO(ovo);
-        // todo ...
         vo = dbf.persistAndRefresh(vo);
         L2VxlanNetworkPoolInventory inv = L2VxlanNetworkPoolInventory.valueOf(vo);
         String info = String.format("successfully create L2VxlanNetworkPool, %s", JSONObjectUtil.toJsonString(inv));

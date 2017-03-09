@@ -4,9 +4,6 @@ import org.zstack.header.configuration.PythonClassInventory;
 import org.zstack.header.query.ExpandedQueries;
 import org.zstack.header.query.ExpandedQuery;
 import org.zstack.header.query.Queryable;
-import org.zstack.header.search.Inventory;
-import org.zstack.header.search.Parent;
-import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
 
 import javax.persistence.JoinColumn;
@@ -34,8 +31,8 @@ public class VniRangeInventory {
     private Integer endVni;
 
     @Queryable(mappingClass = VxlanNetworkVO.class,
-            joinColumn = @JoinColumn(name = "uuid", referencedColumnName = "poolUuid"))
-    private String poolUuid;
+            joinColumn = @JoinColumn(name = "uuid", referencedColumnName = "l2NetworkUuid"))
+    private String l2NetworkUuid;
 
     public VniRangeInventory() {
     }
@@ -46,7 +43,7 @@ public class VniRangeInventory {
         this.description = vo.getDescription();
         this.startVni = vo.getStartVni();
         this.endVni = vo.getEndVni();
-        this.poolUuid = vo.getPoolUuid();
+        this.l2NetworkUuid = vo.getL2NetworkUuid();
     }
 
     public static VniRangeInventory valueOf(VniRangeVO vo) {
@@ -59,14 +56,6 @@ public class VniRangeInventory {
             invs.add(new VniRangeInventory(vo));
         }
         return invs;
-    }
-
-    public String getPoolUuid() {
-        return poolUuid;
-    }
-
-    public void setPoolUuid(String poolUuid) {
-        this.poolUuid = poolUuid;
     }
 
     public String getUuid() {
@@ -107,5 +96,13 @@ public class VniRangeInventory {
 
     public void setEndVni(Integer endVni) {
         this.endVni = endVni;
+    }
+
+    public String getL2NetworkUuid() {
+        return l2NetworkUuid;
+    }
+
+    public void setL2NetworkUuid(String l2NetworkUuid) {
+        this.l2NetworkUuid = l2NetworkUuid;
     }
 }

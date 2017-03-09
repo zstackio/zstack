@@ -30,11 +30,9 @@ public class APICreateL2VxlanNetworkPoolEvent extends APIEvent {
         APICreateL2VxlanNetworkPoolEvent event = new APICreateL2VxlanNetworkPoolEvent();
         L2VxlanNetworkPoolInventory net = new L2VxlanNetworkPoolInventory();
 
-        net.setName("Test-Net");
+        net.setName("Test-NetPool");
         net.setDescription("Test");
         net.setZoneUuid(uuid());
-        net.setPhysicalInterface("eth0.1100");
-        net.setVtepCidr("172.20.0.0/24");
         net.setType("L2VxlanNetwork");
 
         event.setInventory(net);

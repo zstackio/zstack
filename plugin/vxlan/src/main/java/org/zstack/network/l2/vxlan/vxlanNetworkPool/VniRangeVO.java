@@ -4,7 +4,6 @@ import org.zstack.header.tag.AutoDeleteTag;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.Table;
 
 /**
@@ -30,7 +29,7 @@ public class VniRangeVO {
     private Integer endVni;
 
     @Column
-    private String poolUuid;
+    private String l2NetworkUuid;
 
     public String getUuid() {
         return uuid;
@@ -56,12 +55,12 @@ public class VniRangeVO {
         this.description = description;
     }
 
-    public String getPoolUuid() {
-        return poolUuid;
+    public String getL2NetworkUuid() {
+        return l2NetworkUuid;
     }
 
-    public void setPoolUuid(String poolUuid) {
-        this.poolUuid = poolUuid;
+    public void setL2NetworkUuid(String l2NetworkUuid) {
+        this.l2NetworkUuid = l2NetworkUuid;
     }
 
     public Integer getStartVni() {
