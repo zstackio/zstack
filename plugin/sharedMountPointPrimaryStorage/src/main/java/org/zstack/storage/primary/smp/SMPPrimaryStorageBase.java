@@ -27,6 +27,8 @@ import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.volume.VolumeVO_;
 import org.zstack.storage.primary.PrimaryStorageBase;
 
+import static org.zstack.core.Platform.operr;
+
 import javax.persistence.TypedQuery;
 import java.util.Collection;
 import java.util.Collections;
@@ -82,10 +84,8 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
         if (msg.getDestHost() == null) {
             String hostUuid = getAvailableHostUuidForOperation();
             if (hostUuid == null) {
-                throw new OperationFailureException(errf.stringToOperationError(
-                        String.format("the shared mount point primary storage[uuid:%s, name:%s] cannot find any " +
-                                "available host in attached clusters for instantiating the volume", self.getUuid(), self.getName())
-                ));
+                throw new OperationFailureException(operr("the shared mount point primary storage[uuid:%s, name:%s] cannot find any " +
+                                "available host in attached clusters for instantiating the volume", self.getUuid(), self.getName()));
             }
 
             msg.setDestHost(HostInventory.valueOf(dbf.findByUuid(hostUuid, HostVO.class)));
@@ -323,7 +323,7 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
 
     @Override
     protected void syncPhysicalCapacity(ReturnValueCompletion<PhysicalCapacityUsage> completion) {
-        completion.fail(errf.stringToOperationError("not supported operation"));
+        completion.fail(operr("not supported operation"));
     }
 
     @Override

@@ -13,6 +13,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.storage.primary.PrimaryStorageVO_;
+import static org.zstack.core.Platform.argerr;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class NfsApiParamChecker {
@@ -27,9 +28,7 @@ public class NfsApiParamChecker {
         q.add(PrimaryStorageVO_.url, Op.EQ, url);
         q.add(PrimaryStorageVO_.zoneUuid, Op.EQ, zoneUuid);
         if (q.isExists()) {
-            return errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                    String.format("there has been a nfs primary storage having url as %s in zone[uuid:%s]", url, zoneUuid)
-            );
+            return argerr("there has been a nfs primary storage having url as %s in zone[uuid:%s]", url, zoneUuid);
         } else {
             return null;
         }

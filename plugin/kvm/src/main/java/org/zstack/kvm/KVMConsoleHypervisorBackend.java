@@ -20,6 +20,8 @@ import org.zstack.kvm.KVMAgentCommands.GetVncPortResponse;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.operr;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -68,7 +70,7 @@ public class KVMConsoleHypervisorBackend implements ConsoleHypervisorBackend {
                 KVMHostAsyncHttpCallReply kreply = reply.castReply();
                 GetVncPortResponse rsp = kreply.toResponse(GetVncPortResponse.class);
                 if (!rsp.isSuccess()) {
-                    complete.fail(errf.stringToOperationError(rsp.getError()));
+                    complete.fail(operr(rsp.getError()));
                     return;
                 }
 

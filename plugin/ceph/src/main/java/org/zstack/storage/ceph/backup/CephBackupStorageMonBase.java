@@ -29,6 +29,8 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
+import static org.zstack.core.Platform.operr;
+
 import java.util.Map;
 
 /**
@@ -82,10 +84,10 @@ public class CephBackupStorageMonBase extends CephMonBase {
         String uuid = self.getUuid();
         self = dbf.reload(self);
         if (self == null) {
-            throw new OperationFailureException(errf.stringToOperationError(
-                    String.format("cannot update status of the ceph backup storage mon[uuid:%s], it has been deleted." +
+            throw new OperationFailureException(
+                    operr("cannot update status of the ceph backup storage mon[uuid:%s], it has been deleted." +
                             "This error can be ignored", uuid)
-            ));
+            );
         }
 
         if (self.getStatus() == status) {

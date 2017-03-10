@@ -5,6 +5,7 @@ import org.zstack.utils.gson.JSONObjectUtil;
 
 import java.io.Serializable;
 import java.util.LinkedHashMap;
+import java.util.List;
 
 public class ErrorCode implements Serializable, Cloneable {
     private String code;
@@ -112,6 +113,16 @@ public class ErrorCode implements Serializable, Cloneable {
 
     public void setCause(ErrorCode cause) {
         this.cause = cause;
+    }
+
+    public ErrorCode causedBy(ErrorCode cause) {
+        setCause(cause);
+        return this;
+    }
+
+    public ErrorCode causedBy(List<ErrorCode> cause) {
+        ((ErrorCodeList) this).setCauses(cause);
+        return this;
     }
 
     public String getElaboration() {

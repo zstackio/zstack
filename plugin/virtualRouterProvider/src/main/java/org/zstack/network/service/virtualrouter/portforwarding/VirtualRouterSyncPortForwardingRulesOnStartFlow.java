@@ -12,6 +12,7 @@ import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceState;
@@ -25,6 +26,8 @@ import org.zstack.network.service.virtualrouter.VirtualRouterCommands.SyncPortFo
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant.Param;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+
+import static org.zstack.core.Platform.operr;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
@@ -181,10 +184,9 @@ public class VirtualRouterSyncPortForwardingRulesOnStartFlow implements Flow {
                     logger.debug(info);
                     chain.next();
                 } else {
-                    String err = String.format("failed to sync port forwarding rules served by virtual router[name: %s, uuid: %s], because %s",
+                    ErrorCode err = operr("failed to sync port forwarding rules served by virtual router[name: %s, uuid: %s], because %s",
                             vr.getName(), vr.getUuid(), ret.getError());
-                    logger.warn(err);
-                    chain.fail(errf.stringToOperationError(err));
+                    chain.fail(err);
                 }
             }
         });

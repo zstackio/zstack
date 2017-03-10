@@ -28,6 +28,8 @@ import org.zstack.header.network.l3.ReturnIpMsg;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.operr;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -174,10 +176,8 @@ public class VipBase {
         if (s.isServiceProvider()) {
             if (self.getServiceProvider() != null && s.getServiceProvider() != null
                     && !s.getServiceProvider().equals(self.getServiceProvider())) {
-                throw new OperationFailureException(errf.stringToOperationError(
-                        String.format("service provider of the vip[uuid:%s, name:%s, ip: %s] has been set to %s",
-                                self.getUuid(), self.getName(), self.getIp(), self.getServiceProvider())
-                ));
+                throw new OperationFailureException(operr("service provider of the vip[uuid:%s, name:%s, ip: %s] has been set to %s",
+                                self.getUuid(), self.getName(), self.getIp(), self.getServiceProvider()));
             }
 
             self.setServiceProvider(s.getServiceProvider());
@@ -186,10 +186,8 @@ public class VipBase {
         if (s.isUserFor()) {
             if (self.getUseFor() != null && s.getUseFor() != null
                     && !self.getUseFor().equals(s.getUseFor())) {
-                throw new OperationFailureException(errf.stringToOperationError(
-                        String.format("the field 'useFor' of the vip[uuid:%s, name:%s, ip: %s] has been set to %s",
-                                self.getUuid(), self.getName(), self.getIp(), self.getUseFor())
-                ));
+                throw new OperationFailureException(operr("the field 'useFor' of the vip[uuid:%s, name:%s, ip: %s] has been set to %s",
+                                self.getUuid(), self.getName(), self.getIp(), self.getUseFor()));
             }
 
             self.setUseFor(s.getUseFor());
@@ -198,10 +196,8 @@ public class VipBase {
         if (s.isPeerL3NetworkUuid()) {
             if (self.getPeerL3NetworkUuid() != null && s.getPeerL3NetworkUuid() != null
                     && !self.getPeerL3NetworkUuid().equals(s.getPeerL3NetworkUuid())) {
-                throw new OperationFailureException(errf.stringToOperationError(
-                        String.format("the field 'peerL3NetworkUuid' of the vip[uuid:%s, name:%s, ip: %s] has been set to %s",
-                                self.getUuid(), self.getName(), self.getIp(), self.getPeerL3NetworkUuid())
-                ));
+                throw new OperationFailureException(operr("the field 'peerL3NetworkUuid' of the vip[uuid:%s, name:%s, ip: %s] has been set to %s",
+                                self.getUuid(), self.getName(), self.getIp(), self.getPeerL3NetworkUuid()));
             }
 
             self.setPeerL3NetworkUuid(s.getPeerL3NetworkUuid());

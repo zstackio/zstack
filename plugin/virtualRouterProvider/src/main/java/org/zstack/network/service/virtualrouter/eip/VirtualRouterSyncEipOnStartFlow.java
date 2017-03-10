@@ -13,6 +13,7 @@ import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceState;
@@ -27,6 +28,8 @@ import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
+
+import static org.zstack.core.Platform.operr;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
@@ -174,9 +177,9 @@ public class VirtualRouterSyncEipOnStartFlow implements Flow {
                 VirtualRouterAsyncHttpCallReply re = reply.castReply();
                 SyncEipRsp ret = re.toResponse(SyncEipRsp.class);
                 if (!ret.isSuccess()) {
-                    String err = String.format("failed to sync eip on virtual router[uuid:%s], %s",
+                    ErrorCode err = operr("failed to sync eip on virtual router[uuid:%s], %s",
                             vr.getUuid(), ret.getError());
-                    trigger.fail(errf.stringToOperationError(err));
+                    trigger.fail(err);
                 } else {
                     String info = String.format("failed to sync eip on virtual router[uuid:%s]",
                             vr.getUuid());

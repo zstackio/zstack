@@ -37,6 +37,8 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
+import static org.zstack.core.Platform.argerr;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
@@ -298,7 +300,7 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
         if (msg.getAgentUuids() != null) {
             for (String uuid : msg.getAgentUuids()) {
                 if (!mgmtNodeUuids.contains(uuid)) {
-                    errors.put(uuid, errf.stringToInvalidArgumentError(String.format("invalid management node UUID[%s]", uuid)));
+                    errors.put(uuid, argerr("invalid management node UUID[%s]", uuid));
                 }
             }
         }

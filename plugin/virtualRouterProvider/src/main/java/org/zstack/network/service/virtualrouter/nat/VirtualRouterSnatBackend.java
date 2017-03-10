@@ -28,6 +28,8 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.operr;
+
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -68,8 +70,8 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
             @Override
             public void validate(VirtualRouterOfferingInventory offering) throws OperationFailureException {
                 if (offering.getPublicNetworkUuid().equals(guestL3.getUuid())) {
-                    throw new OperationFailureException(errf.stringToOperationError(String.format("guest l3Network[uuid:%s, name:%s] needs SNAT service provided by virtual router, but public l3Network[uuid:%s] of virtual router offering[uuid: %s, name:%s] is the same to this guest l3Network",
-                            guestL3.getUuid(), guestL3.getName(), offering.getPublicNetworkUuid(), offering.getUuid(), offering.getName())));
+                    throw new OperationFailureException(operr("guest l3Network[uuid:%s, name:%s] needs SNAT service provided by virtual router, but public l3Network[uuid:%s] of virtual router offering[uuid: %s, name:%s] is the same to this guest l3Network",
+                            guestL3.getUuid(), guestL3.getName(), offering.getPublicNetworkUuid(), offering.getUuid(), offering.getName()));
                 }
             }
         });
@@ -119,12 +121,10 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
                         if (!ret.isSuccess()) {
                             new VirtualRouterRoleManager().makeSnatRole(vr.getUuid());
 
-                            String err = String.format(
-                                    "virtual router[uuid:%s, ip:%s] failed to apply snat[%s] for vm[uuid:%s, name:%s] on L3Network[uuid:%s, name:%s], because %s",
+                            ErrorCode err = operr("virtual router[uuid:%s, ip:%s] failed to apply snat[%s] for vm[uuid:%s, name:%s] on L3Network[uuid:%s, name:%s], because %s",
                                     vr.getUuid(), vr.getManagementNic().getIp(), JSONObjectUtil.toJsonString(info), spec.getVmInventory().getUuid(), spec.getVmInventory().getName(),
                                     struct.getL3Network().getUuid(), struct.getL3Network().getName(), ret.getError());
-                            logger.warn(err);
-                            completion.fail(errf.stringToOperationError(err));
+                            completion.fail(err);
                         } else {
                             applySnat(it, spec, completion);
                         }

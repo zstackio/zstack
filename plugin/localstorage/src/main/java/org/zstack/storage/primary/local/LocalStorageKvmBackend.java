@@ -58,6 +58,8 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
+import static org.zstack.core.Platform.operr;
+
 import javax.persistence.Tuple;
 import java.io.File;
 import java.util.ArrayList;
@@ -740,7 +742,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 KVMHostAsyncHttpCallReply r = reply.castReply();
                 T rsp = r.toResponse(rspType);
                 if (!rsp.isSuccess()) {
-                    completion.fail(errf.stringToOperationError(rsp.getError()));
+                    completion.fail(operr(rsp.getError()));
                     return;
                 }
 
@@ -802,9 +804,8 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                completion.fail(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
-                        String.format("unable to create an empty volume[uuid:%s, name:%s] on the kvm host[uuid:%s]",
-                                volume.getUuid(), volume.getName(), hostUuid), errorCode));
+                completion.fail(operr("unable to create an empty volume[uuid:%s, name:%s] on the kvm host[uuid:%s]",
+                                volume.getUuid(), volume.getName(), hostUuid).causedBy(errorCode));
             }
         });
     }
@@ -1601,7 +1602,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             @Override
             public ErrorCode getError(KvmResponseWrapper wrapper) {
                 GetVolumeSizeRsp rsp = wrapper.getResponse(GetVolumeSizeRsp.class);
-                return rsp.isSuccess() ? null : errf.stringToOperationError(rsp.getError());
+                return rsp.isSuccess() ? null : operr(rsp.getError());
             }
         }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
             @Override
@@ -1652,7 +1653,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             @Override
             public ErrorCode getError(KvmResponseWrapper w) {
                 GetVolumeBaseImagePathRsp rsp = w.getResponse(GetVolumeBaseImagePathRsp.class);
-                return rsp.isSuccess() ? null : errf.stringToOperationError(rsp.getError());
+                return rsp.isSuccess() ? null : operr(rsp.getError());
             }
         }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
             @Override
@@ -1684,12 +1685,11 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         selector.setImageUuid(img.getUuid());
         final String bsUuid = selector.select();
         if (bsUuid == null) {
-            throw new OperationFailureException(errf.stringToOperationError(String.format(
+            throw new OperationFailureException(operr(
                     "the image[uuid:%s, name: %s] is not available to download on any backup storage:\n" +
                             "1. check if image is in status of Deleted\n" +
                             "2. check if the backup storage on which the image is shown as Ready is attached to the zone[uuid:%s]",
-                    img.getUuid(), img.getName(), self.getZoneUuid()
-            )));
+                    img.getUuid(), img.getName(), self.getZoneUuid()));
         }
 
         BackupStorageInventory bs = BackupStorageInventory.valueOf(dbf.findByUuid(bsUuid, BackupStorageVO.class));
@@ -1739,7 +1739,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                             @Override
                             public ErrorCode getError(KvmResponseWrapper wrapper) {
                                 GetQCOW2ReferenceRsp rsp = wrapper.getResponse(GetQCOW2ReferenceRsp.class);
-                                return rsp.isSuccess() ? null : errf.stringToOperationError(rsp.getError());
+                                return rsp.isSuccess() ? null : operr(rsp.getError());
                             }
                         }, new ReturnValueCompletion<KvmResponseWrapper>(trigger) {
                             @Override

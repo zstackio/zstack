@@ -44,6 +44,8 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.operr;
+
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
@@ -225,8 +227,8 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
         }));
 
         if (cto.getMonInfo().isEmpty()) {
-            throw new OperationFailureException(errf.stringToOperationError(
-                    String.format("cannot find any Connected ceph mon for the primary storage[uuid:%s]", pri.getUuid())
+            throw new OperationFailureException(operr(
+                    "cannot find any Connected ceph mon for the primary storage[uuid:%s]", pri.getUuid()
             ));
         }
 
@@ -251,9 +253,9 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
         List<Tuple> ts = q.listTuple();
 
         if (ts.isEmpty()) {
-            throw new OperationFailureException(errf.stringToOperationError(
-                    String.format("cannot find any Connected ceph mon for the primary storage[uuid:%s]", vol.getPrimaryStorageUuid())
-            ));
+            throw new OperationFailureException(operr(
+                    "cannot find any Connected ceph mon for the primary storage[uuid:%s]", vol.getPrimaryStorageUuid())
+            );
         }
 
         List<MonInfo> monInfos = CollectionUtils.transformToList(ts, new Function<MonInfo, Tuple>() {

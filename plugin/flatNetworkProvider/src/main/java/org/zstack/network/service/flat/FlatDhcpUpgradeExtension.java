@@ -25,6 +25,8 @@ import org.zstack.network.service.flat.FlatDhcpBackend.DeleteNamespaceRsp;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.operr;
+
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
@@ -123,7 +125,7 @@ public class FlatDhcpUpgradeExtension implements Component {
 
                     new KvmCommandSender(l3Host.hostUuid).send(cmd, FlatDhcpBackend.DHCP_DELETE_NAMESPACE_PATH, wrapper -> {
                         DeleteNamespaceRsp rsp = wrapper.getResponse(DeleteNamespaceRsp.class);
-                        return rsp.isSuccess() ? null : errf.stringToOperationError(rsp.getError());
+                        return rsp.isSuccess() ? null : operr(rsp.getError());
                     }, new SteppingSendCallback<KvmResponseWrapper>() {
                         @Override
                         public void success(KvmResponseWrapper w) {

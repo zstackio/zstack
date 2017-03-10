@@ -65,6 +65,8 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.operr;
+
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -216,8 +218,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
 
         if (self == null) {
-            throw new OperationFailureException(errf.stringToOperationError(
-                    String.format("vm[uuid:%s, name:%s] has been deleted", vo.getUuid(), vo.getName())));
+            throw new OperationFailureException(operr("vm[uuid:%s, name:%s] has been deleted", vo.getUuid(), vo.getName()));
         }
 
         originalCopy = ObjectUtils.newAndCopy(vo, vo.getClass());
@@ -525,9 +526,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
 
         if (targetNic == null) {
-            throw new OperationFailureException(errf.stringToOperationError(
-                    String.format("the vm[uuid:%s] has no nic on the L3 network[uuid:%s]", self.getUuid(), l3Uuid)
-            ));
+            throw new OperationFailureException(operr("the vm[uuid:%s] has no nic on the L3 network[uuid:%s]", self.getUuid(), l3Uuid));
         }
 
         if (ip.equals(targetNic.getIp())) {
@@ -875,7 +874,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         final VmStateChangedOnHostReply reply = new VmStateChangedOnHostReply();
         if (refreshVO(true) == null) {
             // the vm has been deleted
-            reply.setError(errf.stringToOperationError("the vm has been deleted"));
+            reply.setError(operr("the vm has been deleted"));
             bus.reply(msg, reply);
             completion.done();
             return;
@@ -1212,7 +1211,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             return;
         }
         if (self.getVmNics().size() == 0) {
-            completion.fail(errf.stringToOperationError("cannot get target migration host without any nics on vm"));
+            completion.fail(operr("cannot get target migration host without any nics on vm"));
             return;
         }
         final DesignatedAllocateHostMsg amsg = new DesignatedAllocateHostMsg();
@@ -2867,10 +2866,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             }
         }
 
-        throw new OperationFailureException(errf.stringToOperationError(
-                String.format("the ISO[uuid:%s] is on backup storage that is not compatible of the primary storage[uuid:%s]" +
-                        " where the VM[name:%s, uuid:%s] is on", isoUuid, psUuid, self.getName(), self.getUuid())
-        ));
+        throw new OperationFailureException(operr("the ISO[uuid:%s] is on backup storage that is not compatible of the primary storage[uuid:%s]" +
+                        " where the VM[name:%s, uuid:%s] is on", isoUuid, psUuid, self.getName(), self.getUuid()));
     }
 
     private void handle(final APIDetachL3NetworkFromVmMsg msg) {
@@ -3085,10 +3082,9 @@ public class VmInstanceBase extends AbstractVmInstance {
             return;
         } else {
             if (self.getState() != VmInstanceState.Running) {
-                throw new OperationFailureException(errf.stringToOperationError(
-                        String.format("The state of vm[uuid:%s] is %s. Only these state[%s] is allowed.",
-                                self.getUuid(), self.getState(),
-                                StringUtils.join(list(VmInstanceState.Running, VmInstanceState.Stopped), ","))));
+                throw new OperationFailureException(operr("The state of vm[uuid:%s] is %s. Only these state[%s] is allowed.",
+                        self.getUuid(), self.getState(),
+                        StringUtils.join(list(VmInstanceState.Running, VmInstanceState.Stopped), ",")));
             }
         }
 
@@ -3681,11 +3677,8 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
 
         if (spec.getDestNics().isEmpty()) {
-            throw new OperationFailureException(errf.stringToOperationError(
-                    String.format("unable to start the vm[uuid:%s]." +
-                                    " It doesn't have any nic, please attach a nic and try again",
-                            self.getUuid())
-            ));
+            throw new OperationFailureException(operr("unable to start the vm[uuid:%s]." +
+                            " It doesn't have any nic, please attach a nic and try again", self.getUuid()));
         }
 
         final VmInstanceState originState = self.getState();

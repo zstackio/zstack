@@ -26,6 +26,8 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.operr;
+
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.List;
@@ -279,10 +281,7 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
                                     public void success(SftpBackupStorageCommands.CheckImageMetaDataFileExistRsp rsp) {
                                         if (!rsp.isSuccess()) {
                                             logger.error(String.format("check image metadata file: %s failed", rsp.getBackupStorageMetaFileName()));
-                                            ErrorCode ec = errf.instantiateErrorCode(
-                                                    SysErrors.OPERATION_ERROR,
-                                                    String.format("check image metadata file: %s failed", rsp.getBackupStorageMetaFileName())
-                                            );
+                                            ErrorCode ec = operr("check image metadata file: %s failed", rsp.getBackupStorageMetaFileName());
                                             trigger.fail(ec);
                                         } else {
                                             if (!rsp.getExist()) {
@@ -325,9 +324,7 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
                                         @Override
                                         public void success(SftpBackupStorageCommands.GenerateImageMetaDataFileRsp rsp) {
                                             if (!rsp.isSuccess()) {
-                                                ErrorCode ec = errf.instantiateErrorCode(
-                                                        SysErrors.OPERATION_ERROR,
-                                                        String.format("create image metadata file : %s failed", rsp.getBackupStorageMetaFileName()));
+                                                ErrorCode ec = operr("create image metadata file : %s failed", rsp.getBackupStorageMetaFileName());
                                                 trigger.fail(ec);
                                             } else {
                                                 logger.info("create image metadata file successfully");
@@ -466,18 +463,12 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
                                     public void success(SftpBackupStorageCommands.CheckImageMetaDataFileExistRsp rsp) {
                                         if (!rsp.isSuccess()) {
                                             logger.error(String.format("check image metadata file: %s failed", rsp.getBackupStorageMetaFileName()));
-                                            ErrorCode ec = errf.instantiateErrorCode(
-                                                    SysErrors.OPERATION_ERROR,
-                                                    String.format("check image metadata file: %s failed", rsp.getBackupStorageMetaFileName())
-                                            );
+                                            ErrorCode ec = operr("check image metadata file: %s failed", rsp.getBackupStorageMetaFileName());
                                             trigger.fail(ec);
                                         } else {
                                             if (!rsp.getExist()) {
                                                 logger.info(String.format("image metadata file %s is not exist", rsp.getBackupStorageMetaFileName()));
-                                                ErrorCode ec = errf.instantiateErrorCode(
-                                                        SysErrors.OPERATION_ERROR,
-                                                        String.format("image metadata file: %s is not exist", rsp.getBackupStorageMetaFileName())
-                                                );
+                                                ErrorCode ec = operr("image metadata file: %s is not exist", rsp.getBackupStorageMetaFileName());
                                                 trigger.fail(ec);
                                             } else {
                                                 logger.info(String.format("image metadata file %s exist", rsp.getBackupStorageMetaFileName()));
@@ -514,9 +505,7 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
                                     @Override
                                     public void success(SftpBackupStorageCommands.DeleteImageInfoFromMetaDataFileRsp rsp) {
                                         if (!rsp.isSuccess()) {
-                                            ErrorCode ec = errf.instantiateErrorCode(
-                                                    SysErrors.OPERATION_ERROR,
-                                                    String.format("delete image metadata file failed: %s", rsp.getError()));
+                                            ErrorCode ec = operr("delete image metadata file failed: %s", rsp.getError());
                                             trigger.fail(ec);
                                         } else {
                                             if (rsp.getRet() != 0) {

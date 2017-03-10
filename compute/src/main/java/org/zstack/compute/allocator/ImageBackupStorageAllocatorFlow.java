@@ -22,6 +22,8 @@ import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
+import static org.zstack.core.Platform.operr;
+
 import javax.persistence.TypedQuery;
 import java.util.List;
 
@@ -80,8 +82,8 @@ public class ImageBackupStorageAllocatorFlow extends AbstractHostAllocatorFlow {
         });
 
         if (bsUuids.isEmpty()) {
-            throw new OperationFailureException(errf.stringToOperationError(
-                    String.format("the image[uuid:%s, name:%s] is deleted on all backup storage", spec.getImage().getUuid(), spec.getImage().getName())
+            throw new OperationFailureException(operr(
+                    "the image[uuid:%s, name:%s] is deleted on all backup storage", spec.getImage().getUuid(), spec.getImage().getName()
             ));
         }
 

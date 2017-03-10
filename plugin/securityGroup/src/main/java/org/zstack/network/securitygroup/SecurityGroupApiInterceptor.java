@@ -20,6 +20,9 @@ import org.zstack.network.securitygroup.APIAddSecurityGroupRuleMsg.SecurityGroup
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.network.NetworkUtils;
 
+import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.operr;
+
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.List;
@@ -60,10 +63,8 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
         q.add(SecurityGroupL3NetworkRefVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
         q.add(SecurityGroupL3NetworkRefVO_.securityGroupUuid, Op.EQ, msg.getSecurityGroupUuid());
         if (!q.isExists()) {
-            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
-                    String.format("security group[uuid:%s] has not attached to l3Network[uuid:%s], can't detach",
-                            msg.getSecurityGroupUuid(), msg.getL3NetworkUuid())
-            ));
+            throw new ApiMessageInterceptionException(operr("security group[uuid:%s] has not attached to l3Network[uuid:%s], can't detach",
+                            msg.getSecurityGroupUuid(), msg.getL3NetworkUuid()));
         }
     }
 
@@ -110,19 +111,15 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
         q.add(SecurityGroupL3NetworkRefVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
         q.add(SecurityGroupL3NetworkRefVO_.securityGroupUuid, Op.EQ, msg.getSecurityGroupUuid());
         if (q.isExists()) {
-            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
-                    String.format("security group[uuid:%s] has attached to l3Network[uuid:%s], can't attach again",
-                            msg.getSecurityGroupUuid(), msg.getL3NetworkUuid())
-            ));
+            throw new ApiMessageInterceptionException(operr("security group[uuid:%s] has attached to l3Network[uuid:%s], can't attach again",
+                            msg.getSecurityGroupUuid(), msg.getL3NetworkUuid()));
         }
 
         SimpleQuery<NetworkServiceL3NetworkRefVO> nq = dbf.createQuery(NetworkServiceL3NetworkRefVO.class);
         nq.add(NetworkServiceL3NetworkRefVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
         nq.add(NetworkServiceL3NetworkRefVO_.networkServiceType, Op.EQ, SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE);
         if (!nq.isExists()) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("the L3 network[uuid:%s] doesn't have the network service type[%s] enabled", msg.getL3NetworkUuid(), SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE)
-            ));
+            throw new ApiMessageInterceptionException(argerr("the L3 network[uuid:%s] doesn't have the network service type[%s] enabled", msg.getL3NetworkUuid(), SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE));
         }
     }
 
@@ -160,10 +157,8 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
         }
 
         if (!wrongUuids.isEmpty()) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("VM nics[uuids:%s] are not on L3 networks that have been attached to the security group[uuid:%s]",
-                            wrongUuids, securityGroupUuid)
-            ));
+            throw new ApiMessageInterceptionException(argerr("VM nics[uuids:%s] are not on L3 networks that have been attached to the security group[uuid:%s]",
+                            wrongUuids, securityGroupUuid));
         }
     }
 
@@ -203,54 +198,40 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
         // Basic check
         for (SecurityGroupRuleAO ao : msg.getRules()) {
             if (ao.getType() == null) {
-                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                        String.format("rule type can not be null. rule dump: %s", JSONObjectUtil.toJsonString(ao))
-                ));
+                throw new ApiMessageInterceptionException(argerr("rule type can not be null. rule dump: %s", JSONObjectUtil.toJsonString(ao)));
             }
 
             if (!ao.getType().equals(SecurityGroupRuleType.Egress.toString()) &&
                     !ao.getType().equals(SecurityGroupRuleType.Ingress.toString())) {
-                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                        String.format("unknown rule type[%s], rule can only be Ingress/Egress. rule dump: %s",
-                                ao.getType(), JSONObjectUtil.toJsonString(ao))
-                ));
+                throw new ApiMessageInterceptionException(argerr("unknown rule type[%s], rule can only be Ingress/Egress. rule dump: %s",
+                                ao.getType(), JSONObjectUtil.toJsonString(ao)));
             }
 
 
             if (ao.getProtocol() == null) {
-                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                        String.format("protocol can not be null. rule dump: %s", JSONObjectUtil.toJsonString(ao))
-                ));
+                throw new ApiMessageInterceptionException(argerr("protocol can not be null. rule dump: %s", JSONObjectUtil.toJsonString(ao)));
             }
 
             try {
                 SecurityGroupRuleProtocolType.valueOf(ao.getProtocol());
             } catch (Exception e) {
-                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                        String.format("invalid protocol[%s]. Valid protocols are [TCP, UDP, ICMP]. rule dump: %s",
-                                ao.getProtocol(), JSONObjectUtil.toJsonString(ao))
-                ));
+                throw new ApiMessageInterceptionException(argerr("invalid protocol[%s]. Valid protocols are [TCP, UDP, ICMP]. rule dump: %s",
+                                ao.getProtocol(), JSONObjectUtil.toJsonString(ao)));
             }
 
             if (ao.getStartPort() == null) {
-                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                        String.format("startPort can not be null. rule dump: %s", JSONObjectUtil.toJsonString(ao))
-                ));
+                throw new ApiMessageInterceptionException(argerr("startPort can not be null. rule dump: %s", JSONObjectUtil.toJsonString(ao)));
             }
 
             if (SecurityGroupRuleProtocolType.ICMP.toString().equals(ao.getProtocol())) {
                 if (ao.getStartPort() < -1 || ao.getStartPort() > 255) {
-                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                            String.format("invalid ICMP type[%s]. Valid type is [-1, 255]. rule dump: %s",
-                                    ao.getStartPort(), JSONObjectUtil.toJsonString(ao))
-                    ));
+                    throw new ApiMessageInterceptionException(argerr("invalid ICMP type[%s]. Valid type is [-1, 255]. rule dump: %s",
+                                    ao.getStartPort(), JSONObjectUtil.toJsonString(ao)));
                 }
             } else {
                 if (ao.getStartPort() < 0 || ao.getStartPort() > 65535) {
-                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                            String.format("invalid startPort[%s]. Valid range is [0, 65535]. rule dump: %s",
-                                    ao.getStartPort(), JSONObjectUtil.toJsonString(ao))
-                    ));
+                    throw new ApiMessageInterceptionException(argerr("invalid startPort[%s]. Valid range is [0, 65535]. rule dump: %s",
+                                    ao.getStartPort(), JSONObjectUtil.toJsonString(ao)));
                 }
             }
 
@@ -261,25 +242,19 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
 
             if (SecurityGroupRuleProtocolType.ICMP.toString().equals(ao.getProtocol())) {
                 if (ao.getEndPort() < -1 || ao.getEndPort() > 3) {
-                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                            String.format("invalid ICMP code[%s]. Valid range is [-1, 3]. rule dump: %s",
-                                    ao.getEndPort(), JSONObjectUtil.toJsonString(ao))
-                    ));
+                    throw new ApiMessageInterceptionException(argerr("invalid ICMP code[%s]. Valid range is [-1, 3]. rule dump: %s",
+                                    ao.getEndPort(), JSONObjectUtil.toJsonString(ao)));
                 }
             } else {
                 if (ao.getEndPort() < 0 || ao.getEndPort() > 65535) {
-                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                            String.format("invalid endPort[%s]. Valid range is [0, 65535]. rule dump: %s",
-                                    ao.getEndPort(), JSONObjectUtil.toJsonString(ao))
-                    ));
+                    throw new ApiMessageInterceptionException(argerr("invalid endPort[%s]. Valid range is [0, 65535]. rule dump: %s",
+                                    ao.getEndPort(), JSONObjectUtil.toJsonString(ao)));
                 }
             }
 
 
             if (ao.getAllowedCidr() != null && !NetworkUtils.isCidr(ao.getAllowedCidr())) {
-                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                        String.format("invalid CIDR[%s]. rule dump: %s", ao.getAllowedCidr(), JSONObjectUtil.toJsonString(ao))
-                ));
+                throw new ApiMessageInterceptionException(argerr("invalid CIDR[%s]. rule dump: %s", ao.getAllowedCidr(), JSONObjectUtil.toJsonString(ao)));
             }
         }
 
@@ -287,10 +262,8 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
         for (int i = 0; i < msg.getRules().size() - 1; i++) {
             for (int j = msg.getRules().size() - 1; j > i; j--) {
                 if (checkSecurityGroupRuleEqual(msg.getRules().get(j), msg.getRules().get(i))) {
-                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                            String.format("rule should not be duplicated. rule dump: %s",
-                                    JSONObjectUtil.toJsonString(msg.getRules().get(j)))
-                    ));
+                    throw new ApiMessageInterceptionException(argerr("rule should not be duplicated. rule dump: %s",
+                                    JSONObjectUtil.toJsonString(msg.getRules().get(j))));
                 }
             }
         }
@@ -309,10 +282,8 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
 
             for (SecurityGroupRuleAO sao : msg.getRules()) {
                 if (checkSecurityGroupRuleEqual(ao, sao)) {
-                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                            String.format("rule exist. rule dump: %s",
-                                    JSONObjectUtil.toJsonString(sao))
-                    ));
+                    throw new ApiMessageInterceptionException(argerr("rule exist. rule dump: %s",
+                                    JSONObjectUtil.toJsonString(sao)));
                 }
             }
 

@@ -19,6 +19,8 @@ import org.zstack.header.rest.SyncHttpCallHandler;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.operr;
+
 import java.util.List;
 
 
@@ -87,18 +89,15 @@ public class ProgressReportService extends AbstractService implements Management
     private void validationType(String processType) {
         if (processType == null || ProgressConstants.ProgressType.valueOf(processType) == null) {
             logger.warn(String.format("not supported processType: %s", processType));
-            throw new OperationFailureException(
-                    errf.stringToOperationError(String.format("not supported processType: %s",
-                            processType)));
+            throw new OperationFailureException(operr("not supported processType: %s",
+                            processType));
         }
     }
 
     private void validationUuid(String uuid) {
         if (uuid == null) {
             logger.warn(String.format("not supported null uuid: %s", uuid));
-            throw new OperationFailureException(
-                    errf.stringToOperationError(String.format("not supported null uuid: %s",
-                            uuid)));
+            throw new OperationFailureException(operr("not supported null uuid: %s", uuid));
         }
     }
 

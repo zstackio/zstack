@@ -12,6 +12,8 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.operr;
+
 import java.util.List;
 
 public class VmInstanceExtensionPointEmitter implements Component {
@@ -36,9 +38,8 @@ public class VmInstanceExtensionPointEmitter implements Component {
             try {
                 String err = ext.preStartNewCreatedVm(inv);
                 if (err != null) {
-                    logger.debug(String.format("VmInstanceStartNewCreatedVmExtensionPoint[%s] refuses to create vm[uuid:%s] because %s",
-                            ext.getClass().getName(), inv.getUuid(), err));
-                    return errf.stringToOperationError(err);
+                    return operr("VmInstanceStartNewCreatedVmExtensionPoint[%s] refuses to create vm[uuid:%s] because %s",
+                            ext.getClass().getName(), inv.getUuid(), err);
                 }
             } catch (Exception e) {
                 logger.warn(String.format("Unhandled exception while calling %s", ext.getClass().getName()), e);
@@ -79,9 +80,8 @@ public class VmInstanceExtensionPointEmitter implements Component {
             try {
                 String err = ext.preStopVm(inv);
                 if (err != null) {
-                    logger.debug(String.format("VmInstanceStopVmExtensionPoint[%s] refuses to stop vm[uuid:%s] because %s", ext.getClass().getName(),
-                            inv.getUuid(), err));
-                    return errf.stringToOperationError(err);
+                    return operr("VmInstanceStopVmExtensionPoint[%s] refuses to stop vm[uuid:%s] because %s",
+                            ext.getClass().getName(), inv.getUuid(), err);
                 }
             } catch (Exception e) {
                 logger.warn(String.format("Unhandled exception while calling %s", ext.getClass().getName()), e);
@@ -122,9 +122,8 @@ public class VmInstanceExtensionPointEmitter implements Component {
             try {
                 String err = ext.preRebootVm(inv);
                 if (err != null) {
-                    logger.debug(String.format("VmInstanceRebootExtensionPoint[%s] refuses to reboot vm[uuid:%s] because %s", ext.getClass().getName(),
-                            inv.getUuid(), err));
-                    return errf.stringToOperationError(err);
+                    return operr("VmInstanceRebootExtensionPoint[%s] refuses to reboot vm[uuid:%s] because %s", ext.getClass().getName(),
+                            inv.getUuid(), err);
                 }
             } catch (Exception e) {
                 logger.warn(String.format("Unhandled exception while calling %s", ext.getClass().getName()), e);
@@ -165,9 +164,7 @@ public class VmInstanceExtensionPointEmitter implements Component {
             try {
                 String err = ext.preDestroyVm(inv);
                 if (err != null) {
-                    logger.debug(String.format("VmInstanceDestroyVmExtensionPoint[%s] refuses to destroy vm[uuid:%s] because %s", ext.getClass().getName(),
-                            inv.getUuid(), err));
-                    return errf.stringToOperationError(err);
+                    return operr("VmInstanceDestroyVmExtensionPoint[%s] refuses to destroy vm[uuid:%s] because %s", ext.getClass().getName(), inv.getUuid(), err);
                 }
             } catch (Exception e) {
                 logger.warn(String.format("Unhandled exception while calling %s", ext.getClass().getName()), e);
@@ -208,9 +205,8 @@ public class VmInstanceExtensionPointEmitter implements Component {
             try {
                 String err = ext.preStartVm(inv);
                 if (err != null) {
-                    logger.debug(String.format("VmInstanceStartExtensionPoint[%s] refuses to start vm[uuid:%s] because %s", ext.getClass().getName(),
-                            inv.getUuid(), err));
-                    return errf.stringToOperationError(err);
+                    return operr("VmInstanceStartExtensionPoint[%s] refuses to start vm[uuid:%s] because %s", ext.getClass().getName(),
+                            inv.getUuid(), err);
                 }
             } catch (Exception e) {
                 logger.warn(String.format("Unhandled exception while calling %s", ext.getClass().getName()), e);

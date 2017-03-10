@@ -8,6 +8,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.Message;
 import org.zstack.header.vm.*;
 import org.zstack.utils.message.OperationChecker;
+import static org.zstack.core.Platform.i18n;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public abstract class AbstractVmInstance implements VmInstance {
@@ -145,7 +146,7 @@ public abstract class AbstractVmInstance implements VmInstance {
         if (checker.isOperationAllowed(msg.getMessageName(), currentState.toString())) {
             return null;
         } else {
-            String details = String.format("current vm instance state[%s] doesn't allow to proceed message[%s], allowed states are %s", currentState,
+            String details = i18n("current vm instance state[%s] doesn't allow to proceed message[%s], allowed states are %s", currentState,
                     msg.getMessageName(), checker.getStatesForOperation(msg.getMessageName()));
             ErrorCode cause = errf.instantiateErrorCode(VmErrors.NOT_IN_CORRECT_STATE, details);
             if (errorCode != null) {

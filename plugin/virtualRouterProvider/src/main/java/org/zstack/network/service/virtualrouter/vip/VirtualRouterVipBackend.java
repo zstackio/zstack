@@ -25,6 +25,8 @@ import org.zstack.network.service.virtualrouter.VirtualRouterCommands.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.operr;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -85,9 +87,8 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
                 VirtualRouterAsyncHttpCallReply re = reply.castReply();
                 CreateVipRsp ret = re.toResponse(CreateVipRsp.class);
                 if (!ret.isSuccess()) {
-                    String err = String.format("failed to create vip%s on virtual router[uuid:%s], because %s", tos, vr.getUuid(), ret.getError());
-                    logger.warn(err);
-                    completion.fail(errf.stringToOperationError(err));
+                    ErrorCode err = operr("failed to create vip%s on virtual router[uuid:%s], because %s", tos, vr.getUuid(), ret.getError());
+                    completion.fail(err);
                 } else {
                     completion.success();
                 }
@@ -131,9 +132,8 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
                 if (ret.isSuccess()) {
                     completion.success();
                 } else {
-                    String err = String.format("failed to remove vip%s, because %s", tos, ret.getError());
-                    logger.warn(err);
-                    completion.fail(errf.stringToOperationError(err));
+                    ErrorCode err = operr("failed to remove vip%s, because %s", tos, ret.getError());
+                    completion.fail(err);
                 }
             }
         });
@@ -168,10 +168,8 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
             q.add(VmInstanceVO_.uuid, SimpleQuery.Op.EQ, vipvo.getVirtualRouterVmUuid());
             VmInstanceState vrState = q.findValue();
             if (VmInstanceState.Running != vrState) {
-                completion.fail(errf.stringToOperationError(
-                        String.format("virtual router[uuid:%s, state:%s] is not running, current HA has not been supported, please manually start this virtual router",
-                                vipvo.getVirtualRouterVmUuid(), vrState)
-                ));
+                completion.fail(operr("virtual router[uuid:%s, state:%s] is not running, current HA has not been supported, please manually start this virtual router",
+                                vipvo.getVirtualRouterVmUuid(), vrState));
             } else {
                 completion.success();
             }
@@ -190,10 +188,8 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
                     @Override
                     public void validate(VirtualRouterOfferingInventory offering) throws OperationFailureException {
                         if (!offering.getPublicNetworkUuid().equals(vip.getL3NetworkUuid())) {
-                            throw new OperationFailureException(errf.stringToOperationError(
-                                    String.format("found a virtual router offering[uuid:%s] for L3Network[uuid:%s] in zone[uuid:%s]; however, the network's public network[uuid:%s] is not the same to VIP[uuid:%s]'s; you may need to use system tag" +
-                                            " guestL3Network::l3NetworkUuid to specify a particular virtual router offering for the L3Network", offering.getUuid(), guestNw.getUuid(), guestNw.getZoneUuid(), vip.getL3NetworkUuid(), vip.getUuid())
-                            ));
+                            throw new OperationFailureException(operr("found a virtual router offering[uuid:%s] for L3Network[uuid:%s] in zone[uuid:%s]; however, the network's public network[uuid:%s] is not the same to VIP[uuid:%s]'s; you may need to use system tag" +
+                                            " guestL3Network::l3NetworkUuid to specify a particular virtual router offering for the L3Network", offering.getUuid(), guestNw.getUuid(), guestNw.getZoneUuid(), vip.getL3NetworkUuid(), vip.getUuid()));
                         }
                     }
                 });

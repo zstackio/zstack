@@ -18,6 +18,8 @@ import org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManager;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.operr;
+
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -270,7 +272,7 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
     public void run(FlowTrigger trigger, Map data) {
         Result ret = allocate(data);
         if (ret.result.isEmpty()) {
-            throw new OperationFailureException(errf.stringToOperationError(ret.error));
+            throw new OperationFailureException(operr(ret.error));
         }
 
         data.put(AllocatorParams.CANDIDATES, ret.result);

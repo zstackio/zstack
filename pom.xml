@@ -341,52 +341,13 @@
    	        <artifactId>okhttp</artifactId>
    	        <version>3.5.0</version>
    	    </dependency>
+	    <dependency>
+	        <groupId>com.github.javaparser</groupId>
+	        <artifactId>javaparser-core</artifactId>
+	        <version>3.0.1</version>
+	    </dependency>
         </dependencies>
     </dependencyManagement>
-
-    <!--
-        <pluginRepositories>
-            <pluginRepository>
-                <id>sonatype-repo</id>
-                <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-                <layout>default</layout>
-                <releases>
-                    <enabled>false</enabled>
-                </releases>
-                <snapshots>
-                    <enabled>true</enabled>
-                </snapshots>
-            </pluginRepository>
-        </pluginRepositories>
-
-        <repositories>
-            <repository>
-                <id>annotationrepo</id>
-                <url>http://maven-annotation-plugin.googlecode.com/svn/trunk/mavenrepo/</url>
-                <releases>
-                    <enabled>true</enabled>
-                </releases>
-                <snapshots>
-                    <enabled>false</enabled>
-                </snapshots>
-            </repository>
-            <repository>
-                <id>helper</id>
-                <url>http://repo.jfrog.org/artifactory/plugins-releases/</url>
-                <releases>
-                    <enabled>true</enabled>
-                </releases>
-                <snapshots>
-                    <enabled>false</enabled>
-                </snapshots>
-            </repository>
-            <repository>
-                <id>spring-milestone</id>
-                <name>Spring Maven MILESTONE Repository</name>
-                <url>http://maven.springframework.org/milestone</url>
-            </repository>
-        </repositories>
-    -->
 
     <build>
         <resources>
@@ -413,26 +374,6 @@
                 </configuration>
             </plugin>
 
-<!--
-	    <plugin>
-	       <groupId>org.codehaus.gmaven</groupId>
-	       <artifactId>gmaven-plugin</artifactId>
-	       <version>1.5</version>
-	       <executions>
-	       	<execution>
-	                <configuration>
-	    		<providerSelection>2.0</providerSelection>
-	    	    </configuration>
-	    	    <goals>
-	    	        <goal>generateStubs</goal>
-	    		<goal>compile</goal>
-	    		<goal>generateTestStubs</goal>
-	    		<goal>testCompile</goal>
-	    	    </goals>
-	    	</execution>
-	        </executions>
-	    </plugin>
--->
         </plugins>
     </build>
 

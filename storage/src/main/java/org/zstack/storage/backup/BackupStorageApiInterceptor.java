@@ -13,6 +13,9 @@ import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.storage.backup.*;
 
+import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.operr;
+
 import java.util.List;
 
 /**
@@ -58,9 +61,7 @@ public class BackupStorageApiInterceptor implements ApiMessageInterceptor {
 
     private void checkNull(final String name, final String val) {
         if (val == null) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("%s should not be null", name)
-            ));
+            throw new ApiMessageInterceptionException(argerr("%s should not be null", name));
         }
     }
     private void validate(APIDeleteExportedImageFromBackupStorageMsg msg) {
@@ -83,9 +84,7 @@ public class BackupStorageApiInterceptor implements ApiMessageInterceptor {
         }
 
         if (!pass && !msg.isAll()) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("zoneUuids, backupStorageUuids must have at least one be none-empty list, or all is set to true")
-            ));
+            throw new ApiMessageInterceptionException(argerr("zoneUuids, backupStorageUuids must have at least one be none-empty list, or all is set to true"));
         }
 
         if (msg.isAll() && (msg.getBackupStorageUuids() == null || msg.getBackupStorageUuids().isEmpty())) {
@@ -115,9 +114,7 @@ public class BackupStorageApiInterceptor implements ApiMessageInterceptor {
         q.add(BackupStorageZoneRefVO_.backupStorageUuid, Op.EQ, msg.getBackupStorageUuid());
         q.add(BackupStorageZoneRefVO_.zoneUuid, Op.EQ, msg.getZoneUuid());
         if (!q.isExists()) {
-            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
-                    String.format("backup storage[uuid:%s] has not been attached to zone[uuid:%s]", msg.getBackupStorageUuid(), msg.getZoneUuid())
-            ));
+            throw new ApiMessageInterceptionException(operr("backup storage[uuid:%s] has not been attached to zone[uuid:%s]", msg.getBackupStorageUuid(), msg.getZoneUuid()));
         }
     }
 
@@ -126,9 +123,7 @@ public class BackupStorageApiInterceptor implements ApiMessageInterceptor {
         q.add(BackupStorageZoneRefVO_.backupStorageUuid, Op.EQ, msg.getBackupStorageUuid());
         q.add(BackupStorageZoneRefVO_.zoneUuid, Op.EQ, msg.getZoneUuid());
         if (q.isExists()) {
-            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
-                    String.format("backup storage[uuid:%s] has been attached to zone[uuid:%s]", msg.getBackupStorageUuid(), msg.getZoneUuid())
-            ));
+            throw new ApiMessageInterceptionException(operr("backup storage[uuid:%s] has been attached to zone[uuid:%s]", msg.getBackupStorageUuid(), msg.getZoneUuid()));
         }
     }
 }

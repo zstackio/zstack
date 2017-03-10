@@ -19,6 +19,9 @@ import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.*;
 
+import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.operr;
+
 import java.util.ArrayList;
 
 /**
@@ -67,62 +70,46 @@ public class LocalStorageApiInterceptor implements ApiMessageInterceptor {
         q.add(LocalStorageResourceRefVO_.resourceUuid, Op.EQ, msg.getVolumeUuid());
         LocalStorageResourceRefVO ref =  q.find();
         if (ref == null) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("the volume[uuid:%s] is not on any local primary storage", msg.getVolumeUuid())
-            ));
+            throw new ApiMessageInterceptionException(argerr("the volume[uuid:%s] is not on any local primary storage", msg.getVolumeUuid()));
         }
 
         if (ref.getHostUuid().equals(msg.getDestHostUuid())) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("the volume[uuid:%s] is already on the host[uuid:%s]", msg.getVolumeUuid(), msg.getDestHostUuid())
-            ));
+            throw new ApiMessageInterceptionException(argerr("the volume[uuid:%s] is already on the host[uuid:%s]", msg.getVolumeUuid(), msg.getDestHostUuid()));
         }
 
         PrimaryStorageVO vo = dbf.findByUuid(ref.getPrimaryStorageUuid(), PrimaryStorageVO.class);
         if (vo == null) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("the primary storage[uuid:%s] is not found", msg.getPrimaryStorageUuid())
-            ));
+            throw new ApiMessageInterceptionException(argerr("the primary storage[uuid:%s] is not found", msg.getPrimaryStorageUuid()));
         }
 
         if (vo.getState() == PrimaryStorageState.Disabled) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("the primary storage[uuid:%s] is disabled cold migrate is not allowed", ref.getPrimaryStorageUuid())
-            ));
+            throw new ApiMessageInterceptionException(argerr("the primary storage[uuid:%s] is disabled cold migrate is not allowed", ref.getPrimaryStorageUuid()));
         }
 
         SimpleQuery<LocalStorageHostRefVO> hq = dbf.createQuery(LocalStorageHostRefVO.class);
         hq.add(LocalStorageHostRefVO_.hostUuid, Op.EQ, msg.getDestHostUuid());
         hq.add(LocalStorageHostRefVO_.primaryStorageUuid, Op.EQ, ref.getPrimaryStorageUuid());
         if (!hq.isExists()) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("the dest host[uuid:%s] doesn't belong to the local primary storage[uuid:%s] where the" +
-                            " volume[uuid:%s] locates", msg.getDestHostUuid(), ref.getPrimaryStorageUuid(), msg.getVolumeUuid())
-            ));
+            throw new ApiMessageInterceptionException(argerr("the dest host[uuid:%s] doesn't belong to the local primary storage[uuid:%s] where the" +
+                            " volume[uuid:%s] locates", msg.getDestHostUuid(), ref.getPrimaryStorageUuid(), msg.getVolumeUuid()));
         }
 
         VolumeVO vol = dbf.findByUuid(msg.getVolumeUuid(), VolumeVO.class);
         if (VolumeStatus.Ready != vol.getStatus()) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("the volume[uuid:%s] is not in status of Ready, cannot migrate it", msg.getVolumeUuid())
-            ));
+            throw new ApiMessageInterceptionException(argerr("the volume[uuid:%s] is not in status of Ready, cannot migrate it", msg.getVolumeUuid()));
         }
 
         if (vol.getType() == VolumeType.Data && vol.getVmInstanceUuid() != null) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("the data volume[uuid:%s, name: %s] is still attached on the VM[uuid:%s]. Please detach" +
-                            " it before migration", vol.getUuid(), vol.getName(), vol.getVmInstanceUuid())
-            ));
+            throw new ApiMessageInterceptionException(argerr("the data volume[uuid:%s, name: %s] is still attached on the VM[uuid:%s]. Please detach" +
+                            " it before migration", vol.getUuid(), vol.getName(), vol.getVmInstanceUuid()));
         } else if (vol.getType() == VolumeType.Root) {
             SimpleQuery<VmInstanceVO> vmq = dbf.createQuery(VmInstanceVO.class);
             vmq.select(VmInstanceVO_.state);
             vmq.add(VmInstanceVO_.uuid, Op.EQ, vol.getVmInstanceUuid());
             VmInstanceState vmstate = vmq.findValue();
             if (VmInstanceState.Stopped != vmstate) {
-                throw new ApiMessageInterceptionException(errf.stringToOperationError(
-                        String.format("the volume[uuid:%s] is the root volume of the vm[uuid:%s]. Currently the vm is in" +
-                                " state of %s, please stop it before migration", vol.getUuid(), vol.getVmInstanceUuid(), vmstate)
-                ));
+                throw new ApiMessageInterceptionException(operr("the volume[uuid:%s] is the root volume of the vm[uuid:%s]. Currently the vm is in" +
+                                " state of %s, please stop it before migration", vol.getUuid(), vol.getVmInstanceUuid(), vmstate));
             }
 
             SimpleQuery<VolumeVO> vq = dbf.createQuery(VolumeVO.class);
@@ -130,10 +117,8 @@ public class LocalStorageApiInterceptor implements ApiMessageInterceptor {
             vq.add(VolumeVO_.vmInstanceUuid, Op.EQ, vol.getVmInstanceUuid());
             long count = vq.count();
             if (count != 0) {
-                throw new ApiMessageInterceptionException(errf.stringToOperationError(
-                        String.format("the volume[uuid:%s] is the root volume of the vm[uuid:%s]. Currently the vm still" +
-                                " has %s data volumes attached, please detach them before migration", vol.getUuid(), vol.getVmInstanceUuid(), count)
-                ));
+                throw new ApiMessageInterceptionException(operr("the volume[uuid:%s] is the root volume of the vm[uuid:%s]. Currently the vm still" +
+                                " has %s data volumes attached, please detach them before migration", vol.getUuid(), vol.getVmInstanceUuid(), count));
             }
         }
 
@@ -142,9 +127,7 @@ public class LocalStorageApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(APIAddLocalPrimaryStorageMsg msg) {
         if (!msg.getUrl().startsWith("/")) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("the url[%s] is not an absolute path starting with '/'", msg.getUrl())
-            ));
+            throw new ApiMessageInterceptionException(argerr("the url[%s] is not an absolute path starting with '/'", msg.getUrl()));
         }
     }
 }

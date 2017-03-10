@@ -18,6 +18,8 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 
+import static org.zstack.core.Platform.argerr;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -76,9 +78,7 @@ public class CephApiInterceptor implements ApiMessageInterceptor {
         q.add(CephPrimaryStorageMonVO_.hostname, Op.IN, hostnames);
         List<String> existing = q.listValue();
         if (!existing.isEmpty()) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("cannot add ceph primary storage, there has been some ceph primary storage using mon[hostnames:%s]", existing)
-            ));
+            throw new ApiMessageInterceptionException(argerr("cannot add ceph primary storage, there has been some ceph primary storage using mon[hostnames:%s]", existing));
         }
     }
 
@@ -91,9 +91,7 @@ public class CephApiInterceptor implements ApiMessageInterceptor {
     }
     private void validate(APIUpdateCephBackupStorageMonMsg msg) {
         if (msg.getHostname() != null && !NetworkUtils.isIpv4Address(msg.getHostname()) && !NetworkUtils.isHostname(msg.getHostname())) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("hostname[%s] is neither an IPv4 address nor a valid hostname", msg.getHostname())
-            ));
+            throw new ApiMessageInterceptionException(argerr("hostname[%s] is neither an IPv4 address nor a valid hostname", msg.getHostname()));
         }
         SimpleQuery<CephBackupStorageMonVO> q = dbf.createQuery(CephBackupStorageMonVO.class);
         q.select(CephBackupStorageMonVO_.backupStorageUuid);
@@ -104,7 +102,7 @@ public class CephApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(APIUpdateCephPrimaryStorageMonMsg msg) {
         if (msg.getHostname() != null && !NetworkUtils.isIpv4Address(msg.getHostname()) && !NetworkUtils.isHostname(msg.getHostname())) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+            throw new ApiMessageInterceptionException(argerr(
                     String.format("hostname[%s] is neither an IPv4 address nor a valid hostname", msg.getHostname())
             ));
         }
@@ -126,26 +124,24 @@ public class CephApiInterceptor implements ApiMessageInterceptor {
                 throw new ApiMessageInterceptionException(ae.getErrorCode());
             } catch (Exception e) {
                 logger.warn(e.getMessage(), e);
-                throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                        String.format("invalid monUrl[%s]. A valid url is in format of %s", monUrl, MON_URL_FORMAT)
-                ));
+                throw new ApiMessageInterceptionException(argerr("invalid monUrl[%s]. A valid url is in format of %s", monUrl, MON_URL_FORMAT));
             }
         }
     }
 
     private void validate(APIAddCephPrimaryStorageMsg msg) {
         if (msg.getDataVolumePoolName() != null && msg.getDataVolumePoolName().isEmpty()) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+            throw new ApiMessageInterceptionException(argerr(
                     "dataVolumePoolName can be null but cannot be an empty string"
             ));
         }
         if (msg.getRootVolumePoolName() != null && msg.getRootVolumePoolName().isEmpty()) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+            throw new ApiMessageInterceptionException(argerr(
                     "rootVolumePoolName can be null but cannot be an empty string"
             ));
         }
         if (msg.getImageCachePoolName() != null && msg.getImageCachePoolName().isEmpty()) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+            throw new ApiMessageInterceptionException(argerr(
                     "imageCachePoolName can be null but cannot be an empty string"
             ));
         }
@@ -168,21 +164,15 @@ public class CephApiInterceptor implements ApiMessageInterceptor {
         q.add(CephBackupStorageMonVO_.hostname, Op.IN, hostnames);
         List<String> existing = q.listValue();
         if (!existing.isEmpty()) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("cannot add ceph backup storage, there has been some ceph backup storage using mon[hostnames:%s]", existing)
-            ));
+            throw new ApiMessageInterceptionException(argerr("cannot add ceph backup storage, there has been some ceph backup storage using mon[hostnames:%s]", existing));
         }
     }
 
     private void validate(APIAddCephBackupStorageMsg msg) {
         if (msg.getPoolName() != null && msg.getPoolName().isEmpty()) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    "poolName can be null but cannot be an empty string"
-            ));
+            throw new ApiMessageInterceptionException(argerr("poolName can be null but cannot be an empty string"));
         }else if(msg.isImportImages() && msg.getPoolName() == null){
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    "poolName is required when importImages is true"
-            ));
+            throw new ApiMessageInterceptionException(argerr("poolName is required when importImages is true"));
         }
 
         checkMonUrls(msg.getMonUrls());

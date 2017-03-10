@@ -23,6 +23,8 @@ import org.zstack.kvm.KVMHostConnectedContext;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.operr;
+
 import javax.persistence.TypedQuery;
 import java.util.Iterator;
 import java.util.List;
@@ -102,9 +104,8 @@ public class LocalStorageKvmFactory implements LocalStorageHypervisorFactory, KV
             @Override
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {
-                    trigger.fail(errf.stringToOperationError(
-                            String.format("KVM host[uuid: %s] fails to be added into local primary storage[uuid: %s], %s",
-                                    context.getInventory().getUuid(), priUuid, reply.getError())));
+                    trigger.fail(operr("KVM host[uuid: %s] fails to be added into local primary storage[uuid: %s], %s",
+                            context.getInventory().getUuid(), priUuid, reply.getError()));
                 } else {
                     initLocalStorage(iterator, trigger, data, context);
                 }

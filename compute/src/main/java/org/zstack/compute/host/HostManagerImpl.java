@@ -40,6 +40,8 @@ import org.zstack.utils.*;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.operr;
+
 import javax.persistence.Tuple;
 import java.util.*;
 
@@ -270,7 +272,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
                 String version = HostSystemTags.OS_VERSION.getTokenByResourceUuid(vo.getUuid(), HostSystemTags.OS_VERSION_TOKEN);
 
                 if (distro == null && release == null && version == null) {
-                    trigger.fail(errf.stringToOperationError(String.format("after connecting, host[name:%s, ip:%s] returns a null os version", vo.getName(), vo.getManagementIp())));
+                    trigger.fail(operr("after connecting, host[name:%s, ip:%s] returns a null os version", vo.getName(), vo.getManagementIp()));
                     return;
                 }
 
@@ -309,8 +311,8 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
                 String currentVersion = String.format("%s;%s;%s", cdistro, crelease, cversion);
 
                 if (!mineVersion.equals(currentVersion)) {
-                    trigger.fail(errf.stringToOperationError(String.format("cluster[uuid:%s] already has host with os version[%s], but new added host[name:%s ip:%s] has host os version[%s]",
-                            vo.getClusterUuid(), currentVersion, vo.getName(), vo.getManagementIp(), mineVersion)));
+                    trigger.fail(operr("cluster[uuid:%s] already has host with os version[%s], but new added host[name:%s ip:%s] has host os version[%s]",
+                            vo.getClusterUuid(), currentVersion, vo.getName(), vo.getManagementIp(), mineVersion));
                     return;
                 }
 

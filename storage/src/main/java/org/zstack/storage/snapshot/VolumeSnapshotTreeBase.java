@@ -55,6 +55,8 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.message.OperationChecker;
 
+import static org.zstack.core.Platform.operr;
+
 import javax.persistence.Query;
 import java.util.*;
 
@@ -127,8 +129,8 @@ public class VolumeSnapshotTreeBase {
     private void refreshVO() {
         VolumeSnapshotVO vo = dbf.reload(currentRoot);
         if (vo == null) {
-            throw new OperationFailureException(errf.stringToOperationError(String.format("cannot find volume snapshot[uuid:%s, name:%s], it may have been deleted by previous operation",
-                    currentRoot.getUuid(), currentRoot.getName())));
+            throw new OperationFailureException(operr("cannot find volume snapshot[uuid:%s, name:%s], it may have been deleted by previous operation",
+                    currentRoot.getUuid(), currentRoot.getName()));
         }
 
         currentRoot = vo;
@@ -611,12 +613,8 @@ public class VolumeSnapshotTreeBase {
                 }
 
                 if (err != null) {
-                    completion.fail(errf.instantiateErrorCode(
-                            SysErrors.OPERATION_ERROR,
-                            String.format("failed to change status of volume snapshot[uuid:%s, name:%s] by status event[%s]",
-                                    failSnapshot.getUuid(), failSnapshot.getName(), evt),
-                            err
-                    ));
+                    completion.fail(operr("failed to change status of volume snapshot[uuid:%s, name:%s] by status event[%s]",
+                                    failSnapshot.getUuid(), failSnapshot.getName(), evt).causedBy(err));
                 } else {
                     completion.success();
                 }
@@ -1205,14 +1203,12 @@ public class VolumeSnapshotTreeBase {
                             q.add(VmInstanceVO_.uuid, Op.EQ, rmsg.getVolume().getVmInstanceUuid());
                             VmInstanceState state = q.findValue();
                             if (state != VmInstanceState.Stopped) {
-                                throw new OperationFailureException(errf.stringToOperationError(
-                                        String.format("unable to reset volume[uuid:%s] to snapshot[uuid:%s]," +
-                                                        " the vm[uuid:%s] volume attached to is not in Stopped state," +
-                                                        " current state is %s",
-                                                rmsg.getVolume().getUuid(),
-                                                rmsg.getSnapshot().getUuid(),
-                                                rmsg.getVolume().getVmInstanceUuid(), state)
-                                ));
+                                throw new OperationFailureException(operr("unable to reset volume[uuid:%s] to snapshot[uuid:%s]," +
+                                                " the vm[uuid:%s] volume attached to is not in Stopped state," +
+                                                " current state is %s",
+                                        rmsg.getVolume().getUuid(),
+                                        rmsg.getSnapshot().getUuid(),
+                                        rmsg.getVolume().getVmInstanceUuid(), state));
                             }
                         }
 

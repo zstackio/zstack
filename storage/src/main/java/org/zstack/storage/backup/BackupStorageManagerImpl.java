@@ -34,6 +34,8 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.operr;
+
 import javax.persistence.LockModeType;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
@@ -297,9 +299,7 @@ public class BackupStorageManagerImpl extends AbstractService implements BackupS
             }
 
             if (target == null) {
-                reply.setError(errf.stringToOperationError(
-                        String.format("capacity reservation on all backup storage failed")
-                ));
+                reply.setError(operr("capacity reservation on all backup storage failed"));
             } else {
                 reply.setInventory(target);
             }

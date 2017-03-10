@@ -7,6 +7,8 @@ import org.zstack.utils.TypeUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.i18n;
+
 import java.lang.reflect.Method;
 import java.util.concurrent.TimeUnit;
 
@@ -68,7 +70,7 @@ public abstract class Retry<T> {
                 if (count == 0) {
                     ErrorCode errorCode = new ErrorCode();
                     errorCode.setCode(SysErrors.OPERATION_ERROR.toString());
-                    errorCode.setDescription(String.format("an operation[%s] fails after retrying %s times with the interval %s seconds",
+                    errorCode.setDescription(i18n("an operation[%s] fails after retrying %s times with the interval %s seconds",
                             __name__, times, interval));
                     errorCode.setDetails(t.getMessage());
                     logger.warn(errorCode.toString(), t);

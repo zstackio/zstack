@@ -28,6 +28,9 @@ import org.zstack.utils.ShellResult;
 import org.zstack.utils.ShellUtils;
 import org.zstack.utils.network.NetworkUtils;
 
+import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.operr;
+
 import javax.persistence.Tuple;
 import java.util.List;
 
@@ -72,16 +75,12 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor {
             String format = t.get(1, String.class);
 
             if (type != ImageMediaType.RootVolumeTemplate) {
-                throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                        String.format("image[uuid:%s]'s mediaType is %s, the mediaType of a virtual router image must be %s",
-                                msg.getImageUuid(), type, ImageMediaType.RootVolumeTemplate)
-                ));
+                throw new ApiMessageInterceptionException(argerr("image[uuid:%s]'s mediaType is %s, the mediaType of a virtual router image must be %s",
+                                msg.getImageUuid(), type, ImageMediaType.RootVolumeTemplate));
             }
 
             if (ImageConstant.ISO_FORMAT_STRING.equals(format)) {
-                throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                        String.format("image[uuid:%s] is of format %s, cannot be used for virtual router", msg.getImageUuid(), format)
-                ));
+                throw new ApiMessageInterceptionException(argerr("image[uuid:%s] is of format %s, cannot be used for virtual router", msg.getImageUuid(), format));
             }
         }
     }
@@ -104,10 +103,8 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor {
         q.add(L3NetworkVO_.uuid, Op.EQ, msg.getManagementNetworkUuid());
         String zoneUuid = q.findValue();
         if (!zoneUuid.equals(msg.getZoneUuid()))  {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("management network[uuid:%s] is not in the same zone[uuid:%s] this offering is going to create",
-                            msg.getManagementNetworkUuid(), msg.getZoneUuid())
-            ));
+            throw new ApiMessageInterceptionException(argerr("management network[uuid:%s] is not in the same zone[uuid:%s] this offering is going to create",
+                            msg.getManagementNetworkUuid(), msg.getZoneUuid()));
         }
 
         if (!CoreGlobalProperty.UNIT_TEST_ON) {
@@ -119,10 +116,8 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor {
         q.add(L3NetworkVO_.uuid, Op.EQ, msg.getPublicNetworkUuid());
         zoneUuid = q.findValue();
         if (!zoneUuid.equals(msg.getZoneUuid()))  {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("public network[uuid:%s] is not in the same zone[uuid:%s] this offering is going to create",
-                            msg.getManagementNetworkUuid(), msg.getZoneUuid())
-            ));
+            throw new ApiMessageInterceptionException(argerr("public network[uuid:%s] is not in the same zone[uuid:%s] this offering is going to create",
+                            msg.getManagementNetworkUuid(), msg.getZoneUuid()));
         }
 
         SimpleQuery<ImageVO> imq = dbf.createQuery(ImageVO.class);
@@ -132,17 +127,13 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor {
 
         ImageMediaType type = t.get(0, ImageMediaType.class);
         if (type != ImageMediaType.RootVolumeTemplate) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("image[uuid:%s]'s mediaType is %s, the mediaType of a virtual router image must be %s",
-                            msg.getImageUuid(), type, ImageMediaType.RootVolumeTemplate)
-            ));
+            throw new ApiMessageInterceptionException(argerr("image[uuid:%s]'s mediaType is %s, the mediaType of a virtual router image must be %s",
+                            msg.getImageUuid(), type, ImageMediaType.RootVolumeTemplate));
         }
 
         String format = t.get(1, String.class);
         if (ImageConstant.ISO_FORMAT_STRING.equals(format)) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("image[uuid:%s] is of format %s, cannot be used for virtual router", msg.getImageUuid(), format)
-            ));
+            throw new ApiMessageInterceptionException(argerr("image[uuid:%s] is of format %s, cannot be used for virtual router", msg.getImageUuid(), format));
         }
 
         SimpleQuery<NetworkServiceL3NetworkRefVO> nq = dbf.createQuery(NetworkServiceL3NetworkRefVO.class);
@@ -151,13 +142,9 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor {
         for (NetworkServiceL3NetworkRefVO nref : nrefs) {
             if (NetworkServiceType.SNAT.toString().equals(nref.getNetworkServiceType())) {
                 if (nref.getL3NetworkUuid().equals(msg.getManagementNetworkUuid())) {
-                    throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                            String.format("the L3 network[uuid: %s] has the SNAT service enabled, it cannot be used as a management network", msg.getManagementNetworkUuid())
-                    ));
+                    throw new ApiMessageInterceptionException(argerr("the L3 network[uuid: %s] has the SNAT service enabled, it cannot be used as a management network", msg.getManagementNetworkUuid()));
                 } else if (nref.getL3NetworkUuid().equals(msg.getPublicNetworkUuid())) {
-                    throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                            String.format("the L3 network[uuid: %s] has the SNAT service enabled, it cannot be used as a public network", msg.getPublicNetworkUuid())
-                    ));
+                    throw new ApiMessageInterceptionException(argerr("the L3 network[uuid: %s] has the SNAT service enabled, it cannot be used as a public network", msg.getPublicNetworkUuid()));
                 }
             }
         }
@@ -168,9 +155,7 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor {
         q.add(IpRangeVO_.l3NetworkUuid, Op.EQ, managementNetworkUuid);
         List<IpRangeVO> iprs = q.list();
         if (iprs.isEmpty()) {
-            throw new ApiMessageInterceptionException(errf.stringToOperationError(
-                    String.format("the management network[uuid:%s] doesn't have any IP range", managementNetworkUuid)
-            ));
+            throw new ApiMessageInterceptionException(operr("the management network[uuid:%s] doesn't have any IP range", managementNetworkUuid));
         }
 
         String startIp = iprs.get(0).getStartIp();
@@ -187,9 +172,7 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor {
             }
         }
 
-        throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                String.format("the management network[uuid:%s, gateway:%s] is not reachable", managementNetworkUuid, gateway)
-        ));
+        throw new ApiMessageInterceptionException(argerr("the management network[uuid:%s, gateway:%s] is not reachable", managementNetworkUuid, gateway));
     }
 
     private void validate(APIQueryVirtualRouterOfferingMsg msg) {

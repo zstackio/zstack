@@ -41,6 +41,9 @@ import org.zstack.tag.TagManager;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.operr;
+
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -86,7 +89,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
     private void passThrough(LoadBalancerMessage msg) {
         LoadBalancerVO vo = dbf.findByUuid(msg.getLoadBalancerUuid(), LoadBalancerVO.class);
         if (vo == null) {
-            throw new OperationFailureException(errf.stringToOperationError(String.format("cannot find the load balancer[uuid:%s]", msg.getLoadBalancerUuid())));
+            throw new OperationFailureException(operr("cannot find the load balancer[uuid:%s]", msg.getLoadBalancerUuid()));
         }
 
         LoadBalancerBase base = new LoadBalancerBase(vo);
@@ -225,9 +228,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
         AbstractSystemTagOperationJudger judger = new AbstractSystemTagOperationJudger() {
             @Override
             public void tagPreDeleted(SystemTagInventory tag) {
-                throw new OperationFailureException(errf.stringToOperationError(
-                        String.format("cannot delete the system tag[%s]. The load balancer plugin relies on it, you can only update it", tag.getTag())
-                ));
+                throw new OperationFailureException(operr("cannot delete the system tag[%s]. The load balancer plugin relies on it, you can only update it", tag.getTag()));
             }
         };
         LoadBalancerSystemTags.BALANCER_ALGORITHM.installJudger(judger);
@@ -246,9 +247,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                         LoadBalancerSystemTags.BALANCER_ALGORITHM_TOKEN);
 
                 if (!LoadBalancerConstants.BALANCE_ALGORITHMS.contains(algorithm)) {
-                    throw new OperationFailureException(errf.stringToInvalidArgumentError(
-                            String.format("invalid balance algorithm[%s], valid algorithms are %s", algorithm, LoadBalancerConstants.BALANCE_ALGORITHMS)
-                    ));
+                    throw new OperationFailureException(argerr("invalid balance algorithm[%s], valid algorithms are %s", algorithm, LoadBalancerConstants.BALANCE_ALGORITHMS));
                 }
             }
         });
@@ -262,9 +261,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                 try {
                     Long.valueOf(s);
                 } catch (NumberFormatException e) {
-                    throw new OperationFailureException(errf.stringToInvalidArgumentError(
-                            String.format("invalid unhealthy threshold[%s], %s is not a number", systemTag, s)
-                    ));
+                    throw new OperationFailureException(argerr("invalid unhealthy threshold[%s], %s is not a number", systemTag, s));
                 }
             }
         });
@@ -278,9 +275,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                 try {
                     Long.valueOf(s);
                 } catch (NumberFormatException e) {
-                    throw new OperationFailureException(errf.stringToInvalidArgumentError(
-                            String.format("invalid healthy threshold[%s], %s is not a number", systemTag, s)
-                    ));
+                    throw new OperationFailureException(argerr("invalid healthy threshold[%s], %s is not a number", systemTag, s));
                 }
             }
         });
@@ -294,9 +289,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                 try {
                     Long.valueOf(s);
                 } catch (NumberFormatException e) {
-                    throw new OperationFailureException(errf.stringToInvalidArgumentError(
-                            String.format("invalid healthy timeout[%s], %s is not a number", systemTag, s)
-                    ));
+                    throw new OperationFailureException(argerr("invalid healthy timeout[%s], %s is not a number", systemTag, s));
                 }
             }
         });
@@ -310,9 +303,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                 try {
                     Long.valueOf(s);
                 } catch (NumberFormatException e) {
-                    throw new OperationFailureException(errf.stringToInvalidArgumentError(
-                            String.format("invalid connection idle timeout[%s], %s is not a number", systemTag, s)
-                    ));
+                    throw new OperationFailureException(argerr("invalid connection idle timeout[%s], %s is not a number", systemTag, s));
                 }
             }
         });
@@ -326,9 +317,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                 try {
                     Long.valueOf(s);
                 } catch (NumberFormatException e) {
-                    throw new OperationFailureException(errf.stringToInvalidArgumentError(
-                            String.format("invalid health check interval[%s], %s is not a number", systemTag, s)
-                    ));
+                    throw new OperationFailureException(argerr("invalid health check interval[%s], %s is not a number", systemTag, s));
                 }
             }
         });
@@ -342,9 +331,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                 try {
                     Long.valueOf(s);
                 } catch (NumberFormatException e) {
-                    throw new OperationFailureException(errf.stringToInvalidArgumentError(
-                            String.format("invalid max connection[%s], %s is not a number", systemTag, s)
-                    ));
+                    throw new OperationFailureException(argerr("invalid max connection[%s], %s is not a number", systemTag, s));
                 }
             }
         });
@@ -357,17 +344,13 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
 
                 String[] ts = target.split(":");
                 if (ts.length != 2) {
-                    throw new OperationFailureException(errf.stringToInvalidArgumentError(
-                            String.format("invalid health target[%s], the format is targetCheckProtocol:port, for example, tcp:default", systemTag)
-                    ));
+                    throw new OperationFailureException(argerr("invalid health target[%s], the format is targetCheckProtocol:port, for example, tcp:default", systemTag));
                 }
 
                 String protocol = ts[0];
                 if (!LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCOLS.contains(protocol)) {
-                    throw new OperationFailureException(errf.stringToInvalidArgumentError(
-                            String.format("invalid health target[%s], the target checking protocol[%s] is invalid, valid protocols are %s",
-                                    systemTag, protocol, LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCOLS)
-                    ));
+                    throw new OperationFailureException(argerr("invalid health target[%s], the target checking protocol[%s] is invalid, valid protocols are %s",
+                                    systemTag, protocol, LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCOLS));
                 }
 
                 String port = ts[1];
@@ -375,14 +358,10 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                     try {
                         int p = Integer.valueOf(port);
                         if (p < 1 || p > 65535) {
-                            throw new OperationFailureException(errf.stringToInvalidArgumentError(
-                                    String.format("invalid invalid health target[%s], port[%s] is not in the range of [1, 65535]", systemTag, port)
-                            ));
+                            throw new OperationFailureException(argerr("invalid invalid health target[%s], port[%s] is not in the range of [1, 65535]", systemTag, port));
                         }
                     } catch (NumberFormatException e) {
-                        throw new OperationFailureException(errf.stringToInvalidArgumentError(
-                                String.format("invalid invalid health target[%s], port[%s] is not a number", systemTag, port)
-                        ));
+                        throw new OperationFailureException(argerr("invalid invalid health target[%s], port[%s] is not a number", systemTag, port));
                     }
                 }
             }

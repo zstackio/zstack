@@ -37,6 +37,9 @@ import org.zstack.tag.TagManager;
 import org.zstack.utils.*;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
+import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.operr;
+
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
@@ -82,15 +85,11 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                 String uuid = PrimaryStorageSystemTags.PRIMARY_STORAGE_ALLOCATOR_UUID_TAG.getTokenByTag(
                         systemTag, PrimaryStorageSystemTags.PRIMARY_STORAGE_ALLOCATOR_UUID_TAG_TOKEN);
                 if (!StringDSL.isZstackUuid(uuid)) {
-                    throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                            String.format("%s is invalid. %s is not a valid zstack uuid", systemTag, uuid)
-                    ));
+                    throw new ApiMessageInterceptionException(argerr("%s is invalid. %s is not a valid zstack uuid", systemTag, uuid));
                 }
 
                 if (!dbf.isExist(uuid, PrimaryStorageVO.class)) {
-                    throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                            String.format("no primary storage[uuid:%s] found", resourceUuid)
-                    ));
+                    throw new ApiMessageInterceptionException(argerr("no primary storage[uuid:%s] found", resourceUuid));
                 }
             }
         });
@@ -566,8 +565,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         }
 
         if (target == null) {
-            throw new OperationFailureException(errf.stringToOperationError(
-                    String.format("cannot find any qualified primary storage, errors are %s", errs)));
+            throw new OperationFailureException(operr("cannot find any qualified primary storage, errors are %s", errs));
         }
 
         reply.setPrimaryStorageInventory(target);

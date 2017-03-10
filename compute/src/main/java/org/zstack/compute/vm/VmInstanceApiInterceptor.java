@@ -35,6 +35,9 @@ import org.zstack.header.zone.ZoneVO;
 import org.zstack.header.zone.ZoneVO_;
 import org.zstack.utils.network.NetworkUtils;
 
+import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.operr;
+
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
@@ -121,7 +124,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         Long usedMemory = (Long) result.get(3);
 
         if ((cpuSum != null && cpuSum > (usedCpu + availableCpu) || (memorySize != null && memorySize > (usedMemory + availableMemory)))) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+            throw new ApiMessageInterceptionException(argerr(
                     "the host doesn't have enough capacity"
             ));
         }
@@ -130,7 +133,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(APIGetInterdependentL3NetworksImagesMsg msg) {
         if (msg.getL3NetworkUuids() == null && msg.getImageUuid() == null) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+            throw new ApiMessageInterceptionException(argerr(
                     "either l3NetworkUuids or imageUuid must be set"
             ));
         }
@@ -154,9 +157,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         q.add(VmInstanceVO_.uuid, Op.EQ, msg.getVmInstanceUuid());
         VmInstanceState state = q.findValue();
         if (state == VmInstanceState.Destroyed) {
-            throw new ApiMessageInterceptionException(errf.stringToOperationError(
-                    String.format("vm[uuid:%s] can only create scheduler when state is not Destroyed", msg.getVmInstanceUuid())
-            ));
+            throw new ApiMessageInterceptionException(operr("vm[uuid:%s] can only create scheduler when state is not Destroyed", msg.getVmInstanceUuid()));
         }
 
     }
@@ -167,9 +168,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         q.add(VmInstanceVO_.uuid, Op.EQ, msg.getVmInstanceUuid());
         VmInstanceState state = q.findValue();
         if (state == VmInstanceState.Destroyed) {
-            throw new ApiMessageInterceptionException(errf.stringToOperationError(
-                    String.format("vm[uuid:%s] can only create scheduler when state is not Destroyed", msg.getVmInstanceUuid())
-            ));
+            throw new ApiMessageInterceptionException(operr("vm[uuid:%s] can only create scheduler when state is not Destroyed", msg.getVmInstanceUuid()));
         }
     }
 
@@ -179,27 +178,21 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         q.add(VmInstanceVO_.uuid, Op.EQ, msg.getVmInstanceUuid());
         VmInstanceState state = q.findValue();
         if (state == VmInstanceState.Destroyed) {
-            throw new ApiMessageInterceptionException(errf.stringToOperationError(
-                    String.format("vm[uuid:%s] can only create scheduler when state is not Destroyed", msg.getVmInstanceUuid())
-            ));
+            throw new ApiMessageInterceptionException(operr("vm[uuid:%s] can only create scheduler when state is not Destroyed", msg.getVmInstanceUuid()));
         }
     }
 
     private void validate(APISetVmStaticIpMsg msg) {
         if (!NetworkUtils.isIpv4Address(msg.getIp())) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("%s is not a valid IPv4 address", msg.getIp()))
-            );
+            throw new ApiMessageInterceptionException(argerr("%s is not a valid IPv4 address", msg.getIp()));
         }
 
         SimpleQuery<VmNicVO> q = dbf.createQuery(VmNicVO.class);
         q.add(VmNicVO_.vmInstanceUuid, Op.EQ, msg.getVmInstanceUuid());
         q.add(VmNicVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
         if (!q.isExists()) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("the VM[uuid:%s] has no nic on the L3 network[uuid:%s]", msg.getVmInstanceUuid(),
-                            msg.getL3NetworkUuid())
-            ));
+            throw new ApiMessageInterceptionException(argerr("the VM[uuid:%s] has no nic on the L3 network[uuid:%s]", msg.getVmInstanceUuid(),
+                            msg.getL3NetworkUuid()));
         }
     }
 
@@ -208,10 +201,8 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         q.add(VmNicVO_.vmInstanceUuid, Op.EQ, msg.getVmInstanceUuid());
         q.add(VmNicVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
         if (!q.isExists()) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("the VM[uuid:%s] has no nic on the L3 network[uuid:%s]", msg.getVmInstanceUuid(),
-                            msg.getL3NetworkUuid())
-            ));
+            throw new ApiMessageInterceptionException(argerr("the VM[uuid:%s] has no nic on the L3 network[uuid:%s]", msg.getVmInstanceUuid(),
+                            msg.getL3NetworkUuid()));
         }
     }
 
@@ -221,9 +212,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 try {
                     VmBootDevice.valueOf(o);
                 } catch (IllegalArgumentException e) {
-                    throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                            String.format("invalid boot device[%s] in boot order%s", o, msg.getBootOrder())
-                    ));
+                    throw new ApiMessageInterceptionException(argerr("invalid boot device[%s] in boot order%s", o, msg.getBootOrder()));
                 }
             }
         }
@@ -232,9 +221,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
     private void validate(APIAttachIsoToVmInstanceMsg msg) {
         String isoUuid = new IsoOperator().getIsoUuidByVmUuid(msg.getVmInstanceUuid());
         if (isoUuid != null) {
-            throw new ApiMessageInterceptionException(errf.stringToOperationError(
-                    String.format("VM[uuid:%s] already has an ISO[uuid:%s] attached", msg.getVmInstanceUuid(), isoUuid)
-            ));
+            throw new ApiMessageInterceptionException(operr("VM[uuid:%s] already has an ISO[uuid:%s] attached", msg.getVmInstanceUuid(), isoUuid));
         }
     }
 
@@ -246,26 +233,20 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         String type = t.get(0, String.class);
         VmInstanceState state = t.get(1, VmInstanceState.class);
         if (!VmInstanceConstant.USER_VM_TYPE.equals(type)) {
-            throw new ApiMessageInterceptionException(errf.stringToOperationError(
-                    String.format("unable to attach a L3 network. The vm[uuid: %s] is not a user vm", type)
-            ));
+            throw new ApiMessageInterceptionException(operr("unable to attach a L3 network. The vm[uuid: %s] is not a user vm", type));
         }
 
         if (!VmInstanceState.Running.equals(state) && !VmInstanceState.Stopped.equals(state)) {
-            throw new ApiMessageInterceptionException(errf.stringToOperationError(
-                    String.format("unable to detach a L3 network. The vm[uuid: %s] is not Running or Stopped; the current state is %s",
-                            msg.getVmInstanceUuid(), state)
-            ));
+            throw new ApiMessageInterceptionException(operr("unable to detach a L3 network. The vm[uuid: %s] is not Running or Stopped; the current state is %s",
+                            msg.getVmInstanceUuid(), state));
         }
 
         SimpleQuery<VmNicVO> nq = dbf.createQuery(VmNicVO.class);
         nq.add(VmNicVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
         nq.add(VmNicVO_.vmInstanceUuid, Op.EQ, msg.getVmInstanceUuid());
         if (nq.isExists()) {
-            throw new ApiMessageInterceptionException(errf.stringToOperationError(
-                    String.format("unable to attach a L3 network. The L3 network[uuid:%s] is already attached to the vm[uuid: %s]",
-                            msg.getL3NetworkUuid(), msg.getVmInstanceUuid())
-            ));
+            throw new ApiMessageInterceptionException(operr("unable to attach a L3 network. The L3 network[uuid:%s] is already attached to the vm[uuid: %s]",
+                            msg.getL3NetworkUuid(), msg.getVmInstanceUuid()));
         }
 
         SimpleQuery<L3NetworkVO> l3q = dbf.createQuery(L3NetworkVO.class);
@@ -275,14 +256,10 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         L3NetworkState l3state = t.get(0, L3NetworkState.class);
         boolean system = t.get(1, Boolean.class);
         if (l3state == L3NetworkState.Disabled) {
-            throw new ApiMessageInterceptionException(errf.stringToOperationError(
-                    String.format("unable to attach a L3 network. The L3 network[uuid:%s] is disabled", msg.getL3NetworkUuid())
-            ));
+            throw new ApiMessageInterceptionException(operr("unable to attach a L3 network. The L3 network[uuid:%s] is disabled", msg.getL3NetworkUuid()));
         }
         if (system) {
-            throw new ApiMessageInterceptionException(errf.stringToOperationError(
-                    String.format("unable to attach a L3 network. The L3 network[uuid:%s] is a system network", msg.getL3NetworkUuid())
-            ));
+            throw new ApiMessageInterceptionException(operr("unable to attach a L3 network. The L3 network[uuid:%s] is a system network", msg.getL3NetworkUuid()));
         }
 
         if (msg.getStaticIp() != null) {
@@ -299,18 +276,14 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             }
 
             if (!found) {
-                throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                        String.format("the static IP[%s] is not in any IP range of the L3 network[uuid:%s]", msg.getStaticIp(), msg.getL3NetworkUuid())
-                ));
+                throw new ApiMessageInterceptionException(argerr("the static IP[%s] is not in any IP range of the L3 network[uuid:%s]", msg.getStaticIp(), msg.getL3NetworkUuid()));
             }
 
             SimpleQuery<UsedIpVO> uq = dbf.createQuery(UsedIpVO.class);
             uq.add(UsedIpVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
             uq.add(UsedIpVO_.ip, Op.EQ, msg.getStaticIp());
             if (uq.isExists()) {
-                throw new ApiMessageInterceptionException(errf.stringToOperationError(
-                        String.format("the static IP[%s] has been occupied on the L3 network[uuid:%s]", msg.getStaticIp(), msg.getL3NetworkUuid())
-                ));
+                throw new ApiMessageInterceptionException(operr("the static IP[%s] has been occupied on the L3 network[uuid:%s]", msg.getStaticIp(), msg.getL3NetworkUuid()));
             }
         }
     }
@@ -326,16 +299,12 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         VmInstanceState state = t.get(2, VmInstanceState.class);
 
         if (!VmInstanceConstant.USER_VM_TYPE.equals(vmType)) {
-            throw new ApiMessageInterceptionException(errf.stringToOperationError(
-                    String.format("unable to detach a L3 network. The vm[uuid: %s] is not a user vm", msg.getVmInstanceUuid())
-            ));
+            throw new ApiMessageInterceptionException(operr("unable to detach a L3 network. The vm[uuid: %s] is not a user vm", msg.getVmInstanceUuid()));
         }
 
         if (!VmInstanceState.Running.equals(state) && !VmInstanceState.Stopped.equals(state)) {
-            throw new ApiMessageInterceptionException(errf.stringToOperationError(
-                    String.format("unable to detach a L3 network. The vm[uuid: %s] is not Running or Stopped; the current state is %s",
-                            msg.getVmInstanceUuid(), state)
-            ));
+            throw new ApiMessageInterceptionException(operr("unable to detach a L3 network. The vm[uuid: %s] is not Running or Stopped; the current state is %s",
+                            msg.getVmInstanceUuid(), state));
         }
 
         msg.setVmInstanceUuid(vmUuid);
@@ -358,9 +327,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         q.add(VmInstanceVO_.uuid, Op.EQ, msg.getVmInstanceUuid());
         VmInstanceState state = q.findValue();
         if (state != VmInstanceState.Stopped && state != VmInstanceState.Running) {
-            throw new ApiMessageInterceptionException(errf.stringToOperationError(
-                    String.format("vm[uuid:%s] can only attach volume when state is Running or Stopped, current state is %s", msg.getVmInstanceUuid(), state)
-            ));
+            throw new ApiMessageInterceptionException(operr("vm[uuid:%s] can only attach volume when state is Running or Stopped, current state is %s", msg.getVmInstanceUuid(), state));
         }
     }
 
@@ -370,9 +337,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         iq.add(InstanceOfferingVO_.uuid, Op.EQ, msg.getInstanceOfferingUuid());
         InstanceOfferingState istate = iq.findValue();
         if (istate == InstanceOfferingState.Disabled) {
-            throw new ApiMessageInterceptionException(errf.stringToOperationError(
-                    String.format("instance offering[uuid:%s] is Disabled, can't create vm from it", msg.getInstanceOfferingUuid())
-            ));
+            throw new ApiMessageInterceptionException(operr("instance offering[uuid:%s] is Disabled, can't create vm from it", msg.getInstanceOfferingUuid()));
         }
 
         SimpleQuery<ImageVO> imgq = dbf.createQuery(ImageVO.class);
@@ -381,30 +346,22 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         Tuple imgt = imgq.findTuple();
         ImageState imgState = imgt.get(0, ImageState.class);
         if (imgState == ImageState.Disabled) {
-            throw new ApiMessageInterceptionException(errf.stringToOperationError(
-                    String.format("image[uuid:%s] is Disabled, can't create vm from it", msg.getImageUuid())
-            ));
+            throw new ApiMessageInterceptionException(operr("image[uuid:%s] is Disabled, can't create vm from it", msg.getImageUuid()));
         }
 
 
         ImageMediaType imgFormat = imgt.get(2, ImageMediaType.class);
         if (imgFormat != ImageMediaType.RootVolumeTemplate && imgFormat != ImageMediaType.ISO) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("image[uuid:%s] is of mediaType: %s, only RootVolumeTemplate and ISO can be used to create vm", msg.getImageUuid(), imgFormat)
-            ));
+            throw new ApiMessageInterceptionException(argerr("image[uuid:%s] is of mediaType: %s, only RootVolumeTemplate and ISO can be used to create vm", msg.getImageUuid(), imgFormat));
         }
 
         if (imgFormat == ImageMediaType.ISO && msg.getRootDiskOfferingUuid() == null) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("rootDiskOfferingUuid cannot be null when image mediaType is ISO")
-            ));
+            throw new ApiMessageInterceptionException(argerr("rootDiskOfferingUuid cannot be null when image mediaType is ISO"));
         }
 
         boolean isSystemImage = imgt.get(1, Boolean.class);
         if (isSystemImage && (msg.getType() == null || VmInstanceConstant.USER_VM_TYPE.equals(msg.getType()))) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("image[uuid:%s] is system image, can't be used to create user vm", msg.getImageUuid())
-            ));
+            throw new ApiMessageInterceptionException(argerr("image[uuid:%s] is system image, can't be used to create user vm", msg.getImageUuid()));
         }
 
 
@@ -423,9 +380,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             dq.add(DiskOfferingVO_.uuid, Op.IN, allDiskOfferingUuids);
             List<String> diskUuids = dq.listValue();
             if (!diskUuids.isEmpty()) {
-                throw new ApiMessageInterceptionException(errf.stringToOperationError(
-                        String.format("disk offerings[uuids:%s] are Disabled, can not create vm from it", diskUuids)
-                ));
+                throw new ApiMessageInterceptionException(operr("disk offerings[uuids:%s] are Disabled, can not create vm from it", diskUuids));
             }
         }
 
@@ -434,9 +389,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         List<String> uuids = new ArrayList<>(msg.getL3NetworkUuids());
         List<String> duplicateElements = getDuplicateElements(uuids);
         if (duplicateElements.size() > 0) {
-            throw new ApiMessageInterceptionException(errf.stringToOperationError(
-                    String.format("Can't add same uuid in the l3Network,uuid:" + duplicateElements.get(0))
-            ));
+            throw new ApiMessageInterceptionException(operr("Can't add same uuid in the l3Network,uuid: %s", duplicateElements.get(0)));
         }
 
         l3q.add(L3NetworkVO_.uuid, Op.IN, msg.getL3NetworkUuids());
@@ -446,15 +399,11 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             Boolean system = t.get(1, Boolean.class);
             L3NetworkState state = t.get(2, L3NetworkState.class);
             if (state != L3NetworkState.Enabled) {
-                throw new ApiMessageInterceptionException(errf.stringToOperationError(
-                        String.format("l3Network[uuid:%s] is Disabled, can not create vm on it", l3Uuid)
-                ));
+                throw new ApiMessageInterceptionException(operr("l3Network[uuid:%s] is Disabled, can not create vm on it", l3Uuid));
             }
 
             if (system && (msg.getType() == null || VmInstanceConstant.USER_VM_TYPE.equals(msg.getType()))) {
-                throw new ApiMessageInterceptionException(errf.stringToOperationError(
-                        String.format("l3Network[uuid:%s] is system network, can not create user vm on it", l3Uuid)
-                ));
+                throw new ApiMessageInterceptionException(operr("l3Network[uuid:%s] is system network, can not create user vm on it", l3Uuid));
             }
         }
 
@@ -472,9 +421,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             zq.add(ZoneVO_.uuid, Op.EQ, msg.getZoneUuid());
             ZoneState zoneState = zq.findValue();
             if (zoneState == ZoneState.Disabled) {
-                throw new ApiMessageInterceptionException(errf.stringToOperationError(
-                        String.format("zone[uuid:%s] is specified but it's Disabled, can not create vm from it", msg.getZoneUuid())
-                ));
+                throw new ApiMessageInterceptionException(operr("zone[uuid:%s] is specified but it's Disabled, can not create vm from it", msg.getZoneUuid()));
             }
         }
 
@@ -484,9 +431,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             cq.add(ClusterVO_.uuid, Op.EQ, msg.getClusterUuid());
             ClusterState clusterState = cq.findValue();
             if (clusterState == ClusterState.Disabled) {
-                throw new ApiMessageInterceptionException(errf.stringToOperationError(
-                        String.format("cluster[uuid:%s] is specified but it's Disabled, can not create vm from it", msg.getClusterUuid())
-                ));
+                throw new ApiMessageInterceptionException(operr("cluster[uuid:%s] is specified but it's Disabled, can not create vm from it", msg.getClusterUuid()));
             }
         }
 
@@ -497,16 +442,12 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             Tuple t = hq.findTuple();
             HostState hostState = t.get(0, HostState.class);
             if (hostState == HostState.Disabled) {
-                throw new ApiMessageInterceptionException(errf.stringToOperationError(
-                        String.format("host[uuid:%s] is specified but it's Disabled, can not create vm from it", msg.getHostUuid())
-                ));
+                throw new ApiMessageInterceptionException(operr("host[uuid:%s] is specified but it's Disabled, can not create vm from it", msg.getHostUuid()));
             }
 
             HostStatus connectionState = t.get(1, HostStatus.class);
             if (connectionState != HostStatus.Connected) {
-                throw new ApiMessageInterceptionException(errf.stringToOperationError(
-                        String.format("host[uuid:%s] is specified but it's connection status is %s, can not create vm from it", msg.getHostUuid(), connectionState)
-                ));
+                throw new ApiMessageInterceptionException(operr("host[uuid:%s] is specified but it's connection status is %s, can not create vm from it", msg.getHostUuid(), connectionState));
             }
         }
 
@@ -516,15 +457,11 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
         if (VmInstanceConstant.USER_VM_TYPE.equals(msg.getType())) {
             if (msg.getDefaultL3NetworkUuid() == null && msg.getL3NetworkUuids().size() != 1) {
-                throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                        String.format("there are more than one L3 network specified in l3NetworkUuids, but defaultL3NetworkUuid is null")
-                ));
+                throw new ApiMessageInterceptionException(argerr("there are more than one L3 network specified in l3NetworkUuids, but defaultL3NetworkUuid is null"));
             } else if (msg.getDefaultL3NetworkUuid() == null && msg.getL3NetworkUuids().size() == 1) {
                 msg.setDefaultL3NetworkUuid(msg.getL3NetworkUuids().get(0));
             } else if (msg.getDefaultL3NetworkUuid() != null && !msg.getL3NetworkUuids().contains(msg.getDefaultL3NetworkUuid())) {
-                throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                        String.format("defaultL3NetworkUuid[uuid:%s] is not in l3NetworkUuids%s", msg.getDefaultL3NetworkUuid(), msg.getL3NetworkUuids())
-                ));
+                throw new ApiMessageInterceptionException(argerr("defaultL3NetworkUuid[uuid:%s] is not in l3NetworkUuids%s", msg.getDefaultL3NetworkUuid(), msg.getL3NetworkUuids()));
             }
         }
     }

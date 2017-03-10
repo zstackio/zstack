@@ -20,6 +20,8 @@ import org.zstack.network.service.portforwarding.APICreatePortForwardingRuleMsg;
 import org.zstack.network.service.portforwarding.PortForwardingRuleVO;
 import org.zstack.network.service.portforwarding.PortForwardingRuleVO_;
 
+import static org.zstack.core.Platform.operr;
+
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.List;
@@ -89,10 +91,8 @@ public class ApiValidator implements GlobalApiMessageInterceptor {
 
             List<String> pfStr = pfs.stream().map(pf -> String.format("(name:%s, ip:%s)", pf.getName(), pf.getVipIp())).collect(Collectors.toList());
 
-            throw new ApiMessageInterceptionException(errf.stringToOperationError(
-                    String.format("the vm[name:%s, uuid:%s] already has some port forwarding rules%s attached", vm.getName(), vm.getUuid(),
-                            StringUtils.join(pfStr, ","))
-            ));
+            throw new ApiMessageInterceptionException(operr("the vm[name:%s, uuid:%s] already has some port forwarding rules%s attached", vm.getName(), vm.getUuid(),
+                            StringUtils.join(pfStr, ",")));
         }
     }
 
@@ -112,10 +112,8 @@ public class ApiValidator implements GlobalApiMessageInterceptor {
 
             List<String> eipStr = eips.stream().map(eip -> String.format("(name:%s, ip:%s)", eip.getName(), eip.getVipIp())).collect(Collectors.toList());
 
-            throw new ApiMessageInterceptionException(errf.stringToOperationError(
-                    String.format("the vm[name:%s, uuid:%s] already has some EIPs%s attached", vm.getName(), vm.getUuid(),
-                            StringUtils.join(eipStr, ","))
-            ));
+            throw new ApiMessageInterceptionException(operr("the vm[name:%s, uuid:%s] already has some EIPs%s attached", vm.getName(), vm.getUuid(),
+                            StringUtils.join(eipStr, ",")));
         }
     }
 

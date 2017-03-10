@@ -53,6 +53,8 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.operr;
+
 import javax.persistence.TypedQuery;
 import java.util.*;
 
@@ -445,10 +447,8 @@ public class VolumeBase implements Volume {
 
     private void expunge(final Completion completion) {
         if (self.getStatus() != VolumeStatus.Deleted) {
-            throw new OperationFailureException(errf.stringToOperationError(
-                    String.format("the volume[uuid:%s, name:%s] is not deleted yet, can't expunge it",
-                            self.getUuid(), self.getName())
-            ));
+            throw new OperationFailureException(operr("the volume[uuid:%s, name:%s] is not deleted yet, can't expunge it",
+                            self.getUuid(), self.getName()));
         }
 
         final VolumeInventory inv = getSelfInventory();

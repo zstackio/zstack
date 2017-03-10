@@ -8,6 +8,7 @@ import org.zstack.core.db.GLock;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.AbstractService;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.Message;
 import org.zstack.utils.BeanUtils;
@@ -16,6 +17,8 @@ import org.zstack.utils.TypeUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
+
+import static org.zstack.core.Platform.argerr;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -65,8 +68,8 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
         GlobalConfig c = allConfigs.get(msg.getIdentity());
         APIGetGlobalConfigReply reply = new APIGetGlobalConfigReply();
         if (c == null) {
-            String err = String.format("unable to find GlobalConfig[category:%s, name:%s]", msg.getCategory(), msg.getName());
-            reply.setError(errf.stringToInvalidArgumentError(err));
+            ErrorCode err = argerr("unable to find GlobalConfig[category:%s, name:%s]", msg.getCategory(), msg.getName());
+            reply.setError(err);
         } else {
             GlobalConfigInventory inv = GlobalConfigInventory.valueOf(c);
             reply.setInventory(inv);
@@ -95,8 +98,8 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
         APIUpdateGlobalConfigEvent evt = new APIUpdateGlobalConfigEvent(msg.getId());
         GlobalConfig c = allConfigs.get(msg.getIdentity());
         if (c == null) {
-            String err = String.format("Unable to find GlobalConfig[category: %s, name: %s]", msg.getCategory(), msg.getName());
-            evt.setError(errf.stringToInvalidArgumentError(err));
+            ErrorCode err = argerr("Unable to find GlobalConfig[category: %s, name: %s]", msg.getCategory(), msg.getName());
+            evt.setError(err);
             bus.publish(evt);
             return;
         }
@@ -107,7 +110,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
             GlobalConfigInventory inv = GlobalConfigInventory.valueOf(c.reload());
             evt.setInventory(inv);
         } catch (GlobalConfigException e) {
-            evt.setError(errf.stringToInvalidArgumentError(e.getMessage()));
+            evt.setError(argerr(e.getMessage()));
             logger.warn(e.getMessage(), e);
         }
         

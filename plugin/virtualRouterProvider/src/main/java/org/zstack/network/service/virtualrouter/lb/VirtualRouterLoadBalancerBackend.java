@@ -39,6 +39,8 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.operr;
+
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.List;
@@ -246,7 +248,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                     if (rsp.isSuccess()) {
                         completion.success();
                     } else {
-                        completion.fail(errf.stringToOperationError(rsp.getError()));
+                        completion.fail(operr(rsp.getError()));
                     }
                 } else {
                     completion.fail(reply.getError());
@@ -696,9 +698,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
     public void addListener(LoadBalancerStruct struct, LoadBalancerListenerInventory listener, Completion completion) {
         VirtualRouterVmInventory vr = findVirtualRouterVm(struct.getLb().getUuid());
         if (vr == null) {
-            throw new OperationFailureException(errf.stringToOperationError(
-                    String.format("cannot find virtual router for load balancer [uuid:%s]", struct.getLb().getUuid())
-            ));
+            throw new OperationFailureException(operr("cannot find virtual router for load balancer [uuid:%s]", struct.getLb().getUuid()));
         }
 
         startVrIfNeededAndRefresh(vr, struct, completion);
@@ -780,7 +780,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                                             dbf.remove(ref);
                                             trigger.next();
                                         } else {
-                                            trigger.fail(errf.stringToOperationError(rsp.getError()));
+                                            trigger.fail(operr(rsp.getError()));
                                         }
                                     } else {
                                         trigger.fail(reply.getError());
@@ -849,7 +849,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                     if (rsp.isSuccess()) {
                         completion.success();
                     } else {
-                        completion.fail(errf.stringToOperationError(rsp.getError()));
+                        completion.fail(operr(rsp.getError()));
                     }
                 } else {
                     completion.fail(reply.getError());

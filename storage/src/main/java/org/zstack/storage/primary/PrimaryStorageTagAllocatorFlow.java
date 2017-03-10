@@ -22,6 +22,8 @@ import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.utils.DebugUtils;
 
+import static org.zstack.core.Platform.operr;
+
 import java.util.List;
 import java.util.Map;
 
@@ -80,9 +82,7 @@ public class PrimaryStorageTagAllocatorFlow extends NoRollbackFlow {
             }
 
             if (ret.isEmpty()) {
-                throw new OperationFailureException(errf.stringToOperationError(
-                        String.format("PrimaryStorageTagAllocatorExtensionPoint[%s] returns zero primary storage candidate", extp.getClass().getName())
-                ));
+                throw new OperationFailureException(operr("PrimaryStorageTagAllocatorExtensionPoint[%s] returns zero primary storage candidate", extp.getClass().getName()));
             }
 
             candidates = ret;

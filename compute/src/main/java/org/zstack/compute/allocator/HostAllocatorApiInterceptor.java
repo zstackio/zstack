@@ -17,6 +17,8 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.header.zone.ZoneVO_;
 
+import static org.zstack.core.Platform.argerr;
+
 import java.util.List;
 
 /**
@@ -51,7 +53,7 @@ public class HostAllocatorApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(APIGetCandidateBackupStorageForCreatingImageMsg msg) {
         if (msg.getVolumeSnapshotUuid() == null && msg.getVolumeUuid() == null) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+            throw new ApiMessageInterceptionException(argerr(
                     "either volumeUuid or volumeSnapshotUuid must be set"
             ));
         }
@@ -70,9 +72,7 @@ public class HostAllocatorApiInterceptor implements ApiMessageInterceptor {
         }
 
         if (!pass && !msg.isAll()) {
-            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                    String.format("zoneUuids, clusterUuids, hostUuids must at least have one be none-empty list, or all is set to true")
-            ));
+            throw new ApiMessageInterceptionException(argerr("zoneUuids, clusterUuids, hostUuids must at least have one be none-empty list, or all is set to true"));
         }
 
         if (msg.isAll() && (msg.getZoneUuids() == null || msg.getZoneUuids().isEmpty())) {

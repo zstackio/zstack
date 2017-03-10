@@ -12,6 +12,7 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkDnsVO;
 import org.zstack.header.network.l3.L3NetworkDnsVO_;
@@ -24,6 +25,8 @@ import org.zstack.network.service.virtualrouter.VirtualRouterCommands.SetDnsRsp;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+
+import static org.zstack.core.Platform.operr;
 
 import java.util.*;
 
@@ -102,12 +105,9 @@ public class VirtualRouterSyncDnsOnStartFlow extends NoRollbackFlow {
                 if (ret.isSuccess()) {
                     chain.next();
                 } else {
-                    String err = String.format(
-                            "virtual router[name: %s, uuid: %s] failed to configure dns%s, %s ",
-                            vr.getName(), vr.getUuid(),
-                            JSONObjectUtil.toJsonString(dns), ret.getError());
-                    logger.warn(err);
-                    chain.fail(errf.stringToOperationError(err));
+                    ErrorCode err = operr("virtual router[name: %s, uuid: %s] failed to configure dns%s, %s ",
+                            vr.getName(), vr.getUuid(), JSONObjectUtil.toJsonString(dns), ret.getError());
+                    chain.fail(err);
                 }
             }
         });

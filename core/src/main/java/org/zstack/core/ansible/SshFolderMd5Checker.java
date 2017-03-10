@@ -14,6 +14,8 @@ import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.ssh.SshResult;
 import org.zstack.utils.ssh.SshShell;
 
+import static org.zstack.core.Platform.operr;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -102,10 +104,8 @@ public class SshFolderMd5Checker implements AnsibleChecker {
         String srcScript = script.format(srcFolder);
         ShellResult srcRes = ShellUtils.runAndReturn(srcScript, false);
         if (!srcRes.isReturnCode(0)) {
-            throw new OperationFailureException(errf.stringToOperationError(
-                    String.format("cannot check md5sum of files in the folder[%s].\nstdout:%s\nstderr:%s", srcFolder,
-                            srcRes.getStdout(), srcRes.getStderr())
-            ));
+            throw new OperationFailureException(operr("cannot check md5sum of files in the folder[%s].\nstdout:%s\nstderr:%s", srcFolder,
+                            srcRes.getStdout(), srcRes.getStderr()));
         }
 
         String dstScript = script.format(dstFolder);
@@ -119,10 +119,8 @@ public class SshFolderMd5Checker implements AnsibleChecker {
             // dst folder doesn't existing
             return true;
         } else if (dstRes.getReturnCode() != 0) {
-            throw new OperationFailureException(errf.stringToOperationError(
-                    String.format("cannot check md5sum of files in the folder[%s] on the host[ip:%s].\nstdout:%s\nstderr:%s",
-                            dstFolder, hostname, dstRes.getStdout(), dstRes.getStderr())
-            ));
+            throw new OperationFailureException(operr("cannot check md5sum of files in the folder[%s] on the host[ip:%s].\nstdout:%s\nstderr:%s",
+                            dstFolder, hostname, dstRes.getStdout(), dstRes.getStderr()));
         }
 
         Map<String, String> srcMd5sum = new HashMap<String, String>();

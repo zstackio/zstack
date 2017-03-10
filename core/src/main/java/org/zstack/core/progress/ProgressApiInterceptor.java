@@ -24,20 +24,10 @@ public class ProgressApiInterceptor implements ApiMessageInterceptor {
 
     @Override
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
-        if (msg instanceof APIGetTaskProgressMsg) {
-            validate((APIGetTaskProgressMsg) msg);
-        }
         setServiceId(msg);
         return msg;
     }
 
-    private void validate(APIGetTaskProgressMsg msg) {
-        if (msg.getResourceUuid() == null) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    "resourceUuid cannot be null"
-            ));
-        }
-    }
 
     private void setServiceId(APIMessage msg) {
         if (msg instanceof APIGetTaskProgressMsg) {

@@ -33,6 +33,8 @@ import org.zstack.search.SearchQuery;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.operr;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -364,8 +366,8 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
         }
         
         if (targetRef == null) {
-            throw new OperationFailureException(errf.stringToOperationError(String.format("L3Network[uuid:%s] doesn't have network service[type:%s] enabled or no provider provides this network service",
-                    l3NetworkUuid, serviceType)));
+            throw new OperationFailureException(operr("L3Network[uuid:%s] doesn't have network service[type:%s] enabled or no provider provides this network service",
+                    l3NetworkUuid, serviceType));
         }
         
         SimpleQuery<NetworkServiceProviderVO> q = dbf.createQuery(NetworkServiceProviderVO.class);

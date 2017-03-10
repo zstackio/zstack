@@ -17,6 +17,8 @@ import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
 import org.zstack.kvm.KVMHostAsyncHttpCallReply;
 
+import static org.zstack.core.Platform.operr;
+
 import java.util.Map;
 
 /**
@@ -59,7 +61,7 @@ public class ApplianceVmKvmBootstrapFlow extends NoRollbackFlow {
                     if (rsp.isSuccess()) {
                         chain.next();
                     } else {
-                        chain.fail(errf.stringToOperationError(rsp.getError()));
+                        chain.fail(operr(rsp.getError()));
                     }
                 }
             }

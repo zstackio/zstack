@@ -33,6 +33,8 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
+import static org.zstack.core.Platform.operr;
+
 import javax.persistence.Query;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -95,9 +97,7 @@ public class SftpBackupStorage extends BackupStorageBase {
             URI uri = new URI(url);
             String scheme = uri.getScheme();
             if (!SftpBackupStorageFactory.type.getSupportedSchemes().contains(scheme)) {
-                throw new OperationFailureException(errf.stringToOperationError(
-                        String.format("SftpBackupStorage doesn't support scheme[%s] in url[%s]", scheme, url)
-                ));
+                throw new OperationFailureException(operr("SftpBackupStorage doesn't support scheme[%s] in url[%s]", scheme, url));
             }
 
             DownloadCmd cmd = new DownloadCmd();
@@ -126,7 +126,7 @@ public class SftpBackupStorage extends BackupStorageBase {
 
                         completion.success(res);
                     } else {
-                        completion.fail(errf.stringToOperationError(ret.getError()));
+                        completion.fail(operr(ret.getError()));
                     }
                 }
 
@@ -160,7 +160,7 @@ public class SftpBackupStorage extends BackupStorageBase {
                     @Override
                     public void success(GetImageSizeRsp rsp) {
                         if (!rsp.isSuccess()) {
-                            reply.setError(errf.stringToOperationError(rsp.getError()));
+                            reply.setError(operr(rsp.getError()));
                         } else {
                             reply.setSize(rsp.size);
                         }
@@ -269,16 +269,15 @@ public class SftpBackupStorage extends BackupStorageBase {
             @Override
             public void success(PingResponse ret) {
                 if (ret.isSuccess() && !self.getUuid().equals(ret.getUuid())) {
-                    logger.debug(String.format("the uuid of sftpBackupStorage agent changed[expected:%s, actual:%s], it's most likely" +
-                            " the agent was manually restarted. Issue a reconnect to sync the status", self.getUuid(), ret.getUuid()));
+                    ErrorCode err = operr("the uuid of sftpBackupStorage agent changed[expected:%s, actual:%s], it's most likely" +
+                            " the agent was manually restarted. Issue a reconnect to sync the status", self.getUuid(), ret.getUuid());
 
-                    ErrorCode err = errf.stringToOperationError("uuid on agent side changed");
                     err.putToOpaque(Opaque.RECONNECT_AGENT.toString(), true);
                     completion.fail(err);
                 } else if (ret.isSuccess()) {
                     completion.success();
                 } else {
-                    completion.fail(errf.stringToOperationError(ret.getError()));
+                    completion.fail(operr(ret.getError()));
                 }
             }
 
@@ -299,9 +298,8 @@ public class SftpBackupStorage extends BackupStorageBase {
                 cmd.setStoragePath(getSelf().getUrl());
                 ConnectResponse rsp = restf.syncJsonPost(url, cmd, ConnectResponse.class);
                 if (!rsp.isSuccess()) {
-                    String err = String.format("unable to connect to SimpleHttpBackupStorage[url:%s], because %s", url, rsp.getError());
-                    logger.warn(err);
-                    complete.fail(errf.stringToOperationError(err));
+                    ErrorCode err = operr("unable to connect to SimpleHttpBackupStorage[url:%s], because %s", url, rsp.getError());
+                    complete.fail(err);
                     return;
                 }
 
@@ -451,7 +449,7 @@ public class SftpBackupStorage extends BackupStorageBase {
             @Override
             public void success(GetImageSizeRsp rsp) {
                 if (!rsp.isSuccess()) {
-                    reply.setError(errf.stringToOperationError(rsp.getError()));
+                    reply.setError(operr(rsp.getError()));
                 } else {
                     reply.setActualSize(rsp.actualSize);
                     reply.setSize(rsp.size);

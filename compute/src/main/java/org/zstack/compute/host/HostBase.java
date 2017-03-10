@@ -42,6 +42,8 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.operr;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -99,7 +101,7 @@ public abstract class HostBase extends AbstractHost {
 
     protected void checkState() {
         if (HostState.PreMaintenance == self.getState() || HostState.Maintenance == self.getState()) {
-            throw new OperationFailureException(errf.stringToOperationError(String.format("host[uuid:%s, name:%s] is in state[%s], cannot perform required operation", self.getUuid(), self.getName(), self.getState())));
+            throw new OperationFailureException(operr("host[uuid:%s, name:%s] is in state[%s], cannot perform required operation", self.getUuid(), self.getName(), self.getState()));
         }
     }
 
@@ -294,7 +296,7 @@ public abstract class HostBase extends AbstractHost {
                                 if (success || HostGlobalConfig.IGNORE_ERROR_ON_MAINTENANCE_MODE.value(Boolean.class)) {
                                     trigger.next();
                                 } else {
-                                    trigger.fail(errf.stringToOperationError(sb.toString()));
+                                    trigger.fail(operr(sb.toString()));
                                 }
                             }
                         });
@@ -563,7 +565,7 @@ public abstract class HostBase extends AbstractHost {
     private void handle(final PingHostMsg msg) {
         final PingHostReply reply = new PingHostReply();
         if (self.getStatus() == HostStatus.Connecting) {
-            reply.setError(errf.stringToOperationError("host is connecting"));
+            reply.setError(operr("host is connecting"));
             bus.reply(msg, reply);
             return;
         }

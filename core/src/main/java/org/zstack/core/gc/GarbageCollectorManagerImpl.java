@@ -22,6 +22,8 @@ import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.operr;
+
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -205,8 +207,8 @@ public class GarbageCollectorManagerImpl extends AbstractService
         } else {
             GarbageCollectorVO vo = dbf.findByUuid(msg.getUuid(), GarbageCollectorVO.class);
             if (vo.getStatus() == GCStatus.Done) {
-                throw new OperationFailureException(errf.stringToOperationError(String.format("cannot trigger a finished GC job[uuid:%s, name:%s]",
-                        vo.getUuid(), vo.getName())));
+                throw new OperationFailureException(operr("cannot trigger a finished GC job[uuid:%s, name:%s]",
+                        vo.getUuid(), vo.getName()));
             }
 
             gc = loadGCJob(vo);

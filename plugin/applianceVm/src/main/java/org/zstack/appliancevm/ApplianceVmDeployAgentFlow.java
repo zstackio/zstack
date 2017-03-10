@@ -31,6 +31,8 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.path.PathUtil;
 
+import static org.zstack.core.Platform.operr;
+
 import java.util.Map;
 
 /**
@@ -100,7 +102,7 @@ public class ApplianceVmDeployAgentFlow extends NoRollbackFlow {
                                 ApplianceVmAsyncHttpCallReply ar = reply.castReply();
                                 InitRsp rsp = ar.toResponse(InitRsp.class);
                                 if (!rsp.isSuccess()) {
-                                    trigger.fail(errf.stringToOperationError(rsp.getError()));
+                                    trigger.fail(operr(rsp.getError()));
                                     return;
                                 }
 

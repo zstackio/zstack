@@ -17,6 +17,8 @@ import org.zstack.header.storage.primary.RecalculatePrimaryStorageCapacityMsg;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.operr;
+
 import javax.persistence.LockModeType;
 import javax.persistence.TypedQuery;
 import java.util.List;
@@ -275,10 +277,8 @@ public class PrimaryStorageCapacityUpdater {
 
         if (capacityVO.getAvailableCapacity() < size) {
             if (exceptionOnFailure) {
-                throw new OperationFailureException(errf.stringToOperationError(
-                        String.format("cannot reserve %s bytes on the primary storage[uuid:%s]," +
-                                " it's short of available capacity", size, capacityVO.getUuid())
-                ));
+                throw new OperationFailureException(operr("cannot reserve %s bytes on the primary storage[uuid:%s]," +
+                                " it's short of available capacity", size, capacityVO.getUuid()));
             } else {
                 return false;
             }

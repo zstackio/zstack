@@ -2,6 +2,7 @@ package org.zstack.network.service.flat;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
@@ -89,7 +90,7 @@ public class FlatDnsBackend implements NetworkServiceDnsBackend, KVMHostConnectE
                 KVMHostAsyncHttpCallReply re = (KVMHostAsyncHttpCallReply)reply;
                 SetDnsRsp rsp = re.castReply();
                 if (!rsp.isSuccess()) {
-                    completion.fail(errf.stringToOperationError(rsp.getError()));
+                    completion.fail(Platform.operr(rsp.getError()));
                 }
             }
         });

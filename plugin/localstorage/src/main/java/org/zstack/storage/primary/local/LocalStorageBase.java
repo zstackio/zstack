@@ -57,6 +57,8 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.operr;
+
 import javax.persistence.LockModeType;
 import javax.persistence.Query;
 import javax.persistence.Tuple;
@@ -205,7 +207,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
         final APILocalStorageMigrateVolumeEvent evt = new APILocalStorageMigrateVolumeEvent(msg.getId());
         
         if (self.getState() == PrimaryStorageState.Disabled) {
-            evt.setError(errf.stringToOperationError(String.format("The primary storage[uuid:%s] is disabled cold migrate is not allowed", msg.getPrimaryStorageUuid())));
+            evt.setError(operr("The primary storage[uuid:%s] is disabled cold migrate is not allowed", msg.getPrimaryStorageUuid()));
             bus.publish(evt);
             return;
         }
@@ -269,8 +271,8 @@ public class LocalStorageBase extends PrimaryStorageBase {
         refq.add(LocalStorageResourceRefVO_.resourceType, Op.EQ, VolumeVO.class.getSimpleName());
         LocalStorageResourceRefVO ref = refq.find();
         if (ref == null) {
-            reply.setError(errf.stringToOperationError(String.format("volume[uuid:%s] is not on the local storage anymore," +
-                    "it may have been deleted", msg.getVolumeUuid())));
+            reply.setError(operr("volume[uuid:%s] is not on the local storage anymore," +
+                    "it may have been deleted", msg.getVolumeUuid()));
             bus.reply(msg, reply);
             completion.done();
             return;
@@ -773,10 +775,8 @@ public class LocalStorageBase extends PrimaryStorageBase {
             @Override
             public void done() {
                 if (ret.errorCodes.size() == hostUuids.size()) {
-                    reply.setError(errf.stringToOperationError(
-                            String.format("failed to download image[uuid:%s] to all hosts in the local storage[uuid:%s]" +
-                                    ". %s", msg.getImage().getUuid(), self.getUuid(), JSONObjectUtil.toJsonString(ret.errorCodes))
-                    ));
+                    reply.setError(operr("failed to download image[uuid:%s] to all hosts in the local storage[uuid:%s]" +
+                                    ". %s", msg.getImage().getUuid(), self.getUuid(), JSONObjectUtil.toJsonString(ret.errorCodes)));
                 } else if (!ret.errorCodes.isEmpty()) {
                     for (HostError err : ret.errorCodes) {
                         logger.warn(String.format("failed to download image [uuid:%s] to the host[uuid:%s] in the local" +
@@ -1293,11 +1293,8 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
         long avail = ref.getAvailableCapacity() - s.getSize();
         if (avail < 0) {
-            throw new OperationFailureException(errf.stringToOperationError(
-                    String.format("host[uuid: %s] of local primary storage[uuid: %s] doesn't have enough capacity" +
-                                    "[current: %s bytes, needed: %s]",
-                            hostUuid, self.getUuid(), ref.getAvailableCapacity(), size)
-            ));
+            throw new OperationFailureException(operr("host[uuid: %s] of local primary storage[uuid: %s] doesn't have enough capacity" +
+                                    "[current: %s bytes, needed: %s]", hostUuid, self.getUuid(), ref.getAvailableCapacity(), size));
         }
 
         ref.setAvailableCapacity(avail);
@@ -1556,10 +1553,8 @@ public class LocalStorageBase extends PrimaryStorageBase {
     @Override
     protected void handle(final DownloadDataVolumeToPrimaryStorageMsg msg) {
         if (msg.getHostUuid() == null) {
-            throw new OperationFailureException(errf.stringToOperationError(
-                    String.format("unable to create the data volume[uuid: %s] on a local primary storage[uuid:%s], because the hostUuid is not specified.",
-                            msg.getVolumeUuid(), self.getUuid())
-            ));
+            throw new OperationFailureException(operr("unable to create the data volume[uuid: %s] on a local primary storage[uuid:%s], because the hostUuid is not specified.",
+                            msg.getVolumeUuid(), self.getUuid()));
         }
 
         FlowChain chain = FlowChainBuilder.newShareFlowChain();

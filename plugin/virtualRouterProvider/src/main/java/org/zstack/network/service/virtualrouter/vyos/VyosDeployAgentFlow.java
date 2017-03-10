@@ -24,6 +24,8 @@ import org.zstack.utils.network.NetworkUtils;
 import org.zstack.utils.path.PathUtil;
 import org.zstack.utils.ssh.Ssh;
 
+import static org.zstack.core.Platform.operr;
+
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -82,9 +84,7 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
         long timeout = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(timeoutInSeconds);
 
         if (isReconnect && !NetworkUtils.isRemotePortOpen(mgmtNicIp, 22, 2)) {
-            throw new OperationFailureException(errf.stringToOperationError(
-                    String.format("unable to ssh in to the vyos[%s], the ssh port seems not open", mgmtNicIp)
-            ));
+            throw new OperationFailureException(operr("unable to ssh in to the vyos[%s], the ssh port seems not open", mgmtNicIp));
         }
 
         thdf.submitCancelablePeriodicTask(new CancelablePeriodicTask() {

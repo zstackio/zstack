@@ -36,6 +36,8 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.operr;
+
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -897,9 +899,7 @@ public class LoadBalancerBase {
 
         final String providerType = findProviderTypeByVmNicUuid(msg.getVmNicUuids().get(0));
         if (providerType == null) {
-            throw new OperationFailureException(errf.stringToOperationError(
-                    String.format("the L3 network of vm nic[uuid:%s] doesn't have load balancer service enabled", msg.getVmNicUuids().get(0))
-            ));
+            throw new OperationFailureException(operr("the L3 network of vm nic[uuid:%s] doesn't have load balancer service enabled", msg.getVmNicUuids().get(0)));
         }
 
         SimpleQuery<VmNicVO> q = dbf.createQuery(VmNicVO.class);
@@ -926,11 +926,9 @@ public class LoadBalancerBase {
                             init = true;
                         } else {
                             if (!providerType.equals(self.getProviderType())) {
-                                throw new OperationFailureException(errf.stringToOperationError(
-                                        String.format("service provider type mismatching. The load balancer[uuid:%s] is provided by the service provider[type:%s]," +
-                                                        " but the L3 network of vm nic[uuid:%s] is enabled with the service provider[type: %s]", self.getUuid(), self.getProviderType(),
-                                                msg.getVmNicUuids().get(0), providerType)
-                                ));
+                                throw new OperationFailureException(operr("service provider type mismatching. The load balancer[uuid:%s] is provided by the service provider[type:%s]," +
+                                                " but the L3 network of vm nic[uuid:%s] is enabled with the service provider[type: %s]", self.getUuid(), self.getProviderType(),
+                                        msg.getVmNicUuids().get(0), providerType));
                             }
                         }
 

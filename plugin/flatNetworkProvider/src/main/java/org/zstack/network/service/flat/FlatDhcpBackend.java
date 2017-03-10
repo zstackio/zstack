@@ -51,6 +51,9 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 
+import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.operr;
+
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
@@ -236,7 +239,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         APIGetL3NetworkDhcpIpAddressReply reply = new APIGetL3NetworkDhcpIpAddressReply();
 
         if (msg.getL3NetworkUuid() == null) {
-            reply.setError(errf.stringToOperationError("l3 network uuid cannot be null"));
+            reply.setError(argerr("l3 network uuid cannot be null"));
             bus.reply(msg, reply);
             return;
         }
@@ -266,8 +269,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             return;
         }
 
-        reply.setError(errf.stringToOperationError(
-                String.format("Cannot find DhcpIp for l3 network[uuid:%s]", msg.getL3NetworkUuid())));
+        reply.setError(operr(String.format("Cannot find DhcpIp for l3 network[uuid:%s]", msg.getL3NetworkUuid())));
         bus.reply(msg, reply);
     }
 
@@ -427,7 +429,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
         new KvmCommandSender(huuids).send(cmd, DHCP_DELETE_NAMESPACE_PATH, wrapper -> {
             DeleteNamespaceRsp rsp = wrapper.getResponse(DeleteNamespaceRsp.class);
-            return rsp.isSuccess() ? null : errf.stringToOperationError(rsp.getError());
+            return rsp.isSuccess() ? null : operr(rsp.getError());
         }, new SteppingSendCallback<KvmResponseWrapper>() {
             @Override
             public void success(KvmResponseWrapper w) {
@@ -560,10 +562,8 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         applyDhcpToHosts(info, destHostUuid, false, completion);
         completion.await(TimeUnit.MINUTES.toMillis(30));
         if (!completion.isSuccess()) {
-            throw new OperationFailureException(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
-                    String.format("cannot configure DHCP for vm[uuid:%s] on the destination host[uuid:%s]",
-                            inv.getUuid(), destHostUuid), completion.getErrorCode()
-            ));
+            throw new OperationFailureException(operr("cannot configure DHCP for vm[uuid:%s] on the destination host[uuid:%s]",
+                            inv.getUuid(), destHostUuid).causedBy(completion.getErrorCode()));
         }
     }
 
@@ -1072,7 +1072,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                                         KVMHostAsyncHttpCallReply ar = reply.castReply();
                                         PrepareDhcpRsp rsp = ar.toResponse(PrepareDhcpRsp.class);
                                         if (!rsp.isSuccess()) {
-                                            trigger.fail(errf.stringToOperationError(rsp.getError()));
+                                            trigger.fail(operr(rsp.getError()));
                                             return;
                                         }
 
@@ -1110,7 +1110,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                                         KVMHostAsyncHttpCallReply r = reply.castReply();
                                         ApplyDhcpRsp rsp = r.toResponse(ApplyDhcpRsp.class);
                                         if (!rsp.isSuccess()) {
-                                            trigger.fail(errf.stringToOperationError(rsp.getError()));
+                                            trigger.fail(operr(rsp.getError()));
                                             return;
                                         }
 
@@ -1233,7 +1233,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         KvmCommandSender sender = new KvmCommandSender(vm.getHostUuid());
         sender.send(cmd, RESET_DEFAULT_GATEWAY_PATH, wrapper -> {
             ResetDefaultGatewayRsp rsp = wrapper.getResponse(ResetDefaultGatewayRsp.class);
-            return rsp.isSuccess() ? null : errf.stringToOperationError(rsp.getError());
+            return rsp.isSuccess() ? null : operr(rsp.getError());
         }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
             @Override
             public void success(KvmResponseWrapper returnValue) {

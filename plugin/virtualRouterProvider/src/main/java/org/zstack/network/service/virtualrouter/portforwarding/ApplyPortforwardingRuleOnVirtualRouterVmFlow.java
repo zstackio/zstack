@@ -11,6 +11,7 @@ import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.network.service.virtualrouter.*;
@@ -19,6 +20,8 @@ import org.zstack.network.service.virtualrouter.VirtualRouterCommands.RevokePort
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+
+import static org.zstack.core.Platform.operr;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -75,12 +78,10 @@ public class ApplyPortforwardingRuleOnVirtualRouterVmFlow implements Flow {
                     data.put(VR_APPLY_PORT_FORWARDING_RULE_SUCCESS, Boolean.TRUE);
                     chain.next();
                 } else {
-                    String err = String
-                            .format("failed to create port forwarding rule[vip ip: %s, private ip: %s, vip start port: %s, vip end port: %s, private start port: %s, private end port: %s], because %s",
-                                    to.getVipIp(), to.getPrivateIp(), to.getVipPortStart(), to.getVipPortEnd(),
-                                    to.getPrivatePortStart(), to.getPrivatePortEnd(), ret.getError());
-                    logger.warn(err);
-                    chain.fail(errf.stringToOperationError(err));
+                    ErrorCode err = operr("failed to create port forwarding rule[vip ip: %s, private ip: %s, vip start port: %s, vip end port: %s, private start port: %s, private end port: %s], because %s",
+                            to.getVipIp(), to.getPrivateIp(), to.getVipPortStart(), to.getVipPortEnd(),
+                            to.getPrivatePortStart(), to.getPrivatePortEnd(), ret.getError());
+                    chain.fail(err);
                 }
             }
         });

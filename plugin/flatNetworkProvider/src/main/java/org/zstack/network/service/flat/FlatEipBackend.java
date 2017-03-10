@@ -2,6 +2,7 @@ package org.zstack.network.service.flat;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
@@ -39,6 +40,8 @@ import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
+
+import static org.zstack.core.Platform.operr;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
@@ -426,7 +429,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
                 KVMHostAsyncHttpCallReply ar = reply.castReply();
                 AgentRsp rsp = ar.toResponse(AgentRsp.class);
                 if (!rsp.success) {
-                    completion.fail(errf.stringToOperationError(rsp.error));
+                    completion.fail(operr(rsp.error));
                     return;
                 }
 
@@ -461,7 +464,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
                 KVMHostAsyncHttpCallReply ar = reply.castReply();
                 AgentRsp rsp = ar.toResponse(AgentRsp.class);
                 if (!rsp.success) {
-                    completion.fail(errf.stringToOperationError(rsp.error));
+                    completion.fail(operr(rsp.error));
                     return;
                 }
 
@@ -523,10 +526,8 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
             if (vm == null) {
                 throw new CloudRuntimeException(String.format("cannot find the vm[uuid:%s]", vmUuid));
             } else {
-                throw new OperationFailureException(errf.stringToOperationError(
-                        String.format("unable to apply the EIP operation for the the vm[uuid:%s, state:%s], because cannot find the VM's hostUUid",
-                                vmUuid, vm.getState())
-                ));
+                throw new OperationFailureException(operr("unable to apply the EIP operation for the the vm[uuid:%s, state:%s], because cannot find the VM's hostUUid",
+                                vmUuid, vm.getState()));
             }
         }
 
@@ -572,7 +573,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
                 KVMHostAsyncHttpCallReply ar = reply.castReply();
                 AgentRsp rsp = ar.toResponse(AgentRsp.class);
                 if (!rsp.success) {
-                    completion.fail(errf.stringToOperationError(rsp.error));
+                    completion.fail(operr(rsp.error));
                     return;
                 }
 
@@ -617,7 +618,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
                 KVMHostAsyncHttpCallReply ar = reply.castReply();
                 AgentRsp rsp = ar.toResponse(AgentRsp.class);
                 if (!rsp.success) {
-                    completion.fail(errf.stringToOperationError(rsp.error));
+                    completion.fail(operr(rsp.error));
                     return;
                 }
 

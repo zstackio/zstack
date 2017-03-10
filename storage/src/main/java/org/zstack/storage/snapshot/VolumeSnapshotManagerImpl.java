@@ -40,6 +40,8 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.operr;
+
 import javax.persistence.Query;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
@@ -307,9 +309,8 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         AskVolumeSnapshotCapabilityReply areply = reply.castReply();
         VolumeSnapshotCapability capability = areply.getCapability();
         if (!capability.isSupport()) {
-            ret.setError(errf.stringToOperationError(
-                    String.format("primary storage[uuid:%s] doesn't support volume snapshot;" +
-                            " cannot create snapshot for volume[uuid:%s]", primaryStorageUuid, vol.getUuid())));
+            ret.setError(operr("primary storage[uuid:%s] doesn't support volume snapshot;" +
+                            " cannot create snapshot for volume[uuid:%s]", primaryStorageUuid, vol.getUuid()));
             bus.reply(msg, ret);
             return;
         }

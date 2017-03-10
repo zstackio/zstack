@@ -10,6 +10,7 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.network.service.virtualrouter.*;
@@ -17,6 +18,8 @@ import org.zstack.network.service.virtualrouter.VirtualRouterCommands.RevokePort
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+
+import static org.zstack.core.Platform.operr;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -69,9 +72,8 @@ public class ReleasePortForwardingRuleOnVirtualRouterVmFlow extends NoRollbackFl
                     logger.debug(info);
                     chain.next();
                 } else {
-                    String err = String.format("failed to revoke port forwarding rules %s, because %s", JSONObjectUtil.toJsonString(to), ret.getError());
-                    logger.warn(err);
-                    chain.fail(errf.stringToOperationError(err));
+                    ErrorCode err = operr("failed to revoke port forwarding rules %s, because %s", JSONObjectUtil.toJsonString(to), ret.getError());
+                    chain.fail(err);
                 }
             }
         });

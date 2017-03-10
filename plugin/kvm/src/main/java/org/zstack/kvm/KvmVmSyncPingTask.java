@@ -33,6 +33,8 @@ import org.zstack.kvm.KVMConstant.KvmVmState;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.operr;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -85,8 +87,7 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
                     reportVmState(host.getUuid(), states);
                     completion.success();
                 } else {
-                    ErrorCode errorCode = errf.stringToOperationError(String.format("unable to do vm sync on host[uuid:%s, ip:%s] because %s", host.getUuid(), host.getManagementIp(), ret.getError()));
-                    logger.warn(errorCode.toString());
+                    ErrorCode errorCode = operr("unable to do vm sync on host[uuid:%s, ip:%s] because %s", host.getUuid(), host.getManagementIp(), ret.getError());
                     completion.fail(errorCode);
                 }
             }

@@ -9,6 +9,7 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.Completion;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HypervisorType;
 import org.zstack.header.message.MessageReply;
@@ -21,6 +22,8 @@ import org.zstack.kvm.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterKvmBackendCommands.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+
+import static org.zstack.core.Platform.operr;
 
 import java.util.List;
 
@@ -102,11 +105,10 @@ public class VirtualRouterKvmBackend implements VirtualRouterHypervisorBackend {
 
                 CreateVritualRouterBootstrapIsoRsp rsp = ((KVMHostAsyncHttpCallReply)reply).toResponse(CreateVritualRouterBootstrapIsoRsp.class);
                 if (!rsp.isSuccess()) {
-                    String err = String.format(
-                            "failed to create VirtualRouterBootstrapIso[%s] on kvm host[uuid:%s, ip:%s] for virtual router[uuid:%s], because %s",
+                    ErrorCode err = operr("failed to create VirtualRouterBootstrapIso[%s] on kvm host[uuid:%s, ip:%s] for virtual router[uuid:%s], because %s",
                             iso.getIsoPath(), vrSpec.getDestHost().getUuid(), vrSpec.getDestHost().getManagementIp(), iso.getVirtualRouterUuid(),
                             rsp.getError());
-                    complete.fail(errf.stringToOperationError(err));
+                    complete.fail(err);
                     return;
                 }
 
@@ -137,12 +139,10 @@ public class VirtualRouterKvmBackend implements VirtualRouterHypervisorBackend {
 
                 DeleteVirtualRouterBootstrapIsoRsp rsp = ((KVMHostAsyncHttpCallReply)reply).toResponse(DeleteVirtualRouterBootstrapIsoRsp.class);
                 if (!rsp.isSuccess()) {
-                    String err = String.format(
-                            "failed to delete VirtualRouterBootstrapIso[%s] on kvm host[uuid:%s] for virtual router[uuid:%s], because %s",
-                            iso.getIsoPath(), hostUuid, iso.getVirtualRouterUuid(),
-                            rsp.getError());
-                    logger.warn(err);
-                    complete.fail(errf.stringToOperationError(err));
+					ErrorCode err = operr("failed to delete VirtualRouterBootstrapIso[%s] on kvm host[uuid:%s] for virtual router[uuid:%s], because %s",
+							iso.getIsoPath(), hostUuid, iso.getVirtualRouterUuid(),
+							rsp.getError());
+					complete.fail(err);
                     return;
                 }
 

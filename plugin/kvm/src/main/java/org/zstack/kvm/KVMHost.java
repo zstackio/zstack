@@ -63,6 +63,8 @@ import org.zstack.utils.ssh.Ssh;
 import org.zstack.utils.ssh.SshResult;
 import org.zstack.utils.ssh.SshShell;
 
+import static org.zstack.core.Platform.operr;
+
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -409,12 +411,10 @@ public class KVMHost extends HostBase implements Host {
 
         KvmRunShellReply reply = new KvmRunShellReply();
         if (result.isSshFailure()) {
-            reply.setError(errf.stringToOperationError(
-                    String.format("unable to connect to KVM[ip:%s, username:%s, sshPort:%d ] to do DNS check," +
-                                    " please check if username/password is wrong; %s",
-                            self.getManagementIp(), getSelf().getUsername(),
-                            getSelf().getPort(), result.getExitErrorMessage())
-            ));
+            reply.setError(operr("unable to connect to KVM[ip:%s, username:%s, sshPort:%d ] to do DNS check," +
+                            " please check if username/password is wrong; %s",
+                    self.getManagementIp(), getSelf().getUsername(),
+                    getSelf().getPort(), result.getExitErrorMessage()));
         } else {
             reply.setStdout(result.getStdout());
             reply.setStderr(result.getStderr());
@@ -435,7 +435,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(ChangeCpuMemoryResponse ret) {
                 if (!ret.isSuccess()) {
-                    reply.setError(errf.stringToOperationError(ret.getError()));
+                    reply.setError(operr(ret.getError()));
                 } else {
                     InstanceOfferingInventory inventory = new InstanceOfferingInventory();
                     inventory.setCpuNum(ret.getCpuNum());
@@ -463,7 +463,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(GetVncPortResponse ret) {
                 if (!ret.isSuccess()) {
-                    reply.setError(errf.stringToOperationError(ret.getError()));
+                    reply.setError(operr(ret.getError()));
                 } else {
                     reply.setHostIp(self.getManagementIp());
                     reply.setProtocol(ret.getProtocol());
@@ -483,9 +483,7 @@ public class KVMHost extends HostBase implements Host {
     private void handle(final CheckVmStateOnHypervisorMsg msg) {
         final CheckVmStateOnHypervisorReply reply = new CheckVmStateOnHypervisorReply();
         if (self.getStatus() != HostStatus.Connected) {
-            reply.setError(errf.stringToOperationError(
-                    String.format("the host[uuid:%s, status:%s] is not Connected", self.getUuid(), self.getStatus())
-            ));
+            reply.setError(operr("the host[uuid:%s, status:%s] is not Connected", self.getUuid(), self.getStatus()));
             bus.reply(msg, reply);
             return;
         }
@@ -500,7 +498,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(CheckVmStateRsp ret) {
                 if (!ret.isSuccess()) {
-                    reply.setError(errf.stringToOperationError(ret.getError()));
+                    reply.setError(operr(ret.getError()));
                 } else {
                     Map<String, String> m = new HashMap<>();
                     for (Map.Entry<String, String> e : ret.states.entrySet()) {
@@ -564,7 +562,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(DetachIsoRsp ret) {
                 if (!ret.isSuccess()) {
-                    reply.setError(errf.stringToOperationError(ret.getError()));
+                    reply.setError(operr(ret.getError()));
                 }
 
                 bus.reply(msg, reply);
@@ -629,7 +627,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(AttachIsoRsp ret) {
                 if (!ret.isSuccess()) {
-                    reply.setError(errf.stringToOperationError(ret.getError()));
+                    reply.setError(operr(ret.getError()));
                 }
 
                 bus.reply(msg, reply);
@@ -686,7 +684,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(DetachNicRsp ret) {
                 if (!ret.isSuccess()) {
-                    reply.setError(errf.stringToOperationError(ret.getError()));
+                    reply.setError(operr(ret.getError()));
                 }
                 bus.reply(msg, reply);
                 completion.done();
@@ -860,22 +858,16 @@ public class KVMHost extends HostBase implements Host {
             q.add(VmInstanceVO_.uuid, Op.EQ, volume.getVmInstanceUuid());
             VmInstanceState state = q.findValue();
             if (state != VmInstanceState.Stopped && state != VmInstanceState.Running) {
-                throw new OperationFailureException(errf.stringToOperationError(
-                        String.format("cannot do volume snapshot merge when vm[uuid:%s] is in state of %s." +
-                                        " The operation is only allowed when vm is Running or Stopped",
-                                volume.getUuid(), state)
-                ));
+                throw new OperationFailureException(operr("cannot do volume snapshot merge when vm[uuid:%s] is in state of %s." +
+                                " The operation is only allowed when vm is Running or Stopped", volume.getUuid(), state));
             }
 
             if (state == VmInstanceState.Running) {
                 String libvirtVersion = KVMSystemTags.LIBVIRT_VERSION.getTokenByResourceUuid(self.getUuid(), KVMSystemTags.LIBVIRT_VERSION_TOKEN);
                 if (new VersionComparator(KVMConstant.MIN_LIBVIRT_LIVE_BLOCK_COMMIT_VERSION).compare(libvirtVersion) > 0) {
-                    throw new OperationFailureException(errf.stringToOperationError(
-                            String.format("live volume snapshot merge needs libvirt version greater than %s," +
-                                            " current libvirt version is %s." +
-                                            " Please stop vm and redo the operation or detach the volume if it's data volume",
-                                    KVMConstant.MIN_LIBVIRT_LIVE_BLOCK_COMMIT_VERSION, libvirtVersion)
-                    ));
+                    throw new OperationFailureException(operr("live volume snapshot merge needs libvirt version greater than %s," +
+                                    " current libvirt version is %s. Please stop vm and redo the operation or detach the volume if it's data volume",
+                            KVMConstant.MIN_LIBVIRT_LIVE_BLOCK_COMMIT_VERSION, libvirtVersion));
                 }
             }
         }
@@ -892,7 +884,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(MergeSnapshotRsp ret) {
                 if (!ret.isSuccess()) {
-                    reply.setError(errf.stringToOperationError(ret.getError()));
+                    reply.setError(operr(ret.getError()));
                 }
                 bus.reply(msg, reply);
                 completion.done();
@@ -948,10 +940,7 @@ public class KVMHost extends HostBase implements Host {
             q.add(VmInstanceVO_.uuid, SimpleQuery.Op.EQ, msg.getVmUuid());
             VmInstanceState vmState = q.findValue();
             if (vmState != VmInstanceState.Running && vmState != VmInstanceState.Stopped && vmState != VmInstanceState.Paused) {
-                throw new OperationFailureException(errf.stringToOperationError(
-                        String.format("vm[uuid:%s] is not Running or Stopped, current state[%s]", msg.getVmUuid(),
-                                vmState)
-                ));
+                throw new OperationFailureException(operr("vm[uuid:%s] is not Running or Stopped, current state[%s]", msg.getVmUuid(), vmState));
             }
 
             if (!HostSystemTags.LIVE_SNAPSHOT.hasTag(self.getUuid())) {
@@ -979,7 +968,7 @@ public class KVMHost extends HostBase implements Host {
                     reply.setSnapshotInstallPath(ret.getSnapshotInstallPath());
                     reply.setSize(ret.getSize());
                 } else {
-                    reply.setError(errf.stringToOperationError(ret.getError()));
+                    reply.setError(operr(ret.getError()));
                 }
                 bus.reply(msg, reply);
                 completion.done();
@@ -1258,9 +1247,9 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(AttachNicResponse ret) {
                 if (!ret.isSuccess()) {
-                    reply.setError(errf.stringToTimeoutError(String.format("failed to attach nic[uuid:%s, vm:%s] on kvm host[uuid:%s, ip:%s]," +
+                    reply.setError(operr("failed to attach nic[uuid:%s, vm:%s] on kvm host[uuid:%s, ip:%s]," +
                                     "because %s", msg.getNicInventory().getUuid(), msg.getNicInventory().getVmInstanceUuid(),
-                            self.getUuid(), self.getManagementIp(), ret.getError())));
+                            self.getUuid(), self.getManagementIp(), ret.getError()));
                 }
 
                 bus.reply(msg, reply);
@@ -1336,10 +1325,9 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(DetachDataVolumeResponse ret) {
                 if (!ret.isSuccess()) {
-                    String err = String.format("failed to detach data volume[uuid:%s, installPath:%s] from vm[uuid:%s, name:%s] on kvm host[uuid:%s, ip:%s], because %s",
+                    ErrorCode err = operr("failed to detach data volume[uuid:%s, installPath:%s] from vm[uuid:%s, name:%s] on kvm host[uuid:%s, ip:%s], because %s",
                             vol.getUuid(), vol.getInstallPath(), vm.getUuid(), vm.getName(), getSelf().getUuid(), getSelf().getManagementIp(), ret.getError());
-                    logger.warn(err);
-                    reply.setError(errf.stringToOperationError(err));
+                    reply.setError(err);
                     extEmitter.detachVolumeFailed((KVMHostInventory) getSelfInventory(), vm, vol, cmd, reply.getError());
                 } else {
                     extEmitter.afterDetachVolume((KVMHostInventory) getSelfInventory(), vm, vol, cmd);
@@ -1433,12 +1421,9 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(AttachDataVolumeResponse ret) {
                 if (!ret.isSuccess()) {
-                    String err = String.format("failed to attach data volume[uuid:%s, installPath:%s] to vm[uuid:%s, name:%s]" +
-                                    " on kvm host[uuid:%s, ip:%s], because %s",
-                            vol.getUuid(), vol.getInstallPath(), vm.getUuid(), vm.getName(),
-                            getSelf().getUuid(), getSelf().getManagementIp(), ret.getError());
-                    logger.warn(err);
-                    reply.setError(errf.stringToOperationError(err));
+                    reply.setError(operr("failed to attach data volume[uuid:%s, installPath:%s] to vm[uuid:%s, name:%s]" +
+                                    " on kvm host[uuid:%s, ip:%s], because %s", vol.getUuid(), vol.getInstallPath(), vm.getUuid(), vm.getName(),
+                            getSelf().getUuid(), getSelf().getManagementIp(), ret.getError()));
                     extEmitter.attachVolumeFailed((KVMHostInventory) getSelfInventory(), vm, vol, cmd, reply.getError());
                 } else {
                     extEmitter.afterAttachVolume((KVMHostInventory) getSelfInventory(), vm, vol, cmd);
@@ -1494,10 +1479,9 @@ public class KVMHost extends HostBase implements Host {
         try {
             extEmitter.beforeDestroyVmOnKvm(KVMHostInventory.valueOf(getSelf()), vminv);
         } catch (KVMException e) {
-            String err = String.format("failed to destroy vm[uuid:%s name:%s] on kvm host[uuid:%s, ip:%s], because %s", vminv.getUuid(), vminv.getName(),
+            ErrorCode err = operr("failed to destroy vm[uuid:%s name:%s] on kvm host[uuid:%s, ip:%s], because %s", vminv.getUuid(), vminv.getName(),
                     self.getUuid(), self.getManagementIp(), e.getMessage());
-            logger.warn(err, e);
-            throw new OperationFailureException(errf.stringToOperationError(err));
+            throw new OperationFailureException(err);
         }
 
         DestroyVmCmd cmd = new DestroyVmCmd();
@@ -1590,7 +1574,7 @@ public class KVMHost extends HostBase implements Host {
             String err = String.format("failed to reboot vm[uuid:%s name:%s] on kvm host[uuid:%s, ip:%s], because %s", vminv.getUuid(), vminv.getName(),
                     self.getUuid(), self.getManagementIp(), e.getMessage());
             logger.warn(err, e);
-            throw new OperationFailureException(errf.stringToOperationError(err));
+            throw new OperationFailureException(operr(err));
         }
 
         RebootVmCmd cmd = new RebootVmCmd();
@@ -1661,10 +1645,9 @@ public class KVMHost extends HostBase implements Host {
         try {
             extEmitter.beforeStopVmOnKvm(KVMHostInventory.valueOf(getSelf()), vminv);
         } catch (KVMException e) {
-            String err = String.format("failed to stop vm[uuid:%s name:%s] on kvm host[uuid:%s, ip:%s], because %s", vminv.getUuid(), vminv.getName(),
+            ErrorCode err = operr("failed to stop vm[uuid:%s name:%s] on kvm host[uuid:%s, ip:%s], because %s", vminv.getUuid(), vminv.getName(),
                     self.getUuid(), self.getManagementIp(), e.getMessage());
-            logger.warn(err, e);
-            throw new OperationFailureException(errf.stringToOperationError(err));
+            throw new OperationFailureException(err);
         }
 
         StopVmCmd cmd = new StopVmCmd();
@@ -1900,11 +1883,10 @@ public class KVMHost extends HostBase implements Host {
         try {
             extEmitter.beforeStartVmOnKvm(khinv, spec, cmd);
         } catch (KVMException e) {
-            String err = String.format("failed to start vm[uuid:%s name:%s] on kvm host[uuid:%s, ip:%s], because %s",
+            ErrorCode err = operr("failed to start vm[uuid:%s name:%s] on kvm host[uuid:%s, ip:%s], because %s",
                     spec.getVmInventory().getUuid(), spec.getVmInventory().getName(),
                     self.getUuid(), self.getManagementIp(), e.getMessage());
-            logger.warn(err, e);
-            throw new OperationFailureException(errf.stringToOperationError(err));
+            throw new OperationFailureException(err);
         }
 
         extEmitter.addOn(khinv, spec, cmd);
@@ -2138,11 +2120,12 @@ public class KVMHost extends HostBase implements Host {
         CheckNetworkPhysicalInterfaceReply reply = new CheckNetworkPhysicalInterfaceReply();
         CheckPhysicalNetworkInterfaceResponse rsp = restf.syncJsonPost(checkPhysicalNetworkInterfacePath, cmd, CheckPhysicalNetworkInterfaceResponse.class);
         if (!rsp.isSuccess()) {
-            String err = rsp.getFailedInterfaceNames().isEmpty() ? rsp.getError() : String.format(
-                    "%s, failed to check physical network interfaces[names : %s] on kvm host[uuid:%s, ip:%s]", rsp.getError(), msg.getPhysicalInterface(), context.getInventory()
-                            .getUuid(), context.getInventory().getManagementIp());
-            reply.setError(errf.stringToOperationError(err));
-            logger.warn(err);
+            if (rsp.getFailedInterfaceNames().isEmpty()) {
+                reply.setError(operr(rsp.getError()));
+            } else {
+                reply.setError(operr("%s, failed to check physical network interfaces[names : %s] on kvm host[uuid:%s, ip:%s]",
+                        rsp.getError(), msg.getPhysicalInterface(), context.getInventory().getUuid(), context.getInventory().getManagementIp()));
+            }
         }
         bus.reply(msg, reply);
         completion.done();
@@ -2214,7 +2197,7 @@ public class KVMHost extends HostBase implements Host {
 
                                     trigger.next();
                                 } else {
-                                    trigger.fail(errf.stringToOperationError(ret.getError()));
+                                    trigger.fail(operr(ret.getError()));
                                 }
                             }
 
@@ -2319,9 +2302,8 @@ public class KVMHost extends HostBase implements Host {
             cmd.setIptablesRules(KVMGlobalProperty.IPTABLES_RULES);
             ConnectResponse rsp = restf.syncJsonPost(connectPath, cmd, ConnectResponse.class);
             if (!rsp.isSuccess() || !rsp.isIptablesSucc()) {
-                String err = String.format("unable to connect to kvm host[uuid:%s, ip:%s, url:%s], because %s", self.getUuid(), self.getManagementIp(), connectPath,
+                errCode = operr("unable to connect to kvm host[uuid:%s, ip:%s, url:%s], because %s", self.getUuid(), self.getManagementIp(), connectPath,
                         rsp.getError());
-                errCode = errf.stringToOperationError(err);
             } else {
                 VersionComparator libvirtVersion = new VersionComparator(rsp.getLibvirtVersion());
                 VersionComparator qemuVersion = new VersionComparator(rsp.getQemuVersion());
@@ -2343,9 +2325,8 @@ public class KVMHost extends HostBase implements Host {
                 }
             }
         } catch (RestClientException e) {
-            String err = String.format("unable to connect to kvm host[uuid:%s, ip:%s, url:%s], because %s", self.getUuid(), self.getManagementIp(),
+            errCode = operr("unable to connect to kvm host[uuid:%s, ip:%s, url:%s], because %s", self.getUuid(), self.getManagementIp(),
                     connectPath, e.getMessage());
-            errCode = errf.stringToOperationError(err);
         } catch (Throwable t) {
             logger.warn(t.getMessage(), t);
             errCode = errf.throwableToInternalError(t);
@@ -2459,14 +2440,9 @@ public class KVMHost extends HostBase implements Host {
                                             map(e("dnsCheckList", checkList)));
 
                                     if (ret.isSshFailure()) {
-                                        trigger.fail(errf.stringToOperationError(
-                                                String.format("unable to connect to KVM[ip:%s, username:%s, sshPort: %d, ] to do DNS check, please check if username/password is wrong; %s", self.getManagementIp(), getSelf().getUsername(), getSelf().getPort(), ret.getExitErrorMessage())
-                                        ));
+                                        trigger.fail(operr("unable to connect to KVM[ip:%s, username:%s, sshPort: %d, ] to do DNS check, please check if username/password is wrong; %s", self.getManagementIp(), getSelf().getUsername(), getSelf().getPort(), ret.getExitErrorMessage()));
                                     } else if (ret.getReturnCode() != 0) {
-                                        trigger.fail(errf.stringToOperationError(
-                                                String.format("failed to ping all DNS/IP in %s; please check /etc/resolv.conf to make sure your host is able to reach public internet",
-                                                        checkList)
-                                        ));
+                                        trigger.fail(operr("failed to ping all DNS/IP in %s; please check /etc/resolv.conf to make sure your host is able to reach public internet", checkList));
                                     } else {
                                         trigger.next();
                                     }
@@ -2491,16 +2467,12 @@ public class KVMHost extends HostBase implements Host {
                             SshResult ret = sshShell.runCommand(String.format("curl --connect-timeout 10 %s", restf.getCallbackUrl()));
 
                             if (ret.isSshFailure()) {
-                                throw new OperationFailureException(errf.stringToOperationError(
-                                        String.format("unable to connect to KVM[ip:%s, username:%s, sshPort:%d] to check the management node connectivity," +
-                                                "please check if username/password is wrong; %s", self.getManagementIp(), getSelf().getUsername(), getSelf().getPort(), ret.getExitErrorMessage())
-                                ));
+                                throw new OperationFailureException(operr("unable to connect to KVM[ip:%s, username:%s, sshPort:%d] to check the management node connectivity," +
+                                                "please check if username/password is wrong; %s", self.getManagementIp(), getSelf().getUsername(), getSelf().getPort(), ret.getExitErrorMessage()));
                             } else if (ret.getReturnCode() != 0) {
-                                throw new OperationFailureException(errf.stringToOperationError(
-                                        String.format("the KVM host[ip:%s] cannot access the management node's callback url. It seems" +
-                                                        " that the KVM host cannot reach the management IP[%s]. %s %s", self.getManagementIp(), Platform.getManagementServerIp(),
-                                                ret.getStderr(), ret.getExitErrorMessage())
-                                ));
+                                throw new OperationFailureException(operr("the KVM host[ip:%s] cannot access the management node's callback url. It seems" +
+                                                " that the KVM host cannot reach the management IP[%s]. %s %s", self.getManagementIp(), Platform.getManagementServerIp(),
+                                        ret.getStderr(), ret.getExitErrorMessage()));
                             }
 
                             trigger.next();
@@ -2589,23 +2561,20 @@ public class KVMHost extends HostBase implements Host {
                                 ShellResult ret = ShellUtils.runAndReturn(String.format("ansible -i %s --private-key %s -m setup -a filter=ansible_distribution* %s -e 'ansible_ssh_port=%d ansible_ssh_user=%s'",
                                         AnsibleConstant.INVENTORY_FILE, privKeyFile, self.getManagementIp(), getSelf().getPort(), getSelf().getUsername()), AnsibleConstant.ROOT_DIR);
                                 if (!ret.isReturnCode(0)) {
-                                    trigger.fail(errf.stringToOperationError(
-                                            String.format("unable to get kvm host[uuid:%s, ip:%s] facts by ansible\n%s", self.getUuid(), self.getManagementIp(), ret.getExecutionLog())
-                                    ));
-
+                                    trigger.fail(operr("unable to get kvm host[uuid:%s, ip:%s] facts by ansible\n%s", self.getUuid(), self.getManagementIp(), ret.getExecutionLog()));
                                     return;
                                 }
 
                                 String[] pairs = ret.getStdout().split(">>");
                                 if (pairs.length != 2) {
-                                    trigger.fail(errf.stringToOperationError(String.format("unrecognized ansible facts mediaType, %s", ret.getStdout())));
+                                    trigger.fail(operr("unrecognized ansible facts mediaType, %s", ret.getStdout()));
                                     return;
                                 }
 
                                 LinkedHashMap output = JSONObjectUtil.toObject(pairs[1], LinkedHashMap.class);
                                 LinkedHashMap facts = (LinkedHashMap) output.get("ansible_facts");
                                 if (facts == null) {
-                                    trigger.fail(errf.stringToOperationError(String.format("unrecognized ansible facts mediaType, cannot find field 'ansible_facts', %s", ret.getStdout())));
+                                    trigger.fail(operr("unrecognized ansible facts mediaType, cannot find field 'ansible_facts', %s", ret.getStdout()));
                                     return;
                                 }
 
@@ -2631,14 +2600,12 @@ public class KVMHost extends HostBase implements Host {
                                 @Override
                                 public void success(HostFactResponse ret) {
                                     if (!ret.isSuccess()) {
-                                        trigger.fail(errf.stringToOperationError(ret.getError()));
+                                        trigger.fail(operr(ret.getError()));
                                         return;
                                     }
 
                                     if (ret.getHvmCpuFlag() == null) {
-                                        trigger.fail(errf.stringToOperationError(
-                                                "cannot find either 'vmx' or 'svm' in /proc/cpuinfo, please make sure you have enabled virtualization in your BIOS setting"
-                                        ));
+                                        trigger.fail(operr("cannot find either 'vmx' or 'svm' in /proc/cpuinfo, please make sure you have enabled virtualization in your BIOS setting"));
                                         return;
                                     }
 

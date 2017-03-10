@@ -26,6 +26,8 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.operr;
+
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -115,10 +117,9 @@ public class VirtualRouterDhcpBackend extends AbstractVirtualRouterBackend imple
                                     .getIp()));
                             applyDhcpEntry(it, spec, completion);
                         } else {
-                            String err = String.format("unable to add dhcp entries to virtual router vm[uuid:%s ip:%s], because %s, dhcp entry[%s]",
+                            ErrorCode err = operr("unable to add dhcp entries to virtual router vm[uuid:%s ip:%s], because %s, dhcp entry[%s]",
                                     vr.getUuid(), vr.getManagementNic().getIp(), rsp.getError(), struct);
-                            logger.warn(err);
-                            completion.fail(errf.stringToOperationError(err));
+                            completion.fail(err);
                         }
                     }
                 });

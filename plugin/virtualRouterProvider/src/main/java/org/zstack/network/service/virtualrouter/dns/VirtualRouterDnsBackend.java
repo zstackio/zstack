@@ -26,6 +26,8 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.operr;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -84,7 +86,7 @@ public class VirtualRouterDnsBackend extends AbstractVirtualRouterBackend implem
                 VirtualRouterAsyncHttpCallReply r = reply.castReply();
                 SetDnsRsp rsp = r.toResponse(SetDnsRsp.class);
                 if (!rsp.isSuccess()) {
-                    completion.fail(errf.stringToOperationError(rsp.getError()));
+                    completion.fail(operr(rsp.getError()));
                     return;
                 }
 
@@ -130,7 +132,7 @@ public class VirtualRouterDnsBackend extends AbstractVirtualRouterBackend implem
                 VirtualRouterAsyncHttpCallReply r = reply.castReply();
                 RemoveDnsRsp rsp = r.toResponse(RemoveDnsRsp.class);
                 if (!rsp.isSuccess()) {
-                    completion.fail(errf.stringToOperationError(rsp.getError()));
+                    completion.fail(operr(rsp.getError()));
                     return;
                 }
 
@@ -188,10 +190,9 @@ public class VirtualRouterDnsBackend extends AbstractVirtualRouterBackend implem
                                     .getIp()));
                             applyDns(it, spec, completion);
                         } else {
-                            String err = String.format("virtual router[uuid:%s, ip:%s] failed to configure dns%s for L3Network[uuid:%s, name:%s], %s",
+                            ErrorCode err = operr("virtual router[uuid:%s, ip:%s] failed to configure dns%s for L3Network[uuid:%s, name:%s], %s",
                                     vr.getUuid(), vr.getManagementNic().getIp(), struct, l3.getUuid(), l3.getName(), ret.getError());
-                            logger.warn(err);
-                            completion.fail(errf.stringToOperationError(err));
+                            completion.fail(err);
                         }
                     }
                 });

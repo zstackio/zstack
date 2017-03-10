@@ -17,6 +17,8 @@ import org.zstack.header.host.*;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
 
+import static org.zstack.core.Platform.operr;
+
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -120,7 +122,7 @@ public class KVMConnectExtensionForL2Network implements KVMHostConnectExtensionP
                 }
             });
         } else {
-            completion.fail(errf.stringToOperationError(String.format("KVMConnectExtensionForL2Network wont's support L2Network[type:%s]", l2.getType())));
+            completion.fail(operr("KVMConnectExtensionForL2Network wont's support L2Network[type:%s]", l2.getType()));
             return;
         }
 

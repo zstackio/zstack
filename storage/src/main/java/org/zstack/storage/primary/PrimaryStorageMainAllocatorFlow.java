@@ -16,6 +16,8 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.operr;
+
 import javax.persistence.TypedQuery;
 import java.util.*;
 
@@ -184,7 +186,7 @@ public class PrimaryStorageMainAllocatorFlow extends NoRollbackFlow {
     public void run(FlowTrigger trigger, Map data) {
         Result ret = allocate(data);
         if (ret.result.isEmpty()) {
-            throw new OperationFailureException(errf.stringToOperationError(ret.error));
+            throw new OperationFailureException(operr(ret.error));
         }
 
         data.put(AllocatorParams.CANDIDATES, ret.result);

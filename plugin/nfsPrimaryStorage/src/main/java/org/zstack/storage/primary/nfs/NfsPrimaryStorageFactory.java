@@ -30,6 +30,8 @@ import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.path.PathUtil;
 
+import static org.zstack.core.Platform.operr;
+
 import javax.persistence.TypedQuery;
 import java.util.Collections;
 import java.util.HashMap;
@@ -169,9 +171,7 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
     @Transactional
     public HostInventory getConnectedHostForOperation(PrimaryStorageInventory pri) {
         if (pri.getAttachedClusterUuids().isEmpty()) {
-            throw new OperationFailureException(errf.stringToOperationError(
-                    String.format("cannot find a Connected host to execute command for nfs primary storage[uuid:%s]", pri.getUuid())
-            ));
+            throw new OperationFailureException(operr("cannot find a Connected host to execute command for nfs primary storage[uuid:%s]", pri.getUuid()));
         }
 
         String sql = "select h from HostVO h where h.state = :state and h.status = :connectionState and h.clusterUuid in (:clusterUuids)";
@@ -182,9 +182,7 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
         q.setMaxResults(1);
         List<HostVO> ret = q.getResultList();
         if (ret.isEmpty()) {
-            throw new OperationFailureException(errf.stringToOperationError(
-                    String.format("cannot find a Connected host to execute command for nfs primary storage[uuid:%s]", pri.getUuid())
-            ));
+            throw new OperationFailureException(operr("cannot find a Connected host to execute command for nfs primary storage[uuid:%s]", pri.getUuid()));
         } else {
             Collections.shuffle(ret);
             return HostInventory.valueOf(ret.get(0));
@@ -224,9 +222,7 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
             return HypervisorType.valueOf(type);
         }
 
-        throw new OperationFailureException(errf.stringToOperationError(
-                String.format("cannot find proper hypervisorType for primary storage[uuid:%s] to handle image format or volume format[%s]", psUuid, imageFormat)
-        ));
+        throw new OperationFailureException(operr("cannot find proper hypervisorType for primary storage[uuid:%s] to handle image format or volume format[%s]", psUuid, imageFormat));
     }
 
     @Override

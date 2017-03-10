@@ -43,6 +43,8 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.operr;
+
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
@@ -1071,11 +1073,9 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                 q.setParameter("nicUuids", nicUuids);
                 Long count = q.getSingleResult();
                 if (count > 0) {
-                    throw new OperationFailureException(errf.stringToOperationError(
-                            String.format("unable to attach the L3 network[uuid:%s, name:%s] to the vm[uuid:%s, name:%s]," +
-                                            " because the L3 network is providing EIP to one of the vm's nic",
-                                    l3.getUuid(), l3.getName(), vm.getUuid(), vm.getName())
-                    ));
+                    throw new OperationFailureException(operr("unable to attach the L3 network[uuid:%s, name:%s] to the vm[uuid:%s, name:%s]," +
+                                    " because the L3 network is providing EIP to one of the vm's nic",
+                            l3.getUuid(), l3.getName(), vm.getUuid(), vm.getName()));
                 }
             }
         }.run();

@@ -14,6 +14,8 @@ import org.zstack.header.core.scheduler.SchedulerVO;
 import org.zstack.header.core.scheduler.SchedulerVO_;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.message.APIMessage;
+import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.operr;
 
 /**
  * Created by Mei Lei on 7/5/16.
@@ -74,15 +76,11 @@ public class SchedulerApiInterceptor implements ApiMessageInterceptor {
         q.select(SchedulerVO_.state);
         q.add(SchedulerVO_.uuid, SimpleQuery.Op.EQ, msg.getUuid());
         String state = q.findValue();
-        if (msg.getStateEvent().equals("enable") && state.equals(SchedulerState.Enabled)) {
-            throw new ApiMessageInterceptionException(errf.stringToOperationError(
-                    String.format("can not enable a Enabled scheduler" )
-            ));
+        if (msg.getStateEvent().equals("enable") && state.equals(SchedulerState.Enabled.toString())) {
+            throw new ApiMessageInterceptionException(operr("can not enable a Enabled scheduler" ));
         }
-        if (msg.getStateEvent().equals("disable") && state.equals(SchedulerState.Disabled)) {
-            throw new ApiMessageInterceptionException(errf.stringToOperationError(
-                    String.format("can not disable a Disabled scheduler")
-            ));
+        if (msg.getStateEvent().equals("disable") && state.equals(SchedulerState.Disabled.toString())) {
+            throw new ApiMessageInterceptionException(operr("can not disable a Disabled scheduler"));
         }
     }
 
@@ -91,41 +89,27 @@ public class SchedulerApiInterceptor implements ApiMessageInterceptor {
             if (msg.getInterval() == null) {
                 if (msg.getRepeatCount() != null) {
                     if (msg.getRepeatCount() != 1) {
-                        throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                                String.format("interval must be set when use simple scheduler when repeat more than once")
-                        ));
+                        throw new ApiMessageInterceptionException(argerr("interval must be set when use simple scheduler when repeat more than once"));
                     }
                 } else {
-                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                            String.format("interval must be set when use simple scheduler when repeat forever")
-                    ));
+                    throw new ApiMessageInterceptionException(argerr("interval must be set when use simple scheduler when repeat forever"));
                 }
             } else if (msg.getInterval() != null && msg.getInterval() <= 0) {
-                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                        String.format("interval must be positive integer")
-                ));
+                throw new ApiMessageInterceptionException(argerr("interval must be positive integer"));
             }
 
             if (msg.getStartTime() == null) {
-                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                        String.format("startTime must be set when use simple scheduler")
-                ));
+                throw new ApiMessageInterceptionException(argerr("startTime must be set when use simple scheduler"));
             } else if (msg.getStartTime() != null && msg.getStartTime() < 0) {
-                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                        String.format("startTime must be positive integer or 0")
-                ));
+                throw new ApiMessageInterceptionException(argerr("startTime must be positive integer or 0"));
             } else if (msg.getStartTime() != null && msg.getStartTime() > 2147454847 ){
                 //  mysql timestamp range is '1970-01-01 00:00:01' UTC to '2038-01-19 03:14:07' UTC.
                 //  we accept 0 as startDate means start from current time
-                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                        String.format("startTime out of range")
-                ));
+                throw new ApiMessageInterceptionException(argerr("startTime out of range"));
             }
 
             if (msg.getRepeatCount() != null && msg.getRepeatCount() <= 0) {
-                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                        String.format("repeatCount must be positive integer")
-                ));
+                throw new ApiMessageInterceptionException(argerr("repeatCount must be positive integer"));
             }
             
             if (msg.getInterval() * msg.getRepeatCount() * 1000 < 0) {
@@ -137,19 +121,13 @@ public class SchedulerApiInterceptor implements ApiMessageInterceptor {
 
         if (msg.getType().equals("cron")) {
             if (msg.getCron() == null || ( msg.getCron() != null && msg.getCron().isEmpty())) {
-                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                        String.format("cron must be set when use cron scheduler")
-                ));
+                throw new ApiMessageInterceptionException(argerr("cron must be set when use cron scheduler"));
             }
             if ( (! msg.getCron().contains("?")) || msg.getCron().split(" ").length != 6) {
-                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                        String.format("cron task must follow format like this : \"0 0/3 17-23 * * ?\" ")
-                ));
+                throw new ApiMessageInterceptionException(argerr("cron task must follow format like this : \"0 0/3 17-23 * * ?\" "));
             }
             if (msg.getInterval() != null || msg.getRepeatCount() != null || msg.getStartTime() != null) {
-                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                        String.format("cron scheduler only need to specify cron task")
-                ));
+                throw new ApiMessageInterceptionException(argerr("cron scheduler only need to specify cron task"));
             }
         }
     }

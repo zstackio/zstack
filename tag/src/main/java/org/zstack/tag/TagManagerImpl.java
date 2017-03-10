@@ -29,6 +29,9 @@ import org.zstack.utils.*;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.operr;
+
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import javax.persistence.metamodel.EntityType;
@@ -194,9 +197,8 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         }
 
         if (isTagExisting(resourceUuid, tag, type, resourceType)) {
-            throw new OperationFailureException(errf.stringToOperationError(
-                    String.format("Duplicated Tag[tag:%s, type:%s, resourceType:%s, resourceUuid:%s]",
-                            tag, type, resourceType, resourceUuid)));
+            throw new OperationFailureException(operr("Duplicated Tag[tag:%s, type:%s, resourceType:%s, resourceUuid:%s]",
+                            tag, type, resourceType, resourceUuid));
         }
 
         if (type == TagType.User) {
@@ -619,9 +621,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         }
 
         if (!checked) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("no system tag matches %s", tag)
-            ));
+            throw new ApiMessageInterceptionException(argerr("no system tag matches %s", tag));
         }
 
     }
@@ -739,9 +739,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
                 }
 
                 if (!checked) {
-                    throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                            String.format("no system tag matches %s", tag)
-                    ));
+                    throw new ApiMessageInterceptionException(argerr("no system tag matches %s", tag));
                 }
             }
 

@@ -33,6 +33,8 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.operr;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -449,9 +451,7 @@ public class RESTFacadeImpl implements RESTFacade {
         }.run();
 
         if (rsp.getStatusCode() != org.springframework.http.HttpStatus.OK) {
-            throw new OperationFailureException(errf.stringToOperationError(
-                    String.format("failed to post to %s, status code: %s, response body: %s", url, rsp.getStatusCode(), rsp.getBody())
-            ));
+            throw new OperationFailureException(operr("failed to post to %s, status code: %s, response body: %s", url, rsp.getStatusCode(), rsp.getBody()));
         }
         
         if (rsp.getBody() != null && returnClass != Void.class) {
@@ -492,8 +492,7 @@ public class RESTFacadeImpl implements RESTFacade {
                     String info = String.format("still unable to echo %s, will try %s times. %s", url, count, e.getMessage());
                     logger.debug(info);
                     if (--count <= 0) {
-                        String err = String.format("unable to echo %s in %sms", url, timeout);
-                        completion.fail(errf.stringToOperationError(err));
+                        completion.fail(operr("unable to echo %s in %sms", url, timeout));
                         return true;
                     } else {
                         return false;

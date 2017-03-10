@@ -84,6 +84,9 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 
+import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.operr;
+
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.sql.Timestamp;
@@ -398,10 +401,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
         bsq.setParameter("zoneUuid", msg.getZoneUuid());
         List<BackupStorageVO> bss = bsq.getResultList();
         if (bss.isEmpty()) {
-            throw new OperationFailureException(errf.stringToInvalidArgumentError(
-                    String.format("the image[uuid:%s] is not on any backup storage that has been attached to the zone[uuid:%s]",
-                            msg.getImageUuid(), msg.getZoneUuid())
-            ));
+            throw new OperationFailureException(argerr("the image[uuid:%s] is not on any backup storage that has been attached to the zone[uuid:%s]",
+                            msg.getImageUuid(), msg.getZoneUuid()));
         }
 
         List<L3NetworkVO> l3s = new ArrayList<>();
@@ -463,10 +464,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
         ImageVO image = dbf.findByUuid(msg.getImageUuid(), ImageVO.class);
         if (image.getMediaType() == ImageMediaType.ISO && msg.getRootDiskOfferingUuid() == null) {
-            throw new OperationFailureException(errf.stringToInvalidArgumentError(
-                    String.format("the image[name:%s, uuid:%s] is an ISO, rootDiskOfferingUuid must be set",
-                            image.getName(), image.getUuid())
-            ));
+            throw new OperationFailureException(argerr("the image[name:%s, uuid:%s] is an ISO, rootDiskOfferingUuid must be set",
+                            image.getName(), image.getUuid()));
         }
 
         amsg.setImage(ImageInventory.valueOf(image));
@@ -505,10 +504,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
             amsg.setRequiredBackupStorageUuid(image.getBackupStorageRefs().iterator().next().getBackupStorageUuid());
         } else {
             if (msg.getZoneUuid() == null) {
-                throw new OperationFailureException(errf.stringToInvalidArgumentError(
-                        String.format("zoneUuid must be set because the image[name:%s, uuid:%s] is on multiple backup storage",
-                                image.getName(), image.getUuid())
-                ));
+                throw new OperationFailureException(argerr("zoneUuid must be set because the image[name:%s, uuid:%s] is on multiple backup storage",
+                                image.getName(), image.getUuid()));
             }
 
             ImageBackupStorageSelector selector = new ImageBackupStorageSelector();
@@ -877,9 +874,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
             private void validateHostname(String tag, String hostname) {
                 DomainValidator domainValidator = DomainValidator.getInstance(true);
                 if (!domainValidator.isValid(hostname)) {
-                    throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                            String.format("hostname[%s] specified in system tag[%s] is not a valid domain name", hostname, tag)
-                    ));
+                    throw new ApiMessageInterceptionException(argerr("hostname[%s] specified in system tag[%s] is not a valid domain name", hostname, tag));
                 }
             }
 
@@ -891,9 +886,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 for (String sysTag : msg.getSystemTags()) {
                     if (VmSystemTags.HOSTNAME.isMatch(sysTag)) {
                         if (++hostnameCount > 1) {
-                            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                                    String.format("only one hostname system tag is allowed, but %s got", hostnameCount)
-                            ));
+                            throw new ApiMessageInterceptionException(argerr("only one hostname system tag is allowed, but %s got", hostnameCount));
                         }
 
                         String hostname = VmSystemTags.HOSTNAME.getTokenByTag(sysTag, VmSystemTags.HOSTNAME_TOKEN);
@@ -910,18 +903,14 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 Map<String, String> token = TagUtils.parse(VmSystemTags.STATIC_IP.getTagFormat(), sysTag);
                 String l3Uuid = token.get(VmSystemTags.STATIC_IP_L3_UUID_TOKEN);
                 if (!dbf.isExist(l3Uuid, L3NetworkVO.class)) {
-                    throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                            String.format("L3 network[uuid:%s] not found. Please correct your system tag[%s] of static IP",
-                                    l3Uuid, sysTag)
-                    ));
+                    throw new ApiMessageInterceptionException(argerr("L3 network[uuid:%s] not found. Please correct your system tag[%s] of static IP",
+                                    l3Uuid, sysTag));
                 }
 
                 String ip = token.get(VmSystemTags.STATIC_IP_TOKEN);
                 if (!NetworkUtils.isIpv4Address(ip)) {
-                    throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                            String.format("%s is not a valid IPv4 address. Please correct your system tag[%s] of static IP",
-                                    ip, sysTag)
-                    ));
+                    throw new ApiMessageInterceptionException(argerr("%s is not a valid IPv4 address. Please correct your system tag[%s] of static IP",
+                                    ip, sysTag));
                 }
 
                 CheckIpAvailabilityMsg cmsg = new CheckIpAvailabilityMsg();
@@ -935,9 +924,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
                 CheckIpAvailabilityReply cr = r.castReply();
                 if (!cr.isAvailable()) {
-                    throw new ApiMessageInterceptionException(errf.stringToOperationError(
-                            String.format("IP[%s] is not available on the L3 network[uuid:%s]", ip, l3Uuid)
-                    ));
+                    throw new ApiMessageInterceptionException(operr("IP[%s] is not available on the L3 network[uuid:%s]", ip, l3Uuid));
                 }
             }
 
@@ -956,11 +943,9 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
                 if (!vos.isEmpty()) {
                     SystemTagVO sameTag = vos.get(0);
-                    throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                            String.format("conflict hostname in system tag[%s];" +
+                    throw new ApiMessageInterceptionException(argerr("conflict hostname in system tag[%s];" +
                                             " there has been a VM[uuid:%s] having hostname[%s] on L3 network[uuid:%s]",
-                                    tag, sameTag.getResourceUuid(), hostname, l3Uuid)
-                    ));
+                                    tag, sameTag.getResourceUuid(), hostname, l3Uuid));
                 }
             }
 
@@ -989,9 +974,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     try {
                         VmBootDevice.valueOf(o);
                     } catch (IllegalArgumentException e) {
-                        throw new OperationFailureException(errf.stringToInvalidArgumentError(
-                                String.format("invalid boot device[%s] in boot order[%s]", o, order)
-                        ));
+                        throw new OperationFailureException(argerr("invalid boot device[%s] in boot order[%s]", o, order));
                     }
                 }
             }
@@ -1956,10 +1939,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
         vq.add(VolumeVO_.uuid, Op.EQ, ref.getResourceUuid());
         vq.add(VolumeVO_.type, Op.EQ, VolumeType.Root);
         if (vq.isExists()) {
-            throw new OperationFailureException(errf.stringToOperationError(
-                    String.format("the resource[uuid:%s] is a ROOT volume, you cannot change its owner, instead," +
-                            "change the owner of the VM the root volume belongs to", ref.getResourceUuid())
-            ));
+            throw new OperationFailureException(operr("the resource[uuid:%s] is a ROOT volume, you cannot change its owner, instead," +
+                            "change the owner of the VM the root volume belongs to", ref.getResourceUuid()));
         }
     }
 

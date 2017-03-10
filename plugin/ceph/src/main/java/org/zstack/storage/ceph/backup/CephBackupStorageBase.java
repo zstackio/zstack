@@ -38,6 +38,8 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.operr;
+
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import java.net.URISyntaxException;
@@ -430,9 +432,9 @@ public class CephBackupStorageBase extends BackupStorageBase {
         }
 
         if (mons.isEmpty()) {
-            throw new OperationFailureException(errf.stringToOperationError(
-                    String.format("all ceph mons are Disconnected in ceph backup storage[uuid:%s]", self.getUuid())
-            ));
+            throw new OperationFailureException(
+                    operr("all ceph mons are Disconnected in ceph backup storage[uuid:%s]", self.getUuid())
+            );
         }
 
         Collections.shuffle(mons);
@@ -443,9 +445,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
             void call() {
                 if (!it.hasNext()) {
-                    callback.fail(errf.stringToOperationError(
-                            String.format("all mons failed to execute http call[%s], errors are %s", path, JSONObjectUtil.toJsonString(errorCodes))
-                    ));
+                    callback.fail(operr("all mons failed to execute http call[%s], errors are %s", path, JSONObjectUtil.toJsonString(errorCodes)));
 
                     return;
                 }
@@ -457,7 +457,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
                         if (!ret.success) {
                             // not an IO error but an operation error, return it
                             String details = String.format("[mon:%s], %s", base.getSelf().getHostname(), ret.error);
-                            callback.fail(errf.stringToOperationError(details));
+                            callback.fail(operr(details));
                         } else {
                             if (!(cmd instanceof InitCmd)) {
                                 updateCapacityIfNeeded(ret);
@@ -836,10 +836,8 @@ public class CephBackupStorageBase extends BackupStorageBase {
             void connect(final FlowTrigger trigger) {
                 if (!it.hasNext()) {
                     if (errorCodes.size() == mons.size()) {
-                        trigger.fail(errf.stringToOperationError(
-                                String.format("unable to connect to the ceph backup storage[uuid:%s]. Failed to connect all ceph mons. Errors are %s",
-                                        self.getUuid(), JSONObjectUtil.toJsonString(errorCodes))
-                        ));
+                        trigger.fail(operr("unable to connect to the ceph backup storage[uuid:%s]. Failed to connect all ceph mons. Errors are %s",
+                                        self.getUuid(), JSONObjectUtil.toJsonString(errorCodes)));
                     } else {
                         // reload because mon status changed
                         self = dbf.reload(self);
@@ -913,7 +911,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
                                         sb.append(String.format("%s (mon ip) --> %s (fsid)\n", mon.getSelf().getHostname(), fsid));
                                     }
 
-                                    throw new OperationFailureException(errf.stringToOperationError(sb.toString()));
+                                    throw new OperationFailureException(operr(sb.toString()));
                                 }
 
                                 // check if there is another ceph setup having the same fsid
@@ -924,11 +922,11 @@ public class CephBackupStorageBase extends BackupStorageBase {
                                 q.add(CephBackupStorageVO_.uuid, Op.NOT_EQ, self.getUuid());
                                 CephBackupStorageVO otherCeph = q.find();
                                 if (otherCeph != null) {
-                                    throw new OperationFailureException(errf.stringToOperationError(
-                                            String.format("there is another CEPH backup storage[name:%s, uuid:%s] with the same" +
+                                    throw new OperationFailureException(
+                                            operr("there is another CEPH backup storage[name:%s, uuid:%s] with the same" +
                                                             " FSID[%s], you cannot add the same CEPH setup as two different backup storage",
                                                     otherCeph.getName(), otherCeph.getUuid(), fsId)
-                                    ));
+                                    );
                                 }
 
                                 trigger.next();
@@ -944,7 +942,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
                                 public void success(GetFactsRsp rsp) {
                                     if (!rsp.success) {
                                         // one mon cannot get the facts, directly error out
-                                        trigger.fail(errf.stringToOperationError(rsp.error));
+                                        trigger.fail(operr(rsp.error));
                                         return;
                                     }
 
@@ -1144,7 +1142,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
                                 backupStorageDown();
                             } else if (!res.success || PingOperationFailure.MonAddrChanged.toString().equals(res.failure)) {
                                 // this mon is down(success == false), but the backup storage may still work as other mons may work
-                                ErrorCode errorCode = errf.stringToOperationError(res.error);
+                                ErrorCode errorCode = operr(res.error);
                                 thisMonIsDown(errorCode);
                             }
                         }
@@ -1286,7 +1284,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
                             @Override
                             public void done() {
                                 if (!errorCodes.isEmpty()) {
-                                    trigger.fail(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR, "unable to connect mons", errorCodes));
+                                    trigger.fail(operr("unable to connect mons").causedBy(errorCodes));
                                 } else {
                                     trigger.next();
                                 }
@@ -1329,7 +1327,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
                             public void done() {
                                 // one fail, all fail
                                 if (!errors.isEmpty()) {
-                                    trigger.fail(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR, "unable to add mon to ceph backup storage", errors));
+                                    trigger.fail(operr("unable to add mon to ceph backup storage").causedBy(errors));
                                 } else {
                                     trigger.next();
                                 }
@@ -1344,14 +1342,12 @@ public class CephBackupStorageBase extends BackupStorageBase {
                                 @Override
                                 public void success(GetFactsRsp rsp) {
                                     if (!rsp.isSuccess()) {
-                                        errors.add(errf.stringToOperationError(rsp.getError()));
+                                        errors.add(operr(rsp.getError()));
                                     } else {
                                         String fsid = rsp.fsid;
                                         if (!getSelf().getFsid().equals(fsid)) {
-                                            errors.add(errf.stringToOperationError(
-                                                    String.format("the mon[ip:%s] returns a fsid[%s] different from the current fsid[%s] of the cep cluster," +
-                                                            "are you adding a mon not belonging to current cluster mistakenly?", base.getSelf().getHostname(), fsid, getSelf().getFsid())
-                                            ));
+                                            errors.add(operr("the mon[ip:%s] returns a fsid[%s] different from the current fsid[%s] of the cep cluster," +
+                                                            "are you adding a mon not belonging to current cluster mistakenly?", base.getSelf().getHostname(), fsid, getSelf().getFsid()));
                                         }
                                     }
 

@@ -55,6 +55,8 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.operr;
+
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -837,7 +839,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                 KVMHostAsyncHttpCallReply r = reply.castReply();
                 T rsp = r.toResponse(rspType);
                 if (!rsp.isSuccess()) {
-                    completion.fail(errf.stringToOperationError(rsp.getError()));
+                    completion.fail(operr(rsp.getError()));
                     return;
                 }
 
@@ -1094,9 +1096,8 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
 
                                 @Override
                                 public void fail(ErrorCode errorCode) {
-                                    trigger.fail(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
-                                            String.format("unable to create an empty volume[uuid:%s, name:%s] on the kvm host[uuid:%s]",
-                                                    p.volume.getUuid(), p.volume.getName(), dstHostUuid), errorCode));
+                                    trigger.fail(operr("unable to create an empty volume[uuid:%s, name:%s] on the kvm host[uuid:%s]",
+                                                    p.volume.getUuid(), p.volume.getName(), dstHostUuid).causedBy(errorCode));
                                 }
                             });
                 }

@@ -32,6 +32,8 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
+import static org.zstack.core.Platform.operr;
+
 import java.util.Map;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
@@ -96,7 +98,7 @@ public class VirtualRouterDeployAgentFlow extends NoRollbackFlow {
                                 if (ret.isSuccess()) {
                                     trigger.next();
                                 } else {
-                                    trigger.fail(errf.stringToOperationError(ret.getError()));
+                                    trigger.fail(operr(ret.getError()));
                                 }
                             }
 

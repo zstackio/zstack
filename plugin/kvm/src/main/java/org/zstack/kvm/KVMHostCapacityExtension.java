@@ -18,6 +18,8 @@ import org.zstack.kvm.KVMAgentCommands.HostCapacityCmd;
 import org.zstack.kvm.KVMAgentCommands.HostCapacityResponse;
 import org.zstack.utils.SizeUtils;
 
+import static org.zstack.core.Platform.operr;
+
 import java.util.Map;
 
 public class KVMHostCapacityExtension implements KVMHostConnectExtensionPoint, HostConnectionReestablishExtensionPoint {
@@ -41,7 +43,7 @@ public class KVMHostCapacityExtension implements KVMHostConnectExtensionPoint, H
         KVMHostSyncHttpCallReply r = reply.castReply();
         HostCapacityResponse rsp = r.toResponse(HostCapacityResponse.class);
         if (!rsp.isSuccess()) {
-            throw new OperationFailureException(errf.stringToOperationError(rsp.getError()));
+            throw new OperationFailureException(operr(rsp.getError()));
         }
 
         if (rsp.getTotalMemory() < SizeUtils.sizeStringToBytes(KVMGlobalConfig.RESERVED_MEMORY_CAPACITY.value())) {

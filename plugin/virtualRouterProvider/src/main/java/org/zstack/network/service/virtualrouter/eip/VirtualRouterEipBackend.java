@@ -33,6 +33,8 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.operr;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -144,11 +146,9 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
                         if (ret.isSuccess()) {
                             trigger.next();
                         } else {
-                            trigger.fail(errf.stringToOperationError(
-                                    String.format("failed to create eip[uuid:%s, name:%s, ip:%s] for vm nic[uuid:%s] on virtual router[uuid:%s], %s",
+                            trigger.fail(operr("failed to create eip[uuid:%s, name:%s, ip:%s] for vm nic[uuid:%s] on virtual router[uuid:%s], %s",
                                             struct.getEip().getUuid(), struct.getEip().getName(), struct.getVip().getIp(), struct.getNic().getUuid(),
-                                            vr.getUuid(), ret.getError())
-                            ));
+                                            vr.getUuid(), ret.getError()));
                         }
                     }
                 });
@@ -182,10 +182,8 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
             @Override
             public void validate(VirtualRouterOfferingInventory offering) throws OperationFailureException {
                 if (!offering.getPublicNetworkUuid().equals(struct.getVip().getL3NetworkUuid())) {
-                    throw new OperationFailureException(errf.stringToOperationError(
-                            String.format("found a virtual router offering[uuid:%s] for L3Network[uuid:%s] in zone[uuid:%s]; however, the network's public network[uuid:%s] is not the same to EIP[uuid:%s]'s; you may need to use system tag" +
-                                    " guestL3Network::l3NetworkUuid to specify a particular virtual router offering for the L3Network", offering.getUuid(), l3inv.getUuid(), l3inv.getZoneUuid(), struct.getVip().getL3NetworkUuid(), struct.getEip().getUuid())
-                    ));
+                    throw new OperationFailureException(operr("found a virtual router offering[uuid:%s] for L3Network[uuid:%s] in zone[uuid:%s]; however, the network's public network[uuid:%s] is not the same to EIP[uuid:%s]'s; you may need to use system tag" +
+                                    " guestL3Network::l3NetworkUuid to specify a particular virtual router offering for the L3Network", offering.getUuid(), l3inv.getUuid(), l3inv.getZoneUuid(), struct.getVip().getL3NetworkUuid(), struct.getEip().getUuid()));
                 }
             }
         });
@@ -287,10 +285,10 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
                             VirtualRouterAsyncHttpCallReply re = reply.castReply();
                             RemoveEipRsp ret = re.toResponse(RemoveEipRsp.class);
                             if (!ret.isSuccess()) {
-                                String err = String.format("failed to remove eip[uuid:%s, name:%s, ip:%s] for vm nic[uuid:%s] on virtual router[uuid:%s], %s",
+                                ErrorCode err = operr("failed to remove eip[uuid:%s, name:%s, ip:%s] for vm nic[uuid:%s] on virtual router[uuid:%s], %s",
                                         struct.getEip().getUuid(), struct.getEip().getName(), struct.getVip().getIp(), struct.getNic().getUuid(),
                                         vr.getUuid(), ret.getError());
-                                trigger.setError(errf.stringToOperationError(err));
+                                trigger.setError(err);
                             }
                         }
 

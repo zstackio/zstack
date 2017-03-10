@@ -26,6 +26,8 @@ import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.operr;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -136,9 +138,8 @@ public class VirtualRouterVipBaseBackend extends VipBaseBackend {
                 if (ret.isSuccess()) {
                     completion.success();
                 } else {
-                    String err = String.format("failed to remove vip%s, because %s", tos, ret.getError());
-                    logger.warn(err);
-                    completion.fail(errf.stringToOperationError(err));
+                    ErrorCode err = operr("failed to remove vip%s, because %s", tos, ret.getError());
+                    completion.fail(err);
                 }
             }
         });
@@ -172,9 +173,8 @@ public class VirtualRouterVipBaseBackend extends VipBaseBackend {
                 VirtualRouterAsyncHttpCallReply re = reply.castReply();
                 VirtualRouterCommands.CreateVipRsp ret = re.toResponse(VirtualRouterCommands.CreateVipRsp.class);
                 if (!ret.isSuccess()) {
-                    String err = String.format("failed to create vip%s on virtual router[uuid:%s], because %s", tos, vr.getUuid(), ret.getError());
-                    logger.warn(err);
-                    completion.fail(errf.stringToOperationError(err));
+                    ErrorCode err = operr("failed to create vip%s on virtual router[uuid:%s], because %s", tos, vr.getUuid(), ret.getError());
+                    completion.fail(err);
                 } else {
                     completion.success();
                 }
@@ -193,10 +193,8 @@ public class VirtualRouterVipBaseBackend extends VipBaseBackend {
             VmInstanceState vrState = q.findValue();
 
             if (VmInstanceState.Running != vrState) {
-                completion.fail(errf.stringToOperationError(
-                        String.format("virtual router[uuid:%s, state:%s] is not running",
-                                vipvo.getVirtualRouterVmUuid(), vrState)
-                ));
+                completion.fail(operr("virtual router[uuid:%s, state:%s] is not running",
+                        vipvo.getVirtualRouterVmUuid(), vrState));
             } else {
                 completion.success();
             }
@@ -227,12 +225,10 @@ public class VirtualRouterVipBaseBackend extends VipBaseBackend {
                 s.setProviderType(self.getServiceProvider());
                 s.setOfferingValidator(offering -> {
                     if (!offering.getPublicNetworkUuid().equals(self.getL3NetworkUuid())) {
-                        throw new OperationFailureException(errf.stringToOperationError(
-                                String.format("found a virtual router offering[uuid:%s] for L3Network[uuid:%s] in zone[uuid:%s]; however, the network's public network[uuid:%s] is not the same to VIP[uuid:%s]'s; you may need to use system tag" +
+                        throw new OperationFailureException(operr("found a virtual router offering[uuid:%s] for L3Network[uuid:%s] in zone[uuid:%s]; however, the network's public network[uuid:%s] is not the same to VIP[uuid:%s]'s; you may need to use system tag" +
                                         " guestL3Network::l3NetworkUuid to specify a particular virtual router offering for the L3Network",
-                                        offering.getUuid(), s.getL3Network().getUuid(), s.getL3Network().getZoneUuid(),
-                                        self.getL3NetworkUuid(), self.getUuid())
-                        ));
+                                offering.getUuid(), s.getL3Network().getUuid(), s.getL3Network().getZoneUuid(),
+                                self.getL3NetworkUuid(), self.getUuid()));
                     }
                 });
 

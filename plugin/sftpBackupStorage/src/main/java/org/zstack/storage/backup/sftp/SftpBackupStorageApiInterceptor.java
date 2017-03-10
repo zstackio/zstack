@@ -12,6 +12,8 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.query.QueryCondition;
 import org.zstack.header.query.QueryOp;
 import org.zstack.utils.network.NetworkUtils;
+import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.operr;
 
 /**
  */
@@ -36,9 +38,7 @@ public class SftpBackupStorageApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(APIUpdateSftpBackupStorageMsg msg) {
         if (msg.getHostname() != null && !NetworkUtils.isIpv4Address(msg.getHostname()) && !NetworkUtils.isHostname(msg.getHostname())) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("hostname[%s] is neither an IPv4 address nor a valid hostname", msg.getHostname())
-            ));
+            throw new ApiMessageInterceptionException(argerr("hostname[%s] is neither an IPv4 address nor a valid hostname", msg.getHostname()));
         }
     }
 
@@ -60,17 +60,13 @@ public class SftpBackupStorageApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(APIAddSftpBackupStorageMsg msg) {
         if (!NetworkUtils.isIpv4Address(msg.getHostname()) && !NetworkUtils.isHostname(msg.getHostname())) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("hostname[%s] is neither an IPv4 address nor a valid hostname", msg.getHostname())
-            ));
+            throw new ApiMessageInterceptionException(argerr("hostname[%s] is neither an IPv4 address nor a valid hostname", msg.getHostname()));
         }
 
         SimpleQuery<SftpBackupStorageVO> q = dbf.createQuery(SftpBackupStorageVO.class);
         q.add(SftpBackupStorageVO_.hostname, Op.EQ, msg.getHostname());
         if (q.isExists()) {
-            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
-                    String.format("duplicate backup storage. There has been a sftp backup storage[hostname:%s] existing", msg.getHostname())
-            ));
+            throw new ApiMessageInterceptionException(operr("duplicate backup storage. There has been a sftp backup storage[hostname:%s] existing", msg.getHostname()));
         }
     }
 }

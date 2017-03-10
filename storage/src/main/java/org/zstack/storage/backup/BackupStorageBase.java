@@ -39,6 +39,8 @@ import org.zstack.header.storage.backup.BackupStorageErrors.Opaque;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.operr;
+
 import javax.persistence.LockModeType;
 import javax.persistence.Query;
 import java.net.URISyntaxException;
@@ -126,8 +128,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
             HttpHeaders header = restf.getRESTTemplate().headForHeaders(url);
             len = header.getFirst("Content-Length");
         } catch (Exception e) {
-            throw new OperationFailureException(errf.stringToOperationError(
-                    String.format("cannot get image. The image url is %s. Exception is %s", url, e.toString())));
+            throw new OperationFailureException(operr("cannot get image. The image url is %s. Exception is %s", url, e.toString()));
         }
         if (len == null) {
             return;
@@ -135,10 +136,8 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
 
         long size = Long.valueOf(len);
         if (size > self.getAvailableCapacity()) {
-            throw new OperationFailureException(errf.stringToOperationError(
-                    String.format("the backup storage[uuid:%s, name:%s] has not enough capacity to download the image[%s]." +
-                            "Required size:%s, available size:%s", self.getUuid(), self.getName(), url, size, self.getAvailableCapacity())
-            ));
+            throw new OperationFailureException(operr("the backup storage[uuid:%s, name:%s] has not enough capacity to download the image[%s]." +
+                            "Required size:%s, available size:%s", self.getUuid(), self.getName(), url, size, self.getAvailableCapacity()));
         }
     }
 
@@ -152,17 +151,13 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
 
     protected void checkStatus(Message msg) {
         if (!statusChecker.isOperationAllowed(msg.getClass().getName(), self.getStatus().toString())) {
-            throw new OperationFailureException(errf.stringToOperationError(
-                    String.format("backup storage cannot proceed message[%s] because its status is %s", msg.getClass().getName(), self.getStatus())
-            ));
+            throw new OperationFailureException(operr("backup storage cannot proceed message[%s] because its status is %s", msg.getClass().getName(), self.getStatus()));
         }
     }
 
     protected void checkState(Message msg) {
         if (!stateChecker.isOperationAllowed(msg.getClass().getName(), self.getState().toString())) {
-            throw new OperationFailureException(errf.stringToOperationError(
-                    String.format("backup storage cannot proceed message[%s] because its state is %s", msg.getClass().getName(), self.getState())
-            ));
+            throw new OperationFailureException(operr("backup storage cannot proceed message[%s] because its state is %s", msg.getClass().getName(), self.getState()));
         }
     }
 

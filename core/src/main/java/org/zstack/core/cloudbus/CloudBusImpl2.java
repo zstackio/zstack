@@ -37,6 +37,8 @@ import org.zstack.utils.gson.GsonUtil;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.argerr;
+
 import javax.management.MXBean;
 import java.io.IOException;
 import java.io.Serializable;
@@ -681,9 +683,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
                 Message msgInstance = (Message) msgClass.newInstance();
                 msgInstance.setHeaders(headers);
                 msgInstance.setId((String) msg.get("id"));
-                replyErrorByMessageType(msgInstance, errf.stringToInvalidArgumentError(
-                        String.format("message is not in corrected JSON mediaType, %s", errMsg)
-                ));
+                replyErrorByMessageType(msgInstance, argerr("message is not in corrected JSON mediaType, %s", errMsg));
             } catch (Exception e) {
                 logger.warn(String.format("unable to handle JsonSyntaxException of message: %s", msgStr), e);
             }

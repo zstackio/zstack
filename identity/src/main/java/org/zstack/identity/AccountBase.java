@@ -36,6 +36,8 @@ import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.argerr;
+
 import javax.persistence.Query;
 import javax.persistence.Tuple;
 import java.util.ArrayList;
@@ -294,9 +296,7 @@ public class AccountBase extends AbstractAccount {
 
         if (!AccountConstant.INITIAL_SYSTEM_ADMIN_UUID.equals(msg.getAccountUuid()) &&
                 !group.getAccountUuid().equals(msg.getAccountUuid())) {
-            throw new OperationFailureException(errf.stringToInvalidArgumentError(
-                    String.format("the user group[uuid:%s] does not belong to the account[uuid:%s]", group.getUuid(), msg.getAccountUuid())
-            ));
+            throw new OperationFailureException(argerr("the user group[uuid:%s] does not belong to the account[uuid:%s]", group.getUuid(), msg.getAccountUuid()));
         }
 
         boolean update = false;
@@ -398,9 +398,7 @@ public class AccountBase extends AbstractAccount {
         QuotaVO quota = q.find();
 
         if (quota == null) {
-            throw new OperationFailureException(errf.stringToInvalidArgumentError(
-                    String.format("cannot find Quota[name: %s] for the account[uuid: %s]", msg.getName(), msg.getIdentityUuid())
-            ));
+            throw new OperationFailureException(argerr("cannot find Quota[name: %s] for the account[uuid: %s]", msg.getName(), msg.getIdentityUuid()));
         }
 
         quota.setValue(msg.getValue());
@@ -459,9 +457,7 @@ public class AccountBase extends AbstractAccount {
 
         for (String ruuid : msg.getResourceUuids()) {
             if (!uuidType.containsKey(ruuid)) {
-                throw new OperationFailureException(errf.stringToInvalidArgumentError(
-                        String.format("the account[uuid: %s] doesn't have a resource[uuid: %s]", vo.getUuid(), ruuid)
-                ));
+                throw new OperationFailureException(argerr("the account[uuid: %s] doesn't have a resource[uuid: %s]", vo.getUuid(), ruuid));
             }
         }
 
@@ -498,8 +494,8 @@ public class AccountBase extends AbstractAccount {
         UserVO user = dbf.findByUuid(msg.getUuid(), UserVO.class);
 
         if (!AccountConstant.INITIAL_SYSTEM_ADMIN_UUID.equals(msg.getAccountUuid()) && !user.getAccountUuid().equals(msg.getAccountUuid())) {
-            throw new OperationFailureException(errf.stringToInvalidArgumentError(String.format("the user[uuid:%s] does not belong to the" +
-                    " account[uuid:%s]", user.getUuid(), msg.getAccountUuid())));
+            throw new OperationFailureException(argerr("the user[uuid:%s] does not belong to the" +
+                    " account[uuid:%s]", user.getUuid(), msg.getAccountUuid()));
         }
 
         boolean update = false;

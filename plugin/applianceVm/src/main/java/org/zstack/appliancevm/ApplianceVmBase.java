@@ -35,6 +35,8 @@ import org.zstack.utils.RangeSet;
 import org.zstack.utils.RangeSet.Range;
 import org.zstack.utils.function.Function;
 
+import static org.zstack.core.Platform.operr;
+
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -121,8 +123,8 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
             public void run(final SyncTaskChain chain) {
                 final ApplianceVmAsyncHttpCallReply reply = new ApplianceVmAsyncHttpCallReply();
                 if (msg.isCheckStatus() && getSelf().getStatus() != ApplianceVmStatus.Connected) {
-                    reply.setError(errf.stringToOperationError(String.format("appliance vm[uuid:%s] is in status of %s that cannot make http call to %s",
-                            self.getUuid(), getSelf().getStatus(), msg.getPath())));
+                    reply.setError(operr("appliance vm[uuid:%s] is in status of %s that cannot make http call to %s",
+                            self.getUuid(), getSelf().getStatus(), msg.getPath()));
                     bus.reply(msg, reply);
                     chain.next();
                     return;
@@ -349,7 +351,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
                 if (!ret.isSuccess()) {
                     logger.warn(String.format("failed to refresh firewall rules on appliance vm[uuid:%s, name:%s], %s",
                             self.getUuid(), self.getName(), ret.getError()));
-                    reply.setError(errf.stringToOperationError(ret.getError()));
+                    reply.setError(operr(ret.getError()));
                 }
 
                 bus.reply(msg, reply);

@@ -23,6 +23,8 @@ import org.zstack.storage.backup.sftp.GetSftpBackupStorageDownloadCredentialMsg;
 import org.zstack.storage.backup.sftp.GetSftpBackupStorageDownloadCredentialReply;
 import org.zstack.storage.backup.sftp.SftpBackupStorageConstant;
 
+import static org.zstack.core.Platform.operr;
+
 import java.util.List;
 
 import static org.zstack.utils.CollectionDSL.list;
@@ -197,10 +199,8 @@ public class LocalStorageKvmSftpBackupStorageMediatorImpl implements LocalStorag
                         KVMHostAsyncHttpCallReply kr = reply.castReply();
                         SftpDownloadBitsRsp rsp = kr.toResponse(SftpDownloadBitsRsp.class);
                         if (!rsp.isSuccess()) {
-                            completion.fail(errf.stringToOperationError(
-                                    String.format("failed to download bits from the SFTP backup storage[hostname:%s, path: %s] to the local primary storage[uuid:%s, path: %s], %s",
-                                            greply.getHostname(), backupStorageInstallPath, pinv.getUuid(), primaryStorageInstallPath, rsp.getError())
-                            ));
+                            completion.fail(operr("failed to download bits from the SFTP backup storage[hostname:%s, path: %s] to the local primary storage[uuid:%s, path: %s], %s",
+                                    greply.getHostname(), backupStorageInstallPath, pinv.getUuid(), primaryStorageInstallPath, rsp.getError()));
                             return;
                         }
 
@@ -250,10 +250,8 @@ public class LocalStorageKvmSftpBackupStorageMediatorImpl implements LocalStorag
                         KVMHostAsyncHttpCallReply kr = reply.castReply();
                         SftpUploadBitsRsp rsp = kr.toResponse(SftpUploadBitsRsp.class);
                         if (!rsp.isSuccess()) {
-                            completion.fail(errf.stringToOperationError(
-                                    String.format("failed to upload bits from the local storage[uuid:%s, path:%s] to the SFTP backup storage[hostname:%s, path:%s], %s",
-                                            pinv.getUuid(), primaryStorageInstallPath, r.getHostname(), backupStorageInstallPath, rsp.getError())
-                            ));
+                            completion.fail(operr("failed to upload bits from the local storage[uuid:%s, path:%s] to the SFTP backup storage[hostname:%s, path:%s], %s",
+                                            pinv.getUuid(), primaryStorageInstallPath, r.getHostname(), backupStorageInstallPath, rsp.getError()));
                             return;
                         }
 

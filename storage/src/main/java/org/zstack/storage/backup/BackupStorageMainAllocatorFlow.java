@@ -12,6 +12,8 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.backup.BackupStorageConstant.AllocatorParams;
 
+import static org.zstack.core.Platform.operr;
+
 import javax.persistence.TypedQuery;
 import java.util.List;
 import java.util.Map;
@@ -83,7 +85,7 @@ public class BackupStorageMainAllocatorFlow extends NoRollbackFlow {
     public void run(FlowTrigger trigger, Map data) {
         Result ret = allocate(data);
         if (ret.result.isEmpty()) {
-            throw new OperationFailureException(errf.stringToOperationError(ret.error));
+            throw new OperationFailureException(operr(ret.error));
         }
 
         data.put(AllocatorParams.CANDIDATES, ret.result);

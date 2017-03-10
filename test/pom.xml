@@ -215,6 +215,10 @@
             <artifactId>testlib</artifactId>
             <version>${project.version}</version>
         </dependency>
+	<dependency>
+	    <groupId>com.github.javaparser</groupId>
+	    <artifactId>javaparser-core</artifactId>
+	</dependency>
     </dependencies>
 
     <build>

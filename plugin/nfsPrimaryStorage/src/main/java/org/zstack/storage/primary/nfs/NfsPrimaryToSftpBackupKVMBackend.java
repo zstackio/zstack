@@ -9,6 +9,7 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.message.MessageReply;
@@ -27,6 +28,8 @@ import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackendCommands.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
+
+import static org.zstack.core.Platform.operr;
 
 import java.util.List;
 
@@ -100,11 +103,9 @@ public class NfsPrimaryToSftpBackupKVMBackend implements NfsPrimaryToBackupStora
 
                 CreateRootVolumeFromTemplateResponse rsp = ((KVMHostAsyncHttpCallReply)reply).toResponse(CreateRootVolumeFromTemplateResponse.class);
                 if (!rsp.isSuccess()) {
-                    String err = String.format("fails to create root volume[uuid:%s] from cached image[path:%s] because %s",
-                            volume.getUuid(), image.getImageUuid(),
-                            rsp.getError());
-                    logger.warn(err);
-                    completion.fail(errf.stringToOperationError(err));
+                    ErrorCode err = operr("fails to create root volume[uuid:%s] from cached image[path:%s] because %s",
+                            volume.getUuid(), image.getImageUuid(), rsp.getError());
+                    completion.fail(err);
                     return;
                 }
 
@@ -155,10 +156,8 @@ public class NfsPrimaryToSftpBackupKVMBackend implements NfsPrimaryToBackupStora
 
                         DownloadBitsFromSftpBackupStorageResponse rsp = ((KVMHostAsyncHttpCallReply)reply).toResponse(DownloadBitsFromSftpBackupStorageResponse.class);
                         if (!rsp.isSuccess()) {
-                            completion.fail(errf.stringToOperationError(
-                                    String.format(String.format("failed to download[%s] from SftpBackupStorage[hostname:%s] to nfs primary storage[uuid:%s, path:%s], %s",
-                                            backupStorageInstallPath, greply.getHostname(), pinv.getUuid(), primaryStorageInstallPath, rsp.getError()))
-                            ));
+                            completion.fail(operr("failed to download[%s] from SftpBackupStorage[hostname:%s] to nfs primary storage[uuid:%s, path:%s], %s",
+                                            backupStorageInstallPath, greply.getHostname(), pinv.getUuid(), primaryStorageInstallPath, rsp.getError()));
                             return;
                         }
 
@@ -214,9 +213,8 @@ public class NfsPrimaryToSftpBackupKVMBackend implements NfsPrimaryToBackupStora
 
                         UploadToSftpResponse rsp = ((KVMHostAsyncHttpCallReply)reply).toResponse(UploadToSftpResponse.class);
                         if (!rsp.isSuccess()) {
-                            completion.fail(errf.stringToOperationError(
-                                    String.format(String.format("failed to upload bits from nfs primary storage[uuid:%s, path:%s] to SFTP backup storage[hostname:%s, path: %s], %s",
-                                            pinv.getUuid(), primaryStorageInstallPath, hostname,  backupStorageInstallPath, rsp.getError()))));
+                            completion.fail(operr("failed to upload bits from nfs primary storage[uuid:%s, path:%s] to SFTP backup storage[hostname:%s, path: %s], %s",
+                                    pinv.getUuid(), primaryStorageInstallPath, hostname,  backupStorageInstallPath, rsp.getError()));
                             return;
                         }
 

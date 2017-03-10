@@ -50,6 +50,8 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
+import static org.zstack.core.Platform.operr;
+
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.sql.Timestamp;
@@ -320,9 +322,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                         });
 
                         if (bsUuids.isEmpty()) {
-                            throw new OperationFailureException(errf.stringToOperationError(
-                                    String.format("the image[uuid:%s, name:%s] has been deleted on all backup storage", template.getUuid(), template.getName())
-                            ));
+                            throw new OperationFailureException(operr("the image[uuid:%s, name:%s] has been deleted on all backup storage", template.getUuid(), template.getName()));
                         }
 
                         String sql = "select bs.uuid from BackupStorageVO bs, BackupStorageZoneRefVO zref, PrimaryStorageVO ps where zref.zoneUuid = ps.zoneUuid and bs.status = :bsStatus and bs.state = :bsState and ps.uuid = :psUuid and zref.backupStorageUuid = bs.uuid and bs.uuid in (:bsUuids)";
@@ -334,10 +334,8 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                         bsUuids = q.getResultList();
 
                         if (bsUuids.isEmpty()) {
-                            trigger.fail(errf.stringToOperationError(
-                                    String.format("cannot find a backup storage on which the image[uuid:%s] is that satisfies all conditions of: 1. has state Enabled 2. has status Connected. 3 has attached to zone in which primary storage[uuid:%s] is",
-                                            template.getUuid(), msg.getPrimaryStorageUuid())
-                            ));
+                            trigger.fail(operr("cannot find a backup storage on which the image[uuid:%s] is that satisfies all conditions of: 1. has state Enabled 2. has status Connected. 3 has attached to zone in which primary storage[uuid:%s] is",
+                                            template.getUuid(), msg.getPrimaryStorageUuid()));
                             return;
                         }
 
@@ -589,9 +587,8 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
             List<VolumeFactory> exts = pluginRgty.getExtensionList(
                     VolumeFactory.class);
             if (exts.size() > 1) {
-                throw new OperationFailureException(errf.stringToOperationError(
-                        String.format("there should not be more than one %s implementation.",
-                                VolumeFactory.class.getSimpleName())));
+                throw new OperationFailureException(operr("there should not be more than one %s implementation.",
+                                VolumeFactory.class.getSimpleName()));
             }
         }
 

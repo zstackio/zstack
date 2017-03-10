@@ -61,6 +61,8 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.operr;
+
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.sql.Timestamp;
@@ -281,8 +283,8 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                     }
 
                                     if (backupStorage.isEmpty()) {
-                                        trigger.fail(errf.stringToOperationError(String.format("failed to allocate all backup storage[uuid:%s], a list of error: %s",
-                                                msg.getBackupStorageUuids(), JSONObjectUtil.toJsonString(errs))));
+                                        trigger.fail(operr("failed to allocate all backup storage[uuid:%s], a list of error: %s",
+                                                msg.getBackupStorageUuids(), JSONObjectUtil.toJsonString(errs)));
                                     } else {
                                         trigger.next();
                                     }
@@ -373,11 +375,8 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                 int backupStorageNum = msg.getBackupStorageUuids() == null ? 1 : msg.getBackupStorageUuids().size();
 
                                 if (fail == backupStorageNum) {
-                                    ErrorCode errCode = errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
-                                            String.format("failed to create data volume template from volume[uuid:%s] on all backup storage%s. See cause for one of errors",
-                                                    msg.getVolumeUuid(), msg.getBackupStorageUuids()),
-                                            err
-                                    );
+                                    ErrorCode errCode = operr("failed to create data volume template from volume[uuid:%s] on all backup storage%s. See cause for one of errors",
+                                                    msg.getVolumeUuid(), msg.getBackupStorageUuids()).causedBy(err);
 
                                     trigger.fail(errCode);
                                 } else {
@@ -690,8 +689,8 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                     }
 
                                     if (targetBackupStorages.isEmpty()) {
-                                        trigger.fail(errf.stringToOperationError(String.format("unable to allocate backup storage specified by uuids%s, list errors are: %s",
-                                                msg.getBackupStorageUuids(), JSONObjectUtil.toJsonString(errs))));
+                                        trigger.fail(operr("unable to allocate backup storage specified by uuids%s, list errors are: %s",
+                                                msg.getBackupStorageUuids(), JSONObjectUtil.toJsonString(errs)));
                                     } else {
                                         trigger.next();
                                     }
@@ -790,8 +789,8 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                 if (success) {
                                     trigger.next();
                                 } else {
-                                    trigger.fail(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR, String.format("failed to create image from root volume[uuid:%s] on all backup storage, see cause for one of errors",
-                                            msg.getRootVolumeUuid()), err));
+                                    trigger.fail(operr("failed to create image from root volume[uuid:%s] on all backup storage, see cause for one of errors",
+                                            msg.getRootVolumeUuid()).causedBy(err));
                                 }
                             }
                         });

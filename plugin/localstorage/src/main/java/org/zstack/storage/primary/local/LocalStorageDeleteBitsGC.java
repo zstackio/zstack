@@ -15,6 +15,7 @@ import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.kvm.KvmCommandFailureChecker;
 import org.zstack.kvm.KvmCommandSender;
 import org.zstack.kvm.KvmResponseWrapper;
+import static org.zstack.core.Platform.operr;
 
 /**
  * Created by xing5 on 2017/3/5.
@@ -52,7 +53,7 @@ public class LocalStorageDeleteBitsGC extends EventBasedGarbageCollector {
                     @Override
                     public ErrorCode getError(KvmResponseWrapper wrapper) {
                         LocalStorageKvmBackend.DeleteBitsRsp rsp = wrapper.getResponse(LocalStorageKvmBackend.DeleteBitsRsp.class);
-                        return rsp.isSuccess() ? null : errf.stringToOperationError(rsp.getError());
+                        return rsp.isSuccess() ? null : operr(rsp.getError());
                     }
                 },
 

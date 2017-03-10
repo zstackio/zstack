@@ -8,16 +8,20 @@ import org.reflections.scanners.*;
 import org.reflections.util.ClasspathHelper;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.MessageSource;
+import org.springframework.context.NoSuchMessageException;
 import org.springframework.web.context.WebApplicationContext;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.componentloader.ComponentLoaderImpl;
 import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.db.DatabaseGlobalProperty;
+import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.statemachine.StateMachine;
 import org.zstack.core.statemachine.StateMachineImpl;
 import org.zstack.header.Component;
 import org.zstack.header.core.encrypt.ENCRYPT;
+import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.utils.*;
 import org.zstack.utils.data.StringTemplate;
@@ -583,25 +587,33 @@ public class Platform {
         return managementServerIp;
     }
 
-    public static String i18n(String code, List args) {
-        return i18n(code, args.toArray(new Object[args.size()]));
+    private static String toI18nString(String code, Object... args) {
+        return toI18nString(code, null, args);
     }
 
-    public static String i18n(String code, Object...args) {
-        return i18n(code, null, args);
+    public static String toI18nString(String code, Locale l, List args) {
+        return toI18nString(code, l, args.toArray(new Object[args.size()]));
     }
 
-    public static String i18n(String code, Locale l, List args) {
-        return i18n(code, l, args.toArray(new Object[args.size()]));
-    }
-
-    public static String i18n(String code, Locale l, Object...args) {
+    public static String toI18nString(String code, Locale l, Object...args) {
         l = l == null ? locale : l;
 
-        if (args.length > 0) {
-            return messageSource.getMessage(code, args, l);
+        try {
+            if (args.length > 0) {
+                return messageSource.getMessage(code, args, l);
+            } else {
+                return messageSource.getMessage(code, null, l);
+            }
+        } catch (NoSuchMessageException e) {
+            return String.format(code, args);
+        }
+    }
+
+    public static String i18n(String str, Object...args) {
+        if (args != null) {
+            return String.format(str, args);
         } else {
-            return messageSource.getMessage(code, null, l);
+            return str;
         }
     }
 
@@ -626,5 +638,34 @@ public class Platform {
         } else {
             return true;
         }
+    }
+
+    public static ErrorCode err(Enum errCode, String fmt, Object...args) {
+        ErrorFacade errf = getComponentLoader().getComponent(ErrorFacade.class);
+        if (SysErrors.INTERNAL == errCode) {
+            return errf.instantiateErrorCode(errCode, String.format(fmt, args));
+        } else {
+            return errf.instantiateErrorCode(errCode, toI18nString(fmt, args));
+        }
+    }
+
+    public static ErrorCode inerr(String fmt, Object...args) {
+        return err(SysErrors.INTERNAL, fmt, args);
+    }
+
+    public static ErrorCode operr(String fmt, Object...args) {
+        return err(SysErrors.OPERATION_ERROR, fmt, args);
+    }
+
+    public static ErrorCode argerr(String fmt, Object...args) {
+        return err(SysErrors.INVALID_ARGUMENT_ERROR, fmt, args);
+    }
+
+    public static ErrorCode ioerr(String fmt, Object...args) {
+        return err(SysErrors.IO_ERROR, fmt, args);
+    }
+
+    public static ErrorCode httperr(String fmt, Object...args) {
+        return err(SysErrors.HTTP_ERROR, fmt, args);
     }
 }

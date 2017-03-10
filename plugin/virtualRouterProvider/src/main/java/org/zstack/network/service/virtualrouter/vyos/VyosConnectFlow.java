@@ -23,6 +23,8 @@ import org.zstack.network.service.virtualrouter.VirtualRouterManager;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmInventory;
 import org.zstack.utils.DebugUtils;
 
+import static org.zstack.core.Platform.operr;
+
 import java.util.Map;
 
 /**
@@ -97,7 +99,7 @@ public class VyosConnectFlow extends NoRollbackFlow {
                                 if (ret.isSuccess()) {
                                     trigger.next();
                                 } else {
-                                    trigger.fail(errf.stringToOperationError(ret.getError()));
+                                    trigger.fail(operr(ret.getError()));
                                 }
                             }
 

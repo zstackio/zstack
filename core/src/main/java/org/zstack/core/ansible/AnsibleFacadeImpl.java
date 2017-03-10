@@ -27,6 +27,8 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
+import static org.zstack.core.Platform.operr;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -223,12 +225,12 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
                     }
 
                     if (output.contains("skipping: no hosts matched")) {
-                        throw new OperationFailureException(errf.stringToOperationError(output));
+                        throw new OperationFailureException(operr(output));
                     }
 
                 } catch (ShellException se) {
                     logger.warn(se.getMessage(), se);
-                    throw new OperationFailureException(errf.stringToOperationError(se.getMessage()));
+                    throw new OperationFailureException(operr(se.getMessage()));
                 }
 
                 completion.success();

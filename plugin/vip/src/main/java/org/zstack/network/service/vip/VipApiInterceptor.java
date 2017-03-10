@@ -13,6 +13,8 @@ import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l3.IpAllocatorType;
 import org.zstack.utils.network.NetworkUtils;
+import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.operr;
 
 /**
  */
@@ -45,25 +47,19 @@ public class VipApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(APICreateVipMsg msg) {
         if (msg.getAllocatorStrategy() != null && !IpAllocatorType.hasType(msg.getAllocatorStrategy())) {
-            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                    String.format("unsupported ip allocation strategy[%s]", msg.getAllocatorStrategy())
-            ));
+            throw new ApiMessageInterceptionException(argerr("unsupported ip allocation strategy[%s]", msg.getAllocatorStrategy()));
         }
 
         if (msg.getRequiredIp() != null) {
             if (!NetworkUtils.isIpv4Address(msg.getRequiredIp())) {
-                throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                        String.format("requiredIp[%s] is not in valid IPv4 mediaType", msg.getRequiredIp())
-                ));
+                throw new ApiMessageInterceptionException(argerr("requiredIp[%s] is not in valid IPv4 mediaType", msg.getRequiredIp()));
             }
 
             SimpleQuery<VipVO> q = dbf.createQuery(VipVO.class);
             q.add(VipVO_.ip, Op.EQ, msg.getRequiredIp());
             q.add(VipVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
             if (q.isExists()) {
-                throw new ApiMessageInterceptionException(errf.stringToOperationError(
-                        String.format("there is already a vip[%s] on l3Network[uuid:%s]", msg.getRequiredIp(), msg.getL3NetworkUuid())
-                ));
+                throw new ApiMessageInterceptionException(operr("there is already a vip[%s] on l3Network[uuid:%s]", msg.getRequiredIp(), msg.getL3NetworkUuid()));
             }
         }
     }

@@ -9,6 +9,7 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HypervisorType;
 import org.zstack.header.message.MessageReply;
@@ -19,6 +20,8 @@ import org.zstack.kvm.KVMAgentCommands.RefreshAllRulesOnHostCmd;
 import org.zstack.network.securitygroup.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+
+import static org.zstack.core.Platform.operr;
 
 import java.util.Map;
 
@@ -57,9 +60,8 @@ public class KVMSecurityGroupBackend implements SecurityGroupHypervisorBackend, 
                 KVMHostAsyncHttpCallReply hreply = reply.castReply();
                 ApplySecurityGroupRuleResponse rsp = hreply.toResponse(ApplySecurityGroupRuleResponse.class);
                 if (!rsp.isSuccess()) {
-                    String err = String.format("failed to apply rules of security group rules to kvm host[uuid:%s], because %s", hto.getHostUuid(), rsp.getError());
-                    logger.warn(err);
-                    complete.fail(errf.stringToOperationError(err));
+                    ErrorCode err = operr("failed to apply rules of security group rules to kvm host[uuid:%s], because %s", hto.getHostUuid(), rsp.getError());
+                    complete.fail(err);
                     return;
                 }
 
@@ -92,9 +94,8 @@ public class KVMSecurityGroupBackend implements SecurityGroupHypervisorBackend, 
                 KVMHostAsyncHttpCallReply hreply = reply.castReply();
                 ApplySecurityGroupRuleResponse rsp = hreply.toResponse(ApplySecurityGroupRuleResponse.class);
                 if (!rsp.isSuccess()) {
-                    String err = String.format("failed to apply rules of security group rules to kvm host[uuid:%s], because %s", hto.getHostUuid(), rsp.getError());
-                    logger.warn(err);
-                    complete.fail(errf.stringToOperationError(err));
+                    ErrorCode err = operr("failed to apply rules of security group rules to kvm host[uuid:%s], because %s", hto.getHostUuid(), rsp.getError());
+                    complete.fail(err);
                     return;
                 }
 
@@ -134,7 +135,7 @@ public class KVMSecurityGroupBackend implements SecurityGroupHypervisorBackend, 
                 KVMHostAsyncHttpCallReply hreply = reply.castReply();
                 CleanupUnusedRulesOnHostResponse  rsp = hreply.toResponse(CleanupUnusedRulesOnHostResponse.class);
                 if (!rsp.isSuccess()) {
-                    completion.fail(errf.stringToOperationError(rsp.getError()));
+                    completion.fail(operr(rsp.getError()));
                     return;
                 }
 

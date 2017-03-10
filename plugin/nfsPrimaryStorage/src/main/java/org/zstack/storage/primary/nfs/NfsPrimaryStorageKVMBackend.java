@@ -12,6 +12,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.errorcode.schema.Error;
 import org.zstack.core.logging.Log;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.Completion;
@@ -48,6 +49,8 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+
+import static org.zstack.core.Platform.operr;
 
 import javax.persistence.Query;
 import javax.persistence.Tuple;
@@ -133,7 +136,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
 
         MountAgentResponse rsp = ((KVMHostSyncHttpCallReply) reply).toResponse(MountAgentResponse.class);
         if (!rsp.isSuccess()) {
-            throw new OperationFailureException(errf.stringToOperationError(rsp.getError()));
+            throw new OperationFailureException(operr(rsp.getError()));
         }
 
         new PrimaryStorageCapacityUpdater(inv.getUuid()).update(
@@ -200,7 +203,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
             String otherVersion = KVMSystemTags.QEMU_IMG_VERSION.getTokenByTag(e.getValue().get(0), KVMSystemTags.QEMU_IMG_VERSION_TOKEN);
             if ((versionInCluster.compareTo(QCOW3_QEMU_IMG_VERSION) >= 0 && otherVersion.compareTo(QCOW3_QEMU_IMG_VERSION) < 0) ||
                     (versionInCluster.compareTo(QCOW3_QEMU_IMG_VERSION) < 0 && otherVersion.compareTo(QCOW3_QEMU_IMG_VERSION) >= 0)) {
-                String err = String.format(
+                ErrorCode err = operr(
                         "unable to attach a primary storage[uuid:%s, name:%s] to cluster[uuid:%s]. Kvm host in the cluster has qemu-img "
                                 + "with version[%s]; but the primary storage has attached to another cluster that has kvm host which has qemu-img with "
                                 + "version[%s]. qemu-img version greater than %s is incompatible with versions less than %s, this will causes volume snapshot operation "
@@ -208,7 +211,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                         inv.getUuid(), inv.getName(), clusterUuid, versionInCluster, otherVersion, QCOW3_QEMU_IMG_VERSION, QCOW3_QEMU_IMG_VERSION
                 );
 
-                throw new OperationFailureException(errf.stringToOperationError(err));
+                throw new OperationFailureException(err);
             }
         }
     }
@@ -266,7 +269,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
             @Override
             public ErrorCode getError(KvmResponseWrapper wrapper) {
                 NfsPrimaryStorageAgentResponse rsp = wrapper.getResponse(NfsPrimaryStorageAgentResponse.class);
-                return rsp.isSuccess() ? null : errf.stringToOperationError(rsp.getError());
+                return rsp.isSuccess() ? null : operr(rsp.getError());
             }
         }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
             @Override
@@ -297,7 +300,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
             @Override
             public ErrorCode getError(KvmResponseWrapper wrapper) {
                 MergeSnapshotResponse rsp = wrapper.getResponse(MergeSnapshotResponse.class);
-                return rsp.isSuccess() ? null : errf.stringToOperationError(rsp.getError());
+                return rsp.isSuccess() ? null : operr(rsp.getError());
             }
         }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
             @Override
@@ -333,7 +336,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
             @Override
             public ErrorCode getError(KvmResponseWrapper wrapper) {
                 MergeSnapshotResponse rsp = wrapper.getResponse(MergeSnapshotResponse.class);
-                return rsp.isSuccess() ? null : errf.stringToOperationError(rsp.getError());
+                return rsp.isSuccess() ? null : operr(rsp.getError());
             }
         }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
             @Override
@@ -386,7 +389,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
             @Override
             public ErrorCode getError(KvmResponseWrapper wrapper) {
                 GetVolumeActualSizeRsp rsp = wrapper.getResponse(GetVolumeActualSizeRsp.class);
-                return rsp.isSuccess() ? null : errf.stringToOperationError(rsp.getError());
+                return rsp.isSuccess() ? null : operr(rsp.getError());
             }
         }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
             @Override
@@ -416,7 +419,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
             @Override
             public ErrorCode getError(KvmResponseWrapper wrapper) {
                 GetVolumeBaseImagePathRsp rsp = wrapper.getResponse(GetVolumeBaseImagePathRsp.class);
-                return rsp.isSuccess() ? null : errf.stringToOperationError(rsp.getError());
+                return rsp.isSuccess() ? null : operr(rsp.getError());
             }
         }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
             @Override
@@ -461,7 +464,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                 KVMHostAsyncHttpCallReply r = reply.castReply();
                 GetCapacityResponse rsp = r.toResponse(GetCapacityResponse.class);
                 if (!r.isSuccess()) {
-                    completion.fail(errf.stringToOperationError(rsp.getError()));
+                    completion.fail(operr(rsp.getError()));
                     return;
                 }
 
@@ -496,10 +499,8 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
 
                 CheckIsBitsExistingRsp rsp = ((KVMHostAsyncHttpCallReply) reply).toResponse(CheckIsBitsExistingRsp.class);
                 if (!rsp.isSuccess()) {
-                    completion.fail(errf.stringToOperationError(
-                            String.format("failed to check existence of %s on nfs primary storage[uuid:%s], %s",
-                                    installPath, inv.getUuid(), rsp.getError())
-                    ));
+                    completion.fail(operr("failed to check existence of %s on nfs primary storage[uuid:%s], %s",
+                                    installPath, inv.getUuid(), rsp.getError()));
                     return;
                 }
 
@@ -556,14 +557,14 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                     (version.compareTo(QCOW3_QEMU_IMG_VERSION) >= 0 && mine.compareTo(QCOW3_QEMU_IMG_VERSION) < 0) ||
                             (version.compareTo(QCOW3_QEMU_IMG_VERSION) < 0 && mine.compareTo(QCOW3_QEMU_IMG_VERSION) >= 0)
                     ) {
-                String err = String.format(
+                ErrorCode err = operr(
                         "unable to attach a primary storage to cluster. Kvm host[uuid:%s, name:%s] in cluster has qemu-img "
                                 + "with version[%s]; but the primary storage has attached to a cluster that has kvm host[uuid:%s], which has qemu-img with "
                                 + "version[%s]. qemu-img version greater than %s is incompatible with versions less than %s, this will causes volume snapshot operation "
                                 + "to fail. Please avoid attaching a primary storage to clusters that have different Linux distributions, in order to prevent qemu-img version mismatch",
                         context.getInventory().getUuid(), context.getInventory().getName(), mine, e.getKey(), version, QCOW3_QEMU_IMG_VERSION, QCOW3_QEMU_IMG_VERSION
                 );
-                throw new OperationFailureException(errf.stringToOperationError(err));
+                throw new OperationFailureException(err);
             }
         }
     }
@@ -603,10 +604,9 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
 
                 CreateEmptyVolumeResponse rsp = ((KVMHostAsyncHttpCallReply) reply).toResponse(CreateEmptyVolumeResponse.class);
                 if (!rsp.isSuccess()) {
-                    String err = String.format("unable to create empty volume[uuid:%s,  name:%s] on kvm host[uuid:%s, ip:%s], because %s",
+                    ErrorCode err = operr("unable to create empty volume[uuid:%s,  name:%s] on kvm host[uuid:%s, ip:%s], because %s",
                             volume.getUuid(), volume.getName(), host.getUuid(), host.getManagementIp(), rsp.getError());
-                    logger.warn(err);
-                    complete.fail(errf.stringToOperationError(err));
+                    complete.fail(err);
                     return;
                 }
 
@@ -720,10 +720,8 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
 
                 RevertVolumeFromSnapshotResponse rsp = ((KVMHostAsyncHttpCallReply) reply).toResponse(RevertVolumeFromSnapshotResponse.class);
                 if (!rsp.isSuccess()) {
-                    completion.fail(errf.stringToOperationError(
-                            String.format("failed to revert volume[uuid:%s] to snapshot[uuid:%s] on kvm host[uuid:%s, ip:%s], %s",
-                                    vol.getUuid(), sinv.getUuid(), host.getUuid(), host.getManagementIp(), rsp.getError())
-                    ));
+                    completion.fail(operr("failed to revert volume[uuid:%s] to snapshot[uuid:%s] on kvm host[uuid:%s, ip:%s], %s",
+                                    vol.getUuid(), sinv.getUuid(), host.getUuid(), host.getManagementIp(), rsp.getError()));
                     return;
                 }
 
@@ -755,10 +753,8 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
 
                 RevertVolumeFromSnapshotResponse rsp = ((KVMHostAsyncHttpCallReply) reply).toResponse(RevertVolumeFromSnapshotResponse.class);
                 if (!rsp.isSuccess()) {
-                    completion.fail(errf.stringToOperationError(
-                            String.format("failed to revert volume[uuid:%s] to image[uuid:%s] on kvm host[uuid:%s, ip:%s], %s",
-                                    vol.getUuid(), vol.getRootImageUuid(), host.getUuid(), host.getManagementIp(), rsp.getError())
-                    ));
+                    completion.fail(operr("failed to revert volume[uuid:%s] to image[uuid:%s] on kvm host[uuid:%s, ip:%s], %s",
+                                    vol.getUuid(), vol.getRootImageUuid(), host.getUuid(), host.getManagementIp(), rsp.getError()));
                     return;
                 }
 
@@ -793,13 +789,12 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
 
                 CreateTemplateFromVolumeRsp rsp = ((KVMHostAsyncHttpCallReply) reply).toResponse(CreateTemplateFromVolumeRsp.class);
                 if (!rsp.isSuccess()) {
-                    StringBuilder sb = new StringBuilder();
-                    sb.append(String.format("failed to create template from volume, because %s", rsp.getError()));
-                    sb.append(String.format("\ntemplate:%s", JSONObjectUtil.toJsonString(image)));
-                    sb.append(String.format("\nvolume:%s", JSONObjectUtil.toJsonString(volume)));
-                    sb.append(String.format("\nnfs primary storage uuid:%s", primaryStorage.getUuid()));
-                    sb.append(String.format("\nKVM host uuid:%s, management ip:%s", destHost.getUuid(), destHost.getManagementIp()));
-                    completion.fail(errf.stringToOperationError(sb.toString()));
+                    String sb = String.format("failed to create template from volume, because %s", rsp.getError()) +
+                            String.format("\ntemplate:%s", JSONObjectUtil.toJsonString(image)) +
+                            String.format("\nvolume:%s", JSONObjectUtil.toJsonString(volume)) +
+                            String.format("\nnfs primary storage uuid:%s", primaryStorage.getUuid()) +
+                            String.format("\nKVM host uuid:%s, management ip:%s", destHost.getUuid(), destHost.getManagementIp());
+                    completion.fail(operr(sb));
                     return;
                 }
 
@@ -857,7 +852,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
 
                     OfflineMergeSnapshotRsp rsp = ((KVMHostAsyncHttpCallReply) reply).toResponse(OfflineMergeSnapshotRsp.class);
                     if (!rsp.isSuccess()) {
-                        completion.fail(errf.stringToOperationError(rsp.getError()));
+                        completion.fail(operr(rsp.getError()));
                         return;
                     }
 
@@ -945,7 +940,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                     KVMHostAsyncHttpCallReply ar = re.castReply();
                     NfsPrimaryStorageAgentResponse rsp = ar.toResponse(NfsPrimaryStorageAgentResponse.class);
                     if (!rsp.isSuccess()) {
-                        ErrorCode err = errf.stringToOperationError(rsp.getError());
+                        ErrorCode err = operr(rsp.getError());
                         errors.add(err);
                         reconnectHost(huuid, err);
                         continue;
@@ -963,7 +958,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                 if (success) {
                     completion.success();
                 } else {
-                    completion.fail(errf.stringToOperationError(String.format("%s", errors)));
+                    completion.fail(operr("%s", errors));
                 }
             }
         });
@@ -1006,7 +1001,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                             @Override
                             public ErrorCode getError(KvmResponseWrapper wrapper) {
                                 UpdateMountPointRsp rsp = wrapper.getResponse(UpdateMountPointRsp.class);
-                                return rsp.isSuccess() ? null : errf.stringToOperationError(rsp.getError());
+                                return rsp.isSuccess() ? null : operr(rsp.getError());
                             }
                         }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
                             @Override
@@ -1087,7 +1082,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                             final NfsPrimaryStorageAgentResponse rsp = r.toResponse(NfsPrimaryStorageAgentResponse.class);
 
                             if (!rsp.isSuccess()) {
-                                throw new OperationFailureException(errf.stringToOperationError(rsp.getError()));
+                                throw new OperationFailureException(operr(rsp.getError()));
                             }
 
                             PrimaryStorageInventory inv = invs.get(replies.indexOf(reply));

@@ -17,6 +17,9 @@ import org.zstack.header.zone.ZoneVO;
 import org.zstack.header.zone.ZoneVO_;
 import org.zstack.utils.CollectionUtils;
 
+import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.operr;
+
 import javax.persistence.TypedQuery;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -71,9 +74,7 @@ public class PrimaryStorageApiInterceptor implements ApiMessageInterceptor {
         }
 
         if (!pass && !msg.isAll()) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("zoneUuids, clusterUuids, primaryStorageUuids must have at least one be none-empty list, or all is set to true")
-            ));
+            throw new ApiMessageInterceptionException(argerr("zoneUuids, clusterUuids, primaryStorageUuids must have at least one be none-empty list, or all is set to true"));
         }
 
         if (msg.isAll() && (msg.getZoneUuids() == null || msg.getZoneUuids().isEmpty())) {
@@ -95,10 +96,8 @@ public class PrimaryStorageApiInterceptor implements ApiMessageInterceptor {
         q.add(PrimaryStorageClusterRefVO_.clusterUuid, Op.EQ, msg.getClusterUuid());
         q.add(PrimaryStorageClusterRefVO_.primaryStorageUuid, Op.EQ, msg.getPrimaryStorageUuid());
         if (!q.isExists()) {
-            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                    String.format("primary storage[uuid:%s] has not been attached to cluster[uuid:%s] yet",
-                            msg.getPrimaryStorageUuid(), msg.getClusterUuid())
-            ));
+            throw new ApiMessageInterceptionException(argerr("primary storage[uuid:%s] has not been attached to cluster[uuid:%s] yet",
+                            msg.getPrimaryStorageUuid(), msg.getClusterUuid()));
         }
     }
 
@@ -114,10 +113,8 @@ public class PrimaryStorageApiInterceptor implements ApiMessageInterceptor {
             q.setParameter("clusterUuid", msg.getClusterUuid());
             long count = q.getSingleResult();
             if (count != 0) {
-                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
-                        String.format("primary storage[uuid:%s] has been attached to cluster[uuid:%s]",
-                                msg.getPrimaryStorageUuid(), msg.getClusterUuid())
-                ));
+                throw new ApiMessageInterceptionException(operr("primary storage[uuid:%s] has been attached to cluster[uuid:%s]",
+                                msg.getPrimaryStorageUuid(), msg.getClusterUuid()));
             }
         }
         {
@@ -131,10 +128,8 @@ public class PrimaryStorageApiInterceptor implements ApiMessageInterceptor {
             jq.setParameter("clusterUuid", msg.getClusterUuid());
             long count = jq.getSingleResult();
             if (count == 0) {
-                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                        String.format("primary storage[uuid:%s] and cluster[uuid:%s] are not in the same zone",
-                                msg.getPrimaryStorageUuid(), msg.getClusterUuid())
-                ));
+                throw new ApiMessageInterceptionException(argerr("primary storage[uuid:%s] and cluster[uuid:%s] are not in the same zone",
+                                msg.getPrimaryStorageUuid(), msg.getClusterUuid()));
             }
         }
     }
@@ -153,11 +148,9 @@ public class PrimaryStorageApiInterceptor implements ApiMessageInterceptor {
             String clusterUuidsString = pscRefs.stream()
                     .map(PrimaryStorageClusterRefVO::getClusterUuid)
                     .collect(Collectors.joining(", "));
-            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
-                    String.format("primary storage[uuid:%s] cannot be deleted for still " +
-                                    "being attached to cluster[uuid:%s].",
-                            msg.getPrimaryStorageUuid(), clusterUuidsString)
-            ));
+            throw new ApiMessageInterceptionException(operr("primary storage[uuid:%s] cannot be deleted for still " +
+                            "being attached to cluster[uuid:%s].",
+                    msg.getPrimaryStorageUuid(), clusterUuidsString));
         }
     }
 }

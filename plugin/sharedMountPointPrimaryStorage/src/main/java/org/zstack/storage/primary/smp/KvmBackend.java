@@ -49,6 +49,8 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
+import static org.zstack.core.Platform.operr;
+
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.io.File;
@@ -201,9 +203,7 @@ public class KvmBackend extends HypervisorBackend {
         q.add(HostVO_.status, Op.EQ, HostStatus.Connected);
         List<String> hostUuids = q.listValue();
         if (hostUuids.isEmpty() && exceptionOnNotFound) {
-            throw new OperationFailureException(errf.stringToOperationError(
-                    String.format("no connected host found in the cluster[uuid:%s]", clusterUuid)
-            ));
+            throw new OperationFailureException(operr("no connected host found in the cluster[uuid:%s]", clusterUuid));
         }
 
         return hostUuids;
@@ -232,7 +232,7 @@ public class KvmBackend extends HypervisorBackend {
                 KVMHostAsyncHttpCallReply r = reply.castReply();
                 final T rsp = r.toResponse(rspType);
                 if (!rsp.success) {
-                    completion.fail(errf.stringToOperationError(rsp.error));
+                    completion.fail(operr(rsp.error));
                     return;
                 }
 
@@ -638,7 +638,7 @@ public class KvmBackend extends HypervisorBackend {
     private String findConnectedHost() {
         List<String> huuids = findConnectedHosts(50);
         if (huuids.isEmpty()) {
-            throw new OperationFailureException(errf.stringToOperationError("cannot find any connected host to perform the operation"));
+            throw new OperationFailureException(operr("cannot find any connected host to perform the operation"));
         }
         return huuids.get(0);
     }
@@ -655,11 +655,9 @@ public class KvmBackend extends HypervisorBackend {
         public Do() {
             hostUuids = findConnectedHosts(50);
             if (hostUuids.isEmpty()) {
-                throw new OperationFailureException(errf.stringToOperationError(
-                        String.format("cannot find any connected host to perform the operation, it seems all KVM hosts" +
-                                        " in the clusters attached with the shared mount point storage[uuid:%s] are disconnected",
-                                self.getUuid())
-                ));
+                throw new OperationFailureException(operr("cannot find any connected host to perform the operation, it seems all KVM hosts" +
+                                " in the clusters attached with the shared mount point storage[uuid:%s] are disconnected",
+                        self.getUuid()));
             }
         }
 
@@ -925,10 +923,8 @@ public class KvmBackend extends HypervisorBackend {
             hostUuid = t.get(1, String.class);
 
             if (state != VmInstanceState.Stopped && state != VmInstanceState.Running) {
-                throw new OperationFailureException(errf.stringToOperationError(
-                        String.format("the volume[uuid;%s] is attached to a VM[uuid:%s] which is in state of %s, cannot do the snapshot merge",
-                                volume.getUuid(), volume.getVmInstanceUuid(), state)
-                ));
+                throw new OperationFailureException(operr("the volume[uuid;%s] is attached to a VM[uuid:%s] which is in state of %s, cannot do the snapshot merge",
+                                volume.getUuid(), volume.getVmInstanceUuid(), state));
             }
 
             offline = (state == VmInstanceState.Stopped);
@@ -980,12 +976,12 @@ public class KvmBackend extends HypervisorBackend {
         selector.setImageUuid(img.getUuid());
         final String bsUuid = selector.select();
         if (bsUuid == null) {
-            throw new OperationFailureException(errf.stringToOperationError(String.format(
+            throw new OperationFailureException(operr(
                     "the image[uuid:%s, name: %s] is not available to download on any backup storage:\n" +
                             "1. check if image is in status of Deleted\n" +
                             "2. check if the backup storage on which the image is shown as Ready is attached to the zone[uuid:%s]",
                     img.getUuid(), img.getName(), self.getZoneUuid()
-            )));
+            ));
         }
 
         ImageBackupStorageRefInventory ref = CollectionUtils.find(img.getBackupStorageRefs(), new Function<ImageBackupStorageRefInventory, ImageBackupStorageRefInventory>() {
@@ -1299,7 +1295,7 @@ public class KvmBackend extends HypervisorBackend {
         String bsType = q.findValue();
 
         if (bsType == null) {
-            throw new OperationFailureException(errf.stringToOperationError(String.format("cannot find backup storage[uuid:%s]", backupStorageUuid)));
+            throw new OperationFailureException(operr("cannot find backup storage[uuid:%s]", backupStorageUuid));
         }
 
         if (SftpBackupStorageConstant.SFTP_BACKUP_STORAGE_TYPE.equals(bsType)) {
@@ -1379,7 +1375,7 @@ public class KvmBackend extends HypervisorBackend {
             @Override
             public ErrorCode getError(KvmResponseWrapper wrapper) {
                 GetVolumeSizeRsp rsp = wrapper.getResponse(GetVolumeSizeRsp.class);
-                return rsp.success ? null : errf.stringToOperationError(rsp.error);
+                return rsp.success ? null : operr(rsp.error);
             }
         }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
             @Override

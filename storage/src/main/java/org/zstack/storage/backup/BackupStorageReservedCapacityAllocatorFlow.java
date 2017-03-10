@@ -14,6 +14,8 @@ import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.SizeUtils;
 
+import static org.zstack.core.Platform.operr;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -41,10 +43,8 @@ public class BackupStorageReservedCapacityAllocatorFlow extends NoRollbackFlow {
         }
 
         if (ret.isEmpty()) {
-            throw new OperationFailureException(errf.stringToOperationError(
-                    String.format("after subtracting reserved capacity[%s], no backup storage has required capacity[%s bytes]",
-                            BackupStorageGlobalConfig.RESERVED_CAPACITY.value(), spec.getSize())
-            ));
+            throw new OperationFailureException(operr("after subtracting reserved capacity[%s], no backup storage has required capacity[%s bytes]",
+                            BackupStorageGlobalConfig.RESERVED_CAPACITY.value(), spec.getSize()));
         }
 
         data.put(AllocatorParams.CANDIDATES, ret);

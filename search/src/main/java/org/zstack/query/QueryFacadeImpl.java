@@ -25,6 +25,8 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.argerr;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.*;
@@ -252,9 +254,8 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
             }
 
             if (!QueryOp.NOT_NULL.equals(cond.getOp()) && !QueryOp.IS_NULL.equals(cond.getOp()) && cond.getValue() == null) {
-                throw new ApiMessageInterceptionException(
-                        errf.stringToInvalidArgumentError(String.format("'value' of query condition %s cannot be null",
-                                JSONObjectUtil.toJsonString(cond))));
+                throw new ApiMessageInterceptionException(argerr("'value' of query condition %s cannot be null",
+                                JSONObjectUtil.toJsonString(cond)));
             }
         }
 

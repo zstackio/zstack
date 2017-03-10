@@ -3,7 +3,6 @@ package org.zstack.rest;
 import org.zstack.header.errorcode.ErrorCode;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**

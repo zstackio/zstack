@@ -32,6 +32,14 @@ md() {
     cd - > /dev/null
 }
 
+i18njson() {
+    ./build/zsi18n -s . -j conf/i18n.json
+}
+
+i18n() {
+    ./build/zsi18n  -j conf/i18n.json -d conf/i18n/
+}
+
 sdk() {
     set -u
     rm -rf ~/zstack-sdk/java
@@ -63,6 +71,10 @@ run_profile() {
 	py
     elif test x$1 = x'apihelper'; then
 	apihelper
+    elif test x$1 = x'i18njson'; then
+	i18njson
+    elif test x$1 = x'i18n'; then
+	i18n
     else
         mvn -pl build -P $1 exec:exec -D$1
     fi

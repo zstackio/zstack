@@ -28,6 +28,8 @@ import org.zstack.utils.function.FunctionNoArg;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
+import static org.zstack.core.Platform.argerr;
+
 import javax.persistence.TypedQuery;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -263,27 +265,21 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
                 if (value != null && at.maxLength() != Integer.MIN_VALUE && (value instanceof String)) {
                     String str = (String) value;
                     if (str.length() > at.maxLength()) {
-                        throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                                String.format("field[%s] of message[%s] exceeds max length of string. expected was <= %s, actual was %s",
-                                        f.getName(), msg.getClass().getName(), at.maxLength(), str.length())
-                        ));
+                        throw new ApiMessageInterceptionException(argerr("field[%s] of message[%s] exceeds max length of string. expected was <= %s, actual was %s",
+                                        f.getName(), msg.getClass().getName(), at.maxLength(), str.length()));
                     }
                 }
 
                 if (at.required() && value == null) {
-                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                            String.format("field[%s] of message[%s] is mandatory, can not be null", f.getName(), msg.getClass().getName())
-                    ));
+                    throw new ApiMessageInterceptionException(argerr("field[%s] of message[%s] is mandatory, can not be null", f.getName(), msg.getClass().getName()));
                 }
 
                 if (value != null && at.validValues().length > 0) {
                     List vals = Arrays.asList(at.validValues());
 
                     if (!vals.contains(value.toString())) {
-                        throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                                String.format("valid value for field[%s] of message[%s] are %s, but %s found", f.getName(),
-                                        msg.getClass().getName(), vals, value)
-                        ));
+                        throw new ApiMessageInterceptionException(argerr("valid value for field[%s] of message[%s] are %s, but %s found", f.getName(),
+                                        msg.getClass().getName(), vals, value));
                     }
                 }
 
@@ -292,19 +288,15 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
                     Pattern p = Pattern.compile(regex);
                     Matcher mt = p.matcher(value.toString());
                     if (!mt.matches()){
-                        throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                                String.format("valid regex value for field[%s] of message[%s] are A-Z a-z 0-9 _, but %s found", f.getName(),
-                                        msg.getClass().getName(), regex, value)
-                        ));
+                        throw new ApiMessageInterceptionException(argerr("valid regex value for field[%s] of message[%s] are %s, but %s found", f.getName(),
+                                        msg.getClass().getName(), regex, value));
                     }
                 }
 
                 if (value !=null && at.nonempty() && value instanceof Collection) {
                     Collection col = (Collection) value;
                     if (col.isEmpty()) {
-                        throw new  ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                                String.format("field[%s] must be a nonempty list", f.getName())
-                        ));
+                        throw new  ApiMessageInterceptionException(argerr("field[%s] must be a nonempty list", f.getName()));
                     }
                 }
 
@@ -312,24 +304,18 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
                     Collection col = (Collection) value;
                     for (Object o : col) {
                         if (o == null) {
-                            throw new  ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                                    String.format("field[%s] cannot contain a NULL element", f.getName())
-                            ));
+                            throw new  ApiMessageInterceptionException(argerr("field[%s] cannot contain a NULL element", f.getName()));
                         }
                     }
                 }
 
                 if (value != null &&!at.emptyString()) {
                     if (value instanceof String && StringUtils.isEmpty((String) value)) {
-                        throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                                String.format("field[%s] cannot be an empty string", f.getName())
-                        ));
+                        throw new ApiMessageInterceptionException(argerr("field[%s] cannot be an empty string", f.getName()));
                     } else if (value instanceof Collection) {
                         for (Object v : (Collection)value) {
                             if (v instanceof String && StringUtils.isEmpty((String)v)) {
-                                throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                                        String.format("field[%s] cannot contain any empty string", f.getName())
-                                ));
+                                throw new ApiMessageInterceptionException(argerr("field[%s] cannot contain any empty string", f.getName()));
                             }
                         }
                     }
@@ -341,9 +327,7 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
                     long high = at.numberRange()[1];
                     long val = Long.valueOf(((Number) value).longValue());
                     if (val < low || val > high) {
-                        throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                                String.format("field[%s] must be in range of [%s, %s]", f.getName(), low, high)
-                        ));
+                        throw new ApiMessageInterceptionException(argerr("field[%s] must be in range of [%s, %s]", f.getName(), low, high));
                     }
                 }
 

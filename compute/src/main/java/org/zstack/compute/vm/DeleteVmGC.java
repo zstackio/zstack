@@ -7,6 +7,7 @@ import org.zstack.core.gc.GCCompletion;
 import org.zstack.header.host.*;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.*;
+import static org.zstack.core.Platform.operr;
 
 /**
  * Created by xing5 on 2017/3/3.
@@ -39,7 +40,7 @@ public class DeleteVmGC extends EventBasedGarbageCollector {
         }
 
         if (status != HostStatus.Connected) {
-            completion.fail(errf.stringToOperationError(String.format("the host[uuid:%s] is not connected", hostUuid)));
+            completion.fail(operr("the host[uuid:%s] is not connected", hostUuid));
             return;
         }
 

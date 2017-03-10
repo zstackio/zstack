@@ -21,6 +21,8 @@ import org.zstack.utils.URLBuilder;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.operr;
+
 import java.net.URI;
 
 /**
@@ -84,7 +86,7 @@ public class ConsoleProxyBase implements ConsoleProxy {
                     self.setProxyPort(ret.getProxyPort());
                     completion.success(self);
                 } else {
-                    completion.fail(errf.stringToOperationError(ret.getError()));
+                    completion.fail(operr(ret.getError()));
                 }
             }
 
@@ -135,9 +137,7 @@ public class ConsoleProxyBase implements ConsoleProxy {
                 if (ret.isSuccess()) {
                     completion.success(ret.getAvailable());
                 } else {
-                    String err = String.format("unable to check console proxy availability, because %s", ret.getError());
-                    logger.warn(err);
-                    completion.fail(errf.stringToOperationError(err));
+                    completion.fail(operr("unable to check console proxy availability, because %s", ret.getError()));
                 }
             }
 
@@ -171,7 +171,7 @@ public class ConsoleProxyBase implements ConsoleProxy {
                         if (ret.isSuccess()) {
                             completion.success();
                         } else {
-                            completion.fail(errf.stringToOperationError(ret.getError()));
+                            completion.fail(operr(ret.getError()));
                         }
                     }
 

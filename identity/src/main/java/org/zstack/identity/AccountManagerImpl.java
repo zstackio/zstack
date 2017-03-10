@@ -43,6 +43,9 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
+import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.operr;
+
 import javax.persistence.Query;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
@@ -143,10 +146,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         q.setParameter("resUuid", resourceUuid);
         List<AccountResourceRefVO> refs = q.getResultList();
         if (refs.isEmpty()) {
-            throw new OperationFailureException(errf.stringToInvalidArgumentError(
-                    String.format("cannot find the resource[uuid:%s]; wrong resourceUuid or the resource is admin resource",
-                            resourceUuid)
-            ));
+            throw new OperationFailureException(argerr("cannot find the resource[uuid:%s]; wrong resourceUuid or the resource is admin resource",
+                            resourceUuid));
         }
 
         AccountResourceRefVO ref = refs.get(0);
@@ -334,11 +335,11 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             boolean isMine = uq.isExists();
 
             if (!isAdmin && !isMine) {
-                throw new OperationFailureException(errf.stringToOperationError(String.format(
+                throw new OperationFailureException(operr(
                         "the user specified by the userUuid[%s] does not belong to the current account, and the" +
                                 " current account is not an admin account, so it has no permission to check the user's" +
                                 "permissions", msg.getUserUuid()
-                )));
+                ));
             }
         }
 
@@ -367,9 +368,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                     ret.put(apiName, StatementEffect.Deny.toString());
                 }
             } catch (ClassNotFoundException e) {
-                throw new OperationFailureException(errf.stringToInvalidArgumentError(
-                        String.format("%s is not an API", apiName)
-                ));
+                throw new OperationFailureException(argerr("%s is not an API", apiName));
             } catch (Exception e) {
                 throw new CloudRuntimeException(e);
             }
@@ -450,9 +449,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             accountq.add(AccountVO_.name, Op.EQ, msg.getAccountName());
             accountUuid = accountq.findValue();
             if (accountUuid == null) {
-                throw new OperationFailureException(errf.stringToInvalidArgumentError(
-                        String.format("account[%s] not found", msg.getAccountName())
-                ));
+                throw new OperationFailureException(argerr("account[%s] not found", msg.getAccountName()));
             }
         }
 
@@ -1014,9 +1011,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         q.setParameter("auuid", accountUuid);
         List<AccountType> types = q.getResultList();
         if (types.isEmpty()) {
-            throw new OperationFailureException(errf.stringToInvalidArgumentError(
-                    String.format("cannot find the account[uuid:%s]", accountUuid)
-            ));
+            throw new OperationFailureException(argerr("cannot find the account[uuid:%s]", accountUuid));
         }
 
         AccountType atype = types.get(0);
@@ -1511,7 +1506,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
     private void validate(APILogInByUserMsg msg) {
         if (msg.getAccountName() == null && msg.getAccountUuid() == null) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+            throw new ApiMessageInterceptionException(argerr(
                     "accountName and accountUuid cannot both be null, you must specify at least one"
             ));
         }
@@ -1522,10 +1517,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         q.add(UserGroupVO_.accountUuid, Op.EQ, msg.getAccountUuid());
         q.add(UserGroupVO_.name, Op.EQ, msg.getName());
         if (q.isExists()) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("unable to create a group. A group called %s is already under the account[uuid:%s]",
-                            msg.getName(), msg.getAccountUuid())
-            ));
+            throw new ApiMessageInterceptionException(argerr("unable to create a group. A group called %s is already under the account[uuid:%s]",
+                            msg.getName(), msg.getAccountUuid()));
         }
     }
 
@@ -1534,10 +1527,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         q.add(UserVO_.accountUuid, Op.EQ, msg.getAccountUuid());
         q.add(UserVO_.name, Op.EQ, msg.getName());
         if (q.isExists()) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("unable to create a user. A user called %s is already under the account[uuid:%s]",
-                            msg.getName(), msg.getAccountUuid())
-            ));
+            throw new ApiMessageInterceptionException(argerr("unable to create a user. A user called %s is already under the account[uuid:%s]",
+                            msg.getName(), msg.getAccountUuid()));
         }
     }
 
@@ -1545,15 +1536,13 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         SimpleQuery<AccountVO> q = dbf.createQuery(AccountVO.class);
         q.add(AccountVO_.name, Op.EQ, msg.getName());
         if (q.isExists()) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("unable to create an account. An account already called %s", msg.getName())
-            ));
+            throw new ApiMessageInterceptionException(argerr("unable to create an account. An account already called %s", msg.getName()));
         }
     }
 
     private void validate(APIDeleteAccountMsg msg) {
         if (new QuotaUtil().isAdminAccount(msg.getUuid())) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+            throw new ApiMessageInterceptionException(argerr(
                     "unable to delete an account. The account is an admin account"
             ));
         }
@@ -1561,7 +1550,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
     private void validate(APIUpdateUserMsg msg) {
         if (msg.getUuid() == null && msg.getSession().isAccountSession()) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+            throw new ApiMessageInterceptionException(argerr(
                     "the current session is an account session. You need to specify the field 'uuid' of the user" +
                             " you want to update"
             ));
@@ -1572,9 +1561,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         }
 
         if (msg.getUuid() != null && !msg.getSession().getUserUuid().equals(msg.getUuid())) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("your are login as a user, you cannot another user[uuid:%s]", msg.getUuid())
-            ));
+            throw new ApiMessageInterceptionException(argerr("your are login as a user, you cannot another user[uuid:%s]", msg.getUuid()));
         }
 
         msg.setUuid(msg.getSession().getUserUuid());
@@ -1582,7 +1569,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
     private void validate(APIRevokeResourceSharingMsg msg) {
         if (!msg.isAll() && (msg.getAccountUuids() == null || msg.getAccountUuids().isEmpty())) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+            throw new ApiMessageInterceptionException(argerr(
                     "all is set to false, accountUuids cannot be null or empty"
             ));
         }
@@ -1590,7 +1577,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
     private void validate(APIShareResourceMsg msg) {
         if (!msg.isToPublic() && (msg.getAccountUuids() == null || msg.getAccountUuids().isEmpty())) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+            throw new ApiMessageInterceptionException(argerr(
                     "toPublic is set to false, accountUuids cannot be null or empty"
             ));
         }
@@ -1600,16 +1587,12 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         PolicyVO policy = dbf.findByUuid(msg.getPolicyUuid(), PolicyVO.class);
         UserVO user = dbf.findByUuid(msg.getUserUuid(), UserVO.class);
         if (!policy.getAccountUuid().equals(msg.getAccountUuid())) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("policy[name: %s, uuid: %s] doesn't belong to the account[uuid: %s]",
-                            policy.getName(), policy.getUuid(), msg.getSession().getAccountUuid())
-            ));
+            throw new ApiMessageInterceptionException(argerr("policy[name: %s, uuid: %s] doesn't belong to the account[uuid: %s]",
+                            policy.getName(), policy.getUuid(), msg.getSession().getAccountUuid()));
         }
         if (!user.getAccountUuid().equals(msg.getAccountUuid())) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("user[name: %s, uuid: %s] doesn't belong to the account[uuid: %s]",
-                            user.getName(), user.getUuid(), msg.getSession().getAccountUuid())
-            ));
+            throw new ApiMessageInterceptionException(argerr("user[name: %s, uuid: %s] doesn't belong to the account[uuid: %s]",
+                            user.getName(), user.getUuid(), msg.getSession().getAccountUuid()));
         }
     }
 
@@ -1617,16 +1600,12 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         PolicyVO policy = dbf.findByUuid(msg.getPolicyUuid(), PolicyVO.class);
         UserGroupVO group = dbf.findByUuid(msg.getGroupUuid(), UserGroupVO.class);
         if (!policy.getAccountUuid().equals(msg.getAccountUuid())) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("policy[name: %s, uuid: %s] doesn't belong to the account[uuid: %s]",
-                            policy.getName(), policy.getUuid(), msg.getSession().getAccountUuid())
-            ));
+            throw new ApiMessageInterceptionException(argerr("policy[name: %s, uuid: %s] doesn't belong to the account[uuid: %s]",
+                            policy.getName(), policy.getUuid(), msg.getSession().getAccountUuid()));
         }
         if (!group.getAccountUuid().equals(msg.getAccountUuid())) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("group[name: %s, uuid: %s] doesn't belong to the account[uuid: %s]",
-                            group.getName(), group.getUuid(), msg.getSession().getAccountUuid())
-            ));
+            throw new ApiMessageInterceptionException(argerr("group[name: %s, uuid: %s] doesn't belong to the account[uuid: %s]",
+                            group.getName(), group.getUuid(), msg.getSession().getAccountUuid()));
         }
     }
 
@@ -1634,16 +1613,12 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         PolicyVO policy = dbf.findByUuid(msg.getPolicyUuid(), PolicyVO.class);
         UserVO user = dbf.findByUuid(msg.getUserUuid(), UserVO.class);
         if (!policy.getAccountUuid().equals(msg.getAccountUuid())) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("policy[name: %s, uuid: %s] doesn't belong to the account[uuid: %s]",
-                            policy.getName(), policy.getUuid(), msg.getSession().getAccountUuid())
-            ));
+            throw new ApiMessageInterceptionException(argerr("policy[name: %s, uuid: %s] doesn't belong to the account[uuid: %s]",
+                            policy.getName(), policy.getUuid(), msg.getSession().getAccountUuid()));
         }
         if (!user.getAccountUuid().equals(msg.getAccountUuid())) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("user[name: %s, uuid: %s] doesn't belong to the account[uuid: %s]",
-                            user.getName(), user.getUuid(), msg.getSession().getAccountUuid())
-            ));
+            throw new ApiMessageInterceptionException(argerr("user[name: %s, uuid: %s] doesn't belong to the account[uuid: %s]",
+                            user.getName(), user.getUuid(), msg.getSession().getAccountUuid()));
         }
     }
 
@@ -1651,17 +1626,13 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         PolicyVO policy = dbf.findByUuid(msg.getPolicyUuid(), PolicyVO.class);
         UserGroupVO group = dbf.findByUuid(msg.getGroupUuid(), UserGroupVO.class);
         if (!policy.getAccountUuid().equals(msg.getAccountUuid())) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("policy[name: %s, uuid: %s] doesn't belong to the account[uuid: %s]",
-                            policy.getName(), policy.getUuid(), msg.getSession().getAccountUuid())
-            ));
+            throw new ApiMessageInterceptionException(argerr("policy[name: %s, uuid: %s] doesn't belong to the account[uuid: %s]",
+                            policy.getName(), policy.getUuid(), msg.getSession().getAccountUuid()));
         }
 
         if (!group.getAccountUuid().equals(msg.getAccountUuid())) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("group[name: %s, uuid: %s] doesn't belong to the account[uuid: %s]",
-                            group.getName(), group.getUuid(), msg.getSession().getAccountUuid())
-            ));
+            throw new ApiMessageInterceptionException(argerr("group[name: %s, uuid: %s] doesn't belong to the account[uuid: %s]",
+                            group.getName(), group.getUuid(), msg.getSession().getAccountUuid()));
         }
     }
 
@@ -1669,36 +1640,26 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         UserVO user = dbf.findByUuid(msg.getUserUuid(), UserVO.class);
         UserGroupVO group = dbf.findByUuid(msg.getGroupUuid(), UserGroupVO.class);
         if (!user.getAccountUuid().equals(msg.getAccountUuid())) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("user[name: %s, uuid: %s] doesn't belong to the account[uuid: %s]",
-                            user.getName(), user.getUuid(), msg.getSession().getAccountUuid())
-            ));
+            throw new ApiMessageInterceptionException(argerr("user[name: %s, uuid: %s] doesn't belong to the account[uuid: %s]",
+                            user.getName(), user.getUuid(), msg.getSession().getAccountUuid()));
         }
         if (!group.getAccountUuid().equals(msg.getSession().getAccountUuid())) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("group[name: %s, uuid: %s] doesn't belong to the account[uuid: %s]",
-                            group.getName(), group.getUuid(), msg.getSession().getAccountUuid())
-            ));
+            throw new ApiMessageInterceptionException(argerr("group[name: %s, uuid: %s] doesn't belong to the account[uuid: %s]",
+                            group.getName(), group.getUuid(), msg.getSession().getAccountUuid()));
         }
     }
 
     private void validate(APICreatePolicyMsg msg) {
         for (Statement s : msg.getStatements()) {
             if (s.getEffect() == null) {
-                throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                        String.format("a statement must have effect field. Invalid statement[%s]", JSONObjectUtil.toJsonString(s))
-                ));
+                throw new ApiMessageInterceptionException(argerr("a statement must have effect field. Invalid statement[%s]", JSONObjectUtil.toJsonString(s)));
             }
             if (s.getActions() == null) {
-                throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                        String.format("a statement must have action field. Invalid statement[%s]", JSONObjectUtil.toJsonString(s))
-                ));
+                throw new ApiMessageInterceptionException(argerr("a statement must have action field. Invalid statement[%s]", JSONObjectUtil.toJsonString(s)));
             }
             if (s.getActions().isEmpty()) {
-                throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                        String.format("a statement must have a non-empty action field. Invalid statement[%s]",
-                                JSONObjectUtil.toJsonString(s))
-                ));
+                throw new ApiMessageInterceptionException(argerr("a statement must have a non-empty action field. Invalid statement[%s]",
+                                JSONObjectUtil.toJsonString(s)));
             }
         }
     }
@@ -1712,7 +1673,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
         if (a.getType() == AccountType.SystemAdmin) {
             if (msg.getName() != null && (msg.getUuid() == null || msg.getUuid().equals(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID))) {
-                throw new OperationFailureException(errf.stringToOperationError(
+                throw new OperationFailureException(operr(
                         "the name of admin account cannot be updated"
                 ));
             }
@@ -1722,10 +1683,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
         AccountVO account = dbf.findByUuid(msg.getUuid(), AccountVO.class);
         if (!account.getUuid().equals(a.getUuid())) {
-            throw new OperationFailureException(errf.stringToOperationError(
-                    String.format("account[uuid: %s, name: %s] is a normal account, it cannot reset the password of another account[uuid: %s]",
-                            account.getUuid(), account.getName(), msg.getUuid())
-            ));
+            throw new OperationFailureException(operr("account[uuid: %s, name: %s] is a normal account, it cannot reset the password of another account[uuid: %s]",
+                            account.getUuid(), account.getName(), msg.getUuid()));
         }
     }
 

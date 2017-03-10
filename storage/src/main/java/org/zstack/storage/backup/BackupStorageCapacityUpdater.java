@@ -15,6 +15,8 @@ import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.operr;
+
 import javax.persistence.LockModeType;
 
 /**
@@ -134,10 +136,8 @@ public class BackupStorageCapacityUpdater {
             if (!exceptionOnFailure) {
                 return false;
             } else {
-                throw new OperationFailureException(errf.stringToOperationError(
-                        String.format("cannot reserve %s on the backup storage[uuid:%s], it only has %s available",
-                                size, backupStorageUuid, capacityVO.getAvailableCapacity())
-                ));
+                throw new OperationFailureException(operr("cannot reserve %s on the backup storage[uuid:%s], it only has %s available",
+                                size, backupStorageUuid, capacityVO.getAvailableCapacity()));
             }
         }
 

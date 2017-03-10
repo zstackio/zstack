@@ -13,6 +13,8 @@ import org.zstack.kvm.KvmCommandFailureChecker;
 import org.zstack.kvm.KvmCommandSender;
 import org.zstack.kvm.KvmResponseWrapper;
 
+import static org.zstack.core.Platform.operr;
+
 import java.util.List;
 
 /**
@@ -39,7 +41,7 @@ public class FlatEipGC extends EventBasedGarbageCollector {
                     @Override
                     public ErrorCode getError(KvmResponseWrapper wrapper) {
                         KVMAgentCommands.AgentResponse rsp = wrapper.getResponse(KVMAgentCommands.AgentResponse.class);
-                        return rsp.isSuccess() ? null : errf.stringToOperationError(rsp.getError());
+                        return rsp.isSuccess() ? null : operr(rsp.getError());
                     }
                 },
 

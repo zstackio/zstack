@@ -50,6 +50,8 @@ import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.operr;
+
 import javax.persistence.LockModeType;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
@@ -440,10 +442,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         q.setParameter("zoneUuid", self.getZoneUuid());
         q.setParameter("bsUuid", bsUuid);
         if (q.getResultList().isEmpty()) {
-            throw new OperationFailureException(errf.stringToOperationError(
-                    String.format("backup storage[uuid:%s] is not attached to zone[uuid:%s] the primary storage[uuid:%s] belongs to",
-                            bsUuid, self.getZoneUuid(), self.getUuid())
-            ));
+            throw new OperationFailureException(operr("backup storage[uuid:%s] is not attached to zone[uuid:%s] the primary storage[uuid:%s] belongs to",
+                            bsUuid, self.getZoneUuid(), self.getUuid()));
         }
     }
 
@@ -549,7 +549,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
     }
 
     protected void handle(APICleanUpImageCacheOnPrimaryStorageMsg msg) {
-        throw new OperationFailureException(errf.stringToOperationError("operation not supported"));
+        throw new OperationFailureException(operr("operation not supported"));
     }
 
     private void handle(final APISyncPrimaryStorageCapacityMsg msg) {

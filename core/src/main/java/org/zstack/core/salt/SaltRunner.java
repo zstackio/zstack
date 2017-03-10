@@ -23,6 +23,8 @@ import org.zstack.utils.network.NetworkUtils;
 import org.zstack.utils.ssh.Ssh;
 import org.zstack.utils.ssh.SshResult;
 
+import static org.zstack.core.Platform.operr;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -292,7 +294,7 @@ public class SaltRunner {
                     }
 
                     if (!ret) {
-                        completion.fail(errf.stringToOperationError(String.format("failed to run salt state[%s] on system[%s], failed after %s retries", stateName, targetIp, retry)));
+                        completion.fail(operr("failed to run salt state[%s] on system[%s], failed after %s retries", stateName, targetIp, retry));
                         return;
                     }
 

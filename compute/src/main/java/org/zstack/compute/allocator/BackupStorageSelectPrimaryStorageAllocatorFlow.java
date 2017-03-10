@@ -21,6 +21,8 @@ import org.zstack.header.storage.backup.BackupStorageVO_;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.operr;
+
 import javax.persistence.TypedQuery;
 import java.util.List;
 
@@ -75,25 +77,25 @@ public class BackupStorageSelectPrimaryStorageAllocatorFlow extends AbstractHost
 
             result = findHostsByPrimaryStorageTypes(possiblePrimaryStorageTypes);
             if (result.isEmpty()) {
-                throw new OperationFailureException(errf.stringToOperationError(
-                        String.format("The image[uuid:%s] is on the backup storage[uuid:%s, type:%s] that requires to work with primary storage[types:%s]," +
-                                        "however, no host found suitable to work with those primary storage", spec.getImage().getUuid(),
-                                spec.getRequiredBackupStorageUuid(), type, possiblePrimaryStorageTypes)
+                throw new OperationFailureException(operr(
+                        "The image[uuid:%s] is on the backup storage[uuid:%s, type:%s] that requires to work with primary storage[types:%s]," +
+                                "however, no host found suitable to work with those primary storage", spec.getImage().getUuid(),
+                        spec.getRequiredBackupStorageUuid(), type, possiblePrimaryStorageTypes
                 ));
             }
         } else if (!psUuids.isEmpty()) {
             result = findHostsByPrimaryStorageUuids(psUuids);
 
             if (result.isEmpty()) {
-                throw new OperationFailureException(errf.stringToOperationError(
-                        String.format("The image[uuid:%s] is on the backup storage[uuid:%s, type:%s] that requires to work with primary storage[uuids:%s]," +
-                                        "however, no host found suitable to work with those primary storage", spec.getImage().getUuid(),
-                                spec.getRequiredBackupStorageUuid(), type, psUuids)
-                ));
+                throw new OperationFailureException(operr(
+                        "The image[uuid:%s] is on the backup storage[uuid:%s, type:%s] that requires to work with primary storage[uuids:%s]," +
+                                "however, no host found suitable to work with those primary storage", spec.getImage().getUuid(),
+                        spec.getRequiredBackupStorageUuid(), type, psUuids)
+                );
             }
         } else {
-            throw new OperationFailureException(errf.stringToOperationError(String.format("the backup storage[uuid:%s, type:%s] requires bound" +
-                    " primary storage, however, the primary storage has not been added", spec.getRequiredBackupStorageUuid(), bsType)));
+            throw new OperationFailureException(operr("the backup storage[uuid:%s, type:%s] requires bound" +
+                    " primary storage, however, the primary storage has not been added", spec.getRequiredBackupStorageUuid(), bsType));
         }
 
 

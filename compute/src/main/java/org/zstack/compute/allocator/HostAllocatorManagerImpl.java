@@ -37,6 +37,8 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.operr;
+
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.text.DecimalFormat;
@@ -616,7 +618,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
 
                     trigger.next();
                 } catch (UnableToReserveHostCapacityException e) {
-                    trigger.fail(errf.stringToOperationError(e.getMessage()));
+                    trigger.fail(operr(e.getMessage()));
                 }
             }
 
@@ -636,7 +638,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
 
                     trigger.next();
                 } catch (UnableToReserveHostCapacityException e) {
-                    trigger.fail(errf.stringToOperationError(e.getMessage()));
+                    trigger.fail(operr(e.getMessage()));
                 }
             }
 

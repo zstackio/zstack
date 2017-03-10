@@ -14,6 +14,9 @@ import org.zstack.header.network.service.*;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
+import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.operr;
+
 import java.util.*;
 
 /**
@@ -35,9 +38,7 @@ public class NetworkServiceApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(APIAttachNetworkServiceToL3NetworkMsg msg) {
         if (msg.getNetworkServices().isEmpty()) {
-            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                    String.format("networkServices cannot be empty")
-            ));
+            throw new ApiMessageInterceptionException(argerr("networkServices cannot be empty"));
         }
 
         SimpleQuery<NetworkServiceTypeVO> q = dbf.createQuery(NetworkServiceTypeVO.class);
@@ -58,16 +59,12 @@ public class NetworkServiceApiInterceptor implements ApiMessageInterceptor {
             String puuid = e.getKey();
             List<String> types = e.getValue();
             if (types == null || types.isEmpty())  {
-                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                        String.format("network service for provider[uuid:%s] must be specified", puuid)
-                ));
+                throw new ApiMessageInterceptionException(argerr("network service for provider[uuid:%s] must be specified", puuid));
             }
 
             final Set<String> actualTypes = actual.get(puuid);
             if (actualTypes == null) {
-                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                        String.format("cannot find network service provider[uuid:%s] or it provides no services", puuid)
-                ));
+                throw new ApiMessageInterceptionException(argerr("cannot find network service provider[uuid:%s] or it provides no services", puuid));
             }
 
             if (!actualTypes.containsAll(types)) {
@@ -81,9 +78,7 @@ public class NetworkServiceApiInterceptor implements ApiMessageInterceptor {
                     }
                 });
 
-                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                        String.format("network service provider[uuid:%s] doesn't provide services%s", puuid, notSupported)
-                ));
+                throw new ApiMessageInterceptionException(argerr("network service provider[uuid:%s] doesn't provide services%s", puuid, notSupported));
             }
         }
 
@@ -95,9 +90,7 @@ public class NetworkServiceApiInterceptor implements ApiMessageInterceptor {
         for (List<String> types : msg.getNetworkServices().values()) {
             for (String type : types) {
                 if (existingNwsTypes.contains(type)) {
-                    throw new ApiMessageInterceptionException(errf.stringToOperationError(
-                            String.format("there has been a network service[%s] attached to L3 network[uuid:%s]", type, msg.getL3NetworkUuid())
-                    ));
+                    throw new ApiMessageInterceptionException(operr("there has been a network service[%s] attached to L3 network[uuid:%s]", type, msg.getL3NetworkUuid()));
                 }
             }
         }

@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.errorcode.schema.Error;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
@@ -22,6 +23,8 @@ import org.zstack.kvm.KVMAgentCommands.NicTO;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+
+import static org.zstack.core.Platform.operr;
 
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
@@ -63,11 +66,10 @@ public class KVMRealizeL2NoVlanNetworkBackend implements L2NetworkRealizationExt
                 KVMHostAsyncHttpCallReply hreply = reply.castReply();
                 CreateBridgeResponse rsp = hreply.toResponse(CreateBridgeResponse.class);
                 if (!rsp.isSuccess()) {
-                    String err = String.format(
+                    ErrorCode err = operr(
                             "failed to create bridge[%s] for l2Network[uuid:%s, type:%s] on kvm host[uuid:%s], because %s", cmd
                                     .getBridgeName(), l2Network.getUuid(), l2Network.getType(), hostUuid, rsp.getError());
-                    logger.warn(err);
-                    completion.fail(errf.stringToOperationError(err));
+                    completion.fail(err);
                     return;
                 }
 
@@ -115,10 +117,8 @@ public class KVMRealizeL2NoVlanNetworkBackend implements L2NetworkRealizationExt
                 KVMHostAsyncHttpCallReply hreply = reply.castReply();
                 CheckBridgeResponse rsp = hreply.toResponse(CheckBridgeResponse.class);
                 if (!rsp.isSuccess()) {
-                    ErrorCode err = errf.stringToOperationError(
-                            String.format("failed to check bridge[%s] for l2NoVlanNetwork[uuid:%s, name:%s] on kvm host[uuid: %s], %s",
-                                    cmd.getBridgeName(), l2Network.getUuid(), l2Network.getName(), hostUuid, rsp.getError())
-                    );
+                    ErrorCode err = operr("failed to check bridge[%s] for l2NoVlanNetwork[uuid:%s, name:%s] on kvm host[uuid: %s], %s",
+                            cmd.getBridgeName(), l2Network.getUuid(), l2Network.getName(), hostUuid, rsp.getError());
                     completion.fail(err);
                     return;
                 }

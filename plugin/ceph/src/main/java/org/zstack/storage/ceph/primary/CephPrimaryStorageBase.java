@@ -61,6 +61,9 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.i18n;
+import static org.zstack.core.Platform.operr;
+
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -932,11 +935,11 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             q.add(CephBackupStorageVO_.uuid, Op.EQ, backupStorage.getUuid());
             String bsFsid = q.findValue();
             if (!getSelf().getFsid().equals(bsFsid)) {
-                throw new OperationFailureException(errf.stringToOperationError(
-                        String.format("the backup storage[uuid:%s, name:%s, fsid:%s] is not in the same ceph cluster" +
-                                        " with the primary storage[uuid:%s, name:%s, fsid:%s]", backupStorage.getUuid(),
-                                backupStorage.getName(), bsFsid, self.getUuid(), self.getName(), getSelf().getFsid())
-                ));
+                throw new OperationFailureException(operr(
+                        "the backup storage[uuid:%s, name:%s, fsid:%s] is not in the same ceph cluster" +
+                                " with the primary storage[uuid:%s, name:%s, fsid:%s]", backupStorage.getUuid(),
+                        backupStorage.getName(), bsFsid, self.getUuid(), self.getName(), getSelf().getFsid())
+                );
             }
         }
 
@@ -1706,9 +1709,9 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         }
 
         if (mons.isEmpty()) {
-            throw new OperationFailureException(errf.stringToOperationError(
-                    String.format("all ceph mons of primary storage[uuid:%s] are not in Connected state", self.getUuid())
-            ));
+            throw new OperationFailureException(operr(
+                    "all ceph mons of primary storage[uuid:%s] are not in Connected state", self.getUuid())
+            );
         }
 
         Collections.shuffle(mons);
@@ -1719,9 +1722,9 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
             void call() {
                 if (!it.hasNext()) {
-                    callback.fail(errf.stringToOperationError(
-                            String.format("all mons failed to execute http call[%s], errors are %s", path, JSONObjectUtil.toJsonString(errorCodes))
-                    ));
+                    callback.fail(operr(
+                            "all mons failed to execute http call[%s], errors are %s", path, JSONObjectUtil.toJsonString(errorCodes))
+                    );
 
                     return;
                 }
@@ -1732,7 +1735,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     @Override
                     public void success(T ret) {
                         if (!ret.success) {
-                            callback.fail(errf.stringToOperationError(ret.error));
+                            callback.fail(operr(ret.error));
                             return;
                         }
 
@@ -1776,11 +1779,9 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             void connect(final FlowTrigger trigger) {
                 if (!it.hasNext()) {
                     if (errorCodes.size() == mons.size()) {
-                        trigger.fail(errf.stringToOperationError(
-                                String.format("unable to connect to the ceph primary storage[uuid:%s]." +
+                        trigger.fail(operr("unable to connect to the ceph primary storage[uuid:%s]." +
                                                 " Failed to connect all ceph mons. Errors are %s",
-                                        self.getUuid(), JSONObjectUtil.toJsonString(errorCodes))
-                        ));
+                                        self.getUuid(), JSONObjectUtil.toJsonString(errorCodes)));
                     } else {
                         // reload because mon status changed
                         self = dbf.reload(self);
@@ -1849,13 +1850,13 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                 set.addAll(fsids.values());
 
                                 if (set.size() != 1) {
-                                    StringBuilder sb = new StringBuilder("the fsid returned by mons are mismatching, it seems the mons belong to different ceph clusters:\n");
+                                    StringBuilder sb = new StringBuilder(i18n("the fsid returned by mons are mismatching, it seems the mons belong to different ceph clusters:\n"));
                                     for (CephPrimaryStorageMonBase mon : mons) {
                                         String fsid = fsids.get(mon.getSelf().getUuid());
                                         sb.append(String.format("%s (mon ip) --> %s (fsid)\n", mon.getSelf().getHostname(), fsid));
                                     }
 
-                                    throw new OperationFailureException(errf.stringToOperationError(sb.toString()));
+                                    throw new OperationFailureException(operr(sb.toString()));
                                 }
 
                                 // check if there is another ceph setup having the same fsid
@@ -1866,11 +1867,11 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                 q.add(CephPrimaryStorageVO_.uuid, Op.NOT_EQ, self.getUuid());
                                 CephPrimaryStorageVO otherCeph = q.find();
                                 if (otherCeph != null) {
-                                    throw new OperationFailureException(errf.stringToOperationError(
-                                            String.format("there is another CEPH primary storage[name:%s, uuid:%s] with the same" +
+                                    throw new OperationFailureException(
+                                            operr("there is another CEPH primary storage[name:%s, uuid:%s] with the same" +
                                                             " FSID[%s], you cannot add the same CEPH setup as two different primary storage",
                                                     otherCeph.getName(), otherCeph.getUuid(), fsId)
-                                    ));
+                                    );
                                 }
 
                                 trigger.next();
@@ -1886,7 +1887,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                 public void success(GetFactsRsp rsp) {
                                     if (!rsp.success) {
                                         // one mon cannot get the facts, directly error out
-                                        trigger.fail(errf.stringToOperationError(rsp.error));
+                                        trigger.fail(operr(rsp.error));
                                         return;
                                     }
 
@@ -2091,14 +2092,13 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
                             } else if (PingOperationFailure.UnableToCreateFile.toString().equals(res.failure)) {
                                 // as long as there is one mon saying the ceph not working, the primary storage goes down
-                                logger.warn(String.format("the ceph primary storage[uuid:%s, name:%s] is down, as one mon[uuid:%s] reports" +
-                                        " an operation failure[%s]", self.getUuid(), self.getName(), mon.getSelf().getUuid(), res.error));
-                                ErrorCode errorCode = errf.stringToOperationError(res.error);
-                                errors.add(errorCode);
+                                ErrorCode err = operr("the ceph primary storage[uuid:%s, name:%s] is down, as one mon[uuid:%s] reports" +
+                                        " an operation failure[%s]", self.getUuid(), self.getName(), mon.getSelf().getUuid(), res.error);
+                                errors.add(err);
                                 primaryStorageDown();
                             } else if (!res.success || PingOperationFailure.MonAddrChanged.toString().equals(res.failure)) {
                                 // this mon is down(success == false, operationFailure == false), but the primary storage may still work as other mons may work
-                                ErrorCode errorCode = errf.stringToOperationError(res.error);
+                                ErrorCode errorCode = operr(res.error);
                                 thisMonIsDown(errorCode);
                             } else {
                                 throw new CloudRuntimeException("should not be here");
@@ -2326,7 +2326,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                             @Override
                             public void done() {
                                 if (!errorCodes.isEmpty()) {
-                                    trigger.fail(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR, "unable to connect mons", errorCodes));
+                                    trigger.fail(operr( "unable to connect mons").causedBy(errorCodes));
                                 } else {
                                     trigger.next();
                                 }
@@ -2370,7 +2370,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                             public void done() {
                                 // one fail, all fail
                                 if (!errors.isEmpty()) {
-                                    trigger.fail(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR, "unable to add mon to ceph primary storage", errors));
+                                    trigger.fail(operr("unable to add mon to ceph primary storage").causedBy(errors));
                                 } else {
                                     trigger.next();
                                 }
@@ -2385,14 +2385,13 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                 @Override
                                 public void success(GetFactsRsp rsp) {
                                     if (!rsp.isSuccess()) {
-                                        errors.add(errf.stringToOperationError(rsp.getError()));
+                                        errors.add(operr(rsp.getError()));
                                     } else {
                                         String fsid = rsp.fsid;
                                         if (!getSelf().getFsid().equals(fsid)) {
-                                            errors.add(errf.stringToOperationError(
-                                                    String.format("the mon[ip:%s] returns a fsid[%s] different from the current fsid[%s] of the cep cluster," +
-                                                            "are you adding a mon not belonging to current cluster mistakenly?", base.getSelf().getHostname(), fsid, getSelf().getFsid())
-                                            ));
+                                            errors.add(operr("the mon[ip:%s] returns a fsid[%s] different from the current fsid[%s] of the cep cluster," +
+                                                    "are you adding a mon not belonging to current cluster mistakenly?", base.getSelf().getHostname(), fsid, getSelf().getFsid())
+                                            );
                                         }
                                     }
 
@@ -2488,7 +2487,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             @Override
             public void success(AgentResponse rsp) {
                 if (!rsp.isSuccess()) {
-                    reply.setError(errf.stringToOperationError(rsp.getError()));
+                    reply.setError(operr(rsp.getError()));
                 }
 
                 bus.reply(msg, reply);
@@ -2512,7 +2511,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         CancelSelfFencerOnKvmHostReply reply = new CancelSelfFencerOnKvmHostReply();
         new KvmCommandSender(param.getHostUuid()).send(cmd, KVM_HA_CANCEL_SELF_FENCER, wrapper -> {
             AgentResponse rsp = wrapper.getResponse(AgentResponse.class);
-            return rsp.isSuccess() ? null : errf.stringToOperationError(rsp.getError());
+            return rsp.isSuccess() ? null : operr(rsp.getError());
         }, new ReturnValueCompletion<KvmResponseWrapper>(msg) {
             @Override
             public void success(KvmResponseWrapper w) {
@@ -2550,7 +2549,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             @Override
             public ErrorCode getError(KvmResponseWrapper wrapper) {
                 AgentResponse rsp = wrapper.getResponse(AgentResponse.class);
-                return rsp.isSuccess() ? null : errf.stringToOperationError(rsp.getError());
+                return rsp.isSuccess() ? null : operr(rsp.getError());
             }
         }, new ReturnValueCompletion<KvmResponseWrapper>(msg) {
             @Override
@@ -2574,8 +2573,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         String bsType = q.findValue();
 
         if (!CephConstants.CEPH_BACKUP_STORAGE_TYPE.equals(bsType)) {
-            throw new OperationFailureException(errf.stringToOperationError(
-                    String.format("unable to upload bits to the backup storage[type:%s], we only support CEPH", bsType)
+            throw new OperationFailureException(operr(
+                    "unable to upload bits to the backup storage[type:%s], we only support CEPH", bsType
             ));
         }
 
@@ -2617,7 +2616,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     private void handle(BackupVolumeSnapshotFromPrimaryStorageToBackupStorageMsg msg) {
         BackupVolumeSnapshotFromPrimaryStorageToBackupStorageReply reply = new BackupVolumeSnapshotFromPrimaryStorageToBackupStorageReply();
-        reply.setError(errf.stringToOperationError("backing up snapshots to backup storage is a depreciated feature, which will be removed in future version"));
+        reply.setError(operr("backing up snapshots to backup storage is a depreciated feature, which will be removed in future version"));
         bus.reply(msg, reply);
     }
 
@@ -2929,7 +2928,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     KVMHostAsyncHttpCallReply kr = r.castReply();
                     CreateKvmSecretRsp rsp = kr.toResponse(CreateKvmSecretRsp.class);
                     if (!rsp.isSuccess()) {
-                        completion.fail(errf.stringToOperationError(rsp.getError()));
+                        completion.fail(operr(rsp.getError()));
                         return;
                     }
                 }

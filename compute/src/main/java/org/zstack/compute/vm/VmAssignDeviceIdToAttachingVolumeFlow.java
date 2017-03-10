@@ -14,6 +14,7 @@ import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.volume.VolumeInventory;
@@ -21,6 +22,8 @@ import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.volume.VolumeVO_;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+
+import static org.zstack.core.Platform.err;
 
 import java.util.BitSet;
 import java.util.List;
@@ -62,7 +65,7 @@ public class VmAssignDeviceIdToAttachingVolumeFlow implements Flow {
         } else if (exts.size() == 1) {
             dvol.setDeviceId(exts.get(0).getNextVolumeDeviceId(spec.getVmInventory().getUuid()));
         } else {
-            throw new OperationFailureException(errf.stringToOperationError(
+            throw new OperationFailureException(err(SysErrors.INTERNAL,
                     "should not be more than one GetNextVolumeDeviceIdExtensionPoint implementation"));
         }
         dvol = dbf.updateAndRefresh(dvol);

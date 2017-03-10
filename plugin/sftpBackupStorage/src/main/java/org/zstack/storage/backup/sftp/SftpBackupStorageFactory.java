@@ -10,11 +10,14 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.Component;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.storage.backup.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+
+import static org.zstack.core.Platform.argerr;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -76,8 +79,8 @@ public class SftpBackupStorageFactory implements BackupStorageFactory, GlobalApi
                 APIAddSftpBackupStorageMsg amsg = (APIAddSftpBackupStorageMsg) msg;
                 String url = amsg.getUrl();
                 if (!url.startsWith("/")) {
-                    String err = String.format("invalid url[%s], the url must be an absolute path starting with '/'", amsg.getUrl());
-                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR, err));
+                    ErrorCode err = argerr("invalid url[%s], the url must be an absolute path starting with '/'", amsg.getUrl());
+                    throw new ApiMessageInterceptionException(err);
                 }
 
                 String hostname = amsg.getHostname();
@@ -85,8 +88,8 @@ public class SftpBackupStorageFactory implements BackupStorageFactory, GlobalApi
                 query.add(SftpBackupStorageVO_.hostname, Op.EQ, hostname);
                 long count = query.count();
                 if (count != 0) {
-                    String err = String.format("existing SimpleHttpBackupStorage with hostname[%s] found", hostname);
-                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR, err));
+                    ErrorCode err = argerr("existing SimpleHttpBackupStorage with hostname[%s] found", hostname);
+                    throw new ApiMessageInterceptionException(err);
                 }
             }
         }

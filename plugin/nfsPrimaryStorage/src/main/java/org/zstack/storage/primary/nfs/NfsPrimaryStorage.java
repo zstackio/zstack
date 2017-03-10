@@ -53,6 +53,8 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
+import static org.zstack.core.Platform.operr;
+
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.io.File;
@@ -227,8 +229,8 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
 
         if (!ts.isEmpty()) {
             List<String> vms = ts.stream().map(v -> String.format("VM[name:%s, uuid:%s]", v.get(0, String.class), v.get(1, String.class))).collect(Collectors.toList());
-            throw new OperationFailureException(errf.stringToOperationError(String.format("there are %s running VMs on the NFS primary storage, please" +
-                    " stop them and try again:\n%s\n", vms.size(), StringUtils.join(vms, "\n"))));
+            throw new OperationFailureException(operr("there are %s running VMs on the NFS primary storage, please" +
+                    " stop them and try again:\n%s\n", vms.size(), StringUtils.join(vms, "\n")));
         }
     }
 
@@ -242,7 +244,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
     private void handle(final DeleteImageCacheOnPrimaryStorageMsg msg) {
         NfsPrimaryStorageBackend bkd = getUsableBackend();
         if (bkd == null) {
-            throw new OperationFailureException(errf.stringToOperationError("cannot find usable backend"));
+            throw new OperationFailureException(operr("cannot find usable backend"));
         }
 
         DeleteBitsOnPrimaryStorageMsg dmsg = new DeleteBitsOnPrimaryStorageMsg();
@@ -267,7 +269,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
     private void handle(final GetVolumeRootImageUuidFromPrimaryStorageMsg msg) {
         NfsPrimaryStorageBackend bkd = getUsableBackend();
         if (bkd == null) {
-            throw new OperationFailureException(errf.stringToOperationError("no usable backend found"));
+            throw new OperationFailureException(operr("no usable backend found"));
         }
 
         bkd.handle(getSelfInventory(), msg, new ReturnValueCompletion<GetVolumeRootImageUuidFromPrimaryStorageReply>(msg) {
@@ -406,12 +408,10 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
 
         HostInventory destHost = factory.getConnectedHostForOperation(PrimaryStorageInventory.valueOf(self));
         if (destHost == null) {
-            reply.setError(errf.stringToOperationError(
-                    String.format("no host in Connected status to which nfs primary storage[uuid:%s, name:%s] attached" +
+            reply.setError(operr("no host in Connected status to which nfs primary storage[uuid:%s, name:%s] attached" +
                                     " found to revert volume[uuid:%s] to snapshot[uuid:%s, name:%s]",
                             self.getUuid(), self.getName(), msg.getVolume().getUuid(),
-                            msg.getSnapshot().getUuid(), msg.getSnapshot().getName())
-            ));
+                            msg.getSnapshot().getUuid(), msg.getSnapshot().getName()));
 
             bus.reply(msg, reply);
             return;
@@ -438,13 +438,10 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
 
         HostInventory destHost = factory.getConnectedHostForOperation(PrimaryStorageInventory.valueOf(self));
         if (destHost == null) {
-            reply.setError(errf.stringToOperationError(
-                    String.format("no host in Connected status to which nfs primary storage[uuid:%s, name:%s] attached" +
-                                    " found to revert volume[uuid:%s] to image[uuid:%s]",
-                            self.getUuid(), self.getName(),
-                            msg.getVolume().getUuid(), msg.getVolume().getRootImageUuid()
-                    )
-            ));
+            reply.setError(operr("no host in Connected status to which nfs primary storage[uuid:%s, name:%s] attached" +
+                            " found to revert volume[uuid:%s] to image[uuid:%s]",
+                    self.getUuid(), self.getName(),
+                    msg.getVolume().getUuid(), msg.getVolume().getRootImageUuid()));
 
             bus.reply(msg, reply);
             return;
@@ -513,8 +510,8 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
             String hostUuid = t.get(1, String.class);
             String lastHostUuid = t.get(2, String.class);
             if (vmState != VmInstanceState.Running && vmState != VmInstanceState.Stopped) {
-                ErrorCode err = errf.stringToOperationError(String.format("vm[uuid:%s] is not Running or Stopped, current state is %s",
-                        vol.getVmInstanceUuid(), vmState));
+                ErrorCode err = operr("vm[uuid:%s] is not Running or Stopped, current state is %s",
+                        vol.getVmInstanceUuid(), vmState);
                 reply.setError(err);
                 bus.reply(msg, reply);
                 return;
@@ -560,7 +557,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
     private void handle(PrimaryStorageRemoveCachedImageMsg msg) {
         if (self.getAttachedClusterRefs().isEmpty()) {
             PrimaryStorageRemoveCachedImageReply reply = new PrimaryStorageRemoveCachedImageReply();
-            errf.stringToOperationError(String.format("primary storage[uuid:%s] doesn't attach to any cluster", self.getUuid()));
+            reply.setError(operr("primary storage[uuid:%s] doesn't attach to any cluster", self.getUuid()));
             bus.reply(msg, reply);
             return;
         }
@@ -736,11 +733,9 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         } else {
             backend = getUsableBackend();
             if (backend == null) {
-                throw new OperationFailureException(errf.stringToOperationError(
-                        String.format("the NFS primary storage[uuid:%s, name:%s] cannot find any usable host to" +
+                throw new OperationFailureException(operr("the NFS primary storage[uuid:%s, name:%s] cannot find any usable host to" +
                                         " create the data volume[uuid:%s, name:%s]", self.getUuid(), self.getName(),
-                                msg.getVolume().getUuid(), msg.getVolume().getName())
-                ));
+                                msg.getVolume().getUuid(), msg.getVolume().getName()));
             }
         }
 
@@ -1018,10 +1013,8 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
     protected void handle(final SyncVolumeSizeOnPrimaryStorageMsg msg) {
         NfsPrimaryStorageBackend backend = getUsableBackend();
         if (backend == null) {
-            throw new OperationFailureException(errf.stringToOperationError(
-                    String.format("the NFS primary storage[uuid:%s, name:%s] cannot find hosts in attached clusters to perform the operation",
-                            self.getUuid(), self.getName())
-            ));
+            throw new OperationFailureException(operr("the NFS primary storage[uuid:%s, name:%s] cannot find hosts in attached clusters to perform the operation",
+                            self.getUuid(), self.getName()));
         }
 
         backend.handle(getSelfInventory(), msg, new ReturnValueCompletion<SyncVolumeSizeOnPrimaryStorageReply>(msg) {
@@ -1213,10 +1206,8 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
             hookToKVMHostConnectedEventToChangeStatusToConnected();
 
             // the nfs primary storage has not been attached to any clusters, or no connected hosts
-            completion.fail(errf.stringToOperationError(
-                    String.format("the NFS primary storage[uuid:%s, name:%s] has not attached to any clusters, or no hosts in the" +
-                            " attached clusters are connected", self.getUuid(), self.getName())
-            ));
+            completion.fail(operr("the NFS primary storage[uuid:%s, name:%s] has not attached to any clusters, or no hosts in the" +
+                            " attached clusters are connected", self.getUuid(), self.getName()));
         } else {
             bkd.ping(getSelfInventory(), completion);
         }
