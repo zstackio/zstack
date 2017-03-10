@@ -37,7 +37,7 @@ public class VxlanNetworkPoolVO extends L2NetworkVO {
     private Set<VxlanNetworkVO> attachedVxlanNetworkRefs = new HashSet<VxlanNetworkVO>();
 
     @OneToMany(fetch = FetchType.EAGER)
-    @JoinColumn(name = "poolUuid", insertable = false, updatable = false)
+    @JoinColumn(name = "l2NetworkUuid", insertable = false, updatable = false)
     @NoView
     private Set<VniRangeVO> attachedVniRanges = new HashSet<>();
 

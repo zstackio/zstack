@@ -23,7 +23,7 @@ import java.util.*;
         parent = {@Parent(inventoryClass = L2NetworkInventory.class, type = VxlanNetworkPoolConstant.VXLAN_NETWORK_POOL_TYPE)})
 @ExpandedQueries({
         @ExpandedQuery(expandedField = "vniRange", inventoryClass = VniRangeInventory.class,
-                foreignKey = "uuid", expandedInventoryKey = "poolUuid"),
+                foreignKey = "uuid", expandedInventoryKey = "l2NetworkUuid"),
         @ExpandedQuery(expandedField = "l2VxlanNetwork", inventoryClass = L2VxlanNetworkInventory.class,
                 foreignKey = "uuid", expandedInventoryKey = "poolUuid"),
         @ExpandedQuery(expandedField = "vtep", inventoryClass = VtepInventory.class,
@@ -39,7 +39,7 @@ public class L2VxlanNetworkPoolInventory extends L2NetworkInventory {
     private Set<VxlanNetworkVO> attachedVxlanNetworkRefs;
 
     @Queryable(mappingClass = VniRangeVO.class,
-            joinColumn = @JoinColumn(name = "poolUuid", referencedColumnName = "uuid"))
+            joinColumn = @JoinColumn(name = "l2NetworkUuid", referencedColumnName = "uuid"))
     private Set<VniRangeVO> attachedVniRanges;
 
     private Map<String, String> attachedCidrs;

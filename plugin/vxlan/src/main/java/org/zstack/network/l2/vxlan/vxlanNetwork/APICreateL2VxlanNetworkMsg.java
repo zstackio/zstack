@@ -19,13 +19,13 @@ public class APICreateL2VxlanNetworkMsg extends APICreateL2NetworkMsg {
     @APIParam(required = true, resourceType = VxlanNetworkPoolVO.class)
     private String poolUuid;
 
+    public Integer getVni() {
+        return vni;
+    }
+
     @Override
     public String getType() {
         return VxlanNetworkConstant.VXLAN_NETWORK_TYPE;
-    }
-
-    public int getVni() {
-        return vni;
     }
 
     public void setVni(int vni) {

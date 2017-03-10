@@ -14,16 +14,17 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
+import org.zstack.header.network.l2.L2Errors;
 import org.zstack.network.l2.L2NetworkExtensionPointEmitter;
 import org.zstack.network.l2.L2NetworkManager;
 import org.zstack.network.l2.L2NoVlanNetwork;
-import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory;
-import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
+import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -31,11 +32,14 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
 
+import static org.zstack.utils.CollectionDSL.e;
+import static org.zstack.utils.CollectionDSL.map;
+
 /**
  * Created by weiwang on 01/03/2017.
  */
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
-public class VxlanNetworkPool extends L2NoVlanNetwork {
+public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkPoolManager {
     private static final CLogger logger = Utils.getLogger(VxlanNetworkPool.class);
 
     @Autowired
@@ -47,6 +51,8 @@ public class VxlanNetworkPool extends L2NoVlanNetwork {
     @Autowired
     protected L2NetworkManager l2Mgr;
     @Autowired
+    protected L2VxlanNetworkPoolManager l2VxlanMgr;
+    @Autowired
     protected InventoryFacade inventoryMgr;
     @Autowired
     protected CascadeFacade casf;
@@ -54,6 +60,8 @@ public class VxlanNetworkPool extends L2NoVlanNetwork {
     protected ErrorFacade errf;
     @Autowired
     private TagManager tagMgr;
+
+    private Map<String, VniAllocatorStrategy> vniAllocatorStrategies = Collections.synchronizedMap(new HashMap<String, VniAllocatorStrategy>());
 
     protected VxlanNetworkPoolVO self;
 
@@ -96,6 +104,10 @@ public class VxlanNetworkPool extends L2NoVlanNetwork {
             handle((PrepareL2NetworkOnHostMsg) msg);
         } else if (msg instanceof DetachL2NetworkFromClusterMsg) {
             handle((DetachL2NetworkFromClusterMsg) msg);
+        } else if (msg instanceof AllocateVniMsg) {
+            handle((AllocateVniMsg) msg);
+        } else if (msg instanceof L2NetworkMessage) {
+            superHandle((L2NetworkMessage) msg);
         } else  {
             bus.dealWithUnknownMessage(msg);
         }
@@ -117,6 +129,21 @@ public class VxlanNetworkPool extends L2NoVlanNetwork {
 
     }
 
+    private void handle(AllocateVniMsg msg) {
+        VniAllocatorType strategyType = msg.getAllocateStrategy() == null ? RandomVniAllocatorStrategy.type : VniAllocatorType.valueOf(msg.getAllocateStrategy());
+        VniAllocatorStrategy vas = l2VxlanMgr.getVniAllocatorStrategy(strategyType);
+        AllocateVniReply reply = new AllocateVniReply();
+        Integer vni = vas.allocateVni(msg);
+        if (vni == null) {
+            reply.setError(errf.instantiateErrorCode(L2Errors.ALLOCATE_VNI_ERROR, String.format("Vni allocator strategy[%s] returns nothing, because no vni is available in this VxlanNetwork[name:%s, uuid:%s]", strategyType, self.getName(), self.getUuid())));
+        } else {
+            logger.debug(String.format("Vni allocator strategy[%s] successfully allocates an vni[%s]", strategyType, vni));
+            reply.setVni(vni);
+        }
+
+        bus.reply(msg, reply);
+    }
+
     private void handleApiMessage(APIMessage msg) {
         if (msg instanceof APIDeleteL2NetworkMsg) {
             handle((APIDeleteL2NetworkMsg) msg);
@@ -124,11 +151,22 @@ public class VxlanNetworkPool extends L2NoVlanNetwork {
             handle((APIAttachL2NetworkToClusterMsg) msg);
         } else if (msg instanceof APICreateVniRangeMsg) {
             handle((APICreateVniRangeMsg) msg);
+        } else if (msg instanceof APIDetachL2NetworkFromClusterMsg) {
+            handle((APIDetachL2NetworkFromClusterMsg) msg);
         } else if (msg instanceof L2NetworkMessage) {
             superHandle((L2NetworkMessage) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(final APIDetachL2NetworkFromClusterMsg msg) {
+        superHandle(msg);
+        VxlanSystemTags.VXLAN_POOL_CLUSTER_VTEP_CIDR.delete(msg.getL2NetworkUuid(),
+                VxlanSystemTags.VXLAN_POOL_CLUSTER_VTEP_CIDR.instantiateTag(map(
+                        e(VxlanSystemTags.VXLAN_POOL_UUID_TOKEN, msg.getL2NetworkUuid()),
+                        e(VxlanSystemTags.VXLAN_POOL_CLUSTER_VTEP_CIDR, msg.getClusterUuid())
+                )));
     }
 
     private void handle(final APICreateVniRangeMsg msg) {
@@ -160,7 +198,11 @@ public class VxlanNetworkPool extends L2NoVlanNetwork {
             return;
         }
 
-        tagMgr.createTagsFromAPICreateMessage(msg, msg.getL2NetworkUuid(), VxlanNetworkPoolVO.class.getSimpleName());
+        // Todo(WeiW): Need to validate
+        for (String tag : msg.getSystemTags()) {
+            tagMgr.createInherentSystemTag(msg.getL2NetworkUuid(), tag, VxlanNetworkPoolVO.class.getSimpleName());
+        }
+
         List<Map<String, String>> tokenList = VxlanSystemTags.VXLAN_POOL_CLUSTER_VTEP_CIDR.getTokensOfTagsByResourceUuid(msg.getL2NetworkUuid());
         Map<String, String> attachedClusters = new HashMap<>();
         for (Map<String, String> tokens : tokenList) {
@@ -275,4 +317,27 @@ public class VxlanNetworkPool extends L2NoVlanNetwork {
     private void superHandle(L2NetworkMessage msg) {
         super.handleMessage((Message) msg);
     }
+
+    @Override
+    public boolean isVniRangFull(VniRangeVO vo) {
+        // TODO(WeiW): Not implemented
+        return false;
+    }
+
+    @Override
+    public List<Integer> getUsedVniInRange(String vniRangeUuid) {
+        // TODO(WeiW): Not implemented
+        return Arrays.asList(0, 1, 2);
+    }
+
+    @Override
+    public VniAllocatorStrategy getVniAllocatorStrategy(VniAllocatorType type) {
+        VniAllocatorStrategy factory = vniAllocatorStrategies.get(type.toString());
+        if (factory == null) {
+            throw new CloudRuntimeException(String.format("Cannot find VniAllocatorStrategy for type(%s)", type));
+        }
+
+        return factory;
+    }
+
 }

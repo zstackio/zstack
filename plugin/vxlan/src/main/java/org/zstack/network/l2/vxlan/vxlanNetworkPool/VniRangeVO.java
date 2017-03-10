@@ -79,4 +79,8 @@ public class VniRangeVO {
         this.endVni = endVni;
     }
 
+    public int size() {
+        return (getEndVni() - getStartVni() + 1);
+    }
+
 }

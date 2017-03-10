@@ -8,11 +8,14 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.inventory.InventoryFacade;
+import org.zstack.header.exception.CloudException;
+import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.network.l2.*;
 import org.zstack.network.l2.L2NetworkExtensionPointEmitter;
 import org.zstack.network.l2.L2NetworkManager;
+import org.zstack.network.l2.L2NoVlanNetwork;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -20,7 +23,7 @@ import org.zstack.utils.logging.CLogger;
  * Created by weiwang on 01/03/2017.
  */
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
-public class VxlanNetwork implements L2Network{
+public class VxlanNetwork extends L2NoVlanNetwork {
     private static final CLogger logger = Utils.getLogger(VxlanNetwork.class);
 
     @Autowired
@@ -38,10 +41,14 @@ public class VxlanNetwork implements L2Network{
     @Autowired
     protected ErrorFacade errf;
 
-    protected L2NetworkVO self;
+    protected VxlanNetworkVO self;
 
     public VxlanNetwork(L2NetworkVO self) {
-        this.self = self;
+        super(self);
+    }
+
+    private L2NetworkVO getSelf() {
+        return (L2NetworkVO) self;
     }
 
     @Override
@@ -75,18 +82,23 @@ public class VxlanNetwork implements L2Network{
             handle((PrepareL2NetworkOnHostMsg) msg);
         } else if (msg instanceof DetachL2NetworkFromClusterMsg) {
             handle((DetachL2NetworkFromClusterMsg) msg);
+        } else if (msg instanceof L2NetworkMessage) {
+            superHandle((L2NetworkMessage) msg);
         } else  {
             bus.dealWithUnknownMessage(msg);
         }
     }
 
     private void handle(DetachL2NetworkFromClusterMsg msg) {
+        throw new CloudRuntimeException("VxlanNetwork can not detach from cluster which VxlanNetworkPool should be used");
     }
 
     private void handle(final PrepareL2NetworkOnHostMsg msg) {
+        throw new CloudRuntimeException("VxlanNetwork doesn't need prepare which VxlanNetworkPool needed");
     }
 
     private void handle(final CheckL2NetworkOnHostMsg msg) {
+        throw new CloudRuntimeException("VxlanNetwork doesn't need check which VxlanNetworkPool needed");
     }
 
     private void handle(L2NetworkDeletionMsg msg) {
@@ -99,23 +111,25 @@ public class VxlanNetwork implements L2Network{
             handle((APIAttachL2NetworkToClusterMsg) msg);
         } else if (msg instanceof APIDetachL2NetworkFromClusterMsg) {
             handle((APIDetachL2NetworkFromClusterMsg) msg);
-        } else if (msg instanceof APIUpdateL2NetworkMsg) {
-            handle((APIUpdateL2NetworkMsg) msg);
+        } else if (msg instanceof L2NetworkMessage) {
+            superHandle((L2NetworkMessage) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
     }
 
-    private void handle(APIUpdateL2NetworkMsg msg) {
-    }
-
     private void handle(final APIDetachL2NetworkFromClusterMsg msg) {
+        throw new CloudRuntimeException("VxlanNetwork can not detach from cluster which VxlanNetworkPool should be used");
     }
 
     private void handle(final APIAttachL2NetworkToClusterMsg msg) {
+        throw new CloudRuntimeException("VxlanNetwork can not attach to cluster which VxlanNetworkPool should be used");
     }
 
     private void handle(APIDeleteL2NetworkMsg msg) {
     }
 
+    private void superHandle(L2NetworkMessage msg) {
+        super.handleMessage((Message) msg);
+    }
 }
