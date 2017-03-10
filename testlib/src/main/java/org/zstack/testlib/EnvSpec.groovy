@@ -171,7 +171,7 @@ class EnvSpec implements Node {
         return spec.inventory
     }
 
-    private String retrieveSessionUuid(Node it) {
+    protected String retrieveSessionUuid(Node it) {
         String suuid = session.uuid
 
         if (it instanceof HasSession) {
