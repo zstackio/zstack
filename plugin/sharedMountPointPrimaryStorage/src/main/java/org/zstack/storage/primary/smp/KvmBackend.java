@@ -1359,6 +1359,7 @@ public class KvmBackend extends HypervisorBackend {
                 @Override
                 public void fail(ErrorCode errorCode) {
                     ret.errorCodes.add(errorCode);
+                    ret.success = false;
                     latch.ack();
                 }
             });
