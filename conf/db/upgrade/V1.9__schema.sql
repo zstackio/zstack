@@ -284,4 +284,6 @@ ALTER TABLE ShareableVolumeVmInstanceRefVO ADD CONSTRAINT fkShareableVolumeVmIns
 
 ALTER TABLE `LocalStorageResourceRefVO` DROP INDEX `resourceUuid`;
 ALTER TABLE `LocalStorageResourceRefVO` DROP PRIMARY KEY;
+ALTER TABLE `LocalStorageResourceRefVO` DROP FOREIGN KEY `fkLocalStorageResourceRefVOHostEO`;
 ALTER TABLE `LocalStorageResourceRefVO` ADD CONSTRAINT `pkLocalStorageResourceRefVO` PRIMARY KEY (`resourceUuid`,`hostUuid`,`primaryStorageUuid`);
+ALTER TABLE `LocalStorageResourceRefVO` ADD  CONSTRAINT `fkLocalStorageResourceRefVOHostEO` FOREIGN KEY (`hostUuid`) REFERENCES HostEO (`uuid`) ON DELETE CASCADE;
