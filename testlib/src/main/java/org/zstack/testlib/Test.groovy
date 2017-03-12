@@ -31,6 +31,7 @@ import org.zstack.utils.logging.CLogger
 
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
+import java.util.concurrent.TimeUnit
 
 /**
  * Created by xing5 on 2017/2/12.
@@ -395,5 +396,33 @@ abstract class Test implements ApiHelper {
             accountName = AccountConstant.INITIAL_SYSTEM_ADMIN_NAME
             password = AccountConstant.INITIAL_SYSTEM_ADMIN_PASSWORD
         } as SessionInventory
+    }
+
+    protected boolean retryInSecs(int total, int interval=1, Closure c) {
+        int count = 0
+        while (count < total) {
+            if (c()) {
+                return true
+            }
+
+            TimeUnit.SECONDS.sleep(interval)
+            count += interval
+        }
+
+        return false
+    }
+
+    protected boolean retryInMillis(int total, int interval, Closure c) {
+        int count = 0
+        while (count < total) {
+            if (c()) {
+                return true
+            }
+
+            TimeUnit.MILLISECONDS.sleep(interval)
+            count += interval
+        }
+
+        return false
     }
 }
