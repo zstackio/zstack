@@ -1,7 +1,6 @@
 package org.zstack.kvm;
 
-import org.zstack.header.core.encrypt.DECRYPT;
-import org.zstack.header.core.encrypt.ENCRYPTParam;
+import org.zstack.header.core.encrypt.*;
 import org.zstack.header.host.HostEO;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.vo.EO;
@@ -47,7 +46,7 @@ public class KVMHostVO extends HostVO {
         return password;
     }
 
-//    @ENCRYPT
+    @ENCRYPT
     public void setPassword(String password) {
         this.password = password;
     }
