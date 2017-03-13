@@ -95,6 +95,8 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             validate((APIGetInterdependentL3NetworksImagesMsg) msg);
         } else if (msg instanceof APIUpdateVmInstanceMsg) {
             validate((APIUpdateVmInstanceMsg) msg);
+        }else if (msg instanceof APISetVmConsolePasswordMsg) {
+            validate((APISetVmConsolePasswordMsg) msg);
         }
         setServiceId(msg);
         return msg;
@@ -471,6 +473,13 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             APIDestroyVmInstanceEvent evt = new APIDestroyVmInstanceEvent(msg.getId());
             bus.publish(evt);
             throw new StopRoutingException();
+        }
+    }
+
+    private void validate(APISetVmConsolePasswordMsg msg) {
+        String pwd = msg.getConsolePassword();
+        if (pwd.startsWith("password")){
+            throw new ApiMessageInterceptionException(argerr("The console password cannot start with 'password' which may trigger a VNC security issue"));
         }
     }
 }
