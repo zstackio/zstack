@@ -128,6 +128,9 @@ public class LocalStorageCapacityRecalculator {
         List<String> huuids = hq.getResultList();
         if (huuids != null && !huuids.isEmpty()) {
             calculateByHostUuids(psUuid, huuids);
+        }else{
+            // when ps is detached, LocalStorageHostRefVO is empty, need reset ps capacity
+            calculateTotalCapacity(psUuid);
         }
         return this;
     }
