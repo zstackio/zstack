@@ -31,6 +31,9 @@ public class HostCapacityVO {
     private int cpuNum;
 
     @Column
+    private int cpuSockets;
+
+    @Column
     @Index
     private long availableMemory;
 
@@ -47,6 +50,14 @@ public class HostCapacityVO {
     private long availablePhysicalMemory;
 
     public HostCapacityVO() {
+    }
+
+    public int getCpuSockets() {
+        return cpuSockets;
+    }
+
+    public void setCpuSockets(int cpuSockets) {
+        this.cpuSockets = cpuSockets;
     }
 
     public int getCpuNum() {

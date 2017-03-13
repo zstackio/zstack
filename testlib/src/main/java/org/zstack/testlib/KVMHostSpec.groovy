@@ -10,6 +10,7 @@ import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
 import org.zstack.sdk.AddKVMHostAction
 import org.zstack.sdk.HostInventory
+import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
 
 import javax.persistence.Tuple
@@ -57,13 +58,26 @@ class KVMHostSpec extends HostSpec {
     private setupSimulator() {
         simulator(KVMConstant.KVM_HOST_CAPACITY_PATH) { HttpEntity<String> e, EnvSpec espec ->
             def rsp = new KVMAgentCommands.HostCapacityResponse()
+
             KVMHostSpec spec = espec.specByUuid(e.getHeaders().getFirst(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID))
             rsp.success = true
-            rsp.usedCpu = spec.usedCpu
-            rsp.cpuNum = spec.totalCpu
-            rsp.totalMemory = spec.totalMem
-            rsp.usedMemory = spec.usedMem
-            rsp.cpuSpeed = 1
+
+            if (spec == null) {
+                rsp.usedCpu = 0
+                rsp.cpuNum = 8
+                rsp.totalMemory = SizeUnit.GIGABYTE.toByte(32)
+                rsp.usedMemory = 0
+                rsp.cpuSpeed = 1
+                rsp.cpuSockets = 2
+            } else {
+                rsp.usedCpu = spec.usedCpu
+                rsp.cpuNum = spec.totalCpu
+                rsp.totalMemory = spec.totalMem
+                rsp.usedMemory = spec.usedMem
+                rsp.cpuSpeed = 1
+                rsp.cpuSockets = spec.cpuSockets
+            }
+
             return rsp
         }
 
