@@ -111,11 +111,13 @@ public class SchedulerApiInterceptor implements ApiMessageInterceptor {
             if (msg.getRepeatCount() != null && msg.getRepeatCount() <= 0) {
                 throw new ApiMessageInterceptionException(argerr("repeatCount must be positive integer"));
             }
-            
-            if (msg.getInterval() * msg.getRepeatCount() * 1000 < 0) {
-                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                        String.format("schedule job time out of range")
-                ));
+
+            if ((long) msg.getInterval() * (long) msg.getRepeatCount() * 1000L < 0 ) {
+                throw new ApiMessageInterceptionException(argerr("duration time out of range"));
+            }
+
+            if ((long) msg.getInterval() * (long) msg.getRepeatCount() * 1000L + msg.getStartTime()  > 2147454847000L) {
+                throw new ApiMessageInterceptionException(argerr("stopTime out of mysql timestamp range"));
             }
         }
 
