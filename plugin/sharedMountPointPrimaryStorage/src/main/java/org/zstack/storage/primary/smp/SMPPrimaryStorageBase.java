@@ -26,6 +26,8 @@ import org.zstack.header.volume.VolumeFormat;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.volume.VolumeVO_;
 import org.zstack.storage.primary.PrimaryStorageBase;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
 import static org.zstack.core.Platform.operr;
 
@@ -33,12 +35,15 @@ import javax.persistence.TypedQuery;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by xing5 on 2016/3/26.
  */
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class SMPPrimaryStorageBase extends PrimaryStorageBase {
+    private static final CLogger logger = Utils.getLogger(SMPPrimaryStorageBase.class);
+
     @Autowired
     private PluginRegistry pluginRgty;
 
@@ -116,13 +121,21 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
         bkd.handle(msg, new ReturnValueCompletion<DeleteVolumeOnPrimaryStorageReply>(msg) {
             @Override
             public void success(DeleteVolumeOnPrimaryStorageReply reply) {
+                logger.debug( String.format("successfully delete volume[uuid:%s]", msg.getVolume().getUuid()));
                 bus.reply(msg, reply);
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
+                logger.debug( String.format("can't delete volume[uuid:%s] right now, add a GC job", msg.getVolume().getUuid()));
+                SMPDeleteVolumeGC gc = new SMPDeleteVolumeGC();
+                gc.NAME = String.format("gc-smp-%s-volume-%s", self.getUuid(), msg.getVolume());
+                gc.primaryStorageUuid = self.getUuid();
+                gc.hypervisorType = type.toString();
+                gc.volume = msg.getVolume();
+                gc.submit(SMPPrimaryStorageGlobalConfig.GC_INTERVAL.value(Long.class), TimeUnit.SECONDS);
+
                 DeleteVolumeOnPrimaryStorageReply reply = new DeleteVolumeOnPrimaryStorageReply();
-                reply.setError(errorCode);
                 bus.reply(msg, reply);
             }
         });
