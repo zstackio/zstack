@@ -53,10 +53,10 @@ public class TestVmConsolePasswordOnKvm {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         String consolePassword = api.getVmConsolePassword(vm.getUuid(), null);
         Assert.assertEquals(null, consolePassword);
-        vm = api.setVmConsolePassword(vm.getUuid(), "password", null);
+        vm = api.setVmConsolePassword(vm.getUuid(), "12345678", null);
         Assert.assertTrue(VmSystemTags.CONSOLE_PASSWORD.hasTag(vm.getUuid()));
         consolePassword = api.getVmConsolePassword(vm.getUuid(), null);
-        Assert.assertEquals("password", consolePassword);
+        Assert.assertEquals("12345678", consolePassword);
         vm = api.rebootVmInstance(vm.getUuid());
         StartVmCmd scmd = config.startVmCmd;
         Assert.assertTrue(scmd.getConsolePassword().contains(consolePassword));
