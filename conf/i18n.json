@@ -257,7 +257,7 @@
     "arguments": [
       "amsg.getVmInstanceUuid()"
     ],
-    "line": 497,
+    "line": 498,
     "fileName": "src/main/java/org/zstack/compute/vm/MevocoVmInstanceBase.java"
   },
   {
@@ -265,7 +265,7 @@
     "en_US": "state is not correct while change password.",
     "zh_CN": "",
     "arguments": [],
-    "line": 518,
+    "line": 519,
     "fileName": "src/main/java/org/zstack/compute/vm/MevocoVmInstanceBase.java"
   },
   {
@@ -1227,6 +1227,22 @@
     "fileName": "src/main/java/org/zstack/core/scheduler/SchedulerApiInterceptor.java"
   },
   {
+    "raw": "duration time out of range",
+    "en_US": "duration time out of range",
+    "zh_CN": "任务需要的时间超出范围",
+    "arguments": [],
+    "line": 116,
+    "fileName": "src/main/java/org/zstack/core/scheduler/SchedulerApiInterceptor.java"
+  },
+  {
+    "raw": "stopTime out of mysql timestamp range",
+    "en_US": "stopTime out of mysql timestamp range",
+    "zh_CN": "定时任务停止时间超出mysql的timestamp的范围",
+    "arguments": [],
+    "line": 120,
+    "fileName": "src/main/java/org/zstack/core/scheduler/SchedulerApiInterceptor.java"
+  },
+  {
     "raw": "cron must be set when use cron scheduler",
     "en_US": "cron must be set when use cron scheduler",
     "zh_CN": "",
@@ -1818,7 +1834,7 @@
     "arguments": [
       "msg.getL3NetworkUuid()"
     ],
-    "line": 88,
+    "line": 79,
     "fileName": "src/main/java/org/zstack/ipsec/IPsecApiInterceptor.java"
   },
   {
@@ -2260,7 +2276,7 @@
     "arguments": [
       "psType"
     ],
-    "line": 222,
+    "line": 223,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -2332,7 +2348,7 @@
       "distro",
       "version"
     ],
-    "line": 503,
+    "line": 488,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -2383,7 +2399,7 @@
       "volume.getUuid()",
       "vm.getUuid()"
     ],
-    "line": 1390,
+    "line": 1361,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -2391,7 +2407,7 @@
     "en_US": "shareable disk only support virtio-scsi type for now",
     "zh_CN": "",
     "arguments": [],
-    "line": 1408,
+    "line": 1379,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -4156,7 +4172,7 @@
       "rsp.getStatusCode()",
       "rsp.getBody()"
     ],
-    "line": 425,
+    "line": 426,
     "fileName": "src/main/java/org/zstack/prometheus/PrometheusManagerImpl.java"
   },
   {
@@ -4178,7 +4194,7 @@
       "ret.get(\"errorType\")",
       "ret.get(\"error\")"
     ],
-    "line": 482,
+    "line": 481,
     "fileName": "src/main/java/org/zstack/prometheus/PrometheusManagerImpl.java"
   },
   {
@@ -4557,6 +4573,16 @@
     ],
     "line": 471,
     "fileName": "src/main/java/org/zstack/storage/backup/sftp/SftpBackupStorageMetaDataMaker.java"
+  },
+  {
+    "raw": "duplicate poolName[%s]. There has been a pool with the same name existing",
+    "en_US": "duplicate poolName[{0}]. There has been a pool with the same name existing",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getPoolName()"
+    ],
+    "line": 66,
+    "fileName": "src/main/java/org/zstack/storage/ceph/CephApiInterceptor.java"
   },
   {
     "raw": "cannot add ceph primary storage, there has been some ceph primary storage using mon[hostnames:%s]",
