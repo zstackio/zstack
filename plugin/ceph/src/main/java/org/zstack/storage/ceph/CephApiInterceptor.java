@@ -52,9 +52,20 @@ public class CephApiInterceptor implements ApiMessageInterceptor {
             validate((APIUpdateCephPrimaryStorageMonMsg) msg);
         } else if (msg instanceof APIDeleteCephPrimaryStoragePoolMsg) {
             validate((APIDeleteCephPrimaryStoragePoolMsg) msg);
+        } else if (msg instanceof APIAddCephPrimaryStoragePoolMsg) {
+            validate((APIAddCephPrimaryStoragePoolMsg) msg);
         }
         
         return msg;
+    }
+
+    private void validate(APIAddCephPrimaryStoragePoolMsg msg) {
+        if (Q.New(CephPrimaryStoragePoolVO.class)
+                .eq(CephPrimaryStoragePoolVO_.primaryStorageUuid, msg.getPrimaryStorageUuid())
+                .eq(CephPrimaryStoragePoolVO_.poolName, msg.getPoolName()).isExists()) {
+            throw new ApiMessageInterceptionException(argerr("duplicate poolName[%s]. There has been a pool with the same name existing", msg.getPoolName()));
+        }
+
     }
 
     private void validate(APIDeleteCephPrimaryStoragePoolMsg msg) {
