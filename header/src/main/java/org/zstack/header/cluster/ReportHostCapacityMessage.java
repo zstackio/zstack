@@ -1,13 +1,23 @@
 package org.zstack.header.cluster;
 
 import org.zstack.header.message.Message;
+import org.zstack.header.message.NeedReplyMessage;
 
-public class ReportHostCapacityMessage extends Message {
+public class ReportHostCapacityMessage extends NeedReplyMessage {
     private long totalMemory;
     private long usedCpu;
     private long usedMemory;
     private String hostUuid;
     private int cpuNum;
+    private int cpuSockets;
+
+    public int getCpuSockets() {
+        return cpuSockets;
+    }
+
+    public void setCpuSockets(int cpuSockets) {
+        this.cpuSockets = cpuSockets;
+    }
 
     public int getCpuNum() {
         return cpuNum;

@@ -50,6 +50,14 @@ public class LicenseInventory  {
         return this.hostNum;
     }
 
+    public java.lang.Integer cpuNum;
+    public void setCpuNum(java.lang.Integer cpuNum) {
+        this.cpuNum = cpuNum;
+    }
+    public java.lang.Integer getCpuNum() {
+        return this.cpuNum;
+    }
+
     public boolean expired;
     public void setExpired(boolean expired) {
         this.expired = expired;

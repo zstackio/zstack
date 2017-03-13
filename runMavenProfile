@@ -43,7 +43,12 @@ i18n() {
 sdk() {
     set -u
     rm -rf ~/zstack-sdk/java
-    cd test
+    if [ -d premium/test-premium ]; then
+   	cd premium/test-premium
+    else
+    	cd test
+    fi
+    
     mvn test -Dtest=TestGenerateSDK
     if [ $? -ne 0 ]; then
 	echo "if you see a compile error, you may try to compile and install the sdk module first"

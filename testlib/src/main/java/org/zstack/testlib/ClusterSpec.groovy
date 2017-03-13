@@ -1,5 +1,6 @@
 package org.zstack.testlib
 
+import org.zstack.kvm.KVMConstant
 import org.zstack.sdk.AttachL2NetworkToClusterAction
 import org.zstack.sdk.AttachPrimaryStorageToClusterAction
 import org.zstack.sdk.ClusterInventory
@@ -12,8 +13,8 @@ class ClusterSpec extends Spec {
     String name
     @SpecParam
     String description
-    @SpecParam(required = true)
-    String hypervisorType
+    @SpecParam
+    String hypervisorType = KVMConstant.KVM_HYPERVISOR_TYPE
     List<HostSpec> hosts = []
 
     private List<String> primaryStorageToAttach = []

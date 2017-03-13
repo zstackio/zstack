@@ -3,14 +3,18 @@ package org.zstack.kvm;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.compute.host.HostLogLabel;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.logging.Log;
 import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.allocator.UnableToReserveHostCapacityException;
 import org.zstack.header.cluster.ReportHostCapacityMessage;
+import org.zstack.header.core.Completion;
+import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.*;
 import org.zstack.header.message.MessageReply;
@@ -28,7 +32,7 @@ public class KVMHostCapacityExtension implements KVMHostConnectExtensionPoint, H
     @Autowired
     private ErrorFacade errf;
 
-    private void reportCapacity(HostInventory host) {
+    private void reportCapacity(HostInventory host, Completion completion) {
         KVMHostSyncHttpCallMsg msg = new KVMHostSyncHttpCallMsg();
         msg.setHostUuid(host.getUuid());
         msg.setPath(KVMConstant.KVM_HOST_CAPACITY_PATH);
@@ -59,14 +63,24 @@ public class KVMHostCapacityExtension implements KVMHostConnectExtensionPoint, H
         rmsg.setUsedCpu(rsp.getUsedCpu());
         rmsg.setTotalMemory(rsp.getTotalMemory());
         rmsg.setUsedMemory(rsp.getUsedMemory());
+        rmsg.setCpuSockets(rsp.getCpuSockets());
         rmsg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
-        bus.send(rmsg);
+        bus.send(rmsg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                } else {
+                    completion.success();
+                }
+            }
+        });
     }
 
 
     @Override
     public void connectionReestablished(HostInventory inv) throws HostException {
-        reportCapacity(inv);
+        reportCapacity(inv, new NopeCompletion());
     }
 
     @Override
@@ -83,8 +97,17 @@ public class KVMHostCapacityExtension implements KVMHostConnectExtensionPoint, H
             public void run(FlowTrigger trigger, Map data) {
                 new Log(context.getInventory().getUuid()).log(KVMHostLabel.SYNC_HOST_CAPACITY);
 
-                reportCapacity(context.getInventory());
-                trigger.next();
+                reportCapacity(context.getInventory(), new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
             }
         };
     }

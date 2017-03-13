@@ -1,16 +1,5 @@
 package org.zstack.testlib
 
-import org.reflections.Reflections
-import org.reflections.scanners.FieldAnnotationsScanner
-import org.reflections.scanners.MemberUsageScanner
-import org.reflections.scanners.MethodAnnotationsScanner
-import org.reflections.scanners.MethodParameterNamesScanner
-import org.reflections.scanners.MethodParameterScanner
-import org.reflections.scanners.ResourcesScanner
-import org.reflections.scanners.SubTypesScanner
-import org.reflections.scanners.TypeAnnotationsScanner
-import org.reflections.scanners.TypeElementsScanner
-import org.reflections.util.ClasspathHelper
 import org.zstack.core.Platform
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.componentloader.ComponentLoader
@@ -21,7 +10,6 @@ import org.zstack.header.identity.AccountConstant
 import org.zstack.header.message.AbstractBeforeSendMessageInterceptor
 import org.zstack.header.message.Event
 import org.zstack.header.message.Message
-import org.zstack.sdk.LogInByAccountAction
 import org.zstack.sdk.SessionInventory
 import org.zstack.sdk.ZSClient
 import org.zstack.utils.ShellUtils
@@ -313,6 +301,9 @@ abstract class Test implements ApiHelper {
 
     static Case CURRENT_SUB_CASE
 
+    protected void beforeRunSubCase() {
+    }
+
     protected void runSubCases() {
         String resultDir = System.getProperty("resultDir")
         if (resultDir == null) {
@@ -345,6 +336,8 @@ abstract class Test implements ApiHelper {
             logger.info("starts running a sub case[${c.class}] of suite[${this.class}]")
             try {
                 CURRENT_SUB_CASE = c
+
+                beforeRunSubCase()
                 c.run()
 
                 caseResult.success = true

@@ -278,6 +278,15 @@ public class KVMAgentCommands {
         private long usedCpu;
         private long totalMemory;
         private long usedMemory;
+        private int cpuSockets;
+
+        public int getCpuSockets() {
+            return cpuSockets;
+        }
+
+        public void setCpuSockets(int cpuSockets) {
+            this.cpuSockets = cpuSockets;
+        }
 
         public long getCpuNum() {
             return cpuNum;

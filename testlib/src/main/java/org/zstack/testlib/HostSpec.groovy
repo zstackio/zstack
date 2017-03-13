@@ -21,6 +21,8 @@ abstract class HostSpec extends Spec {
     Integer totalCpu = 32
     @SpecParam
     Integer usedCpu = 0
+    @SpecParam
+    Integer cpuSockets = 2
 
     HostInventory inventory
 

@@ -23,6 +23,7 @@ import org.zstack.header.image.APIGetCandidateBackupStorageForCreatingImageMsg;
 import org.zstack.header.image.APIGetCandidateBackupStorageForCreatingImageReply;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
+import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.BackupStorageInventory;
 import org.zstack.header.storage.backup.BackupStorageState;
 import org.zstack.header.storage.backup.BackupStorageStatus;
@@ -256,8 +257,10 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
             vo.setTotalPhysicalMemory(msg.getTotalMemory());
             vo.setAvailablePhysicalMemory(availMem);
             vo.setCpuNum(msg.getCpuNum());
+            vo.setCpuSockets(msg.getCpuSockets());
 
             HostCapacityStruct s = new HostCapacityStruct();
+            s.setCpuSockets(vo.getCpuSockets());
             s.setCapacityVO(vo);
             s.setCpuNum(msg.getCpuNum());
             s.setTotalCpu(totalCpu);
@@ -276,9 +279,11 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
             vo.setTotalPhysicalMemory(msg.getTotalMemory());
             vo.setAvailablePhysicalMemory(availMem);
             vo.setTotalMemory(msg.getTotalMemory());
+            vo.setCpuSockets(msg.getCpuSockets());
 
             HostCapacityStruct s = new HostCapacityStruct();
             s.setCapacityVO(vo);
+            s.setCpuSockets(msg.getCpuSockets());
             s.setTotalCpu(totalCpu);
             s.setTotalMemory(msg.getTotalMemory());
             s.setUsedCpu(msg.getUsedCpu());
@@ -289,6 +294,8 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
             }
             dbf.update(vo);
         }
+
+        bus.reply(msg, new MessageReply());
     }
 
     private void handle(final AllocateHostMsg msg) {
