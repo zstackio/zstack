@@ -1,6 +1,5 @@
 package org.zstack.testlib
 
-import org.zstack.core.Platform
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.componentloader.ComponentLoader
 import org.zstack.core.db.DatabaseFacade
@@ -300,7 +299,6 @@ abstract class Test implements ApiHelper {
 
     static Case CURRENT_SUB_CASE
 
-    protected void runSubCases(List<Case> cases) {
     protected void beforeRunSubCase() {
     }
 
