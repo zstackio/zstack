@@ -599,11 +599,16 @@ public class Platform {
         l = l == null ? locale : l;
 
         try {
+            String ret;
             if (args.length > 0) {
-                return messageSource.getMessage(code, args, l);
+                 ret = messageSource.getMessage(code, args, l);
             } else {
-                return messageSource.getMessage(code, null, l);
+                 ret = messageSource.getMessage(code, null, l);
             }
+
+            // if the result is an empty string which means the string is not translated in the locale,
+            // return the original string so users won't get a confusing, empty string
+            return ret.isEmpty() ? String.format(code, args) : ret;
         } catch (NoSuchMessageException e) {
             return String.format(code, args);
         }
