@@ -1,11 +1,7 @@
 package org.zstack.test.integration.kvm.capacity
 
-import com.mchange.v2.c3p0.util.TestUtils
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.sdk.HostInventory
-import org.zstack.sdk.ImageInventory
-import org.zstack.sdk.InstanceOfferingInventory
-import org.zstack.sdk.UpdateVmInstanceAction
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.test.integration.kvm.Env
 import org.zstack.test.integration.kvm.KvmTest
@@ -37,14 +33,13 @@ class CheckHostCapacityWhenUpgradeVmCase extends SubCase {
 
     void testCheckHostCapacityWhenUpgradeVm() {
 
-        // 记录当前host capacity : mem, cup
         HostInventory host = env.inventoryByName("kvm")
         VmInstanceInventory vm = env.inventoryByName("vm")
         long originAvailableCpuCapacity = host.availableCpuCapacity
         long originAvailableMemoryCapacity = host.availableMemoryCapacity
 
 
-        // 创建虚拟机 并启动
+        // create vm, and start vm
         VmInstanceInventory newVm = createVmInstance {
             name = "vm1"
             instanceOfferingUuid = vm.instanceOfferingUuid
@@ -60,7 +55,7 @@ class CheckHostCapacityWhenUpgradeVmCase extends SubCase {
         }
 
 
-        // 检查host capacity : origin = current + newVm
+        // check host capacity : origin == current + newVm
         host = queryHost {
             conditions=["uuid=${host.uuid}".toString()]
         }[0]
@@ -68,6 +63,7 @@ class CheckHostCapacityWhenUpgradeVmCase extends SubCase {
         assert originAvailableMemoryCapacity == newVm.memorySize + host.availableMemoryCapacity
 
 
+        // upgrade vm, check host capacity : origin == current + newVm
         newVm = updateVmInstance {
             uuid = newVm.uuid
             cpuNum = newVm.cpuNum * 2
