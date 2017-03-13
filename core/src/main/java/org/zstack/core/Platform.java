@@ -645,7 +645,7 @@ public class Platform {
         if (SysErrors.INTERNAL == errCode) {
             return errf.instantiateErrorCode(errCode, String.format(fmt, args));
         } else {
-            return errf.instantiateErrorCode(errCode, toI18nString(fmt, args));
+            return errf.instantiateErrorCode(errCode, i18n(fmt, args));
         }
     }
 
