@@ -1,6 +1,6 @@
 package org.zstack.sdk;
 
-public class VniRangeVO  {
+public class VniRangeInventory  {
 
     public java.lang.String uuid;
     public void setUuid(java.lang.String uuid) {

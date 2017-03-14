@@ -13,7 +13,7 @@
        default-init-method="init" default-destroy-method="destroy">
 
 
-    <bean id="L2VxlanNetworkPoolManager" class="org.zstack.network.l2.vxlan.vxlanNetworkPool.L2VxlanNetworkPoolManager">
+    <bean id="L2VxlanNetworkPoolManager" class="org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPool">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.network.l2.vxlan.vxlanNetworkPool.L2VxlanNetworkPoolManager"/>
         </zstack:plugin>

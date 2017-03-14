@@ -15,16 +15,16 @@ import org.zstack.header.rest.RestRequest;
         path = "/l2-networks/vxlan-pool/{l2NetworkUuid}/vni-range",
         method = HttpMethod.POST,
         responseClass = APICreateVniRangeEvent.class,
-        parameterName = "null"
+        parameterName = "params"
 )
 public class APICreateVniRangeMsg extends APICreateMessage implements L2NetworkMessage{
     @APIParam
     private String uuid;
 
-    @APIParam
+    @APIParam(maxLength = 255)
     private String name;
 
-    @APIParam
+    @APIParam(required = false, maxLength = 2048)
     private String description;
 
     @APIParam

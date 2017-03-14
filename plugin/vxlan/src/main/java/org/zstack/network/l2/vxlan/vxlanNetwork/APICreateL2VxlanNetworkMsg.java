@@ -3,11 +3,16 @@ package org.zstack.network.l2.vxlan.vxlanNetwork;
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.message.OverriddenApiParam;
+import org.zstack.header.message.OverriddenApiParams;
 import org.zstack.header.network.l2.APICreateL2NetworkMsg;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolVO;
 
 @Action(category = "vxlan")
+@OverriddenApiParams({
+        @OverriddenApiParam(field = "physicalInterface", param = @APIParam(maxLength = 1024, required = false))
+})
 @RestRequest(
         path = "/l2-networks/vxlan",
         method = HttpMethod.POST,
@@ -40,6 +45,11 @@ public class APICreateL2VxlanNetworkMsg extends APICreateL2NetworkMsg {
 
     public void setPoolUuid(String poolUuid) {
         this.poolUuid = poolUuid;
+    }
+
+    @Override
+    public String getPhysicalInterface() {
+        return "No use";
     }
 
     public static APICreateL2VxlanNetworkMsg __example__() {

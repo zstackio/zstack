@@ -1,10 +1,12 @@
 package org.zstack.network.l2.vxlan.vxlanNetworkPool;
 
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.rest.RestResponse;
 
 /**
  * Created by weiwang on 09/03/2017.
  */
+@RestResponse(allTo = "inventory")
 public class APICreateVniRangeEvent extends APIEvent {
     private VniRangeInventory inventory;
 

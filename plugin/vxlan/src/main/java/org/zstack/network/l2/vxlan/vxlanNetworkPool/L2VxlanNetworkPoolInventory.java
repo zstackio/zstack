@@ -32,15 +32,15 @@ import java.util.*;
 public class L2VxlanNetworkPoolInventory extends L2NetworkInventory {
     @Queryable(mappingClass = VtepVO.class,
             joinColumn = @JoinColumn(name = "poolUuid", referencedColumnName = "uuid"))
-    private Set<VtepVO> attachedVtepRefs;
+    private List<VtepInventory> attachedVtepRefs;
 
     @Queryable(mappingClass = VxlanNetworkVO.class,
             joinColumn = @JoinColumn(name = "poolUuid", referencedColumnName = "uuid"))
-    private Set<VxlanNetworkVO> attachedVxlanNetworkRefs;
+    private List<L2VxlanNetworkInventory> attachedVxlanNetworkRefs;
 
     @Queryable(mappingClass = VniRangeVO.class,
             joinColumn = @JoinColumn(name = "l2NetworkUuid", referencedColumnName = "uuid"))
-    private Set<VniRangeVO> attachedVniRanges;
+    private List<VniRangeInventory> attachedVniRanges;
 
     private Map<String, String> attachedCidrs;
 
@@ -50,9 +50,9 @@ public class L2VxlanNetworkPoolInventory extends L2NetworkInventory {
     protected L2VxlanNetworkPoolInventory(VxlanNetworkPoolVO vo) {
         super(vo);
         this.attachedCidrs = VxlanSystemTags.VXLAN_POOL_CLUSTER_VTEP_CIDR.getTokensByResourceUuid(vo.getUuid());
-        this.attachedVniRanges = vo.getAttachedVniRanges();
-        this.attachedVtepRefs = vo.getAttachedVtepRefs();
-        this.attachedVxlanNetworkRefs = vo.getAttachedVxlanNetworkRefs();
+        this.attachedVniRanges = VniRangeInventory.valueOf(vo.getAttachedVniRanges());
+        this.attachedVtepRefs = VtepInventory.valueOf(vo.getAttachedVtepRefs());
+        this.attachedVxlanNetworkRefs = L2VxlanNetworkInventory.valueOf1(vo.getAttachedVxlanNetworkRefs());
     }
 
     public static L2VxlanNetworkPoolInventory valueOf(VxlanNetworkPoolVO vo) {
@@ -67,27 +67,27 @@ public class L2VxlanNetworkPoolInventory extends L2NetworkInventory {
         return invs;
     }
 
-    public Set<VtepVO> getAttachedVtepRefs() {
+    public List<VtepInventory> getAttachedVtepRefs() {
         return attachedVtepRefs;
     }
 
-    public void setAttachedVtepRefs(Set<VtepVO> attachedVtepRefs) {
+    public void setAttachedVtepRefs(List<VtepInventory> attachedVtepRefs) {
         this.attachedVtepRefs = attachedVtepRefs;
     }
 
-    public Set<VxlanNetworkVO> getAttachedVxlanNetworkRefs() {
+    public List<L2VxlanNetworkInventory> getAttachedVxlanNetworkRefs() {
         return attachedVxlanNetworkRefs;
     }
 
-    public void setAttachedVxlanNetworkRefs(Set<VxlanNetworkVO> attachedVxlanNetworkRefs) {
+    public void setAttachedVxlanNetworkRefs(List<L2VxlanNetworkInventory> attachedVxlanNetworkRefs) {
         this.attachedVxlanNetworkRefs = attachedVxlanNetworkRefs;
     }
 
-    public Set<VniRangeVO> getAttachedVniRanges() {
+    public List<VniRangeInventory> getAttachedVniRanges() {
         return attachedVniRanges;
     }
 
-    public void setAttachedVniRanges(Set<VniRangeVO> attachedVniRanges) {
+    public void setAttachedVniRanges(List<VniRangeInventory> attachedVniRanges) {
         this.attachedVniRanges = attachedVniRanges;
     }
 
