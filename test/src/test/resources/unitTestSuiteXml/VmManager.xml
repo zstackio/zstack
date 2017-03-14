@@ -70,6 +70,5 @@
     <TestCase class="org.zstack.test.compute.vm.TestVmHostname"/>
     <TestCase class="org.zstack.test.compute.vm.TestGetInterdependentL3NetworksImages"/>
     <TestCase class="org.zstack.test.compute.vm.TestGetVmAttachableDataVolume"/>
-    <TestCase class="org.zstack.test.compute.vm.TestDeleteCreatedVm"/>
     <TestCase class="org.zstack.test.compute.vm.TestGetVmCapabilities"/>
 </UnitTestSuiteConfig>
