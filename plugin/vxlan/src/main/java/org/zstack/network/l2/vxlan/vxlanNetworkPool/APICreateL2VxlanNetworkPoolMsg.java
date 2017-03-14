@@ -8,7 +8,7 @@ import org.zstack.header.message.OverriddenApiParams;
 import org.zstack.header.network.l2.APICreateL2NetworkMsg;
 import org.zstack.header.rest.RestRequest;
 
-@Action(category = "vxlan")
+@Action(category = VxlanNetworkPoolConstant.ACTION_CATEGORY)
 @OverriddenApiParams({
         @OverriddenApiParam(field = "physicalInterface", param = @APIParam(maxLength = 1024, required = false))
 })
