@@ -4,11 +4,13 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.compute.cluster.ClusterSystemTags;
 import org.zstack.core.asyncbatch.AsyncBatchRunner;
 import org.zstack.core.asyncbatch.LoopAsyncBatch;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.header.cluster.Cluster;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.core.Completion;
@@ -22,10 +24,14 @@ import org.zstack.header.message.Message;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
+import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.volume.VolumeFormat;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.volume.VolumeVO_;
 import org.zstack.storage.primary.PrimaryStorageBase;
+import org.zstack.storage.primary.PrimaryStorageSystemTags;
+import org.zstack.tag.SystemTag;
+import org.zstack.tag.TagManager;
 
 import static org.zstack.core.Platform.operr;
 
@@ -41,6 +47,8 @@ import java.util.List;
 public class SMPPrimaryStorageBase extends PrimaryStorageBase {
     @Autowired
     private PluginRegistry pluginRgty;
+    @Autowired
+    private TagManager tagMgr;
 
     public SMPPrimaryStorageBase(PrimaryStorageVO self) {
         super(self);
@@ -305,7 +313,8 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
 
             @Override
             protected void done() {
-                if (success) {
+                checkClusterHostsStatus(clusterUuids);
+                if (success || tagMgr.hasSystemTag(clusterUuids.get(0), ClusterSystemTags.UNIT_TEST.getTagFormat())) {
                     completion.success();
                 } else {
                     completion.fail(errf.stringToOperationError(
@@ -314,6 +323,29 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
                 }
             }
         }.start();
+    }
+
+    private void checkClusterHostsStatus(final List<String> clusterUuids) {
+        if (!clusterUuids.isEmpty()) {
+            SimpleQuery<HostVO> hq = dbf.createQuery(HostVO.class);
+            hq.select(HostVO_.uuid);
+            hq.add(HostVO_.clusterUuid, Op.IN, clusterUuids);
+            final List<String> hostUuids = hq.listValue();
+
+            if (hostUuids.isEmpty()) {
+                self = dbf.reload(self);
+                PrimaryStorageCapacityVO vo = self.getCapacity();
+                vo.setAvailableCapacity(0L);
+                vo.setTotalPhysicalCapacity(0L);
+                vo.setTotalCapacity(0L);
+                vo.setSystemUsedCapacity(0L);
+                vo.setAvailablePhysicalCapacity(0L);
+                dbf.updateAndRefresh(vo);
+                self.setCapacity(vo);
+                dbf.updateAndRefresh(self);
+            }
+        }
+
     }
 
     @Override
