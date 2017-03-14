@@ -2061,7 +2061,7 @@
   {
     "raw": "unable to connect to KVM[ip:%s, username:%s, sshPort: %d, ] to do DNS check, please check if username/password is wrong; %s",
     "en_US": "unable to connect to KVM[ip:{0}, username:{1}, sshPort: %d, ] to do DNS check, please check if username/password is wrong; {2}",
-    "zh_CN": "",
+    "zh_CN": "不能连接到KVM[ip:{0}, username:{1}, sshPort: %d, ]做DNS检查，请检查您的用户名或者密码是否有误",
     "arguments": [
       "self.getManagementIp()",
       "getSelf().getUsername()",
@@ -2074,7 +2074,7 @@
   {
     "raw": "the KVM host[ip:%s] cannot access the management node\u0027s callback url. It seems that the KVM host cannot reach the management IP[%s]. %s %s",
     "en_US": "the KVM host[ip:{0}] cannot access the management node\u0027s callback url. It seems that the KVM host cannot reach the management IP[{1}]. {2} {3}",
-    "zh_CN": "",
+    "zh_CN": "物理机[ip:{0}] 不能连接到管理节点 。 看起来是这个物理机不能查找到管理节点的IP [{1}]. {2} {3}",
     "arguments": [
       "self.getManagementIp()",
       "Platform.getManagementServerIp()",
@@ -2087,7 +2087,7 @@
   {
     "raw": "unable to connect to KVM[ip:%s, username:%s, sshPort:%d] to check the management node connectivity,please check if username/password is wrong; %s",
     "en_US": "unable to connect to KVM[ip:{0}, username:{1}, sshPort:%d] to check the management node connectivity,please check if username/password is wrong; {2}",
-    "zh_CN": "",
+    "zh_CN": "不能连接到物理机[ip:{0}, username:{1}, sshPort:%d] 去检查与管理节点是否连通  ,请检查您的用户名或者密码是否有误; {2}",
     "arguments": [
       "self.getManagementIp()",
       "getSelf().getUsername()",
@@ -2100,7 +2100,7 @@
   {
     "raw": "unable to get kvm host[uuid:%s, ip:%s] facts by ansible\\n%s",
     "en_US": "unable to get kvm host[uuid:{0}, ip:{1}] facts by ansible\\n{2}",
-    "zh_CN": "",
+    "zh_CN": "不能获取物理机[uuid:{0}, ip:{1}]的配置管理器\\n{2}",
     "arguments": [
       "self.getUuid()",
       "self.getManagementIp()",
@@ -2122,7 +2122,7 @@
   {
     "raw": "unrecognized ansible facts mediaType, cannot find field \u0027ansible_facts\u0027, %s",
     "en_US": "unrecognized ansible facts mediaType, cannot find field \u0027ansible_facts\u0027, {0}",
-    "zh_CN": "",
+    "zh_CN": "未授权的配置管理器类型，不能发现\u0027ansible_facts\u0027, {0}",
     "arguments": [
       "ret.getStdout()"
     ],
@@ -2132,7 +2132,7 @@
   {
     "raw": "cannot find either \u0027vmx\u0027 or \u0027svm\u0027 in /proc/cpuinfo, please make sure you have enabled virtualization in your BIOS setting",
     "en_US": "cannot find either \u0027vmx\u0027 or \u0027svm\u0027 in /proc/cpuinfo, please make sure you have enabled virtualization in your BIOS setting",
-    "zh_CN": "",
+    "zh_CN": "不能发现以下任意一个  \u0027vmx\u0027 or \u0027svm\u0027 在路径 /proc/cpuinfo 里, 请检查你是否在你的BIOS设置里开启了virtualization选项",
     "arguments": [],
     "line": 2608,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
@@ -2153,8 +2153,8 @@
   },
   {
     "raw": "failed to check bridge[%s] for l2NoVlanNetwork[uuid:%s, name:%s] on kvm host[uuid: %s], %s",
-    "en_US": "failed to check bridge[{0}] for l2NoVlanNetwork[uuid:{1}, name:{2}] on kvm host[uuid: {3}], {4}",
-    "zh_CN": "",
+    "en_US": "failed to check bridge[{0}] for l2NoVlanNetwork[uuid:{1}, name:[{2}] on kvm host[uuid: {3}], {4}",
+    "zh_CN": "在L2网络[uuid:{1}中检查网桥[{0}]失败，名字为[{2}]在物理机t[uuid: {3}]上, {4}",
     "arguments": [
       "cmd.getBridgeName()",
       "l2Network.getUuid()",
@@ -2168,7 +2168,7 @@
   {
     "raw": "failed to create bridge[%s] for l2Network[uuid:%s, type:%s, vlan:%s] on kvm host[uuid:%s], because %s",
     "en_US": "failed to create bridge[{0}] for l2Network[uuid:{1}, type:{2}, vlan:{3}] on kvm host[uuid:{4}], because {5}",
-    "zh_CN": "",
+    "zh_CN": "创建L2网络[uuid:{1}中的网桥[{0}]失败 , 类型为：{2}, vlan:{3}] 在物理机[uuid:{4}]上, 原因： {5}",
     "arguments": [
       "cmd.getBridgeName()",
       "l2Network.getUuid()",
@@ -2183,7 +2183,7 @@
   {
     "raw": "failed to check bridge[%s] for l2VlanNetwork[uuid:%s, name:%s] on kvm host[uuid:%s], %s",
     "en_US": "failed to check bridge[{0}] for l2VlanNetwork[uuid:{1}, name:{2}] on kvm host[uuid:{3}], {4}",
-    "zh_CN": "",
+    "zh_CN": "检查在物理机[uuid:{3}]上L2网络[uuid:{1}, name:{2}]中的网桥[{0}]失败, {4}",
     "arguments": [
       "cmd.getBridgeName()",
       "l2vlan.getUuid()",
@@ -2197,7 +2197,7 @@
   {
     "raw": "failed to apply rules of security group rules to kvm host[uuid:%s], because %s",
     "en_US": "failed to apply rules of security group rules to kvm host[uuid:{0}], because {1}",
-    "zh_CN": "",
+    "zh_CN": "不能应用安全组规则在物理机t[uuid:{0}]上, 因为 {1}",
     "arguments": [
       "hto.getHostUuid()",
       "rsp.getError()"
@@ -2208,7 +2208,7 @@
   {
     "raw": "unable to do vm sync on host[uuid:%s, ip:%s] because %s",
     "en_US": "unable to do vm sync on host[uuid:{0}, ip:{1}] because {2}",
-    "zh_CN": "",
+    "zh_CN": "不能做vm同步在物理机[uuid:{0}, ip:{1}]上 ，因为{2}",
     "arguments": [
       "host.getUuid()",
       "host.getManagementIp()",
@@ -2220,7 +2220,7 @@
   {
     "raw": "hijacked host number detected. Your license[%s] permits %s hosts, but we detect there are %s hosts in the database. You can either delete additional hosts or apply a new license",
     "en_US": "hijacked host number detected. Your license[{0}] permits {1} hosts, but we detect there are {2} hosts in the database. You can either delete additional hosts or apply a new license",
-    "zh_CN": "",
+    "zh_CN": "检测到有误的物理机数量：您的许可证[{0}]允许拥有 {1} 台物理机，但是我们检测到在您的数据库中有{2}台物理机，您可以选择删除这些物理机或者使用新的许可证",
     "arguments": [
       "getLicenseType()",
       "getHostNumAllowedByLicense()",
@@ -2232,7 +2232,7 @@
   {
     "raw": "the vm[name:%s, uuid:%s] already has some port forwarding rules%s attached",
     "en_US": "the vm[name:{0}, uuid:{1}] already has some port forwarding rules{2} attached",
-    "zh_CN": "",
+    "zh_CN": "云主机[name:{0}, uuid:{1}] 已经设置了一些端口转发规则{2}",
     "arguments": [
       "vm.getName()",
       "vm.getUuid()",
@@ -2244,7 +2244,7 @@
   {
     "raw": "the vm[name:%s, uuid:%s] already has some EIPs%s attached",
     "en_US": "the vm[name:{0}, uuid:{1}] already has some EIPs{2} attached",
-    "zh_CN": "",
+    "zh_CN": "云主机[name:{0}, uuid:{1}] 已经配置了弹性IP{2}",
     "arguments": [
       "vm.getName()",
       "vm.getUuid()",
@@ -2256,7 +2256,7 @@
   {
     "raw": "for shareable volume, the only supported primary storage type is ceph, current is %s",
     "en_US": "for shareable volume, the only supported primary storage type is ceph, current is {0}",
-    "zh_CN": "",
+    "zh_CN": "共享数据盘只支持ceph类型的主存储{0}",
     "arguments": [
       "psType"
     ],
@@ -2266,7 +2266,7 @@
   {
     "raw": "invalid network bandwidth[%s], it is not a number",
     "en_US": "invalid network bandwidth[{0}], it is not a number",
-    "zh_CN": "",
+    "zh_CN": "错误的网络带宽[{0}]，这不是数字",
     "arguments": [
       "bandwidth"
     ],
@@ -2276,7 +2276,7 @@
   {
     "raw": "invalid network bandwidth[%s], it must be greater than 0",
     "en_US": "invalid network bandwidth[{0}], it must be greater than 0",
-    "zh_CN": "",
+    "zh_CN": "错误的网络带宽[{0}]，这个数字必须超过0",
     "arguments": [
       "bandwidth"
     ],
@@ -2286,7 +2286,7 @@
   {
     "raw": "invalid volume bandwidth[%s] is not a number",
     "en_US": "invalid volume bandwidth[{0}] is not a number",
-    "zh_CN": "",
+    "zh_CN": "错误的磁盘带宽 ，[{0}] 这个不是数字",
     "arguments": [
       "bandwidth"
     ],
@@ -2296,7 +2296,7 @@
   {
     "raw": "invalid volume bandwidth[%s], it must be greater than 0",
     "en_US": "invalid volume bandwidth[{0}], it must be greater than 0",
-    "zh_CN": "",
+    "zh_CN": "错误的磁盘带宽 ，[{0}] 这个数字必须超过0",
     "arguments": [
       "bandwidth"
     ],
@@ -2306,7 +2306,7 @@
   {
     "raw": "invalid volume IOPS[%s] is not a number",
     "en_US": "invalid volume IOPS[{0}] is not a number",
-    "zh_CN": "",
+    "zh_CN": "错误的磁盘每秒读写速度[{0}]，它应该是个数字",
     "arguments": [
       "bandwidth"
     ],
@@ -2316,7 +2316,7 @@
   {
     "raw": "invalid volume IOPS[%s], it must be greater than 0",
     "en_US": "invalid volume IOPS[{0}], it must be greater than 0",
-    "zh_CN": "",
+    "zh_CN": "错误的磁盘每秒读写速度[{0}]，它应该大于0",
     "arguments": [
       "bandwidth"
     ],
@@ -2326,7 +2326,7 @@
   {
     "raw": "the host[uuid:%s]\u0027s operating system %s %s is too old, the QEMU doesn\u0027t support QoS of network or disk IO. Please choose another instance offering with no QoS configuration",
     "en_US": "the host[uuid:{0}]\u0027s operating system {1} {2} is too old, the QEMU doesn\u0027t support QoS of network or disk IO. Please choose another instance offering with no QoS configuration",
-    "zh_CN": "",
+    "zh_CN": "物理机[uuid:{0}] 的操作系统{1} {2} 过老,  QEMU 不支持磁盘的QOS IO设置 。 请选择别的没有Qos的计算规格",
     "arguments": [
       "hostUuid",
       "distro",
@@ -2338,7 +2338,7 @@
   {
     "raw": "invalid value[%s], it\u0027s not a double",
     "en_US": "invalid value[{0}], it\u0027s not a double",
-    "zh_CN": "",
+    "zh_CN": "错误的值[{0}]，这个不是双精度值",
     "arguments": [
       "newValue"
     ],
@@ -2348,7 +2348,7 @@
   {
     "raw": "invalid value[%s], it must be a double greater than 0",
     "en_US": "invalid value[{0}], it must be a double greater than 0",
-    "zh_CN": "",
+    "zh_CN": "错误的值[{0}]，必须是一个大于0的双精度值",
     "arguments": [
       "newValue"
     ],
@@ -2358,7 +2358,7 @@
   {
     "raw": "invalid value[%s], it must be a double between (0, 1]",
     "en_US": "invalid value[{0}], it must be a double between (0, 1]",
-    "zh_CN": "",
+    "zh_CN": "错误的值[{0}]，这个必须在0~1之间的双精度值",
     "arguments": [
       "newValue"
     ],
@@ -2368,7 +2368,7 @@
   {
     "raw": "invalid value[%s], ZStack doesn\u0027t have such host allocator type",
     "en_US": "invalid value[{0}], ZStack doesn\u0027t have such host allocator type",
-    "zh_CN": "",
+    "zh_CN": "错误值[{0}]，Zstack没有这样的分配器类型",
     "arguments": [
       "newValue"
     ],
@@ -2378,7 +2378,7 @@
   {
     "raw": "Shareable Volume[uuid:%s] has already been attached to VM[uuid:%s]",
     "en_US": "Shareable Volume[uuid:{0}] has already been attached to VM[uuid:{1}]",
-    "zh_CN": "",
+    "zh_CN": "共享云盘[uuid:{0}]已经挂载到云主机[uuid:{1}]上",
     "arguments": [
       "volume.getUuid()",
       "vm.getUuid()"
@@ -2389,7 +2389,7 @@
   {
     "raw": "shareable disk only support virtio-scsi type for now",
     "en_US": "shareable disk only support virtio-scsi type for now",
-    "zh_CN": "",
+    "zh_CN": "目前共享盘只支持virtio-scsi",
     "arguments": [],
     "line": 1408,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
@@ -2397,7 +2397,7 @@
   {
     "raw": "failed to detach shareable volume[uuid:%s] from VmInstance[uuid:%s]",
     "en_US": "failed to detach shareable volume[uuid:{0}] from VmInstance[uuid:{1}]",
-    "zh_CN": "",
+    "zh_CN": "不能卸载云主机[uuid:{1}]上的共享盘[uuid:{0}]",
     "arguments": [
       "msg.getVolume().getUuid()",
       "msg.getVmInstanceUuid()"
@@ -2408,7 +2408,7 @@
   {
     "raw": "failed to detach shareable volume from VmInstance:[\\n%s]",
     "en_US": "failed to detach shareable volume from VmInstance:[\\n{0}]",
-    "zh_CN": "",
+    "zh_CN": "不能卸载云主机[uuid:{0}]上的共享盘",
     "arguments": [
       "StringUtils.join(errors, \"\\n\\n\")"
     ],
@@ -2418,7 +2418,7 @@
   {
     "raw": "l2Network[uuid:%s] has attached to cluster[uuid:%s], can\u0027t attach again",
     "en_US": "l2Network[uuid:{0}] has attached to cluster[uuid:{1}], can\u0027t attach again",
-    "zh_CN": "",
+    "zh_CN": "不能再次挂载l2网络[uuid:{0}]，因为已经挂载到集群[uuid:{1}]上了",
     "arguments": [
       "msg.getL2NetworkUuid()",
       "msg.getClusterUuid()"
@@ -2429,7 +2429,7 @@
   {
     "raw": "There has been a L2VlanNetwork[uuid:%s, name:%s] attached to cluster[uuid:%s] that has physical interface[%s], vlan[%s]. Failed to attach L2VlanNetwork[uuid:%s]",
     "en_US": "There has been a L2VlanNetwork[uuid:{0}, name:{1}] attached to cluster[uuid:{2}] that has physical interface[{3}], vlan[{4}]. Failed to attach L2VlanNetwork[uuid:{5}]",
-    "zh_CN": "",
+    "zh_CN": "L2网络挂载失败[uuid:{5}]：L2网络[uuid:{0}, name:{1}]的物理接口[{3}], vlan[{4}]已经挂载到集群[uuid:{2}]上",
     "arguments": [
       "vl2.getUuid()",
       "vl2.getName()",
@@ -2444,7 +2444,7 @@
   {
     "raw": "There has been a l2Network[uuid:%s, name:%s] attached to cluster[uuid:%s] that has physical interface[%s]. Failed to attach l2Network[uuid:%s]",
     "en_US": "There has been a l2Network[uuid:{0}, name:{1}] attached to cluster[uuid:{2}] that has physical interface[{3}]. Failed to attach l2Network[uuid:{4}]",
-    "zh_CN": "",
+    "zh_CN": "L2网络挂载失败[uuid:{4}]：L2网络[uuid:{0}, name:{1}]的物理接口[{3}]]已经挂载到集群[uuid:{2}]上",
     "arguments": [
       "l2.getUuid()",
       "l2.getName()",
@@ -2458,7 +2458,7 @@
   {
     "raw": "l2Network[uuid:%s] has not attached to cluster[uuid:%s]",
     "en_US": "l2Network[uuid:{0}] has not attached to cluster[uuid:{1}]",
-    "zh_CN": "",
+    "zh_CN": "L2网络[uuid:{0}]没有挂载到集群上[uuid:{1}]",
     "arguments": [
       "msg.getL2NetworkUuid()",
       "msg.getClusterUuid()"
@@ -2469,7 +2469,7 @@
   {
     "raw": "unsupported l2Network type[%s]",
     "en_US": "unsupported l2Network type[{0}]",
-    "zh_CN": "",
+    "zh_CN": "不支持的网络类型[{0}]",
     "arguments": [
       "msg.getType()"
     ],
@@ -2479,7 +2479,7 @@
   {
     "raw": "invalid IP[%s]",
     "en_US": "invalid IP[{0}]",
-    "zh_CN": "",
+    "zh_CN": "错误的IP值[{0}]",
     "arguments": [
       "msg.getIp()"
     ],
@@ -2489,7 +2489,7 @@
   {
     "raw": "ipRangeUuid and l3NetworkUuid cannot both be null; you must set either one.",
     "en_US": "ipRangeUuid and l3NetworkUuid cannot both be null; you must set either one.",
-    "zh_CN": "",
+    "zh_CN": "IP段和L3的uuid不能都为空，您必须选择一个填上",
     "arguments": [],
     "line": 91,
     "fileName": "src/main/java/org/zstack/network/l3/L3NetworkApiInterceptor.java"
@@ -2497,7 +2497,7 @@
   {
     "raw": "%s is not a valid network cidr",
     "en_US": "{0} is not a valid network cidr",
-    "zh_CN": "",
+    "zh_CN": "{0}不是有效的无类别域间路由",
     "arguments": [
       "msg.getNetworkCidr()"
     ],
@@ -2507,7 +2507,7 @@
   {
     "raw": "%s is not an allowed network cidr, because it doesn\u0027t have usable ip range",
     "en_US": "{0} is not an allowed network cidr, because it doesn\u0027t have usable ip range",
-    "zh_CN": "",
+    "zh_CN": "{0}是不允许的无类别域间路由，因为它不支持可用的IP段",
     "arguments": [
       "msg.getNetworkCidr()"
     ],
@@ -2517,7 +2517,7 @@
   {
     "raw": "ipRangeUuids, L3NetworkUuids, zoneUuids must have at least one be none-empty list, or all is set to true",
     "en_US": "ipRangeUuids, L3NetworkUuids, zoneUuids must have at least one be none-empty list, or all is set to true",
-    "zh_CN": "",
+    "zh_CN": "ipRangeUuids, L3NetworkUuids, zoneUuids 至少一个不是为空列表，或者全部不为空",
     "arguments": [],
     "line": 138,
     "fileName": "src/main/java/org/zstack/network/l3/L3NetworkApiInterceptor.java"
@@ -2525,7 +2525,7 @@
   {
     "raw": "unsupported l3network type[%s]",
     "en_US": "unsupported l3network type[{0}]",
-    "zh_CN": "",
+    "zh_CN": "不支持的L3网络类型[{0}]",
     "arguments": [
       "msg.getType()"
     ],
@@ -2535,7 +2535,7 @@
   {
     "raw": "%s is not a valid domain name",
     "en_US": "{0} is not a valid domain name",
-    "zh_CN": "",
+    "zh_CN": "{0}不是有效的域名",
     "arguments": [
       "msg.getDnsDomain()"
     ],
@@ -2545,7 +2545,7 @@
   {
     "raw": "the IP range[%s ~ %s] contains D class addresses which are for multicast",
     "en_US": "the IP range[{0} ~ {1}] contains D class addresses which are for multicast",
-    "zh_CN": "",
+    "zh_CN": "这个IP段[{0} ~ {1}]包含了D类的多播地址",
     "arguments": [
       "ipr.getStartIp()",
       "ipr.getEndIp()"
@@ -2556,7 +2556,7 @@
   {
     "raw": "the IP range[%s ~ %s] contains E class addresses which are reserved",
     "en_US": "the IP range[{0} ~ {1}] contains E class addresses which are reserved",
-    "zh_CN": "",
+    "zh_CN": "这个IP段[{0} ~ {1}]包含了E类的保留地址",
     "arguments": [
       "ipr.getStartIp()",
       "ipr.getEndIp()"
@@ -2567,7 +2567,7 @@
   {
     "raw": "the IP range[%s ~ %s] contains link local addresses which are reserved",
     "en_US": "the IP range[{0} ~ {1}] contains link local addresses which are reserved",
-    "zh_CN": "",
+    "zh_CN": "这个IP段[{0} ~ {1}]包含了本地的保留地址",
     "arguments": [
       "ipr.getStartIp()",
       "ipr.getEndIp()"
@@ -2578,7 +2578,7 @@
   {
     "raw": "the gateway[%s] is not in the subnet %s/%s",
     "en_US": "the gateway[{0}] is not in the subnet {1}/{2}",
-    "zh_CN": "",
+    "zh_CN": "网关[{0}]不在子网{1}/{2}",
     "arguments": [
       "ipr.getGateway()",
       "ipr.getStartIp()",
@@ -2590,7 +2590,7 @@
   {
     "raw": "start ip[%s] is not a IPv4 address",
     "en_US": "start ip[{0}] is not a IPv4 address",
-    "zh_CN": "",
+    "zh_CN": "开始的ip[{0}] 不是IPV4的地址",
     "arguments": [
       "ipr.getStartIp()"
     ],
@@ -2600,7 +2600,7 @@
   {
     "raw": "end ip[%s] is not a IPv4 address",
     "en_US": "end ip[{0}] is not a IPv4 address",
-    "zh_CN": "",
+    "zh_CN": "结束的ip[{0}] 不是IPV4的地址",
     "arguments": [
       "ipr.getEndIp()"
     ],
@@ -2610,7 +2610,7 @@
   {
     "raw": "gateway[%s] is not a IPv4 address",
     "en_US": "gateway[{0}] is not a IPv4 address",
-    "zh_CN": "",
+    "zh_CN": "网关[{0}]不是IPV4的地址",
     "arguments": [
       "ipr.getGateway()"
     ],
@@ -2620,7 +2620,7 @@
   {
     "raw": "netmask[%s] is not a netmask, and the IP range netmask cannot be 0.0.0.0",
     "en_US": "netmask[{0}] is not a netmask, and the IP range netmask cannot be 0.0.0.0",
-    "zh_CN": "",
+    "zh_CN": "子网掩码[{0}]不是子网掩码，并且IP段的子网掩码不能是0.0.0.0",
     "arguments": [
       "ipr.getNetmask()"
     ],
@@ -2630,7 +2630,7 @@
   {
     "raw": "ip allocation can not contain network address or broadcast address",
     "en_US": "ip allocation can not contain network address or broadcast address",
-    "zh_CN": "",
+    "zh_CN": "ip 地址分配不能包含网络地址或广播的地址",
     "arguments": [],
     "line": 225,
     "fileName": "src/main/java/org/zstack/network/l3/L3NetworkApiInterceptor.java"
@@ -2638,7 +2638,7 @@
   {
     "raw": "start ip[%s] is behind end ip[%s]",
     "en_US": "start ip[{0}] is behind end ip[{1}]",
-    "zh_CN": "",
+    "zh_CN": "起始ip[{0}]在尾ip[{1}]后",
     "arguments": [
       "ipr.getStartIp()",
       "ipr.getEndIp()"
@@ -2649,7 +2649,7 @@
   {
     "raw": "gateway[%s] can not be part of range[%s, %s]",
     "en_US": "gateway[{0}] can not be part of range[{1}, {2}]",
-    "zh_CN": "",
+    "zh_CN": "网关[{0}]不能是IP段[{1}, {2}]的一部分",
     "arguments": [
       "ipr.getGateway()",
       "ipr.getStartIp()",
@@ -2661,7 +2661,7 @@
   {
     "raw": "overlap with ip range[uuid:%s, start ip:%s, end ip: %s]",
     "en_US": "overlap with ip range[uuid:{0}, start ip:{1}, end ip: {2}]",
-    "zh_CN": "",
+    "zh_CN": "重叠的IP段[uuid:{0}, 起始ip:{1}, 尾ip: {2}]",
     "arguments": [
       "r.getUuid()",
       "r.getStartIp()",
@@ -2673,7 +2673,7 @@
   {
     "raw": "multiple CIDR on the same L3 network is not allowed. There has been a IP range[uuid:%s, CIDR:%s], the new IP range[CIDR:%s] is not in the CIDR with the existing one",
     "en_US": "multiple CIDR on the same L3 network is not allowed. There has been a IP range[uuid:{0}, CIDR:{1}], the new IP range[CIDR:{2}] is not in the CIDR with the existing one",
-    "zh_CN": "",
+    "zh_CN": "多个无类别域间路由在想通的L3网络上是不允许的，这发生在原有IP范围 [uuid: {0}，CIDR: {1}]。新的IP范围 [CIDR: {2}] 不在现有的一个CIDR",
     "arguments": [
       "ipr.getUuid()",
       "rcidr",
@@ -2685,7 +2685,7 @@
   {
     "raw": "DNS[%s] is not a IPv4 address",
     "en_US": "DNS[{0}] is not a IPv4 address",
-    "zh_CN": "",
+    "zh_CN": "DNS[{0}]不是一个IPv4地址",
     "arguments": [
       "msg.getDns()"
     ],
@@ -2695,7 +2695,7 @@
   {
     "raw": "there has been a DNS[%s] on L3 network[uuid:%s]",
     "en_US": "there has been a DNS[{0}] on L3 network[uuid:{1}]",
-    "zh_CN": "",
+    "zh_CN": "这个发生在L3网络[uuid:{1}]的DNS[{0}]上",
     "arguments": [
       "msg.getDns()",
       "msg.getL3NetworkUuid()"
@@ -2706,7 +2706,7 @@
   {
     "raw": "security group[uuid:%s] has not attached to l3Network[uuid:%s], can\u0027t detach",
     "en_US": "security group[uuid:{0}] has not attached to l3Network[uuid:{1}], can\u0027t detach",
-    "zh_CN": "",
+    "zh_CN": "不能卸载安全组[uuid:{0}]到L3[uuid:{1}]网络上，因为已经挂载了",
     "arguments": [
       "msg.getSecurityGroupUuid()",
       "msg.getL3NetworkUuid()"
@@ -2717,7 +2717,7 @@
   {
     "raw": "security group[uuid:%s] has attached to l3Network[uuid:%s], can\u0027t attach again",
     "en_US": "security group[uuid:{0}] has attached to l3Network[uuid:{1}], can\u0027t attach again",
-    "zh_CN": "",
+    "zh_CN": "不能再次挂载安全组[uuid:{0}]到L3[uuid:{1}]网络上，因为已经挂载了",
     "arguments": [
       "msg.getSecurityGroupUuid()",
       "msg.getL3NetworkUuid()"
@@ -2728,7 +2728,7 @@
   {
     "raw": "the L3 network[uuid:%s] doesn\u0027t have the network service type[%s] enabled",
     "en_US": "the L3 network[uuid:{0}] doesn\u0027t have the network service type[{1}] enabled",
-    "zh_CN": "",
+    "zh_CN": "L3网络[uuid:{0}]没有开启[{1}]类型的网络服务",
     "arguments": [
       "msg.getL3NetworkUuid()",
       "SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE"
@@ -2739,7 +2739,7 @@
   {
     "raw": "VM nics[uuids:%s] are not on L3 networks that have been attached to the security group[uuid:%s]",
     "en_US": "VM nics[uuids:{0}] are not on L3 networks that have been attached to the security group[uuid:{1}]",
-    "zh_CN": "",
+    "zh_CN": "云主机网卡[uuids:{0}]不能在L3网络上，这个已经挂载到安全组[uuid:{1}]了",
     "arguments": [
       "wrongUuids",
       "securityGroupUuid"
