@@ -1,6 +1,7 @@
 package org.zstack.network.l2.vxlan.vxlanNetworkPool;
 
 import org.springframework.http.HttpMethod;
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.network.l2.L2NetworkMessage;
@@ -9,6 +10,7 @@ import org.zstack.header.rest.RestRequest;
 /**
  * Created by weiwang on 09/03/2017.
  */
+@Action(category = "vxlan")
 @RestRequest(
         path = "/l2-networks/vxlan-pool/{l2NetworkUuid}/vni-range",
         method = HttpMethod.POST,

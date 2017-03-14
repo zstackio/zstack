@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class CreateL2VlanNetworkAction extends AbstractAction {
+public class CreateL2VxlanNetworkAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public CreateL2VlanNetworkResult value;
+        public CreateL2VxlanNetworkResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -22,8 +22,11 @@ public class CreateL2VlanNetworkAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,4094L}, noTrim = false)
-    public java.lang.Integer vlan;
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,16777215L}, noTrim = false)
+    public java.lang.Integer vni;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String poolUuid;
 
     @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
@@ -57,21 +60,17 @@ public class CreateL2VlanNetworkAction extends AbstractAction {
     public long pollingInterval;
 
 
-    private Result makeResult(ApiResult res) {
+    public Result call() {
+        ApiResult res = ZSClient.call(this);
         Result ret = new Result();
         if (res.error != null) {
             ret.error = res.error;
             return ret;
         }
         
-        CreateL2VlanNetworkResult value = res.getResult(CreateL2VlanNetworkResult.class);
-        ret.value = value == null ? new CreateL2VlanNetworkResult() : value;
+        CreateL2VxlanNetworkResult value = res.getResult(CreateL2VxlanNetworkResult.class);
+        ret.value = value == null ? new CreateL2VxlanNetworkResult() : value;
         return ret;
-    }
-
-    public Result call() {
-        ApiResult res = ZSClient.call(this);
-        return makeResult(res);
     }
 
     public void call(final Completion<Result> completion) {
@@ -85,8 +84,8 @@ public class CreateL2VlanNetworkAction extends AbstractAction {
                     return;
                 }
                 
-                CreateL2VlanNetworkResult value = res.getResult(CreateL2VlanNetworkResult.class);
-                ret.value = value == null ? new CreateL2VlanNetworkResult() : value;
+                CreateL2VxlanNetworkResult value = res.getResult(CreateL2VxlanNetworkResult.class);
+                ret.value = value == null ? new CreateL2VxlanNetworkResult() : value;
                 completion.complete(ret);
             }
         });
@@ -99,7 +98,7 @@ public class CreateL2VlanNetworkAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/l2-networks/vlan";
+        info.path = "/l2-networks/vxlan";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";

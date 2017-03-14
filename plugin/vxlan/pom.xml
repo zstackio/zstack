@@ -24,11 +24,6 @@
         </dependency>
         <dependency>
             <groupId>org.zstack</groupId>
-            <artifactId>network</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.zstack</groupId>
             <artifactId>header</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -80,10 +75,6 @@
                         <aspectLibrary>
                             <groupId>org.zstack</groupId>
                             <artifactId>header</artifactId>
-                        </aspectLibrary>
-                        <aspectLibrary>
-                            <groupId>org.zstack</groupId>
-                            <artifactId>network</artifactId>
                         </aspectLibrary>
                     </aspectLibraries>
                 </configuration>

@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class CreateL2VlanNetworkAction extends AbstractAction {
+public class CreateVniRangeAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public CreateL2VlanNetworkResult value;
+        public CreateVniRangeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -22,23 +22,23 @@ public class CreateL2VlanNetworkAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,4094L}, noTrim = false)
-    public java.lang.Integer vlan;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String uuid;
 
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
 
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String zoneUuid;
+    public java.lang.Integer startVni;
 
-    @Param(required = true, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String physicalInterface;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Integer endVni;
 
-    @Param(required = false)
-    public java.lang.String type;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String l2NetworkUuid;
 
     @Param(required = false)
     public java.lang.String resourceUuid;
@@ -57,21 +57,17 @@ public class CreateL2VlanNetworkAction extends AbstractAction {
     public long pollingInterval;
 
 
-    private Result makeResult(ApiResult res) {
+    public Result call() {
+        ApiResult res = ZSClient.call(this);
         Result ret = new Result();
         if (res.error != null) {
             ret.error = res.error;
             return ret;
         }
         
-        CreateL2VlanNetworkResult value = res.getResult(CreateL2VlanNetworkResult.class);
-        ret.value = value == null ? new CreateL2VlanNetworkResult() : value;
+        CreateVniRangeResult value = res.getResult(CreateVniRangeResult.class);
+        ret.value = value == null ? new CreateVniRangeResult() : value;
         return ret;
-    }
-
-    public Result call() {
-        ApiResult res = ZSClient.call(this);
-        return makeResult(res);
     }
 
     public void call(final Completion<Result> completion) {
@@ -85,8 +81,8 @@ public class CreateL2VlanNetworkAction extends AbstractAction {
                     return;
                 }
                 
-                CreateL2VlanNetworkResult value = res.getResult(CreateL2VlanNetworkResult.class);
-                ret.value = value == null ? new CreateL2VlanNetworkResult() : value;
+                CreateVniRangeResult value = res.getResult(CreateVniRangeResult.class);
+                ret.value = value == null ? new CreateVniRangeResult() : value;
                 completion.complete(ret);
             }
         });
@@ -99,10 +95,10 @@ public class CreateL2VlanNetworkAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/l2-networks/vlan";
+        info.path = "/l2-networks/vxlan-pool/{l2NetworkUuid}/vni-range";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "null";
         return info;
     }
 
