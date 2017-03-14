@@ -1,10 +1,17 @@
 package org.zstack.test.integration.kvm.vm
 
 import org.springframework.http.HttpEntity
+import org.zstack.header.vm.VmCreationStrategy
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
+import org.zstack.sdk.CreateVmInstanceAction
+import org.zstack.sdk.CreateVmInstanceResult
+import org.zstack.sdk.DiskOfferingInventory
+import org.zstack.sdk.ImageInventory
+import org.zstack.sdk.InstanceOfferingInventory
+import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.test.integration.kvm.Env
 import org.zstack.test.integration.kvm.KvmTest
@@ -41,6 +48,7 @@ test a VM's start/stop/reboot/destroy/recover operations
             testRebootVm()
             testDestroyVm()
             testRecoverVm()
+            testDeleteCreatedVm()
         }
     }
 
@@ -162,6 +170,31 @@ test a VM's start/stop/reboot/destroy/recover operations
 
         def vmvo = dbFindByUuid(cmd.uuid, VmInstanceVO.class)
         assert vmvo.state == VmInstanceState.Stopped
+    }
+
+    void testDeleteCreatedVm() {
+        VmSpec spec = env.specByName("vm")
+        DiskOfferingInventory diskOfferingInventory = env.inventoryByName("diskOffering")
+        InstanceOfferingInventory instanceOfferingInventory = env.inventoryByName("instanceOffering")
+        ImageInventory imageInventory = env.inventoryByName("image1")
+        L3NetworkInventory l3NetworkInventory = env.inventoryByName("l3")
+
+        CreateVmInstanceAction action = new CreateVmInstanceAction()
+        action.name = "JustCreatedVm"
+        action.rootDiskOfferingUuid = diskOfferingInventory.uuid
+        action.instanceOfferingUuid = instanceOfferingInventory.uuid
+        action.imageUuid = imageInventory.uuid
+        action.l3NetworkUuids = [l3NetworkInventory.uuid]
+        action.strategy = VmCreationStrategy.JustCreate.toString()
+        action.sessionId = adminSession()
+        CreateVmInstanceAction.Result result = action.call()
+
+        destroyVmInstance {
+            uuid = result.value.inventory.uuid
+        }
+
+        VmInstanceVO vo = dbFindByUuid(result.value.inventory.uuid, VmInstanceVO.class)
+        assert vo == null
     }
 
     @Override

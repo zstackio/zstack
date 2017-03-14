@@ -28,6 +28,11 @@ use:
                 cpu = 4
             }
 
+            diskOffering {
+                name = "diskOffering"
+                diskSize = SizeUnit.GIGABYTE.toByte(20)
+            }
+
             sftpBackupStorage {
                 name = "sftp"
                 url = "/sftp"
