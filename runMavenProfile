@@ -40,6 +40,18 @@ i18n() {
     ./build/zsi18n  -j conf/i18n.json -d conf/i18n/
 }
 
+notification() {
+    SRC=`pwd`
+    if [ -d premium/test-premium ]; then
+   	cd premium/test-premium
+    else
+    	cd test
+    fi
+
+    mvn test -Dtest=GenerateNotificationHelper -Dsrc=$SRC
+    cd - > /dev/null
+}
+
 sdk() {
     set -u
     rm -rf ~/zstack-sdk/java
@@ -80,6 +92,8 @@ run_profile() {
 	i18njson
     elif test x$1 = x'i18n'; then
 	i18n
+    elif test x$1 = x'notification'; then
+	notification
     else
         mvn -pl build -P $1 exec:exec -D$1
     fi
