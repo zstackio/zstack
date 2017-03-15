@@ -53,7 +53,6 @@
     <TestCase class="org.zstack.test.compute.vm.TestVmStaticIp3"/>
     <TestCase class="org.zstack.test.compute.vm.TestVmStaticIp4"/>
     <TestCase class="org.zstack.test.compute.vm.TestCreateVmWithMultipleSameDataVolume"/>
-    <TestCase class="org.zstack.test.compute.vm.TestUpdateVm"/>
     <TestCase class="org.zstack.test.compute.vm.TestPolicyForVm"/>
     <TestCase class="org.zstack.test.compute.vm.TestPolicyForVm1"/>
     <TestCase class="org.zstack.test.compute.vm.TestPolicyForVm2"/>
