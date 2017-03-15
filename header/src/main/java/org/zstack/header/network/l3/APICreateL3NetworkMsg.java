@@ -3,8 +3,11 @@ package org.zstack.header.network.l3;
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APICreateMessage;
+import org.zstack.header.message.APIEvent;
+import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.network.l2.L2NetworkVO;
+import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
 
 /**
@@ -126,6 +129,20 @@ public class APICreateL3NetworkMsg extends APICreateMessage {
         msg.setL2NetworkUuid(uuid());
 
         return msg;
+    }
+
+    public ApiNotification __notification__() {
+        APIMessage that = this;
+
+        return new ApiNotification() {
+            @Override
+            public void after(APIEvent evt) {
+                if (evt.isSuccess()) {
+                    ntfy("Created").resource(((APICreateL3NetworkEvent)evt).getInventory().getUuid(), L3NetworkVO.class.getSimpleName())
+                            .messageAndEvent(that, evt).done();
+                }
+            }
+        };
     }
 
 }

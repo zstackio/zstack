@@ -1,8 +1,10 @@
 package org.zstack.header.identity;
 
 import org.springframework.http.HttpMethod;
+import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
 
 /**
@@ -47,6 +49,23 @@ public class APIRemoveUserFromGroupMsg extends APIMessage implements AccountMess
         msg.setUserUuid(uuid());
         msg.setGroupUuid(uuid());
         return msg;
+    }
+
+    public ApiNotification __notification__() {
+        APIMessage that = this;
+
+        return new ApiNotification() {
+            @Override
+            public void after(APIEvent evt) {
+                ntfy("Removed from a user group[uuid:%s]", groupUuid).resource(userUuid, UserVO.class.getSimpleName())
+                        .context("groupUuid", groupUuid)
+                        .messageAndEvent(that, evt).done();
+
+                ntfy("Removing a user [uuid:%s]", userUuid).resource(groupUuid, UserGroupVO.class.getSimpleName())
+                        .context("groupUuid", groupUuid)
+                        .messageAndEvent(that, evt).done();
+            }
+        };
     }
 
 }

@@ -2,7 +2,10 @@ package org.zstack.header.network.l2;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIDeleteMessage;
+import org.zstack.header.message.APIEvent;
+import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
 
 /**
@@ -63,6 +66,18 @@ public class APIDeleteL2NetworkMsg extends APIDeleteMessage implements L2Network
         msg.setUuid(uuid());
 
         return msg;
+    }
+
+    public ApiNotification __notification__() {
+        APIMessage that = this;
+
+        return new ApiNotification() {
+            @Override
+            public void after(APIEvent evt) {
+                ntfy("Deleted").resource(uuid, L2NetworkVO.class.getSimpleName())
+                        .messageAndEvent(that, evt).done();
+            }
+        };
     }
 
 }

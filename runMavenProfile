@@ -60,6 +60,30 @@ foreignkey() {
     echo "see ~/zstack-sql/foreignKeys.sql"
 }
 
+notification() {
+    SRC=`pwd`
+    if [ -d premium/test-premium ]; then
+   	cd premium/test-premium
+    else
+    	cd test
+    fi
+
+    mvn test -Dtest=GenerateNotificationHelper -Dsrc=$SRC
+    cd - > /dev/null
+}
+
+notificationapi() {
+    SRC=`pwd`
+    if [ -d premium/test-premium ]; then
+   	cd premium/test-premium
+    else
+    	cd test
+    fi
+
+    mvn test -Dtest=GenerateApiNotificationInApiMessage -Dsrc=$SRC
+    cd - > /dev/null
+}
+
 sdk() {
     set -u
     rm -rf ~/zstack-sdk/java
@@ -102,6 +126,10 @@ run_profile() {
 	i18n
     elif test x$1 = x'foreignkey'; then
 	foreignkey
+    elif test x$1 = x'notification'; then
+	notification
+    elif test x$1 = x'notificationapi'; then
+	notificationapi
     else
         mvn -pl build -P $1 exec:exec -D$1
     fi

@@ -33,7 +33,8 @@ class BeanConstructor {
             "jsonlabel.xml",
             "encrypt.xml",
             "rest.xml",
-            "Progress.xml"
+            "Progress.xml",
+            "notification.xml"
     ]
 
     private List<String> xmls = []

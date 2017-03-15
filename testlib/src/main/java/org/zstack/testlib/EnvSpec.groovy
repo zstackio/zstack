@@ -490,7 +490,8 @@ class EnvSpec implements Node {
                               "GlobalConfigVO", "AsyncRestVO",
                               "AccountVO", "NetworkServiceProviderVO",
                               "NetworkServiceTypeVO", "VmInstanceSequenceNumberVO",
-                              "GarbageCollectorVO", "SystemTagVO", "AccountResourceRefVO"]) {
+                              "GarbageCollectorVO", "SystemTagVO", "AccountResourceRefVO",
+                              "TaskProgressVO", "NotificationVO", "TaskStepVO"]) {
                 //TODO: fix SystemTagVO, AccountResourceRefVO
                 // those tables will continue having entries during running a test suite
                 return

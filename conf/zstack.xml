@@ -95,4 +95,5 @@
     <import resource="springConfigXml/vyos.xml"/>
     <import resource="springConfigXml/rest.xml"/>
     <import resource="springConfigXml/vxlan.xml"/>
+    <import resource="springConfigXml/notification.xml"/>
 </beans>

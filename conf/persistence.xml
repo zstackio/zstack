@@ -137,5 +137,7 @@
         <class>org.zstack.storage.ceph.primary.CephPrimaryStoragePoolVO</class>
         <class>org.zstack.header.core.progress.TaskProgressVO</class>
         <class>org.zstack.header.core.progress.TaskStepVO</class>
+        <class>org.zstack.core.notification.NotificationVO</class>
+        <class>org.zstack.core.notification.NotificationSubscriptionVO</class>
     </persistence-unit>
 </persistence>

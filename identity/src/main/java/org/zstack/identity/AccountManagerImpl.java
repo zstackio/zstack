@@ -31,10 +31,10 @@ import org.zstack.header.identity.IdentityCanonicalEvents.UserDeletedData;
 import org.zstack.header.identity.PolicyInventory.Statement;
 import org.zstack.header.identity.Quota.QuotaPair;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
-import org.zstack.header.message.APIListMessage;
-import org.zstack.header.message.APIMessage;
-import org.zstack.header.message.APIParam;
-import org.zstack.header.message.Message;
+import org.zstack.header.message.*;
+import org.zstack.header.notification.ApiNotification;
+import org.zstack.header.notification.ApiNotificationFactory;
+import org.zstack.header.notification.ApiNotificationFactoryExtensionPoint;
 import org.zstack.header.search.APIGetMessage;
 import org.zstack.header.search.APISearchMessage;
 import org.zstack.utils.*;
@@ -62,7 +62,8 @@ import java.util.regex.Pattern;
 import static org.zstack.utils.CollectionDSL.list;
 
 public class AccountManagerImpl extends AbstractService implements AccountManager, PrepareDbInitialValueExtensionPoint,
-        SoftDeleteEntityExtensionPoint, HardDeleteEntityExtensionPoint, GlobalApiMessageInterceptor, ApiMessageInterceptor {
+        SoftDeleteEntityExtensionPoint, HardDeleteEntityExtensionPoint,
+        GlobalApiMessageInterceptor, ApiMessageInterceptor, ApiNotificationFactoryExtensionPoint {
     private static final CLogger logger = Utils.getLogger(AccountManagerImpl.class);
 
     @Autowired
@@ -90,6 +91,64 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     private HashSet<Class> accountApiControl = new HashSet<>();
     private HashSet<Class> accountApiControlInternal = new HashSet<>();
     private List<Quota> definedQuotas = new ArrayList<>();
+
+    @Override
+    public Map<Class, ApiNotificationFactory> apiNotificationFactory() {
+        Map<Class, ApiNotificationFactory> factories = new HashMap<>();
+
+        factories.put(APIChangeResourceOwnerMsg.class, new ApiNotificationFactory() {
+            @Override
+            public ApiNotification createApiNotification(APIMessage msg) {
+                APIChangeResourceOwnerMsg cmsg = (APIChangeResourceOwnerMsg) msg;
+
+                return new ApiNotification() {
+                    String originAccountUuid;
+                    String resourceType;
+
+                    @Override
+                    public void before() {
+                        Tuple tuple = Q.New(AccountResourceRefVO.class)
+                                .select(AccountResourceRefVO_.accountUuid, AccountResourceRefVO_.resourceType)
+                                .eq(AccountResourceRefVO_.resourceUuid, cmsg.getResourceUuid()).findTuple();
+
+                        originAccountUuid = tuple.get(0, String.class);
+                        resourceType = tuple.get(1, String.class);
+                    }
+
+                    @Override
+                    public void after(APIEvent evt) {
+                        ntfy("changing the ownership to the account[uuid:%s]", cmsg.getAccountUuid())
+                                .resource(cmsg.getResourceUuid(), resourceType)
+                                .context("srcAccountUuid", originAccountUuid)
+                                .context("dstAccountUuid", cmsg.getAccountUuid())
+                                .messageAndEvent(cmsg, evt)
+                                .done();
+
+                        ntfy("transferring a resource[type: %s, uuid: %s] to the account[uuid:%s]", resourceType, cmsg.getResourceUuid(), cmsg.getAccountUuid())
+                                .resource(originAccountUuid, AccountVO.class.getSimpleName())
+                                .context("dstAccountUuid", cmsg.getAccountUuid())
+                                .context("resourceUuid", cmsg.getResourceUuid())
+                                .context("resourceType", resourceType)
+                                .messageAndEvent(cmsg, evt)
+                                .done();
+
+                        ntfy("receiving a resource[type: %s, uuid: %s] from the account[uuid:%s]", resourceType, cmsg.getResourceUuid(), originAccountUuid)
+                                .resource(originAccountUuid, AccountVO.class.getSimpleName())
+                                .context("srcAccountUuid", cmsg.getAccountUuid())
+                                .context("resourceUuid", cmsg.getResourceUuid())
+                                .context("resourceType", resourceType)
+                                .messageAndEvent(cmsg, evt)
+                                .done();
+                    }
+                };
+            }
+        });
+
+        // TODO: handle APIRevokeResourceSharingMsg
+        // TODO: handle APIShareResourceMsg
+
+        return factories;
+    }
 
     class AccountCheckField {
         Field field;

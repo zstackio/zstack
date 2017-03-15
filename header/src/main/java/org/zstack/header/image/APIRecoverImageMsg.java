@@ -2,8 +2,10 @@ package org.zstack.header.image;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
+import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
 
 import java.util.Collections;
@@ -51,4 +53,17 @@ public class APIRecoverImageMsg extends APIMessage implements ImageMessage {
         return msg;
     }
 
+    public ApiNotification __notification__() {
+        APIMessage that = this;
+
+        return new ApiNotification() {
+            @Override
+            public void after(APIEvent evt) {
+                ntfy("Recovered on backup storage[uuids: %s]", backupStorageUuids)
+                        .resource(imageUuid, ImageVO.class.getSimpleName())
+                        .context("backupStorageUuid", backupStorageUuids)
+                        .messageAndEvent(that, evt).done();
+            }
+        };
+    }
 }

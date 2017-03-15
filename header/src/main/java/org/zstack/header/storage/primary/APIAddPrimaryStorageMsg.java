@@ -1,7 +1,10 @@
 package org.zstack.header.storage.primary;
 
 import org.zstack.header.message.APICreateMessage;
+import org.zstack.header.message.APIEvent;
+import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.zone.ZoneVO;
 
 public abstract class APIAddPrimaryStorageMsg extends APICreateMessage {
@@ -78,5 +81,19 @@ public abstract class APIAddPrimaryStorageMsg extends APICreateMessage {
 
     public void setZoneUuid(String zoneUuid) {
         this.zoneUuid = zoneUuid;
+    }
+
+    public ApiNotification __notification__() {
+        APIMessage that = this;
+
+        return new ApiNotification() {
+            @Override
+            public void after(APIEvent evt) {
+                if (evt.isSuccess()) {
+                    ntfy("Created").resource(((APIAddPrimaryStorageEvent)evt).getInventory().getUuid(), PrimaryStorageVO.class.getSimpleName())
+                        .messageAndEvent(that, evt).done();
+                }
+            }
+        };
     }
 }
