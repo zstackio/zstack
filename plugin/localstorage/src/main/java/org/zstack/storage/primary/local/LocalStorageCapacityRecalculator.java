@@ -98,7 +98,13 @@ public class LocalStorageCapacityRecalculator {
                     createQuery(sqlLocalStorageHostRefVO, LocalStorageHostRefVO.class);
             query.setParameter("hostUuid", hostUuid);
             query.setParameter("primaryStorageUuid", psUuid);
-            LocalStorageHostRefVO ref = query.setLockMode(LockModeType.PESSIMISTIC_WRITE).getSingleResult();
+            LocalStorageHostRefVO ref;
+            List<LocalStorageHostRefVO> localStorageHostRefVOS = query.setLockMode(LockModeType.PESSIMISTIC_WRITE).getResultList();
+            if(localStorageHostRefVOS.size() > 0){
+                ref = localStorageHostRefVOS.get(0);
+            }else{
+                break;
+            }
 
             long old = ref.getAvailableCapacity();
             long avail = ref.getTotalCapacity() - used - ref.getSystemUsedCapacity();
