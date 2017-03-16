@@ -5,7 +5,12 @@ usage() {
 }
 
 py() {
-    cd test
+    if [ -d premium/test-premium ]; then
+        cd premium/test-premium
+    else
+        cd test
+    fi
+
     mvn test -Dtest=TestGenerateApiPythonClassAndJsonTemplate
     cd - > /dev/null
 }
