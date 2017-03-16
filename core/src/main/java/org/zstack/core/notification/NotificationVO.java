@@ -36,9 +36,19 @@ public class NotificationVO {
     @Column
     private long time;
     @Column
+    private String opaque;
+    @Column
     private Timestamp createDate;
     @Column
     private Timestamp lastOpDate;
+
+    public String getOpaque() {
+        return opaque;
+    }
+
+    public void setOpaque(String opaque) {
+        this.opaque = opaque;
+    }
 
     public long getTime() {
         return time;

@@ -4,6 +4,7 @@ import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.rest.RestResponse;
 
@@ -68,4 +69,13 @@ public class APIDestroyVmInstanceMsg extends APIDeleteMessage implements VmInsta
         return msg;
     }
 
+    public static ApiNotification __notification__(APIDestroyVmInstanceMsg msg, APIDestroyVmInstanceEvent evt) {
+        return new ApiNotification() {
+            @Override
+            public void makeNotifications() {
+                ntfy("Destroying VM").resource(msg.getUuid(), VmInstanceVO.class.getSimpleName())
+                        .successOrNot(evt).done();
+            }
+        };
+    }
 }
