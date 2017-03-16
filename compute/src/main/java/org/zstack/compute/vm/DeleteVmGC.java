@@ -3,6 +3,7 @@ package org.zstack.compute.vm;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.Q;
 import org.zstack.core.gc.EventBasedGarbageCollector;
+import org.zstack.core.gc.GC;
 import org.zstack.core.gc.GCCompletion;
 import org.zstack.header.host.*;
 import org.zstack.header.message.MessageReply;
@@ -13,7 +14,9 @@ import static org.zstack.core.Platform.operr;
  * Created by xing5 on 2017/3/3.
  */
 public class DeleteVmGC extends EventBasedGarbageCollector {
+    @GC
     public String hostUuid;
+    @GC
     public VmInstanceInventory inventory;
 
     @Override
