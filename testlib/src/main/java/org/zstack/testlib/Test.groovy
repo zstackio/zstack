@@ -351,6 +351,9 @@ abstract class Test implements ApiHelper {
 
                 caseResult.success = true
                 logger.info("a sub case[${c.class}] of suite[${this.class}] completes without any error")
+            } catch (StopTestSuiteException e) {
+                hasFailure = true
+                break
             } catch (Throwable t) {
                 hasFailure = true
 
@@ -367,29 +370,27 @@ abstract class Test implements ApiHelper {
             }
         }
 
-        Runtime.getRuntime().addShutdownHook {
-            int success = 0
-            int failure = 0
-            int skipped = 0
-            allResults.each {
-                if (it.success == null) {
-                    skipped ++
-                } else if (it.success) {
-                    success ++
-                } else {
-                    failure ++
-                }
+        int success = 0
+        int failure = 0
+        int skipped = 0
+        allResults.each {
+            if (it.success == null) {
+                skipped ++
+            } else if (it.success) {
+                success ++
+            } else {
+                failure ++
             }
-
-            def summary = new File([dir.absolutePath, "summary"].join("/"))
-            summary.write(JSONObjectUtil.toJsonString([
-                    "total" : allResults.size(),
-                    "success": success,
-                    "failure": failure,
-                    "skipped": skipped,
-                    "passRate": ((float)success / (float)allResults.size()) * 100
-            ]))
         }
+
+        def summary = new File([dir.absolutePath, "summary"].join("/"))
+        summary.write(JSONObjectUtil.toJsonString([
+                "total" : allResults.size(),
+                "success": success,
+                "failure": failure,
+                "skipped": skipped,
+                "passRate": ((float)success / (float)allResults.size()) * 100
+        ]))
 
         if (hasFailure) {
             // some cases failed, exit with code 1

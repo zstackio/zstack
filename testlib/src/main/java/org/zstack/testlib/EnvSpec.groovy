@@ -358,8 +358,9 @@ class EnvSpec implements Node {
             if (count > 0) {
                 logger.fatal("[${Test.CURRENT_SUB_CASE != null ? Test.CURRENT_SUB_CASE.class : this.class}] EnvSpec.delete() didn't cleanup the environment, there are still records in the database" +
                         " table ${type.name}, go fix it immediately!!! Abort the system")
-                // abort the system
-                System.exit(1)
+
+                // abort the test suite
+                throw new StopTestSuiteException()
             }
         }
     }
