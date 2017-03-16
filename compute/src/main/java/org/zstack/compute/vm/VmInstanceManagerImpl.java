@@ -9,9 +9,7 @@ import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.DbEntityLister;
-import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.jsonlabel.JsonLabel;
@@ -1927,6 +1925,23 @@ public class VmInstanceManagerImpl extends AbstractService implements
     }
 
     private void validateAPIChangeResourceOwnerMsg(APIChangeResourceOwnerMsg msg) {
+        Tuple result = SQL.New("select avo.type , vvo.uuid from AccountVO avo ,VmInstanceVO vvo where avo.uuid =:auuid and vvo.uuid =:vuuid ", Tuple.class)
+                .param("auuid", msg.getAccountUuid()).param("vuuid", msg.getResourceUuid())
+                .find();
+        AccountType accountType = (AccountType) result.get(0);
+        String vmvoUuid = (String) result.get(1);
+
+        if (vmvoUuid != null && accountType == AccountType.Normal) {
+            String l3Uuid = Q.New(VmInstanceVO.class).select(VmInstanceVO_.defaultL3NetworkUuid).eq(VmInstanceVO_.uuid, msg.getResourceUuid()).findValue();
+            Tuple result2 = SQL.New("select id from SharedResourceVO where resourceUuid=(select defaultL3NetworkUuid from VmInstanceVO where  uuid=:vmvoUuid)", Tuple.class)
+                    .param("vmvoUuid", vmvoUuid).find();
+            if (result2 == null) {
+                throw new OperationFailureException(errf.stringToOperationError(
+                        String.format("The account [uuid : %s] does not have the host's [uuid : %s] network [uuid : %s] permissions", msg.getAccountUuid(), vmvoUuid, l3Uuid)
+                ));
+            }
+        }
+
         SimpleQuery<AccountResourceRefVO> q = dbf.createQuery(AccountResourceRefVO.class);
         q.add(AccountResourceRefVO_.resourceUuid, Op.EQ, msg.getResourceUuid());
         AccountResourceRefVO ref = q.find();
@@ -1942,6 +1957,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
             throw new OperationFailureException(operr("the resource[uuid:%s] is a ROOT volume, you cannot change its owner, instead," +
                             "change the owner of the VM the root volume belongs to", ref.getResourceUuid()));
         }
+
     }
 
 
