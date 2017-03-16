@@ -69,11 +69,11 @@ public class APIDestroyVmInstanceMsg extends APIDeleteMessage implements VmInsta
         return msg;
     }
 
-    public static ApiNotification __notification__(APIDestroyVmInstanceMsg msg, APIDestroyVmInstanceEvent evt) {
+    public ApiNotification __notification__(APIDestroyVmInstanceEvent evt) {
         return new ApiNotification() {
             @Override
             public void makeNotifications() {
-                ntfy("Destroying VM").resource(msg.getUuid(), VmInstanceVO.class.getSimpleName())
+                ntfy("Destroying VM").resource(uuid, VmInstanceVO.class.getSimpleName())
                         .successOrNot(evt).done();
             }
         };

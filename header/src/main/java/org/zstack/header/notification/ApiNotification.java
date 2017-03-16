@@ -19,6 +19,26 @@ public abstract class ApiNotification {
         String resourceType;
         Boolean success;
 
+        public String getContent() {
+            return content;
+        }
+
+        public Object[] getArguments() {
+            return arguments;
+        }
+
+        public String getResourceUuid() {
+            return resourceUuid;
+        }
+
+        public String getResourceType() {
+            return resourceType;
+        }
+
+        public Boolean getSuccess() {
+            return success;
+        }
+
         public Inner(String content, Object[] arguments) {
             this.content = content;
             this.arguments = arguments;
@@ -47,4 +67,11 @@ public abstract class ApiNotification {
 
     public abstract void makeNotifications();
 
+    public List<Inner> getInners() {
+        return inners;
+    }
+
+    public void setInners(List<Inner> inners) {
+        this.inners = inners;
+    }
 }

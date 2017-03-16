@@ -15,6 +15,7 @@ public class NotificationBuilder {
     String sender = NotificationConstant.SYSTEM_SENDER;
     String resourceUuid;
     String resourceType;
+    Object opaque;
     List arguments = new ArrayList();
     NotificationType type = NotificationType.Info;
 
@@ -36,8 +37,14 @@ public class NotificationBuilder {
 
         return this;
     }
+
     public NotificationBuilder sender(String sender) {
         this.sender = sender;
+        return this;
+    }
+
+    public NotificationBuilder opaque(Object opaque) {
+        this.opaque = opaque;
         return this;
     }
 

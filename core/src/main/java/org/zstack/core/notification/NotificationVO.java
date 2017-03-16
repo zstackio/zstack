@@ -1,8 +1,5 @@
 package org.zstack.core.notification;
 
-import org.zstack.header.vo.*;
-import org.zstack.header.vo.ForeignKey;
-
 import javax.persistence.*;
 import java.sql.Timestamp;
 
