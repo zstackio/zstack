@@ -1,13 +1,11 @@
 package org.zstack.header.network.l2
 
-import org.zstack.header.network.l2.APIAttachL2NetworkToClusterEvent
-
 doc {
-    title "挂载二层网络到集群(AttachL2NetworkToCluster)"
+    title "AttachL2NetworkToCluster"
 
-    category "二层网络"
+    category "network.l2"
 
-    desc "挂载二层网络到集群"
+    desc "在这里填写API描述"
 
     rest {
         request {
@@ -45,7 +43,7 @@ doc {
 				column {
 					name "systemTags"
 					enclosedIn ""
-					desc "系统标签"
+					desc ""
 					location "body"
 					type "List"
 					optional true
@@ -55,7 +53,7 @@ doc {
 				column {
 					name "userTags"
 					enclosedIn ""
-					desc "用户标签"
+					desc ""
 					location "body"
 					type "List"
 					optional true
