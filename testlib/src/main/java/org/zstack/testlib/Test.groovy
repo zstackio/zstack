@@ -294,7 +294,7 @@ abstract class Test implements ApiHelper {
     }
 
     static class SubCaseResult {
-        boolean success
+        Boolean success
         String error
         String name
     }
@@ -322,9 +322,18 @@ abstract class Test implements ApiHelper {
         caseTypes = caseTypes.findAll { it.package.name.startsWith(this.class.package.name) }
         caseTypes = caseTypes.sort()
 
+        String listCases = System.getProperty("list")
+        if (listCases != null) {
+            def cases = new File([dir.absolutePath, "cases"].join("/"))
+            cases.write(caseTypes.collect {it.name}.join("\n"))
+            return
+        }
+
         if (caseTypes.isEmpty()) {
             return
         }
+
+        boolean hasFailure = false
 
         for (Class type in caseTypes) {
             def c = type.newInstance() as Case
@@ -343,6 +352,8 @@ abstract class Test implements ApiHelper {
                 caseResult.success = true
                 logger.info("a sub case[${c.class}] of suite[${this.class}] completes without any error")
             } catch (Throwable t) {
+                hasFailure = true
+
                 caseResult.success = false
                 caseResult.error = t.message
 
@@ -356,25 +367,31 @@ abstract class Test implements ApiHelper {
             }
         }
 
-        int success = 0
-        int failure = 0
-        allResults.each {
-            if (it.success) {
-                success ++
-            } else {
-                failure ++
+        Runtime.getRuntime().addShutdownHook {
+            int success = 0
+            int failure = 0
+            int skipped = 0
+            allResults.each {
+                if (it.success == null) {
+                    skipped ++
+                } else if (it.success) {
+                    success ++
+                } else {
+                    failure ++
+                }
             }
+
+            def summary = new File([dir.absolutePath, "summary"].join("/"))
+            summary.write(JSONObjectUtil.toJsonString([
+                    "total" : allResults.size(),
+                    "success": success,
+                    "failure": failure,
+                    "skipped": skipped,
+                    "passRate": ((float)success / (float)allResults.size()) * 100
+            ]))
         }
 
-        def summary = new File([dir.absolutePath, "summary"].join("/"))
-        summary.write(JSONObjectUtil.toJsonString([
-                "total" : allResults.size(),
-                "success": success,
-                "failure": failure,
-                "passRate": ((float)success / (float)allResults.size()) * 100
-        ]))
-
-        if (failure != 0) {
+        if (hasFailure) {
             // some cases failed, exit with code 1
             System.exit(1)
         }
