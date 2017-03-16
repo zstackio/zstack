@@ -4,6 +4,8 @@ import org.zstack.header.configuration.PythonClassInventory;
 import org.zstack.header.query.ExpandedQueries;
 import org.zstack.header.query.ExpandedQuery;
 import org.zstack.header.query.Queryable;
+import org.zstack.header.search.Inventory;
+import org.zstack.header.search.Parent;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
 
 import javax.persistence.JoinColumn;
@@ -15,9 +17,10 @@ import java.util.List;
  * Created by weiwang on 08/03/2017.
  */
 @PythonClassInventory
+@Inventory(mappingVOClass = VniRangeVO.class)
 @ExpandedQueries({
         @ExpandedQuery(expandedField = "vxlanPool", inventoryClass = L2VxlanNetworkPoolInventory.class,
-                foreignKey = "poolUuid", expandedInventoryKey = "uuid")
+                foreignKey = "l2NetworkUuid", expandedInventoryKey = "uuid")
 })
 public class VniRangeInventory {
     private String uuid;

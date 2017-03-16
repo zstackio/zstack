@@ -1,9 +1,11 @@
 package org.zstack.network.l2.vxlan.vxlanNetworkPool;
 
 import org.zstack.header.tag.AutoDeleteTag;
+import org.zstack.header.vo.ForeignKey;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.Id;
 import javax.persistence.Table;
 
 /**
@@ -13,6 +15,7 @@ import javax.persistence.Table;
 @Table
 @AutoDeleteTag
 public class VniRangeVO {
+    @Id
     @Column
     private String uuid;
 
@@ -29,6 +32,7 @@ public class VniRangeVO {
     private Integer endVni;
 
     @Column
+    @ForeignKey(parentEntityClass = VxlanNetworkPoolVO.class, onDeleteAction = ForeignKey.ReferenceOption.CASCADE)
     private String l2NetworkUuid;
 
     public String getUuid() {

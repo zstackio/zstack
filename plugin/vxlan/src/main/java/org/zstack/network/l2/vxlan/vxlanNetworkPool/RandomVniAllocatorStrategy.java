@@ -8,10 +8,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.criteria.CriteriaBuilder;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 /**
  * Created by weiwang on 10/03/2017.
@@ -63,8 +60,8 @@ public class RandomVniAllocatorStrategy extends AbstractVniAllocatorStrategy {
     private Integer allocateVni(VniRangeVO vo) {
         int total = vo.size();
         Random random = new Random();
-        long s = random.nextInt(total) + vo.getStartVni();
-        long e = vo.getEndVni();
+        Integer s = random.nextInt(total) + vo.getStartVni();
+        Integer e = vo.getEndVni();
         Integer ret = steppingAllocate(s ,e, total, vo.getUuid(), vo.getL2NetworkUuid());
         if (ret != null) {
             return ret;
@@ -75,7 +72,7 @@ public class RandomVniAllocatorStrategy extends AbstractVniAllocatorStrategy {
         return steppingAllocate(s ,e, total, vo.getUuid(), vo.getL2NetworkUuid());
     }
 
-    private Integer steppingAllocate(long s, long e, int total, String rangeUuid, String poolUuid) {
+    private Integer steppingAllocate(Integer s, Integer e, int total, String rangeUuid, String poolUuid) {
         int step = 254;
         int failureCount = 0;
         int failureCheckPoint = 5;
@@ -100,7 +97,7 @@ public class RandomVniAllocatorStrategy extends AbstractVniAllocatorStrategy {
                 }
             }
 
-            long te = s + step;
+            int te = s + step;
             te = te > e ? e : te;
             SimpleQuery<VxlanNetworkVO> q = dbf.createQuery(VxlanNetworkVO.class);
             q.select(VxlanNetworkVO_.vni);
@@ -115,10 +112,32 @@ public class RandomVniAllocatorStrategy extends AbstractVniAllocatorStrategy {
 
             Collections.sort(used);
 
-            // TODO(WeiW): Not Implemented yet
-            return 1;
+            return randomAllocateVni(s, te, used);
         }
 
         return null;
     }
+
+    private static Integer randomAllocateVni(Integer startVni, Integer endVni, List<Long> allocatedVnis) {
+        int total = (endVni - startVni + 1);
+        if (total == allocatedVnis.size()) {
+            return null;
+        }
+
+        BitSet full = new BitSet(total);
+        for (long alloc : allocatedVnis) {
+            full.set((int) (alloc-startVni));
+        }
+
+        Random random = new Random();
+        int next = random.nextInt(total);
+        int a = full.nextClearBit(next);
+
+        if (a >= total) {
+            a = full.nextClearBit(0);
+        }
+
+        return a + startVni;
+    }
+
 }

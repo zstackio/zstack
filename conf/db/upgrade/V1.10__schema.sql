@@ -71,7 +71,7 @@ CREATE TABLE `zstack`.`VxlanNetworkPoolVO` (
 CREATE TABLE `zstack`.`VtepVO` (
   `uuid` varchar(32) NOT NULL UNIQUE,
   `hostUuid` varchar(32) NOT NULL,
-  `vtepIp` int NOT NULL,
+  `vtepIp` varchar(32) NOT NULL,
   `port` int NOT NULL,
   `clusterUuid` varchar(32) NOT NULL,
   `type` varchar(32) NOT NULL,
@@ -92,7 +92,8 @@ CREATE TABLE `zstack`.`VniRangeVO` (
   `description` varchar(2048) DEFAULT NULL COMMENT 'description',
   `l2NetworkUuid` varchar(32) NOT NULL COMMENT 'l3 network uuid',
   `startVni` INT NOT NULL COMMENT 'start vni',
-  `endVni` INT NOT NULL COMMENT 'end vni'
+  `endVni` INT NOT NULL COMMENT 'end vni',
+  PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE VxlanNetworkVO ADD CONSTRAINT fkVxlanNetworkVOL2NetworkEO FOREIGN KEY (uuid) REFERENCES L2NetworkEO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE;

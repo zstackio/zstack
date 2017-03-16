@@ -21,8 +21,6 @@ public abstract class AbstractVniAllocatorStrategy implements VniAllocatorStrate
     @Autowired
     protected L2NetworkManager l2NwMgr;
     @Autowired
-    protected L2VxlanNetworkPoolManager l2VxlanNwMgr;
-    @Autowired
     protected ErrorFacade errf;
 
     protected Integer allocateRequiredVni(VniAllocateMessage msg) {

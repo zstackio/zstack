@@ -3,6 +3,7 @@ package org.zstack.network.l2.vxlan.vxlanNetworkPool;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.header.Component;
 import org.zstack.header.network.l2.*;
 import org.zstack.query.QueryFacade;
 import org.zstack.utils.Utils;
@@ -12,7 +13,7 @@ import org.zstack.utils.logging.CLogger;
 /**
  * Created by weiwang on 03/03/2017.
  */
-public class VxlanNetworkPoolFactory implements L2NetworkFactory {
+public class VxlanNetworkPoolFactory implements L2NetworkFactory, Component {
     private static CLogger logger = Utils.getLogger(VxlanNetworkPool.class);
     static L2NetworkType type = new L2NetworkType(VxlanNetworkPoolConstant.VXLAN_NETWORK_POOL_TYPE);
 
@@ -41,5 +42,15 @@ public class VxlanNetworkPoolFactory implements L2NetworkFactory {
     @Override
     public L2Network getL2Network(L2NetworkVO vo) {
         return new VxlanNetworkPool(vo);
+    }
+
+    @Override
+    public boolean start() {
+        return true;
+    }
+
+    @Override
+    public boolean stop() {
+        return true;
     }
 }

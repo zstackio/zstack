@@ -12,10 +12,10 @@
     http://zstack.org/schema/zstack/plugin.xsd"
        default-init-method="init" default-destroy-method="destroy">
 
-
-    <bean id="L2VxlanNetworkPoolManager" class="org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPool">
+    <bean id="L2VxlanNetworkPoolFactory" class="org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolFactory">
         <zstack:plugin>
-            <zstack:extension interface="org.zstack.network.l2.vxlan.vxlanNetworkPool.L2VxlanNetworkPoolManager"/>
+            <zstack:extension interface="org.zstack.header.Component"/>
+            <zstack:extension interface="org.zstack.header.network.l2.L2NetworkFactory"/>
         </zstack:plugin>
     </bean>
 

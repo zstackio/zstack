@@ -51,8 +51,6 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
     @Autowired
     protected L2NetworkManager l2Mgr;
     @Autowired
-    protected L2VxlanNetworkPoolManager l2VxlanMgr;
-    @Autowired
     protected InventoryFacade inventoryMgr;
     @Autowired
     protected CascadeFacade casf;
@@ -131,7 +129,7 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
 
     private void handle(AllocateVniMsg msg) {
         VniAllocatorType strategyType = msg.getAllocateStrategy() == null ? RandomVniAllocatorStrategy.type : VniAllocatorType.valueOf(msg.getAllocateStrategy());
-        VniAllocatorStrategy vas = l2VxlanMgr.getVniAllocatorStrategy(strategyType);
+        VniAllocatorStrategy vas = getVniAllocatorStrategy(strategyType);
         AllocateVniReply reply = new AllocateVniReply();
         Integer vni = vas.allocateVni(msg);
         if (vni == null) {
