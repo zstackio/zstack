@@ -297,6 +297,7 @@ abstract class Test implements ApiHelper {
         Boolean success
         String error
         String name
+        transient Class caseType
     }
 
     static Case CURRENT_SUB_CASE
@@ -316,8 +317,6 @@ abstract class Test implements ApiHelper {
         dir.deleteDir()
         dir.mkdirs()
 
-        List<SubCaseResult> allResults = []
-
         def caseTypes = Platform.reflections.getSubTypesOf(Case.class)
         caseTypes = caseTypes.findAll { it.package.name.startsWith(this.class.package.name) }
         caseTypes = caseTypes.sort()
@@ -333,14 +332,17 @@ abstract class Test implements ApiHelper {
             return
         }
 
+        List<SubCaseResult> allCases = caseTypes.collect {
+            SubCaseResult ret = new SubCaseResult()
+            ret.caseType = it
+            ret.name = it.simpleName
+            return ret
+        }
+
         boolean hasFailure = false
 
-        for (Class type in caseTypes) {
-            def c = type.newInstance() as Case
-            def caseResult = new SubCaseResult()
-            caseResult.name = c.class.simpleName
-
-            allResults.add(caseResult)
+        for (SubCaseResult r in allCases) {
+            def c = r.caseType.newInstance() as Case
 
             logger.info("starts running a sub case[${c.class}] of suite[${this.class}]")
             try {
@@ -349,7 +351,7 @@ abstract class Test implements ApiHelper {
                 beforeRunSubCase()
                 c.run()
 
-                caseResult.success = true
+                r.success = true
                 logger.info("a sub case[${c.class}] of suite[${this.class}] completes without any error")
             } catch (StopTestSuiteException e) {
                 hasFailure = true
@@ -357,14 +359,14 @@ abstract class Test implements ApiHelper {
             } catch (Throwable t) {
                 hasFailure = true
 
-                caseResult.success = false
-                caseResult.error = t.message
+                r.success = false
+                r.error = t.message
 
                 logger.error("a sub case [${c.class}] of suite[${this.class}] fails, ${t.message}", t)
             } finally {
-                def fname = c.class.name.replace(".", "_") + "." + (caseResult.success ? "success" : "failure")
+                def fname = c.class.name.replace(".", "_") + "." + (r.success ? "success" : "failure")
                 def rfile = new File([dir.absolutePath, fname].join("/"))
-                rfile.write(JSONObjectUtil.toJsonString(caseResult))
+                rfile.write(JSONObjectUtil.toJsonString(r))
 
                 logger.info("write test result of a sub case [${c.class}] of suite[${this.class}] to $fname")
             }
@@ -373,8 +375,11 @@ abstract class Test implements ApiHelper {
         int success = 0
         int failure = 0
         int skipped = 0
-        allResults.each {
+        allCases.each {
             if (it.success == null) {
+                def fname = it.caseType.name.replace(".", "_") + ".skipped"
+                def rfile = new File([dir.absolutePath, fname].join("/"))
+                rfile.createNewFile()
                 skipped ++
             } else if (it.success) {
                 success ++
@@ -385,11 +390,11 @@ abstract class Test implements ApiHelper {
 
         def summary = new File([dir.absolutePath, "summary"].join("/"))
         summary.write(JSONObjectUtil.toJsonString([
-                "total" : allResults.size(),
+                "total" : caseTypes.size(),
                 "success": success,
                 "failure": failure,
                 "skipped": skipped,
-                "passRate": ((float)success / (float)allResults.size()) * 100
+                "passRate": ((float)success / (float)caseTypes.size()) * 100
         ]))
 
         if (hasFailure) {
