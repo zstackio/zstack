@@ -10,6 +10,8 @@ import org.zstack.header.identity.AccountConstant
 import org.zstack.header.message.AbstractBeforeSendMessageInterceptor
 import org.zstack.header.message.Event
 import org.zstack.header.message.Message
+import org.zstack.sdk.CreateZoneAction
+import org.zstack.sdk.DeleteZoneAction
 import org.zstack.sdk.SessionInventory
 import org.zstack.sdk.ZSClient
 import org.zstack.utils.ShellUtils
@@ -29,6 +31,7 @@ abstract class Test implements ApiHelper {
 
     static Object deployer
 
+
     private final int PHASE_NONE = 0
     private final int PHASE_SETUP = 1
     private final int PHASE_ENV = 2
@@ -41,6 +44,8 @@ abstract class Test implements ApiHelper {
     private int phase = PHASE_NONE
     protected BeanConstructor beanConstructor
     protected SpringSpec _springSpec
+
+
 
     Test() {
         _springSpec = new SpringSpec()
@@ -276,6 +281,10 @@ abstract class Test implements ApiHelper {
             prepare()
             nextPhase()
             test()
+
+            if ((this instanceof Case) && System.getProperty("clean") != null) {
+                clean()
+            }
         } catch (AssertionError e) {
             logger.warn("\n${e.message}", e)
             System.exit(1)

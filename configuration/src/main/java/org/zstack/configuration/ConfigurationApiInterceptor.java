@@ -47,20 +47,10 @@ public class ConfigurationApiInterceptor implements ApiMessageInterceptor {
             validate((APICreateInstanceOfferingMsg) msg);
         } else if (msg instanceof APIDeleteDiskOfferingMsg) {
             validate((APIDeleteDiskOfferingMsg) msg);
-        } else if (msg instanceof APIDeleteInstanceOfferingMsg) {
-            validate((APIDeleteInstanceOfferingMsg) msg);
         }
 
         setServiceId(msg);
         return msg;
-    }
-
-    private void validate(APIDeleteInstanceOfferingMsg msg) {
-        if (!dbf.isExist(msg.getUuid(), InstanceOfferingVO.class)) {
-            APIDeleteInstanceOfferingEvent evt = new APIDeleteInstanceOfferingEvent();
-            bus.publish(evt);
-            throw new StopRoutingException();
-        }
     }
 
     private void validate(APIDeleteDiskOfferingMsg msg) {

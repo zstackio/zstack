@@ -11,6 +11,71 @@ import org.zstack.core.db.SQL
 import org.zstack.header.identity.AccountConstant
 import org.zstack.header.message.Message
 import org.zstack.header.rest.RESTConstant
+import org.zstack.sdk.AddCephBackupStorageAction
+import org.zstack.sdk.AddCephPrimaryStorageAction
+import org.zstack.sdk.AddCephPrimaryStoragePoolAction
+import org.zstack.sdk.AddImageAction
+import org.zstack.sdk.AddImageStoreBackupStorageAction
+import org.zstack.sdk.AddIpRangeByNetworkCidrAction
+import org.zstack.sdk.AddKVMHostAction
+import org.zstack.sdk.AddLocalPrimaryStorageAction
+import org.zstack.sdk.AddNfsPrimaryStorageAction
+import org.zstack.sdk.AddSftpBackupStorageAction
+import org.zstack.sdk.AddSharedMountPointPrimaryStorageAction
+import org.zstack.sdk.ApiResult
+import org.zstack.sdk.CreateAccountAction
+import org.zstack.sdk.CreateClusterAction
+import org.zstack.sdk.CreateDataVolumeAction
+import org.zstack.sdk.CreateDataVolumeFromVolumeSnapshotAction
+import org.zstack.sdk.CreateDataVolumeFromVolumeTemplateAction
+import org.zstack.sdk.CreateDataVolumeTemplateFromVolumeAction
+import org.zstack.sdk.CreateDiskOfferingAction
+import org.zstack.sdk.CreateEipAction
+import org.zstack.sdk.CreateInstanceOfferingAction
+import org.zstack.sdk.CreateL2NoVlanNetworkAction
+import org.zstack.sdk.CreateL2VlanNetworkAction
+import org.zstack.sdk.CreateL3NetworkAction
+import org.zstack.sdk.CreateLoadBalancerAction
+import org.zstack.sdk.CreatePolicyAction
+import org.zstack.sdk.CreatePortForwardingRuleAction
+import org.zstack.sdk.CreateRebootVmInstanceSchedulerAction
+import org.zstack.sdk.CreateRootVolumeTemplateFromRootVolumeAction
+import org.zstack.sdk.CreateSecurityGroupAction
+import org.zstack.sdk.CreateStartVmInstanceSchedulerAction
+import org.zstack.sdk.CreateStopVmInstanceSchedulerAction
+import org.zstack.sdk.CreateUserAction
+import org.zstack.sdk.CreateUserGroupAction
+import org.zstack.sdk.CreateVipAction
+import org.zstack.sdk.CreateVirtualRouterOfferingAction
+import org.zstack.sdk.CreateVmInstanceAction
+import org.zstack.sdk.CreateVolumeSnapshotAction
+import org.zstack.sdk.CreateVolumeSnapshotSchedulerAction
+import org.zstack.sdk.CreateZoneAction
+import org.zstack.sdk.DeleteAccountAction
+import org.zstack.sdk.DeleteBackupStorageAction
+import org.zstack.sdk.DeleteCephPrimaryStoragePoolAction
+import org.zstack.sdk.DeleteClusterAction
+import org.zstack.sdk.DeleteDataVolumeAction
+import org.zstack.sdk.DeleteDiskOfferingAction
+import org.zstack.sdk.DeleteEipAction
+import org.zstack.sdk.DeleteHostAction
+import org.zstack.sdk.DeleteImageAction
+import org.zstack.sdk.DeleteInstanceOfferingAction
+import org.zstack.sdk.DeleteIpRangeAction
+import org.zstack.sdk.DeleteL2NetworkAction
+import org.zstack.sdk.DeleteL3NetworkAction
+import org.zstack.sdk.DeleteLoadBalancerAction
+import org.zstack.sdk.DeletePolicyAction
+import org.zstack.sdk.DeletePortForwardingRuleAction
+import org.zstack.sdk.DeletePrimaryStorageAction
+import org.zstack.sdk.DeleteSchedulerAction
+import org.zstack.sdk.DeleteSecurityGroupAction
+import org.zstack.sdk.DeleteUserAction
+import org.zstack.sdk.DeleteUserGroupAction
+import org.zstack.sdk.DeleteVipAction
+import org.zstack.sdk.DeleteVolumeSnapshotAction
+import org.zstack.sdk.DeleteZoneAction
+import org.zstack.sdk.DestroyVmInstanceAction
 import org.zstack.sdk.ErrorCode
 import org.zstack.sdk.GlobalConfigInventory
 import org.zstack.sdk.LogInByAccountAction
@@ -47,7 +112,78 @@ class EnvSpec implements Node {
     private static RestTemplate restTemplate
     private static Set<Class> simulatorClasses = Platform.reflections.getSubTypesOf(Simulator.class)
 
+    static List deletionMethods = [
+            [CreateZoneAction.metaClass, CreateZoneAction.Result.metaClass, DeleteZoneAction.class],
+            [AddCephBackupStorageAction.metaClass, AddCephBackupStorageAction.Result.metaClass, DeleteBackupStorageAction.class],
+            [AddCephPrimaryStorageAction.metaClass, AddCephPrimaryStorageAction.Result.metaClass, DeletePrimaryStorageAction.class],
+            [AddCephPrimaryStoragePoolAction.metaClass, AddCephPrimaryStoragePoolAction.Result.metaClass, DeleteCephPrimaryStoragePoolAction.class],
+            [CreateEipAction.metaClass, CreateEipAction.Result.metaClass, DeleteEipAction.class],
+            [CreateClusterAction.metaClass, CreateClusterAction.Result.metaClass, DeleteClusterAction.class],
+            [CreateDiskOfferingAction.metaClass, CreateDiskOfferingAction.Result.metaClass, DeleteDiskOfferingAction.class],
+            [CreateInstanceOfferingAction.metaClass, CreateInstanceOfferingAction.Result.metaClass, DeleteInstanceOfferingAction.class],
+            [CreateAccountAction.metaClass, CreateAccountAction.Result.metaClass, DeleteAccountAction.class],
+            [CreatePolicyAction.metaClass, CreatePolicyAction.Result.metaClass, DeletePolicyAction.class],
+            [CreateUserGroupAction.metaClass, CreateUserAction.Result.metaClass, DeleteUserGroupAction.class],
+            [CreateUserAction.metaClass, CreateUserAction.Result.metaClass, DeleteUserAction.class],
+            [AddImageAction.metaClass, AddImageAction.Result.metaClass, DeleteImageAction.class],
+            [CreateDataVolumeTemplateFromVolumeAction.metaClass, CreateDataVolumeTemplateFromVolumeAction.Result.metaClass, DeleteImageAction.class],
+            [CreateRootVolumeTemplateFromRootVolumeAction.metaClass, CreateRootVolumeTemplateFromRootVolumeAction.Result.metaClass, DeleteImageAction.class],
+            [CreateL2NoVlanNetworkAction.metaClass, CreateL2NoVlanNetworkAction.Result.metaClass, DeleteL2NetworkAction.class],
+            [CreateL2VlanNetworkAction.metaClass, CreateL2VlanNetworkAction.Result.metaClass, DeleteL2NetworkAction.class],
+            [AddIpRangeByNetworkCidrAction.metaClass, AddIpRangeByNetworkCidrAction.Result.metaClass, DeleteIpRangeAction.class],
+            [CreateL3NetworkAction.metaClass, CreateL3NetworkAction.Result.metaClass, DeleteL3NetworkAction.class],
+            [CreateRebootVmInstanceSchedulerAction.metaClass, CreateRebootVmInstanceSchedulerAction.Result.metaClass, DeleteSchedulerAction.class],
+            [CreateStartVmInstanceSchedulerAction.metaClass, CreateStartVmInstanceSchedulerAction.Result.metaClass, DeleteSchedulerAction.class],
+            [CreateStopVmInstanceSchedulerAction.metaClass, CreateStopVmInstanceSchedulerAction.Result.metaClass, DeleteSchedulerAction.class],
+            [CreateVmInstanceAction.metaClass, CreateVmInstanceAction.Result.metaClass, DestroyVmInstanceAction.class],
+            [CreateDataVolumeFromVolumeSnapshotAction.metaClass, CreateDataVolumeFromVolumeSnapshotAction.Result.metaClass, DeleteDataVolumeAction.class],
+            [CreateDataVolumeFromVolumeTemplateAction.metaClass, CreateDataVolumeFromVolumeTemplateAction.Result.metaClass, DeleteDataVolumeAction.class],
+            [CreateDataVolumeAction.metaClass, CreateDataVolumeAction.Result.metaClass, DeleteDataVolumeAction.class],
+            [CreateVolumeSnapshotAction.metaClass, CreateVolumeSnapshotAction.Result.metaClass, DeleteVolumeSnapshotAction.class],
+            [CreateVolumeSnapshotSchedulerAction.metaClass, CreateVolumeSnapshotSchedulerAction.Result.metaClass, DeleteSchedulerAction.class],
+            [AddKVMHostAction.metaClass, AddKVMHostAction.Result.metaClass, DeleteHostAction.class],
+            [CreateLoadBalancerAction.metaClass, CreateLoadBalancerAction.Result.metaClass, DeleteLoadBalancerAction.class],
+            [AddLocalPrimaryStorageAction.metaClass, AddLocalPrimaryStorageAction.Result.metaClass, DeletePrimaryStorageAction.class],
+            [AddImageStoreBackupStorageAction.metaClass, AddImageStoreBackupStorageAction.Result.metaClass, DeleteBackupStorageAction.class],
+            [AddNfsPrimaryStorageAction.metaClass, AddNfsPrimaryStorageAction.Result.metaClass, DeletePrimaryStorageAction.class],
+            [CreatePortForwardingRuleAction.metaClass, CreatePortForwardingRuleAction.Result.metaClass, DeletePortForwardingRuleAction.class],
+            [CreateSecurityGroupAction.metaClass, CreateSecurityGroupAction.Result.metaClass, DeleteSecurityGroupAction.class],
+            [AddSftpBackupStorageAction.metaClass, AddSftpBackupStorageAction.Result.metaClass, DeleteBackupStorageAction.class],
+            [AddSharedMountPointPrimaryStorageAction.metaClass, AddSharedMountPointPrimaryStorageAction.Result.metaClass, DeletePrimaryStorageAction.class],
+            [CreateVipAction.metaClass, CreateVipAction.Result.metaClass, DeleteVipAction.class],
+            [CreateVirtualRouterOfferingAction.metaClass, CreateVirtualRouterOfferingAction.Result.metaClass, DeleteInstanceOfferingAction.class],
+    ]
+
+    private List resourcesNeedDeletion = []
+
+    private void installDeletionMethods() {
+        deletionMethods.each { it ->
+            def (actionMeta, resultMeta, deleteClass) = it
+
+            actionMeta.call = {
+                ApiResult res = ZSClient.call(delegate)
+                def ret = delegate.makeResult(res)
+                resourcesNeedDeletion.add(ret)
+                return ret
+            }
+
+            resultMeta.delete = {
+                if (delegate.error != null) {
+                    return false
+                }
+
+                def action = (deleteClass as Class).newInstance()
+                action.uuid = delegate.value.inventory.uuid
+                action.sessionId = session.uuid
+                def res = action.call()
+                assert res.error == null: "API failure: ${JSONObjectUtil.toJsonString(res.error)}"
+            }
+        }
+    }
+
     EnvSpec() {
+        installDeletionMethods()
+
         HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory()
         factory.setReadTimeout(CoreGlobalProperty.REST_FACADE_READ_TIMEOUT)
         factory.setConnectTimeout(CoreGlobalProperty.REST_FACADE_CONNECT_TIMEOUT)
@@ -167,6 +303,7 @@ class EnvSpec implements Node {
 
     def inventoryByName(String name) {
         def spec = specByName(name)
+
         assert spec.hasProperty("inventory"): "${spec.class} doesn't have inventory"
         return spec.inventory
     }
@@ -368,6 +505,11 @@ class EnvSpec implements Node {
     void delete() {
         try {
             destroy(session.uuid)
+
+            resourcesNeedDeletion.each {
+                logger.info("run delete() method on ${it.class}")
+                it.delete()
+            }
 
             makeSureAllEntitiesDeleted()
         } finally {

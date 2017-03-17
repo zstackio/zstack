@@ -32,8 +32,7 @@ public class GetLicenseInfoAction extends AbstractAction {
     public String sessionId;
 
 
-    public Result call() {
-        ApiResult res = ZSClient.call(this);
+    private Result makeResult(ApiResult res) {
         Result ret = new Result();
         if (res.error != null) {
             ret.error = res.error;
@@ -41,24 +40,21 @@ public class GetLicenseInfoAction extends AbstractAction {
         }
         
         GetLicenseInfoResult value = res.getResult(GetLicenseInfoResult.class);
-        ret.value = value == null ? new GetLicenseInfoResult() : value;
+        ret.value = value == null ? new GetLicenseInfoResult() : value; 
+
         return ret;
+    }
+
+    public Result call() {
+        ApiResult res = ZSClient.call(this);
+        return makeResult(res);
     }
 
     public void call(final Completion<Result> completion) {
         ZSClient.call(this, new InternalCompletion() {
             @Override
             public void complete(ApiResult res) {
-                Result ret = new Result();
-                if (res.error != null) {
-                    ret.error = res.error;
-                    completion.complete(ret);
-                    return;
-                }
-                
-                GetLicenseInfoResult value = res.getResult(GetLicenseInfoResult.class);
-                ret.value = value == null ? new GetLicenseInfoResult() : value;
-                completion.complete(ret);
+                completion.complete(makeResult(res));
             }
         });
     }

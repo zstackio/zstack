@@ -32,8 +32,7 @@ public class ValidateSessionAction extends AbstractAction {
     public java.util.List userTags;
 
 
-    public Result call() {
-        ApiResult res = ZSClient.call(this);
+    private Result makeResult(ApiResult res) {
         Result ret = new Result();
         if (res.error != null) {
             ret.error = res.error;
@@ -41,24 +40,21 @@ public class ValidateSessionAction extends AbstractAction {
         }
         
         ValidateSessionResult value = res.getResult(ValidateSessionResult.class);
-        ret.value = value == null ? new ValidateSessionResult() : value;
+        ret.value = value == null ? new ValidateSessionResult() : value; 
+
         return ret;
+    }
+
+    public Result call() {
+        ApiResult res = ZSClient.call(this);
+        return makeResult(res);
     }
 
     public void call(final Completion<Result> completion) {
         ZSClient.call(this, new InternalCompletion() {
             @Override
             public void complete(ApiResult res) {
-                Result ret = new Result();
-                if (res.error != null) {
-                    ret.error = res.error;
-                    completion.complete(ret);
-                    return;
-                }
-                
-                ValidateSessionResult value = res.getResult(ValidateSessionResult.class);
-                ret.value = value == null ? new ValidateSessionResult() : value;
-                completion.complete(ret);
+                completion.complete(makeResult(res));
             }
         });
     }

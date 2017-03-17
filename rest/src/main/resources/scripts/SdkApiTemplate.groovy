@@ -158,8 +158,7 @@ class SdkApiTemplate implements JavaSdkTemplate {
     def generateMethods(String path) {
         def ms = []
         ms.add("""\
-    public Result call() {
-        ApiResult res = ZSClient.call(this);
+    private Result makeResult(ApiResult res) {
         Result ret = new Result();
         if (res.error != null) {
             ret.error = res.error;
@@ -167,8 +166,16 @@ class SdkApiTemplate implements JavaSdkTemplate {
         }
         
         ${resultClassName} value = res.getResult(${resultClassName}.class);
-        ret.value = value == null ? new ${resultClassName}() : value;
+        ret.value = value == null ? new ${resultClassName}() : value; 
+
         return ret;
+    }
+""")
+
+        ms.add("""\
+    public Result call() {
+        ApiResult res = ZSClient.call(this);
+        return makeResult(res);
     }
 """)
 
@@ -177,16 +184,7 @@ class SdkApiTemplate implements JavaSdkTemplate {
         ZSClient.call(this, new InternalCompletion() {
             @Override
             public void complete(ApiResult res) {
-                Result ret = new Result();
-                if (res.error != null) {
-                    ret.error = res.error;
-                    completion.complete(ret);
-                    return;
-                }
-                
-                ${resultClassName} value = res.getResult(${resultClassName}.class);
-                ret.value = value == null ? new ${resultClassName}() : value;
-                completion.complete(ret);
+                completion.complete(makeResult(res));
             }
         });
     }

@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
+import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
@@ -16,9 +17,11 @@ import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor.InterceptorPosition;
+import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.*;
+import org.zstack.header.rest.RestRequest;
 import org.zstack.portal.apimediator.schema.Service;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.FieldUtils;
@@ -59,6 +62,8 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
     private ErrorFacade errf;
     @Autowired
     private DatabaseFacade dbf;
+    @Autowired
+    private CloudBus bus;
 
     private boolean unitTestOn;
     private List<String> configFolders;
@@ -367,15 +372,27 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
                         DebugUtils.Assert(String.class.isAssignableFrom(f.getType()), String.format("field[%s] of message[%s] has APIParam.resourceType specified, then the field must be uuid which is a String, but actual is %s",
                                 f.getName(), msg.getClass().getName(), f.getType()));
 
-                        if (!dbf.isExist((String) value, at.resourceType())) {
-                            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.RESOURCE_NOT_FOUND,
-                                    String.format("invalid field[%s], resource[uuid:%s, type:%s] not found", f.getName(), value, at.resourceType().getSimpleName())
-                            ));
+                        if (!dbf.isExist(value, at.resourceType())) {
+                            if (at.successIfResourceNotExisting()) {
+                                RestRequest rat = msg.getClass().getAnnotation(RestRequest.class);
+                                if (rat == null) {
+                                    throw new CloudRuntimeException(String.format("the API class[%s] does not have @RestRequest but it uses a successIfResourceNotExisting helper", msg.getClass()));
+                                }
+
+                                APIEvent evt = (APIEvent) rat.responseClass().getConstructor(String.class).newInstance(msg.getId());
+
+                                bus.publish(evt);
+                                throw new StopRoutingException();
+                            } else {
+                                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.RESOURCE_NOT_FOUND,
+                                        String.format("invalid field[%s], resource[uuid:%s, type:%s] not found", f.getName(), value, at.resourceType().getSimpleName())
+                                ));
+                            }
                         }
                     }
                 }
             }
-        } catch (ApiMessageInterceptionException ae) {
+        } catch (ApiMessageInterceptionException | StopRoutingException ae) {
             throw ae;
         } catch (Exception e) {
             logger.warn(e.getMessage(), e);

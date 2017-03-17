@@ -39,8 +39,7 @@ public class SyncPrimaryStorageCapacityAction extends AbstractAction {
     public long pollingInterval;
 
 
-    public Result call() {
-        ApiResult res = ZSClient.call(this);
+    private Result makeResult(ApiResult res) {
         Result ret = new Result();
         if (res.error != null) {
             ret.error = res.error;
@@ -48,24 +47,21 @@ public class SyncPrimaryStorageCapacityAction extends AbstractAction {
         }
         
         SyncPrimaryStorageCapacityResult value = res.getResult(SyncPrimaryStorageCapacityResult.class);
-        ret.value = value == null ? new SyncPrimaryStorageCapacityResult() : value;
+        ret.value = value == null ? new SyncPrimaryStorageCapacityResult() : value; 
+
         return ret;
+    }
+
+    public Result call() {
+        ApiResult res = ZSClient.call(this);
+        return makeResult(res);
     }
 
     public void call(final Completion<Result> completion) {
         ZSClient.call(this, new InternalCompletion() {
             @Override
             public void complete(ApiResult res) {
-                Result ret = new Result();
-                if (res.error != null) {
-                    ret.error = res.error;
-                    completion.complete(ret);
-                    return;
-                }
-                
-                SyncPrimaryStorageCapacityResult value = res.getResult(SyncPrimaryStorageCapacityResult.class);
-                ret.value = value == null ? new SyncPrimaryStorageCapacityResult() : value;
-                completion.complete(ret);
+                completion.complete(makeResult(res));
             }
         });
     }

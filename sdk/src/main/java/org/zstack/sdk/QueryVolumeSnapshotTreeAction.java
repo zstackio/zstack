@@ -24,8 +24,7 @@ public class QueryVolumeSnapshotTreeAction extends QueryAction {
 
 
 
-    public Result call() {
-        ApiResult res = ZSClient.call(this);
+    private Result makeResult(ApiResult res) {
         Result ret = new Result();
         if (res.error != null) {
             ret.error = res.error;
@@ -33,24 +32,21 @@ public class QueryVolumeSnapshotTreeAction extends QueryAction {
         }
         
         QueryVolumeSnapshotTreeResult value = res.getResult(QueryVolumeSnapshotTreeResult.class);
-        ret.value = value == null ? new QueryVolumeSnapshotTreeResult() : value;
+        ret.value = value == null ? new QueryVolumeSnapshotTreeResult() : value; 
+
         return ret;
+    }
+
+    public Result call() {
+        ApiResult res = ZSClient.call(this);
+        return makeResult(res);
     }
 
     public void call(final Completion<Result> completion) {
         ZSClient.call(this, new InternalCompletion() {
             @Override
             public void complete(ApiResult res) {
-                Result ret = new Result();
-                if (res.error != null) {
-                    ret.error = res.error;
-                    completion.complete(ret);
-                    return;
-                }
-                
-                QueryVolumeSnapshotTreeResult value = res.getResult(QueryVolumeSnapshotTreeResult.class);
-                ret.value = value == null ? new QueryVolumeSnapshotTreeResult() : value;
-                completion.complete(ret);
+                completion.complete(makeResult(res));
             }
         });
     }

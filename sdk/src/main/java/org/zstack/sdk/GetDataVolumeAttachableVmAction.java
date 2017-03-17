@@ -35,8 +35,7 @@ public class GetDataVolumeAttachableVmAction extends AbstractAction {
     public String sessionId;
 
 
-    public Result call() {
-        ApiResult res = ZSClient.call(this);
+    private Result makeResult(ApiResult res) {
         Result ret = new Result();
         if (res.error != null) {
             ret.error = res.error;
@@ -44,24 +43,21 @@ public class GetDataVolumeAttachableVmAction extends AbstractAction {
         }
         
         GetDataVolumeAttachableVmResult value = res.getResult(GetDataVolumeAttachableVmResult.class);
-        ret.value = value == null ? new GetDataVolumeAttachableVmResult() : value;
+        ret.value = value == null ? new GetDataVolumeAttachableVmResult() : value; 
+
         return ret;
+    }
+
+    public Result call() {
+        ApiResult res = ZSClient.call(this);
+        return makeResult(res);
     }
 
     public void call(final Completion<Result> completion) {
         ZSClient.call(this, new InternalCompletion() {
             @Override
             public void complete(ApiResult res) {
-                Result ret = new Result();
-                if (res.error != null) {
-                    ret.error = res.error;
-                    completion.complete(ret);
-                    return;
-                }
-                
-                GetDataVolumeAttachableVmResult value = res.getResult(GetDataVolumeAttachableVmResult.class);
-                ret.value = value == null ? new GetDataVolumeAttachableVmResult() : value;
-                completion.complete(ret);
+                completion.complete(makeResult(res));
             }
         });
     }

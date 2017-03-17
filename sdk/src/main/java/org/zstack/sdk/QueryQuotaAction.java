@@ -24,8 +24,7 @@ public class QueryQuotaAction extends QueryAction {
 
 
 
-    public Result call() {
-        ApiResult res = ZSClient.call(this);
+    private Result makeResult(ApiResult res) {
         Result ret = new Result();
         if (res.error != null) {
             ret.error = res.error;
@@ -33,24 +32,21 @@ public class QueryQuotaAction extends QueryAction {
         }
         
         QueryQuotaResult value = res.getResult(QueryQuotaResult.class);
-        ret.value = value == null ? new QueryQuotaResult() : value;
+        ret.value = value == null ? new QueryQuotaResult() : value; 
+
         return ret;
+    }
+
+    public Result call() {
+        ApiResult res = ZSClient.call(this);
+        return makeResult(res);
     }
 
     public void call(final Completion<Result> completion) {
         ZSClient.call(this, new InternalCompletion() {
             @Override
             public void complete(ApiResult res) {
-                Result ret = new Result();
-                if (res.error != null) {
-                    ret.error = res.error;
-                    completion.complete(ret);
-                    return;
-                }
-                
-                QueryQuotaResult value = res.getResult(QueryQuotaResult.class);
-                ret.value = value == null ? new QueryQuotaResult() : value;
-                completion.complete(ret);
+                completion.complete(makeResult(res));
             }
         });
     }

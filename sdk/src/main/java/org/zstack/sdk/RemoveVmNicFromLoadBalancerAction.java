@@ -42,8 +42,7 @@ public class RemoveVmNicFromLoadBalancerAction extends AbstractAction {
     public long pollingInterval;
 
 
-    public Result call() {
-        ApiResult res = ZSClient.call(this);
+    private Result makeResult(ApiResult res) {
         Result ret = new Result();
         if (res.error != null) {
             ret.error = res.error;
@@ -51,24 +50,21 @@ public class RemoveVmNicFromLoadBalancerAction extends AbstractAction {
         }
         
         RemoveVmNicFromLoadBalancerResult value = res.getResult(RemoveVmNicFromLoadBalancerResult.class);
-        ret.value = value == null ? new RemoveVmNicFromLoadBalancerResult() : value;
+        ret.value = value == null ? new RemoveVmNicFromLoadBalancerResult() : value; 
+
         return ret;
+    }
+
+    public Result call() {
+        ApiResult res = ZSClient.call(this);
+        return makeResult(res);
     }
 
     public void call(final Completion<Result> completion) {
         ZSClient.call(this, new InternalCompletion() {
             @Override
             public void complete(ApiResult res) {
-                Result ret = new Result();
-                if (res.error != null) {
-                    ret.error = res.error;
-                    completion.complete(ret);
-                    return;
-                }
-                
-                RemoveVmNicFromLoadBalancerResult value = res.getResult(RemoveVmNicFromLoadBalancerResult.class);
-                ret.value = value == null ? new RemoveVmNicFromLoadBalancerResult() : value;
-                completion.complete(ret);
+                completion.complete(makeResult(res));
             }
         });
     }

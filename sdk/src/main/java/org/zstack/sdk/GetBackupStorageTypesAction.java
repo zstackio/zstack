@@ -32,8 +32,7 @@ public class GetBackupStorageTypesAction extends AbstractAction {
     public String sessionId;
 
 
-    public Result call() {
-        ApiResult res = ZSClient.call(this);
+    private Result makeResult(ApiResult res) {
         Result ret = new Result();
         if (res.error != null) {
             ret.error = res.error;
@@ -41,24 +40,21 @@ public class GetBackupStorageTypesAction extends AbstractAction {
         }
         
         GetBackupStorageTypesResult value = res.getResult(GetBackupStorageTypesResult.class);
-        ret.value = value == null ? new GetBackupStorageTypesResult() : value;
+        ret.value = value == null ? new GetBackupStorageTypesResult() : value; 
+
         return ret;
+    }
+
+    public Result call() {
+        ApiResult res = ZSClient.call(this);
+        return makeResult(res);
     }
 
     public void call(final Completion<Result> completion) {
         ZSClient.call(this, new InternalCompletion() {
             @Override
             public void complete(ApiResult res) {
-                Result ret = new Result();
-                if (res.error != null) {
-                    ret.error = res.error;
-                    completion.complete(ret);
-                    return;
-                }
-                
-                GetBackupStorageTypesResult value = res.getResult(GetBackupStorageTypesResult.class);
-                ret.value = value == null ? new GetBackupStorageTypesResult() : value;
-                completion.complete(ret);
+                completion.complete(makeResult(res));
             }
         });
     }

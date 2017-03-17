@@ -29,4 +29,6 @@ public @interface APIParam {
     boolean checkAccount() default false;
 
     boolean noTrim() default false;
+
+    boolean successIfResourceNotExisting() default false;
 }
