@@ -89,7 +89,7 @@ public class NotificationManager extends AbstractService {
                     return;
                 }
 
-                notification.makeNotifications();
+                notification.after();
                 List<NotificationBuilder> lst = new ArrayList<>();
                 for (ApiNotification.Inner inner : notification.getInners()) {
                     Map opaque = new HashMap();

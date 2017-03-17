@@ -5,7 +5,9 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.utils.DebugUtils;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by xing5 on 2017/3/16.
@@ -21,6 +23,7 @@ public abstract class ApiNotification {
         APIMessage message;
         APIEvent event;
         Boolean success;
+        Map<String, Object> context = new HashMap<>();
 
         public APIMessage getMessage() {
             return message;
@@ -50,9 +53,18 @@ public abstract class ApiNotification {
             return success;
         }
 
+        public Map<String, Object> getContext() {
+            return context;
+        }
+
         public Inner(String content, Object[] arguments) {
             this.content = content;
             this.arguments = arguments;
+        }
+
+        public Inner context(String key, Object value) {
+            context.put(key, value);
+            return this;
         }
 
         public Inner resource(String uuid, String type) {
@@ -78,7 +90,9 @@ public abstract class ApiNotification {
         return new Inner(content, args);
     }
 
-    public abstract void makeNotifications();
+    public abstract void after(APIEvent evt);
+    public void before() {
+    }
 
     public List<Inner> getInners() {
         return inners;

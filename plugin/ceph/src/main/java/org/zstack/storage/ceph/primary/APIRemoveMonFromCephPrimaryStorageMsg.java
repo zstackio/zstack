@@ -1,6 +1,7 @@
 package org.zstack.storage.ceph.primary;
 
 import org.springframework.http.HttpMethod;
+import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.notification.ApiNotification;
@@ -57,11 +58,11 @@ public class APIRemoveMonFromCephPrimaryStorageMsg extends APIMessage implements
         return msg;
     }
 
-    public ApiNotification __notification__(APIRemoveMonFromCephPrimaryStorageEvent evt) {
+    public ApiNotification __notification__() {
         APIMessage that = this;
         return new ApiNotification() {
             @Override
-            public void makeNotifications() {
+            public void after(APIEvent evt) {
                 ntfy("Removing a mon server").resource(uuid, PrimaryStorageVO.class.getSimpleName())
                         .messageAndEvent(that, evt).done();
             }

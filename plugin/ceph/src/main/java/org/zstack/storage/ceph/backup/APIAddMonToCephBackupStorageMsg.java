@@ -1,6 +1,7 @@
 package org.zstack.storage.ceph.backup;
 
 import org.springframework.http.HttpMethod;
+import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.notification.ApiNotification;
@@ -56,11 +57,11 @@ public class APIAddMonToCephBackupStorageMsg extends APIMessage implements Backu
         return msg;
     }
 
-    public ApiNotification __notification__(APIAddMonToCephBackupStorageEvent evt) {
+    public ApiNotification __notification__() {
         APIMessage that = this;
         return new ApiNotification() {
             @Override
-            public void makeNotifications() {
+            public void after(APIEvent evt) {
                 ntfy("Adding a mon server").resource(uuid, BackupStorageVO.class.getSimpleName())
                         .messageAndEvent(that, evt).done();
             }

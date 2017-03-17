@@ -1,11 +1,18 @@
 package org.zstack.network.service.eip;
 
 import org.springframework.http.HttpMethod;
+import org.zstack.core.db.Q;
 import org.zstack.header.identity.Action;
+import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
+import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmNicVO;
+import org.zstack.header.vm.VmNicVO_;
+
+import javax.persistence.Tuple;
 
 /**
  * @api
@@ -86,6 +93,37 @@ public class APIAttachEipMsg extends APIMessage implements EipMessage {
         msg.setVmNicUuid(uuid());
 
         return msg;
+    }
+
+    public ApiNotification __notification__() {
+        APIMessage that = this;
+
+        return new ApiNotification() {
+            @Override
+            public void after(APIEvent evt) {
+                Tuple t = Q.New(VmNicVO.class)
+                        .select(VmNicVO_.vmInstanceUuid, VmNicVO_.ip)
+                        .eq(VmNicVO_.uuid, vmNicUuid).findTuple();
+
+                String vmUuid = t.get(0, String.class);
+                String ip = t.get(1, String.class);
+
+                ntfy("Attaching to the nic[%s]", ip)
+                        .resource(eipUuid, EipVO.class.getSimpleName())
+                        .context("vmNicUuid", vmNicUuid)
+                        .context("vmUuid", vmUuid)
+                        .messageAndEvent(that, evt).done();
+
+                String eip = Q.New(EipVO.class)
+                        .select(EipVO_.vipIp)
+                        .eq(EipVO_.uuid, eipUuid).findValue();
+
+                ntfy("Attaching an Eip[%s] to the nic[%s]", eip, ip)
+                        .context("eipUuid", eipUuid)
+                        .resource(vmUuid, VmInstanceVO.class.getSimpleName())
+                        .messageAndEvent(that, evt).done();
+            }
+        };
     }
 
 }

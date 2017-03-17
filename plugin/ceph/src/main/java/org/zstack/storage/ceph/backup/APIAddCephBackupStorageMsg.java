@@ -1,10 +1,7 @@
 package org.zstack.storage.ceph.backup;
 
 import org.springframework.http.HttpMethod;
-import org.zstack.header.message.APIMessage;
-import org.zstack.header.message.APIParam;
-import org.zstack.header.message.OverriddenApiParam;
-import org.zstack.header.message.OverriddenApiParams;
+import org.zstack.header.message.*;
 import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.backup.APIAddBackupStorageEvent;
@@ -68,13 +65,15 @@ public class APIAddCephBackupStorageMsg extends APIAddBackupStorageMsg {
         return msg;
     }
 
-    public ApiNotification __notification__(APIAddBackupStorageEvent evt) {
+    public ApiNotification __notification__() {
         APIMessage that = this;
         return new ApiNotification() {
             @Override
-            public void makeNotifications() {
-                ntfy("Adding Ceph backup storage").resource(evt.isSuccess() ? evt.getInventory().getUuid() : null, BackupStorageVO.class.getSimpleName())
-                        .messageAndEvent(that, evt).done();
+            public void after(APIEvent evt) {
+                if (evt.isSuccess()) {
+                    ntfy("Adding").resource(((APIAddBackupStorageEvent)evt).getInventory().getUuid(), BackupStorageVO.class.getSimpleName())
+                            .messageAndEvent(that, evt).done();
+                }
             }
         };
     }

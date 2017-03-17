@@ -1,8 +1,10 @@
 package org.zstack.core.config;
 
 import org.springframework.http.HttpMethod;
+import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
 
 @RestRequest(
@@ -55,4 +57,14 @@ public class APIUpdateGlobalConfigMsg extends APIMessage {
         return msg;
     }
 
+    public ApiNotification __notification__(APIUpdateGlobalConfigEvent evt) {
+        APIMessage that = this;
+        return new ApiNotification() {
+            @Override
+            public void after(APIEvent evt) {
+                ntfy("Updating a global configuration").resource(category + name, GlobalConfigVO.class.getSimpleName())
+                        .messageAndEvent(that, evt).done();
+            }
+        };
+    }
 }

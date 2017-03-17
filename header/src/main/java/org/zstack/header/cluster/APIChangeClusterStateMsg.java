@@ -1,8 +1,10 @@
 package org.zstack.header.cluster;
 
 import org.springframework.http.HttpMethod;
+import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
 
 /**
@@ -94,6 +96,19 @@ public class APIChangeClusterStateMsg extends APIMessage implements ClusterMessa
         msg.setUuid(uuid());
         msg.setStateEvent("disable");
         return msg;
+    }
+
+    public ApiNotification __notification__() {
+        APIMessage that = this;
+
+        return new ApiNotification() {
+            @Override
+            public void after(APIEvent evt) {
+                ntfy("Changing the state to %s", ((APIChangeClusterStateEvent)evt).getInventory().getState())
+                        .resource(uuid, ClusterVO.class.getSimpleName())
+                        .messageAndEvent(that, evt).done();
+            }
+        };
     }
 
 }

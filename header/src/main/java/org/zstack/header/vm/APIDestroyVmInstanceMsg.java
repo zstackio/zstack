@@ -73,7 +73,7 @@ public class APIDestroyVmInstanceMsg extends APIDeleteMessage implements VmInsta
         APIMessage that = this;
         return new ApiNotification() {
             @Override
-            public void makeNotifications() {
+            public void after() {
                 ntfy("Destroying VM").resource(uuid, VmInstanceVO.class.getSimpleName())
                         .messageAndEvent(that, evt).done();
             }
