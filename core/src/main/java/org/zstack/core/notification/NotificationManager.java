@@ -73,6 +73,8 @@ public class NotificationManager extends AbstractService {
 
             APIEvent aevt = (APIEvent) evt;
             APIMessage msg = apiMessages.get(aevt.getApiId());
+            apiMessages.remove(msg.getId());
+
             Method m = getApiNotificationMethod(msg);
             if (m == null) {
                 logger.warn(String.format("API message[%s] does not define notification method", msg.getClass()));
@@ -145,6 +147,10 @@ public class NotificationManager extends AbstractService {
             vo.setType(builder.type);
             vo.setUuid(Platform.getUuid());
             vo.setTime(System.currentTimeMillis());
+            if (builder.opaque != null) {
+                vo.setOpaque(JSONObjectUtil.toJsonString(builder.opaque));
+            }
+
             vo = dbf.persistAndRefresh(vo);
         }
     }
