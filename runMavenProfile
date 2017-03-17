@@ -52,6 +52,18 @@ notification() {
     cd - > /dev/null
 }
 
+notificationapi() {
+    SRC=`pwd`
+    if [ -d premium/test-premium ]; then
+   	cd premium/test-premium
+    else
+    	cd test
+    fi
+
+    mvn test -Dtest=GenerateApiNotificationInApiMessage -Dsrc=$SRC
+    cd - > /dev/null
+}
+
 sdk() {
     set -u
     rm -rf ~/zstack-sdk/java
