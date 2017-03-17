@@ -74,4 +74,5 @@ public abstract class APIAddBackupStorageMsg extends APICreateMessage {
     public void setType(String type) {
         this.type = type;
     }
+
 }

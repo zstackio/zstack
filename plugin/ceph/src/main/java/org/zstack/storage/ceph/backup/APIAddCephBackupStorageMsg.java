@@ -4,9 +4,11 @@ import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.message.OverriddenApiParam;
 import org.zstack.header.message.OverriddenApiParams;
+import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.backup.APIAddBackupStorageEvent;
 import org.zstack.header.storage.backup.APIAddBackupStorageMsg;
+import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.storage.ceph.CephConstants;
 
 import java.util.Collections;
@@ -63,6 +65,16 @@ public class APIAddCephBackupStorageMsg extends APIAddBackupStorageMsg {
         msg.setPoolName("zs-images");
 
         return msg;
+    }
+
+    public ApiNotification __notification__(APIAddBackupStorageEvent evt) {
+        return new ApiNotification() {
+            @Override
+            public void makeNotifications() {
+                ntfy("Adding Ceph backup storage").resource(evt.isSuccess() ? evt.getInventory().getUuid() : null, BackupStorageVO.class.getSimpleName())
+                        .successOrNot(evt).done();
+            }
+        };
     }
 
 }

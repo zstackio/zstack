@@ -3,9 +3,11 @@ package org.zstack.storage.ceph.primary;
 import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.primary.PrimaryStorageMessage;
+import org.zstack.header.storage.primary.PrimaryStorageVO;
 
 /**
  * Created by xing5 on 2017/2/28.
@@ -43,5 +45,15 @@ public class APIDeleteCephPrimaryStoragePoolMsg extends APIMessage implements Pr
         APIDeleteCephPrimaryStoragePoolMsg msg = new APIDeleteCephPrimaryStoragePoolMsg();
         msg.setUuid(uuid());
         return msg;
+    }
+
+    public ApiNotification __notification__(APIDeleteCephPrimaryStoragePoolEvent evt) {
+        return new ApiNotification() {
+            @Override
+            public void makeNotifications() {
+                ntfy("Deleting a pool").resource(uuid, PrimaryStorageVO.class.getSimpleName())
+                        .successOrNot(evt).done();
+            }
+        };
     }
 }

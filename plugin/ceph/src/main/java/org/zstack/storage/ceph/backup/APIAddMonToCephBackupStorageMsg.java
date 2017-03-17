@@ -3,8 +3,10 @@ package org.zstack.storage.ceph.backup;
 import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.backup.BackupStorageMessage;
+import org.zstack.header.storage.backup.BackupStorageVO;
 
 import java.util.Collections;
 import java.util.List;
@@ -52,6 +54,16 @@ public class APIAddMonToCephBackupStorageMsg extends APIMessage implements Backu
         msg.setMonUrls(Collections.singletonList("10.0.1.3"));
 
         return msg;
+    }
+
+    public ApiNotification __notification__(APIAddMonToCephBackupStorageEvent evt) {
+        return new ApiNotification() {
+            @Override
+            public void makeNotifications() {
+                ntfy("Adding a mon server").resource(uuid, BackupStorageVO.class.getSimpleName())
+                        .successOrNot(evt).done();
+            }
+        };
     }
 
 }

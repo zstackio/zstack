@@ -4,9 +4,11 @@ import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.message.OverriddenApiParam;
 import org.zstack.header.message.OverriddenApiParams;
+import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.primary.APIAddPrimaryStorageEvent;
 import org.zstack.header.storage.primary.APIAddPrimaryStorageMsg;
+import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.storage.ceph.CephConstants;
 
 import java.util.Collections;
@@ -87,4 +89,13 @@ public class APIAddCephPrimaryStorageMsg extends APIAddPrimaryStorageMsg {
         return msg;
     }
 
+    public ApiNotification __notification__(APIAddPrimaryStorageEvent evt) {
+        return new ApiNotification() {
+            @Override
+            public void makeNotifications() {
+                ntfy("Adding").resource(evt.isSuccess() ? evt.getInventory().getUuid() : null, PrimaryStorageVO.class.getSimpleName())
+                        .successOrNot(evt).done();
+            }
+        };
+    }
 }

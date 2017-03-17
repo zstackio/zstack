@@ -3,8 +3,10 @@ package org.zstack.storage.ceph.primary;
 import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.primary.PrimaryStorageMessage;
+import org.zstack.header.storage.primary.PrimaryStorageVO;
 
 import java.util.Collections;
 import java.util.List;
@@ -52,6 +54,16 @@ public class APIAddMonToCephPrimaryStorageMsg extends APIMessage implements Prim
         msg.setMonUrls(Collections.singletonList("10.0.1.3"));
 
         return msg;
+    }
+
+    public ApiNotification __notification__(APIAddMonToCephPrimaryStorageEvent evt) {
+        return new ApiNotification() {
+            @Override
+            public void makeNotifications() {
+                ntfy("Adding a mon server").resource(uuid, PrimaryStorageVO.class.getSimpleName())
+                        .successOrNot(evt).done();
+            }
+        };
     }
 
 }

@@ -3,9 +3,11 @@ package org.zstack.storage.ceph.primary;
 import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.primary.PrimaryStorageMessage;
+import org.zstack.header.storage.primary.PrimaryStorageVO;
 
 /**
  * Created by Mei Lei on 6/6/2016.
@@ -106,4 +108,13 @@ public class APIUpdateCephPrimaryStorageMonMsg extends APIMessage implements Pri
         return msg;
     }
 
+    public ApiNotification __notification__(APIUpdateCephPrimaryStorageMonEvent evt) {
+        return new ApiNotification() {
+            @Override
+            public void makeNotifications() {
+                ntfy("Updating a mon server").resource(getPrimaryStorageUuid(), PrimaryStorageVO.class.getSimpleName())
+                        .successOrNot(evt).done();
+            }
+        };
+    }
 }
