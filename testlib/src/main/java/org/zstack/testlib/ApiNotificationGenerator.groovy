@@ -39,10 +39,11 @@ class ApiNotificationGenerator {
                 return
             }
 
-            def clzPath = clz.package.name.replaceAll("\\.", "/")
+            def clzPath = clz.name.replaceAll("\\.", "/")
             def key = sources.keySet().find { it.contains(clzPath) }
             assert key != null: "cannot find the source file containing path of $clzPath"
 
+            println("processing $key")
             File file = sources[key]
 
             def cu = JavaParser.parse(file)

@@ -106,6 +106,8 @@ run_profile() {
 	i18n
     elif test x$1 = x'notification'; then
 	notification
+    elif test x$1 = x'notificationapi'; then
+	notificationapi
     else
         mvn -pl build -P $1 exec:exec -D$1
     fi
