@@ -218,7 +218,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
                 }
 
                 KvmCephIsoTO.MonInfo info = new KvmCephIsoTO.MonInfo();
-                info.setHostname(arg.getHostname());
+                info.setHostname(arg.getMonAddr());
                 info.setPort(arg.getMonPort());
                 return info;
             }
@@ -491,7 +491,6 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
 
     @Override
     public void preAttachIsoExtensionPoint(KVMHostInventory host, AttachIsoCmd cmd) {
-        IsoTO to = convertIsoToCephIfNeeded(cmd.iso);
-        cmd.iso = to;
+        cmd.iso = convertIsoToCephIfNeeded(cmd.iso);
     }
 }
