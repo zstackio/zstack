@@ -39,13 +39,13 @@ import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
-import static org.zstack.core.Platform.argerr;
-import static org.zstack.core.Platform.operr;
-
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+
+import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.operr;
 
 /**
  * Created with IntelliJ IDEA.
@@ -277,13 +277,40 @@ public class ImageBase implements Image {
         });
     }
 
+    private static void hardDeleteImage(final String imageUuid) {
+        // Our trigger for ImageEO in AccoutResourceRefVO is triggered
+        // by the 'UPDATE' action.  We can not directly use a 'DELETE'
+        // expression here.
+        SQL.New("update ImageEO set status = :status, deleted = :deleted where uuid = :uuid")
+                .param("status", ImageStatus.Deleted)
+                .param("deleted", new Timestamp(new Date().getTime()).toString())
+                .param("uuid", imageUuid)
+                .execute();
+    }
+
     private void handle(final ImageDeletionMsg msg) {
         final ImageDeletionReply reply = new ImageDeletionReply();
-        if (self.getBackupStorageRefs().isEmpty()) {
+        Set<ImageBackupStorageRefVO> bsRefs = self.getBackupStorageRefs();
+        if (bsRefs.isEmpty() || bsRefs.stream().anyMatch(
+                r -> r.getStatus() == ImageStatus.Creating || r.getStatus() == ImageStatus.Downloading)) {
             // the image is not on any backup storage; mostly likely the image is not in the status of Ready, for example
             // it's still downloading
             // in this case, we directly delete it from the database
-            dbf.remove(self);
+            new SQLBatch() {
+                @Override
+                protected void scripts() {
+                    hardDeleteImage(self.getUuid());
+
+                    SQL.New("delete from ImageBackupStorageRefVO where imageUuid = :uuid")
+                            .param("uuid", self.getUuid())
+                            .execute();
+
+                    // in case 'recover' is called with an incomplete image
+                    dbf.hardDeleteCollectionSelectedBySQL(
+                            String.format("select uuid from ImageEO where uuid = '%s'", self.getUuid()),
+                            ImageVO.class);
+                }
+            }.execute();
             bus.reply(msg, reply);
             return;
         }
@@ -359,14 +386,7 @@ public class ImageBase implements Image {
                         @Override
                         @Transactional
                         public Void call() {
-                            // Our trigger for ImageEO in AccoutResourceRefVO is triggered
-                            // by the 'UPDATE' action.  We can not directly use a 'DELETE'
-                            // expression here.
-                            SQL.New("update ImageEO set status = :status, deleted = :deleted where uuid = :uuid")
-                                    .param("status", ImageStatus.Deleted)
-                                    .param("deleted", new Timestamp(new Date().getTime()).toString())
-                                    .param("uuid", self.getUuid())
-                                    .execute();
+                            hardDeleteImage(self.getUuid());
                             for (Object e : refs) {
                                 dbf.getEntityManager().merge(e);
                             }
