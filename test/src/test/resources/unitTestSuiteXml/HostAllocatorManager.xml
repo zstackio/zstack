@@ -38,7 +38,6 @@
     <TestCase class="org.zstack.test.compute.hostallocator.TestReservedHostCapacity3"/>
     <TestCase class="org.zstack.test.compute.hostallocator.TestReservedHostCapacity4"/>
     <TestCase class="org.zstack.test.compute.hostallocator.TestReservedHostCapacity5"/>
-    <TestCase class="org.zstack.test.compute.hostallocator.TestReservedHostCapacity6"/>
     <TestCase class="org.zstack.test.compute.hostallocator.TestReservedHostCapacity7"/>
     <TestCase class="org.zstack.test.compute.hostallocator.TestReservedHostCapacity8"/>
 
