@@ -1644,7 +1644,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
             @Override
             public void fail(ErrorCode errorCode) {
-
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
             }
