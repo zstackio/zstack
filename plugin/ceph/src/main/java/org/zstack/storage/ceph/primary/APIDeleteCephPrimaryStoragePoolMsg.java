@@ -48,11 +48,12 @@ public class APIDeleteCephPrimaryStoragePoolMsg extends APIMessage implements Pr
     }
 
     public ApiNotification __notification__(APIDeleteCephPrimaryStoragePoolEvent evt) {
+        APIMessage that = this;
         return new ApiNotification() {
             @Override
             public void makeNotifications() {
                 ntfy("Deleting a pool").resource(uuid, PrimaryStorageVO.class.getSimpleName())
-                        .successOrNot(evt).done();
+                        .messageAndEvent(that, evt).done();
             }
         };
     }

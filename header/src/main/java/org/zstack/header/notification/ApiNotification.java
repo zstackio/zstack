@@ -1,6 +1,7 @@
 package org.zstack.header.notification;
 
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.message.APIMessage;
 import org.zstack.utils.DebugUtils;
 
 import java.util.ArrayList;
@@ -17,7 +18,17 @@ public abstract class ApiNotification {
         Object[] arguments;
         String resourceUuid;
         String resourceType;
+        APIMessage message;
+        APIEvent event;
         Boolean success;
+
+        public APIMessage getMessage() {
+            return message;
+        }
+
+        public APIEvent getEvent() {
+            return event;
+        }
 
         public String getContent() {
             return content;
@@ -50,7 +61,9 @@ public abstract class ApiNotification {
             return this;
         }
 
-        public Inner successOrNot(APIEvent evt) {
+        public Inner messageAndEvent(APIMessage msg, APIEvent evt) {
+            message = msg;
+            event = evt;
             success = evt.isSuccess();
             return this;
         }

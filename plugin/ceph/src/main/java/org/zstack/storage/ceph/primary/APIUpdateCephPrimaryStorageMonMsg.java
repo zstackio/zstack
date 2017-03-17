@@ -109,11 +109,12 @@ public class APIUpdateCephPrimaryStorageMonMsg extends APIMessage implements Pri
     }
 
     public ApiNotification __notification__(APIUpdateCephPrimaryStorageMonEvent evt) {
+        APIMessage that = this;
         return new ApiNotification() {
             @Override
             public void makeNotifications() {
                 ntfy("Updating a mon server").resource(getPrimaryStorageUuid(), PrimaryStorageVO.class.getSimpleName())
-                        .successOrNot(evt).done();
+                        .messageAndEvent(that, evt).done();
             }
         };
     }

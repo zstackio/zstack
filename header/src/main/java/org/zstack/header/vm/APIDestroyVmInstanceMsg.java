@@ -3,10 +3,10 @@ package org.zstack.header.vm;
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIDeleteMessage;
+import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
-import org.zstack.header.rest.RestResponse;
 
 /**
  * @api destroy a vm instance
@@ -70,11 +70,12 @@ public class APIDestroyVmInstanceMsg extends APIDeleteMessage implements VmInsta
     }
 
     public ApiNotification __notification__(APIDestroyVmInstanceEvent evt) {
+        APIMessage that = this;
         return new ApiNotification() {
             @Override
             public void makeNotifications() {
                 ntfy("Destroying VM").resource(uuid, VmInstanceVO.class.getSimpleName())
-                        .successOrNot(evt).done();
+                        .messageAndEvent(that, evt).done();
             }
         };
     }

@@ -2,6 +2,7 @@ package org.zstack.storage.ceph.primary;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APICreateMessage;
+import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
@@ -67,11 +68,12 @@ public class APIAddCephPrimaryStoragePoolMsg extends APICreateMessage implements
     }
 
     public ApiNotification __notification__(APIAddCephPrimaryStoragePoolEvent evt) {
+        APIMessage that = this;
         return new ApiNotification() {
             @Override
             public void makeNotifications() {
                 ntfy("Adding a Ceph pool").resource(primaryStorageUuid, PrimaryStorageVO.class.getSimpleName())
-                        .successOrNot(evt).done();
+                        .messageAndEvent(that, evt).done();
             }
         };
     }

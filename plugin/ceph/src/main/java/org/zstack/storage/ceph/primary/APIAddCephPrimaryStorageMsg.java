@@ -1,6 +1,7 @@
 package org.zstack.storage.ceph.primary;
 
 import org.springframework.http.HttpMethod;
+import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.message.OverriddenApiParam;
 import org.zstack.header.message.OverriddenApiParams;
@@ -90,11 +91,12 @@ public class APIAddCephPrimaryStorageMsg extends APIAddPrimaryStorageMsg {
     }
 
     public ApiNotification __notification__(APIAddPrimaryStorageEvent evt) {
+        APIMessage that = this;
         return new ApiNotification() {
             @Override
             public void makeNotifications() {
                 ntfy("Adding").resource(evt.isSuccess() ? evt.getInventory().getUuid() : null, PrimaryStorageVO.class.getSimpleName())
-                        .successOrNot(evt).done();
+                        .messageAndEvent(that, evt).done();
             }
         };
     }

@@ -58,11 +58,12 @@ public class APIRemoveMonFromCephPrimaryStorageMsg extends APIMessage implements
     }
 
     public ApiNotification __notification__(APIRemoveMonFromCephPrimaryStorageEvent evt) {
+        APIMessage that = this;
         return new ApiNotification() {
             @Override
             public void makeNotifications() {
                 ntfy("Removing a mon server").resource(uuid, PrimaryStorageVO.class.getSimpleName())
-                        .successOrNot(evt).done();
+                        .messageAndEvent(that, evt).done();
             }
         };
     }

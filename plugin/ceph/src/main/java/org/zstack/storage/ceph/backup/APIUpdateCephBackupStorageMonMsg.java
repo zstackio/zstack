@@ -108,11 +108,12 @@ public class APIUpdateCephBackupStorageMonMsg extends APIMessage implements Back
     }
 
     public ApiNotification __notification__(APIUpdateCephBackupStorageMonEvent evt) {
+        APIMessage that = this;
         return new ApiNotification() {
             @Override
             public void makeNotifications() {
                 ntfy("Updating a mon server").resource(getMonUuid(), BackupStorageVO.class.getSimpleName())
-                        .successOrNot(evt).done();
+                        .messageAndEvent(that, evt).done();
             }
         };
     }
