@@ -1,17 +1,20 @@
 package org.zstack.test.integration.configuration.systemTag
 
 import org.zstack.header.zone.ZoneVO
-import org.zstack.sdk.CreateSystemTagAction
+import org.zstack.sdk.SystemTagInventory
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
-import org.zstack.testlib.Test
 import org.zstack.testlib.ZoneSpec
 
 /**
  * Created by lining on 02/03/2017.
  */
 class SystemTagCase extends SubCase{
+
     EnvSpec env
+
+    String tagValue = "host::reservedCpu::{capacity}"
+    String newTagUuid
 
     @Override
     void setup() {
@@ -38,6 +41,7 @@ class SystemTagCase extends SubCase{
     void testCreateSystemTag(){
         ZoneSpec zone = env.specByName('zone')
 
+        /*
         CreateSystemTagAction a = new CreateSystemTagAction(
                 resourceType: ZoneVO.getSimpleName(),
                 resourceUuid: zone.inventory.uuid,
@@ -45,26 +49,31 @@ class SystemTagCase extends SubCase{
                 sessionId: Test.currentEnvSpec.session.uuid
         )
         CreateSystemTagAction.Result res = a.call()
-
-        assert res.error == null
-        assert res.value.inventory.resourceUuid == a.resourceUuid
-        assert res.value.inventory.tag == a.tag
-        assert res.value.inventory.resourceType == a.resourceType
+        */
+        SystemTagInventory inventory = createSystemTag {
+            resourceType = ZoneVO.getSimpleName()
+            resourceUuid =  zone.inventory.uuid
+            tag = tagValue
+        }
+        newTagUuid = inventory.uuid
+        assert inventory.resourceUuid == zone.inventory.uuid
+        assert inventory.tag ==  tagValue
+        assert inventory.resourceType == ZoneVO.getSimpleName()
     }
 
     void testRepeatCreateSameResourceUuidSystemTag(){
         ZoneSpec zone = env.specByName('zone')
 
-        CreateSystemTagAction a = new CreateSystemTagAction(
-                resourceType: ZoneVO.getSimpleName(),
-                resourceUuid: zone.inventory.uuid,
-                tag: "host::reservedCpu::{capacity}",
-                sessionId: Test.currentEnvSpec.session.uuid
-        )
+        SystemTagInventory inventory = createSystemTag {
+            resourceType = ZoneVO.getSimpleName()
+            resourceUuid =  zone.inventory.uuid
+            tag = tagValue
+        }
+        assert null == inventory
 
-        CreateSystemTagAction.Result res = a.call()
-
-        assert res.error == null
+        deleteTag {
+            uuid = newTagUuid
+        }
     }
 
     @Override
