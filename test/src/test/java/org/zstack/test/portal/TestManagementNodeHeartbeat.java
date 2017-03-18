@@ -13,6 +13,7 @@ import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.BeanConstructor;
 import org.zstack.test.DBUtil;
+import org.zstack.testlib.WebBeanConstructor;
 
 import java.util.concurrent.TimeUnit;
 
@@ -26,7 +27,7 @@ public class TestManagementNodeHeartbeat {
     @Before
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
-        BeanConstructor con = new BeanConstructor();
+        WebBeanConstructor con = new WebBeanConstructor();
         con.addXml("PortalForUnitTest.xml");
         con.addXml("AccountManager.xml");
         loader = con.build();
