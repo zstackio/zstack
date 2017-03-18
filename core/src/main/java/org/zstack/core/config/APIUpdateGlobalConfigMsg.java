@@ -57,7 +57,7 @@ public class APIUpdateGlobalConfigMsg extends APIMessage {
         return msg;
     }
 
-    public ApiNotification __notification__(APIUpdateGlobalConfigEvent evt) {
+    public ApiNotification __notification__() {
         APIMessage that = this;
         return new ApiNotification() {
             @Override

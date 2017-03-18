@@ -1,5 +1,6 @@
 package org.zstack.core.notification;
 
+import org.zstack.header.message.NoJsonSchema;
 import org.zstack.header.search.Inventory;
 import org.zstack.utils.gson.JSONObjectUtil;
 
@@ -24,6 +25,7 @@ public class NotificationInventory {
     private String resourceType;
     private String type;
     private Long time;
+    @NoJsonSchema
     private Object opaque;
     private Timestamp createDate;
     private Timestamp lastOpDate;

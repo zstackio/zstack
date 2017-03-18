@@ -84,7 +84,9 @@ public class NotificationManager extends AbstractService {
                     clz = clz.getSuperclass();
                 }
 
-                notificationMethods.put(msg.getClass(), m);
+                if (m != null) {
+                    notificationMethods.put(msg.getClass(), m);
+                }
             }
 
             ApiNotification notification = null;
@@ -132,7 +134,7 @@ public class NotificationManager extends AbstractService {
                         .arguments(inner.getArguments())
                         .name(NotificationConstant.API_SENDER)
                         .sender(NotificationConstant.API_SENDER)
-                        .resource(inner.getResourceUuid(), inner.getResourceUuid())
+                        .resource(inner.getResourceUuid(), inner.getResourceType())
                         .opaque(opaque));
             }
 
