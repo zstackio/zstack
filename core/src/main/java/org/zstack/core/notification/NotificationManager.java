@@ -3,12 +3,15 @@ package org.zstack.core.notification;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.header.AbstractService;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.*;
 import org.zstack.header.notification.ApiNotification;
+import org.zstack.header.notification.ApiNotificationFactory;
+import org.zstack.header.notification.ApiNotificationFactoryExtensionPoint;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -28,10 +31,19 @@ public class NotificationManager extends AbstractService {
     private CloudBus bus;
     @Autowired
     private DatabaseFacade dbf;
+    @Autowired
+    private PluginRegistry plugRgty;
+
+    private Map<Class, ApiNotificationFactory> apiNotificationFactories = new HashMap<>();
 
     private class ApiNotificationSender implements BeforeDeliveryMessageInterceptor, BeforePublishEventInterceptor {
-        ConcurrentHashMap<String, APIMessage> apiMessages = new ConcurrentHashMap<>();
-        Map<Class, Method> notificationMethods = new HashMap<>();
+        class Bundle {
+            APIMessage message;
+            ApiNotification notification;
+        }
+
+        ConcurrentHashMap<String, Bundle> apiMessages = new ConcurrentHashMap<>();
+        Map<Class, Method> notificationMethods = new ConcurrentHashMap<>();
 
         public ApiNotificationSender() {
             Set<Method> methods = Platform.getReflections().getMethodsReturn(ApiNotification.class);
@@ -45,23 +57,34 @@ public class NotificationManager extends AbstractService {
             return 0;
         }
 
-        private Method getApiNotificationMethod(APIMessage msg) {
+        private ApiNotification getApiNotification(APIMessage msg) throws InvocationTargetException, IllegalAccessException {
             Method m = notificationMethods.get(msg.getClass());
-            if (m != null) {
-                return m;
-            }
+            if (m == null) {
+                Class clz = msg.getClass().getSuperclass();
+                while (clz != Object.class) {
+                    m = notificationMethods.get(clz);
+                    if (m != null) {
+                        break;
+                    }
 
-            Class clz = msg.getClass().getSuperclass();
-            while (clz != Object.class) {
-                m = notificationMethods.get(clz);
-                if (m != null) {
-                    return m;
+                    clz = clz.getSuperclass();
                 }
 
-                clz = clz.getSuperclass();
+                notificationMethods.put(msg.getClass(), m);
             }
 
-            return null;
+            ApiNotification notification = null;
+
+            if (m != null) {
+                notification = (ApiNotification) m.invoke(msg);
+            } else {
+                ApiNotificationFactory factory = apiNotificationFactories.get(msg.getClass());
+                if (factory != null) {
+                    notification = factory.createApiNotification(msg);
+                }
+            }
+
+            return notification;
         }
 
         @Override
@@ -72,45 +95,34 @@ public class NotificationManager extends AbstractService {
             }
 
             APIEvent aevt = (APIEvent) evt;
-            APIMessage msg = apiMessages.get(aevt.getApiId());
-            apiMessages.remove(msg.getId());
-
-            Method m = getApiNotificationMethod(msg);
-            if (m == null) {
-                logger.warn(String.format("API message[%s] does not define notification method", msg.getClass()));
+            Bundle b = apiMessages.get(aevt.getApiId());
+            if (b == null) {
                 return;
             }
 
-            try {
-                ApiNotification notification = (ApiNotification) m.invoke(msg, aevt);
-                if (notification == null) {
-                    logger.warn(String.format("API message[%s]'s notification method[%s] returns null",
-                            msg.getClass(), m.getName()));
-                    return;
+            apiMessages.remove(aevt.getApiId());
+
+            b.notification.after((APIEvent) evt);
+
+            List<NotificationBuilder> lst = new ArrayList<>();
+            for (ApiNotification.Inner inner : b.notification.getInners()) {
+                Map opaque = new HashMap();
+                opaque.put("session", b.message.getSession());
+                opaque.put("success", aevt.isSuccess());
+                if (!aevt.isSuccess()) {
+                    opaque.put("error", aevt.getError());
                 }
 
-                notification.after();
-                List<NotificationBuilder> lst = new ArrayList<>();
-                for (ApiNotification.Inner inner : notification.getInners()) {
-                    Map opaque = new HashMap();
-                    opaque.put("success", aevt.isSuccess());
-                    if (!aevt.isSuccess()) {
-                        opaque.put("error", aevt.getError());
-                    }
-
-                    lst.add(new NotificationBuilder()
-                            .content(inner.getContent())
-                            .arguments(inner.getArguments())
-                            .name(NotificationConstant.API_SENDER)
-                            .sender(NotificationConstant.API_SENDER)
-                            .resource(inner.getResourceUuid(), inner.getResourceUuid())
-                            .opaque(opaque));
-                }
-
-                send(lst);
-            } catch (IllegalAccessException | InvocationTargetException e) {
-                throw new CloudRuntimeException(e);
+                lst.add(new NotificationBuilder()
+                        .content(inner.getContent())
+                        .arguments(inner.getArguments())
+                        .name(NotificationConstant.API_SENDER)
+                        .sender(NotificationConstant.API_SENDER)
+                        .resource(inner.getResourceUuid(), inner.getResourceUuid())
+                        .opaque(opaque));
             }
+
+            send(lst);
         }
 
         @Override
@@ -128,7 +140,29 @@ public class NotificationManager extends AbstractService {
                 return;
             }
 
-            apiMessages.put(msg.getId(), (APIMessage) msg);
+            if (!msg.getServiceId().endsWith(Platform.getManagementServerId())) {
+                // a message to api portal
+                return;
+            }
+
+            try {
+                ApiNotification notification = getApiNotification((APIMessage) msg);
+
+                if (notification == null) {
+                    logger.warn(String.format("API message[%s] does not have an API notification method or the method returns null",
+                            msg.getClass()));
+                    return;
+                }
+
+                notification.before();
+
+                Bundle b = new Bundle();
+                b.message = (APIMessage) msg;
+                b.notification = notification;
+                apiMessages.put(msg.getId(), b);
+            } catch (Throwable t) {
+                logger.warn(String.format("unhandled exception %s", t.getMessage()), t);
+            }
         }
     }
 
@@ -177,6 +211,11 @@ public class NotificationManager extends AbstractService {
     public boolean start() {
         bus.installBeforeDeliveryMessageInterceptor(apiNotificationSender);
         bus.installBeforePublishEventInterceptor(apiNotificationSender);
+
+        for (ApiNotificationFactoryExtensionPoint ext : plugRgty.getExtensionList(ApiNotificationFactoryExtensionPoint.class)) {
+            apiNotificationFactories.putAll(ext.apiNotificationFactory());
+        }
+
         return true;
     }
 
