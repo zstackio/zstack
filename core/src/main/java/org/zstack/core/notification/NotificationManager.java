@@ -3,11 +3,16 @@ package org.zstack.core.notification;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SQL;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.core.thread.AsyncThread;
+import org.zstack.core.thread.Task;
+import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.AbstractService;
-import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.core.ExceptionSafe;
 import org.zstack.header.message.*;
 import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.notification.ApiNotificationFactory;
@@ -19,7 +24,10 @@ import org.zstack.utils.logging.CLogger;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by xing5 on 2017/3/15.
@@ -33,8 +41,14 @@ public class NotificationManager extends AbstractService {
     private DatabaseFacade dbf;
     @Autowired
     private PluginRegistry plugRgty;
+    @Autowired
+    private ThreadFacade thdf;
 
     private Map<Class, ApiNotificationFactory> apiNotificationFactories = new HashMap<>();
+
+    private BlockingQueue<NotificationBuilder> notificationsQueue = new LinkedBlockingQueue<>();
+    private NotificationBuilder quitToken = new NotificationBuilder();
+    private boolean exitQueue = false;
 
     private class ApiNotificationSender implements BeforeDeliveryMessageInterceptor, BeforePublishEventInterceptor {
         class Bundle {
@@ -170,42 +184,19 @@ public class NotificationManager extends AbstractService {
 
     void send(List<NotificationBuilder> builders) {
         for (NotificationBuilder builder : builders) {
-            NotificationVO vo = new NotificationVO();
-            vo.setName(builder.notificationName);
-            vo.setArguments(JSONObjectUtil.toJsonString(builder.arguments));
-            vo.setContent(builder.content);
-            vo.setResourceType(builder.resourceType);
-            vo.setResourceUuid(builder.resourceUuid);
-            vo.setSender(builder.sender);
-            vo.setStatus(NotificationStatus.Unread);
-            vo.setType(builder.type);
-            vo.setUuid(Platform.getUuid());
-            vo.setTime(System.currentTimeMillis());
-            if (builder.opaque != null) {
-                vo.setOpaque(JSONObjectUtil.toJsonString(builder.opaque));
-            }
-
-            vo = dbf.persistAndRefresh(vo);
+            send(builder);
         }
     }
 
     void send(NotificationBuilder builder) {
-        NotificationVO vo = new NotificationVO();
-        vo.setName(builder.notificationName);
-        vo.setArguments(JSONObjectUtil.toJsonString(builder.arguments));
-        vo.setContent(builder.content);
-        vo.setResourceType(builder.resourceType);
-        vo.setResourceUuid(builder.resourceUuid);
-        vo.setSender(builder.sender);
-        vo.setStatus(NotificationStatus.Unread);
-        vo.setType(builder.type);
-        vo.setUuid(Platform.getUuid());
-        vo.setTime(System.currentTimeMillis());
-        vo = dbf.persistAndRefresh(vo);
+        try {
+            notificationsQueue.offer(builder, 60, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            logger.warn(String.format("unable to write log %s", JSONObjectUtil.toJsonString(builder)), e);
+        }
 
         //TODO: send to bus
     }
-
 
     @Override
     public boolean start() {
@@ -216,17 +207,101 @@ public class NotificationManager extends AbstractService {
             apiNotificationFactories.putAll(ext.apiNotificationFactory());
         }
 
+
+        thdf.submit(new Task<Void>() {
+            @Override
+            public Void call() throws Exception {
+                writeNotificationsToDb();
+                return null;
+            }
+
+            @Override
+            public String getName() {
+                return "notification-thread";
+            }
+        });
+
         return true;
+    }
+
+    @ExceptionSafe
+    private void writeNotificationsToDb() throws InterruptedException {
+        while (!exitQueue) {
+            List<NotificationBuilder> lst = new ArrayList<>();
+            lst.add(notificationsQueue.take());
+            notificationsQueue.drainTo(lst);
+
+            new SQLBatch() {
+                @Override
+                protected void scripts() {
+                    for (NotificationBuilder builder : lst) {
+                        if (builder == quitToken) {
+                            exitQueue = true;
+                            continue;
+                        }
+
+                        NotificationVO vo = new NotificationVO();
+                        vo.setName(builder.notificationName);
+                        vo.setArguments(JSONObjectUtil.toJsonString(builder.arguments));
+                        vo.setContent(builder.content);
+                        vo.setResourceType(builder.resourceType);
+                        vo.setResourceUuid(builder.resourceUuid);
+                        vo.setSender(builder.sender);
+                        vo.setStatus(NotificationStatus.Unread);
+                        vo.setType(builder.type);
+                        vo.setUuid(Platform.getUuid());
+                        vo.setTime(System.currentTimeMillis());
+                        if (builder.opaque != null) {
+                            vo.setOpaque(JSONObjectUtil.toJsonString(builder.opaque));
+                        }
+
+                        dbf.getEntityManager().persist(vo);
+                    }
+                }
+            }.execute();
+        }
     }
 
     @Override
     public boolean stop() {
+        notificationsQueue.offer(quitToken);
+
         return true;
     }
 
     @Override
+    @MessageSafe
     public void handleMessage(Message msg) {
-        bus.dealWithUnknownMessage(msg);
+        if (msg instanceof APIMessage) {
+            handleApiMessage((APIMessage) msg);
+        } else {
+            bus.dealWithUnknownMessage(msg);
+        }
+    }
+
+    private void handleApiMessage(APIMessage msg) {
+        if (msg instanceof APIUpdateNotificationsStatusMsg) {
+            handle((APIUpdateNotificationsStatusMsg) msg);
+        } else if (msg instanceof APIDeleteNotificationsMsg) {
+            handle((APIDeleteNotificationsMsg) msg);
+        } else {
+            bus.dealWithUnknownMessage(msg);
+        }
+    }
+
+    private void handle(APIDeleteNotificationsMsg msg) {
+        APIDeleteNotificationsEvent evt = new APIDeleteNotificationsEvent(msg.getId());
+        SQL.New(NotificationVO.class).in(NotificationVO_.uuid, msg.getUuids()).delete();
+        bus.publish(evt);
+    }
+
+    private void handle(APIUpdateNotificationsStatusMsg msg) {
+        APIUpdateNotificationsStatusEvent evt = new APIUpdateNotificationsStatusEvent(msg.getId());
+
+        SQL.New(NotificationVO.class).set(NotificationVO_.status, NotificationStatus.valueOf(msg.getStatus()))
+                .in(NotificationVO_.uuid, msg.getUuids()).update();
+
+        bus.publish(evt);
     }
 
     @Override
