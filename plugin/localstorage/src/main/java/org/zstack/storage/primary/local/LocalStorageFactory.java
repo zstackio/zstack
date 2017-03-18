@@ -436,6 +436,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
                     DeleteVolumeMsg msg = new DeleteVolumeMsg();
                     msg.setUuid(uuid);
                     msg.setDetachBeforeDeleting(true);
+                    msg.setDeletionPolicy(VolumeDeletionPolicyManager.VolumeDeletionPolicy.DBOnly.toString());
                     bus.makeTargetServiceIdByResourceUuid(msg, VolumeConstant.SERVICE_ID, uuid);
                     return msg;
                 }
