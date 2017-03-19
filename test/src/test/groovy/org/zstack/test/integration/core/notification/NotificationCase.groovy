@@ -63,6 +63,8 @@ class NotificationCase extends SubCase {
     }
 
     void testDeleteNotifications() {
+        ZoneInventory zone = env.inventoryByName("zone")
+
         NotificationInventory inv = queryNotification {
             conditions=["resourceType=${ZoneVO.class.simpleName}", "resourceUuid=${zone.uuid}"]
         }[0]

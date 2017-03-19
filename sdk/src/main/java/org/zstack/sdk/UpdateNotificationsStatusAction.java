@@ -9,7 +9,7 @@ public class UpdateNotificationsStatusAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryNotificationResult value;
+        public UpdateNotificationsStatusResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class UpdateNotificationsStatusAction extends AbstractAction {
             return ret;
         }
         
-        QueryNotificationResult value = res.getResult(QueryNotificationResult.class);
-        ret.value = value == null ? new QueryNotificationResult() : value;
+        UpdateNotificationsStatusResult value = res.getResult(UpdateNotificationsStatusResult.class);
+        ret.value = value == null ? new UpdateNotificationsStatusResult() : value;
         return ret;
     }
 
@@ -66,8 +66,8 @@ public class UpdateNotificationsStatusAction extends AbstractAction {
                     return;
                 }
                 
-                QueryNotificationResult value = res.getResult(QueryNotificationResult.class);
-                ret.value = value == null ? new QueryNotificationResult() : value;
+                UpdateNotificationsStatusResult value = res.getResult(UpdateNotificationsStatusResult.class);
+                ret.value = value == null ? new UpdateNotificationsStatusResult() : value;
                 completion.complete(ret);
             }
         });
@@ -79,7 +79,7 @@ public class UpdateNotificationsStatusAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
+        info.httpMethod = "PUT";
         info.path = "/notifications/actions";
         info.needSession = true;
         info.needPoll = true;

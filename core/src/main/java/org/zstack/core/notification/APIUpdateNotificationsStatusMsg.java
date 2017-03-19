@@ -12,9 +12,9 @@ import java.util.List;
  */
 @RestRequest(
         path = "/notifications/actions",
-        method = HttpMethod.POST,
+        method = HttpMethod.PUT,
         isAction = true,
-        responseClass = APIQueryNotificationReply.class
+        responseClass = APIUpdateNotificationsStatusEvent.class
 )
 public class APIUpdateNotificationsStatusMsg extends APIMessage {
     @APIParam(nonempty = true)
