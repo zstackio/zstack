@@ -79,14 +79,16 @@ public class TestReservedHostCapacity6 {
 
         // host tag takes effect
         try {
+
             VmCreator creator = new VmCreator(api);
             creator.timeout = 600;
             creator.addL3Network(l3.getUuid());
             creator.imageUuid = imageInventory.getUuid();
             creator.instanceOfferingUuid = instanceOffering.getUuid();
             creator.create();
+
         } catch (ApiSenderException e) {
-            if (e.getError().getCause() != null && HostAllocatorError.NO_AVAILABLE_HOST.toString().equals(e.getError().getCause().getCode())) {
+            if (e.getError() != null && "SYS.1006".equals(e.getError().getCode())) {
                 success = true;
             }
         }
@@ -113,7 +115,7 @@ public class TestReservedHostCapacity6 {
             creator.instanceOfferingUuid = instanceOffering.getUuid();
             creator.create();
         } catch (ApiSenderException e) {
-            if (e.getError().getCause() != null && HostAllocatorError.NO_AVAILABLE_HOST.toString().equals(e.getError().getCause().getCode())) {
+            if (e.getError() != null && "SYS.1006".equals(e.getError().getCode())) {
                 success = true;
             }
         }
