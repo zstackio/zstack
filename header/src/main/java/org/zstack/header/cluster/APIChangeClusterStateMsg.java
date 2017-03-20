@@ -104,7 +104,7 @@ public class APIChangeClusterStateMsg extends APIMessage implements ClusterMessa
         return new ApiNotification() {
             @Override
             public void after(APIEvent evt) {
-                ntfy("Changing the state to %s", ((APIChangeClusterStateEvent)evt).getInventory().getState())
+                ntfy("Changed the state to %s", ((APIChangeClusterStateEvent)evt).getInventory().getState())
                         .resource(uuid, ClusterVO.class.getSimpleName())
                         .messageAndEvent(that, evt).done();
             }

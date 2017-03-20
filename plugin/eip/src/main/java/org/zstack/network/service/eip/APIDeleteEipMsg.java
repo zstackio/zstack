@@ -87,7 +87,7 @@ public class APIDeleteEipMsg extends APIDeleteMessage implements EipMessage {
         return new ApiNotification() {
             @Override
             public void after(APIEvent evt) {
-                ntfy("Deleting").resource(uuid, EipVO.class.getSimpleName())
+                ntfy("Deleted").resource(uuid, EipVO.class.getSimpleName())
                         .messageAndEvent(that, evt).done();
             }
         };

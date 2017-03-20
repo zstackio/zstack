@@ -108,7 +108,7 @@ public class APIAttachEipMsg extends APIMessage implements EipMessage {
                 String vmUuid = t.get(0, String.class);
                 String ip = t.get(1, String.class);
 
-                ntfy("Attaching to the nic[%s]", ip)
+                ntfy("Attached to the nic[%s]", ip)
                         .resource(eipUuid, EipVO.class.getSimpleName())
                         .context("vmNicUuid", vmNicUuid)
                         .context("vmUuid", vmUuid)
@@ -118,7 +118,7 @@ public class APIAttachEipMsg extends APIMessage implements EipMessage {
                         .select(EipVO_.vipIp)
                         .eq(EipVO_.uuid, eipUuid).findValue();
 
-                ntfy("Attaching an Eip[%s] to the nic[%s]", eip, ip)
+                ntfy("Attached an Eip[%s] to the nic[%s]", eip, ip)
                         .context("eipUuid", eipUuid)
                         .resource(vmUuid, VmInstanceVO.class.getSimpleName())
                         .messageAndEvent(that, evt).done();

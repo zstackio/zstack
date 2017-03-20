@@ -58,7 +58,7 @@ public class APIChangeEipStateMsg extends APIMessage implements EipMessage {
         return new ApiNotification() {
             @Override
             public void after(APIEvent evt) {
-                ntfy("Changing state to %s", ((APIChangeEipStateEvent)evt).getInventory().getState())
+                ntfy("Changed state to %s", ((APIChangeEipStateEvent)evt).getInventory().getState())
                         .resource(uuid, EipVO.class.getSimpleName())
                         .messageAndEvent(that, evt).done();
             }

@@ -83,7 +83,7 @@ public class APIDeleteHostMsg extends APIDeleteMessage implements HostMessage {
         return new ApiNotification() {
             @Override
             public void after(APIEvent evt) {
-                ntfy("Deleting").resource(uuid, HostVO.class.getSimpleName())
+                ntfy("Deleted").resource(uuid, HostVO.class.getSimpleName())
                         .messageAndEvent(that, evt).done();
             }
         };

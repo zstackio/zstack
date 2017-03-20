@@ -135,7 +135,7 @@ public class APICreateClusterMsg extends APICreateMessage {
             @Override
             public void after(APIEvent evt) {
                 if (evt.isSuccess()) {
-                    ntfy("Creating").resource(((APICreateClusterEvent)evt).getInventory().getUuid(), ClusterVO.class.getSimpleName())
+                    ntfy("Created").resource(((APICreateClusterEvent)evt).getInventory().getUuid(), ClusterVO.class.getSimpleName())
                         .messageAndEvent(that, evt).done();
                 }
             }

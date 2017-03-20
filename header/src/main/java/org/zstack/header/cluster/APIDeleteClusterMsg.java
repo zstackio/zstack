@@ -79,7 +79,7 @@ public class APIDeleteClusterMsg extends APIDeleteMessage implements ClusterMess
         return new ApiNotification() {
             @Override
             public void after(APIEvent evt) {
-                ntfy("Deleting").resource(uuid, ClusterVO.class.getSimpleName())
+                ntfy("Deleted").resource(uuid, ClusterVO.class.getSimpleName())
                         .messageAndEvent(that, evt).done();
             }
         };

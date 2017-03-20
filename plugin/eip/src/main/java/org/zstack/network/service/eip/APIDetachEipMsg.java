@@ -104,14 +104,14 @@ public class APIDetachEipMsg extends APIMessage implements EipMessage {
 
             @Override
             public void after(APIEvent evt) {
-                ntfy("detaching from a nic[ip:%s] of the VM[uuid:%s]", ip, vmUuid)
+                ntfy("detached from a nic[ip:%s] of the VM[uuid:%s]", ip, vmUuid)
                         .resource(getUuid(), EipVO.class.getSimpleName())
                         .context("vmUuid", vmUuid)
                         .context("vmNicUuid", vmNicUuid)
                         .messageAndEvent(that, evt)
                         .done();
 
-                ntfy("detaching an EIP[%s] from the nic[ip:%s]", eip, ip)
+                ntfy("detached an EIP[%s] from the nic[ip:%s]", eip, ip)
                         .resource(vmUuid, VmInstanceVO.class.getSimpleName())
                         .context("eipUuid", getEipUuid())
                         .context("vmNicUuid", vmNicUuid)
