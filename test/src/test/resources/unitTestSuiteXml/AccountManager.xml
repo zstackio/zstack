@@ -2,7 +2,6 @@
 <UnitTestSuiteConfig xmlns="http://zstack.org/schema/zstack" timeout="600">
 	<TestCase class="org.zstack.test.identity.TestIdentity1"/>
 	<TestCase class="org.zstack.test.identity.TestIdentity2"/>
-	<TestCase class="org.zstack.test.identity.TestIdentity3"/>
 	<TestCase class="org.zstack.test.identity.TestIdentity4"/>
 	<TestCase class="org.zstack.test.identity.TestIdentity5"/>
 	<TestCase class="org.zstack.test.identity.TestIdentity6"/>
