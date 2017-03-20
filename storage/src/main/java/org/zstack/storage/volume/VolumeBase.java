@@ -206,11 +206,11 @@ public class VolumeBase implements Volume {
                         @Override
                         public void rollback(FlowRollback trigger, Map data) {
                             if (success) {
-                                ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
-                                rmsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
-                                rmsg.setDiskSize(self.getSize());
-                                bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
-                                bus.send(rmsg);
+                                DecreasePrimaryStorageCapacityMsg dmsg = new DecreasePrimaryStorageCapacityMsg();
+                                dmsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
+                                dmsg.setDiskSize(self.getSize());
+                                bus.makeTargetServiceIdByResourceUuid(dmsg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
+                                bus.send(dmsg);
                             }
 
                             trigger.rollback();
@@ -472,7 +472,7 @@ public class VolumeBase implements Volume {
                     if (!r.isSuccess()) {
                         completion.fail(r.getError());
                     } else {
-                        ReturnPrimaryStorageCapacityMsg msg = new ReturnPrimaryStorageCapacityMsg();
+                        IncreasePrimaryStorageCapacityMsg msg = new IncreasePrimaryStorageCapacityMsg();
                         msg.setPrimaryStorageUuid(self.getPrimaryStorageUuid());
                         msg.setDiskSize(self.getSize());
                         bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, self.getPrimaryStorageUuid());
@@ -705,11 +705,11 @@ public class VolumeBase implements Volume {
 
                         @Override
                         public void run(FlowTrigger trigger, Map data) {
-                            ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
-                            rmsg.setPrimaryStorageUuid(self.getPrimaryStorageUuid());
-                            rmsg.setDiskSize(self.getSize());
-                            bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, self.getPrimaryStorageUuid());
-                            bus.send(rmsg);
+                            IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
+                            imsg.setPrimaryStorageUuid(self.getPrimaryStorageUuid());
+                            imsg.setDiskSize(self.getSize());
+                            bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, self.getPrimaryStorageUuid());
+                            bus.send(imsg);
                             trigger.next();
                         }
                     });

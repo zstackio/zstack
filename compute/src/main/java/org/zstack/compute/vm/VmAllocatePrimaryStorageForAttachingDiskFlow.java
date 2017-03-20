@@ -69,11 +69,11 @@ public class VmAllocatePrimaryStorageForAttachingDiskFlow implements Flow {
         Long size = (Long) data.get(VmAllocatePrimaryStorageForAttachingDiskFlow.class);
         if (size != null) {
             PrimaryStorageInventory pri = (PrimaryStorageInventory) data.get(VmInstanceConstant.Params.DestPrimaryStorageInventoryForAttachingVolume.toString());
-            ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
-            rmsg.setPrimaryStorageUuid(pri.getUuid());
-            rmsg.setDiskSize(size);
-            bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, pri.getUuid());
-            bus.send(rmsg);
+            IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
+            imsg.setPrimaryStorageUuid(pri.getUuid());
+            imsg.setDiskSize(size);
+            bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, pri.getUuid());
+            bus.send(imsg);
         }
         chain.rollback();
     }

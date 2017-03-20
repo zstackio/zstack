@@ -105,12 +105,12 @@ public class NfsDownloadImageToCacheJob implements Job {
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
                         if (s) {
-                            ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
-                            rmsg.setDiskSize(image.getInventory().getActualSize());
-                            rmsg.setNoOverProvisioning(true);
-                            rmsg.setPrimaryStorageUuid(primaryStorage.getUuid());
-                            bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
-                            bus.send(rmsg);
+                            IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
+                            imsg.setDiskSize(image.getInventory().getActualSize());
+                            imsg.setNoOverProvisioning(true);
+                            imsg.setPrimaryStorageUuid(primaryStorage.getUuid());
+                            bus.makeLocalServiceId(imsg, PrimaryStorageConstant.SERVICE_ID);
+                            bus.send(imsg);
                         }
 
                         trigger.rollback();
@@ -177,7 +177,7 @@ public class NfsDownloadImageToCacheJob implements Job {
                 }
 
                 // return capacity and re-download
-                ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
+                IncreasePrimaryStorageCapacityMsg rmsg = new IncreasePrimaryStorageCapacityMsg();
                 rmsg.setPrimaryStorageUuid(cvo.getPrimaryStorageUuid());
                 rmsg.setDiskSize(cvo.getSize());
                 bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);

@@ -1121,12 +1121,12 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
                         @Override
                         public void rollback(FlowRollback trigger, Map data) {
                             if (s) {
-                                ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
-                                rmsg.setNoOverProvisioning(true);
-                                rmsg.setPrimaryStorageUuid(self.getUuid());
-                                rmsg.setDiskSize(image.getInventory().getActualSize());
-                                bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
-                                bus.send(rmsg);
+                                IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
+                                imsg.setNoOverProvisioning(true);
+                                imsg.setPrimaryStorageUuid(self.getUuid());
+                                imsg.setDiskSize(image.getInventory().getActualSize());
+                                bus.makeLocalServiceId(imsg, PrimaryStorageConstant.SERVICE_ID);
+                                bus.send(imsg);
                             }
 
                             trigger.rollback();

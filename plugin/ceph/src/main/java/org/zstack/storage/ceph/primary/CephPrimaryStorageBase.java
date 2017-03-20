@@ -51,7 +51,6 @@ import org.zstack.storage.backup.sftp.GetSftpBackupStorageDownloadCredentialRepl
 import org.zstack.storage.backup.sftp.SftpBackupStorageConstant;
 import org.zstack.storage.ceph.*;
 import org.zstack.storage.ceph.CephMonBase.PingResult;
-import org.zstack.storage.ceph.backup.CephBackupStorageMonBase;
 import org.zstack.storage.ceph.backup.CephBackupStorageVO;
 import org.zstack.storage.ceph.backup.CephBackupStorageVO_;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonBase.PingOperationFailure;
@@ -1202,12 +1201,12 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                         @Override
                         public void rollback(FlowRollback trigger, Map data) {
                             if (s) {
-                                ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
-                                rmsg.setNoOverProvisioning(true);
-                                rmsg.setPrimaryStorageUuid(self.getUuid());
-                                rmsg.setDiskSize(image.getInventory().getActualSize());
-                                bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
-                                bus.send(rmsg);
+                                IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
+                                imsg.setNoOverProvisioning(true);
+                                imsg.setPrimaryStorageUuid(self.getUuid());
+                                imsg.setDiskSize(image.getInventory().getActualSize());
+                                bus.makeLocalServiceId(imsg, PrimaryStorageConstant.SERVICE_ID);
+                                bus.send(imsg);
                             }
 
                             trigger.rollback();
@@ -1393,11 +1392,11 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                     q.add(ImageCacheVO_.imageUuid, Op.EQ, image.getInventory().getUuid());
                                     ImageCacheVO cvo = q.find();
 
-                                    ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
-                                    rmsg.setDiskSize(cvo.getSize());
-                                    rmsg.setPrimaryStorageUuid(cvo.getPrimaryStorageUuid());
-                                    bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, cvo.getPrimaryStorageUuid());
-                                    bus.send(rmsg);
+                                    IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
+                                    imsg.setDiskSize(cvo.getSize());
+                                    imsg.setPrimaryStorageUuid(cvo.getPrimaryStorageUuid());
+                                    bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, cvo.getPrimaryStorageUuid());
+                                    bus.send(imsg);
                                     dbf.remove(cvo);
 
                                     doDownload(new ReturnValueCompletion<ImageCacheVO>(chain) {
