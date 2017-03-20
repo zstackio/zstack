@@ -908,12 +908,12 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                 @Override
                                 public void rollback(FlowRollback trigger, Map data) {
                                     if (s) {
-                                        ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
-                                        rmsg.setDiskSize(image.getActualSize());
-                                        rmsg.setNoOverProvisioning(true);
-                                        rmsg.setPrimaryStorageUuid(self.getUuid());
-                                        bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
-                                        bus.send(rmsg);
+                                        IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
+                                        imsg.setDiskSize(image.getActualSize());
+                                        imsg.setNoOverProvisioning(true);
+                                        imsg.setPrimaryStorageUuid(self.getUuid());
+                                        bus.makeLocalServiceId(imsg, PrimaryStorageConstant.SERVICE_ID);
+                                        bus.send(imsg);
                                     }
 
                                     trigger.rollback();
@@ -1033,7 +1033,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                             q.add(ImageCacheVO_.installUrl, Op.LIKE, String.format("%%hostUuid://%s%%", hostUuid));
                             ImageCacheVO cvo = q.find();
 
-                            ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
+                            IncreasePrimaryStorageCapacityMsg rmsg = new IncreasePrimaryStorageCapacityMsg();
                             rmsg.setDiskSize(cvo.getSize());
                             rmsg.setPrimaryStorageUuid(cvo.getPrimaryStorageUuid());
                             bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, cvo.getPrimaryStorageUuid());

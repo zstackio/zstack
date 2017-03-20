@@ -66,11 +66,11 @@ public class TestReturnPrimaryStorage {
         AllocatePrimaryStorageReply ar = (AllocatePrimaryStorageReply) reply;
         Assert.assertEquals(pinv.getUuid(), ar.getPrimaryStorageInventory().getUuid());
 
-        ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
-        rmsg.setDiskSize(requiredSize);
-        rmsg.setPrimaryStorageUuid(pinv.getUuid());
-        rmsg.setServiceId(bus.makeLocalServiceId(PrimaryStorageConstant.SERVICE_ID));
-        bus.send(rmsg);
+        IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
+        imsg.setDiskSize(requiredSize);
+        imsg.setPrimaryStorageUuid(pinv.getUuid());
+        imsg.setServiceId(bus.makeLocalServiceId(PrimaryStorageConstant.SERVICE_ID));
+        bus.send(imsg);
         Thread.sleep(2000);
         PrimaryStorageVO pvo = dbf.findByUuid(pinv.getUuid(), PrimaryStorageVO.class);
         Assert.assertEquals(pvo.getCapacity().getTotalCapacity(), pvo.getCapacity().getAvailableCapacity());

@@ -2,7 +2,7 @@ package org.zstack.header.storage.primary;
 
 import org.zstack.header.message.Message;
 
-public class ReturnPrimaryStorageCapacityMsg extends Message {
+public class IncreasePrimaryStorageCapacityMsg extends Message {
     private String primaryStorageUuid;
     private long diskSize;
     private boolean noOverProvisioning;
