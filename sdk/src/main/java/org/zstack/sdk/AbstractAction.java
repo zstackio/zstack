@@ -9,6 +9,8 @@ import java.util.regex.Pattern;
  * Created by xing5 on 2016/12/9.
  */
 public abstract class AbstractAction {
+    public String apiId;
+
     abstract RestInfo getRestInfo();
 
     static class Parameter {

@@ -1,6 +1,7 @@
 package org.zstack.header.message;
 
 import com.rabbitmq.client.AMQP.BasicProperties;
+import org.apache.logging.log4j.ThreadContext;
 import org.zstack.header.core.AsyncBackup;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.utils.DebugUtils;

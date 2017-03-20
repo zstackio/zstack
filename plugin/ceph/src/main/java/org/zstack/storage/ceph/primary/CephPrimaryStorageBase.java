@@ -712,7 +712,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
         abstract void upload(ReturnValueCompletion<String> completion);
 
-        abstract boolean deleteWhenRollabackDownload();
+        abstract boolean deleteWhenRollbackDownload();
     }
 
     class SftpBackupStorageMediator extends BackupStorageMediator {
@@ -923,7 +923,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         }
 
         @Override
-        boolean deleteWhenRollabackDownload() {
+        boolean deleteWhenRollbackDownload() {
             return true;
         }
     }
@@ -1047,7 +1047,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         }
 
         @Override
-        boolean deleteWhenRollabackDownload() {
+        boolean deleteWhenRollbackDownload() {
             return false;
         }
     }
@@ -1227,7 +1227,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                             BackupStorageMediator mediator = getBackupStorageMediator(image.getSelectedBackupStorage().getBackupStorageUuid());
                             mediator.param = param;
 
-                            deleteOnRollback = mediator.deleteWhenRollabackDownload();
+                            deleteOnRollback = mediator.deleteWhenRollbackDownload();
                             mediator.download(new ReturnValueCompletion<String>(trigger) {
                                 @Override
                                 public void success(String path) {

@@ -44,7 +44,19 @@ class ApiHelperGenerator {
         c.delegate = a
         c()
         $queryConditionManipulate
-        return errorOut(a.call())
+
+        if (a.apiId == null) {
+            a.apiId = Platform.uuid
+        }
+
+        def tracker = new ApiPathTracker(a.apiId)
+        def out = errorOut(a.call())
+        def path = tracker.getApiPath()
+        if (!path.isEmpty()) {
+            Test.apiPaths[a.class.name] = path.join(" --->\\n")
+        }
+    
+        return out
     }
 
 """)
@@ -53,6 +65,7 @@ class ApiHelperGenerator {
         def fileContent = """package org.zstack.testlib
 
 import org.zstack.utils.gson.JSONObjectUtil
+import org.zstack.core.Platform
 
 trait ApiHelper {
     def errorOut(res) {

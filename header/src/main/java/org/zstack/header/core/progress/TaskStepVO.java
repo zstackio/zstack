@@ -4,35 +4,27 @@ import javax.persistence.*;
 import java.sql.Timestamp;
 
 /**
- * Created by mingjian.deng on 16/12/12.
+ * Created by xing5 on 2017/3/23.
  */
-@Table
 @Entity
-public class ProgressVO {
+@Table
+public class TaskStepVO {
     @Id
     @Column
     @GeneratedValue(strategy= GenerationType.IDENTITY)
     private long id;
 
     @Column
-    private String resourceUuid;
+    private String taskName;
 
     @Column
-    private String processType;
-
-    @Column
-    private String progress;
+    private String content;
 
     @Column
     private Timestamp createDate;
 
     @Column
     private Timestamp lastOpDate;
-
-    @PreUpdate
-    private void preUpdate() {
-        lastOpDate = null;
-    }
 
     public long getId() {
         return id;
@@ -42,28 +34,20 @@ public class ProgressVO {
         this.id = id;
     }
 
-    public String getResourceUuid() {
-        return resourceUuid;
+    public String getTaskName() {
+        return taskName;
     }
 
-    public void setResourceUuid(String resourceUuid) {
-        this.resourceUuid = resourceUuid;
+    public void setTaskName(String taskName) {
+        this.taskName = taskName;
     }
 
-    public String getProcessType() {
-        return processType;
+    public String getContent() {
+        return content;
     }
 
-    public void setProcessType(String processType) {
-        this.processType = processType;
-    }
-
-    public String getProgress() {
-        return progress;
-    }
-
-    public void setProgress(String progress) {
-        this.progress = progress;
+    public void setContent(String content) {
+        this.content = content;
     }
 
     public Timestamp getCreateDate() {

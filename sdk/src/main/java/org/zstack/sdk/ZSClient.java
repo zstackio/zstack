@@ -133,6 +133,9 @@ public class ZSClient {
         Api(AbstractAction action) {
             this.action = action;
             info = action.getRestInfo();
+            if (action.apiId != null) {
+                jobUuid = action.apiId;
+            }
         }
 
         private String substituteUrl(String url, Map<String, Object> tokens) {
@@ -191,6 +194,10 @@ public class ZSClient {
             Request request = reqBuilder.build();
 
             try {
+                if (config.webHook != null) {
+                    waittingApis.put(jobUuid, this);
+                }
+
                 Response response = http.newCall(request).execute();
                 if (!response.isSuccessful()) {
                     return httpError(response.code(), response.body().string());
@@ -213,9 +220,7 @@ public class ZSClient {
             }
         }
 
-        private ApiResult webHookResult() {
-            waittingApis.put(jobUuid, this);
-
+        private ApiResult syncWebHookResult() {
             synchronized (this) {
                 Long timeout = (Long)action.getParameterValue("timeout", false);
                 timeout = timeout == null ? config.defaultPollingTimeout : timeout;
@@ -241,6 +246,31 @@ public class ZSClient {
             }
         }
 
+        private ApiResult webHookResult() {
+            if (completion == null) {
+                return syncWebHookResult();
+            } else {
+                asyncWebHookResult();
+                return null;
+            }
+        }
+
+        private void asyncWebHookResult() {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        completion.complete(syncWebHookResult());
+                    } catch (Throwable t) {
+                        ApiResult res = new ApiResult();
+                        res.error = new ErrorCode();
+                        res.error.code = Constants.INTERNAL_ERROR;
+                        res.error.details = t.getMessage();
+                        completion.complete(res);
+                    }
+                }
+            }).start();
+        }
 
         private void fillQueryApiRequestBuilder(Request.Builder reqBuilder) {
             QueryAction qaction = (QueryAction) action;

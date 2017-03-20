@@ -1,6 +1,7 @@
 package org.zstack.kvm;
 
 import org.zstack.header.host.HostMessage;
+import org.zstack.header.message.CarrierMessage;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.utils.gson.JSONObjectUtil;
 
@@ -8,7 +9,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  */
-public class KVMHostAsyncHttpCallMsg extends NeedReplyMessage implements HostMessage {
+public class KVMHostAsyncHttpCallMsg extends NeedReplyMessage implements HostMessage, CarrierMessage {
     private String path;
     private String command;
     private String hostUuid;

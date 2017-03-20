@@ -1,12 +1,13 @@
 package org.zstack.kvm;
 
 import org.zstack.header.host.HostMessage;
+import org.zstack.header.message.CarrierMessage;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.utils.gson.JSONObjectUtil;
 
 /**
  */
-public class KVMHostSyncHttpCallMsg extends NeedReplyMessage implements HostMessage {
+public class KVMHostSyncHttpCallMsg extends NeedReplyMessage implements HostMessage, CarrierMessage {
     private String path;
     private String command;
     private String hostUuid;

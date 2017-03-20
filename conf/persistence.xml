@@ -133,8 +133,9 @@
         <class>org.zstack.ldap.LdapServerVO</class>
         <class>org.zstack.ldap.LdapAccountRefVO</class>
         <class>org.zstack.core.jsonlabel.JsonLabelVO</class>
-        <class>org.zstack.header.core.progress.ProgressVO</class>
         <class>org.zstack.rest.AsyncRestVO</class>
         <class>org.zstack.storage.ceph.primary.CephPrimaryStoragePoolVO</class>
+        <class>org.zstack.header.core.progress.TaskProgressVO</class>
+        <class>org.zstack.header.core.progress.TaskStepVO</class>
     </persistence-unit>
 </persistence>

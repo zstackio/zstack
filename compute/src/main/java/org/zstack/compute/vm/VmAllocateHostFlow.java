@@ -31,6 +31,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+
+import static org.zstack.core.progress.ProgressReportService.taskProgress;
+
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmAllocateHostFlow implements Flow {
     @Autowired
@@ -101,6 +104,8 @@ public class VmAllocateHostFlow implements Flow {
 
     @Override
     public void run(final FlowTrigger chain, Map data) {
+        taskProgress("allocate candidate hosts");
+
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
 
         if (VmOperation.NewCreate != spec.getCurrentVmOperation()) {

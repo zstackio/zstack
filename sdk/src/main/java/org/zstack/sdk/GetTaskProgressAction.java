@@ -22,11 +22,11 @@ public class GetTaskProgressAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String resourceUuid;
+    @Param(required = false)
+    public java.lang.String apiId;
 
-    @Param(required = false, validValues = {"AddImage","LocalStorageMigrateVolume","CreateRootVolumeTemplateFromRootVolume"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String processType;
+    @Param(required = false)
+    public boolean all = false;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -72,7 +72,7 @@ public class GetTaskProgressAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/progress/{processType}/{resourceUuid}";
+        info.path = "/task-progresses/{apiId}";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";

@@ -28,6 +28,8 @@ import java.util.BitSet;
 import java.util.List;
 import java.util.Map;
 
+import static org.zstack.core.progress.ProgressReportService.taskProgress;
+
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmAllocateNicFlow implements Flow {
     private static final CLogger logger = Utils.getLogger(VmAllocateNicFlow.class);
@@ -84,6 +86,8 @@ public class VmAllocateNicFlow implements Flow {
 
     @Override
     public void run(final FlowTrigger trigger, final Map data) {
+        taskProgress("create nics");
+
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
 
         List<AllocateIpMsg> msgs = new ArrayList<AllocateIpMsg>();

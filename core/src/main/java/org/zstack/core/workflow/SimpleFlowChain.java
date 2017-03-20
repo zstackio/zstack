@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -291,7 +292,8 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
 
             currentFlow = toRun;
 
-            String info = String.format("[FlowChain: %s] start executing flow[%s]", name, getFlowName(currentFlow));
+            String flowName = getFlowName(currentFlow);
+            String info = String.format("[FlowChain: %s] start executing flow[%s]", name, flowName);
             logger.debug(info);
             collectAfterRunnable(toRun);
             toRun.run(this, data);

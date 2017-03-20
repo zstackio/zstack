@@ -10,6 +10,7 @@ import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.logging.CLoggerImpl;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 public class PluginRegistryImpl implements PluginRegistryIN {
@@ -200,6 +201,12 @@ public class PluginRegistryImpl implements PluginRegistryIN {
         }
 
         return m.get(key);
+    }
+
+    @Override
+    public void defineDynamicExtension(Class interfaceClass, Object instance) {
+        List exts = extensionsByInterfaceClass.computeIfAbsent(interfaceClass, k -> new ArrayList());
+        exts.add(instance);
     }
 
     @Override

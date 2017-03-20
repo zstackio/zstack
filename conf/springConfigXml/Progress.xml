@@ -19,10 +19,4 @@
             <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint"/>
         </zstack:plugin>
     </bean>
-
-    <bean id="ProgressApiInterceptor" class="org.zstack.core.progress.ProgressApiInterceptor">
-        <zstack:plugin>
-            <zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor" />
-        </zstack:plugin>
-    </bean>
 </beans>

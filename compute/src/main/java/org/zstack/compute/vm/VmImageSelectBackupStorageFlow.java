@@ -29,6 +29,8 @@ import javax.persistence.TypedQuery;
 import java.util.List;
 import java.util.Map;
 
+import static org.zstack.core.progress.ProgressReportService.taskProgress;
+
 /**
  */
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
@@ -39,6 +41,8 @@ public class VmImageSelectBackupStorageFlow extends NoRollbackFlow {
     private ErrorFacade errf;
 
     private String findBackupStorage(VmInstanceSpec spec, String imageUuid) {
+        taskProgress("Choose backup storage for downloading the image");
+
         if (spec.getImageSpec().getInventory().getBackupStorageRefs().size() == 1) {
             return spec.getImageSpec().getInventory().getBackupStorageRefs().iterator().next().getBackupStorageUuid();
         }

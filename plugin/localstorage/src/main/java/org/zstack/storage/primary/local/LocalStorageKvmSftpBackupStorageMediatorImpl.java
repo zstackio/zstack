@@ -5,6 +5,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
+import org.zstack.header.HasThreadContext;
 import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
@@ -45,7 +46,7 @@ public class LocalStorageKvmSftpBackupStorageMediatorImpl implements LocalStorag
     public static final String DOWNLOAD_BIT_PATH = "/localstorage/sftp/download";
 
     @ApiTimeout(apiClasses = {APICreateVmInstanceMsg.class, APILocalStorageMigrateVolumeMsg.class})
-    public static class SftpDownloadBitsCmd extends LocalStorageKvmBackend.AgentCommand {
+    public static class SftpDownloadBitsCmd extends LocalStorageKvmBackend.AgentCommand implements HasThreadContext {
         private String sshKey;
         private String username;
         private String hostname;

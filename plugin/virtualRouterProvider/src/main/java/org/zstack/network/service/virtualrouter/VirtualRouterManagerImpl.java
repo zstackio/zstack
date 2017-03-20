@@ -80,6 +80,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static org.zstack.core.progress.ProgressReportService.createSubTaskProgress;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
@@ -694,6 +695,8 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         msg.setProviderType(struct.getProviderType());
         msg.setApplianceVmType(struct.getApplianceVmType());
         msg.setApplianceVmAgentPort(struct.getApplianceVmAgentPort());
+
+        createSubTaskProgress("create a virtual router vm");
         bus.makeTargetServiceIdByResourceUuid(msg, VirtualRouterConstant.SERVICE_ID, l3Nw.getUuid());
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override

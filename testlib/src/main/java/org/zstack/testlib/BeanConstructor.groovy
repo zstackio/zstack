@@ -32,7 +32,8 @@ class BeanConstructor {
             "SchedulerFacade.xml",
             "jsonlabel.xml",
             "encrypt.xml",
-            "rest.xml"
+            "rest.xml",
+            "Progress.xml"
     ]
 
     private List<String> xmls = []

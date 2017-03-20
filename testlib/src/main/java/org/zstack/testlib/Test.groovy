@@ -21,6 +21,7 @@ import org.zstack.utils.logging.CLogger
 
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 
 /**
@@ -30,6 +31,7 @@ abstract class Test implements ApiHelper {
     final CLogger logger = Utils.getLogger(this.getClass())
 
     static Object deployer
+    static Map<String, String> apiPaths = new ConcurrentHashMap<>()
 
 
     private final int PHASE_NONE = 0
@@ -285,6 +287,16 @@ abstract class Test implements ApiHelper {
             if ((this instanceof Case) && System.getProperty("clean") != null) {
                 clean()
             }
+
+            if (System.getProperty("apipath") != null) {
+                def dir = new File([getResultDirBase(), "apipath"].join("/"))
+                dir.deleteDir()
+                dir.mkdirs()
+
+                apiPaths.each { name, path ->
+                    new File([dir.absolutePath, name.replace(".", "_")].join("/")).write(path)
+                }
+            }
         } catch (AssertionError e) {
             logger.warn("\n${e.message}", e)
             System.exit(1)
@@ -314,14 +326,16 @@ abstract class Test implements ApiHelper {
     protected void beforeRunSubCase() {
     }
 
-    protected void runSubCases() {
+    private String getResultDirBase() {
         String resultDir = System.getProperty("resultDir")
         if (resultDir == null) {
             resultDir = [System.getProperty("user.dir"), "zstack-integration-test-result"].join("/")
         }
+        return resultDir
+    }
 
-        resultDir = [resultDir, this.class.name.replace(".", "_")].join("/")
-
+    protected void runSubCases() {
+        def resultDir = [getResultDirBase(), this.class.name.replace(".", "_")].join("/")
         def dir = new File(resultDir)
         dir.deleteDir()
         dir.mkdirs()
@@ -463,7 +477,7 @@ abstract class Test implements ApiHelper {
         return getRetryReturnValue(ret, true)
     }
 
-    protected boolean retryInMillis(int total, int interval, Closure c) {
+    protected boolean retryInMillis(int total, int interval=500, Closure c) {
         int count = 0
 
         def ret = null

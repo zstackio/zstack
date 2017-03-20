@@ -15,18 +15,15 @@ import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
+import org.zstack.header.HasThreadContext;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
-import org.zstack.header.core.progress.ProgressConstants;
-import org.zstack.header.core.progress.ProgressVO;
-import org.zstack.header.core.progress.ProgressVO_;
 import org.zstack.header.core.validation.Validation;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
 import org.zstack.header.image.*;
@@ -67,6 +64,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import static org.zstack.core.progress.ProgressReportService.taskProgress;
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
@@ -511,7 +509,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     @ApiTimeout(apiClasses = {APILocalStorageMigrateVolumeMsg.class})
-    public static class GetMd5Cmd extends AgentCommand {
+    public static class GetMd5Cmd extends AgentCommand implements HasThreadContext {
         public List<GetMd5TO> md5s;
         public String sendCommandUrl;
         public String volumeUuid;
@@ -530,7 +528,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
 
     @ApiTimeout(apiClasses = {APILocalStorageMigrateVolumeMsg.class})
-    public static class CheckMd5sumCmd extends AgentCommand {
+    public static class CheckMd5sumCmd extends AgentCommand implements HasThreadContext {
         public List<Md5TO> md5s;
         public String sendCommandUrl;
         public String volumeUuid;
@@ -868,6 +866,8 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 }
 
                 private void doDownload(final SyncTaskChain chain) {
+                    taskProgress("Download the image[%s] to the image cache", image.getName());
+
                     FlowChain fchain = FlowChainBuilder.newShareFlowChain();
                     fchain.setName(String.format("download-image-%s-to-local-storage-%s-cache-host-%s",
                             image.getUuid(), self.getUuid(), hostUuid));
@@ -1796,22 +1796,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         }).start();
     }
 
-    private void deleteProgress(String resourceUuid) {
-        final Q q = Q.New(ProgressVO.class)
-                .eq(ProgressVO_.resourceUuid, resourceUuid)
-                .eq(ProgressVO_.processType, ProgressConstants.ProgressType.LocalStorageMigrateVolume.toString());
-        List<ProgressVO> list = q.list();
-        if (list.size() > 0) {
-            for (ProgressVO p : list) {
-                try {
-                    dbf.remove(p);
-                } catch (Exception e) {
-                    logger.warn("no need delete, it was deleted...");
-                }
-            }
-        }
-    }
-
     @Override
     public List<Flow> createMigrateBitsVolumeFlow(final MigrateBitsStruct struct) {
         List<Flow> flows = new ArrayList<Flow>();
@@ -1948,7 +1932,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
                             @Override
                             public void fail(ErrorCode errorCode) {
-                                deleteProgress(cmd.volumeUuid);
                                 trigger.fail(errorCode);
                             }
                         });
@@ -1990,7 +1973,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
                                             @Override
                                             public void fail(ErrorCode errorCode) {
-                                                deleteProgress(cmd.uuid);
                                                 trigger.fail(errorCode);
                                                 chain.next();
                                             }
@@ -2103,7 +2085,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
                             @Override
                             public void fail(ErrorCode errorCode) {
-                                deleteProgress(cmd.volumeUuid);
                                 trigger.fail(errorCode);
                             }
                         });
@@ -2144,7 +2125,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
                     @Override
                     public void fail(ErrorCode errorCode) {
-                        deleteProgress(cmd.volumeUuid);
                         trigger.fail(errorCode);
                     }
                 });
@@ -2187,7 +2167,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
                             @Override
                             public void fail(ErrorCode errorCode) {
-                                deleteProgress(cmd.uuid);
                                 trigger.fail(errorCode);
                             }
                         });
@@ -2249,13 +2228,11 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 httpCall(CHECK_MD5_PATH, struct.getDestHostUuid(), cmd, false, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
                     @Override
                     public void success(AgentResponse rsp) {
-                        deleteProgress(cmd.volumeUuid);
                         trigger.next();
                     }
 
                     @Override
                     public void fail(ErrorCode errorCode) {
-                        deleteProgress(cmd.volumeUuid);
                         trigger.fail(errorCode);
                     }
                 });

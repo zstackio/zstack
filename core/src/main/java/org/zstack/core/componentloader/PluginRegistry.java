@@ -17,6 +17,8 @@ public interface PluginRegistry {
 
     <T> List getExtensionListFromMap(Object key, Class<T> clazz);
 
+    void defineDynamicExtension(Class interfaceClass, Object instance);
+
     String PLUGIN_REGISTRY_BEAN_NAME = "zstack.PluginRegistry";
     String PLUGIN_REGISTRYIMPL_PLUGINS_FIELD_NAME = "extensions";
 }

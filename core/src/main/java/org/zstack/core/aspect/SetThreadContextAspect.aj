@@ -12,6 +12,14 @@ public aspect SetThreadContextAspect {
         HasThreadContext tc = (HasThreadContext)obj;
         if (tc.threadContext != null) {
            ThreadContext.putAll(tc.threadContext);
+        } else {
+            ThreadContext.clearMap();
+        }
+        if (tc.threadContextStack != null) {
+            ThreadContext.clearStack();
+            ThreadContext.setStack(tc.threadContextStack);
+        } else {
+            ThreadContext.clearStack();
         }
     }
 

@@ -587,7 +587,7 @@ public class Platform {
         return managementServerIp;
     }
 
-    private static String toI18nString(String code, Object... args) {
+    public static String toI18nString(String code, Object... args) {
         return toI18nString(code, null, args);
     }
 

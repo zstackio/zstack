@@ -248,7 +248,7 @@ use:
                 }
 
                 image {
-                    name = "vr"
+                    name = "vr-image"
                     url = "http://zstack.org/download/vr.qcow2"
                 }
             }
@@ -267,7 +267,7 @@ use:
                         username = "root"
                         password = "password"
                         totalCpu = 40
-                        totalMem = SizeUnit.GIGABYTE.toByte(8)
+                        totalMem = SizeUnit.GIGABYTE.toByte(320)
                     }
 
                     attachPrimaryStorage("local")
@@ -322,7 +322,7 @@ use:
                     cpu = 2
                     useManagementL3Network("pubL3")
                     usePublicL3Network("pubL3")
-                    useImage("vr")
+                    useImage("vr-image")
                 }
 
                 attachBackupStorage("sftp")
