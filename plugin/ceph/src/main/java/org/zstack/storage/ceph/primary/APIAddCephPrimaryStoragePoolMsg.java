@@ -73,7 +73,7 @@ public class APIAddCephPrimaryStoragePoolMsg extends APICreateMessage implements
         return new ApiNotification() {
             @Override
             public void after(APIEvent evt) {
-                ntfy("Adding a Ceph pool").resource(primaryStorageUuid, PrimaryStorageVO.class.getSimpleName())
+                ntfy("Added a Ceph pool").resource(primaryStorageUuid, PrimaryStorageVO.class.getSimpleName())
                         .messageAndEvent(that, evt).done();
             }
         };

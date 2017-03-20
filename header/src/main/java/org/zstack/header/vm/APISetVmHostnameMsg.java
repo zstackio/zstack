@@ -2,8 +2,10 @@ package org.zstack.header.vm;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
+import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.rest.RestResponse;
 
@@ -49,6 +51,18 @@ public class APISetVmHostnameMsg extends APIMessage implements VmInstanceMessage
         msg.uuid = uuid();
         msg.hostname = "vm1.zstack.org";
         return msg;
+    }
+
+    public ApiNotification __notification__() {
+        APIMessage that = this;
+
+        return new ApiNotification() {
+            @Override
+            public void after(APIEvent evt) {
+                ntfy("set hostname").resource(uuid, VmInstanceVO.class.getSimpleName())
+                        .messageAndEvent(that, evt).done();
+            }
+        };
     }
 
 }

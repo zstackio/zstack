@@ -71,7 +71,7 @@ public class APIAddCephBackupStorageMsg extends APIAddBackupStorageMsg {
             @Override
             public void after(APIEvent evt) {
                 if (evt.isSuccess()) {
-                    ntfy("Adding").resource(((APIAddBackupStorageEvent)evt).getInventory().getUuid(), BackupStorageVO.class.getSimpleName())
+                    ntfy("Added").resource(((APIAddBackupStorageEvent)evt).getInventory().getUuid(), BackupStorageVO.class.getSimpleName())
                             .messageAndEvent(that, evt).done();
                 }
             }

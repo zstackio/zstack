@@ -71,7 +71,7 @@ public class APIDeleteImageMsg extends APIDeleteMessage implements ImageMessage 
         return new ApiNotification() {
             @Override
             public void after(APIEvent evt) {
-                ntfy("Deleting").resource(uuid, ImageVO.class.getSimpleName())
+                ntfy("Deleted").resource(uuid, ImageVO.class.getSimpleName())
                         .messageAndEvent(that, evt).done();
             }
         };
