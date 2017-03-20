@@ -5,6 +5,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.AsyncThread;
@@ -19,7 +22,6 @@ import org.zstack.header.core.progress.ProgressVO_;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.image.APIAddImageMsg;
 import org.zstack.header.image.ImageBackupStorageRefInventory;
@@ -31,12 +33,16 @@ import org.zstack.header.storage.backup.*;
 import org.zstack.storage.backup.BackupStorageBase;
 import org.zstack.storage.ceph.*;
 import org.zstack.storage.ceph.CephMonBase.PingResult;
+import org.zstack.storage.ceph.CephCapacityVO_;
+import org.zstack.storage.ceph.primary.CephPrimaryStorageVO;
+import org.zstack.storage.ceph.primary.CephPrimaryStorageVO_;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+
 
 import static org.zstack.core.Platform.operr;
 
@@ -1408,6 +1414,17 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
     @Override
     public void deleteHook() {
+        String fsid = getSelf().getFsid();
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                if(Q.New(CephPrimaryStorageVO.class).eq(CephPrimaryStorageVO_.fsid, fsid).find() == null){
+                    SQL.New(CephCapacityVO.class).eq(CephCapacityVO_.fsid, fsid).delete();
+                }
+
+            }
+        }.execute();
         dbf.removeCollection(getSelf().getMons(), CephBackupStorageMonVO.class);
+
     }
 }

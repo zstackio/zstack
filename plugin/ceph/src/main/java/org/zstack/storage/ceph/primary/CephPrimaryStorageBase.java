@@ -5,6 +5,8 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.AsyncThread;
@@ -20,7 +22,6 @@ import org.zstack.header.core.*;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostStatus;
@@ -50,6 +51,7 @@ import org.zstack.storage.backup.sftp.GetSftpBackupStorageDownloadCredentialRepl
 import org.zstack.storage.backup.sftp.SftpBackupStorageConstant;
 import org.zstack.storage.ceph.*;
 import org.zstack.storage.ceph.CephMonBase.PingResult;
+import org.zstack.storage.ceph.backup.CephBackupStorageMonBase;
 import org.zstack.storage.ceph.backup.CephBackupStorageVO;
 import org.zstack.storage.ceph.backup.CephBackupStorageVO_;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonBase.PingOperationFailure;
@@ -2962,6 +2964,16 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 throw new OperationFailureException(completion.getErrorCode());
             }
         }
+        String fsid = getSelf().getFsid();
+        new SQLBatch(){
+
+            @Override
+            protected void scripts() {
+                if(Q.New(CephBackupStorageVO.class).eq(CephBackupStorageVO_.fsid, fsid).find() == null){
+                    SQL.New(CephCapacityVO.class).eq(CephCapacityVO_.fsid, fsid).delete();
+                }
+            }
+        }.execute();
         dbf.removeCollection(getSelf().getMons(), CephPrimaryStorageMonVO.class);
     }
 }
