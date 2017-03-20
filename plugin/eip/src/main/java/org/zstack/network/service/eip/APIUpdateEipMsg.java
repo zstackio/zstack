@@ -69,7 +69,7 @@ public class APIUpdateEipMsg extends APIMessage implements EipMessage {
         return new ApiNotification() {
             @Override
             public void after(APIEvent evt) {
-                ntfy("Updating").resource(uuid, EipVO.class.getSimpleName())
+                ntfy("Updated").resource(uuid, EipVO.class.getSimpleName())
                         .messageAndEvent(that, evt).done();
             }
         };

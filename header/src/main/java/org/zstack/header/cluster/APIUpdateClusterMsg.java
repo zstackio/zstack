@@ -67,7 +67,7 @@ public class APIUpdateClusterMsg extends APIMessage implements ClusterMessage {
         return new ApiNotification() {
             @Override
             public void after(APIEvent evt) {
-                ntfy("Updating").resource(uuid, ClusterVO.class.getSimpleName())
+                ntfy("Updated").resource(uuid, ClusterVO.class.getSimpleName())
                         .messageAndEvent(that, evt).done();
             }
         };

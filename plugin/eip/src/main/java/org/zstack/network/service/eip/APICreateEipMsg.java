@@ -134,7 +134,7 @@ public class APICreateEipMsg extends APICreateMessage {
             @Override
             public void after(APIEvent evt) {
                 if (evt.isSuccess()) {
-                    ntfy("Creating").resource(((APICreateEipEvent)evt).getInventory().getUuid(), EipVO.class.getSimpleName())
+                    ntfy("Created").resource(((APICreateEipEvent)evt).getInventory().getUuid(), EipVO.class.getSimpleName())
                             .messageAndEvent(that, evt).done();
                 }
             }
