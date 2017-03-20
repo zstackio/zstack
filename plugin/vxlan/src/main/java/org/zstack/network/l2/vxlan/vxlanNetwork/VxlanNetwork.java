@@ -3,13 +3,21 @@ package org.zstack.network.l2.vxlan.vxlanNetwork;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.inventory.InventoryFacade;
+import org.zstack.core.workflow.FlowChainBuilder;
+import org.zstack.header.core.Completion;
+import org.zstack.header.core.NopeCompletion;
+import org.zstack.header.core.workflow.*;
+import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudException;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.network.l2.*;
@@ -18,6 +26,10 @@ import org.zstack.network.l2.L2NetworkManager;
 import org.zstack.network.l2.L2NoVlanNetwork;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Created by weiwang on 01/03/2017.
@@ -74,9 +86,7 @@ public class VxlanNetwork extends L2NoVlanNetwork {
     }
 
     private void handleLocalMessage(Message msg) {
-        if (msg instanceof L2NetworkDeletionMsg) {
-            handle((L2NetworkDeletionMsg) msg);
-        } else if (msg instanceof CheckL2NetworkOnHostMsg) {
+        if (msg instanceof CheckL2NetworkOnHostMsg) {
             handle((CheckL2NetworkOnHostMsg) msg);
         } else if (msg instanceof PrepareL2NetworkOnHostMsg) {
             handle((PrepareL2NetworkOnHostMsg) msg);
@@ -99,9 +109,6 @@ public class VxlanNetwork extends L2NoVlanNetwork {
 
     private void handle(final CheckL2NetworkOnHostMsg msg) {
         throw new CloudRuntimeException("VxlanNetwork doesn't need check which VxlanNetworkPool needed");
-    }
-
-    private void handle(L2NetworkDeletionMsg msg) {
     }
 
     private void handleApiMessage(APIMessage msg) {
@@ -127,6 +134,75 @@ public class VxlanNetwork extends L2NoVlanNetwork {
     }
 
     private void handle(APIDeleteL2NetworkMsg msg) {
+        final APIDeleteL2NetworkEvent evt = new APIDeleteL2NetworkEvent(msg.getId());
+        final String issuer = VxlanNetworkVO.class.getSimpleName();
+        final List<L2VxlanNetworkInventory> ctx = L2VxlanNetworkInventory.valueOf1(Arrays.asList(self));
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName(String.format("delete-l2VxlanNetwork-%s", msg.getL2NetworkUuid()));
+        if (msg.getDeletionMode() == APIDeleteMessage.DeletionMode.Permissive) {
+            chain.then(new NoRollbackFlow() {
+                @Override
+                public void run(final FlowTrigger trigger, Map data) {
+                    casf.asyncCascade(CascadeConstant.DELETION_CHECK_CODE, issuer, ctx, new Completion(trigger) {
+                        @Override
+                        public void success() {
+                            trigger.next();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            trigger.fail(errorCode);
+                        }
+                    });
+                }
+            }).then(new NoRollbackFlow() {
+                @Override
+                public void run(final FlowTrigger trigger, Map data) {
+                    casf.asyncCascade(CascadeConstant.DELETION_DELETE_CODE, issuer, ctx, new Completion(trigger) {
+                        @Override
+                        public void success() {
+                            trigger.next();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            trigger.fail(errorCode);
+                        }
+                    });
+                }
+            });
+        } else {
+            chain.then(new NoRollbackFlow() {
+                @Override
+                public void run(final FlowTrigger trigger, Map data) {
+                    casf.asyncCascade(CascadeConstant.DELETION_FORCE_DELETE_CODE, issuer, ctx, new Completion(trigger) {
+                        @Override
+                        public void success() {
+                            trigger.next();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            trigger.fail(errorCode);
+                        }
+                    });
+                }
+            });
+        }
+
+        chain.done(new FlowDoneHandler(msg) {
+            @Override
+            public void handle(Map data) {
+                casf.asyncCascadeFull(CascadeConstant.DELETION_CLEANUP_CODE, issuer, ctx, new NopeCompletion());
+                bus.publish(evt);
+            }
+        }).error(new FlowErrorHandler(msg) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                evt.setError(errf.instantiateErrorCode(SysErrors.DELETE_RESOURCE_ERROR, errCode));
+                bus.publish(evt);
+            }
+        }).start();
     }
 
     private void superHandle(L2NetworkMessage msg) {

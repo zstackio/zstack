@@ -1,5 +1,7 @@
 package org.zstack.network.l2.vxlan.vxlanNetworkPool;
 
+import org.zstack.header.network.l2.L2Network;
+import org.zstack.header.network.l2.L2NetworkEO;
 import org.zstack.header.tag.AutoDeleteTag;
 import org.zstack.header.vo.ForeignKey;
 
@@ -32,7 +34,7 @@ public class VniRangeVO {
     private Integer endVni;
 
     @Column
-    @ForeignKey(parentEntityClass = VxlanNetworkPoolVO.class, onDeleteAction = ForeignKey.ReferenceOption.CASCADE)
+    @ForeignKey(parentEntityClass = L2NetworkEO.class, onDeleteAction = ForeignKey.ReferenceOption.CASCADE)
     private String l2NetworkUuid;
 
     public String getUuid() {

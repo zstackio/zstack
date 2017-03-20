@@ -56,7 +56,7 @@ public class L2VxlanNetworkPoolInventory extends L2NetworkInventory {
     }
 
     public static L2VxlanNetworkPoolInventory valueOf(VxlanNetworkPoolVO vo) {
-        return new L2VxlanNetworkPoolInventory();
+        return new L2VxlanNetworkPoolInventory(vo);
     }
 
     public static List<L2VxlanNetworkPoolInventory> valueOf1(Collection<VxlanNetworkPoolVO> vos) {

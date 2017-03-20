@@ -11,7 +11,7 @@ public class VniRangeVO_ {
     public static volatile SingularAttribute<VniRangeVO, String> uuid;
     public static volatile SingularAttribute<VniRangeVO, String> name;
     public static volatile SingularAttribute<VniRangeVO, String> description;
-    public static volatile SingularAttribute<VniRangeVO, String> startVni;
+    public static volatile SingularAttribute<VniRangeVO, Integer> startVni;
     public static volatile SingularAttribute<VniRangeVO, Integer> endVni;
-    public static volatile SingularAttribute<VniRangeVO, Integer> l2NetworkUuid;
+    public static volatile SingularAttribute<VniRangeVO, String> l2NetworkUuid;
 }

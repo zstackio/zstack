@@ -1,10 +1,14 @@
 package org.zstack.network.l2.vxlan.vtep;
 
+import org.zstack.header.cluster.ClusterEO;
 import org.zstack.header.cluster.ClusterVO;
+import org.zstack.header.host.HostEO;
 import org.zstack.header.host.HostVO;
+import org.zstack.header.network.l2.L2NetworkEO;
 import org.zstack.header.tag.AutoDeleteTag;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.NoView;
+import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolVO;
 
 import javax.persistence.*;
 import java.util.HashSet;
@@ -22,11 +26,11 @@ public class VtepVO {
     private String uuid;
 
     @Column
-    @ForeignKey(parentEntityClass = HostVO.class, onDeleteAction = ForeignKey.ReferenceOption.CASCADE)
+    @ForeignKey(parentEntityClass = HostEO.class, onDeleteAction = ForeignKey.ReferenceOption.CASCADE)
     private String hostUuid;
 
     @Column
-    @ForeignKey(parentEntityClass = ClusterVO.class, onDeleteAction = ForeignKey.ReferenceOption.CASCADE)
+    @ForeignKey(parentEntityClass = ClusterEO.class, onDeleteAction = ForeignKey.ReferenceOption.CASCADE)
     private String clusterUuid;
 
     @Column
@@ -36,6 +40,7 @@ public class VtepVO {
     private Integer port;
 
     @Column
+    @ForeignKey(parentEntityClass = L2NetworkEO.class, onDeleteAction = ForeignKey.ReferenceOption.CASCADE)
     private String poolUuid;
 
     @Column

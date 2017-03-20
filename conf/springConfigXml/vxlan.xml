@@ -19,4 +19,30 @@
         </zstack:plugin>
     </bean>
 
+
+    <bean id="L2VxlanNetworkFactory" class="org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkFactory">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component"/>
+            <zstack:extension interface="org.zstack.header.network.l2.L2NetworkFactory"/>
+        </zstack:plugin>
+    </bean>
+
+    <bean id="L2VxlanNetworkPoolCascadeExtension" class="org.zstack.network.l2.vxlan.vxlanNetworkPool.L2VxlanNetworkPoolCascadeExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint"/>
+        </zstack:plugin>
+    </bean>
+
+    <bean id="L2VxlanNetworkCascadeExtension" class="org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkCascadeExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint"/>
+        </zstack:plugin>
+    </bean>
+
+    <bean id="L2VxlanFakeNetworkRealizer" class="org.zstack.network.l2.vxlan.vxlanNetworkPool.L2VxlanFakeNetworkRealizer">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.network.l2.L2NetworkRealizationExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
 </beans>

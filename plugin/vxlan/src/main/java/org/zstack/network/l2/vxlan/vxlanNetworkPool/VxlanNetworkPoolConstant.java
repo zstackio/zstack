@@ -13,4 +13,6 @@ public class VxlanNetworkPoolConstant {
     public static final String RANDOM_VNI_ALLOCATOR_STRATEGY = "RandomVniAllocatorStrategy";
 
     public static final String ACTION_CATEGORY = "vxlan";
+
+    public static final String L2_VXLAN_NETWORK_POOL_FACTORY_SERVICE_ID = "network.l2.vxlan";
 }

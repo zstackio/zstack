@@ -41,8 +41,6 @@ public class VxlanNetworkPoolVO extends L2NetworkVO {
     @NoView
     private Set<VniRangeVO> attachedVniRanges = new HashSet<>();
 
-    private Map<String, String> attachedCidrs = new HashMap<>();
-
     public VxlanNetworkPoolVO() {
     }
 
@@ -71,13 +69,5 @@ public class VxlanNetworkPoolVO extends L2NetworkVO {
 
     public void setAttachedVniRanges(Set<VniRangeVO> attachedVniRanges) {
         this.attachedVniRanges = attachedVniRanges;
-    }
-
-    public Map<String, String> getAttachedCidrs() {
-        return attachedCidrs;
-    }
-
-    public void setAttachedCidrs(Map<String, String> attachedCidrs) {
-        this.attachedCidrs = attachedCidrs;
     }
 }

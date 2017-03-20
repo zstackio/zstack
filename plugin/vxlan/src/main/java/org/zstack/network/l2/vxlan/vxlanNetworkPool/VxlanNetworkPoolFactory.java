@@ -3,6 +3,7 @@ package org.zstack.network.l2.vxlan.vxlanNetworkPool;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.header.AbstractService;
 import org.zstack.header.Component;
 import org.zstack.header.network.l2.*;
 import org.zstack.query.QueryFacade;

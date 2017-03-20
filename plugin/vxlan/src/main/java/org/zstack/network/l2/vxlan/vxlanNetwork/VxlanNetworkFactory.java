@@ -3,6 +3,7 @@ package org.zstack.network.l2.vxlan.vxlanNetwork;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.header.Component;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
@@ -16,7 +17,7 @@ import org.zstack.utils.logging.CLogger;
 /**
  * Created by weiwang on 02/03/2017.
  */
-public class VxlanNetworkFactory implements L2NetworkFactory {
+public class VxlanNetworkFactory implements L2NetworkFactory, Component {
     private static CLogger logger = Utils.getLogger(VxlanNetwork.class);
     static L2NetworkType type = new L2NetworkType(VxlanNetworkConstant.VXLAN_NETWORK_TYPE);
 
@@ -62,4 +63,13 @@ public class VxlanNetworkFactory implements L2NetworkFactory {
         return new VxlanNetwork(vo);
     }
 
+    @Override
+    public boolean start() {
+        return true;
+    }
+
+    @Override
+    public boolean stop() {
+        return true;
+    }
 }
