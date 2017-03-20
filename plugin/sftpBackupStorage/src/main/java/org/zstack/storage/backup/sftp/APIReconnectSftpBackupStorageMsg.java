@@ -1,7 +1,9 @@
 package org.zstack.storage.backup.sftp;
 
+import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.storage.backup.BackupStorageMessage;
 
 public class APIReconnectSftpBackupStorageMsg extends APIMessage implements BackupStorageMessage {
@@ -22,6 +24,20 @@ public class APIReconnectSftpBackupStorageMsg extends APIMessage implements Back
         msg.setUuid("76d39c6862b840a3aa4568d83db99022");
 
         return msg;
+    }
+
+    private ApiNotification __notification__() {
+        APIMessage that = this;
+
+        return new ApiNotification() {
+            @Override
+            public void after(APIEvent evt) {
+                if (evt.isSuccess()) {
+                    ntfy("Reconnected").resource(uuid, SftpBackupStorageVO.class.getSimpleName())
+                        .messageAndEvent(that, evt).done();
+                }
+            }
+        };
     }
 
 }

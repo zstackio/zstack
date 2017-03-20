@@ -93,7 +93,7 @@ public class APIAddCephPrimaryStorageMsg extends APIAddPrimaryStorageMsg {
             @Override
             public void after(APIEvent evt) {
                 if (evt.isSuccess()) {
-                    ntfy("Adding").resource(((APIAddPrimaryStorageEvent)evt).getInventory().getUuid(), PrimaryStorageVO.class.getSimpleName())
+                    ntfy("Added").resource(((APIAddPrimaryStorageEvent)evt).getInventory().getUuid(), PrimaryStorageVO.class.getSimpleName())
                             .messageAndEvent(that, evt).done();
                 }
             }

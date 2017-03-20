@@ -62,7 +62,7 @@ public class APIAddMonToCephPrimaryStorageMsg extends APIMessage implements Prim
         return new ApiNotification() {
             @Override
             public void after(APIEvent evt) {
-                ntfy("Adding a mon server").resource(uuid, PrimaryStorageVO.class.getSimpleName())
+                ntfy("Added a mon server").resource(uuid, PrimaryStorageVO.class.getSimpleName())
                         .messageAndEvent(that, evt).done();
             }
         };

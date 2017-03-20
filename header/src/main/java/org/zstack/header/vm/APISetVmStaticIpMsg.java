@@ -2,9 +2,11 @@ package org.zstack.header.vm;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
+import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.rest.RestResponse;
 
@@ -57,6 +59,21 @@ public class APISetVmStaticIpMsg extends APIMessage implements VmInstanceMessage
         msg.l3NetworkUuid = uuid();
         msg.ip = "192.168.10.10";
         return msg;
+    }
+
+    public ApiNotification __notification__() {
+        APIMessage that = this;
+
+        return new ApiNotification() {
+            @Override
+            public void after(APIEvent evt) {
+                ntfy("Static ip: %s was set", ip).resource(vmInstanceUuid, VmInstanceVO.class.getSimpleName())
+                        .messageAndEvent(that, evt).done();
+
+                ntfy("Set").resource(l3NetworkUuid, L3NetworkVO.class.getSimpleName())
+                        .messageAndEvent(that, evt).done();
+            }
+        };
     }
 
 }

@@ -3,8 +3,10 @@ package org.zstack.header.vm;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
+import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
 
 /**
@@ -44,11 +46,16 @@ public class APISetVmSshKeyMsg extends APIMessage implements VmInstanceMessage {
         return SshKey;
     }
 
- 
-    public static APISetVmSshKeyMsg __example__() {
-        APISetVmSshKeyMsg msg = new APISetVmSshKeyMsg();
-        msg.uuid = uuid();
-        msg.SshKey = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCtgdrSt2i/4ayXoiR6qNd7dykOOcz205NVSUgw41GOZW3PdXa9WWMF1APHtj8L2tYm3lKgIDSy1aQtpIEenu6L03BeqfPwepf2L89aZ/W4UPRpce9/bO4mSSJ6kvbZ7hFv+4KLUJCB9O7UrcFu7J/QwrkHNVNX1NsVUpqebp3Ny8bxj0Wbr9ecqPKTclzygARRGz71iDQaEhLrQqy/Q8vr+/G1/uyAYfTnifCuuMTfh5DEsuKD1AEHMBVZEbJ4zupR4gywXnGRxHmEwE464scACxeFWVx2flIXkTK8f3W0KBLCJ8VtTd8KxvKQBu2jJ70avmXNOzb5IaBDS root@172-20-12-46";
-        return msg;
+
+    public ApiNotification __notification__() {
+        APIMessage that = this;
+
+        return new ApiNotification() {
+            @Override
+            public void after(APIEvent evt) {
+                ntfy("set ssh key").resource(uuid, VmInstanceVO.class.getSimpleName())
+                        .messageAndEvent(that, evt).done();
+            }
+        };
     }
 }

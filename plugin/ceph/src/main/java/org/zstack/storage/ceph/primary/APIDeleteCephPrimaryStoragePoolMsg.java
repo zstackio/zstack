@@ -53,7 +53,7 @@ public class APIDeleteCephPrimaryStoragePoolMsg extends APIMessage implements Pr
         return new ApiNotification() {
             @Override
             public void after(APIEvent evt) {
-                ntfy("Deleting a pool").resource(uuid, PrimaryStorageVO.class.getSimpleName())
+                ntfy("Deleted a pool").resource(uuid, PrimaryStorageVO.class.getSimpleName())
                         .messageAndEvent(that, evt).done();
             }
         };

@@ -62,7 +62,7 @@ public class APIAddMonToCephBackupStorageMsg extends APIMessage implements Backu
         return new ApiNotification() {
             @Override
             public void after(APIEvent evt) {
-                ntfy("Adding a mon server").resource(uuid, BackupStorageVO.class.getSimpleName())
+                ntfy("Added a mon server").resource(uuid, BackupStorageVO.class.getSimpleName())
                         .messageAndEvent(that, evt).done();
             }
         };
