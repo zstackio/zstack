@@ -3,8 +3,10 @@ package org.zstack.network.service.portforwarding;
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIDeleteMessage;
+import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
 
 /**
@@ -73,6 +75,20 @@ public class APIDeletePortForwardingRuleMsg extends APIDeleteMessage {
         APIDeletePortForwardingRuleMsg msg = new APIDeletePortForwardingRuleMsg();
         msg.setUuid(uuid());
         return msg;
+    }
+
+    public ApiNotification __notification__() {
+        APIMessage that = this;
+
+        return new ApiNotification() {
+            @Override
+            public void after(APIEvent evt) {
+                if (evt.isSuccess()) {
+                    ntfy("Deleted").resource(uuid,PortForwardingRuleVO.class.getSimpleName())
+                            .messageAndEvent(that, evt).done();
+                }
+            }
+        };
     }
 
 }

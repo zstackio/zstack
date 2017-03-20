@@ -2,8 +2,10 @@ package org.zstack.network.securitygroup;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
+import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
 
 import java.util.List;
@@ -76,6 +78,24 @@ public class APIDeleteSecurityGroupRuleMsg extends APIMessage {
         APIDeleteSecurityGroupRuleMsg msg = new APIDeleteSecurityGroupRuleMsg();
         msg.setRuleUuids(asList(uuid()));
         return msg;
+    }
+
+    public ApiNotification __notification__() {
+        APIMessage that = this;
+        StringBuilder str = new StringBuilder();
+        for (String s:ruleUuids){
+            str.append(String.format("ruleUuid:%s ",s));
+        }
+
+        return new ApiNotification() {
+            @Override
+            public void after(APIEvent evt) {
+                if (evt.isSuccess()) {
+                    ntfy("Deleted").resource(str.toString(),SecurityGroupRuleVO.class.getSimpleName())
+                            .messageAndEvent(that, evt).done();
+                }
+            }
+        };
     }
 
 }
