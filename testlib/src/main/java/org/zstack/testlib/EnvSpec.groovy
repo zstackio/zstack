@@ -154,7 +154,7 @@ class EnvSpec implements Node {
             [CreateVirtualRouterOfferingAction.metaClass, CreateVirtualRouterOfferingAction.Result.metaClass, DeleteInstanceOfferingAction.class],
     ]
 
-    private List resourcesNeedDeletion = []
+    protected List resourcesNeedDeletion = []
 
     private void installDeletionMethods() {
         deletionMethods.each { it ->
