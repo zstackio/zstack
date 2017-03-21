@@ -2,7 +2,7 @@
   {
     "raw": "More than one BackupStorage on the same host identified by hostname. There has been a SftpBackupStorage [hostname:%s] existing. The BackupStorage type to be added is %s. ",
     "en_US": "More than one BackupStorage on the same host identified by hostname. There has been a SftpBackupStorage [hostname:{0}] existing. The BackupStorage type to be added is {1}. ",
-    "zh_CN": "",
+    "zh_CN": "超过一个相同的备份存储类型在认证的物理机上，这事发生在Sftp存储上 [机器名:{0}] 已存在. 这个类型的备份存储已经被添加{1}",
     "arguments": [
       "hostname",
       "newBS"
@@ -13,7 +13,7 @@
   {
     "raw": "More than one BackupStorage on the same host identified by hostname. There has been an ImageStoreBackupStorage [hostname:%s] existing. The BackupStorage type to be added is %s. ",
     "en_US": "More than one BackupStorage on the same host identified by hostname. There has been an ImageStoreBackupStorage [hostname:{0}] existing. The BackupStorage type to be added is {1}. ",
-    "zh_CN": "",
+    "zh_CN": "超过一个相同的备份存储类型在认证的物理机上，这事发生在镜像仓库上 [机器名:{0}] 已存在. 这个类型的备份存储已经被添加{1}",
     "arguments": [
       "hostname",
       "newBS"
@@ -36,7 +36,7 @@
   {
     "raw": "the start date must be greater than the end date",
     "en_US": "the start date must be greater than the end date",
-    "zh_CN": "",
+    "zh_CN": "开始时间必须大于结束时间",
     "arguments": [],
     "line": 40,
     "fileName": "src/main/java/org/zstack/billing/BillingApiInterceptor.java"
@@ -44,7 +44,7 @@
   {
     "raw": "the minimal resource unit is megabyte, cannot be byte",
     "en_US": "the minimal resource unit is megabyte, cannot be byte",
-    "zh_CN": "",
+    "zh_CN": "资源的最小单位必须为mb，而不是kb",
     "arguments": [],
     "line": 88,
     "fileName": "src/main/java/org/zstack/billing/BillingApiInterceptor.java"
@@ -52,7 +52,7 @@
   {
     "raw": "price must be 0 and 9999.99",
     "en_US": "price must be 0 and 9999.99",
-    "zh_CN": "",
+    "zh_CN": "价格必须在0和9999.99之间",
     "arguments": [],
     "line": 96,
     "fileName": "src/main/java/org/zstack/billing/BillingApiInterceptor.java"
@@ -97,7 +97,7 @@
   {
     "raw": "either volumeUuid or volumeSnapshotUuid must be set",
     "en_US": "either volumeUuid or volumeSnapshotUuid must be set",
-    "zh_CN": "",
+    "zh_CN": "盘uuid或者快照uuid必须被设置",
     "arguments": [],
     "line": 56,
     "fileName": "src/main/java/org/zstack/compute/allocator/HostAllocatorApiInterceptor.java"
@@ -105,7 +105,7 @@
   {
     "raw": "zoneUuids, clusterUuids, hostUuids must at least have one be none-empty list, or all is set to true",
     "en_US": "zoneUuids, clusterUuids, hostUuids must at least have one be none-empty list, or all is set to true",
-    "zh_CN": "",
+    "zh_CN": "区域uuid，集群uuid,物理机uuid必须有一个不为空，或者全部都填写",
     "arguments": [],
     "line": 75,
     "fileName": "src/main/java/org/zstack/compute/allocator/HostAllocatorApiInterceptor.java"
@@ -124,7 +124,7 @@
   {
     "raw": "there has been a host having managementIp[%s]",
     "en_US": "there has been a host having managementIp[{0}]",
-    "zh_CN": "",
+    "zh_CN": "该物理机已经存在在管理节点[{0}]中",
     "arguments": [
       "msg.getManagementIp()"
     ],
@@ -134,7 +134,7 @@
   {
     "raw": "managementIp[%s] is neither an IPv4 address nor a valid hostname",
     "en_US": "managementIp[{0}] is neither an IPv4 address nor a valid hostname",
-    "zh_CN": "",
+    "zh_CN": "管理节点[{0}]既不是有效的IPv4地址也不是有效的物理机名",
     "arguments": [
       "msg.getManagementIp()"
     ],
@@ -144,7 +144,7 @@
   {
     "raw": "can not maintain host[uuid:%s]which is connecting",
     "en_US": "can not maintain host[uuid:{0}]which is connecting",
-    "zh_CN": "",
+    "zh_CN": "不能对维护状态的物理机[uuid:{0}]进行连接",
     "arguments": [
       "msg.getHostUuid()"
     ],
@@ -153,8 +153,8 @@
   },
   {
     "raw": "host[uuid:%s, name:%s] is in state[%s], cannot perform required operation",
-    "en_US": "host[uuid:{0}, name:{1}] is in state[{2}], cannot perform required operation",
-    "zh_CN": "",
+    "en_US": "host[uuid:{0}, name:{1}] is in state, cannot perform required operation",
+    "zh_CN": "物理机[uuid:{0}, name:{1}]处于状态[{2}]中，不能处理该请求",
     "arguments": [
       "self.getUuid()",
       "self.getName()",
@@ -166,7 +166,7 @@
   {
     "raw": "host is connecting",
     "en_US": "host is connecting",
-    "zh_CN": "",
+    "zh_CN": "物理机正在连接",
     "arguments": [],
     "line": 566,
     "fileName": "src/main/java/org/zstack/compute/host/HostBase.java"
@@ -174,7 +174,7 @@
   {
     "raw": "after connecting, host[name:%s, ip:%s] returns a null os version",
     "en_US": "after connecting, host[name:{0}, ip:{1}] returns a null os version",
-    "zh_CN": "",
+    "zh_CN": "在连接后，物理机[name:{0}, ip:{1}]没有返回操作系统版本",
     "arguments": [
       "vo.getName()",
       "vo.getManagementIp()"
@@ -185,7 +185,7 @@
   {
     "raw": "cluster[uuid:%s] already has host with os version[%s], but new added host[name:%s ip:%s] has host os version[%s]",
     "en_US": "cluster[uuid:{0}] already has host with os version[{1}], but new added host[name:{2} ip:{3}] has host os version[{4}]",
-    "zh_CN": "",
+    "zh_CN": "集群[uuid:{0}]中物理机使用的操作系统版本是[{1}]，但是新的物理机[name:{2} ip:{3}]的操作系统版本是 [{4}]",
     "arguments": [
       "vo.getClusterUuid()",
       "currentVersion",
@@ -199,7 +199,7 @@
   {
     "raw": "current vm instance state[%s] doesn\u0027t allow to proceed message[%s], allowed states are %s",
     "en_US": "current vm instance state[{0}] doesn\u0027t allow to proceed message[{1}], allowed states are {2}",
-    "zh_CN": "",
+    "zh_CN": "虚拟机状态[{0}]不允许支持的消息[{1}]，允许的状态是{2}",
     "arguments": [
       "currentState",
       "msg.getMessageName()",
@@ -211,7 +211,7 @@
   {
     "raw": "not dest host found in db, can\u0027t send change password cmd to the host!",
     "en_US": "not dest host found in db, can\u0027t send change password cmd to the host!",
-    "zh_CN": "",
+    "zh_CN": "没有在物理机上发现数据库，不能发送更改密码的指令到这个物理机上",
     "arguments": [],
     "line": 50,
     "fileName": "src/main/java/org/zstack/compute/vm/ChangeVmPasswordFlow.java"
@@ -219,7 +219,7 @@
   {
     "raw": "not system tag found on vm, vm must have the following system tag: qemuga, if you installed qemu-ga yourself, please use CreateSystemTag first.",
     "en_US": "not system tag found on vm, vm must have the following system tag: qemuga, if you installed qemu-ga yourself, please use CreateSystemTag first.",
-    "zh_CN": "",
+    "zh_CN": "没有发现系统标签在云主机上，云主机必须有系统标签：qemuga。如果你已经安装了qemu-ga，请先使用 CreateSystemTag",
     "arguments": [],
     "line": 51,
     "fileName": "src/main/java/org/zstack/compute/vm/ChangeVmPasswordFlow.java"
@@ -227,7 +227,7 @@
   {
     "raw": "not account preference found,  send change password cmd to the host!",
     "en_US": "not account preference found,  send change password cmd to the host!",
-    "zh_CN": "",
+    "zh_CN": "没有优先级账户去发送改变密码的指令到物理机",
     "arguments": [],
     "line": 54,
     "fileName": "src/main/java/org/zstack/compute/vm/ChangeVmPasswordFlow.java"
@@ -235,7 +235,7 @@
   {
     "raw": "the host[uuid:%s] is not connected",
     "en_US": "the host[uuid:{0}] is not connected",
-    "zh_CN": "",
+    "zh_CN": "物理机[uuid:{0}]没有连接",
     "arguments": [
       "hostUuid"
     ],
@@ -245,7 +245,7 @@
   {
     "raw": "direction must be set to in or out",
     "en_US": "direction must be set to in or out",
-    "zh_CN": "",
+    "zh_CN": "方法必须设置in或者out",
     "arguments": [],
     "line": 337,
     "fileName": "src/main/java/org/zstack/compute/vm/MevocoVmInstanceBase.java"
@@ -253,7 +253,7 @@
   {
     "raw": "not dest host found in db by uuid: %s, can\u0027t send change password cmd to the host!",
     "en_US": "not dest host found in db by uuid: {0}, can\u0027t send change password cmd to the host!",
-    "zh_CN": "",
+    "zh_CN": "没有在物理机{0}上发现数据库，不能发送更改密码的指令到这个物理机上",
     "arguments": [
       "amsg.getVmInstanceUuid()"
     ],
@@ -263,7 +263,7 @@
   {
     "raw": "state is not correct while change password.",
     "en_US": "state is not correct while change password.",
-    "zh_CN": "",
+    "zh_CN": "该状态不支持修改密码",
     "arguments": [],
     "line": 519,
     "fileName": "src/main/java/org/zstack/compute/vm/MevocoVmInstanceBase.java"
@@ -271,7 +271,7 @@
   {
     "raw": "cannot find the iso[uuid:%s] in any connected backup storage attached to the zone[uuid:%s]. check below:\n1. if the backup storage is attached to the zone where the VM[name: %s, uuid:%s] is running\n2. if the backup storage is in connected status, if not, try reconnecting it",
     "en_US": "cannot find the iso[uuid:{0}] in any connected backup storage attached to the zone[uuid:{1}]. check below:\n1. if the backup storage is attached to the zone where the VM[name: {2}, uuid:{3}] is running\n2. if the backup storage is in connected status, if not, try reconnecting it",
-    "zh_CN": "",
+    "zh_CN": "不能发现iso[uuid:{0}]在任何已经挂载到集群[uuid:{1}]上的并且处于连接状态备份的备份存储。可以进行对以下选项的检查：1. 备份存储是否已经挂载到区域中的任何运行状态的云主机[name: {2}, uuid:{3}]上；2. 如果备份存储不是处于连接状态，请尝试重连",
     "arguments": [
       "iso.getUuid()",
       "host.getZoneUuid()",
@@ -284,7 +284,7 @@
   {
     "raw": "cannot find the image[uuid:%s] in any connected backup storage. check below:\n1. if the backup storage is attached to the zone where the VM[name: %s, uuid:%s] is in\n2. if the backup storage is in connected status, if not, try reconnecting it",
     "en_US": "cannot find the image[uuid:{0}] in any connected backup storage. check below:\n1. if the backup storage is attached to the zone where the VM[name: {1}, uuid:{2}] is in\n2. if the backup storage is in connected status, if not, try reconnecting it",
-    "zh_CN": "",
+    "zh_CN": "不能发现镜像[uuid:{0}]在任何处于连接状态备份的备份存储。可以进行对以下选项的检查：1. 备份存储是否已经过载到区域中的云主机[name: {1}, uuid:{2}]中；2. 如果备份存储不是处于连接状态，请尝试重连",
     "arguments": [
       "imageUuid",
       "spec.getVmInventory().getName()",
@@ -296,7 +296,7 @@
   {
     "raw": "cannot find the image[uuid:%s] in any connected backup storage attached to the zone[uuid:%s]. check below:\n1. if the backup storage is attached to the zone where the VM[name: %s, uuid:%s] is in\n2. if the backup storage is in connected status, if not, try reconnecting it",
     "en_US": "cannot find the image[uuid:{0}] in any connected backup storage attached to the zone[uuid:{1}]. check below:\n1. if the backup storage is attached to the zone where the VM[name: {2}, uuid:{3}] is in\n2. if the backup storage is in connected status, if not, try reconnecting it",
-    "zh_CN": "",
+    "zh_CN": "不能发现镜像[uuid:{0}]在任何已经挂载到集群[uuid:{1}]上的并且处于连接状态备份的备份存储。可以进行对以下选项的检查：1. 备份存储是否已经过载到区域中的云主机[name: {2}, uuid:{3}]中；2. 如果备份存储不是处于连接状态，请尝试重连",
     "arguments": [
       "imageUuid",
       "spec.getVmInventory().getZoneUuid()",
@@ -309,7 +309,7 @@
   {
     "raw": "no backup storage attached to the zone[uuid:%s] contains the ISO[uuid:%s]",
     "en_US": "no backup storage attached to the zone[uuid:{0}] contains the ISO[uuid:{1}]",
-    "zh_CN": "",
+    "zh_CN": "没有备份存储挂载到区域[uuid:{0}]包含着ISO[uuid:{1}]",
     "arguments": [
       "zoneUuid",
       "isoImageUuid"
@@ -320,7 +320,7 @@
   {
     "raw": "the host doesn\u0027t have enough capacity",
     "en_US": "the host doesn\u0027t have enough capacity",
-    "zh_CN": "",
+    "zh_CN": "物理机没有足够的容量",
     "arguments": [],
     "line": 127,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
@@ -328,7 +328,7 @@
   {
     "raw": "either l3NetworkUuids or imageUuid must be set",
     "en_US": "either l3NetworkUuids or imageUuid must be set",
-    "zh_CN": "",
+    "zh_CN": "L3网络的uuid们或者镜像的uuid必须被设置",
     "arguments": [],
     "line": 136,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
@@ -336,7 +336,7 @@
   {
     "raw": "vm[uuid:%s] can only create scheduler when state is not Destroyed",
     "en_US": "vm[uuid:{0}] can only create scheduler when state is not Destroyed",
-    "zh_CN": "",
+    "zh_CN": "云主机[uuid:{0}]只能在不是删除状态下创建定时计划",
     "arguments": [
       "msg.getVmInstanceUuid()"
     ],
@@ -346,7 +346,7 @@
   {
     "raw": "%s is not a valid IPv4 address",
     "en_US": "{0} is not a valid IPv4 address",
-    "zh_CN": "",
+    "zh_CN": "{0}不是有效的IPv4地址",
     "arguments": [
       "msg.getIp()"
     ],
@@ -356,7 +356,7 @@
   {
     "raw": "the VM[uuid:%s] has no nic on the L3 network[uuid:%s]",
     "en_US": "the VM[uuid:{0}] has no nic on the L3 network[uuid:{1}]",
-    "zh_CN": "",
+    "zh_CN": "云主机[uuid:{0}]毛医生camile",
     "arguments": [
       "msg.getVmInstanceUuid()",
       "msg.getL3NetworkUuid()"
@@ -367,7 +367,7 @@
   {
     "raw": "invalid boot device[%s] in boot order%s",
     "en_US": "invalid boot device[{0}] in boot order{1}",
-    "zh_CN": "",
+    "zh_CN": "在启动列表{1}中的设备[{0}]启动失败",
     "arguments": [
       "o",
       "msg.getBootOrder()"
@@ -378,7 +378,7 @@
   {
     "raw": "VM[uuid:%s] already has an ISO[uuid:%s] attached",
     "en_US": "VM[uuid:{0}] already has an ISO[uuid:{1}] attached",
-    "zh_CN": "",
+    "zh_CN": "云主机[uuid:{0}]已经挂载了ISO[uuid:{1}]",
     "arguments": [
       "msg.getVmInstanceUuid()",
       "isoUuid"
@@ -389,7 +389,7 @@
   {
     "raw": "unable to attach a L3 network. The vm[uuid: %s] is not a user vm",
     "en_US": "unable to attach a L3 network. The vm[uuid: {0}] is not a user vm",
-    "zh_CN": "",
+    "zh_CN": "不能挂载L3网络，云主机[uuid: {0}]不是用户虚拟机",
     "arguments": [
       "type"
     ],
@@ -399,7 +399,7 @@
   {
     "raw": "unable to detach a L3 network. The vm[uuid: %s] is not Running or Stopped; the current state is %s",
     "en_US": "unable to detach a L3 network. The vm[uuid: {0}] is not Running or Stopped; the current state is {1}",
-    "zh_CN": "",
+    "zh_CN": "不能挂载L3网络，云主机[uuid: {0}]不是运行状态或者暂停状态，状态为{1}",
     "arguments": [
       "msg.getVmInstanceUuid()",
       "state"
@@ -410,7 +410,7 @@
   {
     "raw": "unable to attach a L3 network. The L3 network[uuid:%s] is already attached to the vm[uuid: %s]",
     "en_US": "unable to attach a L3 network. The L3 network[uuid:{0}] is already attached to the vm[uuid: {1}]",
-    "zh_CN": "",
+    "zh_CN": "不能挂载L3网络，l3网络[uuid:{0}]已经挂载到云主机[uuid: {1}]上了",
     "arguments": [
       "msg.getL3NetworkUuid()",
       "msg.getVmInstanceUuid()"
@@ -421,7 +421,7 @@
   {
     "raw": "unable to attach a L3 network. The L3 network[uuid:%s] is disabled",
     "en_US": "unable to attach a L3 network. The L3 network[uuid:{0}] is disabled",
-    "zh_CN": "",
+    "zh_CN": "不能挂载L3网络，因为该L3网络[uuid:{0}]处于未启动状态",
     "arguments": [
       "msg.getL3NetworkUuid()"
     ],
@@ -431,7 +431,7 @@
   {
     "raw": "unable to attach a L3 network. The L3 network[uuid:%s] is a system network",
     "en_US": "unable to attach a L3 network. The L3 network[uuid:{0}] is a system network",
-    "zh_CN": "",
+    "zh_CN": "不能挂载L3网络，该L3网络[uuid:{0}] 是系统网络",
     "arguments": [
       "msg.getL3NetworkUuid()"
     ],
@@ -441,7 +441,7 @@
   {
     "raw": "the static IP[%s] is not in any IP range of the L3 network[uuid:%s]",
     "en_US": "the static IP[{0}] is not in any IP range of the L3 network[uuid:{1}]",
-    "zh_CN": "",
+    "zh_CN": "该静态IP[{0}]不在L3网络[uuid:{1}]的任何IP段",
     "arguments": [
       "msg.getStaticIp()",
       "msg.getL3NetworkUuid()"
@@ -452,7 +452,7 @@
   {
     "raw": "the static IP[%s] has been occupied on the L3 network[uuid:%s]",
     "en_US": "the static IP[{0}] has been occupied on the L3 network[uuid:{1}]",
-    "zh_CN": "",
+    "zh_CN": "该静态IP[{0}]已经存在在L3网络[uuid:{1}]中",
     "arguments": [
       "msg.getStaticIp()",
       "msg.getL3NetworkUuid()"
@@ -463,7 +463,7 @@
   {
     "raw": "unable to detach a L3 network. The vm[uuid: %s] is not a user vm",
     "en_US": "unable to detach a L3 network. The vm[uuid: {0}] is not a user vm",
-    "zh_CN": "",
+    "zh_CN": "不能挂载L3网络，云主机[uuid: {0}]不是用户云主机",
     "arguments": [
       "msg.getVmInstanceUuid()"
     ],
@@ -473,7 +473,7 @@
   {
     "raw": "vm[uuid:%s] can only attach volume when state is Running or Stopped, current state is %s",
     "en_US": "vm[uuid:{0}] can only attach volume when state is Running or Stopped, current state is {1}",
-    "zh_CN": "",
+    "zh_CN": "云主机[uuid:{0}]挂载盘时状态只能是运行或者暂停状态，而现在的状态是{1}",
     "arguments": [
       "msg.getVmInstanceUuid()",
       "state"
@@ -484,7 +484,7 @@
   {
     "raw": "instance offering[uuid:%s] is Disabled, can\u0027t create vm from it",
     "en_US": "instance offering[uuid:{0}] is Disabled, can\u0027t create vm from it",
-    "zh_CN": "",
+    "zh_CN": "计算规格[uuid:{0}]没有被启用，不能根据该规格创建云主机",
     "arguments": [
       "msg.getInstanceOfferingUuid()"
     ],
@@ -494,7 +494,7 @@
   {
     "raw": "image[uuid:%s] is Disabled, can\u0027t create vm from it",
     "en_US": "image[uuid:{0}] is Disabled, can\u0027t create vm from it",
-    "zh_CN": "",
+    "zh_CN": "镜像[uuid:{0}]没被启用，不能根据该镜像创建云主机",
     "arguments": [
       "msg.getImageUuid()"
     ],
@@ -504,7 +504,7 @@
   {
     "raw": "image[uuid:%s] is of mediaType: %s, only RootVolumeTemplate and ISO can be used to create vm",
     "en_US": "image[uuid:{0}] is of mediaType: {1}, only RootVolumeTemplate and ISO can be used to create vm",
-    "zh_CN": "",
+    "zh_CN": "镜像[uuid:{0}] 类型为{1}，该镜像只能用来创建根云盘或者用来创建云主机",
     "arguments": [
       "msg.getImageUuid()",
       "imgFormat"
@@ -515,7 +515,7 @@
   {
     "raw": "rootDiskOfferingUuid cannot be null when image mediaType is ISO",
     "en_US": "rootDiskOfferingUuid cannot be null when image mediaType is ISO",
-    "zh_CN": "",
+    "zh_CN": "根云盘规格不能为空在镜像类型为ISO时",
     "arguments": [],
     "line": 359,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
@@ -523,7 +523,7 @@
   {
     "raw": "image[uuid:%s] is system image, can\u0027t be used to create user vm",
     "en_US": "image[uuid:{0}] is system image, can\u0027t be used to create user vm",
-    "zh_CN": "",
+    "zh_CN": "镜像[uuid:{0}] 是系统镜像，不能使用它创建用户虚拟机",
     "arguments": [
       "msg.getImageUuid()"
     ],
@@ -533,7 +533,7 @@
   {
     "raw": "disk offerings[uuids:%s] are Disabled, can not create vm from it",
     "en_US": "disk offerings[uuids:{0}] are Disabled, can not create vm from it",
-    "zh_CN": "",
+    "zh_CN": "磁盘规格[uuids:{0}]没有被启用，不能使用它创建云主机",
     "arguments": [
       "diskUuids"
     ],
@@ -543,7 +543,7 @@
   {
     "raw": "Can\u0027t add same uuid in the l3Network,uuid: %s",
     "en_US": "Can\u0027t add same uuid in the l3Network,uuid: {0}",
-    "zh_CN": "",
+    "zh_CN": "不能添加相同的uuid{0}在L3网络中",
     "arguments": [
       "duplicateElements.get(0)"
     ],
@@ -553,7 +553,7 @@
   {
     "raw": "l3Network[uuid:%s] is Disabled, can not create vm on it",
     "en_US": "l3Network[uuid:{0}] is Disabled, can not create vm on it",
-    "zh_CN": "",
+    "zh_CN": "L3网络[uuid:{0}]没有被启用，不能从这个L3网络创建云主机",
     "arguments": [
       "l3Uuid"
     ],
@@ -563,7 +563,7 @@
   {
     "raw": "l3Network[uuid:%s] is system network, can not create user vm on it",
     "en_US": "l3Network[uuid:{0}] is system network, can not create user vm on it",
-    "zh_CN": "",
+    "zh_CN": "L3网络[uuid:{0}]是系统网络，不能在这上面创建云主机",
     "arguments": [
       "l3Uuid"
     ],
@@ -573,7 +573,7 @@
   {
     "raw": "zone[uuid:%s] is specified but it\u0027s Disabled, can not create vm from it",
     "en_US": "zone[uuid:{0}] is specified but it\u0027s Disabled, can not create vm from it",
-    "zh_CN": "",
+    "zh_CN": "区域[uuid:{0}]虽然被指定了但是处于未启用状态，不能从这上面创建云主机",
     "arguments": [
       "msg.getZoneUuid()"
     ],
@@ -583,7 +583,7 @@
   {
     "raw": "cluster[uuid:%s] is specified but it\u0027s Disabled, can not create vm from it",
     "en_US": "cluster[uuid:{0}] is specified but it\u0027s Disabled, can not create vm from it",
-    "zh_CN": "",
+    "zh_CN": "集群[uuid:{0}]虽然被指定了但是处于未启用状态，不能从这上面创建云主机",
     "arguments": [
       "msg.getClusterUuid()"
     ],
@@ -593,7 +593,7 @@
   {
     "raw": "host[uuid:%s] is specified but it\u0027s Disabled, can not create vm from it",
     "en_US": "host[uuid:{0}] is specified but it\u0027s Disabled, can not create vm from it",
-    "zh_CN": "",
+    "zh_CN": "物理机[uuid:{0}]虽然被指定了但是处于未启用状态，不能从这上面创建云主机",
     "arguments": [
       "msg.getHostUuid()"
     ],
@@ -603,7 +603,7 @@
   {
     "raw": "host[uuid:%s] is specified but it\u0027s connection status is %s, can not create vm from it",
     "en_US": "host[uuid:{0}] is specified but it\u0027s connection status is {1}, can not create vm from it",
-    "zh_CN": "",
+    "zh_CN": "物理机[uuid:{0}]虽然被指定了但是它的连接状态是{1}，不能从这上面创建云主机",
     "arguments": [
       "msg.getHostUuid()",
       "connectionState"
@@ -614,7 +614,7 @@
   {
     "raw": "defaultL3NetworkUuid[uuid:%s] is not in l3NetworkUuids%s",
     "en_US": "defaultL3NetworkUuid[uuid:{0}] is not in l3NetworkUuids{1}",
-    "zh_CN": "",
+    "zh_CN": "默认L3网络的uuid是[uuid:{0}]，不在L3网络uuid们中{1}",
     "arguments": [
       "msg.getDefaultL3NetworkUuid()",
       "msg.getL3NetworkUuids()"
@@ -625,7 +625,7 @@
   {
     "raw": "there are more than one L3 network specified in l3NetworkUuids, but defaultL3NetworkUuid is null",
     "en_US": "there are more than one L3 network specified in l3NetworkUuids, but defaultL3NetworkUuid is null",
-    "zh_CN": "",
+    "zh_CN": "在L3网络uuid们中有很多L3网络被指定了，但是默认L3网络的uuid是空的",
     "arguments": [],
     "line": 460,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
@@ -633,7 +633,7 @@
   {
     "raw": "vm[uuid:%s, name:%s] has been deleted",
     "en_US": "vm[uuid:{0}, name:{1}] has been deleted",
-    "zh_CN": "",
+    "zh_CN": "云主机[uuid:{0}, name:{1}]已经被卸载了",
     "arguments": [
       "vo.getUuid()",
       "vo.getName()"
@@ -644,7 +644,7 @@
   {
     "raw": "the vm[uuid:%s] has no nic on the L3 network[uuid:%s]",
     "en_US": "the vm[uuid:{0}] has no nic on the L3 network[uuid:{1}]",
-    "zh_CN": "",
+    "zh_CN": "云主机[uuid:{0}] 没有网卡在L3网络[uuid:{1}]上",
     "arguments": [
       "self.getUuid()",
       "l3Uuid"
@@ -655,7 +655,7 @@
   {
     "raw": "the vm has been deleted",
     "en_US": "the vm has been deleted",
-    "zh_CN": "",
+    "zh_CN": "云主机已经被卸载了",
     "arguments": [],
     "line": 877,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceBase.java"
@@ -663,7 +663,7 @@
   {
     "raw": "cannot get target migration host without any nics on vm",
     "en_US": "cannot get target migration host without any nics on vm",
-    "zh_CN": "",
+    "zh_CN": "不能在云主机上通过网卡获取目标迁移物理机地址",
     "arguments": [],
     "line": 1214,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceBase.java"
@@ -671,7 +671,7 @@
   {
     "raw": "the ISO[uuid:%s] is on backup storage that is not compatible of the primary storage[uuid:%s] where the VM[name:%s, uuid:%s] is on",
     "en_US": "the ISO[uuid:{0}] is on backup storage that is not compatible of the primary storage[uuid:{1}] where the VM[name:{2}, uuid:{3}] is on",
-    "zh_CN": "",
+    "zh_CN": "ISO[uuid:{0}]在备份存储上，这个ISO不能兼容主存储[uuid:{1}]在云主机[name:{2}, uuid:{3}]上",
     "arguments": [
       "isoUuid",
       "psUuid",
@@ -4585,7 +4585,6 @@
     "fileName": "src/main/java/org/zstack/storage/ceph/CephApiInterceptor.java"
   },
   {
-
     "raw": "cannot add ceph primary storage, there has been some ceph primary storage using mon[hostnames:%s]",
     "en_US": "cannot add ceph primary storage, there has been some ceph primary storage using mon[hostnames:{0}]",
     "zh_CN": "无法添加ceph主存储，一定有某些ceph主存储使用了mon[主机名：{0}]",
@@ -6090,7 +6089,7 @@
   {
     "raw": "the image[uuid:%s, name:%s] has been deleted on all backup storage",
     "en_US": "the image[uuid:{0}, name:{1}] has been deleted on all backup storage",
-    "zh_CN": "镜像[uuid:{0}, name:{1}]已经从所有的镜像存储中删除"
+    "zh_CN": "镜像[uuid:{0}, name:{1}]已经从所有的镜像存储中删除",
     "arguments": [
       "template.getUuid()",
       "template.getName()"
