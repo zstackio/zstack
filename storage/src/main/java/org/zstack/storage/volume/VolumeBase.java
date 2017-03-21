@@ -1066,8 +1066,9 @@ public class VolumeBase implements Volume {
                 List<String> hvTypes = VolumeFormat.valueOf(self.getFormat()).getHypervisorTypesSupportingThisVolumeFormatInString();
                 q.setParameter("hvTypes", hvTypes);
             } else if (self.getStatus() == VolumeStatus.NotInstantiated) {
-                sql = "select vm from VmInstanceVO vm where vm.state in (:vmStates) group by vm.uuid";
+                sql = "select vm from VmInstanceVO vm,PrimaryStorageClusterRefVO ref,PrimaryStorageEO ps where vm.state in (:vmStates) and vm.clusterUuid = ref.clusterUuid and ref.primaryStorageUuid = ps.uuid and ps.state in (:psState) group by vm.uuid";
                 q = dbf.getEntityManager().createQuery(sql, VmInstanceVO.class);
+                q.setParameter("psState",PrimaryStorageState.Enabled);
             } else {
                 DebugUtils.Assert(false, String.format("should not reach here, volume[uuid:%s]", self.getUuid()));
             }
@@ -1079,8 +1080,9 @@ public class VolumeBase implements Volume {
                 List<String> hvTypes = VolumeFormat.valueOf(self.getFormat()).getHypervisorTypesSupportingThisVolumeFormatInString();
                 q.setParameter("hvTypes", hvTypes);
             } else if (self.getStatus() == VolumeStatus.NotInstantiated) {
-                sql = "select vm from VmInstanceVO vm where vm.uuid in (:vmUuids) and vm.state in (:vmStates) group by vm.uuid";
+                sql = "select vm from VmInstanceVO vm,PrimaryStorageClusterRefVO ref,PrimaryStorageEO ps where vm.uuid in (:vmUuids) and vm.state in (:vmStates) and vm.clusterUuid = ref.clusterUuid and ref.primaryStorageUuid = ps.uuid and ps.state in (:psState) group by vm.uuid";
                 q = dbf.getEntityManager().createQuery(sql, VmInstanceVO.class);
+                q.setParameter("psState",PrimaryStorageState.Enabled);
             } else {
                 DebugUtils.Assert(false, String.format("should not reach here, volume[uuid:%s]", self.getUuid()));
             }
@@ -1098,7 +1100,6 @@ public class VolumeBase implements Volume {
         for (VolumeGetAttachableVmExtensionPoint ext : pluginRgty.getExtensionList(VolumeGetAttachableVmExtensionPoint.class)) {
             vms = ext.returnAttachableVms(vol, vms);
         }
-
         return vms;
     }
 
