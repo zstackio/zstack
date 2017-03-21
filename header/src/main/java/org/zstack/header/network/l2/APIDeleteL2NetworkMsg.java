@@ -79,4 +79,5 @@ public class APIDeleteL2NetworkMsg extends APIDeleteMessage implements L2Network
             }
         };
     }
+
 }
