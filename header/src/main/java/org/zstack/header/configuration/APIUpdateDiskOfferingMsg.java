@@ -70,7 +70,7 @@ public class APIUpdateDiskOfferingMsg extends APIMessage implements DiskOffering
         return new ApiNotification() {
             @Override
             public void after(APIEvent evt) {
-                ntfy("Updating").resource(uuid, DiskOfferingVO.class.getSimpleName())
+                ntfy("Updated").resource(uuid, DiskOfferingVO.class.getSimpleName())
                         .messageAndEvent(that, evt).done();
             }
         };

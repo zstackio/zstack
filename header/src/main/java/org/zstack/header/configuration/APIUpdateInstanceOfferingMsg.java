@@ -70,7 +70,7 @@ public class APIUpdateInstanceOfferingMsg extends APIMessage implements Instance
         return new ApiNotification() {
             @Override
             public void after(APIEvent evt) {
-                ntfy("Updating").resource(uuid, InstanceOfferingVO.class.getSimpleName())
+                ntfy("Updated").resource(uuid, InstanceOfferingVO.class.getSimpleName())
                         .messageAndEvent(that, evt).done();
             }
         };
