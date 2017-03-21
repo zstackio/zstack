@@ -9,10 +9,10 @@ import java.sql.Timestamp;
  */
 @StaticMetamodel(ProgressVO.class)
 public class ProgressVO_ {
-    public static volatile SingularAttribute<Long, String> id;
-    public static volatile SingularAttribute<Long, String> processType;
-    public static volatile SingularAttribute<Long, String> progress;
-    public static volatile SingularAttribute<Long, String> resourceUuid;
-    public static volatile SingularAttribute<Long, Timestamp> createDate;
-    public static volatile SingularAttribute<Long, Timestamp> lastOpDate;
+    public static volatile SingularAttribute<ProgressVO, Long> id;
+    public static volatile SingularAttribute<ProgressVO, String> processType;
+    public static volatile SingularAttribute<ProgressVO, String> progress;
+    public static volatile SingularAttribute<ProgressVO, String> resourceUuid;
+    public static volatile SingularAttribute<ProgressVO, Timestamp> createDate;
+    public static volatile SingularAttribute<ProgressVO, Timestamp> lastOpDate;
 }

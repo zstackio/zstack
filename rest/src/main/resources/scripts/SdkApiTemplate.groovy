@@ -102,6 +102,9 @@ class SdkApiTemplate implements JavaSdkTemplate {
                 if (apiParam.maxLength() != Integer.MIN_VALUE) {
                     annotationFields.add(String.format("maxLength = %s", apiParam.maxLength()))
                 }
+                if (apiParam.minLength() != 0) {
+                    annotationFields.add(String.format("minLength = %s", apiParam.minLength()))
+                }
                 annotationFields.add(String.format("nonempty = %s", apiParam.nonempty()))
                 annotationFields.add(String.format("nullElements = %s", apiParam.nullElements()))
                 annotationFields.add(String.format("emptyString = %s", apiParam.emptyString()))

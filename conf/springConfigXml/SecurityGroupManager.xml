@@ -12,8 +12,7 @@
          http://zstack.org/schema/zstack/plugin.xsd"
 	default-init-method="init" default-destroy-method="destroy">
 	
-	<bean id="SecurityGroupManager"
-		class="org.zstack.network.securitygroup.SecurityGroupManagerImpl">
+	<bean id="SecurityGroupManager" class="org.zstack.network.securitygroup.SecurityGroupManagerImpl">
 		<zstack:plugin>
 			<zstack:extension interface="org.zstack.header.Component" />
             <zstack:extension interface="org.zstack.header.Service" />

@@ -107,6 +107,10 @@ public class ErrorFacadeImpl implements ErrorFacade {
         return instantiateErrorCode(SysErrors.OPERATION_ERROR, details, cause);
     }
 
+    public ErrorCode stringToExternalError(String details, ErrorCode cause) {
+        return instantiateErrorCode(SysErrors.EXTERNAL_ERROR, details, cause);
+    }
+
     @Override
     public ErrorCodeList instantiateErrorCode(Enum code, List<ErrorCode> causes) {
         return instantiateErrorCode(code.toString(), causes);
