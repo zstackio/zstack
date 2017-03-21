@@ -327,7 +327,7 @@ abstract class Test implements ApiHelper {
         dir.mkdirs()
 
         def caseTypes = Platform.reflections.getSubTypesOf(Case.class)
-        caseTypes = caseTypes.findAll { it.package.name.startsWith(this.class.package.name) }
+        caseTypes = caseTypes.findAll { it.package.name.startsWith("${this.class.package.name}.") }
         caseTypes = caseTypes.sort()
 
         def cases = new File([dir.absolutePath, "cases"].join("/"))

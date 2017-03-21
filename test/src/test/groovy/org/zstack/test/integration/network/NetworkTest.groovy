@@ -1,8 +1,5 @@
 package org.zstack.test.integration.network
 
-import org.zstack.test.integration.network.l3network.getfreeip.OneL3OneIpRangeNoIpUsed
-import org.zstack.test.integration.network.l3network.getfreeip.OneL3OneIpRangeSomeIpUsed
-import org.zstack.test.integration.network.l3network.getfreeip.OneL3TwoIpRanges
 import org.zstack.testlib.SpringSpec
 import org.zstack.testlib.Test
 
