@@ -42,7 +42,7 @@ public class APIDeleteZoneMsg extends APIDeleteMessage implements ZoneMessage {
     /**
      * @desc zone uuid
      */
-    @APIParam(resourceType = ZoneVO.class, successIfResourceNotExisting = true)
+    @APIParam(resourceType = ZoneVO.class)
     private String uuid;
 
     public APIDeleteZoneMsg() {

@@ -39,7 +39,8 @@ public class PauseVmInstanceAction extends AbstractAction {
     public long pollingInterval;
 
 
-    private Result makeResult(ApiResult res) {
+    public Result call() {
+        ApiResult res = ZSClient.call(this);
         Result ret = new Result();
         if (res.error != null) {
             ret.error = res.error;
@@ -47,21 +48,24 @@ public class PauseVmInstanceAction extends AbstractAction {
         }
         
         PauseVmInstanceResult value = res.getResult(PauseVmInstanceResult.class);
-        ret.value = value == null ? new PauseVmInstanceResult() : value; 
-
+        ret.value = value == null ? new PauseVmInstanceResult() : value;
         return ret;
-    }
-
-    public Result call() {
-        ApiResult res = ZSClient.call(this);
-        return makeResult(res);
     }
 
     public void call(final Completion<Result> completion) {
         ZSClient.call(this, new InternalCompletion() {
             @Override
             public void complete(ApiResult res) {
-                completion.complete(makeResult(res));
+                Result ret = new Result();
+                if (res.error != null) {
+                    ret.error = res.error;
+                    completion.complete(ret);
+                    return;
+                }
+                
+                PauseVmInstanceResult value = res.getResult(PauseVmInstanceResult.class);
+                ret.value = value == null ? new PauseVmInstanceResult() : value;
+                completion.complete(ret);
             }
         });
     }

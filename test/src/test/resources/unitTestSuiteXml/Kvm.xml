@@ -137,6 +137,7 @@
   <TestCase class="org.zstack.test.kvm.TestStartVmOnTargetHost1"/>
   <TestCase class="org.zstack.test.kvm.TestVmErrorRootVolumeRollback"/>
   <TestCase class="org.zstack.test.kvm.TestVmSshKey"/>
+  <TestCase class="org.zstack.test.kvm.TestVmConsolePasswordOnKvm"/>
   <TestCase class="org.zstack.test.kvm.TestKvmPingAgentExtension"/>
   <TestCase class="org.zstack.test.kvm.TestGetCandidatesForCreatingVm"/>
   <TestCase class="org.zstack.test.kvm.TestGetCandidatesForCreatingVm1"/>

@@ -10,7 +10,6 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.defer.Defer;
@@ -62,6 +61,8 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.operr;
+
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.sql.Timestamp;
@@ -72,7 +73,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
-import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
 
 public class ImageManagerImpl extends AbstractService implements ImageManager, ManagementNodeReadyExtensionPoint,
@@ -966,13 +966,6 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                     DownloadImageReply re = reply.castReply();
                                     ref.setStatus(ImageStatus.Ready);
                                     ref.setInstallPath(re.getInstallPath());
-
-                                    if (dbf.reload(ref) == null) {
-                                        logger.debug(String.format("image[uuid: %s] has been deleted", ref.getImageUuid()));
-                                        completion.done();
-                                        return;
-                                    }
-
                                     dbf.update(ref);
 
                                     if (success.compareAndSet(false, true)) {
@@ -998,20 +991,12 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
             @Override
             protected void done() {
-                // check if the database still has the record of the image
+                // TODO: check if the database still has the record of the image
                 // if there is no record, that means user delete the image during the downloading,
                 // then we need to cleanup
-                ImageVO vo = dbf.reload(ivo);
-                if (vo == null) {
-                    evt.setError(operr("image [uuid:%s] has been deleted", ivo.getUuid()));
-                    SQL.New("delete from ImageBackupStorageRefVO where imageUuid = :uuid")
-                            .param("uuid", ivo.getUuid())
-                            .execute();
-                    bus.publish(evt);
-                    return;
-                }
 
                 if (success.get()) {
+                    ImageVO vo = dbf.reload(ivo);
                     final ImageInventory einv = ImageInventory.valueOf(vo);
 
                     CollectionUtils.safeForEach(pluginRgty.getExtensionList(AddImageExtensionPoint.class), new ForEachFunction<AddImageExtensionPoint>() {

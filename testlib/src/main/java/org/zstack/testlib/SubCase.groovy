@@ -9,7 +9,6 @@ abstract class SubCase extends Test implements Case {
             environment()
             test()
         } finally {
-            logger.info("start cleanup for case ${this.class}")
             clean()
         }
     }

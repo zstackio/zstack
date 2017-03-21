@@ -49,7 +49,7 @@
 
 	<config>
 		<name>videoType</name>
-		<description>video type for VM. "cirrus" supply basic video type, the  resolution is not high. "vga" supply more high resolution for VM. "qxl" supply high performance when use SPICE protocal.  Options:[vga, cirrus, qxl]</description>
+		<description>switch for vm video type</description>
 		<category>vm</category>
 		<defaultValue>cirrus</defaultValue>
 		<type>java.lang.String</type>

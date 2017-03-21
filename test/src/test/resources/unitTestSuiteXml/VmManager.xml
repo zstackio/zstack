@@ -53,6 +53,7 @@
     <TestCase class="org.zstack.test.compute.vm.TestVmStaticIp3"/>
     <TestCase class="org.zstack.test.compute.vm.TestVmStaticIp4"/>
     <TestCase class="org.zstack.test.compute.vm.TestCreateVmWithMultipleSameDataVolume"/>
+    <TestCase class="org.zstack.test.compute.vm.TestUpdateVm"/>
     <TestCase class="org.zstack.test.compute.vm.TestPolicyForVm"/>
     <TestCase class="org.zstack.test.compute.vm.TestPolicyForVm1"/>
     <TestCase class="org.zstack.test.compute.vm.TestPolicyForVm2"/>
@@ -69,5 +70,6 @@
     <TestCase class="org.zstack.test.compute.vm.TestVmHostname"/>
     <TestCase class="org.zstack.test.compute.vm.TestGetInterdependentL3NetworksImages"/>
     <TestCase class="org.zstack.test.compute.vm.TestGetVmAttachableDataVolume"/>
+    <TestCase class="org.zstack.test.compute.vm.TestDeleteCreatedVm"/>
     <TestCase class="org.zstack.test.compute.vm.TestGetVmCapabilities"/>
 </UnitTestSuiteConfig>

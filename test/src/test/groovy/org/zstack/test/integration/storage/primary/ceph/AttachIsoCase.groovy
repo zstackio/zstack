@@ -21,8 +21,6 @@ import org.zstack.header.storage.primary.PrimaryStorageState
 import org.zstack.header.storage.primary.PrimaryStorageVO
 import org.zstack.header.storage.backup.BackupStorageVO
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonBase
-import org.zstack.storage.ceph.primary.CephPrimaryStorageMonVO
-import org.zstack.storage.ceph.primary.CephPrimaryStorageMonVO_
 import org.zstack.storage.primary.PrimaryStorageBase
 import org.zstack.testlib.BackupStorageSpec
 import org.zstack.testlib.ImageSpec
@@ -65,6 +63,7 @@ class AttachIsoCase extends SubCase {
     void clean() {
         env.delete()
     }
+
 
     void testAttachIsoToDisabledCephStorageWhenIsoExisting() {
         String vmUuid = (env.specByName("test-vm") as VmSpec).inventory.uuid
