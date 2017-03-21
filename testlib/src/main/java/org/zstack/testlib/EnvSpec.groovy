@@ -493,8 +493,9 @@ class EnvSpec implements Node {
             long count = SQL.New("select count(*) from ${type.name}".toString(), Long.class).find()
 
             if (count > 0) {
-                logger.fatal("[${Test.CURRENT_SUB_CASE != null ? Test.CURRENT_SUB_CASE.class : this.class}] EnvSpec.delete() didn't cleanup the environment, there are still records in the database" +
-                        " table ${type.name}, go fix it immediately!!! Abort the system")
+                def err = "[${Test.CURRENT_SUB_CASE != null ? Test.CURRENT_SUB_CASE.class : this.class}] EnvSpec.delete() didn't cleanup the environment, there are still records in the database" +
+                        " table ${type.name}, go fix it immediately!!! Abort the system"
+                logger.fatal(err)
 
                 // abort the test suite
                 throw new StopTestSuiteException()
@@ -512,6 +513,10 @@ class EnvSpec implements Node {
             }
 
             makeSureAllEntitiesDeleted()
+        } catch (Throwable t) {
+            logger.fatal("an error happened when running EnvSpec.delete() for" +
+                    " the case ${Test.CURRENT_SUB_CASE.class}, we must stop the test suite, ${t.getMessage()}")
+            throw new StopTestSuiteException()
         } finally {
             // set the currentEnvSpec to null anyway
             // because the current sub case may fail but

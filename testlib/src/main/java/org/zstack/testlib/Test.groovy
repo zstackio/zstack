@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit
  * Created by xing5 on 2017/2/12.
  */
 abstract class Test implements ApiHelper {
-    static final CLogger logger = Utils.getLogger(this.getClass())
+    final CLogger logger = Utils.getLogger(this.getClass())
 
     static Object deployer
 
@@ -330,10 +330,10 @@ abstract class Test implements ApiHelper {
         caseTypes = caseTypes.findAll { it.package.name.startsWith(this.class.package.name) }
         caseTypes = caseTypes.sort()
 
-        String listCases = System.getProperty("list")
-        if (listCases != null) {
-            def cases = new File([dir.absolutePath, "cases"].join("/"))
-            cases.write(caseTypes.collect {it.name}.join("\n"))
+        def cases = new File([dir.absolutePath, "cases"].join("/"))
+        cases.write(caseTypes.collect {it.name}.join("\n"))
+
+        if (System.hasProperty("list")) {
             return
         }
 
