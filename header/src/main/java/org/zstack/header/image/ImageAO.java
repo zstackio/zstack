@@ -32,9 +32,11 @@ public class ImageAO implements ShadowEntity {
     private ImageState state;
 
     @Column
+    // size indicate the image file disk size
     private long size;
 
     @Column
+    // actualSize indicate the OS FileSystem disk size
     private long actualSize;
 
     @Column

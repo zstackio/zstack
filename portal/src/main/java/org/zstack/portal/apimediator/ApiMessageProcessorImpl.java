@@ -275,6 +275,16 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
                     }
                 }
 
+                if (value != null && at.minLength() != 0 && (value instanceof String)) {
+                    String str = (String) value;
+                    if (str.length() < at.minLength()) {
+                        throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
+                                String.format("field[%s] of message[%s] less than the min length of string. expected was >= %s, actual was %s",
+                                        f.getName(), msg.getClass().getName(), at.minLength(), str.length())
+                        ));
+                    }
+                }
+
                 if (at.required() && value == null) {
                     throw new ApiMessageInterceptionException(argerr("field[%s] of message[%s] is mandatory, can not be null", f.getName(), msg.getClass().getName()));
                 }

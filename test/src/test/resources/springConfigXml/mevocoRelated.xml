@@ -5,6 +5,12 @@
          http://www.springframework.org/schema/beans/spring-beans-3.0.xsd"
        default-init-method="init" default-destroy-method="destory">
 
+    <import resource="hybrid/datacenter.xml"/>
+    <import resource="hybrid/ecsoss.xml"/>
+    <import resource="hybrid/network.xml"/>
+    <import resource="hybrid/identityzone.xml"/>
+    <import resource="hybrid/ecs.xml"/>
+    <import resource="hybrid/hybridaccount.xml"/>
     <import resource="mevoco.xml"/>
     <import resource="license.xml"/>
     <import resource="localStorage.xml"/>

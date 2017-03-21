@@ -18,6 +18,8 @@ public interface ErrorFacade {
 
     ErrorCode stringToOperationError(String details, ErrorCode cause);
 
+    ErrorCode stringToExternalError(String details, ErrorCode cause);
+
     ErrorCodeList instantiateErrorCode(Enum code, List<ErrorCode> causes);
 
     ErrorCodeList instantiateErrorCode(String code, List<ErrorCode> causes);

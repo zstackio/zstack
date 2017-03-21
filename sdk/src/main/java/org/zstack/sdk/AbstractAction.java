@@ -101,6 +101,14 @@ public abstract class AbstractAction {
                     }
                 }
 
+                if (value != null && at.minLength() != 0 && (value instanceof String)) {
+                    String str = (String) value;
+                    if (str.length() < at.minLength()) {
+                        throw new ApiException(String.format("filed[%s] less than the min length[%s chars] of string",
+                                p.field.getName(), at.minLength()));
+                    }
+                }
+
                 if (value != null && at.validValues().length > 0) {
                     List vals = Arrays.asList(at.validValues());
                     if (!vals.contains(value.toString())) {
