@@ -236,6 +236,11 @@
                     <artifactId>mevoco</artifactId>
                     <version>${project.version}</version>
                 </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
+                    <artifactId>hybrid</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
             </dependencies>
         </profile>
     </profiles>

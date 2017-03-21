@@ -1,0 +1,17 @@
+<error>
+    <prefix>HYBRID</prefix>
+
+    <code>
+        <id>1000</id>
+        <description>no such datacenter</description>
+    </code>
+    <code>
+        <id>1001</id>
+        <description>no such identity zone</description>
+    </code>
+    <code>
+        <id>1002</id>
+        <description>no account found for hybrid</description>
+    </code>
+</error>
+

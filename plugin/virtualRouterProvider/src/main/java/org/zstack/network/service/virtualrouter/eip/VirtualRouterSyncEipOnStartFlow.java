@@ -129,7 +129,7 @@ public class VirtualRouterSyncEipOnStartFlow implements Flow {
         }
 
         if (eipUuids.isEmpty()) {
-            return new ArrayList<EipTO>();
+            return new ArrayList<>();
         }
 
         return findEipOnThisRouter(vr, eipUuids);
