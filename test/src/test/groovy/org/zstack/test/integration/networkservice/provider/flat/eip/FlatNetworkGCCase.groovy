@@ -54,11 +54,16 @@ class FlatNetworkGCCase extends SubCase {
             uuid = eip.uuid
         }
 
-        GarbageCollectorInventory inv = queryGCJob {
-            conditions=["context~=%${eip.guestIp}%".toString()]
-        }[0]
+        GarbageCollectorInventory inv = null
 
-        assert inv.status == GCStatus.Idle.toString()
+        retryInSecs(5) {
+             inv = queryGCJob {
+                conditions=["context~=%${eip.guestIp}%".toString()]
+            }[0]
+
+            return { assert inv.status == GCStatus.Idle.toString() }
+        }
+
 
         boolean called = false
         env.afterSimulator(FlatEipBackend.BATCH_DELETE_EIP_PATH) { rsp ->
@@ -71,15 +76,16 @@ class FlatNetworkGCCase extends SubCase {
             uuid = host.uuid
         }
 
-        TimeUnit.SECONDS.sleep(2)
+        retryInSecs(5) {
+            inv = queryGCJob {
+                conditions=["context~=%${eip.guestIp}%".toString()]
+            }[0]
 
-        assert called
-
-        inv = queryGCJob {
-            conditions=["context~=%${eip.guestIp}%".toString()]
-        }[0]
-
-        assert inv.status == GCStatus.Done.toString()
+            return {
+                assert called
+                assert inv.status == GCStatus.Done.toString()
+            }
+        }
 
         // clean the GC job so it won't effect following cases
         deleteGCJob {
@@ -96,11 +102,15 @@ class FlatNetworkGCCase extends SubCase {
             uuid = eip.uuid
         }
 
-        GarbageCollectorInventory inv = queryGCJob {
-            conditions=["context~=%${eip.guestIp}%".toString()]
-        }[0]
+        GarbageCollectorInventory inv
 
-        assert inv.status == GCStatus.Idle.toString()
+        retryInSecs(5) {
+             inv = queryGCJob {
+                conditions=["context~=%${eip.guestIp}%".toString()]
+            }[0]
+
+            return { assert inv.status == GCStatus.Idle.toString() }
+        }
 
         boolean called = false
         env.afterSimulator(FlatEipBackend.BATCH_DELETE_EIP_PATH) { rsp ->
@@ -112,15 +122,20 @@ class FlatNetworkGCCase extends SubCase {
             uuid = host.uuid
         }
 
-        TimeUnit.SECONDS.sleep(2)
+        retryInSecs(5) {
+            inv = queryGCJob {
+                conditions=["context~=%${eip.guestIp}%".toString()]
+            }[0]
 
-        assert !called
+            return  {
+                assert !called
+                assert inv.status == GCStatus.Done.toString()
+            }
+        }
 
-        inv = queryGCJob {
-            conditions=["context~=%${eip.guestIp}%".toString()]
-        }[0]
-
-        assert inv.status == GCStatus.Done.toString()
+        deleteGCJob {
+            uuid = inv.uuid
+        }
     }
 
     void testNamespaceGCSuccess() {
@@ -134,11 +149,14 @@ class FlatNetworkGCCase extends SubCase {
             uuid = l3.uuid
         }
 
-        GarbageCollectorInventory inv = queryGCJob {
-            conditions=["context~=%$bridgeName%".toString()]
-        }[0]
+        GarbageCollectorInventory inv
+        retryInSecs(5) {
+             inv = queryGCJob {
+                conditions=["context~=%$bridgeName%".toString()]
+            }[0]
 
-        assert inv.status == GCStatus.Idle.toString()
+            return { assert inv.status == GCStatus.Idle.toString() }
+        }
 
         boolean called = false
         env.afterSimulator(FlatDhcpBackend.DHCP_DELETE_NAMESPACE_PATH) { rsp ->
@@ -150,14 +168,16 @@ class FlatNetworkGCCase extends SubCase {
             uuid = host.uuid
         }
 
-        TimeUnit.SECONDS.sleep(2)
-        assert called
+        retryInSecs(5) {
+            inv = queryGCJob {
+                conditions=["context~=%$bridgeName%".toString()]
+            }[0]
 
-        inv = queryGCJob {
-            conditions=["context~=%$bridgeName%".toString()]
-        }[0]
-
-        assert inv.status == GCStatus.Done.toString()
+            return {
+                assert called
+                assert inv.status == GCStatus.Done.toString()
+            }
+        }
 
         // cleanup the job for following cases
         deleteGCJob {
@@ -176,11 +196,17 @@ class FlatNetworkGCCase extends SubCase {
             uuid = l3.uuid
         }
 
-        GarbageCollectorInventory inv = queryGCJob {
-            conditions=["context~=%$bridgeName%".toString()]
-        }[0]
+        GarbageCollectorInventory inv
 
-        assert inv.status == GCStatus.Idle.toString()
+        retryInSecs(5) {
+             inv = queryGCJob {
+                conditions=["context~=%$bridgeName%".toString()]
+            }[0]
+
+            return {
+                assert inv.status == GCStatus.Idle.toString()
+            }
+        }
 
         boolean called = false
         env.afterSimulator(FlatDhcpBackend.DHCP_DELETE_NAMESPACE_PATH) { rsp ->
@@ -192,14 +218,16 @@ class FlatNetworkGCCase extends SubCase {
             uuid = host.uuid
         }
 
-        TimeUnit.SECONDS.sleep(2)
-        assert !called
+        retryInSecs(5) {
+            inv = queryGCJob {
+                conditions=["context~=%$bridgeName%".toString()]
+            }[0]
 
-        inv = queryGCJob {
-            conditions=["context~=%$bridgeName%".toString()]
-        }[0]
-
-        assert inv.status == GCStatus.Done.toString()
+            return {
+                assert !called
+                assert inv.status == GCStatus.Done.toString()
+            }
+        }
     }
 
     @Override
