@@ -2930,7 +2930,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         final VmNicVO candidate = CollectionUtils.find(self.getVmNics(), new Function<VmNicVO, VmNicVO>() {
             @Override
             public VmNicVO call(VmNicVO arg) {
-                return arg.getL3NetworkUuid().equals(nic.getUuid()) ? null : arg;
+                return arg.getUuid().equals(nic.getUuid()) ? null : arg;
             }
         });
 
