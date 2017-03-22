@@ -1,8 +1,5 @@
 package org.zstack.test.integration.storage.primary.local
 
-import groovy.transform.TypeChecked
-import junit.framework.Assert
-import org.zstack.header.storage.primary.PrimaryStorageState
 import org.zstack.sdk.DiskOfferingInventory
 import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.sdk.VmInstanceInventory
@@ -12,10 +9,7 @@ import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.Utils
-import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.logging.CLogger
-
-import java.lang.reflect.Field
 
 /**
  * Created by HeathHose on 2017/3/7.

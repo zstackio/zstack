@@ -18,7 +18,7 @@ import org.zstack.header.rest.RestRequest;
 )
 public class APIDeleteSchedulerMsg extends APIDeleteMessage {
 
-    @APIParam(resourceType = SchedulerVO.class)
+    @APIParam(resourceType = SchedulerVO.class, successIfResourceNotExisting = true)
     private String uuid;
 
 

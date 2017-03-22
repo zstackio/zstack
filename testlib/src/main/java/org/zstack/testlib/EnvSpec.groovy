@@ -4,13 +4,18 @@ import org.codehaus.groovy.runtime.InvokerHelper
 import org.springframework.http.*
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory
 import org.springframework.web.client.RestTemplate
+import org.zstack.compute.vm.VmGlobalConfig
 import org.zstack.core.CoreGlobalProperty
 import org.zstack.core.Platform
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.SQL
 import org.zstack.header.identity.AccountConstant
+import org.zstack.header.image.ImageDeletionPolicyManager
 import org.zstack.header.message.Message
 import org.zstack.header.rest.RESTConstant
+import org.zstack.header.vm.VmInstanceDeletionPolicyManager
+import org.zstack.header.volume.VolumeDeletionPolicyManager
+import org.zstack.image.ImageGlobalConfig
 import org.zstack.sdk.AddCephBackupStorageAction
 import org.zstack.sdk.AddCephPrimaryStorageAction
 import org.zstack.sdk.AddCephPrimaryStoragePoolAction
@@ -83,6 +88,7 @@ import org.zstack.sdk.QueryGlobalConfigAction
 import org.zstack.sdk.SessionInventory
 import org.zstack.sdk.UpdateGlobalConfigAction
 import org.zstack.sdk.ZSClient
+import org.zstack.storage.volume.VolumeGlobalConfig
 import org.zstack.utils.gson.JSONObjectUtil
 
 import javax.servlet.http.HttpServletRequest
@@ -505,6 +511,10 @@ class EnvSpec implements Node {
 
     void delete() {
         try {
+            ImageGlobalConfig.DELETION_POLICY.updateValue(ImageDeletionPolicyManager.ImageDeletionPolicy.Direct.toString())
+            VolumeGlobalConfig.VOLUME_DELETION_POLICY.updateValue(VolumeDeletionPolicyManager.VolumeDeletionPolicy.Direct.toString())
+            VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy.Direct.toString())
+
             destroy(session.uuid)
 
             resourcesNeedDeletion.each {
@@ -514,7 +524,7 @@ class EnvSpec implements Node {
 
             makeSureAllEntitiesDeleted()
         } catch (StopTestSuiteException e) {
-            throw e;
+            throw e
         } catch (Throwable t) {
             logger.fatal("an error happened when running EnvSpec.delete() for" +
                     " the case ${Test.CURRENT_SUB_CASE?.class}, we must stop the test suite, ${t.getMessage()}")
