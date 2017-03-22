@@ -423,10 +423,36 @@ abstract class Test implements ApiHelper {
         } as SessionInventory
     }
 
+    private boolean getRetryReturnValue(ret, boolean throwError=false) {
+        boolean judge
+
+        if (ret instanceof Closure) {
+            try {
+                def r = ret()
+                judge = (r != null && r instanceof Boolean) ? r : true
+            } catch (Throwable t) {
+                if (throwError) {
+                    throw t
+                } else {
+                    judge = false
+                }
+            }
+        } else {
+            judge = ret
+        }
+
+        return judge
+    }
+
     protected boolean retryInSecs(int total, int interval=1, Closure c) {
         int count = 0
+
+        def ret = null
+
         while (count < total) {
-            if (c()) {
+            ret = c()
+
+            if (getRetryReturnValue(ret)) {
                 return true
             }
 
@@ -434,13 +460,18 @@ abstract class Test implements ApiHelper {
             count += interval
         }
 
-        return false
+        return getRetryReturnValue(ret, true)
     }
 
     protected boolean retryInMillis(int total, int interval, Closure c) {
         int count = 0
+
+        def ret = null
+
         while (count < total) {
-            if (c()) {
+            ret = c()
+
+            if (getRetryReturnValue(ret)) {
                 return true
             }
 
@@ -448,6 +479,6 @@ abstract class Test implements ApiHelper {
             count += interval
         }
 
-        return false
+        return getRetryReturnValue(ret, true)
     }
 }

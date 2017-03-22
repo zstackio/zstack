@@ -60,11 +60,13 @@ class LocalStorageGCCase extends SubCase {
             uuid = vol.uuid
         }
 
-        GarbageCollectorInventory inv = queryGCJob {
-            conditions = ["context~=%${vol.uuid}%".toString()]
-        }[0]
+        retryInSecs(5) {
+            GarbageCollectorInventory inv = queryGCJob {
+                conditions = ["context~=%${vol.uuid}%".toString()]
+            }[0]
 
-        assert inv.status == GCStatus.Idle.toString()
+            return { assert inv.status == GCStatus.Idle.toString() }
+        }
 
         boolean called = false
         env.afterSimulator(LocalStorageKvmBackend.DELETE_BITS_PATH) { rsp ->
@@ -77,13 +79,17 @@ class LocalStorageGCCase extends SubCase {
             uuid = host.uuid
         }
 
-        assert called
+        retryInSecs(5) {
+            return { assert called }
+        }
 
-        inv = queryGCJob {
-            conditions = ["context~=%${vol.uuid}%".toString()]
-        }[0]
+        retryInSecs(5) {
+            GarbageCollectorInventory inv = queryGCJob {
+                conditions = ["context~=%${vol.uuid}%".toString()]
+            }[0]
 
-        assert inv.status == GCStatus.Done.toString()
+            return { assert inv.status == GCStatus.Done.toString() }
+        }
     }
 
     void testGCCancelledAfterHostDeleted() {
@@ -102,21 +108,25 @@ class LocalStorageGCCase extends SubCase {
             uuid = vol.uuid
         }
 
-        GarbageCollectorInventory inv = queryGCJob {
-            conditions = ["context~=%${vol.uuid}%".toString()]
-        }[0]
+        retryInSecs(5) {
+            GarbageCollectorInventory inv = queryGCJob {
+                conditions = ["context~=%${vol.uuid}%".toString()]
+            }[0]
 
-        assert inv.status == GCStatus.Idle.toString()
+            return { assert inv.status == GCStatus.Idle.toString() }
+        }
 
         deleteHost {
             uuid = host.uuid
         }
 
-        inv = queryGCJob {
-            conditions = ["context~=%${vol.uuid}%".toString()]
-        }[0]
+        retryInSecs(5) {
+            GarbageCollectorInventory inv = queryGCJob {
+                conditions = ["context~=%${vol.uuid}%".toString()]
+            }[0]
 
-        assert inv.status == GCStatus.Done.toString()
+            return { assert inv.status == GCStatus.Done.toString() }
+        }
     }
 
     void testGCCancelledAfterPrimaryStorageDeleted() {
@@ -135,11 +145,13 @@ class LocalStorageGCCase extends SubCase {
             uuid = vol.uuid
         }
 
-        GarbageCollectorInventory inv = queryGCJob {
-            conditions = ["context~=%${vol.uuid}%".toString()]
-        }[0]
+        retryInSecs(5) {
+            GarbageCollectorInventory inv = queryGCJob {
+                conditions = ["context~=%${vol.uuid}%".toString()]
+            }[0]
 
-        assert inv.status == GCStatus.Idle.toString()
+            return { assert inv.status == GCStatus.Idle.toString() }
+        }
 
         detachPrimaryStorageFromCluster {
             clusterUuid = (env.specByName("cluster") as ClusterSpec).inventory.uuid
@@ -150,11 +162,13 @@ class LocalStorageGCCase extends SubCase {
             uuid = local.uuid
         }
 
-        inv = queryGCJob {
-            conditions = ["context~=%${vol.uuid}%".toString()]
-        }[0]
+        retryInSecs(5) {
+            GarbageCollectorInventory inv = queryGCJob {
+                conditions = ["context~=%${vol.uuid}%".toString()]
+            }[0]
 
-        assert inv.status == GCStatus.Done.toString()
+            return { assert inv.status == GCStatus.Done.toString() }
+        }
     }
 
     @Override

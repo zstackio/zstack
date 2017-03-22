@@ -16,7 +16,7 @@ import org.zstack.header.storage.primary.PrimaryStorageMessage;
         responseClass = APIDeleteCephPrimaryStoragePoolEvent.class
 )
 public class APIDeleteCephPrimaryStoragePoolMsg extends APIMessage implements PrimaryStorageMessage {
-    @APIParam(resourceType = CephPrimaryStoragePoolVO.class)
+    @APIParam(resourceType = CephPrimaryStoragePoolVO.class, successIfResourceNotExisting = true)
     private String uuid;
 
     @APINoSee

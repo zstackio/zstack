@@ -18,22 +18,24 @@ public abstract class AbstractAction {
 
     abstract Map<String, Parameter> getParameterMap();
 
-    private synchronized void initializeParametersIfNot() {
-        if (getParameterMap().isEmpty()) {
-            List<Field> fields = getAllFields();
+    private void initializeParametersIfNot() {
+        synchronized (getParameterMap()) {
+            if (getParameterMap().isEmpty()) {
+                List<Field> fields = getAllFields();
 
-            for (Field f : fields) {
-                Param at = f.getAnnotation(Param.class);
-                if (at == null) {
-                    continue;
+                for (Field f : fields) {
+                    Param at = f.getAnnotation(Param.class);
+                    if (at == null) {
+                        continue;
+                    }
+
+                    Parameter p = new Parameter();
+                    p.annotation = at;
+                    p.field = f;
+                    p.field.setAccessible(true);
+
+                    getParameterMap().put(f.getName(), p);
                 }
-
-                Parameter p = new Parameter();
-                p.annotation = at;
-                p.field = f;
-                p.field.setAccessible(true);
-
-                getParameterMap().put(f.getName(), p);
             }
         }
     }
