@@ -513,9 +513,11 @@ class EnvSpec implements Node {
             }
 
             makeSureAllEntitiesDeleted()
+        } catch (StopTestSuiteException e) {
+            throw e;
         } catch (Throwable t) {
             logger.fatal("an error happened when running EnvSpec.delete() for" +
-                    " the case ${Test.CURRENT_SUB_CASE.class}, we must stop the test suite, ${t.getMessage()}")
+                    " the case ${Test.CURRENT_SUB_CASE?.class}, we must stop the test suite, ${t.getMessage()}")
             throw new StopTestSuiteException()
         } finally {
             // set the currentEnvSpec to null anyway

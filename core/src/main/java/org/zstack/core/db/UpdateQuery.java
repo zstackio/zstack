@@ -39,6 +39,8 @@ public interface UpdateQuery {
 
     void delete();
 
+    int hardDelete();
+
     void update();
 
     static UpdateQuery New(Class entityClass) {

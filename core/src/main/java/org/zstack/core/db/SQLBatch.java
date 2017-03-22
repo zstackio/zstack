@@ -12,8 +12,16 @@ public abstract class SQLBatch {
         return SQL.New(text);
     }
 
+    protected UpdateQuery sql(Class clz) {
+        return SQL.New(clz);
+    }
+
     protected SQL sql(String text, Class clz) {
         return SQL.New(text, clz);
+    }
+
+    protected Q q(Class clz) {
+        return Q.New(clz);
     }
 
     @Transactional

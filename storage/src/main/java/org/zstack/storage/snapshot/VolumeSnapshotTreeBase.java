@@ -12,6 +12,8 @@ import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -59,6 +61,7 @@ import static org.zstack.core.Platform.operr;
 
 import javax.persistence.Query;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.zstack.utils.CollectionDSL.e;
 
@@ -765,41 +768,41 @@ public class VolumeSnapshotTreeBase {
     }
 
     private boolean cleanup() {
-        SimpleQuery<VolumeSnapshotVO> q = dbf.createQuery(VolumeSnapshotVO.class);
-        q.select(VolumeSnapshotVO_.primaryStorageUuid);
-        q.add(VolumeSnapshotVO_.uuid, Op.EQ, currentRoot.getUuid());
-        String uuid = q.findValue();
-
-        if (uuid != null) {
-            return false;
+        class Ret {
+            boolean value;
         }
 
-        SimpleQuery<VolumeSnapshotBackupStorageRefVO> bq = dbf.createQuery(VolumeSnapshotBackupStorageRefVO.class);
-        bq.add(VolumeSnapshotBackupStorageRefVO_.volumeSnapshotUuid, Op.EQ, currentRoot.getUuid());
-        boolean onBs = bq.isExists();
+        Ret ret = new Ret();
 
-        if (onBs) {
-            return false;
-        }
-
-        // the snapshot is on neither primary storage nor backup storage. delete it and descendants
-        List<String> uuids = CollectionUtils.transformToList(currentLeaf.getDescendants(), new Function<String, VolumeSnapshotInventory>() {
+        new SQLBatch() {
             @Override
-            public String call(VolumeSnapshotInventory arg) {
-                return arg.getUuid();
+            protected void scripts() {
+                String psUuid = q(VolumeSnapshotVO.class)
+                        .select(VolumeSnapshotVO_.primaryStorageUuid)
+                        .eq(VolumeSnapshotVO_.uuid, currentRoot.getUuid())
+                        .findValue();
+
+                if (psUuid != null) {
+                    ret.value = false;
+                    return;
+                }
+
+                // the snapshot is on neither primary storage, delete it and descendants
+                List<String> uuids = currentLeaf.getDescendants().stream().map(VolumeSnapshotInventory::getUuid).collect(Collectors.toList());
+                if (!uuids.isEmpty()) {
+                    sql(VolumeSnapshotVO.class).in(VolumeSnapshotVO_.uuid, uuids).hardDelete();
+                }
+
+                if (!q(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.treeUuid, currentRoot.getTreeUuid()).isExists()) {
+                    logger.debug(String.format("volume snapshot tree[uuid:%s] has no leaf, delete it", currentRoot.getTreeUuid()));
+                    sql(VolumeSnapshotTreeVO.class).eq(VolumeSnapshotTreeVO_.uuid, currentRoot.getTreeUuid()).hardDelete();
+                }
+
+                ret.value = true;
             }
-        });
+        }.execute();
 
-        dbf.removeByPrimaryKeys(uuids, VolumeSnapshotVO.class);
-
-        SimpleQuery<VolumeSnapshotVO> tq = dbf.createQuery(VolumeSnapshotVO.class);
-        tq.add(VolumeSnapshotVO_.treeUuid, Op.EQ, currentRoot.getTreeUuid());
-        if (!tq.isExists()) {
-            logger.debug(String.format("volume snapshot tree[uuid:%s] has no leaf, delete it", currentRoot.getTreeUuid()));
-            dbf.removeByPrimaryKey(currentRoot.getTreeUuid(), VolumeSnapshotTreeVO.class);
-        }
-
-        return true;
+        return ret.value;
     }
 
     private List<VolumeSnapshotBackupStorageDeletionMsg> makeVolumeSnapshotBackupStorageDeletionMsg(List<String> bsUuids) {
