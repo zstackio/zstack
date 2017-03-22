@@ -17,9 +17,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APICreateVniRangeEvent.class,
         parameterName = "params"
 )
-public class APICreateVniRangeMsg extends APICreateMessage implements L2NetworkMessage{
-    @APIParam
-    private String uuid;
+public class APICreateVniRangeMsg extends APICreateMessage implements L2NetworkMessage {
 
     @APIParam(maxLength = 255)
     private String name;
@@ -35,14 +33,6 @@ public class APICreateVniRangeMsg extends APICreateMessage implements L2NetworkM
 
     @APIParam
     private String l2NetworkUuid;
-
-    public String getUuid() {
-        return uuid;
-    }
-
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
-    }
 
     public String getName() {
         return name;

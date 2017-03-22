@@ -10,6 +10,8 @@ public class VxlanNetworkPoolConstant {
     @PythonClass
     public static final String VXLAN_NETWORK_POOL_TYPE = "VxlanNetworkPool";
     @PythonClass
+    public static final String VXLAN_NETWORK_TYPE = "VxlanNetwork";
+    @PythonClass
     public static final String RANDOM_VNI_ALLOCATOR_STRATEGY = "RandomVniAllocatorStrategy";
 
     public static final String ACTION_CATEGORY = "vxlan";

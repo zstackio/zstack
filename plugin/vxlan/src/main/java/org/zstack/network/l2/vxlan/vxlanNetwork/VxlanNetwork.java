@@ -27,6 +27,7 @@ import org.zstack.network.l2.L2NoVlanNetwork;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -52,8 +53,6 @@ public class VxlanNetwork extends L2NoVlanNetwork {
     protected CascadeFacade casf;
     @Autowired
     protected ErrorFacade errf;
-
-    protected VxlanNetworkVO self;
 
     public VxlanNetwork(L2NetworkVO self) {
         super(self);
@@ -86,12 +85,12 @@ public class VxlanNetwork extends L2NoVlanNetwork {
     }
 
     private void handleLocalMessage(Message msg) {
-        if (msg instanceof CheckL2NetworkOnHostMsg) {
-            handle((CheckL2NetworkOnHostMsg) msg);
-        } else if (msg instanceof PrepareL2NetworkOnHostMsg) {
+        if (msg instanceof PrepareL2NetworkOnHostMsg) {
             handle((PrepareL2NetworkOnHostMsg) msg);
-        } else if (msg instanceof DetachL2NetworkFromClusterMsg) {
-            handle((DetachL2NetworkFromClusterMsg) msg);
+        } else if (msg instanceof L2NetworkDeletionMsg) {
+            handle((L2NetworkDeletionMsg) msg);
+        } else if (msg instanceof CheckL2NetworkOnHostMsg) {
+            handle((CheckL2NetworkOnHostMsg) msg);
         } else if (msg instanceof L2NetworkMessage) {
             superHandle((L2NetworkMessage) msg);
         } else  {
@@ -99,22 +98,25 @@ public class VxlanNetwork extends L2NoVlanNetwork {
         }
     }
 
-    private void handle(DetachL2NetworkFromClusterMsg msg) {
-        throw new CloudRuntimeException("VxlanNetwork can not detach from cluster which VxlanNetworkPool should be used");
-    }
-
     private void handle(final PrepareL2NetworkOnHostMsg msg) {
-        throw new CloudRuntimeException("VxlanNetwork doesn't need prepare which VxlanNetworkPool needed");
     }
 
     private void handle(final CheckL2NetworkOnHostMsg msg) {
-        throw new CloudRuntimeException("VxlanNetwork doesn't need check which VxlanNetworkPool needed");
+    }
+
+    private void handle(L2NetworkDeletionMsg msg) {
+        L2NetworkInventory inv = L2NetworkInventory.valueOf(self);
+        extpEmitter.beforeDelete(inv);
+        deleteHook();
+        dbf.removeByPrimaryKey(msg.getL2NetworkUuid(), L2NetworkVO.class);
+        extpEmitter.afterDelete(inv);
+
+        L2NetworkDeletionReply reply = new L2NetworkDeletionReply();
+        bus.reply(msg, reply);
     }
 
     private void handleApiMessage(APIMessage msg) {
-        if (msg instanceof APIDeleteL2NetworkMsg) {
-            handle((APIDeleteL2NetworkMsg) msg);
-        } else if (msg instanceof APIAttachL2NetworkToClusterMsg) {
+        if (msg instanceof APIAttachL2NetworkToClusterMsg) {
             handle((APIAttachL2NetworkToClusterMsg) msg);
         } else if (msg instanceof APIDetachL2NetworkFromClusterMsg) {
             handle((APIDetachL2NetworkFromClusterMsg) msg);
@@ -131,78 +133,6 @@ public class VxlanNetwork extends L2NoVlanNetwork {
 
     private void handle(final APIAttachL2NetworkToClusterMsg msg) {
         throw new CloudRuntimeException("VxlanNetwork can not attach to cluster which VxlanNetworkPool should be used");
-    }
-
-    private void handle(APIDeleteL2NetworkMsg msg) {
-        final APIDeleteL2NetworkEvent evt = new APIDeleteL2NetworkEvent(msg.getId());
-        final String issuer = VxlanNetworkVO.class.getSimpleName();
-        final List<L2VxlanNetworkInventory> ctx = L2VxlanNetworkInventory.valueOf1(Arrays.asList(self));
-        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
-        chain.setName(String.format("delete-l2VxlanNetwork-%s", msg.getL2NetworkUuid()));
-        if (msg.getDeletionMode() == APIDeleteMessage.DeletionMode.Permissive) {
-            chain.then(new NoRollbackFlow() {
-                @Override
-                public void run(final FlowTrigger trigger, Map data) {
-                    casf.asyncCascade(CascadeConstant.DELETION_CHECK_CODE, issuer, ctx, new Completion(trigger) {
-                        @Override
-                        public void success() {
-                            trigger.next();
-                        }
-
-                        @Override
-                        public void fail(ErrorCode errorCode) {
-                            trigger.fail(errorCode);
-                        }
-                    });
-                }
-            }).then(new NoRollbackFlow() {
-                @Override
-                public void run(final FlowTrigger trigger, Map data) {
-                    casf.asyncCascade(CascadeConstant.DELETION_DELETE_CODE, issuer, ctx, new Completion(trigger) {
-                        @Override
-                        public void success() {
-                            trigger.next();
-                        }
-
-                        @Override
-                        public void fail(ErrorCode errorCode) {
-                            trigger.fail(errorCode);
-                        }
-                    });
-                }
-            });
-        } else {
-            chain.then(new NoRollbackFlow() {
-                @Override
-                public void run(final FlowTrigger trigger, Map data) {
-                    casf.asyncCascade(CascadeConstant.DELETION_FORCE_DELETE_CODE, issuer, ctx, new Completion(trigger) {
-                        @Override
-                        public void success() {
-                            trigger.next();
-                        }
-
-                        @Override
-                        public void fail(ErrorCode errorCode) {
-                            trigger.fail(errorCode);
-                        }
-                    });
-                }
-            });
-        }
-
-        chain.done(new FlowDoneHandler(msg) {
-            @Override
-            public void handle(Map data) {
-                casf.asyncCascadeFull(CascadeConstant.DELETION_CLEANUP_CODE, issuer, ctx, new NopeCompletion());
-                bus.publish(evt);
-            }
-        }).error(new FlowErrorHandler(msg) {
-            @Override
-            public void handle(ErrorCode errCode, Map data) {
-                evt.setError(errf.instantiateErrorCode(SysErrors.DELETE_RESOURCE_ERROR, errCode));
-                bus.publish(evt);
-            }
-        }).start();
     }
 
     private void superHandle(L2NetworkMessage msg) {

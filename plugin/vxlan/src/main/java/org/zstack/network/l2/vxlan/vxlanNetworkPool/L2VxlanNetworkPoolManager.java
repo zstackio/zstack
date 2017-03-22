@@ -7,8 +7,4 @@ import java.util.List;
  */
 public interface L2VxlanNetworkPoolManager {
     VniAllocatorStrategy getVniAllocatorStrategy(VniAllocatorType type);
-
-    boolean isVniRangFull(VniRangeVO vo);
-
-    List<Integer> getUsedVniInRange(String vniRangeUuid);
 }

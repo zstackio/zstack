@@ -27,21 +27,21 @@
         </zstack:plugin>
     </bean>
 
-    <bean id="L2VxlanNetworkPoolCascadeExtension" class="org.zstack.network.l2.vxlan.vxlanNetworkPool.L2VxlanNetworkPoolCascadeExtension">
-        <zstack:plugin>
-            <zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint"/>
-        </zstack:plugin>
-    </bean>
-
-    <bean id="L2VxlanNetworkCascadeExtension" class="org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkCascadeExtension">
-        <zstack:plugin>
-            <zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint"/>
-        </zstack:plugin>
-    </bean>
-
-    <bean id="L2VxlanFakeNetworkRealizer" class="org.zstack.network.l2.vxlan.vxlanNetworkPool.L2VxlanFakeNetworkRealizer">
+    <bean id="L2VxlanFakeNetworkPoolRealizer" class="org.zstack.network.l2.vxlan.vxlanNetworkPool.L2VxlanFakeNetworkPoolRealizer">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.network.l2.L2NetworkRealizationExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="L2VxlanFakeNetworkRealizer" class="org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanFakeNetworkRealizer">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.network.l2.L2NetworkRealizationExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="RandomVniAllocatorStrategy" class="org.zstack.network.l2.vxlan.vxlanNetworkPool.RandomVniAllocatorStrategy">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.network.l2.vxlan.vxlanNetworkPool.VniAllocatorStrategy" />
         </zstack:plugin>
     </bean>
 

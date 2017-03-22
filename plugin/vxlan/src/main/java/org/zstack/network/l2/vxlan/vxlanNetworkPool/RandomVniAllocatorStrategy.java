@@ -103,7 +103,7 @@ public class RandomVniAllocatorStrategy extends AbstractVniAllocatorStrategy {
             q.select(VxlanNetworkVO_.vni);
             q.add(VxlanNetworkVO_.vni, SimpleQuery.Op.GTE, s);
             q.add(VxlanNetworkVO_.vni, SimpleQuery.Op.LTE, te);
-            q.add(VxlanNetworkVO_.vni, SimpleQuery.Op.EQ, rangeUuid);
+            q.add(VxlanNetworkVO_.poolUuid, SimpleQuery.Op.EQ, poolUuid);
             List<Long> used = q.listValue();
             if (te - s + 1 == used.size()) {
                 s += step;

@@ -3,7 +3,6 @@ package org.zstack.network.l2.vxlan.vxlanNetworkPool;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.core.Completion;
-import org.zstack.header.host.Host;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HypervisorType;
 import org.zstack.header.network.l2.L2NetworkInventory;
@@ -20,8 +19,8 @@ import java.util.Map;
 /**
  * Created by weiwang on 20/03/2017.
  */
-public class L2VxlanFakeNetworkRealizer implements L2NetworkRealizationExtensionPoint {
-    private static CLogger logger = Utils.getLogger(L2VxlanFakeNetworkRealizer.class);
+public class L2VxlanFakeNetworkPoolRealizer implements L2NetworkRealizationExtensionPoint {
+    private static CLogger logger = Utils.getLogger(L2VxlanFakeNetworkPoolRealizer.class);
 
     @Autowired
     private DatabaseFacade dbf;

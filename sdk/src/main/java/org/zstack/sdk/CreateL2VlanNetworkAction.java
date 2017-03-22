@@ -65,7 +65,8 @@ public class CreateL2VlanNetworkAction extends AbstractAction {
         }
         
         CreateL2VlanNetworkResult value = res.getResult(CreateL2VlanNetworkResult.class);
-        ret.value = value == null ? new CreateL2VlanNetworkResult() : value;
+        ret.value = value == null ? new CreateL2VlanNetworkResult() : value; 
+
         return ret;
     }
 
@@ -78,16 +79,7 @@ public class CreateL2VlanNetworkAction extends AbstractAction {
         ZSClient.call(this, new InternalCompletion() {
             @Override
             public void complete(ApiResult res) {
-                Result ret = new Result();
-                if (res.error != null) {
-                    ret.error = res.error;
-                    completion.complete(ret);
-                    return;
-                }
-                
-                CreateL2VlanNetworkResult value = res.getResult(CreateL2VlanNetworkResult.class);
-                ret.value = value == null ? new CreateL2VlanNetworkResult() : value;
-                completion.complete(ret);
+                completion.complete(makeResult(res));
             }
         });
     }

@@ -3,20 +3,30 @@ package org.zstack.network.l2.vxlan.vxlanNetworkPool;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.Platform;
+import org.zstack.core.asyncbatch.While;
+import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.inventory.InventoryFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
+import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
@@ -25,8 +35,12 @@ import org.zstack.header.network.l2.L2Errors;
 import org.zstack.network.l2.L2NetworkExtensionPointEmitter;
 import org.zstack.network.l2.L2NetworkManager;
 import org.zstack.network.l2.L2NoVlanNetwork;
+import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
+import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO_;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
+import org.zstack.utils.StringBind;
+import org.zstack.utils.TagUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -95,6 +109,8 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
             handle((PrepareL2NetworkOnHostMsg) msg);
         } else if (msg instanceof AllocateVniMsg) {
             handle((AllocateVniMsg) msg);
+        } else if (msg instanceof L2NetworkDeletionMsg) {
+            handle((L2NetworkDeletionMsg) msg);
         } else if (msg instanceof L2NetworkMessage) {
             superHandle((L2NetworkMessage) msg);
         } else  {
@@ -133,6 +149,17 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
         bus.reply(msg, reply);
     }
 
+    private void handle(L2NetworkDeletionMsg msg) {
+        L2NetworkInventory inv = L2NetworkInventory.valueOf(self);
+        extpEmitter.beforeDelete(inv);
+        deleteHook();
+        dbf.removeByPrimaryKey(msg.getL2NetworkUuid(), L2NetworkVO.class);
+        extpEmitter.afterDelete(inv);
+
+        L2NetworkDeletionReply reply = new L2NetworkDeletionReply();
+        bus.reply(msg, reply);
+    }
+
     private void handleApiMessage(APIMessage msg) {
         if (msg instanceof APIDeleteL2NetworkMsg) {
             handle((APIDeleteL2NetworkMsg) msg);
@@ -152,37 +179,69 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
     private void handle(final APIDetachL2NetworkFromClusterMsg msg) {
         final APIDetachL2NetworkFromClusterEvent evt = new APIDetachL2NetworkFromClusterEvent(msg.getId());
 
-        String issuer = VxlanNetworkPoolVO.class.getSimpleName();
-        List<L2NetworkDetachStruct> ctx = new ArrayList<L2NetworkDetachStruct>();
-        L2NetworkDetachStruct struct = new L2NetworkDetachStruct();
-        struct.setClusterUuid(msg.getClusterUuid());
-        struct.setL2NetworkUuid(msg.getL2NetworkUuid());
-        ctx.add(struct);
-        casf.asyncCascade(L2NetworkConstant.DETACH_L2NETWORK_CODE, issuer, ctx, new Completion(msg) {
-            @Override
-            public void success() {
-                logger.debug(String.format("successfully detached L2VxlanNetwork[uuid:%s] to cluster [uuid:%s]", self.getUuid(), msg.getClusterUuid()));
-                self = dbf.reload(self);
-                evt.setInventory((L2NetworkInventory) inventoryMgr.valueOf(self));
-                bus.publish(evt);
-            }
+        List<String> uuids = Q.New(VxlanNetworkVO.class)
+                .select(VxlanNetworkVO_.uuid).eq(VxlanNetworkVO_.poolUuid, msg.getL2NetworkUuid()).listValues();
 
+        ErrorCodeList errList = new ErrorCodeList();
+
+        new While<>(uuids).all((uuid, completion) -> {
+            L2NetworkDetachFromClusterMsg dmsg = new L2NetworkDetachFromClusterMsg();
+            dmsg.setL2NetworkUuid(uuid);
+            dmsg.setClusterUuid(msg.getClusterUuid());
+            bus.makeTargetServiceIdByResourceUuid(dmsg, L2NetworkConstant.SERVICE_ID, dmsg.getL2NetworkUuid());
+            bus.send(dmsg, new CloudBusCallBack(completion) {
+                @Override
+                public void run(MessageReply reply) {
+                    if (!reply.isSuccess()) {
+                        logger.warn(reply.getError().toString());
+                        errList.getCauses().add(reply.getError());
+                    }
+                    completion.done();
+                }
+            });
+        }).run(new NoErrorCompletion(msg) {
             @Override
-            public void fail(ErrorCode errorCode) {
-                evt.setError(errorCode);
-                bus.publish(evt);
+            public void done() {
+                if (errList.getCauses() != null) {
+                    bus.makeTargetServiceIdByResourceUuid(msg, L2NetworkConstant.SERVICE_ID, msg.getL2NetworkUuid());
+                    evt.setError(errList.getCauses().get(0));
+                    bus.publish(evt);
+                } else {
+                    L2NetworkDetachFromClusterMsg dmsg = new L2NetworkDetachFromClusterMsg();
+                    dmsg.setL2NetworkUuid(msg.getL2NetworkUuid());
+                    dmsg.setClusterUuid(msg.getClusterUuid());
+                    bus.makeTargetServiceIdByResourceUuid(dmsg, L2NetworkConstant.SERVICE_ID, dmsg.getL2NetworkUuid());
+                    bus.send(dmsg, new CloudBusCallBack(dmsg) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (!reply.isSuccess()) {
+                                logger.warn(reply.getError().toString());
+                                evt.setError(reply.getError());
+                            } else {
+                                String tag = TagUtils.tagPatternToSqlPattern(VxlanSystemTags.VXLAN_POOL_CLUSTER_VTEP_CIDR.instantiateTag(map(
+                                        e(VxlanSystemTags.VXLAN_POOL_UUID_TOKEN, msg.getL2NetworkUuid()),
+                                        e(VxlanSystemTags.CLUSTER_UUID_TOKEN, msg.getClusterUuid()))
+                                ));
+
+                                VxlanSystemTags.VXLAN_POOL_CLUSTER_VTEP_CIDR.delete(msg.getL2NetworkUuid(), tag);
+
+                                evt.setInventory((L2NetworkInventory) inventoryMgr.valueOf(self));
+                            }
+                            bus.publish(evt);
+                        }
+                    });
+                }
             }
         });
-
-        VxlanSystemTags.VXLAN_POOL_CLUSTER_VTEP_CIDR.delete(msg.getL2NetworkUuid(),
-                VxlanSystemTags.VXLAN_POOL_CLUSTER_VTEP_CIDR.instantiateTag(map(
-                        e(VxlanSystemTags.VXLAN_POOL_UUID_TOKEN, msg.getL2NetworkUuid()),
-                        e(VxlanSystemTags.VXLAN_POOL_CLUSTER_VTEP_CIDR, msg.getClusterUuid())
-                )));
     }
 
     private void handle(final APICreateVniRangeMsg msg) {
         VniRangeVO vo = new VniRangeVO();
+        if (msg.getResourceUuid() != null) {
+            vo.setUuid(msg.getResourceUuid());
+        } else {
+            vo.setUuid(Platform.getUuid());
+        }
         vo.setName(msg.getName());
         vo.setDescription(msg.getDescription());
         vo.setStartVni(msg.getStartVni());
@@ -212,7 +271,7 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
 
         // Todo(WeiW): Need to validate
         for (String tag : msg.getSystemTags()) {
-            tagMgr.createInherentSystemTag(msg.getL2NetworkUuid(), tag, VxlanNetworkPoolVO.class.getSimpleName());
+            tagMgr.createInherentSystemTag(msg.getL2NetworkUuid(), tag, L2NetworkVO.class.getSimpleName());
         }
 
         SimpleQuery<HostVO> query = dbf.createQuery(HostVO.class);
@@ -229,8 +288,18 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
                 rvo.setClusterUuid(msg.getClusterUuid());
                 rvo.setL2NetworkUuid(self.getUuid());
                 dbf.persist(rvo);
+
+                List<String> uuids = Q.New(VxlanNetworkVO.class)
+                        .select(VxlanNetworkVO_.uuid).eq(VxlanNetworkVO_.poolUuid, msg.getL2NetworkUuid()).listValues();
+                for (String uuid : uuids) {
+                    rvo = new L2NetworkClusterRefVO();
+                    rvo.setClusterUuid(msg.getClusterUuid());
+                    rvo.setL2NetworkUuid(uuid);
+                    dbf.persist(rvo);
+                }
+
                 logger.debug(String.format("successfully attached L2VxlanNetworkPool[uuid:%s] to cluster [uuid:%s]", self.getUuid(), msg.getClusterUuid()));
-                self = dbf.findByUuid(self.getUuid(), VxlanNetworkPoolVO.class);
+                self = dbf.findByUuid(self.getUuid(), L2NetworkVO.class);
                 evt.setInventory((L2NetworkInventory) inventoryMgr.valueOf(self));
                 bus.publish(evt);
             }
@@ -244,6 +313,38 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
     }
 
     private void handle(APIDeleteL2NetworkMsg msg) {
+        List<String> uuids = Q.New(VxlanNetworkVO.class)
+                .select(VxlanNetworkVO_.uuid).eq(VxlanNetworkVO_.poolUuid, msg.getL2NetworkUuid()).listValues();
+        ErrorCodeList errList = new ErrorCodeList();
+
+        new While<>(uuids).all((String uuid, NoErrorCompletion completion) -> {
+            DeleteL2NetworkMsg dmsg = new DeleteL2NetworkMsg();
+            dmsg.setUuid(uuid);
+            dmsg.setForceDelete(msg.getDeletionMode() == APIDeleteMessage.DeletionMode.Enforcing ? true : false);
+            bus.makeTargetServiceIdByResourceUuid(dmsg, L2NetworkConstant.SERVICE_ID, dmsg.getL2NetworkUuid());
+            bus.send(dmsg, new CloudBusCallBack(completion) {
+                @Override
+                public void run(MessageReply reply) {
+                    if (!reply.isSuccess()) {
+                        logger.warn(reply.getError().toString());
+                        errList.getCauses().add(reply.getError());
+                    }
+                    completion.done();
+                }
+            });
+        }).run(new NoErrorCompletion() {
+            @Override
+            public void done() {
+                if (errList.getCauses() != null) {
+                    APIDeleteL2NetworkEvent evt = new APIDeleteL2NetworkEvent(msg.getId());
+                    bus.makeTargetServiceIdByResourceUuid(msg, L2NetworkConstant.SERVICE_ID, msg.getL2NetworkUuid());
+                    evt.setError(errList.getCauses().get(0));
+                    bus.publish(evt);
+                } else {
+                    superHandle((L2NetworkMessage) msg);
+                }
+            }
+        });
     }
 
     private void prepareL2NetworkOnHosts(final String l2NetworkUuid, final List<HostInventory> hosts, final Completion completion) {
@@ -321,18 +422,6 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
 
     private void superHandle(L2NetworkMessage msg) {
         super.handleMessage((Message) msg);
-    }
-
-    @Override
-    public boolean isVniRangFull(VniRangeVO vo) {
-        // TODO(WeiW): Not implemented
-        return false;
-    }
-
-    @Override
-    public List<Integer> getUsedVniInRange(String vniRangeUuid) {
-        // TODO(WeiW): Not implemented
-        return Arrays.asList(0, 1, 2);
     }
 
     @Override

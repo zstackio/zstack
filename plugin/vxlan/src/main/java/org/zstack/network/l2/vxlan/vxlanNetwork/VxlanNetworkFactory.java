@@ -3,16 +3,22 @@ package org.zstack.network.l2.vxlan.vxlanNetwork;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.Component;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.AllocateVniMsg;
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.AllocateVniReply;
+import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolVO;
+import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanSystemTags;
 import org.zstack.query.QueryFacade;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * Created by weiwang on 02/03/2017.
@@ -41,8 +47,8 @@ public class VxlanNetworkFactory implements L2NetworkFactory, Component {
         AllocateVniMsg vniMsg = new AllocateVniMsg();
         vniMsg.setL2NetworkUuid(amsg.getPoolUuid());
         vniMsg.setRequiredVni(amsg.getVni());
-        bus.makeTargetServiceIdByResourceUuid(amsg, L2NetworkConstant.SERVICE_ID, amsg.getPoolUuid());
-        MessageReply reply = bus.call(amsg);
+        bus.makeTargetServiceIdByResourceUuid(vniMsg, L2NetworkConstant.SERVICE_ID, amsg.getPoolUuid());
+        MessageReply reply = bus.call(vniMsg);
         if (!reply.isSuccess()) {
             throw new OperationFailureException(reply.getError());
         }
@@ -51,6 +57,18 @@ public class VxlanNetworkFactory implements L2NetworkFactory, Component {
         vo.setVni(r.getVni());
         vo.setPoolUuid((amsg.getPoolUuid()));
         vo = dbf.persistAndRefresh(vo);
+
+        SimpleQuery<L2NetworkClusterRefVO> q = dbf.createQuery(L2NetworkClusterRefVO.class);
+        q.add(L2NetworkClusterRefVO_.l2NetworkUuid, SimpleQuery.Op.EQ, amsg.getPoolUuid());
+        final List<L2NetworkClusterRefVO> refs = q.list();
+        for (L2NetworkClusterRefVO ref : refs) {
+            L2NetworkClusterRefVO rvo = new L2NetworkClusterRefVO();
+            rvo.setClusterUuid(ref.getClusterUuid());
+            rvo.setL2NetworkUuid(vo.getUuid());
+            dbf.persist(rvo);
+        }
+
+        vo = dbf.reload(vo);
 
         L2VxlanNetworkInventory inv = L2VxlanNetworkInventory.valueOf(vo);
         String info = String.format("successfully create L2VxlanNetwork, %s", JSONObjectUtil.toJsonString(inv));
