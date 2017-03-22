@@ -51,7 +51,8 @@ public class CreateDataVolumeFromVolumeSnapshotAction extends AbstractAction {
     public long pollingInterval;
 
 
-    private Result makeResult(ApiResult res) {
+    public Result call() {
+        ApiResult res = ZSClient.call(this);
         Result ret = new Result();
         if (res.error != null) {
             ret.error = res.error;
@@ -59,21 +60,24 @@ public class CreateDataVolumeFromVolumeSnapshotAction extends AbstractAction {
         }
         
         CreateDataVolumeFromVolumeSnapshotResult value = res.getResult(CreateDataVolumeFromVolumeSnapshotResult.class);
-        ret.value = value == null ? new CreateDataVolumeFromVolumeSnapshotResult() : value; 
-
+        ret.value = value == null ? new CreateDataVolumeFromVolumeSnapshotResult() : value;
         return ret;
-    }
-
-    public Result call() {
-        ApiResult res = ZSClient.call(this);
-        return makeResult(res);
     }
 
     public void call(final Completion<Result> completion) {
         ZSClient.call(this, new InternalCompletion() {
             @Override
             public void complete(ApiResult res) {
-                completion.complete(makeResult(res));
+                Result ret = new Result();
+                if (res.error != null) {
+                    ret.error = res.error;
+                    completion.complete(ret);
+                    return;
+                }
+                
+                CreateDataVolumeFromVolumeSnapshotResult value = res.getResult(CreateDataVolumeFromVolumeSnapshotResult.class);
+                ret.value = value == null ? new CreateDataVolumeFromVolumeSnapshotResult() : value;
+                completion.complete(ret);
             }
         });
     }

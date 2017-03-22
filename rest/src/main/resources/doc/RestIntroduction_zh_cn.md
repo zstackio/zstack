@@ -623,7 +623,7 @@ __systemTag__=         __userTag__=           allocatorStrategy=     clusterUuid
 createDate=            defaultL3NetworkUuid=  description=           groupBy=               hostUuid=              hypervisorType=
 imageUuid=             instanceOfferingUuid=  lastHostUuid=          lastOpDate=            memorySize=            name=
 platform=              rootVolumeUuid=        state=                 type=
-uuid=                  zoneUuid=              
+uuid=                  zoneUuid=
 
 [Parameters:]
 count=                 fields=                limit=                 replyWithCount=        sortBy=                sortDirection=
@@ -637,7 +637,7 @@ __systemTag__=         __userTag__=           allocatorStrategy=     clusterUuid
 createDate=            defaultL3NetworkUuid=  description=           groupBy=               hostUuid=              hypervisorType=
 imageUuid=             instanceOfferingUuid=  lastHostUuid=          lastOpDate=            memorySize=            name=
 platform=              rootVolumeUuid=        state=                 type=
-uuid=                  zoneUuid=     
+uuid=                  zoneUuid=
 ```
 
 除`__systemTag__`和`__userTag__`两个特殊查询条件外，其余均为虚拟机表的原生字段，用户可以在API的查询条件里面指定它们，并且可以在`fields`参数中指定这些字段来过滤其它不希望
@@ -700,7 +700,7 @@ zone.cluster.l2Network.l3Network.__systemTag__=    zone.cluster.l2Network.l3Netw
 zone.cluster.l2Network.l3Network.description=      zone.cluster.l2Network.l3Network.dnsDomain=        zone.cluster.l2Network.l3Network.l2NetworkUuid=
 zone.cluster.l2Network.l3Network.lastOpDate=       zone.cluster.l2Network.l3Network.name=             zone.cluster.l2Network.l3Network.state=
 zone.cluster.l2Network.l3Network.system=           zone.cluster.l2Network.l3Network.type=             zone.cluster.l2Network.l3Network.uuid=
-zone.cluster.l2Network.l3Network.zoneUuid= 
+zone.cluster.l2Network.l3Network.zoneUuid=
 ```
 
 分别跟zone, cluster, l2Network, l3Network多个资源进行跨表。

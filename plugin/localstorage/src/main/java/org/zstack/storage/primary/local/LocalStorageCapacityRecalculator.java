@@ -98,13 +98,7 @@ public class LocalStorageCapacityRecalculator {
                     createQuery(sqlLocalStorageHostRefVO, LocalStorageHostRefVO.class);
             query.setParameter("hostUuid", hostUuid);
             query.setParameter("primaryStorageUuid", psUuid);
-            LocalStorageHostRefVO ref;
-            List<LocalStorageHostRefVO> localStorageHostRefVOS = query.setLockMode(LockModeType.PESSIMISTIC_WRITE).getResultList();
-            if(localStorageHostRefVOS.size() > 0){
-                ref = localStorageHostRefVOS.get(0);
-            }else{
-                break;
-            }
+            LocalStorageHostRefVO ref = query.setLockMode(LockModeType.PESSIMISTIC_WRITE).getSingleResult();
 
             long old = ref.getAvailableCapacity();
             long avail = ref.getTotalCapacity() - used - ref.getSystemUsedCapacity();
@@ -128,9 +122,6 @@ public class LocalStorageCapacityRecalculator {
         List<String> huuids = hq.getResultList();
         if (huuids != null && !huuids.isEmpty()) {
             calculateByHostUuids(psUuid, huuids);
-        }else{
-            // when ps is detached, LocalStorageHostRefVO is empty, need reset ps capacity
-            calculateTotalCapacity(psUuid);
         }
         return this;
     }

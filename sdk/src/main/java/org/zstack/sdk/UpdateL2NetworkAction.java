@@ -45,7 +45,8 @@ public class UpdateL2NetworkAction extends AbstractAction {
     public long pollingInterval;
 
 
-    private Result makeResult(ApiResult res) {
+    public Result call() {
+        ApiResult res = ZSClient.call(this);
         Result ret = new Result();
         if (res.error != null) {
             ret.error = res.error;
@@ -53,21 +54,24 @@ public class UpdateL2NetworkAction extends AbstractAction {
         }
         
         UpdateL2NetworkResult value = res.getResult(UpdateL2NetworkResult.class);
-        ret.value = value == null ? new UpdateL2NetworkResult() : value; 
-
+        ret.value = value == null ? new UpdateL2NetworkResult() : value;
         return ret;
-    }
-
-    public Result call() {
-        ApiResult res = ZSClient.call(this);
-        return makeResult(res);
     }
 
     public void call(final Completion<Result> completion) {
         ZSClient.call(this, new InternalCompletion() {
             @Override
             public void complete(ApiResult res) {
-                completion.complete(makeResult(res));
+                Result ret = new Result();
+                if (res.error != null) {
+                    ret.error = res.error;
+                    completion.complete(ret);
+                    return;
+                }
+                
+                UpdateL2NetworkResult value = res.getResult(UpdateL2NetworkResult.class);
+                ret.value = value == null ? new UpdateL2NetworkResult() : value;
+                completion.complete(ret);
             }
         });
     }

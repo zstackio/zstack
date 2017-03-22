@@ -1,6 +1,5 @@
 package org.zstack.core.thread;
 
-import org.apache.logging.log4j.ThreadContext;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.logging.CLoggerImpl;
 
@@ -35,8 +34,6 @@ public class ScheduledThreadPoolExecutorExt extends ScheduledThreadPoolExecutor 
     
     @Override
     protected void beforeExecute(Thread t, Runnable r) {
-        ThreadContext.clearMap();
-
         ThreadAroundHook debugHook = null;
         List<ThreadAroundHook> tmpHooks;       
         synchronized (_hooks) {
@@ -55,10 +52,8 @@ public class ScheduledThreadPoolExecutorExt extends ScheduledThreadPoolExecutor 
     
     @Override
     protected void afterExecute(Runnable r, Throwable t) {
-        ThreadContext.clearMap();
-
         ThreadAroundHook debugHook = null;
-        List<ThreadAroundHook> tmpHooks;
+        List<ThreadAroundHook> tmpHooks;       
         synchronized (_hooks) {
             tmpHooks = new ArrayList<ThreadAroundHook>(_hooks);
         }

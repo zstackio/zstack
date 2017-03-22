@@ -10,8 +10,6 @@ import org.zstack.header.identity.AccountConstant
 import org.zstack.header.message.AbstractBeforeSendMessageInterceptor
 import org.zstack.header.message.Event
 import org.zstack.header.message.Message
-import org.zstack.sdk.CreateZoneAction
-import org.zstack.sdk.DeleteZoneAction
 import org.zstack.sdk.SessionInventory
 import org.zstack.sdk.ZSClient
 import org.zstack.utils.ShellUtils
@@ -27,10 +25,9 @@ import java.util.concurrent.TimeUnit
  * Created by xing5 on 2017/2/12.
  */
 abstract class Test implements ApiHelper {
-    final CLogger logger = Utils.getLogger(this.getClass())
+    static final CLogger logger = Utils.getLogger(this.getClass())
 
     static Object deployer
-
 
     private final int PHASE_NONE = 0
     private final int PHASE_SETUP = 1
@@ -44,8 +41,6 @@ abstract class Test implements ApiHelper {
     private int phase = PHASE_NONE
     protected BeanConstructor beanConstructor
     protected SpringSpec _springSpec
-
-
 
     Test() {
         _springSpec = new SpringSpec()
@@ -281,10 +276,6 @@ abstract class Test implements ApiHelper {
             prepare()
             nextPhase()
             test()
-
-            if ((this instanceof Case) && System.getProperty("clean") != null) {
-                clean()
-            }
         } catch (AssertionError e) {
             logger.warn("\n${e.message}", e)
             System.exit(1)
@@ -303,10 +294,9 @@ abstract class Test implements ApiHelper {
     }
 
     static class SubCaseResult {
-        Boolean success
+        boolean success
         String error
         String name
-        transient Class caseType
     }
 
     static Case CURRENT_SUB_CASE
@@ -326,32 +316,22 @@ abstract class Test implements ApiHelper {
         dir.deleteDir()
         dir.mkdirs()
 
+        List<SubCaseResult> allResults = []
+
         def caseTypes = Platform.reflections.getSubTypesOf(Case.class)
-        caseTypes = caseTypes.findAll { it.package.name.startsWith("${this.class.package.name}.") }
+        caseTypes = caseTypes.findAll { it.package.name.startsWith(this.class.package.name) }
         caseTypes = caseTypes.sort()
-
-        def cases = new File([dir.absolutePath, "cases"].join("/"))
-        cases.write(caseTypes.collect {it.name}.join("\n"))
-
-        if (System.hasProperty("list")) {
-            return
-        }
 
         if (caseTypes.isEmpty()) {
             return
         }
 
-        List<SubCaseResult> allCases = caseTypes.collect {
-            SubCaseResult ret = new SubCaseResult()
-            ret.caseType = it
-            ret.name = it.simpleName
-            return ret
-        }
+        for (Class type in caseTypes) {
+            def c = type.newInstance() as Case
+            def caseResult = new SubCaseResult()
+            caseResult.name = c.class.simpleName
 
-        boolean hasFailure = false
-
-        for (SubCaseResult r in allCases) {
-            def c = r.caseType.newInstance() as Case
+            allResults.add(caseResult)
 
             logger.info("starts running a sub case[${c.class}] of suite[${this.class}]")
             try {
@@ -360,22 +340,17 @@ abstract class Test implements ApiHelper {
                 beforeRunSubCase()
                 c.run()
 
-                r.success = true
+                caseResult.success = true
                 logger.info("a sub case[${c.class}] of suite[${this.class}] completes without any error")
-            } catch (StopTestSuiteException e) {
-                hasFailure = true
-                break
             } catch (Throwable t) {
-                hasFailure = true
-
-                r.success = false
-                r.error = t.message
+                caseResult.success = false
+                caseResult.error = t.message
 
                 logger.error("a sub case [${c.class}] of suite[${this.class}] fails, ${t.message}", t)
             } finally {
-                def fname = c.class.name.replace(".", "_") + "." + (r.success ? "success" : "failure")
+                def fname = c.class.name.replace(".", "_") + "." + (caseResult.success ? "success" : "failure")
                 def rfile = new File([dir.absolutePath, fname].join("/"))
-                rfile.write(JSONObjectUtil.toJsonString(r))
+                rfile.write(JSONObjectUtil.toJsonString(caseResult))
 
                 logger.info("write test result of a sub case [${c.class}] of suite[${this.class}] to $fname")
             }
@@ -383,14 +358,8 @@ abstract class Test implements ApiHelper {
 
         int success = 0
         int failure = 0
-        int skipped = 0
-        allCases.each {
-            if (it.success == null) {
-                def fname = it.caseType.name.replace(".", "_") + ".skipped"
-                def rfile = new File([dir.absolutePath, fname].join("/"))
-                rfile.createNewFile()
-                skipped ++
-            } else if (it.success) {
+        allResults.each {
+            if (it.success) {
                 success ++
             } else {
                 failure ++
@@ -399,14 +368,13 @@ abstract class Test implements ApiHelper {
 
         def summary = new File([dir.absolutePath, "summary"].join("/"))
         summary.write(JSONObjectUtil.toJsonString([
-                "total" : caseTypes.size(),
+                "total" : allResults.size(),
                 "success": success,
                 "failure": failure,
-                "skipped": skipped,
-                "passRate": ((float)success / (float)caseTypes.size()) * 100
+                "passRate": ((float)success / (float)allResults.size()) * 100
         ]))
 
-        if (hasFailure) {
+        if (failure != 0) {
             // some cases failed, exit with code 1
             System.exit(1)
         }

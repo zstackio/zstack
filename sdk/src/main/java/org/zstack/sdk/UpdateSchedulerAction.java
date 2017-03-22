@@ -45,7 +45,8 @@ public class UpdateSchedulerAction extends AbstractAction {
     public long pollingInterval;
 
 
-    private Result makeResult(ApiResult res) {
+    public Result call() {
+        ApiResult res = ZSClient.call(this);
         Result ret = new Result();
         if (res.error != null) {
             ret.error = res.error;
@@ -53,21 +54,24 @@ public class UpdateSchedulerAction extends AbstractAction {
         }
         
         UpdateSchedulerResult value = res.getResult(UpdateSchedulerResult.class);
-        ret.value = value == null ? new UpdateSchedulerResult() : value; 
-
+        ret.value = value == null ? new UpdateSchedulerResult() : value;
         return ret;
-    }
-
-    public Result call() {
-        ApiResult res = ZSClient.call(this);
-        return makeResult(res);
     }
 
     public void call(final Completion<Result> completion) {
         ZSClient.call(this, new InternalCompletion() {
             @Override
             public void complete(ApiResult res) {
-                completion.complete(makeResult(res));
+                Result ret = new Result();
+                if (res.error != null) {
+                    ret.error = res.error;
+                    completion.complete(ret);
+                    return;
+                }
+                
+                UpdateSchedulerResult value = res.getResult(UpdateSchedulerResult.class);
+                ret.value = value == null ? new UpdateSchedulerResult() : value;
+                completion.complete(ret);
             }
         });
     }

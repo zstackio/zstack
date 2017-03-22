@@ -51,7 +51,8 @@ public class AddIpRangeByNetworkCidrAction extends AbstractAction {
     public long pollingInterval;
 
 
-    private Result makeResult(ApiResult res) {
+    public Result call() {
+        ApiResult res = ZSClient.call(this);
         Result ret = new Result();
         if (res.error != null) {
             ret.error = res.error;
@@ -59,21 +60,24 @@ public class AddIpRangeByNetworkCidrAction extends AbstractAction {
         }
         
         AddIpRangeByNetworkCidrResult value = res.getResult(AddIpRangeByNetworkCidrResult.class);
-        ret.value = value == null ? new AddIpRangeByNetworkCidrResult() : value; 
-
+        ret.value = value == null ? new AddIpRangeByNetworkCidrResult() : value;
         return ret;
-    }
-
-    public Result call() {
-        ApiResult res = ZSClient.call(this);
-        return makeResult(res);
     }
 
     public void call(final Completion<Result> completion) {
         ZSClient.call(this, new InternalCompletion() {
             @Override
             public void complete(ApiResult res) {
-                completion.complete(makeResult(res));
+                Result ret = new Result();
+                if (res.error != null) {
+                    ret.error = res.error;
+                    completion.complete(ret);
+                    return;
+                }
+                
+                AddIpRangeByNetworkCidrResult value = res.getResult(AddIpRangeByNetworkCidrResult.class);
+                ret.value = value == null ? new AddIpRangeByNetworkCidrResult() : value;
+                completion.complete(ret);
             }
         });
     }

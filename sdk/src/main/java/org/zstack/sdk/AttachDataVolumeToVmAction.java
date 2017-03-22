@@ -42,7 +42,8 @@ public class AttachDataVolumeToVmAction extends AbstractAction {
     public long pollingInterval;
 
 
-    private Result makeResult(ApiResult res) {
+    public Result call() {
+        ApiResult res = ZSClient.call(this);
         Result ret = new Result();
         if (res.error != null) {
             ret.error = res.error;
@@ -50,21 +51,24 @@ public class AttachDataVolumeToVmAction extends AbstractAction {
         }
         
         AttachDataVolumeToVmResult value = res.getResult(AttachDataVolumeToVmResult.class);
-        ret.value = value == null ? new AttachDataVolumeToVmResult() : value; 
-
+        ret.value = value == null ? new AttachDataVolumeToVmResult() : value;
         return ret;
-    }
-
-    public Result call() {
-        ApiResult res = ZSClient.call(this);
-        return makeResult(res);
     }
 
     public void call(final Completion<Result> completion) {
         ZSClient.call(this, new InternalCompletion() {
             @Override
             public void complete(ApiResult res) {
-                completion.complete(makeResult(res));
+                Result ret = new Result();
+                if (res.error != null) {
+                    ret.error = res.error;
+                    completion.complete(ret);
+                    return;
+                }
+                
+                AttachDataVolumeToVmResult value = res.getResult(AttachDataVolumeToVmResult.class);
+                ret.value = value == null ? new AttachDataVolumeToVmResult() : value;
+                completion.complete(ret);
             }
         });
     }

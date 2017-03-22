@@ -102,6 +102,9 @@ class SdkApiTemplate implements JavaSdkTemplate {
                 if (apiParam.maxLength() != Integer.MIN_VALUE) {
                     annotationFields.add(String.format("maxLength = %s", apiParam.maxLength()))
                 }
+                if (apiParam.minLength() != 0) {
+                    annotationFields.add(String.format("minLength = %s", apiParam.minLength()))
+                }
                 annotationFields.add(String.format("nonempty = %s", apiParam.nonempty()))
                 annotationFields.add(String.format("nullElements = %s", apiParam.nullElements()))
                 annotationFields.add(String.format("emptyString = %s", apiParam.emptyString()))
@@ -158,7 +161,8 @@ class SdkApiTemplate implements JavaSdkTemplate {
     def generateMethods(String path) {
         def ms = []
         ms.add("""\
-    private Result makeResult(ApiResult res) {
+    public Result call() {
+        ApiResult res = ZSClient.call(this);
         Result ret = new Result();
         if (res.error != null) {
             ret.error = res.error;
@@ -166,16 +170,8 @@ class SdkApiTemplate implements JavaSdkTemplate {
         }
         
         ${resultClassName} value = res.getResult(${resultClassName}.class);
-        ret.value = value == null ? new ${resultClassName}() : value; 
-
+        ret.value = value == null ? new ${resultClassName}() : value;
         return ret;
-    }
-""")
-
-        ms.add("""\
-    public Result call() {
-        ApiResult res = ZSClient.call(this);
-        return makeResult(res);
     }
 """)
 
@@ -184,7 +180,16 @@ class SdkApiTemplate implements JavaSdkTemplate {
         ZSClient.call(this, new InternalCompletion() {
             @Override
             public void complete(ApiResult res) {
-                completion.complete(makeResult(res));
+                Result ret = new Result();
+                if (res.error != null) {
+                    ret.error = res.error;
+                    completion.complete(ret);
+                    return;
+                }
+                
+                ${resultClassName} value = res.getResult(${resultClassName}.class);
+                ret.value = value == null ? new ${resultClassName}() : value;
+                completion.complete(ret);
             }
         });
     }

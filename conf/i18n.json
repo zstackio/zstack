@@ -257,7 +257,7 @@
     "arguments": [
       "amsg.getVmInstanceUuid()"
     ],
-    "line": 498,
+    "line": 497,
     "fileName": "src/main/java/org/zstack/compute/vm/MevocoVmInstanceBase.java"
   },
   {
@@ -265,7 +265,7 @@
     "en_US": "state is not correct while change password.",
     "zh_CN": "",
     "arguments": [],
-    "line": 519,
+    "line": 518,
     "fileName": "src/main/java/org/zstack/compute/vm/MevocoVmInstanceBase.java"
   },
   {
@@ -1227,22 +1227,6 @@
     "fileName": "src/main/java/org/zstack/core/scheduler/SchedulerApiInterceptor.java"
   },
   {
-    "raw": "duration time out of range",
-    "en_US": "duration time out of range",
-    "zh_CN": "任务需要的时间超出范围",
-    "arguments": [],
-    "line": 116,
-    "fileName": "src/main/java/org/zstack/core/scheduler/SchedulerApiInterceptor.java"
-  },
-  {
-    "raw": "stopTime out of mysql timestamp range",
-    "en_US": "stopTime out of mysql timestamp range",
-    "zh_CN": "定时任务停止时间超出mysql的timestamp的范围",
-    "arguments": [],
-    "line": 120,
-    "fileName": "src/main/java/org/zstack/core/scheduler/SchedulerApiInterceptor.java"
-  },
-  {
     "raw": "cron must be set when use cron scheduler",
     "en_US": "cron must be set when use cron scheduler",
     "zh_CN": "",
@@ -1834,7 +1818,7 @@
     "arguments": [
       "msg.getL3NetworkUuid()"
     ],
-    "line": 79,
+    "line": 88,
     "fileName": "src/main/java/org/zstack/ipsec/IPsecApiInterceptor.java"
   },
   {
@@ -2077,7 +2061,7 @@
   {
     "raw": "unable to connect to KVM[ip:%s, username:%s, sshPort: %d, ] to do DNS check, please check if username/password is wrong; %s",
     "en_US": "unable to connect to KVM[ip:{0}, username:{1}, sshPort: %d, ] to do DNS check, please check if username/password is wrong; {2}",
-    "zh_CN": "不能连接到KVM[ip:{0}, username:{1}, sshPort: %d, ]做DNS检查，请检查您的用户名或者密码是否有误",
+    "zh_CN": "",
     "arguments": [
       "self.getManagementIp()",
       "getSelf().getUsername()",
@@ -2090,7 +2074,7 @@
   {
     "raw": "the KVM host[ip:%s] cannot access the management node\u0027s callback url. It seems that the KVM host cannot reach the management IP[%s]. %s %s",
     "en_US": "the KVM host[ip:{0}] cannot access the management node\u0027s callback url. It seems that the KVM host cannot reach the management IP[{1}]. {2} {3}",
-    "zh_CN": "物理机[ip:{0}] 不能连接到管理节点 。 看起来是这个物理机不能查找到管理节点的IP [{1}]. {2} {3}",
+    "zh_CN": "",
     "arguments": [
       "self.getManagementIp()",
       "Platform.getManagementServerIp()",
@@ -2103,7 +2087,7 @@
   {
     "raw": "unable to connect to KVM[ip:%s, username:%s, sshPort:%d] to check the management node connectivity,please check if username/password is wrong; %s",
     "en_US": "unable to connect to KVM[ip:{0}, username:{1}, sshPort:%d] to check the management node connectivity,please check if username/password is wrong; {2}",
-    "zh_CN": "不能连接到物理机[ip:{0}, username:{1}, sshPort:%d] 去检查与管理节点是否连通  ,请检查您的用户名或者密码是否有误; {2}",
+    "zh_CN": "",
     "arguments": [
       "self.getManagementIp()",
       "getSelf().getUsername()",
@@ -2116,7 +2100,7 @@
   {
     "raw": "unable to get kvm host[uuid:%s, ip:%s] facts by ansible\\n%s",
     "en_US": "unable to get kvm host[uuid:{0}, ip:{1}] facts by ansible\\n{2}",
-    "zh_CN": "不能获取物理机[uuid:{0}, ip:{1}]的配置管理器\\n{2}",
+    "zh_CN": "",
     "arguments": [
       "self.getUuid()",
       "self.getManagementIp()",
@@ -2138,7 +2122,7 @@
   {
     "raw": "unrecognized ansible facts mediaType, cannot find field \u0027ansible_facts\u0027, %s",
     "en_US": "unrecognized ansible facts mediaType, cannot find field \u0027ansible_facts\u0027, {0}",
-    "zh_CN": "未授权的配置管理器类型，不能发现\u0027ansible_facts\u0027, {0}",
+    "zh_CN": "",
     "arguments": [
       "ret.getStdout()"
     ],
@@ -2148,7 +2132,7 @@
   {
     "raw": "cannot find either \u0027vmx\u0027 or \u0027svm\u0027 in /proc/cpuinfo, please make sure you have enabled virtualization in your BIOS setting",
     "en_US": "cannot find either \u0027vmx\u0027 or \u0027svm\u0027 in /proc/cpuinfo, please make sure you have enabled virtualization in your BIOS setting",
-    "zh_CN": "不能发现以下任意一个  \u0027vmx\u0027 or \u0027svm\u0027 在路径 /proc/cpuinfo 里, 请检查你是否在你的BIOS设置里开启了virtualization选项",
+    "zh_CN": "",
     "arguments": [],
     "line": 2608,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
@@ -2169,8 +2153,8 @@
   },
   {
     "raw": "failed to check bridge[%s] for l2NoVlanNetwork[uuid:%s, name:%s] on kvm host[uuid: %s], %s",
-    "en_US": "failed to check bridge[{0}] for l2NoVlanNetwork[uuid:{1}, name:[{2}] on kvm host[uuid: {3}], {4}",
-    "zh_CN": "在L2网络[uuid:{1}中检查网桥[{0}]失败，名字为[{2}]在物理机t[uuid: {3}]上, {4}",
+    "en_US": "failed to check bridge[{0}] for l2NoVlanNetwork[uuid:{1}, name:{2}] on kvm host[uuid: {3}], {4}",
+    "zh_CN": "",
     "arguments": [
       "cmd.getBridgeName()",
       "l2Network.getUuid()",
@@ -2184,7 +2168,7 @@
   {
     "raw": "failed to create bridge[%s] for l2Network[uuid:%s, type:%s, vlan:%s] on kvm host[uuid:%s], because %s",
     "en_US": "failed to create bridge[{0}] for l2Network[uuid:{1}, type:{2}, vlan:{3}] on kvm host[uuid:{4}], because {5}",
-    "zh_CN": "创建L2网络[uuid:{1}中的网桥[{0}]失败 , 类型为：{2}, vlan:{3}] 在物理机[uuid:{4}]上, 原因： {5}",
+    "zh_CN": "",
     "arguments": [
       "cmd.getBridgeName()",
       "l2Network.getUuid()",
@@ -2199,7 +2183,7 @@
   {
     "raw": "failed to check bridge[%s] for l2VlanNetwork[uuid:%s, name:%s] on kvm host[uuid:%s], %s",
     "en_US": "failed to check bridge[{0}] for l2VlanNetwork[uuid:{1}, name:{2}] on kvm host[uuid:{3}], {4}",
-    "zh_CN": "检查在物理机[uuid:{3}]上L2网络[uuid:{1}, name:{2}]中的网桥[{0}]失败, {4}",
+    "zh_CN": "",
     "arguments": [
       "cmd.getBridgeName()",
       "l2vlan.getUuid()",
@@ -2213,7 +2197,7 @@
   {
     "raw": "failed to apply rules of security group rules to kvm host[uuid:%s], because %s",
     "en_US": "failed to apply rules of security group rules to kvm host[uuid:{0}], because {1}",
-    "zh_CN": "不能应用安全组规则在物理机t[uuid:{0}]上, 因为 {1}",
+    "zh_CN": "",
     "arguments": [
       "hto.getHostUuid()",
       "rsp.getError()"
@@ -2224,7 +2208,7 @@
   {
     "raw": "unable to do vm sync on host[uuid:%s, ip:%s] because %s",
     "en_US": "unable to do vm sync on host[uuid:{0}, ip:{1}] because {2}",
-    "zh_CN": "不能做vm同步在物理机[uuid:{0}, ip:{1}]上 ，因为{2}",
+    "zh_CN": "",
     "arguments": [
       "host.getUuid()",
       "host.getManagementIp()",
@@ -2236,7 +2220,7 @@
   {
     "raw": "hijacked host number detected. Your license[%s] permits %s hosts, but we detect there are %s hosts in the database. You can either delete additional hosts or apply a new license",
     "en_US": "hijacked host number detected. Your license[{0}] permits {1} hosts, but we detect there are {2} hosts in the database. You can either delete additional hosts or apply a new license",
-    "zh_CN": "检测到有误的物理机数量：您的许可证[{0}]允许拥有 {1} 台物理机，但是我们检测到在您的数据库中有{2}台物理机，您可以选择删除这些物理机或者使用新的许可证",
+    "zh_CN": "",
     "arguments": [
       "getLicenseType()",
       "getHostNumAllowedByLicense()",
@@ -2248,7 +2232,7 @@
   {
     "raw": "the vm[name:%s, uuid:%s] already has some port forwarding rules%s attached",
     "en_US": "the vm[name:{0}, uuid:{1}] already has some port forwarding rules{2} attached",
-    "zh_CN": "云主机[name:{0}, uuid:{1}] 已经设置了一些端口转发规则{2}",
+    "zh_CN": "",
     "arguments": [
       "vm.getName()",
       "vm.getUuid()",
@@ -2260,7 +2244,7 @@
   {
     "raw": "the vm[name:%s, uuid:%s] already has some EIPs%s attached",
     "en_US": "the vm[name:{0}, uuid:{1}] already has some EIPs{2} attached",
-    "zh_CN": "云主机[name:{0}, uuid:{1}] 已经配置了弹性IP{2}",
+    "zh_CN": "",
     "arguments": [
       "vm.getName()",
       "vm.getUuid()",
@@ -2272,17 +2256,17 @@
   {
     "raw": "for shareable volume, the only supported primary storage type is ceph, current is %s",
     "en_US": "for shareable volume, the only supported primary storage type is ceph, current is {0}",
-    "zh_CN": "共享数据盘只支持ceph类型的主存储{0}",
+    "zh_CN": "",
     "arguments": [
       "psType"
     ],
-    "line": 223,
+    "line": 222,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
     "raw": "invalid network bandwidth[%s], it is not a number",
     "en_US": "invalid network bandwidth[{0}], it is not a number",
-    "zh_CN": "错误的网络带宽[{0}]，这不是数字",
+    "zh_CN": "",
     "arguments": [
       "bandwidth"
     ],
@@ -2292,7 +2276,7 @@
   {
     "raw": "invalid network bandwidth[%s], it must be greater than 0",
     "en_US": "invalid network bandwidth[{0}], it must be greater than 0",
-    "zh_CN": "错误的网络带宽[{0}]，这个数字必须超过0",
+    "zh_CN": "",
     "arguments": [
       "bandwidth"
     ],
@@ -2302,7 +2286,7 @@
   {
     "raw": "invalid volume bandwidth[%s] is not a number",
     "en_US": "invalid volume bandwidth[{0}] is not a number",
-    "zh_CN": "错误的磁盘带宽 ，[{0}] 这个不是数字",
+    "zh_CN": "",
     "arguments": [
       "bandwidth"
     ],
@@ -2312,7 +2296,7 @@
   {
     "raw": "invalid volume bandwidth[%s], it must be greater than 0",
     "en_US": "invalid volume bandwidth[{0}], it must be greater than 0",
-    "zh_CN": "错误的磁盘带宽 ，[{0}] 这个数字必须超过0",
+    "zh_CN": "",
     "arguments": [
       "bandwidth"
     ],
@@ -2322,7 +2306,7 @@
   {
     "raw": "invalid volume IOPS[%s] is not a number",
     "en_US": "invalid volume IOPS[{0}] is not a number",
-    "zh_CN": "错误的磁盘每秒读写速度[{0}]，它应该是个数字",
+    "zh_CN": "",
     "arguments": [
       "bandwidth"
     ],
@@ -2332,7 +2316,7 @@
   {
     "raw": "invalid volume IOPS[%s], it must be greater than 0",
     "en_US": "invalid volume IOPS[{0}], it must be greater than 0",
-    "zh_CN": "错误的磁盘每秒读写速度[{0}]，它应该大于0",
+    "zh_CN": "",
     "arguments": [
       "bandwidth"
     ],
@@ -2342,19 +2326,19 @@
   {
     "raw": "the host[uuid:%s]\u0027s operating system %s %s is too old, the QEMU doesn\u0027t support QoS of network or disk IO. Please choose another instance offering with no QoS configuration",
     "en_US": "the host[uuid:{0}]\u0027s operating system {1} {2} is too old, the QEMU doesn\u0027t support QoS of network or disk IO. Please choose another instance offering with no QoS configuration",
-    "zh_CN": "物理机[uuid:{0}] 的操作系统{1} {2} 过老,  QEMU 不支持磁盘的QOS IO设置 。 请选择别的没有Qos的计算规格",
+    "zh_CN": "",
     "arguments": [
       "hostUuid",
       "distro",
       "version"
     ],
-    "line": 488,
+    "line": 503,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
     "raw": "invalid value[%s], it\u0027s not a double",
     "en_US": "invalid value[{0}], it\u0027s not a double",
-    "zh_CN": "错误的值[{0}]，这个不是双精度值",
+    "zh_CN": "",
     "arguments": [
       "newValue"
     ],
@@ -2364,7 +2348,7 @@
   {
     "raw": "invalid value[%s], it must be a double greater than 0",
     "en_US": "invalid value[{0}], it must be a double greater than 0",
-    "zh_CN": "错误的值[{0}]，必须是一个大于0的双精度值",
+    "zh_CN": "",
     "arguments": [
       "newValue"
     ],
@@ -2374,7 +2358,7 @@
   {
     "raw": "invalid value[%s], it must be a double between (0, 1]",
     "en_US": "invalid value[{0}], it must be a double between (0, 1]",
-    "zh_CN": "错误的值[{0}]，这个必须在0~1之间的双精度值",
+    "zh_CN": "",
     "arguments": [
       "newValue"
     ],
@@ -2384,7 +2368,7 @@
   {
     "raw": "invalid value[%s], ZStack doesn\u0027t have such host allocator type",
     "en_US": "invalid value[{0}], ZStack doesn\u0027t have such host allocator type",
-    "zh_CN": "错误值[{0}]，Zstack没有这样的分配器类型",
+    "zh_CN": "",
     "arguments": [
       "newValue"
     ],
@@ -2394,26 +2378,26 @@
   {
     "raw": "Shareable Volume[uuid:%s] has already been attached to VM[uuid:%s]",
     "en_US": "Shareable Volume[uuid:{0}] has already been attached to VM[uuid:{1}]",
-    "zh_CN": "共享云盘[uuid:{0}]已经挂载到云主机[uuid:{1}]上",
+    "zh_CN": "",
     "arguments": [
       "volume.getUuid()",
       "vm.getUuid()"
     ],
-    "line": 1361,
+    "line": 1390,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
     "raw": "shareable disk only support virtio-scsi type for now",
     "en_US": "shareable disk only support virtio-scsi type for now",
-    "zh_CN": "目前共享盘只支持virtio-scsi",
+    "zh_CN": "",
     "arguments": [],
-    "line": 1379,
+    "line": 1408,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
     "raw": "failed to detach shareable volume[uuid:%s] from VmInstance[uuid:%s]",
     "en_US": "failed to detach shareable volume[uuid:{0}] from VmInstance[uuid:{1}]",
-    "zh_CN": "不能卸载云主机[uuid:{1}]上的共享盘[uuid:{0}]",
+    "zh_CN": "",
     "arguments": [
       "msg.getVolume().getUuid()",
       "msg.getVmInstanceUuid()"
@@ -2424,7 +2408,7 @@
   {
     "raw": "failed to detach shareable volume from VmInstance:[\\n%s]",
     "en_US": "failed to detach shareable volume from VmInstance:[\\n{0}]",
-    "zh_CN": "不能卸载云主机[uuid:{0}]上的共享盘",
+    "zh_CN": "",
     "arguments": [
       "StringUtils.join(errors, \"\\n\\n\")"
     ],
@@ -2434,7 +2418,7 @@
   {
     "raw": "l2Network[uuid:%s] has attached to cluster[uuid:%s], can\u0027t attach again",
     "en_US": "l2Network[uuid:{0}] has attached to cluster[uuid:{1}], can\u0027t attach again",
-    "zh_CN": "不能再次挂载l2网络[uuid:{0}]，因为已经挂载到集群[uuid:{1}]上了",
+    "zh_CN": "",
     "arguments": [
       "msg.getL2NetworkUuid()",
       "msg.getClusterUuid()"
@@ -2445,7 +2429,7 @@
   {
     "raw": "There has been a L2VlanNetwork[uuid:%s, name:%s] attached to cluster[uuid:%s] that has physical interface[%s], vlan[%s]. Failed to attach L2VlanNetwork[uuid:%s]",
     "en_US": "There has been a L2VlanNetwork[uuid:{0}, name:{1}] attached to cluster[uuid:{2}] that has physical interface[{3}], vlan[{4}]. Failed to attach L2VlanNetwork[uuid:{5}]",
-    "zh_CN": "L2网络挂载失败[uuid:{5}]：L2网络[uuid:{0}, name:{1}]的物理接口[{3}], vlan[{4}]已经挂载到集群[uuid:{2}]上",
+    "zh_CN": "",
     "arguments": [
       "vl2.getUuid()",
       "vl2.getName()",
@@ -2460,7 +2444,7 @@
   {
     "raw": "There has been a l2Network[uuid:%s, name:%s] attached to cluster[uuid:%s] that has physical interface[%s]. Failed to attach l2Network[uuid:%s]",
     "en_US": "There has been a l2Network[uuid:{0}, name:{1}] attached to cluster[uuid:{2}] that has physical interface[{3}]. Failed to attach l2Network[uuid:{4}]",
-    "zh_CN": "L2网络挂载失败[uuid:{4}]：L2网络[uuid:{0}, name:{1}]的物理接口[{3}]]已经挂载到集群[uuid:{2}]上",
+    "zh_CN": "",
     "arguments": [
       "l2.getUuid()",
       "l2.getName()",
@@ -2474,7 +2458,7 @@
   {
     "raw": "l2Network[uuid:%s] has not attached to cluster[uuid:%s]",
     "en_US": "l2Network[uuid:{0}] has not attached to cluster[uuid:{1}]",
-    "zh_CN": "L2网络[uuid:{0}]没有挂载到集群上[uuid:{1}]",
+    "zh_CN": "",
     "arguments": [
       "msg.getL2NetworkUuid()",
       "msg.getClusterUuid()"
@@ -2485,7 +2469,7 @@
   {
     "raw": "unsupported l2Network type[%s]",
     "en_US": "unsupported l2Network type[{0}]",
-    "zh_CN": "不支持的网络类型[{0}]",
+    "zh_CN": "",
     "arguments": [
       "msg.getType()"
     ],
@@ -2495,7 +2479,7 @@
   {
     "raw": "invalid IP[%s]",
     "en_US": "invalid IP[{0}]",
-    "zh_CN": "错误的IP值[{0}]",
+    "zh_CN": "",
     "arguments": [
       "msg.getIp()"
     ],
@@ -2505,7 +2489,7 @@
   {
     "raw": "ipRangeUuid and l3NetworkUuid cannot both be null; you must set either one.",
     "en_US": "ipRangeUuid and l3NetworkUuid cannot both be null; you must set either one.",
-    "zh_CN": "IP段和L3的uuid不能都为空，您必须选择一个填上",
+    "zh_CN": "",
     "arguments": [],
     "line": 91,
     "fileName": "src/main/java/org/zstack/network/l3/L3NetworkApiInterceptor.java"
@@ -2513,7 +2497,7 @@
   {
     "raw": "%s is not a valid network cidr",
     "en_US": "{0} is not a valid network cidr",
-    "zh_CN": "{0}不是有效的无类别域间路由",
+    "zh_CN": "",
     "arguments": [
       "msg.getNetworkCidr()"
     ],
@@ -2523,7 +2507,7 @@
   {
     "raw": "%s is not an allowed network cidr, because it doesn\u0027t have usable ip range",
     "en_US": "{0} is not an allowed network cidr, because it doesn\u0027t have usable ip range",
-    "zh_CN": "{0}是不允许的无类别域间路由，因为它不支持可用的IP段",
+    "zh_CN": "",
     "arguments": [
       "msg.getNetworkCidr()"
     ],
@@ -2533,7 +2517,7 @@
   {
     "raw": "ipRangeUuids, L3NetworkUuids, zoneUuids must have at least one be none-empty list, or all is set to true",
     "en_US": "ipRangeUuids, L3NetworkUuids, zoneUuids must have at least one be none-empty list, or all is set to true",
-    "zh_CN": "ipRangeUuids, L3NetworkUuids, zoneUuids 至少一个不是为空列表，或者全部不为空",
+    "zh_CN": "",
     "arguments": [],
     "line": 138,
     "fileName": "src/main/java/org/zstack/network/l3/L3NetworkApiInterceptor.java"
@@ -2541,7 +2525,7 @@
   {
     "raw": "unsupported l3network type[%s]",
     "en_US": "unsupported l3network type[{0}]",
-    "zh_CN": "不支持的L3网络类型[{0}]",
+    "zh_CN": "",
     "arguments": [
       "msg.getType()"
     ],
@@ -2551,7 +2535,7 @@
   {
     "raw": "%s is not a valid domain name",
     "en_US": "{0} is not a valid domain name",
-    "zh_CN": "{0}不是有效的域名",
+    "zh_CN": "",
     "arguments": [
       "msg.getDnsDomain()"
     ],
@@ -2561,7 +2545,7 @@
   {
     "raw": "the IP range[%s ~ %s] contains D class addresses which are for multicast",
     "en_US": "the IP range[{0} ~ {1}] contains D class addresses which are for multicast",
-    "zh_CN": "这个IP段[{0} ~ {1}]包含了D类的多播地址",
+    "zh_CN": "",
     "arguments": [
       "ipr.getStartIp()",
       "ipr.getEndIp()"
@@ -2572,7 +2556,7 @@
   {
     "raw": "the IP range[%s ~ %s] contains E class addresses which are reserved",
     "en_US": "the IP range[{0} ~ {1}] contains E class addresses which are reserved",
-    "zh_CN": "这个IP段[{0} ~ {1}]包含了E类的保留地址",
+    "zh_CN": "",
     "arguments": [
       "ipr.getStartIp()",
       "ipr.getEndIp()"
@@ -2583,7 +2567,7 @@
   {
     "raw": "the IP range[%s ~ %s] contains link local addresses which are reserved",
     "en_US": "the IP range[{0} ~ {1}] contains link local addresses which are reserved",
-    "zh_CN": "这个IP段[{0} ~ {1}]包含了本地的保留地址",
+    "zh_CN": "",
     "arguments": [
       "ipr.getStartIp()",
       "ipr.getEndIp()"
@@ -2594,7 +2578,7 @@
   {
     "raw": "the gateway[%s] is not in the subnet %s/%s",
     "en_US": "the gateway[{0}] is not in the subnet {1}/{2}",
-    "zh_CN": "网关[{0}]不在子网{1}/{2}",
+    "zh_CN": "",
     "arguments": [
       "ipr.getGateway()",
       "ipr.getStartIp()",
@@ -2606,7 +2590,7 @@
   {
     "raw": "start ip[%s] is not a IPv4 address",
     "en_US": "start ip[{0}] is not a IPv4 address",
-    "zh_CN": "开始的ip[{0}] 不是IPV4的地址",
+    "zh_CN": "",
     "arguments": [
       "ipr.getStartIp()"
     ],
@@ -2616,7 +2600,7 @@
   {
     "raw": "end ip[%s] is not a IPv4 address",
     "en_US": "end ip[{0}] is not a IPv4 address",
-    "zh_CN": "结束的ip[{0}] 不是IPV4的地址",
+    "zh_CN": "",
     "arguments": [
       "ipr.getEndIp()"
     ],
@@ -2626,7 +2610,7 @@
   {
     "raw": "gateway[%s] is not a IPv4 address",
     "en_US": "gateway[{0}] is not a IPv4 address",
-    "zh_CN": "网关[{0}]不是IPV4的地址",
+    "zh_CN": "",
     "arguments": [
       "ipr.getGateway()"
     ],
@@ -2636,7 +2620,7 @@
   {
     "raw": "netmask[%s] is not a netmask, and the IP range netmask cannot be 0.0.0.0",
     "en_US": "netmask[{0}] is not a netmask, and the IP range netmask cannot be 0.0.0.0",
-    "zh_CN": "子网掩码[{0}]不是子网掩码，并且IP段的子网掩码不能是0.0.0.0",
+    "zh_CN": "",
     "arguments": [
       "ipr.getNetmask()"
     ],
@@ -2646,7 +2630,7 @@
   {
     "raw": "ip allocation can not contain network address or broadcast address",
     "en_US": "ip allocation can not contain network address or broadcast address",
-    "zh_CN": "ip 地址分配不能包含网络地址或广播的地址",
+    "zh_CN": "",
     "arguments": [],
     "line": 225,
     "fileName": "src/main/java/org/zstack/network/l3/L3NetworkApiInterceptor.java"
@@ -2654,7 +2638,7 @@
   {
     "raw": "start ip[%s] is behind end ip[%s]",
     "en_US": "start ip[{0}] is behind end ip[{1}]",
-    "zh_CN": "起始ip[{0}]在尾ip[{1}]后",
+    "zh_CN": "",
     "arguments": [
       "ipr.getStartIp()",
       "ipr.getEndIp()"
@@ -2665,7 +2649,7 @@
   {
     "raw": "gateway[%s] can not be part of range[%s, %s]",
     "en_US": "gateway[{0}] can not be part of range[{1}, {2}]",
-    "zh_CN": "网关[{0}]不能是IP段[{1}, {2}]的一部分",
+    "zh_CN": "",
     "arguments": [
       "ipr.getGateway()",
       "ipr.getStartIp()",
@@ -2677,7 +2661,7 @@
   {
     "raw": "overlap with ip range[uuid:%s, start ip:%s, end ip: %s]",
     "en_US": "overlap with ip range[uuid:{0}, start ip:{1}, end ip: {2}]",
-    "zh_CN": "重叠的IP段[uuid:{0}, 起始ip:{1}, 尾ip: {2}]",
+    "zh_CN": "",
     "arguments": [
       "r.getUuid()",
       "r.getStartIp()",
@@ -2689,7 +2673,7 @@
   {
     "raw": "multiple CIDR on the same L3 network is not allowed. There has been a IP range[uuid:%s, CIDR:%s], the new IP range[CIDR:%s] is not in the CIDR with the existing one",
     "en_US": "multiple CIDR on the same L3 network is not allowed. There has been a IP range[uuid:{0}, CIDR:{1}], the new IP range[CIDR:{2}] is not in the CIDR with the existing one",
-    "zh_CN": "多个无类别域间路由在想通的L3网络上是不允许的，这发生在原有IP范围 [uuid: {0}，CIDR: {1}]。新的IP范围 [CIDR: {2}] 不在现有的一个CIDR",
+    "zh_CN": "",
     "arguments": [
       "ipr.getUuid()",
       "rcidr",
@@ -2701,7 +2685,7 @@
   {
     "raw": "DNS[%s] is not a IPv4 address",
     "en_US": "DNS[{0}] is not a IPv4 address",
-    "zh_CN": "DNS[{0}]不是一个IPv4地址",
+    "zh_CN": "",
     "arguments": [
       "msg.getDns()"
     ],
@@ -2711,7 +2695,7 @@
   {
     "raw": "there has been a DNS[%s] on L3 network[uuid:%s]",
     "en_US": "there has been a DNS[{0}] on L3 network[uuid:{1}]",
-    "zh_CN": "这个发生在L3网络[uuid:{1}]的DNS[{0}]上",
+    "zh_CN": "",
     "arguments": [
       "msg.getDns()",
       "msg.getL3NetworkUuid()"
@@ -2722,7 +2706,7 @@
   {
     "raw": "security group[uuid:%s] has not attached to l3Network[uuid:%s], can\u0027t detach",
     "en_US": "security group[uuid:{0}] has not attached to l3Network[uuid:{1}], can\u0027t detach",
-    "zh_CN": "不能卸载安全组[uuid:{0}]到L3[uuid:{1}]网络上，因为已经挂载了",
+    "zh_CN": "",
     "arguments": [
       "msg.getSecurityGroupUuid()",
       "msg.getL3NetworkUuid()"
@@ -2733,7 +2717,7 @@
   {
     "raw": "security group[uuid:%s] has attached to l3Network[uuid:%s], can\u0027t attach again",
     "en_US": "security group[uuid:{0}] has attached to l3Network[uuid:{1}], can\u0027t attach again",
-    "zh_CN": "不能再次挂载安全组[uuid:{0}]到L3[uuid:{1}]网络上，因为已经挂载了",
+    "zh_CN": "",
     "arguments": [
       "msg.getSecurityGroupUuid()",
       "msg.getL3NetworkUuid()"
@@ -2744,7 +2728,7 @@
   {
     "raw": "the L3 network[uuid:%s] doesn\u0027t have the network service type[%s] enabled",
     "en_US": "the L3 network[uuid:{0}] doesn\u0027t have the network service type[{1}] enabled",
-    "zh_CN": "L3网络[uuid:{0}]没有开启[{1}]类型的网络服务",
+    "zh_CN": "",
     "arguments": [
       "msg.getL3NetworkUuid()",
       "SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE"
@@ -2755,7 +2739,7 @@
   {
     "raw": "VM nics[uuids:%s] are not on L3 networks that have been attached to the security group[uuid:%s]",
     "en_US": "VM nics[uuids:{0}] are not on L3 networks that have been attached to the security group[uuid:{1}]",
-    "zh_CN": "云主机网卡[uuids:{0}]不能在L3网络上，这个已经挂载到安全组[uuid:{1}]了",
+    "zh_CN": "",
     "arguments": [
       "wrongUuids",
       "securityGroupUuid"
@@ -4172,7 +4156,7 @@
       "rsp.getStatusCode()",
       "rsp.getBody()"
     ],
-    "line": 426,
+    "line": 425,
     "fileName": "src/main/java/org/zstack/prometheus/PrometheusManagerImpl.java"
   },
   {
@@ -4194,7 +4178,7 @@
       "ret.get(\"errorType\")",
       "ret.get(\"error\")"
     ],
-    "line": 481,
+    "line": 482,
     "fileName": "src/main/java/org/zstack/prometheus/PrometheusManagerImpl.java"
   },
   {
@@ -4575,17 +4559,6 @@
     "fileName": "src/main/java/org/zstack/storage/backup/sftp/SftpBackupStorageMetaDataMaker.java"
   },
   {
-    "raw": "duplicate poolName[%s]. There has been a pool with the same name existing",
-    "en_US": "duplicate poolName[{0}]. There has been a pool with the same name existing",
-    "zh_CN": "",
-    "arguments": [
-      "msg.getPoolName()"
-    ],
-    "line": 66,
-    "fileName": "src/main/java/org/zstack/storage/ceph/CephApiInterceptor.java"
-  },
-  {
-
     "raw": "cannot add ceph primary storage, there has been some ceph primary storage using mon[hostnames:%s]",
     "en_US": "cannot add ceph primary storage, there has been some ceph primary storage using mon[hostnames:{0}]",
     "zh_CN": "",
@@ -5489,7 +5462,7 @@
   {
     "raw": "the NFS primary storage[uuid:%s, name:%s] cannot find hosts in attached clusters to perform the operation",
     "en_US": "the NFS primary storage[uuid:{0}, name:{1}] cannot find hosts in attached clusters to perform the operation",
-    "zh_CN": "NFS主存储[uuid:{0}, name:{1}]不能找到物理机挂载到集群，执行此操作",
+    "zh_CN": "",
     "arguments": [
       "self.getUuid()",
       "self.getName()"
@@ -5500,7 +5473,7 @@
   {
     "raw": "the NFS primary storage[uuid:%s, name:%s] has not attached to any clusters, or no hosts in the attached clusters are connected",
     "en_US": "the NFS primary storage[uuid:{0}, name:{1}] has not attached to any clusters, or no hosts in the attached clusters are connected",
-    "zh_CN": "NFS主存储[uuid:{0}, name:{1}] 没有挂载到任何一个集群，或者挂载到集群的物理机均无法连接",
+    "zh_CN": "",
     "arguments": [
       "self.getUuid()",
       "self.getName()"
@@ -5511,7 +5484,7 @@
   {
     "raw": "cannot find a Connected host to execute command for nfs primary storage[uuid:%s]",
     "en_US": "cannot find a Connected host to execute command for nfs primary storage[uuid:{0}]",
-    "zh_CN": "对nfs主存储[uuid:{0}]来说不能发现一个可连接的物理机执行命令",
+    "zh_CN": "",
     "arguments": [
       "pri.getUuid()"
     ],
@@ -5521,7 +5494,7 @@
   {
     "raw": "cannot find proper hypervisorType for primary storage[uuid:%s] to handle image format or volume format[%s]",
     "en_US": "cannot find proper hypervisorType for primary storage[uuid:{0}] to handle image format or volume format[{1}]",
-    "zh_CN": "对主存储[uuid:{0}]来说不能发现合适的管理程序类型来处理镜像格式或云盘格式[{1}]",
+    "zh_CN": "",
     "arguments": [
       "psUuid",
       "imageFormat"
@@ -5532,7 +5505,7 @@
   {
     "raw": "unable to attach a primary storage[uuid:%s, name:%s] to cluster[uuid:%s]. Kvm host in the cluster has qemu-img with version[%s]; but the primary storage has attached to another cluster that has kvm host which has qemu-img with version[%s]. qemu-img version greater than %s is incompatible with versions less than %s, this will causes volume snapshot operation to fail. Please avoid attaching a primary storage to clusters that have different Linux distributions, in order to prevent qemu-img version mismatch",
     "en_US": "unable to attach a primary storage[uuid:{0}, name:{1}] to cluster[uuid:{2}]. Kvm host in the cluster has qemu-img with version[{3}]; but the primary storage has attached to another cluster that has kvm host which has qemu-img with version[{4}]. qemu-img version greater than {5} is incompatible with versions less than {6}, this will causes volume snapshot operation to fail. Please avoid attaching a primary storage to clusters that have different Linux distributions, in order to prevent qemu-img version mismatch",
-    "zh_CN": "不能挂载主存储[uuid:{0}, name:{1}]到集群[uuid:{2}].集群中的物理机存在[{3}]版本qemu-img；但是主存储已经挂载到另一个物理机拥有[{4}]版本qemu-img的集群。版本大于{5}的qemu-img不兼容版本小于{6}，这将会造成云盘快照操作失败。为了防止qemu-img版本不兼容，请避免挂载主存储到物理机装有不同linux版本的集群",
+    "zh_CN": "",
     "arguments": [
       "inv.getUuid()",
       "inv.getName()",
@@ -5548,7 +5521,7 @@
   {
     "raw": "failed to check existence of %s on nfs primary storage[uuid:%s], %s",
     "en_US": "failed to check existence of {0} on nfs primary storage[uuid:{1}], {2}",
-    "zh_CN": "检查nfs主存储中是否存在{0}失败",
+    "zh_CN": "",
     "arguments": [
       "installPath",
       "inv.getUuid()",
@@ -5560,7 +5533,7 @@
   {
     "raw": "unable to attach a primary storage to cluster. Kvm host[uuid:%s, name:%s] in cluster has qemu-img with version[%s]; but the primary storage has attached to a cluster that has kvm host[uuid:%s], which has qemu-img with version[%s]. qemu-img version greater than %s is incompatible with versions less than %s, this will causes volume snapshot operation to fail. Please avoid attaching a primary storage to clusters that have different Linux distributions, in order to prevent qemu-img version mismatch",
     "en_US": "unable to attach a primary storage to cluster. Kvm host[uuid:{0}, name:{1}] in cluster has qemu-img with version[{2}]; but the primary storage has attached to a cluster that has kvm host[uuid:{3}], which has qemu-img with version[{4}]. qemu-img version greater than {5} is incompatible with versions less than {6}, this will causes volume snapshot operation to fail. Please avoid attaching a primary storage to clusters that have different Linux distributions, in order to prevent qemu-img version mismatch",
-    "zh_CN": "不能挂载主存储到集群。集群中的物理机[uuid:{0}, name:{1}]拥有[{2}]版本的qemu-img；但是主存储已经挂载到拥有[{4}]版本qemu-img的集群上。版本大于{5}的qemu-img不兼容版本小于{6}，这将会造成云盘快照操作失败。为了防止qemu-img版本不兼容，请避免挂载主存储到物理机装有不同linux版本的集群",
+    "zh_CN": "",
     "arguments": [
       "context.getInventory().getUuid()",
       "context.getInventory().getName()",
@@ -5576,7 +5549,7 @@
   {
     "raw": "unable to create empty volume[uuid:%s,  name:%s] on kvm host[uuid:%s, ip:%s], because %s",
     "en_US": "unable to create empty volume[uuid:{0},  name:{1}] on kvm host[uuid:{2}, ip:{3}], because {4}",
-    "zh_CN": "不能在物理机[uuid:{2}, ip:{3}]上创建空云盘[uuid:{0},  name:{1}]，因为{4}",
+    "zh_CN": "",
     "arguments": [
       "volume.getUuid()",
       "volume.getName()",
@@ -5590,7 +5563,7 @@
   {
     "raw": "failed to revert volume[uuid:%s] to snapshot[uuid:%s] on kvm host[uuid:%s, ip:%s], %s",
     "en_US": "failed to revert volume[uuid:{0}] to snapshot[uuid:{1}] on kvm host[uuid:{2}, ip:{3}], {4}",
-    "zh_CN": "回滚在物理机[uuid:{2}, ip:{3}]上的云盘[uuid:{0}]到快照[uuid:{1}]的状态失败，{4}",
+    "zh_CN": "",
     "arguments": [
       "vol.getUuid()",
       "sinv.getUuid()",
@@ -5604,7 +5577,7 @@
   {
     "raw": "failed to revert volume[uuid:%s] to image[uuid:%s] on kvm host[uuid:%s, ip:%s], %s",
     "en_US": "failed to revert volume[uuid:{0}] to image[uuid:{1}] on kvm host[uuid:{2}, ip:{3}], {4}",
-    "zh_CN": "回滚在物理机[uuid:{2}, ip:{3}]上的云盘[uuid:{0}]到镜像[uuid:{1}]，{4}",
+    "zh_CN": "",
     "arguments": [
       "vol.getUuid()",
       "vol.getRootImageUuid()",
@@ -5628,7 +5601,7 @@
   {
     "raw": "failed to download[%s] from SftpBackupStorage[hostname:%s] to nfs primary storage[uuid:%s, path:%s], %s",
     "en_US": "failed to download[{0}] from SftpBackupStorage[hostname:{1}] to nfs primary storage[uuid:{2}, path:{3}], {4}",
-    "zh_CN": "从Sftp镜像存储[hostname:{1}] 下载[{0}]到nfs主存储[uuid:{2}, path:{3}]失败，{4}",
+    "zh_CN": "",
     "arguments": [
       "backupStorageInstallPath",
       "greply.getHostname()",
@@ -5642,7 +5615,7 @@
   {
     "raw": "failed to upload bits from nfs primary storage[uuid:%s, path:%s] to SFTP backup storage[hostname:%s, path: %s], %s",
     "en_US": "failed to upload bits from nfs primary storage[uuid:{0}, path:{1}] to SFTP backup storage[hostname:{2}, path: {3}], {4}",
-    "zh_CN": "从nfs主存储[uuid:{0}, path:{1}]上传比特到STFP镜像存储[hostname:{2}, path: {3}]失败，{4}",
+    "zh_CN": "",
     "arguments": [
       "pinv.getUuid()",
       "primaryStorageInstallPath",
@@ -5656,7 +5629,7 @@
   {
     "raw": "the image[uuid:%s, name: %s] is not available to download on any backup storage:\n1. check if image is in status of Deleted\n2. check if the backup storage on which the image is shown as Ready is attached to the zone[uuid:%s]",
     "en_US": "the image[uuid:{0}, name: {1}] is not available to download on any backup storage:\n1. check if image is in status of Deleted\n2. check if the backup storage on which the image is shown as Ready is attached to the zone[uuid:{2}]",
-    "zh_CN": "不能从镜像存储中下载镜像[uuid:%s, name: %s]\n1.检查镜像是否处于被删除状态\n2.检查镜像处于就绪状态的镜像存储是否挂载到区域[uuid:{2}]",
+    "zh_CN": "",
     "arguments": [
       "img.getUuid()",
       "img.getName()",
@@ -5668,7 +5641,7 @@
   {
     "raw": "no connected host found in the cluster[uuid:%s]",
     "en_US": "no connected host found in the cluster[uuid:{0}]",
-    "zh_CN": "cluster[uuid:{0}]不存在已连接的物理机",
+    "zh_CN": "",
     "arguments": [
       "clusterUuid"
     ],
@@ -5678,7 +5651,7 @@
   {
     "raw": "cannot find any connected host to perform the operation",
     "en_US": "cannot find any connected host to perform the operation",
-    "zh_CN": "找不到处于连接状态的物理机来执行操作",
+    "zh_CN": "",
     "arguments": [],
     "line": 641,
     "fileName": "src/main/java/org/zstack/storage/primary/smp/KvmBackend.java"
@@ -5686,7 +5659,7 @@
   {
     "raw": "the volume[uuid;%s] is attached to a VM[uuid:%s] which is in state of %s, cannot do the snapshot merge",
     "en_US": "the volume[uuid;{0}] is attached to a VM[uuid:{1}] which is in state of {2}, cannot do the snapshot merge",
-    "zh_CN": "云盘[uuid;{0}] 挂载到处于{2}状态的虚拟机，不能合并快照",
+    "zh_CN": "",
     "arguments": [
       "volume.getUuid()",
       "volume.getVmInstanceUuid()",
@@ -5698,7 +5671,7 @@
   {
     "raw": "cannot find backup storage[uuid:%s]",
     "en_US": "cannot find backup storage[uuid:{0}]",
-    "zh_CN": "找不到镜像存储[uuid:{0}]",
+    "zh_CN": "",
     "arguments": [
       "backupStorageUuid"
     ],
@@ -5708,7 +5681,7 @@
   {
     "raw": "the shared mount point primary storage[uuid:%s, name:%s] cannot find any available host in attached clusters for instantiating the volume",
     "en_US": "the shared mount point primary storage[uuid:{0}, name:{1}] cannot find any available host in attached clusters for instantiating the volume",
-    "zh_CN": "共享挂载点主存储[uuid:{0}, name:{1}]在挂载的集群中找不到任何可用的物理机来实例化云盘",
+    "zh_CN": "",
     "arguments": [
       "self.getUuid()",
       "self.getName()"
@@ -5719,7 +5692,7 @@
   {
     "raw": "not supported operation",
     "en_US": "not supported operation",
-    "zh_CN": "不支持的操作",
+    "zh_CN": "",
     "arguments": [],
     "line": 326,
     "fileName": "src/main/java/org/zstack/storage/primary/smp/SMPPrimaryStorageBase.java"
@@ -5727,7 +5700,7 @@
   {
     "raw": "volume snapshot[uuid:%s] is not on primary storage, cannot be backed up",
     "en_US": "volume snapshot[uuid:{0}] is not on primary storage, cannot be backed up",
-    "zh_CN": "云盘快照[uuid:{0}]不在主存储上，不能备份",
+    "zh_CN": "",
     "arguments": [
       "msg.getUuid()"
     ],
@@ -5737,7 +5710,7 @@
   {
     "raw": "volume snapshot[uuid:%s] is already on backup storage[uuid: %s]",
     "en_US": "volume snapshot[uuid:{0}] is already on backup storage[uuid: {1}]",
-    "zh_CN": "云盘快照[uuid:{0}]已经在备份存储[uuid: {1}]上",
+    "zh_CN": "",
     "arguments": [
       "msg.getUuid()",
       "msg.getBackupStorageUuid()"
@@ -5748,7 +5721,7 @@
   {
     "raw": "volume snapshot[uuid:%s] is on primary storage[uuid:%s] which is in zone[uuid:%s] that backup storage[uuid:%s] is not attached to",
     "en_US": "volume snapshot[uuid:{0}] is on primary storage[uuid:{1}] which is in zone[uuid:{2}] that backup storage[uuid:{3}] is not attached to",
-    "zh_CN": "云盘快照存放在主存储[uuid:{1}]，而主存储[uuid:{1}]挂载在未挂载备份存储[uuid:{3}]的区域[uuid:{2}]",
+    "zh_CN": "",
     "arguments": [
       "msg.getUuid()",
       "priUuid",
@@ -5761,7 +5734,7 @@
   {
     "raw": "either volumeUuid or treeUuid must be set",
     "en_US": "either volumeUuid or treeUuid must be set",
-    "zh_CN": "云盘Uuid或者快照树Uuid必须设置",
+    "zh_CN": "",
     "arguments": [],
     "line": 110,
     "fileName": "src/main/java/org/zstack/storage/snapshot/VolumeSnapshotApiInterceptor.java"
@@ -5769,7 +5742,7 @@
   {
     "raw": "volume[uuid:%s] is not in status Ready, current is %s, can\u0027t create snapshot",
     "en_US": "volume[uuid:{0}] is not in status Ready, current is {1}, can\u0027t create snapshot",
-    "zh_CN": "云盘[uuid:{0}]未出于就绪状态，当前是{1}，不能创建快照",
+    "zh_CN": "",
     "arguments": [
       "msg.getVolumeUuid()",
       "status"
@@ -5780,7 +5753,7 @@
   {
     "raw": "volume snapshot[uuid:%s] is in state %s, cannot revert volume to it",
     "en_US": "volume snapshot[uuid:{0}] is in state {1}, cannot revert volume to it",
-    "zh_CN": "云盘快照[uuid:{0}]出于状态{1}，不能恢复云盘到该快照状态",
+    "zh_CN": "",
     "arguments": [
       "msg.getUuid()",
       "state"
@@ -5791,7 +5764,7 @@
   {
     "raw": "original volume for snapshot[uuid:%s] has been deleted, cannot revert volume to it",
     "en_US": "original volume for snapshot[uuid:{0}] has been deleted, cannot revert volume to it",
-    "zh_CN": "快照[uuid:{0}]的原版云盘已经被删除，不能恢复云盘到该快照",
+    "zh_CN": "",
     "arguments": [
       "msg.getUuid()"
     ],
@@ -5801,7 +5774,7 @@
   {
     "raw": "primary storage[uuid:%s] doesn\u0027t support volume snapshot; cannot create snapshot for volume[uuid:%s]",
     "en_US": "primary storage[uuid:{0}] doesn\u0027t support volume snapshot; cannot create snapshot for volume[uuid:{1}]",
-    "zh_CN": "主存储[uuid:{0}]不能支持云盘快照，不能为云盘[uuid:{1}]创建快照",
+    "zh_CN": "",
     "arguments": [
       "primaryStorageUuid",
       "vol.getUuid()"
@@ -5812,7 +5785,7 @@
   {
     "raw": "cannot find volume snapshot[uuid:%s, name:%s], it may have been deleted by previous operation",
     "en_US": "cannot find volume snapshot[uuid:{0}, name:{1}], it may have been deleted by previous operation",
-    "zh_CN": "不能创建云盘快照[uuid:{0}, name:{1}]，该快照可能已经被以前的操作删除",
+    "zh_CN": "",
     "arguments": [
       "currentRoot.getUuid()",
       "currentRoot.getName()"
@@ -5823,7 +5796,7 @@
   {
     "raw": "failed to change status of volume snapshot[uuid:%s, name:%s] by status event[%s]",
     "en_US": "failed to change status of volume snapshot[uuid:{0}, name:{1}] by status event[{2}]",
-    "zh_CN": "通过状态事件[{2}]改变云盘快照[uuid:{0}, name:{1}]失败",
+    "zh_CN": "",
     "arguments": [
       "failSnapshot.getUuid()",
       "failSnapshot.getName()",
@@ -5835,7 +5808,7 @@
   {
     "raw": "unable to reset volume[uuid:%s] to snapshot[uuid:%s], the vm[uuid:%s] volume attached to is not in Stopped state, current state is %s",
     "en_US": "unable to reset volume[uuid:{0}] to snapshot[uuid:{1}], the vm[uuid:{2}] volume attached to is not in Stopped state, current state is {3}",
-    "zh_CN": "不能重置云盘[uuid:{0}]到快照[uuid:{1}]状态，云盘的虚拟机[uuid:{2}]未处于停止状态，当前状态是{3}",
+    "zh_CN": "",
     "arguments": [
       "rmsg.getVolume().getUuid()",
       "rmsg.getSnapshot().getUuid()",
@@ -5848,7 +5821,7 @@
   {
     "raw": "the volume[uuid:%s] is not in status of deleted. This is operation is to recover a deleted data volume",
     "en_US": "the volume[uuid:{0}] is not in status of deleted. This is operation is to recover a deleted data volume",
-    "zh_CN": "云盘[uuid:{0}]未处于删除状态。此操作将覆盖一个被删除的数据云盘",
+    "zh_CN": "",
     "arguments": [
       "msg.getVolumeUuid()"
     ],
@@ -5858,7 +5831,7 @@
   {
     "raw": "the volume[uuid:%s] is in status of deleted, cannot do the operation",
     "en_US": "the volume[uuid:{0}] is in status of deleted, cannot do the operation",
-    "zh_CN": "云盘[uuid:{0}]出于删除操作，不能执行此操作",
+    "zh_CN": "",
     "arguments": [
       "vol.getUuid()"
     ],
@@ -5868,7 +5841,7 @@
   {
     "raw": "image[uuid:%s] is not %s, it\u0027s %s",
     "en_US": "image[uuid:{0}] is not {1}, it\u0027s {2}",
-    "zh_CN": "镜像[uuid:{0}]不是{1}，而是{2}",
+    "zh_CN": "",
     "arguments": [
       "msg.getImageUuid()",
       "ImageMediaType.DataVolumeTemplate",
@@ -5880,7 +5853,7 @@
   {
     "raw": "image[uuid:%s] is not Enabled, it\u0027s %s",
     "en_US": "image[uuid:{0}] is not Enabled, it\u0027s {1}",
-    "zh_CN": "镜像不能启用，此镜像是{1}",
+    "zh_CN": "",
     "arguments": [
       "img.getUuid()",
       "img.getState()"
@@ -5891,7 +5864,7 @@
   {
     "raw": "image[uuid:%s] is not Ready, it\u0027s %s",
     "en_US": "image[uuid:{0}] is not Ready, it\u0027s {1}",
-    "zh_CN": "镜像未准备就绪，此镜像是{1}",
+    "zh_CN": "",
     "arguments": [
       "img.getUuid()",
       "img.getStatus()"
@@ -5912,7 +5885,7 @@
   {
     "raw": "volume[uuid:%s] is in state[%s], data volume can only be attached when state is %s",
     "en_US": "volume[uuid:{0}] is in state[{1}], data volume can only be attached when state is {2}",
-    "zh_CN": "云盘[uuid:{0}]处于[{1}]状态，数据云盘只能在处于{2}状态的时候挂载",
+    "zh_CN": "",
     "arguments": [
       "msg.getVolumeUuid()",
       "state",
@@ -5924,7 +5897,7 @@
   {
     "raw": "volume[uuid:%s] is in status[%s], data volume can only be attached when status is %s or %S",
     "en_US": "volume[uuid:{0}] is in status[{1}], data volume can only be attached when status is {2} or %S",
-    "zh_CN": "云盘[uuid:{0}]处于[{1}]，数据云盘只能在处于{2}或%S状态的时候挂载",
+    "zh_CN": "",
     "arguments": [
       "msg.getVolumeUuid()",
       "status",
@@ -5937,7 +5910,7 @@
   {
     "raw": "data volume[uuid:%s] is not attached to any vm, can\u0027t detach",
     "en_US": "data volume[uuid:{0}] is not attached to any vm, can\u0027t detach",
-    "zh_CN": "数据云盘没有被挂载到云盘，不能卸载",
+    "zh_CN": "",
     "arguments": [
       "msg.getVolumeUuid()"
     ],
@@ -5947,7 +5920,7 @@
   {
     "raw": "to detach shareable data volume[uuid:%s], vm uuid is needed.",
     "en_US": "to detach shareable data volume[uuid:{0}], vm uuid is needed.",
-    "zh_CN": "卸载共享数据云盘[uuid:{0}]需要虚拟机的uuid",
+    "zh_CN": "",
     "arguments": [
       "msg.getVolumeUuid()"
     ],
@@ -5957,7 +5930,7 @@
   {
     "raw": "the volume[uuid:%s, name:%s] is Root Volume, can\u0027t detach it",
     "en_US": "the volume[uuid:{0}, name:{1}] is Root Volume, can\u0027t detach it",
-    "zh_CN": "不能卸载根云盘[uuid:{0}, name:{1}]",
+    "zh_CN": "",
     "arguments": [
       "vol.getUuid()",
       "vol.getName()"
@@ -5968,7 +5941,7 @@
   {
     "raw": "the volume[uuid:%s, name:%s] is Root Volume, can\u0027t attach it",
     "en_US": "the volume[uuid:{0}, name:{1}] is Root Volume, can\u0027t attach it",
-    "zh_CN": "不能挂载根云盘[uuid:{0}, name:{1}]",
+    "zh_CN": "",
     "arguments": [
       "vol.getUuid()",
       "vol.getName()"
@@ -5979,7 +5952,7 @@
   {
     "raw": "data volume[uuid:%s] is Disabled, can\u0027t attach",
     "en_US": "data volume[uuid:{0}] is Disabled, can\u0027t attach",
-    "zh_CN": "数据云盘已被禁用，不能挂载",
+    "zh_CN": "",
     "arguments": [
       "vol.getUuid()"
     ],
@@ -5989,7 +5962,7 @@
   {
     "raw": "data volume[%s] has been attached to vm[uuid:%s], can\u0027t attach again",
     "en_US": "data volume[{0}] has been attached to vm[uuid:{1}], can\u0027t attach again",
-    "zh_CN": "数据云盘已经被挂载到虚拟机[uuid:{1}]，不能再次挂载",
+    "zh_CN": "",
     "arguments": [
       "vol.getUuid()",
       "vol.getVmInstanceUuid()"
@@ -6000,7 +5973,7 @@
   {
     "raw": "data volume can only be attached when status is [%s, %s], current is %s",
     "en_US": "data volume can only be attached when status is [{0}, {1}], current is {2}",
-    "zh_CN": "数据云盘仅能当处于[{0}, {1}]状态挂载，当前状态是{2}",
+    "zh_CN": "",
     "arguments": [
       "VolumeStatus.Ready",
       "VolumeStatus.NotInstantiated",
@@ -6012,7 +5985,7 @@
   {
     "raw": "data volume[uuid:%s] has format[%s] that can only be attached to hypervisor[%s], but vm[uuid:%s] has hypervisor type[%s]. Can\u0027t attach",
     "en_US": "data volume[uuid:{0}] has format[{1}] that can only be attached to hypervisor[{2}], but vm[uuid:{3}] has hypervisor type[{4}]. Can\u0027t attach",
-    "zh_CN": "只有[{1}]格式的数据云盘[uuid:{0}]才能被挂载到管理程序[{2}]，但是虚拟机是[{4}]类型的管理程序，数据云盘不能挂载到该虚拟机",
+    "zh_CN": "",
     "arguments": [
       "vol.getUuid()",
       "vol.getFormat()",
@@ -6026,7 +5999,7 @@
   {
     "raw": "hypervisor[%s] only allows max %s data volumes to be attached to a single vm; there have been %s data volumes attached to vm[uuid:%s]",
     "en_US": "hypervisor[{0}] only allows max {1} data volumes to be attached to a single vm; there have been {2} data volumes attached to vm[uuid:{3}]",
-    "zh_CN": "[{0}]管理程序仅允许最大不超过{1}数据云盘挂载到单个虚拟机。{2} data volumes已经挂载到虚拟机[uuid:{3}]",
+    "zh_CN": "",
     "arguments": [
       "hvType",
       "maxDataVolumeNum",
@@ -6039,7 +6012,7 @@
   {
     "raw": "it\u0027s not allowed to backup root volume, uuid:%s",
     "en_US": "it\u0027s not allowed to backup root volume, uuid:{0}",
-    "zh_CN": "备份根云盘不被允许，uuid:{0}",
+    "zh_CN": "",
     "arguments": [
       "msg.getUuid()"
     ],
@@ -6049,7 +6022,7 @@
   {
     "raw": "volume[uuid:%s] is Root volume, can\u0027t be deleted",
     "en_US": "volume[uuid:{0}] is Root volume, can\u0027t be deleted",
-    "zh_CN": "不能删除根云盘[uuid:{0}]",
+    "zh_CN": "",
     "arguments": [
       "msg.getVolumeUuid()"
     ],
@@ -6059,7 +6032,7 @@
   {
     "raw": "volume[uuid:%s] is already in status of deleted",
     "en_US": "volume[uuid:{0}] is already in status of deleted",
-    "zh_CN": "云盘[uuid:{0}]早已处于被删除状态",
+    "zh_CN": "",
     "arguments": [
       "msg.getVolumeUuid()"
     ],
@@ -6069,7 +6042,7 @@
   {
     "raw": "it\u0027s not allowed to change state of root volume, uuid:%s",
     "en_US": "it\u0027s not allowed to change state of root volume, uuid:{0}",
-    "zh_CN": "不能改变根云盘状态，uuid:{0}",
+    "zh_CN": "",
     "arguments": [
       "msg.getUuid()"
     ],
@@ -6079,7 +6052,7 @@
   {
     "raw": "the volume[uuid:%s, name:%s] is not deleted yet, can\u0027t expunge it",
     "en_US": "the volume[uuid:{0}, name:{1}] is not deleted yet, can\u0027t expunge it",
-    "zh_CN": "云盘[uuid:{0}, name:{1}]仍未被删除，不能清除该云盘",
+    "zh_CN": "",
     "arguments": [
       "self.getUuid()",
       "self.getName()"
@@ -6090,7 +6063,7 @@
   {
     "raw": "the image[uuid:%s, name:%s] has been deleted on all backup storage",
     "en_US": "the image[uuid:{0}, name:{1}] has been deleted on all backup storage",
-    "zh_CN": "镜像[uuid:{0}, name:{1}]已经从所有的镜像存储中删除"
+    "zh_CN": "",
     "arguments": [
       "template.getUuid()",
       "template.getName()"
@@ -6099,9 +6072,9 @@
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeManagerImpl.java"
   },
   {
-    "raw": "cannot find a backup storage on which the image[uuid:%s] is that satisfies all conditions of: 1. has state Enabled 2. has status Connected. 3. has attached to zone in which primary storage[uuid:%s] is",
-    "en_US": "cannot find a backup storage on which the image[uuid:{0}] is that satisfies all conditions of: 1. has state Enabled 2. has status Connected. 3. has attached to zone in which primary storage[uuid:{1}] is",
-    "zh_CN": "不能找到拥有满足如下要求镜像的镜像仓库：1.处于启用状态 2.处于已连接状态。 3. 已经被挂载到拥有主存储[uuid:{1}]的区域",
+    "raw": "cannot find a backup storage on which the image[uuid:%s] is that satisfies all conditions of: 1. has state Enabled 2. has status Connected. 3 has attached to zone in which primary storage[uuid:%s] is",
+    "en_US": "cannot find a backup storage on which the image[uuid:{0}] is that satisfies all conditions of: 1. has state Enabled 2. has status Connected. 3 has attached to zone in which primary storage[uuid:{1}] is",
+    "zh_CN": "",
     "arguments": [
       "template.getUuid()",
       "msg.getPrimaryStorageUuid()"
@@ -6112,7 +6085,7 @@
   {
     "raw": "there should not be more than one %s implementation.",
     "en_US": "there should not be more than one {0} implementation.",
-    "zh_CN": "不允许超过一种实现",
+    "zh_CN": "",
     "arguments": [
       "VolumeFactory.class.getSimpleName()"
     ],
@@ -6122,7 +6095,7 @@
   {
     "raw": "SharedVolume cannot be set bandwidth.",
     "en_US": "SharedVolume cannot be set bandwidth.",
-    "zh_CN": "共享云盘不允许设置带宽",
+    "zh_CN": "",
     "arguments": [],
     "line": 34,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeMevocoApiInterceptor.java"
@@ -6130,7 +6103,7 @@
   {
     "raw": "no resource type[%s] found in tag system",
     "en_US": "no resource type[{0}] found in tag system",
-    "zh_CN": "标签系统中不存在[{0}]资源类型",
+    "zh_CN": "",
     "arguments": [
       "msg.getResourceType()"
     ],
@@ -6140,7 +6113,7 @@
   {
     "raw": "tag[uuid:%s] is an inherent system tag, can not be removed",
     "en_US": "tag[uuid:{0}] is an inherent system tag, can not be removed",
-    "zh_CN": "固有系统标签[uuid:{0}]禁止移除",
+    "zh_CN": "",
     "arguments": [
       "msg.getUuid()"
     ],
@@ -6158,7 +6131,7 @@
   {
     "raw": "Duplicated Tag[tag:%s, type:%s, resourceType:%s, resourceUuid:%s]",
     "en_US": "Duplicated Tag[tag:{0}, type:{1}, resourceType:{2}, resourceUuid:{3}]",
-    "zh_CN": "标签[tag:{0}, type:{1}, resourceType:{2}, resourceUuid:{3}]重复",
+    "zh_CN": "",
     "arguments": [
       "tag",
       "type",
@@ -6171,7 +6144,7 @@
   {
     "raw": "no system tag matches %s",
     "en_US": "no system tag matches {0}",
-    "zh_CN": "没有找到匹配{0}的系统标签",
+    "zh_CN": "",
     "arguments": [
       "tag"
     ],
@@ -6181,7 +6154,7 @@
   {
     "raw": "vCenter login name expected, got: %s",
     "en_US": "vCenter login name expected, got: {0}",
-    "zh_CN": "vCenter需要登录名字，得到：{0}",
+    "zh_CN": "",
     "arguments": [
       "msg.getUsername()"
     ],
@@ -6191,7 +6164,7 @@
   {
     "raw": "domainName[%s] is neither an IPv4 address nor a valid hostname",
     "en_US": "domainName[{0}] is neither an IPv4 address nor a valid hostname",
-    "zh_CN": "域名[{0}]不是一个IPv4地址或有效的主机名",
+    "zh_CN": "",
     "arguments": [
       "msg.getDomainName()"
     ],
@@ -6201,7 +6174,7 @@
   {
     "raw": "vCenter [domainName:%s] has been added",
     "en_US": "vCenter [domainName:{0}] has been added",
-    "zh_CN": "vCenter[domainName:{0}]已经被添加",
+    "zh_CN": "",
     "arguments": [
       "msg.getDomainName()"
     ],

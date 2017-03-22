@@ -41,7 +41,8 @@ public class GetBackupStorageCapacityAction extends AbstractAction {
     public String sessionId;
 
 
-    private Result makeResult(ApiResult res) {
+    public Result call() {
+        ApiResult res = ZSClient.call(this);
         Result ret = new Result();
         if (res.error != null) {
             ret.error = res.error;
@@ -49,21 +50,24 @@ public class GetBackupStorageCapacityAction extends AbstractAction {
         }
         
         GetBackupStorageCapacityResult value = res.getResult(GetBackupStorageCapacityResult.class);
-        ret.value = value == null ? new GetBackupStorageCapacityResult() : value; 
-
+        ret.value = value == null ? new GetBackupStorageCapacityResult() : value;
         return ret;
-    }
-
-    public Result call() {
-        ApiResult res = ZSClient.call(this);
-        return makeResult(res);
     }
 
     public void call(final Completion<Result> completion) {
         ZSClient.call(this, new InternalCompletion() {
             @Override
             public void complete(ApiResult res) {
-                completion.complete(makeResult(res));
+                Result ret = new Result();
+                if (res.error != null) {
+                    ret.error = res.error;
+                    completion.complete(ret);
+                    return;
+                }
+                
+                GetBackupStorageCapacityResult value = res.getResult(GetBackupStorageCapacityResult.class);
+                ret.value = value == null ? new GetBackupStorageCapacityResult() : value;
+                completion.complete(ret);
             }
         });
     }

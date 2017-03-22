@@ -17,6 +17,8 @@ public @interface Param {
 
     int maxLength() default Integer.MIN_VALUE;
 
+    int minLength() default Integer.MIN_VALUE;
+
     boolean nonempty() default false;
 
     boolean nullElements() default false;

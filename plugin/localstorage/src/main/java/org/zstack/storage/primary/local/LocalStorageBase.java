@@ -122,7 +122,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                completion.fail(errorCode);
+		completion.fail(errorCode);
             }
         });
     }

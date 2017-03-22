@@ -45,9 +45,10 @@ import static org.zstack.core.Platform.operr;
 import javax.persistence.Query;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 import static org.zstack.utils.CollectionDSL.list;
 

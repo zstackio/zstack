@@ -18,6 +18,8 @@ public @interface APIParam {
 
     int maxLength() default Integer.MIN_VALUE;
 
+    int minLength() default 0;
+
     boolean nonempty() default false;
 
     boolean nullElements() default false;
@@ -29,6 +31,4 @@ public @interface APIParam {
     boolean checkAccount() default false;
 
     boolean noTrim() default false;
-
-    boolean successIfResourceNotExisting() default false;
 }

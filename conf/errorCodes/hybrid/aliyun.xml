@@ -1,0 +1,59 @@
+<error>
+    <prefix>ALIYUN</prefix>
+
+    <code>
+        <id>1000</id>
+        <description>OpenAPI Return Error</description>
+    </code>
+
+    <code>
+        <id>1001</id>
+        <description>No Such Ecs Id Local</description>
+    </code>
+
+    <code>
+        <id>1002</id>
+        <description>No Such Ecs Id Remote</description>
+    </code>
+
+    <code>
+        <id>1003</id>
+        <description>Invalid ECS Parameters</description>
+    </code>
+
+    <code>
+        <id>1004</id>
+        <description>No Such Instance Offering Uuid</description>
+    </code>
+
+    <code>
+        <id>1005</id>
+        <description>No Such Ecs Image Id Local</description>
+    </code>
+
+    <code>
+        <id>1006</id>
+        <description>Image Size Exceed Than Public Cloud Allowed</description>
+    </code>
+
+    <code>
+        <id>1007</id>
+        <description>Instance Offering not Support By Aliyun</description>
+    </code>
+
+    <code>
+        <id>1008</id>
+        <description>No Instance Type Support In IZone</description>
+    </code>
+
+    <code>
+        <id>1009</id>
+        <description>Invalid aliyun OpenAPI AccessKey/Secret</description>
+    </code>
+
+    <code>
+        <id>1010</id>
+        <description>No oss bucket attach to datacenter</description>
+    </code>
+</error>
+
