@@ -1,14 +1,12 @@
 package org.zstack.test.integration.kvm.vm
 
 import org.springframework.http.HttpEntity
-import org.zstack.core.Platform
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.gc.GCStatus
 import org.zstack.core.gc.GarbageCollectorVO
 import org.zstack.header.message.MessageReply
 import org.zstack.header.vm.StopVmInstanceMsg
-import org.zstack.header.vm.StopVmInstanceReply
 import org.zstack.header.vm.VmInstanceConstant
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
@@ -16,20 +14,10 @@ import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
 import org.zstack.sdk.DestroyVmInstanceAction
 import org.zstack.sdk.GarbageCollectorInventory
-import org.zstack.sdk.StopVmInstanceAction
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.test.integration.kvm.Env
 import org.zstack.test.integration.kvm.KvmTest
-import org.zstack.testlib.EnvSpec
-import org.zstack.testlib.HttpError
-import org.zstack.testlib.ImageSpec
-import org.zstack.testlib.InstanceOfferingSpec
-import org.zstack.testlib.KVMHostSpec
-import org.zstack.testlib.L3NetworkSpec
-import org.zstack.testlib.SubCase
-import org.zstack.testlib.VmSpec
-
-import java.util.concurrent.TimeUnit
+import org.zstack.testlib.*
 
 /**
  * Created by xing5 on 2017/3/3.
@@ -100,17 +88,19 @@ class VmGCCase extends SubCase {
             uuid = vm.hostUuid
         }
 
-        TimeUnit.SECONDS.sleep(1)
+        GarbageCollectorInventory inv = null
 
-        // confirm the destroy command is sent
-        assert cmd != null
-        assert cmd.uuid == vm.uuid
+        retryInSecs(5) {
+            inv = queryGCJob {
+                conditions=["context~=%${vm.uuid}%"]
+            }[0]
 
-        GarbageCollectorInventory inv = queryGCJob {
-            conditions=["context~=%${vm.uuid}%"]
-        }[0]
-
-        assert inv.status == GCStatus.Done.toString()
+            return {
+                assert cmd != null
+                assert cmd.uuid == vm.uuid
+                assert inv.status == GCStatus.Done.toString()
+            }
+        }
 
         deleteGCJob {
             uuid = inv.uuid
@@ -124,13 +114,15 @@ class VmGCCase extends SubCase {
             uuid = vm.hostUuid
         }
 
-        TimeUnit.SECONDS.sleep(1)
+        GarbageCollectorInventory inv = null
 
-        GarbageCollectorInventory inv = queryGCJob {
-            conditions=["context~=%${vm.uuid}%"]
-        }[0]
+        retryInSecs(5) {
+            inv = queryGCJob {
+                conditions=["context~=%${vm.uuid}%"]
+            }[0]
 
-        assert inv.status == GCStatus.Done.toString()
+            return { assert inv.status == GCStatus.Done.toString() }
+        }
 
         deleteGCJob {
             uuid = inv.uuid
@@ -155,14 +147,19 @@ class VmGCCase extends SubCase {
             return rsp
         }
 
-        // no destroy command sent beacuse the vm is recovered
-        assert cmd == null
+        GarbageCollectorInventory inv = null
 
-        GarbageCollectorInventory inv = queryGCJob {
-            conditions=["context~=%${vm.uuid}%"]
-        }[0]
+        retryInSecs(5) {
+            inv = queryGCJob {
+                conditions=["context~=%${vm.uuid}%"]
+            }[0]
 
-        assert inv.status == GCStatus.Done.toString()
+            return  {
+                // no destroy command sent beacuse the vm is recovered
+                assert cmd == null
+                assert inv.status == GCStatus.Done.toString()
+            }
+        }
 
         deleteGCJob {
             uuid = inv.uuid
@@ -230,14 +227,18 @@ class VmGCCase extends SubCase {
             uuid = vm.hostUuid
         }
 
-        TimeUnit.SECONDS.sleep(1)
+        GarbageCollectorInventory inv = null
 
-        assert cmd == null
-        GarbageCollectorInventory inv = queryGCJob {
-            conditions=["context~=%${vm.uuid}%"]
-        }[0]
+        retryInSecs(5) {
+            inv = queryGCJob {
+                conditions=["context~=%${vm.uuid}%"]
+            }[0]
 
-        assert inv.status == GCStatus.Done.toString()
+            return {
+                assert cmd == null
+                assert inv.status == GCStatus.Done.toString()
+            }
+        }
 
         deleteGCJob {
             uuid = inv.uuid
@@ -257,16 +258,19 @@ class VmGCCase extends SubCase {
             uuid = vm.uuid
         }
 
-        TimeUnit.SECONDS.sleep(1)
+        GarbageCollectorInventory inv = null
 
-        assert cmd == null
+        retryInSecs(5) {
+            // the GC job is cancelled
+            inv = queryGCJob {
+                conditions=["context~=%${vm.uuid}%"]
+            }[0]
 
-        // the GC job is cancelled
-        GarbageCollectorInventory inv = queryGCJob {
-            conditions=["context~=%${vm.uuid}%"]
-        }[0]
-
-        assert inv.status == GCStatus.Done.toString()
+            return {
+                assert cmd == null
+                assert inv.status == GCStatus.Done.toString()
+            }
+        }
 
         deleteGCJob {
             uuid = inv.uuid
@@ -287,16 +291,18 @@ class VmGCCase extends SubCase {
             uuid = vm.hostUuid
         }
 
-        TimeUnit.SECONDS.sleep(1)
+        GarbageCollectorInventory inv = null
+        retryInSecs(5) {
+            inv = queryGCJob {
+                conditions=["context~=%${vm.uuid}%"]
+            }[0]
 
-        assert cmd != null
-        assert cmd.uuid == vm.uuid
-
-        GarbageCollectorInventory inv = queryGCJob {
-            conditions=["context~=%${vm.uuid}%"]
-        }[0]
-
-        assert inv.status == GCStatus.Done.toString()
+            return {
+                assert cmd != null
+                assert cmd.uuid == vm.uuid
+                assert inv.status == GCStatus.Done.toString()
+            }
+        }
 
         deleteGCJob {
             uuid = inv.uuid
