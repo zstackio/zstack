@@ -61,11 +61,17 @@ class NfsGCCase extends SubCase {
             uuid = vol.uuid
         }
 
-        GarbageCollectorInventory inv = queryGCJob {
-            conditions = ["context~=%${vol.getUuid()}%".toString()]
-        }[0]
+        GarbageCollectorInventory inv = null
 
-        assert inv.status == GCStatus.Idle.toString()
+        retryInSecs(5) {
+            inv = queryGCJob {
+                conditions = ["context~=%${vol.getUuid()}%".toString()]
+            }[0]
+
+            return {
+                assert inv.status == GCStatus.Idle.toString()
+            }
+        }
 
         triggerGCJob {
             uuid = inv.uuid
@@ -77,13 +83,16 @@ class NfsGCCase extends SubCase {
             return rsp
         }
 
-        TimeUnit.SECONDS.sleep(1)
-        assert called
+        retryInSecs(5) {
+            inv = queryGCJob {
+                conditions = ["context~=%${vol.getUuid()}%".toString()]
+            }[0]
 
-        inv = queryGCJob {
-            conditions = ["context~=%${vol.getUuid()}%".toString()]
-        }[0]
-        assert inv.status == GCStatus.Done.toString()
+            return {
+                assert called
+                assert inv.status == GCStatus.Done.toString()
+            }
+        }
     }
 
 
@@ -107,11 +116,16 @@ class NfsGCCase extends SubCase {
             uuid = sp.uuid
         }
 
-        GarbageCollectorInventory inv = queryGCJob {
-            conditions = ["context~=%${sp.getUuid()}%".toString()]
-        }[0]
+        GarbageCollectorInventory inv = null
+        retryInSecs(5) {
+            inv = queryGCJob {
+                conditions = ["context~=%${sp.getUuid()}%".toString()]
+            }[0]
 
-        assert inv.status == GCStatus.Idle.toString()
+            return {
+                assert inv.status == GCStatus.Idle.toString()
+            }
+        }
 
         triggerGCJob {
             uuid = inv.uuid
@@ -123,13 +137,16 @@ class NfsGCCase extends SubCase {
             return rsp
         }
 
-        TimeUnit.SECONDS.sleep(1)
-        assert called
+        retryInSecs(5) {
+            inv = queryGCJob {
+                conditions = ["context~=%${sp.getUuid()}%".toString()]
+            }[0]
 
-        inv = queryGCJob {
-            conditions = ["context~=%${sp.getUuid()}%".toString()]
-        }[0]
-        assert inv.status == GCStatus.Done.toString()
+            return {
+                assert called
+                assert inv.status == GCStatus.Done.toString()
+            }
+        }
     }
 
     void testVolumeSnapshotAndVolumeGCCancelledAfterPrimaryStorageDeleted() {
@@ -156,17 +173,22 @@ class NfsGCCase extends SubCase {
             uuid = vol.uuid
         }
 
-        GarbageCollectorInventory spGC = queryGCJob {
-            conditions = ["context~=%${sp.getUuid()}%".toString()]
-        }[0]
+        GarbageCollectorInventory spGC = null
+        GarbageCollectorInventory volumeGC = null
+        retryInSecs(5)  {
+            spGC = queryGCJob {
+                conditions = ["context~=%${sp.getUuid()}%".toString()]
+            }[0]
 
-        assert spGC.status == GCStatus.Idle.toString()
+            volumeGC = queryGCJob {
+                conditions = ["context~=%${vol.getUuid()}%".toString(), "runnerClass=${NfsDeleteVolumeGC.class.name}".toString()]
+            }[0]
 
-        GarbageCollectorInventory volumeGC = queryGCJob {
-            conditions = ["context~=%${vol.getUuid()}%".toString(), "runnerClass=${NfsDeleteVolumeGC.class.name}".toString()]
-        }[0]
-
-        assert volumeGC.status == GCStatus.Idle.toString()
+            return {
+                assert spGC.status == GCStatus.Idle.toString()
+                assert volumeGC.status == GCStatus.Idle.toString()
+            }
+        }
 
         detachPrimaryStorageFromCluster {
             clusterUuid = (env.specByName("cluster") as ClusterSpec).inventory.uuid
@@ -180,26 +202,32 @@ class NfsGCCase extends SubCase {
         triggerGCJob {
             uuid = spGC.uuid
         }
-        TimeUnit.SECONDS.sleep(1)
 
-        // trigger GC cause it's cancelled
-        spGC = queryGCJob {
-            conditions = ["context~=%${sp.getUuid()}%".toString()]
-        }[0]
+        retryInSecs(5) {
+            // trigger GC cause it's cancelled
+            spGC = queryGCJob {
+                conditions = ["context~=%${sp.getUuid()}%".toString()]
+            }[0]
 
-        assert spGC.status == GCStatus.Done.toString()
+            return {
+                assert spGC.status == GCStatus.Done.toString()
+            }
+        }
 
         triggerGCJob {
             uuid = volumeGC.uuid
         }
-        TimeUnit.SECONDS.sleep(1)
 
-        // trigger GC cause it's cancelled
-        volumeGC = queryGCJob {
-            conditions = ["context~=%${vol.getUuid()}%".toString(), "runnerClass=${NfsDeleteVolumeGC.class.name}".toString()]
-        }[0]
+        retryInSecs(5) {
+            // trigger GC cause it's cancelled
+            volumeGC = queryGCJob {
+                conditions = ["context~=%${vol.getUuid()}%".toString(), "runnerClass=${NfsDeleteVolumeGC.class.name}".toString()]
+            }[0]
 
-        assert volumeGC.status == GCStatus.Done.toString()
+            return {
+                assert volumeGC.status == GCStatus.Done.toString()
+            }
+        }
     }
 
     @Override
