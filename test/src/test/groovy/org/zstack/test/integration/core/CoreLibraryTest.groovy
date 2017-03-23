@@ -11,6 +11,10 @@ class CoreLibraryTest extends Test {
     @Override
     void setup() {
         INCLUDE_CORE_SERVICES = false
+
+        spring {
+            include("CloudBusAopProxy.xml")
+        }
     }
 
     @Override
