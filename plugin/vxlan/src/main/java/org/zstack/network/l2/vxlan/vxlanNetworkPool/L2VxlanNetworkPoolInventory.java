@@ -49,14 +49,15 @@ public class L2VxlanNetworkPoolInventory extends L2NetworkInventory {
 
     protected L2VxlanNetworkPoolInventory(VxlanNetworkPoolVO vo) {
         super(vo);
-        this.attachedCidrs = new HashMap<>();
+        attachedCidrs = new HashMap<>();
         for (Map<String, String> tag : VxlanSystemTags.VXLAN_POOL_CLUSTER_VTEP_CIDR.getTokensOfTagsByResourceUuid(vo.getUuid())) {
-            this.attachedCidrs.put(tag.get(VxlanSystemTags.CLUSTER_UUID_TOKEN),
+            attachedCidrs.put(tag.get(VxlanSystemTags.CLUSTER_UUID_TOKEN),
                     tag.get(VxlanSystemTags.VTEP_CIDR_TOKEN).split("[{}]")[1]);
         }
-        this.attachedVniRanges = VniRangeInventory.valueOf(vo.getAttachedVniRanges());
-        this.attachedVtepRefs = VtepInventory.valueOf(vo.getAttachedVtepRefs());
-        this.attachedVxlanNetworkRefs = L2VxlanNetworkInventory.valueOf1(vo.getAttachedVxlanNetworkRefs());
+        setAttachedCidrs(attachedCidrs);
+        setAttachedVniRanges(VniRangeInventory.valueOf(vo.getAttachedVniRanges()));
+        setAttachedVtepRefs(VtepInventory.valueOf(vo.getAttachedVtepRefs()));
+        setAttachedVxlanNetworkRefs(L2VxlanNetworkInventory.valueOf1(vo.getAttachedVxlanNetworkRefs()));
     }
 
     public static L2VxlanNetworkPoolInventory valueOf(VxlanNetworkPoolVO vo) {
