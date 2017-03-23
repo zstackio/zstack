@@ -32,9 +32,10 @@ public class LocalStorageResourceRefVO {
     @ForeignKey(parentEntityClass = PrimaryStorageEO.class, onDeleteAction = ReferenceOption.CASCADE)
     private String primaryStorageUuid;
 
+    // @ForeignKey(parentEntityClass = HostEO.class, onDeleteAction = ReferenceOption.CASCADE)
+    // Do not cascade delete LocalStorageResourceRefVO when delete HostEO, If the cascade delete is opened, the ImageVO/VolumeVO/VolumeSnapshotVO/ImageCacheVO data will not be cleaned when delete HostEO.
     @Column
     @Id
-    @ForeignKey(parentEntityClass = HostEO.class, onDeleteAction = ReferenceOption.CASCADE)
     private String hostUuid;
 
     @Column
