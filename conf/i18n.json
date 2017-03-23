@@ -684,7 +684,7 @@
   {
     "raw": "The state of vm[uuid:%s] is %s. Only these state[%s] is allowed.",
     "en_US": "The state of vm[uuid:{0}] is {1}. Only these state[{2}] is allowed.",
-    "zh_CN": "",
+    "zh_CN": "虚拟机[uuid:{0}]的状态是{1}。仅状态为[{2}]的才被允许进行当前操作",
     "arguments": [
       "self.getUuid()",
       "self.getState()",
@@ -696,7 +696,7 @@
   {
     "raw": "unable to start the vm[uuid:%s]. It doesn\u0027t have any nic, please attach a nic and try again",
     "en_US": "unable to start the vm[uuid:{0}]. It doesn\u0027t have any nic, please attach a nic and try again",
-    "zh_CN": "",
+    "zh_CN": "无法启动虚拟机[uuid:{0}]。该虚拟机没有网卡，请添加网卡后再试",
     "arguments": [
       "self.getUuid()"
     ],
@@ -706,7 +706,7 @@
   {
     "raw": "VmInstanceStartNewCreatedVmExtensionPoint[%s] refuses to create vm[uuid:%s] because %s",
     "en_US": "VmInstanceStartNewCreatedVmExtensionPoint[{0}] refuses to create vm[uuid:{1}] because {2}",
-    "zh_CN": "",
+    "zh_CN": "VmInstanceStartNewCreatedVmExtensionPoint[{0}] 因为{2} 拒绝创建虚拟机[uuid:{1}]",
     "arguments": [
       "ext.getClass().getName()",
       "inv.getUuid()",
@@ -718,7 +718,7 @@
   {
     "raw": "VmInstanceStopVmExtensionPoint[%s] refuses to stop vm[uuid:%s] because %s",
     "en_US": "VmInstanceStopVmExtensionPoint[{0}] refuses to stop vm[uuid:{1}] because {2}",
-    "zh_CN": "",
+    "zh_CN": "VmInstanceStopVmExtensionPoint[{0}] 因为{2} 拒绝创建虚拟机[uuid:{1}]",
     "arguments": [
       "ext.getClass().getName()",
       "inv.getUuid()",
@@ -730,7 +730,7 @@
   {
     "raw": "VmInstanceRebootExtensionPoint[%s] refuses to reboot vm[uuid:%s] because %s",
     "en_US": "VmInstanceRebootExtensionPoint[{0}] refuses to reboot vm[uuid:{1}] because {2}",
-    "zh_CN": "",
+    "zh_CN": "VmInstanceRebootExtensionPoint[{0}] 因为{2} 拒绝重启虚拟机[uuid:{1}]",
     "arguments": [
       "ext.getClass().getName()",
       "inv.getUuid()",
@@ -742,7 +742,7 @@
   {
     "raw": "VmInstanceDestroyVmExtensionPoint[%s] refuses to destroy vm[uuid:%s] because %s",
     "en_US": "VmInstanceDestroyVmExtensionPoint[{0}] refuses to destroy vm[uuid:{1}] because {2}",
-    "zh_CN": "",
+    "zh_CN": "VmInstanceDestroyVmExtensionPoint[{0}] 因为{2} 拒绝删除虚拟机[uuid:{1}]",
     "arguments": [
       "ext.getClass().getName()",
       "inv.getUuid()",
@@ -754,7 +754,7 @@
   {
     "raw": "VmInstanceStartExtensionPoint[%s] refuses to start vm[uuid:%s] because %s",
     "en_US": "VmInstanceStartExtensionPoint[{0}] refuses to start vm[uuid:{1}] because {2}",
-    "zh_CN": "",
+    "zh_CN": "VmInstanceStartExtensionPoint[{0}] 因为{2} 拒绝启动虚拟机[uuid:{1}]",
     "arguments": [
       "ext.getClass().getName()",
       "inv.getUuid()",
@@ -766,7 +766,7 @@
   {
     "raw": "the image[uuid:%s] is not on any backup storage that has been attached to the zone[uuid:%s]",
     "en_US": "the image[uuid:{0}] is not on any backup storage that has been attached to the zone[uuid:{1}]",
-    "zh_CN": "",
+    "zh_CN": "镜像[uuid:{0}]不在任何连接到zone[uuid:{1}]的备份存储上",
     "arguments": [
       "msg.getImageUuid()",
       "msg.getZoneUuid()"
@@ -777,7 +777,7 @@
   {
     "raw": "the image[name:%s, uuid:%s] is an ISO, rootDiskOfferingUuid must be set",
     "en_US": "the image[name:{0}, uuid:{1}] is an ISO, rootDiskOfferingUuid must be set",
-    "zh_CN": "",
+    "zh_CN": "镜像[name:{0}, uuid:{1}]是一个IOS, 必须设置根云盘规格",
     "arguments": [
       "image.getName()",
       "image.getUuid()"
@@ -788,7 +788,7 @@
   {
     "raw": "zoneUuid must be set because the image[name:%s, uuid:%s] is on multiple backup storage",
     "en_US": "zoneUuid must be set because the image[name:{0}, uuid:{1}] is on multiple backup storage",
-    "zh_CN": "",
+    "zh_CN": "zoneUuid必须被设置，因为image[name:{0}, uuid:{1}]在多个备份存储上",
     "arguments": [
       "image.getName()",
       "image.getUuid()"
@@ -799,7 +799,7 @@
   {
     "raw": "hostname[%s] specified in system tag[%s] is not a valid domain name",
     "en_US": "hostname[{0}] specified in system tag[{1}] is not a valid domain name",
-    "zh_CN": "",
+    "zh_CN": "在系统标签[{1}]中特别声明的主机名[{0}]不是一个有效的域名",
     "arguments": [
       "hostname",
       "tag"
@@ -810,7 +810,7 @@
   {
     "raw": "only one hostname system tag is allowed, but %s got",
     "en_US": "only one hostname system tag is allowed, but {0} got",
-    "zh_CN": "",
+    "zh_CN": "只允许通过系统标签设置一个主机名，但是实际上有{0}",
     "arguments": [
       "hostnameCount"
     ],
@@ -820,7 +820,7 @@
   {
     "raw": "L3 network[uuid:%s] not found. Please correct your system tag[%s] of static IP",
     "en_US": "L3 network[uuid:{0}] not found. Please correct your system tag[{1}] of static IP",
-    "zh_CN": "",
+    "zh_CN": "找不到L3网络[uuid:0]。请修改你关于静态IP的系统标签",
     "arguments": [
       "l3Uuid",
       "sysTag"
@@ -831,7 +831,7 @@
   {
     "raw": "%s is not a valid IPv4 address. Please correct your system tag[%s] of static IP",
     "en_US": "{0} is not a valid IPv4 address. Please correct your system tag[{1}] of static IP",
-    "zh_CN": "",
+    "zh_CN": "{0}不是一个有效的IPv4地址。请修改你关于静态IP的系统标签",
     "arguments": [
       "ip",
       "sysTag"
@@ -842,7 +842,7 @@
   {
     "raw": "IP[%s] is not available on the L3 network[uuid:%s]",
     "en_US": "IP[{0}] is not available on the L3 network[uuid:{1}]",
-    "zh_CN": "",
+    "zh_CN": "在L3网络[uuid:{1}]中，IP[{0}]不可达",
     "arguments": [
       "ip",
       "l3Uuid"
@@ -853,7 +853,7 @@
   {
     "raw": "conflict hostname in system tag[%s]; there has been a VM[uuid:%s] having hostname[%s] on L3 network[uuid:%s]",
     "en_US": "conflict hostname in system tag[{0}]; there has been a VM[uuid:{1}] having hostname[{2}] on L3 network[uuid:{3}]",
-    "zh_CN": "",
+    "zh_CN": "系统标签的主机名存在冲突[{0}]；已经存在以一个主机名为[{2}]的VM[uuid:{1}]出现在L3网络[uuid:{3}]中",
     "arguments": [
       "tag",
       "sameTag.getResourceUuid()",
@@ -866,7 +866,7 @@
   {
     "raw": "invalid boot device[%s] in boot order[%s]",
     "en_US": "invalid boot device[{0}] in boot order[{1}]",
-    "zh_CN": "",
+    "zh_CN": "在引导顺序[{1}]中存在无效的引导设备[{0}]",
     "arguments": [
       "o",
       "order"
@@ -877,7 +877,7 @@
   {
     "raw": "the resource[uuid:%s] is a ROOT volume, you cannot change its owner, instead,change the owner of the VM the root volume belongs to",
     "en_US": "the resource[uuid:{0}] is a ROOT volume, you cannot change its owner, instead,change the owner of the VM the root volume belongs to",
-    "zh_CN": "",
+    "zh_CN": "当前资源[uuid:{0}]是一个根云盘，你不能改变它的所有者，但是你能够修改对应VM的所有者",
     "arguments": [
       "ref.getResourceUuid()"
     ],
@@ -887,7 +887,7 @@
   {
     "raw": "either uuid or account or password must be set",
     "en_US": "either uuid or account or password must be set",
-    "zh_CN": "",
+    "zh_CN": "uuid或者账户或者密码需要被设置",
     "arguments": [],
     "line": 39,
     "fileName": "src/main/java/org/zstack/compute/vm/VmMevocoApiInterceptor.java"
@@ -895,7 +895,7 @@
   {
     "raw": "direction must be set in (in, out), but was %s",
     "en_US": "direction must be set in (in, out), but was {0}",
-    "zh_CN": "",
+    "zh_CN": "方向必须设置在(in, out)，但是输入的是{0}",
     "arguments": [
       "msg.getDirection()"
     ],
@@ -905,7 +905,7 @@
   {
     "raw": "outboundBandwidth and inboundBandwidth must be set at lease one.",
     "en_US": "outboundBandwidth and inboundBandwidth must be set at lease one.",
-    "zh_CN": "",
+    "zh_CN": "上行带宽和下行带宽至少有一个需要被设置",
     "arguments": [],
     "line": 53,
     "fileName": "src/main/java/org/zstack/compute/vm/VmMevocoApiInterceptor.java"
@@ -913,7 +913,7 @@
   {
     "raw": "nic id: %s does not exist...",
     "en_US": "nic id: {0} does not exist...",
-    "zh_CN": "",
+    "zh_CN": "网卡id: {0}不存在",
     "arguments": [
       "msg.getUuid()"
     ],
@@ -923,7 +923,7 @@
   {
     "raw": "unsupported host allocation strategy[%s]",
     "en_US": "unsupported host allocation strategy[{0}]",
-    "zh_CN": "",
+    "zh_CN": "不被支持的主机分配策略[{0}]",
     "arguments": [
       "msg.getAllocatorStrategy()"
     ],
@@ -933,7 +933,7 @@
   {
     "raw": "unsupported instance offering type[%s]",
     "en_US": "unsupported instance offering type[{0}]",
-    "zh_CN": "",
+    "zh_CN": "不被支持的计算规格类型[{0}]",
     "arguments": [
       "msg.getType()"
     ],
@@ -943,7 +943,7 @@
   {
     "raw": "cpu num[%s] is less than 1",
     "en_US": "cpu num[{0}] is less than 1",
-    "zh_CN": "",
+    "zh_CN": "cpu数量[{0}]少于1",
     "arguments": [
       "msg.getCpuNum()"
     ],
@@ -953,7 +953,7 @@
   {
     "raw": "memory size[%s bytes] is less than 16M, no modern operating system is likely able to boot with such small memory size",
     "en_US": "memory size[{0} bytes] is less than 16M, no modern operating system is likely able to boot with such small memory size",
-    "zh_CN": "",
+    "zh_CN": "内存大小[{0} bytes]少于16M，没有一个现代操作系统能够在如此小的内存里被引导",
     "arguments": [
       "msg.getMemorySize()"
     ],
@@ -963,7 +963,7 @@
   {
     "raw": "unsupported primary storage allocation strategy[%s]",
     "en_US": "unsupported primary storage allocation strategy[{0}]",
-    "zh_CN": "",
+    "zh_CN": "不被支持的主存储分配策略[{0}]",
     "arguments": [
       "msg.getAllocationStrategy()"
     ],
@@ -973,7 +973,7 @@
   {
     "raw": "the console agent is not connected; it\u0027s mostly like the management node just starts, please wait for the console agent connected.",
     "en_US": "the console agent is not connected; it\u0027s mostly like the management node just starts, please wait for the console agent connected.",
-    "zh_CN": "",
+    "zh_CN": "控制台代理失联，很有可能管理节点刚刚启动，请等待控制台道理的连接",
     "arguments": [],
     "line": 101,
     "fileName": "src/main/java/org/zstack/console/AbstractConsoleProxyBackend.java"
@@ -981,7 +981,7 @@
   {
     "raw": "cannot find host IP of the vm[uuid:%s], is the vm running???",
     "en_US": "cannot find host IP of the vm[uuid:{0}], is the vm running???",
-    "zh_CN": "",
+    "zh_CN": "无法找到vm[uuid:{0}]的主机IP，请确认该vm是否在运行？？？",
     "arguments": [
       "vm.getUuid()"
     ],
@@ -991,7 +991,7 @@
   {
     "raw": "Console is only available when the VM[uuid:%s] is Running, but the current state is %s",
     "en_US": "Console is only available when the VM[uuid:{0}] is Running, but the current state is {1}",
-    "zh_CN": "",
+    "zh_CN": "控制台仅仅当VM[uuid:{0}]处于运行状态才可用，但是现在的状态为{1}",
     "arguments": [
       "msg.getVmInstanceUuid()",
       "state"
@@ -1002,7 +1002,7 @@
   {
     "raw": "unable to check console proxy availability, because %s",
     "en_US": "unable to check console proxy availability, because {0}",
-    "zh_CN": "",
+    "zh_CN": "无法检查控制台代理是否可用，因为{0}",
     "arguments": [
       "ret.getError()"
     ],
@@ -1012,7 +1012,7 @@
   {
     "raw": "invalid management node UUID[%s]",
     "en_US": "invalid management node UUID[{0}]",
-    "zh_CN": "",
+    "zh_CN": "非法的管理节点UUID[{0}]",
     "arguments": [
       "uuid"
     ],
@@ -1022,7 +1022,7 @@
   {
     "raw": "cannot check md5sum of files in the folder[%s].\\nstdout:%s\\nstderr:%s",
     "en_US": "cannot check md5sum of files in the folder[{0}].\\nstdout:{1}\\nstderr:{2}",
-    "zh_CN": "",
+    "zh_CN": "无法检查文件夹[{0}]下文件的md5sum.\\nstdout:{1}\\nstderr:{2}",
     "arguments": [
       "srcFolder",
       "srcRes.getStdout()",
@@ -1034,7 +1034,7 @@
   {
     "raw": "cannot check md5sum of files in the folder[%s] on the host[ip:%s].\\nstdout:%s\\nstderr:%s",
     "en_US": "cannot check md5sum of files in the folder[{0}] on the host[ip:{1}].\\nstdout:{2}\\nstderr:{3}",
-    "zh_CN": "",
+    "zh_CN": "无法检查主机[ip:{1}]的文件夹[{0}]下文件的md5sum.\\nstdout:{2}\\nstderr:{3}",
     "arguments": [
       "dstFolder",
       "hostname",
@@ -1047,7 +1047,7 @@
   {
     "raw": "message is not in corrected JSON mediaType, %s",
     "en_US": "message is not in corrected JSON mediaType, {0}",
-    "zh_CN": "",
+    "zh_CN": "消息是错误的JSON格式，{0}",
     "arguments": [
       "errMsg"
     ],
@@ -1057,7 +1057,7 @@
   {
     "raw": "unable to find GlobalConfig[category:%s, name:%s]",
     "en_US": "unable to find GlobalConfig[category:{0}, name:{1}]",
-    "zh_CN": "",
+    "zh_CN": "无法找到全局变量[category:{0}, name:{1}]",
     "arguments": [
       "msg.getCategory()",
       "msg.getName()"
@@ -1068,7 +1068,7 @@
   {
     "raw": "Unable to find GlobalConfig[category: %s, name: %s]",
     "en_US": "Unable to find GlobalConfig[category: {0}, name: {1}]",
-    "zh_CN": "",
+    "zh_CN": "无法找到全局变量[category:{0}, name:{1}]",
     "arguments": [
       "msg.getCategory()",
       "msg.getName()"
@@ -1079,7 +1079,7 @@
   {
     "raw": "cannot trigger a finished GC job[uuid:%s, name:%s]",
     "en_US": "cannot trigger a finished GC job[uuid:{0}, name:{1}]",
-    "zh_CN": "",
+    "zh_CN": "无法触发一个完成过的GC任务",
     "arguments": [
       "vo.getUuid()",
       "vo.getName()"
@@ -1090,7 +1090,7 @@
   {
     "raw": "not supported processType: %s",
     "en_US": "not supported processType: {0}",
-    "zh_CN": "",
+    "zh_CN": "不被支持的处理类型。",
     "arguments": [
       "processType"
     ],
@@ -1100,7 +1100,7 @@
   {
     "raw": "not supported null uuid: %s",
     "en_US": "not supported null uuid: {0}",
-    "zh_CN": "",
+    "zh_CN": "不被支持的null uuid: {0}",
     "arguments": [
       "uuid"
     ],
@@ -1110,7 +1110,7 @@
   {
     "raw": "failed to post to %s, status code: %s, response body: %s",
     "en_US": "failed to post to {0}, status code: {1}, response body: {2}",
-    "zh_CN": "",
+    "zh_CN": "发送消息到{0}失败，状态码: {1}, 返回: {2}",
     "arguments": [
       "url",
       "rsp.getStatusCode()",
@@ -1122,7 +1122,7 @@
   {
     "raw": "unable to echo %s in %sms",
     "en_US": "unable to echo {0} in {1}ms",
-    "zh_CN": "",
+    "zh_CN": "无法在{1}ms内返回{0}",
     "arguments": [
       "url",
       "timeout"
@@ -1133,7 +1133,7 @@
   {
     "raw": "an operation[%s] fails after retrying %s times with the interval %s seconds",
     "en_US": "an operation[{0}] fails after retrying {1} times with the interval {2} seconds",
-    "zh_CN": "",
+    "zh_CN": "在重试{1}次间隔时间为{2}后操作[{0}]失败",
     "arguments": [
       "__name__",
       "times",
@@ -1145,7 +1145,7 @@
   {
     "raw": "failed to run salt state[%s] on system[%s], failed after %s retries",
     "en_US": "failed to run salt state[{0}] on system[{1}], failed after {2} retries",
-    "zh_CN": "",
+    "zh_CN": "重试{2}次之后，在系统[{1}]上运行加盐状态[{0}]失败",
     "arguments": [
       "stateName",
       "targetIp",
@@ -1157,7 +1157,7 @@
   {
     "raw": "can not enable a Enabled scheduler",
     "en_US": "can not enable a Enabled scheduler",
-    "zh_CN": "",
+    "zh_CN": "无法启用一个已经启用的定时任务",
     "arguments": [],
     "line": 79,
     "fileName": "src/main/java/org/zstack/core/scheduler/SchedulerApiInterceptor.java"
@@ -1165,7 +1165,7 @@
   {
     "raw": "can not disable a Disabled scheduler",
     "en_US": "can not disable a Disabled scheduler",
-    "zh_CN": "",
+    "zh_CN": "不能够停用一个已经停用的定时任务",
     "arguments": [],
     "line": 82,
     "fileName": "src/main/java/org/zstack/core/scheduler/SchedulerApiInterceptor.java"
@@ -1173,7 +1173,7 @@
   {
     "raw": "interval must be positive integer",
     "en_US": "interval must be positive integer",
-    "zh_CN": "",
+    "zh_CN": "间隔时间必须是正整数",
     "arguments": [],
     "line": 98,
     "fileName": "src/main/java/org/zstack/core/scheduler/SchedulerApiInterceptor.java"
@@ -1181,7 +1181,7 @@
   {
     "raw": "interval must be set when use simple scheduler when repeat forever",
     "en_US": "interval must be set when use simple scheduler when repeat forever",
-    "zh_CN": "",
+    "zh_CN": "当简单定时任务永远重复的时，必须设置间隔时间",
     "arguments": [],
     "line": 95,
     "fileName": "src/main/java/org/zstack/core/scheduler/SchedulerApiInterceptor.java"
@@ -1189,7 +1189,7 @@
   {
     "raw": "interval must be set when use simple scheduler when repeat more than once",
     "en_US": "interval must be set when use simple scheduler when repeat more than once",
-    "zh_CN": "",
+    "zh_CN": "当简单定时任务执行超过一次时，必须设置间隔时间",
     "arguments": [],
     "line": 92,
     "fileName": "src/main/java/org/zstack/core/scheduler/SchedulerApiInterceptor.java"
@@ -1197,7 +1197,7 @@
   {
     "raw": "startTime out of range",
     "en_US": "startTime out of range",
-    "zh_CN": "",
+    "zh_CN": "开始时间超出范围",
     "arguments": [],
     "line": 108,
     "fileName": "src/main/java/org/zstack/core/scheduler/SchedulerApiInterceptor.java"
@@ -1205,7 +1205,7 @@
   {
     "raw": "startTime must be positive integer or 0",
     "en_US": "startTime must be positive integer or 0",
-    "zh_CN": "",
+    "zh_CN": "开始时间必须是正整数或者0",
     "arguments": [],
     "line": 104,
     "fileName": "src/main/java/org/zstack/core/scheduler/SchedulerApiInterceptor.java"
@@ -1213,7 +1213,7 @@
   {
     "raw": "startTime must be set when use simple scheduler",
     "en_US": "startTime must be set when use simple scheduler",
-    "zh_CN": "",
+    "zh_CN": "必须设置简单定时任务的开始时间",
     "arguments": [],
     "line": 102,
     "fileName": "src/main/java/org/zstack/core/scheduler/SchedulerApiInterceptor.java"
@@ -1221,7 +1221,7 @@
   {
     "raw": "repeatCount must be positive integer",
     "en_US": "repeatCount must be positive integer",
-    "zh_CN": "",
+    "zh_CN": "重复次数必须为正整数",
     "arguments": [],
     "line": 112,
     "fileName": "src/main/java/org/zstack/core/scheduler/SchedulerApiInterceptor.java"
@@ -1245,7 +1245,7 @@
   {
     "raw": "cron must be set when use cron scheduler",
     "en_US": "cron must be set when use cron scheduler",
-    "zh_CN": "",
+    "zh_CN": "当使用定时器任务时，必须设置cron",
     "arguments": [],
     "line": 118,
     "fileName": "src/main/java/org/zstack/core/scheduler/SchedulerApiInterceptor.java"
@@ -1253,7 +1253,7 @@
   {
     "raw": "cron task must follow format like this : \\\"0 0/3 17-23 * * ?\\\" ",
     "en_US": "cron task must follow format like this : \\\"0 0/3 17-23 * * ?\\\" ",
-    "zh_CN": "",
+    "zh_CN": "定时器任务必须符合以下格式：\\\"0 0/3 17-23 * * ?\\\" ",
     "arguments": [],
     "line": 121,
     "fileName": "src/main/java/org/zstack/core/scheduler/SchedulerApiInterceptor.java"
@@ -1269,7 +1269,7 @@
   {
     "raw": "hosts failed to port scan the failure host[uuid:%s, ip:%s], errors are %s",
     "en_US": "hosts failed to port scan the failure host[uuid:{0}, ip:{1}], errors are {2}",
-    "zh_CN": "",
+    "zh_CN": "扫描物理机失败[uuid:{0}, ip:{1}]，错误原因是 {2}",
     "arguments": [
       "struct.getHostUuid()",
       "struct.getHostIp()",
@@ -1281,7 +1281,7 @@
   {
     "raw": "cannot find the host of the vm[name:%s, uuid:%s], hostUuid is null",
     "en_US": "cannot find the host of the vm[name:{0}, uuid:{1}], hostUuid is null",
-    "zh_CN": "",
+    "zh_CN": "找不到vm[name:{0}, uuid:{1}]的物理机, 因为hostUuid为null",
     "arguments": [
       "self.getName()",
       "self.getUuid()"
@@ -1292,7 +1292,7 @@
   {
     "raw": "no HaHostChecker found, cannot do HA",
     "en_US": "no HaHostChecker found, cannot do HA",
-    "zh_CN": "",
+    "zh_CN": "找不到HaHostChecker，无法执行HA",
     "arguments": [],
     "line": 70,
     "fileName": "src/main/java/org/zstack/ha/HaKvmWorker.java"
@@ -1300,7 +1300,7 @@
   {
     "raw": "the management node fails to scan the host",
     "en_US": "the management node fails to scan the host",
-    "zh_CN": "",
+    "zh_CN": "管理节点扫描物理机失败。",
     "arguments": [],
     "line": 46,
     "fileName": "src/main/java/org/zstack/ha/HaManagementNodeChecker.java"
@@ -1308,7 +1308,7 @@
   {
     "raw": "the value[%s] is lesser than 0",
     "en_US": "the value[{0}] is lesser than 0",
-    "zh_CN": "",
+    "zh_CN": "值[{0}]比0小",
     "arguments": [
       "newValue"
     ],
@@ -1318,7 +1318,7 @@
   {
     "raw": "the user group[uuid:%s] does not belong to the account[uuid:%s]",
     "en_US": "the user group[uuid:{0}] does not belong to the account[uuid:{1}]",
-    "zh_CN": "",
+    "zh_CN": "这个用户组[uuid:{0}]不属于当前账户[uuid:{1}]",
     "arguments": [
       "group.getUuid()",
       "msg.getAccountUuid()"
@@ -1329,7 +1329,7 @@
   {
     "raw": "cannot find Quota[name: %s] for the account[uuid: %s]",
     "en_US": "cannot find Quota[name: {0}] for the account[uuid: {1}]",
-    "zh_CN": "",
+    "zh_CN": "无法为当前账户[uuid: {1}]找到Quota",
     "arguments": [
       "msg.getName()",
       "msg.getIdentityUuid()"
@@ -1340,7 +1340,7 @@
   {
     "raw": "the account[uuid: %s] doesn\u0027t have a resource[uuid: %s]",
     "en_US": "the account[uuid: {0}] doesn\u0027t have a resource[uuid: {1}]",
-    "zh_CN": "",
+    "zh_CN": "账户[uuid: {0}]没有资源[uuid: {1}]",
     "arguments": [
       "vo.getUuid()",
       "ruuid"
@@ -1351,7 +1351,7 @@
   {
     "raw": "the user[uuid:%s] does not belong to the account[uuid:%s]",
     "en_US": "the user[uuid:{0}] does not belong to the account[uuid:{1}]",
-    "zh_CN": "",
+    "zh_CN": "当前用户[uuid:{0}]不属于当前账户[uuid:{1}]",
     "arguments": [
       "user.getUuid()",
       "msg.getAccountUuid()"
@@ -1362,7 +1362,7 @@
   {
     "raw": "cannot find the resource[uuid:%s]; wrong resourceUuid or the resource is admin resource",
     "en_US": "cannot find the resource[uuid:{0}]; wrong resourceUuid or the resource is admin resource",
-    "zh_CN": "",
+    "zh_CN": "无法找到资源[uuid:{0}]：错误的资源uuid或者资源是管理员资源",
     "arguments": [
       "resourceUuid"
     ],
@@ -1372,7 +1372,7 @@
   {
     "raw": "the user specified by the userUuid[%s] does not belong to the current account, and the current account is not an admin account, so it has no permission to check the user\u0027spermissions",
     "en_US": "the user specified by the userUuid[{0}] does not belong to the current account, and the current account is not an admin account, so it has no permission to check the user\u0027spermissions",
-    "zh_CN": "",
+    "zh_CN": "当前通过userUuid获得的user不属于当前账户，而且当前账户不是管理员账户。",
     "arguments": [
       "msg.getUserUuid()"
     ],
