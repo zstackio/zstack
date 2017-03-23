@@ -108,16 +108,12 @@ public class JsonSchemaBuilder {
 
                     if (Collection.class.isAssignableFrom(e.getValue().getClass())) {
                         Collection c = (Collection) e.getValue();
-                        Iterator it = c.iterator();
                         int i = 0;
-                        while (it.hasNext()) {
-                            build(it.next(), new Stack<String>() {
-                                {
-                                    add(String.format("%s[%s]", e.getKey(), i));
-                                }
-                            });
+                        for (Object it : c) {
+                            Stack<String> path = new Stack<>();
+                            path.add(String.format("%s[%s]", e.getKey(), i++));
+                            build(it, path);
                         }
-
                     } else {
                         build(e.getValue(), new Stack<String>() {
                             {
