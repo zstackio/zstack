@@ -29,7 +29,6 @@
     <TestCase class="org.zstack.test.virtualrouter.TestVirtualRouterServiceAttaching"/>
     <TestCase class="org.zstack.test.virtualrouter.TestVirtualRouterOfferingDelete"/>
     <TestCase class="org.zstack.test.virtualrouter.TestVirtualRouterOnIpRangeDelete"/>
-    <TestCase class="org.zstack.test.virtualrouter.TestVirtualRouterReconnect"/>
     <TestCase class="org.zstack.test.virtualrouter.TestVirtualRouterDMZ"/>
     <TestCase class="org.zstack.test.virtualrouter.TestQueryVirtualRouterVm"/>
 	<TestCase class="org.zstack.test.virtualrouter.TestVirtualRouterPing"/>
