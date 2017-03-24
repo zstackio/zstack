@@ -10,6 +10,7 @@
     <TestCase class="org.zstack.test.virtualrouter.TestStartVirtualRouter7"/>
     <TestCase class="org.zstack.test.virtualrouter.TestStartVirtualRouter8"/>
     <TestCase class="org.zstack.test.virtualrouter.TestStartVirtualRouter9"/>
+    <TestCase class="org.zstack.test.virtualrouter.TestVirtualRouterDhcp"/>
 	<TestCase class="org.zstack.test.virtualrouter.TestVirtualRouterDhcpFailure"/>
 	<TestCase class="org.zstack.test.virtualrouter.TestVirtualRouterApplyExistingDhcp"/>
 	<TestCase class="org.zstack.test.virtualrouter.TestVirtualRouterDns"/>
