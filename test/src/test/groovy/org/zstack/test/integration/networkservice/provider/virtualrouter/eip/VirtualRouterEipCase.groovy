@@ -1,11 +1,17 @@
 package org.zstack.test.integration.networkservice.provider.virtualrouter.eip
 
+import org.zstack.core.db.Q
+import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO
+import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO_
+import org.zstack.header.vm.VmNicVO
+import org.zstack.header.vm.VmNicVO_
 import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.eip.EipVO
 import org.zstack.network.service.vip.VipVO
 import org.zstack.sdk.EipInventory
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.VmInstanceInventory
+import org.zstack.sdk.VmNicInventory
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
 import org.zstack.test.integration.networkservice.provider.virtualrouter.VirtualRouterNetworkServiceEnv
 import org.zstack.testlib.EipSpec
@@ -13,6 +19,9 @@ import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.L3NetworkSpec
 import org.zstack.testlib.SubCase
 import org.zstack.testlib.VmSpec
+import org.zstack.utils.CollectionUtils
+import org.zstack.utils.function.Function
+import javax.persistence.Tuple
 
 /**
  * Created by xing5 on 2017/3/7.
@@ -62,14 +71,38 @@ class VirtualRouterEipCase extends SubCase {
         assert vip.useFor == EipConstant.EIP_NETWORK_SERVICE_TYPE
     }
 
+    void testVirtualRouterDHCP() {
+        VmNicInventory defaultNic = CollectionUtils.find(vm.getVmNics(), new Function<VmNicInventory, VmNicInventory>() {
+            VmNicInventory call(VmNicInventory arg) {
+                return arg.getL3NetworkUuid().equals(vm.getDefaultL3NetworkUuid()) ? arg : null
+            }
+        })
+        assert defaultNic != null
+
+        final List<String> l3s = CollectionUtils.transformToList(vm.getVmNics(), new Function<String, VmNicInventory>() {
+            String call(VmNicInventory arg) {
+                return arg.getL3NetworkUuid()
+            }
+        })
+        long count = Q.New(NetworkServiceL3NetworkRefVO.class).select()
+                .eq(NetworkServiceL3NetworkRefVO_.networkServiceType, "DHCP")
+                .in(NetworkServiceL3NetworkRefVO_.l3NetworkUuid, l3s).count()
+        assert count == 1
+
+        Tuple tuple = Q.New(VmNicVO.class).select(VmNicVO_.mac, VmNicVO_.ip).eq(VmNicVO_.uuid, defaultNic.uuid).findTuple()
+        assert defaultNic.mac == tuple.get(0, String.class)
+        assert defaultNic.ip == tuple.get(1, String.class)
+    }
+
     @Override
     void test() {
         env.create {
             vm = (env.specByName("vm") as VmSpec).inventory
             eip = (env.specByName("eip") as EipSpec).inventory
             publicL3 = (env.specByName("pubL3") as L3NetworkSpec).inventory
-
             testDetachEipJustAfterAttachToStoppedVm()
+            testVirtualRouterDHCP()
         }
     }
+
 }
