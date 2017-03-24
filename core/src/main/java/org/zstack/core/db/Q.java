@@ -3,6 +3,7 @@ package org.zstack.core.db;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.Tuple;
 import javax.persistence.metamodel.SingularAttribute;
@@ -17,10 +18,10 @@ public class Q {
     @Autowired
     private DatabaseFacade dbf;
 
-    private SimpleQuery q;
+    private SimpleQueryImpl q;
 
     private Q(Class clz) {
-        q = dbf.createQuery(clz);
+        q = new SimpleQueryImpl(clz);
     }
 
     public Q select(SingularAttribute... attrs) {
@@ -48,36 +49,44 @@ public class Q {
         return this;
     }
 
+    @Transactional
     public boolean isExists() {
-        return q.count() > 0;
+        return q._count() > 0;
     }
 
+    @Transactional
     public Long count() {
-        return q.count();
+        return q._count();
     }
 
+    @Transactional
     public <T> T find() {
-        return (T) q.find();
+        return (T) q._find();
     }
 
+    @Transactional
     public <T> List<T> list() {
-        return q.list();
+        return q._list();
     }
 
+    @Transactional
     public <K> K findValue() {
-        return (K) q.findValue();
+        return (K) q._findValue();
     }
 
+    @Transactional
     public <K> List<K> listValues() {
-        return q.listValue();
+        return q._listValue();
     }
 
+    @Transactional
     public Tuple findTuple() {
-        return q.findTuple();
+        return q._findTuple();
     }
 
+    @Transactional
     public List<Tuple> listTuple() {
-        return q.listTuple();
+        return q._listTuple();
     }
 
     public Q eq(SingularAttribute attr, Object val) {

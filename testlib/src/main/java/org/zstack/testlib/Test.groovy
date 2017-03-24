@@ -327,7 +327,7 @@ abstract class Test implements ApiHelper {
         dir.mkdirs()
 
         def caseTypes = Platform.reflections.getSubTypesOf(Case.class)
-        caseTypes = caseTypes.findAll { it.package.name.startsWith("${this.class.package.name}.") }
+        caseTypes = caseTypes.findAll { it.package.name == this.class.package.name || it.package.name.startsWith("${this.class.package.name}.") }
         caseTypes = caseTypes.sort()
 
         def cases = new File([dir.absolutePath, "cases"].join("/"))
@@ -371,7 +371,7 @@ abstract class Test implements ApiHelper {
                 r.success = false
                 r.error = t.message
 
-                logger.error("a sub case [${c.class}] of suite[${this.class}] fails, ${t.message}", t)
+                logger.error("a sub case [${c.class}] of suite[${this.class}] fails, ${t.message}")
             } finally {
                 def fname = c.class.name.replace(".", "_") + "." + (r.success ? "success" : "failure")
                 def rfile = new File([dir.absolutePath, fname].join("/"))
@@ -423,10 +423,36 @@ abstract class Test implements ApiHelper {
         } as SessionInventory
     }
 
-    protected boolean retryInSecs(int total, int interval=1, Closure c) {
+    private boolean getRetryReturnValue(ret, boolean throwError=false) {
+        boolean judge
+
+        if (ret instanceof Closure) {
+            try {
+                def r = ret()
+                judge = (r != null && r instanceof Boolean) ? r : true
+            } catch (Throwable t) {
+                if (throwError) {
+                    throw t
+                } else {
+                    judge = false
+                }
+            }
+        } else {
+            judge = ret
+        }
+
+        return judge
+    }
+
+    protected boolean retryInSecs(int total=15, int interval=1, Closure c) {
         int count = 0
+
+        def ret = null
+
         while (count < total) {
-            if (c()) {
+            ret = c()
+
+            if (getRetryReturnValue(ret)) {
                 return true
             }
 
@@ -434,13 +460,18 @@ abstract class Test implements ApiHelper {
             count += interval
         }
 
-        return false
+        return getRetryReturnValue(ret, true)
     }
 
     protected boolean retryInMillis(int total, int interval, Closure c) {
         int count = 0
+
+        def ret = null
+
         while (count < total) {
-            if (c()) {
+            ret = c()
+
+            if (getRetryReturnValue(ret)) {
                 return true
             }
 
@@ -448,6 +479,6 @@ abstract class Test implements ApiHelper {
             count += interval
         }
 
-        return false
+        return getRetryReturnValue(ret, true)
     }
 }

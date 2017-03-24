@@ -77,5 +77,10 @@ public class TestEval {
         System.out.println(collection);
 
         Assert.assertTrue(NetworkUtils.isCidrOverlap("192.168.0.1/24", "192.168.1.0/16"));
+
+        Assert.assertTrue(NetworkUtils.isIpv4InCidr("192.168.201.100", "192.168.200.0/16"));
+        Assert.assertFalse(NetworkUtils.isIpv4InCidr("192.168.201.100", "192.168.200.0/24"));
+
+
     }
 }

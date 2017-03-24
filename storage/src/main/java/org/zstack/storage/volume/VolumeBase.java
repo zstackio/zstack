@@ -10,6 +10,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -1055,41 +1056,66 @@ public class VolumeBase implements Volume {
             return new ArrayList<VmInstanceVO>();
         }
 
-        TypedQuery<VmInstanceVO> q = null;
-        String sql;
+        SQL sql = null;
         if (vmUuids == null) {
             // all vms
             if (self.getStatus() == VolumeStatus.Ready) {
-                sql = "select vm from VmInstanceVO vm, PrimaryStorageClusterRefVO ref, VolumeVO vol where vm.state in (:vmStates) and vol.uuid = :volUuid and vm.hypervisorType in (:hvTypes) and vm.clusterUuid = ref.clusterUuid and ref.primaryStorageUuid = vol.primaryStorageUuid group by vm.uuid";
-                q = dbf.getEntityManager().createQuery(sql, VmInstanceVO.class);
-                q.setParameter("volUuid", self.getUuid());
                 List<String> hvTypes = VolumeFormat.valueOf(self.getFormat()).getHypervisorTypesSupportingThisVolumeFormatInString();
-                q.setParameter("hvTypes", hvTypes);
+                sql = SQL.New("select vm " +
+                        "from VmInstanceVO vm, PrimaryStorageClusterRefVO ref, VolumeVO vol " +
+                        "where vm.state in (:vmStates) " +
+                        "and vol.uuid = :volUuid " +
+                        "and vm.hypervisorType in (:hvTypes) " +
+                        "and vm.clusterUuid = ref.clusterUuid " +
+                        "and ref.primaryStorageUuid = vol.primaryStorageUuid " +
+                        "group by vm.uuid")
+                        .param("volUuid", self.getUuid())
+                        .param("hvTypes", hvTypes);
             } else if (self.getStatus() == VolumeStatus.NotInstantiated) {
-                sql = "select vm from VmInstanceVO vm where vm.state in (:vmStates) group by vm.uuid";
-                q = dbf.getEntityManager().createQuery(sql, VmInstanceVO.class);
+                sql = SQL.New("select vm " +
+                        "from VmInstanceVO vm,PrimaryStorageClusterRefVO ref,PrimaryStorageEO ps " +
+                        "where vm.state in (:vmStates) " +
+                        "and vm.clusterUuid = ref.clusterUuid " +
+                        "and ref.primaryStorageUuid = ps.uuid " +
+                        "and ps.state in (:psState) " +
+                        "group by vm.uuid")
+                        .param("psState",PrimaryStorageState.Enabled);
             } else {
                 DebugUtils.Assert(false, String.format("should not reach here, volume[uuid:%s]", self.getUuid()));
             }
         } else {
             if (self.getStatus() == VolumeStatus.Ready) {
-                sql = "select vm from VmInstanceVO vm, PrimaryStorageClusterRefVO ref, VolumeVO vol where vm.uuid in (:vmUuids) and vm.state in (:vmStates) and vol.uuid = :volUuid and vm.hypervisorType in (:hvTypes) and vm.clusterUuid = ref.clusterUuid and ref.primaryStorageUuid = vol.primaryStorageUuid group by vm.uuid";
-                q = dbf.getEntityManager().createQuery(sql, VmInstanceVO.class);
-                q.setParameter("volUuid", self.getUuid());
                 List<String> hvTypes = VolumeFormat.valueOf(self.getFormat()).getHypervisorTypesSupportingThisVolumeFormatInString();
-                q.setParameter("hvTypes", hvTypes);
+                sql = SQL.New("select vm "+
+                        "from VmInstanceVO vm, PrimaryStorageClusterRefVO ref, VolumeVO vol " +
+                        "where vm.uuid in (:vmUuids) " +
+                        "and vm.state in (:vmStates) " +
+                        "and vol.uuid = :volUuid " +
+                        "and vm.hypervisorType in (:hvTypes) " +
+                        "and vm.clusterUuid = ref.clusterUuid " +
+                        "and ref.primaryStorageUuid = vol.primaryStorageUuid " +
+                        "group by vm.uuid")
+                        .param("volUuid", self.getUuid())
+                        .param("hvTypes", hvTypes);
             } else if (self.getStatus() == VolumeStatus.NotInstantiated) {
-                sql = "select vm from VmInstanceVO vm where vm.uuid in (:vmUuids) and vm.state in (:vmStates) group by vm.uuid";
-                q = dbf.getEntityManager().createQuery(sql, VmInstanceVO.class);
+                sql = SQL.New("select vm " +
+                        "from VmInstanceVO vm,PrimaryStorageClusterRefVO ref,PrimaryStorageEO ps " +
+                        "where vm.uuid in (:vmUuids) " +
+                        "and vm.state in (:vmStates) " +
+                        "and vm.clusterUuid = ref.clusterUuid " +
+                        "and ref.primaryStorageUuid = ps.uuid " +
+                        "and ps.state in (:psState) " +
+                        "group by vm.uuid")
+                        .param("psState",PrimaryStorageState.Enabled);
             } else {
                 DebugUtils.Assert(false, String.format("should not reach here, volume[uuid:%s]", self.getUuid()));
             }
 
-            q.setParameter("vmUuids", vmUuids);
+            sql.param("vmUuids", vmUuids);
         }
 
-        q.setParameter("vmStates", Arrays.asList(VmInstanceState.Running, VmInstanceState.Stopped));
-        List<VmInstanceVO> vms = q.getResultList();
+        sql.param("vmStates", Arrays.asList(VmInstanceState.Running, VmInstanceState.Stopped));
+        List<VmInstanceVO> vms = sql.list();
         if (vms.isEmpty()) {
             return vms;
         }

@@ -10,7 +10,6 @@
     <TestCase class="org.zstack.test.virtualrouter.TestStartVirtualRouter7"/>
     <TestCase class="org.zstack.test.virtualrouter.TestStartVirtualRouter8"/>
     <TestCase class="org.zstack.test.virtualrouter.TestStartVirtualRouter9"/>
-    <TestCase class="org.zstack.test.virtualrouter.TestVirtualRouterDhcp"/>
 	<TestCase class="org.zstack.test.virtualrouter.TestVirtualRouterDhcpFailure"/>
 	<TestCase class="org.zstack.test.virtualrouter.TestVirtualRouterApplyExistingDhcp"/>
 	<TestCase class="org.zstack.test.virtualrouter.TestVirtualRouterDns"/>
@@ -34,7 +33,6 @@
 	<TestCase class="org.zstack.test.virtualrouter.TestVirtualRouterPing"/>
 	<TestCase class="org.zstack.test.virtualrouter.TestVirtualRouterPing1"/>
 	<TestCase class="org.zstack.test.virtualrouter.TestVirtualRouterPing2"/>
-	<TestCase class="org.zstack.test.virtualrouter.TestVirtualRouterPing3"/>
 	<TestCase class="org.zstack.test.virtualrouter.TestPolicyForVirtualRouterOffering"/>
 	<TestCase class="org.zstack.test.virtualrouter.TestUpdateVirtualRouterOffering"/>
 	<TestCase class="org.zstack.test.virtualrouter.TestAddVirtualRouterOffering1"/>

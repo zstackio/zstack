@@ -18,22 +18,24 @@ public abstract class AbstractAction {
 
     abstract Map<String, Parameter> getParameterMap();
 
-    private synchronized void initializeParametersIfNot() {
-        if (getParameterMap().isEmpty()) {
-            List<Field> fields = getAllFields();
+    private void initializeParametersIfNot() {
+        synchronized (getParameterMap()) {
+            if (getParameterMap().isEmpty()) {
+                List<Field> fields = getAllFields();
 
-            for (Field f : fields) {
-                Param at = f.getAnnotation(Param.class);
-                if (at == null) {
-                    continue;
+                for (Field f : fields) {
+                    Param at = f.getAnnotation(Param.class);
+                    if (at == null) {
+                        continue;
+                    }
+
+                    Parameter p = new Parameter();
+                    p.annotation = at;
+                    p.field = f;
+                    p.field.setAccessible(true);
+
+                    getParameterMap().put(f.getName(), p);
                 }
-
-                Parameter p = new Parameter();
-                p.annotation = at;
-                p.field = f;
-                p.field.setAccessible(true);
-
-                getParameterMap().put(f.getName(), p);
             }
         }
     }
@@ -96,6 +98,14 @@ public abstract class AbstractAction {
                     if (str.length() > at.maxLength()) {
                         throw new ApiException(String.format("filed[%s] exceeds the max length[%s chars] of string",
                                 p.field.getName(), at.maxLength()));
+                    }
+                }
+
+                if (value != null && at.minLength() != 0 && (value instanceof String)) {
+                    String str = (String) value;
+                    if (str.length() < at.minLength()) {
+                        throw new ApiException(String.format("filed[%s] less than the min length[%s chars] of string",
+                                p.field.getName(), at.minLength()));
                     }
                 }
 
