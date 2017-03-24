@@ -41,7 +41,6 @@ ALTER TABLE `zstack`.`SharedResourceVO` DROP INDEX `ownerAccountUuid`;
 ALTER TABLE `zstack`.`SharedResourceVO` ADD CONSTRAINT fkSharedResourceVOAccountVO FOREIGN KEY (ownerAccountUuid) REFERENCES AccountVO (uuid) ON DELETE CASCADE;
 ALTER TABLE `zstack`.`SharedResourceVO` ADD UNIQUE INDEX(`ownerAccountUuid`,`receiverAccountUuid`,`resourceUuid`,`toPublic`);
 
-
 CREATE TABLE  `zstack`.`CephPrimaryStoragePoolVO` (
     `uuid` varchar(32) NOT NULL UNIQUE,
     `primaryStorageUuid` varchar(32) NOT NULL,
