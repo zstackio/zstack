@@ -371,7 +371,7 @@ abstract class Test implements ApiHelper {
                 r.success = false
                 r.error = t.message
 
-                logger.error("a sub case [${c.class}] of suite[${this.class}] fails, ${t.message}", t)
+                logger.error("a sub case [${c.class}] of suite[${this.class}] fails, ${t.message}")
             } finally {
                 def fname = c.class.name.replace(".", "_") + "." + (r.success ? "success" : "failure")
                 def rfile = new File([dir.absolutePath, fname].join("/"))
@@ -444,7 +444,7 @@ abstract class Test implements ApiHelper {
         return judge
     }
 
-    protected boolean retryInSecs(int total, int interval=1, Closure c) {
+    protected boolean retryInSecs(int total=15, int interval=1, Closure c) {
         int count = 0
 
         def ret = null

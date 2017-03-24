@@ -56,7 +56,7 @@ class FlatNetworkGCCase extends SubCase {
 
         GarbageCollectorInventory inv = null
 
-        retryInSecs(5) {
+        retryInSecs {
              inv = queryGCJob {
                 conditions=["context~=%${eip.guestIp}%".toString()]
             }[0]
@@ -76,7 +76,7 @@ class FlatNetworkGCCase extends SubCase {
             uuid = host.uuid
         }
 
-        retryInSecs(5) {
+        retryInSecs {
             inv = queryGCJob {
                 conditions=["context~=%${eip.guestIp}%".toString()]
             }[0]
@@ -104,7 +104,7 @@ class FlatNetworkGCCase extends SubCase {
 
         GarbageCollectorInventory inv
 
-        retryInSecs(5) {
+        retryInSecs {
              inv = queryGCJob {
                 conditions=["context~=%${eip.guestIp}%".toString()]
             }[0]
@@ -122,7 +122,7 @@ class FlatNetworkGCCase extends SubCase {
             uuid = host.uuid
         }
 
-        retryInSecs(5) {
+        retryInSecs {
             inv = queryGCJob {
                 conditions=["context~=%${eip.guestIp}%".toString()]
             }[0]
@@ -150,7 +150,7 @@ class FlatNetworkGCCase extends SubCase {
         }
 
         GarbageCollectorInventory inv
-        retryInSecs(5) {
+        retryInSecs {
              inv = queryGCJob {
                 conditions=["context~=%$bridgeName%".toString()]
             }[0]
@@ -168,7 +168,7 @@ class FlatNetworkGCCase extends SubCase {
             uuid = host.uuid
         }
 
-        retryInSecs(5) {
+        retryInSecs {
             inv = queryGCJob {
                 conditions=["context~=%$bridgeName%".toString()]
             }[0]
@@ -198,7 +198,7 @@ class FlatNetworkGCCase extends SubCase {
 
         GarbageCollectorInventory inv
 
-        retryInSecs(5) {
+        retryInSecs {
              inv = queryGCJob {
                 conditions=["context~=%$bridgeName%".toString()]
             }[0]
@@ -218,7 +218,7 @@ class FlatNetworkGCCase extends SubCase {
             uuid = host.uuid
         }
 
-        retryInSecs(5) {
+        retryInSecs {
             inv = queryGCJob {
                 conditions=["context~=%$bridgeName%".toString()]
             }[0]

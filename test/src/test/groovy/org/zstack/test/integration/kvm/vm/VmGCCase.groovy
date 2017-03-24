@@ -90,7 +90,7 @@ class VmGCCase extends SubCase {
 
         GarbageCollectorInventory inv = null
 
-        retryInSecs(5) {
+        retryInSecs {
             inv = queryGCJob {
                 conditions=["context~=%${vm.uuid}%"]
             }[0]
@@ -116,7 +116,7 @@ class VmGCCase extends SubCase {
 
         GarbageCollectorInventory inv = null
 
-        retryInSecs(5) {
+        retryInSecs {
             inv = queryGCJob {
                 conditions=["context~=%${vm.uuid}%"]
             }[0]
@@ -149,7 +149,7 @@ class VmGCCase extends SubCase {
 
         GarbageCollectorInventory inv = null
 
-        retryInSecs(5) {
+        retryInSecs {
             inv = queryGCJob {
                 conditions=["context~=%${vm.uuid}%"]
             }[0]
@@ -229,7 +229,7 @@ class VmGCCase extends SubCase {
 
         GarbageCollectorInventory inv = null
 
-        retryInSecs(5) {
+        retryInSecs {
             inv = queryGCJob {
                 conditions=["context~=%${vm.uuid}%"]
             }[0]
@@ -260,7 +260,7 @@ class VmGCCase extends SubCase {
 
         GarbageCollectorInventory inv = null
 
-        retryInSecs(5) {
+        retryInSecs {
             // the GC job is cancelled
             inv = queryGCJob {
                 conditions=["context~=%${vm.uuid}%"]
@@ -292,7 +292,7 @@ class VmGCCase extends SubCase {
         }
 
         GarbageCollectorInventory inv = null
-        retryInSecs(5) {
+        retryInSecs {
             inv = queryGCJob {
                 conditions=["context~=%${vm.uuid}%"]
             }[0]

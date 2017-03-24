@@ -63,7 +63,7 @@ class NfsGCCase extends SubCase {
 
         GarbageCollectorInventory inv = null
 
-        retryInSecs(5) {
+        retryInSecs {
             inv = queryGCJob {
                 conditions = ["context~=%${vol.getUuid()}%".toString()]
             }[0]
@@ -83,7 +83,7 @@ class NfsGCCase extends SubCase {
             return rsp
         }
 
-        retryInSecs(5) {
+        retryInSecs {
             inv = queryGCJob {
                 conditions = ["context~=%${vol.getUuid()}%".toString()]
             }[0]
@@ -117,7 +117,7 @@ class NfsGCCase extends SubCase {
         }
 
         GarbageCollectorInventory inv = null
-        retryInSecs(5) {
+        retryInSecs {
             inv = queryGCJob {
                 conditions = ["context~=%${sp.getUuid()}%".toString()]
             }[0]
@@ -137,7 +137,7 @@ class NfsGCCase extends SubCase {
             return rsp
         }
 
-        retryInSecs(5) {
+        retryInSecs {
             inv = queryGCJob {
                 conditions = ["context~=%${sp.getUuid()}%".toString()]
             }[0]
@@ -175,7 +175,7 @@ class NfsGCCase extends SubCase {
 
         GarbageCollectorInventory spGC = null
         GarbageCollectorInventory volumeGC = null
-        retryInSecs(5)  {
+        retryInSecs {
             spGC = queryGCJob {
                 conditions = ["context~=%${sp.getUuid()}%".toString()]
             }[0]
@@ -203,7 +203,7 @@ class NfsGCCase extends SubCase {
             uuid = spGC.uuid
         }
 
-        retryInSecs(5) {
+        retryInSecs {
             // trigger GC cause it's cancelled
             spGC = queryGCJob {
                 conditions = ["context~=%${sp.getUuid()}%".toString()]
@@ -218,7 +218,7 @@ class NfsGCCase extends SubCase {
             uuid = volumeGC.uuid
         }
 
-        retryInSecs(5) {
+        retryInSecs {
             // trigger GC cause it's cancelled
             volumeGC = queryGCJob {
                 conditions = ["context~=%${vol.getUuid()}%".toString(), "runnerClass=${NfsDeleteVolumeGC.class.name}".toString()]

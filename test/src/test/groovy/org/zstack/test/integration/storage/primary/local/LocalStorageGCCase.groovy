@@ -60,7 +60,7 @@ class LocalStorageGCCase extends SubCase {
             uuid = vol.uuid
         }
 
-        retryInSecs(5) {
+        retryInSecs {
             GarbageCollectorInventory inv = queryGCJob {
                 conditions = ["context~=%${vol.uuid}%".toString()]
             }[0]
@@ -79,11 +79,11 @@ class LocalStorageGCCase extends SubCase {
             uuid = host.uuid
         }
 
-        retryInSecs(5) {
+        retryInSecs {
             return { assert called }
         }
 
-        retryInSecs(5) {
+        retryInSecs {
             GarbageCollectorInventory inv = queryGCJob {
                 conditions = ["context~=%${vol.uuid}%".toString()]
             }[0]
@@ -108,7 +108,7 @@ class LocalStorageGCCase extends SubCase {
             uuid = vol.uuid
         }
 
-        retryInSecs(5) {
+        retryInSecs {
             GarbageCollectorInventory inv = queryGCJob {
                 conditions = ["context~=%${vol.uuid}%".toString()]
             }[0]
@@ -120,7 +120,7 @@ class LocalStorageGCCase extends SubCase {
             uuid = host.uuid
         }
 
-        retryInSecs(5) {
+        retryInSecs {
             GarbageCollectorInventory inv = queryGCJob {
                 conditions = ["context~=%${vol.uuid}%".toString()]
             }[0]
@@ -145,7 +145,7 @@ class LocalStorageGCCase extends SubCase {
             uuid = vol.uuid
         }
 
-        retryInSecs(5) {
+        retryInSecs {
             GarbageCollectorInventory inv = queryGCJob {
                 conditions = ["context~=%${vol.uuid}%".toString()]
             }[0]
@@ -162,7 +162,7 @@ class LocalStorageGCCase extends SubCase {
             uuid = local.uuid
         }
 
-        retryInSecs(5) {
+        retryInSecs {
             GarbageCollectorInventory inv = queryGCJob {
                 conditions = ["context~=%${vol.uuid}%".toString()]
             }[0]
