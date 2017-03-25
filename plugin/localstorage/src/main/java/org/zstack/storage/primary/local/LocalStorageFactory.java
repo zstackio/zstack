@@ -587,22 +587,6 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
             }
         });
 
-        sql = "select ref.volumeUuid" +
-                " from ShareableVolumeVmInstanceRefVO ref" +
-                " where ref.volumeUuid in (:uuids)" +
-                " and ref.vmInstanceUuid = :vmuuid";
-        q = dbf.getEntityManager().createQuery(sql, String.class);
-        q.setParameter("uuids", volUuids);
-        q.setParameter("vmuuid", vm.getUuid());
-        final List<String> attachedShareable = q.getResultList();
-
-        candidates = CollectionUtils.transformToList(candidates, new Function<VolumeVO, VolumeVO>() {
-            @Override
-            public VolumeVO call(VolumeVO arg) {
-                return attachedShareable.contains(arg.getUuid()) ? null : arg;
-            }
-        });
-
         candidates.addAll(uninstantiatedVolumes);
 
         return candidates;
