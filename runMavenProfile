@@ -45,6 +45,21 @@ i18n() {
     ./build/zsi18n  -j conf/i18n.json -d conf/i18n/
 }
 
+foreignkey() {
+    set -u
+    #if [ -d premium/test-premium ]; then
+    #    cd premium/test-premium
+    #else
+    #	cd test
+    #fi
+
+    cd test
+    mvn test -Dtest=TestGenerateSqlForeignKey
+    cd - > /dev/null
+
+    echo "see ~/zstack-sql/foreignKeys.sql"
+}
+
 sdk() {
     set -u
     rm -rf ~/zstack-sdk/java
@@ -85,6 +100,8 @@ run_profile() {
 	i18njson
     elif test x$1 = x'i18n'; then
 	i18n
+    elif test x$1 = x'foreignkey'; then
+	foreignkey
     else
         mvn -pl build -P $1 exec:exec -D$1
     fi

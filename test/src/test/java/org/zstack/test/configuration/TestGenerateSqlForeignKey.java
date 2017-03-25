@@ -12,7 +12,7 @@ import org.zstack.test.image.TestAddImage;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-public class TestGenerateSqlForeignKey {
+public class TestGenerateSqlForeignKey  {
     CLogger logger = Utils.getLogger(TestAddImage.class);
     Api api;
     ComponentLoader loader;
