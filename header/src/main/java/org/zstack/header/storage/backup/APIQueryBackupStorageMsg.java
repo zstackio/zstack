@@ -13,6 +13,7 @@ import java.util.List;
 @AutoQuery(replyClass = APIQueryBackupStorageReply.class, inventoryClass = BackupStorageInventory.class)
 @RestRequest(
         path = "/backup-storage",
+        optionalPaths = {"/backup-storage/{uuid}"},
         method = HttpMethod.GET,
         responseClass = APIQueryBackupStorageReply.class
 )
