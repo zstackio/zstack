@@ -1,4 +1,4 @@
-package org.zstack.rest;
+package org.zstack.header.message;
 
 import org.apache.commons.lang.StringUtils;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -72,13 +72,12 @@ public class JsonSchemaBuilder {
                 }
 
                 // don't record standard JRE classes
-                continue;
+
+            } else if (value.getClass().getCanonicalName().startsWith("org.zstack")) {
+                paths.push(f.getName());
+                build(value, paths);
+                paths.pop();
             }
-
-
-            paths.push(f.getName());
-            build(value, paths);
-            paths.pop();
         }
 
         if (!paths.isEmpty()) {

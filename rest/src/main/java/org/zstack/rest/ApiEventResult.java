@@ -3,6 +3,7 @@ package org.zstack.rest;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.message.JsonSchemaBuilder;
 import org.zstack.utils.gson.JSONObjectUtil;
 
 import java.util.*;

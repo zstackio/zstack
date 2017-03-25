@@ -6,7 +6,6 @@ import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
 import com.rabbitmq.client.impl.recovery.RecoveryAwareAMQConnection;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.ThreadContext;
-import org.mvel2.MVEL;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.Platform;
@@ -36,8 +35,7 @@ import org.zstack.utils.gson.GsonTypeCoder;
 import org.zstack.utils.gson.GsonUtil;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
-
-import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.*;
 
 import javax.management.MXBean;
 import java.io.IOException;
@@ -49,6 +47,8 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.zstack.utils.BeanUtils.getProperty;
+import static org.zstack.utils.BeanUtils.setProperty;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 import static org.zstack.utils.ExceptionDSL.throwableSafe;
@@ -86,7 +86,6 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
     private boolean trackerClose = false;
     private Map<String, MessageStatistic> statistics = new HashMap<String, MessageStatistic>();
 
-    private Map<Class, Map<String, Serializable>> mvelExpressions = new ConcurrentHashMap<Class, Map<String, Serializable>>();
     private Map<Class, List<ReplyMessagePreSendingExtensionPoint>> replyMessageMarshaller = new ConcurrentHashMap<Class, List<ReplyMessagePreSendingExtensionPoint>>();
 
     private Map<Class, List<BeforeDeliveryMessageInterceptor>> beforeDeliveryMessageInterceptors = new HashMap<Class, List<BeforeDeliveryMessageInterceptor>>();
@@ -539,7 +538,11 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
         }
 
         private void buildSchema(Message msg) {
-            msg.putHeaderEntry("schema", MessageJsonSchemaBuilder.buildSchema(msg));
+            try {
+                msg.putHeaderEntry("schema", new JsonSchemaBuilder(msg).build());
+            } catch (Exception e) {
+                throw new CloudRuntimeException(e);
+            }
         }
 
         public void send(final Message msg, boolean makeQueueName) {
@@ -602,61 +605,28 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
             }
         }
 
-        private Serializable getMVELExpression(Message msg, String express, String prefix) {
-            Map<String, Serializable> exps = mvelExpressions.get(msg.getClass());
-            if (exps == null) {
-                exps = new ConcurrentHashMap<String, Serializable>();
-                mvelExpressions.put(msg.getClass(), exps);
-            }
-
-            String key = String.format("%s:%s", express, prefix);
-            Serializable exp = exps.get(key);
-            if (exp == null) {
-                if (prefix.equals("msg:get")) {
-                    exp = MVEL.compileGetExpression(express);
-                } else if (prefix.equals("raw:get")) {
-                    exp = MVEL.compileGetExpression(express);
-                } else if (prefix.equals("msg:set")) {
-                    exp = MVEL.compileSetExpression(express);
-                } else {
-                    throw new CloudRuntimeException(String.format("unknown prefix[%s]", prefix));
-                }
-
-                exps.put(key, exp);
-            }
-            return exp;
-        }
-
         private void restoreFromSchema(Message msg, byte[] binary) throws ClassNotFoundException {
-            Map<String, List<String>> schema = msg.getHeaderEntry("schema");
+            Map<String, String> schema = msg.getHeaderEntry("schema");
             if (schema == null) {
                 return;
             }
 
             Map raw = JSONObjectUtil.toObject(new String(binary), LinkedHashMap.class);
             raw = (Map) raw.values().iterator().next();
-            for (Map.Entry<String, List<String>> e : schema.entrySet()) {
-                String rawClassName = e.getKey();
-                List<String> paths = e.getValue();
+            List<String> paths = new ArrayList<>();
+            paths.addAll(schema.keySet());
+            paths.sort(Comparator.reverseOrder());
 
-                for (String path : paths) {
-                    Serializable exp = getMVELExpression(msg, path, "msg:get");
-                    Object obj = MVEL.executeExpression(exp, msg);
-                    if (obj.getClass().getName().equals(rawClassName)) {
-                        continue;
-                    }
+            for (String p : paths) {
+                Object dst = getProperty(msg, p);
+                String type = schema.get(p);
 
-                    exp = getMVELExpression(msg, path, "raw:get");
-                    Object rawData = MVEL.executeExpression(exp, raw);
-                    Class rawClass = Class.forName(rawClassName);
-                    Object newValue = JSONObjectUtil.rehashObject(rawData, rawClass);
-                    exp = getMVELExpression(msg, path, "msg:set");
-                    // Note MVEL context is
-                    // not meant for write but rather for read. Use a Map context to
-                    // force MVEL to assign newValue on msg, not to create a new variable
-                    // in vars map
-                    MVEL.executeSetExpression(exp, msg, newValue);
+                if (dst.getClass().getName().equals(type)) {
+                    continue;
                 }
+
+                Class clz = Class.forName(type);
+                setProperty(msg, p, JSONObjectUtil.rehashObject(getProperty(raw, p), clz));
             }
         }
 
