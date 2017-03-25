@@ -45,18 +45,22 @@ class ApiHelperGenerator {
         c()
         $queryConditionManipulate
 
-        if (a.apiId == null) {
-            a.apiId = Platform.uuid
-        }
-
-        def tracker = new ApiPathTracker(a.apiId)
-        def out = errorOut(a.call())
-        def path = tracker.getApiPath()
-        if (!path.isEmpty()) {
-            Test.apiPaths[a.class.name] = path.join(" --->\\n")
-        }
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
     
-        return out
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
     }
 
 """)
