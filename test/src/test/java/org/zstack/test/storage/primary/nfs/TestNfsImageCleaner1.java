@@ -2,6 +2,7 @@ package org.zstack.test.storage.primary.nfs;
 
 import junit.framework.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.zstack.compute.vm.VmGlobalConfig;
 import org.zstack.core.cloudbus.CloudBus;
@@ -40,6 +41,9 @@ import java.util.concurrent.TimeUnit;
  * confirm the image cache of the nfs get cleaned up
  * confirm the image cache of the nfs1 doesn't get cleaned up
  */
+@Ignore
+@Deprecated
+// New Groovy Case : CleanImageCacheOnPrimaryStorageTest
 public class TestNfsImageCleaner1 {
     CLogger logger = Utils.getLogger(TestSftpBackupStorageDeleteImage2.class);
     Deployer deployer;

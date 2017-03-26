@@ -2916,8 +2916,9 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 
+    // switch vm default nic if vm current default nic is input parm nic
     protected void selectDefaultL3(VmNicInventory nic) {
-        if (self.getDefaultL3NetworkUuid() != null && self.getDefaultL3NetworkUuid().equals(nic.getL3NetworkUuid())) {
+        if (self.getDefaultL3NetworkUuid() != null && !self.getDefaultL3NetworkUuid().equals(nic.getL3NetworkUuid())) {
             return;
         }
 
