@@ -19,7 +19,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIDeleteUserGroupEvent.class
 )
 public class APIDeleteUserGroupMsg extends APIDeleteMessage implements AccountMessage {
-    @APIParam(resourceType = UserGroupVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = UserGroupVO.class, checkAccount = true, operationTarget = true, successIfResourceNotExisting = true)
     private String uuid;
 
     @Override
