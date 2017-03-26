@@ -5,7 +5,7 @@ import org.zstack.header.message.MessageReply;
 /**
  * Created by xing5 on 2016/11/19.
  */
-class AcquireVipReply extends MessageReply {
+public class AcquireVipReply extends MessageReply {
     private VipInventory vip;
 
     public VipInventory getVip() {

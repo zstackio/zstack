@@ -5,9 +5,10 @@ import org.zstack.header.message.NeedReplyMessage;
 /**
  * Created by xing5 on 2016/11/30.
  */
-class ModifyVipAttributesMsg extends NeedReplyMessage implements VipMessage {
+public class ModifyVipAttributesMsg extends NeedReplyMessage implements VipMessage {
     private String vipUuid;
     private ModifyVipAttributesStruct struct;
+
 
     public ModifyVipAttributesMsg() {
         struct = new ModifyVipAttributesStruct();

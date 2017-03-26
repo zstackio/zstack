@@ -5,7 +5,7 @@ import org.zstack.header.message.NeedReplyMessage;
 /**
  * Created by xing5 on 2016/12/2.
  */
-class DeleteVipFromBackendMsg extends NeedReplyMessage implements VipMessage {
+public class DeleteVipFromBackendMsg extends NeedReplyMessage implements VipMessage {
     private String vipUuid;
 
     @Override
