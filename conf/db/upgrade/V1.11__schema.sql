@@ -356,6 +356,12 @@ CREATE TABLE `HybridAccountVO` (
 
 SET FOREIGN_KEY_CHECKS = 1;
 
+CREATE UNIQUE INDEX uniqAccountUuid on  HybridAccountVO(accountUuid);
+ALTER TABLE HybridAccountVO drop index accountUuid;
+
+CREATE UNIQUE INDEX uniqUserUuid on  HybridAccountVO(userUuid);
+ALTER TABLE HybridAccountVO drop index userUuid;
+
 # Foreign keys for table DataCenterVO
 
 ALTER TABLE DataCenterVO ADD CONSTRAINT fkDataCenterVOEcsVpcVO FOREIGN KEY (defaultVpcUuid) REFERENCES EcsVpcVO (uuid) ON DELETE SET NULL;
