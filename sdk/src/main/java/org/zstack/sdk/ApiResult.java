@@ -2,7 +2,12 @@ package org.zstack.sdk;
 
 import org.apache.commons.beanutils.PropertyUtils;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static java.util.Arrays.asList;
 
 /**
  * Created by xing5 on 2016/12/9.
@@ -23,6 +28,62 @@ public class ApiResult {
         this.resultString = resultString;
     }
 
+    private static Object getProperty(Object bean, Iterator<String> it) throws IllegalAccessException, NoSuchMethodException, InvocationTargetException {
+        String path = it.next();
+        if (bean instanceof Map) {
+            Pattern re = Pattern.compile("(.*)\\[(\\d+)]");
+            Matcher m = re.matcher(path);
+            if (m.find()) {
+                path = String.format("(%s)[%s]", m.group(1), m.group(2));
+            }
+        }
+
+        Object val = PropertyUtils.getProperty(bean, path);
+
+        if (it.hasNext()) {
+            return getProperty(val, it);
+        } else {
+            return val;
+        }
+    }
+
+    public static Object getProperty(Object bean, String path) {
+        List<String> paths = asList(path.split("\\."));
+        try {
+            return getProperty(bean, paths.iterator());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void setProperty(Object bean, Iterator<String> it, String fieldName, Object val) throws IllegalAccessException, NoSuchMethodException, InvocationTargetException {
+        if (it.hasNext()) {
+            bean = getProperty(bean, it);
+        }
+
+        if (bean instanceof Map) {
+            Pattern re = Pattern.compile("(.*)\\[(\\d+)]");
+            Matcher m = re.matcher(fieldName);
+            if (m.find()) {
+                fieldName = String.format("(%s)[%s]", m.group(1), m.group(2));
+            }
+        }
+
+        PropertyUtils.setProperty(bean, fieldName, val);
+    }
+
+    public static void setProperty(Object bean, String path, Object val) {
+        List<String> paths = asList(path.split("\\."));
+        String fieldName = paths.get(paths.size()-1);
+        paths = paths.subList(0, paths.size()-1);
+
+        try {
+            setProperty(bean, paths.iterator(), fieldName, val);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     <T> T getResult(Class<T> clz) {
         if (resultString == null || resultString.isEmpty()) {
             return null;
@@ -34,14 +95,10 @@ public class ApiResult {
             return ret;
         }
 
-        Map schema = (Map) m.get("schema");
+        Map<String, String> schema = (Map) m.get("schema");
         try {
-            List<String> paths = new ArrayList();
-            paths.addAll(schema.keySet());
-            Collections.sort(paths);
-
-            for (String path : paths) {
-                String src = (String) schema.get(path);
+            for (String path : schema.keySet()) {
+                String src = schema.get(path);
                 String dst = SourceClassMap.srcToDstMapping.get(src);
 
                 if (dst == null) {
@@ -49,40 +106,16 @@ public class ApiResult {
                     continue;
                 }
 
-                Object bean = PropertyUtils.getProperty(ret, path);
+                Object bean = getProperty(ret, path);
                 if (bean.getClass().getName().equals(dst)) {
                     // not an inherent object
                     continue;
                 }
 
                 Class dstClz = Class.forName(dst);
-
-                Object source;
-                if (path.contains("[")) {
-                    // there is a list in the path,
-                    // to get list in a map, we must use the path like
-                    // (inventories)[0]
-                    String[] pps = path.split("\\.");
-                    List<String> lst = new ArrayList<>(pps.length);
-                    for (String pp : pps) {
-                        if (!pp.contains("[")) {
-                            lst.add(pp);
-                            continue;
-                        }
-
-                        String[] word = pp.split("\\[");
-                        lst.add(String.format("(%s)[%s", word[0], word[1]));
-                    }
-
-                    String nPath = ZSClient.join(lst, ".");
-
-                    source = PropertyUtils.getProperty(m, nPath);
-                } else {
-                    source = PropertyUtils.getProperty(m, path);
-                }
-
+                Object source = getProperty(m, path);
                 Object dstBean = ZSClient.gson.fromJson(ZSClient.gson.toJson(source), dstClz);
-                PropertyUtils.setProperty(ret, path, dstBean);
+                setProperty(ret, path, dstBean);
             }
 
             return ret;

@@ -618,7 +618,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
             raw = (Map) raw.values().iterator().next();
             List<String> paths = new ArrayList<>();
             paths.addAll(schema.keySet());
-            paths.sort(Comparator.reverseOrder());
+            //paths.sort(Comparator.reverseOrder());
 
             for (String p : paths) {
                 Object dst = getProperty(msg, p);

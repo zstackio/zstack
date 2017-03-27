@@ -368,6 +368,8 @@ abstract class Test implements ApiHelper {
             def c = r.caseType.newInstance() as Case
 
             logger.info("starts running a sub case[${c.class}] of suite[${this.class}]")
+            new File([dir.absolutePath, "current-case"].join("/")).write("${c.class}")
+
             try {
                 CURRENT_SUB_CASE = c
 

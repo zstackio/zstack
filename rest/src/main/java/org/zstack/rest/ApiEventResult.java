@@ -1,9 +1,9 @@
 package org.zstack.rest;
 
-import org.apache.commons.beanutils.PropertyUtils;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.JsonSchemaBuilder;
+import org.zstack.utils.BeanUtils;
 import org.zstack.utils.gson.JSONObjectUtil;
 
 import java.util.*;
@@ -30,15 +30,15 @@ public class ApiEventResult {
             for (String path : paths) {
                 String clzName = res.schema.get(path);
 
-                Object bean = PropertyUtils.getProperty(evt, path);
+                Object bean = org.zstack.utils.BeanUtils.getProperty(evt, path);
                 if (bean.getClass().getName().equals(clzName)) {
                     // not an inherent object
                     continue;
                 }
 
                 Class fclz = Class.forName(clzName);
-                Object val = JSONObjectUtil.rehashObject(PropertyUtils.getProperty(res.apiEvent, path), fclz);
-                PropertyUtils.setProperty(evt, path, val);
+                Object val = JSONObjectUtil.rehashObject(BeanUtils.getProperty(res.apiEvent, path), fclz);
+                BeanUtils.setProperty(evt, path, val);
             }
 
             return evt;

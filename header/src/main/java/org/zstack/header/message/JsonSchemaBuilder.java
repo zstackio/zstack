@@ -10,6 +10,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.*;
 
+import static java.util.Arrays.asList;
+
 /**
  * Created by xing5 on 2016/12/12.
  */
@@ -125,7 +127,14 @@ public class JsonSchemaBuilder {
                 build(object, new Stack<>());
             }
 
-            return schema;
+            List<String> keys = new ArrayList<>(schema.keySet());
+            Collections.reverse(keys);
+            LinkedHashMap ret = new LinkedHashMap(schema.size());
+            for (String key : keys) {
+                ret.put(key, schema.get(key));
+            }
+
+            return ret;
         } catch (IllegalAccessException e) {
             throw new CloudRuntimeException(e);
         }
