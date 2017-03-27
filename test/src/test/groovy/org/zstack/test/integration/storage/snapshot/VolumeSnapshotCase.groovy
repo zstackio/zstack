@@ -9,6 +9,7 @@ import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.testlib.VmSpec
 
+import java.sql.Timestamp
 import java.util.concurrent.TimeUnit
 
 /**
@@ -39,6 +40,7 @@ class VolumeSnapshotCase extends SubCase {
             testSnapshotScheduleJobTimeOutOfRange()
             testSnapshotScheduleJobPassiveStopTime()
             testSnapshotSchedulerJobWithoutSetInterval()
+            testSnapshotSchedulerJobWithoutSetRepeatCount()
         }
     }
 
@@ -110,12 +112,26 @@ class VolumeSnapshotCase extends SubCase {
             schedulerName = "test4"
             type = "simple"
             repeatCount = 1
+            startTime = 0
+        }
+
+        assert schedulerInventory.repeatCount == 1
+        assert schedulerInventory.schedulerName == "test4"
+    }
+
+    void testSnapshotSchedulerJobWithoutSetRepeatCount() {
+        VmSpec vmSpec = env.specByName("vm")
+        // forever job
+        SchedulerInventory schedulerInventory = createVolumeSnapshotScheduler {
+            volumeUuid = vmSpec.inventory.rootVolumeUuid
+            snapShotName = "test5"
+            schedulerName = "test5"
+            type = "simple"
+            interval = 3600
             startTime = 3600
         }
 
-        deleteScheduler {
-            uuid = schedulerInventory.uuid
-        }
-        TimeUnit.SECONDS.sleep(3)
+        assert schedulerInventory.stopTime == null
+        assert schedulerInventory.repeatCount == null
     }
 }
