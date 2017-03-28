@@ -2,6 +2,7 @@ package org.zstack.network.service.vip;
 
 import org.zstack.header.network.l3.IpRangeEO;
 import org.zstack.header.network.l3.L3NetworkEO;
+import org.zstack.header.network.l3.UsedIpVO;
 import org.zstack.header.tag.AutoDeleteTag;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
@@ -54,6 +55,7 @@ public class VipVO {
     private String useFor;
 
     @Column
+    @ForeignKey(parentEntityClass = UsedIpVO.class, onDeleteAction = ReferenceOption.CASCADE)
     private String usedIpUuid;
 
     @Column

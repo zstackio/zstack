@@ -422,8 +422,8 @@ public class VipBase {
         refresh();
 
         if (self.getUseFor() == null) {
-            returnVip();
             dbf.remove(self);
+            returnVip();
             logger.debug(String.format("'useFor' is not set, released vip[uuid:%s, ip:%s] on l3Network[uuid:%s]",
                     self.getUuid(), self.getIp(), self.getL3NetworkUuid()));
             completion.success();
@@ -480,8 +480,8 @@ public class VipBase {
                 done(new FlowDoneHandler(completion) {
                     @Override
                     public void handle(Map data) {
-                        returnVip();
                         dbf.remove(self);
+                        returnVip();
                         completion.success();
                     }
                 });

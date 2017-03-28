@@ -10,6 +10,8 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SQL;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -203,10 +205,12 @@ public class L3BasicNetwork implements L3Network {
 
     private void handle(ReturnIpMsg msg) {
         ReturnIpReply reply = new ReturnIpReply();
-        dbf.removeByPrimaryKey(msg.getUsedIpUuid(), UsedIpVO.class);
+        SQL.New(UsedIpVO.class).eq(UsedIpVO_.uuid, msg.getUsedIpUuid()).hardDelete();
         logger.debug(String.format("Successfully released used ip[%s]", msg.getUsedIpUuid()));
         bus.reply(msg, reply);
     }
+
+
 
     private void handle(AllocateIpMsg msg) {
         IpAllocatorType strategyType = msg.getAllocatorStrategy() == null ? RandomIpAllocatorStrategy.type : IpAllocatorType.valueOf(msg.getAllocatorStrategy());
