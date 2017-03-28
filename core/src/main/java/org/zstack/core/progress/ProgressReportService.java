@@ -23,13 +23,14 @@ import org.zstack.header.rest.SyncHttpCallHandler;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
-import static org.zstack.core.Platform.*;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import static org.codehaus.groovy.runtime.InvokerHelper.asList;
+import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.toI18nString;
 
 
 /**
@@ -67,6 +68,7 @@ public class ProgressReportService extends AbstractService implements Management
             @Override
             public String handleSyncHttpCall(ProgressReportCmd cmd) {
                 setThreadContext(cmd);
+                logger.debug(String.format("report progress is : %s", cmd.getProgress()));
                 taskProgress(TaskType.Progress, cmd.getProgress());
                 return null;
             }
@@ -263,7 +265,7 @@ public class ProgressReportService extends AbstractService implements Management
         return invs;
     }
 
-    private void handle(APIGetTaskProgressMsg msg) {
+    private void handle(final APIGetTaskProgressMsg msg) {
         APIGetTaskProgressReply reply = new APIGetTaskProgressReply();
 
         new SQLBatch() {
@@ -464,5 +466,10 @@ public class ProgressReportService extends AbstractService implements Management
 
     public static void taskProgress(String fmt, Object...args) {
         taskProgress(TaskType.Task, fmt, args);
+    }
+
+    public static void reportProgress(String fmt) {
+        logger.debug(String.format("report progress is : %s", fmt));
+        taskProgress(TaskType.Progress, fmt);
     }
 }
