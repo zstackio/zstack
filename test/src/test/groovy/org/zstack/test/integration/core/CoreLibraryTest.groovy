@@ -19,7 +19,9 @@ class CoreLibraryTest extends Test {
 
     @Override
     void environment() {
-
+        spring {
+            include("ManagementNodeManager.xml")
+        }
     }
 
     @Override
