@@ -1332,18 +1332,17 @@ public class KvmBackend extends HypervisorBackend {
 
         class Result {
             List<ErrorCode> errorCodes = new ArrayList<ErrorCode>();
-            boolean success = false;
         }
 
         final Result ret = new Result();
         final AsyncLatch latch = new AsyncLatch(huuids.size(), new NoErrorCompletion(completion) {
             @Override
             public void done() {
-                if (ret.success) {
-                    completion.success();
-                } else {
+                if (!ret.errorCodes.isEmpty()) {
                     completion.fail(errf.stringToOperationError(String.format("unable to connect the shared mount point storage[uuid:%s, name:%s] to" +
                             " the cluster[uuid:%s]", self.getUuid(), self.getName(), clusterUuid), ret.errorCodes));
+                } else {
+                    completion.success();
                 }
             }
         });
@@ -1352,14 +1351,12 @@ public class KvmBackend extends HypervisorBackend {
             connect(huuid, new Completion(latch) {
                 @Override
                 public void success() {
-                    ret.success = true;
                     latch.ack();
                 }
 
                 @Override
                 public void fail(ErrorCode errorCode) {
                     ret.errorCodes.add(errorCode);
-                    ret.success = false;
                     latch.ack();
                 }
             });

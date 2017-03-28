@@ -1,19 +1,17 @@
 package org.zstack.test.integration.storage.primary.smp
 
 import org.springframework.http.HttpEntity
-import org.zstack.header.host.HostStatusEvent
-import org.zstack.header.host.HostVO
+import org.zstack.header.storage.primary.PrimaryStorageVO
 import org.zstack.sdk.AttachPrimaryStorageToClusterAction
 import org.zstack.sdk.ClusterInventory
 import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.storage.primary.smp.KvmBackend
 import org.zstack.test.integration.storage.SMPEnv
 import org.zstack.test.integration.storage.StorageTest
-import org.zstack.testlib.ClusterSpec
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.HostSpec
-import org.zstack.testlib.PrimaryStorageSpec
 import org.zstack.testlib.SubCase
+import org.zstack.utils.gson.JSONObjectUtil
 
 import java.util.concurrent.TimeUnit
 
@@ -30,7 +28,7 @@ class SMPAttachCase extends SubCase{
 
     @Override
     void environment() {
-        env = SMPEnv.oneVmBasicEnv()
+        env = SMPEnv.twoHostsNoVmBasicEnv()
     }
 
     @Override
@@ -43,7 +41,9 @@ class SMPAttachCase extends SubCase{
     void testAttachingSmpWithoutMountPathOnHost() {
         PrimaryStorageInventory primaryStorageInventory = env.inventoryByName("smp")
         ClusterInventory clusterInventory = env.inventoryByName("cluster")
-        HostSpec hostSpec = env.specByName("kvm")
+        HostSpec hostSpec1 = env.specByName("kvm1")
+        HostSpec hostSpec2 = env.specByName("kvm2")
+        HostSpec hostSpec3 = env.specByName("kvm3")
 
         detachPrimaryStorageFromCluster {
             primaryStorageUuid = primaryStorageInventory.uuid
@@ -51,9 +51,17 @@ class SMPAttachCase extends SubCase{
         }
         TimeUnit.SECONDS.sleep(3)
 
+        def counter = 0 as int
+        KvmBackend.ConnectCmd cmd = null
         env.afterSimulator(KvmBackend.CONNECT_PATH) { rsp, HttpEntity<String> e ->
+            cmd = JSONObjectUtil.toObject(e.body, KvmBackend.ConnectCmd.class)
             def ret = new KvmBackend.AgentRsp()
-            ret.success = false
+            if(counter > 0) {
+                ret.success = false
+            } else {
+                ret.success = true
+            }
+            counter++
             return ret
         }
 
@@ -63,6 +71,15 @@ class SMPAttachCase extends SubCase{
         action.sessionId = adminSession()
         AttachPrimaryStorageToClusterAction.Result ret = action.call()
         assert ret.error != null
+
+        PrimaryStorageVO vo = dbFindByUuid(primaryStorageInventory.uuid, PrimaryStorageVO.class)
+        retryInSecs(3) {
+            vo = dbFindByUuid(primaryStorageInventory.uuid, PrimaryStorageVO.class)
+            return {
+                vo.getAttachedClusterRefs().isEmpty()
+                cmd != null
+            }
+        }
     }
 
     @Override
