@@ -1,6 +1,8 @@
 package org.zstack.test.integration.networkservice.provider.virtualrouter.eip
 
+import org.springframework.http.HttpEntity
 import org.zstack.core.db.Q
+import org.zstack.header.exception.CloudRuntimeException
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO_
 import org.zstack.header.vm.VmNicVO
@@ -8,19 +10,17 @@ import org.zstack.header.vm.VmNicVO_
 import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.eip.EipVO
 import org.zstack.network.service.vip.VipVO
+import org.zstack.network.service.virtualrouter.VirtualRouterConstant
 import org.zstack.sdk.EipInventory
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.VmNicInventory
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
 import org.zstack.test.integration.networkservice.provider.virtualrouter.VirtualRouterNetworkServiceEnv
-import org.zstack.testlib.EipSpec
-import org.zstack.testlib.EnvSpec
-import org.zstack.testlib.L3NetworkSpec
-import org.zstack.testlib.SubCase
-import org.zstack.testlib.VmSpec
+import org.zstack.testlib.*
 import org.zstack.utils.CollectionUtils
 import org.zstack.utils.function.Function
+
 import javax.persistence.Tuple
 
 /**
@@ -35,6 +35,7 @@ class VirtualRouterEipCase extends SubCase {
 
     @Override
     void clean() {
+        env.cleanSimulatorHandlers();
         env.delete()
     }
 
@@ -94,6 +95,27 @@ class VirtualRouterEipCase extends SubCase {
         assert defaultNic.ip == tuple.get(1, String.class)
     }
 
+    void testDeleteEipOnRevokeEipFailure() {
+        startVmInstance {
+            uuid = vm.uuid
+        }
+
+        attachEip {
+            eipUuid = eip.uuid
+            vmNicUuid = vm.vmNics[0].uuid
+        }
+
+        env.afterSimulator(VirtualRouterConstant.VR_REMOVE_EIP) {
+            rsp, HttpEntity<String> e -> throw new CloudRuntimeException("injected fault")
+        }
+
+        deleteEip {
+            uuid = eip.uuid
+        }
+
+        assert !dbIsExists(eip.uuid, EipVO.class)
+    }
+
     @Override
     void test() {
         env.create {
@@ -101,6 +123,7 @@ class VirtualRouterEipCase extends SubCase {
             eip = (env.specByName("eip") as EipSpec).inventory
             publicL3 = (env.specByName("pubL3") as L3NetworkSpec).inventory
             testDetachEipJustAfterAttachToStoppedVm()
+            testDeleteEipOnRevokeEipFailure()
             testVirtualRouterDHCP()
         }
     }
