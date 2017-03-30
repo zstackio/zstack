@@ -14,13 +14,14 @@ import org.zstack.testlib.ImageSpec
 import org.zstack.testlib.SubCase
 import org.zstack.testlib.VmSpec
 import org.zstack.compute.vm.VmGlobalConfig
-import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.HostInventory
 import org.zstack.sdk.DiskOfferingInventory 
 import org.zstack.sdk.VolumeInventory
 import org.zstack.sdk.DetachDataVolumeFromVmAction
 import org.zstack.storage.primary.local.LocalStorageKvmBackend
+import org.zstack.storage.volume.VolumeGlobalConfig
+import org.zstack.header.volume.VolumeDeletionPolicyManager
 
 /**
  * Created by shengyan on 2017/3/22.
@@ -47,7 +48,7 @@ class LocalStorageDisablePrimaryStorageCreateSharedVolumeCase extends SubCase{
 
 
     void testLocalStorageCreateSharedVolumeWhenPrimaryStorageIsDisabled() {
-        VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicy.Delay.toString())
+        VolumeGlobalConfig.VOLUME_DELETION_POLICY.updateValue(VolumeDeletionPolicyManager.VolumeDeletionPolicy.Delay.toString())
         PrimaryStorageSpec primaryStorageSpec = env.specByName("local")
         String imageUuid = (env.specByName("test-iso") as ImageSpec).inventory.uuid
         DatabaseFacade dbf = bean(DatabaseFacade.class)

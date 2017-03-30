@@ -14,7 +14,6 @@ import org.zstack.testlib.ImageSpec
 import org.zstack.testlib.SubCase
 import org.zstack.testlib.VmSpec
 import org.zstack.compute.vm.VmGlobalConfig
-import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.HostInventory
 import org.zstack.sdk.DiskOfferingInventory 
@@ -46,7 +45,6 @@ class LocalStorageDisablePrimaryStorageAttachVolumeCase extends SubCase{
 
 
     void testLocalStorageAttachVolumeWhenPrimaryStorageIsDisabled() {
-        VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicy.Delay.toString())
         PrimaryStorageSpec primaryStorageSpec = env.specByName("local")
         String imageUuid = (env.specByName("test-iso") as ImageSpec).inventory.uuid
         DatabaseFacade dbf = bean(DatabaseFacade.class)

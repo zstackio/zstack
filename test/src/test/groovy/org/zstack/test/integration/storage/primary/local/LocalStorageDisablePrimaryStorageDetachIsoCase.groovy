@@ -19,7 +19,7 @@ import org.zstack.compute.vm.VmGlobalConfig
 /**
  * Created by shengyan on 2017/3/22.
  */
-class LocalStorageDisablePrimaryStorageAttachIsoCase extends SubCase{
+class LocalStorageDisablePrimaryStorageDetachIsoCase extends SubCase{
     EnvSpec env
 
     @Override
@@ -35,12 +35,12 @@ class LocalStorageDisablePrimaryStorageAttachIsoCase extends SubCase{
     @Override
     void test() {
         env.create {
-            testLocalStorageAttachIsoWhenPrimaryStorageIsDisabled()
+            testLocalStorageDetachIsoWhenPrimaryStorageIsDisabled()
         }
     }
 
 
-    void testLocalStorageAttachIsoWhenPrimaryStorageIsDisabled() {
+    void testLocalStorageDetachIsoWhenPrimaryStorageIsDisabled() {
         PrimaryStorageSpec primaryStorageSpec = env.specByName("local")
         VmSpec vmSpec = env.specByName("test-vm")
         String vmUuid = vmSpec.inventory.uuid
@@ -59,6 +59,14 @@ class LocalStorageDisablePrimaryStorageAttachIsoCase extends SubCase{
         }
         assert cmd1 != null
 
+
+        changePrimaryStorageState {
+            uuid = primaryStorageSpec.inventory.uuid
+            stateEvent = PrimaryStorageStateEvent.disable.toString()
+        }
+        assert dbf.findByUuid(primaryStorageSpec.inventory.uuid, PrimaryStorageVO.class).state == PrimaryStorageState.Disabled
+
+
         Map cmd2 = null
         env.afterSimulator(KVMConstant.KVM_DETACH_ISO_PATH) { rsp, HttpEntity<String> e ->
             cmd2 = json(e.body, LinkedHashMap.class)
@@ -70,26 +78,6 @@ class LocalStorageDisablePrimaryStorageAttachIsoCase extends SubCase{
         }
         assert cmd2 != null
 
-        changePrimaryStorageState {
-            uuid = primaryStorageSpec.inventory.uuid
-            stateEvent = PrimaryStorageStateEvent.disable.toString()
-        }
-        assert dbf.findByUuid(primaryStorageSpec.inventory.uuid, PrimaryStorageVO.class).state == PrimaryStorageState.Disabled
-
-
-        Map cmd3 = null
-        env.afterSimulator(KVMConstant.KVM_ATTACH_ISO_PATH) { rsp, HttpEntity<String> e ->
-            cmd3 = json(e.body, LinkedHashMap.class)
-            return rsp
-        }
-
-        attachIsoToVmInstance {
-            isoUuid = imageUuid
-            vmInstanceUuid = vmUuid
-            sessionId = currentEnvSpec.session.uuid
-        }
-
-        assert cmd3 != null
 
         changePrimaryStorageState {
             uuid = primaryStorageSpec.inventory.uuid

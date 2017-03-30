@@ -12,14 +12,21 @@ import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.PrimaryStorageSpec
 import org.zstack.testlib.ImageSpec 
 import org.zstack.testlib.SubCase
-import org.zstack.testlib.Test
 import org.zstack.testlib.VmSpec
 import org.zstack.compute.vm.VmGlobalConfig
+import org.zstack.sdk.VmInstanceInventory
+import org.zstack.sdk.HostInventory
+import org.zstack.sdk.DiskOfferingInventory 
+import org.zstack.sdk.VolumeInventory
+import org.zstack.sdk.DetachDataVolumeFromVmAction
+import org.zstack.storage.primary.local.LocalStorageKvmBackend
+import org.zstack.storage.volume.VolumeGlobalConfig
+import org.zstack.header.volume.VolumeDeletionPolicyManager
 
 /**
  * Created by shengyan on 2017/3/22.
  */
-class LocalStorageDisablePrimaryStorageAttachIsoCase extends SubCase{
+class LocalStorageDisablePrimaryStorageDeleteSharedVolumeCase extends SubCase{
     EnvSpec env
 
     @Override
@@ -35,67 +42,49 @@ class LocalStorageDisablePrimaryStorageAttachIsoCase extends SubCase{
     @Override
     void test() {
         env.create {
-            testLocalStorageAttachIsoWhenPrimaryStorageIsDisabled()
+            testLocalStorageDeleteSharedVolumeWhenPrimaryStorageIsDisabled()
         }
     }
 
-
-    void testLocalStorageAttachIsoWhenPrimaryStorageIsDisabled() {
+    void testLocalStorageDeleteSharedVolumeWhenPrimaryStorageIsDisabled() {
+        VolumeGlobalConfig.VOLUME_DELETION_POLICY.updateValue(VolumeDeletionPolicyManager.VolumeDeletionPolicy.Delay.toString())
         PrimaryStorageSpec primaryStorageSpec = env.specByName("local")
-        VmSpec vmSpec = env.specByName("test-vm")
-        String vmUuid = vmSpec.inventory.uuid
         String imageUuid = (env.specByName("test-iso") as ImageSpec).inventory.uuid
         DatabaseFacade dbf = bean(DatabaseFacade.class)
+        HostInventory host = env.inventoryByName("kvm")
+        DiskOfferingInventory diskOfferingInventory = env.inventoryByName("diskOffering")
+        VmInstanceInventory vm = env.inventoryByName("test-vm")
 
-        Map cmd1 = null
-        env.afterSimulator(KVMConstant.KVM_ATTACH_ISO_PATH) { rsp, HttpEntity<String> e ->
-            cmd1 = json(e.body, LinkedHashMap.class)
-            return rsp
+        VolumeInventory dataVolume = createDataVolume {
+            name = "dataVolume"
+            diskOfferingUuid = diskOfferingInventory.uuid
+            primaryStorageUuid = primaryStorageSpec.inventory.uuid
+            systemTags = ["localStorage::hostUuid::${host.uuid}".toString(), "ephemeral::shareable".toString(), "capability::virtio-scsi".toString()]
         }
-        attachIsoToVmInstance {
-            isoUuid = imageUuid
-            vmInstanceUuid = vmUuid
-            sessionId = currentEnvSpec.session.uuid
-        }
-        assert cmd1 != null
 
-        Map cmd2 = null
-        env.afterSimulator(KVMConstant.KVM_DETACH_ISO_PATH) { rsp, HttpEntity<String> e ->
-            cmd2 = json(e.body, LinkedHashMap.class)
-            return rsp
-        }
-        detachIsoFromVmInstance {
-            vmInstanceUuid = vmUuid
-            sessionId = currentEnvSpec.session.uuid
-        }
-        assert cmd2 != null
 
         changePrimaryStorageState {
             uuid = primaryStorageSpec.inventory.uuid
             stateEvent = PrimaryStorageStateEvent.disable.toString()
         }
         assert dbf.findByUuid(primaryStorageSpec.inventory.uuid, PrimaryStorageVO.class).state == PrimaryStorageState.Disabled
+        
 
-
-        Map cmd3 = null
-        env.afterSimulator(KVMConstant.KVM_ATTACH_ISO_PATH) { rsp, HttpEntity<String> e ->
-            cmd3 = json(e.body, LinkedHashMap.class)
-            return rsp
+        //Map cmd1 = null
+        //env.afterSimulator(LocalStorageKvmBackend.DELETE_BITS_PATH) { rsp, HttpEntity<String> e ->
+        //    cmd1 = json(e.body, LinkedHashMap.class)
+        //    return rsp
+        //}
+        deleteDataVolume {
+            uuid = dataVolume.uuid
         }
+        //assert cmd1 != null
 
-        attachIsoToVmInstance {
-            isoUuid = imageUuid
-            vmInstanceUuid = vmUuid
-            sessionId = currentEnvSpec.session.uuid
-        }
-
-        assert cmd3 != null
 
         changePrimaryStorageState {
             uuid = primaryStorageSpec.inventory.uuid
             stateEvent = PrimaryStorageStateEvent.enable.toString()
         }
-
         assert dbf.findByUuid(primaryStorageSpec.inventory.uuid, PrimaryStorageVO.class).state == PrimaryStorageState.Enabled
     }
 
