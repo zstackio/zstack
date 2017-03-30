@@ -12,14 +12,18 @@ import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.PrimaryStorageSpec
 import org.zstack.testlib.ImageSpec 
 import org.zstack.testlib.SubCase
-import org.zstack.testlib.Test
 import org.zstack.testlib.VmSpec
 import org.zstack.compute.vm.VmGlobalConfig
+import org.zstack.sdk.VmInstanceInventory
+import org.zstack.sdk.HostInventory
+import org.zstack.sdk.DiskOfferingInventory 
+import org.zstack.sdk.VolumeInventory
+import org.zstack.sdk.DetachDataVolumeFromVmAction
 
 /**
  * Created by shengyan on 2017/3/22.
  */
-class LocalStorageDisablePrimaryStorageAttachIsoCase extends SubCase{
+class LocalStorageDisablePrimaryStorageDetachVolumeCase extends SubCase{
     EnvSpec env
 
     @Override
@@ -35,40 +39,37 @@ class LocalStorageDisablePrimaryStorageAttachIsoCase extends SubCase{
     @Override
     void test() {
         env.create {
-            testLocalStorageAttachIsoWhenPrimaryStorageIsDisabled()
+            testLocalStorageDetachVolumeWhenPrimaryStorageIsDisabled()
         }
     }
 
 
-    void testLocalStorageAttachIsoWhenPrimaryStorageIsDisabled() {
+    void testLocalStorageDetachVolumeWhenPrimaryStorageIsDisabled() {
         PrimaryStorageSpec primaryStorageSpec = env.specByName("local")
-        VmSpec vmSpec = env.specByName("test-vm")
-        String vmUuid = vmSpec.inventory.uuid
         String imageUuid = (env.specByName("test-iso") as ImageSpec).inventory.uuid
         DatabaseFacade dbf = bean(DatabaseFacade.class)
+        HostInventory host = env.inventoryByName("kvm")
+        DiskOfferingInventory diskOfferingInventory = env.inventoryByName("diskOffering")
+        VmInstanceInventory vm = env.inventoryByName("test-vm")
+
+        VolumeInventory dataVolume = createDataVolume {
+            name = "dataVolume"
+            diskOfferingUuid = diskOfferingInventory.uuid
+            primaryStorageUuid = primaryStorageSpec.inventory.uuid
+            systemTags = ["localStorage::hostUuid::${host.uuid}".toString()]
+        }
 
         Map cmd1 = null
-        env.afterSimulator(KVMConstant.KVM_ATTACH_ISO_PATH) { rsp, HttpEntity<String> e ->
+        env.afterSimulator(KVMConstant.KVM_ATTACH_VOLUME) { rsp, HttpEntity<String> e ->
             cmd1 = json(e.body, LinkedHashMap.class)
             return rsp
         }
-        attachIsoToVmInstance {
-            isoUuid = imageUuid
-            vmInstanceUuid = vmUuid
-            sessionId = currentEnvSpec.session.uuid
+        attachDataVolumeToVm {
+            vmInstanceUuid = vm.uuid
+            volumeUuid = dataVolume.uuid
         }
         assert cmd1 != null
 
-        Map cmd2 = null
-        env.afterSimulator(KVMConstant.KVM_DETACH_ISO_PATH) { rsp, HttpEntity<String> e ->
-            cmd2 = json(e.body, LinkedHashMap.class)
-            return rsp
-        }
-        detachIsoFromVmInstance {
-            vmInstanceUuid = vmUuid
-            sessionId = currentEnvSpec.session.uuid
-        }
-        assert cmd2 != null
 
         changePrimaryStorageState {
             uuid = primaryStorageSpec.inventory.uuid
@@ -77,19 +78,19 @@ class LocalStorageDisablePrimaryStorageAttachIsoCase extends SubCase{
         assert dbf.findByUuid(primaryStorageSpec.inventory.uuid, PrimaryStorageVO.class).state == PrimaryStorageState.Disabled
 
 
-        Map cmd3 = null
-        env.afterSimulator(KVMConstant.KVM_ATTACH_ISO_PATH) { rsp, HttpEntity<String> e ->
-            cmd3 = json(e.body, LinkedHashMap.class)
+        Map cmd2 = null
+        env.afterSimulator(KVMConstant.KVM_DETACH_VOLUME) { rsp, HttpEntity<String> e ->
+            cmd2 = json(e.body, LinkedHashMap.class)
             return rsp
         }
 
-        attachIsoToVmInstance {
-            isoUuid = imageUuid
-            vmInstanceUuid = vmUuid
-            sessionId = currentEnvSpec.session.uuid
-        }
+        DetachDataVolumeFromVmAction a = new DetachDataVolumeFromVmAction()
+        a.uuid = dataVolume.uuid
+        a.sessionId = currentEnvSpec.session.uuid
 
-        assert cmd3 != null
+        DetachDataVolumeFromVmAction.Result res = a.call()
+        assert cmd2 != null
+
 
         changePrimaryStorageState {
             uuid = primaryStorageSpec.inventory.uuid
