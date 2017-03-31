@@ -21,6 +21,7 @@ import org.zstack.core.cloudbus.CloudBusEventListener;
 import org.zstack.core.retry.Retry;
 import org.zstack.core.retry.RetryCondition;
 import org.zstack.header.Component;
+import org.zstack.header.MapField;
 import org.zstack.header.apimediator.ApiMediatorConstant;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.SessionInventory;
@@ -56,6 +57,8 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static java.util.Arrays.asList;
 
 /**
  * Created by xing5 on 2016/12/7.
@@ -334,6 +337,44 @@ public class RestServer implements Component, CloudBusEventListener {
             return requestMappingFields.get(key);
         }
 
+        private void mapQueryParameterToApiFieldValue(String name, String[] vals, Map<String, Object> params) throws RestException {
+            String[] pairs = name.split("\\.");
+            String fname = pairs[0];
+            String key = pairs[1];
+
+            Field f = allApiClassFields.get(fname);
+            if (f == null) {
+                logger.warn(String.format("unknown map query parameter[%s], ignore", name));
+                return;
+            }
+
+            MapField at = f.getAnnotation(MapField.class);
+            DebugUtils.Assert(at!=null, String.format("%s::%s must be annotated by @MapField", apiClass, fname));
+
+            Map m = (Map) params.get(fname);
+            if (m == null) {
+                m = new HashMap();
+                params.put(fname, m);
+            }
+
+            if (m.containsKey(key)) {
+                throw new RestException(HttpStatus.BAD_REQUEST.value(),
+                        String.format("duplicate map query parameter[%s], there has been a parameter with the same map key", name));
+            }
+
+            if (Collection.class.isAssignableFrom(at.valueType())) {
+                m.put(key, asList(vals));
+            } else {
+                if (vals.length > 1) {
+                    throw new RestException(HttpStatus.BAD_REQUEST.value(),
+                            String.format("Invalid query parameter[%s], only one value is allowed for the parameter but" +
+                                    " multiple values found", name));
+                }
+
+                m.put(key, vals[0]);
+            }
+        }
+
         Object queryParameterToApiFieldValue(String name, String[] vals) throws RestException {
             Field f = allApiClassFields.get(name);
             if (f == null) {
@@ -352,7 +393,7 @@ public class RestServer implements Component, CloudBusEventListener {
                 if (vals.length > 1) {
                     throw new RestException(HttpStatus.BAD_REQUEST.value(),
                             String.format("Invalid query parameter[%s], only one value is allowed for the parameter but" +
-                                    " mupltiple values found", name));
+                                    " multiple values found", name));
                 }
 
                 return TypeUtils.stringToValue(vals[0], f.getType());
@@ -643,13 +684,18 @@ public class RestServer implements Component, CloudBusEventListener {
                 String k = e.getKey();
                 String[] vals = e.getValue();
 
-                Object val = api.queryParameterToApiFieldValue(k, vals);
-                if (val == null) {
-                    logger.warn(String.format("unknown query parameter[%s], ignored", k));
-                    continue;
-                }
+                if (k.contains(".")) {
+                    // this is a map parameter
+                    api.mapQueryParameterToApiFieldValue(k, vals, m);
+                } else {
+                    Object val = api.queryParameterToApiFieldValue(k, vals);
+                    if (val == null) {
+                        logger.warn(String.format("unknown query parameter[%s], ignored", k));
+                        continue;
+                    }
 
-                m.put(k, val);
+                    m.put(k, val);
+                }
             }
 
             parameter = m;
@@ -802,7 +848,7 @@ public class RestServer implements Component, CloudBusEventListener {
                     if (OP == null) {
                         throw new RestException(HttpStatus.BAD_REQUEST.value(), String.format("Invalid query parameter." +
                                 " The '%s' in the parameter[q] doesn't contain any query operator. Valid query operators are" +
-                                " %s", cond, Arrays.asList(QUERY_OP_MAPPING.keySet())));
+                                " %s", cond, asList(QUERY_OP_MAPPING.keySet())));
                     }
 
                     QueryCondition qc = new QueryCondition();
