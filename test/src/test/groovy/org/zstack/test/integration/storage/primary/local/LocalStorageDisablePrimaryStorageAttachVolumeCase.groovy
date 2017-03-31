@@ -77,18 +77,9 @@ class LocalStorageDisablePrimaryStorageAttachVolumeCase extends SubCase{
             cmd2 = json(e.body, LinkedHashMap.class)
             return rsp
         }
-
-        //This part will failed
-        //detachVolumeFromVm {
-        //    volumeUuid = dataVolume.uuid
-        //    session = currentEnvSpec.session.uuid
-        //}
-        //This part will passed
-        DetachDataVolumeFromVmAction a = new DetachDataVolumeFromVmAction()
-        a.uuid = dataVolume.uuid
-        a.sessionId = currentEnvSpec.session.uuid
-
-        DetachDataVolumeFromVmAction.Result res = a.call()
+        detachDataVolumeFromVm{
+           uuid = dataVolume.uuid
+        }
         assert cmd2 != null
 
         changePrimaryStorageState {
