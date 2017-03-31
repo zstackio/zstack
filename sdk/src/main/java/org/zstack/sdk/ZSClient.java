@@ -379,11 +379,26 @@ public class ZSClient {
                             builder.addQueryParameter(k, o.toString());
                         }
                     } else if (v instanceof Map) {
-                        throw new ApiException(String.format("%s won't support map as a parameter type. %s.%s",
-                                info.httpMethod, action.getClass(), k));
+                        for (Object o : ((Map) v).entrySet()) {
+                            Map.Entry pe = (Map.Entry) o;
+                            if (!(pe.getKey() instanceof String)) {
+                                throw new ApiException(String.format("%s only supports map parameter whose keys and values are both string. %s.%s.%s is not key string",
+                                        info.httpMethod, action.getClass(), k, pe.getKey()));
+                            }
+
+                            if (pe.getValue() instanceof Collection) {
+                                for (Object i : (Collection)pe.getValue()) {
+                                    builder.addQueryParameter(String.format("%s.%s", k, pe.getKey()), i.toString());
+                                }
+                            } else {
+                                builder.addQueryParameter(String.format("%s.%s", k, pe.getKey()), pe.getValue().toString());
+                            }
+
+                        }
                     } else {
                         builder.addQueryParameter(k, v.toString());
                     }
+
                 }
 
                 if (info.httpMethod.equals("GET")) {

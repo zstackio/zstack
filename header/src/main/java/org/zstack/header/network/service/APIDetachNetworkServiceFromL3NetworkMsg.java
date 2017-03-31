@@ -1,6 +1,7 @@
 package org.zstack.header.network.service;
 
 import org.springframework.http.HttpMethod;
+import org.zstack.header.MapField;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
@@ -33,6 +34,7 @@ public class APIDetachNetworkServiceFromL3NetworkMsg extends APIMessage implemen
      * @desc a map where key is network service provider uuid and value is list of network service types
      */
     @APIParam
+    @MapField(keyType = String.class, valueType = List.class)
     private Map<String, List<String>> networkServices;
 
     @Override
