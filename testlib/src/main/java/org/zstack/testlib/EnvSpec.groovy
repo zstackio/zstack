@@ -9,6 +9,8 @@ import org.zstack.core.CoreGlobalProperty
 import org.zstack.core.Platform
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.SQL
+import org.zstack.core.notification.NotificationVO
+import org.zstack.header.core.progress.TaskProgressVO
 import org.zstack.header.identity.AccountConstant
 import org.zstack.header.image.ImageDeletionPolicyManager
 import org.zstack.header.message.Message
@@ -522,6 +524,9 @@ class EnvSpec implements Node {
                 logger.info("run delete() method on ${it.class}")
                 it.delete()
             }
+
+            SQL.New(NotificationVO.class).hardDelete()
+            SQL.New(TaskProgressVO.class).hardDelete()
 
             makeSureAllEntitiesDeleted()
         } catch (StopTestSuiteException e) {
