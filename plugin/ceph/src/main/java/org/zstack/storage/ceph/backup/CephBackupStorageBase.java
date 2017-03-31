@@ -645,9 +645,9 @@ public class CephBackupStorageBase extends BackupStorageBase {
         cmd.sendCommandUrl = restf.getSendCommandUrl();
 
         SQL.New(ImageBackupStorageRefVO.class)
+                .condAnd(ImageBackupStorageRefVO_.backupStorageUuid, SimpleQuery.Op.EQ, msg.getBackupStorageUuid())
+                .condAnd(ImageBackupStorageRefVO_.imageUuid, SimpleQuery.Op.EQ, msg.getImageInventory().getUuid())
                 .set(ImageBackupStorageRefVO_.installPath, cmd.installPath)
-                .set(ImageBackupStorageRefVO_.backupStorageUuid, msg.getBackupStorageUuid())
-                .set(ImageBackupStorageRefVO_.imageUuid, msg.getImageInventory().getUuid())
                 .update();
 
         final DownloadImageReply reply = new DownloadImageReply();
