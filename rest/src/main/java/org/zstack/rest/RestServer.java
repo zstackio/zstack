@@ -722,6 +722,8 @@ public class RestServer implements Component, CloudBusEventListener {
         QUERY_OP_MAPPING.put("=", QueryOp.EQ.toString());
         QUERY_OP_MAPPING.put(">", QueryOp.GT.toString());
         QUERY_OP_MAPPING.put("<", QueryOp.LT.toString());
+        QUERY_OP_MAPPING.put("is null", QueryOp.IS_NULL.toString());
+        QUERY_OP_MAPPING.put("not null", QueryOp.NOT_NULL.toString());
     }
 
     private void handleQueryApi(Api api, String sessionId, HttpServletRequest req, HttpServletResponse rsp) throws IllegalAccessException, InstantiationException, RestException, IOException, NoSuchMethodException, InvocationTargetException {
@@ -803,18 +805,25 @@ public class RestServer implements Component, CloudBusEventListener {
                                 " %s", cond, Arrays.asList(QUERY_OP_MAPPING.keySet())));
                     }
 
-                    String[] ks = StringUtils.split(cond, delimiter, 2);
-                    if (ks.length != 2) {
-                        throw new RestException(HttpStatus.BAD_REQUEST.value(), String.format("Invalid query parameter." +
-                                " The '%s' in parameter[q] is not a key-value pair split by %s", cond, OP));
+                    QueryCondition qc = new QueryCondition();
+                    String[] ks = StringUtils.splitByWholeSeparator(cond, delimiter, 2);
+                    if (OP.equals(QueryOp.IS_NULL.toString()) || OP.equals(QueryOp.NOT_NULL.toString())) {
+                        String cname = ks[0].trim();
+                        qc.setName(cname);
+                        qc.setOp(OP);
+                    } else {
+                        if (ks.length != 2) {
+                            throw new RestException(HttpStatus.BAD_REQUEST.value(), String.format("Invalid query parameter." +
+                                    " The '%s' in parameter[q] is not a key-value pair split by %s", cond, OP));
+                        }
+
+                        String cname = ks[0].trim();
+                        String cvalue = ks[1]; // don't trim the value, a space is valid in some conditions
+                        qc.setName(cname);
+                        qc.setOp(OP);
+                        qc.setValue(cvalue);
                     }
 
-                    String cname = ks[0].trim();
-                    String cvalue = ks[1]; // don't trim the value, a space is valid in some conditions
-                    QueryCondition qc = new QueryCondition();
-                    qc.setName(cname);
-                    qc.setOp(OP);
-                    qc.setValue(cvalue);
                     msg.getConditions().add(qc);
                 }
             } else if ("fields".equals(varname)) {
