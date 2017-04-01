@@ -61,6 +61,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.EncodingConversion;
 
 import static org.zstack.core.Platform.i18n;
 import static org.zstack.core.Platform.operr;
@@ -2213,7 +2214,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
         AddPoolCmd cmd = new AddPoolCmd();
         cmd.errorIfNotExist = msg.isErrorIfNotExist();
-        cmd.poolName = msg.getPoolName();
+        cmd.poolName = EncodingConversion.encodingToUnicode(msg.getPoolName());
 
         APIAddCephPrimaryStoragePoolEvent evt = new APIAddCephPrimaryStoragePoolEvent(msg.getId());
         CephPrimaryStoragePoolVO finalVo = vo;
