@@ -13,7 +13,7 @@ import org.zstack.utils.data.SizeUnit
  */
 class FlatNetworkServiceEnv {
     static EnvSpec oneHostNoVmEnv() {
-        Test.makeEnv {
+        return Test.makeEnv {
             instanceOffering {
                 name = "instanceOffering"
                 memory = SizeUnit.GIGABYTE.toByte(8)
@@ -84,7 +84,7 @@ class FlatNetworkServiceEnv {
     }
 
     static EnvSpec oneFlatEipEnv() {
-        Test.makeEnv {
+        return Test.makeEnv {
             instanceOffering {
                 name = "instanceOffering"
                 memory = SizeUnit.GIGABYTE.toByte(8)

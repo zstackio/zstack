@@ -28,7 +28,6 @@
     <TestCase class="org.zstack.test.virtualrouter.TestVirtualRouterPortForwarding26"/>
     <TestCase class="org.zstack.test.virtualrouter.TestVirtualRouterPortForwarding27"/>
     <TestCase class="org.zstack.test.virtualrouter.TestVirtualRouterPortForwarding28"/>
-    <TestCase class="org.zstack.test.virtualrouter.TestVirtualRouterPortForwarding29"/>
     <TestCase class="org.zstack.test.virtualrouter.TestVirtualRouterPortForwarding30"/>
     <TestCase class="org.zstack.test.virtualrouter.TestVirtualRouterPortForwarding31"/>
     <TestCase class="org.zstack.test.virtualrouter.TestVirtualRouterPortForwarding32"/>
