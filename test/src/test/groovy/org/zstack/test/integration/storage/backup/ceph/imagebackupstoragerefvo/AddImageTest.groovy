@@ -32,32 +32,7 @@ class AddImageTest extends SubCase{
                     name = "test-cluster"
                     hypervisorType = "KVM"
 
-                    kvm {
-                        name = "ceph-mon"
-                        managementIp = "localhost"
-                        username = "root"
-                        password = "password"
-                        usedMem = 1000
-                        totalCpu = 10
-                    }
-
                     attachPrimaryStorage("ceph-pri")
-                    attachL2Network("l2")
-                }
-                l2NoVlanNetwork {
-                    name = "l2"
-                    physicalInterface = "eth0"
-
-                    l3Network {
-                        name = "l3"
-
-                        ip {
-                            startIp = "192.168.100.10"
-                            endIp = "192.168.100.100"
-                            netmask = "255.255.255.0"
-                            gateway = "192.168.100.1"
-                        }
-                    }
                 }
 
                 cephPrimaryStorage {
