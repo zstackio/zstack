@@ -10,6 +10,7 @@ import org.zstack.storage.ceph.primary.CephPrimaryStoragePoolVO
 import org.zstack.storage.ceph.primary.CephPrimaryStoragePoolVO_
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.*
+import org.zstack.utils.EncodingConversion
 import org.zstack.utils.data.SizeUnit
 
 /**
@@ -171,7 +172,7 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
         assert inv.poolName == LOW_POOL_NAME
         assert acmd != null
         assert !acmd.errorIfNotExist
-        assert acmd.poolName == LOW_POOL_NAME
+        assert acmd.poolName == EncodingConversion.encodingToUnicode(LOW_POOL_NAME)
 
         CephPrimaryStorageBase.DeletePoolCmd dcmd = null
 
