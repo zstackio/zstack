@@ -3,6 +3,8 @@ package org.zstack.test.integration.storage
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.network.securitygroup.SecurityGroupConstant
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant
+import org.zstack.network.service.flat.FlatNetworkServiceConstant
+import org.zstack.network.service.userdata.UserdataConstant
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.Test
 import org.zstack.utils.data.SizeUnit
@@ -347,6 +349,26 @@ class Env {
                         }
                     }
 
+                    l3Network {
+                        name = "l3_2"
+
+                        service {
+                            provider = VirtualRouterConstant.PROVIDER_TYPE
+                            types = [NetworkServiceType.DHCP.toString(), NetworkServiceType.DNS.toString()]
+                        }
+
+                        service {
+                            provider = SecurityGroupConstant.SECURITY_GROUP_PROVIDER_TYPE
+                            types = [SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE]
+                        }
+
+                        ip {
+                            startIp = "192.168.200.10"
+                            endIp = "192.168.200.100"
+                            netmask = "255.255.255.0"
+                            gateway = "192.168.200.1"
+                        }
+                    }
                     l3Network {
                         name = "pubL3"
 
