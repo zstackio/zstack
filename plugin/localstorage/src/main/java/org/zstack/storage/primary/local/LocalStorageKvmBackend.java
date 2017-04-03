@@ -6,6 +6,8 @@ import org.zstack.compute.vm.ImageBackupStorageSelector;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
+import org.zstack.core.config.GlobalConfigVO;
+import org.zstack.core.config.GlobalConfigVO_;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -1961,7 +1963,8 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                 cmd.paths = list(context.backingFilePath);
                                 cmd.uuid = context.rootVolumeUuid;
                                 cmd.stage = PrimaryStorageConstant.MIGRATE_VOLUME_BACKING_FILE_COPY_STAGE;
-
+                                Integer value = Q.New(GlobalConfigVO.class).select(GlobalConfigVO_.value).eq(GlobalConfigVO_.name, "coldMigrateSpeed").findValue();
+                                cmd.coldMigrateSpeed = value;
                                 httpCall(LocalStorageKvmMigrateVmFlow.COPY_TO_REMOTE_BITS_PATH, struct.getSrcHostUuid(), cmd, false,
                                         AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger, chain) {
                                             @Override
@@ -2144,7 +2147,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 cmd.dstPassword = password;
                 cmd.dstPort = port;
                 cmd.sendCommandUrl = restf.getSendCommandUrl();
-                if(context.hasbackingfile) {
+                if (context.hasbackingfile) {
                     cmd.stage = PrimaryStorageConstant.MIGRATE_VOLUME_AFTER_BACKING_FILE_COPY_STAGE;
                 } else {
                     cmd.stage = PrimaryStorageConstant.MIGRATE_VOLUME_COPY_STAGE;
