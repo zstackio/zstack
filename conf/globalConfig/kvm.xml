@@ -97,4 +97,11 @@
         <type>java.lang.Boolean</type>
         <defaultValue>true</defaultValue>
     </config>
+    <config>
+        <category>kvm</category>
+        <name>coldMigrateSpeed</name>
+        <description>The value is cold migrate speeds by KBPS on local storage scenarios</description>
+        <type>java.lang.Integer</type>
+        <defaultValue>40000</defaultValue>
+    </config>
 </globalConfig>

@@ -109,6 +109,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
         public String dstUsername;
         public Integer dstPort = 22;
         public String stage;
+        public Integer coldMigrateSpeed;
     }
 
     class BackingImage {
