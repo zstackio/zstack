@@ -1,19 +1,17 @@
 package org.zstack.test.integration.storage.primary.smp
 
 import org.springframework.http.HttpEntity
-import org.zstack.header.host.HostStatusEvent
-import org.zstack.header.host.HostVO
+import org.zstack.header.storage.primary.PrimaryStorageVO
 import org.zstack.sdk.AttachPrimaryStorageToClusterAction
 import org.zstack.sdk.ClusterInventory
 import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.storage.primary.smp.KvmBackend
 import org.zstack.test.integration.storage.SMPEnv
 import org.zstack.test.integration.storage.StorageTest
-import org.zstack.testlib.ClusterSpec
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.HostSpec
-import org.zstack.testlib.PrimaryStorageSpec
 import org.zstack.testlib.SubCase
+import org.zstack.utils.gson.JSONObjectUtil
 
 import java.util.concurrent.TimeUnit
 
@@ -51,7 +49,9 @@ class SMPAttachCase extends SubCase{
         }
         TimeUnit.SECONDS.sleep(3)
 
+        KvmBackend.ConnectCmd cmd = null
         env.afterSimulator(KvmBackend.CONNECT_PATH) { rsp, HttpEntity<String> e ->
+            cmd = JSONObjectUtil.toObject(e.body, KvmBackend.ConnectCmd.class)
             def ret = new KvmBackend.AgentRsp()
             ret.success = false
             return ret
@@ -63,6 +63,12 @@ class SMPAttachCase extends SubCase{
         action.sessionId = adminSession()
         AttachPrimaryStorageToClusterAction.Result ret = action.call()
         assert ret.error != null
+
+        PrimaryStorageVO vo = dbFindByUuid(primaryStorageInventory.uuid, PrimaryStorageVO.class)
+        assert vo.getAttachedClusterRefs().isEmpty()
+        retryInSecs(3) {
+            return cmd != null
+        }
     }
 
     @Override
