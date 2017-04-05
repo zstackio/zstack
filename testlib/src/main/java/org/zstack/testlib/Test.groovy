@@ -218,7 +218,7 @@ abstract class Test implements ApiHelper {
         componentLoader = beanConstructor.build()
     }
 
-    protected String adminSession() {
+    public String adminSession() {
         return currentEnvSpec.session.uuid
     }
 
