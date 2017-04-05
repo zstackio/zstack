@@ -82,9 +82,9 @@
     "fileName": "src/main/java/org/zstack/compute/allocator/BackupStorageSelectPrimaryStorageAllocatorFlow.java"
   },
   {
-    "raw": "The image[uuid:%s] is on the backup storage[uuid:%s, type:%s] that requires to work with primary storage[types:%s],however, no host found suitable to work with those primary storage",
-    "en_US": "The image[uuid:{0}] is on the backup storage[uuid:{1}, type:{2}] that requires to work with primary storage[types:{3}],however, no host found suitable to work with those primary storage",
-    "zh_CN": "镜像[uuid:{0}]所在的备份存储[uuid:{1}, type:{2}]必须跟主存储[uuid:{3}]配对使用，但无法找到可以跟满足条件并可以访问该主存储的物理机",
+    "raw": "The image[uuid:%s,type:%s] is on the backup storage[uuid:%s, type:%s] that requires to work with primary storage[types:%s],however, no host found suitable to work with those primary storage",
+    "en_US": "The image[uuid:{0},type:%s] is on the backup storage[uuid:{1}, type:{2}] that requires to work with primary storage[types:{3}],however, no host found suitable to work with those primary storage",
+    "zh_CN": "镜像[uuid:{0},type:%s]所在的备份存储[uuid:{1}, type:{2}]必须跟主存储[uuid:{3}]配对使用，但无法找到可以跟满足条件并可以访问该主存储的物理机",
     "arguments": [
       "spec.getImage().getUuid()",
       "spec.getRequiredBackupStorageUuid()",
