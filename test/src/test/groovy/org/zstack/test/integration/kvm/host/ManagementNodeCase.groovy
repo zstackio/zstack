@@ -2,9 +2,17 @@ package org.zstack.test.integration.kvm.host
 
 import org.zstack.core.Platform
 import org.zstack.core.db.DatabaseFacade
+import org.zstack.core.db.Q
+import org.zstack.core.db.SQL
+import org.zstack.core.scheduler.SchedulerFacade
+import org.zstack.core.scheduler.SchedulerFacadeImpl
+import org.zstack.header.core.scheduler.SchedulerVO
+import org.zstack.header.core.scheduler.SchedulerVO_
 import org.zstack.header.managementnode.ManagementNodeState
 import org.zstack.header.managementnode.ManagementNodeVO
+import org.zstack.header.managementnode.ManagementNodeVO_
 import org.zstack.portal.managementnode.ManagementNodeGlobalConfig
+import org.zstack.portal.managementnode.ManagementNodeManager
 import org.zstack.test.integration.kvm.Env
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
@@ -15,7 +23,7 @@ import java.util.concurrent.TimeUnit
 /**
  * Created by Administrator on 2017-03-22.
  */
-class ManagementNodeHeartbeatCase extends SubCase{
+class ManagementNodeCase extends SubCase{
 
     EnvSpec env
 
