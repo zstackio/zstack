@@ -3,6 +3,7 @@ package org.zstack.storage.primary.local;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.thread.SyncTask;
+import org.zstack.header.host.HostVO;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.ImageCacheShadowVO;
@@ -118,6 +119,10 @@ public class LocalStorageImageCleaner extends ImageCacheCleaner implements Manag
             p.fullPath = vo.getInstallUrl();
             p.disassemble();
 
+            if (!dbf.isExist(p.hostUuid, HostVO.class)){
+                dbf.removeByPrimaryKey(vo.getId(), ImageCacheShadowVO.class);
+                continue;
+            }
             LocalStorageDeleteImageCacheOnPrimaryStorageMsg msg = new LocalStorageDeleteImageCacheOnPrimaryStorageMsg();
             msg.setHostUuid(p.hostUuid);
             msg.setImageUuid(vo.getImageUuid());
