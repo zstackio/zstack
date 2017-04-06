@@ -26,6 +26,7 @@ import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.Constants;
+import org.zstack.header.allocator.HostCapacityVO;
 import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.core.AsyncLatch;
 import org.zstack.header.core.Completion;
@@ -1793,6 +1794,16 @@ public class KVMHost extends HostBase implements Host {
 
         int cpuNum = spec.getVmInventory().getCpuNum();
         cmd.setCpuNum(cpuNum);
+        long memorySize = spec.getVmInventory().getMemorySize();
+
+
+        if(spec.getVmInventory().getHostUuid() != null) {
+            HostCapacityVO vo = dbf.findByUuid(spec.getVmInventory().getHostUuid(), HostCapacityVO.class);
+            vo.setAvailableCpu(vo.getAvailableCpu() - cpuNum);
+            vo.setAvailableMemory(vo.getAvailableMemory() - memorySize);
+            dbf.update(vo);
+        }
+
 
         int socket;
         int cpuOnSocket;
