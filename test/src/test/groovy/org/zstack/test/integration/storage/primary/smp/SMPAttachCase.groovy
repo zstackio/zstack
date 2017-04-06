@@ -58,6 +58,7 @@ class SMPAttachCase extends SubCase{
             def ret = new KvmBackend.AgentRsp()
             if(counter > 0) {
                 ret.success = false
+                ret.error = "failed"
             } else {
                 ret.success = true
             }

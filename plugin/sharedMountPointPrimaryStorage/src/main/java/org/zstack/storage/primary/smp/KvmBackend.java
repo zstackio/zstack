@@ -1332,6 +1332,7 @@ public class KvmBackend extends HypervisorBackend {
 
         class Result {
             List<ErrorCode> errorCodes = new ArrayList<ErrorCode>();
+            List<String> huuids = new ArrayList<String>();
         }
 
         final Result ret = new Result();
@@ -1339,8 +1340,12 @@ public class KvmBackend extends HypervisorBackend {
             @Override
             public void done() {
                 if (!ret.errorCodes.isEmpty()) {
+                    String mountPathErrorInfo = "Can't find mount path on ";
+                    for(String hostUuid : ret.huuids) {
+                        mountPathErrorInfo += String.format("host[uuid:%s] ", hostUuid);
+                    }
                     completion.fail(errf.stringToOperationError(String.format("unable to connect the shared mount point storage[uuid:%s, name:%s] to" +
-                            " the cluster[uuid:%s]", self.getUuid(), self.getName(), clusterUuid), ret.errorCodes));
+                            " the cluster[uuid:%s], %s", self.getUuid(), self.getName(), clusterUuid, mountPathErrorInfo), ret.errorCodes));
                 } else {
                     completion.success();
                 }
@@ -1357,6 +1362,7 @@ public class KvmBackend extends HypervisorBackend {
                 @Override
                 public void fail(ErrorCode errorCode) {
                     ret.errorCodes.add(errorCode);
+                    ret.huuids.add(huuid);
                     latch.ack();
                 }
             });
