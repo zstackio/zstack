@@ -132,6 +132,7 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
             hostname = String.format("%s.%s", hostname, l3.getDnsDomain());
         }
         struct.setHostname(hostname);
+        // nic ip might be null
         struct.setIp(nic.getIp());
         struct.setDnsDomain(l3.getDnsDomain());
         struct.setL3Network(l3);

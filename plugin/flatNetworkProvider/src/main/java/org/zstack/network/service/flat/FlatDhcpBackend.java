@@ -534,7 +534,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
             if (info.isDefaultL3Network) {
                 info.hostname = hostnames.get(nic.getVmInstanceUuid());
-                if (info.hostname == null) {
+                if (info.hostname == null && nic.getIp() != null) {
                     info.hostname = nic.getIp().replaceAll("\\.", "-");
                 }
 
