@@ -1,4 +1,4 @@
-package org.zstack.test.integration.core.scheduler
+package org.zstack.test.integration.kvm.scheduler
 
 
 import org.zstack.core.db.Q
