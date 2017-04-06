@@ -1,7 +1,5 @@
 package org.zstack.test.integration.core
 
-import org.zstack.test.integration.core.gc.EventBasedGarbageCollectorCase
-import org.zstack.test.integration.core.gc.TimeBasedGarbageCollectorCase
 import org.zstack.testlib.Test
 
 /**
