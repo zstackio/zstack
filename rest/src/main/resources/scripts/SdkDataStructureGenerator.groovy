@@ -8,7 +8,7 @@ import org.zstack.header.query.APIQueryReply
 import org.zstack.header.rest.APINoSee
 import org.zstack.header.rest.RestResponse
 import org.zstack.header.rest.SDK
-import org.zstack.rest.sdk.JavaSdkTemplate
+import org.zstack.rest.sdk.SdkTemplate
 import org.zstack.rest.sdk.SdkFile
 import org.zstack.utils.FieldUtils
 import org.zstack.utils.Utils
@@ -19,7 +19,7 @@ import java.lang.reflect.Field
 /**
  * Created by xing5 on 2016/12/11.
  */
-class SdkDataStructureGenerator implements JavaSdkTemplate {
+class SdkDataStructureGenerator implements SdkTemplate {
     CLogger logger = Utils.getLogger(SdkDataStructureGenerator.class)
 
     Set<Class> responseClasses

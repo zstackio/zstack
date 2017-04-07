@@ -9,7 +9,7 @@ import org.zstack.header.query.APIQueryMessage
 import org.zstack.header.rest.APINoSee
 import org.zstack.header.rest.RestRequest
 import org.zstack.header.rest.SDK
-import org.zstack.rest.sdk.JavaSdkTemplate
+import org.zstack.rest.sdk.SdkTemplate
 import org.zstack.rest.sdk.SdkFile
 import org.zstack.utils.FieldUtils
 import org.zstack.utils.Utils
@@ -20,7 +20,7 @@ import java.lang.reflect.Field
 /**
  * Created by xing5 on 2016/12/9.
  */
-class SdkApiTemplate implements JavaSdkTemplate {
+class SdkApiTemplate implements SdkTemplate {
     CLogger logger = Utils.getLogger(SdkApiTemplate.class)
 
     Class apiMessageClass

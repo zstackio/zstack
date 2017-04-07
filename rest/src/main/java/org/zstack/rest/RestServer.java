@@ -36,7 +36,7 @@ import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.rest.RestResponse;
 import org.zstack.rest.sdk.DocumentGenerator;
-import org.zstack.rest.sdk.JavaSdkTemplate;
+import org.zstack.rest.sdk.SdkTemplate;
 import org.zstack.rest.sdk.SdkFile;
 import org.zstack.utils.*;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -132,11 +132,11 @@ public class RestServer implements Component, CloudBusEventListener {
                     continue;
                 }
 
-                JavaSdkTemplate tmp = (JavaSdkTemplate) clz.getConstructor(Class.class).newInstance(apiClz);
+                SdkTemplate tmp = (SdkTemplate) clz.getConstructor(Class.class).newInstance(apiClz);
                 allFiles.addAll(tmp.generate());
             }
 
-            JavaSdkTemplate tmp = GroovyUtils.newInstance("scripts/SdkDataStructureGenerator.groovy", RestServer.class.getClassLoader());
+            SdkTemplate tmp = GroovyUtils.newInstance("scripts/SdkDataStructureGenerator.groovy", RestServer.class.getClassLoader());
             allFiles.addAll(tmp.generate());
 
             for (SdkFile f : allFiles) {

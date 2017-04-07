@@ -5,6 +5,6 @@ import java.util.List;
 /**
  * Created by xing5 on 2016/12/9.
  */
-public interface JavaSdkTemplate {
+public interface SdkTemplate {
     List<SdkFile> generate();
 }
