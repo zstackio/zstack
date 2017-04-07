@@ -15,6 +15,17 @@ py() {
     cd - > /dev/null
 }
 
+pysdk() {
+    if [ -d premium/test-premium ]; then
+        cd premium/test-premium
+    else
+        cd test
+    fi
+
+    mvn test -Dtest=TestGeneratePythonSDK
+    cd - > /dev/null
+}
+
 apihelper() {
     cd test
     mvn test -Dtest=TestGenerateApiHelper
@@ -118,6 +129,8 @@ run_profile() {
 	doc
     elif test x$1 = x'py'; then
 	py
+    elif test x$1 = x'pysdk'; then
+	pysdk
     elif test x$1 = x'apihelper'; then
 	apihelper
     elif test x$1 = x'i18njson'; then
