@@ -12,10 +12,9 @@ import org.zstack.network.service.vip.VipVO;
  */
 @Action(category = EipConstant.ACTION_CATEGORY, names = {"read"})
 @RestRequest(
-        path = "/eips/vm-instances/candidate-nics",
+        path = "/eips/{eipUuid}/vm-instances/candidate-nics",
         method = HttpMethod.GET,
-        responseClass = APIGetEipAttachableVmNicsReply.class,
-        parameterName = "params"
+        responseClass = APIGetEipAttachableVmNicsReply.class
 )
 public class APIGetEipAttachableVmNicsMsg extends APISyncCallMessage {
     @APIParam(required = false, resourceType = EipVO.class)
