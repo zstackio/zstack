@@ -2,6 +2,8 @@ package org.zstack.test.integration.kvm
 
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.network.securitygroup.SecurityGroupConstant
+import org.zstack.network.service.flat.FlatNetworkServiceConstant
+import org.zstack.network.service.userdata.UserdataConstant
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.Test
@@ -328,6 +330,114 @@ use:
                 attachBackupStorage("sftp")
             }
 
+        }
+    }
+
+
+    static EnvSpec oneHostTwoVmsNoVrCephEnv(){
+        return Test.makeEnv {
+            instanceOffering {
+                name = "instanceOffering"
+                memory = SizeUnit.GIGABYTE.toByte(4)
+                cpu = 1
+            }
+
+            cephBackupStorage {
+                name="ceph-bk"
+                description="Test"
+                totalCapacity = SizeUnit.GIGABYTE.toByte(100)
+                availableCapacity= SizeUnit.GIGABYTE.toByte(100)
+                url = "/bk"
+                fsid ="7ff218d9-f525-435f-8a40-3618d1772a64"
+                monUrls = ["root:password@localhost/?monPort=7777"]
+
+                image {
+                    name = "test-iso"
+                    url  = "http://zstack.org/download/test.iso"
+                }
+                image {
+                    name = "image"
+                    url  = "http://zstack.org/download/image.qcow2"
+                }
+            }
+
+            zone {
+                name = "zone"
+                description = "test"
+
+                cluster {
+                    name = "cluster"
+                    hypervisorType = "KVM"
+
+                    kvm {
+                        name = "kvm"
+                        managementIp = "localhost"
+                        username = "root"
+                        password = "password"
+                    }
+
+                    attachPrimaryStorage("ceph")
+                    attachL2Network("l2")
+                }
+
+                cephPrimaryStorage {
+                    name="ceph"
+                    description="Test"
+                    totalCapacity = SizeUnit.GIGABYTE.toByte(100)
+                    availableCapacity= SizeUnit.GIGABYTE.toByte(100)
+                    url="ceph://pri"
+                    fsid="7ff218d9-f525-435f-8a40-3618d1772a64"
+                    monUrls=["root:password@localhost/?monPort=7777"]
+                }
+
+                l2NoVlanNetwork {
+                    name = "l2"
+                    physicalInterface = "eth0"
+
+                    l3Network {
+                        name = "l3"
+
+                        service {
+                            provider = FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING
+                            types = [NetworkServiceType.DHCP.toString(), UserdataConstant.USERDATA_TYPE_STRING]
+                        }
+
+                        service {
+                            provider = SecurityGroupConstant.SECURITY_GROUP_PROVIDER_TYPE
+                            types = [SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE]
+                        }
+
+                        ip {
+                            name = "TestIpRange"
+                            startIp = "192.168.100.10"
+                            endIp = "192.168.100.100"
+                            netmask = "255.255.255.0"
+                            gateway = "192.168.100.1"
+                        }
+                    }
+
+                    l3Network {
+                        name = "pubL3"
+
+                        ip {
+                            startIp = "12.16.10.10"
+                            endIp = "12.16.10.100"
+                            netmask = "255.255.255.0"
+                            gateway = "12.16.10.1"
+                        }
+                    }
+                }
+
+                attachBackupStorage("ceph-bk")
+            }
+
+            vm {
+                name = "vm"
+                useInstanceOffering("instanceOffering")
+                useImage("image1")
+                useL3Networks("l3", "l3_2")
+                useDefaultL3Network("l3")
+            }
         }
     }
 }

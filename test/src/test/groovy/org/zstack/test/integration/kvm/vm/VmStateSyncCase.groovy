@@ -6,11 +6,12 @@ import org.zstack.header.vm.VmInstanceVO
 import org.zstack.header.vm.VmInstanceVO_
 import org.zstack.kvm.KVMConstant
 import org.zstack.sdk.ClusterInventory
+import org.zstack.sdk.HostInventory
 import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.InstanceOfferingInventory
 import org.zstack.sdk.L3NetworkInventory
+import org.zstack.test.integration.kvm.Env
 import org.zstack.test.integration.kvm.KvmTest
-import org.zstack.test.integration.storage.CephEnv
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.HttpError
 import org.zstack.testlib.SubCase
@@ -33,7 +34,7 @@ class VmStateSyncCase extends SubCase {
 
     @Override
     void environment() {
-        env = CephEnv.CephStorageOneVmEnv()
+        env = Env.oneHostTwoVmsNoVrCephEnv()
     }
 
     @Override
@@ -48,6 +49,7 @@ class VmStateSyncCase extends SubCase {
         ImageInventory imageInventory = env.inventoryByName("image")
         L3NetworkInventory l3NetworkInventory = env.inventoryByName("l3")
         ClusterInventory clusterInventory = env.inventoryByName("test-cluster")
+        HostInventory hostInventory = env.inventoryByName("kvm")
 
         for(int i = 0; i < 20; i++) {
             createVmInstance {
@@ -68,6 +70,10 @@ class VmStateSyncCase extends SubCase {
         }
 
         env.cleanSimulatorHandlers()
+
+        reconnectHost {
+            uuid = hostInventory.uuid
+        }
 
         vms = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.clusterUuid, clusterInventory.uuid).listValues()
         for(VmInstanceVO vm : vms) {
