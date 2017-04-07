@@ -11,6 +11,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.test.Api;
 import org.zstack.test.BeanConstructor;
 import org.zstack.test.DBUtil;
+import org.zstack.test.WebBeanConstructor;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -27,7 +28,7 @@ public class TestJobReturnValueFail {
     @Before
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
-        BeanConstructor con = new BeanConstructor();
+        BeanConstructor con = new WebBeanConstructor();
         loader = con.addXml("JobForUnitTest.xml").addXml("PortalForUnitTest.xml").addXml("AccountManager.xml").build();
         jobf = loader.getComponent(JobQueueFacade.class);
         new Api().startServer();

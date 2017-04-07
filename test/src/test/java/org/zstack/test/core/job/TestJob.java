@@ -8,23 +8,27 @@ import org.zstack.core.job.JobQueueFacade;
 import org.zstack.test.Api;
 import org.zstack.test.BeanConstructor;
 import org.zstack.test.DBUtil;
+import org.zstack.test.WebBeanConstructor;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
 import java.util.concurrent.TimeUnit;
 
 public class TestJob {
+    Api api;
     ComponentLoader loader;
     JobQueueFacade jobf;
     long num = 50;
     FakeJobConfig fl;
-
     @Before
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
-        BeanConstructor con = new BeanConstructor();
+        BeanConstructor con = new WebBeanConstructor();
         loader = con.addXml("JobForUnitTest.xml").addXml("PortalForUnitTest.xml").addXml("AccountManager.xml").build();
         jobf = loader.getComponent(JobQueueFacade.class);
         fl = loader.getComponent(FakeJobConfig.class);
-        new Api().startServer();
+        api = new Api();
+        api.startServer();
     }
 
     private void startJob(long index) {

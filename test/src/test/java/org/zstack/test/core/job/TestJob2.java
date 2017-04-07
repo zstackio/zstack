@@ -9,6 +9,7 @@ import org.zstack.core.thread.AsyncThread;
 import org.zstack.test.Api;
 import org.zstack.test.BeanConstructor;
 import org.zstack.test.DBUtil;
+import org.zstack.test.WebBeanConstructor;
 
 import java.util.concurrent.TimeUnit;
 
@@ -21,7 +22,7 @@ public class TestJob2 {
     @Before
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
-        BeanConstructor con = new BeanConstructor();
+        BeanConstructor con = new WebBeanConstructor();
         loader = con.addXml("JobForUnitTest.xml").addXml("PortalForUnitTest.xml").addXml("AccountManager.xml").build();
         jobf = loader.getComponent(JobQueueFacade.class);
         fl = loader.getComponent(FakeJobConfig.class);
