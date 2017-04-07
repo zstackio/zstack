@@ -47,7 +47,7 @@ class VmStateSyncCase extends SubCase {
         InstanceOfferingInventory instanceOfferingInventory = env.inventoryByName("instanceOffering")
         ImageInventory imageInventory = env.inventoryByName("image")
         L3NetworkInventory l3NetworkInventory = env.inventoryByName("l3")
-        ClusterInventory clusterInventory = env.inventoryByName("cluster")
+        ClusterInventory clusterInventory = env.inventoryByName("test-cluster")
 
         for(int i = 0; i < 20; i++) {
             createVmInstance {
