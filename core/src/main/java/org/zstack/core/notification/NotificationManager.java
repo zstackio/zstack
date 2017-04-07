@@ -191,15 +191,11 @@ public class NotificationManager extends AbstractService {
     }
 
     void send(NotificationBuilder builder) {
-        return;
-        /*
-
         try {
             notificationsQueue.offer(builder, 60, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             logger.warn(String.format("unable to write log %s", JSONObjectUtil.toJsonString(builder)), e);
         }
-        */
 
         //TODO: send to bus
     }
