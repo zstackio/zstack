@@ -11,7 +11,6 @@ class CoreLibraryTest extends Test {
         INCLUDE_CORE_SERVICES = false
         spring {
             include("CloudBusAopProxy.xml")
-            include("JobForUnitTest.xml")
         }
     }
 
