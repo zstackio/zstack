@@ -434,7 +434,7 @@ use:
             vm {
                 name = "vm"
                 useInstanceOffering("instanceOffering")
-                useImage("image1")
+                useImage("image")
                 useL3Networks("l3", "l3_2")
                 useDefaultL3Network("l3")
             }
