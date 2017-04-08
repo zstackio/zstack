@@ -38,11 +38,7 @@ public class VipApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APIDeleteVipMsg msg) {
-        if (!dbf.isExist(msg.getUuid(), VipVO.class)) {
-            APIDeleteVipEvent evt = new APIDeleteVipEvent(msg.getId());
-            bus.publish(evt);
-            throw new StopRoutingException();
-        }
+
     }
 
     private void validate(APICreateVipMsg msg) {
