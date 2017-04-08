@@ -55,5 +55,9 @@
         <id>1010</id>
         <description>No oss bucket attach to datacenter</description>
     </code>
+    <code>
+        <id>1011</id>
+        <description>No such virtual router table</description>
+    </code>
 </error>
 

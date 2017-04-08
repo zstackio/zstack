@@ -13,5 +13,33 @@
         <id>1002</id>
         <description>no account found for hybrid</description>
     </code>
+    <code>
+        <id>1003</id>
+        <description>no such ecs vpc</description>
+    </code>
+    <code>
+        <id>1004</id>
+        <description>no such virtual router</description>
+    </code>
+    <code>
+        <id>1005</id>
+        <description>no such virtual route entry</description>
+    </code>
+    <code>
+        <id>1006</id>
+        <description>no such virtual router interface</description>
+    </code>
+    <code>
+        <id>1007</id>
+        <description>no such virtual border router</description>
+    </code>
+    <code>
+        <id>1008</id>
+        <description>non support virtual router type</description>
+    </code>
+    <code>
+        <id>1009</id>
+        <description>no such connection access point</description>
+    </code>
 </error>
 
