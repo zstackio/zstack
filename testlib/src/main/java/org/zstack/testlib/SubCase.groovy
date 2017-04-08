@@ -10,6 +10,7 @@ abstract class SubCase extends Test implements Case {
             test()
         } catch (Throwable t) {
             logger.warn("a sub case [${this.class}] fails, ${t.message}", t)
+            throw t
         } finally {
             logger.info("start cleanup for case ${this.class}")
             clean()
