@@ -76,7 +76,7 @@ public class DetachOssBucketToEcsDataCenterAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
-        info.path = "/hybrid/{dataCenterUuid}/oss/bucket/{ossBucketUuid}";
+        info.path = "/hybrid/aliyun/{dataCenterUuid}/oss-bucket/{ossBucketUuid}";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "";

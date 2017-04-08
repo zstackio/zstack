@@ -58,7 +58,7 @@ public class QueryOssBucketFileNameAction extends QueryAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/hybrid/oss/bucket";
+        info.path = "/hybrid/aliyun/oss-bucket";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";

@@ -76,7 +76,7 @@ public class DeleteOssFileBucketNameInLocalAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
-        info.path = "/hybrid/oss/bucket/{uuid}";
+        info.path = "/hybrid/aliyun/oss-bucket/{uuid}";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";

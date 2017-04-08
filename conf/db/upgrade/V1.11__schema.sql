@@ -41,6 +41,8 @@ CREATE TABLE `EcsVSwitchVO` (
 
 SET FOREIGN_KEY_CHECKS = 1;
 
+
+
 SET FOREIGN_KEY_CHECKS = 0;
 
 -- ----------------------------
@@ -107,7 +109,6 @@ CREATE TABLE `EcsSecurityGroupVO` (
 
 SET FOREIGN_KEY_CHECKS = 1;
 
-SET FOREIGN_KEY_CHECKS = 0;
 
 SET FOREIGN_KEY_CHECKS = 0;
 
@@ -638,3 +639,150 @@ ALTER TABLE LocalStorageResourceRefVO DROP FOREIGN KEY `fkLocalStorageResourceRe
 ALTER TABLE VipVO ADD CONSTRAINT fkUsedIpVO FOREIGN KEY (`usedIpUuid`) REFERENCES `UsedIpVO` (`uuid`) ON DELETE CASCADE;
 
 ALTER TABLE VCenterVO ADD port int DEFAULT NULL;
+SET FOREIGN_KEY_CHECKS = 0;
+
+-- ----------------------------
+--  Table structure for `EcsSecurityGroupRuleVO`
+-- ----------------------------
+CREATE TABLE `VpcVirtualRouterVO` (
+	  `uuid` varchar(32) NOT NULL,
+	  `vrId` varchar(32) NOT NULL,
+	  `vpcUuid` varchar(32) NOT NULL,
+	  `vRouterName` varchar(32) NOT NULL,
+	  `description` varchar(1024) NOT NULL,
+	  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+	  `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+	  PRIMARY KEY (`uuid`),
+	  CONSTRAINT `fkVpcVirtualRouterVOEcsVpcVO` FOREIGN KEY (`vpcUuid`) REFERENCES `zstack`.`EcsVpcVO` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+SET FOREIGN_KEY_CHECKS = 1;
+
+SET FOREIGN_KEY_CHECKS = 0;
+
+-- ----------------------------
+--  Table structure for `EcsSecurityGroupRuleVO`
+-- ----------------------------
+CREATE TABLE `VirtualRouterInterfaceVO` (
+	  `uuid` varchar(32) NOT NULL,
+	  `routerInterfaceId` varchar(64) NOT NULL,
+	  `virtualRouterUuid` varchar(32) NOT NULL,
+	  `accessPointUuid` varchar(32) NOT NULL,
+	  `vRouterType` varchar(16) NOT NULL,
+	  `role` varchar(16) NOT NULL,
+	  `spec` varchar(32) NOT NULL,
+	  `name` varchar(64) NOT NULL,
+	  `status` varchar(32) NOT NULL,
+	  `oppositeInterfaceUuid` varchar(32) NOT NULL,
+	  `description` varchar(128) NOT NULL,
+	  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+	  `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+	  PRIMARY KEY (`uuid`),
+	  CONSTRAINT `fkVirtualRouterInterfaceVOConnectionAccessPointVO` FOREIGN KEY (`accessPointUuid`) REFERENCES `zstack`.`ConnectionAccessPointVO` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+SET FOREIGN_KEY_CHECKS = 1;
+
+
+SET FOREIGN_KEY_CHECKS = 0;
+
+-- ----------------------------
+--  Table structure for `EcsSecurityGroupRuleVO`
+-- ----------------------------
+CREATE TABLE `VpcVirtualRouteEntryVO` (
+	  `uuid` varchar(32) NOT NULL,
+	  `destinationCidrBlock` varchar(64) NOT NULL,
+	  `nextHopUuid` varchar(32) NOT NULL,
+	  `type` varchar(32) NOT NULL,
+	  `status` varchar(32) NOT NULL,
+	  `nextHopType` varchar(32) NOT NULL,
+	  `vRouterType` varchar(16) NOT NULL,
+	  `virtualRouterUuid` varchar(32) NOT NULL,
+	  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+	  `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+	  PRIMARY KEY (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+SET FOREIGN_KEY_CHECKS = 1;
+
+SET FOREIGN_KEY_CHECKS = 0;
+
+-- ----------------------------
+--  Table structure for `ConnectionAccessPointVO`
+-- ----------------------------
+CREATE TABLE `ConnectionAccessPointVO` (
+	  `uuid` varchar(32) NOT NULL,
+	  `accessPointId` varchar(64) NOT NULL,
+	  `type` varchar(32) NOT NULL,
+	  `name` varchar(64) NOT NULL,
+	  `dataCenterUuid` varchar(32) NOT NULL,
+	  `status` varchar(32) NOT NULL,
+	  `hostOperator` varchar(32) NOT NULL,
+	  `description` varchar(128) NOT NULL,
+	  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+	  `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+	  PRIMARY KEY (`uuid`),
+	  CONSTRAINT `fkConnectionAccessPointVODataCenterVO` FOREIGN KEY (`dataCenterUuid`) REFERENCES `zstack`.`DataCenterVO` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+SET FOREIGN_KEY_CHECKS = 1;
+
+SET FOREIGN_KEY_CHECKS = 0;
+
+-- ----------------------------
+--  Table structure for `EcsSecurityGroupRuleVO`
+-- ----------------------------
+CREATE TABLE `VirtualBorderRouterVO` (
+	  `uuid` varchar(32) NOT NULL,
+	  `vrId` varchar(32) NOT NULL,
+	  `vlanInterfaceId` varchar(64) NOT NULL,
+	  `vRouterName` varchar(64) NOT NULL,
+	  `status` varchar(16) NOT NULL,
+	  `name` varchar(64) NOT NULL,
+	  `dataCenterUuid` varchar(32) NOT NULL,
+	  `vlanId` varchar(64) NOT NULL,
+	  `circuitCode` varchar(32) NOT NULL,
+	  `localGatewayIp` varchar(32) NOT NULL,
+	  `peerGatewayIp` varchar(32) NOT NULL,
+	  `physicalConnectionStatus` varchar(32) NOT NULL,
+	  `peeringSubnetMask` varchar(32) NOT NULL,
+	  `physicalConnectionId` varchar(32) NOT NULL,
+	  `accessPointUuid` varchar(32) NOT NULL,
+	  `description` varchar(128) NOT NULL,
+	  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+	  `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+	  PRIMARY KEY (`uuid`),
+	  CONSTRAINT `fkVirtualBorderRouterVODataCenterVO` FOREIGN KEY (`dataCenterUuid`) REFERENCES `zstack`.`DataCenterVO` (`uuid`) ON DELETE CASCADE,
+	  CONSTRAINT `fkVirtualBorderRouterVOConnectionAccessPointVO` FOREIGN KEY (`accessPointUuid`) REFERENCES `zstack`.`ConnectionAccessPointVO` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+SET FOREIGN_KEY_CHECKS = 1;
+
+
+DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_VpcVirtualRouteEntryVO;
+DELIMITER $$
+CREATE TRIGGER trigger_clean_AccountResourceRefVO_for_VpcVirtualRouteEntryVO AFTER DELETE ON `VpcVirtualRouteEntryVO`
+FOR EACH ROW
+    BEGIN
+        delete from `AccountResourceRefVO` where `resourceUuid`=OLD.`uuid` and `resourceType`='VpcVirtualRouteEntryVO';
+    END$$
+DELIMITER ;
+
+DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_ConnectionAccessPointVO;
+DELIMITER $$
+CREATE TRIGGER trigger_clean_AccountResourceRefVO_for_ConnectionAccessPointVO AFTER DELETE ON `ConnectionAccessPointVO`
+FOR EACH ROW
+    BEGIN
+        delete from `AccountResourceRefVO` where `resourceUuid`=OLD.`uuid` and `resourceType`='ConnectionAccessPointVO';
+    END$$
+DELIMITER ;
+
+
+DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_VirtualRouterInterfaceVO;
+DELIMITER $$
+CREATE TRIGGER trigger_clean_AccountResourceRefVO_for_VirtualRouterInterfaceVO AFTER DELETE ON `VirtualRouterInterfaceVO`
+FOR EACH ROW
+    BEGIN
+        delete from `AccountResourceRefVO` where `resourceUuid`=OLD.`uuid` and `resourceType`='VirtualRouterInterfaceVO';
+    END$$
+DELIMITER ;
