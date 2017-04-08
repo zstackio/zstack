@@ -68,5 +68,9 @@ public class SftpBackupStorageApiInterceptor implements ApiMessageInterceptor {
         if (q.isExists()) {
             throw new ApiMessageInterceptionException(operr("duplicate backup storage. There has been a sftp backup storage[hostname:%s] existing", msg.getHostname()));
         }
+        String dir = msg.getUrl();
+        if (dir.startsWith("/proc")||dir.startsWith("/dev") || dir.startsWith("/sys")) {
+            throw new ApiMessageInterceptionException(argerr(" the url contains an invalid folder[/dev or /proc or /sys]"));
+        }
     }
 }
