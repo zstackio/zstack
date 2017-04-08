@@ -8,6 +8,7 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfigException;
 import org.zstack.core.config.GlobalConfigValidatorExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.Component;
 import org.zstack.header.core.workflow.Flow;
@@ -42,7 +43,7 @@ import java.util.concurrent.Callable;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
-public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, PrimaryStorageFactory, Component, CreateTemplateFromVolumeSnapshotExtensionPoint {
+public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, PrimaryStorageFactory, Component, CreateTemplateFromVolumeSnapshotExtensionPoint, RecalculatePrimaryStorageCapacityExtensionPoint, PrimaryStorageDetachExtensionPoint{
     @Autowired
     private DatabaseFacade dbf;
     @Autowired
@@ -360,5 +361,72 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
     @Override
     public String createTemplateFromVolumeSnapshotPrimaryStorageType() {
         return NfsPrimaryStorageConstant.NFS_PRIMARY_STORAGE_TYPE;
+    }
+
+    @Override
+    public String getPrimaryStorageTypeForRecalculateCapacityExtensionPoint() {
+        return type.toString();
+    }
+
+    @Override
+    public void beforeRecalculatePrimaryStorageCapacity(RecalculatePrimaryStorageCapacityStruct struct) {
+        // do nothing
+        return;
+    }
+
+    @Override
+    public void afterRecalculatePrimaryStorageCapacity(RecalculatePrimaryStorageCapacityStruct struct) {
+        if(isNfsUnmounted(struct.getPrimaryStorageUuid())){
+            resetDefaultCapacityWhenNfsUnmounted(struct.getPrimaryStorageUuid());
+        }
+    }
+
+    private boolean isNfsUnmounted(String psUuid) {
+        long count = Q.New(PrimaryStorageClusterRefVO.class)
+                .eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, psUuid).count();
+
+        return count == 0;
+    }
+
+    private void resetDefaultCapacityWhenNfsUnmounted(String psUuid) {
+        PrimaryStorageCapacityUpdater pupdater = new PrimaryStorageCapacityUpdater(psUuid);
+
+        long  totalCapacity = 0;
+        long  availableCapacity = 0;
+        long  totalPhysicalCapacity = 0;
+        long  availablePhysicalCapacity = 0;
+        pupdater.run(new PrimaryStorageCapacityUpdaterRunnable() {
+            @Override
+            public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
+                cap.setTotalCapacity(totalCapacity);
+                cap.setAvailableCapacity(availableCapacity);
+                cap.setTotalPhysicalCapacity(totalPhysicalCapacity);
+                cap.setAvailablePhysicalCapacity(availablePhysicalCapacity);
+                return cap;
+            }
+        });
+    }
+
+    @Override
+    public void preDetachPrimaryStorage(PrimaryStorageInventory inventory, String clusterUuid) throws PrimaryStorageException {
+        return;
+    }
+
+    @Override
+    public void beforeDetachPrimaryStorage(PrimaryStorageInventory inventory, String clusterUuid) {
+        return;
+    }
+
+    @Override
+    public void failToDetachPrimaryStorage(PrimaryStorageInventory inventory, String clusterUuid) {
+        return;
+    }
+
+    @Override
+    public void afterDetachPrimaryStorage(PrimaryStorageInventory inventory, String clusterUuid) {
+        RecalculatePrimaryStorageCapacityMsg rmsg = new RecalculatePrimaryStorageCapacityMsg();
+        rmsg.setPrimaryStorageUuid(inventory.getUuid());
+        bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, inventory.getUuid());
+        bus.send(rmsg);
     }
 }
