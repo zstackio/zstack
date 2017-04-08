@@ -74,7 +74,7 @@ public class APIAddNfsPrimaryStorageMsg extends APIAddPrimaryStorageMsg {
 
         msg.setName("PS1");
         msg.setUrl("192.168.0.25:/share/nfs");
-
+        msg.setZoneUuid(uuid());
         return msg;
     }
 

@@ -180,6 +180,16 @@ doc {
                     since "0.6"
 
                 }
+
+                column {
+                    name "strategy"
+                    enclosedIn ""
+                    desc "云主机创建策略,创建后立刻启动或创建后不启动"
+                    location "body"
+                    type "String"
+                    optional true
+                    since "0.6"
+                }
             }
         }
 

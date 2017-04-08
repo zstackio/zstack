@@ -50,20 +50,11 @@ doc {
                     since "0.6"
 
                 }
-                column {
-                    name "cpuSpeed"
-                    enclosedIn "params"
-                    desc "CPU速度"
-                    location "body"
-                    type "int"
-                    optional false
-                    since "0.6"
 
-                }
                 column {
                     name "memorySize"
                     enclosedIn "params"
-                    desc "内存大小"
+                    desc "内存大小, 单位Byte"
                     location "body"
                     type "long"
                     optional false
