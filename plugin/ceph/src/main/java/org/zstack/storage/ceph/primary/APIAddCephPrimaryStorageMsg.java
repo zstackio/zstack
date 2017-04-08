@@ -83,6 +83,7 @@ public class APIAddCephPrimaryStorageMsg extends APIAddPrimaryStorageMsg {
         msg.setRootVolumePoolName("zs-images");
         msg.setDataVolumePoolName("zs-data-volume");
         msg.setImageCachePoolName("zs-image-cache");
+        msg.setZoneUuid(uuid());
 
         return msg;
     }

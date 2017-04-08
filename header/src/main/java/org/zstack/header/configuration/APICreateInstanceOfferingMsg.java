@@ -108,8 +108,7 @@ public class APICreateInstanceOfferingMsg extends APICreateMessage {
         msg.setName("instanceOffering");
         msg.setType(USER_VM_TYPE);
         msg.setCpuNum(2);
-        msg.setCpuSpeed(1);
-        msg.setMemorySize(1000);
+        msg.setMemorySize(2097152);
 
 
         return msg;

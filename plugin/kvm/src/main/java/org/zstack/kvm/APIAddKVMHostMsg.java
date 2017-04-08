@@ -107,6 +107,9 @@ public class APIAddKVMHostMsg extends APIAddHostMsg {
         msg.setUsername("userName");
         msg.setPassword("password");
         msg.setSshPort(22);
+        msg.setClusterUuid(uuid());
+        msg.setName("newHost");
+        msg.setManagementIp("127.0.0.1");
         return msg;
     }
 
