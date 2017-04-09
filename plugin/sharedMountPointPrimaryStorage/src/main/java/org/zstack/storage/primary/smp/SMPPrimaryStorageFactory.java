@@ -37,7 +37,7 @@ import static org.zstack.core.Platform.operr;
 /**
  * Created by xing5 on 2016/3/26.
  */
-public class SMPPrimaryStorageFactory implements PrimaryStorageFactory, CreateTemplateFromVolumeSnapshotExtensionPoint, HostDeleteExtensionPoint {
+public class SMPPrimaryStorageFactory implements PrimaryStorageFactory, CreateTemplateFromVolumeSnapshotExtensionPoint, HostDeleteExtensionPoint, PrimaryStorageDetachExtensionPoint {
     private static final CLogger logger = Utils.getLogger(SMPPrimaryStorageFactory.class);
 
     public static final PrimaryStorageType type = new PrimaryStorageType(SMPConstants.SMP_TYPE);
@@ -265,11 +265,11 @@ public class SMPPrimaryStorageFactory implements PrimaryStorageFactory, CreateTe
         }
 
         for (String psUuid : psUuids) {
-            releasePrimaryStorageCapacity(psUuid, inventory);
+            releasePrimaryStorageCapacity(psUuid);
         }
     }
 
-    private void releasePrimaryStorageCapacity(String psUuid, HostInventory inv) {
+    private void releasePrimaryStorageCapacity(String psUuid) {
         SMPRecalculatePrimaryStorageCapacityMsg msg = new SMPRecalculatePrimaryStorageCapacityMsg();
         msg.setPrimaryStorageUuid(psUuid);
         msg.setRelease(true);
@@ -286,5 +286,36 @@ public class SMPPrimaryStorageFactory implements PrimaryStorageFactory, CreateTe
                 .param("cuuid", clusterUuid)
                 .param("ptype", SMPConstants.SMP_TYPE)
                 .list();
+    }
+
+    @Override
+    public void preDetachPrimaryStorage(PrimaryStorageInventory inventory, String clusterUuid) throws PrimaryStorageException {
+        return;
+    }
+
+    @Override
+    public void beforeDetachPrimaryStorage(PrimaryStorageInventory inventory, String clusterUuid) {
+        return;
+    }
+
+    @Override
+    public void failToDetachPrimaryStorage(PrimaryStorageInventory inventory, String clusterUuid) {
+        return;
+    }
+
+    @Override
+    public void afterDetachPrimaryStorage(PrimaryStorageInventory inventory, String clusterUuid) {
+
+        PrimaryStorageVO vo = dbf.findByUuid(inventory.getUuid(), PrimaryStorageVO.class);
+        if(null == vo){
+            logger.warn(String.format("run afterRecalculatePrimaryStorageCapacity fail, not find ps[%s] db record", inventory.getUuid()));
+            return;
+        }
+
+        SMPPrimaryStorageBase base = new SMPPrimaryStorageBase(vo);
+        if(base.isUnmounted()){
+            //base.resetDefaultCapacityWhenUnmounted();
+            releasePrimaryStorageCapacity(inventory.getUuid());
+        }
     }
 }
