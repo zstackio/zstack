@@ -37,7 +37,7 @@ import static org.zstack.core.Platform.operr;
 /**
  * Created by xing5 on 2016/3/26.
  */
-public class SMPPrimaryStorageFactory implements PrimaryStorageFactory, CreateTemplateFromVolumeSnapshotExtensionPoint, HostDeleteExtensionPoint {
+public class SMPPrimaryStorageFactory implements PrimaryStorageFactory, CreateTemplateFromVolumeSnapshotExtensionPoint, HostDeleteExtensionPoint, RecalculatePrimaryStorageCapacityExtensionPoint, PrimaryStorageDetachExtensionPoint {
     private static final CLogger logger = Utils.getLogger(SMPPrimaryStorageFactory.class);
 
     public static final PrimaryStorageType type = new PrimaryStorageType(SMPConstants.SMP_TYPE);
@@ -286,5 +286,56 @@ public class SMPPrimaryStorageFactory implements PrimaryStorageFactory, CreateTe
                 .param("cuuid", clusterUuid)
                 .param("ptype", SMPConstants.SMP_TYPE)
                 .list();
+    }
+
+    @Override
+    public void preDetachPrimaryStorage(PrimaryStorageInventory inventory, String clusterUuid) throws PrimaryStorageException {
+        return;
+    }
+
+    @Override
+    public String getPrimaryStorageTypeForRecalculateCapacityExtensionPoint() {
+        return type.toString();
+    }
+
+    @Override
+    public void beforeDetachPrimaryStorage(PrimaryStorageInventory inventory, String clusterUuid) {
+        return;
+    }
+
+    @Override
+    public void afterRecalculatePrimaryStorageCapacity(RecalculatePrimaryStorageCapacityStruct struct) {
+        PrimaryStorageVO vo = dbf.findByUuid(struct.getPrimaryStorageUuid(), PrimaryStorageVO.class);
+        if(null == vo){
+            logger.warn(String.format("run afterRecalculatePrimaryStorageCapacity fail, not find ps[%s] db record", struct.getPrimaryStorageUuid()));
+            return;
+        }
+
+        SMPPrimaryStorageBase base = new SMPPrimaryStorageBase(vo);
+        if(base.isUnmounted()){
+            base.resetDefaultCapacityWhenUnmounted();
+        }
+    }
+
+    @Override
+    public void failToDetachPrimaryStorage(PrimaryStorageInventory inventory, String clusterUuid) {
+        return;
+    }
+
+    @Override
+    public void beforeRecalculatePrimaryStorageCapacity(RecalculatePrimaryStorageCapacityStruct struct) {
+        return;
+    }
+
+    @Override
+    public void afterDetachPrimaryStorage(PrimaryStorageInventory inventory, String clusterUuid) {
+        if(null == inventory || null == inventory.getUuid()){
+            return;
+        }
+
+        RecalculatePrimaryStorageCapacityMsg rmsg = new RecalculatePrimaryStorageCapacityMsg();
+        rmsg.setPrimaryStorageUuid(inventory.getUuid());
+        bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, inventory.getUuid());
+        bus.send(rmsg);
     }
 }
