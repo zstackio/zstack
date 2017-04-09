@@ -1002,28 +1002,13 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
 
     protected void handle(NfsRecalculatePrimaryStorageCapacityMsg msg) {
         if (msg.isRelease()) {
-            doReleasePrimaryStorageCapacity();
+            resetDefaultCapacity();
         } else {
             RecalculatePrimaryStorageCapacityMsg rmsg = new RecalculatePrimaryStorageCapacityMsg();
             rmsg.setPrimaryStorageUuid(self.getUuid());
             bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
             bus.send(rmsg);
         }
-    }
-
-    private void doReleasePrimaryStorageCapacity() {
-        PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(self.getUuid());
-        updater.run(new PrimaryStorageCapacityUpdaterRunnable() {
-            @Override
-            public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
-                cap.setAvailableCapacity(0L);
-                cap.setAvailablePhysicalCapacity(0L);
-                cap.setSystemUsedCapacity(0L);
-                cap.setTotalPhysicalCapacity(0L);
-                cap.setTotalCapacity(0L);
-                return cap;
-            }
-        });
     }
 
     protected void hookToKVMHostConnectedEventToChangeStatusToConnected() {
