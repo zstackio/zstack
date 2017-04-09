@@ -194,12 +194,17 @@ public class Platform {
     }
 
     private static void linkGlobalProperty() {
-        List<Class> clzs = BeanUtils.scanClass("org.zstack", GlobalPropertyDefinition.class);
+        Set<Class<?>> clzs = reflections.getTypesAnnotatedWith(GlobalPropertyDefinition.class);
+
+        boolean noTrim = System.getProperty("DoNotTrimPropertyFile") != null;
 
         List<String> lst = new ArrayList<String>();
         Map<String, String> propertiesMap = new HashMap<String, String>();
         for (final String name: System.getProperties().stringPropertyNames()) {
             String value = System.getProperty(name);
+            if (!noTrim) {
+                value = value.trim();
+            }
             propertiesMap.put(name, value);
             lst.add(String.format("%s=%s", name, value));
         }
