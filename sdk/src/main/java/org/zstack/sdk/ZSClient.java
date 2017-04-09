@@ -295,7 +295,7 @@ public class ZSClient {
                 urlBuilder.addQueryParameter("limit", String.format("%s", qaction.limit));
             }
             if (qaction.start != null) {
-                urlBuilder.addQueryParameter("limit", String.format("%s", qaction.start));
+                urlBuilder.addQueryParameter("start", String.format("%s", qaction.start));
             }
             if (qaction.count != null) {
                 urlBuilder.addQueryParameter("count", String.format("%s", qaction.count));
@@ -311,7 +311,7 @@ public class ZSClient {
                     urlBuilder.addQueryParameter("sort", String.format("%s", qaction.sortBy));
                 } else {
                     String d = "asc".equals(qaction.sortDirection) ? "+" : "-";
-                    urlBuilder.addQueryParameter("sort", String.format("%s%s", d, qaction.replyWithCount));
+                    urlBuilder.addQueryParameter("sort", String.format("%s%s", d, qaction.sortBy));
                 }
             }
             if (qaction.fields != null && !qaction.fields.isEmpty()) {
