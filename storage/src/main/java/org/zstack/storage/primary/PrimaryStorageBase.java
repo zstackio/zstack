@@ -22,6 +22,7 @@ import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.NopeCompletion;
@@ -30,6 +31,8 @@ import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
+import org.zstack.header.host.HostState;
+import org.zstack.header.host.HostStatus;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -910,6 +913,9 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
         extpEmitter.beforeChange(self, event);
         if (PrimaryStorageStateEvent.maintain == event) {
+            if(self.getStatus() == PrimaryStorageStatus.Disconnected){
+                throw new ApiMessageInterceptionException(operr("cannot maitain disconnected primary storage"));
+            }
             logger.warn(String.format("Primary Storage %s  will enter maintenance mode, ignore unknown status VMs", msg.getPrimaryStorageUuid()));
             List<String> vmUuids = getAllVmsUuid(msg.getPrimaryStorageUuid());
             //TODO: Add alert if some vms on disconnect host
