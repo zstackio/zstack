@@ -63,8 +63,6 @@ use:
                     l3Network {
                         name = "l3"
 
-
-
                         ip {
                             startIp = "192.168.100.10"
                             endIp = "192.168.100.100"
