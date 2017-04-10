@@ -8,6 +8,7 @@ public class InstantiateVolumeOnPrimaryStorageMsg extends NeedReplyMessage imple
     private HostInventory destHost;
     private VolumeInventory volume;
     private String primaryStorageUuid;
+    private boolean isAllocated = false;
 
     public void setPrimaryStorageUuid(String primaryStorageUuid) {
         this.primaryStorageUuid = primaryStorageUuid;
@@ -33,4 +34,13 @@ public class InstantiateVolumeOnPrimaryStorageMsg extends NeedReplyMessage imple
     public void setDestHost(HostInventory destHost) {
         this.destHost = destHost;
     }
+
+    public boolean isAllocated() {
+        return isAllocated;
+    }
+
+    public void setAllocated(boolean allocated) {
+        isAllocated = allocated;
+    }
+
 }

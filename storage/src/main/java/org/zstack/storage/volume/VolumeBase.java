@@ -265,6 +265,7 @@ public class VolumeBase implements Volume {
                         }
                         imsg.setSystemTags(msg.getSystemTags());
                         imsg.setTemplateSpec(msg.getTemplateSpec());
+                        imsg.setAllocated(true);
                         bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
                         bus.send(imsg, new CloudBusCallBack(trigger) {
                             @Override
