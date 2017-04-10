@@ -23,6 +23,7 @@ class NetworkTest extends Test {
         useSpring(springSpec)
         spring {
             include("eip.xml")
+            securityGroup()
         }
     }
 
