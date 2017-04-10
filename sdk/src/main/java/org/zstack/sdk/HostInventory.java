@@ -90,6 +90,14 @@ public class HostInventory  {
         return this.availableCpuCapacity;
     }
 
+    public java.lang.Integer cpuSockets;
+    public void setCpuSockets(java.lang.Integer cpuSockets) {
+        this.cpuSockets = cpuSockets;
+    }
+    public java.lang.Integer getCpuSockets() {
+        return this.cpuSockets;
+    }
+
     public java.lang.Long totalMemoryCapacity;
     public void setTotalMemoryCapacity(java.lang.Long totalMemoryCapacity) {
         this.totalMemoryCapacity = totalMemoryCapacity;
