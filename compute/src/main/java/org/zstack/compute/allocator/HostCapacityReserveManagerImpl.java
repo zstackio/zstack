@@ -13,6 +13,8 @@ import org.zstack.header.allocator.HostCapacityOverProvisioningManager;
 import org.zstack.header.allocator.HostReservedCapacityExtensionPoint;
 import org.zstack.header.allocator.ReservedHostCapacity;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.host.HostState;
+import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.utils.CollectionUtils;
@@ -94,6 +96,8 @@ public class HostCapacityReserveManagerImpl implements HostCapacityReserveManage
             SimpleQuery<HostVO> clusterq = dbf.createQuery(HostVO.class);
             clusterq.select(HostVO_.uuid, HostVO_.clusterUuid);
             clusterq.add(HostVO_.uuid, Op.IN, hostUuids);
+            clusterq.add(HostVO_.state,Op.EQ, HostState.Enabled);
+            clusterq.add(HostVO_.status,Op.EQ, HostStatus.Connected);
             List<Tuple> clusterTuple = clusterq.listTuple();
             Map<String, List<String>> clusterHostUuidMap = new HashMap<>(clusterTuple.size());
             List<String> clusterUuids = new ArrayList<>(clusterTuple.size());
@@ -146,6 +150,8 @@ public class HostCapacityReserveManagerImpl implements HostCapacityReserveManage
             SimpleQuery<HostVO> zoneq = dbf.createQuery(HostVO.class);
             zoneq.select(HostVO_.uuid, HostVO_.zoneUuid);
             zoneq.add(HostVO_.uuid, Op.IN, hostUuids);
+            zoneq.add(HostVO_.state,Op.EQ, HostState.Enabled);
+            zoneq.add(HostVO_.status,Op.EQ, HostStatus.Connected);
             List<Tuple> zoneTuples = zoneq.listTuple();
             List<String> zoneUuids = new ArrayList<>();
             Map<String, List<String>> zoneHostUuidMap = new HashMap<>();
@@ -195,6 +201,8 @@ public class HostCapacityReserveManagerImpl implements HostCapacityReserveManage
             SimpleQuery<HostVO> hq = dbf.createQuery(HostVO.class);
             hq.select(HostVO_.uuid, HostVO_.hypervisorType);
             hq.add(HostVO_.uuid, Op.IN, hostUuids);
+            hq.add(HostVO_.state,Op.EQ, HostState.Enabled);
+            hq.add(HostVO_.status,Op.EQ, HostStatus.Connected);
             List<Tuple> tuples = hq.listTuple();
 
             for (Tuple t : tuples) {
