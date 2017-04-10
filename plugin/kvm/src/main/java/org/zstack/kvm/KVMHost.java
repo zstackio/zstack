@@ -2158,6 +2158,7 @@ public class KVMHost extends HostBase implements Host {
         return KVMHostInventory.valueOf(getSelf());
     }
 
+    @Override
     protected void pingHook(final Completion completion) {
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("ping-kvm-host-%s", self.getUuid()));

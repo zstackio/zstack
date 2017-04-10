@@ -9,6 +9,7 @@ import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -590,10 +591,12 @@ public abstract class HostBase extends AbstractHost {
                 Boolean noReconnect = (Boolean) errorCode.getFromOpaque(Opaque.NO_RECONNECT_AFTER_PING_FAILURE.toString());
                 reply.setNoReconnect(noReconnect != null && noReconnect);
 
-                if (changeConnectionState(HostStatusEvent.disconnected)) {
+                if(!Q.New(HostVO.class).eq(HostVO_.uuid, msg.getHostUuid()).isExists()){
+                    reply.setNoReconnect(true);
+                }else if (changeConnectionState(HostStatusEvent.disconnected)) {
                     new Event().log(HostLogLabel.HOST_STATUS_DISCONNECTED, self.getUuid(), self.getName(), errorCode.toString());
                 }
-
+                
                 bus.reply(msg, reply);
             }
         });
