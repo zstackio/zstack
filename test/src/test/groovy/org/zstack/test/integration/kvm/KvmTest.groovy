@@ -13,6 +13,7 @@ class KvmTest extends Test {
         virtualRouter()
         securityGroup()
         kvm()
+        ceph()
     }
 
     @Override
