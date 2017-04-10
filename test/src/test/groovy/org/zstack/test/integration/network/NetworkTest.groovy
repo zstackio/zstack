@@ -21,6 +21,9 @@ class NetworkTest extends Test {
     @Override
     void setup() {
         useSpring(springSpec)
+        spring {
+            include("eip.xml")
+        }
     }
 
     @Override

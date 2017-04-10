@@ -7,6 +7,7 @@ import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.sdk.ClusterInventory
 import org.zstack.sdk.L2NetworkInventory
+import org.zstack.test.integration.network.NetworkTest
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
 import org.zstack.test.integration.networkservice.provider.virtualrouter.VirtualRouterNetworkServiceEnv
 import org.zstack.testlib.EnvSpec
@@ -29,7 +30,10 @@ use:
 
     @Override
     void setup() {
-        useSpring(NetworkServiceProviderTest.springSpec)
+        useSpring(NetworkTest.springSpec)
+        spring {
+            include("eip.xml")
+        }
     }
 
     @Override

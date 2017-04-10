@@ -20,7 +20,7 @@ class CloudBusShardingCase extends SubCase {
     CloudBusIN bus
     CountDownLatch latch = new CountDownLatch(1)
     boolean isSuccess = false
-    String servId = "FakeService"
+    String servId = "FakeServiceForeCloudBusShardingCase"
     CountDownLatch startLatch = new CountDownLatch(1)
 
     class FakeService extends AbstractService {
