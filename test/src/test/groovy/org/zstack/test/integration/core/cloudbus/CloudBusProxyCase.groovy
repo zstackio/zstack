@@ -1,16 +1,12 @@
 package org.zstack.test.integration.core.cloudbus
 
-import groovy.transform.TypeChecked
 import junit.framework.Assert
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.cloudbus.CloudBusCallBack
 import org.zstack.header.message.MessageReply
 import org.zstack.header.message.NeedReplyMessage
 import org.zstack.test.aop.CloudBusAopProxy
-import org.zstack.test.core.cloudbus.FakeNeedReplyMessage
 import org.zstack.testlib.SubCase
-import org.zstack.utils.Utils
-import org.zstack.utils.logging.CLogger
 
 /**
  * Created by heathhose on 17-3-22.
