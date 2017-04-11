@@ -263,7 +263,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
                 for (String id : ids) {
                     if (destinationMaker.isManagedByUs(id)) {
                         ours.add(id);
-                        List<SchedulerVO> vos = Q.New(SchedulerVO.class).in(SchedulerVO_.uuid, ours).listValues();
+                        List<SchedulerVO> vos = Q.New(SchedulerVO.class).in(SchedulerVO_.uuid, ours).list();
                         for (SchedulerVO vo : vos) {
                             vo.setManagementNodeUuid(Platform.getManagementServerId());
                             dbf.updateAndRefresh(vo);
