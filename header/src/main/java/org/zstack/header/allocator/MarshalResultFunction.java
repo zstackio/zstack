@@ -1,8 +1,6 @@
 package org.zstack.header.allocator;
 
 import org.zstack.header.host.HostVO;
-
-import java.util.Collection;
 import java.util.List;
 
 /**

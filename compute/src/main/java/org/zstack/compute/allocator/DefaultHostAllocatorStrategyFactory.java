@@ -5,8 +5,6 @@ import org.zstack.header.allocator.HostAllocatorStrategy;
 import org.zstack.header.allocator.HostAllocatorStrategyType;
 import org.zstack.header.allocator.MarshalResultFunction;
 import org.zstack.header.host.HostVO;
-
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
