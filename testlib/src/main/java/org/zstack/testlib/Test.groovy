@@ -1,5 +1,6 @@
 package org.zstack.testlib
 
+import org.apache.logging.log4j.ThreadContext
 import org.zstack.core.Platform
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.componentloader.ComponentLoader
@@ -7,6 +8,7 @@ import org.zstack.core.db.DatabaseFacade
 import org.zstack.header.AbstractService
 import org.zstack.header.exception.CloudRuntimeException
 import org.zstack.header.identity.AccountConstant
+import org.zstack.header.message.APIMessage
 import org.zstack.header.message.AbstractBeforeSendMessageInterceptor
 import org.zstack.header.message.Event
 import org.zstack.header.message.Message
@@ -364,6 +366,17 @@ abstract class Test implements ApiHelper {
 
         boolean hasFailure = false
 
+        bean(CloudBus.class).installBeforeSendMessageInterceptor(new AbstractBeforeSendMessageInterceptor() {
+            @Override
+            void intercept(Message msg) {
+                if (msg instanceof APIMessage) {
+                    if (CURRENT_SUB_CASE != null) {
+                        ThreadContext.put("case", CURRENT_SUB_CASE.class.simpleName)
+                    }
+                }
+            }
+        })
+
         for (SubCaseResult r in allCases) {
             def c = r.caseType.newInstance() as Case
 
@@ -374,6 +387,7 @@ abstract class Test implements ApiHelper {
                 CURRENT_SUB_CASE = c
 
                 beforeRunSubCase()
+
                 c.run()
 
                 r.success = true
