@@ -4,13 +4,19 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.allocator.*;
+import org.zstack.header.cluster.Cluster;
+import org.zstack.header.cluster.ClusterState;
+import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
@@ -48,6 +54,8 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
     private PluginRegistry pluginRgty;
     @Autowired
     private HostCapacityOverProvisioningManager ratioMgr;
+    @Autowired
+    private DatabaseFacade dbf;
 
     public HostAllocatorSpec getAllocationSpec() {
         return allocationSpec;
@@ -74,6 +82,7 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
     }
 
     void reserveCapacity(final String hostUuid, final long cpu, final long memory) {
+        checkHostClusterStatus(hostUuid);
         HostCapacityUpdater updater = new HostCapacityUpdater(hostUuid);
         updater.run(new HostCapacityUpdaterRunnable() {
             @Override
@@ -97,6 +106,15 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
                 return cap;
             }
         });
+    }
+
+    private void checkHostClusterStatus(final String hostUuid) {
+        HostVO vo = dbf.findByUuid(hostUuid, HostVO.class);
+        ClusterVO clusterVO = dbf.findByUuid(vo.getClusterUuid(), ClusterVO.class);
+        if (clusterVO.getState() == ClusterState.Disabled) {
+            throw new UnableToReserveHostCapacityException(
+                    String.format("The cluster[uuid:%s] is disabled, can't reserve capacity from host[uuid:%s]", clusterVO.getUuid(), vo.getUuid()));
+        }
     }
 
     protected void marshalResult() {
