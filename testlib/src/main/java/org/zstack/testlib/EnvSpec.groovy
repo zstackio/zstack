@@ -481,6 +481,7 @@ class EnvSpec implements Node {
 
         adminLogin()
         resetAllGlobalConfig()
+        cleanSimulatorAndMessageHandlers()
         deploy()
 
         defaultHttpHandlers = [:]
