@@ -497,4 +497,28 @@ abstract class Test implements ApiHelper {
 
         return getRetryReturnValue(ret, true)
     }
+
+    protected static void expect(exceptions, Closure c) {
+        List<Class> lst = []
+        if (exceptions instanceof Collection) {
+            lst.addAll(exceptions)
+        } else if (exceptions instanceof Class && Throwable.class.isAssignableFrom(exceptions)) {
+            lst.add(exceptions)
+        } else {
+            throw new Exception("the first argument must be a Throwable or a collection of Throwable, but got a ${exceptions.class.name}")
+        }
+
+        try {
+            c()
+        } catch (Throwable t) {
+            for (Class tt : lst) {
+                if (tt.isAssignableFrom(t.class)) {
+                    return
+                }
+            }
+
+            throw new Exception("expected to get a Throwable of ${lst.collect { it.name }} but got ${t.class.name}")
+
+        }
+    }
 }
