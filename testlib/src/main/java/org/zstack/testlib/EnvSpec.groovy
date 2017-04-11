@@ -7,9 +7,11 @@ import org.springframework.web.client.RestTemplate
 import org.zstack.compute.vm.VmGlobalConfig
 import org.zstack.core.CoreGlobalProperty
 import org.zstack.core.Platform
+import org.zstack.core.asyncbatch.While
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.SQL
 import org.zstack.core.notification.NotificationVO
+import org.zstack.header.core.NoErrorCompletion
 import org.zstack.header.core.progress.TaskProgressVO
 import org.zstack.header.identity.AccountConstant
 import org.zstack.header.image.ImageDeletionPolicyManager
@@ -91,6 +93,7 @@ import org.zstack.sdk.SessionInventory
 import org.zstack.sdk.UpdateGlobalConfigAction
 import org.zstack.sdk.ZSClient
 import org.zstack.storage.volume.VolumeGlobalConfig
+import org.zstack.utils.DebugUtils
 import org.zstack.utils.gson.JSONObjectUtil
 
 import javax.servlet.http.HttpServletRequest
@@ -414,27 +417,37 @@ class EnvSpec implements Node {
         a.sessionId = session.uuid
         QueryGlobalConfigAction.Result res = a.call()
         assert res.error == null: res.error.toString()
-        CountDownLatch latch = new CountDownLatch(res.value.inventories.size())
+        CountDownLatch latch = new CountDownLatch(1)
         List<ErrorCode> errors = []
-        res.value.inventories.each { GlobalConfigInventory config ->
-            Thread.start {
-                try {
-                    def ua = new UpdateGlobalConfigAction()
-                    ua.category = config.category
-                    ua.name = config.name
-                    ua.value = config.defaultValue
-                    ua.sessionId = session.uuid
-                    UpdateGlobalConfigAction.Result r = ua.call()
+        new While<GlobalConfigInventory>(res.value.inventories).all(new While.Do<GlobalConfigInventory>() {
+            @Override
+            void accept(GlobalConfigInventory config, NoErrorCompletion completion) {
+                def ua = new UpdateGlobalConfigAction()
+                ua.category = config.category
+                ua.name = config.name
+                ua.value = config.defaultValue
+                ua.sessionId = session.uuid
+                ua.call { UpdateGlobalConfigAction.Result r ->
                     if (r.error != null) {
                         errors.add(r.error)
                     }
-                } finally {
-                    latch.countDown()
+
+                    completion.done()
                 }
             }
+        }).run(new NoErrorCompletion() {
+            @Override
+            void done() {
+                latch.countDown()
+            }
+        })
+
+        def ret = latch.await(1, TimeUnit.MINUTES)
+        if (!ret) {
+            DebugUtils.dumpAllThreads()
         }
 
-        assert latch.await(1, TimeUnit.MINUTES): "global configs not all updated after 1 minutes timeout"
+        assert ret: "global configs not all updated after 1 minutes timeout"
         assert errors.isEmpty(): "some global configs fail to update, see ${errors.collect {it.toString()}}"
     }
 

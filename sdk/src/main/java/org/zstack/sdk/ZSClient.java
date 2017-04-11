@@ -93,11 +93,7 @@ public class ZSClient {
                 return;
             }
 
-            api.resultFromWebHook = res;
-            synchronized (api) {
-                api.notify();
-            }
-
+            api.wakeUpFromWebHook(res);
             rsp.setStatus(200);
             rsp.getWriter().write("");
         } catch (Exception e) {
@@ -128,13 +124,32 @@ public class ZSClient {
         InternalCompletion completion;
         String jobUuid = UUID.randomUUID().toString().replaceAll("-", "");
 
-        ApiResult resultFromWebHook;
+        private ApiResult resultFromWebHook;
 
         Api(AbstractAction action) {
             this.action = action;
             info = action.getRestInfo();
             if (action.apiId != null) {
                 jobUuid = action.apiId;
+            }
+        }
+
+        void wakeUpFromWebHook(ApiResult res) {
+            if (completion == null) {
+                resultFromWebHook = res;
+                synchronized (this) {
+                    this.notifyAll();
+                }
+            } else {
+                try {
+                    completion.complete(res);
+                } catch (Throwable t) {
+                    res = new ApiResult();
+                    res.error = new ErrorCode();
+                    res.error.code = Constants.INTERNAL_ERROR;
+                    res.error.details = t.getMessage();
+                    completion.complete(res);
+                }
             }
         }
 
@@ -250,26 +265,8 @@ public class ZSClient {
             if (completion == null) {
                 return syncWebHookResult();
             } else {
-                asyncWebHookResult();
                 return null;
             }
-        }
-
-        private void asyncWebHookResult() {
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        completion.complete(syncWebHookResult());
-                    } catch (Throwable t) {
-                        ApiResult res = new ApiResult();
-                        res.error = new ErrorCode();
-                        res.error.code = Constants.INTERNAL_ERROR;
-                        res.error.details = t.getMessage();
-                        completion.complete(res);
-                    }
-                }
-            }).start();
         }
 
         private void fillQueryApiRequestBuilder(Request.Builder reqBuilder) {
