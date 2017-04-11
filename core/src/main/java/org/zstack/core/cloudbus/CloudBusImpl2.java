@@ -514,18 +514,22 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
                 for (BeforeSendMessageInterceptor interceptor : interceptors) {
                     interceptor.intercept(msg);
 
+                    /*
                     if (logger.isTraceEnabled()) {
                         logger.trace(String.format("called %s for message[%s]", interceptor.getClass(), msg.getClass()));
                     }
+                    */
                 }
             }
 
             for (BeforeSendMessageInterceptor interceptor : beforeSendMessageInterceptorsForAll) {
                 interceptor.intercept(msg);
 
+                /*
                 if (logger.isTraceEnabled()) {
                     logger.trace(String.format("called %s for message[%s]", interceptor.getClass(), msg.getClass()));
                 }
+                */
             }
 
             send(msg, true);
@@ -2007,18 +2011,22 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
                                             for (BeforeDeliveryMessageInterceptor i : is) {
                                                 i.intercept(msg);
 
+                                                /*
                                                 if (logger.isTraceEnabled()) {
                                                     logger.trace(String.format("called BeforeDeliveryMessageInterceptor[%s] for message[%s]", i.getClass(), msg.getClass()));
                                                 }
+                                                */
                                             }
                                         }
 
                                         for (BeforeDeliveryMessageInterceptor i : beforeDeliveryMessageInterceptorsForAll) {
                                             i.intercept(msg);
 
+                                            /*
                                             if (logger.isTraceEnabled()) {
                                                 logger.trace(String.format("called BeforeDeliveryMessageInterceptor[%s] for message[%s]", i.getClass(), msg.getClass()));
                                             }
+                                            */
                                         }
 
                                         serv.handleMessage(msg);
