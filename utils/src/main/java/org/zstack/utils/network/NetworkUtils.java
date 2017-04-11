@@ -228,7 +228,9 @@ public class NetworkUtils {
         if (startIp > endIp) {
             throw new IllegalArgumentException(String.format("[%s, %s] is an invalid ip range, end ip must be greater than start ip", longToIpv4String(startIp), longToIpv4String(endIp)));
         }
-
+        if (startIp.equals(endIp) && allocatedIps.length == 0 ) {
+            return startIp;
+        }
         if (allocatedIps.length == 0) {
             return startIp;
         }
@@ -268,6 +270,9 @@ public class NetworkUtils {
 
     public static String randomAllocateIpv4Address(Long startIp, Long endIp, List<Long> allocatedIps) {
         int total = (int)(endIp - startIp + 1);
+        if (startIp.equals(endIp) && allocatedIps.size() == 0){
+            return longToIpv4String(startIp);
+        }
         if (total == allocatedIps.size()) {
             return null;
         }

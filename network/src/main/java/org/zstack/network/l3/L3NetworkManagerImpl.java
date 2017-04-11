@@ -332,7 +332,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
     }
 
     @Override
-    public IpAllocatorStrategy getIpAllocatorStrategy(IpAllocatorType type) {
+    public IpAllocatorStrategy  getIpAllocatorStrategy(IpAllocatorType type) {
         IpAllocatorStrategy factory = ipAllocatorStrategies.get(type.toString());
         if (factory == null) {
             throw new CloudRuntimeException(String.format("Cannot find IpAllocatorStrategy for type(%s)", type));
