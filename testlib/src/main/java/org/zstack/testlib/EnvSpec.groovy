@@ -199,11 +199,6 @@ class EnvSpec implements Node {
         factory.setReadTimeout(CoreGlobalProperty.REST_FACADE_READ_TIMEOUT)
         factory.setConnectTimeout(CoreGlobalProperty.REST_FACADE_CONNECT_TIMEOUT)
         restTemplate = new RestTemplate(factory)
-
-        simulatorClasses.each {
-            Simulator sim = it.newInstance() as Simulator
-            sim.registerSimulators(this)
-        }
     }
 
     void cleanSimulatorHandlers() {
@@ -482,6 +477,12 @@ class EnvSpec implements Node {
         adminLogin()
         resetAllGlobalConfig()
         cleanSimulatorAndMessageHandlers()
+
+        simulatorClasses.each {
+            Simulator sim = it.newInstance() as Simulator
+            sim.registerSimulators(this)
+        }
+
         deploy()
 
         defaultHttpHandlers = [:]
