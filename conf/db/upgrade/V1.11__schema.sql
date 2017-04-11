@@ -637,4 +637,8 @@ ALTER TABLE LocalStorageResourceRefVO DROP FOREIGN KEY `fkLocalStorageResourceRe
 
 ALTER TABLE VipVO ADD CONSTRAINT fkUsedIpVO FOREIGN KEY (`usedIpUuid`) REFERENCES `UsedIpVO` (`uuid`) ON DELETE CASCADE;
 
+
 ALTER TABLE VCenterVO ADD port int DEFAULT NULL;
+
+ALTER TABLE SharedResourceVO DROP FOREIGN KEY `fkSharedResourceVOAccountVO1`;
+
