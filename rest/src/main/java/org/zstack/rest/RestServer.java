@@ -504,7 +504,7 @@ public class RestServer implements Component, CloudBusEventListener {
 
     void handle(HttpServletRequest req, HttpServletResponse rsp) throws IOException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
         requestInfo.set(new RequestInfo(req));
-
+        rsp.setCharacterEncoding("utf-8");
         String path = getDecodedUrl(req);
         HttpEntity<String> entity = toHttpEntity(req);
 
