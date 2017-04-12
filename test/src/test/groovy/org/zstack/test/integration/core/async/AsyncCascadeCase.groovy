@@ -1,6 +1,5 @@
 package org.zstack.test.integration.core.async
 
-import junit.framework.Assert
 import org.zstack.core.cascade.AbstractAsyncCascadeExtension
 import org.zstack.core.cascade.CascadeAction
 import org.zstack.core.cascade.CascadeExtensionPoint
@@ -170,11 +169,11 @@ class AsyncCascadeCase extends SubCase{
             }
         }) 
 
-        Assert.assertTrue(success1) 
-        Assert.assertTrue(success2) 
-        Assert.assertTrue(success3) 
-        Assert.assertTrue(success4) 
-        Assert.assertTrue(success5)
+        assert success1
+        assert success2
+        assert success3
+        assert success4
+        assert success5
     }
 
     @Override

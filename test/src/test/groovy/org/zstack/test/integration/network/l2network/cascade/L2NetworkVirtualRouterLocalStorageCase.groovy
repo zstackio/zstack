@@ -23,7 +23,7 @@ use:
 2. create a vm with virtual router
 3. make vr nowhere to migrate(in deploy configuration)
 4. detach l2 which vr has l3 on
-5. confirm vr is stopped
+5. confirm vr is kill
 """
     EnvSpec env
     DatabaseFacade dbf
@@ -56,7 +56,7 @@ use:
         ApplianceVmVO vr = dbf.listAll(ApplianceVmVO.class).get(0)
         Assert.assertEquals(VmInstanceState.Running, vr.getState()) 
         long count = dbf.count(VmInstanceVO.class) 
-        Assert.assertEquals(2, count) 
+        assert count == 2
 
         detachL2NetworkFromCluster {
             l2NetworkUuid = l2i.uuid
@@ -64,7 +64,7 @@ use:
         }
 
         count = dbf.count(VmInstanceVO.class) 
-        Assert.assertEquals(1, count) 
+        assert count == 1
     }
 
     @Override

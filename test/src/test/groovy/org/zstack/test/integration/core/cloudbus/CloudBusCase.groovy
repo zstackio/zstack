@@ -1,15 +1,11 @@
 package org.zstack.test.integration.core.CloudBus
 
-import groovy.transform.TypeChecked
-import junit.framework.Assert
 import org.zstack.core.Platform
 import org.zstack.core.cloudbus.CloudBusIN
 import org.zstack.core.thread.AsyncThread
 import org.zstack.header.AbstractService
 import org.zstack.header.message.Message
-import org.zstack.test.integration.core.CoreLibraryTest
 import org.zstack.test.integration.core.cloudbus.HelloWorldMsgForCloudBusCase
-import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 
 import java.util.concurrent.CountDownLatch
@@ -18,7 +14,6 @@ import java.util.concurrent.TimeUnit
 /**
  * Created by heathhose on 17-3-22.
  */
-@TypeChecked
 public class CloudBusCase extends SubCase{
 
     CloudBusIN bus
@@ -80,14 +75,14 @@ public class CloudBusCase extends SubCase{
     }
 
     void testCloudBusSharding(){
-        HelloWorldMsgForCloudBusCase msg = new HelloWorldMsgForCloudBusCase();
-        startFakeService();
-        startLatch.await();
+        HelloWorldMsgForCloudBusCase msg = new HelloWorldMsgForCloudBusCase() 
+        startFakeService() 
+        startLatch.await() 
 
-        bus.makeTargetServiceIdByResourceUuid(msg, servId, Platform.getUuid());
-        bus.send(msg);
-        latch.await(10, TimeUnit.SECONDS);
-        Assert.assertEquals(true, isSuccess);
+        bus.makeTargetServiceIdByResourceUuid(msg, servId, Platform.getUuid()) 
+        bus.send(msg) 
+        latch.await(10, TimeUnit.SECONDS) 
+        assert isSuccess
     }
 
     @Override
