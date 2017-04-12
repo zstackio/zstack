@@ -705,9 +705,9 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                             stop();
                             return null;
                         } else {
-                            fenceSuspects();
                             updateHeartbeat();
                             checkAllNodesHealth();
+                            fenceSuspects();
                         }
 
                         heartbeatFailure = 0;
