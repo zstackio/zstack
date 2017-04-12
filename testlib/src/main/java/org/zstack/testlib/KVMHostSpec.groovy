@@ -133,9 +133,13 @@ class KVMHostSpec extends HostSpec {
             return rsp
         }
 
-        simulator(KVMConstant.KVM_PING_PATH) {
+        simulator(KVMConstant.KVM_PING_PATH) { HttpEntity<String> e, EnvSpec espec ->
+            KVMAgentCommands.PingCmd cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.PingCmd.class)
+            assert null != cmd
+            assert null != cmd.hostUuid
+
             def rsp = new KVMAgentCommands.PingResponse()
-            rsp.hostUuid = inventory.uuid
+            rsp.hostUuid = cmd.hostUuid
             return rsp
         }
 
