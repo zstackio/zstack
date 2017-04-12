@@ -1,6 +1,5 @@
 package org.zstack.test.integration.network.l3network.multil3
 
-import junit.framework.Assert
 import org.springframework.http.HttpEntity
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.network.service.eip.EipConstant
@@ -179,13 +178,13 @@ use:
         }
 
         TimeUnit.SECONDS.sleep(2);
-        Assert.assertEquals(nic1.getMac(), cmd.macOfGatewayToRemove);
-        Assert.assertEquals(nic1.getGateway(), cmd.gatewayToRemove);
-        Assert.assertEquals(new BridgeNameFinder().findByL3Uuid(l31i.getUuid()), cmd.bridgeNameOfGatewayToRemove);
+        assert nic1.getMac() == cmd.macOfGatewayToRemove
+        assert nic1.getGateway() == cmd.gatewayToRemove
+        assert new BridgeNameFinder().findByL3Uuid(l31i.getUuid()) == cmd.bridgeNameOfGatewayToRemove
 
-        Assert.assertEquals(nic2.getMac(), cmd.macOfGatewayToAdd);
-        Assert.assertEquals(nic2.getGateway(), cmd.gatewayToAdd);
-        Assert.assertEquals(new BridgeNameFinder().findByL3Uuid(l32i.getUuid()), cmd.bridgeNameOfGatewayToAdd);
+        assert nic2.getMac() == cmd.macOfGatewayToAdd
+        assert nic2.getGateway() == cmd.gatewayToAdd
+        assert new BridgeNameFinder().findByL3Uuid(l32i.getUuid()) == cmd.bridgeNameOfGatewayToAdd
     }
     @Override
     void clean() {
