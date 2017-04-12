@@ -2109,4 +2109,22 @@ public class LocalStorageBase extends PrimaryStorageBase {
         LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
         bkd.attachHook(clusterUuid, completion);
     }
+
+    @Override
+    protected void checkImageIfNeedToDownload(DownloadIsoToPrimaryStorageMsg msg){
+        logger.debug("check if image exist in disabled primary storage");
+        if(self.getState() != PrimaryStorageState.Disabled){
+            return ;
+        }
+        if( !Q.New(ImageCacheVO.class)
+                .eq(ImageCacheVO_.primaryStorageUuid, self.getUuid())
+                .eq(ImageCacheVO_.imageUuid, msg.getIsoSpec().getInventory().getUuid())
+                .like(ImageCacheVO_.installUrl, String.format("%%hostUuid://%s%%", msg.getDestHostUuid()))
+                .isExists()){
+
+            throw new OperationFailureException(errf.stringToOperationError(
+                    String.format("cannot attach ISO to a primary storage[uuid:%s] which is disabled",
+                            self.getUuid())));
+        }
+    }
 }

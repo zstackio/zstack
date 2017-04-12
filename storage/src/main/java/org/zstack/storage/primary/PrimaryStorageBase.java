@@ -182,16 +182,15 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         }
     }
     // if new kind of storage is added , override it
-    protected void checkImageIfNeedToDownload(String ImageUuid){
+    protected void checkImageIfNeedToDownload(DownloadIsoToPrimaryStorageMsg msg){
         logger.debug("check if image exist in disabled primary storage");
         if(self.getState() != PrimaryStorageState.Disabled){
             return ;
         }
-        if( Q.New(ImageCacheVO.class)
+        if( !Q.New(ImageCacheVO.class)
                 .eq(ImageCacheVO_.primaryStorageUuid, self.getUuid())
-                .eq(ImageCacheVO_.imageUuid, ImageUuid)
-                .select(ImageCacheVO_.installUrl)
-                .findValue() == null){
+                .eq(ImageCacheVO_.imageUuid, msg.getIsoSpec().getInventory().getUuid())
+                .isExists()){
 
             throw new OperationFailureException(errf.stringToOperationError(
                     String.format("cannot attach ISO to a primary storage[uuid:%s] which is disabled",
@@ -352,7 +351,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
     private void handleBase(DownloadIsoToPrimaryStorageMsg msg) {
         checkIfBackupStorageAttachedToMyZone(msg.getIsoSpec().getSelectedBackupStorage().getBackupStorageUuid());
-        checkImageIfNeedToDownload(msg.getIsoSpec().getInventory().getUuid());
+        checkImageIfNeedToDownload(msg);
         handle(msg);
     }
 
