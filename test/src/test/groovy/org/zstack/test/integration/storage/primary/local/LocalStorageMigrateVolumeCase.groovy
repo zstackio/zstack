@@ -102,7 +102,7 @@ class LocalStorageMigrateVolumeCase extends SubCase{
             destHostUuid = hostSpec1.inventory.uuid
         }
 
-        retryInSecs(6) {
+        assert retryInSecs(6) {
             return calledCheckMD5 && calledCopyToRemote
         }
     }

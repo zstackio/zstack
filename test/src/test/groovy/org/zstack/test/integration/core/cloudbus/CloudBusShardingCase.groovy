@@ -67,6 +67,9 @@ class CloudBusShardingCase extends SubCase {
 
     @Override
     void setup() {
+        spring {
+            include("CloudBusAopProxy.xml")
+        }
     }
 
     @Override
