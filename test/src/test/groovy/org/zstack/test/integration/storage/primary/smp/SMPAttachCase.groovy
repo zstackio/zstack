@@ -1,6 +1,9 @@
 package org.zstack.test.integration.storage.primary.smp
 
 import org.springframework.http.HttpEntity
+import org.zstack.core.db.Q
+import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO
+import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO_
 import org.zstack.header.storage.primary.PrimaryStorageVO
 import org.zstack.sdk.AttachPrimaryStorageToClusterAction
 import org.zstack.sdk.ClusterInventory
@@ -34,8 +37,27 @@ class SMPAttachCase extends SubCase{
     @Override
     void test() {
         env.create {
+            testAttachingSMPSuccess()
             testAttachingSmpWithoutMountPathOnHost()
         }
+    }
+
+    void testAttachingSMPSuccess() {
+        PrimaryStorageInventory primaryStorageInventory = env.inventoryByName("smp")
+        ClusterInventory clusterInventory = env.inventoryByName("cluster")
+
+        detachPrimaryStorageFromCluster {
+            primaryStorageUuid = primaryStorageInventory.uuid
+            clusterUuid = clusterInventory.uuid
+        }
+
+        attachPrimaryStorageToCluster {
+            primaryStorageUuid = primaryStorageInventory.uuid
+            clusterUuid = clusterInventory.uuid
+        }
+
+        assert !Q.New(PrimaryStorageClusterRefVO.class).eq(PrimaryStorageClusterRefVO_.clusterUuid, clusterInventory.uuid)
+                .eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, primaryStorageInventory.uuid).list().isEmpty()
     }
 
     void testAttachingSmpWithoutMountPathOnHost() {
@@ -49,20 +71,13 @@ class SMPAttachCase extends SubCase{
             primaryStorageUuid = primaryStorageInventory.uuid
             clusterUuid = clusterInventory.uuid
         }
-        TimeUnit.SECONDS.sleep(3)
 
-        def counter = 0 as int
         KvmBackend.ConnectCmd cmd = null
         env.afterSimulator(KvmBackend.CONNECT_PATH) { rsp, HttpEntity<String> e ->
             cmd = JSONObjectUtil.toObject(e.body, KvmBackend.ConnectCmd.class)
             def ret = new KvmBackend.AgentRsp()
-            if(counter > 0) {
-                ret.success = false
-                ret.error = "failed"
-            } else {
-                ret.success = true
-            }
-            counter++
+            ret.success = false
+            ret.error = "failed"
             return ret
         }
 
@@ -81,6 +96,8 @@ class SMPAttachCase extends SubCase{
                 cmd != null
             }
         }
+
+        env.cleanSimulatorAndMessageHandlers()
     }
 
     @Override
