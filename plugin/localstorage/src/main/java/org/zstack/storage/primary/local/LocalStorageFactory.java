@@ -62,7 +62,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         GetAttachableVolumeExtensionPoint, RecalculatePrimaryStorageCapacityExtensionPoint, HostMaintenancePolicyExtensionPoint,
         AddExpandedQueryExtensionPoint, VolumeGetAttachableVmExtensionPoint, RecoverDataVolumeExtensionPoint,
         RecoverVmExtensionPoint, VmPreMigrationExtensionPoint, CreateTemplateFromVolumeSnapshotExtensionPoint, HostAfterConnectedExtensionPoint,
-        InstantiateDataVolumeOnCreationExtensionPoint {
+        InstantiateDataVolumeOnCreationExtensionPoint, PrimaryStorageAttachExtensionPoint {
     private final static CLogger logger = Utils.getLogger(LocalStorageFactory.class);
     public static PrimaryStorageType type = new PrimaryStorageType(LocalStorageConstants.LOCAL_STORAGE_TYPE);
 
@@ -786,8 +786,12 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
 
     @Override
     public void afterHostConnected(HostInventory host) {
+        recalculatePrimaryStorageCapacity(host.getClusterUuid());
+    }
+
+    private void recalculatePrimaryStorageCapacity(String clusterUuid) {
         SimpleQuery<PrimaryStorageClusterRefVO> q = dbf.createQuery(PrimaryStorageClusterRefVO.class);
-        q.add(PrimaryStorageClusterRefVO_.clusterUuid, Op.EQ, host.getClusterUuid());
+        q.add(PrimaryStorageClusterRefVO_.clusterUuid, Op.EQ, clusterUuid);
         List<PrimaryStorageClusterRefVO> refs = q.list();
         if (refs != null && !refs.isEmpty()) {
             for (PrimaryStorageClusterRefVO ref : refs) {
@@ -859,5 +863,25 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
                 }
             }
         });
+    }
+
+    @Override
+    public void preAttachPrimaryStorage(PrimaryStorageInventory inventory, String clusterUuid) throws PrimaryStorageException {
+
+    }
+
+    @Override
+    public void beforeAttachPrimaryStorage(PrimaryStorageInventory inventory, String clusterUuid) {
+
+    }
+
+    @Override
+    public void failToAttachPrimaryStorage(PrimaryStorageInventory inventory, String clusterUuid) {
+
+    }
+
+    @Override
+    public void afterAttachPrimaryStorage(PrimaryStorageInventory inventory, String clusterUuid) {
+        recalculatePrimaryStorageCapacity(clusterUuid);
     }
 }
