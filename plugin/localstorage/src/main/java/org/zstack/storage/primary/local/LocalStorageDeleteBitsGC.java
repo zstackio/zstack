@@ -12,6 +12,7 @@ import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.storage.primary.PrimaryStorageCanonicalEvent;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
+import org.zstack.header.storage.primary.PrimaryStorageVO_;
 import org.zstack.kvm.KvmCommandFailureChecker;
 import org.zstack.kvm.KvmCommandSender;
 import org.zstack.kvm.KvmResponseWrapper;
@@ -45,6 +46,10 @@ public class LocalStorageDeleteBitsGC extends EventBasedGarbageCollector {
         LocalStorageKvmBackend.DeleteBitsCmd cmd = new LocalStorageKvmBackend.DeleteBitsCmd();
         cmd.setPath(installPath);
         cmd.setHostUuid(hostUuid);
+        cmd.storagePath = Q.New(PrimaryStorageVO.class).
+                eq(PrimaryStorageVO_.uuid, primaryStorageUuid).
+                select(PrimaryStorageVO_.url).
+                findValue();
 
         String path = isDir ? LocalStorageKvmBackend.DELETE_DIR_PATH : LocalStorageKvmBackend.DELETE_BITS_PATH;
 

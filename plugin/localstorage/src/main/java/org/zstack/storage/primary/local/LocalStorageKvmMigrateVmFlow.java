@@ -8,6 +8,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -31,9 +32,7 @@ import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageStatus;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.storage.primary.DownloadImageToPrimaryStorageCacheMsg;
-import org.zstack.header.storage.primary.DownloadImageToPrimaryStorageCacheReply;
-import org.zstack.header.storage.primary.PrimaryStorageConstant;
+import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.storage.snapshot.VolumeSnapshotTree;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
@@ -796,6 +795,10 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
     }
 
     private <T extends AgentResponse> void callKvmHost(final String hostUuid, final String psUuid, String path, AgentCommand cmd, final Class<T> rspType, final ReturnValueCompletion<T> completion) {
+        cmd.storagePath = Q.New(PrimaryStorageVO.class).
+                eq(PrimaryStorageVO_.uuid, psUuid).
+                select(PrimaryStorageVO_.url).
+                findValue();
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setCommand(cmd);
         msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));

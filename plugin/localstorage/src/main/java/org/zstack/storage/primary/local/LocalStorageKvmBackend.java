@@ -85,6 +85,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
     public static class AgentCommand {
         public String uuid;
+        public String storagePath;
     }
 
     public static class AgentResponse {
@@ -674,6 +675,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             public KVMHostAsyncHttpCallMsg call(String arg) {
                 GetPhysicalCapacityCmd cmd = new GetPhysicalCapacityCmd();
                 cmd.setHostUuid(arg);
+                cmd.storagePath = self.getUrl();
 
                 KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
                 msg.setHostUuid(arg);
@@ -721,6 +723,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
     protected <T extends AgentResponse> void httpCall(String path, final String hostUuid, AgentCommand cmd, boolean noCheckStatus, final Class<T> rspType, final ReturnValueCompletion<T> completion) {
         cmd.uuid = self.getUuid();
+        cmd.storagePath = self.getUrl();
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setHostUuid(hostUuid);
@@ -1189,6 +1192,11 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         httpCall(deletePath, hostUuid, cmd, DeleteBitsRsp.class, new ReturnValueCompletion<DeleteBitsRsp>(completion) {
             @Override
             public void success(DeleteBitsRsp returnValue) {
+                if(returnValue.getAvailableCapacity() == null || returnValue.getTotalCapacity() == null){
+                    logger.warn("Deleting bits is successful, " +
+                            "but getting capacity is failed, " +
+                            "Please check if the storage has been detach from cluster");
+                }
                 completion.success();
             }
 
@@ -1597,6 +1605,11 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         GetVolumeSizeCmd cmd = new GetVolumeSizeCmd();
         cmd.installPath = msg.getInstallPath();
         cmd.volumeUuid = msg.getVolumeUuid();
+        cmd.storagePath = Q.New(PrimaryStorageVO.class)
+                .eq(PrimaryStorageVO_.uuid, msg.getPrimaryStorageUuid())
+                .select(PrimaryStorageVO_.url)
+                .findValue();
+
         KvmCommandSender sender = new KvmCommandSender(hostUuid);
         sender.send(cmd, GET_VOLUME_SIZE, new KvmCommandFailureChecker() {
             @Override
@@ -1649,6 +1662,11 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         GetVolumeBaseImagePathCmd cmd = new GetVolumeBaseImagePathCmd();
         cmd.installPath = msg.getVolume().getInstallPath();
         cmd.volumeUuid = msg.getVolume().getUuid();
+        cmd.storagePath = Q.New(PrimaryStorageVO.class)
+                .eq(PrimaryStorageVO_.uuid, msg.getPrimaryStorageUuid())
+                .select(PrimaryStorageVO_.url)
+                .findValue();
+
         new KvmCommandSender(hostUuid).send(cmd, GET_BASE_IMAGE_PATH, new KvmCommandFailureChecker() {
             @Override
             public ErrorCode getError(KvmResponseWrapper w) {
@@ -1734,6 +1752,10 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                         GetQCOW2ReferenceCmd cmd = new GetQCOW2ReferenceCmd();
                         cmd.searchingDir = self.getUrl();
                         cmd.path = msg.getInstallPath();
+                        cmd.storagePath = Q.New(PrimaryStorageVO.class)
+                                .eq(PrimaryStorageVO_.uuid, msg.getPrimaryStorageUuid())
+                                .select(PrimaryStorageVO_.url)
+                                .findValue();
 
                         new KvmCommandSender(msg.getHostUuid()).send(cmd, GET_QCOW2_REFERENCE, new KvmCommandFailureChecker() {
                             @Override
