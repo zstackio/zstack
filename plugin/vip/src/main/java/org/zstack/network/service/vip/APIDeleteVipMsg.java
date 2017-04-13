@@ -49,7 +49,7 @@ public class APIDeleteVipMsg extends APIDeleteMessage implements L3NetworkMessag
     /**
      * @desc vip uuid
      */
-    @APIParam(checkAccount = true, operationTarget = true, successIfResourceNotExisting = true)
+    @APIParam(checkAccount = true, operationTarget = true, resourceType = VipVO.class, successIfResourceNotExisting = true)
     private String uuid;
 
     public String getUuid() {
