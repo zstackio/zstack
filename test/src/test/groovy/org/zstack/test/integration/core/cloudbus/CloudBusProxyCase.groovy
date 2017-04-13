@@ -15,7 +15,7 @@ class CloudBusProxyCase extends SubCase{
     CloudBus bus
     CloudBusAopProxy aop
     List<FakeNeedReplyMessage> msgs = new ArrayList<FakeNeedReplyMessage>(2)
-    FakeNeedReplyMessage msg = new FakeNeedReplyMessage()
+    FakeNeedReplyMessage msg
 
     @Override
     void setup() {
@@ -42,6 +42,7 @@ class CloudBusProxyCase extends SubCase{
     }
 
     void testBusSendMsgsWhenCloudBusAopProxyBehaviorFAIL(){
+        msg = new FakeNeedReplyMessage()
         msg.setServiceId("A fake service id not needed")
         msgs.add(msg)
         msg = new FakeNeedReplyMessage()
@@ -51,7 +52,7 @@ class CloudBusProxyCase extends SubCase{
     }
 
     void testBusSendCallBackMgsWhenCloudBusAopProxyBehaviorFAIL(){
-        boolean isSuccess
+        boolean isSuccess = false
         msg = new FakeNeedReplyMessage()
         msg.setServiceId("A fake service id not needed")
         bus.send(msg, new CloudBusCallBack(null) {
@@ -66,8 +67,10 @@ class CloudBusProxyCase extends SubCase{
         msg = new FakeNeedReplyMessage()
         msg.setServiceId("A fake service id not needed")
         MessageReply reply = bus.call(msg)
-        assert !reply.isSuccess()
-        assert isSuccess
+        retryInSecs(1,1){
+            assert !reply.isSuccess()
+            assert isSuccess
+        }
     }
 
     void testBusSenMsgsWhenCloudBusAopProxyBehaviorTIMEOUT(){
