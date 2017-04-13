@@ -215,13 +215,10 @@ class DeleteHostTest extends SubCase{
             uuid = vm.hostUuid
         }
 
-        boolean checked = retryInSecs(2){
+        assert retryInSecs(4){
             VolumeVO volumeVO = dbFindByUuid(vol.uuid, VolumeVO.class)
-            return null == volumeVO
+            return null == volumeVO && null == dbFindByUuid(vm.uuid, VmInstanceVO.class)
         }
-        assert checked
-        VmInstanceVO vmInstanceVO = dbFindByUuid(vm.uuid, VmInstanceVO.class)
-        assert VmInstanceState.Destroyed.name() == vmInstanceVO.state.name()
 
         newVm = queryVmInstance {
             conditions=["uuid=${newVm.uuid}".toString()]
