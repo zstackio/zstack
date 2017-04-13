@@ -1189,6 +1189,11 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         httpCall(deletePath, hostUuid, cmd, DeleteBitsRsp.class, new ReturnValueCompletion<DeleteBitsRsp>(completion) {
             @Override
             public void success(DeleteBitsRsp returnValue) {
+                if(returnValue.getAvailableCapacity() == null || returnValue.getTotalCapacity() == null){
+                    logger.warn("Deleting bits is successful, " +
+                            "but getting capacity is failed, " +
+                            "Please check if the storage has been detach from cluster");
+                }
                 completion.success();
             }
 
