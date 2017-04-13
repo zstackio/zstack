@@ -367,6 +367,7 @@ public abstract class HostBase extends AbstractHost {
                     casf.asyncCascade(CascadeConstant.DELETION_DELETE_CODE, issuer, ctx, new Completion(trigger) {
                         @Override
                         public void success() {
+                            extpEmitter.afterDelete(hinv);
                             trigger.next();
                         }
 
@@ -384,6 +385,7 @@ public abstract class HostBase extends AbstractHost {
                     casf.asyncCascade(CascadeConstant.DELETION_FORCE_DELETE_CODE, issuer, ctx, new Completion(trigger) {
                         @Override
                         public void success() {
+                            extpEmitter.afterDelete(hinv);
                             trigger.next();
                         }
 
@@ -402,7 +404,6 @@ public abstract class HostBase extends AbstractHost {
                 casf.asyncCascadeFull(CascadeConstant.DELETION_CLEANUP_CODE, issuer, ctx, new NopeCompletion());
                 bus.publish(evt);
 
-                extpEmitter.afterDelete(hinv);
                 HostDeletedData d = new HostDeletedData();
                 d.setInventory(HostInventory.valueOf(self));
                 d.setHostUuid(self.getUuid());
