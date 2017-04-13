@@ -9,6 +9,5 @@
     <TestCase class="org.zstack.test.core.cloudbus.TestCloudBusMultiCall"/>
     <TestCase class="org.zstack.test.core.cloudbus.TestCloudBusMultiCallTimeout"/>
     <TestCase class="org.zstack.test.core.cloudbus.TestCloudBusSharding"/>
-    <TestCase class="org.zstack.test.core.cloudbus.TestCloudBusSharding1"/>
     <TestCase class="org.zstack.test.core.cloudbus.TestLockResourceMessage"/>
 </UnitTestSuiteConfig>

@@ -94,8 +94,16 @@ public class SchedulerApiInterceptor implements ApiMessageInterceptor {
                 } else {
                     throw new ApiMessageInterceptionException(argerr("interval must be set when use simple scheduler when repeat forever"));
                 }
-            } else if (msg.getInterval() != null && msg.getInterval() <= 0) {
-                throw new ApiMessageInterceptionException(argerr("interval must be positive integer"));
+            } else if (msg.getInterval() != null) {
+                if (msg.getRepeatCount() != null) {
+                    if (msg.getInterval() <= 0) {
+                        throw new ApiMessageInterceptionException(argerr("interval must be positive integer"));
+                    } else if ((long) msg.getInterval() * (long) msg.getRepeatCount() * 1000L + msg.getStartTime() < 0 ) {
+                        throw new ApiMessageInterceptionException(argerr("duration time out of range"));
+                    } else if ((long) msg.getInterval() * (long) msg.getRepeatCount() * 1000L + msg.getStartTime() > 2147454847000L) {
+                        throw new ApiMessageInterceptionException(argerr("stopTime out of mysql timestamp range"));
+                    }
+                }
             }
 
             if (msg.getStartTime() == null) {
@@ -110,14 +118,6 @@ public class SchedulerApiInterceptor implements ApiMessageInterceptor {
 
             if (msg.getRepeatCount() != null && msg.getRepeatCount() <= 0) {
                 throw new ApiMessageInterceptionException(argerr("repeatCount must be positive integer"));
-            }
-
-            if ((long) msg.getInterval() * (long) msg.getRepeatCount() * 1000L < 0 ) {
-                throw new ApiMessageInterceptionException(argerr("duration time out of range"));
-            }
-
-            if ((long) msg.getInterval() * (long) msg.getRepeatCount() * 1000L + msg.getStartTime()  > 2147454847000L) {
-                throw new ApiMessageInterceptionException(argerr("stopTime out of mysql timestamp range"));
             }
         }
 

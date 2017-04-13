@@ -3,11 +3,14 @@ package org.zstack.storage.primary.local;
 import org.springframework.http.HttpMethod;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.identity.Action;
+import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.primary.PrimaryStorageMessage;
+import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeVO;
 
@@ -61,6 +64,23 @@ public class APILocalStorageMigrateVolumeMsg extends APIMessage implements Prima
         msg.setDestHostUuid(uuid());
 
         return msg;
+    }
+
+    public ApiNotification __notification__() {
+        APIMessage that = this;
+
+        return new ApiNotification() {
+            @Override
+            public void after(APIEvent evt) {
+                if (evt.isSuccess()) {
+                    ntfy("Migrated from primary storage[uuid:%s] to primary storage[uuid:%s]", primaryStorageUuid, destHostUuid)
+                        .resource(volumeUuid, VolumeVO.class.getSimpleName())
+                        .context("primaryStorageUuid", primaryStorageUuid)
+                        .context("destHostUuid", destHostUuid)
+                        .messageAndEvent(that, evt).done();
+                }
+            }
+        };
     }
 
 }

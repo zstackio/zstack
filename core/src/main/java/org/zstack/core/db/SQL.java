@@ -103,7 +103,9 @@ public class SQL {
     @Transactional
     private int transactionalExecute() {
         rebuildQueryInTransaction();
-        return query.executeUpdate();
+        int ret = query.executeUpdate();
+        dbf.getEntityManager().flush();
+        return ret;
     }
 
     public int execute() {

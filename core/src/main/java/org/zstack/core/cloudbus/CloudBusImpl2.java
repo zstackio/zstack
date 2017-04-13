@@ -6,7 +6,6 @@ import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
 import com.rabbitmq.client.impl.recovery.RecoveryAwareAMQConnection;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.ThreadContext;
-import org.mvel2.MVEL;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.Platform;
@@ -16,6 +15,7 @@ import org.zstack.core.jmx.JmxFacade;
 import org.zstack.core.thread.*;
 import org.zstack.core.thread.ThreadFacadeImpl.TimeoutTaskReceipt;
 import org.zstack.core.timeout.ApiTimeoutManager;
+import org.zstack.header.Constants;
 import org.zstack.header.Service;
 import org.zstack.header.apimediator.APIIsReadyToGoMsg;
 import org.zstack.header.apimediator.APIIsReadyToGoReply;
@@ -36,8 +36,7 @@ import org.zstack.utils.gson.GsonTypeCoder;
 import org.zstack.utils.gson.GsonUtil;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
-
-import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.*;
 
 import javax.management.MXBean;
 import java.io.IOException;
@@ -49,6 +48,8 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.zstack.utils.BeanUtils.getProperty;
+import static org.zstack.utils.BeanUtils.setProperty;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 import static org.zstack.utils.ExceptionDSL.throwableSafe;
@@ -86,7 +87,6 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
     private boolean trackerClose = false;
     private Map<String, MessageStatistic> statistics = new HashMap<String, MessageStatistic>();
 
-    private Map<Class, Map<String, Serializable>> mvelExpressions = new ConcurrentHashMap<Class, Map<String, Serializable>>();
     private Map<Class, List<ReplyMessagePreSendingExtensionPoint>> replyMessageMarshaller = new ConcurrentHashMap<Class, List<ReplyMessagePreSendingExtensionPoint>>();
 
     private Map<Class, List<BeforeDeliveryMessageInterceptor>> beforeDeliveryMessageInterceptors = new HashMap<Class, List<BeforeDeliveryMessageInterceptor>>();
@@ -104,7 +104,8 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
     private final String MESSAGE_META_DATA = "metaData";
     private final long DEFAULT_MESSAGE_TIMEOUT = TimeUnit.MINUTES.toMillis(30);
     private final String DEAD_LETTER = "dead-message";
-    private final String API_ID = "api-id";
+    private final String TASK_STACK = "task-stack";
+    private final String TASK_CONTEXT = "task-context";
 
     private final String AMQP_PROPERTY_HEADER__COMPRESSED = "compressed";
 
@@ -513,18 +514,22 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
                 for (BeforeSendMessageInterceptor interceptor : interceptors) {
                     interceptor.intercept(msg);
 
+                    /*
                     if (logger.isTraceEnabled()) {
                         logger.trace(String.format("called %s for message[%s]", interceptor.getClass(), msg.getClass()));
                     }
+                    */
                 }
             }
 
             for (BeforeSendMessageInterceptor interceptor : beforeSendMessageInterceptorsForAll) {
                 interceptor.intercept(msg);
 
+                /*
                 if (logger.isTraceEnabled()) {
                     logger.trace(String.format("called %s for message[%s]", interceptor.getClass(), msg.getClass()));
                 }
+                */
             }
 
             send(msg, true);
@@ -539,7 +544,11 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
         }
 
         private void buildSchema(Message msg) {
-            msg.putHeaderEntry("schema", MessageJsonSchemaBuilder.buildSchema(msg));
+            try {
+                msg.putHeaderEntry("schema", new JsonSchemaBuilder(msg).build());
+            } catch (Exception e) {
+                throw new CloudRuntimeException(e);
+            }
         }
 
         public void send(final Message msg, boolean makeQueueName) {
@@ -554,11 +563,12 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
 
             buildSchema(msg);
 
+            evalThreadContextToMessage(msg);
+
             if (logger.isTraceEnabled() && logMessage(msg)) {
                 logger.trace(String.format("[msg send]: %s", wire.dumpMessage(msg)));
             }
 
-            evalThreadContextToMessage(msg);
 
             Channel chan = channelPool.acquire();
             try {
@@ -602,61 +612,28 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
             }
         }
 
-        private Serializable getMVELExpression(Message msg, String express, String prefix) {
-            Map<String, Serializable> exps = mvelExpressions.get(msg.getClass());
-            if (exps == null) {
-                exps = new ConcurrentHashMap<String, Serializable>();
-                mvelExpressions.put(msg.getClass(), exps);
-            }
-
-            String key = String.format("%s:%s", express, prefix);
-            Serializable exp = exps.get(key);
-            if (exp == null) {
-                if (prefix.equals("msg:get")) {
-                    exp = MVEL.compileGetExpression(express);
-                } else if (prefix.equals("raw:get")) {
-                    exp = MVEL.compileGetExpression(express);
-                } else if (prefix.equals("msg:set")) {
-                    exp = MVEL.compileSetExpression(express);
-                } else {
-                    throw new CloudRuntimeException(String.format("unknown prefix[%s]", prefix));
-                }
-
-                exps.put(key, exp);
-            }
-            return exp;
-        }
-
         private void restoreFromSchema(Message msg, byte[] binary) throws ClassNotFoundException {
-            Map<String, List<String>> schema = msg.getHeaderEntry("schema");
+            Map<String, String> schema = msg.getHeaderEntry("schema");
             if (schema == null) {
                 return;
             }
 
             Map raw = JSONObjectUtil.toObject(new String(binary), LinkedHashMap.class);
             raw = (Map) raw.values().iterator().next();
-            for (Map.Entry<String, List<String>> e : schema.entrySet()) {
-                String rawClassName = e.getKey();
-                List<String> paths = e.getValue();
+            List<String> paths = new ArrayList<>();
+            paths.addAll(schema.keySet());
+            //paths.sort(Comparator.reverseOrder());
 
-                for (String path : paths) {
-                    Serializable exp = getMVELExpression(msg, path, "msg:get");
-                    Object obj = MVEL.executeExpression(exp, msg);
-                    if (obj.getClass().getName().equals(rawClassName)) {
-                        continue;
-                    }
+            for (String p : paths) {
+                Object dst = getProperty(msg, p);
+                String type = schema.get(p);
 
-                    exp = getMVELExpression(msg, path, "raw:get");
-                    Object rawData = MVEL.executeExpression(exp, raw);
-                    Class rawClass = Class.forName(rawClassName);
-                    Object newValue = JSONObjectUtil.rehashObject(rawData, rawClass);
-                    exp = getMVELExpression(msg, path, "msg:set");
-                    // Note MVEL context is
-                    // not meant for write but rather for read. Use a Map context to
-                    // force MVEL to assign newValue on msg, not to create a new variable
-                    // in vars map
-                    MVEL.executeSetExpression(exp, msg, newValue);
+                if (dst.getClass().getName().equals(type)) {
+                    continue;
                 }
+
+                Class clz = Class.forName(type);
+                setProperty(msg, p, JSONObjectUtil.rehashObject(getProperty(raw, p), clz));
             }
         }
 
@@ -1949,17 +1926,33 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
     }
 
     private void setThreadLoggingContext(Message msg) {
+        ThreadContext.clearAll();
+
         if (msg instanceof APIMessage) {
-            ThreadContext.put("api", msg.getId());
-        } else if (msg.getHeaders().containsKey(API_ID)){
-            ThreadContext.put("api", msg.getHeaders().get(API_ID).toString());
+            ThreadContext.put(Constants.THREAD_CONTEXT_API, msg.getId());
+            ThreadContext.put(Constants.THREAD_CONTEXT_TASK_NAME, msg.getClass().getName());
+        } else {
+            Map<String, String> ctx = msg.getHeaderEntry(TASK_CONTEXT);
+            if (ctx != null) {
+                ThreadContext.putAll(ctx);
+            }
+        }
+
+        if (msg.getHeaders().containsKey(TASK_STACK)) {
+            List<String> taskStack = msg.getHeaderEntry(TASK_STACK);
+            ThreadContext.setStack(taskStack);
         }
     }
 
     private void evalThreadContextToMessage(Message msg) {
-        String apiId = ThreadContext.get("api");
-        if (apiId != null) {
-            msg.putHeaderEntry(API_ID, apiId);
+        Map<String, String> ctx = ThreadContext.getImmutableContext();
+        if (ctx != null) {
+            msg.putHeaderEntry(TASK_CONTEXT, ctx);
+        }
+
+        List<String> taskStack = ThreadContext.getImmutableStack().asList();
+        if (taskStack != null && !taskStack.isEmpty()) {
+            msg.putHeaderEntry(TASK_STACK, taskStack);
         }
     }
 
@@ -1988,8 +1981,6 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
                         try {
                             final Message msg = wire.toMessage(bytes, basicProperties);
 
-                            setThreadLoggingContext(msg);
-
                             if (logger.isTraceEnabled() && wire.logMessage(msg)) {
                                 logger.trace(String.format("[msg received]: %s", wire.dumpMessage(msg)));
                             }
@@ -2012,24 +2003,30 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
 
                                 @Override
                                 public Void call() throws Exception {
+                                    setThreadLoggingContext(msg);
+
                                     try {
                                         List<BeforeDeliveryMessageInterceptor> is = beforeDeliveryMessageInterceptors.get(msg.getClass());
                                         if (is != null) {
                                             for (BeforeDeliveryMessageInterceptor i : is) {
                                                 i.intercept(msg);
 
+                                                /*
                                                 if (logger.isTraceEnabled()) {
                                                     logger.trace(String.format("called BeforeDeliveryMessageInterceptor[%s] for message[%s]", i.getClass(), msg.getClass()));
                                                 }
+                                                */
                                             }
                                         }
 
                                         for (BeforeDeliveryMessageInterceptor i : beforeDeliveryMessageInterceptorsForAll) {
                                             i.intercept(msg);
 
+                                            /*
                                             if (logger.isTraceEnabled()) {
                                                 logger.trace(String.format("called BeforeDeliveryMessageInterceptor[%s] for message[%s]", i.getClass(), msg.getClass()));
                                             }
+                                            */
                                         }
 
                                         serv.handleMessage(msg);

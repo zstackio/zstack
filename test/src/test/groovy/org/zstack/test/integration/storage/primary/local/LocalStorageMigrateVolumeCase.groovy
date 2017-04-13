@@ -5,6 +5,8 @@ import org.zstack.header.storage.primary.PrimaryStorageState
 import org.zstack.header.storage.primary.PrimaryStorageStateEvent
 import org.zstack.header.storage.primary.PrimaryStorageVO
 import org.zstack.sdk.LocalStorageMigrateVolumeAction
+import org.zstack.storage.primary.local.LocalStorageKvmBackend
+import org.zstack.storage.primary.local.LocalStorageKvmMigrateVmFlow
 import org.zstack.test.integration.storage.Env
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
@@ -81,11 +83,30 @@ class LocalStorageMigrateVolumeCase extends SubCase{
         }
 
         assert dbf.findByUuid(primaryStorageSpec.inventory.uuid, PrimaryStorageVO.class).state == PrimaryStorageState.Enabled
+
+        boolean calledCheckMD5 = false
+        env.afterSimulator(LocalStorageKvmBackend.CHECK_MD5_PATH) { rsp ->
+            calledCheckMD5 = true
+            return rsp
+        }
+
+        boolean calledCopyToRemote = false
+        env.afterSimulator(LocalStorageKvmMigrateVmFlow.COPY_TO_REMOTE_BITS_PATH) { rsp ->
+            calledCopyToRemote = true
+            return rsp
+        }
+
+
         localStorageMigrateVolume {
             volumeUuid = vmSpec.inventory.rootVolumeUuid
             destHostUuid = hostSpec1.inventory.uuid
         }
+
+        retryInSecs(6) {
+            return calledCheckMD5 && calledCopyToRemote
+        }
     }
+    
     @Override
     void clean() {
         env.delete()

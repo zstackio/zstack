@@ -4,13 +4,22 @@ import org.codehaus.groovy.runtime.InvokerHelper
 import org.springframework.http.*
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory
 import org.springframework.web.client.RestTemplate
+import org.zstack.compute.vm.VmGlobalConfig
 import org.zstack.core.CoreGlobalProperty
 import org.zstack.core.Platform
+import org.zstack.core.asyncbatch.While
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.SQL
+import org.zstack.core.notification.NotificationVO
+import org.zstack.header.core.NoErrorCompletion
+import org.zstack.header.core.progress.TaskProgressVO
 import org.zstack.header.identity.AccountConstant
+import org.zstack.header.image.ImageDeletionPolicyManager
 import org.zstack.header.message.Message
 import org.zstack.header.rest.RESTConstant
+import org.zstack.header.vm.VmInstanceDeletionPolicyManager
+import org.zstack.header.volume.VolumeDeletionPolicyManager
+import org.zstack.image.ImageGlobalConfig
 import org.zstack.sdk.AddCephBackupStorageAction
 import org.zstack.sdk.AddCephPrimaryStorageAction
 import org.zstack.sdk.AddCephPrimaryStoragePoolAction
@@ -83,6 +92,8 @@ import org.zstack.sdk.QueryGlobalConfigAction
 import org.zstack.sdk.SessionInventory
 import org.zstack.sdk.UpdateGlobalConfigAction
 import org.zstack.sdk.ZSClient
+import org.zstack.storage.volume.VolumeGlobalConfig
+import org.zstack.utils.DebugUtils
 import org.zstack.utils.gson.JSONObjectUtil
 
 import javax.servlet.http.HttpServletRequest
@@ -123,7 +134,7 @@ class EnvSpec implements Node {
             [CreateInstanceOfferingAction.metaClass, CreateInstanceOfferingAction.Result.metaClass, DeleteInstanceOfferingAction.class],
             [CreateAccountAction.metaClass, CreateAccountAction.Result.metaClass, DeleteAccountAction.class],
             [CreatePolicyAction.metaClass, CreatePolicyAction.Result.metaClass, DeletePolicyAction.class],
-            [CreateUserGroupAction.metaClass, CreateUserAction.Result.metaClass, DeleteUserGroupAction.class],
+            [CreateUserGroupAction.metaClass, CreateUserGroupAction.Result.metaClass, DeleteUserGroupAction.class],
             [CreateUserAction.metaClass, CreateUserAction.Result.metaClass, DeleteUserAction.class],
             [AddImageAction.metaClass, AddImageAction.Result.metaClass, DeleteImageAction.class],
             [CreateDataVolumeTemplateFromVolumeAction.metaClass, CreateDataVolumeTemplateFromVolumeAction.Result.metaClass, DeleteImageAction.class],
@@ -188,11 +199,6 @@ class EnvSpec implements Node {
         factory.setReadTimeout(CoreGlobalProperty.REST_FACADE_READ_TIMEOUT)
         factory.setConnectTimeout(CoreGlobalProperty.REST_FACADE_CONNECT_TIMEOUT)
         restTemplate = new RestTemplate(factory)
-
-        simulatorClasses.each {
-            Simulator sim = it.newInstance() as Simulator
-            sim.registerSimulators(this)
-        }
     }
 
     void cleanSimulatorHandlers() {
@@ -406,27 +412,37 @@ class EnvSpec implements Node {
         a.sessionId = session.uuid
         QueryGlobalConfigAction.Result res = a.call()
         assert res.error == null: res.error.toString()
-        CountDownLatch latch = new CountDownLatch(res.value.inventories.size())
+        CountDownLatch latch = new CountDownLatch(1)
         List<ErrorCode> errors = []
-        res.value.inventories.each { GlobalConfigInventory config ->
-            Thread.start {
-                try {
-                    def ua = new UpdateGlobalConfigAction()
-                    ua.category = config.category
-                    ua.name = config.name
-                    ua.value = config.defaultValue
-                    ua.sessionId = session.uuid
-                    UpdateGlobalConfigAction.Result r = ua.call()
+        new While<GlobalConfigInventory>(res.value.inventories).all(new While.Do<GlobalConfigInventory>() {
+            @Override
+            void accept(GlobalConfigInventory config, NoErrorCompletion completion) {
+                def ua = new UpdateGlobalConfigAction()
+                ua.category = config.category
+                ua.name = config.name
+                ua.value = config.defaultValue
+                ua.sessionId = session.uuid
+                ua.call { UpdateGlobalConfigAction.Result r ->
                     if (r.error != null) {
                         errors.add(r.error)
                     }
-                } finally {
-                    latch.countDown()
+
+                    completion.done()
                 }
             }
+        }).run(new NoErrorCompletion() {
+            @Override
+            void done() {
+                latch.countDown()
+            }
+        })
+
+        def ret = latch.await(1, TimeUnit.MINUTES)
+        if (!ret) {
+            DebugUtils.dumpAllThreads()
         }
 
-        assert latch.await(1, TimeUnit.MINUTES): "global configs not all updated after 1 minutes timeout"
+        assert ret: "global configs not all updated after 1 minutes timeout"
         assert errors.isEmpty(): "some global configs fail to update, see ${errors.collect {it.toString()}}"
     }
 
@@ -460,6 +476,13 @@ class EnvSpec implements Node {
 
         adminLogin()
         resetAllGlobalConfig()
+        cleanSimulatorAndMessageHandlers()
+
+        simulatorClasses.each {
+            Simulator sim = it.newInstance() as Simulator
+            sim.registerSimulators(this)
+        }
+
         deploy()
 
         defaultHttpHandlers = [:]
@@ -484,7 +507,8 @@ class EnvSpec implements Node {
                               "GlobalConfigVO", "AsyncRestVO",
                               "AccountVO", "NetworkServiceProviderVO",
                               "NetworkServiceTypeVO", "VmInstanceSequenceNumberVO",
-                              "GarbageCollectorVO", "SystemTagVO", "AccountResourceRefVO"]) {
+                              "GarbageCollectorVO", "SystemTagVO", "AccountResourceRefVO",
+                              "TaskProgressVO", "NotificationVO", "TaskStepVO"]) {
                 //TODO: fix SystemTagVO, AccountResourceRefVO
                 // those tables will continue having entries during running a test suite
                 return
@@ -505,6 +529,10 @@ class EnvSpec implements Node {
 
     void delete() {
         try {
+            ImageGlobalConfig.DELETION_POLICY.updateValue(ImageDeletionPolicyManager.ImageDeletionPolicy.Direct.toString())
+            VolumeGlobalConfig.VOLUME_DELETION_POLICY.updateValue(VolumeDeletionPolicyManager.VolumeDeletionPolicy.Direct.toString())
+            VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy.Direct.toString())
+
             destroy(session.uuid)
 
             resourcesNeedDeletion.each {
@@ -512,10 +540,15 @@ class EnvSpec implements Node {
                 it.delete()
             }
 
+            SQL.New(NotificationVO.class).hardDelete()
+            SQL.New(TaskProgressVO.class).hardDelete()
+
             makeSureAllEntitiesDeleted()
+        } catch (StopTestSuiteException e) {
+            throw e
         } catch (Throwable t) {
             logger.fatal("an error happened when running EnvSpec.delete() for" +
-                    " the case ${Test.CURRENT_SUB_CASE.class}, we must stop the test suite, ${t.getMessage()}")
+                    " the case ${Test.CURRENT_SUB_CASE?.class}, we must stop the test suite, ${t.getMessage()}")
             throw new StopTestSuiteException()
         } finally {
             // set the currentEnvSpec to null anyway
@@ -611,7 +644,7 @@ class EnvSpec implements Node {
             logger.warn("the simulator[$url] reports a http error[status code:${he.status}, message:${he.message}]", he)
             rsp.sendError(he.status, he.message)
         } catch (Throwable t) {
-            logger.warn("error happened when handlign $url", t)
+            logger.warn("error happened when handling $url", t)
             rsp.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(), t.message)
         }
     }

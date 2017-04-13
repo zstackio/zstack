@@ -94,7 +94,7 @@ public class TestQemuAgentSystemTag {
         SimpleQuery<VmInstanceVO> pqv = dbf.createQuery(VmInstanceVO.class);
         pqv.add(VmInstanceVO_.uuid, SimpleQuery.Op.EQ, clonevm.getUuid());
         VmInstanceVO cloned = pqv.find();
-        String rootImageUuid = cloned.getRootVolumes().getRootImageUuid();
+        String rootImageUuid = cloned.getRootVolume().getRootImageUuid();
         // check the image have tag
         tag = getResourceUuidTag(rootImageUuid);
         Assert.assertEquals(TestSystemTags.qemu.getTagFormat(), tag);
@@ -102,7 +102,7 @@ public class TestQemuAgentSystemTag {
 
         BackupStorageInventory bs = deployer.backupStorages.get("sftp");
         List<String> bsUuids = Collections.singletonList(bs.getUuid());
-        logger.debug(cloned.getRootVolumes().getUuid());
+        logger.debug(cloned.getRootVolume().getUuid());
 
 //        ImageInventory commitedImage = api.commitVolumeAsImage(testvm.getRootVolumeUuid(), "test-commit-image", bsUuids);
 //        // check the commited-image have tag

@@ -17,15 +17,12 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
+import org.zstack.header.HasThreadContext;
 import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
-import org.zstack.header.core.progress.ProgressConstants;
-import org.zstack.header.core.progress.ProgressVO;
-import org.zstack.header.core.progress.ProgressVO_;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.MigrateVmOnHypervisorMsg;
 import org.zstack.header.host.MigrateVmOnHypervisorMsg.StorageMigrationPolicy;
@@ -104,7 +101,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
     }
 
     @ApiTimeout(apiClasses = {APILocalStorageMigrateVolumeMsg.class})
-    public static class CopyBitsFromRemoteCmd extends LocalStorageKvmBackend.AgentCommand {
+    public static class CopyBitsFromRemoteCmd extends LocalStorageKvmBackend.AgentCommand implements HasThreadContext {
         public String sendCommandUrl;
         public List<String> paths;
         public String dstIp;
@@ -756,29 +753,6 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
                         next.fail(errCode);
-                    }
-                });
-
-                Finally(new FlowFinallyHandler(next) {
-                    @Transactional
-                    private void deleteProgress(){
-                        SimpleQuery<ProgressVO> q = dbf.createQuery(ProgressVO.class);
-                        q.add(ProgressVO_.processType, SimpleQuery.Op.EQ, ProgressConstants.ProgressType.LocalStorageMigrateVolume.toString());
-                        q.add(ProgressVO_.resourceUuid, SimpleQuery.Op.EQ, rootVolume.getUuid());
-                        List<ProgressVO> list = q.list();
-                        if (list.size() > 0) {
-                            for (ProgressVO p : list) {
-                                try {
-                                    dbf.remove(p);
-                                } catch (Exception e) {
-                                    logger.warn("no need delete, it was deleted...");
-                                }
-                            }
-                        }
-                    }
-                    @Override
-                    public void Finally() {
-                        deleteProgress();
                     }
                 });
             }

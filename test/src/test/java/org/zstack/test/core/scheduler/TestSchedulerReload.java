@@ -38,7 +38,6 @@ public class TestSchedulerReload {
 
     @Before
     public void setUp() throws Exception {
-        UnitTestUtils.runTestCase(TestSchedulerCron.class);
         WebBeanConstructor con = new WebBeanConstructor();
         deployer = new Deployer("deployerXml/OnlyOneZone.xml", con);
         deployer.addSpringConfig("KVMRelated.xml");

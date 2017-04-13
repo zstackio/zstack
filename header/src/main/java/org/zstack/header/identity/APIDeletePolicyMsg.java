@@ -2,7 +2,10 @@ package org.zstack.header.identity;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIDeleteMessage;
+import org.zstack.header.message.APIEvent;
+import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
 
 /**
@@ -39,4 +42,15 @@ public class APIDeletePolicyMsg extends APIDeleteMessage implements AccountMessa
         return msg;
     }
 
+    public ApiNotification __notification__() {
+        APIMessage that = this;
+
+        return new ApiNotification() {
+            @Override
+            public void after(APIEvent evt) {
+                ntfy("Deleting").resource(uuid, PolicyVO.class.getSimpleName())
+                        .messageAndEvent(that, evt).done();
+            }
+        };
+    }
 }

@@ -2,6 +2,7 @@ package org.zstack.test.storage.primary.nfs;
 
 import junit.framework.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.zstack.compute.vm.VmGlobalConfig;
 import org.zstack.core.cloudbus.CloudBus;
@@ -31,6 +32,9 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.concurrent.TimeUnit;
 
+@Ignore
+@Deprecated
+// New Groovy Case : CleanImageCacheWhenDeleteImageTest
 public class TestNfsImageCleaner {
     CLogger logger = Utils.getLogger(TestSftpBackupStorageDeleteImage2.class);
     Deployer deployer;

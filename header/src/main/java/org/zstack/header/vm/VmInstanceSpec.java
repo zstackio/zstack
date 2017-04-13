@@ -5,6 +5,7 @@ import org.zstack.header.host.HostInventory;
 import org.zstack.header.image.ImageBackupStorageRefInventory;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.Message;
+import org.zstack.header.message.NoJsonSchema;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefInventory;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
@@ -180,6 +181,7 @@ public class VmInstanceSpec implements Serializable {
     private List<VolumeInventory> destDataVolumes = new ArrayList<>();
     private VolumeInventory destRootVolume;
     private VmOperation currentVmOperation;
+    @NoJsonSchema
     private Map<String, JsonWrapper> extensionData = new HashMap<>();
     private String dataIsoPath;
     private IsoSpec destIso;

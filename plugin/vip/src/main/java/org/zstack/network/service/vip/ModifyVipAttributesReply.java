@@ -5,7 +5,7 @@ import org.zstack.header.message.MessageReply;
 /**
  * Created by xing5 on 2016/11/30.
  */
-class ModifyVipAttributesReply extends MessageReply {
+public class ModifyVipAttributesReply extends MessageReply {
     private ModifyVipAttributesStruct struct;
 
     public ModifyVipAttributesStruct getStruct() {

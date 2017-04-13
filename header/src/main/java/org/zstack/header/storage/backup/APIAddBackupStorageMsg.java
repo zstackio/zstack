@@ -1,7 +1,10 @@
 package org.zstack.header.storage.backup;
 
 import org.zstack.header.message.APICreateMessage;
+import org.zstack.header.message.APIEvent;
+import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.notification.ApiNotification;
 
 public abstract class APIAddBackupStorageMsg extends APICreateMessage {
     /**
@@ -73,5 +76,19 @@ public abstract class APIAddBackupStorageMsg extends APICreateMessage {
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    public ApiNotification __notification__() {
+        APIMessage that = this;
+
+        return new ApiNotification() {
+            @Override
+            public void after(APIEvent evt) {
+                if (evt.isSuccess()) {
+                    ntfy("Created").resource(((APIAddBackupStorageEvent)evt).getInventory().getUuid(), BackupStorageVO.class.getSimpleName())
+                        .messageAndEvent(that, evt).done();
+                }
+            }
+        };
     }
 }

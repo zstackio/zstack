@@ -169,6 +169,34 @@ public class UpdateQueryImpl implements UpdateQuery {
 
     @Override
     @Transactional
+    public int hardDelete() {
+        DebugUtils.Assert(entityClass!=null, "entity class cannot be null");
+
+        StringBuilder sb = new StringBuilder(String.format("DELETE FROM %s vo", entityClass.getSimpleName()));
+
+        String where = where();
+        if (where != null) {
+            sb.append(String.format(" WHERE %s", where));
+        }
+
+        String sql = sb.toString();
+        if (logger.isTraceEnabled()) {
+            logger.trace(sql);
+        }
+
+        Query q = dbf.getEntityManager().createQuery(sql);
+
+        if (where != null) {
+            fillConditions(q);
+        }
+
+        int ret = q.executeUpdate();
+        dbf.getEntityManager().flush();
+        return ret;
+    }
+
+    @Override
+    @Transactional
     public void delete() {
         DebugUtils.Assert(entityClass!=null, "entity class cannot be null");
 
@@ -235,5 +263,6 @@ public class UpdateQueryImpl implements UpdateQuery {
         }
 
         q.executeUpdate();
+        dbf.getEntityManager().flush();
     }
 }

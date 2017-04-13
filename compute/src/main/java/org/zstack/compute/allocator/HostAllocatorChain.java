@@ -42,6 +42,8 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
 
     private Set<String> seriesErrorWhenPagination = new HashSet<String>();
 
+    private MarshalResultFunction marshalResultFunction;
+
     @Autowired
     private ErrorFacade errf;
     @Autowired
@@ -100,7 +102,9 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
     }
 
     protected void marshalResult() {
-        Collections.shuffle(result);
+        if (marshalResultFunction != null) {
+            marshalResultFunction.marshal(result);
+        }
     }
 
     private void done() {
@@ -293,5 +297,10 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
     public void dryRun(HostAllocatorSpec spec, ReturnValueCompletion<List<HostInventory>> completion) {
         this.allocationSpec = spec;
         dryRun(completion);
+    }
+
+    @Override
+    public void setMarshalResultFunction(MarshalResultFunction func) {
+        marshalResultFunction = func;
     }
 }

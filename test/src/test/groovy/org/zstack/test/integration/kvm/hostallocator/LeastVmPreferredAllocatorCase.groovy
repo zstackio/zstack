@@ -45,7 +45,7 @@ class LeastVmPreferredAllocatorCase extends SubCase {
 
         def threads = []
         1.upto(num, {
-            def vmName = "VM-${it}"
+            def vmName = "VM-${it}".toString()
             def thread = Thread.start {
                 createVmInstance {
                     name = vmName

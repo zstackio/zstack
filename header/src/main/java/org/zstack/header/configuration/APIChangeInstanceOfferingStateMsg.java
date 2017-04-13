@@ -2,8 +2,10 @@ package org.zstack.header.configuration;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
+import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
 
 /**
@@ -51,6 +53,19 @@ public class APIChangeInstanceOfferingStateMsg extends APIMessage implements Ins
         msg.setUuid(uuid());
         msg.setStateEvent("enable");
         return msg;
+    }
+
+    public ApiNotification __notification__() {
+        APIMessage that = this;
+
+        return new ApiNotification() {
+            @Override
+            public void after(APIEvent evt) {
+                ntfy("Changing the state to %s", ((APIChangeInstanceOfferingStateEvent)evt).getInventory().getState())
+                        .resource(uuid, InstanceOfferingVO.class.getSimpleName())
+                        .messageAndEvent(that, evt).done();
+            }
+        };
     }
 
 }

@@ -18,11 +18,15 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostAddExtensionPoint;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HypervisorType;
+import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.*;
 import org.zstack.header.network.l2.*;
+import org.zstack.header.notification.ApiNotification;
+import org.zstack.header.notification.ApiNotificationFactory;
+import org.zstack.header.notification.ApiNotificationFactoryExtensionPoint;
 import org.zstack.search.GetQuery;
 import org.zstack.search.SearchQuery;
 import org.zstack.tag.TagManager;
@@ -32,7 +36,8 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
 
-public class L2NetworkManagerImpl extends AbstractService implements L2NetworkManager, HostAddExtensionPoint {
+public class L2NetworkManagerImpl extends AbstractService implements L2NetworkManager,
+        HostAddExtensionPoint {
     private static final CLogger logger = Utils.getLogger(L2NetworkManagerImpl.class);
     
     @Autowired

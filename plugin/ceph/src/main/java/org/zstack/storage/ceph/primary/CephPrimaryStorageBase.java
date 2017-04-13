@@ -51,7 +51,6 @@ import org.zstack.storage.backup.sftp.GetSftpBackupStorageDownloadCredentialRepl
 import org.zstack.storage.backup.sftp.SftpBackupStorageConstant;
 import org.zstack.storage.ceph.*;
 import org.zstack.storage.ceph.CephMonBase.PingResult;
-import org.zstack.storage.ceph.backup.CephBackupStorageMonBase;
 import org.zstack.storage.ceph.backup.CephBackupStorageVO;
 import org.zstack.storage.ceph.backup.CephBackupStorageVO_;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonBase.PingOperationFailure;
@@ -62,6 +61,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.EncodingConversion;
 
 import static org.zstack.core.Platform.i18n;
 import static org.zstack.core.Platform.operr;
@@ -712,7 +712,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
         abstract void upload(ReturnValueCompletion<String> completion);
 
-        abstract boolean deleteWhenRollabackDownload();
+        abstract boolean deleteWhenRollbackDownload();
     }
 
     class SftpBackupStorageMediator extends BackupStorageMediator {
@@ -923,7 +923,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         }
 
         @Override
-        boolean deleteWhenRollabackDownload() {
+        boolean deleteWhenRollbackDownload() {
             return true;
         }
     }
@@ -1047,7 +1047,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         }
 
         @Override
-        boolean deleteWhenRollabackDownload() {
+        boolean deleteWhenRollbackDownload() {
             return false;
         }
     }
@@ -1202,12 +1202,12 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                         @Override
                         public void rollback(FlowRollback trigger, Map data) {
                             if (s) {
-                                ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
-                                rmsg.setNoOverProvisioning(true);
-                                rmsg.setPrimaryStorageUuid(self.getUuid());
-                                rmsg.setDiskSize(image.getInventory().getActualSize());
-                                bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
-                                bus.send(rmsg);
+                                IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
+                                imsg.setNoOverProvisioning(true);
+                                imsg.setPrimaryStorageUuid(self.getUuid());
+                                imsg.setDiskSize(image.getInventory().getActualSize());
+                                bus.makeLocalServiceId(imsg, PrimaryStorageConstant.SERVICE_ID);
+                                bus.send(imsg);
                             }
 
                             trigger.rollback();
@@ -1227,7 +1227,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                             BackupStorageMediator mediator = getBackupStorageMediator(image.getSelectedBackupStorage().getBackupStorageUuid());
                             mediator.param = param;
 
-                            deleteOnRollback = mediator.deleteWhenRollabackDownload();
+                            deleteOnRollback = mediator.deleteWhenRollbackDownload();
                             mediator.download(new ReturnValueCompletion<String>(trigger) {
                                 @Override
                                 public void success(String path) {
@@ -1393,11 +1393,11 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                     q.add(ImageCacheVO_.imageUuid, Op.EQ, image.getInventory().getUuid());
                                     ImageCacheVO cvo = q.find();
 
-                                    ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
-                                    rmsg.setDiskSize(cvo.getSize());
-                                    rmsg.setPrimaryStorageUuid(cvo.getPrimaryStorageUuid());
-                                    bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, cvo.getPrimaryStorageUuid());
-                                    bus.send(rmsg);
+                                    IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
+                                    imsg.setDiskSize(cvo.getSize());
+                                    imsg.setPrimaryStorageUuid(cvo.getPrimaryStorageUuid());
+                                    bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, cvo.getPrimaryStorageUuid());
+                                    bus.send(imsg);
                                     dbf.remove(cvo);
 
                                     doDownload(new ReturnValueCompletion<ImageCacheVO>(chain) {
@@ -2214,7 +2214,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
         AddPoolCmd cmd = new AddPoolCmd();
         cmd.errorIfNotExist = msg.isErrorIfNotExist();
-        cmd.poolName = msg.getPoolName();
+        cmd.poolName = EncodingConversion.encodingToUnicode(msg.getPoolName());
 
         APIAddCephPrimaryStoragePoolEvent evt = new APIAddCephPrimaryStoragePoolEvent(msg.getId());
         CephPrimaryStoragePoolVO finalVo = vo;

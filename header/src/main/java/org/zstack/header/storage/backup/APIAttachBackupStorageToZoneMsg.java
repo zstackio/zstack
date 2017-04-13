@@ -1,8 +1,10 @@
 package org.zstack.header.storage.backup;
 
 import org.springframework.http.HttpMethod;
+import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.zone.ZoneVO;
 
@@ -88,4 +90,20 @@ public class APIAttachBackupStorageToZoneMsg extends APIMessage implements Backu
         return msg;
     }
 
+    public ApiNotification __notification__() {
+        APIMessage that = this;
+
+        return new ApiNotification() {
+            @Override
+            public void after(APIEvent evt) {
+                ntfy("Attached to a zone[uuid:%s]", zoneUuid).resource(backupStorageUuid, BackupStorageVO.class.getSimpleName())
+                        .context("zoneUuid", zoneUuid)
+                        .messageAndEvent(that, evt).done();
+
+                ntfy("Attached to a backup storage[uuid:%s]", backupStorageUuid).resource(zoneUuid, ZoneVO.class.getSimpleName())
+                        .context("backupStorageUuid", backupStorageUuid)
+                        .messageAndEvent(that, evt).done();
+            }
+        };
+    }
 }

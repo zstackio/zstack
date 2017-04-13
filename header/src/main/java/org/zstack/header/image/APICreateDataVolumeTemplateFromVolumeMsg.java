@@ -3,7 +3,10 @@ package org.zstack.header.image;
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APICreateMessage;
+import org.zstack.header.message.APIEvent;
+import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.volume.VolumeVO;
@@ -70,6 +73,22 @@ public class APICreateDataVolumeTemplateFromVolumeMsg extends APICreateMessage {
         msg.setVolumeUuid(uuid());
 
         return msg;
+    }
+
+    public ApiNotification __notification__() {
+        APIMessage that = this;
+
+        return new ApiNotification() {
+            @Override
+            public void after(APIEvent evt) {
+                if (evt.isSuccess()) {
+                    ntfy("Created from a data volume[uuid:%s]", volumeUuid)
+                            .resource(((APICreateDataVolumeTemplateFromVolumeEvent) evt).getInventory().getUuid(),
+                                    ImageVO.class.getSimpleName())
+                            .messageAndEvent(that, evt).done();
+                }
+            }
+        };
     }
 
 }

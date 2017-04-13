@@ -264,12 +264,12 @@ public class VolumeSnapshotBase implements VolumeSnapshot {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
-                        rmsg.setDiskSize(self.getSize());
-                        rmsg.setNoOverProvisioning(true);
-                        rmsg.setPrimaryStorageUuid(self.getPrimaryStorageUuid());
-                        bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, rmsg.getPrimaryStorageUuid());
-                        bus.send(rmsg);
+                        IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
+                        imsg.setDiskSize(self.getSize());
+                        imsg.setNoOverProvisioning(true);
+                        imsg.setPrimaryStorageUuid(self.getPrimaryStorageUuid());
+                        bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, imsg.getPrimaryStorageUuid());
+                        bus.send(imsg);
                         trigger.next();
                     }
                 });

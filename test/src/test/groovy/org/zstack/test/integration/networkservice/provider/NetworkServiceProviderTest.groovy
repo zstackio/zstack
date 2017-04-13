@@ -26,6 +26,9 @@ class NetworkServiceProviderTest extends Test {
     @Override
     void setup() {
         useSpring(springSpec)
+        spring {
+            securityGroup()
+        }
     }
 
     @Override

@@ -45,6 +45,11 @@
             <artifactId>shrinkwrap-impl-base</artifactId>
             <version>1.2.6</version>
         </dependency>
+        <dependency>
+            <groupId>com.github.javaparser</groupId>
+            <artifactId>javaparser-core</artifactId>
+            <version>3.0.1</version>
+        </dependency>
 
 
         <dependency>
@@ -135,6 +140,11 @@
         <dependency>
             <groupId>org.zstack</groupId>
             <artifactId>fusionstor</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.zstack</groupId>
+            <artifactId>vxlan</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

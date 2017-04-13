@@ -93,11 +93,7 @@ public class ZSClient {
                 return;
             }
 
-            api.resultFromWebHook = res;
-            synchronized (api) {
-                api.notify();
-            }
-
+            api.wakeUpFromWebHook(res);
             rsp.setStatus(200);
             rsp.getWriter().write("");
         } catch (Exception e) {
@@ -128,11 +124,33 @@ public class ZSClient {
         InternalCompletion completion;
         String jobUuid = UUID.randomUUID().toString().replaceAll("-", "");
 
-        ApiResult resultFromWebHook;
+        private ApiResult resultFromWebHook;
 
         Api(AbstractAction action) {
             this.action = action;
             info = action.getRestInfo();
+            if (action.apiId != null) {
+                jobUuid = action.apiId;
+            }
+        }
+
+        void wakeUpFromWebHook(ApiResult res) {
+            if (completion == null) {
+                resultFromWebHook = res;
+                synchronized (this) {
+                    this.notifyAll();
+                }
+            } else {
+                try {
+                    completion.complete(res);
+                } catch (Throwable t) {
+                    res = new ApiResult();
+                    res.error = new ErrorCode();
+                    res.error.code = Constants.INTERNAL_ERROR;
+                    res.error.details = t.getMessage();
+                    completion.complete(res);
+                }
+            }
         }
 
         private String substituteUrl(String url, Map<String, Object> tokens) {
@@ -191,6 +209,10 @@ public class ZSClient {
             Request request = reqBuilder.build();
 
             try {
+                if (config.webHook != null) {
+                    waittingApis.put(jobUuid, this);
+                }
+
                 Response response = http.newCall(request).execute();
                 if (!response.isSuccessful()) {
                     return httpError(response.code(), response.body().string());
@@ -213,9 +235,7 @@ public class ZSClient {
             }
         }
 
-        private ApiResult webHookResult() {
-            waittingApis.put(jobUuid, this);
-
+        private ApiResult syncWebHookResult() {
             synchronized (this) {
                 Long timeout = (Long)action.getParameterValue("timeout", false);
                 timeout = timeout == null ? config.defaultPollingTimeout : timeout;
@@ -241,6 +261,13 @@ public class ZSClient {
             }
         }
 
+        private ApiResult webHookResult() {
+            if (completion == null) {
+                return syncWebHookResult();
+            } else {
+                return null;
+            }
+        }
 
         private void fillQueryApiRequestBuilder(Request.Builder reqBuilder) {
             QueryAction qaction = (QueryAction) action;
@@ -349,11 +376,26 @@ public class ZSClient {
                             builder.addQueryParameter(k, o.toString());
                         }
                     } else if (v instanceof Map) {
-                        throw new ApiException(String.format("%s won't support map as a parameter type. %s.%s",
-                                info.httpMethod, action.getClass(), k));
+                        for (Object o : ((Map) v).entrySet()) {
+                            Map.Entry pe = (Map.Entry) o;
+                            if (!(pe.getKey() instanceof String)) {
+                                throw new ApiException(String.format("%s only supports map parameter whose keys and values are both string. %s.%s.%s is not key string",
+                                        info.httpMethod, action.getClass(), k, pe.getKey()));
+                            }
+
+                            if (pe.getValue() instanceof Collection) {
+                                for (Object i : (Collection)pe.getValue()) {
+                                    builder.addQueryParameter(String.format("%s.%s", k, pe.getKey()), i.toString());
+                                }
+                            } else {
+                                builder.addQueryParameter(String.format("%s.%s", k, pe.getKey()), pe.getValue().toString());
+                            }
+
+                        }
                     } else {
                         builder.addQueryParameter(k, v.toString());
                     }
+
                 }
 
                 if (info.httpMethod.equals("GET")) {

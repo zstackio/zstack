@@ -230,10 +230,20 @@
                     <artifactId>rest</artifactId>
                     <version>${project.version}</version>
                 </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
+                    <artifactId>vxlan</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
 
                 <dependency>
                     <groupId>org.zstack</groupId>
                     <artifactId>mevoco</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
+                    <artifactId>hybrid</artifactId>
                     <version>${project.version}</version>
                 </dependency>
             </dependencies>
@@ -447,6 +457,11 @@
         <dependency>
             <groupId>org.zstack</groupId>
             <artifactId>rest</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.zstack</groupId>
+            <artifactId>vxlan</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>

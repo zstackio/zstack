@@ -2,7 +2,10 @@ package org.zstack.header.identity;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIDeleteMessage;
+import org.zstack.header.message.APIEvent;
+import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
 
 /**
@@ -16,7 +19,7 @@ import org.zstack.header.rest.RestRequest;
         parameterName = "params"
 )
 public class APIDeleteAccountMsg extends APIDeleteMessage implements AccountMessage {
-    @APIParam
+    @APIParam(resourceType = AccountVO.class, successIfResourceNotExisting = true)
     private String uuid;
 
     public String getUuid() {
@@ -37,6 +40,18 @@ public class APIDeleteAccountMsg extends APIDeleteMessage implements AccountMess
         msg.setUuid(uuid());
 
         return msg;
+    }
+
+    public ApiNotification __notification__() {
+        APIMessage that = this;
+
+        return new ApiNotification() {
+            @Override
+            public void after(APIEvent evt) {
+                ntfy("Deleting").resource(uuid, AccountVO.class.getSimpleName())
+                        .messageAndEvent(that, evt).done();
+            }
+        };
     }
 
 }

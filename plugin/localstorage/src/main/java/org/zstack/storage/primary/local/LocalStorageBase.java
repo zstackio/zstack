@@ -15,7 +15,6 @@ import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
-import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
@@ -23,9 +22,6 @@ import org.zstack.header.core.AsyncLatch;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
-import org.zstack.header.core.progress.ProgressConstants;
-import org.zstack.header.core.progress.ProgressVO;
-import org.zstack.header.core.progress.ProgressVO_;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -66,6 +62,7 @@ import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
 
+import static org.zstack.core.progress.ProgressReportService.createSubTaskProgress;
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
@@ -482,25 +479,8 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 });
 
                 Finally(new FlowFinallyHandler(msg, completion) {
-                    @Transactional
-                    private void deleteProgress(){
-                        SimpleQuery<ProgressVO> q = dbf.createQuery(ProgressVO.class);
-                        q.add(ProgressVO_.processType, SimpleQuery.Op.EQ, ProgressConstants.ProgressType.LocalStorageMigrateVolume.toString());
-                        q.add(ProgressVO_.resourceUuid, SimpleQuery.Op.EQ, msg.getVolumeUuid());
-                        List<ProgressVO> list = q.list();
-                        if (list.size() > 0) {
-                            for (ProgressVO p : list) {
-                                try {
-                                    dbf.remove(p);
-                                } catch (Exception e) {
-                                    logger.warn("no need delete, it was deleted...");
-                                }
-                            }
-                        }
-                    }
                     @Override
                     public void Finally() {
-                        deleteProgress();
                         completion.done();
                     }
                 });
@@ -1376,6 +1356,8 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
     @Override
     protected void handle(final InstantiateVolumeOnPrimaryStorageMsg msg) {
+        createSubTaskProgress("create a volume[%s] on the local storage", msg.getVolume().getType());
+
         String hostUuid = msg.getDestHost().getUuid();
         LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(hostUuid);
         final LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);

@@ -15,6 +15,17 @@ py() {
     cd - > /dev/null
 }
 
+pysdk() {
+    if [ -d premium/test-premium ]; then
+        cd premium/test-premium
+    else
+        cd test
+    fi
+
+    mvn test -Dtest=TestGeneratePythonSDK
+    cd - > /dev/null
+}
+
 apihelper() {
     cd test
     mvn test -Dtest=TestGenerateApiHelper
@@ -43,6 +54,45 @@ i18njson() {
 
 i18n() {
     ./build/zsi18n  -j conf/i18n.json -d conf/i18n/
+}
+
+foreignkey() {
+    set -u
+    #if [ -d premium/test-premium ]; then
+    #    cd premium/test-premium
+    #else
+    #	cd test
+    #fi
+
+    cd test
+    mvn test -Dtest=TestGenerateSqlForeignKey
+    cd - > /dev/null
+
+    echo "see ~/zstack-sql/foreignKeys.sql"
+}
+
+notification() {
+    SRC=`pwd`
+    if [ -d premium/test-premium ]; then
+   	cd premium/test-premium
+    else
+    	cd test
+    fi
+
+    mvn test -Dtest=GenerateNotificationHelper -Dsrc=$SRC
+    cd - > /dev/null
+}
+
+notificationapi() {
+    SRC=`pwd`
+    if [ -d premium/test-premium ]; then
+   	cd premium/test-premium
+    else
+    	cd test
+    fi
+
+    mvn test -Dtest=GenerateApiNotificationInApiMessage -Dsrc=$SRC
+    cd - > /dev/null
 }
 
 sdk() {
@@ -79,12 +129,20 @@ run_profile() {
 	doc
     elif test x$1 = x'py'; then
 	py
+    elif test x$1 = x'pysdk'; then
+	pysdk
     elif test x$1 = x'apihelper'; then
 	apihelper
     elif test x$1 = x'i18njson'; then
 	i18njson
     elif test x$1 = x'i18n'; then
 	i18n
+    elif test x$1 = x'foreignkey'; then
+	foreignkey
+    elif test x$1 = x'notification'; then
+	notification
+    elif test x$1 = x'notificationapi'; then
+	notificationapi
     else
         mvn -pl build -P $1 exec:exec -D$1
     fi

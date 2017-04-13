@@ -42,6 +42,10 @@
         <class>org.zstack.header.network.l2.L2NetworkVO</class>
         <class>org.zstack.header.network.l2.L2NetworkEO</class>
         <class>org.zstack.header.network.l2.L2VlanNetworkVO</class>
+        <class>org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolVO</class>
+        <class>org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO</class>
+        <class>org.zstack.network.l2.vxlan.vtep.VtepVO</class>
+        <class>org.zstack.network.l2.vxlan.vxlanNetworkPool.VniRangeVO</class>
         <class>org.zstack.header.network.l2.L2NetworkClusterRefVO</class>
         <class>org.zstack.header.network.l3.L3NetworkVO</class>
         <class>org.zstack.header.network.l3.L3NetworkEO</class>
@@ -129,8 +133,11 @@
         <class>org.zstack.ldap.LdapServerVO</class>
         <class>org.zstack.ldap.LdapAccountRefVO</class>
         <class>org.zstack.core.jsonlabel.JsonLabelVO</class>
-        <class>org.zstack.header.core.progress.ProgressVO</class>
         <class>org.zstack.rest.AsyncRestVO</class>
         <class>org.zstack.storage.ceph.primary.CephPrimaryStoragePoolVO</class>
+        <class>org.zstack.header.core.progress.TaskProgressVO</class>
+        <class>org.zstack.header.core.progress.TaskStepVO</class>
+        <class>org.zstack.core.notification.NotificationVO</class>
+        <class>org.zstack.core.notification.NotificationSubscriptionVO</class>
     </persistence-unit>
 </persistence>

@@ -7,6 +7,7 @@ import org.zstack.header.volume.VolumeVO;
 
 import javax.persistence.*;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
 @Entity
@@ -25,11 +26,6 @@ public class VmInstanceVO extends VmInstanceAO {
     @NoView
     private Set<VolumeVO> allVolumes = new HashSet<VolumeVO>();
 
-    @OneToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "rootVolumeUuid", insertable = false, updatable = false)
-    @NoView
-    private VolumeVO rootVolumes;
-
     public VmInstanceVO() {
     }
 
@@ -37,9 +33,7 @@ public class VmInstanceVO extends VmInstanceAO {
         super(other);
         this.vmNics = other.vmNics;
         this.allVolumes = other.allVolumes;
-        this.rootVolumes = other.rootVolumes;
     }
-
 
     public Set<VmNicVO> getVmNics() {
         return vmNics;
@@ -57,11 +51,12 @@ public class VmInstanceVO extends VmInstanceAO {
         this.allVolumes = allVolumes;
     }
 
-    public VolumeVO getRootVolumes() {
-        return rootVolumes;
-    }
+    public VolumeVO getRootVolume() {
+        if (allVolumes == null) {
+            return null;
+        }
 
-    public void setRootVolumes(VolumeVO rootVolumes) {
-        this.rootVolumes = rootVolumes;
+        Optional<VolumeVO> opt = allVolumes.stream().filter(v -> v.getUuid().equals(getRootVolumeUuid())).findAny();
+        return opt.isPresent() ? opt.get() : null;
     }
 }

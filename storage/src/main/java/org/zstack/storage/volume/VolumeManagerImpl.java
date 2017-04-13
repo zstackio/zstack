@@ -377,11 +377,11 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
                         if (targetPrimaryStorage != null) {
-                            ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
-                            rmsg.setDiskSize(template.getSize());
-                            rmsg.setPrimaryStorageUuid(targetPrimaryStorage.getUuid());
-                            bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, targetPrimaryStorage.getUuid());
-                            bus.send(rmsg);
+                            IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
+                            imsg.setDiskSize(template.getSize());
+                            imsg.setPrimaryStorageUuid(targetPrimaryStorage.getUuid());
+                            bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, targetPrimaryStorage.getUuid());
+                            bus.send(imsg);
                         }
                         trigger.rollback();
                     }

@@ -542,7 +542,7 @@ ZStack的查询条件类似于MySQL数据库，例如：
 ```
 uuid=bfa67f956afb430890aa49db14b85153
 totalCapacity>2000
-vmInstanceUuid!=null
+vmInstanceUuid not null
 ```
 
 > **字段名、查询操作符、匹配值三者之间不能有任何空格**。例如`uuid = 25506342d1384c07b7342373a57475b9`就是一个错误的查询条件，必须写为
@@ -550,16 +550,16 @@ vmInstanceUuid!=null
 
 多个查询条件之间是**与**关系。总共支持10个查询操作符：
 
-- `=`: 等于。可以用`=null`来测试一个字段是否为`null`，例如：
+- `=`: 等于，例如：
 
     ```
-    vmInstanceUuid=null
+    vmInstanceUuid=c4981689088b40f98d2ade2548c323da
     ```
     
-- `!=`: 不等于。可以用`!=null`来测试一个字段是否部位`null`，例如：
+- `!=`: 不等于，例如：
 
     ```
-    vmInstanceUuid!=null
+    vmInstanceUuid!=c4981689088b40f98d2ade2548c323da
     ```
 
 - `>`: 大于
@@ -594,6 +594,18 @@ vmInstanceUuid!=null
     这样名字是*IntelCoreI7*，*IntelCoreM7*的记录都会匹配上。
     
 - `!~=`: 模糊匹配非操作。查询一个字段不能模糊匹配到某个字符串，匹配条件与`~=`相同
+
+- `is null`: 字段为null：
+
+   ```
+   name is null
+   ```
+   
+- `not null`: 字段不为null：
+
+   ```
+   name not null
+   ```
 
 #### <a name="query-pagination">分页查询</a>
 

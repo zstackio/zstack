@@ -2,6 +2,7 @@ package org.zstack.test.eip;
 
 import junit.framework.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
@@ -48,6 +49,9 @@ import java.util.ArrayList;
  * <p>
  * confirm the user cannot do those operations
  */
+@Ignore
+@Deprecated
+// New Groovy Case : TestPolicyForEip.groovy
 public class TestPolicyForEip {
     Deployer deployer;
     Api api;

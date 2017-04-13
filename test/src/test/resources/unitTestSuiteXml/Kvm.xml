@@ -37,7 +37,6 @@
   -->
   <TestCase class="org.zstack.test.kvm.TestDestroyVmOnKvm"/>
   <TestCase class="org.zstack.test.kvm.TestDestroyVmOnKvm1"/>
-  <TestCase class="org.zstack.test.kvm.TestDestroyVmOnKvm2"/>
   <TestCase class="org.zstack.test.kvm.TestDestroyVmOnKvm3"/>
   <TestCase class="org.zstack.test.kvm.TestDestroyVmOnKvm4"/>
   <TestCase class="org.zstack.test.kvm.TestDestroyVmOnKvm5"/>
@@ -109,7 +108,6 @@
   <TestCase class="org.zstack.test.kvm.TestDetachNicOnKvm5"/>
   <TestCase class="org.zstack.test.kvm.TestDetachNicOnKvm6"/>
   <TestCase class="org.zstack.test.kvm.TestDetachNicOnKvm7"/>
-  <TestCase class="org.zstack.test.kvm.TestDetachNicOnKvm8"/>
   <TestCase class="org.zstack.test.kvm.TestDetachNicOnKvm9"/>
   <TestCase class="org.zstack.test.kvm.TestDetachNicOnKvm10"/>
   <TestCase class="org.zstack.test.kvm.TestDetachNicOnKvm11"/>

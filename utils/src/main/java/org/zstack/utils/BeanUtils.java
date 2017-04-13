@@ -1,14 +1,19 @@
 package org.zstack.utils;
 
+import org.apache.commons.beanutils.PropertyUtils;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.core.type.filter.AssignableTypeFilter;
 import org.zstack.utils.function.Function;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.lang.reflect.InvocationTargetException;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static java.util.Arrays.asList;
 
 /**
  */
@@ -123,7 +128,7 @@ public class BeanUtils {
     }
 
     public static List<Class> scanClassByType(String pkgName, Class includeType) {
-        return scanClassByType(Arrays.asList(pkgName), Arrays.asList(includeType));
+        return scanClassByType(asList(pkgName), asList(includeType));
     }
 
     public static List<Class> scanClass(List<String> pkgNames, List<Class> includeAnnotations) {
@@ -147,14 +152,70 @@ public class BeanUtils {
     }
 
     public static List<Class> scanClass(String pkgName, List<Class> includeAnnotations) {
-        return scanClass(Arrays.asList(pkgName), includeAnnotations);
+        return scanClass(asList(pkgName), includeAnnotations);
     }
 
     public static List<Class> scanClass(String pkgName, Class includeAnnotation) {
-        return scanClass(Arrays.asList(pkgName), Arrays.asList(includeAnnotation));
+        return scanClass(asList(pkgName), asList(includeAnnotation));
     }
 
     public static List<Class> scanClass(List<String> pkgNames, Class includeAnnotation) {
-        return scanClass(pkgNames, Arrays.asList(includeAnnotation));
+        return scanClass(pkgNames, asList(includeAnnotation));
+    }
+
+    private static Object getProperty(Object bean, Iterator<String> it) throws IllegalAccessException, NoSuchMethodException, InvocationTargetException {
+        String path = it.next();
+        if (bean instanceof Map) {
+            Pattern re = Pattern.compile("(.*)\\[(\\d+)]");
+            Matcher m = re.matcher(path);
+            if (m.find()) {
+                path = String.format("(%s)[%s]", m.group(1), m.group(2));
+            }
+        }
+
+        Object val = PropertyUtils.getProperty(bean, path);
+
+        if (it.hasNext()) {
+            return getProperty(val, it);
+        } else {
+            return val;
+        }
+    }
+
+    public static Object getProperty(Object bean, String path) {
+        List<String> paths = asList(path.split("\\."));
+        try {
+            return getProperty(bean, paths.iterator());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void setProperty(Object bean, Iterator<String> it, String fieldName, Object val) throws IllegalAccessException, NoSuchMethodException, InvocationTargetException {
+        if (it.hasNext()) {
+            bean = getProperty(bean, it);
+        }
+
+        if (bean instanceof Map) {
+            Pattern re = Pattern.compile("(.*)\\[(\\d+)]");
+            Matcher m = re.matcher(fieldName);
+            if (m.find()) {
+                fieldName = String.format("(%s)[%s]", m.group(1), m.group(2));
+            }
+        }
+
+        PropertyUtils.setProperty(bean, fieldName, val);
+    }
+
+    public static void setProperty(Object bean, String path, Object val) {
+        List<String> paths = asList(path.split("\\."));
+        String fieldName = paths.get(paths.size()-1);
+        paths = paths.subList(0, paths.size()-1);
+
+        try {
+            setProperty(bean, paths.iterator(), fieldName, val);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }

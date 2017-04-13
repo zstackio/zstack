@@ -1,5 +1,6 @@
 package org.zstack.testlib
 
+import org.apache.logging.log4j.ThreadContext
 import org.zstack.core.Platform
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.componentloader.ComponentLoader
@@ -7,6 +8,7 @@ import org.zstack.core.db.DatabaseFacade
 import org.zstack.header.AbstractService
 import org.zstack.header.exception.CloudRuntimeException
 import org.zstack.header.identity.AccountConstant
+import org.zstack.header.message.APIMessage
 import org.zstack.header.message.AbstractBeforeSendMessageInterceptor
 import org.zstack.header.message.Event
 import org.zstack.header.message.Message
@@ -21,6 +23,7 @@ import org.zstack.utils.logging.CLogger
 
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 
 /**
@@ -30,6 +33,7 @@ abstract class Test implements ApiHelper {
     final CLogger logger = Utils.getLogger(this.getClass())
 
     static Object deployer
+    static Map<String, String> apiPaths = new ConcurrentHashMap<>()
 
 
     private final int PHASE_NONE = 0
@@ -285,6 +289,16 @@ abstract class Test implements ApiHelper {
             if ((this instanceof Case) && System.getProperty("clean") != null) {
                 clean()
             }
+
+            if (System.getProperty("apipath") != null) {
+                def dir = new File([getResultDirBase(), "apipath"].join("/"))
+                dir.deleteDir()
+                dir.mkdirs()
+
+                apiPaths.each { name, path ->
+                    new File([dir.absolutePath, name.replace(".", "_")].join("/")).write(path)
+                }
+            }
         } catch (AssertionError e) {
             logger.warn("\n${e.message}", e)
             System.exit(1)
@@ -314,20 +328,22 @@ abstract class Test implements ApiHelper {
     protected void beforeRunSubCase() {
     }
 
-    protected void runSubCases() {
+    private String getResultDirBase() {
         String resultDir = System.getProperty("resultDir")
         if (resultDir == null) {
             resultDir = [System.getProperty("user.dir"), "zstack-integration-test-result"].join("/")
         }
+        return resultDir
+    }
 
-        resultDir = [resultDir, this.class.name.replace(".", "_")].join("/")
-
+    protected void runSubCases() {
+        def resultDir = [getResultDirBase(), this.class.name.replace(".", "_")].join("/")
         def dir = new File(resultDir)
         dir.deleteDir()
         dir.mkdirs()
 
         def caseTypes = Platform.reflections.getSubTypesOf(Case.class)
-        caseTypes = caseTypes.findAll { it.package.name.startsWith("${this.class.package.name}.") }
+        caseTypes = caseTypes.findAll { it.package.name == this.class.package.name || it.package.name.startsWith("${this.class.package.name}.") }
         caseTypes = caseTypes.sort()
 
         def cases = new File([dir.absolutePath, "cases"].join("/"))
@@ -350,14 +366,28 @@ abstract class Test implements ApiHelper {
 
         boolean hasFailure = false
 
+        bean(CloudBus.class).installBeforeSendMessageInterceptor(new AbstractBeforeSendMessageInterceptor() {
+            @Override
+            void intercept(Message msg) {
+                if (msg instanceof APIMessage) {
+                    if (CURRENT_SUB_CASE != null) {
+                        ThreadContext.put("case", CURRENT_SUB_CASE.class.simpleName)
+                    }
+                }
+            }
+        })
+
         for (SubCaseResult r in allCases) {
             def c = r.caseType.newInstance() as Case
 
             logger.info("starts running a sub case[${c.class}] of suite[${this.class}]")
+            new File([dir.absolutePath, "current-case"].join("/")).write("${c.class}")
+
             try {
                 CURRENT_SUB_CASE = c
 
                 beforeRunSubCase()
+
                 c.run()
 
                 r.success = true
@@ -371,7 +401,7 @@ abstract class Test implements ApiHelper {
                 r.success = false
                 r.error = t.message
 
-                logger.error("a sub case [${c.class}] of suite[${this.class}] fails, ${t.message}", t)
+                logger.error("a sub case [${c.class}] of suite[${this.class}] fails, ${t.message}")
             } finally {
                 def fname = c.class.name.replace(".", "_") + "." + (r.success ? "success" : "failure")
                 def rfile = new File([dir.absolutePath, fname].join("/"))
@@ -423,10 +453,36 @@ abstract class Test implements ApiHelper {
         } as SessionInventory
     }
 
-    protected boolean retryInSecs(int total, int interval=1, Closure c) {
+    private boolean getRetryReturnValue(ret, boolean throwError=false) {
+        boolean judge
+
+        if (ret instanceof Closure) {
+            try {
+                def r = ret()
+                judge = (r != null && r instanceof Boolean) ? r : true
+            } catch (Throwable t) {
+                if (throwError) {
+                    throw t
+                } else {
+                    judge = false
+                }
+            }
+        } else {
+            judge = ret
+        }
+
+        return judge
+    }
+
+    protected boolean retryInSecs(int total=15, int interval=1, Closure c) {
         int count = 0
+
+        def ret = null
+
         while (count < total) {
-            if (c()) {
+            ret = c()
+
+            if (getRetryReturnValue(ret)) {
                 return true
             }
 
@@ -434,13 +490,18 @@ abstract class Test implements ApiHelper {
             count += interval
         }
 
-        return false
+        return getRetryReturnValue(ret, true)
     }
 
-    protected boolean retryInMillis(int total, int interval, Closure c) {
+    protected boolean retryInMillis(int total, int interval=500, Closure c) {
         int count = 0
+
+        def ret = null
+
         while (count < total) {
-            if (c()) {
+            ret = c()
+
+            if (getRetryReturnValue(ret)) {
                 return true
             }
 
@@ -448,6 +509,30 @@ abstract class Test implements ApiHelper {
             count += interval
         }
 
-        return false
+        return getRetryReturnValue(ret, true)
+    }
+
+    protected static void expect(exceptions, Closure c) {
+        List<Class> lst = []
+        if (exceptions instanceof Collection) {
+            lst.addAll(exceptions)
+        } else if (exceptions instanceof Class && Throwable.class.isAssignableFrom(exceptions)) {
+            lst.add(exceptions)
+        } else {
+            throw new Exception("the first argument must be a Throwable or a collection of Throwable, but got a ${exceptions.class.name}")
+        }
+
+        try {
+            c()
+        } catch (Throwable t) {
+            for (Class tt : lst) {
+                if (tt.isAssignableFrom(t.class)) {
+                    return
+                }
+            }
+
+            throw new Exception("expected to get a Throwable of ${lst.collect { it.name }} but got ${t.class.name}")
+
+        }
     }
 }

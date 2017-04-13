@@ -255,11 +255,6 @@
                 <version>1.46</version>
             </dependency>
             <dependency>
-                <groupId>org.mvel</groupId>
-                <artifactId>mvel2</artifactId>
-                <version>2.2.7.Final</version>
-            </dependency>
-            <dependency>
                 <groupId>org.objenesis</groupId>
                 <artifactId>objenesis</artifactId>
                 <version>2.1</version>
@@ -295,7 +290,11 @@
 	        <artifactId>commons-beanutils</artifactId>
 	        <version>1.9.3</version>
 	    </dependency>
-
+            <dependency>
+                <groupId>org.javassist</groupId>
+                <artifactId>javassist</artifactId>
+                <version>3.21.0-GA</version>
+            </dependency>
 
             <!-- build plugins -->
             <dependency>

@@ -3,7 +3,10 @@ package org.zstack.header.configuration;
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APICreateMessage;
+import org.zstack.header.message.APIEvent;
+import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
 
 @Action(category = ConfigurationConstant.ACTION_CATEGORY)
@@ -83,6 +86,20 @@ public class APICreateDiskOfferingMsg extends APICreateMessage {
         msg.setDiskSize(100);
 
         return msg;
+    }
+
+    public ApiNotification __notification__() {
+        APIMessage that = this;
+
+        return new ApiNotification() {
+            @Override
+            public void after(APIEvent evt) {
+                if (evt.isSuccess()) {
+                    ntfy("Creating").resource(((APICreateDiskOfferingEvent)evt).getInventory().getUuid(), DiskOfferingVO.class.getSimpleName())
+                        .messageAndEvent(that, evt).done();
+                }
+            }
+        };
     }
 
 }

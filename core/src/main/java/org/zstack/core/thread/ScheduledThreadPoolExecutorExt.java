@@ -36,6 +36,7 @@ public class ScheduledThreadPoolExecutorExt extends ScheduledThreadPoolExecutor 
     @Override
     protected void beforeExecute(Thread t, Runnable r) {
         ThreadContext.clearMap();
+        ThreadContext.clearStack();
 
         ThreadAroundHook debugHook = null;
         List<ThreadAroundHook> tmpHooks;       
@@ -56,6 +57,7 @@ public class ScheduledThreadPoolExecutorExt extends ScheduledThreadPoolExecutor 
     @Override
     protected void afterExecute(Runnable r, Throwable t) {
         ThreadContext.clearMap();
+        ThreadContext.clearStack();
 
         ThreadAroundHook debugHook = null;
         List<ThreadAroundHook> tmpHooks;

@@ -21,6 +21,7 @@ import org.zstack.core.cloudbus.CloudBusEventListener;
 import org.zstack.core.retry.Retry;
 import org.zstack.core.retry.RetryCondition;
 import org.zstack.header.Component;
+import org.zstack.header.MapField;
 import org.zstack.header.apimediator.ApiMediatorConstant;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.SessionInventory;
@@ -35,7 +36,7 @@ import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.rest.RestResponse;
 import org.zstack.rest.sdk.DocumentGenerator;
-import org.zstack.rest.sdk.JavaSdkTemplate;
+import org.zstack.rest.sdk.SdkTemplate;
 import org.zstack.rest.sdk.SdkFile;
 import org.zstack.utils.*;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -56,6 +57,8 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static java.util.Arrays.asList;
 
 /**
  * Created by xing5 on 2016/12/7.
@@ -129,11 +132,11 @@ public class RestServer implements Component, CloudBusEventListener {
                     continue;
                 }
 
-                JavaSdkTemplate tmp = (JavaSdkTemplate) clz.getConstructor(Class.class).newInstance(apiClz);
+                SdkTemplate tmp = (SdkTemplate) clz.getConstructor(Class.class).newInstance(apiClz);
                 allFiles.addAll(tmp.generate());
             }
 
-            JavaSdkTemplate tmp = GroovyUtils.newInstance("scripts/SdkDataStructureGenerator.groovy", RestServer.class.getClassLoader());
+            SdkTemplate tmp = GroovyUtils.newInstance("scripts/SdkDataStructureGenerator.groovy", RestServer.class.getClassLoader());
             allFiles.addAll(tmp.generate());
 
             for (SdkFile f : allFiles) {
@@ -334,6 +337,44 @@ public class RestServer implements Component, CloudBusEventListener {
             return requestMappingFields.get(key);
         }
 
+        private void mapQueryParameterToApiFieldValue(String name, String[] vals, Map<String, Object> params) throws RestException {
+            String[] pairs = name.split("\\.");
+            String fname = pairs[0];
+            String key = pairs[1];
+
+            Field f = allApiClassFields.get(fname);
+            if (f == null) {
+                logger.warn(String.format("unknown map query parameter[%s], ignore", name));
+                return;
+            }
+
+            MapField at = f.getAnnotation(MapField.class);
+            DebugUtils.Assert(at!=null, String.format("%s::%s must be annotated by @MapField", apiClass, fname));
+
+            Map m = (Map) params.get(fname);
+            if (m == null) {
+                m = new HashMap();
+                params.put(fname, m);
+            }
+
+            if (m.containsKey(key)) {
+                throw new RestException(HttpStatus.BAD_REQUEST.value(),
+                        String.format("duplicate map query parameter[%s], there has been a parameter with the same map key", name));
+            }
+
+            if (Collection.class.isAssignableFrom(at.valueType())) {
+                m.put(key, asList(vals));
+            } else {
+                if (vals.length > 1) {
+                    throw new RestException(HttpStatus.BAD_REQUEST.value(),
+                            String.format("Invalid query parameter[%s], only one value is allowed for the parameter but" +
+                                    " multiple values found", name));
+                }
+
+                m.put(key, vals[0]);
+            }
+        }
+
         Object queryParameterToApiFieldValue(String name, String[] vals) throws RestException {
             Field f = allApiClassFields.get(name);
             if (f == null) {
@@ -352,7 +393,7 @@ public class RestServer implements Component, CloudBusEventListener {
                 if (vals.length > 1) {
                     throw new RestException(HttpStatus.BAD_REQUEST.value(),
                             String.format("Invalid query parameter[%s], only one value is allowed for the parameter but" +
-                                    " mupltiple values found", name));
+                                    " multiple values found", name));
                 }
 
                 return TypeUtils.stringToValue(vals[0], f.getType());
@@ -643,13 +684,18 @@ public class RestServer implements Component, CloudBusEventListener {
                 String k = e.getKey();
                 String[] vals = e.getValue();
 
-                Object val = api.queryParameterToApiFieldValue(k, vals);
-                if (val == null) {
-                    logger.warn(String.format("unknown query parameter[%s], ignored", k));
-                    continue;
-                }
+                if (k.contains(".")) {
+                    // this is a map parameter
+                    api.mapQueryParameterToApiFieldValue(k, vals, m);
+                } else {
+                    Object val = api.queryParameterToApiFieldValue(k, vals);
+                    if (val == null) {
+                        logger.warn(String.format("unknown query parameter[%s], ignored", k));
+                        continue;
+                    }
 
-                m.put(k, val);
+                    m.put(k, val);
+                }
             }
 
             parameter = m;
@@ -722,6 +768,8 @@ public class RestServer implements Component, CloudBusEventListener {
         QUERY_OP_MAPPING.put("=", QueryOp.EQ.toString());
         QUERY_OP_MAPPING.put(">", QueryOp.GT.toString());
         QUERY_OP_MAPPING.put("<", QueryOp.LT.toString());
+        QUERY_OP_MAPPING.put("is null", QueryOp.IS_NULL.toString());
+        QUERY_OP_MAPPING.put("not null", QueryOp.NOT_NULL.toString());
     }
 
     private void handleQueryApi(Api api, String sessionId, HttpServletRequest req, HttpServletResponse rsp) throws IllegalAccessException, InstantiationException, RestException, IOException, NoSuchMethodException, InvocationTargetException {
@@ -800,21 +848,28 @@ public class RestServer implements Component, CloudBusEventListener {
                     if (OP == null) {
                         throw new RestException(HttpStatus.BAD_REQUEST.value(), String.format("Invalid query parameter." +
                                 " The '%s' in the parameter[q] doesn't contain any query operator. Valid query operators are" +
-                                " %s", cond, Arrays.asList(QUERY_OP_MAPPING.keySet())));
+                                " %s", cond, asList(QUERY_OP_MAPPING.keySet())));
                     }
 
-                    String[] ks = StringUtils.split(cond, delimiter, 2);
-                    if (ks.length != 2) {
-                        throw new RestException(HttpStatus.BAD_REQUEST.value(), String.format("Invalid query parameter." +
-                                " The '%s' in parameter[q] is not a key-value pair split by %s", cond, OP));
-                    }
-
-                    String cname = ks[0].trim();
-                    String cvalue = ks[1]; // don't trim the value, a space is valid in some conditions
                     QueryCondition qc = new QueryCondition();
-                    qc.setName(cname);
-                    qc.setOp(OP);
-                    qc.setValue(cvalue);
+                    String[] ks = StringUtils.splitByWholeSeparator(cond, delimiter, 2);
+                    if (OP.equals(QueryOp.IS_NULL.toString()) || OP.equals(QueryOp.NOT_NULL.toString())) {
+                        String cname = ks[0].trim();
+                        qc.setName(cname);
+                        qc.setOp(OP);
+                    } else {
+                        if (ks.length != 2) {
+                            throw new RestException(HttpStatus.BAD_REQUEST.value(), String.format("Invalid query parameter." +
+                                    " The '%s' in parameter[q] is not a key-value pair split by %s", cond, OP));
+                        }
+
+                        String cname = ks[0].trim();
+                        String cvalue = ks[1]; // don't trim the value, a space is valid in some conditions
+                        qc.setName(cname);
+                        qc.setOp(OP);
+                        qc.setValue(cvalue);
+                    }
+
                     msg.getConditions().add(qc);
                 }
             } else if ("fields".equals(varname)) {

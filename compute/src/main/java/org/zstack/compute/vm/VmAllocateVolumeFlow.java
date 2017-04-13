@@ -31,6 +31,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static org.zstack.core.progress.ProgressReportService.taskProgress;
+
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmAllocateVolumeFlow implements Flow {
     @Autowired
@@ -43,6 +45,8 @@ public class VmAllocateVolumeFlow implements Flow {
     protected ErrorFacade errf;
 
     private List<CreateVolumeMsg> prepareMsg(Map<String, Object> ctx) {
+        taskProgress("create volumes");
+
         VmInstanceSpec spec = (VmInstanceSpec) ctx.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
 
         String accountUuid = acntMgr.getOwnerAccountUuidOfResource(spec.getVmInventory().getUuid());

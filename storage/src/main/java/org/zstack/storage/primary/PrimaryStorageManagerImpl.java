@@ -29,7 +29,6 @@ import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.tag.SystemTagValidator;
-import org.zstack.header.volume.Volume;
 import org.zstack.header.volume.VolumeStatus;
 import org.zstack.search.GetQuery;
 import org.zstack.search.SearchQuery;
@@ -301,8 +300,10 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
     private void handleLocalMessage(Message msg) {
         if (msg instanceof AllocatePrimaryStorageMsg) {
             handle((AllocatePrimaryStorageMsg) msg);
-        } else if (msg instanceof ReturnPrimaryStorageCapacityMsg) {
-            handle((ReturnPrimaryStorageCapacityMsg) msg);
+        } else if (msg instanceof IncreasePrimaryStorageCapacityMsg) {
+            handle((IncreasePrimaryStorageCapacityMsg) msg);
+        } else if (msg instanceof DecreasePrimaryStorageCapacityMsg) {
+            handle((DecreasePrimaryStorageCapacityMsg) msg);
         } else if (msg instanceof RecalculatePrimaryStorageCapacityMsg) {
             handle((RecalculatePrimaryStorageCapacityMsg) msg);
         } else if (msg instanceof PrimaryStorageMessage) {
@@ -483,10 +484,21 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         bus.reply(msg, reply);
     }
 
-    private void handle(ReturnPrimaryStorageCapacityMsg msg) {
+    private void handle(IncreasePrimaryStorageCapacityMsg msg) {
         long diskSize = msg.isNoOverProvisioning() ? msg.getDiskSize() : ratioMgr.calculateByRatio(msg.getPrimaryStorageUuid(), msg.getDiskSize());
         PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(msg.getPrimaryStorageUuid());
         if (updater.increaseAvailableCapacity(diskSize)) {
+            if (logger.isTraceEnabled()) {
+                logger.trace(String.format("Successfully return %s bytes to primary storage[uuid:%s]",
+                        diskSize, msg.getPrimaryStorageUuid()));
+            }
+        }
+    }
+
+    private void handle(DecreasePrimaryStorageCapacityMsg msg) {
+        long diskSize = msg.isNoOverProvisioning() ? msg.getDiskSize() : ratioMgr.calculateByRatio(msg.getPrimaryStorageUuid(), msg.getDiskSize());
+        PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(msg.getPrimaryStorageUuid());
+        if (updater.decreaseAvailableCapacity(diskSize)) {
             if (logger.isTraceEnabled()) {
                 logger.trace(String.format("Successfully return %s bytes to primary storage[uuid:%s]",
                         diskSize, msg.getPrimaryStorageUuid()));

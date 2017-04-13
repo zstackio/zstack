@@ -1,5 +1,6 @@
 package org.zstack.network.service.virtualrouter;
 
+import org.zstack.header.message.CarrierMessage;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.vm.VmInstanceMessage;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -8,7 +9,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  */
-public class VirtualRouterAsyncHttpCallMsg extends NeedReplyMessage implements VmInstanceMessage {
+public class VirtualRouterAsyncHttpCallMsg extends NeedReplyMessage implements VmInstanceMessage, CarrierMessage {
     private String vmInstanceUuid;
     private String path;
     private String command;

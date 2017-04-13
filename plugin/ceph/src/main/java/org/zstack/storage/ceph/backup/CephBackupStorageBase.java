@@ -15,17 +15,13 @@ import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
+import org.zstack.header.HasThreadContext;
 import org.zstack.header.core.*;
-import org.zstack.header.core.progress.ProgressConstants;
-import org.zstack.header.core.progress.ProgressVO;
-import org.zstack.header.core.progress.ProgressVO_;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.image.APIAddImageMsg;
-import org.zstack.header.image.ImageBackupStorageRefInventory;
-import org.zstack.header.image.ImageInventory;
+import org.zstack.header.image.*;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.rest.RESTFacade;
@@ -33,7 +29,6 @@ import org.zstack.header.storage.backup.*;
 import org.zstack.storage.backup.BackupStorageBase;
 import org.zstack.storage.ceph.*;
 import org.zstack.storage.ceph.CephMonBase.PingResult;
-import org.zstack.storage.ceph.CephCapacityVO_;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageVO;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageVO_;
 import org.zstack.utils.CollectionUtils;
@@ -42,11 +37,8 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+import static org.zstack.core.Platform.*;
 
-
-import static org.zstack.core.Platform.operr;
-
-import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import java.net.URISyntaxException;
 import java.util.*;
@@ -168,7 +160,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
     }
 
     @ApiTimeout(apiClasses = {APIAddImageMsg.class})
-    public static class DownloadCmd extends AgentCommand {
+    public static class DownloadCmd extends AgentCommand implements HasThreadContext {
         String url;
         String installPath;
         String imageUuid;
@@ -645,7 +637,6 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
 
     @Override
-    @Transactional
     protected void handle(final DownloadImageMsg msg) {
         final DownloadCmd cmd = new DownloadCmd();
         cmd.url = msg.getImageInventory().getUrl();
@@ -653,43 +644,22 @@ public class CephBackupStorageBase extends BackupStorageBase {
         cmd.imageUuid = msg.getImageInventory().getUuid();
         cmd.sendCommandUrl = restf.getSendCommandUrl();
 
-        String sql = "update ImageBackupStorageRefVO set installPath = :installPath " +
-                "where backupStorageUuid = :bsUuid and imageUuid = :imageUuid";
-        Query q = dbf.getEntityManager().createQuery(sql);
-        q.setParameter("installPath", cmd.installPath);
-        q.setParameter("bsUuid", msg.getBackupStorageUuid());
-        q.setParameter("imageUuid", msg.getImageInventory().getUuid());
-        q.executeUpdate();
-
+        SQL.New(ImageBackupStorageRefVO.class)
+                .condAnd(ImageBackupStorageRefVO_.backupStorageUuid, SimpleQuery.Op.EQ, msg.getBackupStorageUuid())
+                .condAnd(ImageBackupStorageRefVO_.imageUuid, SimpleQuery.Op.EQ, msg.getImageInventory().getUuid())
+                .set(ImageBackupStorageRefVO_.installPath, cmd.installPath)
+                .update();
 
         final DownloadImageReply reply = new DownloadImageReply();
         httpCall(DOWNLOAD_IMAGE_PATH, cmd, DownloadRsp.class, new ReturnValueCompletion<DownloadRsp>(msg) {
-            @Transactional
-            private void deleteProgress(){
-                SimpleQuery<ProgressVO> q = dbf.createQuery(ProgressVO.class);
-                q.add(ProgressVO_.processType, SimpleQuery.Op.EQ, ProgressConstants.ProgressType.AddImage.toString());
-                q.add(ProgressVO_.resourceUuid, SimpleQuery.Op.EQ, msg.getImageInventory().getUuid());
-                List<ProgressVO> list = q.list();
-                if (list.size() > 0) {
-                    for (ProgressVO p : list) {
-                        try {
-                            dbf.remove(p);
-                        } catch (Exception e) {
-                            logger.warn("no need delete, it was deleted...");
-                        }
-                    }
-                }
-            }
             @Override
             public void fail(ErrorCode err) {
-                deleteProgress();
                 reply.setError(err);
                 bus.reply(msg, reply);
             }
 
             @Override
             public void success(DownloadRsp ret) {
-                deleteProgress();
                 reply.setInstallPath(cmd.installPath);
                 reply.setSize(ret.size);
 
@@ -711,32 +681,14 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
         final DownloadVolumeReply reply = new DownloadVolumeReply();
         httpCall(DOWNLOAD_IMAGE_PATH, cmd, DownloadRsp.class, new ReturnValueCompletion<DownloadRsp>(msg) {
-            @Transactional
-            private void deleteProgress(){
-                SimpleQuery<ProgressVO> q = dbf.createQuery(ProgressVO.class);
-                q.add(ProgressVO_.processType, SimpleQuery.Op.EQ, ProgressConstants.ProgressType.AddImage.toString());
-                q.add(ProgressVO_.resourceUuid, SimpleQuery.Op.EQ, msg.getVolume().getUuid());
-                List<ProgressVO> list = q.list();
-                if (list.size() > 0) {
-                    for (ProgressVO p : list) {
-                        try {
-                            dbf.remove(p);
-                        } catch (Exception e) {
-                            logger.warn("no need delete, it was deleted...");
-                        }
-                    }
-                }
-            }
             @Override
             public void fail(ErrorCode err) {
-                deleteProgress();
                 reply.setError(err);
                 bus.reply(msg, reply);
             }
 
             @Override
             public void success(DownloadRsp ret) {
-                deleteProgress();
                 reply.setInstallPath(cmd.installPath);
                 reply.setSize(ret.size);
                 reply.setMd5sum("not calculated");

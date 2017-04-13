@@ -1,17 +1,17 @@
 package org.zstack.network.service.virtualrouter.eip;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.zstack.appliancevm.*;
+import org.zstack.appliancevm.ApplianceVmFacade;
+import org.zstack.appliancevm.ApplianceVmFirewallProtocol;
+import org.zstack.appliancevm.ApplianceVmFirewallRuleInventory;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.core.db.UpdateQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
-import org.zstack.core.workflow.*;
+import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
@@ -33,11 +33,11 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
-import static org.zstack.core.Platform.operr;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+
+import static org.zstack.core.Platform.operr;
 
 /**
  */
@@ -237,8 +237,7 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
         VirtualRouterVmVO vrvo = dbf.findByUuid(ref.getVirtualRouterVmUuid(), VirtualRouterVmVO.class);
         if (vrvo.getState() != VmInstanceState.Running) {
             // rule will be synced when vr state changes to Running
-            SQL.New("delete from VirtualRouterEipRefVO ref where ref.eipUuid = :eipUuid")
-                    .param("eipUuid", struct.getEip().getUuid()).execute();
+            dbf.remove(ref);
             completion.success();
             return;
         }
@@ -326,6 +325,9 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
         }).error(new FlowErrorHandler(completion) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
+                // We need to remove the 'ref' record, otherwise the next time when
+                // deleting EIP is requested, we will get ConstraintViolationException.
+                dbf.remove(ref);
                 completion.fail(errCode);
             }
         }).start();

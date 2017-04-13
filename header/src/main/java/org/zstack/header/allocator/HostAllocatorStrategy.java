@@ -9,4 +9,6 @@ public interface HostAllocatorStrategy {
     void allocate(HostAllocatorSpec spec, ReturnValueCompletion<HostInventory> completion);
 
     void dryRun(HostAllocatorSpec spec, ReturnValueCompletion<List<HostInventory>> completion);
+
+    void setMarshalResultFunction(MarshalResultFunction func);
 }

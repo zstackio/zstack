@@ -6,7 +6,7 @@ import org.zstack.header.allocator.*;
 import java.util.List;
 
 public abstract class AbstractHostAllocatorStrategyFactory implements HostAllocatorStrategyFactory, Component {
-    private HostAllocatorChainBuilder builder;
+    protected HostAllocatorChainBuilder builder;
     private List<String> allocatorFlowNames;
 
     public HostAllocatorStrategy getHostAllocatorStrategy() {

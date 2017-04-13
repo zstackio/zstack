@@ -1,5 +1,8 @@
 package org.zstack.core.progress;
 
+import java.util.List;
+import java.util.Map;
+
 /**
  * Created by mingjian.deng on 16/12/10.
  */
@@ -22,11 +25,29 @@ public class ProgressCommands {
     }
 
     public static class ProgressReportCmd {
+        private Map<String, String> threadContextMap;
+        private List<String> threadContextStack;
         private String serverUuid;
         private String serverType;
         private String resourceUuid;
         private String progress;
         private String processType;
+
+        public Map<String, String> getThreadContextMap() {
+            return threadContextMap;
+        }
+
+        public void setThreadContextMap(Map<String, String> threadContextMap) {
+            this.threadContextMap = threadContextMap;
+        }
+
+        public List<String> getThreadContextStack() {
+            return threadContextStack;
+        }
+
+        public void setThreadContextStack(List<String> threadContextStack) {
+            this.threadContextStack = threadContextStack;
+        }
 
         public String getServerUuid() {
             return serverUuid;

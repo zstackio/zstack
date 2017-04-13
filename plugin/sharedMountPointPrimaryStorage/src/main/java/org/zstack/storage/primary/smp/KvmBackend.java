@@ -383,12 +383,12 @@ public class KvmBackend extends HypervisorBackend {
                                 @Override
                                 public void rollback(FlowRollback trigger, Map data) {
                                     if (s) {
-                                        ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
-                                        rmsg.setDiskSize(image.getActualSize());
-                                        rmsg.setNoOverProvisioning(true);
-                                        rmsg.setPrimaryStorageUuid(self.getUuid());
-                                        bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
-                                        bus.send(rmsg);
+                                        IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
+                                        imsg.setDiskSize(image.getActualSize());
+                                        imsg.setNoOverProvisioning(true);
+                                        imsg.setPrimaryStorageUuid(self.getUuid());
+                                        bus.makeLocalServiceId(imsg, PrimaryStorageConstant.SERVICE_ID);
+                                        bus.send(imsg);
                                     }
 
                                     trigger.rollback();
@@ -479,11 +479,11 @@ public class KvmBackend extends HypervisorBackend {
                             q.add(ImageCacheVO_.imageUuid, Op.EQ, image.getUuid());
                             ImageCacheVO vo = q.find();
 
-                            ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
-                            rmsg.setDiskSize(vo.getSize());
-                            rmsg.setPrimaryStorageUuid(vo.getPrimaryStorageUuid());
-                            bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, vo.getPrimaryStorageUuid());
-                            bus.send(rmsg);
+                            IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
+                            imsg.setDiskSize(vo.getSize());
+                            imsg.setPrimaryStorageUuid(vo.getPrimaryStorageUuid());
+                            bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, vo.getPrimaryStorageUuid());
+                            bus.send(imsg);
 
                             dbf.remove(vo);
                             doDownload(chain);
@@ -1332,18 +1332,22 @@ public class KvmBackend extends HypervisorBackend {
 
         class Result {
             List<ErrorCode> errorCodes = new ArrayList<ErrorCode>();
-            boolean success = false;
+            List<String> huuids = new ArrayList<String>();
         }
 
         final Result ret = new Result();
         final AsyncLatch latch = new AsyncLatch(huuids.size(), new NoErrorCompletion(completion) {
             @Override
             public void done() {
-                if (ret.success) {
-                    completion.success();
-                } else {
+                if (!ret.errorCodes.isEmpty()) {
+                    String mountPathErrorInfo = "Can't find mount path on ";
+                    for(String hostUuid : ret.huuids) {
+                        mountPathErrorInfo += String.format("host[uuid:%s] ", hostUuid);
+                    }
                     completion.fail(errf.stringToOperationError(String.format("unable to connect the shared mount point storage[uuid:%s, name:%s] to" +
-                            " the cluster[uuid:%s]", self.getUuid(), self.getName(), clusterUuid), ret.errorCodes));
+                            " the cluster[uuid:%s], %s", self.getUuid(), self.getName(), clusterUuid, mountPathErrorInfo), ret.errorCodes));
+                } else {
+                    completion.success();
                 }
             }
         });
@@ -1352,13 +1356,13 @@ public class KvmBackend extends HypervisorBackend {
             connect(huuid, new Completion(latch) {
                 @Override
                 public void success() {
-                    ret.success = true;
                     latch.ack();
                 }
 
                 @Override
                 public void fail(ErrorCode errorCode) {
                     ret.errorCodes.add(errorCode);
+                    ret.huuids.add(huuid);
                     latch.ack();
                 }
             });

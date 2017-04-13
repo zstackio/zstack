@@ -7,7 +7,6 @@ import org.zstack.header.vm.VmInstanceVO
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
 import org.zstack.sdk.CreateVmInstanceAction
-import org.zstack.sdk.CreateVmInstanceResult
 import org.zstack.sdk.DiskOfferingInventory
 import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.InstanceOfferingInventory
@@ -138,7 +137,7 @@ test a VM's start/stop/reboot/destroy/recover operations
         assert cmd.memory == vmvo.memorySize
         assert cmd.cpuNum == vmvo.cpuNum
         //TODO: test socketNum, cpuOnSocket
-        assert cmd.rootVolume.installPath == vmvo.rootVolumes.installPath
+        assert cmd.rootVolume.installPath == vmvo.rootVolume.installPath
         assert cmd.useVirtio
         vmvo.vmNics.each { nic ->
             KVMAgentCommands.NicTO to = cmd.nics.find { nic.mac == it.mac }
