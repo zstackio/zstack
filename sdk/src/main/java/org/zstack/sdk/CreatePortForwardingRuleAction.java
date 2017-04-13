@@ -106,7 +106,7 @@ public class CreatePortForwardingRuleAction extends AbstractAction {
         info.path = "/port-forwarding";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 
