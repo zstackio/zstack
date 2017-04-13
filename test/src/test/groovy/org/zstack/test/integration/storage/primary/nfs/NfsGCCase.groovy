@@ -127,14 +127,14 @@ class NfsGCCase extends SubCase {
             }
         }
 
-        triggerGCJob {
-            uuid = inv.uuid
-        }
-
         boolean called = false
         env.afterSimulator(NfsPrimaryStorageKVMBackend.DELETE_PATH) { rsp ->
             called = true
             return rsp
+        }
+
+        triggerGCJob {
+            uuid = inv.uuid
         }
 
         retryInSecs {
