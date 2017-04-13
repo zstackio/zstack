@@ -72,6 +72,7 @@ public class KvmBackend extends HypervisorBackend {
     protected PluginRegistry pluginRgty;
 
     public static class AgentCmd {
+        public String mountPoint;
     }
 
     public static class AgentRsp {
@@ -83,7 +84,6 @@ public class KvmBackend extends HypervisorBackend {
 
     public static class ConnectCmd extends AgentCmd {
         public String uuid;
-        public String mountPoint;
     }
 
 
@@ -214,6 +214,8 @@ public class KvmBackend extends HypervisorBackend {
     }
 
     private <T extends AgentRsp> void httpCall(String path, final String hostUuid, AgentCmd cmd, boolean noCheckStatus, final Class<T> rspType, final ReturnValueCompletion<T> completion) {
+        cmd.mountPoint = self.getMountPath();
+
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setHostUuid(hostUuid);
         msg.setPath(path);
@@ -1375,6 +1377,7 @@ public class KvmBackend extends HypervisorBackend {
         final GetVolumeSizeCmd cmd = new GetVolumeSizeCmd();
         cmd.installPath = msg.getInstallPath();
         cmd.volumeUuid = msg.getVolumeUuid();
+        cmd.mountPoint = self.getMountPath();
         new KvmCommandSender(hostUuid).send(cmd, GET_VOLUME_SIZE_PATH, new KvmCommandFailureChecker() {
             @Override
             public ErrorCode getError(KvmResponseWrapper wrapper) {
