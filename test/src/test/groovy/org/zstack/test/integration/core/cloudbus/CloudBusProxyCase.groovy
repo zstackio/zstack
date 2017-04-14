@@ -67,9 +67,11 @@ class CloudBusProxyCase extends SubCase{
         msg = new FakeNeedReplyMessage()
         msg.setServiceId("A fake service id not needed")
         MessageReply reply = bus.call(msg)
-        retryInSecs(1,1){
-            assert !reply.isSuccess()
-            assert isSuccess
+        retryInSecs {
+            return{
+                assert !reply.isSuccess()
+                assert isSuccess
+            }
         }
     }
 
