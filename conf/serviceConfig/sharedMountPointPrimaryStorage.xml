@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <service xmlns="http://zstack.org/schema/zstack">
     <id>storage.primary</id>
+    <interceptor>SharedMountPointApiInterceptor</interceptor>
 
     <message>
         <name>org.zstack.storage.primary.smp.APIAddSharedMountPointPrimaryStorageMsg</name>

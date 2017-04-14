@@ -8,6 +8,8 @@ import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.APIMessage;
 
+import static org.zstack.core.Platform.argerr;
+
 /**
  */
 public class NfsPrimaryStorageApiInterceptor implements ApiMessageInterceptor {
@@ -29,6 +31,11 @@ public class NfsPrimaryStorageApiInterceptor implements ApiMessageInterceptor {
         ErrorCode err = new NfsApiParamChecker().checkUrl(msg.getZoneUuid(), msg.getUrl());
         if (err != null) {
             throw new ApiMessageInterceptionException(err);
+        }
+        String[] results = msg.getUrl().split(":");
+        if (results.length == 2 && (
+                results[1].startsWith("/dev") || results[1].startsWith("/proc") || results[1].startsWith("/sys"))) {
+            throw new ApiMessageInterceptionException(argerr(" the url contains an invalid folder[/dev or /proc or /sys]"));
         }
     }
 }

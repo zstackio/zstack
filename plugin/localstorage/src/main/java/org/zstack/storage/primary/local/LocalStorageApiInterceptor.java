@@ -54,7 +54,7 @@ public class LocalStorageApiInterceptor implements ApiMessageInterceptor {
         SimpleQuery<LocalStorageResourceRefVO> q = dbf.createQuery(LocalStorageResourceRefVO.class);
         q.add(LocalStorageResourceRefVO_.resourceType, Op.EQ, VolumeVO.class.getSimpleName());
         q.add(LocalStorageResourceRefVO_.resourceUuid, Op.EQ, msg.getVolumeUuid());
-        LocalStorageResourceRefVO ref =  q.find();
+        LocalStorageResourceRefVO ref = q.find();
         if (ref == null) {
             reply.setInventories(new ArrayList<HostInventory>());
             bus.reply(msg, reply);
@@ -68,7 +68,7 @@ public class LocalStorageApiInterceptor implements ApiMessageInterceptor {
         SimpleQuery<LocalStorageResourceRefVO> q = dbf.createQuery(LocalStorageResourceRefVO.class);
         q.add(LocalStorageResourceRefVO_.resourceType, Op.EQ, VolumeVO.class.getSimpleName());
         q.add(LocalStorageResourceRefVO_.resourceUuid, Op.EQ, msg.getVolumeUuid());
-        LocalStorageResourceRefVO ref =  q.find();
+        LocalStorageResourceRefVO ref = q.find();
         if (ref == null) {
             throw new ApiMessageInterceptionException(argerr("the volume[uuid:%s] is not on any local primary storage", msg.getVolumeUuid()));
         }
@@ -91,7 +91,7 @@ public class LocalStorageApiInterceptor implements ApiMessageInterceptor {
         hq.add(LocalStorageHostRefVO_.primaryStorageUuid, Op.EQ, ref.getPrimaryStorageUuid());
         if (!hq.isExists()) {
             throw new ApiMessageInterceptionException(argerr("the dest host[uuid:%s] doesn't belong to the local primary storage[uuid:%s] where the" +
-                            " volume[uuid:%s] locates", msg.getDestHostUuid(), ref.getPrimaryStorageUuid(), msg.getVolumeUuid()));
+                    " volume[uuid:%s] locates", msg.getDestHostUuid(), ref.getPrimaryStorageUuid(), msg.getVolumeUuid()));
         }
 
         VolumeVO vol = dbf.findByUuid(msg.getVolumeUuid(), VolumeVO.class);
@@ -101,7 +101,7 @@ public class LocalStorageApiInterceptor implements ApiMessageInterceptor {
 
         if (vol.getType() == VolumeType.Data && vol.getVmInstanceUuid() != null) {
             throw new ApiMessageInterceptionException(argerr("the data volume[uuid:%s, name: %s] is still attached on the VM[uuid:%s]. Please detach" +
-                            " it before migration", vol.getUuid(), vol.getName(), vol.getVmInstanceUuid()));
+                    " it before migration", vol.getUuid(), vol.getName(), vol.getVmInstanceUuid()));
         } else if (vol.getType() == VolumeType.Root) {
             SimpleQuery<VmInstanceVO> vmq = dbf.createQuery(VmInstanceVO.class);
             vmq.select(VmInstanceVO_.state);
@@ -109,7 +109,7 @@ public class LocalStorageApiInterceptor implements ApiMessageInterceptor {
             VmInstanceState vmstate = vmq.findValue();
             if (VmInstanceState.Stopped != vmstate) {
                 throw new ApiMessageInterceptionException(operr("the volume[uuid:%s] is the root volume of the vm[uuid:%s]. Currently the vm is in" +
-                                " state of %s, please stop it before migration", vol.getUuid(), vol.getVmInstanceUuid(), vmstate));
+                        " state of %s, please stop it before migration", vol.getUuid(), vol.getVmInstanceUuid(), vmstate));
             }
 
             SimpleQuery<VolumeVO> vq = dbf.createQuery(VolumeVO.class);
@@ -118,7 +118,7 @@ public class LocalStorageApiInterceptor implements ApiMessageInterceptor {
             long count = vq.count();
             if (count != 0) {
                 throw new ApiMessageInterceptionException(operr("the volume[uuid:%s] is the root volume of the vm[uuid:%s]. Currently the vm still" +
-                                " has %s data volumes attached, please detach them before migration", vol.getUuid(), vol.getVmInstanceUuid(), count));
+                        " has %s data volumes attached, please detach them before migration", vol.getUuid(), vol.getVmInstanceUuid(), count));
             }
         }
 
@@ -126,8 +126,12 @@ public class LocalStorageApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APIAddLocalPrimaryStorageMsg msg) {
-        if (!msg.getUrl().startsWith("/")) {
+        String url = msg.getUrl();
+        if (!url.startsWith("/")) {
             throw new ApiMessageInterceptionException(argerr("the url[%s] is not an absolute path starting with '/'", msg.getUrl()));
+        }
+        if (url.startsWith("/dev") || url.startsWith("/proc") || url.startsWith("/sys")) {
+            throw new ApiMessageInterceptionException(argerr(" the url contains an invalid folder[/dev or /proc or /sys]"));
         }
     }
 }
