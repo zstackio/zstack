@@ -37,4 +37,9 @@ public class APIUpdateNotificationsStatusMsg extends APIMessage {
     public void setStatus(String status) {
         this.status = status;
     }
+
+    public static APIUpdateNotificationsStatusMsg __example__() {
+        APIUpdateNotificationsStatusMsg msg = new APIUpdateNotificationsStatusMsg();
+        return msg;
+    }
 }

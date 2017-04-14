@@ -26,4 +26,9 @@ public class APIDeleteNotificationsMsg extends APIMessage {
     public void setUuids(List<String> uuids) {
         this.uuids = uuids;
     }
+
+    public static APIDeleteNotificationsMsg __example__() {
+        APIDeleteNotificationsMsg msg = new APIDeleteNotificationsMsg();
+        return msg;
+    }
 }
