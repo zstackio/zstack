@@ -46,6 +46,11 @@ public class APISetVmSshKeyMsg extends APIMessage implements VmInstanceMessage {
         return SshKey;
     }
 
+    public static APISetVmSshKeyMsg __example__() {
+        APISetVmSshKeyMsg msg = new APISetVmSshKeyMsg();
+        msg.setUuid(uuid());
+        return msg;
+    }
 
     public ApiNotification __notification__() {
         APIMessage that = this;

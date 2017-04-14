@@ -74,7 +74,7 @@ public class APICreateVniRangeMsg extends APICreateMessage implements L2NetworkM
         this.l2NetworkUuid = l2NetworkUuid;
     }
 
-    public static APICreateVniRangeMsg __exmaple__() {
+    public static APICreateVniRangeMsg __example__() {
         APICreateVniRangeMsg msg = new APICreateVniRangeMsg();
 
         msg.setName("TestVniRange");
