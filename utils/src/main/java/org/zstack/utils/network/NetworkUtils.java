@@ -267,7 +267,9 @@ public class NetworkUtils {
         if (total == allocatedIps.size()) {
             return null;
         }
-
+        if (startIp.equals(endIp) && allocatedIps.size() == 0){
+            return longToIpv4String(startIp);
+        }
         BitSet full = new BitSet(total);
         for (long alloc : allocatedIps) {
             full.set((int) (alloc-startIp));

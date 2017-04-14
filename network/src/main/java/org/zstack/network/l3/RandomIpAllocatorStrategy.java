@@ -61,7 +61,7 @@ public class RandomIpAllocatorStrategy extends AbstractIpAllocatorStrategy {
         int failureCount = 0;
         int failureCheckPoint = 5;
 
-        while (s < e) {
+        while (s <= e) {
             // if failing failureCheckPoint times, the range is probably full,
             // we check the range.
             // why don't we check before steppingAllocate()? because in that case we
