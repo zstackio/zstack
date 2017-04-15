@@ -336,6 +336,21 @@ abstract class Test implements ApiHelper {
         return resultDir
     }
 
+    private void collectFailureCaseLog(File dir, Class caseClass, String caseLogStartLine) {
+        File failureLogDir = new File([dir.absolutePath, "failureLogs"].join("/"))
+        failureLogDir.mkdirs()
+        File failureLog = new File([failureLogDir.absolutePath, caseClass.name.replace(".", "_")].join("/"))
+
+        File mgmtLogPath = new File([System.getProperty("user.dir"), "management-server.log"].join("/"))
+
+        ShellUtils.run("""\
+start=`grep -nr "$caseLogStartLine" ${mgmtLogPath.absolutePath} | grep -v ShellUtils | gawk '{print \$1}' FS=":"`
+tail -n +\$start ${mgmtLogPath.absolutePath} > ${failureLog.absolutePath}
+
+mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
+""", false)
+    }
+
     protected void runSubCases() {
         def resultDir = [getResultDirBase(), this.class.name.replace(".", "_")].join("/")
         def dir = new File(resultDir)
@@ -377,8 +392,12 @@ abstract class Test implements ApiHelper {
             }
         })
 
+
         for (SubCaseResult r in allCases) {
             def c = r.caseType.newInstance() as Case
+
+            String caseLogStartLine = "case log of ${c.class} starts here"
+            String caseLogEndLine  = "case lo of ${c.class} ends here"
 
             logger.info("starts running a sub case[${c.class}] of suite[${this.class}]")
             new File([dir.absolutePath, "current-case"].join("/")).write("${c.class}")
@@ -387,6 +406,8 @@ abstract class Test implements ApiHelper {
                 CURRENT_SUB_CASE = c
 
                 beforeRunSubCase()
+
+                logger.info(caseLogStartLine)
 
                 c.run()
 
@@ -402,12 +423,14 @@ abstract class Test implements ApiHelper {
                 r.error = t.message
 
                 logger.error("a sub case [${c.class}] of suite[${this.class}] fails, ${t.message}")
+                collectFailureCaseLog(dir, r.caseType, caseLogStartLine)
             } finally {
                 def fname = c.class.name.replace(".", "_") + "." + (r.success ? "success" : "failure")
                 def rfile = new File([dir.absolutePath, fname].join("/"))
                 rfile.write(JSONObjectUtil.toJsonString(r))
 
                 logger.info("write test result of a sub case [${c.class}] of suite[${this.class}] to $fname")
+                logger.info(caseLogEndLine)
             }
         }
 
