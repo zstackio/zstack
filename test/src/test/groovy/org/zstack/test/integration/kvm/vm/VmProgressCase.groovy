@@ -27,17 +27,17 @@ class VmProgressCase extends SubCase {
 
     @Override
     void clean() {
-        env.delete()
+        //env.delete()
     }
 
     @Override
     void setup() {
-        useSpring(KvmTest.springSpec)
+        //useSpring(KvmTest.springSpec)
     }
 
     @Override
     void environment() {
-        env = Env.noVmEnv()
+        //env = Env.noVmEnv()
     }
 
     void testCreateVmProgress() {
@@ -175,8 +175,10 @@ class VmProgressCase extends SubCase {
 
     @Override
     void test() {
+        /* disable this case temporarily, as the progress logic needs to be refined
         env.create {
             testCreateVmProgress()
         }
+        */
     }
 }
