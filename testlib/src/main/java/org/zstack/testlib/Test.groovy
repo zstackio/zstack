@@ -381,18 +381,6 @@ mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
 
         boolean hasFailure = false
 
-        bean(CloudBus.class).installBeforeSendMessageInterceptor(new AbstractBeforeSendMessageInterceptor() {
-            @Override
-            void intercept(Message msg) {
-                if (msg instanceof APIMessage) {
-                    if (CURRENT_SUB_CASE != null) {
-                        ThreadContext.put("case", CURRENT_SUB_CASE.class.simpleName)
-                    }
-                }
-            }
-        })
-
-
         for (SubCaseResult r in allCases) {
             def c = r.caseType.newInstance() as Case
 
