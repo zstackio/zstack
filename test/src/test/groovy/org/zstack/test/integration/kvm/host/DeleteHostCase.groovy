@@ -31,7 +31,7 @@ import org.zstack.utils.data.SizeUnit
  * confirm the vm2 and its data volumes are not effected by the host1 deletion
  */
 // base on TestMevoco19
-class DeleteHostTest extends SubCase{
+class DeleteHostCase extends SubCase{
 
     EnvSpec env
 

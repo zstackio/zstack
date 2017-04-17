@@ -57,7 +57,7 @@ import org.zstack.utils.data.SizeUnit
  * Created by lining on 2017/3/27.
  */
 // base on TestPolicyForEip.java
-class TestPolicyForEip extends SubCase {
+class PolicyForEipCase extends SubCase {
     EnvSpec env
 
     L3NetworkInventory l3
