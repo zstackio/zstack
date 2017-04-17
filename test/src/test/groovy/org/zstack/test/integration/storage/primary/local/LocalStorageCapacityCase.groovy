@@ -1,21 +1,21 @@
 package org.zstack.test.integration.storage.primary.local
 
 import org.springframework.http.HttpEntity
-import org.zstack.sdk.ClusterInventory
 import org.zstack.sdk.DiskOfferingInventory
-import org.zstack.sdk.GetPrimaryStorageCapacityResult
 import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.InstanceOfferingInventory
 import org.zstack.sdk.L3NetworkInventory
-import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.storage.primary.local.LocalStorageKvmBackend
+import org.zstack.testlib.LocalStorageSpec
+import org.zstack.header.host.HostVO
+import org.zstack.sdk.ClusterInventory
+import org.zstack.sdk.GetPrimaryStorageCapacityResult
+import org.zstack.sdk.HostInventory
+import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.test.integration.storage.Env
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
-import org.zstack.testlib.LocalStorageSpec
-import org.zstack.testlib.PrimaryStorageSpec
 import org.zstack.testlib.SubCase
-import org.zstack.utils.gson.JSONObjectUtil
 
 /**
  * Created by AlanJager on 2017/4/13.
@@ -42,6 +42,7 @@ class LocalStorageCapacityCase extends SubCase {
     void test() {
         env.create {
             testCalculationOfLSCapacityWhenDetachAndAttachLSPStoCluster()
+            testLocalStoragePrimaryStorageCapacityDecreaseAfterDeleteHost()
         }
     }
 
@@ -100,4 +101,37 @@ class LocalStorageCapacityCase extends SubCase {
         assert capacityResult2.availableCapacity == capacityResult3.availableCapacity
         assert capacityResult.availableCapacity == capacityResult2.availableCapacity
     }
+
+    void testLocalStoragePrimaryStorageCapacityDecreaseAfterDeleteHost() {
+        PrimaryStorageInventory ps = env.inventoryByName("local")
+        ClusterInventory cluster = env.inventoryByName("cluster")
+
+        GetPrimaryStorageCapacityResult result = getPrimaryStorageCapacity {
+            primaryStorageUuids = [ps.uuid]
+        }
+
+        HostInventory host = addKVMHost {
+            name = "test"
+            managementIp = "127.0.0.2"
+            username = "root"
+            password = "password"
+            clusterUuid = cluster.uuid
+        }
+        assert dbFindByUuid(host.uuid, HostVO.class) != null
+
+        GetPrimaryStorageCapacityResult result2 = getPrimaryStorageCapacity {
+            primaryStorageUuids = [ps.uuid]
+        }
+        assert result2.totalCapacity > result.totalCapacity
+
+        deleteHost {
+            uuid = host.uuid
+        }
+
+        GetPrimaryStorageCapacityResult result3 = getPrimaryStorageCapacity {
+            primaryStorageUuids = [ps.uuid]
+        }
+        assert result3.totalCapacity == result.totalCapacity
+    }
 }
+

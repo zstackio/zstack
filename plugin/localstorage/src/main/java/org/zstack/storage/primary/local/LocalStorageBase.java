@@ -1075,7 +1075,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
     private void handle(RemoveHostFromLocalStorageMsg msg) {
         LocalStorageHostRefVO ref = Q.New(LocalStorageHostRefVO.class)
                 .eq(LocalStorageHostRefVO_.hostUuid, msg.getHostUuid())
-                .eq(LocalStorageHostRefVO_.primaryStorageUuid, self.getUuid())
+                .eq(LocalStorageHostRefVO_.primaryStorageUuid, msg.getPrimaryStorageUuid())
                 .find();
 
         if (ref != null) {

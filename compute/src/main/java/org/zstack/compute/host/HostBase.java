@@ -403,7 +403,6 @@ public abstract class HostBase extends AbstractHost {
                 casf.asyncCascadeFull(CascadeConstant.DELETION_CLEANUP_CODE, issuer, ctx, new NopeCompletion());
                 bus.publish(evt);
 
-                extpEmitter.afterDelete(hinv);
                 HostDeletedData d = new HostDeletedData();
                 d.setInventory(HostInventory.valueOf(self));
                 d.setHostUuid(self.getUuid());
@@ -615,6 +614,7 @@ public abstract class HostBase extends AbstractHost {
                 HostInventory hinv = HostInventory.valueOf(self);
                 extpEmitter.beforeDelete(hinv);
                 deleteHook();
+                extpEmitter.afterDelete(hinv);
                 bus.reply(msg, new HostDeletionReply());
                 tracker.untrackHost(self.getUuid());
                 chain.next();

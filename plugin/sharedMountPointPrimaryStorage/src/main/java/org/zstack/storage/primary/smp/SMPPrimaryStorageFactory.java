@@ -230,7 +230,7 @@ public class SMPPrimaryStorageFactory implements PrimaryStorageFactory, CreateTe
         }
 
         final List<String> hostUuids = getConnectedHostInCluster(clusterUuid);
-        if (!hostUuids.isEmpty()) {
+        if (hostUuids.size() > 1) {
             return;
         }
 
