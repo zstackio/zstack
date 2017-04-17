@@ -19,6 +19,7 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.allocator.HostAllocatorConstant;
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.NopeCompletion;
@@ -249,11 +250,7 @@ public abstract class HostBase extends AbstractHost {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
-                        q.select(VmInstanceVO_.uuid);
-                        q.add(VmInstanceVO_.hostUuid, Op.EQ, self.getUuid());
-                        q.add(VmInstanceVO_.state, Op.EQ, VmInstanceState.Unknown);
-                        List<String> vmUuids = q.listValue();
+                        List<String> vmUuids = new ArrayList<String>();
                         vmUuids.addAll(vmFailedToMigrate);
                         vmUuids = CollectionUtils.removeDuplicateFromList(vmUuids);
 
@@ -262,10 +259,10 @@ public abstract class HostBase extends AbstractHost {
                             return;
                         }
 
-                        stopUnknownVms(vmUuids, trigger);
+                        stopFailedToMigrateVms(vmUuids, trigger);
                     }
 
-                    private void stopUnknownVms(List<String> vmUuids, final FlowTrigger trigger) {
+                    private void stopFailedToMigrateVms(List<String> vmUuids, final FlowTrigger trigger) {
                         final List<StopVmInstanceMsg> msgs = new ArrayList<StopVmInstanceMsg>();
                         for (String vmUuid : vmUuids) {
                             StopVmInstanceMsg msg = new StopVmInstanceMsg();
@@ -453,6 +450,10 @@ public abstract class HostBase extends AbstractHost {
             public void run(final SyncTaskChain chain) {
                 final APIChangeHostStateEvent evt = new APIChangeHostStateEvent(msg.getId());
                 HostStateEvent stateEvent = HostStateEvent.valueOf(msg.getStateEvent());
+
+                if (self.getStatus() == HostStatus.Disconnected && stateEvent == HostStateEvent.maintain) {
+                    throw new ApiMessageInterceptionException(operr("cannot change the state of Disconnected host into Maintenance "));
+                }
                 stateEvent = stateEvent == HostStateEvent.maintain ? HostStateEvent.preMaintain : stateEvent;
                 try {
                     extpEmitter.preChange(self, stateEvent);

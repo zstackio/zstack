@@ -72,10 +72,10 @@ public class GetEipAttachableVmNicsAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/eips/vm-instances/candidate-nics";
+        info.path = "/eips/{eipUuid}/vm-instances/candidate-nics";
         info.needSession = true;
         info.needPoll = false;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

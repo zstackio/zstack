@@ -199,14 +199,14 @@ class ChangeNetworkSerivceTest extends SubCase{
 
             Assert.assertFalse(acmd.dhcp.isEmpty());
             FlatDhcpBackend.DhcpInfo dhcp = acmd.dhcp.get(0);
-            Assert.assertEquals(nic.getIp(), dhcp.ip);
-            Assert.assertEquals(nic.getMac(), dhcp.mac);
-            Assert.assertEquals(nic.getGateway(), dhcp.gateway);
-            Assert.assertEquals(nic.getNetmask(), dhcp.netmask);
-            Assert.assertTrue(dhcp.isDefaultL3Network);
-            Assert.assertNotNull(dhcp.dns);
-            Assert.assertNotNull(dhcp.bridgeName);
-            Assert.assertNotNull(dhcp.namespaceName);
+            assert nic.getIp() == dhcp.ip
+            assert nic.getMac() == dhcp.mac
+            assert nic.getGateway() == dhcp.gateway
+            assert nic.getNetmask() == dhcp.netmask
+            assert dhcp.isDefaultL3Network
+            assert dhcp.dns != null
+            assert dhcp.bridgeName != null
+            assert dhcp.namespaceName != null
 
             return rsp
         }
@@ -219,9 +219,9 @@ class ChangeNetworkSerivceTest extends SubCase{
             String dhcpServerIp = tokens.get(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_TOKEN);
             String dhcpServerIpUuid = tokens.get(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_UUID_TOKEN)
             UsedIpVO ipvo = dbf.findByUuid(dhcpServerIpUuid, UsedIpVO.class)
-            Assert.assertEquals(ipvo.getIp(), dhcpServerIp)
-            Assert.assertEquals(dhcpServerIp, cmd.dhcpServerIp)
-            Assert.assertEquals(ipvo.getNetmask(), cmd.dhcpNetmask)
+            assert ipvo.getIp() == dhcpServerIp
+            assert dhcpServerIp == cmd.dhcpServerIp
+            assert ipvo.getNetmask() == cmd.dhcpNetmask
 
             return rsp
         }
@@ -231,17 +231,17 @@ class ChangeNetworkSerivceTest extends SubCase{
             uuid = host.uuid
         }
 
-        Assert.assertTrue(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.hasTag(l3.getUuid()));
+        assert FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.hasTag(l3.getUuid())
         Map<String, String> tokens = FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.getTokensByResourceUuid(l3.getUuid());
         String dhcpServerIpUuid = tokens.get(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_UUID_TOKEN);
         UsedIpVO ipvo = dbf.findByUuid(dhcpServerIpUuid, UsedIpVO.class);
-        Assert.assertNotNull(ipvo);
+        assert ipvo != null
 
         assert null != acmd
         assert null != cmd
         FlatDhcpBackend.DhcpInfo dhcp = acmd.dhcp[0]
-        Assert.assertEquals(dhcp.bridgeName, cmd.bridgeName);
-        Assert.assertEquals(dhcp.namespaceName, cmd.namespaceName);
+        assert dhcp.bridgeName == cmd.bridgeName
+        assert dhcp.namespaceName == cmd.namespaceName
     }
 
     @Override

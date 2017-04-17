@@ -151,7 +151,7 @@ class CheckFlatDhcpWorkCase extends SubCase{
                 return arg.getL3NetworkUuid().equals(l31.getUuid()) ? arg : null;
             }
         });
-        Assert.assertEquals(0, n.getDeviceId());
+        assert n.getDeviceId() ==0
 
         n = CollectionUtils.find(vm.getVmNics(), new Function<VmNicInventory, VmNicInventory>() {
             @Override
@@ -159,7 +159,7 @@ class CheckFlatDhcpWorkCase extends SubCase{
                 return arg.getL3NetworkUuid().equals(l32.getUuid()) ? arg : null;
             }
         });
-        Assert.assertEquals(1, n.getDeviceId());
+        assert n.getDeviceId() == 1
 
         List<FlatDhcpBackend.DhcpInfo> dhcpInfoList = new ArrayList<FlatDhcpBackend.DhcpInfo>()
         env.afterSimulator(FlatDhcpBackend.APPLY_DHCP_PATH) { rsp, HttpEntity<String> e1 ->

@@ -3,12 +3,10 @@ package org.zstack.test.integration.ldap.forcase
 import com.unboundid.ldap.sdk.LDAPInterface
 import com.unboundid.ldap.sdk.SearchResult
 import com.unboundid.ldap.sdk.SearchScope
-import org.junit.Assert
 import org.zstack.sdk.LdapServerInventory
 import org.zstack.test.integration.ldap.Env
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
-import org.zstack.testlib.Test
 import org.zstack.test.integration.ldap.LdapTest
 
 /**
@@ -51,7 +49,7 @@ class LdapConnCase extends SubCase {
     void testLdapConn(){
         final LDAPInterface ldapConnection = LdapTest.embeddedLdapRule.ldapConnection()
         final SearchResult searchResult = ldapConnection.search(LdapTest.DOMAIN_DSN, SearchScope.SUB, "(objectClass=person)")
-        Assert.assertEquals(3, searchResult.getEntryCount())
+        assert searchResult.getEntryCount() == 3
 
 
         def result = addLdapServer {

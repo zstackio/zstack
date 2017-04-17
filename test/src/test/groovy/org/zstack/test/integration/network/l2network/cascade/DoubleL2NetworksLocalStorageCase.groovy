@@ -1,7 +1,5 @@
 package org.zstack.test.integration.network.l2network.cascade
 
-import junit.framework.Assert
-
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.sdk.ClusterInventory
@@ -180,7 +178,7 @@ use:
     void detachL2AndCheckVMState(){
         VmInstanceVO vmvo = dbFindByUuid(vmi.uuid,VmInstanceVO.class)
         int nicNumber = vmvo.getVmNics().size() 
-        Assert.assertTrue(nicNumber >= 1) 
+        assert nicNumber >= 1
 
         detachL2NetworkFromCluster {
             l2NetworkUuid = l2i1.uuid
@@ -188,8 +186,8 @@ use:
         }
 
         vmvo = dbFindByUuid(vmi.uuid,VmInstanceVO.class)
-        Assert.assertEquals(VmInstanceState.Running, vmvo.getState()) 
-        Assert.assertTrue(nicNumber > vmvo.getVmNics().size()) 
+        assert VmInstanceState.Running == vmvo.getState()
+        assert nicNumber > vmvo.getVmNics().size()
     }
 
     void attachL2ToAnotherClusterAndCheckVmCluster(){
@@ -202,8 +200,8 @@ use:
         }
 
         VmInstanceVO vmvo = dbFindByUuid(vmi.uuid,VmInstanceVO.class)
-        Assert.assertEquals(VmInstanceState.Running, vmvo.getState()) 
-        Assert.assertEquals(cluster1.getUuid(), vmvo.getClusterUuid()) 
+        assert VmInstanceState.Running ==  vmvo.getState()
+        assert cluster1.getUuid() == vmvo.getClusterUuid()
     }
 
     @Override

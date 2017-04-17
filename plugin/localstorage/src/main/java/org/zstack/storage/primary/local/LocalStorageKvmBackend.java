@@ -2293,13 +2293,14 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             completion.success();
             return;
         }
-
+        
         // make init msg for each host
         List<KVMHostAsyncHttpCallMsg> msgs = CollectionUtils.transformToList(hostUuids,
                 new Function<KVMHostAsyncHttpCallMsg, String>() {
                     @Override
                     public KVMHostAsyncHttpCallMsg call(String arg) {
                         InitCmd cmd = new InitCmd();
+                        cmd.uuid = self.getUuid();
                         cmd.path = self.getUrl();
                         cmd.hostUuid = arg;
 
