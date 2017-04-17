@@ -38,7 +38,7 @@ import java.util.concurrent.TimeUnit
  * Created by lining on 2017/3/25.
  */
 // base on TestNfsImageCleaner1
-class CleanImageCacheOnPrimaryStorageTest extends SubCase{
+class CleanImageCacheOnPrimaryStorageCase extends SubCase{
 
     EnvSpec env
     DatabaseFacade dbf

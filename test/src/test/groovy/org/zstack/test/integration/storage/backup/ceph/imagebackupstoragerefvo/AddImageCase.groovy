@@ -14,7 +14,7 @@ import org.zstack.utils.data.SizeUnit
 /**
  * Created by lining on 2017/3/31.
  */
-class AddImageTest extends SubCase{
+class AddImageCase extends SubCase{
 
     EnvSpec env
 

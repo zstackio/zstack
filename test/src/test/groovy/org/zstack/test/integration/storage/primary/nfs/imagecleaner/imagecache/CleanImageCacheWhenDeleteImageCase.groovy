@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit
  * Created by lining on 2017/3/25.
  */
 // base on TestNfsImageCleaner
-class CleanImageCacheWhenDeleteImageTest extends SubCase{
+class CleanImageCacheWhenDeleteImageCase extends SubCase{
 
     EnvSpec env
     DatabaseFacade dbf
