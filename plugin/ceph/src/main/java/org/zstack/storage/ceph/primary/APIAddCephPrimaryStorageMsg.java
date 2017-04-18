@@ -79,7 +79,7 @@ public class APIAddCephPrimaryStorageMsg extends APIAddPrimaryStorageMsg {
         APIAddCephPrimaryStorageMsg msg = new APIAddCephPrimaryStorageMsg();
 
         msg.setName("My Ceph Primary Storage");
-        msg.setMonUrls(Collections.singletonList("10.0.1.2"));
+        msg.setMonUrls(Collections.singletonList("root:password@localhost/?monPort=7777"));
         msg.setRootVolumePoolName("zs-images");
         msg.setDataVolumePoolName("zs-data-volume");
         msg.setImageCachePoolName("zs-image-cache");
