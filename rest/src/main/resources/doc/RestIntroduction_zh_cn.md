@@ -531,7 +531,7 @@ GET /v1/vm-instances?q=host.managementIp=10.10.20.3
 |count (可选)|Boolean|query|计数查询，相当于MySQL中的count()函数。当设置成`true`时，API只返回的是满足查询条件的记录数||0.6|
 |groupBy (可选)|String|query|以字段分组，相当于MySQL中的group by关键字。例如groupBy=type||1.9|
 |replyWithCount (可选)|Boolean|query|见上面[分页查询](#query-pagination)||0.6|
-|sortBy (可选)|String|query|以字段排序，等同于MySQL中的sort by关键字，例如sortBy=ip。必须跟`sortDirection`配合使用||0.6|
+|sort (可选)|String|query|以字段排序，等同于MySQL中的sort by关键字，例如sort=+ip。必须跟+或者-配合使用，+表示升序，-表示降序,后面跟排序字段名|<ul><li>+`字段名`</li><li>-`字段名`</li></ul>||0.6|
 |sortDirection (可选)|String|query|字段排序方向，必须跟`sortBy`配合使用|<ul><li>asc</li><li>desc</li></ul>|0.6|
 |fields (可选)|List|query|指定返回的字段，等同于MySQL中的select字段功能。例如fields=name,uuid，则只返回满足条件记录的`name`和`uuid`字段||0.6|
 
