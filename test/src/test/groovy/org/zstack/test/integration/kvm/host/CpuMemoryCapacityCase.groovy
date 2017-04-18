@@ -45,7 +45,7 @@ class CpuMemoryCapacityCase extends SubCase {
         env.create {
             KVMGlobalConfig.RESERVED_MEMORY_CAPACITY.updateValue("1G")
             HostGlobalConfig.AUTO_RECONNECT_ON_ERROR.updateValue(false)
-            HostGlobalConfig.PING_HOST_INTERVAL.updateValue(3)
+            HostGlobalConfig.PING_HOST_INTERVAL.updateValue(5)
             setHostDisconnecedAndGetCorrectlyCpuMemoryCapacity()
         }
     }
