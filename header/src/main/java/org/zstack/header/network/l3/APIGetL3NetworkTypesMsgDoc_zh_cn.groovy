@@ -14,7 +14,7 @@ doc {
 			url "GET /v1/l3-networks/types"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIGetL3NetworkTypesMsg.class
 

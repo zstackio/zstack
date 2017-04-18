@@ -1,7 +1,5 @@
 package org.zstack.core.notification
 
-import org.zstack.core.notification.APIUpdateNotificationsStatusEvent
-
 doc {
     title "UpdateNotificationsStatus"
 
@@ -14,7 +12,7 @@ doc {
 			url "PUT /v1/notifications/actions"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIUpdateNotificationsStatusMsg.class
 

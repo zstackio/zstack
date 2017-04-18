@@ -17,7 +17,7 @@ doc {
 			url "GET /v1/backup-storage/ceph/{uuid}"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIQueryCephBackupStorageMsg.class
 

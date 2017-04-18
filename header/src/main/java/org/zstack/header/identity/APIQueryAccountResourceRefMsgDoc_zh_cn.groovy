@@ -14,7 +14,7 @@ doc {
             url "GET /v1/accounts/resources/refs"
 
 
-            header(OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIQueryAccountResourceRefMsg.class
 

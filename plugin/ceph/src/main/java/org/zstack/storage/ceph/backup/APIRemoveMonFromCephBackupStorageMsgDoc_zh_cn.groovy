@@ -12,7 +12,7 @@ doc {
 			url "DELETE /v1/backup-storage/ceph/{uuid}/mons"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIRemoveMonFromCephBackupStorageMsg.class
 

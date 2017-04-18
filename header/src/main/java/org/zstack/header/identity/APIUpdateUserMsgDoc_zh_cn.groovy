@@ -12,7 +12,7 @@ doc {
             url "PUT /v1/accounts/users/actions"
 
 
-            header(OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIUpdateUserMsg.class
 

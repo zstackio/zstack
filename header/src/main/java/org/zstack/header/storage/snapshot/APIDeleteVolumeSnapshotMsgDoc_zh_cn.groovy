@@ -12,7 +12,7 @@ doc {
 			url "DELETE /v1/volume-snapshots/{uuid}"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIDeleteVolumeSnapshotMsg.class
 

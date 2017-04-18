@@ -17,7 +17,7 @@ doc {
 			url "GET /v1/zones/{uuid}"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIQueryZoneMsg.class
 

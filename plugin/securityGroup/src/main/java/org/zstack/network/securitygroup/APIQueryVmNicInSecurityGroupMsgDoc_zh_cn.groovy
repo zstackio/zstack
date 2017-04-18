@@ -15,7 +15,7 @@ doc {
 			url "GET /v1/security-groups/vm-instances/nics"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIQueryVmNicInSecurityGroupMsg.class
 

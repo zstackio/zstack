@@ -12,7 +12,7 @@ doc {
 			url "GET /v1/volumes/formats"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIGetVolumeFormatMsg.class
 

@@ -14,7 +14,7 @@ doc {
 			url "GET /v1/port-forwarding/{ruleUuid}/vm-instances/candidate-nics"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIGetPortForwardingAttachableVmNicsMsg.class
 

@@ -12,7 +12,7 @@ doc {
             url "DELETE /v1/vm-instances/{vmInstanceUuid}/static-ips"
 
 
-            header(OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIDeleteVmStaticIpMsg.class
 

@@ -14,7 +14,7 @@ doc {
 			url "POST /v1/security-groups/{securityGroupUuid}/vm-instances/nics"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIAddVmNicToSecurityGroupMsg.class
 

@@ -11,7 +11,7 @@ doc {
         request {
 			url "POST /v1/volumes/{volumeUuid}/schedulers/creating-volume-snapshots"
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APICreateVolumeSnapshotSchedulerMsg.class
 

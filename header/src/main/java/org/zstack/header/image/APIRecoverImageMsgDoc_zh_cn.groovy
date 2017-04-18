@@ -12,7 +12,7 @@ doc {
             url "PUT /v1/images/{imageUuid}/actions"
 
 
-            header(OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIRecoverImageMsg.class
 

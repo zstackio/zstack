@@ -15,7 +15,7 @@ doc {
             url "GET /v1/vm-instances/{uuid}/console-addresses"
 
 
-            header(OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIGetVmConsoleAddressMsg.class
 

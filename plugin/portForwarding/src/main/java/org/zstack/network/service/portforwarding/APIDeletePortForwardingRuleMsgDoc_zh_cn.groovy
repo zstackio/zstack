@@ -14,7 +14,7 @@ doc {
 			url "DELETE /v1/port-forwarding/{uuid}"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIDeletePortForwardingRuleMsg.class
 

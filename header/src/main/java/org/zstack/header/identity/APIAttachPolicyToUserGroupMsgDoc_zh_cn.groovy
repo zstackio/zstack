@@ -12,7 +12,7 @@ doc {
             url "POST /v1/accounts/groups/{groupUuid}/policies"
 
 
-            header(OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIAttachPolicyToUserGroupMsg.class
 

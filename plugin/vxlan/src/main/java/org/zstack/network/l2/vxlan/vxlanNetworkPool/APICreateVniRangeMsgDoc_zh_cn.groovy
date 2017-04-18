@@ -1,7 +1,5 @@
 package org.zstack.network.l2.vxlan.vxlanNetworkPool
 
-import org.zstack.network.l2.vxlan.vxlanNetworkPool.APICreateVniRangeEvent
-
 doc {
     title "CreateVniRange"
 
@@ -14,7 +12,7 @@ doc {
 			url "POST /v1/l2-networks/vxlan-pool/{l2NetworkUuid}/vni-range"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APICreateVniRangeMsg.class
 

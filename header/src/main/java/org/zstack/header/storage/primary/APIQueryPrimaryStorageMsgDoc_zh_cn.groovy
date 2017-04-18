@@ -14,7 +14,7 @@ doc {
 			url "GET /v1/primary-storage"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIQueryPrimaryStorageMsg.class
 
