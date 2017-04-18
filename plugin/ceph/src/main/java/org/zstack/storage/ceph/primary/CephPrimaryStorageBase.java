@@ -57,19 +57,18 @@ import org.zstack.storage.ceph.primary.CephPrimaryStorageMonBase.PingOperationFa
 import org.zstack.storage.primary.PrimaryStorageBase;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
+import org.zstack.utils.EncodingConversion;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
-import org.zstack.utils.EncodingConversion;
-
-import static org.zstack.core.Platform.i18n;
-import static org.zstack.core.Platform.operr;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.zstack.core.Platform.i18n;
+import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
@@ -1774,7 +1773,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 });
 
         class Connector {
-            List<ErrorCode> errorCodes = new ArrayList<ErrorCode>();
+            List<ErrorCode> errorCodes = new ArrayList<>();
             Iterator<CephPrimaryStorageMonBase> it = mons.iterator();
 
             void connect(final FlowTrigger trigger) {
@@ -1785,8 +1784,18 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                         self.getUuid(), JSONObjectUtil.toJsonString(errorCodes)));
                     } else {
                         // reload because mon status changed
-                        self = dbf.reload(self);
-                        trigger.next();
+                        PrimaryStorageVO vo = dbf.reload(self);
+                        if (vo == null) {
+                            if (newAdded) {
+                                if (!getSelf().getMons().isEmpty()) {
+                                    dbf.removeCollection(getSelf().getMons(), CephPrimaryStorageMonVO.class);
+                                }
+                            }
+                            trigger.fail(operr("ceph primary storage[uuid:%s] may have been deleted.", self.getUuid()));
+                        } else {
+                            self = vo;
+                            trigger.next();
+                        }
                     }
 
                     return;
@@ -1970,7 +1979,10 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
                         if (newAdded) {
-                            self = dbf.reload(self);
+                            PrimaryStorageVO vo = dbf.reload(self);
+                            if (vo != null) {
+                                self = vo;
+                            }
                             if (!getSelf().getMons().isEmpty()) {
                                 dbf.removeCollection(getSelf().getMons(), CephPrimaryStorageMonVO.class);
                             }

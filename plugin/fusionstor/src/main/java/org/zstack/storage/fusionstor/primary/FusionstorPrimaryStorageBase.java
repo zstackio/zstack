@@ -62,6 +62,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
@@ -1650,8 +1651,18 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
                         ));
                     } else {
                         // reload because mon status changed
-                        self = dbf.reload(self);
-                        trigger.next();
+                        PrimaryStorageVO vo = dbf.reload(self);
+                        if (vo == null) {
+                            if (newAdded){
+                                if (!getSelf().getMons().isEmpty()) {
+                                    dbf.removeCollection(getSelf().getMons(), FusionstorPrimaryStorageMonVO.class);
+                                }
+                            }
+                            trigger.fail(operr("fusionstor primary storage[uuid:%s] may have been deleted.", self.getUuid()));
+                        } else {
+                            self = vo;
+                            trigger.next();
+                        }
                     }
 
                     return;
@@ -1851,7 +1862,10 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
                         if (newAdded) {
-                            self = dbf.reload(self);
+                            PrimaryStorageVO vo = dbf.reload(self);
+                            if (vo != null) {
+                                self = vo;
+                            }
                             if (!getSelf().getMons().isEmpty()) {
                                 dbf.removeCollection(getSelf().getMons(), FusionstorPrimaryStorageMonVO.class);
                             }

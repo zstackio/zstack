@@ -2,7 +2,6 @@ package org.zstack.storage.ceph.primary;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.CoreGlobalProperty;
-import org.zstack.core.Platform;
 import org.zstack.core.ansible.AnsibleGlobalProperty;
 import org.zstack.core.ansible.AnsibleRunner;
 import org.zstack.core.ansible.SshFileMd5Checker;
@@ -29,9 +28,9 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
-import static org.zstack.core.Platform.operr;
-
 import java.util.Map;
+
+import static org.zstack.core.Platform.operr;
 
 /**
  * Created by frank on 7/28/2015.
@@ -187,27 +186,27 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
                             });
                         }
                     });
-
-                    flow(new NoRollbackFlow() {
-                        String __name__ = "echo-agent";
-
-                        @Override
-                        public void run(final FlowTrigger trigger, Map data) {
-                            restf.echo(String.format("http://%s:%s%s", getSelf().getHostname(),
-                                    CephGlobalProperty.PRIMARY_STORAGE_AGENT_PORT, ECHO_PATH), new Completion(trigger) {
-                                @Override
-                                public void success() {
-                                    trigger.next();
-                                }
-
-                                @Override
-                                public void fail(ErrorCode errorCode) {
-                                    trigger.fail(errorCode);
-                                }
-                            });
-                        }
-                    });
                 }
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "echo-agent";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        restf.echo(String.format("http://%s:%s%s", getSelf().getHostname(),
+                                CephGlobalProperty.PRIMARY_STORAGE_AGENT_PORT, ECHO_PATH), new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
 
                 done(new FlowDoneHandler(completion) {
                     @Override
