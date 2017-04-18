@@ -447,6 +447,8 @@ mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
                 "passRate": ((float)success / (float)caseTypes.size()) * 100
         ]))
 
+        new File([dir.absolutePath, "done"].join("/")).createNewFile()
+
         if (hasFailure) {
             // some cases failed, exit with code 1
             System.exit(1)
