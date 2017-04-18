@@ -14,7 +14,7 @@ doc {
 			url "GET /v1/security-groups/{securityGroupUuid}/vm-instances/candidate-nics"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIGetCandidateVmNicForSecurityGroupMsg.class
 

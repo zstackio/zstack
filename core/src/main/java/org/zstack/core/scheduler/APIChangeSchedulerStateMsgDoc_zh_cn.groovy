@@ -14,7 +14,7 @@ doc {
 			url "PUT /v1/schedulers/{uuid}"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIChangeSchedulerStateMsg.class
 

@@ -14,7 +14,7 @@ doc {
 			url "GET /v1/l2-networks/types"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIGetL2NetworkTypesMsg.class
 

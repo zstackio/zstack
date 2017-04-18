@@ -14,7 +14,7 @@ doc {
 			url "GET /v1/tags/{uuid}"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIQueryTagMsg.class
 

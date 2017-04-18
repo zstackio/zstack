@@ -12,7 +12,7 @@ doc {
             url "POST /v1/vm-instances"
 
 
-            header(OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APICreateVmInstanceMsg.class
 

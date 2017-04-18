@@ -12,7 +12,7 @@ doc {
             url "GET /v1/vm-instances/{uuid}/ssh-keys"
 
 
-            header(OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIGetVmSshKeyMsg.class
 

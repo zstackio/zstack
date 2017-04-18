@@ -14,7 +14,7 @@ doc {
 			url "DELETE /v1/l3-networks/{l3NetworkUuid}/network-services"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIDetachNetworkServiceFromL3NetworkMsg.class
 

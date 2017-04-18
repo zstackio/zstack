@@ -12,7 +12,7 @@ doc {
             url "DELETE /v1/disk-offerings/{uuid}"
 
 
-            header(OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIDeleteDiskOfferingMsg.class
 

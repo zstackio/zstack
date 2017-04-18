@@ -1,6 +1,5 @@
 package org.zstack.network.l2.vxlan.vxlanNetworkPool
 
-import org.zstack.network.l2.vxlan.vxlanNetworkPool.APIQueryVniRangeReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
@@ -17,7 +16,7 @@ doc {
 			url "GET /v1/l2-networks/vxlan-pool/vni-range/{uuid}"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIQueryVniRangeMsg.class
 

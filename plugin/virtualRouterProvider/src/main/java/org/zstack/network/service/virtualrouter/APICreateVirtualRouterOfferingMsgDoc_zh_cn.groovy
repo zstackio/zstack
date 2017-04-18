@@ -14,7 +14,7 @@ doc {
 			url "POST /v1/instance-offerings/virtual-routers"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APICreateVirtualRouterOfferingMsg.class
 

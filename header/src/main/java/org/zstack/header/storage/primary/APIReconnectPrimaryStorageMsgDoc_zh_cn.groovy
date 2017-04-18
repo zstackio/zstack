@@ -12,7 +12,7 @@ doc {
 			url "PUT /v1/primary-storage/{uuid}/actions"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIReconnectPrimaryStorageMsg.class
 

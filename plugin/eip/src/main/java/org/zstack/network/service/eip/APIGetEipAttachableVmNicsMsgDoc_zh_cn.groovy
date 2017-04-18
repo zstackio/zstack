@@ -14,7 +14,7 @@ doc {
 			url "GET /v1/eips/{eipUuid}/vm-instances/candidate-nics"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIGetEipAttachableVmNicsMsg.class
 

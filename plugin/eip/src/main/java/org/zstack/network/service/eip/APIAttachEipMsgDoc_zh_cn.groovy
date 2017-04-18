@@ -14,7 +14,7 @@ doc {
 			url "POST /v1/eips/{eipUuid}/vm-instances/nics/{vmNicUuid"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIAttachEipMsg.class
 

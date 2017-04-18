@@ -122,4 +122,5 @@ public abstract class APICreateL2NetworkMsg extends APICreateMessage {
             }
         };
     }
+
 }

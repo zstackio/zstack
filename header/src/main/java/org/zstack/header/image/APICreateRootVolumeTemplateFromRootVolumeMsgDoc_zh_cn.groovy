@@ -12,7 +12,7 @@ doc {
 			url "POST /v1/images/root-volume-templates/from/volumes/{rootVolumeUuid}"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APICreateRootVolumeTemplateFromRootVolumeMsg.class
 

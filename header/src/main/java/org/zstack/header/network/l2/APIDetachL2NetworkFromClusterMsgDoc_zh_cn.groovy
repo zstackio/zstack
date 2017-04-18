@@ -14,7 +14,7 @@ doc {
 			url "DELETE /v1/l2-networks/{l2NetworkUuid}/clusters/{clusterUuid}"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIDetachL2NetworkFromClusterMsg.class
 

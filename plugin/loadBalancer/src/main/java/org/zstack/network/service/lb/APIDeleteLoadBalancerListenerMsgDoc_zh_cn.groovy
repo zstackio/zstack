@@ -14,7 +14,7 @@ doc {
 			url "DELETE /v1/load-balancers/listeners/{uuid}"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIDeleteLoadBalancerListenerMsg.class
 
