@@ -171,36 +171,7 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
 
     @Override
     public void afterHostConnected(final HostInventory host) {
-        SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
-        q.select(VmInstanceVO_.uuid);
-        q.add(VmInstanceVO_.state, Op.EQ, VmInstanceState.Unknown);
-        q.add(VmInstanceVO_.hostUuid, Op.EQ, host.getUuid());
-        final List<String> vmUuids = q.listValue();
-        if (!vmUuids.isEmpty()) {
-            CheckVmStateOnHypervisorMsg msg = new CheckVmStateOnHypervisorMsg();
-            msg.setVmInstanceUuids(vmUuids);
-            msg.setHostUuid(host.getUuid());
-            bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, host.getUuid());
-            bus.send(msg, new CloudBusCallBack(null) {
-                @Override
-                public void run(MessageReply reply) {
-                    if (!reply.isSuccess()) {
-                        //TODO
-                        logger.warn(String.format("unable to check states of vms[uuids:%s] on the host[uuid:%s], %s",
-                                vmUuids, host.getUuid(), reply.getError()));
-                        return;
-                    }
-
-                    CheckVmStateOnHypervisorReply r = reply.castReply();
-                    Map<String, VmInstanceState> states = new HashMap<String, VmInstanceState>();
-                    for (Map.Entry<String, String> e : r.getStates().entrySet()) {
-                        states.put(e.getKey(), VmInstanceState.valueOf(e.getValue()));
-                    }
-
-                    reportVmState(host.getUuid(), states);
-                }
-            });
-        }
+        //syncVm has done the same work, so abandon it
     }
 
     @Override
