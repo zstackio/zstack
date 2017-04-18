@@ -29,7 +29,7 @@ import static org.zstack.utils.CollectionDSL.list
  * Created by lining on 2017/4/4.
  */
 // base on TestMevoco20
-class ChangeNetworkSerivceTest extends SubCase{
+class ChangeNetworkSerivceCase extends SubCase{
 
     EnvSpec env
 
