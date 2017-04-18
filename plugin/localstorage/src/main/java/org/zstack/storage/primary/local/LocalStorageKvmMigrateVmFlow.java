@@ -595,24 +595,34 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                 flow(new NoRollbackFlow() {
                     String __name__ = "update-volumes-info-in-db-to-dst-host";
 
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        List<String> volUuids = CollectionUtils.transformToList(volumesOnLocalStorage, new Function<String, VolumeInventory>() {
-                            @Override
-                            public String call(VolumeInventory arg) {
-                                return arg.getUuid();
-                            }
-                        });
-
+                    @Transactional
+                    private void updateVolumesInfo(final List<String> volUuids) {
                         SimpleQuery<LocalStorageResourceRefVO> q = dbf.createQuery(LocalStorageResourceRefVO.class);
                         q.add(LocalStorageResourceRefVO_.resourceUuid, Op.IN, volUuids);
                         q.add(LocalStorageResourceRefVO_.resourceType, Op.EQ, VolumeVO.class.getSimpleName());
-                        List<LocalStorageResourceRefVO> refs = q.list();
-                        for (LocalStorageResourceRefVO ref : refs) {
-                            ref.setHostUuid(dstHostUuid);
-                        }
+                        List<LocalStorageResourceRefVO> oldRefs = q.list();
 
-                        dbf.updateCollection(refs);
+                        for (final LocalStorageResourceRefVO ref : oldRefs) {
+                            LocalStorageResourceRefVO newRef = new LocalStorageResourceRefVO();
+                            newRef.setHostUuid(dstHostUuid);
+                            newRef.setResourceUuid(ref.getResourceUuid());
+                            newRef.setPrimaryStorageUuid(ref.getPrimaryStorageUuid());
+                            newRef.setResourceType(ref.getResourceType());
+                            newRef.setSize(ref.getSize());
+                            newRef.setCreateDate(ref.getCreateDate());
+                            dbf.getEntityManager().persist(newRef);
+                            dbf.getEntityManager().remove(ref);
+                        }
+                    }
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        List<String> volUuids = CollectionUtils.transformToList(volumesOnLocalStorage,
+                                (VolumeInventory vol) -> vol.getUuid()
+                        );
+
+                        updateVolumesInfo(volUuids);
+
                         trigger.next();
                     }
                 });
@@ -621,24 +631,34 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                     flow(new NoRollbackFlow() {
                         String __name__ = "update-snapshots-info-in-db-to-dst-host";
 
-                        @Override
-                        public void run(FlowTrigger trigger, Map data) {
-                            List<String> spUuids = CollectionUtils.transformToList(allSnapshots, new Function<String, VolumeSnapshotInventory>() {
-                                @Override
-                                public String call(VolumeSnapshotInventory arg) {
-                                    return arg.getUuid();
-                                }
-                            });
-
+                        @Transactional
+                        private void updateSnapshotsInfo(final List<String> spUuids) {
                             SimpleQuery<LocalStorageResourceRefVO> q = dbf.createQuery(LocalStorageResourceRefVO.class);
                             q.add(LocalStorageResourceRefVO_.resourceUuid, Op.IN, spUuids);
                             q.add(LocalStorageResourceRefVO_.resourceType, Op.EQ, VolumeSnapshotVO.class.getSimpleName());
-                            List<LocalStorageResourceRefVO> refs = q.list();
-                            for (LocalStorageResourceRefVO ref : refs) {
-                                ref.setHostUuid(dstHostUuid);
-                            }
+                            List<LocalStorageResourceRefVO> oldRefs = q.list();
 
-                            dbf.updateCollection(refs);
+                            for (final LocalStorageResourceRefVO ref : oldRefs) {
+                                LocalStorageResourceRefVO newRef = new LocalStorageResourceRefVO();
+                                newRef.setHostUuid(dstHostUuid);
+                                newRef.setResourceUuid(ref.getResourceUuid());
+                                newRef.setPrimaryStorageUuid(ref.getPrimaryStorageUuid());
+                                newRef.setResourceType(ref.getResourceType());
+                                newRef.setSize(ref.getSize());
+                                newRef.setCreateDate(ref.getCreateDate());
+                                dbf.getEntityManager().persist(newRef);
+                                dbf.getEntityManager().remove(ref);
+                            }
+                        }
+
+                        @Override
+                        public void run(FlowTrigger trigger, Map data) {
+                            List<String> spUuids = CollectionUtils.transformToList(allSnapshots,
+                                    (VolumeSnapshotInventory sp) -> sp.getUuid()
+                            );
+
+                            updateSnapshotsInfo(spUuids);
+
                             trigger.next();
                         }
                     });
