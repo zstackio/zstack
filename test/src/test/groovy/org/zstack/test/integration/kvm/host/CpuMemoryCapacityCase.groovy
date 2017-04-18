@@ -70,6 +70,16 @@ class CpuMemoryCapacityCase extends SubCase {
             return rsp
         }
 
+        env.afterSimulator(KVMConstant.KVM_PING_PATH) { KVMAgentCommands.AgentResponse rsp, HttpEntity<String> e ->
+            pingCmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.PingCmd.class)
+            if (pingCmd.hostUuid == kvm1Inv.uuid || pingCmd.hostUuid == kvm2Inv.uuid) {
+                rsp.success = false
+            } else {
+                rsp.success = true
+            }
+            return rsp
+        }
+
         retryInSecs{
             return {
                 String kvm1Status = Q.New(HostVO.class).select(HostVO_.status).eq(HostVO_.uuid,kvm1Inv.uuid).findValue()
