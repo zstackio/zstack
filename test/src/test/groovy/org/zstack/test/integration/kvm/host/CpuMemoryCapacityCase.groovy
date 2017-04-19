@@ -71,43 +71,44 @@ class CpuMemoryCapacityCase extends SubCase {
             }
             return rsp
         }
-        KVMAgentCommands.ConnectCmd connectCmd = null
-        env.afterSimulator(KVMConstant.KVM_CONNECT_PATH) { KVMAgentCommands.AgentResponse rsp, HttpEntity<String> e ->
-            connectCmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.ConnectCmd.class)
-            if (connectCmd.hostUuid == kvm1Inv.uuid || connectCmd.hostUuid == kvm2Inv.uuid) {
-                rsp.success = false
-            } else {
-                rsp.success = true
-            }
-            return rsp
-        }
-        KVMAgentCommands.ReconnectMeCmd reConnectCmd = null
-        env.afterSimulator(KVMConstant.KVM_RECONNECT_ME) { KVMAgentCommands.AgentResponse rsp, HttpEntity<String> e ->
-            reConnectCmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.ReconnectMeCmd.class)
-            if (reConnectCmd.hostUuid == kvm1Inv.uuid || reConnectCmd.hostUuid == kvm2Inv.uuid) {
-                rsp.success = false
-            } else {
-                rsp.success = true
-            }
-            return rsp
-        }
+//        KVMAgentCommands.ConnectCmd connectCmd = null
+//        env.afterSimulator(KVMConstant.KVM_CONNECT_PATH) { KVMAgentCommands.AgentResponse rsp, HttpEntity<String> e ->
+//            connectCmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.ConnectCmd.class)
+//            if (connectCmd.hostUuid == kvm1Inv.uuid || connectCmd.hostUuid == kvm2Inv.uuid) {
+//                rsp.success = false
+//            } else {
+//                rsp.success = true
+//            }
+//            return rsp
+//        }
+//        KVMAgentCommands.ReconnectMeCmd reConnectCmd = null
+//        env.afterSimulator(KVMConstant.KVM_RECONNECT_ME) { KVMAgentCommands.AgentResponse rsp, HttpEntity<String> e ->
+//            reConnectCmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.ReconnectMeCmd.class)
+//            if (reConnectCmd.hostUuid == kvm1Inv.uuid || reConnectCmd.hostUuid == kvm2Inv.uuid) {
+//                rsp.success = false
+//            } else {
+//                rsp.success = true
+//            }
+//            return rsp
+//        }
 
         retryInSecs{
             return {
                 assert Q.New(HostVO.class).select(HostVO_.status).eq(HostVO_.uuid, kvm1Inv.uuid).findValue().toString() == HostStatus.Disconnected.toString()
                 assert Q.New(HostVO.class).select(HostVO_.status).eq(HostVO_.uuid, kvm2Inv.uuid).findValue().toString() == HostStatus.Disconnected.toString()
-            }
-        }
-        if (Q.New(HostVO.class).select(HostVO_.status).eq(HostVO_.uuid, kvm3Inv.uuid).findValue().toString() != HostStatus.Connected.toString()) {
-            reconnectHost {
-                uuid = kvm3Inv.uuid
-            }
-        }
-        retryInSecs{
-            return {
                 assert Q.New(HostVO.class).select(HostVO_.status).eq(HostVO_.uuid, kvm3Inv.uuid).findValue().toString() == HostStatus.Connected.toString()
             }
         }
+//        if (Q.New(HostVO.class).select(HostVO_.status).eq(HostVO_.uuid, kvm3Inv.uuid).findValue().toString() != HostStatus.Connected.toString()) {
+//            reconnectHost {
+//                uuid = kvm3Inv.uuid
+//            }
+//        }
+//        retryInSecs{
+//            return {
+//
+//            }
+//        }
         GetCpuMemoryCapacityAction action = new GetCpuMemoryCapacityAction()
         action.all = true
         action.sessionId = adminSession()
