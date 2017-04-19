@@ -59,7 +59,16 @@ class CpuMemoryCapacityCase extends SubCase {
         HostInventory kvm3Inv = (env.specByName("kvm3") as HostSpec).inventory
 
         KVMAgentCommands.PingCmd pingCmd = null
-        env.afterSimulator(KVMConstant.KVM_PING_PATH) { KVMAgentCommands.PingResponse rsp, HttpEntity<String> e ->
+//        env.afterSimulator(KVMConstant.KVM_PING_PATH) { KVMAgentCommands.PingResponse rsp, HttpEntity<String> e ->
+//            pingCmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.PingCmd.class)
+//            rsp.success = false
+//            if (pingCmd.hostUuid == kvm3Inv.uuid) {
+//                rsp.success = true
+//                rsp.hostUuid = pingCmd.hostUuid
+//            }
+//            return rsp
+//        }
+        env.simulator(KVMConstant.KVM_PING_PATH) {rsp, HttpEntity<String> e ->
             pingCmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.PingCmd.class)
             rsp.success = false
             if (pingCmd.hostUuid == kvm3Inv.uuid) {
