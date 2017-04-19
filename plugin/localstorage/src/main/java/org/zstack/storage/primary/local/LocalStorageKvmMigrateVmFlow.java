@@ -596,24 +596,37 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                 flow(new NoRollbackFlow() {
                     String __name__ = "update-volumes-info-in-db-to-dst-host";
 
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        List<String> volUuids = CollectionUtils.transformToList(volumesOnLocalStorage, new Function<String, VolumeInventory>() {
-                            @Override
-                            public String call(VolumeInventory arg) {
-                                return arg.getUuid();
-                            }
-                        });
-
+                    @Transactional
+                    private void updateVolumesInfo(final List<String> volUuids) {
                         SimpleQuery<LocalStorageResourceRefVO> q = dbf.createQuery(LocalStorageResourceRefVO.class);
                         q.add(LocalStorageResourceRefVO_.resourceUuid, Op.IN, volUuids);
                         q.add(LocalStorageResourceRefVO_.resourceType, Op.EQ, VolumeVO.class.getSimpleName());
-                        List<LocalStorageResourceRefVO> refs = q.list();
-                        for (LocalStorageResourceRefVO ref : refs) {
-                            ref.setHostUuid(dstHostUuid);
+                        List<LocalStorageResourceRefVO> oldRefs = q.list();
+
+                        List<LocalStorageResourceRefVO> newRefs = new ArrayList<>();
+                        for (final LocalStorageResourceRefVO ref : oldRefs) {
+                            LocalStorageResourceRefVO r = new LocalStorageResourceRefVO();
+                            r.setHostUuid(dstHostUuid);
+                            r.setResourceUuid(ref.getResourceUuid());
+                            r.setPrimaryStorageUuid(ref.getPrimaryStorageUuid());
+                            r.setResourceType(ref.getResourceType());
+                            r.setSize(ref.getSize());
+                            r.setCreateDate(ref.getCreateDate());
+                            newRefs.add(r);
                         }
 
-                        dbf.updateCollection(refs);
+                        dbf.persistCollection(newRefs);
+                        dbf.removeCollection(oldRefs, LocalStorageResourceRefVO.class);
+                    }
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        List<String> volUuids = CollectionUtils.transformToList(volumesOnLocalStorage,
+                                (VolumeInventory vol) -> vol.getUuid()
+                        );
+
+                        updateVolumesInfo(volUuids);
+
                         trigger.next();
                     }
                 });
