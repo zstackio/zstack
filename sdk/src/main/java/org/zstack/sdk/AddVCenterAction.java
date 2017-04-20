@@ -34,8 +34,11 @@ public class AddVCenterAction extends AbstractAction {
     @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public boolean https = true;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Integer port;
 
     @Param(required = true, maxLength = 256, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String domainName;
