@@ -2279,6 +2279,8 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
             handle((UploadBitsToBackupStorageMsg) msg);
         } else if (msg instanceof SetupSelfFencerOnKvmHostMsg) {
             handle((SetupSelfFencerOnKvmHostMsg) msg);
+        } else if (msg instanceof ValidateExpungeOperationMsg){
+            handle((ValidateExpungeOperationMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -2637,6 +2639,10 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
                 bus.reply(msg, reply);
             }
         });
+    }
+
+    protected void handle(final ValidateExpungeOperationMsg msg) {
+        bus.reply(msg, new ValidateExpungeOperationReply());
     }
 
     @Override

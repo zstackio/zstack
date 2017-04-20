@@ -260,6 +260,10 @@ public class LocalStorageBase extends PrimaryStorageBase {
         });
     }
 
+    protected void handle(final ValidateExpungeOperationMsg msg) {
+        bus.reply(msg, new ValidateExpungeOperationReply());
+    }
+
     private void migrateVolume(MigrateVolumeOnLocalStorageMsg msg, NoErrorCompletion completion) {
         MigrateVolumeOnLocalStorageReply reply = new MigrateVolumeOnLocalStorageReply();
 
@@ -522,6 +526,8 @@ public class LocalStorageBase extends PrimaryStorageBase {
             handle((LocalStorageDeleteImageCacheOnPrimaryStorageMsg) msg);
         } else if (msg instanceof MigrateVolumeOnLocalStorageMsg) {
             handle((MigrateVolumeOnLocalStorageMsg) msg);
+        } else if (msg instanceof ValidateExpungeOperationMsg){
+            handle((ValidateExpungeOperationMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }

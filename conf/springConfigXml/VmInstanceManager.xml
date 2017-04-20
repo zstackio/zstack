@@ -91,6 +91,7 @@
         </property>
         <property name="expungeVmWorkFlowElements">
             <list>
+                <value>org.zstack.compute.vm.ValidateOperationFlow</value>
                 <value>org.zstack.compute.vm.VmExpungeRootVolumeFlow</value>
             </list>
         </property>
