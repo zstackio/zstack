@@ -58,12 +58,12 @@ class AddSftpBackupStorageCase extends SubCase {
         action.hostname = "192.168.0.3"
         action.sessionId = adminSession()
         AddSftpBackupStorageAction.Result res = action.call()
-        res.error != null
+        assert res.error != null
         action.url = "/proc/xx"
         res = action.call()
-        res.error != null
+        assert res.error != null
         action.url = "/sys/test"
         res = action.call()
-        res.error != null
+        assert res.error != null
     }
 }

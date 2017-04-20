@@ -69,12 +69,12 @@ class AddLocalStorageCase extends SubCase {
         addLocalPrimaryStorageAction.zoneUuid = zoneUuid
         addLocalPrimaryStorageAction.sessionId = adminSession()
         AddLocalPrimaryStorageAction.Result res= addLocalPrimaryStorageAction.call()
-        res.error !=null
+        assert res.error !=null
         addLocalPrimaryStorageAction.url = "/proc/test"
         res= addLocalPrimaryStorageAction.call()
-        res.error !=null
+        assert res.error !=null
         addLocalPrimaryStorageAction.url = "/sys/test"
         res= addLocalPrimaryStorageAction.call()
-        res.error !=null
+        assert res.error !=null
     }
 }

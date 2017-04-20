@@ -1,6 +1,5 @@
 package org.zstack.test.integration.storage.primary.smp
 
-import org.zstack.sdk.AddLocalPrimaryStorageAction
 import org.zstack.sdk.AddSharedMountPointPrimaryStorageAction
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
@@ -58,12 +57,12 @@ class AddSMPStorageCase extends SubCase {
         addLocalPrimaryStorageAction.zoneUuid = zoneUuid
         addLocalPrimaryStorageAction.sessionId = adminSession()
         AddSharedMountPointPrimaryStorageAction.Result res = addLocalPrimaryStorageAction.call()
-        res.error != null
+        assert res.error != null
         addLocalPrimaryStorageAction.url = "/proc/test"
         res = addLocalPrimaryStorageAction.call()
-        res.error != null
+        assert  res.error != null
         addLocalPrimaryStorageAction.url = "/sys/test"
         res = addLocalPrimaryStorageAction.call()
-        res.error != null
+        assert res.error != null
     }
 }
