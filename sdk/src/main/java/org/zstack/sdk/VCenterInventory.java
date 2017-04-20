@@ -34,6 +34,14 @@ public class VCenterInventory  {
         return this.domainName;
     }
 
+    public java.lang.Integer port;
+    public void setPort(java.lang.Integer port) {
+        this.port = port;
+    }
+    public java.lang.Integer getPort() {
+        return this.port;
+    }
+
     public java.lang.String userName;
     public void setUserName(java.lang.String userName) {
         this.userName = userName;
