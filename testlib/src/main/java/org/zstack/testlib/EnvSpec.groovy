@@ -165,6 +165,8 @@ class EnvSpec implements Node {
             [CreateVirtualRouterOfferingAction.metaClass, CreateVirtualRouterOfferingAction.Result.metaClass, DeleteInstanceOfferingAction.class],
     ]
 
+    static Closure GLOBAL_DELETE_HOOK
+
     protected List resourcesNeedDeletion = []
 
     private void installDeletionMethods() {
@@ -542,6 +544,10 @@ class EnvSpec implements Node {
 
             SQL.New(NotificationVO.class).hardDelete()
             SQL.New(TaskProgressVO.class).hardDelete()
+
+            if (GLOBAL_DELETE_HOOK != null) {
+                GLOBAL_DELETE_HOOK()
+            }
 
             makeSureAllEntitiesDeleted()
         } catch (StopTestSuiteException e) {
