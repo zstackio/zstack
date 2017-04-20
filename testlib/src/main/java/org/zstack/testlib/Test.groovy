@@ -1,6 +1,5 @@
 package org.zstack.testlib
 
-import org.apache.logging.log4j.ThreadContext
 import org.zstack.core.Platform
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.componentloader.ComponentLoader
@@ -8,12 +7,9 @@ import org.zstack.core.db.DatabaseFacade
 import org.zstack.header.AbstractService
 import org.zstack.header.exception.CloudRuntimeException
 import org.zstack.header.identity.AccountConstant
-import org.zstack.header.message.APIMessage
 import org.zstack.header.message.AbstractBeforeSendMessageInterceptor
 import org.zstack.header.message.Event
 import org.zstack.header.message.Message
-import org.zstack.sdk.CreateZoneAction
-import org.zstack.sdk.DeleteZoneAction
 import org.zstack.sdk.SessionInventory
 import org.zstack.sdk.ZSClient
 import org.zstack.utils.ShellUtils
@@ -336,7 +332,7 @@ abstract class Test implements ApiHelper {
         return resultDir
     }
 
-    private void collectFailureCaseLog(File dir, Class caseClass, String caseLogStartLine) {
+    void collectFailureCaseLog(File dir, Class caseClass, String caseLogStartLine) {
         File failureLogDir = new File([dir.absolutePath, "failureLogs", caseClass.name.replace(".", "_")].join("/"))
         failureLogDir.mkdirs()
         File failureLog = new File([failureLogDir.absolutePath, "case.log"].join("/"))
@@ -392,6 +388,20 @@ mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
 
             try {
                 CURRENT_SUB_CASE = c
+                c.metaClass.collectErrorLog = {
+                    File failureLogDir = new File([dir.absolutePath, "failureLogs", r.caseType.name.replace(".", "_")].join("/"))
+                    failureLogDir.mkdirs()
+                    File failureLog = new File([failureLogDir.absolutePath, "case.log"].join("/"))
+
+                    File mgmtLogPath = new File([System.getProperty("user.dir"), "management-server.log"].join("/"))
+
+                    ShellUtils.run("""\
+start=`grep -nr "$caseLogStartLine" ${mgmtLogPath.absolutePath} | grep -v ShellUtils | gawk '{print \$1}' FS=":"`
+tail -n +\$start ${mgmtLogPath.absolutePath} > ${failureLog.absolutePath}
+
+mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
+""", false)
+                }
 
                 beforeRunSubCase()
 
@@ -410,8 +420,7 @@ mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
                 r.success = false
                 r.error = t.message
 
-                logger.error("a sub case [${c.class}] of suite[${this.class}] fails, ${t.message}")
-                collectFailureCaseLog(dir, r.caseType, caseLogStartLine)
+                logger.error("a sub case [${c.class}] of suite[${this.class}] fails, ${t.message}", t)
             } finally {
                 def fname = c.class.name.replace(".", "_") + "." + (r.success ? "success" : "failure")
                 def rfile = new File([dir.absolutePath, fname].join("/"))
