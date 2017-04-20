@@ -25,4 +25,10 @@
             <zstack:extension interface="org.zstack.kvm.KVMHostConnectExtensionPoint" />
         </zstack:plugin>
     </bean>
+
+    <bean id="SharedMountPointApiInterceptor" class="org.zstack.storage.primary.smp.SharedMountPointApiInterceptor">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor" />
+        </zstack:plugin>
+    </bean>
 </beans>
