@@ -52,18 +52,18 @@ class AddNfsStorageCase extends SubCase {
 
     void addErrorPathLSailure() {
         String zoneUuid = (env.specByName("zone") as ZoneSpec).inventory.uuid
-        AddNfsPrimaryStorageAction addLocalPrimaryStorageAction = new AddNfsPrimaryStorageAction()
-        addLocalPrimaryStorageAction.url = "/dev/test"
-        addLocalPrimaryStorageAction.name = "test2"
-        addLocalPrimaryStorageAction.zoneUuid = zoneUuid
-        addLocalPrimaryStorageAction.sessionId = adminSession()
-        AddNfsPrimaryStorageAction.Result res= addLocalPrimaryStorageAction.call()
-        res.error !=null
-        addLocalPrimaryStorageAction.url = "/proc/test"
-        res= addLocalPrimaryStorageAction.call()
-        res.error !=null
-        addLocalPrimaryStorageAction.url = "/sys/test"
-        res= addLocalPrimaryStorageAction.call()
-        res.error !=null
+        AddNfsPrimaryStorageAction addNfsPrimaryStorageAction = new AddNfsPrimaryStorageAction()
+        addNfsPrimaryStorageAction.url = "192.168.1.196:/dev/test"
+        addNfsPrimaryStorageAction.name = "test2"
+        addNfsPrimaryStorageAction.zoneUuid = zoneUuid
+        addNfsPrimaryStorageAction.sessionId = adminSession()
+        AddNfsPrimaryStorageAction.Result res= addNfsPrimaryStorageAction.call()
+        assert res.error !=null
+        addNfsPrimaryStorageAction.url = "192.168.1.196:/proc/test"
+        res= addNfsPrimaryStorageAction.call()
+        assert res.error !=null
+        addNfsPrimaryStorageAction.url = "192.168.1.196:/sys/test"
+        res= addNfsPrimaryStorageAction.call()
+        assert res.error !=null
     }
 }
