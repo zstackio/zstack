@@ -9,7 +9,7 @@ public class QueryVCenterClusterAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteVCenterResult value;
+        public QueryVCenterClusterResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -31,8 +31,8 @@ public class QueryVCenterClusterAction extends QueryAction {
             return ret;
         }
         
-        DeleteVCenterResult value = res.getResult(DeleteVCenterResult.class);
-        ret.value = value == null ? new DeleteVCenterResult() : value; 
+        QueryVCenterClusterResult value = res.getResult(QueryVCenterClusterResult.class);
+        ret.value = value == null ? new QueryVCenterClusterResult() : value; 
 
         return ret;
     }
@@ -61,7 +61,7 @@ public class QueryVCenterClusterAction extends QueryAction {
         info.path = "/vcenters/clusters";
         info.needSession = true;
         info.needPoll = false;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 
