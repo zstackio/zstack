@@ -9,7 +9,7 @@ public class QueryVCenterBackupStorageAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteVCenterResult value;
+        public QueryVCenterBackupStorageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -31,8 +31,8 @@ public class QueryVCenterBackupStorageAction extends QueryAction {
             return ret;
         }
         
-        DeleteVCenterResult value = res.getResult(DeleteVCenterResult.class);
-        ret.value = value == null ? new DeleteVCenterResult() : value; 
+        QueryVCenterBackupStorageResult value = res.getResult(QueryVCenterBackupStorageResult.class);
+        ret.value = value == null ? new QueryVCenterBackupStorageResult() : value; 
 
         return ret;
     }
@@ -61,7 +61,7 @@ public class QueryVCenterBackupStorageAction extends QueryAction {
         info.path = "/vcenters/backup-storage";
         info.needSession = true;
         info.needPoll = false;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 
