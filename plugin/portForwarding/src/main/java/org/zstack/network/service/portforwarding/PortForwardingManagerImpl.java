@@ -7,6 +7,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -420,9 +421,8 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        SimpleQuery q = dbf.createQuery(PortForwardingRuleVO.class);
-                        q.add(PortForwardingRuleVO_.vipUuid, Op.EQ, inv.getVipUuid());
-                        if (q.isExists()) {
+                        if (Q.New(PortForwardingRuleVO.class).eq(PortForwardingRuleVO_.vipUuid, inv.getVipUuid())
+                                .notNull(PortForwardingRuleVO_.vmNicUuid).isExists()) {
                             trigger.next();
                             return;
                         }

@@ -24,7 +24,7 @@ public class VirtualRouterVipVO {
     @Column
     @ForeignKey(parentEntityClass = VipVO.class, onDeleteAction = ReferenceOption.RESTRICT)
     private String uuid;
-    
+
     @Column
     @ForeignKey(parentEntityClass = VmInstanceEO.class, onDeleteAction = ReferenceOption.CASCADE)
     private String virtualRouterVmUuid;
