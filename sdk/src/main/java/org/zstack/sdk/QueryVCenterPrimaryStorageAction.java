@@ -9,7 +9,7 @@ public class QueryVCenterPrimaryStorageAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteVCenterResult value;
+        public QueryVCenterPrimaryStorageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -31,8 +31,8 @@ public class QueryVCenterPrimaryStorageAction extends QueryAction {
             return ret;
         }
         
-        DeleteVCenterResult value = res.getResult(DeleteVCenterResult.class);
-        ret.value = value == null ? new DeleteVCenterResult() : value; 
+        QueryVCenterPrimaryStorageResult value = res.getResult(QueryVCenterPrimaryStorageResult.class);
+        ret.value = value == null ? new QueryVCenterPrimaryStorageResult() : value; 
 
         return ret;
     }
@@ -61,7 +61,7 @@ public class QueryVCenterPrimaryStorageAction extends QueryAction {
         info.path = "/vcenters/primary-storage";
         info.needSession = true;
         info.needPoll = false;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 
