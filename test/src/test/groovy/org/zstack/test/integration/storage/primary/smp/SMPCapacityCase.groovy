@@ -7,6 +7,15 @@ import org.zstack.header.host.HostVO
 import org.zstack.header.host.HostVO_
 import org.zstack.header.storage.primary.PrimaryStorageCapacityVO
 import org.zstack.header.storage.primary.PrimaryStorageVO
+import org.zstack.header.vm.VmInstanceState
+import org.zstack.header.vm.VmInstanceVO
+import org.zstack.sdk.DiskOfferingInventory
+import org.zstack.sdk.GetPrimaryStorageCapacityResult
+import org.zstack.sdk.ImageInventory
+import org.zstack.sdk.InstanceOfferingInventory
+import org.zstack.sdk.L3NetworkInventory
+import org.zstack.sdk.PrimaryStorageInventory
+import org.zstack.sdk.VmInstanceInventory
 import org.zstack.storage.primary.smp.SMPConstants
 import org.zstack.test.integration.storage.SMPEnv
 import org.zstack.test.integration.storage.StorageTest
@@ -36,6 +45,7 @@ class SMPCapacityCase extends SubCase{
     @Override
     void test() {
         env.create {
+            testReconnectPrimaryStorageCapacityRecalculation()
             testReleaseSMPCapacityWithNoHostInCase()
         }
     }
@@ -82,6 +92,60 @@ class SMPCapacityCase extends SubCase{
         assert primaryStorageVO.getCapacity().getAvailableCapacity() == 0L
         assert primaryStorageVO.getCapacity().getTotalPhysicalCapacity() == 0L
         assert primaryStorageVO.getCapacity().getAvailablePhysicalCapacity() == 0L
+    }
+
+    void testReconnectPrimaryStorageCapacityRecalculation() {
+        PrimaryStorageInventory ps = env.inventoryByName("smp")
+        L3NetworkInventory l3 = env.inventoryByName("l3")
+        InstanceOfferingInventory instanceOffering = env.inventoryByName("instanceOffering")
+        ImageInventory image = env.inventoryByName("iso")
+        DiskOfferingInventory diskOffering = env.inventoryByName("diskOffering")
+
+        GetPrimaryStorageCapacityResult beforeCapacity = getPrimaryStorageCapacity {
+            primaryStorageUuids = [ps.uuid]
+        }
+
+        VmInstanceInventory vm = createVmInstance {
+            name = "test"
+            l3NetworkUuids = [l3.uuid]
+            imageUuid = image.uuid
+            rootDiskOfferingUuid = diskOffering.uuid
+            instanceOfferingUuid = instanceOffering.uuid
+        }
+
+        GetPrimaryStorageCapacityResult afterCreateVmInstance = getPrimaryStorageCapacity {
+            primaryStorageUuids = [ps.uuid]
+        }
+        assert beforeCapacity.availableCapacity > afterCreateVmInstance.availableCapacity
+
+        reconnectPrimaryStorage {
+            uuid = ps.uuid
+        }
+
+        GetPrimaryStorageCapacityResult afterReconnectPS = getPrimaryStorageCapacity {
+            primaryStorageUuids = [ps.uuid]
+        }
+        assert afterReconnectPS.availableCapacity == afterCreateVmInstance.availableCapacity
+        assert afterReconnectPS.totalCapacity == afterCreateVmInstance.totalCapacity
+
+        destroyVmInstance {
+            uuid = vm.uuid
+        }
+
+        expungeVmInstance {
+            uuid = vm.uuid
+        }
+
+        reconnectPrimaryStorage {
+            uuid = ps.uuid
+        }
+        GetPrimaryStorageCapacityResult afterReconnectPS2 = getPrimaryStorageCapacity {
+            primaryStorageUuids = [ps.uuid]
+        }
+        assert afterReconnectPS2.availableCapacity == beforeCapacity.availableCapacity
+
+        VmInstanceVO vo = dbFindByUuid(vm.uuid, VmInstanceVO.class)
+        assert vo == null
     }
 
     @Override

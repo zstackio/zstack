@@ -1,5 +1,6 @@
 package org.zstack.test.integration.storage
 
+import org.zstack.header.image.ImageConstant
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.network.securitygroup.SecurityGroupConstant
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant
@@ -43,6 +44,12 @@ use:
                 image {
                     name = "image1"
                     url  = "http://zstack.org/download/test.qcow2"
+                }
+
+                image {
+                    name = "iso"
+                    mediaType = ImageConstant.ImageMediaType.ISO.toString()
+                    url  = "http://zstack.org/download/test.iso"
                 }
 
                 image {
