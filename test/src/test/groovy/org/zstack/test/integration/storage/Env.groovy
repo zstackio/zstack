@@ -296,6 +296,11 @@ class Env {
                 }
 
                 image {
+                    name = "test-iso1"
+                    url  = "http://zstack.org/download/test.iso"
+                }
+
+                image {
                     name = "vr"
                     url  = "http://zstack.org/download/vr.qcow2"
                 }
