@@ -62,6 +62,8 @@
 
     <message>
         <name>org.zstack.header.storage.primary.APIUpdatePrimaryStorageMsg</name>
+        <interceptor>PrimaryStorageApiInterceptor</interceptor>
+        <interceptor>NfsPrimaryStorageApiInterceptor</interceptor>
     </message>
 
     <message>
