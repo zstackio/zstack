@@ -510,6 +510,7 @@ public class KVMAgentCommands {
             this.useVirtioSCSI = other.useVirtioSCSI;
             this.cacheMode = other.cacheMode;
             this.wwn = other.wwn;
+            this.shareable = other.shareable;
         }
 
         public boolean isShareable() {
