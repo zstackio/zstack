@@ -49,7 +49,7 @@ public class VniRangeInventory {
     }
 
     public static VniRangeInventory valueOf(VniRangeVO vo) {
-        return new VniRangeInventory();
+        return new VniRangeInventory(vo);
     }
 
     public static List<VniRangeInventory> valueOf(Collection<VniRangeVO> vos) {

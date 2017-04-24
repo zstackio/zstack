@@ -16,14 +16,15 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.*;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
+import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory;
+import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkConstant;
+import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
+import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolConstant;
 
 import static org.zstack.core.Platform.operr;
 
 import javax.persistence.TypedQuery;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -36,26 +37,37 @@ public class KVMConnectExtensionForL2Network implements KVMHostConnectExtensionP
     @Autowired
     private KVMRealizeL2VlanNetworkBackend vlanNetworkBackend;
     @Autowired
+    private KVMRealizeL2VxlanNetworkBackend vxlanNetworkBackend;
+    @Autowired
     private ErrorFacade errf;
     @Autowired
     private CloudBus bus;
 
     @Transactional
     private List<L2NetworkInventory> getL2Networks(String clusterUuid) {
-        String sql = "select l2 from L2NetworkVO l2, L2NetworkClusterRefVO ref where l2.uuid = ref.l2NetworkUuid and ref.clusterUuid = :clusterUuid";
+        String sql = "select l2 from L2NetworkVO l2, L2NetworkClusterRefVO ref where l2.uuid = ref.l2NetworkUuid and ref.clusterUuid = :clusterUuid and l2.type not in (:noNeedCheckTypes)";
         TypedQuery<L2NetworkVO> q = dbf.getEntityManager().createQuery(sql, L2NetworkVO.class);
         q.setParameter("clusterUuid", clusterUuid);
+        q.setParameter("noNeedCheckTypes", getNoNeedCheckNetworkType());
         List<L2NetworkVO> vos = q.getResultList();
         List<L2NetworkInventory> ret = new ArrayList<L2NetworkInventory>(vos.size());
         for (L2NetworkVO vo : vos) {
             if (L2NetworkConstant.L2_VLAN_NETWORK_TYPE.equals(vo.getType())) {
                 L2VlanNetworkVO vlanvo = dbf.getEntityManager().find(L2VlanNetworkVO.class, vo.getUuid());
                 ret.add(L2VlanNetworkInventory.valueOf(vlanvo));
+            } else if (VxlanNetworkConstant.VXLAN_NETWORK_TYPE.equals(vo.getType())) {
+                VxlanNetworkVO vxlanvo = dbf.getEntityManager().find(VxlanNetworkVO.class, vo.getUuid());
+                ret.add(L2VxlanNetworkInventory.valueOf(vxlanvo));
             } else {
                 ret.add(L2NetworkInventory.valueOf(vo));
             }
         }
         return ret;
+    }
+
+    private List<String> getNoNeedCheckNetworkType() {
+        List<String> types = Arrays.asList(VxlanNetworkPoolConstant.VXLAN_NETWORK_POOL_TYPE, VxlanNetworkConstant.VXLAN_NETWORK_TYPE);
+        return types;
     }
 
     private void prepareNetwork(final Iterator<L2NetworkInventory> it, final String hostUuid, final Completion completion) {
@@ -67,25 +79,27 @@ public class KVMConnectExtensionForL2Network implements KVMHostConnectExtensionP
         final L2NetworkInventory l2 = it.next();
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("prepare-l2-%s-for-kvm-%s-connect", l2.getUuid(), hostUuid));
-        chain.then(new NoRollbackFlow() {
-            @Override
-            public void run(final FlowTrigger trigger, Map data) {
-                CheckNetworkPhysicalInterfaceMsg cmsg = new CheckNetworkPhysicalInterfaceMsg();
-                cmsg.setHostUuid(hostUuid);
-                cmsg.setPhysicalInterface(l2.getPhysicalInterface());
-                bus.makeTargetServiceIdByResourceUuid(cmsg, HostConstant.SERVICE_ID, hostUuid);
-                bus.send(cmsg, new CloudBusCallBack(completion) {
-                    @Override
-                    public void run(MessageReply reply) {
-                        if (!reply.isSuccess()) {
-                            trigger.fail(reply.getError());
-                        } else {
-                            trigger.next();
+        if (l2.getType().equals(VxlanNetworkConstant.VXLAN_NETWORK_TYPE)) {
+            chain.then(new NoRollbackFlow() {
+                @Override
+                public void run(final FlowTrigger trigger, Map data) {
+                    CheckNetworkPhysicalInterfaceMsg cmsg = new CheckNetworkPhysicalInterfaceMsg();
+                    cmsg.setHostUuid(hostUuid);
+                    cmsg.setPhysicalInterface(l2.getPhysicalInterface());
+                    bus.makeTargetServiceIdByResourceUuid(cmsg, HostConstant.SERVICE_ID, hostUuid);
+                    bus.send(cmsg, new CloudBusCallBack(completion) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (!reply.isSuccess()) {
+                                trigger.fail(reply.getError());
+                            } else {
+                                trigger.next();
+                            }
                         }
-                    }
-                });
-            }
-        });
+                    });
+                }
+            });
+        }
 
         if (l2.getType().equals(L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE)) {
             chain.then(new NoRollbackFlow() {
@@ -109,6 +123,23 @@ public class KVMConnectExtensionForL2Network implements KVMHostConnectExtensionP
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
                     vlanNetworkBackend.realize(l2, hostUuid, true, new Completion(trigger) {
+                        @Override
+                        public void success() {
+                            trigger.next();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            trigger.fail(errorCode);
+                        }
+                    });
+                }
+            });
+        } else if (VxlanNetworkConstant.VXLAN_NETWORK_TYPE.equals(l2.getType())) {
+            chain.then(new NoRollbackFlow() {
+                @Override
+                public void run(final FlowTrigger trigger, Map data) {
+                    vxlanNetworkBackend.realize(l2, hostUuid, true, new Completion(trigger) {
                         @Override
                         public void success() {
                             trigger.next();
