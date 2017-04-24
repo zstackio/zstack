@@ -87,19 +87,31 @@ class LocalStorageCapacityCase extends SubCase {
             clusterUuid = cluster.uuid
         }
 
-        GetPrimaryStorageCapacityResult capacityResult2 = getPrimaryStorageCapacity {
-            primaryStorageUuids = [ps.uuid]
+        GetPrimaryStorageCapacityResult capacityResult2
+        retryInSecs {
+            capacityResult2 = getPrimaryStorageCapacity {
+                primaryStorageUuids = [ps.uuid]
+            }
+
+            return {
+                assert capacityResult.availableCapacity == capacityResult2.availableCapacity
+            }
         }
-        assert capacityResult.availableCapacity == capacityResult2.availableCapacity
 
         reconnectPrimaryStorage {
             uuid = ps.uuid
         }
-        GetPrimaryStorageCapacityResult capacityResult3 = getPrimaryStorageCapacity {
-            primaryStorageUuids = [ps.uuid]
+
+        retryInSecs {
+            GetPrimaryStorageCapacityResult capacityResult3 = getPrimaryStorageCapacity {
+                primaryStorageUuids = [ps.uuid]
+            }
+
+            return {
+                assert capacityResult2.availableCapacity == capacityResult3.availableCapacity
+                assert capacityResult.availableCapacity == capacityResult2.availableCapacity
+            }
         }
-        assert capacityResult2.availableCapacity == capacityResult3.availableCapacity
-        assert capacityResult.availableCapacity == capacityResult2.availableCapacity
     }
 
     void testLocalStoragePrimaryStorageCapacityDecreaseAfterDeleteHost() {
