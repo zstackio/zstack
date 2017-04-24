@@ -27,22 +27,16 @@
         </zstack:plugin>
     </bean>
 
-    <bean id="L2VxlanFakeNetworkPoolRealizer" class="org.zstack.network.l2.vxlan.vxlanNetworkPool.L2VxlanFakeNetworkPoolRealizer">
-        <zstack:plugin>
-            <zstack:extension interface="org.zstack.header.network.l2.L2NetworkRealizationExtensionPoint" />
-        </zstack:plugin>
-    </bean>
-
-    <bean id="L2VxlanFakeNetworkRealizer" class="org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanFakeNetworkRealizer">
-        <zstack:plugin>
-            <zstack:extension interface="org.zstack.header.network.l2.L2NetworkRealizationExtensionPoint" />
-        </zstack:plugin>
-    </bean>
-
     <bean id="RandomVniAllocatorStrategy" class="org.zstack.network.l2.vxlan.vxlanNetworkPool.RandomVniAllocatorStrategy">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.network.l2.vxlan.vxlanNetworkPool.VniAllocatorStrategy" />
         </zstack:plugin>
     </bean>
 
+    <bean id="InstantiateVxlanNetworkForNewCreatedVmExtension"
+          class="org.zstack.network.l2.vxlan.vxlanNetwork.InstantiateVxlanNetworkForNewCreatedVmExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.vm.PreVmInstantiateResourceExtensionPoint"/>
+        </zstack:plugin>
+    </bean>
 </beans>
