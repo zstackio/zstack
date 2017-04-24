@@ -350,6 +350,73 @@ public class KVMAgentCommands {
         }
     }
 
+
+    public static class CreateVxlanBridgeCmd extends AgentCommand {
+        private String bridgeName;
+        private String vtepIp;
+        private Integer vni;
+        private List<String> peers;
+
+        public String getBridgeName() {
+            return bridgeName;
+        }
+
+        public void setBridgeName(String bridgeName) {
+            this.bridgeName = bridgeName;
+        }
+
+        public String getVtepIp() {
+            return vtepIp;
+        }
+
+        public void setVtepIp(String vtepIp) {
+            this.vtepIp = vtepIp;
+        }
+
+        public Integer getVni() {
+            return vni;
+        }
+
+        public void setVni(Integer vni) {
+            this.vni = vni;
+        }
+
+        public List<String> getPeers() {
+            return peers;
+        }
+
+        public void setPeers(List<String> peers) {
+            this.peers = peers;
+        }
+    }
+
+    public static class CreateVxlanBridgeResponse extends CreateBridgeResponse {
+    }
+
+    public static class PopulateVxlanFdbCmd extends AgentCommand {
+        private String interf;
+        private List<String> peers;
+
+        public String getInterf() {
+            return interf;
+        }
+
+        public void setInterf(String interf) {
+            this.interf = interf;
+        }
+
+        public List<String> getPeers() {
+            return peers;
+        }
+
+        public void setPeers(List<String> peers) {
+            this.peers = peers;
+        }
+    }
+
+    public static class PopulateVxlanFdbResponse extends AgentResponse {
+    }
+
     public static class CreateBridgeResponse extends AgentResponse {
     }
 
@@ -386,6 +453,40 @@ public class KVMAgentCommands {
 
         public void setVlan(int vlan) {
             this.vlan = vlan;
+        }
+    }
+
+    public static class CheckVxlanCidrCmd extends AgentCommand {
+        private String cidr;
+
+        public String getPhysicalInterfaceName() {
+            return physicalInterfaceName;
+        }
+
+        public void setPhysicalInterfaceName(String physicalInterfaceName) {
+            this.physicalInterfaceName = physicalInterfaceName;
+        }
+
+        private String physicalInterfaceName;
+
+        public String getCidr() {
+            return cidr;
+        }
+
+        public void setCidr(String cidr) {
+            this.cidr = cidr;
+        }
+    }
+
+    public static class CheckVxlanCidrResponse extends AgentResponse {
+        private String vtepIp;
+
+        public String getVtepIp() {
+            return vtepIp;
+        }
+
+        public void setVtepIp(String vtepIp) {
+            this.vtepIp = vtepIp;
         }
     }
 

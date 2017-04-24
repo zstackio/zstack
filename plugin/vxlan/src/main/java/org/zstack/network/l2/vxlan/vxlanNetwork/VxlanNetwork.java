@@ -5,18 +5,29 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.inventory.InventoryFacade;
+import org.zstack.core.workflow.FlowChainBuilder;
+import org.zstack.header.core.Completion;
+import org.zstack.header.core.workflow.*;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.host.HostConstant;
+import org.zstack.header.host.HostInventory;
+import org.zstack.header.host.HypervisorType;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
+import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
 import org.zstack.network.l2.L2NetworkExtensionPointEmitter;
 import org.zstack.network.l2.L2NetworkManager;
 import org.zstack.network.l2.L2NoVlanNetwork;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+
+import java.util.*;
 
 /**
  * Created by weiwang on 01/03/2017.
@@ -44,16 +55,17 @@ public class VxlanNetwork extends L2NoVlanNetwork {
         super(self);
     }
 
-    private L2NetworkVO getSelf() {
-        return (L2NetworkVO) self;
+    private VxlanNetworkVO getSelf() {
+        return (VxlanNetworkVO) self;
     }
 
     @Override
     public void deleteHook() {
     }
 
+    @Override
     protected L2NetworkInventory getSelfInventory() {
-        return L2NetworkInventory.valueOf(self);
+        return L2VxlanNetworkInventory.valueOf(getSelf());
     }
 
     @Override
@@ -85,9 +97,103 @@ public class VxlanNetwork extends L2NoVlanNetwork {
     }
 
     private void handle(final PrepareL2NetworkOnHostMsg msg) {
+        final PrepareL2NetworkOnHostReply reply = new PrepareL2NetworkOnHostReply();
+        prepareL2NetworkOnHosts(Arrays.asList(msg.getHost()), new Completion(msg) {
+            @Override
+            public void success() {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void prepareL2NetworkOnHosts(final List<HostInventory> hosts, final Completion completion) {
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName(String.format("prepare-l2-%s-on-hosts", self.getUuid()));
+        chain.then(new NoRollbackFlow() {
+            @Override
+            public void run(final FlowTrigger trigger, Map data) {
+                List<CheckL2NetworkOnHostMsg> cmsgs = new ArrayList<CheckL2NetworkOnHostMsg>();
+                for (HostInventory h : hosts) {
+                    CheckL2NetworkOnHostMsg cmsg = new CheckL2NetworkOnHostMsg();
+                    cmsg.setHostUuid(h.getUuid());
+                    cmsg.setL2NetworkUuid(self.getUuid());
+                    bus.makeTargetServiceIdByResourceUuid(cmsg, L2NetworkConstant.SERVICE_ID, h.getUuid());
+                    cmsgs.add(cmsg);
+                }
+
+                if (cmsgs.isEmpty()) {
+                    trigger.next();
+                    return;
+                }
+
+                bus.send(cmsgs, new CloudBusListCallBack(trigger) {
+                    @Override
+                    public void run(List<MessageReply> replies) {
+                        for (MessageReply r : replies) {
+                            if (!r.isSuccess()) {
+                                trigger.fail(r.getError());
+                                return;
+                            }
+                        }
+
+                        trigger.next();
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            private void realize(final Iterator<HostInventory> it, final FlowTrigger trigger) {
+                if (!it.hasNext()) {
+                    trigger.next();
+                    return;
+                }
+
+                HostInventory host = it.next();
+                realizeNetwork(host.getUuid(), host.getHypervisorType(), new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        realize(it, trigger);
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                realize(hosts.iterator(), trigger);
+            }
+        }).done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                completion.success();
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                completion.fail(errCode);
+            }
+        }).start();
+    }
+
+    protected void realizeNetwork(String hostUuid, String htype, Completion completion) {
+        final HypervisorType hvType = HypervisorType.valueOf(htype);
+        final L2NetworkType l2Type = L2NetworkType.valueOf(self.getType());
+
+        L2NetworkRealizationExtensionPoint ext = l2Mgr.getRealizationExtension(l2Type, hvType);
+        ext.realize(getSelfInventory(), hostUuid, completion);
     }
 
     private void handle(final CheckL2NetworkOnHostMsg msg) {
+        superHandle((L2NetworkMessage) msg);
     }
 
     private void handle(L2NetworkDeletionMsg msg) {
