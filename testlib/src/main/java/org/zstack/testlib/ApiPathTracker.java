@@ -81,6 +81,16 @@ public class ApiPathTracker {
 
             @Override
             public void beforeAsyncJsonPost(String url, String body, TimeUnit unit, long timeout) {
+                String id = ThreadContext.get(Constants.THREAD_CONTEXT_API);
+
+                if (id == null || !id.equals(apiId)) {
+                    return;
+                }
+
+                Path p = new Path();
+                p.type = Type.HttpRPC;
+                p.path = String.format("[url:%s, cmd body: %s]", url, body);
+                paths.add(p);
             }
         });
     }
