@@ -25,11 +25,6 @@ public class APICreateL2VxlanNetworkPoolMsg extends APICreateL2NetworkMsg {
         return VxlanNetworkPoolConstant.VXLAN_NETWORK_POOL_TYPE;
     }
 
-    @Override
-    public String getPhysicalInterface() {
-        return "No use";
-    }
-
     public static APICreateL2VxlanNetworkPoolMsg __example__() {
         APICreateL2VxlanNetworkPoolMsg msg = new APICreateL2VxlanNetworkPoolMsg();
 
