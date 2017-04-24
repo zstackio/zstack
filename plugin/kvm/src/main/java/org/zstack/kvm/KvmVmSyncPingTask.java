@@ -36,7 +36,6 @@ import org.zstack.utils.logging.CLogger;
 import static org.zstack.core.Platform.operr;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailureExtensionPoint, KVMHostConnectExtensionPoint,
