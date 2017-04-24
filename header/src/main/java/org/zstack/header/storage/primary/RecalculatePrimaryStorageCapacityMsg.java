@@ -5,7 +5,7 @@ import org.zstack.header.message.NeedReplyMessage;
 /**
  * Created by frank on 10/15/2015.
  */
-public class RecalculatePrimaryStorageCapacityMsg extends NeedReplyMessage {
+public class RecalculatePrimaryStorageCapacityMsg extends NeedReplyMessage implements PrimaryStorageMessage{
     private String zoneUuid;
     private String primaryStorageUuid;
 

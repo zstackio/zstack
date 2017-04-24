@@ -10,9 +10,7 @@ import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfigException;
 import org.zstack.core.config.GlobalConfigValidatorExtensionPoint;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.DbEntityLister;
-import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.defer.Deferred;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -319,169 +317,19 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         final List<String> psUuids = new ArrayList<>();
 
         if (msg.getPrimaryStorageUuid() != null) {
-            psUuids.add(msg.getPrimaryStorageUuid());
+            passThrough(msg);
         } else if (msg.getZoneUuid() != null) {
             SimpleQuery<PrimaryStorageVO> q = dbf.createQuery(PrimaryStorageVO.class);
             q.select(PrimaryStorageVO_.uuid);
             q.add(PrimaryStorageVO_.zoneUuid, Op.EQ, msg.getZoneUuid());
             List<String> uuids = q.listValue();
             psUuids.addAll(uuids);
-        }
 
-
-        if (psUuids.isEmpty()) {
+            PrimaryStorageCapacityRecalculator psRecal = new PrimaryStorageCapacityRecalculator();
+            psRecal.psUuids = psUuids;
+            psRecal.recalculate();
             bus.reply(msg, reply);
-            return;
         }
-
-        final Map<String, Long> psCap = new HashMap<>();
-        new Runnable() {
-            @Override
-            @Transactional(readOnly = true)
-            public void run() {
-                // calculate all volume size
-                {
-                    String sql = "select sum(vol.size), vol.primaryStorageUuid" +
-                            " from VolumeVO vol" +
-                            " where vol.primaryStorageUuid in (:psUuids)" +
-                            " and vol.status in (:volStatus)" +
-                            " group by vol.primaryStorageUuid";
-                    TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
-                    q.setParameter("psUuids", psUuids);
-                    List<VolumeStatus> needCountVolumeStates = asList(VolumeStatus.Creating, VolumeStatus.Ready, VolumeStatus.Deleted);
-                    q.setParameter("volStatus", needCountVolumeStates);
-                    List<Tuple> ts = q.getResultList();
-
-                    for (Tuple t : ts) {
-                        if (t.get(0, Long.class) == null) {
-                            // no volume
-                            continue;
-                        }
-
-                        long cap = t.get(0, Long.class);
-                        String psUuid = t.get(1, String.class);
-                        psCap.put(psUuid, ratioMgr.calculateByRatio(psUuid, cap));
-                    }
-                }
-
-                // calculate all image cache size
-                {
-                    String sql = "select sum(i.size), i.primaryStorageUuid" +
-                            " from ImageCacheVO i" +
-                            " where i.primaryStorageUuid in (:psUuids)" +
-                            " group by i.primaryStorageUuid";
-                    TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
-                    q.setParameter("psUuids", psUuids);
-                    List<Tuple> ts = q.getResultList();
-                    for (Tuple t : ts) {
-                        if (t.get(0, Long.class) == null) {
-                            // no image cache
-                            continue;
-                        }
-
-                        // templates in image cache are physical size
-                        // do not calculate over-provisioning
-                        long cap = t.get(0, Long.class);
-                        String psUuid = t.get(1, String.class);
-                        Long ncap = psCap.get(psUuid);
-                        ncap = ncap == null ? cap : ncap + cap;
-                        psCap.put(psUuid, ncap);
-                    }
-                }
-            }
-        }.run();
-
-
-        if (psCap.isEmpty()) {
-            // the primary storage is empty
-            for (String psUuid : psUuids) {
-                new Runnable() {
-                    @Override
-                    @Transactional
-                    public void run() {
-                        String sql = "select ps.type" +
-                                " from PrimaryStorageVO ps" +
-                                " where ps.uuid = :psUuid";
-                        TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
-                        q.setParameter("psUuid", psUuid);
-                        String type = q.getSingleResult();
-
-                        RecalculatePrimaryStorageCapacityExtensionPoint ext = recalculateCapacityExtensions.get(type);
-                        RecalculatePrimaryStorageCapacityStruct struct = new RecalculatePrimaryStorageCapacityStruct();
-                        struct.setPrimaryStorageUuid(psUuid);
-
-                        if (ext != null) {
-                            ext.beforeRecalculatePrimaryStorageCapacity(struct);
-                        }
-
-                        PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(psUuid);
-                        updater.run(new PrimaryStorageCapacityUpdaterRunnable() {
-                            @Override
-                            public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
-                                cap.setAvailableCapacity(cap.getAvailablePhysicalCapacity());
-                                logger.debug(String.format("re-calculated available capacity of the primary storage" +
-                                                "[uuid:%s] with over-provisioning ratio[%s]",
-                                        psUuid, ratioMgr.getRatio(psUuid)));
-                                return cap;
-                            }
-                        });
-
-                        if (ext != null) {
-                            ext.afterRecalculatePrimaryStorageCapacity(struct);
-                        }
-                    }
-                }.run();
-            }
-        } else {
-            // there are volumes/images on the primary storage, re-calculate the available capacity
-            for (final Map.Entry<String, Long> e : psCap.entrySet()) {
-                final String psUuid = e.getKey();
-                final long used = e.getValue();
-
-                new Runnable() {
-                    @Override
-                    @Transactional
-                    public void run() {
-                        String sql = "select ps.type" +
-                                " from PrimaryStorageVO ps" +
-                                " where ps.uuid = :psUuid";
-                        TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
-                        q.setParameter("psUuid", psUuid);
-                        String type = q.getSingleResult();
-
-                        RecalculatePrimaryStorageCapacityExtensionPoint ext = recalculateCapacityExtensions.get(type);
-                        RecalculatePrimaryStorageCapacityStruct struct = new RecalculatePrimaryStorageCapacityStruct();
-                        struct.setPrimaryStorageUuid(psUuid);
-
-                        if (ext != null) {
-                            ext.beforeRecalculatePrimaryStorageCapacity(struct);
-                        }
-
-                        PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(psUuid);
-                        updater.run(new PrimaryStorageCapacityUpdaterRunnable() {
-                            @Override
-                            public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
-                                long before = cap.getAvailableCapacity();
-                                long now = cap.getTotalCapacity()
-                                        - used
-                                        - (cap.getSystemUsedCapacity() == null ? 0 : cap.getSystemUsedCapacity());
-                                cap.setAvailableCapacity(now);
-                                logger.debug(String.format("re-calculated available capacity of the primary storage" +
-                                                "[uuid:%s, before:%s, now:%s] with over-provisioning ratio[%s]",
-                                        psUuid, before, now, ratioMgr.getRatio(psUuid)));
-                                return cap;
-                            }
-                        });
-
-                        if (ext != null) {
-                            ext.afterRecalculatePrimaryStorageCapacity(struct);
-                        }
-                    }
-                }.run();
-            }
-        }
-
-        bus.reply(msg, reply);
     }
 
     private void handle(IncreasePrimaryStorageCapacityMsg msg) {
@@ -658,17 +506,6 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                         f.getClass().getName(), old.getClass().getName(), old.getPrimaryStorageType()));
             }
             primaryStorageFactories.put(f.getPrimaryStorageType().toString(), f);
-        }
-
-        for (RecalculatePrimaryStorageCapacityExtensionPoint ext : pluginRgty.getExtensionList(RecalculatePrimaryStorageCapacityExtensionPoint.class)) {
-            RecalculatePrimaryStorageCapacityExtensionPoint old = recalculateCapacityExtensions.get(ext.getPrimaryStorageTypeForRecalculateCapacityExtensionPoint());
-            if (old != null) {
-                throw new CloudRuntimeException(
-                        String.format("duplicate RecalculatePrimaryStorageCapacityExtensionPoint[%s, %s] for type[%s]",
-                                ext.getClass().getName(), old.getClass().getName(),
-                                old.getPrimaryStorageTypeForRecalculateCapacityExtensionPoint()));
-            }
-            recalculateCapacityExtensions.put(ext.getPrimaryStorageTypeForRecalculateCapacityExtensionPoint(), ext);
         }
     }
 
