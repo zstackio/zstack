@@ -3,6 +3,7 @@ package org.zstack.test.integration.core.gc
 import org.zstack.core.Platform
 import org.zstack.core.cloudbus.EventFacade
 import org.zstack.core.db.DatabaseFacade
+import org.zstack.core.db.SQL
 import org.zstack.core.errorcode.ErrorFacade
 import org.zstack.core.gc.*
 import org.zstack.testlib.SubCase
@@ -588,6 +589,6 @@ class EventBasedGarbageCollectorCase extends SubCase {
 
     @Override
     void clean() {
-        // nothing
+        SQL.New(GarbageCollectorVO.class).delete()
     }
 }

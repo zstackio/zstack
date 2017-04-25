@@ -1,9 +1,11 @@
 package org.zstack.test.integration.core.gc
 
 import org.zstack.core.db.DatabaseFacade
+import org.zstack.core.db.SQL
 import org.zstack.core.gc.GCCompletion
 import org.zstack.core.gc.GCGlobalConfig
 import org.zstack.core.gc.GCStatus
+import org.zstack.core.gc.GarbageCollector
 import org.zstack.core.gc.GarbageCollectorVO
 import org.zstack.core.gc.GarbageCollectorManagerImpl
 import org.zstack.core.gc.TimeBasedGarbageCollector
@@ -371,6 +373,6 @@ class TimeBasedGarbageCollectorCase extends SubCase {
 
     @Override
     void clean() {
-        /* nothing */
+        SQL.New(GarbageCollectorVO.class).delete()
     }
 }
