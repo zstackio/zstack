@@ -2977,7 +2977,7 @@
   {
     "raw": "rule type can not be null. rule dump: %s",
     "en_US": "rule type can not be null. rule dump: {0}",
-    "zh_CN": "",
+    "zh_CN": "规则类型(rule type)不能为空(null)。规则内容为：{0}。",
     "arguments": [
       "JSONObjectUtil.toJsonString(ao)"
     ],
@@ -2987,7 +2987,7 @@
   {
     "raw": "unknown rule type[%s], rule can only be Ingress/Egress. rule dump: %s",
     "en_US": "unknown rule type[{0}], rule can only be Ingress/Egress. rule dump: {1}",
-    "zh_CN": "",
+    "zh_CN": "未知的规则类型(rule type)[{0}]，规则类型只能为Ingress/Egress。规则内容为：{1}。",
     "arguments": [
       "ao.getType()",
       "JSONObjectUtil.toJsonString(ao)"
@@ -2998,7 +2998,7 @@
   {
     "raw": "protocol can not be null. rule dump: %s",
     "en_US": "protocol can not be null. rule dump: {0}",
-    "zh_CN": "",
+    "zh_CN": "协议(protocol)不能为空(null)。规则内容为：{0}。",
     "arguments": [
       "JSONObjectUtil.toJsonString(ao)"
     ],
@@ -3008,7 +3008,7 @@
   {
     "raw": "invalid protocol[%s]. Valid protocols are [TCP, UDP, ICMP]. rule dump: %s",
     "en_US": "invalid protocol[{0}]. Valid protocols are [TCP, UDP, ICMP]. rule dump: {1}",
-    "zh_CN": "",
+    "zh_CN": "无效的协议(protocol)[{0}]。有效的协议类型为[TCP,UDP,ICMP]。规则内容为：{1}。",
     "arguments": [
       "ao.getProtocol()",
       "JSONObjectUtil.toJsonString(ao)"
@@ -3019,7 +3019,7 @@
   {
     "raw": "startPort can not be null. rule dump: %s",
     "en_US": "startPort can not be null. rule dump: {0}",
-    "zh_CN": "",
+    "zh_CN": "起始端口(startPort)不能为空(null)。规则内容为：{0}。",
     "arguments": [
       "JSONObjectUtil.toJsonString(ao)"
     ],
@@ -3029,7 +3029,7 @@
   {
     "raw": "invalid startPort[%s]. Valid range is [0, 65535]. rule dump: %s",
     "en_US": "invalid startPort[{0}]. Valid range is [0, 65535]. rule dump: {1}",
-    "zh_CN": "",
+    "zh_CN": "无效的起始端口(startPort)[{0}]。有效的范围为[0,65535]。规则内容为：{1}。",
     "arguments": [
       "ao.getStartPort()",
       "JSONObjectUtil.toJsonString(ao)"
@@ -3040,7 +3040,7 @@
   {
     "raw": "invalid ICMP type[%s]. Valid type is [-1, 255]. rule dump: %s",
     "en_US": "invalid ICMP type[{0}]. Valid type is [-1, 255]. rule dump: {1}",
-    "zh_CN": "",
+    "zh_CN": "无效的ICMP类型[{0}]。有效的类型为[-1,255]。规则内容为：{1}。",
     "arguments": [
       "ao.getStartPort()",
       "JSONObjectUtil.toJsonString(ao)"
@@ -3051,7 +3051,7 @@
   {
     "raw": "invalid endPort[%s]. Valid range is [0, 65535]. rule dump: %s",
     "en_US": "invalid endPort[{0}]. Valid range is [0, 65535]. rule dump: {1}",
-    "zh_CN": "",
+    "zh_CN": "无效的结束端口(endPort)[{0}]。有效的范围为[0,65535]。规则内容为：{1}。",
     "arguments": [
       "ao.getEndPort()",
       "JSONObjectUtil.toJsonString(ao)"
@@ -3062,7 +3062,7 @@
   {
     "raw": "invalid ICMP code[%s]. Valid range is [-1, 3]. rule dump: %s",
     "en_US": "invalid ICMP code[{0}]. Valid range is [-1, 3]. rule dump: {1}",
-    "zh_CN": "",
+    "zh_CN": "无效的ICMP编码[{0}]。有效的范围为[-1,3]。规则内容为：{1}。",
     "arguments": [
       "ao.getEndPort()",
       "JSONObjectUtil.toJsonString(ao)"
@@ -3073,7 +3073,7 @@
   {
     "raw": "invalid CIDR[%s]. rule dump: %s",
     "en_US": "invalid CIDR[{0}]. rule dump: {1}",
-    "zh_CN": "",
+    "zh_CN": "无效的CIDR[{0}]。规则内容为：{1}。",
     "arguments": [
       "ao.getAllowedCidr()",
       "JSONObjectUtil.toJsonString(ao)"
@@ -3084,7 +3084,7 @@
   {
     "raw": "rule should not be duplicated. rule dump: %s",
     "en_US": "rule should not be duplicated. rule dump: {0}",
-    "zh_CN": "",
+    "zh_CN": "规则不应该重复。规则内容为：{0}。",
     "arguments": [
       "JSONObjectUtil.toJsonString(msg.getRules().get(j))"
     ],
@@ -3094,7 +3094,7 @@
   {
     "raw": "rule exist. rule dump: %s",
     "en_US": "rule exist. rule dump: {0}",
-    "zh_CN": "",
+    "zh_CN": "规则已经存在。规则内容为：{0}。",
     "arguments": [
       "JSONObjectUtil.toJsonString(sao)"
     ],
@@ -3104,7 +3104,7 @@
   {
     "raw": "networkServices cannot be empty",
     "en_US": "networkServices cannot be empty",
-    "zh_CN": "",
+    "zh_CN": "网络服务(networkServices)不能为空。",
     "arguments": [],
     "line": 41,
     "fileName": "src/main/java/org/zstack/network/service/NetworkServiceApiInterceptor.java"
@@ -3112,7 +3112,7 @@
   {
     "raw": "network service for provider[uuid:%s] must be specified",
     "en_US": "network service for provider[uuid:{0}] must be specified",
-    "zh_CN": "",
+    "zh_CN": "服务提供器[uuid:{0}]的网络服务必须被指定。",
     "arguments": [
       "puuid"
     ],
@@ -3122,7 +3122,7 @@
   {
     "raw": "cannot find network service provider[uuid:%s] or it provides no services",
     "en_US": "cannot find network service provider[uuid:{0}] or it provides no services",
-    "zh_CN": "",
+    "zh_CN": "无法找到网络服务提供器[uuid:{0}]或它没有提供任何服务。",
     "arguments": [
       "puuid"
     ],
@@ -3132,7 +3132,7 @@
   {
     "raw": "network service provider[uuid:%s] doesn\u0027t provide services%s",
     "en_US": "network service provider[uuid:{0}] doesn\u0027t provide services{1}",
-    "zh_CN": "",
+    "zh_CN": "网络服务提供器[uuid:{0}]无法提供服务{1}。",
     "arguments": [
       "puuid",
       "notSupported"
@@ -3143,7 +3143,7 @@
   {
     "raw": "there has been a network service[%s] attached to L3 network[uuid:%s]",
     "en_US": "there has been a network service[{0}] attached to L3 network[uuid:{1}]",
-    "zh_CN": "",
+    "zh_CN": "已经有一个网络服务[{0}]被挂载到L3网络[uuid:{1}]。",
     "arguments": [
       "type",
       "msg.getL3NetworkUuid()"
@@ -3154,7 +3154,7 @@
   {
     "raw": "L3Network[uuid:%s] doesn\u0027t have network service[type:%s] enabled or no provider provides this network service",
     "en_US": "L3Network[uuid:{0}] doesn\u0027t have network service[type:{1}] enabled or no provider provides this network service",
-    "zh_CN": "",
+    "zh_CN": "L3网络[uuid:{0}]上没有网络服务[type:{1}]被启用或没有服务提供器提供该网络服务。",
     "arguments": [
       "l3NetworkUuid",
       "serviceType"
@@ -3165,7 +3165,7 @@
   {
     "raw": "either eipUuid or vipUuid must be set",
     "en_US": "either eipUuid or vipUuid must be set",
-    "zh_CN": "",
+    "zh_CN": "eipUuid或vipUuid必须有一个被指定。",
     "arguments": [],
     "line": 66,
     "fileName": "src/main/java/org/zstack/network/service/eip/EipApiInterceptor.java"
@@ -3173,7 +3173,7 @@
   {
     "raw": "eip[uuid:%s] is not in state of Enabled, cannot get attachable vm nic",
     "en_US": "eip[uuid:{0}] is not in state of Enabled, cannot get attachable vm nic",
-    "zh_CN": "",
+    "zh_CN": "eip[uuid:{0}]没有被启用，无法获取可挂载的虚拟机网卡。",
     "arguments": [
       "msg.getEipUuid()"
     ],
@@ -3183,7 +3183,7 @@
   {
     "raw": "eip[uuid:%s] has attached to vm nic[uuid:%s], cannot get attachable vm nic",
     "en_US": "eip[uuid:{0}] has attached to vm nic[uuid:{1}], cannot get attachable vm nic",
-    "zh_CN": "",
+    "zh_CN": "eip[uuid:{0}]已经被挂载到虚拟机网卡[uuid:{1}]，无法获取可挂载的虚拟机网卡。",
     "arguments": [
       "msg.getEipUuid()",
       "vmNicUuid"
@@ -3194,7 +3194,7 @@
   {
     "raw": "eip[uuid:%s] has attached to another vm nic[uuid:%s], can\u0027t attach again",
     "en_US": "eip[uuid:{0}] has attached to another vm nic[uuid:{1}], can\u0027t attach again",
-    "zh_CN": "",
+    "zh_CN": "eip[uuid:{0}]已经被挂载到另外一台虚拟机网卡[uuid:{1}]，无法再次挂载。",
     "arguments": [
       "msg.getEipUuid()",
       "vmNicUuid"
@@ -3205,7 +3205,7 @@
   {
     "raw": "eip[uuid: %s] can only be attached when state is %s, current state is %s",
     "en_US": "eip[uuid: {0}] can only be attached when state is {1}, current state is {2}",
-    "zh_CN": "",
+    "zh_CN": "eip[uuid:{0}]只有在状态(state)为{1}的情况下可以被挂载，当前状态是{2}。",
     "arguments": [
       "msg.getEipUuid()",
       "EipState.Enabled",
@@ -3217,7 +3217,7 @@
   {
     "raw": "guest l3Network of vm nic[uuid:%s] and vip l3Network of EIP[uuid:%s] are the same network",
     "en_US": "guest l3Network of vm nic[uuid:{0}] and vip l3Network of EIP[uuid:{1}] are the same network",
-    "zh_CN": "",
+    "zh_CN": "虚拟机网卡[uuid:{0}]的客户L3网络，和EIP[uuid:{1}]的虚拟ip L3网络是同一个网络。",
     "arguments": [
       "msg.getVmNicUuid()",
       "msg.getEipUuid()"
@@ -3228,7 +3228,7 @@
   {
     "raw": "eip[uuid:%s] has not attached to any vm nic",
     "en_US": "eip[uuid:{0}] has not attached to any vm nic",
-    "zh_CN": "",
+    "zh_CN": "eip[uuid:{0}]还没有被挂载到任意虚拟机网卡。",
     "arguments": [
       "msg.getUuid()"
     ],
@@ -3238,7 +3238,7 @@
   {
     "raw": "overlap public and private subnets. The subnet of EIP[%s] is an overlap with the subnet[%s/%s] of the VM nic[uuid:%s].",
     "en_US": "overlap public and private subnets. The subnet of EIP[{0}] is an overlap with the subnet[{1}/{2}] of the VM nic[uuid:{3}].",
-    "zh_CN": "",
+    "zh_CN": "公共网络和私有网络的子网重叠。EIP[{0}]的子网与虚拟机网卡[{uuid:3}]的子网[{1}/{2}]重叠。",
     "arguments": [
       "eipIp",
       "gw",
@@ -3251,7 +3251,7 @@
   {
     "raw": "the vm[uuid:%s] that the EIP is about to attach is already on the public network[uuid:%s] from which the vip[uuid:%s, name:%s, ip:%s] comes",
     "en_US": "the vm[uuid:{0}] that the EIP is about to attach is already on the public network[uuid:{1}] from which the vip[uuid:{2}, name:{3}, ip:{4}] comes",
-    "zh_CN": "",
+    "zh_CN": "EIP将要挂载到的虚拟机[uuid:{0}]已经处于公共网络[uuid:{1}]上，该网络上已有vip[uuid:{2}, name:{3}, ip:{4}]。",
     "arguments": [
       "vmUuid",
       "vip.getL3NetworkUuid()",
@@ -3265,7 +3265,7 @@
   {
     "raw": "vip[uuid:%s] has been occupied other network service entity[%s]",
     "en_US": "vip[uuid:{0}] has been occupied other network service entity[{1}]",
-    "zh_CN": "",
+    "zh_CN": "vip[uuid:{0}]已经被其他网络服务实体[{1}]占用。",
     "arguments": [
       "msg.getVipUuid()",
       "vip.getUseFor()"
@@ -3276,7 +3276,7 @@
   {
     "raw": "vip[uuid:%s] is not in state[%s], current state is %s",
     "en_US": "vip[uuid:{0}] is not in state[{1}], current state is {2}",
-    "zh_CN": "",
+    "zh_CN": "vip[uuid:{0}]不处于状态[{1}]中，当前状态[{2}]。",
     "arguments": [
       "msg.getVipUuid()",
       "VipState.Enabled",
@@ -3288,7 +3288,7 @@
   {
     "raw": "unable to attach the L3 network[uuid:%s, name:%s] to the vm[uuid:%s, name:%s], because the L3 network is providing EIP to one of the vm\u0027s nic",
     "en_US": "unable to attach the L3 network[uuid:{0}, name:{1}] to the vm[uuid:{2}, name:{3}], because the L3 network is providing EIP to one of the vm\u0027s nic",
-    "zh_CN": "",
+    "zh_CN": "无法将L3网络[uuid:{0}, name:{1}]挂载到虚拟机[uuid:{2}, name:{3}]，因为L3网络正在为虚拟机上的一块网卡提供EIP。",
     "arguments": [
       "l3.getUuid()",
       "l3.getName()",
@@ -3301,7 +3301,7 @@
   {
     "raw": "l3 network uuid cannot be null",
     "en_US": "l3 network uuid cannot be null",
-    "zh_CN": "",
+    "zh_CN": "L3网络的uuid不能为空。",
     "arguments": [],
     "line": 242,
     "fileName": "src/main/java/org/zstack/network/service/flat/FlatDhcpBackend.java"
@@ -3309,7 +3309,7 @@
   {
     "raw": "cannot configure DHCP for vm[uuid:%s] on the destination host[uuid:%s]",
     "en_US": "cannot configure DHCP for vm[uuid:{0}] on the destination host[uuid:{1}]",
-    "zh_CN": "",
+    "zh_CN": "无法为目标物理机[uuid:{1}]上的虚拟机[uuid:{0}]配置DHCP。",
     "arguments": [
       "inv.getUuid()",
       "destHostUuid"
@@ -3320,7 +3320,7 @@
   {
     "raw": "unable to apply the EIP operation for the the vm[uuid:%s, state:%s], because cannot find the VM\u0027s hostUUid",
     "en_US": "unable to apply the EIP operation for the the vm[uuid:{0}, state:{1}], because cannot find the VM\u0027s hostUUid",
-    "zh_CN": "",
+    "zh_CN": "无法为虚拟机[uuid:{0}, state:{1}]应用EIP操作，因为无法找到该虚拟机的物理机uuid(hostUuid)。",
     "arguments": [
       "vmUuid",
       "vm.getState()"
@@ -3331,7 +3331,7 @@
   {
     "raw": "the vip[uuid:%s] is occupied by another load balancer[uuid:%s]",
     "en_US": "the vip[uuid:{0}] is occupied by another load balancer[uuid:{1}]",
-    "zh_CN": "",
+    "zh_CN": "vip[uuid:{0}]已经被另一个负载均衡器[uuid:{1}]占用。",
     "arguments": [
       "msg.getVipUuid()",
       "lbuuid"
@@ -3342,7 +3342,7 @@
   {
     "raw": "the vip[uuid:%s] is occupied by another service[%s]",
     "en_US": "the vip[uuid:{0}] is occupied by another service[{1}]",
-    "zh_CN": "",
+    "zh_CN": "vip[uuid:{0}]已经被另一个服务[uuid:{1}]占用。",
     "arguments": [
       "msg.getVipUuid()",
       "useFor"
@@ -3353,7 +3353,7 @@
   {
     "raw": "vm nics[uuids:%s] are not on the same L3 network. they are on L3 networks[uuids:%s]",
     "en_US": "vm nics[uuids:{0}] are not on the same L3 network. they are on L3 networks[uuids:{1}]",
-    "zh_CN": "",
+    "zh_CN": "虚拟机网卡[uuids:{0}]不在同一个L3网络上。它们分别处于[uuids:{1}]这些L3网络上。",
     "arguments": [
       "msg.getVmNicUuids()",
       "l3Uuids"
@@ -3364,7 +3364,7 @@
   {
     "raw": "the L3 network[uuid:%s] of the vm nics has no network service[%s] enabled",
     "en_US": "the L3 network[uuid:{0}] of the vm nics has no network service[{1}] enabled",
-    "zh_CN": "",
+    "zh_CN": "虚拟机网卡所在的L3网络[uuid:{0}]没有启用网络服务[{1}]。",
     "arguments": [
       "l3Uuid",
       "LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING"
@@ -3375,7 +3375,7 @@
   {
     "raw": "the vm nics[uuid:%s] are already on the load balancer listener[uuid:%s]",
     "en_US": "the vm nics[uuid:{0}] are already on the load balancer listener[uuid:{1}]",
-    "zh_CN": "",
+    "zh_CN": "虚拟机网卡[uuid:{0}]已经处于负载均衡监听器[uuid:{1}]上。",
     "arguments": [
       "existingNics",
       "msg.getListenerUuid()"
@@ -3386,7 +3386,7 @@
   {
     "raw": "conflict loadBalancerPort[%s], a listener[uuid:%s] has used that port",
     "en_US": "conflict loadBalancerPort[{0}], a listener[uuid:{1}] has used that port",
-    "zh_CN": "",
+    "zh_CN": "冲突的负载均衡器端口(loadBalancerPort)[{0}]，一个监听器[uuid:{1}]已经使用了该端口。",
     "arguments": [
       "msg.getLoadBalancerPort()",
       "luuid"
@@ -3397,7 +3397,7 @@
   {
     "raw": "conflict instancePort[%s], a listener[uuid:%s] has used that port",
     "en_US": "conflict instancePort[{0}], a listener[uuid:{1}] has used that port",
-    "zh_CN": "",
+    "zh_CN": "冲突的实例端口(instancePort)[{0}]，一个监听器[uuid:{1}]已经使用了该端口。",
     "arguments": [
       "msg.getInstancePort()",
       "luuid"
@@ -3408,7 +3408,7 @@
   {
     "raw": "the L3 network of vm nic[uuid:%s] doesn\u0027t have load balancer service enabled",
     "en_US": "the L3 network of vm nic[uuid:{0}] doesn\u0027t have load balancer service enabled",
-    "zh_CN": "",
+    "zh_CN": "虚拟机网卡[uuid:{0}]的L3网络没有启用负载均衡服务。",
     "arguments": [
       "msg.getVmNicUuids().get(0)"
     ],
@@ -3418,7 +3418,7 @@
   {
     "raw": "service provider type mismatching. The load balancer[uuid:%s] is provided by the service provider[type:%s], but the L3 network of vm nic[uuid:%s] is enabled with the service provider[type: %s]",
     "en_US": "service provider type mismatching. The load balancer[uuid:{0}] is provided by the service provider[type:{1}], but the L3 network of vm nic[uuid:{2}] is enabled with the service provider[type: {3}]",
-    "zh_CN": "",
+    "zh_CN": "网络服务提供器的类型不匹配。负载均衡器[uuid:{0}]由服务提供器[type:{1}]提供，但虚拟机网卡[uuid:{2}]的L3网络启用服务器类型为[type: {3}]。",
     "arguments": [
       "self.getUuid()",
       "self.getProviderType()",
@@ -3431,7 +3431,7 @@
   {
     "raw": "cannot find the load balancer[uuid:%s]",
     "en_US": "cannot find the load balancer[uuid:{0}]",
-    "zh_CN": "",
+    "zh_CN": "无法找到负载均衡器[uuid:{0}]。",
     "arguments": [
       "msg.getLoadBalancerUuid()"
     ],
@@ -3441,7 +3441,7 @@
   {
     "raw": "cannot delete the system tag[%s]. The load balancer plugin relies on it, you can only update it",
     "en_US": "cannot delete the system tag[{0}]. The load balancer plugin relies on it, you can only update it",
-    "zh_CN": "",
+    "zh_CN": "无法删除系统标签[{0}]。负载均衡器插件依赖于该标签，该标签只能被更新。",
     "arguments": [
       "tag.getTag()"
     ],
@@ -3451,7 +3451,7 @@
   {
     "raw": "invalid balance algorithm[%s], valid algorithms are %s",
     "en_US": "invalid balance algorithm[{0}], valid algorithms are {1}",
-    "zh_CN": "",
+    "zh_CN": "无效的均衡算法[{0}]，有效的为[{1}]。",
     "arguments": [
       "algorithm",
       "LoadBalancerConstants.BALANCE_ALGORITHMS"
@@ -3462,7 +3462,7 @@
   {
     "raw": "invalid unhealthy threshold[%s], %s is not a number",
     "en_US": "invalid unhealthy threshold[{0}], {1} is not a number",
-    "zh_CN": "",
+    "zh_CN": "无效的不健康阈值[{0}]，[{1}]不是一个数字。",
     "arguments": [
       "systemTag",
       "s"
@@ -3473,7 +3473,7 @@
   {
     "raw": "invalid healthy threshold[%s], %s is not a number",
     "en_US": "invalid healthy threshold[{0}], {1} is not a number",
-    "zh_CN": "",
+    "zh_CN": "无效的健康阈值[{0}]，[{1}]不是一个数字。",
     "arguments": [
       "systemTag",
       "s"
@@ -3484,7 +3484,7 @@
   {
     "raw": "invalid healthy timeout[%s], %s is not a number",
     "en_US": "invalid healthy timeout[{0}], {1} is not a number",
-    "zh_CN": "",
+    "zh_CN": "无效的健康超时[{0}]，[{1}]不是一个数字。",
     "arguments": [
       "systemTag",
       "s"
@@ -3495,7 +3495,7 @@
   {
     "raw": "invalid connection idle timeout[%s], %s is not a number",
     "en_US": "invalid connection idle timeout[{0}], {1} is not a number",
-    "zh_CN": "",
+    "zh_CN": "无效的连接空闲超时[{0}]，[{1}]不是一个数字。",
     "arguments": [
       "systemTag",
       "s"
@@ -3506,7 +3506,7 @@
   {
     "raw": "invalid health check interval[%s], %s is not a number",
     "en_US": "invalid health check interval[{0}], {1} is not a number",
-    "zh_CN": "",
+    "zh_CN": "无效的健康检查间隔[{0}]，[{1}]不是一个数字。",
     "arguments": [
       "systemTag",
       "s"
@@ -3517,7 +3517,7 @@
   {
     "raw": "invalid max connection[%s], %s is not a number",
     "en_US": "invalid max connection[{0}], {1} is not a number",
-    "zh_CN": "",
+    "zh_CN": "无效的最大连接[{0}]，[{1}]不是一个数字。",
     "arguments": [
       "systemTag",
       "s"
@@ -3528,7 +3528,7 @@
   {
     "raw": "invalid health target[%s], the format is targetCheckProtocol:port, for example, tcp:default",
     "en_US": "invalid health target[{0}], the format is targetCheckProtocol:port, for example, tcp:default",
-    "zh_CN": "",
+    "zh_CN": "无效的健康检查目标[{0}]，格式为[目标检查协议(targetCheckProtocol):端口(port)], 例如[tcp:default]。",
     "arguments": [
       "systemTag"
     ],
@@ -3538,7 +3538,7 @@
   {
     "raw": "invalid health target[%s], the target checking protocol[%s] is invalid, valid protocols are %s",
     "en_US": "invalid health target[{0}], the target checking protocol[{1}] is invalid, valid protocols are {2}",
-    "zh_CN": "",
+    "zh_CN": "无效的健康检查目标[{0}]，目标检查协议无效[{1}]，有效的为[{2}]。",
     "arguments": [
       "systemTag",
       "protocol",
@@ -3550,7 +3550,7 @@
   {
     "raw": "invalid invalid health target[%s], port[%s] is not a number",
     "en_US": "invalid invalid health target[{0}], port[{1}] is not a number",
-    "zh_CN": "",
+    "zh_CN": "无效的健康检查目标[{0}]，端口[{1}]不是一个数字。",
     "arguments": [
       "systemTag",
       "port"
@@ -3561,7 +3561,7 @@
   {
     "raw": "invalid invalid health target[%s], port[%s] is not in the range of [1, 65535]",
     "en_US": "invalid invalid health target[{0}], port[{1}] is not in the range of [1, 65535]",
-    "zh_CN": "",
+    "zh_CN": "无效的无效健康检查目标[{0}]，端口[{1}]不在范围[1, 65535]内。",
     "arguments": [
       "systemTag",
       "port"
@@ -3572,7 +3572,7 @@
   {
     "raw": "Port forwarding rule[uuid:%s] is not in state of Enabled, current state is %s",
     "en_US": "Port forwarding rule[uuid:{0}] is not in state of Enabled, current state is {1}",
-    "zh_CN": "",
+    "zh_CN": "端口转发规则[uuid:{0}]未启用，当前状态[{1}]。",
     "arguments": [
       "msg.getRuleUuid()",
       "state"
@@ -3583,7 +3583,7 @@
   {
     "raw": "Port forwarding rule[uuid:%s] has been attached to vm nic[uuid:%s] already",
     "en_US": "Port forwarding rule[uuid:{0}] has been attached to vm nic[uuid:{1}] already",
-    "zh_CN": "",
+    "zh_CN": "端口转发规则[uuid:{0}]已经被挂载到虚拟机网卡[uuid:{1}]。",
     "arguments": [
       "msg.getRuleUuid()",
       "vmNicUuid"
@@ -3594,7 +3594,7 @@
   {
     "raw": "port forwarding rule rule[uuid:%s] has not been attached to any vm nic, can\u0027t detach",
     "en_US": "port forwarding rule rule[uuid:{0}] has not been attached to any vm nic, can\u0027t detach",
-    "zh_CN": "",
+    "zh_CN": "端口转发规则[uuid:{0}]尚未被挂载到任何虚拟机网卡，无法卸载。",
     "arguments": [
       "msg.getUuid()"
     ],
@@ -3604,7 +3604,7 @@
   {
     "raw": "port forwarding rule[uuid:%s] has been attached to vm nic[uuid:%s], can\u0027t attach again",
     "en_US": "port forwarding rule[uuid:{0}] has been attached to vm nic[uuid:{1}], can\u0027t attach again",
-    "zh_CN": "",
+    "zh_CN": "端口转发规则[uuid:{0}]已经被挂载到虚拟机网卡[uuid:{1}]，无法再次挂载。",
     "arguments": [
       "msg.getRuleUuid()",
       "vmNicUuid"
