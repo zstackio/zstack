@@ -292,7 +292,7 @@ public class HostCapacityReserveManagerImpl implements HostCapacityReserveManage
         List<HostVO> ret = new ArrayList<>(candidates.size());
         for (HostVO hvo : candidates) {
             ReservedHostCapacity hc = reserves.get(hvo.getUuid());
-            if (hvo.getCapacity().getAvailableMemory() - hc.getReservedMemoryCapacity() > ratioMgr.calculateMemoryByRatio(hvo.getUuid(), requiredMemory)) {
+            if (hvo.getCapacity().getAvailableMemory() - hc.getReservedMemoryCapacity() >= ratioMgr.calculateMemoryByRatio(hvo.getUuid(), requiredMemory)) {
                 ret.add(hvo);
             } else {
                 if (logger.isTraceEnabled()) {
