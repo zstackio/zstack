@@ -49,7 +49,8 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/security-groups",
         method = HttpMethod.POST,
-        responseClass = APICreateSecurityGroupEvent.class
+        responseClass = APICreateSecurityGroupEvent.class,
+        parameterName = "params"
 )
 public class APICreateSecurityGroupMsg extends APICreateMessage {
     /**
