@@ -69,7 +69,9 @@ public abstract class GarbageCollector {
         logger.debug(String.format("[GC] a job[name:%s, id:%s] completes successfully", NAME, uuid));
         canceller.run();
 
-        SQL.New(GarbageCollectorVO.class).set(GarbageCollectorVO_.status, GCStatus.Done).update();
+        SQL.New(GarbageCollectorVO.class)
+                .eq(GarbageCollectorVO_.uuid, uuid)
+                .set(GarbageCollectorVO_.status, GCStatus.Done).update();
         gcMgr.deregisterGC(this);
     }
 
@@ -80,7 +82,9 @@ public abstract class GarbageCollector {
         logger.debug(String.format("[GC] a job[name:%s, id:%s] is cancelled by itself", NAME, uuid));
         canceller.run();
 
-        SQL.New(GarbageCollectorVO.class).set(GarbageCollectorVO_.status, GCStatus.Done).update();
+        SQL.New(GarbageCollectorVO.class)
+                .eq(GarbageCollectorVO_.uuid, uuid)
+                .set(GarbageCollectorVO_.status, GCStatus.Done).update();
 
         gcMgr.deregisterGC(this);
     }
