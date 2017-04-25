@@ -16,7 +16,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIDeleteLoadBalancerEvent.class
 )
 public class APIDeleteLoadBalancerMsg extends APIDeleteMessage implements LoadBalancerMessage {
-    @APIParam(resourceType = LoadBalancerVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = LoadBalancerVO.class, successIfResourceNotExisting = true, checkAccount = true, operationTarget = true)
     private String uuid;
 
     public String getUuid() {
