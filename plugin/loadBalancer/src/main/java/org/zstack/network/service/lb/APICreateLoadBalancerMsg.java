@@ -18,7 +18,8 @@ import java.util.List;
 @RestRequest(
         path = "/load-balancers",
         method = HttpMethod.POST,
-        responseClass = APICreateLoadBalancerEvent.class
+        responseClass = APICreateLoadBalancerEvent.class,
+        parameterName = "params"
 )
 public class APICreateLoadBalancerMsg extends APICreateMessage {
     @APIParam(maxLength = 255)
