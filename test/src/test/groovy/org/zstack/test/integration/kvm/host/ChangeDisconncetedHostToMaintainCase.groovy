@@ -71,7 +71,7 @@ class ChangeDisconncetedHostToMaintainCase extends SubCase{
                 uuid = host.uuid
             }
         }
-        retryInSecs(3,1){
+        retryInSecs {
             HostVO hvo = dbf.findByUuid(host.getUuid(), HostVO.class)
             assert HostStatus.Disconnected == hvo.getStatus()
             VmInstanceVO vmvo = dbf.findByUuid(vm.getUuid(), VmInstanceVO.class)
