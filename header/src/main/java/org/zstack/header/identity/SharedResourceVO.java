@@ -22,7 +22,6 @@ public class SharedResourceVO {
     private String ownerAccountUuid;
 
     @Column
-    @ForeignKey(parentEntityClass = AccountVO.class, onDeleteAction = ReferenceOption.CASCADE)
     private String receiverAccountUuid;
 
     @Column

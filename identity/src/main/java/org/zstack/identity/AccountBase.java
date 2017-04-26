@@ -466,6 +466,10 @@ public class AccountBase extends AbstractAccount {
             for (String ruuid : msg.getResourceUuids()) {
                 SharedResourceVO svo = new SharedResourceVO();
                 svo.setOwnerAccountUuid(msg.getAccountUuid());
+                //if ReceiverAccountUuid is null, entity might duplicate even there is unique index，
+                //so we set it the "*" to avoid it.
+                //and modify foreign key to trigger
+                svo.setReceiverAccountUuid("*");
                 svo.setResourceType(uuidType.get(ruuid));
                 svo.setResourceUuid(ruuid);
                 svo.setToPublic(true);
