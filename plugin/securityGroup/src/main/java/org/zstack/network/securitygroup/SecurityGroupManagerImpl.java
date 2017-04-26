@@ -841,8 +841,8 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         dbf.persistCollection(refs);
 
         SimpleQuery<VmInstanceVO> vmq = dbf.createQuery(VmInstanceVO.class);
-        q.add(VmInstanceVO_.uuid, Op.IN, vmUuids);
-        q.add(VmInstanceVO_.state, Op.EQ, VmInstanceState.Running);
+        vmq.add(VmInstanceVO_.uuid, Op.IN, vmUuids);
+        vmq.add(VmInstanceVO_.state, Op.EQ, VmInstanceState.Running);
         boolean triggerApplyRules = vmq.count() > 0;
 
         if (triggerApplyRules) {
