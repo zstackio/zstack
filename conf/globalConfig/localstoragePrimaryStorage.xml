@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<globalConfig xmlns="http://zstack.org/schema/zstack">
+	<config>
+		<name>liveMigrationWithStorage.allow</name>
+		<description>Enable to do live migration on local storage primary storage.</description>
+		<defaultValue>false</defaultValue>
+		<category>localStoragePrimaryStorage</category>
+		<type>java.lang.Boolean</type>
+	</config>
+</globalConfig>

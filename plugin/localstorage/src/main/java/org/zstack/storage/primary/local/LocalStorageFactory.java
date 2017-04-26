@@ -41,9 +41,6 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
-import static org.zstack.core.Platform.argerr;
-import static org.zstack.core.Platform.operr;
-
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -52,6 +49,8 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
+import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
@@ -761,6 +760,12 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
     @Override
     @Transactional(readOnly = true, noRollbackForClassName = {"org.zstack.header.errorcode.OperationFailureException"})
     public void preVmMigration(VmInstanceInventory vm) {
+        if (!LocalStoragePrimaryStorageGlobalConfig.ALLOW_LIVE_MIGRATION.value(Boolean.class)) {
+            refuseLiveMigrationForLocalStorage(vm);
+        }
+    }
+
+    private void refuseLiveMigrationForLocalStorage(VmInstanceInventory vm) {
         List<String> volUuids = CollectionUtils.transformToList(vm.getAllVolumes(), new Function<String, VolumeInventory>() {
             @Override
             public String call(VolumeInventory arg) {
@@ -780,7 +785,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         Long count = q.getSingleResult();
         if (count > 0) {
             throw new OperationFailureException(operr("unable to live migrate with local storage. The vm[uuid:%s] has volumes on local storage," +
-                            "to protect your data, please stop the vm and do the volume migration", vm.getUuid()));
+                    "to protect your data, please stop the vm and do the volume migration", vm.getUuid()));
         }
     }
 
