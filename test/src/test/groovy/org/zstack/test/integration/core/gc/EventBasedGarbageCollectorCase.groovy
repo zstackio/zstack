@@ -1,5 +1,6 @@
 package org.zstack.test.integration.core.gc
 
+import org.apache.commons.collections.map.HashedMap
 import org.zstack.core.Platform
 import org.zstack.core.cloudbus.EventFacade
 import org.zstack.core.db.DatabaseFacade
@@ -70,7 +71,7 @@ class EventBasedGarbageCollectorCase extends SubCase {
         }
     }
 
-    static Closure<EventBasedGCInDbBehavior> testLogicForJobLoadedFromDb
+    static Map<String, Closure<EventBasedGCInDbBehavior>> testLogicForJobLoadedFromDbMap = new HashedMap<String, Closure<EventBasedGCInDbBehavior>>()
 
     static enum EventBasedGCInDbBehavior {
         SUCCESS,
@@ -101,7 +102,9 @@ class EventBasedGarbageCollectorCase extends SubCase {
 
         @Override
         protected void triggerNow(GCCompletion completion) {
-            EventBasedGCInDbBehavior ret = testLogicForJobLoadedFromDb(this)
+
+            assert null != testLogicForJobLoadedFromDbMap.get(name)
+            EventBasedGCInDbBehavior ret = testLogicForJobLoadedFromDbMap.get(name)(this)
 
             if (ret == EventBasedGCInDbBehavior.SUCCESS) {
                 completion.success()
@@ -115,7 +118,7 @@ class EventBasedGarbageCollectorCase extends SubCase {
         }
     }
 
-    static Closure<EventBasedGCInDbBehavior> testTriggerNowForJobLoadedFromDb
+    static Map<String, Closure<EventBasedGCInDbBehavior>> testTriggerNowForJobLoadedFromDbMap = new HashedMap<String, Closure<EventBasedGCInDbBehavior>>()
 
     static class EventBasedGCInDbTriggerNow extends EventBasedGarbageCollector {
         Closure trigger = { true }
@@ -140,7 +143,8 @@ class EventBasedGarbageCollectorCase extends SubCase {
 
         @Override
         protected void triggerNow(GCCompletion completion) {
-            EventBasedGCInDbBehavior ret = testTriggerNowForJobLoadedFromDb(this)
+            assert null != testTriggerNowForJobLoadedFromDbMap.get(name)
+            EventBasedGCInDbBehavior ret = testTriggerNowForJobLoadedFromDbMap.get(name)(this)
 
             if (ret == EventBasedGCInDbBehavior.SUCCESS) {
                 completion.success()
@@ -379,7 +383,8 @@ class EventBasedGarbageCollectorCase extends SubCase {
         vo.setManagementNodeUuid(null)
         dbf.update(vo)
 
-        testLogicForJobLoadedFromDb = { return EventBasedGCInDbBehavior.CANCEL }
+        Closure<EventBasedGCInDbBehavior> testLogicForJobLoadedFromDb = { return EventBasedGCInDbBehavior.CANCEL }
+        testLogicForJobLoadedFromDbMap.put(gc.name,testLogicForJobLoadedFromDb)
 
         // load orphan jobs
         gcMgr.managementNodeReady()
@@ -407,7 +412,8 @@ class EventBasedGarbageCollectorCase extends SubCase {
         vo.setManagementNodeUuid(null)
         dbf.update(vo)
 
-        testLogicForJobLoadedFromDb = { return EventBasedGCInDbBehavior.FAIL }
+        Closure<EventBasedGCInDbBehavior> testLogicForJobLoadedFromDb = { return EventBasedGCInDbBehavior.FAIL }
+        testLogicForJobLoadedFromDbMap.put(gc.name,testLogicForJobLoadedFromDb)
 
         // load orphan jobs
         gcMgr.managementNodeReady()
@@ -438,10 +444,11 @@ class EventBasedGarbageCollectorCase extends SubCase {
         dbf.update(vo)
 
         boolean called = false
-        testTriggerNowForJobLoadedFromDb = {
+        Closure<EventBasedGCInDbBehavior> testTriggerNowForJobLoadedFromDb = {
             called = true
             return EventBasedGCInDbBehavior.SUCCESS
         }
+        testTriggerNowForJobLoadedFromDbMap.put(gc.name, testTriggerNowForJobLoadedFromDb)
 
         // load orphan jobs
         gcMgr.managementNodeReady()
@@ -477,7 +484,7 @@ class EventBasedGarbageCollectorCase extends SubCase {
         Context ctx = null
         String loadedJobId = null
 
-        testLogicForJobLoadedFromDb = { EventBasedGCInDb g ->
+        Closure<EventBasedGCInDbBehavior> testLogicForJobLoadedFromDb = { EventBasedGCInDb g ->
             name = g.name
             description = g.description
             ctx = g.context
@@ -487,6 +494,7 @@ class EventBasedGarbageCollectorCase extends SubCase {
             latch.countDown()
             return EventBasedGCInDbBehavior.SUCCESS
         }
+        testLogicForJobLoadedFromDbMap.put(gc.name,testLogicForJobLoadedFromDb)
 
         // load orphan jobs
         gcMgr.managementNodeReady()
@@ -526,7 +534,8 @@ class EventBasedGarbageCollectorCase extends SubCase {
 
         TimeUnit.SECONDS.sleep(2)
 
-        testLogicForJobLoadedFromDb = { return EventBasedGCInDbBehavior.SUCCESS }
+        Closure<EventBasedGCInDbBehavior> testLogicForJobLoadedFromDb = { return EventBasedGCInDbBehavior.SUCCESS }
+        testLogicForJobLoadedFromDbMap.put(gc.name,testLogicForJobLoadedFromDb)
 
         evtf.fire(EVENT_PATH, "trigger it")
 
