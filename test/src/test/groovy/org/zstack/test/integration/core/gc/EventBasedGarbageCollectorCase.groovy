@@ -101,7 +101,6 @@ class EventBasedGarbageCollectorCase extends SubCase {
 
         @Override
         protected void triggerNow(GCCompletion completion) {
-            assert null != testLogicForJobLoadedFromDb
 
             EventBasedGCInDbBehavior ret = testLogicForJobLoadedFromDb(this)
 
