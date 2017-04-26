@@ -371,8 +371,8 @@ class EventBasedGarbageCollectorCase extends SubCase {
     void testLoadedOrphanJobCancel() {
         // create GC job just in the database
         def gc = new EventBasedGCInDb()
-        gc.name = "test"
-        gc.NAME = "testLoadedOrphanJobSuccess"
+        gc.name = "testLoadedOrphanJobCancel"
+        gc.NAME = "testLoadedOrphanJobCancel"
         gc.description = "description"
         gc.context = new Context()
         gc.context.text = "something"
@@ -400,8 +400,8 @@ class EventBasedGarbageCollectorCase extends SubCase {
     void testLoadedOrphanJobFailure() {
         // create GC job just in the database
         def gc = new EventBasedGCInDb()
-        gc.name = "test"
-        gc.NAME = "testLoadedOrphanJobSuccess"
+        gc.name = "testLoadedOrphanJobFailure"
+        gc.NAME = "testLoadedOrphanJobFailure"
         gc.description = "description"
         gc.context = new Context()
         gc.context.text = "something"
@@ -431,7 +431,7 @@ class EventBasedGarbageCollectorCase extends SubCase {
     void testLoadedOrphanJobTriggerNow() {
         // create GC job just in the database
         def gc = new EventBasedGCInDbTriggerNow()
-        gc.name = "test"
+        gc.name = "testLoadedOrphanJobTriggerNow"
         gc.NAME = "testLoadedOrphanJobTriggerNow"
         gc.description = "description"
         gc.context = new Context()
@@ -464,7 +464,7 @@ class EventBasedGarbageCollectorCase extends SubCase {
     void testLoadedOrphanJobSuccess() {
         // create GC job just in the database
         def gc = new EventBasedGCInDb()
-        gc.name = "test"
+        gc.name = "testLoadedOrphanJobSuccess"
         gc.NAME = "testLoadedOrphanJobSuccess"
         gc.description = "description"
         gc.context = new Context()
@@ -496,19 +496,17 @@ class EventBasedGarbageCollectorCase extends SubCase {
         }
         testLogicForJobLoadedFromDbMap.put(gc.name,testLogicForJobLoadedFromDb)
 
-        // load orphan jobs
+        // load orphan jobs and run trigger
         gcMgr.managementNodeReady()
-
         evtf.fire(EVENT_PATH, "trigger it")
         latch.await(10, TimeUnit.SECONDS)
-        assert count == 1
-        assert name == gc.name
-        assert description == gc.description
-        assert ctx != null
-        assert ctx.text == gc.context.text
-
-        assert retryInSecs {
+        retryInSecs{
             return {
+                assert count == 1
+                assert name == gc.name
+                assert description == gc.description
+                assert ctx != null
+                assert ctx.text == gc.context.text
                 assert dbFindByUuid(gc.uuid, GarbageCollectorVO.class).status == GCStatus.Done
             }
         }
@@ -517,8 +515,8 @@ class EventBasedGarbageCollectorCase extends SubCase {
     void testLoadedOrphanJobScan() {
         // create GC job just in the database
         def gc = new EventBasedGCInDb()
-        gc.name = "test"
-        gc.NAME = "testLoadedOrphanJobSuccess"
+        gc.name = "testLoadedOrphanJobScan"
+        gc.NAME = "testLoadedOrphanJobScan"
         gc.description = "description"
         gc.context = new Context()
         gc.context.text = "something"
@@ -529,15 +527,11 @@ class EventBasedGarbageCollectorCase extends SubCase {
         vo.setManagementNodeUuid(null)
         dbf.update(vo)
 
-        GCGlobalConfig.SCAN_ORPHAN_JOB_INTERVAL.updateValue(1)
-        gcMgr.start()
-
-        TimeUnit.SECONDS.sleep(2)
-
         Closure<EventBasedGCInDbBehavior> testLogicForJobLoadedFromDb = { return EventBasedGCInDbBehavior.SUCCESS }
         testLogicForJobLoadedFromDbMap.put(gc.name,testLogicForJobLoadedFromDb)
 
-        evtf.fire(EVENT_PATH, "trigger it")
+        GCGlobalConfig.SCAN_ORPHAN_JOB_INTERVAL.updateValue(1)
+        gcMgr.start()
 
         assert retryInSecs {
             return {
@@ -549,7 +543,7 @@ class EventBasedGarbageCollectorCase extends SubCase {
     void testEventBasedGCCancelByApi() {
         int count = 0
         def gc = new EventBasedGC1()
-        gc.NAME = "testEventBasedGCCancel"
+        gc.NAME = "testEventBasedGCCancelByApi"
         gc.testLogic = { GCCompletion completion ->
             count ++
             completion.cancel()
