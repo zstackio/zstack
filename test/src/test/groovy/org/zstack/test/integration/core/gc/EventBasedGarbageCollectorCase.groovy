@@ -70,8 +70,6 @@ class EventBasedGarbageCollectorCase extends SubCase {
         }
     }
 
-    static Closure<EventBasedGCInDbBehavior> testLogicForJobLoadedFromDb
-
     static enum EventBasedGCInDbBehavior {
         SUCCESS,
         FAIL,
@@ -80,6 +78,8 @@ class EventBasedGarbageCollectorCase extends SubCase {
 
     static class EventBasedGCInDb extends EventBasedGarbageCollector {
         Closure trigger = { true }
+
+        Closure<EventBasedGCInDbBehavior> testLogicForJobLoadedFromDb
 
         @GC
         String name
@@ -101,6 +101,7 @@ class EventBasedGarbageCollectorCase extends SubCase {
 
         @Override
         protected void triggerNow(GCCompletion completion) {
+
             EventBasedGCInDbBehavior ret = testLogicForJobLoadedFromDb(this)
 
             if (ret == EventBasedGCInDbBehavior.SUCCESS) {
@@ -115,10 +116,10 @@ class EventBasedGarbageCollectorCase extends SubCase {
         }
     }
 
-    static Closure<EventBasedGCInDbBehavior> testTriggerNowForJobLoadedFromDb
-
     static class EventBasedGCInDbTriggerNow extends EventBasedGarbageCollector {
         Closure trigger = { true }
+
+        Closure<EventBasedGCInDbBehavior> testTriggerNowForJobLoadedFromDb
 
         @GC
         String name
@@ -140,6 +141,8 @@ class EventBasedGarbageCollectorCase extends SubCase {
 
         @Override
         protected void triggerNow(GCCompletion completion) {
+            assert null != testTriggerNowForJobLoadedFromDb
+
             EventBasedGCInDbBehavior ret = testTriggerNowForJobLoadedFromDb(this)
 
             if (ret == EventBasedGCInDbBehavior.SUCCESS) {
@@ -379,7 +382,7 @@ class EventBasedGarbageCollectorCase extends SubCase {
         vo.setManagementNodeUuid(null)
         dbf.update(vo)
 
-        testLogicForJobLoadedFromDb = { return EventBasedGCInDbBehavior.CANCEL }
+        gc.testLogicForJobLoadedFromDb = { return EventBasedGCInDbBehavior.CANCEL }
 
         // load orphan jobs
         gcMgr.managementNodeReady()
@@ -407,7 +410,7 @@ class EventBasedGarbageCollectorCase extends SubCase {
         vo.setManagementNodeUuid(null)
         dbf.update(vo)
 
-        testLogicForJobLoadedFromDb = { return EventBasedGCInDbBehavior.FAIL }
+        gc.testLogicForJobLoadedFromDb = { return EventBasedGCInDbBehavior.FAIL }
 
         // load orphan jobs
         gcMgr.managementNodeReady()
@@ -438,7 +441,7 @@ class EventBasedGarbageCollectorCase extends SubCase {
         dbf.update(vo)
 
         boolean called = false
-        testTriggerNowForJobLoadedFromDb = {
+        gc.testTriggerNowForJobLoadedFromDb = {
             called = true
             return EventBasedGCInDbBehavior.SUCCESS
         }
@@ -477,7 +480,7 @@ class EventBasedGarbageCollectorCase extends SubCase {
         Context ctx = null
         String loadedJobId = null
 
-        testLogicForJobLoadedFromDb = { EventBasedGCInDb g ->
+        gc.testLogicForJobLoadedFromDb = { EventBasedGCInDb g ->
             name = g.name
             description = g.description
             ctx = g.context
@@ -526,7 +529,7 @@ class EventBasedGarbageCollectorCase extends SubCase {
 
         TimeUnit.SECONDS.sleep(2)
 
-        testLogicForJobLoadedFromDb = { return EventBasedGCInDbBehavior.SUCCESS }
+        gc.testLogicForJobLoadedFromDb = { return EventBasedGCInDbBehavior.SUCCESS }
 
         evtf.fire(EVENT_PATH, "trigger it")
 
