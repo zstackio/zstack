@@ -786,3 +786,5 @@ FOR EACH ROW
         delete from `AccountResourceRefVO` where `resourceUuid`=OLD.`uuid` and `resourceType`='VirtualRouterInterfaceVO';
     END$$
 DELIMITER ;
+
+alter table `VirtualRouterInterfaceVO` add constraint `fkVirtualRouterInterfaceVOConnectionAccessPointVO` foreign key (`accessPointUuid`) REFERENCES `ConnectionAccessPointVO`(`uuid`) on delete cascade;

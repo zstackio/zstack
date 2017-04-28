@@ -1,5 +1,7 @@
 package org.zstack.testlib
 
+import org.zstack.header.message.Message
+
 /**
  * Created by xing5 on 2017/2/15.
  */
@@ -23,5 +25,9 @@ abstract class Spec implements Node, CreateAction, Tag, ApiHelper, DeleteAction 
 
     void simulator(String path, Closure cl) {
         envSpec.simulator(path, cl)
+    }
+
+    void message(Class<? extends Message> msgClz, Closure cl) {
+        envSpec.message(msgClz, cl)
     }
 }
