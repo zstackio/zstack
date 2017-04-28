@@ -220,40 +220,33 @@ public class SMPPrimaryStorageFactory implements PrimaryStorageFactory, CreateTe
     @Override
     public void afterDeleteHost(HostInventory inventory) {
         String clusterUuid = inventory.getClusterUuid();
-        checkClusterHostsStatus(clusterUuid);
-    }
 
-    private void checkClusterHostsStatus(String clusterUuid) {
+        List<String> hostUuids = getRemainedHostInCluster(clusterUuid, inventory.getUuid());
+        if (!hostUuids.isEmpty()) {
+            return;
+        }
+
         final List<String> psUuids = getSMPPrimaryStorageInCluster(clusterUuid);
-        if(psUuids == null || psUuids.isEmpty() || clusterUuid == null) {
+        if(psUuids == null || psUuids.isEmpty()) {
             return;
         }
 
-        final List<String> hostUuids = getConnectedHostInCluster(clusterUuid);
-        if (hostUuids.size() > 1) {
-            return;
-        }
-
-        PrimaryStorageCapacityUpdater primaryStorageCapacityUpdater;
         for (String psUuid : psUuids) {
-            primaryStorageCapacityUpdater = new PrimaryStorageCapacityUpdater(psUuid);
-            primaryStorageCapacityUpdater.run(new PrimaryStorageCapacityUpdaterRunnable() {
-                @Override
-                public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
-                    cap.setAvailablePhysicalCapacity(0L);
-                    cap.setSystemUsedCapacity(0L);
-                    cap.setTotalCapacity(0L);
-                    cap.setTotalPhysicalCapacity(0L);
-                    cap.setAvailableCapacity(0L);
-                    return cap;
-                }
-            });
+            releasePrimaryStorageCapacity(psUuid, inventory);
         }
     }
 
-    private List<String> getConnectedHostInCluster(String clusterUuid) {
+    private void releasePrimaryStorageCapacity(String psUuid, HostInventory inv) {
+        SMPRecalculatePrimaryStorageCapacityMsg msg = new SMPRecalculatePrimaryStorageCapacityMsg();
+        msg.setPrimaryStorageUuid(psUuid);
+        msg.setRelease(true);
+        bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, psUuid);
+        bus.send(msg);
+    }
+
+    private List<String> getRemainedHostInCluster(String clusterUuid, String hostUuid) {
         return Q.New(HostVO.class)
-                .select(HostVO_.uuid).eq(HostVO_.clusterUuid, clusterUuid).listValues();
+                .select(HostVO_.uuid).eq(HostVO_.clusterUuid, clusterUuid).notEq(HostVO_.uuid, hostUuid).listValues();
     }
 
     private List<String> getSMPPrimaryStorageInCluster(String clusterUuid) {

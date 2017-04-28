@@ -9,6 +9,7 @@ import org.zstack.core.config.GlobalConfigException;
 import org.zstack.core.config.GlobalConfigValidatorExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.Component;
 import org.zstack.header.core.workflow.Flow;
@@ -43,7 +44,8 @@ import java.util.concurrent.Callable;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
-public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, PrimaryStorageFactory, Component, CreateTemplateFromVolumeSnapshotExtensionPoint, RecalculatePrimaryStorageCapacityExtensionPoint, PrimaryStorageDetachExtensionPoint{
+public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, PrimaryStorageFactory, Component, CreateTemplateFromVolumeSnapshotExtensionPoint, RecalculatePrimaryStorageCapacityExtensionPoint,
+        PrimaryStorageDetachExtensionPoint, HostDeleteExtensionPoint{
     @Autowired
     private DatabaseFacade dbf;
     @Autowired
@@ -376,9 +378,32 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
 
     @Override
     public void afterRecalculatePrimaryStorageCapacity(RecalculatePrimaryStorageCapacityStruct struct) {
-        if(isNfsUnmounted(struct.getPrimaryStorageUuid())){
+        if(isNfsUnmounted(struct.getPrimaryStorageUuid()) || isHostsExsitInNfsAttachedCluster(struct.getPrimaryStorageUuid())){
             resetDefaultCapacityWhenNfsUnmounted(struct.getPrimaryStorageUuid());
         }
+    }
+
+    private boolean isHostsExsitInNfsAttachedCluster(String psUuid) {
+        List<String> clusterUuids = getClusterUuidsByPrimaryStorageUuid(psUuid);
+
+        for (String clusterUuid : clusterUuids) {
+            if(!getRemainedHostInCluster(clusterUuid).isEmpty()) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private List<String> getClusterUuidsByPrimaryStorageUuid(String clusterUuid) {
+        return SQL.New("select pri.uuid" +
+                " from PrimaryStorageVO pri, PrimaryStorageClusterRefVO ref" +
+                " where pri.uuid = ref.primaryStorageUuid" +
+                " and ref.clusterUuid = :cuuid" +
+                " and pri.type = :ptype")
+                .param("cuuid", clusterUuid)
+                .param("ptype", NfsPrimaryStorageConstant.NFS_PRIMARY_STORAGE_TYPE)
+                .list();
     }
 
     private boolean isNfsUnmounted(String psUuid) {
@@ -428,5 +453,60 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
         rmsg.setPrimaryStorageUuid(inventory.getUuid());
         bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, inventory.getUuid());
         bus.send(rmsg);
+    }
+
+    public void preDeleteHost(HostInventory inventory) throws HostException {
+
+    }
+
+    @Override
+    public void beforeDeleteHost(HostInventory inventory) {
+
+    }
+
+    @Override
+    public void afterDeleteHost(HostInventory inventory) {
+        String clusterUuid = inventory.getClusterUuid();
+        List<String> psUuids = getNfsPrimaryStorageInCluster(clusterUuid);
+        if(psUuids == null || psUuids.isEmpty()) {
+            return;
+        }
+
+        List<String> hostUuids = getRemainedHostInCluster(clusterUuid, inventory.getUuid());
+        if (!hostUuids.isEmpty()) {
+            return;
+        }
+
+        for(String psUuid : psUuids) {
+            releasePrimaryStorageCapacity(psUuid);
+        }
+    }
+
+    private void releasePrimaryStorageCapacity(String psUuid) {
+        NfsRecalculatePrimaryStorageCapacityMsg msg = new NfsRecalculatePrimaryStorageCapacityMsg();
+        msg.setPrimaryStorageUuid(psUuid);
+        msg.setRelease(true);
+        bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, psUuid);
+        bus.send(msg);
+    }
+
+    private List<String> getRemainedHostInCluster(String clusterUuid) {
+        return getRemainedHostInCluster(clusterUuid, null);
+    }
+
+    private List<String> getRemainedHostInCluster(String clusterUuid, String hostUuid) {
+        return Q.New(HostVO.class)
+                .select(HostVO_.uuid).eq(HostVO_.clusterUuid, clusterUuid).notEq(HostVO_.uuid, hostUuid).listValues();
+    }
+
+    private List<String> getNfsPrimaryStorageInCluster(String clusterUuid) {
+        return SQL.New("select pri.uuid" +
+                " from PrimaryStorageVO pri, PrimaryStorageClusterRefVO ref" +
+                " where pri.uuid = ref.primaryStorageUuid" +
+                " and ref.clusterUuid = :cuuid" +
+                " and pri.type = :ptype")
+                .param("cuuid", clusterUuid)
+                .param("ptype", NfsPrimaryStorageConstant.NFS_PRIMARY_STORAGE_TYPE)
+                .list();
     }
 }
