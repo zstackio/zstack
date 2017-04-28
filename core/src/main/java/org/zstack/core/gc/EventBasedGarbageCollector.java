@@ -16,6 +16,14 @@ public abstract class EventBasedGarbageCollector extends GarbageCollector {
         setup();
         installTriggers();
         logger.debug(String.format("[GC] loaded a job[name:%s, id:%s]", NAME, uuid));
+
+        if (!lock()) {
+            logger.debug(String.format("[GC] the job[name:%s, id:%s] is being executed by another trigger," +
+                    "skip management node to excuete", NAME, uuid));
+            return;
+        }
+        
+        logger.debug(String.format("[GC] the job[name:%s, id:%s] is triggered by management node", NAME, uuid));
         runTrigger();
     }
 
