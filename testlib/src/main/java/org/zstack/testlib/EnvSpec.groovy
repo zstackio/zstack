@@ -478,7 +478,6 @@ class EnvSpec implements Node {
 
         adminLogin()
         resetAllGlobalConfig()
-        cleanSimulatorAndMessageHandlers()
 
         simulatorClasses.each {
             Simulator sim = it.newInstance() as Simulator
@@ -535,6 +534,8 @@ class EnvSpec implements Node {
             ImageGlobalConfig.DELETION_POLICY.updateValue(ImageDeletionPolicyManager.ImageDeletionPolicy.Direct.toString())
             VolumeGlobalConfig.VOLUME_DELETION_POLICY.updateValue(VolumeDeletionPolicyManager.VolumeDeletionPolicy.Direct.toString())
             VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy.Direct.toString())
+
+            cleanSimulatorAndMessageHandlers()
 
             destroy(session.uuid)
 

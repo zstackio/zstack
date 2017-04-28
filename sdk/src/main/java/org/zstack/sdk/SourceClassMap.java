@@ -4,7 +4,7 @@ import java.util.HashMap;
 
 public class SourceClassMap {
     final static HashMap<String, String> srcToDstMapping = new HashMap() {
-        {
+    {
 			put("org.zstack.storage.ceph.primary.CephPrimaryStorageInventory", "org.zstack.sdk.CephPrimaryStorageInventory");
 			put("org.zstack.header.network.l3.L3NetworkInventory", "org.zstack.sdk.L3NetworkInventory");
 			put("org.zstack.header.identity.PolicyInventory", "org.zstack.sdk.PolicyInventory");
@@ -119,11 +119,11 @@ public class SourceClassMap {
 			put("org.zstack.billing.SpendingDetails", "org.zstack.sdk.SpendingDetails");
 			put("org.zstack.storage.fusionstor.primary.FusionstorPrimaryStorageMonInventory", "org.zstack.sdk.FusionstorPrimaryStorageMonInventory");
 			put("org.zstack.header.identity.AccountConstant$StatementEffect", "org.zstack.sdk.PolicyStatementEffect");
-        }
+      }
     };
 
     final static HashMap<String, String> dstToSrcMapping = new HashMap() {
-        {
+    {
 			put("org.zstack.sdk.CephPrimaryStorageInventory", "org.zstack.storage.ceph.primary.CephPrimaryStorageInventory");
 			put("org.zstack.sdk.L3NetworkInventory", "org.zstack.header.network.l3.L3NetworkInventory");
 			put("org.zstack.sdk.PolicyInventory", "org.zstack.header.identity.PolicyInventory");
@@ -238,6 +238,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.SpendingDetails", "org.zstack.billing.SpendingDetails");
 			put("org.zstack.sdk.FusionstorPrimaryStorageMonInventory", "org.zstack.storage.fusionstor.primary.FusionstorPrimaryStorageMonInventory");
 			put("org.zstack.sdk.PolicyStatementEffect", "org.zstack.header.identity.AccountConstant$StatementEffect");
+
         }
     };
 }
