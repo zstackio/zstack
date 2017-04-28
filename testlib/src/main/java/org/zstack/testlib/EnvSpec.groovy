@@ -377,7 +377,12 @@ class EnvSpec implements Node {
             def suuid = retrieveSessionUuid(it)
 
             try {
-                SpecID id = (it as CreateAction).create(uuid, suuid)
+                def id
+                if (onlyDefine) {
+                    id = (it as CreateAction).define(uuid) as SpecID
+                } else {
+                    id = (it as CreateAction).create(uuid, suuid) as SpecID
+                }
                 if (id != null) {
                     specsByName[id.name] = it
                 }
