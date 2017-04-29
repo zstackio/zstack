@@ -1,16 +1,13 @@
 package org.zstack.header.storage.backup;
 
 import org.zstack.header.vo.Index;
+import org.zstack.header.vo.ResourceVO;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
 
 @MappedSuperclass
-public class BackupStorageAO {
-    @Id
-    @Column
-    private String uuid;
-
+public class BackupStorageAO extends ResourceVO {
     @Column
     @Index
     private String name;
@@ -58,14 +55,6 @@ public class BackupStorageAO {
 
     public void setAvailableCapacity(long availableCapacity) {
         this.availableCapacity = availableCapacity;
-    }
-
-    public String getUuid() {
-        return uuid;
-    }
-
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
     }
 
     public String getName() {

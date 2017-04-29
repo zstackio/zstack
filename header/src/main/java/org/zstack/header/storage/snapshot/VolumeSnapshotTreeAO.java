@@ -2,6 +2,7 @@ package org.zstack.header.storage.snapshot;
 
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
+import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.volume.VolumeEO;
 
 import javax.persistence.Column;
@@ -13,11 +14,7 @@ import java.sql.Timestamp;
 /**
  */
 @MappedSuperclass
-public class VolumeSnapshotTreeAO {
-    @Id
-    @Column
-    private String uuid;
-
+public class VolumeSnapshotTreeAO extends ResourceVO {
     @Column
     @ForeignKey(parentEntityClass = VolumeEO.class, onDeleteAction = ReferenceOption.SET_NULL)
     private String volumeUuid;
@@ -34,14 +31,6 @@ public class VolumeSnapshotTreeAO {
     @PreUpdate
     private void preUpdate() {
         lastOpDate = null;
-    }
-
-    public String getUuid() {
-        return uuid;
-    }
-
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
     }
 
     public String getVolumeUuid() {

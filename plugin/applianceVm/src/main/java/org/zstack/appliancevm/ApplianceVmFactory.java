@@ -1,6 +1,7 @@
 package org.zstack.appliancevm;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.Component;
@@ -33,8 +34,10 @@ public class ApplianceVmFactory implements VmInstanceFactory, Component {
     }
 
     @Override
+    @Transactional
     public VmInstanceVO createVmInstance(VmInstanceVO vo, CreateVmInstanceMsg msg) {
-        return dbf.persistAndRefresh(vo);
+        dbf.getEntityManager().persist(vo);
+        return vo;
     }
 
     @Override

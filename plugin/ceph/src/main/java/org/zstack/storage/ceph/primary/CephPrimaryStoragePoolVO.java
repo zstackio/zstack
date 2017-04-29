@@ -2,6 +2,7 @@ package org.zstack.storage.ceph.primary;
 
 import org.zstack.header.storage.primary.PrimaryStorageEO;
 import org.zstack.header.vo.ForeignKey;
+import org.zstack.header.vo.ResourceVO;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -14,10 +15,7 @@ import java.sql.Timestamp;
  */
 @Entity
 @Table
-public class CephPrimaryStoragePoolVO {
-    @Column
-    @Id
-    private String uuid;
+public class CephPrimaryStoragePoolVO extends ResourceVO {
     @Column
     @ForeignKey(parentEntityClass = PrimaryStorageEO.class, parentKey = "uuid", onDeleteAction = ForeignKey.ReferenceOption.CASCADE)
     private String primaryStorageUuid;
@@ -36,14 +34,6 @@ public class CephPrimaryStoragePoolVO {
 
     public void setPrimaryStorageUuid(String primaryStorageUuid) {
         this.primaryStorageUuid = primaryStorageUuid;
-    }
-
-    public String getUuid() {
-        return uuid;
-    }
-
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
     }
 
     public String getPoolName() {

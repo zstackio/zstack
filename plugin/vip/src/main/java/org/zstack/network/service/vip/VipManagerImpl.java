@@ -10,6 +10,7 @@ import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginExtension;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
@@ -242,10 +243,17 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
                         vipvo.setNetmask(ip.getNetmask());
                         vipvo.setUsedIpUuid(ip.getUuid());
 
-                        vipvo = dbf.persistAndRefresh(vipvo);
-
-                        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vipvo.getUuid(), VipVO.class);
-                        tagMgr.createTagsFromAPICreateMessage(msg, vipvo.getUuid(), VipVO.class.getSimpleName());
+                        VipVO finalVipvo = vipvo;
+                        vipvo = new SQLBatchWithReturn<VipVO>() {
+                            @Override
+                            protected VipVO scripts() {
+                                persist(finalVipvo);
+                                reload(finalVipvo);
+                                acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), finalVipvo.getUuid(), VipVO.class);
+                                tagMgr.createTagsFromAPICreateMessage(msg, finalVipvo.getUuid(), VipVO.class.getSimpleName());
+                                return finalVipvo;
+                            }
+                        }.execute();
 
                         vip = VipInventory.valueOf(vipvo);
                         trigger.next();

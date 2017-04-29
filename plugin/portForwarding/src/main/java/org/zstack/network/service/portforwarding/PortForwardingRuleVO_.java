@@ -1,12 +1,13 @@
 package org.zstack.network.service.portforwarding;
 
+import org.zstack.header.vo.ResourceVO_;
+
 import javax.persistence.metamodel.SingularAttribute;
 import javax.persistence.metamodel.StaticMetamodel;
 import java.sql.Timestamp;
 
 @StaticMetamodel(PortForwardingRuleVO.class)
-public class PortForwardingRuleVO_ {
-    public static volatile SingularAttribute<PortForwardingRuleVO, String> uuid;
+public class PortForwardingRuleVO_ extends ResourceVO_ {
     public static volatile SingularAttribute<PortForwardingRuleVO, String> name;
     public static volatile SingularAttribute<PortForwardingRuleVO, String> description;
     public static volatile SingularAttribute<PortForwardingRuleVO, String> vipUuid;

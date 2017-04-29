@@ -1,12 +1,13 @@
 package org.zstack.header.storage.backup;
 
+import org.zstack.header.vo.ResourceVO_;
+
 import javax.persistence.metamodel.SingularAttribute;
 import javax.persistence.metamodel.StaticMetamodel;
 import java.sql.Timestamp;
 
 @StaticMetamodel(BackupStorageAO.class)
-public class BackupStorageAO_ {
-    public static volatile SingularAttribute<BackupStorageAO, String> uuid;
+public class BackupStorageAO_ extends ResourceVO_ {
     public static volatile SingularAttribute<BackupStorageAO, String> description;
     public static volatile SingularAttribute<BackupStorageAO, String> name;
     public static volatile SingularAttribute<BackupStorageAO, String> url;

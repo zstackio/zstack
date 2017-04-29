@@ -12,7 +12,6 @@ import java.util.Set;
 @Entity
 @Table
 @EO(EOClazz = L3NetworkEO.class)
-@AutoDeleteTag
 public class L3NetworkVO extends L3NetworkAO {
     @OneToMany(fetch = FetchType.EAGER)
     @JoinColumn(name = "l3NetworkUuid", insertable = false, updatable = false)

@@ -1,6 +1,7 @@
 package org.zstack.header.zone;
 
 import org.zstack.header.vo.Index;
+import org.zstack.header.vo.ResourceVO;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
@@ -8,11 +9,7 @@ import java.sql.Timestamp;
 /**
  */
 @MappedSuperclass
-public class ZoneAO {
-    @Id
-    @Column
-    private String uuid;
-
+public class ZoneAO extends ResourceVO {
     @Column
     @Index
     private String name;

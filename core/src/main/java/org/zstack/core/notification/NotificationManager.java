@@ -232,34 +232,38 @@ public class NotificationManager extends AbstractService {
             lst.add(notificationsQueue.take());
             notificationsQueue.drainTo(lst);
 
-            new SQLBatch() {
-                @Override
-                protected void scripts() {
-                    for (NotificationBuilder builder : lst) {
-                        if (builder == quitToken) {
-                            exitQueue = true;
-                            continue;
-                        }
+            try {
+                new SQLBatch() {
+                    @Override
+                    protected void scripts() {
+                        for (NotificationBuilder builder : lst) {
+                            if (builder == quitToken) {
+                                exitQueue = true;
+                                continue;
+                            }
 
-                        NotificationVO vo = new NotificationVO();
-                        vo.setName(builder.notificationName);
-                        vo.setArguments(JSONObjectUtil.toJsonString(builder.arguments));
-                        vo.setContent(builder.content);
-                        vo.setResourceType(builder.resourceType);
-                        vo.setResourceUuid(builder.resourceUuid);
-                        vo.setSender(builder.sender);
-                        vo.setStatus(NotificationStatus.Unread);
-                        vo.setType(builder.type);
-                        vo.setUuid(Platform.getUuid());
-                        vo.setTime(System.currentTimeMillis());
-                        if (builder.opaque != null) {
-                            vo.setOpaque(JSONObjectUtil.toJsonString(builder.opaque));
-                        }
+                            NotificationVO vo = new NotificationVO();
+                            vo.setName(builder.notificationName);
+                            vo.setArguments(JSONObjectUtil.toJsonString(builder.arguments));
+                            vo.setContent(builder.content);
+                            vo.setResourceType(builder.resourceType);
+                            vo.setResourceUuid(builder.resourceUuid);
+                            vo.setSender(builder.sender);
+                            vo.setStatus(NotificationStatus.Unread);
+                            vo.setType(builder.type);
+                            vo.setUuid(Platform.getUuid());
+                            vo.setTime(System.currentTimeMillis());
+                            if (builder.opaque != null) {
+                                vo.setOpaque(JSONObjectUtil.toJsonString(builder.opaque));
+                            }
 
-                        dbf.getEntityManager().persist(vo);
+                            dbf.getEntityManager().persist(vo);
+                        }
                     }
-                }
-            }.execute();
+                }.execute();
+            } catch (Throwable t) {
+                logger.warn(String.format("failed to persists notifications:\n %s", JSONObjectUtil.toJsonString(lst)), t);
+            }
         }
     }
 

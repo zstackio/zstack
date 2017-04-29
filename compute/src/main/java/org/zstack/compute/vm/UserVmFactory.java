@@ -1,6 +1,7 @@
 package org.zstack.compute.vm;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.vm.*;
 
@@ -16,9 +17,10 @@ public class UserVmFactory implements VmInstanceFactory {
     }
 
     @Override
+    @Transactional
     public VmInstanceVO createVmInstance(VmInstanceVO vo, CreateVmInstanceMsg msg) {
         vo.setType(type.toString());
-        vo = dbf.persistAndRefresh(vo);
+        dbf.getEntityManager().persist(vo);
         return vo;
     }
 

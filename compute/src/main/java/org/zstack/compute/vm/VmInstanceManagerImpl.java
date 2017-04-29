@@ -11,6 +11,7 @@ import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.DbEntityLister;
+import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -623,12 +624,22 @@ public class VmInstanceManagerImpl extends AbstractService implements
         vo.setMemorySize(msg.getMemorySize());
         vo.setAllocatorStrategy(msg.getAllocatorStrategy());
 
-        acntMgr.createAccountResourceRef(msg.getAccountUuid(), vo.getUuid(), VmInstanceVO.class);
-
         String vmType = msg.getType() == null ? VmInstanceConstant.USER_VM_TYPE : msg.getType();
         VmInstanceType type = VmInstanceType.valueOf(vmType);
         VmInstanceFactory factory = getVmInstanceFactory(type);
-        vo = factory.createVmInstance(vo, msg);
+
+        VmInstanceVO finalVo = vo;
+        vo = new SQLBatchWithReturn<VmInstanceVO>() {
+            @Override
+            protected VmInstanceVO scripts() {
+                factory.createVmInstance(finalVo, msg);
+                dbf.getEntityManager().flush();
+                dbf.getEntityManager().refresh(finalVo);
+                acntMgr.createAccountResourceRef(msg.getAccountUuid(), finalVo.getUuid(), VmInstanceVO.class);
+
+                return finalVo;
+            }
+        }.execute();
 
         if (cmsg != null) {
             tagMgr.createTagsFromAPICreateMessage(cmsg, vo.getUuid(), VmInstanceVO.class.getSimpleName());
