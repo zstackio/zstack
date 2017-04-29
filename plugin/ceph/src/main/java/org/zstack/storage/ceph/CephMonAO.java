@@ -1,5 +1,7 @@
 package org.zstack.storage.ceph;
 
+import org.zstack.header.vo.ResourceVO;
+
 import javax.persistence.*;
 import java.sql.Timestamp;
 
@@ -7,11 +9,7 @@ import java.sql.Timestamp;
  * Created by frank on 7/27/2015.
  */
 @MappedSuperclass
-public class CephMonAO {
-    @Id
-    @Column
-    private String uuid;
-
+public class CephMonAO extends ResourceVO {
     @Column
     private String sshUsername;
 
@@ -67,14 +65,6 @@ public class CephMonAO {
 
     public void setMonPort(int monPort) {
         this.monPort = monPort;
-    }
-
-    public String getUuid() {
-        return uuid;
-    }
-
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
     }
 
     public String getSshUsername() {

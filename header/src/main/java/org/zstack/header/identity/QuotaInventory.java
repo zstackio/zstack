@@ -18,6 +18,7 @@ import java.util.List;
                 foreignKey = "identityUuid", expandedInventoryKey = "uuid")
 })
 public class QuotaInventory {
+    private String uuid;
     private String name;
     private String identityUuid;
     private String identityType;
@@ -27,6 +28,7 @@ public class QuotaInventory {
 
     public static QuotaInventory valueOf(QuotaVO vo) {
         QuotaInventory inv = new QuotaInventory();
+        inv.setUuid(vo.getUuid());
         inv.setName(vo.getName());
         inv.setIdentityType(vo.getIdentityType());
         inv.setIdentityUuid(vo.getIdentityUuid());
@@ -42,6 +44,14 @@ public class QuotaInventory {
             invs.add(valueOf(vo));
         }
         return invs;
+    }
+
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
     }
 
     public String getName() {

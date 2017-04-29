@@ -1,6 +1,7 @@
 package org.zstack.network.securitygroup;
 
 import org.zstack.header.vo.Index;
+import org.zstack.header.vo.ResourceVO;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
@@ -9,11 +10,7 @@ import java.util.Set;
 
 @Entity
 @Table
-public class SecurityGroupVO {
-    @Id
-    @Column
-    private String uuid;
-    
+public class SecurityGroupVO extends ResourceVO {
     @Column
     @Index
     private String name;
@@ -45,14 +42,6 @@ public class SecurityGroupVO {
     @PreUpdate
     private void preUpdate() {
         lastOpDate = null;
-    }
-
-    public String getUuid() {
-        return uuid;
-    }
-
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
     }
 
     public String getName() {

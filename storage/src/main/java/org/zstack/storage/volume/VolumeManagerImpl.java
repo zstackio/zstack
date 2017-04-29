@@ -7,9 +7,7 @@ import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.DbEntityLister;
-import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.scheduler.SchedulerFacade;
@@ -163,9 +161,17 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
             vo.setDeviceId(0);
         }
 
-        acntMgr.createAccountResourceRef(msg.getAccountUuid(), vo.getUuid(), VolumeVO.class);
-
-        vo = dbf.persistAndRefresh(vo);
+        VolumeVO finalVo = vo;
+        vo = new SQLBatchWithReturn<VolumeVO>() {
+            @Override
+            protected VolumeVO scripts() {
+                dbf.getEntityManager().persist(finalVo);
+                dbf.getEntityManager().flush();
+                dbf.getEntityManager().refresh(finalVo);
+                acntMgr.createAccountResourceRef(msg.getAccountUuid(), finalVo.getUuid(), VolumeVO.class);
+                return finalVo;
+            }
+        }.execute();
 
         new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(null, VolumeInventory.valueOf(vo));
 
@@ -196,12 +202,18 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         vo.setStatus(VolumeStatus.Creating);
         vo.setType(VolumeType.Data);
         vo.setSize(0);
-        VolumeVO vvo = dbf.persistAndRefresh(vo);
+        VolumeVO vvo = new SQLBatchWithReturn<VolumeVO>() {
+            @Override
+            protected VolumeVO scripts() {
+                persist(vo);
+                reload(vo);
+                acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), VolumeVO.class);
+                tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), VolumeVO.class.getSimpleName());
+                return vo;
+            }
+        }.execute();
 
         new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(null, VolumeInventory.valueOf(vvo));
-
-        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), VolumeVO.class);
-        tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), VolumeVO.class.getSimpleName());
 
         SimpleQuery<VolumeSnapshotVO> sq = dbf.createQuery(VolumeSnapshotVO.class);
         sq.select(VolumeSnapshotVO_.volumeUuid, VolumeSnapshotVO_.treeUuid);
@@ -291,10 +303,16 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         vol.setState(VolumeState.Enabled);
         vol.setType(VolumeType.Data);
         vol.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
-        VolumeVO vvo = dbf.persistAndRefresh(vol);
-
-        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vol.getUuid(), VolumeVO.class);
-        tagMgr.createTagsFromAPICreateMessage(msg, vol.getUuid(), VolumeVO.class.getSimpleName());
+        VolumeVO vvo = new SQLBatchWithReturn<VolumeVO>() {
+            @Override
+            protected VolumeVO scripts() {
+                persist(vol);
+                reload(vol);
+                acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vol.getUuid(), VolumeVO.class);
+                tagMgr.createTagsFromAPICreateMessage(msg, vol.getUuid(), VolumeVO.class.getSimpleName());
+                return vol;
+            }
+        }.execute();
 
         new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(null, VolumeInventory.valueOf(vvo));
 
@@ -507,14 +525,22 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         vo.setType(VolumeType.Data);
         vo.setStatus(VolumeStatus.NotInstantiated);
 
-        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), VolumeVO.class);
-        tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), VolumeVO.class.getSimpleName());
-
         if (msg.hasSystemTag(VolumeSystemTags.SHAREABLE.getTagFormat())) {
             vo.setShareable(true);
         }
 
-        vo = dbf.persistAndRefresh(vo);
+        VolumeVO finalVo1 = vo;
+        vo = new SQLBatchWithReturn<VolumeVO>() {
+            @Override
+            protected VolumeVO scripts() {
+                dbf.getEntityManager().persist(finalVo1);
+                dbf.getEntityManager().flush();
+                dbf.getEntityManager().refresh(finalVo1);
+                acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), finalVo1.getUuid(), VolumeVO.class);
+                tagMgr.createTagsFromAPICreateMessage(msg, finalVo1.getUuid(), VolumeVO.class.getSimpleName());
+                return finalVo1;
+            }
+        }.execute();
 
         if (msg.getPrimaryStorageUuid() == null) {
             new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(null, VolumeInventory.valueOf(vo));

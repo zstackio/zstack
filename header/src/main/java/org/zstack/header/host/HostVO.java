@@ -9,7 +9,6 @@ import javax.persistence.*;
 
 @Entity
 @Table
-@Inheritance(strategy = InheritanceType.JOINED)
 @EO(EOClazz = HostEO.class)
 @AutoDeleteTag
 public class HostVO extends HostAO {

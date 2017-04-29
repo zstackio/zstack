@@ -15,7 +15,6 @@ import javax.persistence.*;
  */
 @Entity
 @Table
-@Inheritance(strategy= InheritanceType.JOINED)
 @SoftDeletionCascades({
         @SoftDeletionCascade(parent = PrimaryStorageVO.class, joinColumn = "primaryStorageUuid")
 })

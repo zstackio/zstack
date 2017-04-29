@@ -10,6 +10,7 @@ import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.DbEntityLister;
+import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -272,12 +273,17 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
         vo.setZoneUuid(zoneUuid);
         vo.setState(L3NetworkState.Enabled);
 
-
         L3NetworkFactory factory = getL3NetworkFactory(L3NetworkType.valueOf(msg.getType()));
-        L3NetworkInventory inv = factory.createL3Network(vo, msg);
+        L3NetworkInventory inv = new SQLBatchWithReturn<L3NetworkInventory>() {
+            @Override
+            protected L3NetworkInventory scripts() {
+                L3NetworkInventory inv = factory.createL3Network(vo, msg);
+                acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), L3NetworkVO.class);
+                tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), L3NetworkVO.class.getSimpleName());
+                return inv;
+            }
+        }.execute();
 
-        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), L3NetworkVO.class);
-        tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), L3NetworkVO.class.getSimpleName());
 
         APICreateL3NetworkEvent evt = new APICreateL3NetworkEvent(msg.getId());
         evt.setInventory(inv);

@@ -9,6 +9,7 @@ import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.cloudbus.ReplyMessagePreSendingExtensionPoint;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -328,18 +329,23 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         vo.setStatus(VolumeSnapshotStatus.Creating);
         vo.setVolumeType(vol.getType().toString());
 
-        acntMgr.createAccountResourceRef(msg.getAccountUuid(), vo.getUuid(), VolumeSnapshotVO.class);
+        final VolumeSnapshotStruct struct = new SQLBatchWithReturn<VolumeSnapshotStruct>() {
+            @Override
+            protected VolumeSnapshotStruct scripts() {
+                VolumeSnapshotStruct s = null;
+                if (VolumeSnapshotArrangementType.CHAIN == capability.getArrangementType()) {
+                    s = saveChainTypeSnapshot(vo);
+                } else if (VolumeSnapshotArrangementType.INDIVIDUAL == capability.getArrangementType()) {
+                    s = saveIndividualTypeSnapshot(vo);
+                } else {
+                    DebugUtils.Assert(false, "should not be here");
+                }
 
-        VolumeSnapshotStruct s = null;
-        if (VolumeSnapshotArrangementType.CHAIN == capability.getArrangementType()) {
-            s = saveChainTypeSnapshot(vo);
-        } else if (VolumeSnapshotArrangementType.INDIVIDUAL == capability.getArrangementType()) {
-            s = saveIndividualTypeSnapshot(vo);
-        } else {
-            DebugUtils.Assert(false, "should not be here");
-        }
+                acntMgr.createAccountResourceRef(msg.getAccountUuid(), vo.getUuid(), VolumeSnapshotVO.class);
+                return s;
+            }
+        }.execute();
 
-        final VolumeSnapshotStruct struct = s;
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("take-volume-snapshot-for-volume-%s", msg.getVolumeUuid()));
         chain.then(new ShareFlow() {

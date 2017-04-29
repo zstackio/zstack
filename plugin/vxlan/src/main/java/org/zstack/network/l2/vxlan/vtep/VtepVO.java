@@ -5,6 +5,7 @@ import org.zstack.header.host.HostEO;
 import org.zstack.header.network.l2.L2NetworkEO;
 import org.zstack.header.tag.AutoDeleteTag;
 import org.zstack.header.vo.ForeignKey;
+import org.zstack.header.vo.ResourceVO;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -16,12 +17,7 @@ import javax.persistence.Table;
  */
 @Entity
 @Table
-@AutoDeleteTag
-public class VtepVO {
-    @Id
-    @Column
-    private String uuid;
-
+public class VtepVO extends ResourceVO {
     @Column
     @ForeignKey(parentEntityClass = HostEO.class, onDeleteAction = ForeignKey.ReferenceOption.CASCADE)
     private String hostUuid;
@@ -42,14 +38,6 @@ public class VtepVO {
 
     @Column
     private String type;
-
-    public String getUuid() {
-        return uuid;
-    }
-
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
-    }
 
     public String getHostUuid() {
         return hostUuid;

@@ -8,6 +8,7 @@ import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -520,10 +521,14 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         vo.setPrivatePortStart(msg.getPrivatePortStart());
         vo.setProtocolType(PortForwardingProtocolType.valueOf(msg.getProtocolType()));
 
-        dbf.persist(vo);
-
-        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), PortForwardingRuleVO.class);
-        tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), PortForwardingRuleVO.class.getSimpleName());
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                persist(vo);
+                acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), PortForwardingRuleVO.class);
+                tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), PortForwardingRuleVO.class.getSimpleName());
+            }
+        }.execute();
 
         VipInventory vipInventory = VipInventory.valueOf(vip);
         if (msg.getVmNicUuid() == null) {

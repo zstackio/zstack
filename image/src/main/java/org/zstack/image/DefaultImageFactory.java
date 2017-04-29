@@ -1,6 +1,7 @@
 package org.zstack.image;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.image.*;
 import org.zstack.header.volume.VolumeFormat;
@@ -18,8 +19,12 @@ public class DefaultImageFactory implements ImageFactory {
     }
 
     @Override
+    @Transactional
     public ImageVO createImage(ImageVO vo, APIAddImageMsg msg) {
-        return dbf.persistAndRefresh(vo);
+        dbf.getEntityManager().persist(vo);
+        dbf.getEntityManager().flush();
+        dbf.getEntityManager().refresh(vo);
+        return vo;
     }
 
     @Override

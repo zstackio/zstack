@@ -8,7 +8,7 @@ import java.lang.annotation.Target;
 @Target(java.lang.annotation.ElementType.FIELD)
 @Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
 public @interface ForeignKey {
-    public static enum ReferenceOption {
+    enum ReferenceOption {
         RESTRICT("RESTRICT"),
         CASCADE("CASCADE"),
         SET_NULL("SET NULL"),

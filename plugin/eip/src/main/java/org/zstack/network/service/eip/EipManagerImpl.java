@@ -6,11 +6,8 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SQL;
-import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.core.db.UpdateQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
@@ -443,10 +440,17 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
 
         vo.setVmNicUuid(msg.getVmNicUuid());
         vo.setState(EipState.Enabled);
-        vo = dbf.persistAndRefresh(vo);
-
-        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), EipVO.class);
-        tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), EipVO.class.getSimpleName());
+        EipVO finalVo1 = vo;
+        vo = new SQLBatchWithReturn<EipVO>() {
+            @Override
+            protected EipVO scripts() {
+                persist(finalVo1);
+                reload(finalVo1);
+                acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), finalVo1.getUuid(), EipVO.class);
+                tagMgr.createTagsFromAPICreateMessage(msg, finalVo1.getUuid(), EipVO.class.getSimpleName());
+                return finalVo1;
+            }
+        }.execute();
 
         VipVO vipvo = dbf.findByUuid(msg.getVipUuid(), VipVO.class);
         final VipInventory vipInventory = VipInventory.valueOf(vipvo);

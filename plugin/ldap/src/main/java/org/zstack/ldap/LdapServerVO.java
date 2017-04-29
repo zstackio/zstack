@@ -1,7 +1,7 @@
 package org.zstack.ldap;
 
-import org.zstack.header.tag.AutoDeleteTag;
 import org.zstack.header.vo.Index;
+import org.zstack.header.vo.ResourceVO;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -13,12 +13,7 @@ import java.sql.Timestamp;
  */
 @Entity
 @Table
-@AutoDeleteTag
-public class LdapServerVO {
-    @Id
-    @Column
-    private String uuid;
-
+public class LdapServerVO extends ResourceVO {
     @Column
     @Index
     private String name;
@@ -46,14 +41,6 @@ public class LdapServerVO {
 
     @Column
     private Timestamp lastOpDate;
-
-    public String getUuid() {
-        return uuid;
-    }
-
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
-    }
 
     public String getName() {
         return name;

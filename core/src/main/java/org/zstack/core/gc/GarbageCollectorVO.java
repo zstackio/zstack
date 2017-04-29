@@ -1,5 +1,7 @@
 package org.zstack.core.gc;
 
+import org.zstack.header.vo.ResourceVO;
+
 import javax.persistence.*;
 import java.sql.Timestamp;
 
@@ -8,11 +10,7 @@ import java.sql.Timestamp;
  */
 @Entity
 @Table
-public class GarbageCollectorVO {
-    @Id
-    @Column
-    private String uuid;
-
+public class GarbageCollectorVO extends ResourceVO {
     @Column
     private String name;
 
@@ -52,14 +50,6 @@ public class GarbageCollectorVO {
 
     public void setType(String type) {
         this.type = type;
-    }
-
-    public String getUuid() {
-        return uuid;
-    }
-
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
     }
 
     public String getRunnerClass() {

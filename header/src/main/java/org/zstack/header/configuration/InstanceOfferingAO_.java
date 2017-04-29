@@ -1,13 +1,14 @@
 package org.zstack.header.configuration;
 
+import org.zstack.header.vo.ResourceVO_;
+
 import javax.persistence.metamodel.SingularAttribute;
 import javax.persistence.metamodel.StaticMetamodel;
 import java.sql.Timestamp;
 
 
 @StaticMetamodel(InstanceOfferingAO.class)
-public class InstanceOfferingAO_ {
-    public static volatile SingularAttribute<InstanceOfferingAO, String> uuid;
+public class InstanceOfferingAO_ extends ResourceVO_ {
     public static volatile SingularAttribute<InstanceOfferingAO, Integer> cpuNum;
     public static volatile SingularAttribute<InstanceOfferingAO, Integer> cpuSpeed;
     public static volatile SingularAttribute<InstanceOfferingAO, Long> memorySize;

@@ -3,6 +3,7 @@ package org.zstack.header.console;
 import org.zstack.header.vm.VmInstanceEO;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
+import org.zstack.header.vo.ResourceVO;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
@@ -15,11 +16,7 @@ import java.sql.Timestamp;
  */
 @Entity
 @Table
-public class ConsoleProxyVO {
-    @Id
-    @Column
-    private String uuid;
-
+public class ConsoleProxyVO extends ResourceVO {
     @Column
     @ForeignKey(parentEntityClass = VmInstanceEO.class, onDeleteAction = ReferenceOption.CASCADE)
     private String vmInstanceUuid;
@@ -64,14 +61,6 @@ public class ConsoleProxyVO {
     @PreUpdate
     private void preUpdate() {
         lastOpDate = null;
-    }
-
-    public String getUuid() {
-        return uuid;
-    }
-
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
     }
 
     public String getVmInstanceUuid() {

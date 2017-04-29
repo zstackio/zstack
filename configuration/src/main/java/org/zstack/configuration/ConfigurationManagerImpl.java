@@ -19,6 +19,7 @@ import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.DbEntityLister;
+import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.core.rest.RESTApiJsonTemplateGenerator;
 import org.zstack.header.AbstractService;
 import org.zstack.header.allocator.HostAllocatorConstant;
@@ -964,10 +965,16 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
         vo.setMemorySize(msg.getMemorySize());
         vo.setDuration(InstanceOfferingDuration.Permanent);
         vo.setType(type);
-        InstanceOfferingInventory inv = f.createInstanceOffering(vo, msg);
 
-        tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), InstanceOfferingVO.class.getSimpleName());
-        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), InstanceOfferingVO.class);
+        InstanceOfferingInventory inv = new SQLBatchWithReturn<InstanceOfferingInventory>() {
+            @Override
+            protected InstanceOfferingInventory scripts() {
+                InstanceOfferingInventory inv = f.createInstanceOffering(vo, msg);
+                acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), InstanceOfferingVO.class);
+                tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), InstanceOfferingVO.class.getSimpleName());
+                return inv;
+            }
+        }.execute();
 
         evt.setInventory(inv);
         bus.publish(evt);
@@ -1008,10 +1015,18 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
         }
 
         DiskOfferingFactory f = getDiskOfferingFactory(vo.getType());
-        DiskOfferingInventory inv = f.createDiskOffering(vo, msg);
+
+        DiskOfferingInventory inv = new SQLBatchWithReturn<DiskOfferingInventory>() {
+            @Override
+            protected DiskOfferingInventory scripts() {
+                DiskOfferingInventory inv = f.createDiskOffering(vo, msg);
+                acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), DiskOfferingVO.class);
+
+                return inv;
+            }
+        }.execute();
 
         tagMgr.createTagsFromAPICreateMessage(msg, inv.getUuid(), DiskOfferingVO.class.getSimpleName());
-        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), DiskOfferingVO.class);
 
         APICreateDiskOfferingEvent evt = new APICreateDiskOfferingEvent(msg.getId());
         evt.setInventory(inv);

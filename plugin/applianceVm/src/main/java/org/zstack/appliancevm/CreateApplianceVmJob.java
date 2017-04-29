@@ -7,6 +7,7 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.job.Job;
@@ -91,10 +92,21 @@ public class CreateApplianceVmJob implements Job {
         avo.setMemorySize(iovo.getMemorySize());
         avo.setAllocatorStrategy(iovo.getAllocatorStrategy());
 
-        acntMgr.createAccountResourceRef(spec.getAccountUuid(), avo.getUuid(), VmInstanceVO.class);
-
         ApplianceVmSubTypeFactory factory = apvmFactory.getApplianceVmSubTypeFactory(avo.getApplianceVmType());
-        avo = factory.persistApplianceVm(spec, avo);
+
+        ApplianceVmVO finalAvo1 = avo;
+        avo = new SQLBatchWithReturn<ApplianceVmVO>() {
+            @Override
+            protected ApplianceVmVO scripts() {
+                ApplianceVmVO vo = factory.persistApplianceVm(spec, finalAvo1);
+                dbf.getEntityManager().flush();
+                dbf.getEntityManager().refresh(vo);
+
+                acntMgr.createAccountResourceRef(spec.getAccountUuid(), vo.getUuid(), VmInstanceVO.class);
+
+                return vo;
+            }
+        }.execute();
 
         tagMgr.copySystemTag(iovo.getUuid(), InstanceOfferingVO.class.getSimpleName(), avo.getUuid(), VmInstanceVO.class.getSimpleName());
         if (spec.getInherentSystemTags() != null && !spec.getInherentSystemTags().isEmpty()) {

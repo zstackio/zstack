@@ -1,6 +1,5 @@
 package org.zstack.header.network.l3;
 
-import org.zstack.header.search.SqlTrigger;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 
@@ -9,7 +8,6 @@ import java.sql.Timestamp;
 
 @Entity
 @Table
-@SqlTrigger(foreignVOClass = L3NetworkDnsVO.class, foreignVOJoinColumn = "l3NetworkUuid")
 public class L3NetworkDnsVO {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

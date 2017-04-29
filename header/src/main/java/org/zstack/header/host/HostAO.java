@@ -4,6 +4,7 @@ import org.zstack.header.cluster.ClusterEO;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 import org.zstack.header.vo.Index;
+import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.zone.ZoneEO;
 
 import javax.persistence.*;
@@ -12,22 +13,17 @@ import java.sql.Timestamp;
 /**
  */
 @MappedSuperclass
-public class HostAO {
-    @Id
-    @Column
-    @Index
-    private String uuid;
-
+public class HostAO extends ResourceVO {
     @Column
     @ForeignKey(parentEntityClass = ZoneEO.class, onDeleteAction = ReferenceOption.RESTRICT)
     private String zoneUuid;
 
     @Column
-    @ForeignKey(parentEntityClass = ClusterEO.class, onDeleteAction = ReferenceOption.RESTRICT)
-    private String clusterUuid;
+    private String name;
 
     @Column
-    private String name;
+    @ForeignKey(parentEntityClass = ClusterEO.class, onDeleteAction = ReferenceOption.RESTRICT)
+    private String clusterUuid;
 
     @Column
     private String description;
@@ -60,14 +56,6 @@ public class HostAO {
     public HostAO() {
     }
 
-    public String getZoneUuid() {
-        return zoneUuid;
-    }
-
-    public void setZoneUuid(String zoneUuid) {
-        this.zoneUuid = zoneUuid;
-    }
-
     public String getName() {
         return name;
     }
@@ -76,12 +64,12 @@ public class HostAO {
         this.name = name;
     }
 
-    public String getUuid() {
-        return uuid;
+    public String getZoneUuid() {
+        return zoneUuid;
     }
 
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
+    public void setZoneUuid(String zoneUuid) {
+        this.zoneUuid = zoneUuid;
     }
 
     public String getDescription() {

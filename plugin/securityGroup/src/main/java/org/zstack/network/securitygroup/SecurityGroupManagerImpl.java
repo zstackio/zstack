@@ -8,9 +8,7 @@ import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.DbEntityLister;
-import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.AsyncThread;
@@ -931,10 +929,17 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         vo.setState(SecurityGroupState.Enabled);
         vo.setInternalId(dbf.generateSequenceNumber(SecurityGroupSequenceNumberVO.class));
 
-        vo = dbf.persistAndRefresh(vo);
-
-        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), SecurityGroupVO.class);
-        tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), SecurityGroupVO.class.getSimpleName());
+        SecurityGroupVO finalVo = vo;
+        vo = new SQLBatchWithReturn<SecurityGroupVO>() {
+            @Override
+            protected SecurityGroupVO scripts() {
+                persist(finalVo);
+                reload(finalVo);
+                acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), finalVo.getUuid(), SecurityGroupVO.class);
+                tagMgr.createTagsFromAPICreateMessage(msg, finalVo.getUuid(), SecurityGroupVO.class.getSimpleName());
+                return finalVo;
+            }
+        }.execute();
 
         SecurityGroupInventory inv = SecurityGroupInventory.valueOf(vo);
         APICreateSecurityGroupEvent evt = new APICreateSecurityGroupEvent(msg.getId());

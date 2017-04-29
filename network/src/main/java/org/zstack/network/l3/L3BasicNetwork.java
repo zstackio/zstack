@@ -95,19 +95,29 @@ public class L3BasicNetwork implements L3Network {
     }
 
     private IpRangeInventory createIpRange(APICreateMessage msg, IpRangeInventory ipr) {
-        IpRangeVO vo = new IpRangeVO();
-        vo.setUuid(ipr.getUuid() == null ? Platform.getUuid() : ipr.getUuid());
-        vo.setDescription(ipr.getDescription());
-        vo.setEndIp(ipr.getEndIp());
-        vo.setGateway(ipr.getGateway());
-        vo.setL3NetworkUuid(ipr.getL3NetworkUuid());
-        vo.setName(ipr.getName());
-        vo.setNetmask(ipr.getNetmask());
-        vo.setStartIp(ipr.getStartIp());
-        vo.setNetworkCidr(ipr.getNetworkCidr());
-        vo = dbf.persistAndRefresh(vo);
+        IpRangeVO vo = new SQLBatchWithReturn<IpRangeVO>() {
+            @Override
+            protected IpRangeVO scripts() {
+                IpRangeVO vo = new IpRangeVO();
+                vo.setUuid(ipr.getUuid() == null ? Platform.getUuid() : ipr.getUuid());
+                vo.setDescription(ipr.getDescription());
+                vo.setEndIp(ipr.getEndIp());
+                vo.setGateway(ipr.getGateway());
+                vo.setL3NetworkUuid(ipr.getL3NetworkUuid());
+                vo.setName(ipr.getName());
+                vo.setNetmask(ipr.getNetmask());
+                vo.setStartIp(ipr.getStartIp());
+                vo.setNetworkCidr(ipr.getNetworkCidr());
+                dbf.getEntityManager().persist(vo);
+                dbf.getEntityManager().flush();
+                dbf.getEntityManager().refresh(vo);
 
-        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), IpRangeVO.class);
+                acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), IpRangeVO.class);
+
+                return vo;
+            }
+        }.execute();
+
         tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), IpRangeVO.class.getSimpleName());
 
         IpRangeInventory inv = IpRangeInventory.valueOf(vo);

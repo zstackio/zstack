@@ -7,18 +7,14 @@ import org.zstack.header.tag.AutoDeleteTag;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 import org.zstack.header.vo.Index;
+import org.zstack.header.vo.ResourceVO;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
 
 @Entity
 @Table
-@AutoDeleteTag
-public class VipVO {
-    @Id
-    @Column
-    private String uuid;
-
+public class VipVO extends ResourceVO {
     @Column
     @Index
     private String  name;
@@ -103,14 +99,6 @@ public class VipVO {
 
     public void setServiceProvider(String serviceProvider) {
         this.serviceProvider = serviceProvider;
-    }
-
-    public String getUuid() {
-        return uuid;
-    }
-
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
     }
 
     public String getUseFor() {
