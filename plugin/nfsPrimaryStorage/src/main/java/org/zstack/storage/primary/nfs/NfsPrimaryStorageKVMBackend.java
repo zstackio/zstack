@@ -1007,8 +1007,9 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
 
                     success = true;
                     if (!reported) {
+                        // Do not directly update availableCapacity, because availableCapacity is not equal to availablePhysicalCapacity
                         new PrimaryStorageCapacityUpdater(pinv.getUuid()).update(
-                                rsp.getTotalCapacity(), rsp.getAvailableCapacity(), rsp.getTotalCapacity(), rsp.getAvailableCapacity()
+                                rsp.getTotalCapacity(), null, rsp.getTotalCapacity(), rsp.getAvailableCapacity()
                         );
                         reported = true;
                     }
