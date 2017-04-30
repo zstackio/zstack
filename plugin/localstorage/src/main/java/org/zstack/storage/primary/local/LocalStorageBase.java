@@ -28,6 +28,7 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
+import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -709,6 +710,9 @@ public class LocalStorageBase extends PrimaryStorageBase {
     }
 
     private void handle(final DownloadImageToPrimaryStorageCacheMsg msg) {
+        ImageInventory imageInventory = msg.getImage();
+        // If image actualSize is null, Default allow distribute image
+        long imageActualSize = imageInventory.getActualSize() != null ? imageInventory.getActualSize() : 0 ;
         final DownloadImageToPrimaryStorageCacheReply reply = new DownloadImageToPrimaryStorageCacheReply();
         final List<String> hostUuids;
         if (msg.getHostUuid() == null) {
@@ -720,10 +724,12 @@ public class LocalStorageBase extends PrimaryStorageBase {
                             " from LocalStorageHostRefVO h, HostVO host" +
                             " where h.primaryStorageUuid = :puuid" +
                             " and h.hostUuid = host.uuid" +
-                            " and host.status = :hstatus";
+                            " and host.status = :hstatus" +
+                            " and h.availablePhysicalCapacity >= :availablePhysicalCapacity";
                     TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
                     q.setParameter("puuid", self.getUuid());
                     q.setParameter("hstatus", HostStatus.Connected);
+                    q.setParameter("availablePhysicalCapacity", imageActualSize);
                     return q.getResultList();
                 }
             }.call();
