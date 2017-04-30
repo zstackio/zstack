@@ -65,10 +65,17 @@ class LocalStorageCapacityCase extends SubCase {
             l3NetworkUuids = [l3.uuid]
             rootDiskOfferingUuid = diskOffering.uuid
         }
-        GetPrimaryStorageCapacityResult capacityResult = getPrimaryStorageCapacity {
-            primaryStorageUuids = [ps.uuid]
+        GetPrimaryStorageCapacityResult capacityResult
+
+        retryInSecs {
+            capacityResult = getPrimaryStorageCapacity {
+                primaryStorageUuids = [ps.uuid]
+            }
+
+            return {
+                assert beforeCapacityResult.availableCapacity > capacityResult.availableCapacity
+            }
         }
-        assert beforeCapacityResult.availableCapacity > capacityResult.availableCapacity
 
         detachPrimaryStorageFromCluster {
             primaryStorageUuid = ps.uuid
@@ -140,19 +147,33 @@ class LocalStorageCapacityCase extends SubCase {
         }
         assert dbFindByUuid(host.uuid, HostVO.class) != null
 
-        GetPrimaryStorageCapacityResult result2 = getPrimaryStorageCapacity {
-            primaryStorageUuids = [ps.uuid]
+        GetPrimaryStorageCapacityResult result2
+
+        retryInSecs {
+            result2 = getPrimaryStorageCapacity {
+                primaryStorageUuids = [ps.uuid]
+            }
+
+            return {
+                assert result2.totalCapacity > result.totalCapacity
+            }
         }
-        assert result2.totalCapacity > result.totalCapacity
 
         deleteHost {
             uuid = host.uuid
         }
 
-        GetPrimaryStorageCapacityResult result3 = getPrimaryStorageCapacity {
-            primaryStorageUuids = [ps.uuid]
+        GetPrimaryStorageCapacityResult result3
+
+        retryInSecs {
+            result3 = getPrimaryStorageCapacity {
+                primaryStorageUuids = [ps.uuid]
+            }
+
+            return {
+                assert result3.totalCapacity == result.totalCapacity
+            }
         }
-        assert result3.totalCapacity == result.totalCapacity
     }
 
     void testCreateVmChangePSCapacity() {
