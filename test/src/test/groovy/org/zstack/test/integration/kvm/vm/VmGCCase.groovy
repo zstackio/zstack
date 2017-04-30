@@ -40,7 +40,7 @@ class VmGCCase extends SubCase {
 
     private VmInstanceInventory createGCCandidateDestroyedVm() {
 
-        retryInSecs(3){
+        retryInSecs(6){
             // ApplianceVm
             ApplianceVmInventory vr = queryVirtualRouterVm {
                 conditions = []
