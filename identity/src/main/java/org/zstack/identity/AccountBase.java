@@ -13,6 +13,10 @@ import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQLBatch;
+import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -460,30 +464,39 @@ public class AccountBase extends AbstractAccount {
             }
         }
 
-        List<SharedResourceVO> vos = new ArrayList<SharedResourceVO>();
-        if (msg.isToPublic()) {
-            for (String ruuid : msg.getResourceUuids()) {
-                SharedResourceVO svo = new SharedResourceVO();
-                svo.setOwnerAccountUuid(msg.getAccountUuid());
-                svo.setResourceType(uuidType.get(ruuid));
-                svo.setResourceUuid(ruuid);
-                svo.setToPublic(true);
-                vos.add(svo);
-            }
-        } else {
-            for (String ruuid : msg.getResourceUuids()) {
-                for (String auuid : msg.getAccountUuids()) {
-                    SharedResourceVO svo = new SharedResourceVO();
-                    svo.setOwnerAccountUuid(msg.getAccountUuid());
-                    svo.setResourceType(uuidType.get(ruuid));
-                    svo.setResourceUuid(ruuid);
-                    svo.setReceiverAccountUuid(auuid);
-                    vos.add(svo);
+        new SQLBatch(){
+            @Override
+            protected void scripts() {
+                if (msg.isToPublic()) {
+                    for (String ruuid : msg.getResourceUuids()) {
+                        if(Q.New(SharedResourceVO.class)
+                                .eq(SharedResourceVO_.ownerAccountUuid, msg.getAccountUuid())
+                                .eq(SharedResourceVO_.resourceUuid, ruuid)
+                                .eq(SharedResourceVO_.toPublic, msg.isToPublic())
+                                .isExists()){
+                            continue;
+                        }
+                        SharedResourceVO svo = new SharedResourceVO();
+                        svo.setOwnerAccountUuid(msg.getAccountUuid());
+                        svo.setResourceType(uuidType.get(ruuid));
+                        svo.setResourceUuid(ruuid);
+                        svo.setToPublic(true);
+                        dbf.getEntityManager().persist(svo);
+                    }
+                } else {
+                    for (String ruuid : msg.getResourceUuids()) {
+                        for (String auuid : msg.getAccountUuids()) {
+                            SharedResourceVO svo = new SharedResourceVO();
+                            svo.setOwnerAccountUuid(msg.getAccountUuid());
+                            svo.setResourceType(uuidType.get(ruuid));
+                            svo.setResourceUuid(ruuid);
+                            svo.setReceiverAccountUuid(auuid);
+                            dbf.getEntityManager().persist(svo);
+                        }
+                    }
                 }
             }
-        }
-
-        dbf.persistCollection(vos);
+        }.execute();
 
         APIShareResourceEvent evt = new APIShareResourceEvent(msg.getId());
         bus.publish(evt);
