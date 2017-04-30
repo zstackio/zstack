@@ -667,6 +667,10 @@ public class RestServer implements Component, CloudBusEventListener {
             }
 
             sessionId = auth.replaceFirst("OAuth", "").trim();
+            if (!StringDSL.isZstackUuid(sessionId)) {
+                throw new RestException(HttpStatus.BAD_REQUEST.value(), String.format("sessionUuid '%s' is invalid", sessionId));
+            }
+
         }
 
         if (APIQueryMessage.class.isAssignableFrom(api.apiClass)) {
