@@ -661,6 +661,7 @@ public class RestServer implements Component, CloudBusEventListener {
                 throw new RestException(HttpStatus.BAD_REQUEST.value(), "missing header 'Authorization'");
             }
 
+            auth = auth.replaceAll(":","");
             auth = auth.trim();
             if (!auth.startsWith(RestConstants.HEADER_OAUTH)) {
                 throw new RestException(HttpStatus.BAD_REQUEST.value(), String.format("Authorization type must be '%s'", RestConstants.HEADER_OAUTH));
