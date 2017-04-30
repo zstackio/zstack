@@ -3,7 +3,6 @@ package scripts
 import com.google.common.io.Resources
 import groovy.json.JsonBuilder
 import org.apache.commons.io.Charsets
-import org.apache.commons.io.FileUtils
 import org.apache.commons.lang.StringUtils
 import org.springframework.http.HttpMethod
 import org.zstack.core.Platform
@@ -12,19 +11,13 @@ import org.zstack.header.exception.CloudRuntimeException
 import org.zstack.header.identity.SuppressCredentialCheck
 import org.zstack.header.message.APIParam
 import org.zstack.header.query.APIQueryMessage
-import org.zstack.header.query.AutoQuery
 import org.zstack.header.rest.APINoSee
 import org.zstack.header.rest.RestRequest
 import org.zstack.header.rest.RestResponse
 import org.zstack.rest.RestConstants
 import org.zstack.rest.sdk.DocumentGenerator
 import org.zstack.rest.sdk.DocumentGenerator.DocMode
-import org.zstack.utils.DebugUtils
-import org.zstack.utils.FieldUtils
-import org.zstack.utils.ShellResult
-import org.zstack.utils.ShellUtils
-import org.zstack.utils.TypeUtils
-import org.zstack.utils.Utils
+import org.zstack.utils.*
 import org.zstack.utils.gson.JSONObjectUtil
 import org.zstack.utils.logging.CLogger
 import org.zstack.utils.path.PathUtil
@@ -32,10 +25,8 @@ import org.zstack.utils.path.PathUtil
 import java.lang.reflect.Field
 import java.lang.reflect.Method
 import java.lang.reflect.Modifier
-import java.util.concurrent.TimeUnit
 import java.util.regex.Matcher
 import java.util.regex.Pattern
-
 /**
  * Created by xing5 on 2016/12/21.
  */
@@ -558,7 +549,7 @@ ${cols.join("\n")}
 
             List<String> examples = paths.collect {
                 def curl = ["curl -H \"Content-Type: application/json\""]
-                curl.add("-H \"${RestConstants.HEADER_OAUTH}: ${Platform.getUuid()}\"")
+                curl.add("-H \"${RestConstants.HEADER_OAUTH}: OAuth ${Platform.getUuid()}\"")
 
                 curl.add("-X ${at.method()}")
 
@@ -783,7 +774,7 @@ ${table.join("\n")}
             List<String> examples = paths.collect {
                 def curl = ["curl -H \"Content-Type: application/json\""]
                 if (!clz.isAnnotationPresent(SuppressCredentialCheck.class)) {
-                    curl.add("-H \"${RestConstants.HEADER_OAUTH}: ${Platform.getUuid()}\"")
+                    curl.add("-H \"${RestConstants.HEADER_OAUTH}: OAuth ${Platform.getUuid()}\"")
                 }
 
                 boolean queryString = at.method() == HttpMethod.GET
@@ -1322,7 +1313,7 @@ ${fieldStr}
                 return ""
             }
 
-            return """header (${RestConstants.HEADER_OAUTH}: 'the-session-uuid')"""
+            return """header (${RestConstants.HEADER_OAUTH}: OAuth 'the-session-uuid')"""
         }
 
         String getParamName() {
