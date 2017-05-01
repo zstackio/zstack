@@ -636,8 +636,6 @@ CREATE TABLE  `zstack`.`NotificationSubscriptionVO` (
 
 ALTER TABLE LocalStorageResourceRefVO DROP FOREIGN KEY `fkLocalStorageResourceRefVOHostEO`;
 
-ALTER TABLE VipVO ADD CONSTRAINT fkUsedIpVO FOREIGN KEY (`usedIpUuid`) REFERENCES `UsedIpVO` (`uuid`) ON DELETE CASCADE;
-
 ALTER TABLE VCenterVO ADD port int DEFAULT NULL;
 SET FOREIGN_KEY_CHECKS = 0;
 
@@ -795,6 +793,7 @@ UPDATE QuotaVO SET uuid = REPLACE(UUID(),'-','') WHERE uuid IS NULL;
 ALTER TABLE QuotaVO MODIFY uuid varchar(32) UNIQUE NOT NULL PRIMARY KEY;
 
 ALTER TABLE `zstack`.`JsonLabelVO` modify column resourceUuid varchar(32) DEFAULT NULL;
+ALTER TABLE `zstack`.`VipVO` ADD UNIQUE INDEX(`ipRangeUuid`,`ip`);
 
 CREATE TABLE `ResourceVO` (
   `uuid` varchar(32) NOT NULL UNIQUE,
