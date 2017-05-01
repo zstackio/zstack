@@ -349,7 +349,7 @@ CREATE TABLE `HybridAccountVO` (
   `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`uuid`),
   UNIQUE KEY `idxHybridAccountVOKey` (`akey`) USING BTREE,
-  KEY `accountUuid` (`accountUuid`),
+  UNIQUE KEY `accountUuid` (`accountUuid`) USING BTREE,
   KEY `userUuid` (`userUuid`),
   CONSTRAINT `fkHybridAccountVOAccountVO` FOREIGN KEY (`accountUuid`) REFERENCES `zstack`.`AccountVO` (`uuid`) ON DELETE CASCADE,
   CONSTRAINT `fkHybridAccountVOUserVO` FOREIGN KEY (`userUuid`) REFERENCES `zstack`.`UserVO` (`uuid`) ON DELETE CASCADE
