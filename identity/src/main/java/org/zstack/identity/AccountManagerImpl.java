@@ -37,6 +37,10 @@ import org.zstack.header.notification.ApiNotificationFactory;
 import org.zstack.header.notification.ApiNotificationFactoryExtensionPoint;
 import org.zstack.header.search.APIGetMessage;
 import org.zstack.header.search.APISearchMessage;
+import org.zstack.header.vo.APIGetResourceNamesMsg;
+import org.zstack.header.vo.APIGetResourceNamesReply;
+import org.zstack.header.vo.ResourceInventory;
+import org.zstack.header.vo.ResourceVO;
 import org.zstack.utils.*;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -58,6 +62,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -341,9 +346,30 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             handle((APIGetResourceAccountMsg) msg);
         } else if (msg instanceof APIChangeResourceOwnerMsg) {
             handle((APIChangeResourceOwnerMsg) msg);
+        } else if (msg instanceof APIGetResourceNamesMsg) {
+            handle((APIGetResourceNamesMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIGetResourceNamesMsg msg) {
+        List<ResourceInventory> invs = new SQLBatchWithReturn<List<ResourceInventory>>() {
+            @Override
+            protected List<ResourceInventory> scripts() {
+                Query q = dbf.getEntityManager().createNativeQuery("select uuid, resourceName, resourceType from ResourceVO where uuid in (:uuids)");
+                q.setParameter("uuids", msg.getUuids());
+                List<Object[]> objs = q.getResultList();
+
+                List<ResourceVO> vos = objs.stream().map(ResourceVO::new).collect(Collectors.toList());
+
+                return ResourceInventory.valueOf(vos);
+            }
+        }.execute();
+
+        APIGetResourceNamesReply reply = new APIGetResourceNamesReply();
+        reply.setInventories(invs);
+        bus.reply(msg, reply);
     }
 
     private void handle(final APIChangeResourceOwnerMsg msg) {
