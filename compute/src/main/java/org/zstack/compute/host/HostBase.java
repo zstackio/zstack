@@ -781,6 +781,13 @@ public abstract class HostBase extends AbstractHost {
         data.setInventory(HostInventory.valueOf(self));
         evtf.fire(HostCanonicalEvents.HOST_STATUS_CHANGED_PATH, data);
 
+        CollectionUtils.safeForEach(pluginRgty.getExtensionList(AfterChangeHostStatusExtensionPoint.class),
+                new ForEachFunction<AfterChangeHostStatusExtensionPoint>() {
+                    @Override
+                    public void run(AfterChangeHostStatusExtensionPoint arg) {
+                        arg.afterChangeHostStatus(self.getUuid(), before, next);
+                    }
+                });
         return true;
     }
 
