@@ -98,8 +98,7 @@ public class HostCapacityUpdater {
     }
 
     @Transactional
-    @DeadlockAutoRestart
-    public boolean run(HostCapacityUpdaterRunnable runnable) {
+    private boolean _run(HostCapacityUpdaterRunnable runnable) {
         if (!lockCapacity()) {
             logDeletedHost();
             return false;
@@ -112,6 +111,11 @@ public class HostCapacityUpdater {
             return true;
         }
         return false;
+    }
+
+    @DeadlockAutoRestart
+    public boolean run(HostCapacityUpdaterRunnable runnable) {
+        return _run(runnable);
     }
 
 }

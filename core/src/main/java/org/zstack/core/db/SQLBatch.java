@@ -60,7 +60,12 @@ public abstract class SQLBatch {
     }
 
     @Transactional
-    public void execute() {
+    private void _execute() {
         scripts();
+    }
+
+    @DeadlockAutoRestart
+    public void execute() {
+        _execute();
     }
 }
