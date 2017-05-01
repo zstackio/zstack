@@ -2458,6 +2458,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             handle((CancelSelfFencerOnKvmHostMsg) msg);
         } else if (msg instanceof DeleteImageCacheOnPrimaryStorageMsg) {
             handle((DeleteImageCacheOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof ValidateExpungeOperationMsg){
+            handle((ValidateExpungeOperationMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -2660,6 +2662,10 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 bus.reply(msg, reply);
             }
         });
+    }
+
+    protected void handle(final ValidateExpungeOperationMsg msg) {
+        bus.reply(msg, new ValidateExpungeOperationReply());
     }
 
     protected void handle(final RevertVolumeFromSnapshotOnPrimaryStorageMsg msg) {

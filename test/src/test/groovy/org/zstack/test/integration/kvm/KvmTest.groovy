@@ -12,6 +12,9 @@ class KvmTest extends Test {
         localStorage()
         virtualRouter()
         securityGroup()
+        nfsPrimaryStorage()
+        smp()
+        ceph()
         kvm()
     }
 

@@ -353,6 +353,8 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
             handle((UploadBitsToBackupStorageMsg) msg);
         } else if (msg instanceof CreateTemporaryVolumeFromSnapshotMsg) {
             handle((CreateTemporaryVolumeFromSnapshotMsg) msg);
+        } else if (msg instanceof ValidateExpungeOperationMsg){
+            handle((ValidateExpungeOperationMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -501,6 +503,14 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
                 bus.reply(msg, reply);
             }
         });
+    }
+
+    protected void handle(final ValidateExpungeOperationMsg msg) {
+        ValidateExpungeOperationReply reply = new ValidateExpungeOperationReply();
+        if (self.getAttachedClusterRefs().isEmpty()){
+            reply.setError(operr("SMP Primary storage [uuid:%s] has been detached all the cluster", self.getUuid()));
+        }
+        bus.reply(msg, reply);
     }
 
     @Transactional(readOnly = true)

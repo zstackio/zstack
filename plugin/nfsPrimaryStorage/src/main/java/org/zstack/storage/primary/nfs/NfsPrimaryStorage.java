@@ -102,10 +102,13 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
             handle((GetVolumeRootImageUuidFromPrimaryStorageMsg) msg);
         } else if (msg instanceof DeleteImageCacheOnPrimaryStorageMsg) {
             handle((DeleteImageCacheOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof ValidateExpungeOperationMsg){
+            handle((ValidateExpungeOperationMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
     }
+
 
     protected void updateMountPoint(PrimaryStorageVO vo, String newUrl) {
         Future<ErrorCode> future = thdf.syncSubmit(new SyncTask<ErrorCode>() {
@@ -1030,6 +1033,14 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                 bus.reply(msg, reply);
             }
         });
+    }
+
+    protected void handle(final ValidateExpungeOperationMsg msg) {
+        ValidateExpungeOperationReply reply = new ValidateExpungeOperationReply();
+        if (self.getAttachedClusterRefs().isEmpty()){
+             reply.setError(operr("NFS Primary storage [uuid:%s] has been detached all the cluster", self.getUuid()));
+        }
+        bus.reply(msg, reply);
     }
 
     protected void hookToKVMHostConnectedEventToChangeStatusToConnected() {
