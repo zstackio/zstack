@@ -2,6 +2,7 @@ package org.zstack.storage.primary.nfs;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.compute.vm.VmExpungeRootVolumeValidator;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -9,6 +10,7 @@ import org.zstack.core.config.GlobalConfigException;
 import org.zstack.core.config.GlobalConfigValidatorExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.Component;
 import org.zstack.header.core.workflow.Flow;
@@ -23,6 +25,8 @@ import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.CreateTemplateFromVolumeSnapshotExtensionPoint;
 import org.zstack.header.volume.VolumeFormat;
+import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.volume.VolumeVO_;
 import org.zstack.kvm.KVMConstant;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.primary.PrimaryStorageSystemTags;
@@ -67,6 +71,33 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
         type.setSupportHeartbeatFile(true);
         type.setSupportPingStorageGateway(true);
         type.setOrder(899);
+    }
+
+    @VmExpungeRootVolumeValidator.VmExpungeRootVolumeValidatorMethod
+    static void vmExpungeRootVolumeValidator(String vmUuid, String volumeUuid) {
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                String psUuid = q(VolumeVO.class).select(VolumeVO_.primaryStorageUuid).eq(VolumeVO_.uuid, volumeUuid)
+                        .findValue();
+
+                if (psUuid == null) {
+                    return;
+                }
+
+                if (!q(PrimaryStorageVO.class).eq(PrimaryStorageVO_.uuid, psUuid)
+                        .eq(PrimaryStorageVO_.type, NfsPrimaryStorageConstant.NFS_PRIMARY_STORAGE_TYPE)
+                        .isExists()) {
+                    // not NFS
+                    return;
+                }
+
+                if (!q(PrimaryStorageClusterRefVO.class).eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, psUuid).isExists()) {
+                    throw new OperationFailureException(operr("the NFS primary storage[uuid:%s] is not attached" +
+                            " to any clusters, and cannot expunge the root volume[uuid:%s] of the VM[uuid:%s]", psUuid, vmUuid, volumeUuid));
+                }
+            }
+        }.execute();
     }
 
     @Override
