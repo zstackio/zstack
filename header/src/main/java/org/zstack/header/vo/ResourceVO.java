@@ -17,7 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Entity
 @Table
 @Inheritance(strategy = InheritanceType.JOINED)
-public abstract class ResourceVO {
+public class ResourceVO {
     @Id
     @Column
     @Index
@@ -30,6 +30,15 @@ public abstract class ResourceVO {
     private String resourceType;
 
     private static Map<Class, Field> nameFields = new ConcurrentHashMap<>();
+
+    public ResourceVO() {
+    }
+
+    public ResourceVO(Object[] objs) {
+        uuid = (String) objs[0];
+        resourceName = (String) objs[1];
+        resourceType = (String) objs[2];
+    }
 
     private Field getNameField() {
         Field f = nameFields.get(getClass());
