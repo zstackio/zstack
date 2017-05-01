@@ -113,6 +113,7 @@
             <zstack:extension interface="org.zstack.header.network.l3.L3NetworkDeleteExtensionPoint" />
             <zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor" />
             <zstack:extension interface="org.zstack.header.identity.ResourceOwnerAfterChangeExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.host.AfterChangeHostStatusExtensionPoint"/>
         </zstack:plugin>
     </bean>
 

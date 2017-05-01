@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.allocator.HostAllocatorManager;
 import org.zstack.core.Platform;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfig;
@@ -12,6 +13,7 @@ import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.DbEntityLister;
 import org.zstack.core.db.SQLBatchWithReturn;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -34,6 +36,8 @@ import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.configuration.DiskOfferingVO;
 import org.zstack.header.configuration.DiskOfferingVO_;
 import org.zstack.header.configuration.InstanceOfferingVO;
+import org.zstack.header.core.FutureCompletion;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.scheduler.APICreateSchedulerMessage;
 import org.zstack.header.core.workflow.FlowChain;
@@ -42,6 +46,7 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudConfigureFailException;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.host.AfterChangeHostStatusExtensionPoint;
 import org.zstack.header.host.HostCanonicalEvents;
 import org.zstack.header.host.HostCanonicalEvents.HostStatusChangedData;
 import org.zstack.header.host.HostInventory;
@@ -105,7 +110,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
         ManagementNodeReadyExtensionPoint,
         L3NetworkDeleteExtensionPoint,
         ResourceOwnerAfterChangeExtensionPoint,
-        GlobalApiMessageInterceptor {
+        GlobalApiMessageInterceptor,
+        AfterChangeHostStatusExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VmInstanceManagerImpl.class);
     private Map<String, VmInstanceFactory> vmInstanceFactories = Collections.synchronizedMap(new HashMap<>());
     private List<String> createVmWorkFlowElements;
@@ -812,7 +818,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
             populateExtensions();
             installSystemTagValidator();
             installGlobalConfigUpdater();
-            setupCanonicalEvents();
 
             bus.installBeforeDeliveryMessageInterceptor(new AbstractBeforeDeliveryMessageInterceptor() {
                 @Override
@@ -839,24 +844,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
         } catch (Exception e) {
             throw new CloudConfigureFailException(VmInstanceManagerImpl.class, e.getMessage(), e);
         }
-    }
-
-    private void setupCanonicalEvents() {
-        evtf.on(HostCanonicalEvents.HOST_STATUS_CHANGED_PATH, new EventCallback() {
-            @Override
-            public void run(Map tokens, Object data) {
-                HostStatusChangedData d = (HostStatusChangedData) data;
-                if (!HostStatus.Disconnected.toString().equals(d.getNewStatus())) {
-                    return;
-                }
-
-                if (!destMaker.isManagedByUs(d.getHostUuid())) {
-                    return;
-                }
-
-                putVmToUnknownState(d.getHostUuid());
-            }
-        });
     }
 
     private void installGlobalConfigUpdater() {
@@ -1015,25 +1002,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         return vmInstanceBaseExtensionFactories.get(msg.getClass());
     }
 
-    @Transactional
-    protected void putVmToUnknownState(final String hostUuid) {
-        SimpleQuery<VmInstanceVO> query = dbf.createQuery(VmInstanceVO.class);
-        query.select(VmInstanceVO_.uuid);
-        query.add(VmInstanceVO_.hostUuid, Op.EQ, hostUuid);
-        List<String> tss = query.listValue();
-        List<VmStateChangedOnHostMsg> msgs = CollectionUtils.transformToList(tss, new Function<VmStateChangedOnHostMsg, String>() {
-            @Override
-            public VmStateChangedOnHostMsg call(String vmUuid) {
-                VmStateChangedOnHostMsg msg = new VmStateChangedOnHostMsg();
-                msg.setVmInstanceUuid(vmUuid);
-                msg.setHostUuid(hostUuid);
-                msg.setStateOnHost(VmInstanceState.Unknown);
-                bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vmUuid);
-                return msg;
-            }
-        });
-        bus.send(msgs);
-    }
+
 
     @Override
     public FlowChain getCreateVmWorkFlowChain(VmInstanceInventory inv) {
@@ -1955,5 +1924,43 @@ public class VmInstanceManagerImpl extends AbstractService implements
         }
     }
 
+    @Override
+    public void afterChangeHostStatus(String hostUuid, HostStatus before, HostStatus next) {
+        if(next == HostStatus.Disconnected) {
+            List<String> vmUuids = Q.New(VmInstanceVO.class).select(VmInstanceVO_.uuid)
+                    .eq(VmInstanceVO_.hostUuid, hostUuid)
+                    .listValues();
+            if(vmUuids.isEmpty()){
+                return;
+            }
+
+            FutureCompletion future = new FutureCompletion(null);
+
+            new While<>(vmUuids).all((vmUuid, completion) -> {
+                VmStateChangedOnHostMsg msg = new VmStateChangedOnHostMsg();
+                msg.setVmInstanceUuid(vmUuid);
+                msg.setHostUuid(hostUuid);
+                msg.setStateOnHost(VmInstanceState.Unknown);
+                bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vmUuid);
+                bus.send(msg, new CloudBusCallBack(completion) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if(!reply.isSuccess()){
+                            //TODO: Need notification
+                           logger.warn(String.format( "fail to change vm[uuid:%s]'s state to Unknown,%s",
+                                   vmUuid, reply.getError()));
+                        }
+                        completion.done();
+                    }
+                });
+            }).run(new NoErrorCompletion(future) {
+                @Override
+                public void done() {
+                    future.success();
+                }
+            });
+            future.await();
+        }
+    }
 
 }
