@@ -707,10 +707,8 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
         return getEntityInfo(clazz).isExist(id);
     }
 
-    @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    @DeadlockAutoRestart
-    public void eoCleanup(Class VOClazz) {
+    private void _eoCleanup(Class VOClazz) {
         EntityInfo info = getEntityInfo(VOClazz);
         if (!info.hasEO()) {
             return;
@@ -726,6 +724,12 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
         }
 
         info.hardDelete(ids);
+    }
+
+    @Override
+    @DeadlockAutoRestart
+    public void eoCleanup(Class VOClazz) {
+        _eoCleanup(VOClazz);
     }
 
     @Override

@@ -142,7 +142,6 @@ public class PrimaryStorageCapacityUpdater {
     }
 
     @Transactional
-    @DeadlockAutoRestart
     private boolean _updateAvailablePhysicalCapacity(long avail) {
         if (!lockCapacity()) {
             logDeletedPrimaryStorage();
@@ -155,6 +154,7 @@ public class PrimaryStorageCapacityUpdater {
     }
 
 
+    @DeadlockAutoRestart
     public boolean updateAvailablePhysicalCapacity(long avail) {
         boolean ret = _updateAvailablePhysicalCapacity(avail);
         checkResize();
@@ -162,7 +162,6 @@ public class PrimaryStorageCapacityUpdater {
     }
 
     @Transactional
-    @DeadlockAutoRestart
     private boolean _increaseAvailableCapacity(long size) {
         if (!lockCapacity()) {
             logDeletedPrimaryStorage();
@@ -180,6 +179,7 @@ public class PrimaryStorageCapacityUpdater {
         return true;
     }
 
+    @DeadlockAutoRestart
     public boolean increaseAvailableCapacity(long size) {
         boolean ret = _increaseAvailableCapacity(size);
         checkResize();
@@ -187,7 +187,6 @@ public class PrimaryStorageCapacityUpdater {
     }
 
     @Transactional
-    @DeadlockAutoRestart
     private boolean _decreaseAvailableCapacity(long size) {
         if (!lockCapacity()) {
             logDeletedPrimaryStorage();
@@ -199,6 +198,7 @@ public class PrimaryStorageCapacityUpdater {
         return true;
     }
 
+    @DeadlockAutoRestart
     public boolean decreaseAvailableCapacity(long size) {
         boolean ret = _decreaseAvailableCapacity(size);
         checkResize();
@@ -206,7 +206,6 @@ public class PrimaryStorageCapacityUpdater {
     }
 
     @Transactional
-    @DeadlockAutoRestart
     private boolean _update(Long total, Long avail, Long physicalTotal, Long physicalAvail) {
         if (!lockCapacity()) {
             logDeletedPrimaryStorage();
@@ -234,6 +233,7 @@ public class PrimaryStorageCapacityUpdater {
         return true;
     }
 
+    @DeadlockAutoRestart
     public boolean update(Long total, Long avail, Long physicalTotal, Long physicalAvail) {
         boolean ret = _update(total, avail, physicalTotal, physicalAvail);
         checkResize();
@@ -241,7 +241,6 @@ public class PrimaryStorageCapacityUpdater {
     }
 
     @Transactional
-    @DeadlockAutoRestart
     private boolean _run(PrimaryStorageCapacityUpdaterRunnable runnable) {
         if (!lockCapacity()) {
             logDeletedPrimaryStorage();
@@ -257,6 +256,7 @@ public class PrimaryStorageCapacityUpdater {
         return false;
     }
 
+    @DeadlockAutoRestart
     public boolean run(PrimaryStorageCapacityUpdaterRunnable runnable) {
         boolean ret = _run(runnable);
         checkResize();
@@ -268,8 +268,7 @@ public class PrimaryStorageCapacityUpdater {
     }
 
     @Transactional
-    @DeadlockAutoRestart
-    public boolean reserve(long size, boolean exceptionOnFailure) {
+    private boolean _reserve(long size, boolean exceptionOnFailure) {
         if (!lockCapacity()) {
             logDeletedPrimaryStorage();
             return false;
@@ -278,7 +277,7 @@ public class PrimaryStorageCapacityUpdater {
         if (capacityVO.getAvailableCapacity() < size) {
             if (exceptionOnFailure) {
                 throw new OperationFailureException(operr("cannot reserve %s bytes on the primary storage[uuid:%s]," +
-                                " it's short of available capacity", size, capacityVO.getUuid()));
+                        " it's short of available capacity", size, capacityVO.getUuid()));
             } else {
                 return false;
             }
@@ -287,5 +286,10 @@ public class PrimaryStorageCapacityUpdater {
         capacityVO.setAvailableCapacity(capacityVO.getAvailableCapacity() - size);
         merge();
         return true;
+    }
+
+    @DeadlockAutoRestart
+    public boolean reserve(long size, boolean exceptionOnFailure) {
+        return _reserve(size, exceptionOnFailure);
     }
 }

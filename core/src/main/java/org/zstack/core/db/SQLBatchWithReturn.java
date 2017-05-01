@@ -60,7 +60,12 @@ public abstract class SQLBatchWithReturn<T> {
     }
 
     @Transactional
-    public T execute() {
+    private T _execute() {
         return scripts();
+    }
+
+    @DeadlockAutoRestart
+    public T execute() {
+        return _execute();
     }
 }
