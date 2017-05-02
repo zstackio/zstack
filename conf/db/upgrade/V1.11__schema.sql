@@ -591,17 +591,7 @@ CREATE TABLE  `zstack`.`TaskProgressVO` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 # Foreign keys for table TaskProgressVO
-ALTER TABLE TaskProgressVO ADD COLUMN createDate timestamp;
 ALTER TABLE TaskProgressVO ADD CONSTRAINT fkTaskProgressVOManagementNodeVO FOREIGN KEY (managementUuid) REFERENCES ManagementNodeVO (uuid) ON DELETE SET NULL;
-
-CREATE TABLE  `zstack`.`TaskStepVO` (
-    `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
-    `taskName` varchar(1024) NOT NULL,
-    `content` text DEFAULT NULL,
-    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
-    `createDate` timestamp,
-    PRIMARY KEY  (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE ProgressVO;
 
