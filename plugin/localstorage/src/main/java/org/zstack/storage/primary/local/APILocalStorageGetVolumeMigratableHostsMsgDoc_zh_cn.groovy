@@ -11,7 +11,7 @@ doc {
 
     rest {
         request {
-			url "GET /v1/volumes/{uuid}/migration-target-hosts"
+			url "GET /v1/volumes/{volumeUuid}/migration-target-hosts"
 
 
             header (OAuth: 'the-session-uuid')
