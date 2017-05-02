@@ -1,7 +1,5 @@
 package org.zstack.core.notification
 
-import org.zstack.core.notification.APIDeleteNotificationsEvent
-
 doc {
     title "DeleteNotifications"
 
@@ -14,7 +12,7 @@ doc {
 			url "DELETE /v1/notifications"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIDeleteNotificationsMsg.class
 

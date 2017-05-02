@@ -672,7 +672,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         }).start();
     }
 
-    protected PrimaryStorageVO updatePrimaryStorage(APIUpdatePrimaryStorageMsg msg) {
+    protected void updatePrimaryStorage(APIUpdatePrimaryStorageMsg msg, ReturnValueCompletion<PrimaryStorageVO> completion) {
         boolean update = false;
         if (msg.getName() != null) {
             self.setName(msg.getName());
@@ -682,20 +682,27 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             self.setDescription(msg.getDescription());
             update = true;
         }
-
-        return update ? self : null;
+        completion.success(update? self : null);
     }
 
     private void handle(APIUpdatePrimaryStorageMsg msg) {
-        PrimaryStorageVO vo = updatePrimaryStorage(msg);
-
-        if (vo != null) {
-            self = dbf.updateAndRefresh(vo);
-        }
-
         APIUpdatePrimaryStorageEvent evt = new APIUpdatePrimaryStorageEvent(msg.getId());
-        evt.setInventory(getSelfInventory());
-        bus.publish(evt);
+        updatePrimaryStorage(msg, new ReturnValueCompletion<PrimaryStorageVO>(msg) {
+            @Override
+            public void success(PrimaryStorageVO vo) {
+                if (vo != null){
+                    self = dbf.updateAndRefresh(vo);
+                }
+                evt.setInventory(getSelfInventory());
+                bus.publish(evt);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                evt.setError(errorCode);
+                bus.publish(evt);
+            }
+        });
     }
 
     protected void changeStatus(PrimaryStorageStatus status) {

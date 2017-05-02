@@ -4,6 +4,7 @@ import org.apache.commons.net.util.SubnetUtils;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 import org.zstack.header.vo.Index;
+import org.zstack.header.vo.ResourceVO;
 
 import javax.persistence.Column;
 import javax.persistence.Id;
@@ -12,11 +13,7 @@ import javax.persistence.PreUpdate;
 import java.sql.Timestamp;
 
 @MappedSuperclass
-public class IpRangeAO {
-    @Id
-    @Column
-    private String uuid;
-
+public class IpRangeAO extends ResourceVO {
     @Column
     @ForeignKey(parentEntityClass = L3NetworkEO.class, onDeleteAction = ReferenceOption.CASCADE)
     private String l3NetworkUuid;
@@ -69,14 +66,6 @@ public class IpRangeAO {
 
     public void setNetworkCidr(String networkCidr) {
         this.networkCidr = networkCidr;
-    }
-
-    public String getUuid() {
-        return uuid;
-    }
-
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
     }
 
     public String getName() {

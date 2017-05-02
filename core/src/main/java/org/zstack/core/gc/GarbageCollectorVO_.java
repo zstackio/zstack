@@ -1,5 +1,7 @@
 package org.zstack.core.gc;
 
+import org.zstack.header.vo.ResourceVO_;
+
 import javax.persistence.metamodel.SingularAttribute;
 import javax.persistence.metamodel.StaticMetamodel;
 import java.sql.Timestamp;
@@ -8,9 +10,7 @@ import java.sql.Timestamp;
  * Created by frank on 8/5/2015.
  */
 @StaticMetamodel(GarbageCollectorVO.class)
-public class GarbageCollectorVO_ {
-    public static volatile SingularAttribute<GarbageCollectorVO, Long> id;
-    public static volatile SingularAttribute<GarbageCollectorVO, String> uuid;
+public class GarbageCollectorVO_ extends ResourceVO_ {
     public static volatile SingularAttribute<GarbageCollectorVO, Long> name;
     public static volatile SingularAttribute<GarbageCollectorVO, String> runnerClass;
     public static volatile SingularAttribute<GarbageCollectorVO, String> context;

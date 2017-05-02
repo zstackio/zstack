@@ -14,7 +14,7 @@ doc {
 			url "PUT /v1/backup-storage/sftp/{uuid}/actions"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIUpdateSftpBackupStorageMsg.class
 

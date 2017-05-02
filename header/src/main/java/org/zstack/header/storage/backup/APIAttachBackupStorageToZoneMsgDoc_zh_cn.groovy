@@ -12,7 +12,7 @@ doc {
 			url "POST /v1/zones/{zoneUuid}/backup-storage/{backupStorageUuid}"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIAttachBackupStorageToZoneMsg.class
 

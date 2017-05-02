@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.asyncbatch.AsyncBatchRunner;
 import org.zstack.core.asyncbatch.LoopAsyncBatch;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
@@ -16,6 +17,7 @@ import org.zstack.core.errorcode.schema.Error;
 import org.zstack.core.logging.Log;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.Flow;
@@ -50,6 +52,8 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.createComponentLoaderFromWebApplicationContext;
+import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 
 import javax.persistence.Query;
@@ -107,49 +111,48 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
 
     private static final String QCOW3_QEMU_IMG_VERSION = "2.0.0";
 
-    private void mount(PrimaryStorageInventory inv, String hostUuid) {
+    private void mount(PrimaryStorageInventory inv, String hostUuid, Completion completion) {
         MountCmd cmd = new MountCmd();
         cmd.setUrl(inv.getUrl());
         cmd.setMountPath(inv.getMountPath());
         cmd.setUuid(inv.getUuid());
         cmd.setOptions(NfsSystemTags.MOUNT_OPTIONS.getTokenByResourceUuid(inv.getUuid(), NfsSystemTags.MOUNT_OPTIONS_TOKEN));
 
-        KVMHostSyncHttpCallMsg msg = new KVMHostSyncHttpCallMsg();
-        msg.setCommand(cmd);
-        msg.setPath(MOUNT_PRIMARY_STORAGE_PATH);
-        msg.setHostUuid(hostUuid);
-        msg.setNoStatusCheck(true);
-        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
-        MessageReply reply = bus.call(msg);
+        KvmCommandSender sender = new KvmCommandSender(hostUuid);
+        sender.send(cmd, MOUNT_PRIMARY_STORAGE_PATH, new KvmCommandFailureChecker() {
+            @Override
+            public ErrorCode getError(KvmResponseWrapper wrapper) {
+                MountAgentResponse rsp = wrapper.getResponse(MountAgentResponse.class);
+                return rsp.isSuccess() ? null : operr(rsp.getError());
+            }
+        }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
+            @Override
+            public void success(KvmResponseWrapper returnValue) {
+                MountAgentResponse rsp = returnValue.getResponse(MountAgentResponse.class);
+                new PrimaryStorageCapacityUpdater(inv.getUuid()).update(
+                        rsp.getTotalCapacity(), rsp.getAvailableCapacity(), rsp.getTotalCapacity(), rsp.getAvailableCapacity()
+                );
 
-        if (!reply.isSuccess()) {
-            ErrorCode err = reply.getError();
-
-            if (reply.getError().getDetails().contains("java.net.SocketTimeoutException: Read timed out")) {
-                // socket read timeout is caused by timeout of mounting a wrong URL
-                err = errf.instantiateErrorCode(SysErrors.TIMEOUT, String.format("mount timeout. Please the check if the URL[%s] is" +
-                        " valid to mount", inv.getUrl()), reply.getError());
+                logger.debug(String.format(
+                        "Successfully mounted nfs primary storage[uuid:%s] on kvm host[uuid:%s]",
+                        inv.getUuid(), hostUuid));
+                completion.success();
             }
 
-            throw new OperationFailureException(err);
-        }
-
-        MountAgentResponse rsp = ((KVMHostSyncHttpCallReply) reply).toResponse(MountAgentResponse.class);
-        if (!rsp.isSuccess()) {
-            throw new OperationFailureException(operr(rsp.getError()));
-        }
-
-        new PrimaryStorageCapacityUpdater(inv.getUuid()).update(
-                rsp.getTotalCapacity(), rsp.getAvailableCapacity(), rsp.getTotalCapacity(), rsp.getAvailableCapacity()
-        );
-
-        logger.debug(String.format(
-                "Successfully mounted nfs primary storage[uuid:%s] on kvm host[uuid:%s]",
-                inv.getUuid(), hostUuid));
+            @Override
+            public void fail(ErrorCode errorCode) {
+                if (errorCode.getDetails().contains("java.net.SocketTimeoutException: Read timed out")) {
+                    // socket read timeout is caused by timeout of mounting a wrong URL
+                    errorCode = errf.instantiateErrorCode(SysErrors.TIMEOUT, String.format("mount timeout. Please the check if the URL[%s] is" +
+                            " valid to mount", inv.getUrl()), errorCode);
+                }
+                completion.fail(errorCode);
+            }
+        });
     }
 
     @Override
-    public boolean attachToCluster(PrimaryStorageInventory inv, String clusterUuid) throws NfsPrimaryStorageException {
+    public void attachToCluster(PrimaryStorageInventory inv, String clusterUuid, ReturnValueCompletion<Boolean> completion){
         if (!CoreGlobalProperty.UNIT_TEST_ON) {
             checkQemuImgVersionInOtherClusters(inv, clusterUuid);
         }
@@ -160,11 +163,37 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         query.add(HostVO_.status, Op.EQ, HostStatus.Connected);
         query.add(HostVO_.clusterUuid, Op.EQ, clusterUuid);
         List<String> hostUuids = query.listValue();
-        for (String huuid : hostUuids) {
-            mount(inv, huuid);
+        if(hostUuids.isEmpty()){
+            completion.success(false);// !isEmpty
+            return;
         }
 
-        return !hostUuids.isEmpty();
+        List<ErrorCode> errs = new ArrayList<>();
+        new While<>(hostUuids).all((hostUuid, compl) -> {
+            mount(inv, hostUuid, new Completion(compl){
+
+                @Override
+                public void success() {
+                    compl.done();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    errs.add(errorCode);
+                    compl.done();
+                }
+            });
+
+        }).run(new NoErrorCompletion() {
+            @Override
+            public void done() {
+                if(!errs.isEmpty()){
+                    completion.fail(errs.get(0));
+                }else {
+                    completion.success(true);
+                }
+            }
+        });
     }
 
     private void checkQemuImgVersionInOtherClusters(final PrimaryStorageInventory inv, String clusterUuid) {
@@ -638,9 +667,39 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         if (ps.isEmpty()) {
             return;
         }
+        FutureCompletion compl = new FutureCompletion(null);
 
-        for (PrimaryStorageVO pvo : ps) {
-            mount(PrimaryStorageInventory.valueOf(pvo), inv.getUuid());
+        List<ErrorCode> errs = new ArrayList<>();
+        new While<>(ps).each((pvo, completion) -> {
+            mount(PrimaryStorageInventory.valueOf(pvo), inv.getUuid(), new Completion(completion){
+
+                @Override
+                public void success() {
+                    completion.done();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    errs.add(errorCode);
+                    completion.done();
+                }
+            });
+
+        }).run(new NoErrorCompletion() {
+            @Override
+            public void done() {
+                if(!errs.isEmpty()){
+                    compl.fail(errs.get(0));
+                }else {
+                    compl.success();
+                }
+            }
+        });
+
+        compl.await();
+
+        if (!compl.isSuccess()) {
+            throw new OperationFailureException(compl.getErrorCode());
         }
     }
 
@@ -948,8 +1007,9 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
 
                     success = true;
                     if (!reported) {
+                        // Do not directly update availableCapacity, because availableCapacity is not equal to availablePhysicalCapacity
                         new PrimaryStorageCapacityUpdater(pinv.getUuid()).update(
-                                rsp.getTotalCapacity(), rsp.getAvailableCapacity(), rsp.getTotalCapacity(), rsp.getAvailableCapacity()
+                                rsp.getTotalCapacity(), null, rsp.getTotalCapacity(), rsp.getAvailableCapacity()
                         );
                         reported = true;
                     }
@@ -1015,9 +1075,17 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
 
                             @Override
                             public void fail(ErrorCode errorCode) {
+                                errors.add(errorCode);
                                 logger.warn(String.format("failed to update the nfs[uuid:%s, name:%s] mount point" +
-                                                " from %s to %s in the cluster[uuid:%s], %s", pinv.getUuid(), pinv.getName(),
-                                        oldMountPoint, newMountPoint, hostUuid, errorCode));
+                                                " from %s to %s in the cluster[uuid:%s], Disconnected this host, %s",
+                                        pinv.getUuid(), pinv.getName(), oldMountPoint, newMountPoint, hostUuid, errorCode));
+
+                                //TODO: need notification to UI
+                                ChangeHostConnectionStateMsg cmsg = new ChangeHostConnectionStateMsg();
+                                cmsg.setConnectionStateEvent(HostStatusEvent.disconnected.toString());
+                                cmsg.setHostUuid(hostUuid);
+                                bus.makeTargetServiceIdByResourceUuid(cmsg, HostConstant.SERVICE_ID, hostUuid);
+                                bus.send(cmsg);// disconnected host will always return success
                                 completion.done();
                             }
                         });
@@ -1027,7 +1095,11 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
 
             @Override
             protected void done() {
-                completion.success();
+                if(errors.size() == huuids.size()){
+                    completion.fail(errors.get(0));
+                }else {
+                    completion.success();
+                }
             }
         }.start();
     }

@@ -3,6 +3,8 @@ package org.zstack.header.core.scheduler;
 import org.zstack.header.managementnode.ManagementNodeVO;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
+import org.zstack.header.vo.ResourceAttributes;
+import org.zstack.header.vo.ResourceVO;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
@@ -12,11 +14,8 @@ import java.sql.Timestamp;
  */
 @Entity
 @Table
-@Inheritance(strategy = InheritanceType.JOINED)
-public class SchedulerVO {
-    @Id
-    @Column
-    private String uuid;
+@ResourceAttributes(nameField = "jobName")
+public class SchedulerVO extends ResourceVO {
     @Column
     private String targetResourceUuid;
     @Column
@@ -76,14 +75,6 @@ public class SchedulerVO {
 
     public void setManagementNodeUuid(String managementNodeUuid) {
         this.managementNodeUuid = managementNodeUuid;
-    }
-
-    public String getUuid() {
-        return uuid;
-    }
-
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
     }
 
     public Timestamp getStartTime() {

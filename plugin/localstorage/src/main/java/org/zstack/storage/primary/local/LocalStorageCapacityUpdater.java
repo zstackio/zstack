@@ -5,6 +5,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.header.storage.primary.PrimaryStorageCapacityUpdaterRunnable;
 import org.zstack.header.storage.primary.PrimaryStorageCapacityVO;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
@@ -26,31 +29,10 @@ public class LocalStorageCapacityUpdater {
     @Autowired
     private DatabaseFacade dbf;
 
-    @Transactional
-    private LocalStorageHostRefVO updateLocalStorageRef(String psUuid, String hostUuid, AgentResponse rsp) {
-        String sqlLocalStorageHostRefVO = "select ref" +
-                " from LocalStorageHostRefVO ref" +
-                " where ref.hostUuid = :hostUuid" +
-                " and ref.primaryStorageUuid = :primaryStorageUuid";
-        TypedQuery<LocalStorageHostRefVO> query = dbf.getEntityManager().
-                createQuery(sqlLocalStorageHostRefVO, LocalStorageHostRefVO.class);
-        query.setParameter("hostUuid", hostUuid);
-        query.setParameter("primaryStorageUuid", psUuid);
-        List<LocalStorageHostRefVO> refs = query.getResultList();
-        if (refs.isEmpty()) {
-            return null;
-        }
-
-        LocalStorageHostRefVO ref = refs.get(0);
-        CompositePrimaryKeyForLocalStorageHostRefVO id = new CompositePrimaryKeyForLocalStorageHostRefVO();
-        id.setHostUuid(ref.getHostUuid());
-        id.setPrimaryStorageUuid(ref.getPrimaryStorageUuid());
-
-        ref = dbf.getEntityManager().find(LocalStorageHostRefVO.class, id, LockModeType.PESSIMISTIC_WRITE);
-
+    private void updateLocalStorageRef(AgentResponse rsp, LocalStorageHostRefVO ref) {
         if (ref.getAvailablePhysicalCapacity() == rsp.getAvailableCapacity()
                 && ref.getTotalPhysicalCapacity() == rsp.getTotalCapacity()) {
-            return null;
+            return;
         }
 
         long originalPhysicalTotal = ref.getTotalPhysicalCapacity();
@@ -65,29 +47,36 @@ public class LocalStorageCapacityUpdater {
                             "the local primary storage[uuid:%s] as:\n" +
                             "physical total: %s --> %s\n" +
                             "physical available: %s --> %s\n",
-                    hostUuid, psUuid, originalPhysicalTotal, ref.getTotalPhysicalCapacity(),
+                    ref.getHostUuid(), ref.getPrimaryStorageUuid(), originalPhysicalTotal, ref.getTotalPhysicalCapacity(),
                     originalPhysicalAvailable, ref.getAvailablePhysicalCapacity()));
         }
-
-        return ref;
     }
 
     public void updatePhysicalCapacityByKvmAgentResponse(String psUuid, String hostUuid, AgentResponse rsp) {
-        LocalStorageHostRefVO ref = updateLocalStorageRef(psUuid, hostUuid, rsp);
-        if (ref == null) {
-            return;
-        }
-
-        final long totalChange = rsp.getTotalCapacity() - ref.getTotalPhysicalCapacity();
-        final long availChange = rsp.getAvailableCapacity() - ref.getAvailablePhysicalCapacity();
-
-        new PrimaryStorageCapacityUpdater(psUuid).run(new PrimaryStorageCapacityUpdaterRunnable() {
+        new SQLBatch() {
             @Override
-            public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
-                cap.setTotalPhysicalCapacity(cap.getTotalPhysicalCapacity() + totalChange);
-                cap.setAvailablePhysicalCapacity(cap.getAvailablePhysicalCapacity() + availChange);
-                return cap;
+            protected void scripts() {
+                LocalStorageHostRefVO ref = Q.New(LocalStorageHostRefVO.class).eq(LocalStorageHostRefVO_.primaryStorageUuid, psUuid)
+                        .eq(LocalStorageHostRefVO_.hostUuid, hostUuid).find();
+
+                if (ref == null) {
+                    return;
+                }
+
+                final long totalChange = rsp.getTotalCapacity() - ref.getTotalPhysicalCapacity();
+                final long availChange = rsp.getAvailableCapacity() - ref.getAvailablePhysicalCapacity();
+
+                new PrimaryStorageCapacityUpdater(psUuid).run(new PrimaryStorageCapacityUpdaterRunnable() {
+                    @Override
+                    public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
+                        cap.setTotalPhysicalCapacity(cap.getTotalPhysicalCapacity() + totalChange);
+                        cap.setAvailablePhysicalCapacity(cap.getAvailablePhysicalCapacity() + availChange);
+                        return cap;
+                    }
+                });
+
+                updateLocalStorageRef(rsp, ref);
             }
-        });
+        }.execute();
     }
 }

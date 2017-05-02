@@ -12,7 +12,7 @@ doc {
 			url "GET /v1/primary-storage/allocators/strategies"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIGetPrimaryStorageAllocatorStrategiesMsg.class
 

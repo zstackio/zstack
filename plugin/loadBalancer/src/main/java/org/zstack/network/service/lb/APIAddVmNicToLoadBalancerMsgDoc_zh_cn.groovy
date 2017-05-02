@@ -14,7 +14,7 @@ doc {
 			url "POST /v1/load-balancers/listeners/{listenerUuid}/vm-instances/nics"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIAddVmNicToLoadBalancerMsg.class
 

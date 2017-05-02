@@ -14,7 +14,7 @@ doc {
 			url "PUT /v1/l2-networks/{uuid}/actions"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIUpdateL2NetworkMsg.class
 

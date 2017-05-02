@@ -388,6 +388,30 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                         psCap.put(psUuid, ncap);
                     }
                 }
+
+                // calculate all snapshot size
+                {
+                    String sql = "select sum(snapshot.size), snapshot.primaryStorageUuid" +
+                            " from VolumeSnapshotVO snapshot" +
+                            " where snapshot.primaryStorageUuid in (:psUuids)" +
+                            " group by snapshot.primaryStorageUuid";
+                    TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
+                    q.setParameter("psUuids", psUuids);
+                    List<Tuple> ts = q.getResultList();
+
+                    for (Tuple t : ts) {
+                        if (t.get(0, Long.class) == null) {
+                            // no snapshot
+                            continue;
+                        }
+
+                        long cap = t.get(0, Long.class);
+                        String psUuid = t.get(1, String.class);
+                        Long ncap = psCap.get(psUuid);
+                        ncap = ncap == null ? cap : ncap + cap;
+                        psCap.put(psUuid, ncap);
+                    }
+                }
             }
         }.run();
 

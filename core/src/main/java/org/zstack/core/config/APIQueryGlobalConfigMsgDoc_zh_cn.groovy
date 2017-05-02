@@ -15,7 +15,7 @@ doc {
 			url "GET /v1/global-configurations"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIQueryGlobalConfigMsg.class
 

@@ -14,7 +14,7 @@ doc {
 			url "PUT /v1/l3-networks/ip-ranges/{uuid}/actions"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIUpdateIpRangeMsg.class
 

@@ -1,5 +1,6 @@
 package org.zstack.header.core.progress
 
+
 doc {
     title "GetTaskProgress"
 
@@ -12,7 +13,7 @@ doc {
 			url "GET /v1/task-progresses/{apiId}"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIGetTaskProgressMsg.class
 
@@ -28,7 +29,6 @@ doc {
 					type "String"
 					optional true
 					since "1.11"
-					
 				}
 				column {
 					name "all"
@@ -38,7 +38,7 @@ doc {
 					type "boolean"
 					optional true
 					since "1.11"
-					
+
 				}
 				column {
 					name "systemTags"
@@ -48,7 +48,7 @@ doc {
 					type "List"
 					optional true
 					since "1.11"
-					
+
 				}
 				column {
 					name "userTags"
@@ -58,7 +58,7 @@ doc {
 					type "List"
 					optional true
 					since "1.11"
-					
+
 				}
 			}
         }

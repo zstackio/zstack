@@ -1,6 +1,5 @@
 package org.zstack.header.vm;
 
-import org.zstack.header.tag.AutoDeleteTag;
 import org.zstack.header.vo.EO;
 import org.zstack.header.vo.NoView;
 import org.zstack.header.volume.VolumeVO;
@@ -12,9 +11,7 @@ import java.util.Set;
 
 @Entity
 @Table
-@Inheritance(strategy = InheritanceType.JOINED)
 @EO(EOClazz = VmInstanceEO.class)
-@AutoDeleteTag
 public class VmInstanceVO extends VmInstanceAO {
     @OneToMany(fetch = FetchType.EAGER)
     @JoinColumn(name = "vmInstanceUuid", insertable = false, updatable = false)

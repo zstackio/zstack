@@ -12,7 +12,7 @@ doc {
             url "POST /v1/accounts/users"
 
 
-            header(OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APICreateUserMsg.class
 

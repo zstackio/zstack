@@ -2,17 +2,14 @@ package org.zstack.header.identity;
 
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
+import org.zstack.header.vo.ResourceVO;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
 
 @Entity
 @Table
-public class PolicyVO {
-    @Id
-    @Column
-    private String uuid;
-
+public class PolicyVO extends ResourceVO {
     @Column
     private String name;
 
@@ -33,15 +30,6 @@ public class PolicyVO {
     private void preUpdate() {
         lastOpDate = null;
     }
-
-    public String getUuid() {
-        return uuid;
-    }
-
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
-    }
-
 
     public String getData() {
         return data;

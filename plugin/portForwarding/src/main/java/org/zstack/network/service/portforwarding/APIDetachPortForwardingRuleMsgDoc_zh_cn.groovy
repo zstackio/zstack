@@ -14,7 +14,7 @@ doc {
 			url "DELETE /v1/port-forwarding/{uuid}/vm-instances/nics"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIDetachPortForwardingRuleMsg.class
 

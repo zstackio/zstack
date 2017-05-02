@@ -18,4 +18,10 @@ public class APIListGlobalConfigMsg extends APIListMessage {
     }
 
 
+
+    public static APIListGlobalConfigMsg __example__() {
+        APIListGlobalConfigMsg msg = new APIListGlobalConfigMsg();
+        return msg;
+    }
+    
 }

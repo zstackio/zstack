@@ -22,6 +22,7 @@ import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.*;
 import org.zstack.header.rest.RestRequest;
+import org.zstack.header.vo.EO;
 import org.zstack.portal.apimediator.schema.Service;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.FieldUtils;
@@ -388,6 +389,9 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
                                 if (rat == null) {
                                     throw new CloudRuntimeException(String.format("the API class[%s] does not have @RestRequest but it uses a successIfResourceNotExisting helper", msg.getClass()));
                                 }
+
+                                // trigger EO cleanup
+                                dbf.eoCleanup(at.resourceType());
 
                                 APIEvent evt = (APIEvent) rat.responseClass().getConstructor(String.class).newInstance(msg.getId());
 

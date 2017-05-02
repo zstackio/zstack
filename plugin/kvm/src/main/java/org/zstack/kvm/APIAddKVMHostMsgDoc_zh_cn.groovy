@@ -14,7 +14,7 @@ doc {
 			url "POST /v1/hosts/kvm"
 
 
-			header (OAuth: 'the-session-uuid')
+			header (Authorization: 'OAuth the-session-uuid')
 
 			clz APIAddKVMHostMsg.class
 

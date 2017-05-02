@@ -1,22 +1,14 @@
 package org.zstack.header.identity;
 
-import org.zstack.header.search.SqlTrigger;
-import org.zstack.header.search.TriggerIndex;
 import org.zstack.header.vo.Index;
+import org.zstack.header.vo.ResourceVO;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
 
 @Entity
 @Table
-@Inheritance(strategy = InheritanceType.JOINED)
-@TriggerIndex
-@SqlTrigger
-public class AccountVO {
-    @Id
-    @Column
-    private String uuid;
-
+public class AccountVO extends ResourceVO {
     @Column
     @Index
     private String name;
@@ -48,14 +40,6 @@ public class AccountVO {
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public String getUuid() {
-        return uuid;
-    }
-
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
     }
 
     public String getName() {

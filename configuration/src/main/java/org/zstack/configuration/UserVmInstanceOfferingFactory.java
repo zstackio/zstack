@@ -1,6 +1,7 @@
 package org.zstack.configuration;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.configuration.*;
 
@@ -16,8 +17,11 @@ public class UserVmInstanceOfferingFactory implements InstanceOfferingFactory {
     }
 
     @Override
+    @Transactional
     public InstanceOfferingInventory createInstanceOffering(InstanceOfferingVO vo, APICreateInstanceOfferingMsg msg) {
-        vo = dbf.persistAndRefresh(vo);
+        dbf.getEntityManager().persist(vo);
+        dbf.getEntityManager().flush();
+        dbf.getEntityManager().refresh(vo);
         return InstanceOfferingInventory.valueOf(vo);
     }
 

@@ -1,5 +1,7 @@
 package org.zstack.network.service.lb;
 
+import org.zstack.header.vo.ResourceVO_;
+
 import javax.persistence.metamodel.SingularAttribute;
 import javax.persistence.metamodel.StaticMetamodel;
 import java.sql.Timestamp;
@@ -8,8 +10,7 @@ import java.sql.Timestamp;
  * Created by frank on 8/9/2015.
  */
 @StaticMetamodel(LoadBalancerVO.class)
-public class LoadBalancerVO_ {
-    public static volatile SingularAttribute<LoadBalancerVO, String> uuid;
+public class LoadBalancerVO_ extends ResourceVO_ {
     public static volatile SingularAttribute<LoadBalancerVO, String> name;
     public static volatile SingularAttribute<LoadBalancerVO, String> description;
     public static volatile SingularAttribute<LoadBalancerVO, String> providerType;

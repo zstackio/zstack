@@ -6,11 +6,8 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.HardDeleteEntityExtensionPoint;
-import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.core.db.SoftDeleteEntityExtensionPoint;
 import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -175,22 +172,19 @@ public class TagManagerImpl extends AbstractService implements TagManager,
 
     private boolean isTagExisting(String resourceUuid, String tag, TagType type, String resourceType) {
         if (type == TagType.User) {
-            SimpleQuery<UserTagVO> q = dbf.createQuery(UserTagVO.class);
-            q.add(UserTagVO_.resourceType, SimpleQuery.Op.EQ, resourceType);
-            q.add(UserTagVO_.tag, SimpleQuery.Op.EQ, tag);
-            q.add(UserTagVO_.resourceUuid, SimpleQuery.Op.EQ, resourceUuid);
-            long count = q.count();
-            return count != 0;
+            return Q.New(UserTagVO.class).eq(UserTagVO_.resourceType, resourceType)
+                    .eq(UserTagVO_.tag, tag)
+                    .eq(UserTagVO_.resourceUuid, resourceUuid)
+                    .isExists();
         } else {
-            SimpleQuery<SystemTagVO> q = dbf.createQuery(SystemTagVO.class);
-            q.add(SystemTagVO_.resourceType, SimpleQuery.Op.EQ, resourceType);
-            q.add(SystemTagVO_.tag, SimpleQuery.Op.EQ, tag);
-            q.add(SystemTagVO_.resourceUuid, SimpleQuery.Op.EQ, resourceUuid);
-            long count = q.count();
-            return count != 0;
+            return Q.New(SystemTagVO.class).eq(SystemTagVO_.resourceType, resourceType)
+                    .eq(SystemTagVO_.tag, tag)
+                    .eq(SystemTagVO_.resourceUuid, resourceUuid)
+                    .isExists();
         }
     }
 
+    @Transactional
     private TagInventory createTag(String resourceUuid, String tag, TagType type, String resourceType) {
         if (!resourceTypeClassMap.keySet().contains(resourceType)) {
             throw new IllegalArgumentException(String.format("no resource type[%s] found for tag", resourceType));
@@ -208,7 +202,9 @@ public class TagManagerImpl extends AbstractService implements TagManager,
             vo.setUuid(Platform.getUuid());
             vo.setTag(tag);
             vo.setType(type);
-            vo = dbf.persistAndRefresh(vo);
+            dbf.getEntityManager().persist(vo);
+            dbf.getEntityManager().flush();
+            dbf.getEntityManager().refresh(vo);
             return UserTagInventory.valueOf(vo);
         } else {
             SystemTagVO vo = new SystemTagVO();
@@ -221,7 +217,9 @@ public class TagManagerImpl extends AbstractService implements TagManager,
 
             preTagCreated(SystemTagInventory.valueOf(vo));
 
-            vo = dbf.persistAndRefresh(vo);
+            dbf.getEntityManager().persist(vo);
+            dbf.getEntityManager().flush();
+            dbf.getEntityManager().refresh(vo);
 
             SystemTagInventory stag = SystemTagInventory.valueOf(vo);
             fireTagCreated(list(stag));
@@ -231,6 +229,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
 
     @Override
     @Deferred
+    @Transactional
     public SystemTagInventory createNonInherentSystemTag(String resourceUuid, String tag, String resourceType) {
         if (isTagExisting(resourceUuid, tag, TagType.System, resourceType)) {
             return null;
@@ -248,16 +247,14 @@ public class TagManagerImpl extends AbstractService implements TagManager,
 
         preTagCreated(SystemTagInventory.valueOf(vo));
 
-        vo = dbf.persistAndRefresh(vo);
+        dbf.getEntityManager().persist(vo);
+        dbf.getEntityManager().flush();
+        dbf.getEntityManager().refresh(vo);
+
         SystemTagInventory inv = SystemTagInventory.valueOf(vo);
 
         final SystemTagVO finalVo = vo;
-        Defer.guard(new Runnable() {
-            @Override
-            public void run() {
-                dbf.remove(finalVo);
-            }
-        });
+        Defer.guard(() -> dbf.remove(finalVo));
 
         fireTagCreated(list(inv));
         return inv;
@@ -304,6 +301,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     }
 
     @Override
+    @Transactional
     public void createTagsFromAPICreateMessage(APICreateMessage msg, String resourceUuid, String resourceType) {
         if (msg.getSystemTags() != null && !msg.getSystemTags().isEmpty()) {
             for (String sysTag : msg.getSystemTags()) {

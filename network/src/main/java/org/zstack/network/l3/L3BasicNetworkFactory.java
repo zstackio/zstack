@@ -1,6 +1,7 @@
 package org.zstack.network.l3;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.network.l3.*;
@@ -24,9 +25,12 @@ public class L3BasicNetworkFactory implements L3NetworkFactory {
     }
 
     @Override
+    @Transactional
     public L3NetworkInventory createL3Network(L3NetworkVO l3vo, APICreateL3NetworkMsg msg) {
         l3vo.setType(type.toString());
-        l3vo = dbf.persistAndRefresh(l3vo);
+        dbf.getEntityManager().persist(l3vo);
+        dbf.getEntityManager().flush();
+        dbf.getEntityManager().refresh(l3vo);
         return L3NetworkInventory.valueOf(l3vo);
     }
 

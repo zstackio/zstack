@@ -1,6 +1,7 @@
 package org.zstack.configuration;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.configuration.*;
 
@@ -22,8 +23,11 @@ public class DefaultDiskOfferingFactory implements DiskOfferingFactory {
     }
 
     @Override
+    @Transactional
     public DiskOfferingInventory createDiskOffering(DiskOfferingVO vo, APICreateDiskOfferingMsg msg) {
-        vo = dbf.persistAndRefresh(vo);
+        dbf.getEntityManager().persist(vo);
+        dbf.getEntityManager().flush();
+        dbf.getEntityManager().refresh(vo);
         return DiskOfferingInventory.valueOf(vo);
     }
 

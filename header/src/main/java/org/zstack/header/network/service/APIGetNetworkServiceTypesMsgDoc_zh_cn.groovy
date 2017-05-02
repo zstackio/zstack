@@ -14,7 +14,7 @@ doc {
 			url "GET /v1/network-services/types"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIGetNetworkServiceTypesMsg.class
 

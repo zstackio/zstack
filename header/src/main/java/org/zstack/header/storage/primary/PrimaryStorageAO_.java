@@ -1,12 +1,13 @@
 package org.zstack.header.storage.primary;
 
+import org.zstack.header.vo.ResourceVO_;
+
 import javax.persistence.metamodel.SingularAttribute;
 import javax.persistence.metamodel.StaticMetamodel;
 import java.sql.Timestamp;
 
 @StaticMetamodel(PrimaryStorageAO.class)
-public class PrimaryStorageAO_ {
-    public static volatile SingularAttribute<PrimaryStorageAO, String> uuid;
+public class PrimaryStorageAO_ extends ResourceVO_ {
     public static volatile SingularAttribute<PrimaryStorageAO, String> zoneUuid;
     public static volatile SingularAttribute<PrimaryStorageAO, String> description;
     public static volatile SingularAttribute<PrimaryStorageAO, String> name;

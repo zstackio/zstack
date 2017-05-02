@@ -12,7 +12,7 @@ doc {
 			url "PUT /v1/volumes/id}/actions"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIExpungeDataVolumeMsg.class
 

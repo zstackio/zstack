@@ -14,7 +14,7 @@ doc {
 			url "GET /v1/l3-networks/{l3NetworkUuid}/ip/{ip}/availability"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APICheckIpAvailabilityMsg.class
 

@@ -4,17 +4,14 @@ import org.zstack.header.network.l2.L2NetworkEO;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 import org.zstack.header.vo.Index;
+import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.zone.ZoneEO;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
 
 @MappedSuperclass
-public class L3NetworkAO {
-    @Id
-    @Column
-    private String uuid;
-
+public class L3NetworkAO extends ResourceVO {
     @Column
     @Index
     private String name;
@@ -68,14 +65,6 @@ public class L3NetworkAO {
 
     public void setSystem(boolean system) {
         this.system = system;
-    }
-
-    public String getUuid() {
-        return uuid;
-    }
-
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
     }
 
     public String getName() {

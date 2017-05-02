@@ -12,7 +12,7 @@ doc {
             url "DELETE /v1/accounts/users/{userUuid}/policies"
 
 
-            header(OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIDetachPoliciesFromUserMsg.class
 

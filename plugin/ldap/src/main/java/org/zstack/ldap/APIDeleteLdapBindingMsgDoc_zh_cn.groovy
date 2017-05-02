@@ -12,7 +12,7 @@ doc {
             url "DELETE /v1/ldap/bindings/{uuid}"
 
 
-            header(OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIDeleteLdapBindingMsg.class
 

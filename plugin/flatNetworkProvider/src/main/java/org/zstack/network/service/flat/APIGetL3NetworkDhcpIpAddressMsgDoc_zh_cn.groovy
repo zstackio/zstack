@@ -14,7 +14,7 @@ doc {
 			url "GET /v1/l3-networks/{l3NetworkUuid/dhcp-ip"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIGetL3NetworkDhcpIpAddressMsg.class
 

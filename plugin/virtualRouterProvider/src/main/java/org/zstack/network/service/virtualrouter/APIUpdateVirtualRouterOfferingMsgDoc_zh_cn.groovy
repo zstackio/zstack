@@ -14,7 +14,7 @@ doc {
 			url "PUT /v1/instance-offerings/virtual-routers/{uuid}/actions"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIUpdateVirtualRouterOfferingMsg.class
 

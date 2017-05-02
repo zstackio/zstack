@@ -16,7 +16,7 @@ doc {
             url "GET /v1/ldap/bindings/{uuid}"
 
 
-            header(OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIQueryLdapBindingMsg.class
 
