@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<globalConfig xmlns="http://zstack.org/schema/zstack">
+    <config>
+        <category>notification</category>
+        <name>webhook.url</name>
+	<description>The webhook where the management node sends notifications</description>
+        <defaultValue>null</defaultValue>
+        <type>java.lang.String</type>
+    </config>
+</globalConfig>
