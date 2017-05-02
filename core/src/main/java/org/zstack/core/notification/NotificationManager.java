@@ -1,25 +1,34 @@
 package org.zstack.core.notification;
 
+import org.apache.commons.validator.routines.UrlValidator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.config.GlobalConfigException;
+import org.zstack.core.config.GlobalConfigFacade;
+import org.zstack.core.config.GlobalConfigValidatorExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SQL;
 import org.zstack.core.db.SQLBatch;
+import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.Task;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.ExceptionSafe;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.message.*;
 import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.notification.ApiNotificationFactory;
 import org.zstack.header.notification.ApiNotificationFactoryExtensionPoint;
+import org.zstack.header.rest.RESTFacade;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+
+import static org.zstack.core.Platform.argerr;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -43,6 +52,8 @@ public class NotificationManager extends AbstractService {
     private PluginRegistry plugRgty;
     @Autowired
     private ThreadFacade thdf;
+    @Autowired
+    private RESTFacade restf;
 
     private Map<Class, ApiNotificationFactory> apiNotificationFactories = new HashMap<>();
 
@@ -196,7 +207,6 @@ public class NotificationManager extends AbstractService {
         } catch (InterruptedException e) {
             logger.warn(String.format("unable to write log %s", JSONObjectUtil.toJsonString(builder)), e);
         }
-        //TODO: send to bus
     }
 
     @Override
@@ -208,6 +218,20 @@ public class NotificationManager extends AbstractService {
             apiNotificationFactories.putAll(ext.apiNotificationFactory());
         }
 
+
+        NotificationGlobalConfig.WEBHOOK_URL.installValidateExtension(new GlobalConfigValidatorExtensionPoint() {
+            @Override
+            public void validateGlobalConfig(String category, String name, String oldValue, String newValue) throws GlobalConfigException {
+                if (newValue == null || "null".equals(newValue)) {
+                    return;
+                }
+
+
+                if (!new UrlValidator().isValid(newValue)) {
+                    throw new OperationFailureException(argerr("%s is not a valid URL", newValue));
+                }
+            }
+        });
 
         thdf.submit(new Task<Void>() {
             @Override
@@ -233,9 +257,11 @@ public class NotificationManager extends AbstractService {
             notificationsQueue.drainTo(lst);
 
             try {
-                new SQLBatch() {
+                List<NotificationInventory> invs = new SQLBatchWithReturn<List<NotificationInventory>>() {
                     @Override
-                    protected void scripts() {
+                    protected List<NotificationInventory> scripts() {
+                        List<NotificationInventory> invs = new ArrayList<>();
+
                         for (NotificationBuilder builder : lst) {
                             if (builder == quitToken) {
                                 exitQueue = true;
@@ -258,13 +284,27 @@ public class NotificationManager extends AbstractService {
                             }
 
                             dbf.getEntityManager().persist(vo);
+
+                            invs.add(NotificationInventory.valueOf(vo));
                         }
+
+                        return invs;
                     }
                 }.execute();
+
+
+                if (NotificationGlobalConfig.WEBHOOK_URL.value() != null && !NotificationGlobalConfig.WEBHOOK_URL.value().equals("null")) {
+                    callWebhook(invs);
+                }
             } catch (Throwable t) {
                 logger.warn(String.format("failed to persists notifications:\n %s", JSONObjectUtil.toJsonString(lst)), t);
             }
         }
+    }
+
+    @AsyncThread
+    private void callWebhook(List<NotificationInventory> lst) {
+        restf.getRESTTemplate().postForEntity(NotificationGlobalConfig.WEBHOOK_URL.value(), JSONObjectUtil.toJsonString(lst), String.class);
     }
 
     @Override
