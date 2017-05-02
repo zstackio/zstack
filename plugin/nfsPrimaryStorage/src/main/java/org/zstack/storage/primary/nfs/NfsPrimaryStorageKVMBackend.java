@@ -118,17 +118,34 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         cmd.setUuid(inv.getUuid());
         cmd.setOptions(NfsSystemTags.MOUNT_OPTIONS.getTokenByResourceUuid(inv.getUuid(), NfsSystemTags.MOUNT_OPTIONS_TOKEN));
 
-        KvmCommandSender sender = new KvmCommandSender(hostUuid);
-        sender.send(cmd, MOUNT_PRIMARY_STORAGE_PATH, new KvmCommandFailureChecker() {
+        KVMHostSyncHttpCallMsg msg = new KVMHostSyncHttpCallMsg();
+        msg.setCommand(cmd);
+        msg.setPath(MOUNT_PRIMARY_STORAGE_PATH);
+        msg.setHostUuid(hostUuid);
+        msg.setNoStatusCheck(true);
+        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
+        bus.send(msg, new CloudBusCallBack(completion) {
             @Override
-            public ErrorCode getError(KvmResponseWrapper wrapper) {
-                MountAgentResponse rsp = wrapper.getResponse(MountAgentResponse.class);
-                return rsp.isSuccess() ? null : operr(rsp.getError());
-            }
-        }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
-            @Override
-            public void success(KvmResponseWrapper returnValue) {
-                MountAgentResponse rsp = returnValue.getResponse(MountAgentResponse.class);
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    ErrorCode err = reply.getError();
+
+                    if (reply.getError().getDetails().contains("java.net.SocketTimeoutException: Read timed out")) {
+                        // socket read timeout is caused by timeout of mounting a wrong URL
+                        err = errf.instantiateErrorCode(SysErrors.TIMEOUT, String.format("mount timeout. Please the check if the URL[%s] is" +
+                                " valid to mount", inv.getUrl()), reply.getError());
+                    }
+
+                    completion.fail(err);
+                    return;
+                }
+
+                MountAgentResponse rsp = ((KVMHostSyncHttpCallReply) reply).toResponse(MountAgentResponse.class);
+                if (!rsp.isSuccess()) {
+                    completion.fail(operr(rsp.getError()));
+                    return;
+                }
+
                 new PrimaryStorageCapacityUpdater(inv.getUuid()).update(
                         rsp.getTotalCapacity(), rsp.getAvailableCapacity(), rsp.getTotalCapacity(), rsp.getAvailableCapacity()
                 );
@@ -138,17 +155,9 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                         inv.getUuid(), hostUuid));
                 completion.success();
             }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                if (errorCode.getDetails().contains("java.net.SocketTimeoutException: Read timed out")) {
-                    // socket read timeout is caused by timeout of mounting a wrong URL
-                    errorCode = errf.instantiateErrorCode(SysErrors.TIMEOUT, String.format("mount timeout. Please the check if the URL[%s] is" +
-                            " valid to mount", inv.getUrl()), errorCode);
-                }
-                completion.fail(errorCode);
-            }
         });
+
+
     }
 
     @Override
