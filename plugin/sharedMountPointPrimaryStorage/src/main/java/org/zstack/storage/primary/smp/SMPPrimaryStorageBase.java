@@ -26,12 +26,15 @@ import org.zstack.header.volume.VolumeFormat;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.volume.VolumeVO_;
 import org.zstack.storage.primary.PrimaryStorageBase;
+import org.zstack.storage.primary.PrimaryStorageCapacityRecalculator;
+import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import static org.zstack.core.Platform.operr;
 
 import javax.persistence.TypedQuery;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -353,9 +356,37 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
             handle((UploadBitsToBackupStorageMsg) msg);
         } else if (msg instanceof CreateTemporaryVolumeFromSnapshotMsg) {
             handle((CreateTemporaryVolumeFromSnapshotMsg) msg);
+        } else if (msg instanceof SMPRecalculatePrimaryStorageCapacityMsg) {
+            handle((SMPRecalculatePrimaryStorageCapacityMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    protected void handle(SMPRecalculatePrimaryStorageCapacityMsg msg) {
+        if (msg.isRelease()) {
+            doReleasePrimaryStorageCapacity();
+        } else {
+            RecalculatePrimaryStorageCapacityMsg rmsg = new RecalculatePrimaryStorageCapacityMsg();
+            rmsg.setPrimaryStorageUuid(self.getUuid());
+            bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
+            bus.send(rmsg);
+        }
+    }
+
+    private void doReleasePrimaryStorageCapacity() {
+        PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(self.getUuid());
+        updater.run(new PrimaryStorageCapacityUpdaterRunnable() {
+            @Override
+            public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
+                cap.setAvailableCapacity(0L);
+                cap.setTotalCapacity(0L);
+                cap.setTotalPhysicalCapacity(0L);
+                cap.setAvailablePhysicalCapacity(0L);
+                cap.setSystemUsedCapacity(0L);
+                return cap;
+            }
+        });
     }
 
     private void handle(final CreateTemporaryVolumeFromSnapshotMsg msg) {
