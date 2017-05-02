@@ -18,6 +18,7 @@
 			<zstack:extension interface="org.zstack.header.storage.primary.RecalculatePrimaryStorageCapacityExtensionPoint" />
 			<zstack:extension interface="org.zstack.header.storage.primary.PrimaryStorageDetachExtensionPoint" />
 			<zstack:extension interface="org.zstack.header.Component" />
+			<zstack:extension interface="org.zstack.header.host.HostDeleteExtensionPoint"/>
 		</zstack:plugin>
 	</bean>
 	

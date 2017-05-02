@@ -260,6 +260,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         checkPrimaryStatus(msg);
         if (msg instanceof PrimaryStorageReportPhysicalCapacityMsg) {
             handle((PrimaryStorageReportPhysicalCapacityMsg) msg);
+        } else if (msg instanceof RecalculatePrimaryStorageCapacityMsg) {
+            handle((RecalculatePrimaryStorageCapacityMsg) msg);
         } else if (msg instanceof InstantiateVolumeOnPrimaryStorageMsg) {
             handle((InstantiateVolumeOnPrimaryStorageMsg) msg);
         } else if (msg instanceof DeleteVolumeOnPrimaryStorageMsg) {
@@ -301,6 +303,14 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    protected void handle(RecalculatePrimaryStorageCapacityMsg msg) {
+        RecalculatePrimaryStorageCapacityReply reply = new RecalculatePrimaryStorageCapacityReply();
+        PrimaryStorageCapacityRecalculator recalculator = new PrimaryStorageCapacityRecalculator();
+        recalculator.psUuids = Arrays.asList(msg.getPrimaryStorageUuid());
+        recalculator.recalculate();
+        bus.reply(msg, reply);
     }
 
     protected void handle(ReconnectPrimaryStorageMsg msg) {

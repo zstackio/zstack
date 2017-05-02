@@ -46,6 +46,7 @@ import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.kvm.KVMConstant;
 import org.zstack.storage.primary.PrimaryStorageBase;
+import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.primary.PrimaryStoragePathMaker;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
@@ -59,14 +60,10 @@ import static org.zstack.core.Platform.operr;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 public class NfsPrimaryStorage extends PrimaryStorageBase {
     private static final CLogger logger = Utils.getLogger(NfsPrimaryStorage.class);
@@ -104,6 +101,8 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
             handle((GetVolumeRootImageUuidFromPrimaryStorageMsg) msg);
         } else if (msg instanceof DeleteImageCacheOnPrimaryStorageMsg) {
             handle((DeleteImageCacheOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof NfsRecalculatePrimaryStorageCapacityMsg) {
+            handle((NfsRecalculatePrimaryStorageCapacityMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -997,6 +996,32 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                 SyncVolumeSizeOnPrimaryStorageReply reply = new SyncVolumeSizeOnPrimaryStorageReply();
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
+            }
+        });
+    }
+
+    protected void handle(NfsRecalculatePrimaryStorageCapacityMsg msg) {
+        if (msg.isRelease()) {
+            doReleasePrimaryStorageCapacity();
+        } else {
+            RecalculatePrimaryStorageCapacityMsg rmsg = new RecalculatePrimaryStorageCapacityMsg();
+            rmsg.setPrimaryStorageUuid(self.getUuid());
+            bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
+            bus.send(rmsg);
+        }
+    }
+
+    private void doReleasePrimaryStorageCapacity() {
+        PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(self.getUuid());
+        updater.run(new PrimaryStorageCapacityUpdaterRunnable() {
+            @Override
+            public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
+                cap.setAvailableCapacity(0L);
+                cap.setAvailablePhysicalCapacity(0L);
+                cap.setSystemUsedCapacity(0L);
+                cap.setTotalPhysicalCapacity(0L);
+                cap.setTotalCapacity(0L);
+                return cap;
             }
         });
     }
