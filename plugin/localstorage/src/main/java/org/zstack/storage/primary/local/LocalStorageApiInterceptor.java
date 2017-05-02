@@ -3,13 +3,18 @@ package org.zstack.storage.primary.local;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.host.HostInventory;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.storage.primary.PrimaryStorageState;
 import org.zstack.header.storage.primary.PrimaryStorageStatus;
@@ -19,10 +24,14 @@ import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.*;
 
+import javax.persistence.Tuple;
+
 import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by frank on 7/1/2015.
@@ -103,24 +112,56 @@ public class LocalStorageApiInterceptor implements ApiMessageInterceptor {
             throw new ApiMessageInterceptionException(argerr("the data volume[uuid:%s, name: %s] is still attached on the VM[uuid:%s]. Please detach" +
                     " it before migration", vol.getUuid(), vol.getName(), vol.getVmInstanceUuid()));
         } else if (vol.getType() == VolumeType.Root) {
-            SimpleQuery<VmInstanceVO> vmq = dbf.createQuery(VmInstanceVO.class);
-            vmq.select(VmInstanceVO_.state);
-            vmq.add(VmInstanceVO_.uuid, Op.EQ, vol.getVmInstanceUuid());
-            VmInstanceState vmstate = vmq.findValue();
-            if (VmInstanceState.Stopped != vmstate) {
-                throw new ApiMessageInterceptionException(operr("the volume[uuid:%s] is the root volume of the vm[uuid:%s]. Currently the vm is in" +
-                        " state of %s, please stop it before migration", vol.getUuid(), vol.getVmInstanceUuid(), vmstate));
-            }
+            new SQLBatch() {
+                @Override
+                protected void scripts() {
+                    VmInstanceState vmstate = Q.New(VmInstanceVO.class)
+                            .select(VmInstanceVO_.state)
+                            .eq(VmInstanceVO_.uuid,vol.getVmInstanceUuid()).findValue();
+                    if (VmInstanceState.Stopped != vmstate) {
+                        throw new ApiMessageInterceptionException(operr("the volume[uuid:%s] is the root volume of the vm[uuid:%s]. Currently the vm is in" +
+                                " state of %s, please stop it before migration", vol.getUuid(), vol.getVmInstanceUuid(), vmstate));
+                    }
 
-            SimpleQuery<VolumeVO> vq = dbf.createQuery(VolumeVO.class);
-            vq.add(VolumeVO_.type, Op.EQ, VolumeType.Data);
-            vq.add(VolumeVO_.vmInstanceUuid, Op.EQ, vol.getVmInstanceUuid());
-            long count = vq.count();
-            if (count != 0) {
-                throw new ApiMessageInterceptionException(operr("the volume[uuid:%s] is the root volume of the vm[uuid:%s]. Currently the vm still" +
-                        " has %s data volumes attached, please detach them before migration", vol.getUuid(), vol.getVmInstanceUuid(), count));
-            }
+
+                    long count = Q.New(VolumeVO.class)
+                            .eq(VolumeVO_.type,VolumeType.Data)
+                            .eq(VolumeVO_.vmInstanceUuid,vol.getVmInstanceUuid()).count();
+                    if (count != 0) {
+                        throw new ApiMessageInterceptionException(operr("the volume[uuid:%s] is the root volume of the vm[uuid:%s]. Currently the vm still" +
+                                " has %s data volumes attached, please detach them before migration", vol.getUuid(), vol.getVmInstanceUuid(), count));
+                    }
+
+                    String originClusterUuid = Q.New(VmInstanceVO.class)
+                            .select(VmInstanceVO_.clusterUuid)
+                            .eq(VmInstanceVO_.uuid, vol.getVmInstanceUuid()).findValue();
+                    if(originClusterUuid == null){
+                        throw new ApiMessageInterceptionException(
+                                err(SysErrors.INTERNAL,"The clusterUuid of vm[uuid:%s] cannot be null when migrate the root volume[uuid:%s, name: %s]",vol.getVmInstanceUuid(),vol.getUuid(),vol.getName()));
+                    }
+                    String clusterUuid = Q.New(HostVO.class).select(HostVO_.clusterUuid)
+                            .eq(HostVO_.uuid,msg.getDestHostUuid()).findValue();
+
+                    if(!originClusterUuid.equals(clusterUuid)){
+                        List<String> originL2NetworkList  = sql("select l2NetworkUuid from L3NetworkVO" +
+                                " where uuid in(select l3NetworkUuid from VmNicVO where vmInstanceUuid = :vmUuid)")
+                                .param("vmUuid",vol.getVmInstanceUuid()).list();
+                        List<String> l2NetworkList = sql("select l2NetworkUuid from L2NetworkClusterRefVO" +
+                                " where clusterUuid = :clusterUuid")
+                                .param("clusterUuid",clusterUuid).list();
+                        for(String l2:originL2NetworkList){
+                            if(!l2NetworkList.contains(l2)){
+                                throw new ApiMessageInterceptionException(
+                                        operr("The two clusters[uuid:%s,uuid:%s] must access each other in l2 network  when migrate the vm[uuid;%s] to another cluster", originClusterUuid, clusterUuid, vol.getVmInstanceUuid()));
+                            }
+                        }
+                    }
+                }
+            }.execute();
+
         }
+
+
 
         msg.setPrimaryStorageUuid(ref.getPrimaryStorageUuid());
     }

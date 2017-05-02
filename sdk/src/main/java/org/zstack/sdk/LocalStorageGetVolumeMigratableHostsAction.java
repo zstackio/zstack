@@ -69,7 +69,7 @@ public class LocalStorageGetVolumeMigratableHostsAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/volumes/{uuid}/migration-target-hosts";
+        info.path = "/volumes/{volumeUuid}/migration-target-hosts";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";
