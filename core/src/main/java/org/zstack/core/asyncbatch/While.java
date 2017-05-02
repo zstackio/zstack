@@ -112,6 +112,10 @@ public class While<T> {
     private void runAll(NoErrorCompletion completion) {
         AtomicInteger count = new AtomicInteger(items.size());
 
+        if(count.intValue() == 0){
+            completion.done();
+            return;
+        }
         for (T t : items) {
             consumer.accept(t, new NoErrorCompletion() {
                 @Override
