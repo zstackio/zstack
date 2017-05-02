@@ -66,20 +66,4 @@ public class TaskProgressInventory  {
         return this.subTasks;
     }
 
-    public java.lang.Integer totalSteps;
-    public void setTotalSteps(java.lang.Integer totalSteps) {
-        this.totalSteps = totalSteps;
-    }
-    public java.lang.Integer getTotalSteps() {
-        return this.totalSteps;
-    }
-
-    public java.lang.Integer currentStep;
-    public void setCurrentStep(java.lang.Integer currentStep) {
-        this.currentStep = currentStep;
-    }
-    public java.lang.Integer getCurrentStep() {
-        return this.currentStep;
-    }
-
 }

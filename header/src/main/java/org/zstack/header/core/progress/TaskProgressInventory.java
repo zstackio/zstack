@@ -17,8 +17,6 @@ public class TaskProgressInventory {
     private LinkedHashMap opaque;
     private Long time;
     private List<TaskProgressInventory> subTasks;
-    private Integer totalSteps;
-    private Integer currentStep;
 
     public TaskProgressInventory() {
     }
@@ -40,22 +38,6 @@ public class TaskProgressInventory {
 
     public void setTaskName(String taskName) {
         this.taskName = taskName;
-    }
-
-    public Integer getTotalSteps() {
-        return totalSteps;
-    }
-
-    public void setTotalSteps(Integer totalSteps) {
-        this.totalSteps = totalSteps;
-    }
-
-    public Integer getCurrentStep() {
-        return currentStep;
-    }
-
-    public void setCurrentStep(Integer currentStep) {
-        this.currentStep = currentStep;
     }
 
     public List<TaskProgressInventory> getSubTasks() {

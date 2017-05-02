@@ -50,8 +50,6 @@ public class ProgressReportService extends AbstractService implements Management
     @Autowired
     private CloudBus bus;
 
-    private Map<String, Map<String, Long>> steps = new ConcurrentHashMap<>();
-
     private void setThreadContext(ProgressReportCmd cmd) {
         ThreadContext.clearAll();
         if (cmd.getThreadContextMap() != null) {
@@ -74,104 +72,12 @@ public class ProgressReportService extends AbstractService implements Management
             }
         });
 
-        bus.installBeforePublishEventInterceptor(new AbstractBeforePublishEventInterceptor() {
-            @Override
-            public void beforePublishEvent(Event evt) {
-                if (!(evt instanceof APIEvent)) {
-                    return;
-                }
-
-                String apiName = ThreadContext.get(Constants.THREAD_CONTEXT_TASK_NAME);
-                if (apiName == null || ThreadContext.get(Constants.THREAD_CONTEXT_PROGRESS_ENABLED) == null) {
-                    return;
-                }
-
-                String apiId = ThreadContext.get(Constants.THREAD_CONTEXT_API);
-                if (apiId == null) {
-                    return;
-                }
-
-                if (steps.containsKey(apiName)) {
-                    return;
-                }
-
-                new SQLBatch() {
-                    @Override
-                    protected void scripts() {
-                        TaskStepVO vo = q(TaskStepVO.class).eq(TaskStepVO_.taskName, apiName).find();
-                        if (vo == null) {
-                            saveToDb();
-                        } else {
-                            Map<String, Long> step = JSONObjectUtil.toObject(vo.getContent(), LinkedHashMap.class);
-                            steps.put(apiName, step);
-                        }
-                    }
-
-                    private void saveToDb() {
-                        Map<String, Long> step = new HashMap<>();
-
-                        List<String> taskNames = q(TaskProgressVO.class).select(TaskProgressVO_.taskName)
-                                .eq(TaskProgressVO_.apiId, apiId).groupBy(TaskProgressVO_.taskName).listValues();
-
-                        for (String tn : taskNames) {
-                            String puuid = sql("select vo.parentUuid from TaskProgressVO vo where vo.taskName = :tn" +
-                                    " and vo.apiId = :id and type = :type group by vo.parentUuid", String.class)
-                                    .param("tn", tn).param("id", apiId).param("type", TaskType.Task).limit(1).find();
-
-                            long count = puuid == null ?
-                                    sql("select count(*) from TaskProgressVO vo where vo.taskName = :tn" +
-                                            " and vo.apiId = :id and type = :type and vo.parentUuid is null", Long.class)
-                                            .param("tn", tn).param("id", apiId).param("type", TaskType.Task).find()
-                                    :
-
-                                    sql("select count(*) from TaskProgressVO vo where vo.taskName = :tn" +
-                                            " and vo.apiId = :id and type = :type and vo.parentUuid = :puuid", Long.class)
-                                            .param("tn", tn).param("id", apiId)
-                                            .param("type", TaskType.Task).param("puuid", puuid).find();
-
-                            // all entries with type = progress are counted as one entry
-                            if (q(TaskProgressVO.class)
-                                    .eq(TaskProgressVO_.apiId, apiId)
-                                    .eq(TaskProgressVO_.taskName, tn)
-                                    .eq(TaskProgressVO_.type, TaskType.Progress).isExists()) {
-                                count += 1;
-                            }
-
-                            step.put(tn, count);
-                        }
-
-                        TaskStepVO vo = new TaskStepVO();
-                        vo.setTaskName(apiName);
-                        vo.setContent(JSONObjectUtil.toJsonString(step));
-                        dbf.getEntityManager().persist(vo);
-
-                        steps.put(apiName, step);
-                    }
-                }.execute();
-            }
-        });
-
         return true;
     }
 
     @Override
     public boolean stop() {
         return true;
-    }
-
-    private void validationType(String processType) {
-        if (processType == null || !ProgressConstants.ProgressType.contains(processType) ) {
-            logger.warn(String.format("not supported processType: %s", processType));
-            throw new OperationFailureException(operr("not supported processType: %s",
-                            processType));
-        }
-    }
-
-    private void validationUuid(String uuid) {
-        if (uuid == null) {
-            logger.warn("not supported null uuid");
-            throw new OperationFailureException(operr("not supported null uuid"));
-        }
     }
 
     @Override
@@ -232,22 +138,6 @@ public class ProgressReportService extends AbstractService implements Management
         // sort by time with ASC
         for (Map.Entry<String, List<TaskProgressInventory>> e : map.entrySet()) {
             e.getValue().sort((o1, o2) -> (int) (o1.getTime() - o2.getTime()));
-
-            int compliment = 0;
-            int current = 0;
-            for (TaskProgressInventory inv : e.getValue()) {
-                if (inv.getType().equals(TaskType.Progress.toString())) {
-                    compliment = 1;
-                } else {
-                    current ++;
-                }
-            }
-
-            current += compliment;
-
-            for (TaskProgressInventory inv : e.getValue()) {
-                inv.setCurrentStep(current);
-            }
         }
 
         for (Map.Entry<String, List<TaskProgressInventory>> e : map.entrySet()) {
@@ -278,18 +168,6 @@ public class ProgressReportService extends AbstractService implements Management
                 }
             }
 
-            private Integer calculateCurrentStep(TaskProgressVO vo) {
-                if (vo.getType() == TaskType.Progress) {
-                    return null;
-                }
-
-                if (vo.getParentUuid() ==  null)  {
-                    return Q.New(TaskProgressVO.class).isNull(TaskProgressVO_.parentUuid).count().intValue();
-                } else {
-                    return Q.New(TaskProgressVO.class).eq(TaskProgressVO_.parentUuid, vo.getParentUuid()).count().intValue();
-                }
-            }
-
             private void replyLastProgress() {
                 TaskProgressVO vo = Q.New(TaskProgressVO.class)
                         .eq(TaskProgressVO_.apiId, msg.getApiId())
@@ -305,14 +183,12 @@ public class ProgressReportService extends AbstractService implements Management
                 TaskProgressInventory inv;
                 if (vo.getParentUuid() == null) {
                     inv = inventory(vo);
-                    inv.setCurrentStep(calculateCurrentStep(vo));
                     reply.setInventories(asList(inv));
                     return;
                 }
 
                 List<TaskProgressInventory> invs = new ArrayList<>();
                 inv = inventory(vo);
-                inv.setCurrentStep(calculateCurrentStep(vo));
                 invs.add(inv);
 
                 while (vo.getParentUuid() != null) {
@@ -328,7 +204,6 @@ public class ProgressReportService extends AbstractService implements Management
                     }
 
                     inv = inventory(vo);
-                    inv.setCurrentStep(calculateCurrentStep(vo));
                     invs.add(inv);
                 }
 
@@ -341,35 +216,7 @@ public class ProgressReportService extends AbstractService implements Management
             }
         }.execute();
         
-        setStepsNumber(reply);
-
         bus.reply(msg, reply);
-    }
-
-    private void setStepsNumber(APIGetTaskProgressReply reply) {
-        if (reply.getInventories().isEmpty()) {
-            return;
-        }
-
-        Map<String, Long> step = steps.get(reply.getInventories().get(0).getTaskName());
-        if (step == null) {
-            // no step count for this task, directly out
-            return;
-        }
-
-        for (TaskProgressInventory inv : reply.getInventories()) {
-            setStepsNumber(inv, step);
-        }
-    }
-
-    private void setStepsNumber(TaskProgressInventory inv, Map<String, Long> step) {
-        inv.setTotalSteps(step.get(inv.getTaskName()).intValue());
-
-        if (inv.getSubTasks() != null) {
-            for (TaskProgressInventory i : inv.getSubTasks()) {
-                setStepsNumber(i, step);
-            }
-        }
     }
 
     private void handleLocalMessage(Message msg) {
