@@ -7,6 +7,8 @@ import org.zstack.header.rest.RestRequest;
 
 import java.util.List;
 
+import static java.util.Arrays.asList;
+
 /**
  * Created by xing5 on 2017/5/1.
  */
@@ -25,5 +27,11 @@ public class APIGetResourceNamesMsg extends APISyncCallMessage {
 
     public void setUuids(List<String> uuids) {
         this.uuids = uuids;
+    }
+
+    public static APIGetResourceNamesMsg __example__() {
+        APIGetResourceNamesMsg msg = new APIGetResourceNamesMsg();
+        msg.setUuids(asList(uuid(), uuid()));
+        return msg;
     }
 }

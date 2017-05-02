@@ -14,7 +14,7 @@ doc {
 			url "GET /v1/resources/names"
 
 
-            header (OAuth: 'the-session-uuid')
+			header (Authorization: 'OAuth the-session-uuid')
 
             clz APIGetResourceNamesMsg.class
 
