@@ -34,6 +34,9 @@ import org.zstack.sdk.AddSftpBackupStorageAction
 import org.zstack.sdk.AddSharedMountPointPrimaryStorageAction
 import org.zstack.sdk.ApiResult
 import org.zstack.sdk.CreateAccountAction
+import org.zstack.sdk.CreateBaremetalChessisAction
+import org.zstack.sdk.CreateBaremetalHostCfgAction
+import org.zstack.sdk.CreateBaremetalPxeServerAction
 import org.zstack.sdk.CreateClusterAction
 import org.zstack.sdk.CreateDataVolumeAction
 import org.zstack.sdk.CreateDataVolumeFromVolumeSnapshotAction
@@ -64,6 +67,9 @@ import org.zstack.sdk.CreateWebhookAction
 import org.zstack.sdk.CreateZoneAction
 import org.zstack.sdk.DeleteAccountAction
 import org.zstack.sdk.DeleteBackupStorageAction
+import org.zstack.sdk.DeleteBaremetalChessisAction
+import org.zstack.sdk.DeleteBaremetalHostCfgAction
+import org.zstack.sdk.DeleteBaremetalPxeServerAction
 import org.zstack.sdk.DeleteCephPrimaryStoragePoolAction
 import org.zstack.sdk.DeleteClusterAction
 import org.zstack.sdk.DeleteDataVolumeAction
@@ -168,6 +174,9 @@ class EnvSpec implements Node {
             [CreateVipAction.metaClass, CreateVipAction.Result.metaClass, DeleteVipAction.class],
             [CreateVirtualRouterOfferingAction.metaClass, CreateVirtualRouterOfferingAction.Result.metaClass, DeleteInstanceOfferingAction.class],
             [CreateWebhookAction.metaClass, CreateWebhookAction.Result.metaClass, DeleteWebhookAction.class],
+            [CreateBaremetalPxeServerAction.metaClass, CreateBaremetalPxeServerAction.Result.metaClass, DeleteBaremetalPxeServerAction.class],
+            [CreateBaremetalChessisAction.metaClass, CreateBaremetalChessisAction.Result.metaClass, DeleteBaremetalChessisAction.class],
+            [CreateBaremetalHostCfgAction.metaClass, CreateBaremetalHostCfgAction.Result.metaClass, DeleteBaremetalHostCfgAction.class],
     ]
 
     static Closure GLOBAL_DELETE_HOOK
