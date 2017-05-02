@@ -20,6 +20,7 @@ public class VirtualRouterOfferingFactory implements InstanceOfferingFactory {
 		return type;
 	}
 
+	@Transactional
 	public InstanceOfferingInventory createInstanceOffering(InstanceOfferingVO vo, APICreateInstanceOfferingMsg msg) {
 		VirtualRouterOfferingVO rvo = new VirtualRouterOfferingVO(vo);
 		APICreateVirtualRouterOfferingMsg amsg = (APICreateVirtualRouterOfferingMsg) msg;
@@ -27,7 +28,9 @@ public class VirtualRouterOfferingFactory implements InstanceOfferingFactory {
 		rvo.setPublicNetworkUuid(amsg.getPublicNetworkUuid());
 		rvo.setZoneUuid(amsg.getZoneUuid());
 		rvo.setImageUuid(amsg.getImageUuid());
-		rvo = dbf.persistAndRefresh(rvo);
+		dbf.getEntityManager().persist(rvo);
+		dbf.getEntityManager().flush();
+		dbf.getEntityManager().refresh(rvo);
 
 		DefaultVirtualRouterOfferingSelector selector = new DefaultVirtualRouterOfferingSelector();
 		selector.setOfferingUuid(rvo.getUuid());
@@ -36,7 +39,8 @@ public class VirtualRouterOfferingFactory implements InstanceOfferingFactory {
         selector.setCreated(true);
 		selector.selectDefaultOffering();
 
-		return VirtualRouterOfferingInventory.valueOf(dbf.reload(rvo));
+		dbf.getEntityManager().refresh(rvo);
+		return VirtualRouterOfferingInventory.valueOf(rvo);
 	}
 
     @Override

@@ -14,7 +14,7 @@ doc {
 			url "GET /v1/management-nodes/ready"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIIsReadyToGoMsg.class
 

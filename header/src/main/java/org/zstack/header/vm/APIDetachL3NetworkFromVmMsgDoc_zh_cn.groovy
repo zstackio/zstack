@@ -12,7 +12,7 @@ doc {
             url "DELETE /v1/vm-instances/nics/{vmNicUuid}"
 
 
-            header(OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIDetachL3NetworkFromVmMsg.class
 

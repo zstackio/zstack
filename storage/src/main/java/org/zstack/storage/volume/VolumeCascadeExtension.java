@@ -82,7 +82,7 @@ public class VolumeCascadeExtension extends AbstractAsyncCascadeExtension {
 
     private String actionToDeletionPolicy(CascadeAction action, String volUuid) {
         if (action.getParentIssuer().equals(PrimaryStorageVO.class.getSimpleName())) {
-            return VolumeDeletionPolicy.Never.toString();
+            return VolumeDeletionPolicy.DBOnly.toString();
         } else {
             return deletionPolicyManager.getDeletionPolicy(volUuid).toString();
         }

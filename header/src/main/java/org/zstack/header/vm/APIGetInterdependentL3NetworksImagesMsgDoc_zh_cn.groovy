@@ -17,7 +17,7 @@ doc {
             url "GET /v1/images-l3networks/dependencies"
 
 
-            header(OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIGetInterdependentL3NetworksImagesMsg.class
 

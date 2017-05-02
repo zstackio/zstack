@@ -12,9 +12,9 @@ import java.util.concurrent.TimeUnit;
 public aspect DbDeadlockAspect {
     private static final CLogger logger = Utils.getLogger(DbDeadlockAspect.class);
 
-    declare error: withincode(@org.springframework.transaction.annotation.Transactional *.* *(*)) && withincode(@org.zstack.core.db.DeadlockAutoRestart * *.*(*)) : "@Transactional and @DeadlockAutoRestart can not be present on the same method. @DeadlockAutoRestart must be on parent method which calls method that has @Transactional";
+    declare error: withincode(@org.springframework.transaction.annotation.Transactional * *.*(..)) && withincode(@org.zstack.core.db.DeadlockAutoRestart * *.*(..)) : "@Transactional and @DeadlockAutoRestart can not be present on the same method. @DeadlockAutoRestart must be on parent method which calls method that has @Transactional";
 
-    Object around() : execution(@org.zstack.core.db.DeadlockAutoRestart * org.zstack.core.db.DatabaseFacade+.*(..)) {
+    Object around() : execution(@org.zstack.core.db.DeadlockAutoRestart * *.*(..)) {
         RuntimeException bad = null;
         int times = DatabaseGlobalProperty.retryTimes;
         do {

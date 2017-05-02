@@ -36,6 +36,8 @@ public class VmExpungeRootVolumeFlow extends NoRollbackFlow {
             return;
         }
 
+        new VmExpungeRootVolumeValidator().validate(spec.getVmInventory().getUuid(), spec.getVmInventory().getRootVolumeUuid());
+
         ExpungeVolumeMsg msg = new ExpungeVolumeMsg();
         msg.setVolumeUuid(spec.getVmInventory().getRootVolumeUuid());
         bus.makeTargetServiceIdByResourceUuid(msg, VolumeConstant.SERVICE_ID, msg.getVolumeUuid());

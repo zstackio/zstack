@@ -12,7 +12,10 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.db.*;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -461,30 +464,39 @@ public class AccountBase extends AbstractAccount {
             }
         }
 
-        List<SharedResourceVO> vos = new ArrayList<SharedResourceVO>();
-        if (msg.isToPublic()) {
-            for (String ruuid : msg.getResourceUuids()) {
-                SharedResourceVO svo = new SharedResourceVO();
-                svo.setOwnerAccountUuid(msg.getAccountUuid());
-                svo.setResourceType(uuidType.get(ruuid));
-                svo.setResourceUuid(ruuid);
-                svo.setToPublic(true);
-                vos.add(svo);
-            }
-        } else {
-            for (String ruuid : msg.getResourceUuids()) {
-                for (String auuid : msg.getAccountUuids()) {
-                    SharedResourceVO svo = new SharedResourceVO();
-                    svo.setOwnerAccountUuid(msg.getAccountUuid());
-                    svo.setResourceType(uuidType.get(ruuid));
-                    svo.setResourceUuid(ruuid);
-                    svo.setReceiverAccountUuid(auuid);
-                    vos.add(svo);
+        new SQLBatch(){
+            @Override
+            protected void scripts() {
+                if (msg.isToPublic()) {
+                    for (String ruuid : msg.getResourceUuids()) {
+                        if(Q.New(SharedResourceVO.class)
+                                .eq(SharedResourceVO_.ownerAccountUuid, msg.getAccountUuid())
+                                .eq(SharedResourceVO_.resourceUuid, ruuid)
+                                .eq(SharedResourceVO_.toPublic, msg.isToPublic())
+                                .isExists()){
+                            continue;
+                        }
+                        SharedResourceVO svo = new SharedResourceVO();
+                        svo.setOwnerAccountUuid(msg.getAccountUuid());
+                        svo.setResourceType(uuidType.get(ruuid));
+                        svo.setResourceUuid(ruuid);
+                        svo.setToPublic(true);
+                        dbf.getEntityManager().persist(svo);
+                    }
+                } else {
+                    for (String ruuid : msg.getResourceUuids()) {
+                        for (String auuid : msg.getAccountUuids()) {
+                            SharedResourceVO svo = new SharedResourceVO();
+                            svo.setOwnerAccountUuid(msg.getAccountUuid());
+                            svo.setResourceType(uuidType.get(ruuid));
+                            svo.setResourceUuid(ruuid);
+                            svo.setReceiverAccountUuid(auuid);
+                            dbf.getEntityManager().persist(svo);
+                        }
+                    }
                 }
             }
-        }
-
-        dbf.persistCollection(vos);
+        }.execute();
 
         APIShareResourceEvent evt = new APIShareResourceEvent(msg.getId());
         bus.publish(evt);
@@ -622,9 +634,17 @@ public class AccountBase extends AbstractAccount {
         gvo.setAccountUuid(vo.getUuid());
         gvo.setDescription(msg.getDescription());
         gvo.setName(msg.getName());
-        dbf.persistAndRefresh(gvo);
 
-        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), gvo.getUuid(), UserGroupVO.class);
+        UserGroupVO finalGvo = gvo;
+        gvo = new SQLBatchWithReturn<UserGroupVO>() {
+            @Override
+            protected UserGroupVO scripts() {
+                persist(finalGvo);
+                reload(finalGvo);
+                acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), finalGvo.getUuid(), UserGroupVO.class);
+                return finalGvo;
+            }
+        }.execute();
 
         UserGroupInventory inv = UserGroupInventory.valueOf(gvo);
         APICreateUserGroupEvent evt = new APICreateUserGroupEvent(msg.getId());
@@ -660,9 +680,17 @@ public class AccountBase extends AbstractAccount {
         pvo.setAccountUuid(vo.getUuid());
         pvo.setName(msg.getName());
         pvo.setData(JSONObjectUtil.toJsonString(msg.getStatements()));
-        pvo = dbf.persistAndRefresh(pvo);
 
-        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), pvo.getUuid(), PolicyVO.class);
+        PolicyVO finalPvo = pvo;
+        pvo = new SQLBatchWithReturn<PolicyVO>() {
+            @Override
+            protected PolicyVO scripts() {
+                persist(finalPvo);
+                reload(finalPvo);
+                acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), finalPvo.getUuid(), PolicyVO.class);
+                return finalPvo;
+            }
+        }.execute();
 
         PolicyInventory pinv = PolicyInventory.valueOf(pvo);
         APICreatePolicyEvent evt = new APICreatePolicyEvent(msg.getId());
@@ -672,41 +700,45 @@ public class AccountBase extends AbstractAccount {
 
     private void handle(APICreateUserMsg msg) {
         APICreateUserEvent evt = new APICreateUserEvent(msg.getId());
-        UserVO uvo = new UserVO();
-        if (msg.getResourceUuid() != null) {
-            uvo.setUuid(msg.getResourceUuid());
-        } else {
-            uvo.setUuid(Platform.getUuid());
-        }
-        uvo.setAccountUuid(vo.getUuid());
-        uvo.setName(msg.getName());
-        uvo.setPassword(msg.getPassword());
-        uvo.setDescription(msg.getDescription());
-        uvo = dbf.persistAndRefresh(uvo);
 
-        SimpleQuery<PolicyVO> q = dbf.createQuery(PolicyVO.class);
-        q.add(PolicyVO_.name, Op.EQ, "DEFAULT-READ");
-        q.add(PolicyVO_.accountUuid, Op.EQ, vo.getUuid());
-        PolicyVO p = q.find();
-        if (p != null) {
-            UserPolicyRefVO uref = new UserPolicyRefVO();
-            uref.setPolicyUuid(p.getUuid());
-            uref.setUserUuid(uvo.getUuid());
-            dbf.persist(uref);
-        }
+        UserVO uvo = new SQLBatchWithReturn<UserVO>() {
+            @Override
+            protected UserVO scripts() {
+                UserVO uvo = new UserVO();
+                if (msg.getResourceUuid() != null) {
+                    uvo.setUuid(msg.getResourceUuid());
+                } else {
+                    uvo.setUuid(Platform.getUuid());
+                }
+                uvo.setAccountUuid(vo.getUuid());
+                uvo.setName(msg.getName());
+                uvo.setPassword(msg.getPassword());
+                uvo.setDescription(msg.getDescription());
+                persist(uvo);
+                reload(uvo);
 
-        q = dbf.createQuery(PolicyVO.class);
-        q.add(PolicyVO_.name, Op.EQ, "USER-RESET-PASSWORD");
-        q.add(PolicyVO_.accountUuid, Op.EQ, vo.getUuid());
-        p = q.find();
-        if (p != null) {
-            UserPolicyRefVO uref = new UserPolicyRefVO();
-            uref.setPolicyUuid(p.getUuid());
-            uref.setUserUuid(uvo.getUuid());
-            dbf.persist(uref);
-        }
+                PolicyVO p = Q.New(PolicyVO.class).eq(PolicyVO_.name, "DEFAULT-READ")
+                        .eq(PolicyVO_.accountUuid, vo.getUuid()).find();
+                if (p != null) {
+                    UserPolicyRefVO uref = new UserPolicyRefVO();
+                    uref.setPolicyUuid(p.getUuid());
+                    uref.setUserUuid(uvo.getUuid());
+                    persist(uref);
+                }
 
-        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), uvo.getUuid(), UserVO.class);
+                p = Q.New(PolicyVO.class).eq(PolicyVO_.name, "USER-RESET-PASSWORD")
+                        .eq(PolicyVO_.accountUuid, vo.getUuid()).find();
+                if (p != null) {
+                    UserPolicyRefVO uref = new UserPolicyRefVO();
+                    uref.setPolicyUuid(p.getUuid());
+                    uref.setUserUuid(uvo.getUuid());
+                    persist(uref);
+                }
+
+                acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), uvo.getUuid(), UserVO.class);
+                return uvo;
+            }
+        }.execute();
 
         final UserInventory inv = UserInventory.valueOf(uvo);
 

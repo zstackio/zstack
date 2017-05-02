@@ -36,4 +36,5 @@ public abstract class APICreateTagMsg extends APIMessage {
     public void setTag(String tag) {
         this.tag = tag;
     }
+
 }

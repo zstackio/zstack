@@ -15,7 +15,7 @@ doc {
 			url "GET /v1/l3-networks/network-services/refs"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIQueryNetworkServiceL3NetworkRefMsg.class
 

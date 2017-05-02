@@ -37,6 +37,10 @@ import org.zstack.header.notification.ApiNotificationFactory;
 import org.zstack.header.notification.ApiNotificationFactoryExtensionPoint;
 import org.zstack.header.search.APIGetMessage;
 import org.zstack.header.search.APISearchMessage;
+import org.zstack.header.vo.APIGetResourceNamesMsg;
+import org.zstack.header.vo.APIGetResourceNamesReply;
+import org.zstack.header.vo.ResourceInventory;
+import org.zstack.header.vo.ResourceVO;
 import org.zstack.utils.*;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -58,6 +62,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -341,9 +346,30 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             handle((APIGetResourceAccountMsg) msg);
         } else if (msg instanceof APIChangeResourceOwnerMsg) {
             handle((APIChangeResourceOwnerMsg) msg);
+        } else if (msg instanceof APIGetResourceNamesMsg) {
+            handle((APIGetResourceNamesMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIGetResourceNamesMsg msg) {
+        List<ResourceInventory> invs = new SQLBatchWithReturn<List<ResourceInventory>>() {
+            @Override
+            protected List<ResourceInventory> scripts() {
+                Query q = dbf.getEntityManager().createNativeQuery("select uuid, resourceName, resourceType from ResourceVO where uuid in (:uuids)");
+                q.setParameter("uuids", msg.getUuids());
+                List<Object[]> objs = q.getResultList();
+
+                List<ResourceVO> vos = objs.stream().map(ResourceVO::new).collect(Collectors.toList());
+
+                return ResourceInventory.valueOf(vos);
+            }
+        }.execute();
+
+        APIGetResourceNamesReply reply = new APIGetResourceNamesReply();
+        reply.setInventories(invs);
+        bus.reply(msg, reply);
     }
 
     private void handle(final APIChangeResourceOwnerMsg msg) {
@@ -572,72 +598,75 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         bus.reply(msg, reply);
     }
 
-    @Transactional
     private void handle(APICreateAccountMsg msg) {
-        AccountVO vo = new AccountVO();
-        if (msg.getResourceUuid() != null) {
-            vo.setUuid(msg.getResourceUuid());
-        } else {
-            vo.setUuid(Platform.getUuid());
-        }
-        vo.setName(msg.getName());
-        vo.setDescription(msg.getDescription());
-        vo.setPassword(msg.getPassword());
-        vo.setType(msg.getType() != null ? AccountType.valueOf(msg.getType()) : AccountType.Normal);
-        dbf.getEntityManager().persist(vo);
+        final AccountInventory inv = new SQLBatchWithReturn<AccountInventory>() {
+            @Override
+            protected AccountInventory scripts() {
+                AccountVO vo = new AccountVO();
+                if (msg.getResourceUuid() != null) {
+                    vo.setUuid(msg.getResourceUuid());
+                } else {
+                    vo.setUuid(Platform.getUuid());
+                }
+                vo.setName(msg.getName());
+                vo.setDescription(msg.getDescription());
+                vo.setPassword(msg.getPassword());
+                vo.setType(msg.getType() != null ? AccountType.valueOf(msg.getType()) : AccountType.Normal);
+                persist(vo);
+                reload(vo);
 
-        PolicyVO p = new PolicyVO();
-        p.setUuid(Platform.getUuid());
-        p.setAccountUuid(vo.getUuid());
-        p.setName("DEFAULT-READ");
-        Statement s = new Statement();
-        s.setName(String.format("read-permission-for-account-%s", vo.getUuid()));
-        s.setEffect(StatementEffect.Allow);
-        s.addAction(".*:read");
-        p.setData(JSONObjectUtil.toJsonString(list(s)));
-        dbf.getEntityManager().persist(p);
-        dbf.getEntityManager().persist(AccountResourceRefVO.newOwn(vo.getUuid(), p.getUuid(), PolicyVO.class));
+                PolicyVO p = new PolicyVO();
+                p.setUuid(Platform.getUuid());
+                p.setAccountUuid(vo.getUuid());
+                p.setName("DEFAULT-READ");
+                Statement s = new Statement();
+                s.setName(String.format("read-permission-for-account-%s", vo.getUuid()));
+                s.setEffect(StatementEffect.Allow);
+                s.addAction(".*:read");
+                p.setData(JSONObjectUtil.toJsonString(list(s)));
+                persist(p);
+                reload(p);
+                persist(AccountResourceRefVO.newOwn(vo.getUuid(), p.getUuid(), PolicyVO.class));
 
-        p = new PolicyVO();
-        p.setUuid(Platform.getUuid());
-        p.setAccountUuid(vo.getUuid());
-        p.setName("USER-RESET-PASSWORD");
-        s = new Statement();
-        s.setName(String.format("user-reset-password-%s", vo.getUuid()));
-        s.setEffect(StatementEffect.Allow);
-        s.addAction(String.format("%s:%s", AccountConstant.ACTION_CATEGORY, APIUpdateUserMsg.class.getSimpleName()));
-        p.setData(JSONObjectUtil.toJsonString(list(s)));
-        dbf.getEntityManager().persist(p);
-        dbf.getEntityManager().persist(AccountResourceRefVO.newOwn(vo.getUuid(), p.getUuid(), PolicyVO.class));
+                p = new PolicyVO();
+                p.setUuid(Platform.getUuid());
+                p.setAccountUuid(vo.getUuid());
+                p.setName("USER-RESET-PASSWORD");
+                s = new Statement();
+                s.setName(String.format("user-reset-password-%s", vo.getUuid()));
+                s.setEffect(StatementEffect.Allow);
+                s.addAction(String.format("%s:%s", AccountConstant.ACTION_CATEGORY, APIUpdateUserMsg.class.getSimpleName()));
+                p.setData(JSONObjectUtil.toJsonString(list(s)));
+                persist(p);
+                reload(p);
+                persist(AccountResourceRefVO.newOwn(vo.getUuid(), p.getUuid(), PolicyVO.class));
 
-        SimpleQuery<GlobalConfigVO> q = dbf.createQuery(GlobalConfigVO.class);
-        q.select(GlobalConfigVO_.name, GlobalConfigVO_.value);
-        q.add(GlobalConfigVO_.category, Op.EQ, AccountConstant.QUOTA_GLOBAL_CONFIG_CATETORY);
-        List<Tuple> ts = q.listTuple();
+                List<Tuple> ts = Q.New(GlobalConfigVO.class).select(GlobalConfigVO_.name, GlobalConfigVO_.value)
+                        .eq(GlobalConfigVO_.category, AccountConstant.QUOTA_GLOBAL_CONFIG_CATETORY).listTuple();
 
-        for (Tuple t : ts) {
-            String rtype = t.get(0, String.class);
-            long quota = Long.valueOf(t.get(1, String.class));
+                for (Tuple t : ts) {
+                    String rtype = t.get(0, String.class);
+                    long quota = Long.valueOf(t.get(1, String.class));
 
-            QuotaVO qvo = new QuotaVO();
-            qvo.setIdentityType(AccountVO.class.getSimpleName());
-            qvo.setIdentityUuid(vo.getUuid());
-            qvo.setName(rtype);
-            qvo.setValue(quota);
-            dbf.getEntityManager().persist(qvo);
-            dbf.getEntityManager().persist(AccountResourceRefVO.newOwn(vo.getUuid(), qvo.getId().toString(), QuotaVO.class));
-        }
+                    QuotaVO qvo = new QuotaVO();
+                    qvo.setUuid(Platform.getUuid());
+                    qvo.setIdentityType(AccountVO.class.getSimpleName());
+                    qvo.setIdentityUuid(vo.getUuid());
+                    qvo.setName(rtype);
+                    qvo.setValue(quota);
+                    persist(qvo);
+                    reload(qvo);
+                    persist(AccountResourceRefVO.newOwn(vo.getUuid(), qvo.getUuid(), QuotaVO.class));
+                }
 
-        dbf.getEntityManager().refresh(vo);
-        final AccountInventory inv = AccountInventory.valueOf(vo);
+                reload(vo);
+                return AccountInventory.valueOf(vo);
+            }
+        }.execute();
+
 
         CollectionUtils.safeForEach(pluginRgty.getExtensionList(AfterCreateAccountExtensionPoint.class),
-                new ForEachFunction<AfterCreateAccountExtensionPoint>() {
-                    @Override
-                    public void run(AfterCreateAccountExtensionPoint arg) {
-                        arg.afterCreateAccount(inv);
-                    }
-                });
+                arg -> arg.afterCreateAccount(inv));
 
         APICreateAccountEvent evt = new APICreateAccountEvent(msg.getId());
         evt.setInventory(inv);
@@ -904,6 +933,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                 }
 
                 QuotaVO q = new QuotaVO();
+                q.setUuid(Platform.getUuid());
                 q.setName(rtype);
                 q.setIdentityUuid(nA);
                 q.setIdentityType(AccountVO.class.getSimpleName());
@@ -914,7 +944,6 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                     logger.trace(String.format("create default quota[name: %s, value: %s] global config", rtype, value));
                 }
             }
-
         }
 
         if (!quotas.isEmpty()) {
@@ -1047,13 +1076,14 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     }
 
     @Override
+    @Transactional
     public void createAccountResourceRef(String accountUuid, String resourceUuid, Class<?> resourceClass) {
         if (!resourceTypes.contains(resourceClass)) {
             throw new CloudRuntimeException(String.format("%s is not listed in resourceTypeForAccountRef of AccountManager.xml that is spring configuration. you forgot it???", resourceClass.getName()));
         }
 
         AccountResourceRefVO ref = AccountResourceRefVO.newOwn(accountUuid, resourceUuid, resourceClass);
-        dbf.persist(ref);
+        dbf.getEntityManager().persist(ref);
     }
 
     @Override

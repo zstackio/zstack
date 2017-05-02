@@ -1,6 +1,7 @@
 package org.zstack.network.service.virtualrouter;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.appliancevm.*;
 import org.zstack.core.db.DatabaseFacade;
 
@@ -24,10 +25,12 @@ public class VirtualRouterApplianceVmFactory implements ApplianceVmSubTypeFactor
     }
 
     @Override
+    @Transactional
     public ApplianceVmVO persistApplianceVm(ApplianceVmSpec spec, ApplianceVmVO apvm) {
         VirtualRouterVmVO vr = new VirtualRouterVmVO(apvm);
         VirtualRouterOfferingInventory offering = (VirtualRouterOfferingInventory) spec.getInstanceOffering();
         vr.setPublicNetworkUuid(offering.getPublicNetworkUuid());
-        return dbf.persistAndRefresh(vr);
+        dbf.getEntityManager().persist(vr);
+        return vr;
     }
 }

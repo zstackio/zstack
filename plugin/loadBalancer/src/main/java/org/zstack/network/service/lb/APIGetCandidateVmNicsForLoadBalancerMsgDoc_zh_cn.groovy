@@ -14,7 +14,7 @@ doc {
 			url "GET /v1/load-balancers/listeners/{listenerUuid}/vm-instances/candidate-nics"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIGetCandidateVmNicsForLoadBalancerMsg.class
 

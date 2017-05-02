@@ -60,4 +60,5 @@ public abstract class APIAddHostMsg extends APICreateMessage implements AddHostM
     public void setClusterUuid(String clusterUuid) {
         this.clusterUuid = clusterUuid;
     }
+
 }

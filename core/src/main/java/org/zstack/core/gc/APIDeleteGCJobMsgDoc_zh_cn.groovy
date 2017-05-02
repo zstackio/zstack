@@ -14,7 +14,7 @@ doc {
 			url "DELETE /v1/gc-jobs/{uuid}"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIDeleteGCJobMsg.class
 

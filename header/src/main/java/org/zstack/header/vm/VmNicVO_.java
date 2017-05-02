@@ -1,12 +1,13 @@
 package org.zstack.header.vm;
 
+import org.zstack.header.vo.ResourceVO_;
+
 import javax.persistence.metamodel.SingularAttribute;
 import javax.persistence.metamodel.StaticMetamodel;
 import java.sql.Timestamp;
 
 @StaticMetamodel(VmNicVO.class)
-public class VmNicVO_ {
-    public static volatile SingularAttribute<VmNicVO, String> uuid;
+public class VmNicVO_ extends ResourceVO_ {
     public static volatile SingularAttribute<VmNicVO, String> vmInstanceUuid;
     public static volatile SingularAttribute<VmNicVO, String> internalName;
     public static volatile SingularAttribute<VmNicVO, String> usedIpUuid;

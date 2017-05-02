@@ -12,7 +12,7 @@ doc {
 			url "PUT /v1/primary-storage/local-storage/volumes/{volumeUuid}/actions"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APILocalStorageMigrateVolumeMsg.class
 

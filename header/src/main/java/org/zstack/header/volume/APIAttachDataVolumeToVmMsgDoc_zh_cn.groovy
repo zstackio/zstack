@@ -12,7 +12,7 @@ doc {
 			url "POST /v1/volumes/{vmeUuid}/vm-instances/{vmInstanceUuid}"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIAttachDataVolumeToVmMsg.class
 

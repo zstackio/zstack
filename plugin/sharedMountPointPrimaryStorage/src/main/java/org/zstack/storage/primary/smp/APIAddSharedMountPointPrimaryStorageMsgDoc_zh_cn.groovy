@@ -14,7 +14,7 @@ doc {
 			url "POST /v1/primary-storage/smp"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIAddSharedMountPointPrimaryStorageMsg.class
 

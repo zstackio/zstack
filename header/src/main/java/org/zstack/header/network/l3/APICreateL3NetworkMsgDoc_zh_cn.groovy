@@ -14,7 +14,7 @@ doc {
 			url "POST /v1/l3-networks"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APICreateL3NetworkMsg.class
 

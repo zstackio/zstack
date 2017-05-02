@@ -55,8 +55,6 @@ public class ImageApiInterceptor implements ApiMessageInterceptor {
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
         if (msg instanceof APIAddImageMsg) {
             validate((APIAddImageMsg)msg);
-        } else if (msg instanceof APIDeleteImageMsg) {
-            validate((APIDeleteImageMsg)msg);
         } else if (msg instanceof APICreateRootVolumeTemplateFromRootVolumeMsg) {
             validate((APICreateRootVolumeTemplateFromRootVolumeMsg) msg);
         } else if (msg instanceof APICreateRootVolumeTemplateFromVolumeSnapshotMsg) {
@@ -102,14 +100,6 @@ public class ImageApiInterceptor implements ApiMessageInterceptor {
     private void validate(APICreateRootVolumeTemplateFromRootVolumeMsg msg) {
         if (msg.getPlatform() == null) {
             msg.setPlatform(ImagePlatform.Linux.toString());
-        }
-    }
-
-    private void validate(APIDeleteImageMsg msg) {
-        if (!dbf.isExist(msg.getUuid(), ImageVO.class)) {
-            APIDeleteImageEvent evt = new APIDeleteImageEvent(msg.getId());
-            bus.publish(evt);
-            throw new StopRoutingException();
         }
     }
 

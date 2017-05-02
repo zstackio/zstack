@@ -16,7 +16,7 @@ doc {
 			url "GET /v1/backup-storage/sftp/{uuid}"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIQuerySftpBackupStorageMsg.class
 

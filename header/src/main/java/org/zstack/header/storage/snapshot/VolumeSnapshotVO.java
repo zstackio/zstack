@@ -11,7 +11,6 @@ import java.util.List;
  */
 @Entity
 @Table
-@Inheritance(strategy = InheritanceType.JOINED)
 @EO(EOClazz = VolumeSnapshotEO.class)
 public class VolumeSnapshotVO extends VolumeSnapshotAO {
     @OneToMany(fetch = FetchType.EAGER)

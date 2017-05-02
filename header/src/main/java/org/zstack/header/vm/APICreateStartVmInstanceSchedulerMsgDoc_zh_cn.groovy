@@ -12,7 +12,7 @@ doc {
             url "POST /v1/vm-instances/{vmUuid}/schedulers/starting"
 
 
-            header(OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APICreateStartVmInstanceSchedulerMsg.class
 

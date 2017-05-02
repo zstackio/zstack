@@ -17,7 +17,7 @@ doc {
 			url "GET /v1/backup-storage/fusionstor/{uuid}"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIQueryFusionstorBackupStorageMsg.class
 

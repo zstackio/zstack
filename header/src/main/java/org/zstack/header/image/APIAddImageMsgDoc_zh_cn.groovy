@@ -12,7 +12,7 @@ doc {
 			url "POST /v1/images"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIAddImageMsg.class
 

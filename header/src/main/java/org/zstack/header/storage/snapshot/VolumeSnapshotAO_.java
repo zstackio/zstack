@@ -1,5 +1,6 @@
 package org.zstack.header.storage.snapshot;
 
+import org.zstack.header.vo.ResourceVO_;
 import org.zstack.header.volume.VolumeType;
 
 import javax.persistence.metamodel.SingularAttribute;
@@ -9,8 +10,7 @@ import java.sql.Timestamp;
 /**
  */
 @StaticMetamodel(VolumeSnapshotAO.class)
-public class VolumeSnapshotAO_ {
-    public static volatile SingularAttribute<VolumeSnapshotAO, String> uuid;
+public class VolumeSnapshotAO_ extends ResourceVO_ {
     public static volatile SingularAttribute<VolumeSnapshotAO, String> name;
     public static volatile SingularAttribute<VolumeSnapshotAO, String> description;
     public static volatile SingularAttribute<VolumeSnapshotAO, String> type;

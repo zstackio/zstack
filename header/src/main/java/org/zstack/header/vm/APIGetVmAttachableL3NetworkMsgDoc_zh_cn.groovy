@@ -12,7 +12,7 @@ doc {
             url "GET /v1/vm-instances/{vmInstanceUuid}/l3-networks-candidates"
 
 
-            header(OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIGetVmAttachableL3NetworkMsg.class
 

@@ -2,17 +2,14 @@ package org.zstack.header.storage.primary;
 
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
+import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.zone.ZoneEO;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
 
 @MappedSuperclass
-public class PrimaryStorageAO {
-    @Id
-    @Column
-    private String uuid;
-
+public class PrimaryStorageAO extends ResourceVO {
     @Column
     @ForeignKey(parentEntityClass = ZoneEO.class, onDeleteAction = ReferenceOption.RESTRICT)
     private String zoneUuid;
@@ -74,14 +71,6 @@ public class PrimaryStorageAO {
 
     public void setStatus(PrimaryStorageStatus status) {
         this.status = status;
-    }
-
-    public String getUuid() {
-        return uuid;
-    }
-
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
     }
 
     public String getName() {

@@ -62,4 +62,10 @@ public class APIGetVolumeSnapshotTreeMsg extends APISyncCallMessage {
         this.treeUuid = treeUuid;
     }
 
+
+    public static APIGetVolumeSnapshotTreeMsg __example__() {
+        APIGetVolumeSnapshotTreeMsg msg = new APIGetVolumeSnapshotTreeMsg();
+        return msg;
+    }
+    
 }

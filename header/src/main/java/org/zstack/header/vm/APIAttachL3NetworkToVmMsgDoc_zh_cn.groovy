@@ -12,7 +12,7 @@ doc {
             url "POST /v1/vm-instances/{vmInstanceUuid}/l3-networks/{l3NetworkUuid}"
 
 
-            header(OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIAttachL3NetworkToVmMsg.class
 

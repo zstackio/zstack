@@ -14,7 +14,7 @@ doc {
 			url "POST /v1/l3-networks/{l3NetworkUuid}/ip-ranges"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIAddIpRangeMsg.class
 

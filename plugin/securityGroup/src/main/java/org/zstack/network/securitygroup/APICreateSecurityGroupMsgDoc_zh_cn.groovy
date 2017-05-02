@@ -14,7 +14,7 @@ doc {
 			url "POST /v1/security-groups"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APICreateSecurityGroupMsg.class
 

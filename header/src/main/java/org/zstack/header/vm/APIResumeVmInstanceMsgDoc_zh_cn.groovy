@@ -12,7 +12,7 @@ doc {
             url "PUT /v1/vm-instances/{uuid}/actions"
 
 
-            header(OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIResumeVmInstanceMsg.class
 

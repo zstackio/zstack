@@ -2,17 +2,14 @@ package org.zstack.header.identity;
 
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
+import org.zstack.header.vo.ResourceVO;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
 
 @Entity
 @Table
-public class UserGroupVO {
-    @Id
-    @Column
-    private String uuid;
-
+public class UserGroupVO extends ResourceVO {
     @Column
     @ForeignKey(parentEntityClass = AccountVO.class, parentKey = "uuid", onDeleteAction = ReferenceOption.CASCADE)
     private String accountUuid;
@@ -32,14 +29,6 @@ public class UserGroupVO {
     @PreUpdate
     private void preUpdate() {
         lastOpDate = null;
-    }
-
-    public String getUuid() {
-        return uuid;
-    }
-
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
     }
 
     public String getAccountUuid() {

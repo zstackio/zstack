@@ -38,6 +38,7 @@ public class LocalStorageCapacityRecalculator {
 
         Map<String, Long> hostCap = new HashMap<>();
 
+        // count volume
         String sql = "select sum(vol.size), ref.hostUuid" +
                 " from VolumeVO vol, LocalStorageResourceRefVO ref" +
                 " where vol.primaryStorageUuid = :psUuid" +
@@ -60,6 +61,32 @@ public class LocalStorageCapacityRecalculator {
             hostCap.put(hostUuid, ratioMgr.calculateByRatio(psUuid, cap));
         }
 
+        // count snapshot
+        sql = "select sum(snapshot.size), ref.hostUuid" +
+                " from VolumeSnapshotVO snapshot, LocalStorageResourceRefVO ref" +
+                " where snapshot.primaryStorageUuid = :psUuid" +
+                " and snapshot.uuid = ref.resourceUuid" +
+                " and ref.primaryStorageUuid = snapshot.primaryStorageUuid" +
+                " and ref.hostUuid in (:huuids)" +
+                " group by ref.hostUuid";
+        TypedQuery<Tuple> snapshotTypeQuery = dbf.getEntityManager().createQuery(sql, Tuple.class);
+        q.setParameter("psUuid", psUuid);
+        q.setParameter("huuids", huuids);
+        List<Tuple> snapshotList = snapshotTypeQuery.getResultList();
+        for (Tuple t : snapshotList) {
+            if (t.get(0, Long.class) == null) {
+                // no snpashot
+                continue;
+            }
+
+            long cap = t.get(0, Long.class);
+            String huuid = t.get(1, String.class);
+            Long ncap = hostCap.get(huuid);
+            ncap = ncap == null ? cap : ncap + cap;
+            hostCap.put(huuid, ncap);
+        }
+
+        // count imageCache
         for (String huuid : huuids) {
             // note: templates in image cache are physical size
             // do not calculate over provisioning for them
@@ -85,6 +112,8 @@ public class LocalStorageCapacityRecalculator {
                 hostCap.put(huuid, ncap);
             }
         }
+
+
 
         for (Map.Entry<String, Long> e : hostCap.entrySet()) {
             String hostUuid = e.getKey();

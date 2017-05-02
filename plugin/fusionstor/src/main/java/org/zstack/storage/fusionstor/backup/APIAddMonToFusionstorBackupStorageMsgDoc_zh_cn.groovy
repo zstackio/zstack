@@ -14,7 +14,7 @@ doc {
 			url "POST /v1/backup-storage/fusionstor/{uuid}/mons"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIAddMonToFusionstorBackupStorageMsg.class
 

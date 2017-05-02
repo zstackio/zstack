@@ -14,7 +14,7 @@ doc {
 			url "DELETE /v1/l2-networks/{uuid}"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIDeleteL2NetworkMsg.class
 

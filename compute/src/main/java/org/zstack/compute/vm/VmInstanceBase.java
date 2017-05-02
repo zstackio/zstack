@@ -9,6 +9,7 @@ import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.defer.Defer;
@@ -1545,8 +1546,18 @@ public class VmInstanceBase extends AbstractVmInstance {
             public void success() {
                 extEmitter.afterDestroyVm(inv);
                 logger.debug(String.format("successfully deleted vm instance[name:%s, uuid:%s]", self.getName(), self.getUuid()));
-                if (deletionPolicy == VmInstanceDeletionPolicy.Direct || deletionPolicy == VmInstanceDeletionPolicy.DBOnly) {
+                if (deletionPolicy == VmInstanceDeletionPolicy.Direct) {
                     dbf.remove(getSelf());
+                } else if (deletionPolicy == VmInstanceDeletionPolicy.DBOnly) {
+                    new SQLBatch() {
+                        @Override
+                        protected void scripts() {
+                            sql(VmNicVO.class).eq(VmNicVO_.vmInstanceUuid, self.getUuid()).hardDelete();
+                            sql(VolumeVO.class).eq(VolumeVO_.vmInstanceUuid, self.getUuid())
+                                    .eq(VolumeVO_.type, VolumeType.Root).hardDelete();
+                            sql(VmInstanceVO.class).eq(VmInstanceVO_.uuid, self.getUuid()).hardDelete();
+                        }
+                    }.execute();
                 } else if (deletionPolicy == VmInstanceDeletionPolicy.Delay) {
                     self = dbf.reload(self);
                     self.setHostUuid(null);

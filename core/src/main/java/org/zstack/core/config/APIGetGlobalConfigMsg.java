@@ -27,4 +27,10 @@ public class APIGetGlobalConfigMsg extends APISyncCallMessage {
     }
 
 
+
+    public static APIGetGlobalConfigMsg __example__() {
+        APIGetGlobalConfigMsg msg = new APIGetGlobalConfigMsg();
+        return msg;
+    }
+    
 }

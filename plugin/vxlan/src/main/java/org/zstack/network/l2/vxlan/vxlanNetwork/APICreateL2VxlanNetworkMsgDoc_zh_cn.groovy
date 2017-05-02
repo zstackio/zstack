@@ -14,7 +14,7 @@ doc {
 			url "POST /v1/l2-networks/vxlan"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APICreateL2VxlanNetworkMsg.class
 

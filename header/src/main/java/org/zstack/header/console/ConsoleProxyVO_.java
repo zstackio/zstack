@@ -1,5 +1,7 @@
 package org.zstack.header.console;
 
+import org.zstack.header.vo.ResourceVO_;
+
 import javax.persistence.metamodel.SingularAttribute;
 import javax.persistence.metamodel.StaticMetamodel;
 import java.sql.Timestamp;
@@ -11,8 +13,7 @@ import java.sql.Timestamp;
  * To change this template use File | Settings | File Templates.
  */
 @StaticMetamodel(ConsoleProxyVO.class)
-public class ConsoleProxyVO_ {
-    public static volatile SingularAttribute<ConsoleProxyVO, String> uuid;
+public class ConsoleProxyVO_ extends ResourceVO_ {
     public static volatile SingularAttribute<ConsoleProxyVO, String> vmInstanceUuid;
     public static volatile SingularAttribute<ConsoleProxyVO, String> proxyHostname;
     public static volatile SingularAttribute<ConsoleProxyVO, Integer> proxyPort;

@@ -12,7 +12,7 @@ doc {
 			url "DELETE /v1/backup-storage/{backupStorageUuid}/exported-images/{imageUuid}"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIDeleteExportedImageFromBackupStorageMsg.class
 

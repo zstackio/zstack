@@ -169,4 +169,8 @@
     <message>
         <name>org.zstack.header.identity.APIChangeResourceOwnerMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.header.vo.APIGetResourceNamesMsg</name>
+    </message>
 </service>

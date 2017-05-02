@@ -11,6 +11,7 @@ import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SQL;
+import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.defer.Defer;
@@ -905,10 +906,15 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         vo.setPlatform(ImagePlatform.valueOf(msg.getPlatform()));
 
         ImageFactory factory = getImageFacotry(ImageType.valueOf(imageType));
-        final ImageVO ivo = factory.createImage(vo, msg);
-
-        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), ImageVO.class);
-        tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), ImageVO.class.getSimpleName());
+        final ImageVO ivo = new SQLBatchWithReturn<ImageVO>() {
+            @Override
+            protected ImageVO scripts() {
+                final ImageVO ivo = factory.createImage(vo, msg);
+                acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), ImageVO.class);
+                tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), ImageVO.class.getSimpleName());
+                return ivo;
+            }
+        }.execute();
 
         Defer.guard(() -> dbf.remove(ivo));
 

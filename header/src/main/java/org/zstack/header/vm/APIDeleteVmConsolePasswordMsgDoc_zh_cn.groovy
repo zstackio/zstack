@@ -12,7 +12,7 @@ doc {
             url "DELETE /v1/vm-instances/{uuid}/console-password"
 
 
-            header(OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIDeleteVmConsolePasswordMsg.class
 

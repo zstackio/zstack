@@ -14,7 +14,7 @@ doc {
 			url "PUT /v1/port-forwarding/{uuid}/actions"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIUpdatePortForwardingRuleMsg.class
 

@@ -1,25 +1,13 @@
 package org.zstack.network.service.virtualrouter;
 
-import org.springframework.beans.factory.annotation.Autowire;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Configurable;
-import org.springframework.transaction.annotation.Transactional;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.core.db.TransactionalCallback.Operation;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.utils.DebugUtils;
-
-import javax.persistence.Query;
 
 /**
  * Created by frank on 7/31/2015.
  */
-@Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class DefaultVirtualRouterOfferingSelector {
-    @Autowired
-    private DatabaseFacade dbf;
-
     private String offeringUuid;
     private String zoneUuid;
     private Boolean preferToBeDefault;
@@ -57,37 +45,34 @@ public class DefaultVirtualRouterOfferingSelector {
         this.preferToBeDefault = preferToBeDefault;
     }
 
-    @Transactional
-    private void cleanOtherDefault() {
-        dbf.entityForTranscationCallback(Operation.UPDATE, VirtualRouterOfferingVO.class);
-        String sql = "update VirtualRouterOfferingVO v set v.isDefault = 0 where v.zoneUuid = :zoneUuid";
-        Query q = dbf.getEntityManager().createQuery(sql);
-        q.setParameter("zoneUuid", zoneUuid);
-        q.executeUpdate();
-    }
-
     public void selectDefaultOffering() {
         DebugUtils.Assert(zoneUuid != null, "zoneUuid cannot be null");
         DebugUtils.Assert(offeringUuid != null, "offeringUuid cannot be null");
 
-        VirtualRouterOfferingVO offering = dbf.findByUuid(offeringUuid, VirtualRouterOfferingVO.class);
-        SimpleQuery<VirtualRouterOfferingVO> vq = dbf.createQuery(VirtualRouterOfferingVO.class);
-        vq.add(VirtualRouterOfferingVO_.zoneUuid, Op.EQ, zoneUuid);
-        vq.add(VirtualRouterOfferingVO_.uuid, Op.NOT_EQ, offeringUuid);
-        if (!vq.isExists() && created) {
-            // the first offering is always the default one
-            offering.setDefault(true);
-            dbf.update(offering);
-            return;
-        }
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                VirtualRouterOfferingVO offering = findByUuid(offeringUuid, VirtualRouterOfferingVO.class);
 
-        if (preferToBeDefault != null && preferToBeDefault) {
-            cleanOtherDefault();
-            offering.setDefault(true);
-            dbf.update(offering);
-        } else if (preferToBeDefault != null) {
-            offering.setDefault(false);
-            dbf.update(offering);
-        }
+                if (!Q.New(VirtualRouterOfferingVO.class).eq(VirtualRouterOfferingVO_.zoneUuid, zoneUuid)
+                        .notEq(VirtualRouterOfferingVO_.uuid, offeringUuid).isExists()
+                        && created) {
+                    // the first offering is always the default one
+                    offering.setDefault(true);
+                    merge(offering);
+                    return;
+                }
+
+                if (preferToBeDefault != null && preferToBeDefault) {
+                    sql(VirtualRouterOfferingVO.class).set(VirtualRouterOfferingVO_.isDefault, false)
+                            .eq(VirtualRouterOfferingVO_.zoneUuid, zoneUuid).update();
+                    offering.setDefault(true);
+                    merge(offering);
+                } else if (preferToBeDefault != null) {
+                    offering.setDefault(false);
+                    merge(offering);
+                }
+            }
+        }.execute();
     }
 }

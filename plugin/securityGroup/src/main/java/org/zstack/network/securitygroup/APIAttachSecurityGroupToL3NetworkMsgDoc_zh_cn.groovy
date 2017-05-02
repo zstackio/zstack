@@ -14,7 +14,7 @@ doc {
 			url "POST /v1/security-groups/{securityGroupUuid}/l3-networks/{l3NetworkUuid}"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIAttachSecurityGroupToL3NetworkMsg.class
 

@@ -14,7 +14,7 @@ doc {
 			url "DELETE /v1/security-groups/{securityGroupUuid}/l3-networks/{l3NetworkUuid}"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIDetachSecurityGroupFromL3NetworkMsg.class
 

@@ -1,12 +1,13 @@
 package org.zstack.header.network.l3;
 
+import org.zstack.header.vo.ResourceVO_;
+
 import javax.persistence.metamodel.SingularAttribute;
 import javax.persistence.metamodel.StaticMetamodel;
 import java.sql.Timestamp;
 
 @StaticMetamodel(L3NetworkAO.class)
-public class L3NetworkAO_ {
-    public static volatile SingularAttribute<L3NetworkAO, String> uuid;
+public class L3NetworkAO_ extends ResourceVO_ {
     public static volatile SingularAttribute<L3NetworkAO, String> name;
     public static volatile SingularAttribute<L3NetworkAO, String> type;
     public static volatile SingularAttribute<L3NetworkAO, Boolean> system;

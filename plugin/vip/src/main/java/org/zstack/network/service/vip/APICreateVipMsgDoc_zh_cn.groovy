@@ -12,7 +12,7 @@ doc {
             url "POST /v1/vips"
 
 
-            header(OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APICreateVipMsg.class
 

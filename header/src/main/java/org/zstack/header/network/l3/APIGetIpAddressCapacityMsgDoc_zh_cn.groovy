@@ -14,7 +14,7 @@ doc {
 			url "GET /v1/ip-capacity"
 
 
-            header (OAuth: 'the-session-uuid')
+            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIGetIpAddressCapacityMsg.class
 
