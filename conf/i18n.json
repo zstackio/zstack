@@ -5332,9 +5332,9 @@
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageApiInterceptor.java"
   },
   {
-    "raw": "the primary storage[uuid:%s] is disabled cold migrate is not allowed",
-    "en_US": "the primary storage[uuid:{0}] is disabled cold migrate is not allowed",
-    "zh_CN": "主存储[uuid:{0}]为Disabled时不允许冷迁移",
+    "raw": "the primary storage[uuid:%s] is disabled or maintenance cold migrate is not allowed",
+    "en_US": "the primary storage[uuid:{0}] is disabled or maintenance cold migrate is not allowed",
+    "zh_CN": "主存储[uuid:{0}]为Disabled或维护状态时不允许冷迁移",
     "arguments": [
       "ref.getPrimaryStorageUuid()"
     ],
