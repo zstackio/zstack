@@ -8,8 +8,7 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.cloudbus.ResourceDestinationMaker;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.*;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.SyncThread;
@@ -24,6 +23,8 @@ import org.zstack.header.identity.AccountResourceRefInventory;
 import org.zstack.header.identity.ResourceOwnerPreChangeExtensionPoint;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
+import org.zstack.header.managementnode.ManagementNodeVO;
+import org.zstack.header.managementnode.ManagementNodeVO_;
 import org.zstack.header.message.Message;
 import org.zstack.header.vm.*;
 import org.zstack.utils.Utils;
@@ -247,26 +248,32 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
         }
     }
 
-    private List<String> getSchedulerManagedByUs() {
-        SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
-        q.select(SchedulerVO_.uuid);
-        q.add(SchedulerVO_.managementNodeUuid, SimpleQuery.Op.NULL);
-        List<String> ids = q.listValue();
-
-        List<String> ours = new ArrayList<String>();
-        for (String id : ids) {
-            if (destinationMaker.isManagedByUs(id)) {
-                ours.add(id);
-                q = dbf.createQuery(SchedulerVO.class);
-                q.add(SchedulerVO_.uuid, SimpleQuery.Op.IN, ours);
-                List<SchedulerVO> vos = q.list();
-                for (SchedulerVO vo : vos) {
-                    vo.setManagementNodeUuid(Platform.getManagementServerId());
-                    dbf.updateAndRefresh(vo);
+    private void getSchedulerManagedByUs() {
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                List<String> managementNodeUuids = Q.New(ManagementNodeVO.class).select(ManagementNodeVO_.uuid).eq(SchedulerVO_.managementNodeUuid, Platform.getManagementServerId()).listValues();
+                if(managementNodeUuids.isEmpty()) {
+                    return;
                 }
+
+                List<String> ids = Q.New(SchedulerVO.class).select(SchedulerVO_.uuid).isNull(SchedulerVO_.managementNodeUuid).listValues();
+
+                List<String> ours = new ArrayList<String>();
+                for (String id : ids) {
+                    if (destinationMaker.isManagedByUs(id)) {
+                        ours.add(id);
+                        List<SchedulerVO> vos = Q.New(SchedulerVO.class).in(SchedulerVO_.uuid, ours).list();
+                        for (SchedulerVO vo : vos) {
+                            vo.setManagementNodeUuid(Platform.getManagementServerId());
+                            dbf.updateAndRefresh(vo);
+                        }
+                    }
+                }
+
+                jobLoader(ours);
             }
-        }
-        return ours;
+        }.execute();
     }
 
     private void jobLoader(List<String> ours) {
@@ -293,8 +300,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
     }
 
     private void loadSchedulerJobs() {
-        List<String> ours = getSchedulerManagedByUs();
-        jobLoader(ours);
+        getSchedulerManagedByUs();
     }
 
     private void takeOverScheduler() {
