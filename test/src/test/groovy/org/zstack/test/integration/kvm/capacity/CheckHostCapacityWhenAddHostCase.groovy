@@ -1,16 +1,19 @@
 package org.zstack.test.integration.kvm.capacity
 
 import org.springframework.http.HttpEntity
+import org.zstack.header.vm.VmInstanceState
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
 import org.zstack.kvm.KVMGlobalConfig
 import org.zstack.sdk.AddKVMHostAction
+import org.zstack.sdk.ClusterInventory
+import org.zstack.sdk.GetCpuMemoryCapacityResult
+import org.zstack.sdk.VmInstanceInventory
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.ClusterSpec
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.test.integration.kvm.Env
-import org.zstack.testlib.Test
 
 /**
  * Created by zouye on 2017/3/1.
@@ -25,14 +28,51 @@ class CheckHostCapacityWhenAddHostCase extends SubCase {
 
     @Override
     void environment() {
-        env = Env.noHostBasicEnv()
+        env = Env.oneVmBasicEnv()
     }
 
     @Override
     void test() {
         env.create {
             testCheckCapacityWhenAddHost()
+            testCPUCapacityCalculation()
         }
+    }
+
+    void testCPUCapacityCalculation() {
+        ClusterInventory clusterInventory = env.inventoryByName("cluster")
+        VmInstanceInventory vmInstanceInventory = env.inventoryByName("vm")
+
+        GetCpuMemoryCapacityResult ret1 = getCpuMemoryCapacity {
+            clusterUuids = [clusterInventory.uuid]
+        }
+        updateVmInstance {
+            uuid = vmInstanceInventory.uuid
+            cpuNum = 10
+        }
+        GetCpuMemoryCapacityResult ret2 = getCpuMemoryCapacity {
+            clusterUuids = [clusterInventory.uuid]
+        }
+        assert ret1.availableCpu == ret2.availableCpu
+
+        VmInstanceInventory rebootVmInstanceResult = rebootVmInstance {
+            uuid = vmInstanceInventory.uuid
+        }
+
+        assert rebootVmInstanceResult.state == VmInstanceState.Running.toString()
+
+        GetCpuMemoryCapacityResult ret3 = getCpuMemoryCapacity {
+            clusterUuids = [clusterInventory.uuid]
+        }
+        assert ret3.availableCpu == ret2.availableCpu - 10
+
+        stopVmInstance {
+            uuid = vmInstanceInventory.uuid
+        }
+        GetCpuMemoryCapacityResult ret4 = getCpuMemoryCapacity {
+            clusterUuids = [clusterInventory.uuid]
+        }
+        assert ret4.availableCpu == ret2.availableCpu
     }
 
     void testCheckCapacityWhenAddHost() {
@@ -49,7 +89,7 @@ class CheckHostCapacityWhenAddHostCase extends SubCase {
         action.username = "root"
         action.password = "password"
         action.name = "addHost"
-        action.managementIp = "localhost"
+        action.managementIp = "127.0.0.2"
         action.clusterUuid = clusterSpec.inventory.uuid
         action.sessionId = adminSession()
 
