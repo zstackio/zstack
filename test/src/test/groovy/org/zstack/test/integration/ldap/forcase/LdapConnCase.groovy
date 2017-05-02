@@ -57,8 +57,8 @@ class LdapConnCase extends SubCase {
             description = "test-ldap0"
             base = LdapTest.DOMAIN_DSN
             url = "ldap://localhost:1888"
-            username = ""
-            password = ""
+            username = "notEmpty"
+            password = "passwd"
             encryption = "None"
             sessionId = currentEnvSpec.session.uuid
         } as LdapServerInventory

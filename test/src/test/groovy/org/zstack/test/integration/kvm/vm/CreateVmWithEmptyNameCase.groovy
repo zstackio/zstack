@@ -1,6 +1,7 @@
-package org.zstack.test.integration.core.api.apiparam
+package org.zstack.test.integration.kvm.vm
 
-import org.zstack.sdk.*
+import org.zstack.sdk.CreateVmInstanceAction
+import org.zstack.sdk.VmInstanceInventory
 import org.zstack.test.integration.kvm.Env
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
@@ -10,7 +11,7 @@ import org.zstack.testlib.Test
 /**
  * Created by lining on 2017/05/01.
  */
-class APIParamRequiredCase extends SubCase {
+class CreateVmWithEmptyNameCase extends SubCase {
     EnvSpec env
 
     @Override
