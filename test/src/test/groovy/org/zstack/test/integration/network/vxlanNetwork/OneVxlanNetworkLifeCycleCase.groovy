@@ -122,10 +122,10 @@ class OneVxlanNetworkLifeCycleCase extends SubCase {
         L2VxlanNetworkPoolInventory poolinv2 = queryL2VxlanNetworkPool{}[0]
 
         createVniRange {
-            delegate.startVni = 10
+            delegate.startVni = 100
             delegate.endVni = 10000
             delegate.l2NetworkUuid = poolinv.getUuid()
-            delegate.name = "TestRange"
+            delegate.name = "TestRange1"
         }
 
         attachL2NetworkToCluster {
@@ -136,9 +136,10 @@ class OneVxlanNetworkLifeCycleCase extends SubCase {
 
         L2NetworkInventory netinv = createL2VxlanNetwork {
             delegate.poolUuid = poolinv.getUuid()
-            delegate.name = "TestVxlan"
+            delegate.name = "TestVxlan1"
             delegate.zoneUuid = zone.inventory.getUuid()
         }
+
 
         assert netinv.getAttachedClusterUuids().size() == 1
 
@@ -232,7 +233,6 @@ class OneVxlanNetworkLifeCycleCase extends SubCase {
         assert nets.isEmpty()
         assert l3Nets.isEmpty()
         assert tags.isEmpty()
-
     }
 
 

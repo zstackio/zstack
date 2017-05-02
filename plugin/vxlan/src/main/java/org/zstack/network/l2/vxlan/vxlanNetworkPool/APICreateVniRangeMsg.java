@@ -25,10 +25,10 @@ public class APICreateVniRangeMsg extends APICreateMessage implements L2NetworkM
     @APIParam(required = false, maxLength = 2048)
     private String description;
 
-    @APIParam
+    @APIParam(numberRange = {0, 16777215})
     private Integer startVni;
 
-    @APIParam
+    @APIParam(numberRange = {0, 16777215})
     private Integer endVni;
 
     @APIParam

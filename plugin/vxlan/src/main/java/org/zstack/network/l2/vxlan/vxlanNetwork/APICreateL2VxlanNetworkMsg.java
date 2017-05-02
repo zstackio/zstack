@@ -21,7 +21,7 @@ import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolVO;
         parameterName = "params"
 )
 public class APICreateL2VxlanNetworkMsg extends APICreateL2NetworkMsg {
-    @APIParam(required = false, numberRange = {1, 16777215})
+    @APIParam(required = false, numberRange = {1, 16777214})
     private Integer vni;
 
     @APIParam(required = true, resourceType = VxlanNetworkPoolVO.class)
