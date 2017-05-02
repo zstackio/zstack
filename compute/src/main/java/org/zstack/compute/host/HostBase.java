@@ -343,6 +343,7 @@ public abstract class HostBase extends AbstractHost {
         final String issuer = HostVO.class.getSimpleName();
         final List<HostInventory> ctx = Arrays.asList(HostInventory.valueOf(self));
 
+        HostInventory hinv = HostInventory.valueOf(self);
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("delete-host-%s", msg.getUuid()));
         if (msg.getDeletionMode() == APIDeleteMessage.DeletionMode.Permissive) {
@@ -402,6 +403,7 @@ public abstract class HostBase extends AbstractHost {
                 casf.asyncCascadeFull(CascadeConstant.DELETION_CLEANUP_CODE, issuer, ctx, new NopeCompletion());
                 bus.publish(evt);
 
+                extpEmitter.afterDelete(hinv);
                 HostDeletedData d = new HostDeletedData();
                 d.setInventory(HostInventory.valueOf(self));
                 d.setHostUuid(self.getUuid());
@@ -607,7 +609,6 @@ public abstract class HostBase extends AbstractHost {
                 HostInventory hinv = HostInventory.valueOf(self);
                 extpEmitter.beforeDelete(hinv);
                 deleteHook();
-                extpEmitter.afterDelete(hinv);
                 bus.reply(msg, new HostDeletionReply());
                 tracker.untrackHost(self.getUuid());
                 chain.next();
