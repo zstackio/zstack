@@ -118,7 +118,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         cmd.setUuid(inv.getUuid());
         cmd.setOptions(NfsSystemTags.MOUNT_OPTIONS.getTokenByResourceUuid(inv.getUuid(), NfsSystemTags.MOUNT_OPTIONS_TOKEN));
 
-        KvmCommandSender sender = new KvmCommandSender(hostUuid);
+        KvmCommandSender sender = new KvmCommandSender(hostUuid,true);
         sender.send(cmd, MOUNT_PRIMARY_STORAGE_PATH, new KvmCommandFailureChecker() {
             @Override
             public ErrorCode getError(KvmResponseWrapper wrapper) {
