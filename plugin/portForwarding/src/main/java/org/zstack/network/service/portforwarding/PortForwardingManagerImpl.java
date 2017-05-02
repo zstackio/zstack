@@ -533,6 +533,8 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         VipInventory vipInventory = VipInventory.valueOf(vip);
         if (msg.getVmNicUuid() == null) {
             Vip v = new Vip(vipInventory.getUuid());
+            v.setServiceProvider(vipInventory.getServiceProvider());
+            v.setPeerL3NetworkUuid(vipInventory.getPeerL3NetworkUuid());
             v.setUseFor(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
             v.acquire(false, new Completion(msg) {
                 @Override
@@ -558,6 +560,8 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         VmInstanceState vmState = q.findValue();
         if (VmInstanceState.Running != vmState) {
             Vip v = new Vip(vipInventory.getUuid());
+            v.setServiceProvider(vipInventory.getServiceProvider());
+            v.setPeerL3NetworkUuid(vipInventory.getPeerL3NetworkUuid());
             v.setUseFor(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
             v.acquire(false, new Completion(msg) {
                 @Override
