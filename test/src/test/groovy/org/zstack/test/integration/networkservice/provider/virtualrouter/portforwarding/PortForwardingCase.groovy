@@ -4,6 +4,8 @@ import org.springframework.http.HttpEntity
 import org.zstack.appliancevm.ApplianceVmVO
 import org.zstack.core.db.Q
 import org.zstack.header.network.service.NetworkServiceType
+import org.zstack.header.vm.VmInstanceState
+import org.zstack.header.vm.VmInstanceVO
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
 import org.zstack.network.service.eip.EipConstant
@@ -259,6 +261,8 @@ class PortForwardingCase extends SubCase {
             privatePortStart = 3306
             protocolType = PortForwardingProtocolType.TCP.toString()
         }
+        VipVO vipVO = dbFindByUuid(vip.uuid, VipVO.class)
+        assert vipVO.serviceProvider != null
 
         deletePortForwardingRule {
             uuid = portForwarding.getUuid()
@@ -270,5 +274,53 @@ class PortForwardingCase extends SubCase {
         }
         assert Q.New(VirtualRouterVipVO.class).select(VirtualRouterVipVO_.uuid).eq(VirtualRouterVipVO_.uuid, vip.uuid).listValues().size() == 0
         assert !Q.New(VipVO.class).eq(VipVO_.uuid, vip.uuid).list().isEmpty()
+
+        deleteVip {
+            uuid = vip.uuid
+        }
+        assert Q.New(VipVO.class).eq(VipVO_.uuid, vip.uuid).list().isEmpty()
+    }
+
+    void testCreatePortForwardingRuleWillNotSetVipServiceProviderToNull() {
+        L3NetworkInventory l3 = env.inventoryByName("pubL3")
+        VmInstanceInventory vm = env.inventoryByName("vm")
+        VipInventory vip = createVip {
+            name = "vip"
+            l3NetworkUuid = l3.uuid
+        }
+
+        assert Q.New(VipVO.class).select(VipVO_.uuid).eq(VipVO_.uuid, vip.uuid).listValues().size() == 1
+        assert Q.New(VirtualRouterVipVO.class).select(VirtualRouterVipVO_.uuid).eq(VirtualRouterVipVO_.uuid, vip.uuid).listValues().isEmpty()
+
+        PortForwardingRuleInventory portForwarding = createPortForwardingRule {
+            name = "test"
+            vipUuid = vip.uuid
+            vipPortStart = 22
+            vipPortEnd = 22
+            privatePortEnd = 100
+            privatePortStart = 100
+            protocolType = PortForwardingProtocolType.TCP.toString()
+            vmNicUuid = vm.getVmNics().get(0).uuid
+        }
+        assert Q.New(VirtualRouterVipVO.class).select(VirtualRouterVipVO_.uuid).eq(VirtualRouterVipVO_.uuid, vip.uuid).listValues().size() == 1
+
+        stopVmInstance {
+            uuid = vm.uuid
+        }
+        VmInstanceVO vmInstanceVO = dbFindByUuid(vm.uuid, VmInstanceVO.class)
+        assert vmInstanceVO.state == VmInstanceState.Stopped
+
+        PortForwardingRuleInventory portForwarding2 = createPortForwardingRule {
+            name = "test"
+            vipUuid = vip.uuid
+            vipPortStart = 3306
+            vipPortEnd = 3306
+            privatePortEnd = 3306
+            privatePortStart = 3306
+            protocolType = PortForwardingProtocolType.TCP.toString()
+            vmNicUuid = vm.vmNics.get(0).uuid
+        }
+        VipVO vipVO = dbFindByUuid(vip.uuid, VipVO.class)
+        assert vipVO.serviceProvider != null
     }
 }

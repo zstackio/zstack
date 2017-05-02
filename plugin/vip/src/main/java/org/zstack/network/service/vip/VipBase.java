@@ -180,9 +180,7 @@ public class VipBase {
                                 self.getUuid(), self.getName(), self.getIp(), self.getServiceProvider()));
             }
 
-            if (self.getServiceProvider() == null && s.getServiceProvider() != null) {
-                self.setServiceProvider(s.getServiceProvider());
-            }
+            self.setServiceProvider(s.getServiceProvider());
         }
 
         if (s.isUserFor()) {
