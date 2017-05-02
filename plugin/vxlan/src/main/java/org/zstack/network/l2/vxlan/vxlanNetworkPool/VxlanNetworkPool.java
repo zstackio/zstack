@@ -8,6 +8,7 @@ import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.componentloader.PluginDSL;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
@@ -15,6 +16,8 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.inventory.InventoryFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
+import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.*;
@@ -27,6 +30,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
+import org.zstack.header.network.l3.APICreateL3NetworkMsg;
 import org.zstack.network.l2.L2NetworkExtensionPointEmitter;
 import org.zstack.network.l2.L2NetworkManager;
 import org.zstack.network.l2.L2NoVlanNetwork;
@@ -48,7 +52,7 @@ import static org.zstack.utils.CollectionDSL.map;
  * Created by weiwang on 01/03/2017.
  */
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
-public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkPoolManager {
+public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkPoolManager, GlobalApiMessageInterceptor {
     private static final CLogger logger = Utils.getLogger(VxlanNetworkPool.class);
 
     @Autowired
@@ -69,11 +73,17 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
     protected ErrorFacade errf;
     @Autowired
     private TagManager tagMgr;
+    @Autowired
+    private VxlanNetworkChecker vxlanInterceptor;
 
     private Map<String, VniAllocatorStrategy> vniAllocatorStrategies = Collections.synchronizedMap(new HashMap<String, VniAllocatorStrategy>());
 
     public VxlanNetworkPool(L2NetworkVO vo) {
         super(vo);
+    }
+
+    public VxlanNetworkPool(){
+        super(null);
     }
 
     private VxlanNetworkPoolVO getSelf() {
@@ -222,6 +232,11 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
                 List<String> uuids = Q.New(VxlanNetworkVO.class)
                         .select(VxlanNetworkVO_.uuid).eq(VxlanNetworkVO_.poolUuid, msg.getL2NetworkUuid()).listValues();
 
+                if (uuids.isEmpty()) {
+                    logger.info(String.format("There are no vxlan networks for vxlan pool %s", msg.getL2NetworkUuid()));
+                    trigger.next();
+                }
+
                 logger.info(String.format("Detach l2 vxlan networks %s for vxlan pool %s", uuids, msg.getL2NetworkUuid()));
 
                 new While<>(uuids).all((uuid, completion) -> {
@@ -363,6 +378,9 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
 
             @Override
             public void fail(ErrorCode errorCode) {
+                for (String tag : msg.getSystemTags()) {
+                    VxlanSystemTags.VXLAN_POOL_CLUSTER_VTEP_CIDR.delete(msg.getL2NetworkUuid(), tag);
+                }
                 evt.setError(errf.instantiateErrorCode(L2Errors.ATTACH_ERROR, errorCode));
                 bus.publish(evt);
             }
@@ -511,4 +529,21 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
         }
         return attachedClusters;
     }
+
+    @Override
+    public List<Class> getMessageClassToIntercept() {
+        return Arrays.asList(APIAttachL2NetworkToClusterMsg.class, APICreateL3NetworkMsg.class);
+    }
+
+    @Override
+    public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
+        vxlanInterceptor.intercept(msg);
+        return msg;
+    }
+
+    @Override
+    public InterceptorPosition getPosition() {
+        return InterceptorPosition.FRONT;
+    }
+
 }
