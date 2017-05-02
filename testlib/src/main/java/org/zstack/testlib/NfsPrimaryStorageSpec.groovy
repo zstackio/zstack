@@ -1,6 +1,8 @@
 package org.zstack.testlib
 
 import org.springframework.http.HttpEntity
+import org.zstack.header.Constants
+import org.zstack.header.rest.RESTConstant
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.storage.primary.local.LocalStorageKvmBackend
@@ -51,11 +53,13 @@ class NfsPrimaryStorageSpec extends PrimaryStorageSpec {
             return rsp
         }
 
-        simulator(NfsPrimaryStorageKVMBackend.UNMOUNT_PRIMARY_STORAGE_PATH) {
+        simulator(NfsPrimaryStorageKVMBackend.UNMOUNT_PRIMARY_STORAGE_PATH) { HttpEntity<String> e ->
+            checkHttpCallType(e, true)
             return new KVMAgentCommands.AgentResponse()
         }
 
         simulator(NfsPrimaryStorageKVMBackend.MOUNT_PRIMARY_STORAGE_PATH) { HttpEntity<String> e, EnvSpec espec ->
+            checkHttpCallType(e, true)
             def cmd = JSONObjectUtil.toObject(e.getBody(), NfsPrimaryStorageKVMBackendCommands.MountCmd.class)
             NfsPrimaryStorageSpec spec = espec.specByUuid(cmd.uuid) as NfsPrimaryStorageSpec
             def rsp = new NfsPrimaryStorageKVMBackendCommands.MountAgentResponse()

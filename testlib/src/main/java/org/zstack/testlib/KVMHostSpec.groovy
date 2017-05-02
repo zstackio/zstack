@@ -57,6 +57,7 @@ class KVMHostSpec extends HostSpec {
 
     private setupSimulator() {
         simulator(KVMConstant.KVM_HOST_CAPACITY_PATH) { HttpEntity<String> e, EnvSpec espec ->
+            checkHttpCallType(e, true)
             def rsp = new KVMAgentCommands.HostCapacityResponse()
 
             KVMHostSpec spec = espec.specByUuid(e.getHeaders().getFirst(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID))
@@ -143,7 +144,8 @@ class KVMHostSpec extends HostSpec {
             return rsp
         }
 
-        simulator(KVMConstant.KVM_CONNECT_PATH) {
+        simulator(KVMConstant.KVM_CONNECT_PATH) { HttpEntity<String> e ->
+            checkHttpCallType(e, true)
             def rsp = new KVMAgentCommands.ConnectResponse()
             rsp.success = true
             rsp.libvirtVersion = "1.0.0"
@@ -152,7 +154,8 @@ class KVMHostSpec extends HostSpec {
             return rsp
         }
 
-        simulator(KVMConstant.KVM_ECHO_PATH) {
+        simulator(KVMConstant.KVM_ECHO_PATH) { HttpEntity<String> e ->
+            checkHttpCallType(e, true)
             return [:]
         }
 
@@ -189,7 +192,8 @@ class KVMHostSpec extends HostSpec {
             return new KVMAgentCommands.AttachDataVolumeResponse()
         }
 
-        simulator(KVMConstant.KVM_CHECK_PHYSICAL_NETWORK_INTERFACE_PATH) {
+        simulator(KVMConstant.KVM_CHECK_PHYSICAL_NETWORK_INTERFACE_PATH) { HttpEntity<String> e ->
+            checkHttpCallType(e, true)
             return new KVMAgentCommands.CheckPhysicalNetworkInterfaceResponse()
         }
 
