@@ -34,7 +34,7 @@ public class APIUpdateVmInstanceMsg extends APIMessage implements VmInstanceMess
     private String platform;
     @APIParam(required = false, numberRange = {1, 1024})
     private Integer cpuNum;
-    @APIParam(required = false, numberRange = {1, Long.MAX_VALUE})
+    @APIParam(required = false, numberRange = {1, 1024*1024*1024*1024L})
     private Long memorySize;
 
     public String getDefaultL3NetworkUuid() {
