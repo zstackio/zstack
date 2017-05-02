@@ -14,7 +14,7 @@ import org.zstack.utils.logging.CLogger;
  * Created by weiwang on 03/03/2017.
  */
 public class VxlanNetworkPoolFactory implements L2NetworkFactory, Component {
-    private static CLogger logger = Utils.getLogger(VxlanNetworkPool.class);
+    private static CLogger logger = Utils.getLogger(VxlanNetworkPoolFactory.class);
     static L2NetworkType type = new L2NetworkType(VxlanNetworkPoolConstant.VXLAN_NETWORK_POOL_TYPE);
 
     @Autowired
@@ -32,6 +32,9 @@ public class VxlanNetworkPoolFactory implements L2NetworkFactory, Component {
     @Override
     public L2NetworkInventory createL2Network(L2NetworkVO ovo, APICreateL2NetworkMsg msg) {
         VxlanNetworkPoolVO vo = new VxlanNetworkPoolVO(ovo);
+        if (vo.getPhysicalInterface() == null) {
+            vo.setPhysicalInterface("No use");
+        }
         vo = dbf.persistAndRefresh(vo);
         L2VxlanNetworkPoolInventory inv = L2VxlanNetworkPoolInventory.valueOf(vo);
         String info = String.format("successfully create L2VxlanNetworkPool, %s", JSONObjectUtil.toJsonString(inv));

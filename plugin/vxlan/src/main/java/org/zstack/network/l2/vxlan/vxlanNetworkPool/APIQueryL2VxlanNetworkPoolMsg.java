@@ -14,7 +14,7 @@ import static java.util.Arrays.asList;
 /**
  * Created by weiwang on 15/03/2017.
  */
-@AutoQuery(replyClass = APIQueryL2VxlanNetworkPoolReply.class, inventoryClass = L2VxlanNetworkInventory.class)
+@AutoQuery(replyClass = APIQueryL2VxlanNetworkPoolReply.class, inventoryClass = L2VxlanNetworkPoolInventory.class)
 @Action(category = VxlanNetworkPoolConstant.ACTION_CATEGORY, names = {"read"})
 @RestRequest(
         path = "/l2-networks/vxlan-pool",

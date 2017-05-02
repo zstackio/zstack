@@ -48,11 +48,6 @@ public class APICreateL2VxlanNetworkMsg extends APICreateL2NetworkMsg {
         this.poolUuid = poolUuid;
     }
 
-    @Override
-    public String getPhysicalInterface() {
-        return "No use";
-    }
-
     public static APICreateL2VxlanNetworkMsg __example__() {
         APICreateL2VxlanNetworkMsg msg = new APICreateL2VxlanNetworkMsg();
 

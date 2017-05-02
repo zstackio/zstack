@@ -6,7 +6,7 @@ import org.zstack.header.configuration.PythonClass;
  * Created by weiwang on 02/03/2017.
  */
 @PythonClass
-public interface VxlanNetworkConstant {
+public class VxlanNetworkConstant {
     @PythonClass
     public static final String VXLAN_NETWORK_TYPE = "VxlanNetwork";
 }

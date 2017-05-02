@@ -19,11 +19,6 @@
         </dependency>
         <dependency>
             <groupId>org.zstack</groupId>
-            <artifactId>kvm</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.zstack</groupId>
             <artifactId>header</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -35,6 +30,11 @@
         <dependency>
             <groupId>org.zstack</groupId>
             <artifactId>tag</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.zstack</groupId>
+            <artifactId>network</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>
