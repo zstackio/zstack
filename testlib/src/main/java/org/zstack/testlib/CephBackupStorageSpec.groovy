@@ -127,5 +127,10 @@ class CephBackupStorageSpec extends BackupStorageSpec {
             return rsp
 
         }
+
+        simulator(CephBackupStorageMonBase.ECHO_PATH) { HttpEntity<String> entity ->
+            checkHttpCallType(entity, true)
+            return [:]
+        }
     }
 }

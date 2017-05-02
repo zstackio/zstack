@@ -108,7 +108,8 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
             return new CephPrimaryStorageBase.DeleteRsp()
         }
 
-        simulator(CephPrimaryStorageMonBase.ECHO_PATH) { HttpEntity<String> entity, EnvSpec spec ->
+        simulator(CephPrimaryStorageMonBase.ECHO_PATH) { HttpEntity<String> entity ->
+            checkHttpCallType(entity, true)
             return [:]
         }
 

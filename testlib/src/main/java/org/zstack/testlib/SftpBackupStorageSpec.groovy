@@ -49,6 +49,7 @@ class SftpBackupStorageSpec extends BackupStorageSpec {
 
     private void setupSimulator() {
         simulator(SftpBackupStorageConstant.CONNECT_PATH) { HttpEntity<String> e, EnvSpec spec ->
+            checkHttpCallType(e, true)
             def cmd = JSONObjectUtil.toObject(e.getBody(), SftpBackupStorageCommands.ConnectCmd.class)
             BackupStorageSpec bsSpec = spec.specByUuid(cmd.uuid)
 
@@ -58,7 +59,8 @@ class SftpBackupStorageSpec extends BackupStorageSpec {
             return rsp
         }
 
-        simulator(SftpBackupStorageConstant.ECHO_PATH) {
+        simulator(SftpBackupStorageConstant.ECHO_PATH) { HttpEntity<String> e ->
+            checkHttpCallType(e, true)
             return [:]
         }
 

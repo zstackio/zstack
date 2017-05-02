@@ -101,7 +101,8 @@ class VirtualRouterOfferingSpec extends InstanceOfferingSpec {
             return new ApplianceVmKvmCommands.PrepareBootstrapInfoRsp()
         }
 
-        simulator(ApplianceVmConstant.ECHO_PATH) {
+        simulator(ApplianceVmConstant.ECHO_PATH) { HttpEntity<String> e ->
+            checkHttpCallType(e, true)
             return [:]
         }
 
@@ -145,7 +146,8 @@ class VirtualRouterOfferingSpec extends InstanceOfferingSpec {
             return new VirtualRouterCommands.CreatePortForwardingRuleRsp()
         }
 
-        simulator(VirtualRouterConstant.VR_ECHO_PATH) {
+        simulator(VirtualRouterConstant.VR_ECHO_PATH) { HttpEntity<String> e ->
+            checkHttpCallType(e, true)
             return [:]
         }
 
