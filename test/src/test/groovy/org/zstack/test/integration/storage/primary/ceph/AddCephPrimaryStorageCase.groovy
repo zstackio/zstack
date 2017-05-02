@@ -109,8 +109,6 @@ use:
                 bus.reply(msgbak, reply)
             }
 
-            TimeUnit.SECONDS.sleep(5)
-
             return [:]
         }
 
@@ -126,9 +124,9 @@ use:
         action.call()
 
         // wait echo finished
-        TimeUnit.SECONDS.sleep(5)
-
-        assert Q.New(CephPrimaryStorageMonVO.class).count() == 0: "failed to add cephPS, all monVO should be removed, but some left"
+        retryInSecs{
+            assert Q.New(CephPrimaryStorageMonVO.class).count() == 0l: "failed to add cephPS, all monVO should be removed, but some left"
+        }
     }
 
     @Override

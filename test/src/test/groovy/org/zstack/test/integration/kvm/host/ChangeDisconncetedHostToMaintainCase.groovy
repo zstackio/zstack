@@ -9,11 +9,14 @@ import org.zstack.header.host.HostState
 import org.zstack.header.host.HostStateEvent
 import org.zstack.header.host.HostStatus
 import org.zstack.header.host.HostVO
+import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceStateEvent
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
+import org.zstack.network.securitygroup.SecurityGroupConstant
+import org.zstack.network.service.virtualrouter.VirtualRouterConstant
 import org.zstack.sdk.ChangeHostStateAction
 import org.zstack.sdk.HostInventory
 import org.zstack.sdk.VmInstanceInventory
@@ -22,6 +25,7 @@ import org.zstack.test.integration.kvm.Env
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
+import org.zstack.utils.data.SizeUnit
 
 import java.util.concurrent.TimeUnit
 
@@ -51,7 +55,6 @@ class ChangeDisconncetedHostToMaintainCase extends SubCase{
             host = env.inventoryByName("kvm")
             vm = env.inventoryByName("vm")
             testChangeStateIntoMaintainOneVMUnkown()
-            testChangeStateIntoMaintainNoneVm()
         }
 
     }
@@ -78,35 +81,12 @@ class ChangeDisconncetedHostToMaintainCase extends SubCase{
             assert VmInstanceState.Unknown == vmvo.getState()
         }
 
-        expect(ApiMessageInterceptionException.class){
-            ChangeHostStateAction action = new ChangeHostStateAction()
-            action.uuid = host.uuid
-            action.stateEvent = HostStateEvent.maintain
-            action.sessionId = loginAsAdmin()
-            action.call()
-        }
-
-        assert dbFindByUuid(host.uuid,HostVO.class).state == HostState.Enabled
-
-    }
-    
-    void testChangeStateIntoMaintainNoneVm(){
-        destroyVmInstance {
-            uuid = vm.uuid
-        }
-        retryInSecs(1,1){
-            HostVO host = dbf.findByUuid(host.getUuid(), HostVO.class)
-            Assert.assertEquals(HostStatus.Disconnected, host.getStatus())
-        }
-
-        expect(ApiMessageInterceptionException.class){
-            ChangeHostStateAction action = new ChangeHostStateAction()
-            action.uuid = host.uuid
-            action.stateEvent = HostStateEvent.maintain
-            action.sessionId = loginAsAdmin()
-            action.call()
-        }
-
+        ChangeHostStateAction action = new ChangeHostStateAction()
+        action.uuid = host.uuid
+        action.stateEvent = HostStateEvent.maintain
+        action.sessionId = adminSession()
+        ChangeHostStateAction.Result result = action.call()
+        assert result.error != null
         assert dbFindByUuid(host.uuid,HostVO.class).state == HostState.Enabled
 
     }

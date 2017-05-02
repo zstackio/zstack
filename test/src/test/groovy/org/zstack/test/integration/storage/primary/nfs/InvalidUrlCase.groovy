@@ -120,7 +120,9 @@ class InvalidUrlCase extends SubCase {
         a.primaryStorageUuid = psInv.uuid
         a.sessionId = currentEnvSpec.session.uuid
 
-        assert a.call().error != null
+        retryInSecs{
+            assert a.call().error != null
+        }
 
     }
 
@@ -223,7 +225,9 @@ class InvalidUrlCase extends SubCase {
         a.uuid = host.uuid
         a.sessionId = currentEnvSpec.session.uuid
 
-        assert a.call().error != null
+        retryInSecs{
+            assert a.call().error != null
+        }
     }
 
     void testReconnectHost(){
@@ -270,6 +274,8 @@ class InvalidUrlCase extends SubCase {
         a.uuid = psInv.uuid
         a.sessionId = currentEnvSpec.session.uuid
 
-        assert a.call().error != null
+        retryInSecs{
+            assert a.call().error != null
+        }
     }
 }
