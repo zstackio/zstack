@@ -60,6 +60,46 @@
     "fileName": "src/main/java/org/zstack/aliyun/core/AliyunSdkImpl.java"
   },
   {
+    "raw": "vbrvo couldn\u0027t find connection access point: [%s] in db",
+    "en_US": "vbrvo couldn\u0027t find connection access point: [{0}] in db",
+    "zh_CN": "",
+    "arguments": [
+      "vbrvo.getAccessPointUuid()"
+    ],
+    "line": 109,
+    "fileName": "src/main/java/org/zstack/aliyun/datacenter/CreateDataCenterInDBFlow.java"
+  },
+  {
+    "raw": "vrivo couldn\u0027t find connection access point: [%s] in db",
+    "en_US": "vrivo couldn\u0027t find connection access point: [{0}] in db",
+    "zh_CN": "",
+    "arguments": [
+      "vrivo.getAccessPointUuid()"
+    ],
+    "line": 131,
+    "fileName": "src/main/java/org/zstack/aliyun/datacenter/CreateDataCenterInDBFlow.java"
+  },
+  {
+    "raw": "vrivo couldn\u0027t find virtual border router: [%s] in db",
+    "en_US": "vrivo couldn\u0027t find virtual border router: [{0}] in db",
+    "zh_CN": "",
+    "arguments": [
+      "vrivo.getVirtualRouterUuid()"
+    ],
+    "line": 161,
+    "fileName": "src/main/java/org/zstack/aliyun/datacenter/CreateDataCenterInDBFlow.java"
+  },
+  {
+    "raw": "vrivo couldn\u0027t find virtual router: [%s] in db",
+    "en_US": "vrivo couldn\u0027t find virtual router: [{0}] in db",
+    "zh_CN": "",
+    "arguments": [
+      "vrivo.getVirtualRouterUuid()"
+    ],
+    "line": 148,
+    "fileName": "src/main/java/org/zstack/aliyun/datacenter/CreateDataCenterInDBFlow.java"
+  },
+  {
     "raw": "image has bee deleted!",
     "en_US": "image has bee deleted!",
     "zh_CN": "",
@@ -128,36 +168,6 @@
     ],
     "line": 191,
     "fileName": "src/main/java/org/zstack/aliyun/ecs/EcsInstanceManagerImpl.java"
-  },
-  {
-    "raw": "no such dataCenterUuid [%s]",
-    "en_US": "no such dataCenterUuid [{0}]",
-    "zh_CN": "",
-    "arguments": [
-      "dcUuid"
-    ],
-    "line": 72,
-    "fileName": "src/main/java/org/zstack/aliyun/network/AliyunNetworkServiceBase.java"
-  },
-  {
-    "raw": "no such identityZone [%s]",
-    "en_US": "no such identityZone [{0}]",
-    "zh_CN": "",
-    "arguments": [
-      "msg.getIdentityZoneUuid()"
-    ],
-    "line": 201,
-    "fileName": "src/main/java/org/zstack/aliyun/network/AliyunNetworkServiceBase.java"
-  },
-  {
-    "raw": "No such vpcUuid: %s",
-    "en_US": "No such vpcUuid: {0}",
-    "zh_CN": "",
-    "arguments": [
-      "msg.getEcsVpcUuid()"
-    ],
-    "line": 314,
-    "fileName": "src/main/java/org/zstack/aliyun/network/AliyunNetworkServiceBase.java"
   },
   {
     "raw": "dataCenterUuid [%s] couldn\u0027t be found",
@@ -355,11 +365,11 @@
     "fileName": "src/main/java/org/zstack/compute/host/HostBase.java"
   },
   {
-    "raw": "cannot change the state of disconnected host into maintain ",
-    "en_US": "cannot change the state of disconnected host into maintain ",
-    "zh_CN": "失连状态的物理机不能进入维护模式",
+    "raw": "cannot change the state of Disconnected host into Maintenance ",
+    "en_US": "cannot change the state of Disconnected host into Maintenance ",
+    "zh_CN": "",
     "arguments": [],
-    "line": 420,
+    "line": 455,
     "fileName": "src/main/java/org/zstack/compute/host/HostBase.java"
   },
   {
@@ -1527,6 +1537,92 @@
     "arguments": [],
     "line": 41,
     "fileName": "src/main/java/org/zstack/hybrid/account/HybridAccountApiInterceptor.java"
+  },
+  {
+    "raw": "no such virtual router: %s",
+    "en_US": "no such virtual router: {0}",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getvRouterUuid()"
+    ],
+    "line": 101,
+    "fileName": "src/main/java/org/zstack/hybrid/network/HybridNetworkApiInterceptor.java"
+  },
+  {
+    "raw": "no such virtual border router: %s",
+    "en_US": "no such virtual border router: {0}",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getvRouterUuid()"
+    ],
+    "line": 92,
+    "fileName": "src/main/java/org/zstack/hybrid/network/HybridNetworkApiInterceptor.java"
+  },
+  {
+    "raw": "localGateway is not IPv4: %s",
+    "en_US": "localGateway is not IPv4: {0}",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getLocalGatewayIp()"
+    ],
+    "line": 68,
+    "fileName": "src/main/java/org/zstack/hybrid/network/HybridNetworkApiInterceptor.java"
+  },
+  {
+    "raw": "peerGateway is not IPv4: %s",
+    "en_US": "peerGateway is not IPv4: {0}",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getPeerGatewayIp()"
+    ],
+    "line": 71,
+    "fileName": "src/main/java/org/zstack/hybrid/network/HybridNetworkApiInterceptor.java"
+  },
+  {
+    "raw": "peerGateway is not subnet mask: %s",
+    "en_US": "peerGateway is not subnet mask: {0}",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getPeeringSubnetMask()"
+    ],
+    "line": 74,
+    "fileName": "src/main/java/org/zstack/hybrid/network/HybridNetworkApiInterceptor.java"
+  },
+  {
+    "raw": "vlanId is not number: %s",
+    "en_US": "vlanId is not number: {0}",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getVlanId()"
+    ],
+    "line": 78,
+    "fileName": "src/main/java/org/zstack/hybrid/network/HybridNetworkApiInterceptor.java"
+  },
+  {
+    "raw": "destination Cidr [%s] is existed, please check or delete it first",
+    "en_US": "destination Cidr [{0}] is existed, please check or delete it first",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getDestinationCidrBlock()"
+    ],
+    "line": 87,
+    "fileName": "src/main/java/org/zstack/hybrid/network/HybridNetworkApiInterceptor.java"
+  },
+  {
+    "raw": "router interface must be vrouter type",
+    "en_US": "router interface must be vrouter type",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 105,
+    "fileName": "src/main/java/org/zstack/hybrid/network/HybridNetworkApiInterceptor.java"
+  },
+  {
+    "raw": "router interface must be vbr type",
+    "en_US": "router interface must be vbr type",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 96,
+    "fileName": "src/main/java/org/zstack/hybrid/network/HybridNetworkApiInterceptor.java"
   },
   {
     "raw": "the user group[uuid:%s] does not belong to the account[uuid:%s]",
@@ -4654,6 +4750,14 @@
     "fileName": "src/main/java/org/zstack/storage/backup/imagestore/ImageStoreBackupStorageApiInterceptor.java"
   },
   {
+    "raw": "the url contains an invalid folder[/dev or /proc or /sys]",
+    "en_US": "the url contains an invalid folder[/dev or /proc or /sys]",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 80,
+    "fileName": "src/main/java/org/zstack/storage/backup/imagestore/ImageStoreBackupStorageApiInterceptor.java"
+  },
+  {
     "raw": "file path contains invalid character: %s",
     "en_US": "file path contains invalid character: {0}",
     "zh_CN": "文件路径包含非法字符：{0}",
@@ -4744,6 +4848,14 @@
     ],
     "line": 272,
     "fileName": "src/main/java/org/zstack/storage/backup/sftp/SftpBackupStorage.java"
+  },
+  {
+    "raw": " the url contains an invalid folder[/dev or /proc or /sys]",
+    "en_US": " the url contains an invalid folder[/dev or /proc or /sys]",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 73,
+    "fileName": "src/main/java/org/zstack/storage/backup/sftp/SftpBackupStorageApiInterceptor.java"
   },
   {
     "raw": "duplicate backup storage. There has been a sftp backup storage[hostname:%s] existing",
@@ -4974,6 +5086,16 @@
     "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageBase.java"
   },
   {
+    "raw": "ceph primary storage[uuid:%s] may have been deleted.",
+    "en_US": "ceph primary storage[uuid:{0}] may have been deleted.",
+    "zh_CN": "",
+    "arguments": [
+      "self.getUuid()"
+    ],
+    "line": 1794,
+    "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageBase.java"
+  },
+  {
     "raw": "unable to connect to the ceph primary storage[uuid:%s]. Failed to connect all ceph mons. Errors are %s",
     "en_US": "unable to connect to the ceph primary storage[uuid:{0}]. Failed to connect all ceph mons. Errors are {1}",
     "zh_CN": "无法连接到ceph主存储[uuid:{0}]。连接所有ceph mons失败。错误是{1}",
@@ -5062,6 +5184,16 @@
     ],
     "line": 88,
     "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageMonBase.java"
+  },
+  {
+    "raw": "fusionstor primary storage[uuid:%s] may have been deleted.",
+    "en_US": "fusionstor primary storage[uuid:{0}] may have been deleted.",
+    "zh_CN": "",
+    "arguments": [
+      "self.getUuid()"
+    ],
+    "line": 1661,
+    "fileName": "src/main/java/org/zstack/storage/fusionstor/primary/FusionstorPrimaryStorageBase.java"
   },
   {
     "raw": "zoneUuids, clusterUuids, primaryStorageUuids must have at least one be none-empty list, or all is set to true",
@@ -5385,6 +5517,18 @@
       "count"
     ],
     "line": 133,
+    "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageApiInterceptor.java"
+  },
+  {
+    "raw": "The two clusters[uuid:%s,uuid:%s] must access each other in l2 network  when migrate the vm[uuid;%s] to another cluster",
+    "en_US": "The two clusters[uuid:{0},uuid:{1}] must access each other in l2 network  when migrate the vm[uuid;{2}] to another cluster",
+    "zh_CN": "当迁移云主机到另一个集群，集群间必须二层可达",
+    "arguments": [
+      "originClusterUuid",
+      "clusterUuid",
+      "vol.getVmInstanceUuid()"
+    ],
+    "line": 155,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageApiInterceptor.java"
   },
   {
