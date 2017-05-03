@@ -2,6 +2,7 @@ package org.zstack.header.host
 
 import org.zstack.header.host.APIQueryHostReply
 import org.zstack.header.query.APIQueryMessage
+import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "QueryHost"
@@ -13,11 +14,10 @@ doc {
     rest {
         request {
 			url "GET /v1/hosts"
-
 			url "GET /v1/hosts/{uuid}"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIQueryHostMsg.class
 

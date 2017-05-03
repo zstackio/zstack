@@ -2,6 +2,7 @@ package org.zstack.core.gc
 
 import org.zstack.core.gc.APIQueryGCJobReply
 import org.zstack.header.query.APIQueryMessage
+import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "QueryGCJob"
@@ -13,11 +14,10 @@ doc {
     rest {
         request {
 			url "GET /v1/gc-jobs"
-
 			url "GET /v1/gc-jobs/{uuid}"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIQueryGCJobMsg.class
 

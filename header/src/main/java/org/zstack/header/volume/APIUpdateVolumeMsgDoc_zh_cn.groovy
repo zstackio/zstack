@@ -1,5 +1,7 @@
 package org.zstack.header.volume
 
+import org.zstack.header.volume.APIUpdateVolumeEvent
+
 doc {
     title "修改云盘属性(UpdateVolume)"
 
@@ -9,10 +11,10 @@ doc {
 
     rest {
         request {
-			url "PUT /v1/volus/{uuid}/actions"
+			url "PUT /v1/volumes/{uuid}/actions"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIUpdateVolumeMsg.class
 

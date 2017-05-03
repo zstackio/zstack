@@ -2,6 +2,7 @@ package org.zstack.storage.ceph.backup
 
 import org.zstack.header.storage.backup.APIQueryBackupStorageReply
 import org.zstack.header.query.APIQueryMessage
+import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "查询 Ceph 镜像服务器(QueryCephBackupStorage)"
@@ -13,11 +14,10 @@ doc {
     rest {
         request {
 			url "GET /v1/backup-storage/ceph"
-
 			url "GET /v1/backup-storage/ceph/{uuid}"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIQueryCephBackupStorageMsg.class
 

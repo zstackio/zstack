@@ -13,13 +13,13 @@ doc {
         request {
 			url "POST /v1/zones"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APICreateZoneMsg.class
 
-			desc "创建一个新的区域"
-
+            desc "创建一个新的区域"
+            
 			params {
 
 				column {
@@ -54,8 +54,8 @@ doc {
 				}
 				column {
 					name "systemTags"
- 					enclosedIn ""
- 					desc "系统标签"
+					enclosedIn ""
+					desc "系统标签"
 					location "body"
 					type "List"
 					optional true

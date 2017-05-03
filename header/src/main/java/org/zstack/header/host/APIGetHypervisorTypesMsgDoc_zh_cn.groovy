@@ -13,8 +13,8 @@ doc {
         request {
 			url "GET /v1/hosts/hypervisor-types"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIGetHypervisorTypesMsg.class
 

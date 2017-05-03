@@ -13,8 +13,8 @@ doc {
         request {
 			url "GET /v1/eips/{eipUuid}/vm-instances/candidate-nics"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIGetEipAttachableVmNicsMsg.class
 
@@ -24,7 +24,7 @@ doc {
 
 				column {
 					name "eipUuid"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "弹性IP UUID"
 					location "url"
 					type "String"
@@ -34,9 +34,9 @@ doc {
 				}
 				column {
 					name "vipUuid"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "VIP UUID"
-					location "url"
+					location "query"
 					type "String"
 					optional true
 					since "0.6"

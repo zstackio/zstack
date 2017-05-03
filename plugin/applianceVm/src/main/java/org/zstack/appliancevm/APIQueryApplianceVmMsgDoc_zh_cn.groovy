@@ -2,6 +2,7 @@ package org.zstack.appliancevm
 
 import org.zstack.appliancevm.APIQueryApplianceVmReply
 import org.zstack.header.query.APIQueryMessage
+import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "查询系统云主机(QueryApplianceVm)"
@@ -13,11 +14,10 @@ doc {
     rest {
         request {
 			url "GET /v1/vm-instances/appliances"
-
 			url "GET /v1/vm-instances/appliances/{uuid}"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIQueryApplianceVmMsg.class
 

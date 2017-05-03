@@ -1,5 +1,7 @@
 package org.zstack.header.storage.primary
 
+import org.zstack.header.storage.primary.APICleanUpImageCacheOnPrimaryStorageEvent
+
 doc {
     title "清楚主存储镜像缓存(CleanUpImageCacheOnPrimaryStorage)"
 
@@ -11,8 +13,8 @@ doc {
         request {
 			url "PUT /v1/primary-storage/{uuid}/actions"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APICleanUpImageCacheOnPrimaryStorageMsg.class
 
@@ -32,8 +34,8 @@ doc {
 				}
 				column {
 					name "systemTags"
- 					enclosedIn "params"
- 					desc "系统标签"
+					enclosedIn ""
+					desc "系统标签"
 					location "body"
 					type "List"
 					optional true
@@ -42,7 +44,7 @@ doc {
 				}
 				column {
 					name "userTags"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "用户标签"
 					location "body"
 					type "List"

@@ -2,6 +2,7 @@ package org.zstack.network.service.lb
 
 import org.zstack.network.service.lb.APIQueryLoadBalancerReply
 import org.zstack.header.query.APIQueryMessage
+import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "查询负载均衡器(QueryLoadBalancer)"
@@ -13,11 +14,10 @@ doc {
     rest {
         request {
 			url "GET /v1/load-balancers"
-
 			url "GET /v1/load-balancers/{uuid}"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIQueryLoadBalancerMsg.class
 

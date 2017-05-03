@@ -1,5 +1,7 @@
 package org.zstack.storage.ceph.backup
 
+import org.zstack.storage.ceph.backup.APIUpdateCephBackupStorageMonEvent
+
 doc {
     title "更新 Ceph 镜像服务器 mon 节点(UpdateCephBackupStorageMon)"
 
@@ -7,12 +9,12 @@ doc {
 
     desc "更新 Ceph 镜像服务器 mon 节点"
 
-	rest {
+    rest {
         request {
 			url "PUT /v1/backup-storage/ceph/mons/{monUuid}/actions"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIUpdateCephBackupStorageMonMsg.class
 
@@ -82,7 +84,7 @@ doc {
 				}
 				column {
 					name "systemTags"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "系统标签"
 					location "body"
 					type "List"
@@ -92,7 +94,7 @@ doc {
 				}
 				column {
 					name "userTags"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "用户标签"
 					location "body"
 					type "List"

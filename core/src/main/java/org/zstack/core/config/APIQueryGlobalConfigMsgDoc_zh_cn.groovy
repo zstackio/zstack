@@ -2,6 +2,7 @@ package org.zstack.core.config
 
 import org.zstack.core.config.APIQueryGlobalConfigReply
 import org.zstack.header.query.APIQueryMessage
+import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "QueryGlobalConfig"
@@ -14,8 +15,8 @@ doc {
         request {
 			url "GET /v1/global-configurations"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIQueryGlobalConfigMsg.class
 

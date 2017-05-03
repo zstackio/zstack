@@ -13,8 +13,8 @@ doc {
         request {
 			url "PUT /v1/vm-instances/appliances/virtual-routers/{vmInstanceUuid}/actions"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIReconnectVirtualRouterMsg.class
 

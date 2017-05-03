@@ -1,5 +1,7 @@
 package org.zstack.header.storage.backup
 
+import org.zstack.header.storage.backup.APIDeleteBackupStorageEvent
+
 doc {
     title "删除镜像服务器(DeleteBackupStorage)"
 
@@ -11,8 +13,8 @@ doc {
         request {
 			url "DELETE /v1/backup-storage/{uuid}"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIDeleteBackupStorageMsg.class
 
@@ -22,7 +24,7 @@ doc {
 
 				column {
 					name "uuid"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "资源的UUID，唯一标示该资源"
 					location "url"
 					type "String"
@@ -32,7 +34,7 @@ doc {
 				}
 				column {
 					name "deleteMode"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "删除模式(Permissive 或者 Enforcing, 默认 Permissive)"
 					location "body"
 					type "String"
@@ -42,7 +44,7 @@ doc {
 				}
 				column {
 					name "systemTags"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "系统标签"
 					location "body"
 					type "List"
@@ -52,7 +54,7 @@ doc {
 				}
 				column {
 					name "userTags"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "用户标签"
 					location "body"
 					type "List"

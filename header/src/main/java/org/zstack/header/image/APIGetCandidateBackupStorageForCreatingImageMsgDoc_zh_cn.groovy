@@ -12,11 +12,10 @@ doc {
     rest {
         request {
 			url "GET /v1/images/volumes/{volumeUuid}/candidate-backup-storage"
-
 			url "GET /v1/images/volume-snapshots/{volumeSnapshotUuid}/candidate-backup-storage"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIGetCandidateBackupStorageForCreatingImageMsg.class
 

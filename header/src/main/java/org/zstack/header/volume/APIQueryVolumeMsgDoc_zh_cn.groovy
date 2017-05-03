@@ -1,5 +1,7 @@
 package org.zstack.header.volume
 
+import org.zstack.header.volume.APIQueryVolumeReply
+import org.zstack.header.query.APIQueryMessage
 import org.zstack.header.query.APIQueryMessage
 
 doc {
@@ -11,12 +13,11 @@ doc {
 
     rest {
         request {
-			url "GET /v1/volmes"
-
+			url "GET /v1/volumes"
 			url "GET /v1/volumes/{uuid}"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIQueryVolumeMsg.class
 

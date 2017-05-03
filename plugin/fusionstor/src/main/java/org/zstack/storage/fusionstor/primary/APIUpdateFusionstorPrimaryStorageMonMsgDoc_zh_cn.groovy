@@ -13,8 +13,8 @@ doc {
         request {
 			url "PUT /v1/primary-storage/fusionstor/mons/{monUuid}/actions"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIUpdateFusionstorPrimaryStorageMonMsg.class
 

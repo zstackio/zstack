@@ -1,5 +1,7 @@
 package org.zstack.header.cluster
 
+import org.zstack.header.cluster.APIDeleteClusterEvent
+
 doc {
     title "DeleteCluster"
 
@@ -11,8 +13,8 @@ doc {
         request {
 			url "DELETE /v1/clusters/{uuid}"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIDeleteClusterMsg.class
 

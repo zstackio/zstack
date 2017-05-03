@@ -1,5 +1,7 @@
 package org.zstack.header.storage.primary
 
+import org.zstack.header.storage.primary.APIGetPrimaryStorageCapacityReply
+
 doc {
     title "获取主存储容量(GetPrimaryStorageCapacity)"
 
@@ -11,8 +13,8 @@ doc {
         request {
 			url "GET /v1/primary-storage/capacities"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIGetPrimaryStorageCapacityMsg.class
 
@@ -62,7 +64,7 @@ doc {
 				}
 				column {
 					name "systemTags"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "系统标签"
 					location "query"
 					type "List"

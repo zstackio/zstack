@@ -1,5 +1,7 @@
 package org.zstack.core.notification
 
+import org.zstack.core.notification.APIQueryNotificationSubscriptionReply
+import org.zstack.header.query.APIQueryMessage
 import org.zstack.header.query.APIQueryMessage
 
 doc {
@@ -11,16 +13,17 @@ doc {
 
     rest {
         request {
+			url "GET /v1/notifications/subscriptions"
+			url "GET /v1/notifications/subscriptions/{uuid}"
 
-            url "GET /v1/notifications/subscriptions/{uuid}"
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header(Authorization: 'OAuth the-session-uuid')
 
             clz APIQueryNotificationSubscriptionMsg.class
 
             desc ""
-
-            params APIQueryMessage.class
+            
+			params APIQueryMessage.class
         }
 
         response {

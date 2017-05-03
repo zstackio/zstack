@@ -13,13 +13,13 @@ doc {
         request {
 			url "POST /v1/security-groups/{securityGroupUuid}/l3-networks/{l3NetworkUuid}"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIAttachSecurityGroupToL3NetworkMsg.class
 
-			desc "用户可以使用AttachSecurityGroupToL3Network来挂载一个安全组到L3网络"
-
+            desc "用户可以使用AttachSecurityGroupToL3Network来挂载一个安全组到L3网络"
+            
 			params {
 
 				column {

@@ -13,13 +13,13 @@ doc {
         request {
 			url "DELETE /v1/port-forwarding/{uuid}"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIDeletePortForwardingRuleMsg.class
 
-			desc "删除端口转发规则"
-
+            desc "删除端口转发规则"
+            
 			params {
 
 				column {
@@ -34,7 +34,7 @@ doc {
 				}
 				column {
 					name "deleteMode"
- 					enclosedIn ""
+					enclosedIn ""
 					desc "当设置成Permissive时, 如果删除过程中发生错误或者删除不被允许ZStack会停止删除操作; 在这种情况下, 包含失败原因的错误代码会被返回.当设置成Enforcing, ZStack会忽略所有错误和权限而直接删除资源; 在这种情况下, 删除操作总是会成功."
 					location "body"
 					type "String"

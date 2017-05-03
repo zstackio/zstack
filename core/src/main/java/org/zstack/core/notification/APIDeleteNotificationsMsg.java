@@ -7,6 +7,8 @@ import org.zstack.header.rest.RestRequest;
 
 import java.util.List;
 
+import static java.util.Arrays.asList;
+
 /**
  * Created by xing5 on 2017/3/18.
  */
@@ -29,6 +31,7 @@ public class APIDeleteNotificationsMsg extends APIMessage {
 
     public static APIDeleteNotificationsMsg __example__() {
         APIDeleteNotificationsMsg msg = new APIDeleteNotificationsMsg();
+        msg.setUuids(asList(uuid(),uuid()));
         return msg;
     }
 }

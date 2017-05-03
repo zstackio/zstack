@@ -13,8 +13,8 @@ doc {
         request {
 			url "DELETE /v1/backup-storage/fusionstor/{uuid}/mons"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIRemoveMonFromFusionstorBackupStorageMsg.class
 
@@ -44,8 +44,8 @@ doc {
 				}
 				column {
 					name "systemTags"
- 					enclosedIn ""
- 					desc ""
+					enclosedIn ""
+					desc ""
 					location "body"
 					type "List"
 					optional true

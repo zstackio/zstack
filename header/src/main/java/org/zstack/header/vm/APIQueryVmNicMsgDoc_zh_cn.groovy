@@ -1,5 +1,7 @@
 package org.zstack.header.vm
 
+import org.zstack.header.vm.APIQueryVmNicReply
+import org.zstack.header.query.APIQueryMessage
 import org.zstack.header.query.APIQueryMessage
 
 doc {
@@ -11,18 +13,17 @@ doc {
 
     rest {
         request {
-            url "GET /v1/vm-instances/nics"
+			url "GET /v1/vm-instances/nics"
+			url "GET /v1/vm-instances/nics/{uuid}"
 
-            url "GET /v1/vm-instances/nics/{uuid}"
+			header (Authorization: 'OAuth the-session-uuid')
 
-
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIQueryVmNicMsg.class
 
             desc ""
-
-            params APIQueryMessage.class
+            
+			params APIQueryMessage.class
         }
 
         response {

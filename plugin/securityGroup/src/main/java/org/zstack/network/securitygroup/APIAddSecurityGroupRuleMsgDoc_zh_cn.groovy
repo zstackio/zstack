@@ -13,13 +13,13 @@ doc {
         request {
 			url "POST /v1/security-groups/{securityGroupUuid}/rules"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIAddSecurityGroupRuleMsg.class
 
-			desc "用户可以使用AddSecurityGroupRule添加规则到安全组"
-
+            desc "用户可以使用AddSecurityGroupRule添加规则到安全组"
+            
 			params {
 
 				column {

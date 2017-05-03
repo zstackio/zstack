@@ -13,8 +13,8 @@ doc {
         request {
 			url "PUT /v1/l3-networks/{uuid}/actions"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIUpdateL3NetworkMsg.class
 

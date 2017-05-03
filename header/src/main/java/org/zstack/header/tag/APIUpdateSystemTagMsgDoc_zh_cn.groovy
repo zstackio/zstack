@@ -13,13 +13,13 @@ doc {
         request {
 			url "PUT /v1/system-tags/{uuid}/actions"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIUpdateSystemTagMsg.class
 
-			desc "更新系统标签"
-
+            desc "更新系统标签"
+            
 			params {
 
 				column {
@@ -44,8 +44,8 @@ doc {
 				}
 				column {
 					name "systemTags"
- 					enclosedIn ""
- 					desc "系统标签"
+					enclosedIn ""
+					desc "系统标签"
 					location "body"
 					type "List"
 					optional true

@@ -13,8 +13,8 @@ doc {
         request {
 			url "PUT /v1/global-configurations/{category}/{name}/actions"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIUpdateGlobalConfigMsg.class
 

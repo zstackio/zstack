@@ -13,8 +13,8 @@ doc {
         request {
 			url "POST /v1/l2-networks/vxlan-pool"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth: the-session-uuid')
 
             clz APICreateL2VxlanNetworkPoolMsg.class
 

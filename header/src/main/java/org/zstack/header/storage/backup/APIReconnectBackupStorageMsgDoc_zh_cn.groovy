@@ -1,5 +1,7 @@
 package org.zstack.header.storage.backup
 
+import org.zstack.header.storage.backup.APIReconnectBackupStorageEvent
+
 doc {
     title "重连镜像服务器(ReconnectBackupStorage)"
 
@@ -11,8 +13,8 @@ doc {
         request {
 			url "PUT /v1/backup-storage/{uuid}/actions"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIReconnectBackupStorageMsg.class
 
@@ -32,7 +34,7 @@ doc {
 				}
 				column {
 					name "systemTags"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "系统标签"
 					location "body"
 					type "List"
@@ -42,7 +44,7 @@ doc {
 				}
 				column {
 					name "userTags"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "用户标签"
 					location "body"
 					type "List"

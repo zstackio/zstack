@@ -1,5 +1,7 @@
 package org.zstack.header.storage.snapshot
 
+import org.zstack.header.storage.snapshot.APIDeleteVolumeSnapshotEvent
+
 doc {
     title "删除云盘快照(DeleteVolumeSnapshot)"
 
@@ -11,8 +13,8 @@ doc {
         request {
 			url "DELETE /v1/volume-snapshots/{uuid}"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIDeleteVolumeSnapshotMsg.class
 
@@ -22,7 +24,7 @@ doc {
 
 				column {
 					name "uuid"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "资源的UUID，唯一标示该资源"
 					location "url"
 					type "String"
@@ -32,8 +34,8 @@ doc {
 				}
 				column {
 					name "deleteMode"
- 					enclosedIn "params"
- 					desc "删除模式(Permissive 或者 Enforcing, 默认 Permissive)"
+					enclosedIn ""
+					desc "删除模式(Permissive 或者 Enforcing, 默认 Permissive)"
 					location "body"
 					type "String"
 					optional true
@@ -42,7 +44,7 @@ doc {
 				}
 				column {
 					name "systemTags"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "系统标签"
 					location "body"
 					type "List"
@@ -52,7 +54,7 @@ doc {
 				}
 				column {
 					name "userTags"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "用户标签"
 					location "body"
 					type "List"

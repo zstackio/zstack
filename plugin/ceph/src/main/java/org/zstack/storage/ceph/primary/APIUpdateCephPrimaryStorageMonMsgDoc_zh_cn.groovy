@@ -1,18 +1,20 @@
 package org.zstack.storage.ceph.primary
 
+import org.zstack.storage.ceph.primary.APIUpdateCephPrimaryStorageMonEvent
+
 doc {
-	title "更新 Ceph 主存储 mon 节点(UpdateCephPrimaryStorageMon)"
+    title "更新 Ceph 主存储 mon 节点(UpdateCephPrimaryStorageMon)"
 
-	category "storage.ceph.primary"
+    category "storage.ceph.primary"
 
-	desc "更新 Ceph 主存储 mon 节点"
+    desc "更新 Ceph 主存储 mon 节点"
 
     rest {
         request {
 			url "PUT /v1/primary-storage/ceph/mons/{monUuid}/actions"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIUpdateCephPrimaryStorageMonMsg.class
 
@@ -82,7 +84,7 @@ doc {
 				}
 				column {
 					name "systemTags"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "系统标签"
 					location "body"
 					type "List"
@@ -92,7 +94,7 @@ doc {
 				}
 				column {
 					name "userTags"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "用户标签"
 					location "body"
 					type "List"

@@ -1,5 +1,7 @@
 package org.zstack.header.volume
 
+import org.zstack.header.volume.APICreateDataVolumeFromVolumeTemplateEvent
+
 doc {
     title "从镜像创建云盘(CreateDataVolumeFromVolumeTemplate)"
 
@@ -11,8 +13,8 @@ doc {
         request {
 			url "POST /v1/volumes/data/from/data-volume-templates/{imageUuid}"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APICreateDataVolumeFromVolumeTemplateMsg.class
 

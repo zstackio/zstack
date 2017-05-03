@@ -11,6 +11,7 @@ import org.zstack.header.errorcode.ErrorCode
 import org.zstack.header.exception.CloudRuntimeException
 import org.zstack.header.identity.SuppressCredentialCheck
 import org.zstack.header.message.APIParam
+import org.zstack.header.message.OverriddenApiParams
 import org.zstack.header.query.APIQueryMessage
 import org.zstack.header.query.AutoQuery
 import org.zstack.header.rest.APINoSee
@@ -111,13 +112,25 @@ class RestDocumentationGenerator implements DocumentGenerator {
         rootPath = scanPath
         scanJavaSourceFiles()
 
-        Set<Class> apiClasses = Platform.getReflections().getTypesAnnotatedWith(RestRequest.class)
+        String classes = System.getProperty("classes")
+        def apiClasses
+        if (classes != null) {
+            apiClasses = classes.split(",").collect { Class.forName(it) }
+        } else {
+            apiClasses = Platform.getReflections().getTypesAnnotatedWith(RestRequest.class).findAll { it.isAnnotationPresent(RestRequest.class) }
+        }
+
         apiClasses.each {
+            println("generating doc template for class ${it}")
             def tmp = new ApiRequestDocTemplate(it)
             tmp.generateDocFile(mode)
         }
 
-        apiClasses = Platform.getReflections().getTypesAnnotatedWith(RestResponse.class)
+        apiClasses = apiClasses.collect {
+            RestRequest at = it.getAnnotation(RestRequest.class)
+            return at.responseClass()
+        }
+
         generateResponseDocTemplate(apiClasses as List, mode)
     }
 
@@ -132,7 +145,7 @@ class RestDocumentationGenerator implements DocumentGenerator {
             dir.mkdirs()
         }
 
-        Set<Class> apiClasses = Platform.getReflections().getTypesAnnotatedWith(RestRequest.class)
+        Set<Class> apiClasses = Platform.getReflections().getTypesAnnotatedWith(RestRequest.class).findAll { it.isAnnotationPresent(RestRequest.class) }
         String specifiedClasses = System.getProperty("classes")
 
         if (specifiedClasses != null) {
@@ -271,11 +284,19 @@ class RestDocumentationGenerator implements DocumentGenerator {
         String key
         String value
         String comment
+
+        String toString() {
+            return "header (${key}: '$value')"
+        }
     }
 
     class Url {
         String url
         String comment
+
+        String toString() {
+            return "url \"${url}\""
+        }
     }
 
     class Request {
@@ -410,6 +431,34 @@ class RestDocumentationGenerator implements DocumentGenerator {
         private List<DocField> _fields = []
         private List<DocFieldRef> _refs = []
 
+        void merge(Doc n) {
+            Request oreq = _rest._request
+            Request nreq = n._rest._request
+
+            oreq._urls = nreq._urls
+            oreq._headers = nreq._headers
+            oreq._clz = nreq._clz
+
+            if (!(oreq._params instanceof RequestParamRef) && oreq._params?._cloumns != null && nreq._params?._cloumns != null) {
+                oreq._params._cloumns.each { ocol ->
+                    RequestParamColumn ncol = nreq._params._cloumns.find { it._name == ocol._name }
+                    if (ncol == null) {
+                        // the column is removed
+                        return
+                    }
+
+                    ocol._enclosedIn = ncol._enclosedIn
+                    ocol._location = ncol._location
+                    ocol._type = ncol._type
+                    ocol._optional = ncol._optional
+                }
+            }
+
+            Response orsp = _rest._response
+            Response nrsp = n._rest._response
+            orsp._clz = nrsp._clz
+        }
+
         def title(String v) {
             _title = v
         }
@@ -447,8 +496,7 @@ class RestDocumentationGenerator implements DocumentGenerator {
         }
     }
 
-    Doc createDoc(String docTemplatePath) {
-        Script script = new GroovyShell().parse(new File(docTemplatePath))
+    Doc createDocFromGroobyScript(Script script) {
         ExpandoMetaClass emc = new ExpandoMetaClass(script.getClass(), false, true)
 
         installClosure(emc, { ExpandoMetaClass e ->
@@ -467,6 +515,16 @@ class RestDocumentationGenerator implements DocumentGenerator {
         script.setMetaClass(emc)
 
         return script.run() as Doc
+    }
+
+    Doc createDocFromString(String scriptText) {
+        Script script = new GroovyShell().parse(scriptText)
+        return createDocFromGroobyScript(script)
+    }
+
+    Doc createDoc(String docTemplatePath) {
+        Script script = new GroovyShell().parse(new File(docTemplatePath))
+        return createDocFromGroobyScript(script)
     }
 
     class QueryMarkDown extends MarkDown {
@@ -558,7 +616,7 @@ ${cols.join("\n")}
 
             List<String> examples = paths.collect {
                 def curl = ["curl -H \"Content-Type: application/json\""]
-                curl.add("-H \"${RestConstants.HEADER_OAUTH}: ${Platform.getUuid()}\"")
+                curl.add("-H \"Authorization: ${RestConstants.HEADER_OAUTH} ${Platform.getUuid()}\"")
 
                 curl.add("-X ${at.method()}")
 
@@ -749,7 +807,30 @@ ${table.join("\n")}
 
                 LinkedHashMap map = JSONObjectUtil.rehashObject(example, LinkedHashMap.class)
 
-                def apiFieldNames = getApiFieldsOfClass(clz).collect {
+                List<Field> apiFields = getApiFieldsOfClass(clz)
+
+                def overridenApiParams = [:]
+                OverriddenApiParams oat = clz.getAnnotation(OverriddenApiParams.class)
+                if (oat != null) {
+                    oat.value().each {
+                        overridenApiParams[it.field()] = it.param()
+                    }
+                }
+
+                List<String> missingField = apiFields.findAll {
+                    APIParam at = overridenApiParams.containsKey(it.name) ? overridenApiParams[it.name] : it.getAnnotation(APIParam.class)
+                    if (at != null && at.required() && !map.containsKey(it.name)) {
+                        return it
+                    } else {
+                        return null
+                    }
+                }.collect { it.name }
+
+                if (!missingField.isEmpty()) {
+                    throw new CloudRuntimeException("required fields $missingField of ${clz.name} missing in the return value of __example__()")
+                }
+
+                def apiFieldNames = apiFields.collect {
                     return it.name
                 }
 
@@ -783,10 +864,10 @@ ${table.join("\n")}
             List<String> examples = paths.collect {
                 def curl = ["curl -H \"Content-Type: application/json\""]
                 if (!clz.isAnnotationPresent(SuppressCredentialCheck.class)) {
-                    curl.add("-H \"${RestConstants.HEADER_OAUTH}: ${Platform.getUuid()}\"")
+                    curl.add("-H \"Authorization: ${RestConstants.HEADER_OAUTH} ${Platform.getUuid()}\"")
                 }
 
-                boolean queryString = at.method() == HttpMethod.GET
+                boolean queryString = at.method() == HttpMethod.GET || HttpMethod.DELETE
 
                 curl.add("-X ${at.method()}")
 
@@ -807,10 +888,27 @@ ${table.join("\n")}
                         return it._name
                     }
 
-                    List qstr = allFields.findAll { k, v ->
+                    List qstr = []
+                    allFields.findAll { k, v ->
                         return queryVars.contains(k)
-                    }.collect { k, v ->
-                        return "${k}=${v}"
+                    }.each { k, v ->
+                        if (v instanceof Collection) {
+                            for (vv in v) {
+                                qstr.add("${k}=${vv}")
+                            }
+                        } else if (v instanceof Map) {
+                            v.each { kk, vv ->
+                                if (vv instanceof Collection) {
+                                    for (vvv in vv) {
+                                        qstr.add("${k}.${kk}=${vvv}")
+                                    }
+                                } else {
+                                    qstr.add("${k}.${kk}=${vv}")
+                                }
+                            }
+                        } else {
+                            qstr.add("${k}=${v}")
+                        }
                     }
 
                     curl.add("http://localhost:8080${urlPath}?${qstr.join("&")}")
@@ -1322,7 +1420,7 @@ ${fieldStr}
                 return ""
             }
 
-            return """header (${RestConstants.HEADER_OAUTH}: 'the-session-uuid')"""
+            return """header(Authorization: '${RestConstants.HEADER_OAUTH} the-session-uuid')"""
         }
 
         String getParamName() {
@@ -1426,6 +1524,64 @@ ${cols.join("\n")}
             }.join("\n")
         }
 
+        String generate(Doc doc) {
+            String paramString
+            if (doc._rest._request._params instanceof RequestParamRef) {
+                imports.add("import ${doc._rest._request._params.refClass.canonicalName}")
+                paramString = "\t\t\tparams ${doc._rest._request._params.refClass.simpleName}.class"
+            } else {
+                List cols = doc._rest._request._params._cloumns.collect {
+                    String values = it._values != null && !it._values.isEmpty() ? "values (${it._values.collect { "\"$it\"" }.join(",")})" : ""
+                    return """\t\t\t\tcolumn {
+\t\t\t\t\tname "${it._name}"
+\t\t\t\t\tenclosedIn "${it._enclosedIn}"
+\t\t\t\t\tdesc "${it._desc}"
+\t\t\t\t\tlocation "${it._location}"
+\t\t\t\t\ttype "${it._type}"
+\t\t\t\t\toptional ${it._optional}
+\t\t\t\t\tsince "${it._since}"
+\t\t\t\t\t${values}
+\t\t\t\t}"""
+                }
+
+                paramString = """\t\t\tparams {
+
+${cols.join("\n")}
+\t\t\t}"""
+            }
+
+            return """package ${apiClass.package.name}
+
+${imports()}
+
+doc {
+    title "${doc._title}"
+
+    category "${doc._category}"
+
+    desc "${doc._desc}"
+
+    rest {
+        request {
+${doc._rest._request._urls.collect { "\t\t\t" + it.toString() }.join("\n")}
+
+${doc._rest._request._headers.collect { "\t\t\t" + it.toString() }.join("\n")}
+
+
+            clz ${doc._rest._request._clz.simpleName}.class
+
+            desc "${doc._rest._request._desc}"
+            
+${paramString}
+        }
+
+        response {
+            clz ${doc._rest._response._clz.simpleName}.class
+        }
+    }
+}"""
+        }
+
         String generate() {
             String paramString = params()
 
@@ -1468,12 +1624,28 @@ ${paramString}
 }"""
         }
 
+        void repair(String docFilePath) {
+            if (!new File(docFilePath).exists()) {
+                System.out.println("cannot find ${docFilePath}, not way to repair, you need to generate it first")
+                return
+            }
+
+            Doc oldDoc = createDoc(docFilePath)
+            Doc newDoc = createDocFromString(generate())
+            oldDoc.merge(newDoc)
+
+            new File(docFilePath).write generate(oldDoc)
+            System.out.println("re-written a request doc template ${docFilePath}")
+        }
+
         void generateDocFile(DocMode mode) {
             def docFilePath = getDocTemplatePathFromClass(apiClass)
 
             if (mode == DocMode.RECREATE_ALL) {
                 new File(docFilePath).write generate()
                 System.out.println("written a request doc template ${docFilePath}")
+            } else if (mode == DocMode.REPAIR) {
+                repair(docFilePath)
             } else if (mode == DocMode.CREATE_MISSING) {
                 if (!new File(docFilePath).exists()) {
                     new File(docFilePath).write generate()
@@ -1511,7 +1683,7 @@ ${paramString}
         aClasses.each {
             System.out.println("generating response doc template for class[${it.name}]")
             String path = getDocTemplatePathFromClass(it)
-            if (new File(path).exists() && mode == DocMode.CREATE_MISSING) {
+            if (new File(path).exists() && mode != DocMode.RECREATE_ALL) {
                 System.out.println("${path} exists, skip it")
                 return
             }

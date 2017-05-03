@@ -13,13 +13,13 @@ doc {
         request {
 			url "PUT /v1/schedulers/{uuid}"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIChangeSchedulerStateMsg.class
 
-			desc "改变定时任务状态"
-
+            desc "改变定时任务状态"
+            
 			params {
 
 				column {

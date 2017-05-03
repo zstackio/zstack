@@ -1,5 +1,7 @@
 package org.zstack.header.volume
 
+import org.zstack.header.volume.APIAttachDataVolumeToVmEvent
+
 doc {
     title "AttachDataVolumeToVm"
 
@@ -9,10 +11,10 @@ doc {
 
     rest {
         request {
-			url "POST /v1/volumes/{vmeUuid}/vm-instances/{vmInstanceUuid}"
+			url "POST /v1/volumes/{volumeUuid}/vm-instances/{vmInstanceUuid}"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIAttachDataVolumeToVmMsg.class
 

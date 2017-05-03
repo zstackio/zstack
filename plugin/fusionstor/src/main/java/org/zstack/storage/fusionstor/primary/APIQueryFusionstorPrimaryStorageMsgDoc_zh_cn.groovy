@@ -2,6 +2,7 @@ package org.zstack.storage.fusionstor.primary
 
 import org.zstack.header.storage.primary.APIQueryPrimaryStorageReply
 import org.zstack.header.query.APIQueryMessage
+import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "QueryFusionstorPrimaryStorage"
@@ -13,11 +14,10 @@ doc {
     rest {
         request {
 			url "GET /v1/primary-storage/fusionstor"
-
 			url "GET /v1/primary-storage/fusionstor/{uuid}"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIQueryFusionstorPrimaryStorageMsg.class
 

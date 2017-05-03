@@ -2,6 +2,7 @@ package org.zstack.network.securitygroup
 
 import org.zstack.network.securitygroup.APIQueryVmNicInSecurityGroupReply
 import org.zstack.header.query.APIQueryMessage
+import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "QueryVmNicInSecurityGroup"
@@ -14,13 +15,13 @@ doc {
         request {
 			url "GET /v1/security-groups/vm-instances/nics"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIQueryVmNicInSecurityGroupMsg.class
 
             desc "查询应用了安全组的网卡列表"
-
+            
 			params APIQueryMessage.class
         }
 

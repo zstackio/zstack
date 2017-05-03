@@ -13,13 +13,13 @@ doc {
         request {
 			url "POST /v1/port-forwarding/{ruleUuid}/vm-instances/nics/{vmNicUuid}"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIAttachPortForwardingRuleMsg.class
 
-			desc "用户可以使用AttachPortForwardingRule来挂载一个规则到虚拟机网卡上"
-
+            desc "用户可以使用AttachPortForwardingRule来挂载一个规则到虚拟机网卡上"
+            
 			params {
 
 				column {

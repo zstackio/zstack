@@ -13,8 +13,8 @@ doc {
         request {
 			url "POST /v1/l2-networks/{l2NetworkUuid}/clusters/{clusterUuid}"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIAttachL2NetworkToClusterMsg.class
 

@@ -13,8 +13,8 @@ doc {
         request {
 			url "PUT /v1/eips/{uuid}/actions"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIUpdateEipMsg.class
 

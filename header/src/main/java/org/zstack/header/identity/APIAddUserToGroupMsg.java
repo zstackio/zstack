@@ -46,7 +46,7 @@ public class APIAddUserToGroupMsg extends APIMessage implements AccountMessage {
         APIAddUserToGroupMsg msg = new APIAddUserToGroupMsg();
 
         msg.setGroupUuid(uuid());
-        msg.setGroupUuid(uuid());
+        msg.setUserUuid(uuid());
 
         return msg;
     }

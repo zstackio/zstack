@@ -1,5 +1,7 @@
 package org.zstack.header.vm
 
+import org.zstack.header.vm.APIDeleteVmSshKeyEvent
+
 doc {
     title "删除云主机SSH Key(DeleteVmSshKey)"
 
@@ -9,48 +11,48 @@ doc {
 
     rest {
         request {
-            url "DELETE /v1/vm-instances/{uuid}/ssh-keys"
+			url "DELETE /v1/vm-instances/{uuid}/ssh-keys"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIDeleteVmSshKeyMsg.class
 
             desc ""
+            
+			params {
 
-            params {
-
-                column {
-                    name "uuid"
-                    enclosedIn ""
-                    desc "云主机UUID"
-                    location "url"
-                    type "String"
-                    optional true
-                    since "0.6"
-
-                }
-                column {
-                    name "systemTags"
-                    enclosedIn ""
-                    desc "系统标签"
-                    location "body"
-                    type "List"
-                    optional true
-                    since "0.6"
-
-                }
-                column {
-                    name "userTags"
-                    enclosedIn ""
-                    desc "用户标签"
-                    location "body"
-                    type "List"
-                    optional true
-                    since "0.6"
-
-                }
-            }
+				column {
+					name "uuid"
+					enclosedIn ""
+					desc "云主机UUID"
+					location "url"
+					type "String"
+					optional true
+					since "0.6"
+					
+				}
+				column {
+					name "systemTags"
+					enclosedIn ""
+					desc "系统标签"
+					location "body"
+					type "List"
+					optional true
+					since "0.6"
+					
+				}
+				column {
+					name "userTags"
+					enclosedIn ""
+					desc "用户标签"
+					location "body"
+					type "List"
+					optional true
+					since "0.6"
+					
+				}
+			}
         }
 
         response {

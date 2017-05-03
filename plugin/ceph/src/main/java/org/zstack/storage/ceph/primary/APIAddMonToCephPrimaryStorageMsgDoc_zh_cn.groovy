@@ -1,5 +1,7 @@
 package org.zstack.storage.ceph.primary
 
+import org.zstack.storage.ceph.primary.APIAddMonToCephPrimaryStorageEvent
+
 doc {
     title "为 Ceph 主存储添加 mon 节点(AddMonToCephPrimaryStorage)"
 
@@ -7,12 +9,12 @@ doc {
 
     desc "为 Ceph 主存储添加 mon 节点"
 
-   rest {
+    rest {
         request {
 			url "POST /v1/primary-storage/ceph/{uuid}/mons"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIAddMonToCephPrimaryStorageMsg.class
 
@@ -42,7 +44,7 @@ doc {
 				}
 				column {
 					name "systemTags"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "系统标签"
 					location "body"
 					type "List"
@@ -52,7 +54,7 @@ doc {
 				}
 				column {
 					name "userTags"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "用户标签"
 					location "body"
 					type "List"

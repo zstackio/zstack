@@ -13,8 +13,8 @@ doc {
         request {
 			url "GET /v1/l2-networks/types"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIGetL2NetworkTypesMsg.class
 
@@ -24,8 +24,8 @@ doc {
 
 				column {
 					name "systemTags"
- 					enclosedIn ""
- 					desc "系统标签"
+					enclosedIn ""
+					desc "系统标签"
 					location "query"
 					type "List"
 					optional true

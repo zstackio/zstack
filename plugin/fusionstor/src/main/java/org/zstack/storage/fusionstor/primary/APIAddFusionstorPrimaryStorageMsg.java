@@ -11,6 +11,8 @@ import org.zstack.storage.fusionstor.FusionstorConstants;
 
 import java.util.List;
 
+import static java.util.Arrays.asList;
+
 /**
  * Created by frank on 7/28/2015.
  */
@@ -76,8 +78,9 @@ public class APIAddFusionstorPrimaryStorageMsg extends APIAddPrimaryStorageMsg {
  
     public static APIAddFusionstorPrimaryStorageMsg __example__() {
         APIAddFusionstorPrimaryStorageMsg msg = new APIAddFusionstorPrimaryStorageMsg();
-
-
+        msg.setMonUrls(asList("root:password@localhost/?monPort=7777"));
+        msg.setName("fusion");
+        msg.setZoneUuid(uuid());
         return msg;
     }
 

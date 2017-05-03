@@ -1,5 +1,7 @@
 package org.zstack.header.image
 
+import org.zstack.header.image.APICreateDataVolumeTemplateFromVolumeEvent
+
 doc {
     title "从云盘创建数据云盘镜像(CreateDataVolumeTemplateFromVolume)"
 
@@ -9,88 +11,88 @@ doc {
 
     rest {
         request {
-            url "POST /v1/images/data-volume-templates/from/volumes/{volumeUuid}"
+			url "POST /v1/images/data-volume-templates/from/volumes/{volumeUuid}"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APICreateDataVolumeTemplateFromVolumeMsg.class
 
             desc ""
+            
+			params {
 
-            params {
-
-                column {
-                    name "name"
-                    enclosedIn "params"
-                    desc "数据云盘镜像名称"
-                    location "body"
-                    type "String"
-                    optional false
-                    since "0.6"
-
-                }
-                column {
-                    name "description"
-                    enclosedIn "params"
-                    desc "数据云盘镜像的详细描述"
-                    location "body"
-                    type "String"
-                    optional true
-                    since "0.6"
-
-                }
-                column {
-                    name "volumeUuid"
-                    enclosedIn "params"
-                    desc "起始云盘UUID"
-                    location "url"
-                    type "String"
-                    optional false
-                    since "0.6"
-
-                }
-                column {
-                    name "backupStorageUuids"
-                    enclosedIn "params"
-                    desc "镜像服务器UUID列表"
-                    location "body"
-                    type "List"
-                    optional true
-                    since "0.6"
-
-                }
-                column {
-                    name "resourceUuid"
-                    enclosedIn "params"
-                    desc "数据云盘UUID。若指定，数据云盘会使用该字段值作为UUID。"
-                    location "body"
-                    type "String"
-                    optional true
-                    since "0.6"
-
-                }
-                column {
-                    name "systemTags"
-                    enclosedIn "params"
-                    desc "系统标签"
-                    location "body"
-                    type "List"
-                    optional true
-                    since "0.6"
-
-                }
-                column {
-                    name "userTags"
-                    enclosedIn "params"
-                    desc "用户标签"
-                    location "body"
-                    type "List"
-                    optional true
-                    since "0.6"
-
-                }
-            }
+				column {
+					name "name"
+					enclosedIn "params"
+					desc "数据云盘镜像名称"
+					location "body"
+					type "String"
+					optional false
+					since "0.6"
+					
+				}
+				column {
+					name "description"
+					enclosedIn "params"
+					desc "数据云盘镜像的详细描述"
+					location "body"
+					type "String"
+					optional true
+					since "0.6"
+					
+				}
+				column {
+					name "volumeUuid"
+					enclosedIn "params"
+					desc "起始云盘UUID"
+					location "url"
+					type "String"
+					optional false
+					since "0.6"
+					
+				}
+				column {
+					name "backupStorageUuids"
+					enclosedIn "params"
+					desc "镜像服务器UUID列表"
+					location "body"
+					type "List"
+					optional true
+					since "0.6"
+					
+				}
+				column {
+					name "resourceUuid"
+					enclosedIn "params"
+					desc "数据云盘UUID。若指定，数据云盘会使用该字段值作为UUID。"
+					location "body"
+					type "String"
+					optional true
+					since "0.6"
+					
+				}
+				column {
+					name "systemTags"
+					enclosedIn ""
+					desc "系统标签"
+					location "body"
+					type "List"
+					optional true
+					since "0.6"
+					
+				}
+				column {
+					name "userTags"
+					enclosedIn ""
+					desc "用户标签"
+					location "body"
+					type "List"
+					optional true
+					since "0.6"
+					
+				}
+			}
         }
 
         response {

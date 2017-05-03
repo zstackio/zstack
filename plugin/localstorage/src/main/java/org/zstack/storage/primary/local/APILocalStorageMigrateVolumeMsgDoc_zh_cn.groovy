@@ -1,5 +1,7 @@
 package org.zstack.storage.primary.local
 
+import org.zstack.storage.primary.local.APILocalStorageMigrateVolumeEvent
+
 doc {
     title "迁移本地存储上存放的云盘(LocalStorageMigrateVolume)"
 
@@ -11,8 +13,8 @@ doc {
         request {
 			url "PUT /v1/primary-storage/local-storage/volumes/{volumeUuid}/actions"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APILocalStorageMigrateVolumeMsg.class
 
@@ -42,7 +44,7 @@ doc {
 				}
 				column {
 					name "systemTags"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "系统标签"
 					location "body"
 					type "List"
@@ -52,7 +54,7 @@ doc {
 				}
 				column {
 					name "userTags"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "用户标签"
 					location "body"
 					type "List"

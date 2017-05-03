@@ -13,8 +13,8 @@ doc {
         request {
 			url "GET /v1/load-balancers/listeners/{listenerUuid}/vm-instances/candidate-nics"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIGetCandidateVmNicsForLoadBalancerMsg.class
 

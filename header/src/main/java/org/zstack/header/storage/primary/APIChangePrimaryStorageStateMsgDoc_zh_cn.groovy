@@ -1,5 +1,7 @@
 package org.zstack.header.storage.primary
 
+import org.zstack.header.storage.primary.APIChangePrimaryStorageStateEvent
+
 doc {
     title "更改主存储状态(ChangePrimaryStorageState)"
 
@@ -11,8 +13,8 @@ doc {
         request {
 			url "PUT /v1/primary-storage/{uuid}/actions"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIChangePrimaryStorageStateMsg.class
 
@@ -42,8 +44,8 @@ doc {
 				}
 				column {
 					name "systemTags"
- 					enclosedIn "params"
- 					desc ""
+					enclosedIn ""
+					desc ""
 					location "body"
 					type "List"
 					optional true
@@ -52,7 +54,7 @@ doc {
 				}
 				column {
 					name "userTags"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "用户标签"
 					location "body"
 					type "List"

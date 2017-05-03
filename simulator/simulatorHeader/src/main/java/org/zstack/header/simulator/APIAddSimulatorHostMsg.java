@@ -34,8 +34,9 @@ public class APIAddSimulatorHostMsg extends APIAddHostMsg {
  
     public static APIAddSimulatorHostMsg __example__() {
         APIAddSimulatorHostMsg msg = new APIAddSimulatorHostMsg();
-
-
+        msg.setName("simulator");
+        msg.setManagementIp("127.0.0.1");
+        msg.setClusterUuid(uuid());
         return msg;
     }
 

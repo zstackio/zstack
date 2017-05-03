@@ -1,5 +1,7 @@
 package org.zstack.storage.backup.sftp
 
+import org.zstack.storage.backup.sftp.APIAddSftpBackupStorageEvent
+
 doc {
     title "添加sftp镜像服务器(AddSftpBackupStorage)"
 
@@ -11,8 +13,8 @@ doc {
         request {
 			url "POST /v1/backup-storage/sftp"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIAddSftpBackupStorageMsg.class
 

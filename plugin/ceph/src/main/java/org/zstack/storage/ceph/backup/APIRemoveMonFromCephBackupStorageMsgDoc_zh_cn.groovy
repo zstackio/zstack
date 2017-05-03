@@ -1,18 +1,20 @@
 package org.zstack.storage.ceph.backup
 
+import org.zstack.storage.ceph.backup.APIRemoveMonFromCephBackupStorageEvent
+
 doc {
     title "从 Ceph 镜像服务器删除 mon 节点(RemoveMonFromCephBackupStorage)"
 
     category "storage.ceph.backup"
 
-	desc "从 Ceph 镜像服务器删除 mon 节点"
+    desc "从 Ceph 镜像服务器删除 mon 节点"
 
-   rest {
+    rest {
         request {
 			url "DELETE /v1/backup-storage/ceph/{uuid}/mons"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIRemoveMonFromCephBackupStorageMsg.class
 
@@ -42,7 +44,7 @@ doc {
 				}
 				column {
 					name "systemTags"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "系统标签"
 					location "body"
 					type "List"
@@ -52,7 +54,7 @@ doc {
 				}
 				column {
 					name "userTags"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "用户标签"
 					location "body"
 					type "List"

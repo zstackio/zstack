@@ -13,13 +13,13 @@ doc {
         request {
 			url "POST /v1/security-groups/{securityGroupUuid}/vm-instances/nics"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIAddVmNicToSecurityGroupMsg.class
 
-			desc "用户可以使用AddVmNicToSecurityGroup来添加虚拟机网卡到安全组"
-
+            desc "用户可以使用AddVmNicToSecurityGroup来添加虚拟机网卡到安全组"
+            
 			params {
 
 				column {

@@ -1,5 +1,7 @@
 package org.zstack.header.identity
 
+import org.zstack.header.identity.APIQueryUserGroupReply
+import org.zstack.header.query.APIQueryMessage
 import org.zstack.header.query.APIQueryMessage
 
 doc {
@@ -11,18 +13,17 @@ doc {
 
     rest {
         request {
-            url "GET /v1/accounts/groups"
+			url "GET /v1/accounts/groups"
+			url "GET /v1/accounts/groups/{uuid}"
 
-            url "GET /v1/accounts/groups/{uuid}"
+			header (Authorization: 'OAuth the-session-uuid')
 
-
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIQueryUserGroupMsg.class
 
             desc "查询用户组"
-
-            params APIQueryMessage.class
+            
+			params APIQueryMessage.class
         }
 
         response {

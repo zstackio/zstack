@@ -1,5 +1,7 @@
 package org.zstack.storage.primary.local
 
+import org.zstack.storage.primary.local.APIQueryLocalStorageResourceRefReply
+import org.zstack.header.query.APIQueryMessage
 import org.zstack.header.query.APIQueryMessage
 
 doc {
@@ -13,8 +15,8 @@ doc {
         request {
 			url "GET /v1/primary-storage/local-storage/resource-refs"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIQueryLocalStorageResourceRefMsg.class
 

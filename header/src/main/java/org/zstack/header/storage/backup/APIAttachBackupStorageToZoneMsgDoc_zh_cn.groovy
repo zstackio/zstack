@@ -1,5 +1,7 @@
 package org.zstack.header.storage.backup
 
+import org.zstack.header.storage.backup.APIAttachBackupStorageToZoneEvent
+
 doc {
     title "挂载镜像服务器至区域(AttachBackupStorageToZone)"
 
@@ -11,8 +13,8 @@ doc {
         request {
 			url "POST /v1/zones/{zoneUuid}/backup-storage/{backupStorageUuid}"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIAttachBackupStorageToZoneMsg.class
 
@@ -22,7 +24,7 @@ doc {
 
 				column {
 					name "zoneUuid"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "区域UUID"
 					location "url"
 					type "String"
@@ -42,7 +44,7 @@ doc {
 				}
 				column {
 					name "systemTags"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "系统标签"
 					location "body"
 					type "List"
