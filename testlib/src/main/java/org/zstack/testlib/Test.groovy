@@ -10,6 +10,7 @@ import org.zstack.header.identity.AccountConstant
 import org.zstack.header.message.AbstractBeforeSendMessageInterceptor
 import org.zstack.header.message.Event
 import org.zstack.header.message.Message
+import org.zstack.header.message.MessageReply
 import org.zstack.sdk.SessionInventory
 import org.zstack.sdk.ZSClient
 import org.zstack.utils.ShellUtils
@@ -150,7 +151,8 @@ abstract class Test implements ApiHelper {
                 try {
                     def all = currentEnvSpec.messageHandlers.findAll { k, _ -> k.isAssignableFrom(msg.getClass()) }
 
-                    all.each { tuples ->
+                    boolean handled = false
+                    all.values().each { tuples ->
                         tuples.each {
                             Closure cond = it[0]
                             Closure handler = it[1]
@@ -159,12 +161,18 @@ abstract class Test implements ApiHelper {
                                 return
                             }
 
+                            handled = true
                             if (handler.maximumNumberOfParameters <= 1) {
                                 handler(msg)
                             } else {
                                 handler(msg, bus)
                             }
                         }
+                    }
+
+                    if (!handled) {
+                        bus.replyErrorByMessageType(msg, "a test case installed message handler for this message, however," +
+                                " its condition closure decides not to handle this message. Check your test case")
                     }
                 } catch (Exception ex) {
                     bus.replyErrorByMessageType(msg, ex)
@@ -196,19 +204,10 @@ abstract class Test implements ApiHelper {
                     return
                 }
 
-                Tuple t = currentEnvSpec.messageHandlers[msg.class]
-                if (t == null) {
-                    return
+                def has = currentEnvSpec.messageHandlers.find { k, _ -> k.isAssignableFrom(msg.getClass()) } != null
+                if (has) {
+                    bus.makeLocalServiceId(msg, serviceId)
                 }
-
-                Closure condition = t[0]
-
-                if (condition != null && !condition(msg)) {
-                    // the condition closure tells us not to hijack this message
-                    return
-                }
-
-                bus.makeLocalServiceId(msg, serviceId)
             }
         })
     }
