@@ -1,9 +1,12 @@
 package org.zstack.test.integration.storage.primary.local.capacity
 
+import org.zstack.core.db.Q
 import org.zstack.header.image.ImageConstant
 import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.VolumeSnapshotInventory
+import org.zstack.storage.primary.local.LocalStorageHostRefVO
+import org.zstack.storage.primary.local.LocalStorageHostRefVO_
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
@@ -137,17 +140,22 @@ class CreateSnapshotCase extends SubCase {
     void checkPSAvailableCapacityAfterCreateSnapshot(){
         PrimaryStorageInventory ps = env.inventoryByName("local")
         VmInstanceInventory vm = env.inventoryByName("vm")
-        vm.allVolumes
+        LocalStorageHostRefVO refVO = Q.New(LocalStorageHostRefVO.class)
+                .eq(LocalStorageHostRefVO_.hostUuid, vm.hostUuid).find()
 
         VolumeSnapshotInventory snapshot = createVolumeSnapshot {
             volumeUuid = vm.allVolumes.find { it.uuid != vm.rootVolumeUuid }.uuid
             name = "sp1"
         }
 
+        LocalStorageHostRefVO currentRefVO = Q.New(LocalStorageHostRefVO.class)
+                .eq(LocalStorageHostRefVO_.hostUuid, vm.hostUuid).find()
         PrimaryStorageInventory currentPs = queryPrimaryStorage {
             conditions=["uuid=${ps.uuid}".toString()]
         }[0]
         assert ps.availableCapacity == currentPs.availableCapacity + snapshot.size
+        assert refVO.availableCapacity  == currentRefVO.availableCapacity + snapshot.size
+
 
         reconnectPrimaryStorage {
             uuid = ps.uuid
@@ -155,7 +163,10 @@ class CreateSnapshotCase extends SubCase {
         currentPs = queryPrimaryStorage {
             conditions=["uuid=${ps.uuid}".toString()]
         }[0]
+        currentRefVO = Q.New(LocalStorageHostRefVO.class)
+                .eq(LocalStorageHostRefVO_.hostUuid, vm.hostUuid).find()
         assert ps.availableCapacity == currentPs.availableCapacity + snapshot.size
+        assert refVO.availableCapacity  == currentRefVO.availableCapacity + snapshot.size
 
         deleteVolumeSnapshot {
             uuid = snapshot.uuid
@@ -163,7 +174,10 @@ class CreateSnapshotCase extends SubCase {
         currentPs = queryPrimaryStorage {
             conditions=["uuid=${ps.uuid}".toString()]
         }[0]
+        currentRefVO = Q.New(LocalStorageHostRefVO.class)
+                .eq(LocalStorageHostRefVO_.hostUuid, vm.hostUuid).find()
         assert ps.availableCapacity == currentPs.availableCapacity
+        assert refVO.availableCapacity  == currentRefVO.availableCapacity
 
         reconnectPrimaryStorage {
             uuid = ps.uuid
@@ -171,7 +185,10 @@ class CreateSnapshotCase extends SubCase {
         currentPs = queryPrimaryStorage {
             conditions=["uuid=${ps.uuid}".toString()]
         }[0]
+        currentRefVO = Q.New(LocalStorageHostRefVO.class)
+                .eq(LocalStorageHostRefVO_.hostUuid, vm.hostUuid).find()
         assert ps.availableCapacity == currentPs.availableCapacity
+        assert refVO.availableCapacity  == currentRefVO.availableCapacity
     }
 
 }
