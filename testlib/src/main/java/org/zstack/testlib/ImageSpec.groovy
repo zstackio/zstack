@@ -25,6 +25,8 @@ class ImageSpec extends Spec implements HasSession {
     String platform = "Linux"
     @SpecParam
     String format = "qcow2"
+    @SpecParam
+    String guestOsType = "CentOS"
 
     ImageInventory inventory
 
@@ -37,6 +39,7 @@ class ImageSpec extends Spec implements HasSession {
             delegate.resourceUuid = uuid
             delegate.name = name
             delegate.description = description
+            delegate.guestOsType = guestOsType
             delegate.format = format
             delegate.mediaType = mediaType
             delegate.platform = platform

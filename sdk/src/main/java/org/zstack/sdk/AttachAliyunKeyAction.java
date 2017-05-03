@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class LocalStorageGetVolumeMigratableHostsAction extends AbstractAction {
+public class AttachAliyunKeyAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public LocalStorageGetVolumeMigratableResult value;
+        public AttachAliyunKeyResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -23,7 +23,7 @@ public class LocalStorageGetVolumeMigratableHostsAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String volumeUuid;
+    public java.lang.String uuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -34,6 +34,10 @@ public class LocalStorageGetVolumeMigratableHostsAction extends AbstractAction {
     @Param(required = true)
     public String sessionId;
 
+    public long timeout;
+    
+    public long pollingInterval;
+
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -42,8 +46,8 @@ public class LocalStorageGetVolumeMigratableHostsAction extends AbstractAction {
             return ret;
         }
         
-        LocalStorageGetVolumeMigratableResult value = res.getResult(LocalStorageGetVolumeMigratableResult.class);
-        ret.value = value == null ? new LocalStorageGetVolumeMigratableResult() : value; 
+        AttachAliyunKeyResult value = res.getResult(AttachAliyunKeyResult.class);
+        ret.value = value == null ? new AttachAliyunKeyResult() : value; 
 
         return ret;
     }
@@ -68,11 +72,11 @@ public class LocalStorageGetVolumeMigratableHostsAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
-        info.path = "/volumes/{volumeUuid}/migration-target-hosts";
+        info.httpMethod = "PUT";
+        info.path = "/hybrid/aliyun/key/{uuid}";
         info.needSession = true;
-        info.needPoll = false;
-        info.parameterName = "";
+        info.needPoll = true;
+        info.parameterName = "attachAliyunKey";
         return info;
     }
 

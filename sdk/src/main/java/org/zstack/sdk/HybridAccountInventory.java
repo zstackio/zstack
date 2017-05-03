@@ -42,6 +42,14 @@ public class HybridAccountInventory  {
         return this.key;
     }
 
+    public java.lang.String current;
+    public void setCurrent(java.lang.String current) {
+        this.current = current;
+    }
+    public java.lang.String getCurrent() {
+        return this.current;
+    }
+
     public java.lang.String description;
     public void setDescription(java.lang.String description) {
         this.description = description;
