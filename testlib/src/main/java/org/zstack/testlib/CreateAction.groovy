@@ -6,9 +6,7 @@ trait CreateAction {
     // return uuid of the created resource
     abstract SpecID create(String uuid, String sessionId)
 
-    SpecID define(String uuid) {
-
-    }
+    boolean onlyDefine = false
 
     SpecID id(String name, String uuid) {
         return new SpecID(name, uuid)

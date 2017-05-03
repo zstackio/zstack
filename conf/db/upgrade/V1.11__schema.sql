@@ -49,7 +49,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 --  Table structure for `EcsVpcVO`
 -- ----------------------------
 CREATE TABLE `EcsVpcVO` (
-	  `uuid` varchar(32) NOT NULL,
+	  `uuid` varchar(32) UNIQUE NOT NULL,
 	  `ecsVpcId` varchar(32) NOT NULL,
 	  `dataCenterUuid` varchar(32) NOT NULL,
 	  `status` varchar(32) NOT NULL,
@@ -71,7 +71,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 --  Table structure for `EcsSecurityGroupRuleVO`
 -- ----------------------------
 CREATE TABLE `EcsSecurityGroupRuleVO` (
-	  `uuid` varchar(32) NOT NULL,
+	  `uuid` varchar(32) UNIQUE NOT NULL,
 	  `ecsSecurityGroupUuid` varchar(32) NOT NULL,
 	  `portRange` varchar(32) NOT NULL,
 	  `cidrIp` varchar(32) NOT NULL,
@@ -96,7 +96,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 --  Table structure for `EcsSecurityGroupVO`
 -- ----------------------------
 CREATE TABLE `EcsSecurityGroupVO` (
-	  `uuid` varchar(32) NOT NULL,
+	  `uuid` varchar(32) UNIQUE NOT NULL,
 	  `ecsVpcUuid` varchar(32) NOT NULL,
 	  `securityGroupId` varchar(32) NOT NULL,
 	  `securityGroupName` varchar(128) NOT NULL,
@@ -116,7 +116,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 --  Table structure for `EcsInstanceConsoleProxyVO`
 -- ----------------------------
 CREATE TABLE `EcsInstanceConsoleProxyVO` (
-	  `uuid` varchar(32) NOT NULL,
+	  `uuid` varchar(32) UNIQUE NOT NULL,
 	  `ecsInstanceUuid` varchar(32) NOT NULL,
 	  `vncUrl` varchar(256) DEFAULT NULL,
 	  `vncPassword` varchar(32) DEFAULT NULL,
@@ -135,7 +135,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 --  Table structure for `EcsInstanceVO`
 -- ----------------------------
 CREATE TABLE `EcsInstanceVO` (
-	  `uuid` varchar(32) NOT NULL,
+	  `uuid` varchar(32) UNIQUE NOT NULL,
 	  `localVmInstanceUuid` varchar(32) DEFAULT NULL,
 	  `ecsInstanceId` varchar(32) NOT NULL,
 	  `name` varchar(128) NOT NULL,
@@ -181,7 +181,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 --  Table structure for `EcsImageVO`
 -- ----------------------------
 CREATE TABLE `EcsImageVO` (
-	  `uuid` varchar(32) NOT NULL,
+	  `uuid` varchar(32) UNIQUE NOT NULL,
 	  `localImageUuid` varchar(32) DEFAULT NULL,
 	  `ecsImageId` varchar(32) NOT NULL,
 	  `dataCenterUuid` varchar(32) DEFAULT NULL,
@@ -205,7 +205,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 --  Table structure for `HybridEipAddressVO`
 -- ----------------------------
 CREATE TABLE `HybridEipAddressVO` (
-	  `uuid` varchar(32) NOT NULL,
+	  `uuid` varchar(32) UNIQUE NOT NULL,
 	  `eipId` varchar(32) NOT NULL,
 	  `bandWidth` varchar(32) NOT NULL,
 	  `eipAddress` varchar(32) NOT NULL,
@@ -227,7 +227,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 --  Table structure for `EcsImageMd5SumMappingVO`
 -- ----------------------------
 CREATE TABLE `EcsImageMd5SumMappingVO` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `id` bigint(20) unsigned UNIQUE NOT NULL AUTO_INCREMENT,
   `qcow2Md5Sum` varchar(128) NOT NULL,
   `rawMd5Sum` varchar(128) NOT NULL,
   `ossBucketName` varchar(32) NOT NULL,
@@ -245,7 +245,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 --  Table structure for `OssBucketVO`
 -- ----------------------------
 CREATE TABLE `OssBucketVO` (
-	  `uuid` varchar(32) NOT NULL,
+	  `uuid` varchar(32) UNIQUE NOT NULL,
 	  `bucketName` varchar(32) NOT NULL,
 	  `regionId` varchar(32) NOT NULL,
 	  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
@@ -260,7 +260,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 --  Table structure for `OssBucketEcsDataCenterRefVO`
 -- ----------------------------
 CREATE TABLE `OssBucketEcsDataCenterRefVO` (
-	  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+	  `id` bigint(20) unsigned UNIQUE NOT NULL AUTO_INCREMENT,
 	  `ossBucketUuid` varchar(32) NOT NULL,
 	  `dataCenterUuid` varchar(32) NOT NULL,
 	  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
@@ -280,7 +280,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 --  Table structure for `DataCenterVO`
 -- ----------------------------
 CREATE TABLE `DataCenterVO` (
-	  `uuid` varchar(32) NOT NULL,
+	  `uuid` varchar(32) UNIQUE NOT NULL,
 	  `deleted` varchar(1) DEFAULT NULL,
 	  `regionName` varchar(1024) NOT NULL,
 	  `dcType` varchar(32) NOT NULL,
@@ -299,7 +299,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 --  Table structure for `AvailableInstanceTypesVO`
 -- ----------------------------
 CREATE TABLE `AvailableInstanceTypesVO` (
-	  `uuid` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+	  `uuid` bigint(20) unsigned UNIQUE NOT NULL AUTO_INCREMENT,
 	  `accountUuid` varchar(32) NOT NULL,
 	  `instanceType` varchar(4096) NOT NULL,
 	  `diskCategories` varchar(256) NOT NULL,
@@ -319,7 +319,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 --  Table structure for `AvailableIdentityZonesVO`
 -- ----------------------------
 CREATE TABLE `AvailableIdentityZonesVO` (
-	  `uuid` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+	  `uuid` bigint(20) unsigned UNIQUE NOT NULL AUTO_INCREMENT,
 	  `accountUuid` varchar(32) NOT NULL,
 	  `dataCenterUuid` varchar(32) NOT NULL,
 	  `type` varchar(32) NOT NULL,
@@ -338,7 +338,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 --  Table structure for `HybridAccountVO`
 -- ----------------------------
 CREATE TABLE `HybridAccountVO` (
-  `uuid` varchar(32) NOT NULL,
+  `uuid` varchar(32) UNIQUE NOT NULL,
   `accountUuid` varchar(32) NOT NULL,
   `userUuid` varchar(32) DEFAULT NULL,
   `type` varchar(32) NOT NULL,
@@ -411,105 +411,7 @@ update `EcsVSwitchVO` set `availableIpAddressCount`=`availableIpAddressCount`-1 
 END$$
 DELIMITER ;
 
-DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_EcsInstanceVO;
-DELIMITER $$
-CREATE TRIGGER trigger_clean_AccountResourceRefVO_for_EcsInstanceVO AFTER DELETE ON `EcsInstanceVO`
-FOR EACH ROW
-    BEGIN
-        delete from `AccountResourceRefVO` where `resourceUuid`=OLD.`uuid` and `resourceType`='EcsInstanceVO';
-        update `EcsVSwitchVO` set `availableIpAddressCount`=`availableIpAddressCount`+1 where `uuid`=OLD.`ecsVSwitchUuid`;
-    END$$
-DELIMITER ;
 
-DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_IdentityZoneVO;
-DELIMITER $$
-CREATE TRIGGER trigger_clean_AccountResourceRefVO_for_IdentityZoneVO AFTER DELETE ON `IdentityZoneVO`
-FOR EACH ROW
-    BEGIN
-        delete from `AccountResourceRefVO` where `resourceUuid`=OLD.`uuid` and `resourceType`='IdentityZoneVO';
-    END$$
-DELIMITER ;
-
-DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_DataCenterVO;
-DELIMITER $$
-CREATE TRIGGER trigger_clean_AccountResourceRefVO_for_DataCenterVO AFTER DELETE ON `DataCenterVO`
-FOR EACH ROW
-    BEGIN
-        delete from `AccountResourceRefVO` where `resourceUuid`=OLD.`uuid` and `resourceType`='DataCenterVO';
-    END$$
-DELIMITER ;
-
-DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_EcsVpcVO;
-DELIMITER $$
-CREATE TRIGGER trigger_clean_AccountResourceRefVO_for_EcsVpcVO AFTER DELETE ON `EcsVpcVO`
-FOR EACH ROW
-    BEGIN
-        delete from `AccountResourceRefVO` where `resourceUuid`=OLD.`uuid` and `resourceType`='EcsVpcVO';
-    END$$
-DELIMITER ;
-
-DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_EcsVSwitchVO;
-DELIMITER $$
-CREATE TRIGGER trigger_clean_AccountResourceRefVO_for_EcsVSwitchVO AFTER DELETE ON `EcsVSwitchVO`
-FOR EACH ROW
-    BEGIN
-        delete from `AccountResourceRefVO` where `resourceUuid`=OLD.`uuid` and `resourceType`='EcsVSwitchVO';
-    END$$
-DELIMITER ;
-
-DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_EcsImageVO;
-DELIMITER $$
-CREATE TRIGGER trigger_clean_AccountResourceRefVO_for_EcsImageVO AFTER DELETE ON `EcsImageVO`
-FOR EACH ROW
-    BEGIN
-        delete from `AccountResourceRefVO` where `resourceUuid`=OLD.`uuid` and `resourceType`='EcsImageVO';
-    END$$
-DELIMITER ;
-
-DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_EcsSecurityGroupVO;
-DELIMITER $$
-CREATE TRIGGER trigger_clean_AccountResourceRefVO_for_EcsSecurityGroupVO AFTER DELETE ON `EcsSecurityGroupVO`
-FOR EACH ROW
-    BEGIN
-        delete from `AccountResourceRefVO` where `resourceUuid`=OLD.`uuid` and `resourceType`='EcsSecurityGroupVO';
-    END$$
-DELIMITER ;
-
-DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_HybridEipAddressVO;
-DELIMITER $$
-CREATE TRIGGER trigger_clean_AccountResourceRefVO_for_HybridEipAddressVO AFTER DELETE ON `HybridEipAddressVO`
-FOR EACH ROW
-    BEGIN
-        delete from `AccountResourceRefVO` where `resourceUuid`=OLD.`uuid` and `resourceType`='HybridEipAddressVO';
-    END$$
-DELIMITER ;
-
-DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_OssBucketVO;
-DELIMITER $$
-CREATE TRIGGER trigger_clean_AccountResourceRefVO_for_OssBucketVO AFTER DELETE ON `OssBucketVO`
-FOR EACH ROW
-    BEGIN
-        delete from `AccountResourceRefVO` where `resourceUuid`=OLD.`uuid` and `resourceType`='OssBucketVO';
-    END$$
-DELIMITER ;
-
-DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_EcsInstanceConsoleProxyVO;
-DELIMITER $$
-CREATE TRIGGER trigger_clean_AccountResourceRefVO_for_EcsInstanceConsoleProxyVO AFTER DELETE ON `EcsInstanceConsoleProxyVO`
-FOR EACH ROW
-    BEGIN
-        delete from `AccountResourceRefVO` where `resourceUuid`=OLD.`uuid` and `resourceType`='EcsInstanceConsoleProxyVO';
-    END$$
-DELIMITER ;
-
-DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_HybridAccountVO;
-DELIMITER $$
-CREATE TRIGGER trigger_clean_AccountResourceRefVO_for_HybridAccountVO AFTER DELETE ON `HybridAccountVO`
-FOR EACH ROW
-    BEGIN
-        delete from `AccountResourceRefVO` where `resourceUuid`=OLD.`uuid` and `resourceType`='HybridAccountVO';
-    END$$
-DELIMITER ;
 
 DROP TRIGGER IF EXISTS trigger_attach_eip_for_ecsinstance;
 DELIMITER $$
@@ -630,10 +532,10 @@ ALTER TABLE VCenterVO ADD port int DEFAULT NULL;
 SET FOREIGN_KEY_CHECKS = 0;
 
 -- ----------------------------
---  Table structure for `EcsSecurityGroupRuleVO`
+--  Table structure for `VpcVirtualRouterVO`
 -- ----------------------------
 CREATE TABLE `VpcVirtualRouterVO` (
-	  `uuid` varchar(32) NOT NULL,
+	  `uuid` varchar(32) UNIQUE NOT NULL,
 	  `vrId` varchar(32) NOT NULL,
 	  `vpcUuid` varchar(32) NOT NULL,
 	  `vRouterName` varchar(32) NOT NULL,
@@ -649,10 +551,10 @@ SET FOREIGN_KEY_CHECKS = 1;
 SET FOREIGN_KEY_CHECKS = 0;
 
 -- ----------------------------
---  Table structure for `EcsSecurityGroupRuleVO`
+--  Table structure for `VirtualRouterInterfaceVO`
 -- ----------------------------
 CREATE TABLE `VirtualRouterInterfaceVO` (
-	  `uuid` varchar(32) NOT NULL,
+	  `uuid` varchar(32) UNIQUE NOT NULL,
 	  `routerInterfaceId` varchar(64) NOT NULL,
 	  `virtualRouterUuid` varchar(32) NOT NULL,
 	  `accessPointUuid` varchar(32) NOT NULL,
@@ -675,10 +577,10 @@ SET FOREIGN_KEY_CHECKS = 1;
 SET FOREIGN_KEY_CHECKS = 0;
 
 -- ----------------------------
---  Table structure for `EcsSecurityGroupRuleVO`
+--  Table structure for `VpcVirtualRouteEntryVO`
 -- ----------------------------
 CREATE TABLE `VpcVirtualRouteEntryVO` (
-	  `uuid` varchar(32) NOT NULL,
+	  `uuid` varchar(32) UNIQUE NOT NULL,
 	  `destinationCidrBlock` varchar(64) NOT NULL,
 	  `nextHopUuid` varchar(32) NOT NULL,
 	  `type` varchar(32) NOT NULL,
@@ -699,7 +601,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 --  Table structure for `ConnectionAccessPointVO`
 -- ----------------------------
 CREATE TABLE `ConnectionAccessPointVO` (
-	  `uuid` varchar(32) NOT NULL,
+	  `uuid` varchar(32) UNIQUE NOT NULL,
 	  `accessPointId` varchar(64) NOT NULL,
 	  `type` varchar(32) NOT NULL,
 	  `name` varchar(64) NOT NULL,
@@ -718,10 +620,10 @@ SET FOREIGN_KEY_CHECKS = 1;
 SET FOREIGN_KEY_CHECKS = 0;
 
 -- ----------------------------
---  Table structure for `EcsSecurityGroupRuleVO`
+--  Table structure for `VirtualBorderRouterVO`
 -- ----------------------------
 CREATE TABLE `VirtualBorderRouterVO` (
-	  `uuid` varchar(32) NOT NULL,
+	  `uuid` varchar(32) UNIQUE NOT NULL,
 	  `vrId` varchar(32) NOT NULL,
 	  `vlanInterfaceId` varchar(64) NOT NULL,
 	  `vRouterName` varchar(64) NOT NULL,
@@ -745,35 +647,6 @@ CREATE TABLE `VirtualBorderRouterVO` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET FOREIGN_KEY_CHECKS = 1;
-
-
-DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_VpcVirtualRouteEntryVO;
-DELIMITER $$
-CREATE TRIGGER trigger_clean_AccountResourceRefVO_for_VpcVirtualRouteEntryVO AFTER DELETE ON `VpcVirtualRouteEntryVO`
-FOR EACH ROW
-    BEGIN
-        delete from `AccountResourceRefVO` where `resourceUuid`=OLD.`uuid` and `resourceType`='VpcVirtualRouteEntryVO';
-    END$$
-DELIMITER ;
-
-DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_ConnectionAccessPointVO;
-DELIMITER $$
-CREATE TRIGGER trigger_clean_AccountResourceRefVO_for_ConnectionAccessPointVO AFTER DELETE ON `ConnectionAccessPointVO`
-FOR EACH ROW
-    BEGIN
-        delete from `AccountResourceRefVO` where `resourceUuid`=OLD.`uuid` and `resourceType`='ConnectionAccessPointVO';
-    END$$
-DELIMITER ;
-
-
-DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_VirtualRouterInterfaceVO;
-DELIMITER $$
-CREATE TRIGGER trigger_clean_AccountResourceRefVO_for_VirtualRouterInterfaceVO AFTER DELETE ON `VirtualRouterInterfaceVO`
-FOR EACH ROW
-    BEGIN
-        delete from `AccountResourceRefVO` where `resourceUuid`=OLD.`uuid` and `resourceType`='VirtualRouterInterfaceVO';
-    END$$
-DELIMITER ;
 
 ALTER TABLE QuotaVO MODIFY COLUMN id INT;
 ALTER TABLE QuotaVO DROP PRIMARY KEY;
@@ -824,23 +697,30 @@ DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_VmNicVO;
 DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_VolumeEO;
 DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_VolumeSnapshotEO;
 
-#DROP TRIGGER IF EXISTS trigger_decrease_vswitch_for_create_ecs;
-#DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_EcsInstanceVO;
-#DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_IdentityZoneVO;
-#DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_DataCenterVO;
-#DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_EcsVpcVO;
-#DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_EcsVSwitchVO;
-#DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_EcsImageVO;
-#DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_EcsSecurityGroupVO;
-#DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_HybridEipAddressVO;
-#DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_OssBucketVO;
-#DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_EcsInstanceConsoleProxyVO;
-#DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_HybridAccountVO;
-#DROP TRIGGER IF EXISTS trigger_attach_eip_for_ecsinstance;
-#DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_VpcVirtualRouteEntryVO;
-#DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_ConnectionAccessPointVO;
-#DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_VirtualRouterInterfaceVO;
 
+
+INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "DataCenterVO" FROM DataCenterVO t;
+INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "EcsImageVO" FROM EcsImageVO t;
+INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "EcsSecurityGroupRuleVO" FROM EcsSecurityGroupRuleVO t;
+INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "EcsInstanceConsoleProxyVO" FROM EcsInstanceConsoleProxyVO t;
+INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "EcsSecurityGroupVO" FROM EcsSecurityGroupVO t;
+INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "VpcVirtualRouterVO" FROM VpcVirtualRouterVO t;
+INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "EcsVSwitchVO" FROM EcsVSwitchVO t;
+INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "EcsVpcVO" FROM EcsVpcVO t;
+INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "EcsInstanceVO" FROM EcsInstanceVO t;
+INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "HybridAccountVO" FROM HybridAccountVO t;
+INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "HybridEipAddressVO" FROM HybridEipAddressVO t;
+INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.bucketName, "OssBucketVO" FROM OssBucketVO t;
+INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "IdentityZoneVO" FROM IdentityZoneVO t;
+INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "ConnectionAccessPointVO" FROM ConnectionAccessPointVO t;
+INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "VirtualBorderRouterVO" FROM VirtualBorderRouterVO t;
+INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "VirtualRouterInterfaceVO" FROM VirtualRouterInterfaceVO t;
+INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "VpcVirtualRouteEntryVO" FROM VpcVirtualRouteEntryVO t;
+
+
+
+
+INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "EipVO" FROM EipVO t;
 INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "AccountVO" FROM AccountVO t;
 INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "BackupStorageEO" FROM BackupStorageEO t;
 INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "CephBackupStorageMonVO" FROM CephBackupStorageMonVO t;
@@ -848,21 +728,10 @@ INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "CephPrimaryStorageMo
 INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "CephPrimaryStoragePoolVO" FROM CephPrimaryStoragePoolVO t;
 INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "ClusterEO" FROM ClusterEO t;
 INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "ConsoleProxyVO" FROM ConsoleProxyVO t;
-INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "DataCenterVO" FROM DataCenterVO t;
 INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "DiskOfferingEO" FROM DiskOfferingEO t;
-INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "EcsImageVO" FROM EcsImageVO t;
-INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "EcsInstanceConsoleProxyVO" FROM EcsInstanceConsoleProxyVO t;
-INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "EcsInstanceVO" FROM EcsInstanceVO t;
-INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "EcsSecurityGroupRuleVO" FROM EcsSecurityGroupRuleVO t;
-INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "EcsSecurityGroupVO" FROM EcsSecurityGroupVO t;
-INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "EcsVSwitchVO" FROM EcsVSwitchVO t;
-INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "EcsVpcVO" FROM EcsVpcVO t;
 INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "EipVO" FROM EipVO t;
 INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "GarbageCollectorVO" FROM GarbageCollectorVO t;
 INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "HostEO" FROM HostEO t;
-INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "HybridAccountVO" FROM HybridAccountVO t;
-INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "HybridEipAddressVO" FROM HybridEipAddressVO t;
-INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.zoneName, "IdentityZoneVO" FROM IdentityZoneVO t;
 INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "ImageEO" FROM ImageEO t;
 INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "InstanceOfferingEO" FROM InstanceOfferingEO t;
 INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "IpRangeEO" FROM IpRangeEO t;
@@ -871,7 +740,6 @@ INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name,
 INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "LdapServerVO" FROM LdapServerVO t;
 INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "LoadBalancerListenerVO" FROM LoadBalancerListenerVO t;
 INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "LoadBalancerVO" FROM LoadBalancerVO t;
-INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.bucketName, "OssBucketVO" FROM OssBucketVO t;
 INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "PolicyVO" FROM PolicyVO t;
 INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "PortForwardingRuleVO" FROM PortForwardingRuleVO t;
 INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "PrimaryStorageEO" FROM PrimaryStorageEO t;
@@ -892,3 +760,5 @@ INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name,
 INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "VolumeSnapshotTreeEO" FROM VolumeSnapshotTreeEO t;
 INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "VtepVO" FROM VtepVO t;
 INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "ZoneEO" FROM ZoneEO t;
+
+
