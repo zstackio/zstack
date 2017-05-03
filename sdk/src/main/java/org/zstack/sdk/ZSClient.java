@@ -354,6 +354,7 @@ public class ZSClient {
             }
 
             final Map<String, Object> params = new HashMap<>();
+
             for (String pname : action.getAllParameterNames()) {
                 if (varNames.contains(pname) || Constants.SESSION_ID.equals(pname)) {
                     // the field is set in URL variables
