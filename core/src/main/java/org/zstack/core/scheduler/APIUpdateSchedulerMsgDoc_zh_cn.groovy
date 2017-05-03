@@ -13,18 +13,18 @@ doc {
         request {
 			url "PUT /v1/schedulers/{uuid}/actions"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIUpdateSchedulerMsg.class
 
-			desc "更新定时任务"
-
+            desc "更新定时任务"
+            
 			params {
 
 				column {
 					name "uuid"
-					enclosedIn ""
+					enclosedIn "updateScheduler"
 					desc "资源的UUID，唯一标示该资源"
 					location "url"
 					type "String"
@@ -34,7 +34,7 @@ doc {
 				}
 				column {
 					name "schedulerName"
-					enclosedIn ""
+					enclosedIn "updateScheduler"
 					desc "定时任务名称"
 					location "body"
 					type "String"
@@ -44,7 +44,7 @@ doc {
 				}
 				column {
 					name "schedulerDescription"
-					enclosedIn ""
+					enclosedIn "updateScheduler"
 					desc "定时任务描述"
 					location "body"
 					type "String"

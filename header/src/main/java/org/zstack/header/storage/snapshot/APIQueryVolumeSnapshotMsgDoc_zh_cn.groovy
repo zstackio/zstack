@@ -1,5 +1,7 @@
 package org.zstack.header.storage.snapshot
 
+import org.zstack.header.storage.snapshot.APIQueryVolumeSnapshotReply
+import org.zstack.header.query.APIQueryMessage
 import org.zstack.header.query.APIQueryMessage
 
 doc {
@@ -12,11 +14,10 @@ doc {
     rest {
         request {
 			url "GET /v1/volume-snapshots"
-
 			url "GET /v1/volume-snapshots/{uuid}"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIQueryVolumeSnapshotMsg.class
 

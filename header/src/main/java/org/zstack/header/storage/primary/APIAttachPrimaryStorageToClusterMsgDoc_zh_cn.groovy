@@ -1,5 +1,7 @@
 package org.zstack.header.storage.primary
 
+import org.zstack.header.storage.primary.APIAttachPrimaryStorageToClusterEvent
+
 doc {
     title "向集群添加主存储(AttachPrimaryStorageToCluster)"
 
@@ -11,8 +13,8 @@ doc {
         request {
 			url "POST /v1/clusters/{clusterUuid}/primary-storage/{primaryStorageUuid}"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIAttachPrimaryStorageToClusterMsg.class
 
@@ -22,7 +24,7 @@ doc {
 
 				column {
 					name "clusterUuid"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "集群UUID"
 					location "url"
 					type "String"
@@ -32,7 +34,7 @@ doc {
 				}
 				column {
 					name "primaryStorageUuid"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "主存储UUID"
 					location "url"
 					type "String"
@@ -42,7 +44,7 @@ doc {
 				}
 				column {
 					name "systemTags"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "系统标签"
 					location "body"
 					type "List"
@@ -52,7 +54,7 @@ doc {
 				}
 				column {
 					name "userTags"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "用户标签"
 					location "body"
 					type "List"

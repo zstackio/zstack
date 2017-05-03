@@ -1,5 +1,7 @@
 package org.zstack.header.image
 
+import org.zstack.header.image.APIRecoverImageEvent
+
 doc {
     title "恢复镜像(RecoverImage)"
 
@@ -9,58 +11,58 @@ doc {
 
     rest {
         request {
-            url "PUT /v1/images/{imageUuid}/actions"
+			url "PUT /v1/images/{imageUuid}/actions"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIRecoverImageMsg.class
 
             desc ""
+            
+			params {
 
-            params {
-
-                column {
-                    name "imageUuid"
-                    enclosedIn "url"
-                    desc "镜像UUID"
-                    location "body"
-                    type "String"
-                    optional false
-                    since "0.6"
-
-                }
-                column {
-                    name "backupStorageUuids"
-                    enclosedIn "params"
-                    desc "镜像服务器UUID列表"
-                    location "body"
-                    type "List"
-                    optional true
-                    since "0.6"
-
-                }
-                column {
-                    name "systemTags"
-                    enclosedIn "params"
-                    desc "系统标签"
-                    location "body"
-                    type "List"
-                    optional true
-                    since "0.6"
-
-                }
-                column {
-                    name "userTags"
-                    enclosedIn "params"
-                    desc "用户标签"
-                    location "body"
-                    type "List"
-                    optional true
-                    since "0.6"
-
-                }
-            }
+				column {
+					name "imageUuid"
+					enclosedIn "params"
+					desc "镜像UUID"
+					location "url"
+					type "String"
+					optional false
+					since "0.6"
+					
+				}
+				column {
+					name "backupStorageUuids"
+					enclosedIn "params"
+					desc "镜像服务器UUID列表"
+					location "body"
+					type "List"
+					optional true
+					since "0.6"
+					
+				}
+				column {
+					name "systemTags"
+					enclosedIn ""
+					desc "系统标签"
+					location "body"
+					type "List"
+					optional true
+					since "0.6"
+					
+				}
+				column {
+					name "userTags"
+					enclosedIn ""
+					desc "用户标签"
+					location "body"
+					type "List"
+					optional true
+					since "0.6"
+					
+				}
+			}
         }
 
         response {

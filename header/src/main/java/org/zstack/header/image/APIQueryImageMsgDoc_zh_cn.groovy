@@ -2,6 +2,7 @@ package org.zstack.header.image
 
 import org.zstack.header.image.APIQueryImageReply
 import org.zstack.header.query.APIQueryMessage
+import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "QueryImage"
@@ -13,11 +14,10 @@ doc {
     rest {
         request {
 			url "GET /v1/images"
-
 			url "GET /v1/images/{uuid}"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIQueryImageMsg.class
 

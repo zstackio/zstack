@@ -7,6 +7,7 @@ public interface DocumentGenerator {
     enum DocMode {
         RECREATE_ALL,
         CREATE_MISSING,
+        REPAIR,
     }
 
     void generateDocTemplates(String scanPath, DocMode mode);

@@ -3,23 +3,23 @@ package org.zstack.kvm
 import org.zstack.header.host.APIAddHostEvent
 
 doc {
-	title "AddKVMHost"
+    title "AddKVMHost"
 
-	category "host"
+    category "host"
 
-	desc "添加KVM主机"
+    desc "添加KVM主机"
 
-	rest {
-		request {
+    rest {
+        request {
 			url "POST /v1/hosts/kvm"
-
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-			clz APIAddKVMHostMsg.class
 
-			desc "添加KVM主机"
+            clz APIAddKVMHostMsg.class
 
+            desc "添加KVM主机"
+            
 			params {
 
 				column {
@@ -30,7 +30,7 @@ doc {
 					type "String"
 					optional false
 					since "0.6"
-
+					
 				}
 				column {
 					name "password"
@@ -40,7 +40,7 @@ doc {
 					type "String"
 					optional false
 					since "0.6"
-
+					
 				}
 				column {
 					name "sshPort"
@@ -50,7 +50,7 @@ doc {
 					type "int"
 					optional true
 					since "0.6"
-
+					
 				}
 				column {
 					name "name"
@@ -60,7 +60,7 @@ doc {
 					type "String"
 					optional false
 					since "0.6"
-
+					
 				}
 				column {
 					name "description"
@@ -70,7 +70,7 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-
+					
 				}
 				column {
 					name "managementIp"
@@ -80,7 +80,7 @@ doc {
 					type "String"
 					optional false
 					since "0.6"
-
+					
 				}
 				column {
 					name "clusterUuid"
@@ -90,7 +90,7 @@ doc {
 					type "String"
 					optional false
 					since "0.6"
-
+					
 				}
 				column {
 					name "resourceUuid"
@@ -100,7 +100,7 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-
+					
 				}
 				column {
 					name "systemTags"
@@ -110,7 +110,7 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-
+					
 				}
 				column {
 					name "userTags"
@@ -120,13 +120,13 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-
+					
 				}
 			}
-		}
+        }
 
-		response {
-			clz APIAddHostEvent.class
-		}
-	}
+        response {
+            clz APIAddHostEvent.class
+        }
+    }
 }

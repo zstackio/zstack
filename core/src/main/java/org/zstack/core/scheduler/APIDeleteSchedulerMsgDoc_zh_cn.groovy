@@ -13,13 +13,13 @@ doc {
         request {
 			url "DELETE /v1/schedulers/{uuid}"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIDeleteSchedulerMsg.class
 
-			desc "删除定时任务"
-
+            desc "删除定时任务"
+            
 			params {
 
 				column {

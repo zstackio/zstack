@@ -1,5 +1,7 @@
 package org.zstack.header.vm
 
+import org.zstack.header.vm.APIAttachL3NetworkToVmEvent
+
 doc {
     title "加载网络到云主机(AttachL3NetworkToVm)"
 
@@ -9,68 +11,68 @@ doc {
 
     rest {
         request {
-            url "POST /v1/vm-instances/{vmInstanceUuid}/l3-networks/{l3NetworkUuid}"
+			url "POST /v1/vm-instances/{vmInstanceUuid}/l3-networks/{l3NetworkUuid}"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIAttachL3NetworkToVmMsg.class
 
             desc ""
+            
+			params {
 
-            params {
-
-                column {
-                    name "vmInstanceUuid"
-                    enclosedIn "params"
-                    desc "云主机UUID"
-                    location "url"
-                    type "String"
-                    optional false
-                    since "0.6"
-
-                }
-                column {
-                    name "l3NetworkUuid"
-                    enclosedIn "params"
-                    desc "三层网络UUID"
-                    location "url"
-                    type "String"
-                    optional false
-                    since "0.6"
-
-                }
-                column {
-                    name "staticIp"
-                    enclosedIn "params"
-                    desc "指定分配给云主机的IP地址"
-                    location "body"
-                    type "String"
-                    optional true
-                    since "0.6"
-
-                }
-                column {
-                    name "systemTags"
-                    enclosedIn ""
-                    desc "系统标签"
-                    location "body"
-                    type "List"
-                    optional true
-                    since "0.6"
-
-                }
-                column {
-                    name "userTags"
-                    enclosedIn ""
-                    desc "用户标签"
-                    location "body"
-                    type "List"
-                    optional true
-                    since "0.6"
-
-                }
-            }
+				column {
+					name "vmInstanceUuid"
+					enclosedIn "params"
+					desc "云主机UUID"
+					location "url"
+					type "String"
+					optional false
+					since "0.6"
+					
+				}
+				column {
+					name "l3NetworkUuid"
+					enclosedIn "params"
+					desc "三层网络UUID"
+					location "url"
+					type "String"
+					optional false
+					since "0.6"
+					
+				}
+				column {
+					name "staticIp"
+					enclosedIn "params"
+					desc "指定分配给云主机的IP地址"
+					location "body"
+					type "String"
+					optional true
+					since "0.6"
+					
+				}
+				column {
+					name "systemTags"
+					enclosedIn ""
+					desc "系统标签"
+					location "body"
+					type "List"
+					optional true
+					since "0.6"
+					
+				}
+				column {
+					name "userTags"
+					enclosedIn ""
+					desc "用户标签"
+					location "body"
+					type "List"
+					optional true
+					since "0.6"
+					
+				}
+			}
         }
 
         response {

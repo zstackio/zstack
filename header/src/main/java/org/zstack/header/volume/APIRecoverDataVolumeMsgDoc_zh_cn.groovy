@@ -1,5 +1,7 @@
 package org.zstack.header.volume
 
+import org.zstack.header.volume.APIRecoverDataVolumeEvent
+
 doc {
     title "恢复云盘(RecoverDataVolume)"
 
@@ -9,10 +11,10 @@ doc {
 
     rest {
         request {
-			url "PUT /v1/volumes/id}/actions"
+			url "PUT /v1/volumes/{uuid}/actions"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIRecoverDataVolumeMsg.class
 
@@ -32,8 +34,8 @@ doc {
 				}
 				column {
 					name "systemTags"
- 					enclosedIn ""
- 					desc ""
+					enclosedIn ""
+					desc ""
 					location "body"
 					type "List"
 					optional true

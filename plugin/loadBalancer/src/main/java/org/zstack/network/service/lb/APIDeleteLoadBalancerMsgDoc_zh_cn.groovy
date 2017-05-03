@@ -13,8 +13,8 @@ doc {
         request {
 			url "DELETE /v1/load-balancers/{uuid}"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIDeleteLoadBalancerMsg.class
 
@@ -34,8 +34,8 @@ doc {
 				}
 				column {
 					name "deleteMode"
- 					enclosedIn ""
- 					desc "删除模式"
+					enclosedIn ""
+					desc "删除模式"
 					location "body"
 					type "String"
 					optional true

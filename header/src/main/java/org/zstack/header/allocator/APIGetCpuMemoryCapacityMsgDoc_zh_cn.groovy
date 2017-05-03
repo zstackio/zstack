@@ -13,8 +13,8 @@ doc {
         request {
 			url "GET /v1/hosts/capacities/cpu-memory"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIGetCpuMemoryCapacityMsg.class
 

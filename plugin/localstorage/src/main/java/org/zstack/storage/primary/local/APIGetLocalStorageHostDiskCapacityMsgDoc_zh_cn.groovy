@@ -1,18 +1,20 @@
 package org.zstack.storage.primary.local
 
+import org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply
+
 doc {
     title "获取主机本地存储容量(GetLocalStorageHostDiskCapacity)"
 
     category "storage.primary"
 
-    desc "获取主机的本地存储的云盘容量"
+    desc "获取本地存储中物理机本地盘磁盘容量"
 
     rest {
         request {
-			url "GET /v1/primary-storage/local-storage/capacities"
+			url "GET /v1/primary-storage/local-storage/{primaryStorageUuid}/hosts/{hostUuid}/capacities"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIGetLocalStorageHostDiskCapacityMsg.class
 
@@ -24,7 +26,7 @@ doc {
 					name "hostUuid"
 					enclosedIn "params"
 					desc "物理机UUID"
-					location "query"
+					location "url"
 					type "String"
 					optional true
 					since "0.6"
@@ -34,7 +36,7 @@ doc {
 					name "primaryStorageUuid"
 					enclosedIn "params"
 					desc "主存储UUID"
-					location "query"
+					location "url"
 					type "String"
 					optional false
 					since "0.6"
@@ -42,7 +44,7 @@ doc {
 				}
 				column {
 					name "systemTags"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "系统标签"
 					location "query"
 					type "List"
@@ -52,7 +54,7 @@ doc {
 				}
 				column {
 					name "userTags"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "用户标签"
 					location "query"
 					type "List"

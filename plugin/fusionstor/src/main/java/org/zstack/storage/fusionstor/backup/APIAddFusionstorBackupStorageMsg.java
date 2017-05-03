@@ -9,6 +9,7 @@ import org.zstack.header.storage.backup.APIAddBackupStorageEvent;
 import org.zstack.header.storage.backup.APIAddBackupStorageMsg;
 import org.zstack.storage.fusionstor.FusionstorConstants;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -56,8 +57,8 @@ public class APIAddFusionstorBackupStorageMsg extends APIAddBackupStorageMsg {
  
     public static APIAddFusionstorBackupStorageMsg __example__() {
         APIAddFusionstorBackupStorageMsg msg = new APIAddFusionstorBackupStorageMsg();
-
-
+        msg.setMonUrls(Collections.singletonList("root:password@localhost/?monPort=7777"));
+        msg.setName("fusion");
         return msg;
     }
 

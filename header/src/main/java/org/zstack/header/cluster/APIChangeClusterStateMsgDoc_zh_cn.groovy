@@ -1,5 +1,7 @@
 package org.zstack.header.cluster
 
+import org.zstack.header.cluster.APIChangeClusterStateEvent
+
 doc {
     title "ChangeClusterState"
 
@@ -11,8 +13,8 @@ doc {
         request {
 			url "PUT /v1/clusters/{uuid}/actions"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIChangeClusterStateMsg.class
 

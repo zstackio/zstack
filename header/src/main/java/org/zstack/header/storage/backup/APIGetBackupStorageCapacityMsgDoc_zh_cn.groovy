@@ -1,5 +1,7 @@
 package org.zstack.header.storage.backup
 
+import org.zstack.header.storage.backup.APIGetBackupStorageCapacityReply
+
 doc {
     title "获取镜像服务器存储容量(GetBackupStorageCapacity)"
 
@@ -11,8 +13,8 @@ doc {
         request {
 			url "GET /v1/backup-storage/capacities"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIGetBackupStorageCapacityMsg.class
 
@@ -52,7 +54,7 @@ doc {
 				}
 				column {
 					name "systemTags"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "系统标签"
 					location "query"
 					type "List"
@@ -62,7 +64,7 @@ doc {
 				}
 				column {
 					name "userTags"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "用户标签"
 					location "query"
 					type "List"

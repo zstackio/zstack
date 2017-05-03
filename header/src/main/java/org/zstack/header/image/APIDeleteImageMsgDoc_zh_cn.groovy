@@ -1,5 +1,7 @@
 package org.zstack.header.image
 
+import org.zstack.header.image.APIDeleteImageEvent
+
 doc {
     title "删除镜像(DeleteImage)"
 
@@ -11,8 +13,8 @@ doc {
         request {
 			url "DELETE /v1/images/{uuid}"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIDeleteImageMsg.class
 
@@ -52,7 +54,7 @@ doc {
 				}
 				column {
 					name "systemTags"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "系统标签"
 					location "body"
 					type "List"
@@ -62,7 +64,7 @@ doc {
 				}
 				column {
 					name "userTags"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "用户标签"
 					location "body"
 					type "List"

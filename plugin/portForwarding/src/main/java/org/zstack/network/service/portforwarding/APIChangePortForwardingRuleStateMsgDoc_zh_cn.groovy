@@ -13,13 +13,13 @@ doc {
         request {
 			url "PUT /v1/port-forwarding/{uuid}/actions"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIChangePortForwardingRuleStateMsg.class
 
-			desc "改变端口转发规则的状态"
-
+            desc "改变端口转发规则的状态"
+            
 			params {
 
 				column {

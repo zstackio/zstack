@@ -35,8 +35,9 @@ public class APIAddSimulatorPrimaryStorageMsg extends APIAddPrimaryStorageMsg {
  
     public static APIAddSimulatorPrimaryStorageMsg __example__() {
         APIAddSimulatorPrimaryStorageMsg msg = new APIAddSimulatorPrimaryStorageMsg();
-
-
+        msg.setUrl("/simulator");
+        msg.setName("simulator");
+        msg.setZoneUuid(uuid());
         return msg;
     }
 

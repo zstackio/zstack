@@ -1,6 +1,6 @@
 package org.zstack.header.network.l2
 
-import org.zstack.header.network.l2.APICreateL2NetworkEvent
+import org.zstack.header.network.l2.APICreateL2VlanNetworkEvent
 
 doc {
     title "创建Vlan二层网络(CreateL2VlanNetwork)"
@@ -13,8 +13,8 @@ doc {
         request {
 			url "POST /v1/l2-networks/vlan"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APICreateL2VlanNetworkMsg.class
 
@@ -94,8 +94,8 @@ doc {
 				}
 				column {
 					name "systemTags"
- 					enclosedIn ""
- 					desc "系统标签"
+					enclosedIn ""
+					desc "系统标签"
 					location "body"
 					type "List"
 					optional true
@@ -116,7 +116,7 @@ doc {
         }
 
         response {
-            clz APICreateL2NetworkEvent.class
+            clz APICreateL2VlanNetworkEvent.class
         }
     }
 }

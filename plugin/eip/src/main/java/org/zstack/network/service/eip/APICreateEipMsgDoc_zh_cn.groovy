@@ -13,8 +13,8 @@ doc {
         request {
 			url "POST /v1/eips"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APICreateEipMsg.class
 
@@ -74,8 +74,8 @@ doc {
 				}
 				column {
 					name "systemTags"
- 					enclosedIn ""
- 					desc "EIP的系统标签"
+					enclosedIn ""
+					desc "EIP的系统标签"
 					location "body"
 					type "List"
 					optional true

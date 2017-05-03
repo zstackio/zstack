@@ -2,6 +2,7 @@ package org.zstack.network.service.virtualrouter
 
 import org.zstack.network.service.virtualrouter.APIQueryVirtualRouterOfferingReply
 import org.zstack.header.query.APIQueryMessage
+import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "查询虚拟路由器规格(QueryVirtualRouterOffering)"
@@ -13,11 +14,10 @@ doc {
     rest {
         request {
 			url "GET /v1/instance-offerings/virtual-routers"
-
 			url "GET /v1/instance-offerings/virtual-routers/{uuid}"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIQueryVirtualRouterOfferingMsg.class
 

@@ -13,8 +13,8 @@ doc {
         request {
 			url "POST /v1/load-balancers"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APICreateLoadBalancerMsg.class
 
@@ -24,7 +24,7 @@ doc {
 
 				column {
 					name "name"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "资源名称"
 					location "body"
 					type "String"
@@ -34,7 +34,7 @@ doc {
 				}
 				column {
 					name "description"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "资源的详细描述"
 					location "body"
 					type "String"
@@ -44,7 +44,7 @@ doc {
 				}
 				column {
 					name "vipUuid"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "VIP UUID"
 					location "body"
 					type "String"
@@ -54,7 +54,7 @@ doc {
 				}
 				column {
 					name "resourceUuid"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "资源UUID"
 					location "body"
 					type "String"

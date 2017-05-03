@@ -1,5 +1,7 @@
 package org.zstack.header.vm
 
+import org.zstack.header.vm.APIQueryVmInstanceReply
+import org.zstack.header.query.APIQueryMessage
 import org.zstack.header.query.APIQueryMessage
 
 doc {
@@ -11,18 +13,17 @@ doc {
 
     rest {
         request {
-            url "GET /v1/vm-instances"
+			url "GET /v1/vm-instances"
+			url "GET /v1/vm-instances/{uuid}"
 
-            url "GET /v1/vm-instances/{uuid}"
+			header (Authorization: 'OAuth the-session-uuid')
 
-
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIQueryVmInstanceMsg.class
 
             desc ""
-
-            params APIQueryMessage.class
+            
+			params APIQueryMessage.class
         }
 
         response {

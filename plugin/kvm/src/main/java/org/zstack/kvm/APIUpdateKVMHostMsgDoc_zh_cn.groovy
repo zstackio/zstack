@@ -13,8 +13,8 @@ doc {
         request {
 			url "PUT /v1/hosts/kvm/{uuid}/actions"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIUpdateKVMHostMsg.class
 

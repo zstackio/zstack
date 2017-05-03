@@ -48,6 +48,28 @@ md() {
     cd - > /dev/null
 }
 
+docpremium() {
+    if [ -d premium/test-premium ]; then
+        cd premium/test-premium
+    else
+        cd test
+    fi
+
+    mvn test -Dtest=TestGenerateDocTemplate
+    cd - > /dev/null
+}
+
+mdpremium() {
+    if [ -d premium/test-premium ]; then
+        cd premium/test-premium
+    else
+        cd test
+    fi
+
+    mvn test -Dtest=TestGenerateMarkDownDoc
+    cd - > /dev/null
+}
+
 i18njson() {
     ./build/zsi18n -s . -j conf/i18n.json
 }

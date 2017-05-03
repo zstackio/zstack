@@ -13,13 +13,13 @@ doc {
         request {
 			url "GET /v1/security-groups/{securityGroupUuid}/vm-instances/candidate-nics"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIGetCandidateVmNicForSecurityGroupMsg.class
 
-			desc "获取可应用安全组的网卡列表清单"
-
+            desc "获取可应用安全组的网卡列表清单"
+            
 			params {
 
 				column {

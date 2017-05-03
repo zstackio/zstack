@@ -1,5 +1,7 @@
 package org.zstack.storage.ceph.backup
 
+import org.zstack.storage.ceph.backup.APIAddMonToCephBackupStorageEvent
+
 doc {
     title "为 Ceph 镜像服务器添加 mon 节点(AddMonToCephBackupStorage)"
 
@@ -11,8 +13,8 @@ doc {
         request {
 			url "POST /v1/backup-storage/ceph/{uuid}/mons"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIAddMonToCephBackupStorageMsg.class
 
@@ -42,7 +44,7 @@ doc {
 				}
 				column {
 					name "systemTags"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "系统标签"
 					location "body"
 					type "List"
@@ -52,7 +54,7 @@ doc {
 				}
 				column {
 					name "userTags"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "用户标签"
 					location "body"
 					type "List"

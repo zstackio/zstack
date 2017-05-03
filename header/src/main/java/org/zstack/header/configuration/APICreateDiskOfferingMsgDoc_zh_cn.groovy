@@ -1,5 +1,7 @@
 package org.zstack.header.configuration
 
+import org.zstack.header.configuration.APICreateDiskOfferingEvent
+
 doc {
     title "CreateDiskOffering"
 
@@ -9,108 +11,108 @@ doc {
 
     rest {
         request {
-            url "POST /v1/disk-offerings"
+			url "POST /v1/disk-offerings"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APICreateDiskOfferingMsg.class
 
             desc "创建云盘规格"
+            
+			params {
 
-            params {
-
-                column {
-                    name "name"
-                    enclosedIn "params"
-                    desc "资源名称"
-                    location "body"
-                    type "String"
-                    optional false
-                    since "0.6"
-
-                }
-                column {
-                    name "description"
-                    enclosedIn "params"
-                    desc "资源的详细描述"
-                    location "body"
-                    type "String"
-                    optional true
-                    since "0.6"
-
-                }
-                column {
-                    name "diskSize"
-                    enclosedIn "params"
-                    desc "云盘大小"
-                    location "body"
-                    type "long"
-                    optional false
-                    since "0.6"
-
-                }
-                column {
-                    name "sortKey"
-                    enclosedIn "params"
-                    desc "排序key"
-                    location "body"
-                    type "int"
-                    optional true
-                    since "0.6"
-
-                }
-                column {
-                    name "allocationStrategy"
-                    enclosedIn "params"
-                    desc "分配策略"
-                    location "body"
-                    type "String"
-                    optional true
-                    since "0.6"
-
-                }
-                column {
-                    name "type"
-                    enclosedIn "params"
-                    desc "类型"
-                    location "body"
-                    type "String"
-                    optional true
-                    since "0.6"
-                    values("zstack")
-                }
-                column {
-                    name "resourceUuid"
-                    enclosedIn "params"
-                    desc "资源UUID"
-                    location "body"
-                    type "String"
-                    optional true
-                    since "0.6"
-
-                }
-                column {
-                    name "systemTags"
-                    enclosedIn ""
-                    desc "系统标签"
-                    location "body"
-                    type "List"
-                    optional true
-                    since "0.6"
-
-                }
-                column {
-                    name "userTags"
-                    enclosedIn ""
-                    desc "用户标签"
-                    location "body"
-                    type "List"
-                    optional true
-                    since "0.6"
-
-                }
-            }
+				column {
+					name "name"
+					enclosedIn "params"
+					desc "资源名称"
+					location "body"
+					type "String"
+					optional false
+					since "0.6"
+					
+				}
+				column {
+					name "description"
+					enclosedIn "params"
+					desc "资源的详细描述"
+					location "body"
+					type "String"
+					optional true
+					since "0.6"
+					
+				}
+				column {
+					name "diskSize"
+					enclosedIn "params"
+					desc "云盘大小"
+					location "body"
+					type "long"
+					optional false
+					since "0.6"
+					
+				}
+				column {
+					name "sortKey"
+					enclosedIn "params"
+					desc "排序key"
+					location "body"
+					type "int"
+					optional true
+					since "0.6"
+					
+				}
+				column {
+					name "allocationStrategy"
+					enclosedIn "params"
+					desc "分配策略"
+					location "body"
+					type "String"
+					optional true
+					since "0.6"
+					
+				}
+				column {
+					name "type"
+					enclosedIn "params"
+					desc "类型"
+					location "body"
+					type "String"
+					optional true
+					since "0.6"
+					values ("zstack")
+				}
+				column {
+					name "resourceUuid"
+					enclosedIn "params"
+					desc "资源UUID"
+					location "body"
+					type "String"
+					optional true
+					since "0.6"
+					
+				}
+				column {
+					name "systemTags"
+					enclosedIn ""
+					desc "系统标签"
+					location "body"
+					type "List"
+					optional true
+					since "0.6"
+					
+				}
+				column {
+					name "userTags"
+					enclosedIn ""
+					desc "用户标签"
+					location "body"
+					type "List"
+					optional true
+					since "0.6"
+					
+				}
+			}
         }
 
         response {

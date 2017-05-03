@@ -13,13 +13,13 @@ doc {
         request {
 			url "PUT /v1/security-groups/{uuid}/actions"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIChangeSecurityGroupStateMsg.class
 
-			desc "改变安全组状态"
-
+            desc "改变安全组状态"
+            
 			params {
 
 				column {

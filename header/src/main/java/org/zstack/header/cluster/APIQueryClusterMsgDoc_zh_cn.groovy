@@ -2,6 +2,7 @@ package org.zstack.header.cluster
 
 import org.zstack.header.cluster.APIQueryClusterReply
 import org.zstack.header.query.APIQueryMessage
+import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "QueryCluster"
@@ -13,11 +14,10 @@ doc {
     rest {
         request {
 			url "GET /v1/clusters"
-
 			url "GET /v1/clusters/{uuid}"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIQueryClusterMsg.class
 

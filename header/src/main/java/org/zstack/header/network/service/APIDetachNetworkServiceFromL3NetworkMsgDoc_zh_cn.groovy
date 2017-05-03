@@ -13,8 +13,8 @@ doc {
         request {
 			url "DELETE /v1/l3-networks/{l3NetworkUuid}/network-services"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIDetachNetworkServiceFromL3NetworkMsg.class
 
@@ -44,8 +44,8 @@ doc {
 				}
 				column {
 					name "systemTags"
- 					enclosedIn ""
- 					desc "系统标签"
+					enclosedIn ""
+					desc "系统标签"
 					location "body"
 					type "List"
 					optional true

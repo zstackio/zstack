@@ -1,5 +1,7 @@
 package org.zstack.header.storage.primary
 
+import org.zstack.header.storage.primary.APIGetPrimaryStorageTypesReply
+
 doc {
     title "获取主存储类型列表(GetPrimaryStorageTypes)"
 
@@ -11,8 +13,8 @@ doc {
         request {
 			url "GET /v1/primary-storage/types"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIGetPrimaryStorageTypesMsg.class
 
@@ -22,7 +24,7 @@ doc {
 
 				column {
 					name "systemTags"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "系统标签"
 					location "query"
 					type "List"
@@ -32,7 +34,7 @@ doc {
 				}
 				column {
 					name "userTags"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "用户标签"
 					location "query"
 					type "List"

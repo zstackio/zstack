@@ -1,5 +1,7 @@
 package org.zstack.ldap
 
+import org.zstack.ldap.APIQueryLdapServerReply
+import org.zstack.header.query.APIQueryMessage
 import org.zstack.header.query.APIQueryMessage
 
 doc {
@@ -11,18 +13,17 @@ doc {
 
     rest {
         request {
-            url "GET /v1/ldap/servers"
+			url "GET /v1/ldap/servers"
+			url "GET /v1/ldap/servers/{uuid}"
 
-            url "GET /v1/ldap/servers/{uuid}"
+			header (Authorization: 'OAuth the-session-uuid')
 
-
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIQueryLdapServerMsg.class
 
             desc ""
-
-            params APIQueryMessage.class
+            
+			params APIQueryMessage.class
         }
 
         response {

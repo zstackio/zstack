@@ -1,5 +1,7 @@
 package org.zstack.header.volume
 
+import org.zstack.header.volume.APISyncVolumeSizeEvent
+
 doc {
     title "同步云盘大小(SyncVolumeSize)"
 
@@ -11,8 +13,8 @@ doc {
         request {
 			url "GET /v1/volumes/{uuid}/actions"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APISyncVolumeSizeMsg.class
 
@@ -32,8 +34,8 @@ doc {
 				}
 				column {
 					name "systemTags"
- 					enclosedIn ""
- 					desc ""
+					enclosedIn ""
+					desc ""
 					location "query"
 					type "List"
 					optional true

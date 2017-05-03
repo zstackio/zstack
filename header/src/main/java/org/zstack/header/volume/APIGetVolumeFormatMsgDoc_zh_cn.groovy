@@ -1,5 +1,7 @@
 package org.zstack.header.volume
 
+import org.zstack.header.volume.APIGetVolumeFormatReply
+
 doc {
     title "GetVolumeFormat"
 
@@ -11,8 +13,8 @@ doc {
         request {
 			url "GET /v1/volumes/formats"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIGetVolumeFormatMsg.class
 

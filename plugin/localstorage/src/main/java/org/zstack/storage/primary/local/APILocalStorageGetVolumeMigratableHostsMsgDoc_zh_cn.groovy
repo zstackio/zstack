@@ -13,8 +13,8 @@ doc {
         request {
 			url "GET /v1/volumes/{volumeUuid}/migration-target-hosts"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (OAuth: 'the-session-uuid')
 
             clz APILocalStorageGetVolumeMigratableHostsMsg.class
 
@@ -26,7 +26,7 @@ doc {
 					name "volumeUuid"
 					enclosedIn ""
 					desc "云盘UUID"
-					location "query"
+					location "url"
 					type "String"
 					optional false
 					since "0.6"

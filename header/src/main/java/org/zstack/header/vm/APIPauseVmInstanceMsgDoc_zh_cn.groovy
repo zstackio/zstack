@@ -1,5 +1,7 @@
 package org.zstack.header.vm
 
+import org.zstack.header.vm.APIPauseVmInstanceEvent
+
 doc {
     title "暂停云主机(PauseVmInstance)"
 
@@ -9,48 +11,48 @@ doc {
 
     rest {
         request {
-            url "PUT /v1/vm-instances/{uuid}/actions"
+			url "PUT /v1/vm-instances/{uuid}/actions"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIPauseVmInstanceMsg.class
 
             desc ""
+            
+			params {
 
-            params {
-
-                column {
-                    name "uuid"
-                    enclosedIn "pauseVmInstance"
-                    desc "云主机UUID"
-                    location "url"
-                    type "String"
-                    optional false
-                    since "0.6"
-
-                }
-                column {
-                    name "systemTags"
-                    enclosedIn ""
-                    desc "系统标签"
-                    location "body"
-                    type "List"
-                    optional true
-                    since "0.6"
-
-                }
-                column {
-                    name "userTags"
-                    enclosedIn ""
-                    desc "用户标签"
-                    location "body"
-                    type "List"
-                    optional true
-                    since "0.6"
-
-                }
-            }
+				column {
+					name "uuid"
+					enclosedIn "pauseVmInstance"
+					desc "云主机UUID"
+					location "url"
+					type "String"
+					optional false
+					since "0.6"
+					
+				}
+				column {
+					name "systemTags"
+					enclosedIn ""
+					desc "系统标签"
+					location "body"
+					type "List"
+					optional true
+					since "0.6"
+					
+				}
+				column {
+					name "userTags"
+					enclosedIn ""
+					desc "用户标签"
+					location "body"
+					type "List"
+					optional true
+					since "0.6"
+					
+				}
+			}
         }
 
         response {

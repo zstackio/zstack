@@ -1,5 +1,7 @@
 package org.zstack.header.vm
 
+import org.zstack.header.vm.APIGetInterdependentL3NetworkImageReply
+
 doc {
     title "获取相互依赖的镜像和三层网络(GetInterdependentL3NetworksImages)"
 
@@ -14,68 +16,68 @@ doc {
 
     rest {
         request {
-            url "GET /v1/images-l3networks/dependencies"
+			url "GET /v1/images-l3networks/dependencies"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIGetInterdependentL3NetworksImagesMsg.class
 
             desc ""
+            
+			params {
 
-            params {
-
-                column {
-                    name "zoneUuid"
-                    enclosedIn "params"
-                    desc "区域UUID。必须指定，以确定三层网络和镜像依赖关系。"
-                    location "query"
-                    type "String"
-                    optional false
-                    since "0.6"
-
-                }
-                column {
-                    name "l3NetworkUuids"
-                    enclosedIn "params"
-                    desc "三层网络UUID列表"
-                    location "query"
-                    type "List"
-                    optional true
-                    since "0.6"
-
-                }
-                column {
-                    name "imageUuid"
-                    enclosedIn "params"
-                    desc "镜像UUID"
-                    location "query"
-                    type "String"
-                    optional true
-                    since "0.6"
-
-                }
-                column {
-                    name "systemTags"
-                    enclosedIn ""
-                    desc "系统标签"
-                    location "query"
-                    type "List"
-                    optional true
-                    since "0.6"
-
-                }
-                column {
-                    name "userTags"
-                    enclosedIn ""
-                    desc "用户标签"
-                    location "query"
-                    type "List"
-                    optional true
-                    since "0.6"
-
-                }
-            }
+				column {
+					name "zoneUuid"
+					enclosedIn "params"
+					desc "区域UUID。必须指定，以确定三层网络和镜像依赖关系。"
+					location "query"
+					type "String"
+					optional false
+					since "0.6"
+					
+				}
+				column {
+					name "l3NetworkUuids"
+					enclosedIn "params"
+					desc "三层网络UUID列表"
+					location "query"
+					type "List"
+					optional true
+					since "0.6"
+					
+				}
+				column {
+					name "imageUuid"
+					enclosedIn "params"
+					desc "镜像UUID"
+					location "query"
+					type "String"
+					optional true
+					since "0.6"
+					
+				}
+				column {
+					name "systemTags"
+					enclosedIn ""
+					desc "系统标签"
+					location "query"
+					type "List"
+					optional true
+					since "0.6"
+					
+				}
+				column {
+					name "userTags"
+					enclosedIn ""
+					desc "用户标签"
+					location "query"
+					type "List"
+					optional true
+					since "0.6"
+					
+				}
+			}
         }
 
         response {

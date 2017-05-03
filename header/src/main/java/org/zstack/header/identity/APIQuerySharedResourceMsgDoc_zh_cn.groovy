@@ -1,5 +1,7 @@
 package org.zstack.header.identity
 
+import org.zstack.header.identity.APIQuerySharedResourceReply
+import org.zstack.header.query.APIQueryMessage
 import org.zstack.header.query.APIQueryMessage
 
 doc {
@@ -11,16 +13,16 @@ doc {
 
     rest {
         request {
-            url "GET /v1/accounts/resources"
+			url "GET /v1/accounts/resources"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIQuerySharedResourceMsg.class
 
             desc "查询共享资源"
-
-            params APIQueryMessage.class
+            
+			params APIQueryMessage.class
         }
 
         response {

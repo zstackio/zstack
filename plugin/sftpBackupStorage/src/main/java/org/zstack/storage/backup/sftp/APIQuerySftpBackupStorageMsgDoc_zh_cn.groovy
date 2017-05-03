@@ -1,5 +1,7 @@
 package org.zstack.storage.backup.sftp
 
+import org.zstack.storage.backup.sftp.APIQuerySftpBackupStorageReply
+import org.zstack.header.query.APIQueryMessage
 import org.zstack.header.query.APIQueryMessage
 
 doc {
@@ -12,11 +14,10 @@ doc {
     rest {
         request {
 			url "GET /v1/backup-storage/sftp"
-
 			url "GET /v1/backup-storage/sftp/{uuid}"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIQuerySftpBackupStorageMsg.class
 

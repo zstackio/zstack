@@ -1,5 +1,7 @@
 package org.zstack.header.volume
 
+import org.zstack.header.volume.APIDeleteDataVolumeEvent
+
 doc {
     title "DeleteDataVolume"
 
@@ -11,8 +13,8 @@ doc {
         request {
 			url "DELETE /v1/volumes/{uuid}"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIDeleteDataVolumeMsg.class
 
@@ -32,8 +34,8 @@ doc {
 				}
 				column {
 					name "deleteMode"
- 					enclosedIn ""
- 					desc "删除模式：Permissive(删除前检查)或Enforcing(强行删除)"
+					enclosedIn ""
+					desc "删除模式：Permissive(删除前检查)或Enforcing(强行删除)"
 					location "body"
 					type "String"
 					optional true

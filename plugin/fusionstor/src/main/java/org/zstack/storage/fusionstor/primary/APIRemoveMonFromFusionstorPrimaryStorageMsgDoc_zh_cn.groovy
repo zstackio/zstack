@@ -13,8 +13,8 @@ doc {
         request {
 			url "DELETE /v1/primary-storage/fusionstor/{uuid}/mons"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIRemoveMonFromFusionstorPrimaryStorageMsg.class
 

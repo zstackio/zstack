@@ -1,5 +1,7 @@
 package org.zstack.header.volume
 
+import org.zstack.header.volume.APIDetachDataVolumeFromVmEvent
+
 doc {
     title "DetachDataVolumeFromVm"
 
@@ -11,8 +13,8 @@ doc {
         request {
 			url "DELETE /v1/volumes/{uuid}/vm-instances"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIDetachDataVolumeFromVmMsg.class
 
@@ -42,8 +44,8 @@ doc {
 				}
 				column {
 					name "systemTags"
- 					enclosedIn ""
- 					desc ""
+					enclosedIn ""
+					desc ""
 					location "body"
 					type "List"
 					optional true

@@ -13,13 +13,13 @@ doc {
         request {
 			url "POST /v1/system-tags"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APICreateSystemTagMsg.class
 
-			desc "创建系统标签"
-
+            desc "创建系统标签"
+            
 			params {
 
 				column {

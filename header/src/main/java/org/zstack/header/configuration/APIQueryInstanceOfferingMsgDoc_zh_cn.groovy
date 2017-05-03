@@ -1,5 +1,7 @@
 package org.zstack.header.configuration
 
+import org.zstack.header.configuration.APIQueryInstanceOfferingReply
+import org.zstack.header.query.APIQueryMessage
 import org.zstack.header.query.APIQueryMessage
 
 doc {
@@ -11,18 +13,17 @@ doc {
 
     rest {
         request {
-            url "GET /v1/instance-offerings"
+			url "GET /v1/instance-offerings"
+			url "GET /v1/instance-offerings/{uuid}"
 
-            url "GET /v1/instance-offerings/{uuid}"
+			header (Authorization: 'OAuth the-session-uuid')
 
-
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIQueryInstanceOfferingMsg.class
 
             desc "查询云主机规格"
-
-            params APIQueryMessage.class
+            
+			params APIQueryMessage.class
         }
 
         response {

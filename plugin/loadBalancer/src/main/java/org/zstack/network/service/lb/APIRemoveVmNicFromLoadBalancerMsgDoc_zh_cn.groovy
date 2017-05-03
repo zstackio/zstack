@@ -13,8 +13,8 @@ doc {
         request {
 			url "DELETE /v1/load-balancers/listeners/{listenerUuid}/vm-instances/nics"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIRemoveVmNicFromLoadBalancerMsg.class
 

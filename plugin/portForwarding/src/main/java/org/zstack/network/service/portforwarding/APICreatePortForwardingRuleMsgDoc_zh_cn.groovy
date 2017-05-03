@@ -13,18 +13,18 @@ doc {
         request {
 			url "POST /v1/port-forwarding"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APICreatePortForwardingRuleMsg.class
 
-			desc "用户可以使用CreatePortForwardingRule来创建一个端口转发规则, 并可以同时挂载或者不挂载到虚拟机网卡上"
-
+            desc "用户可以使用CreatePortForwardingRule来创建一个端口转发规则, 并可以同时挂载或者不挂载到虚拟机网卡上"
+            
 			params {
 
 				column {
 					name "vipUuid"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "VIP UUID"
 					location "body"
 					type "String"
@@ -34,7 +34,7 @@ doc {
 				}
 				column {
 					name "vipPortStart"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "VIP的起始端口号"
 					location "body"
 					type "Integer"
@@ -44,7 +44,7 @@ doc {
 				}
 				column {
 					name "vipPortEnd"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "VIP的结束端口号; 如果忽略不设置, 会默认设置为vipPortStart"
 					location "body"
 					type "Integer"
@@ -54,7 +54,7 @@ doc {
 				}
 				column {
 					name "privatePortStart"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "客户IP（虚拟机网卡的IP地址）的起始端口号; 如果忽略不设置, 会默认设置为vipPortStart"
 					location "body"
 					type "Integer"
@@ -64,7 +64,7 @@ doc {
 				}
 				column {
 					name "privatePortEnd"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "客户IP（虚拟机网卡的IP地址）的结束端口号; 如果忽略不设置, 会默认设置为vipPortEnd"
 					location "body"
 					type "Integer"
@@ -74,7 +74,7 @@ doc {
 				}
 				column {
 					name "protocolType"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "网络流量协议类型"
 					location "body"
 					type "String"
@@ -84,7 +84,7 @@ doc {
 				}
 				column {
 					name "vmNicUuid"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "云主机网卡UUID"
 					location "body"
 					type "String"
@@ -94,7 +94,7 @@ doc {
 				}
 				column {
 					name "allowedCidr"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "源CIDR; 端口转发规则只作用于源CIDR的流量; 如果忽略不设置, 会默认设置为to 0.0.0.0/0"
 					location "body"
 					type "String"
@@ -104,7 +104,7 @@ doc {
 				}
 				column {
 					name "name"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "资源名称"
 					location "body"
 					type "String"
@@ -114,7 +114,7 @@ doc {
 				}
 				column {
 					name "description"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "资源的详细描述"
 					location "body"
 					type "String"
@@ -124,7 +124,7 @@ doc {
 				}
 				column {
 					name "resourceUuid"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "用户指定的资源UUID，若指定，系统不会为该资源随机分配UUID"
 					location "body"
 					type "String"

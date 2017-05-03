@@ -1,5 +1,7 @@
 package org.zstack.header.managementnode
 
+import org.zstack.header.managementnode.APIGetVersionReply
+
 doc {
     title "GetVersion"
 
@@ -9,7 +11,7 @@ doc {
 
     rest {
         request {
-            url "PUT /v1/management-nodes/actions"
+			url "PUT /v1/management-nodes/actions"
 
 
 
@@ -17,30 +19,30 @@ doc {
             clz APIGetVersionMsg.class
 
             desc "获取当前版本"
+            
+			params {
 
-            params {
-
-                column {
-                    name "systemTags"
-                    enclosedIn ""
-                    desc "系统标签"
-                    location "body"
-                    type "List"
-                    optional true
-                    since "0.6"
-
-                }
-                column {
-                    name "userTags"
-                    enclosedIn ""
-                    desc "用户标签"
-                    location "body"
-                    type "List"
-                    optional true
-                    since "0.6"
-
-                }
-            }
+				column {
+					name "systemTags"
+					enclosedIn ""
+					desc "系统标签"
+					location "body"
+					type "List"
+					optional true
+					since "0.6"
+					
+				}
+				column {
+					name "userTags"
+					enclosedIn ""
+					desc "用户标签"
+					location "body"
+					type "List"
+					optional true
+					since "0.6"
+					
+				}
+			}
         }
 
         response {

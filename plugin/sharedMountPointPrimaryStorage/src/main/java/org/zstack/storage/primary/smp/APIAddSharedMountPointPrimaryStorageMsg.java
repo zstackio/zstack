@@ -29,7 +29,9 @@ public class APIAddSharedMountPointPrimaryStorageMsg extends APIAddPrimaryStorag
  
     public static APIAddSharedMountPointPrimaryStorageMsg __example__() {
         APIAddSharedMountPointPrimaryStorageMsg msg = new APIAddSharedMountPointPrimaryStorageMsg();
-
+        msg.setName("smp");
+        msg.setUrl("/smp_mountpoint");
+        msg.setZoneUuid(uuid());
         return msg;
     }
 

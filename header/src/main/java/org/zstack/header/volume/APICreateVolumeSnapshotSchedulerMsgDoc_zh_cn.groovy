@@ -1,5 +1,7 @@
 package org.zstack.header.volume
 
+import org.zstack.header.volume.APICreateVolumeSnapshotSchedulerEvent
+
 doc {
     title "CreateVolumeSnapshotScheduler"
 
@@ -11,7 +13,8 @@ doc {
         request {
 			url "POST /v1/volumes/{volumeUuid}/schedulers/creating-volume-snapshots"
 
-            header (Authorization: 'OAuth the-session-uuid')
+			header (Authorization: 'OAuth the-session-uuid')
+
 
             clz APICreateVolumeSnapshotSchedulerMsg.class
 
@@ -23,7 +26,7 @@ doc {
 					name "volumeUuid"
 					enclosedIn "params"
 					desc "云盘UUID"
-					location "body"
+					location "url"
 					type "String"
 					optional false
 					since "0.6"
@@ -102,7 +105,7 @@ doc {
 				column {
 					name "startTime"
 					enclosedIn "params"
-                    desc "定时任务启动时间，必须遵循unix timestamp格式，0为从立刻开始"
+					desc "定时任务启动时间，必须遵循unix timestamp格式，0为从立刻开始"
 					location "body"
 					type "Long"
 					optional true

@@ -7,19 +7,19 @@ doc {
 
     category "tag"
 
-	desc "创建用户标签"
+    desc "创建用户标签"
 
     rest {
         request {
 			url "POST /v1/user-tags"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APICreateUserTagMsg.class
 
-			desc "创建用户标签"
-
+            desc "创建用户标签"
+            
 			params {
 
 				column {

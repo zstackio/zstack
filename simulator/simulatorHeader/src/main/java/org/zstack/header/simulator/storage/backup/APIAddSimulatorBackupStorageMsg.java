@@ -36,8 +36,8 @@ public class APIAddSimulatorBackupStorageMsg extends APIAddBackupStorageMsg {
  
     public static APIAddSimulatorBackupStorageMsg __example__() {
         APIAddSimulatorBackupStorageMsg msg = new APIAddSimulatorBackupStorageMsg();
-
-
+        msg.setUrl("/simulator");
+        msg.setName("simulator-backup-storage");
         return msg;
     }
 

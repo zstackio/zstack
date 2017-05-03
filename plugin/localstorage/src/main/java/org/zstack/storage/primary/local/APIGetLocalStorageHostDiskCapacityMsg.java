@@ -12,7 +12,7 @@ import org.zstack.header.storage.primary.PrimaryStorageVO;
  * Created by frank on 10/15/2015.
  */
 @RestRequest(
-        path = "/primary-storage/local-storage/capacities",
+        path = "/primary-storage/local-storage/{primaryStorageUuid}/hosts/{hostUuid}/capacities",
         method = HttpMethod.GET,
         responseClass = APIGetLocalStorageHostDiskCapacityReply.class,
         parameterName = "params"

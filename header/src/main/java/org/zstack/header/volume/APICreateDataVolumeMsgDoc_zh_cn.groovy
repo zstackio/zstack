@@ -1,5 +1,7 @@
 package org.zstack.header.volume
 
+import org.zstack.header.volume.APICreateDataVolumeEvent
+
 doc {
     title "CreateDataVolume"
 
@@ -11,8 +13,8 @@ doc {
         request {
 			url "POST /v1/volumes/data"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APICreateDataVolumeMsg.class
 

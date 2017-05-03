@@ -12,11 +12,10 @@ doc {
     rest {
         request {
 			url "GET /v1/l3-networks/{l3NetworkUuid}/ip/free"
-
 			url "GET /v1/l3-networks/ip-ranges/{ipRangeUuid}/ip/free"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIGetFreeIpMsg.class
 

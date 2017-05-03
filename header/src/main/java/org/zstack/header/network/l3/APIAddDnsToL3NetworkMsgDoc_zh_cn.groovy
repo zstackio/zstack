@@ -13,8 +13,8 @@ doc {
         request {
 			url "POST /v1/l3-networks/{l3NetworkUuid}/dns"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIAddDnsToL3NetworkMsg.class
 

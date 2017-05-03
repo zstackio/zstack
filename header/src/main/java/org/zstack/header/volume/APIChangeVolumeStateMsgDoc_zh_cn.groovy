@@ -1,5 +1,7 @@
 package org.zstack.header.volume
 
+import org.zstack.header.volume.APIChangeVolumeStateEvent
+
 doc {
     title "ChangeVolumeState"
 
@@ -11,8 +13,8 @@ doc {
         request {
 			url "PUT /v1/volumes/{uuid}/actions"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIChangeVolumeStateMsg.class
 

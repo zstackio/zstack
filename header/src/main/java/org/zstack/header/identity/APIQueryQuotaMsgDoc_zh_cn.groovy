@@ -1,5 +1,7 @@
 package org.zstack.header.identity
 
+import org.zstack.header.identity.APIQueryQuotaReply
+import org.zstack.header.query.APIQueryMessage
 import org.zstack.header.query.APIQueryMessage
 
 doc {
@@ -11,16 +13,16 @@ doc {
 
     rest {
         request {
-            url "GET /v1/accounts/quotas"
+			url "GET /v1/accounts/quotas"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIQueryQuotaMsg.class
 
             desc "查询配额"
-
-            params APIQueryMessage.class
+            
+			params APIQueryMessage.class
         }
 
         response {

@@ -1,5 +1,7 @@
 package org.zstack.header.network.service
 
+import org.zstack.header.network.service.APIAttachNetworkServiceToL3NetworkEvent
+
 doc {
     title "挂载网络服务到三层网络(AttachNetworkServiceToL3Network)"
 
@@ -11,8 +13,8 @@ doc {
         request {
 			url "POST /v1/l3-networks/{l3NetworkUuid}/network-services"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header (Authorization: 'OAuth the-session-uuid')
 
             clz APIAttachNetworkServiceToL3NetworkMsg.class
 
@@ -22,7 +24,7 @@ doc {
 
 				column {
 					name "l3NetworkUuid"
-					enclosedIn "url"
+					enclosedIn "params"
 					desc "三层网络UUID"
 					location "url"
 					type "String"
@@ -42,8 +44,8 @@ doc {
 				}
 				column {
 					name "systemTags"
- 					enclosedIn ""
- 					desc "系统标签"
+					enclosedIn ""
+					desc "系统标签"
 					location "body"
 					type "List"
 					optional true
