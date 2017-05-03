@@ -1,6 +1,7 @@
 package org.zstack.test.integration.kvm.globalconfig
 
 import org.zstack.network.securitygroup.SecurityGroupConstant
+import org.zstack.sdk.CreateVmInstanceAction
 import org.zstack.sdk.GetCpuMemoryCapacityAction
 import org.zstack.test.integration.kvm.hostallocator.AllocatorTest
 import org.zstack.testlib.*
@@ -168,13 +169,13 @@ class BatchCreateVmWhenSetReservedMemoryCase extends SubCase {
         assert res.error == null
         assert res.value.availableMemory != SizeUnit.GIGABYTE.toByte(0)
 
-        expect(AssertionError.class) {
-            createVmInstance {
-                name = "VMM"
-                instanceOfferingUuid = _1CPU1G
-                imageUuid = thisImageUuid
-                l3NetworkUuids = [l3uuid]
-            }
-        }
+        CreateVmInstanceAction createVmInstanceAction = new CreateVmInstanceAction()
+        createVmInstanceAction.name = "VMM"
+        createVmInstanceAction.instanceOfferingUuid = _1CPU1G
+        createVmInstanceAction.imageUuid = thisImageUuid
+        createVmInstanceAction.l3NetworkUuids = [l3uuid]
+        createVmInstanceAction.sessionId = adminSession()
+        CreateVmInstanceAction.Result res2 = createVmInstanceAction.call()
+        assert res2.error !=null
     }
 }
