@@ -378,11 +378,9 @@ class EnvSpec implements Node {
 
             try {
                 def id
-                if (onlyDefine) {
-                    id = (it as CreateAction).define(uuid) as SpecID
-                } else {
-                    id = (it as CreateAction).create(uuid, suuid) as SpecID
-                }
+                logger.debug(String.format("create resource of class %s", it.getClass().getName()))
+                id = (it as CreateAction).create(uuid, suuid) as SpecID
+
                 if (id != null) {
                     specsByName[id.name] = it
                 }

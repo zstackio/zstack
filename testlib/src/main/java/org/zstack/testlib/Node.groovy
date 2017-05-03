@@ -10,7 +10,6 @@ trait Node {
     final CLogger logger = Utils.getLogger(this.getClass())
 
     Node parent
-    Boolean onlyDefine = false
     List<Object> children = []
     Set<Node> dependencies = []
 

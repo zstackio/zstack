@@ -33,11 +33,15 @@ abstract class Spec implements Node, CreateAction, Tag, ApiHelper, DeleteAction 
         envSpec.message(msgClz, cl)
     }
 
-    final static void checkHttpCallType(HttpEntity<String> e, boolean isSync){
-        if(isSync){
-            assert e.getHeaders().getFirst(RESTConstant.TASK_UUID) == null : "you cannot send a KVMHostAsyncHttpCallMsg to a sync uri in agent"
-        }else {
-            assert e.getHeaders().getFirst(RESTConstant.TASK_UUID) != null : "you cannot send a KVMHostSyncHttpCallMsg to a async uri in agent"
+    final static void checkHttpCallType(HttpEntity<String> e, boolean isSync) {
+        if (isSync) {
+            assert e.getHeaders().getFirst(RESTConstant.TASK_UUID) == null: "you cannot send a KVMHostAsyncHttpCallMsg to a sync uri in agent"
+        } else {
+            assert e.getHeaders().getFirst(RESTConstant.TASK_UUID) != null: "you cannot send a KVMHostSyncHttpCallMsg to a async uri in agent"
         }
+    }
+    
+    void message(Class<? extends Message> msgClz, Closure condition, Closure handler) {
+        envSpec.message(msgClz, condition, handler)
     }
 }
