@@ -47,6 +47,7 @@ public class Event extends Log {
 
     @ExceptionSafe
     public void log(String label, Object...args) {
-        setText(label, args).write();
+        // todo : move to notification
+        // setText(label, args).write();
     }
 }

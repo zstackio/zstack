@@ -51,6 +51,70 @@ public class Log {
             this.date = other.date;
             this.opaque = other.opaque;
         }
+
+        public LogLevel getLevel() {
+            return level;
+        }
+
+        public void setLevel(LogLevel level) {
+            this.level = level;
+        }
+
+        public String getText() {
+            return text;
+        }
+
+        public void setText(String text) {
+            this.text = text;
+        }
+
+        public List getParameters() {
+            return parameters;
+        }
+
+        public void setParameters(List parameters) {
+            this.parameters = parameters;
+        }
+
+        public String getResourceUuid() {
+            return resourceUuid;
+        }
+
+        public void setResourceUuid(String resourceUuid) {
+            this.resourceUuid = resourceUuid;
+        }
+
+        public String getUuid() {
+            return uuid;
+        }
+
+        public void setUuid(String uuid) {
+            this.uuid = uuid;
+        }
+
+        public long getDateInLong() {
+            return dateInLong;
+        }
+
+        public void setDateInLong(long dateInLong) {
+            this.dateInLong = dateInLong;
+        }
+
+        public Date getDate() {
+            return date;
+        }
+
+        public void setDate(Date date) {
+            this.date = date;
+        }
+
+        public Object getOpaque() {
+            return opaque;
+        }
+
+        public void setOpaque(Object opaque) {
+            this.opaque = opaque;
+        }
     }
 
     protected Content content;
@@ -136,6 +200,8 @@ public class Log {
 
     @ExceptionSafe
     public void log(String label, Object...args) {
+        // todo : move to notification
+        /*
         for (int i=0; i<args.length; i++) {
             if (args[i] == null) {
                 args[i] = "null";
@@ -143,10 +209,13 @@ public class Log {
         }
 
         setText(label, args).write();
+        */
     }
 
     @ExceptionSafe
     public void log(String label, Collection args) {
+        // todo : move to notification
+        /*
         List noNullArgs = new ArrayList<>();
         args.forEach(i -> {
             if (i == null) {
@@ -156,6 +225,7 @@ public class Log {
             }
         });
         setText(label, noNullArgs).write();
+        */
     }
 
     public List getParameters() {
