@@ -534,6 +534,27 @@ mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
         return getRetryReturnValue(ret, true)
     }
 
+    static class ExpectedException extends Exception {
+        ExpectedException() {
+        }
+
+        ExpectedException(String var1) {
+            super(var1)
+        }
+
+        ExpectedException(String var1, Throwable var2) {
+            super(var1, var2)
+        }
+
+        ExpectedException(Throwable var1) {
+            super(var1)
+        }
+
+        ExpectedException(String var1, Throwable var2, boolean var3, boolean var4) {
+            super(var1, var2, var3, var4)
+        }
+    }
+
     protected static void expect(exceptions, Closure c) {
         List<Class> lst = []
         if (exceptions instanceof Collection) {
@@ -546,7 +567,12 @@ mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
 
         try {
             c()
+            throw new ExpectedException("expect exceptions[${lst.collect { it.name }}] happen, but nothing happens")
         } catch (Throwable t) {
+            if (t instanceof ExpectedException) {
+                throw t
+            }
+
             for (Class tt : lst) {
                 if (tt.isAssignableFrom(t.class)) {
                     return
