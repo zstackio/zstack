@@ -1086,8 +1086,8 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                             public void fail(ErrorCode errorCode) {
                                 errors.add(errorCode);
                                 logger.warn(String.format("failed to update the nfs[uuid:%s, name:%s] mount point" +
-                                                " from %s to %s in the cluster[uuid:%s], Disconnected this host, %s",
-                                        pinv.getUuid(), pinv.getName(), oldMountPoint, newMountPoint, hostUuid, errorCode));
+                                                " from %s to %s in the cluster[uuid:%s], Disconnected this host[uuid:%s], %s",
+                                        pinv.getUuid(), pinv.getName(), oldMountPoint, newMountPoint, clusterUuid, hostUuid, errorCode));
 
                                 //TODO: need notification to UI
                                 ChangeHostConnectionStateMsg cmsg = new ChangeHostConnectionStateMsg();

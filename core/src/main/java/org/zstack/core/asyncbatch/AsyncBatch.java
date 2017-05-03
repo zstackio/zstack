@@ -11,6 +11,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -20,7 +21,7 @@ public abstract class AsyncBatch extends AbstractCompletion {
     private static final CLogger logger = Utils.getLogger(AsyncBatch.class);
 
     private List<AsyncBatchRunner> runners = new ArrayList<>();
-    protected List<ErrorCode> errors = new ArrayList<>();
+    protected List<ErrorCode> errors = Collections.synchronizedList(new ArrayList<ErrorCode>());
 
     public AsyncBatch(AsyncBackup one, AsyncBackup... others) {
         super(one, others);
