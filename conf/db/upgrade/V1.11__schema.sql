@@ -189,7 +189,7 @@ CREATE TABLE `EcsImageVO` (
 	  `ecsImageSize` bigint(20) NOT NULL,
 	  `platform` varchar(32) NOT NULL,
 	  `type` varchar(32) NOT NULL,
-	  `ossMd5Sum` varchar(32) NOT NULL,
+	  `ossMd5Sum` varchar(128) NOT NULL,
 	  `format` varchar(32) NOT NULL,
 	  `description` varchar(1024) DEFAULT NULL,
 	  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
@@ -344,24 +344,17 @@ CREATE TABLE `HybridAccountVO` (
   `type` varchar(32) NOT NULL,
   `akey` varchar(32) NOT NULL,
   `secret` varchar(64) NOT NULL,
+  `current` varchar(64) NOT NULL DEFAULT 'false',
   `description` varchar(1024) DEFAULT NULL,
   `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
   `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`uuid`),
-  UNIQUE KEY `idxHybridAccountVOKey` (`akey`) USING BTREE,
-  KEY `accountUuid` (`accountUuid`),
-  KEY `userUuid` (`userUuid`),
+  UNIQUE KEY `uniqAccountUuid` (`accountUuid`,`akey`),
   CONSTRAINT `fkHybridAccountVOAccountVO` FOREIGN KEY (`accountUuid`) REFERENCES `zstack`.`AccountVO` (`uuid`) ON DELETE CASCADE,
   CONSTRAINT `fkHybridAccountVOUserVO` FOREIGN KEY (`userUuid`) REFERENCES `zstack`.`UserVO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET FOREIGN_KEY_CHECKS = 1;
-
-CREATE UNIQUE INDEX uniqAccountUuid on  HybridAccountVO(accountUuid);
-ALTER TABLE HybridAccountVO drop index accountUuid;
-
-CREATE UNIQUE INDEX uniqUserUuid on  HybridAccountVO(userUuid);
-ALTER TABLE HybridAccountVO drop index userUuid;
 
 # Foreign keys for table DataCenterVO
 
@@ -555,9 +548,10 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- ----------------------------
 CREATE TABLE `VirtualRouterInterfaceVO` (
 	  `uuid` varchar(32) UNIQUE NOT NULL,
+	  `dataCenterUuid` varchar(32) NOT NULL,
 	  `routerInterfaceId` varchar(64) NOT NULL,
 	  `virtualRouterUuid` varchar(32) NOT NULL,
-	  `accessPointUuid` varchar(32) NOT NULL,
+	  `accessPointUuid` varchar(32) DEFAULT NULL,
 	  `vRouterType` varchar(16) NOT NULL,
 	  `role` varchar(16) NOT NULL,
 	  `spec` varchar(32) NOT NULL,
@@ -582,7 +576,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 CREATE TABLE `VpcVirtualRouteEntryVO` (
 	  `uuid` varchar(32) UNIQUE NOT NULL,
 	  `destinationCidrBlock` varchar(64) NOT NULL,
-	  `nextHopUuid` varchar(32) NOT NULL,
+	  `nextHopVRiUuid` varchar(32) DEFAULT NULL,
 	  `type` varchar(32) NOT NULL,
 	  `status` varchar(32) NOT NULL,
 	  `nextHopType` varchar(32) NOT NULL,
@@ -624,9 +618,8 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- ----------------------------
 CREATE TABLE `VirtualBorderRouterVO` (
 	  `uuid` varchar(32) UNIQUE NOT NULL,
-	  `vrId` varchar(32) NOT NULL,
+	  `vbrId` varchar(32) NOT NULL,
 	  `vlanInterfaceId` varchar(64) NOT NULL,
-	  `vRouterName` varchar(64) NOT NULL,
 	  `status` varchar(16) NOT NULL,
 	  `name` varchar(64) NOT NULL,
 	  `dataCenterUuid` varchar(32) NOT NULL,

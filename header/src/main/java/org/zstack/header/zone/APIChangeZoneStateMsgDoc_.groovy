@@ -11,7 +11,7 @@ doc {
             url ("POST /zones", "例子")
 
             header (Authorization: 'OAuth the-session-uuid', "这里session-uuid是通过Login API得到的，例如bfa67f956afb430890aa49db14b85153")
-			header (X'OAuth the-session-uuid')
+			header ('OAuth the-session-uuid')
 
             clz APIChangeZoneStateMsg.class
 
