@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class CreateL2VxlanNetworkAction extends AbstractAction {
+public class DeleteVniRangeAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public CreateL2VxlanNetworkResult value;
+        public DeleteVniRangeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -22,29 +22,11 @@ public class CreateL2VxlanNetworkAction extends AbstractAction {
         }
     }
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,16777214L}, noTrim = false)
-    public java.lang.Integer vni;
-
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String poolUuid;
-
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String zoneUuid;
-
-    @Param(required = false, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String physicalInterface;
+    public java.lang.String uuid;
 
     @Param(required = false)
-    public java.lang.String type;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
+    public java.lang.String deleteMode = "Permissive";
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -67,8 +49,8 @@ public class CreateL2VxlanNetworkAction extends AbstractAction {
             return ret;
         }
         
-        CreateL2VxlanNetworkResult value = res.getResult(CreateL2VxlanNetworkResult.class);
-        ret.value = value == null ? new CreateL2VxlanNetworkResult() : value; 
+        DeleteVniRangeResult value = res.getResult(DeleteVniRangeResult.class);
+        ret.value = value == null ? new DeleteVniRangeResult() : value; 
 
         return ret;
     }
@@ -93,8 +75,8 @@ public class CreateL2VxlanNetworkAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/l2-networks/vxlan";
+        info.httpMethod = "DELETE";
+        info.path = "/l2-networks/vxlan-pool/vni-ranges/{uuid}";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";
