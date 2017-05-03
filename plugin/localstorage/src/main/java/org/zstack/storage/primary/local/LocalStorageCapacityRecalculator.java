@@ -70,8 +70,8 @@ public class LocalStorageCapacityRecalculator {
                 " and ref.hostUuid in (:huuids)" +
                 " group by ref.hostUuid";
         TypedQuery<Tuple> snapshotTypeQuery = dbf.getEntityManager().createQuery(sql, Tuple.class);
-        q.setParameter("psUuid", psUuid);
-        q.setParameter("huuids", huuids);
+        snapshotTypeQuery.setParameter("psUuid", psUuid);
+        snapshotTypeQuery.setParameter("huuids", huuids);
         List<Tuple> snapshotList = snapshotTypeQuery.getResultList();
         for (Tuple t : snapshotList) {
             if (t.get(0, Long.class) == null) {
