@@ -21,7 +21,10 @@ import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
-import org.zstack.header.allocator.*;
+import org.zstack.header.allocator.AllocateHostDryRunReply;
+import org.zstack.header.allocator.DesignatedAllocateHostMsg;
+import org.zstack.header.allocator.HostAllocatorConstant;
+import org.zstack.header.allocator.HostAllocatorError;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.cluster.ClusterVO;
@@ -39,8 +42,11 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
-import org.zstack.header.image.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
+import org.zstack.header.image.ImageEO;
+import org.zstack.header.image.ImageInventory;
+import org.zstack.header.image.ImageStatus;
+import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.*;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.storage.primary.*;
@@ -66,14 +72,13 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
-import static org.zstack.core.Platform.operr;
-
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.*;
 
 
@@ -3701,6 +3706,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         FlowChain chain = getStartVmWorkFlowChain(inv);
         setFlowMarshaller(chain);
 
+        String oldHostUuid = self.getHostUuid();
         chain.setName(String.format("start-vm-%s", self.getUuid()));
         chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
         chain.done(new FlowDoneHandler(completion) {
@@ -3710,7 +3716,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 // reload self because some nics may have been deleted in start phase because a former L3Network deletion.
                 // reload to avoid JPA EntityNotFoundException
                 self = dbf.reload(self);
-                self.setLastHostUuid(self.getHostUuid());
+                self.setLastHostUuid(oldHostUuid);
                 self.setHostUuid(spec.getDestHost().getUuid());
                 self.setClusterUuid(spec.getDestHost().getClusterUuid());
                 self.setZoneUuid(spec.getDestHost().getZoneUuid());
