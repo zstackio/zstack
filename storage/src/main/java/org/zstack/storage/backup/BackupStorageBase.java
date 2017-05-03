@@ -367,7 +367,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
         extpEmitter.afterDelete(inv);
 
         BackupStorageDeletionReply reply = new BackupStorageDeletionReply();
-        tracker.untrackHook(self.getUuid());
+        tracker.untrack(self.getUuid());
         bus.reply(msg, reply);
     }
 
