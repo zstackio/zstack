@@ -77,15 +77,15 @@ public class BackupStorageSelectPrimaryStorageAllocatorFlow extends AbstractHost
 
             result = findHostsByPrimaryStorageTypes(possiblePrimaryStorageTypes);
             if (result.isEmpty()) {
+                String name = spec.getImage().getName();
                 throw new OperationFailureException(operr(
-                        "The image[uuid:%s, type:%s] is on the backup storage[uuid:%s, type:%s] that requires to work with primary storage[types:%s]," +
+                        "The image[uuid:%s, name:%s] is on the backup storage[uuid:%s, type:%s] that requires to work with primary storage[types:%s]," +
                                 "however, no host found suitable to work with those primary storage", spec.getImage().getUuid(),spec.getImage().getType(),
-                        spec.getRequiredBackupStorageUuid(), type, possiblePrimaryStorageTypes
+                        spec.getRequiredBackupStorageUuid(), name, possiblePrimaryStorageTypes
                 ));
             }
         } else if (!psUuids.isEmpty()) {
             result = findHostsByPrimaryStorageUuids(psUuids);
-
             if (result.isEmpty()) {
                 throw new OperationFailureException(operr(
                         "The image[uuid:%s] is on the backup storage[uuid:%s, type:%s] that requires to work with primary storage[uuids:%s]," +
