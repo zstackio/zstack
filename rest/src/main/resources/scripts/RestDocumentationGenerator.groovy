@@ -549,7 +549,7 @@ ${cols.join("\n")}
 
             List<String> examples = paths.collect {
                 def curl = ["curl -H \"Content-Type: application/json\""]
-                curl.add("-H \"${RestConstants.HEADER_OAUTH}: OAuth ${Platform.getUuid()}\"")
+                curl.add("-H \"${RestConstants.HEADER_AUTHORIZATION}: ${RestConstants.HEADER_OAUTH} ${Platform.getUuid()}\"")
 
                 curl.add("-X ${at.method()}")
 
@@ -774,7 +774,7 @@ ${table.join("\n")}
             List<String> examples = paths.collect {
                 def curl = ["curl -H \"Content-Type: application/json\""]
                 if (!clz.isAnnotationPresent(SuppressCredentialCheck.class)) {
-                    curl.add("-H \"${RestConstants.HEADER_OAUTH}: OAuth ${Platform.getUuid()}\"")
+                    curl.add("-H \"${RestConstants.HEADER_AUTHORIZATION}: ${RestConstants.HEADER_OAUTH} ${Platform.getUuid()}\"")
                 }
 
                 boolean queryString = at.method() == HttpMethod.GET
@@ -1313,7 +1313,7 @@ ${fieldStr}
                 return ""
             }
 
-            return """header (${RestConstants.HEADER_OAUTH}: OAuth 'the-session-uuid')"""
+            return """header (${RestConstants.HEADER_AUTHORIZATION}: ${RestConstants.HEADER_OAUTH} 'the-session-uuid')"""
         }
 
         String getParamName() {

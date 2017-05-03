@@ -12,7 +12,9 @@ public interface RestConstants {
     String HEADER_WEBHOOK = "X-Web-Hook";
     String HEADER_JOB_UUID = "X-Job-UUID";
     String HEADER_JOB_SUCCESS = "X-Job-Success";
-    String HEADER_OAUTH = "Authorization";
+    String HEADER_OAUTH = "OAuth";
+    String HEADER_AUTHORIZATION= "Authorization";
+
 
     String UNIT_TEST_WEBHOOK_PATH = "/rest-webhook";
 }
