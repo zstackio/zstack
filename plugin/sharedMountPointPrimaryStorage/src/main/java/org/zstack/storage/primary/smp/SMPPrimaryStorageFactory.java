@@ -1,16 +1,19 @@
 package org.zstack.storage.primary.smp;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.compute.vm.VmExpungeRootVolumeValidator;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.*;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.BackupStorageAskInstallPathMsg;
@@ -20,12 +23,16 @@ import org.zstack.header.storage.backup.DeleteBitsOnBackupStorageMsg;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.CreateTemplateFromVolumeSnapshotExtensionPoint;
 import org.zstack.header.volume.VolumeFormat;
+import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.volume.VolumeVO_;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.List;
 import java.util.Map;
+
+import static org.zstack.core.Platform.operr;
 
 /**
  * Created by xing5 on 2016/3/26.
@@ -69,6 +76,33 @@ public class SMPPrimaryStorageFactory implements PrimaryStorageFactory, CreateTe
     @Override
     public PrimaryStorageInventory getInventory(String uuid) {
         return PrimaryStorageInventory.valueOf(dbf.findByUuid(uuid, PrimaryStorageVO.class));
+    }
+
+    @VmExpungeRootVolumeValidator.VmExpungeRootVolumeValidatorMethod
+    static void vmExpungeRootVolumeValidator(String vmUuid, String volumeUuid) {
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                String psUuid = q(VolumeVO.class).select(VolumeVO_.primaryStorageUuid).eq(VolumeVO_.uuid, volumeUuid)
+                        .findValue();
+
+                if (psUuid == null) {
+                    return;
+                }
+
+                if (!q(PrimaryStorageVO.class).eq(PrimaryStorageVO_.uuid, psUuid)
+                        .eq(PrimaryStorageVO_.type, SMPConstants.SMP_TYPE)
+                        .isExists()) {
+                    // not SMP
+                    return;
+                }
+
+                if (!q(PrimaryStorageClusterRefVO.class).eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, psUuid).isExists()) {
+                    throw new OperationFailureException(operr("the SMP primary storage[uuid:%s] is not attached" +
+                            " to any clusters, and cannot expunge the root volume[uuid:%s] of the VM[uuid:%s]", psUuid, vmUuid, volumeUuid));
+                }
+            }
+        }.execute();
     }
 
     @Override
