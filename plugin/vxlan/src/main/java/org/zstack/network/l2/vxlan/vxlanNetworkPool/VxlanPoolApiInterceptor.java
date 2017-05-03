@@ -8,15 +8,10 @@ import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.message.APIMessage;
-import org.zstack.header.network.l2.APIAttachL2NetworkToClusterMsg;
-import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
-import org.zstack.utils.network.NetworkUtils;
 
 import java.util.List;
-import java.util.StringTokenizer;
-import java.util.regex.Pattern;
 
 /**
  * Created by weiwang on 02/05/2017.
@@ -30,8 +25,15 @@ public class VxlanPoolApiInterceptor implements ApiMessageInterceptor {
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
         if (msg instanceof APICreateVniRangeMsg) {
             validate((APICreateVniRangeMsg) msg);
+        } else if (msg instanceof  APIDeleteVniRangeMsg) {
+            validate((APIDeleteVniRangeMsg) msg);
         }
         return msg;
+    }
+
+    private void validate(APIDeleteVniRangeMsg msg) {
+        VniRangeVO vo = Q.New(VniRangeVO.class).eq(VniRangeVO_.uuid, msg.getUuid()).find();
+        msg.setL2NetworkUuid(vo.getL2NetworkUuid());
     }
 
     private void validate(APICreateVniRangeMsg msg) {
@@ -54,9 +56,9 @@ public class VxlanPoolApiInterceptor implements ApiMessageInterceptor {
     }
 
     private boolean checkOverlap(Integer checktart, Integer checkEnd, Integer existStart, Integer existEnd){
-        if ((checktart >= existStart) && (checktart < existEnd)) {
+        if ((checktart >= existStart) && (checktart <= existEnd)) {
             return true;
-        } else if ((checkEnd > existStart) && (checkEnd <= existEnd)) {
+        } else if ((checkEnd >= existStart) && (checkEnd <= existEnd)) {
             return true;
         }
         return false;

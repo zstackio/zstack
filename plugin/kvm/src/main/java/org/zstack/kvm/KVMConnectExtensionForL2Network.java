@@ -79,13 +79,33 @@ public class KVMConnectExtensionForL2Network implements KVMHostConnectExtensionP
         final L2NetworkInventory l2 = it.next();
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("prepare-l2-%s-for-kvm-%s-connect", l2.getUuid(), hostUuid));
-        if (l2.getType().equals(VxlanNetworkConstant.VXLAN_NETWORK_TYPE)) {
+        if (!l2.getType().equals(VxlanNetworkConstant.VXLAN_NETWORK_TYPE)) {
             chain.then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
                     CheckNetworkPhysicalInterfaceMsg cmsg = new CheckNetworkPhysicalInterfaceMsg();
                     cmsg.setHostUuid(hostUuid);
                     cmsg.setPhysicalInterface(l2.getPhysicalInterface());
+                    bus.makeTargetServiceIdByResourceUuid(cmsg, HostConstant.SERVICE_ID, hostUuid);
+                    bus.send(cmsg, new CloudBusCallBack(completion) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (!reply.isSuccess()) {
+                                trigger.fail(reply.getError());
+                            } else {
+                                trigger.next();
+                            }
+                        }
+                    });
+                }
+            });
+        } else {
+            chain.then(new NoRollbackFlow() {
+                @Override
+                public void run(final FlowTrigger trigger, Map data) {
+                    CheckL2NetworkOnHostMsg cmsg = new CheckL2NetworkOnHostMsg();
+                    cmsg.setHostUuid(hostUuid);
+                    cmsg.setL2NetworkUuid(l2.getUuid());
                     bus.makeTargetServiceIdByResourceUuid(cmsg, HostConstant.SERVICE_ID, hostUuid);
                     bus.send(cmsg, new CloudBusCallBack(completion) {
                         @Override

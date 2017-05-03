@@ -2,6 +2,7 @@ package org.zstack.test.integration.network.vxlanNetwork
 
 import org.zstack.header.apimediator.ApiMessageInterceptionException
 import org.zstack.sdk.L2VxlanNetworkPoolInventory
+import org.zstack.sdk.VniRangeInventory
 import org.zstack.test.integration.network.NetworkTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
@@ -118,7 +119,7 @@ class VxlanApiInterceptor extends SubCase {
             }
         }
 
-        createVniRange {
+        VniRangeInventory vniRange = createVniRange {
             delegate.startVni = 100
             delegate.endVni = 10000
             delegate.l2NetworkUuid = poolinv.getUuid()
@@ -140,6 +141,15 @@ class VxlanApiInterceptor extends SubCase {
                 delegate.endVni = 1000
                 delegate.l2NetworkUuid = poolinv.getUuid()
                 delegate.name = "TestRange4"
+            }
+        }
+
+        expect(AssertionError.class) {
+            createVniRange {
+                delegate.startVni = 50
+                delegate.endVni = 100
+                delegate.l2NetworkUuid = poolinv.getUuid()
+                delegate.name = "TestRange5"
             }
         }
 
@@ -187,6 +197,50 @@ class VxlanApiInterceptor extends SubCase {
             delegate.vni = 10000
         }
 
+        expect(AssertionError.class) {
+            createL2VxlanNetwork {
+                delegate.poolUuid = poolinv.getUuid()
+                delegate.name = "TestVxlan4"
+                delegate.zoneUuid = zone.inventory.getUuid()
+                delegate.vni = 10001
+            }
+        }
+
+        L2VxlanNetworkPoolInventory poolinv2 = createL2VxlanNetworkPool {
+            delegate.name = "TestVxlanPool2"
+            delegate.zoneUuid = zone.inventory.getUuid()
+        }
+
+        createVniRange {
+            delegate.startVni = 100
+            delegate.endVni = 101
+            delegate.l2NetworkUuid = poolinv2.getUuid()
+            delegate.name = "TestRange21"
+        }
+
+        createL2VxlanNetwork {
+            delegate.poolUuid = poolinv2.getUuid()
+            delegate.name = "TestVxlan11"
+            delegate.zoneUuid = zone.inventory.getUuid()
+        }
+
+        createL2VxlanNetwork {
+            delegate.poolUuid = poolinv2.getUuid()
+            delegate.name = "TestVxlan12"
+            delegate.zoneUuid = zone.inventory.getUuid()
+        }
+
+        expect(AssertionError.class) {
+            createL2VxlanNetwork {
+                delegate.poolUuid = poolinv2.getUuid()
+                delegate.name = "TestVxlan13"
+                delegate.zoneUuid = zone.inventory.getUuid()
+            }
+        }
+
+        deleteVniRange {
+            delegate.uuid = vniRange.getUuid()
+        }
     }
 
     @Override

@@ -140,7 +140,6 @@ class OneVxlanNetworkLifeCycleCase extends SubCase {
             delegate.zoneUuid = zone.inventory.getUuid()
         }
 
-
         assert netinv.getAttachedClusterUuids().size() == 1
 
         attachL2NetworkToCluster {
