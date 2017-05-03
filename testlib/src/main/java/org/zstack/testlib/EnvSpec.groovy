@@ -119,7 +119,7 @@ class EnvSpec implements Node {
     private ConcurrentHashMap<String, Closure> httpPostHandlers = [:]
     private ConcurrentHashMap<String, Closure> defaultHttpHandlers = [:]
     private ConcurrentHashMap<String, Closure> defaultHttpPostHandlers = [:]
-    protected ConcurrentHashMap<Class, Tuple> messageHandlers = [:]
+    protected ConcurrentHashMap<Class, List<Tuple>> messageHandlers = [:]
     private static RestTemplate restTemplate
     private static Set<Class> simulatorClasses = Platform.reflections.getSubTypesOf(Simulator.class)
 
@@ -662,7 +662,13 @@ class EnvSpec implements Node {
     }
 
     void message(Class<? extends Message> msgClz, Closure condition, Closure handler) {
-        messageHandlers[(msgClz)] = new Tuple(condition, handler)
+        def lst = messageHandlers[(msgClz)]
+        if (lst == null) {
+            lst = []
+            messageHandlers[(msgClz)] = lst
+        }
+
+        lst.add(new Tuple(condition, handler))
     }
 
     void message(Class<? extends Message> msgClz, Closure handler) {

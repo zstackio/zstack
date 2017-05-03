@@ -148,14 +148,22 @@ abstract class Test implements ApiHelper {
                 }
 
                 try {
-                    def entry = currentEnvSpec.messageHandlers.find { k, _ -> k.isAssignableFrom(msg.getClass()) }
-                    if (entry != null) {
-                        Tuple t = entry.value
-                        Closure handler = t[1]
-                        if (handler.maximumNumberOfParameters <= 1) {
-                            handler(msg)
-                        } else {
-                            handler(msg, bus)
+                    def all = currentEnvSpec.messageHandlers.findAll { k, _ -> k.isAssignableFrom(msg.getClass()) }
+
+                    all.each { tuples ->
+                        tuples.each {
+                            Closure cond = it[0]
+                            Closure handler = it[1]
+
+                            if (cond != null && !cond(msg)) {
+                                return
+                            }
+
+                            if (handler.maximumNumberOfParameters <= 1) {
+                                handler(msg)
+                            } else {
+                                handler(msg, bus)
+                            }
                         }
                     }
                 } catch (Exception ex) {
