@@ -102,7 +102,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
     private final String REPLY_TO = "replyTo";
     private final String IS_MESSAGE_REPLY = "isReply";
     private final String MESSAGE_META_DATA = "metaData";
-    private final long DEFAULT_MESSAGE_TIMEOUT = TimeUnit.MINUTES.toMillis(30);
+    private long DEFAULT_MESSAGE_TIMEOUT = TimeUnit.MINUTES.toMillis(30);
     private final String DEAD_LETTER = "dead-message";
     private final String TASK_STACK = "task-stack";
     private final String TASK_CONTEXT = "task-context";
@@ -110,6 +110,10 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
     private final String AMQP_PROPERTY_HEADER__COMPRESSED = "compressed";
 
     private String SERVICE_ID = makeLocalServiceId("cloudbus");
+
+    public void setDEFAULT_MESSAGE_TIMEOUT(long timeout) {
+        this.DEFAULT_MESSAGE_TIMEOUT = timeout;
+    }
 
     private void createExchanges() throws IOException {
         Channel chan = channelPool.acquire();

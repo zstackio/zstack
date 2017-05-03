@@ -3,6 +3,7 @@ package org.zstack.testlib
 import okhttp3.OkHttpClient
 import org.zstack.core.Platform
 import org.zstack.core.cloudbus.CloudBus
+import org.zstack.core.cloudbus.CloudBusImpl2
 import org.zstack.core.componentloader.ComponentLoader
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.header.AbstractService
@@ -35,7 +36,7 @@ abstract class Test implements ApiHelper {
     static Object deployer
     static Map<String, String> apiPaths = new ConcurrentHashMap<>()
 
-
+    private final long DEFAULT_MESSAGE_TIMEOUT = TimeUnit.SECONDS.toMillis(10)
     private final int PHASE_NONE = 0
     private final int PHASE_SETUP = 1
     private final int PHASE_ENV = 2
@@ -143,6 +144,9 @@ abstract class Test implements ApiHelper {
 
     private void hijackService() {
         CloudBus bus = bean(CloudBus.class)
+        if(bus instanceof CloudBusImpl2){
+            ((CloudBusImpl2)bus).setDEFAULT_MESSAGE_TIMEOUT(DEFAULT_MESSAGE_TIMEOUT)
+        }
 
         def serviceId = "test.hijack.service"
         def service = new AbstractService() {
