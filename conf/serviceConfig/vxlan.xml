@@ -30,4 +30,8 @@
         <serviceId>query</serviceId>
     </message>
 
+    <message>
+        <name>org.zstack.network.l2.vxlan.vxlanNetworkPool.APIDeleteVniRangeMsg</name>
+    </message>
+
 </service>

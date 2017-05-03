@@ -28,10 +28,10 @@ public class CreateVniRangeAction extends AbstractAction {
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,16777214L}, noTrim = false)
     public java.lang.Integer startVni;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,16777214L}, noTrim = false)
     public java.lang.Integer endVni;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
@@ -88,7 +88,7 @@ public class CreateVniRangeAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/l2-networks/vxlan-pool/{l2NetworkUuid}/vni-range";
+        info.path = "/l2-networks/vxlan-pool/{l2NetworkUuid}/vni-ranges";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";

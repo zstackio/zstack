@@ -214,6 +214,8 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
             handle((APICreateVniRangeMsg) msg);
         } else if (msg instanceof APIDetachL2NetworkFromClusterMsg) {
             handle((APIDetachL2NetworkFromClusterMsg) msg);
+        } else if (msg instanceof APIDeleteVniRangeMsg) {
+            handle((APIDeleteVniRangeMsg) msg);
         } else if (msg instanceof L2NetworkMessage) {
             superHandle((L2NetworkMessage) msg);
         } else {
@@ -418,6 +420,48 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
                 } else {
                     superHandle((L2NetworkMessage) msg);
                 }
+            }
+        });
+    }
+
+    private void handle(final APIDeleteVniRangeMsg msg) {
+        APIDeleteVniRangeEvent evt = new APIDeleteVniRangeEvent(msg.getId());
+        VniRangeVO vo = Q.New(VniRangeVO.class).eq(VniRangeVO_.uuid, msg.getUuid()).find();
+
+        List<String> uuids = Q.New(VxlanNetworkVO.class)
+                .select(VxlanNetworkVO_.uuid).eq(VxlanNetworkVO_.poolUuid, vo.getL2NetworkUuid())
+                .gte(VxlanNetworkVO_.vni, vo.getStartVni()).lte(VxlanNetworkVO_.vni, vo.getEndVni()).listValues();
+
+        if (uuids.isEmpty()) {
+            logger.info(String.format("there are no vxlan networks for vni range[%s] and delete vni range directly", msg.getUuid()));
+            dbf.remove(vo);
+            bus.makeTargetServiceIdByResourceUuid(msg, L2NetworkConstant.SERVICE_ID, msg.getL2NetworkUuid());
+            bus.publish(evt);
+        }
+
+        logger.info(String.format("delete l2 vxlan networks[%s] for vni range[%s]", uuids, msg.getUuid()));
+
+        new While<>(uuids).all((uuid, completion) -> {
+            DeleteL2NetworkMsg dmsg = new DeleteL2NetworkMsg();
+            dmsg.setUuid(uuid);
+            bus.makeTargetServiceIdByResourceUuid(dmsg, L2NetworkConstant.SERVICE_ID, dmsg.getL2NetworkUuid());
+            bus.send(dmsg, new CloudBusCallBack(completion) {
+                @Override
+                public void run(MessageReply reply) {
+                    if (!reply.isSuccess()) {
+                        logger.warn(reply.getError().toString());
+                    } else {
+                        logger.debug(String.format("delete l2 vxlan network %s for vni range %s success", uuid, msg.getL2NetworkUuid()));
+                    }
+                    completion.done();
+                }
+            });
+        }).run(new NoErrorCompletion(msg) {
+            @Override
+            public void done() {
+                dbf.remove(vo);
+                bus.makeTargetServiceIdByResourceUuid(msg, L2NetworkConstant.SERVICE_ID, msg.getL2NetworkUuid());
+                bus.publish(evt);
             }
         });
     }
