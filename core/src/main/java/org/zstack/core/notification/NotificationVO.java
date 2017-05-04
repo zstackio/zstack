@@ -39,6 +39,15 @@ public class NotificationVO {
     @Column
     private Timestamp lastOpDate;
 
+    // this column is for DB partitions, don't use it for application
+    @Column
+    private Timestamp dateTime;
+
+    @PrePersist
+    private void prePersist() {
+        dateTime = new Timestamp(System.currentTimeMillis());
+    }
+
     public String getOpaque() {
         return opaque;
     }

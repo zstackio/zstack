@@ -492,7 +492,7 @@ ALTER TABLE TaskProgressVO ADD CONSTRAINT fkTaskProgressVOManagementNodeVO FOREI
 DROP TABLE IF EXISTS ProgressVO;
 
 CREATE TABLE  `zstack`.`NotificationVO` (
-    `uuid` varchar(32) NOT NULL UNIQUE,
+    `uuid` varchar(32) NOT NULL,
     `name` varchar(1024) NOT NULL,
     `content` text NOT NULL,
     `arguments` text DEFAULT NULL,
@@ -505,8 +505,23 @@ CREATE TABLE  `zstack`.`NotificationVO` (
     `time` bigint unsigned DEFAULT NULL,
     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp,
-    PRIMARY KEY  (`uuid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+    `dateTime` datetime,
+    UNIQUE KEY `uuid` (`uuid`, `dateTime`),
+    PRIMARY KEY  (`uuid`, `dateTime`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 PARTITION BY RANGE( YEAR(dateTime) ) (
+    PARTITION p2017 VALUES LESS THAN (2018),
+    PARTITION p2018 VALUES LESS THAN (2019),
+    PARTITION p2019 VALUES LESS THAN (2020),
+    PARTITION p2020 VALUES LESS THAN (2021),
+    PARTITION p2021 VALUES LESS THAN (2022),
+    PARTITION p2022 VALUES LESS THAN (2023),
+    PARTITION p2023 VALUES LESS THAN (2024),
+    PARTITION p2024 VALUES LESS THAN (2025),
+    PARTITION p2025 VALUES LESS THAN (2026),
+    PARTITION p2026 VALUES LESS THAN (2027),
+    PARTITION p2027 VALUES LESS THAN (2028),
+    PARTITION p9999 VALUES LESS THAN MAXVALUE
+);
 
 CREATE TABLE  `zstack`.`NotificationSubscriptionVO` (
     `uuid` varchar(32) NOT NULL UNIQUE,
