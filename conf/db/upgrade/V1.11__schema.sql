@@ -14,10 +14,13 @@ CREATE TABLE `IdentityZoneVO` (
 	  `description` varchar(1024) DEFAULT NULL,
 	  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
 	  `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
-	  PRIMARY KEY (`uuid`)
+	  PRIMARY KEY (`uuid`),
+	  CONSTRAINT fkIdentityZoneVODataCenterVO FOREIGN KEY (dataCenterUuid) REFERENCES DataCenterVO (uuid) ON DELETE RESTRICT,
+	  CONSTRAINT fkIdentityZoneVOEcsVSwitchVO FOREIGN KEY (defaultVSwitchUuid) REFERENCES EcsVSwitchVO (uuid) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET FOREIGN_KEY_CHECKS = 1;
+
 
 SET FOREIGN_KEY_CHECKS = 0;
 
@@ -36,12 +39,12 @@ CREATE TABLE `EcsVSwitchVO` (
 	  `identityZoneUuid` varchar(32) NOT NULL,
 	  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
 	  `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
-	  PRIMARY KEY (`uuid`)
+	  PRIMARY KEY (`uuid`),
+	  CONSTRAINT fkEcsVSwitchVOEcsVpcVO FOREIGN KEY (ecsVpcUuid) REFERENCES EcsVpcVO (uuid) ON DELETE RESTRICT,
+	  CONSTRAINT fkEcsVSwitchVOIdentityZoneVO FOREIGN KEY (identityZoneUuid) REFERENCES IdentityZoneVO (uuid) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET FOREIGN_KEY_CHECKS = 1;
-
-
 
 SET FOREIGN_KEY_CHECKS = 0;
 
@@ -60,10 +63,12 @@ CREATE TABLE `EcsVpcVO` (
 	  `description` varchar(1024) DEFAULT NULL,
 	  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
 	  `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
-	  PRIMARY KEY (`uuid`)
+	  PRIMARY KEY (`uuid`),
+	  CONSTRAINT fkEcsVpcVODataCenterVO FOREIGN KEY (dataCenterUuid) REFERENCES DataCenterVO (uuid) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET FOREIGN_KEY_CHECKS = 1;
+
 
 SET FOREIGN_KEY_CHECKS = 0;
 
@@ -85,7 +90,7 @@ CREATE TABLE `EcsSecurityGroupRuleVO` (
 	  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
 	  `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
 	  PRIMARY KEY (`uuid`),
-	  CONSTRAINT `fkEcsSecurityGroupRuleVOEcsSecurityGroupVO` FOREIGN KEY (`ecsSecurityGroupUuid`) REFERENCES `zstack`.`EcsSecurityGroupVO` (`uuid`) ON DELETE CASCADE
+	  CONSTRAINT fkEcsSecurityGroupRuleVOEcsSecurityGroupVO FOREIGN KEY (ecsSecurityGroupUuid) REFERENCES EcsSecurityGroupVO (uuid) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET FOREIGN_KEY_CHECKS = 1;
@@ -104,7 +109,8 @@ CREATE TABLE `EcsSecurityGroupVO` (
 	  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
 	  `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
 	  PRIMARY KEY (`uuid`),
-	  UNIQUE KEY `ukEcsVpcUuidSecurityGroupId` (`ecsVpcUuid`,`securityGroupId`) USING BTREE
+	  UNIQUE KEY `ukEcsVpcUuidSecurityGroupId` (`ecsVpcUuid`,`securityGroupId`) USING BTREE,
+	  CONSTRAINT fkEcsSecurityGroupVOEcsVpcVO FOREIGN KEY (ecsVpcUuid) REFERENCES EcsVpcVO (uuid) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET FOREIGN_KEY_CHECKS = 1;
@@ -123,8 +129,8 @@ CREATE TABLE `EcsInstanceConsoleProxyVO` (
 	  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
 	  `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
 	  PRIMARY KEY (`uuid`),
-	  CONSTRAINT `fkEcsInstanceConsoleProxyVOEcsInstanceVO` FOREIGN KEY (`ecsInstanceUuid`) REFERENCES `zstack`.`EcsInstanceVO` (`uuid`) ON DELETE CASCADE,
-	  UNIQUE KEY `ecsInstanceUuid` (`ecsInstanceUuid`)
+	  UNIQUE KEY `ecsInstanceUuid` (`ecsInstanceUuid`),
+	  CONSTRAINT fkEcsInstanceConsoleProxyVOEcsInstanceVO FOREIGN KEY (ecsInstanceUuid) REFERENCES EcsInstanceVO(uuid) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET FOREIGN_KEY_CHECKS = 1;
@@ -166,10 +172,10 @@ CREATE TABLE `EcsInstanceVO` (
       KEY `fkEcsInstanceVOIdentityZoneVO` (`identityZoneUuid`),
       KEY `fkEcsInstanceVOVmInstanceEO` (`localVmInstanceUuid`),
       CONSTRAINT `fkEcsInstanceVOEcsImageVO` FOREIGN KEY (`ecsImageUuid`) REFERENCES `EcsImageVO` (`uuid`) ON DELETE SET NULL,
-      CONSTRAINT `fkEcsInstanceVOEcsSecurityGroupVO` FOREIGN KEY (`ecsSecurityGroupUuid`) REFERENCES `EcsSecurityGroupVO` (`uuid`) ON DELETE SET NULL,
-      CONSTRAINT `fkEcsInstanceVOEcsVpcVO` FOREIGN KEY (`ecsVpcUuid`) REFERENCES `EcsVpcVO` (`uuid`) ON DELETE SET NULL,
-      CONSTRAINT `fkEcsInstanceVOEcsVSwitchVO` FOREIGN KEY (`ecsVSwitchUuid`) REFERENCES `EcsVSwitchVO` (`uuid`) ON DELETE SET NULL,
-      CONSTRAINT `fkEcsInstanceVOIdentityZoneVO` FOREIGN KEY (`identityZoneUuid`) REFERENCES `IdentityZoneVO` (`uuid`) ON DELETE CASCADE,
+      CONSTRAINT `fkEcsInstanceVOEcsSecurityGroupVO` FOREIGN KEY (`ecsSecurityGroupUuid`) REFERENCES `EcsSecurityGroupVO` (`uuid`) ON DELETE RESTRICT,
+      CONSTRAINT `fkEcsInstanceVOEcsVpcVO` FOREIGN KEY (`ecsVpcUuid`) REFERENCES `EcsVpcVO` (`uuid`) ON DELETE RESTRICT,
+      CONSTRAINT `fkEcsInstanceVOEcsVSwitchVO` FOREIGN KEY (`ecsVSwitchUuid`) REFERENCES `EcsVSwitchVO` (`uuid`) ON DELETE RESTRICT,
+      CONSTRAINT `fkEcsInstanceVOIdentityZoneVO` FOREIGN KEY (`identityZoneUuid`) REFERENCES `IdentityZoneVO` (`uuid`) ON DELETE RESTRICT,
       CONSTRAINT `fkEcsInstanceVOVmInstanceEO` FOREIGN KEY (`localVmInstanceUuid`) REFERENCES `VmInstanceEO` (`uuid`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -194,7 +200,9 @@ CREATE TABLE `EcsImageVO` (
 	  `description` varchar(1024) DEFAULT NULL,
 	  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
 	  `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
-	  PRIMARY KEY (`uuid`)
+	  PRIMARY KEY (`uuid`),
+	  CONSTRAINT fkEcsImageVOImageEO FOREIGN KEY (localImageUuid) REFERENCES ImageEO (uuid) ON DELETE SET NULL,
+	  CONSTRAINT fkEcsImageVODataCenterVO FOREIGN KEY (dataCenterUuid) REFERENCES DataCenterVO (uuid) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET FOREIGN_KEY_CHECKS = 1;
@@ -233,9 +241,7 @@ CREATE TABLE `EcsImageMd5SumMappingVO` (
   `ossBucketName` varchar(32) NOT NULL,
   `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
   `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `rawMd5Sum` (`rawMd5Sum`),
-  UNIQUE KEY `ossBucketName` (`ossBucketName`)
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET FOREIGN_KEY_CHECKS = 1;
@@ -267,9 +273,7 @@ CREATE TABLE `OssBucketEcsDataCenterRefVO` (
 	  `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
 	  PRIMARY KEY (`id`),
 	  CONSTRAINT `fkOssBucketEcsDataCenterRefVOOssBucketVO` FOREIGN KEY (`ossBucketUuid`) REFERENCES `zstack`.`OssBucketVO` (`uuid`) ON DELETE CASCADE,
-      CONSTRAINT `fkOssBucketEcsDataCenterRefVODataCenterVO` FOREIGN KEY (`dataCenterUuid`) REFERENCES `zstack`.`DataCenterVO` (`uuid`) ON DELETE CASCADE,
-      UNIQUE KEY `dataCenterUuid` (`dataCenterUuid`),
-      UNIQUE KEY `ossBucketUuid` (`ossBucketUuid`)
+	  CONSTRAINT `fkOssBucketEcsDataCenterRefVODataCenterVO` FOREIGN KEY (`dataCenterUuid`) REFERENCES `zstack`.`DataCenterVO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET FOREIGN_KEY_CHECKS = 1;
@@ -289,7 +293,8 @@ CREATE TABLE `DataCenterVO` (
 	  `description` varchar(1024) DEFAULT NULL,
 	  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
 	  `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
-	  PRIMARY KEY (`uuid`)
+	  PRIMARY KEY (`uuid`),
+	  CONSTRAINT fkDataCenterVOEcsVpcVO FOREIGN KEY (defaultVpcUuid) REFERENCES EcsVpcVO (uuid) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET FOREIGN_KEY_CHECKS = 1;
@@ -309,7 +314,9 @@ CREATE TABLE `AvailableInstanceTypesVO` (
 	  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
 	  `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
 	  PRIMARY KEY (`uuid`),
-	  UNIQUE KEY `ukAccountUuidizUuid` (`accountUuid`,`izUuid`) USING BTREE
+	  UNIQUE KEY `ukAccountUuidizUuid` (`accountUuid`,`izUuid`) USING BTREE,
+	  CONSTRAINT fkAvailableInstanceTypesVOAccountVO FOREIGN KEY (accountUuid) REFERENCES AccountVO (uuid) ON DELETE CASCADE,
+	  CONSTRAINT fkAvailableInstanceTypesVOIdentityZoneVO FOREIGN KEY (izUuid) REFERENCES IdentityZoneVO (uuid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET FOREIGN_KEY_CHECKS = 1;
@@ -328,8 +335,11 @@ CREATE TABLE `AvailableIdentityZonesVO` (
 	  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
 	  `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
 	  PRIMARY KEY (`uuid`),
-	  UNIQUE KEY `ukAccountUuidizUuid` (`accountUuid`,`dataCenterUuid`,`zoneId`) USING BTREE
+	  UNIQUE KEY `ukAccountUuidizUuid` (`accountUuid`,`dataCenterUuid`,`zoneId`) USING BTREE,
+	  CONSTRAINT fkAvailableIdentityZonesVOAccountVO FOREIGN KEY (accountUuid) REFERENCES AccountVO (uuid) ON DELETE CASCADE,
+	  CONSTRAINT fkAvailableIdentityZonesVODataCenterVO FOREIGN KEY (dataCenterUuid) REFERENCES DataCenterVO (uuid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 SET FOREIGN_KEY_CHECKS = 1;
 
 SET FOREIGN_KEY_CHECKS = 0;
@@ -350,49 +360,11 @@ CREATE TABLE `HybridAccountVO` (
   `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`uuid`),
   UNIQUE KEY `uniqAccountUuid` (`accountUuid`,`akey`),
-  CONSTRAINT `fkHybridAccountVOAccountVO` FOREIGN KEY (`accountUuid`) REFERENCES `zstack`.`AccountVO` (`uuid`) ON DELETE CASCADE,
+  CONSTRAINT `fkHybridAccountVOAccountVO` FOREIGN KEY (`accountUuid`) REFERENCES `zstack`.`AccountVO` (`uuid`) ON DELETE RESTRICT,
   CONSTRAINT `fkHybridAccountVOUserVO` FOREIGN KEY (`userUuid`) REFERENCES `zstack`.`UserVO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET FOREIGN_KEY_CHECKS = 1;
-
-# Foreign keys for table DataCenterVO
-
-ALTER TABLE DataCenterVO ADD CONSTRAINT fkDataCenterVOEcsVpcVO FOREIGN KEY (defaultVpcUuid) REFERENCES EcsVpcVO (uuid) ON DELETE SET NULL;
-
-# Foreign keys for table EcsImageVO
-
-ALTER TABLE EcsImageVO ADD CONSTRAINT fkEcsImageVOImageEO FOREIGN KEY (localImageUuid) REFERENCES ImageEO (uuid) ON DELETE SET NULL;
-ALTER TABLE EcsImageVO ADD CONSTRAINT fkEcsImageVODataCenterVO FOREIGN KEY (dataCenterUuid) REFERENCES DataCenterVO (uuid) ON DELETE CASCADE;
-
-# Foreign keys for table AvailableInstanceTypesVO
-
-ALTER TABLE AvailableInstanceTypesVO ADD CONSTRAINT fkAvailableInstanceTypesVOAccountVO FOREIGN KEY (accountUuid) REFERENCES AccountVO (uuid) ON DELETE CASCADE;
-ALTER TABLE AvailableInstanceTypesVO ADD CONSTRAINT fkAvailableInstanceTypesVOIdentityZoneVO FOREIGN KEY (izUuid) REFERENCES IdentityZoneVO (uuid) ON DELETE CASCADE;
-
-# Foreign keys for table AvailableIdentityZonesVO
-
-ALTER TABLE AvailableIdentityZonesVO ADD CONSTRAINT fkAvailableIdentityZonesVOAccountVO FOREIGN KEY (accountUuid) REFERENCES AccountVO (uuid) ON DELETE CASCADE;
-ALTER TABLE AvailableIdentityZonesVO ADD CONSTRAINT fkAvailableIdentityZonesVODataCenterVO FOREIGN KEY (dataCenterUuid) REFERENCES DataCenterVO (uuid) ON DELETE CASCADE;
-
-# Foreign keys for table IdentityZoneVO
-
-ALTER TABLE IdentityZoneVO ADD CONSTRAINT fkIdentityZoneVODataCenterVO FOREIGN KEY (dataCenterUuid) REFERENCES DataCenterVO (uuid) ON DELETE CASCADE;
-ALTER TABLE IdentityZoneVO ADD CONSTRAINT fkIdentityZoneVOEcsVSwitchVO FOREIGN KEY (defaultVSwitchUuid) REFERENCES EcsVSwitchVO (uuid) ON DELETE SET NULL;
-
-# Foreign keys for table EcsSecurityGroupVO
-
-ALTER TABLE EcsSecurityGroupVO ADD CONSTRAINT fkEcsSecurityGroupVOEcsVpcVO FOREIGN KEY (ecsVpcUuid) REFERENCES EcsVpcVO (uuid) ON DELETE CASCADE;
-
-# Foreign keys for table EcsVpcVO
-
-ALTER TABLE EcsVpcVO ADD CONSTRAINT fkEcsVpcVODataCenterVO FOREIGN KEY (dataCenterUuid) REFERENCES DataCenterVO (uuid) ON DELETE CASCADE;
-
-# Foreign keys for table EcsVSwitchVO
-
-ALTER TABLE EcsVSwitchVO ADD CONSTRAINT fkEcsVSwitchVOEcsVpcVO FOREIGN KEY (ecsVpcUuid) REFERENCES EcsVpcVO (uuid) ON DELETE CASCADE;
-ALTER TABLE EcsVSwitchVO ADD CONSTRAINT fkEcsVSwitchVOIdentityZoneVO FOREIGN KEY (identityZoneUuid) REFERENCES IdentityZoneVO (uuid) ON DELETE CASCADE;
-
 
 # sync EcsVSwitchVO availableIpAddressCount while EcsInstanceVO update
 DROP TRIGGER IF EXISTS trigger_decrease_vswitch_for_create_ecs;
@@ -552,7 +524,7 @@ CREATE TABLE `VpcVirtualRouterVO` (
 	  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
 	  `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
 	  PRIMARY KEY (`uuid`),
-	  CONSTRAINT `fkVpcVirtualRouterVOEcsVpcVO` FOREIGN KEY (`vpcUuid`) REFERENCES `zstack`.`EcsVpcVO` (`uuid`) ON DELETE CASCADE
+	  CONSTRAINT `fkVpcVirtualRouterVOEcsVpcVO` FOREIGN KEY (`vpcUuid`) REFERENCES `zstack`.`EcsVpcVO` (`uuid`) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET FOREIGN_KEY_CHECKS = 1;
@@ -578,8 +550,8 @@ CREATE TABLE `VirtualRouterInterfaceVO` (
 	  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
 	  `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
 	  PRIMARY KEY (`uuid`),
-	  CONSTRAINT `fkVirtualRouterInterfaceVOConnectionAccessPointVO` FOREIGN KEY (`accessPointUuid`) REFERENCES `zstack`.`ConnectionAccessPointVO` (`uuid`) ON DELETE CASCADE,
-	  CONSTRAINT `fkVirtualRouterInterfaceVODataCenterVO` FOREIGN KEY (`dataCenterUuid`) REFERENCES `zstack`.`DataCenterVO` (`uuid`) ON DELETE CASCADE
+	  CONSTRAINT `fkVirtualRouterInterfaceVOConnectionAccessPointVO` FOREIGN KEY (`accessPointUuid`) REFERENCES `zstack`.`ConnectionAccessPointVO` (`uuid`) ON DELETE RESTRICT,
+	  CONSTRAINT `fkVirtualRouterInterfaceVODataCenterVO` FOREIGN KEY (`dataCenterUuid`) REFERENCES `zstack`.`DataCenterVO` (`uuid`) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET FOREIGN_KEY_CHECKS = 1;
@@ -623,7 +595,7 @@ CREATE TABLE `ConnectionAccessPointVO` (
 	  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
 	  `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
 	  PRIMARY KEY (`uuid`),
-	  CONSTRAINT `fkConnectionAccessPointVODataCenterVO` FOREIGN KEY (`dataCenterUuid`) REFERENCES `zstack`.`DataCenterVO` (`uuid`) ON DELETE CASCADE
+	  CONSTRAINT `fkConnectionAccessPointVODataCenterVO` FOREIGN KEY (`dataCenterUuid`) REFERENCES `zstack`.`DataCenterVO` (`uuid`) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET FOREIGN_KEY_CHECKS = 1;
@@ -652,8 +624,8 @@ CREATE TABLE `VirtualBorderRouterVO` (
 	  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
 	  `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
 	  PRIMARY KEY (`uuid`),
-	  CONSTRAINT `fkVirtualBorderRouterVODataCenterVO` FOREIGN KEY (`dataCenterUuid`) REFERENCES `zstack`.`DataCenterVO` (`uuid`) ON DELETE CASCADE,
-	  CONSTRAINT `fkVirtualBorderRouterVOConnectionAccessPointVO` FOREIGN KEY (`accessPointUuid`) REFERENCES `zstack`.`ConnectionAccessPointVO` (`uuid`) ON DELETE CASCADE
+	  CONSTRAINT `fkVirtualBorderRouterVODataCenterVO` FOREIGN KEY (`dataCenterUuid`) REFERENCES `zstack`.`DataCenterVO` (`uuid`) ON DELETE RESTRICT,
+	  CONSTRAINT `fkVirtualBorderRouterVOConnectionAccessPointVO` FOREIGN KEY (`accessPointUuid`) REFERENCES `zstack`.`ConnectionAccessPointVO` (`uuid`) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET FOREIGN_KEY_CHECKS = 1;
