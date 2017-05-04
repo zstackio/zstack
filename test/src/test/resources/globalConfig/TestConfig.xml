@@ -26,4 +26,17 @@
         <validatorRegularExpression>^hello$</validatorRegularExpression>
         <category>Test</category>
     </config>
+    <config>
+        <name>TestString</name>
+        <description>Test Description</description>
+        <defaultValue>hello</defaultValue>
+        <category>Test</category>
+    </config>
+    <config>
+        <name>TestBoolean</name>
+        <description>Test Description</description>
+        <defaultValue>false</defaultValue>
+        <type>java.lang.Boolean</type>
+        <category>Test</category>
+    </config>
 </globalConfig>
