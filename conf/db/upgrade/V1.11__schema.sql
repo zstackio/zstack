@@ -4,7 +4,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 --  Table structure for `IdentityZoneVO`
 -- ----------------------------
 CREATE TABLE `IdentityZoneVO` (
-	  `uuid` varchar(32) NOT NULL,
+	  `uuid` varchar(32) UNIQUE NOT NULL,
 	  `zoneId` varchar(32) NOT NULL,
 	  `dataCenterUuid` varchar(32) NOT NULL,
 	  `type` varchar(32) NOT NULL,
@@ -25,7 +25,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 --  Table structure for `EcsVSwitchVO`
 -- ----------------------------
 CREATE TABLE `EcsVSwitchVO` (
-	  `uuid` varchar(32) NOT NULL,
+	  `uuid` varchar(32) UNIQUE NOT NULL,
 	  `vSwitchId` varchar(32) NOT NULL,
 	  `status` varchar(32) NOT NULL,
 	  `cidrBlock` varchar(32) NOT NULL,
@@ -363,7 +363,7 @@ ALTER TABLE DataCenterVO ADD CONSTRAINT fkDataCenterVOEcsVpcVO FOREIGN KEY (defa
 # Foreign keys for table EcsImageVO
 
 ALTER TABLE EcsImageVO ADD CONSTRAINT fkEcsImageVOImageEO FOREIGN KEY (localImageUuid) REFERENCES ImageEO (uuid) ON DELETE SET NULL;
-ALTER TABLE EcsImageVO ADD CONSTRAINT fkEcsImageVODataCenterVO FOREIGN KEY (dataCenterUuid) REFERENCES DataCenterVO (uuid) ON DELETE SET NULL;
+ALTER TABLE EcsImageVO ADD CONSTRAINT fkEcsImageVODataCenterVO FOREIGN KEY (dataCenterUuid) REFERENCES DataCenterVO (uuid) ON DELETE CASCADE;
 
 # Foreign keys for table AvailableInstanceTypesVO
 
@@ -489,7 +489,7 @@ CREATE TABLE  `zstack`.`TaskProgressVO` (
 # Foreign keys for table TaskProgressVO
 ALTER TABLE TaskProgressVO ADD CONSTRAINT fkTaskProgressVOManagementNodeVO FOREIGN KEY (managementUuid) REFERENCES ManagementNodeVO (uuid) ON DELETE SET NULL;
 
-DROP TABLE ProgressVO;
+DROP TABLE IF EXISTS ProgressVO;
 
 CREATE TABLE  `zstack`.`NotificationVO` (
     `uuid` varchar(32) NOT NULL UNIQUE,
@@ -563,7 +563,8 @@ CREATE TABLE `VirtualRouterInterfaceVO` (
 	  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
 	  `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
 	  PRIMARY KEY (`uuid`),
-	  CONSTRAINT `fkVirtualRouterInterfaceVOConnectionAccessPointVO` FOREIGN KEY (`accessPointUuid`) REFERENCES `zstack`.`ConnectionAccessPointVO` (`uuid`) ON DELETE CASCADE
+	  CONSTRAINT `fkVirtualRouterInterfaceVOConnectionAccessPointVO` FOREIGN KEY (`accessPointUuid`) REFERENCES `zstack`.`ConnectionAccessPointVO` (`uuid`) ON DELETE CASCADE,
+	  CONSTRAINT `fkVirtualRouterInterfaceVODataCenterVO` FOREIGN KEY (`dataCenterUuid`) REFERENCES `zstack`.`DataCenterVO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET FOREIGN_KEY_CHECKS = 1;
@@ -698,8 +699,8 @@ INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "EcsImageVO" FROM Ecs
 INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "EcsSecurityGroupRuleVO" FROM EcsSecurityGroupRuleVO t;
 INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "EcsInstanceConsoleProxyVO" FROM EcsInstanceConsoleProxyVO t;
 INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "EcsSecurityGroupVO" FROM EcsSecurityGroupVO t;
-INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "VpcVirtualRouterVO" FROM VpcVirtualRouterVO t;
-INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "EcsVSwitchVO" FROM EcsVSwitchVO t;
+INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.vRouterName, "VpcVirtualRouterVO" FROM VpcVirtualRouterVO t;
+INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.vSwitchName, "EcsVSwitchVO" FROM EcsVSwitchVO t;
 INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "EcsVpcVO" FROM EcsVpcVO t;
 INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "EcsInstanceVO" FROM EcsInstanceVO t;
 INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "HybridAccountVO" FROM HybridAccountVO t;
@@ -707,8 +708,8 @@ INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "HybridEipAddressVO" 
 INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.bucketName, "OssBucketVO" FROM OssBucketVO t;
 INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "IdentityZoneVO" FROM IdentityZoneVO t;
 INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "ConnectionAccessPointVO" FROM ConnectionAccessPointVO t;
-INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "VirtualBorderRouterVO" FROM VirtualBorderRouterVO t;
-INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "VirtualRouterInterfaceVO" FROM VirtualRouterInterfaceVO t;
+INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "VirtualBorderRouterVO" FROM VirtualBorderRouterVO t;
+INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "VirtualRouterInterfaceVO" FROM VirtualRouterInterfaceVO t;
 INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "VpcVirtualRouteEntryVO" FROM VpcVirtualRouteEntryVO t;
 
 

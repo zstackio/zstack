@@ -34,12 +34,12 @@ public class HybridAccountInventory  {
         return this.type;
     }
 
-    public java.lang.String key;
-    public void setKey(java.lang.String key) {
-        this.key = key;
+    public java.lang.String akey;
+    public void setAkey(java.lang.String akey) {
+        this.akey = akey;
     }
-    public java.lang.String getKey() {
-        return this.key;
+    public java.lang.String getAkey() {
+        return this.akey;
     }
 
     public java.lang.String current;
