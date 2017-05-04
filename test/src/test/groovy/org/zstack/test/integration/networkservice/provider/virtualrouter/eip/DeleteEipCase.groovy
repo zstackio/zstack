@@ -155,19 +155,20 @@ class DeleteEipCase extends SubCase{
         rmsg.usedIpUuid = vipVO.usedIpUuid
         rmsg.l3NetworkUuid = l3Inv.uuid
         bus.makeTargetServiceIdByResourceUuid(rmsg, L3NetworkConstant.SERVICE_ID, l3Inv.uuid)
-        bus.send(rmsg, new CloudBusCallBack(null) {
-            @Override
-            void run(MessageReply reply) {
+        assert bus.call(rmsg).success
+        retryInSecs(){
+            return {
                 new SQLBatch(){
                     @Override
                     protected void scripts() {
-                        assert !q(EipVO.class).eq(EipVO_.uuid, eipInv.uuid).isExists()
-                        assert !q(VipVO.class).eq(VipVO_.uuid, vipVO.uuid).isExists()
+                        assert q(EipVO.class).eq(EipVO_.uuid, eipInv.uuid).isExists()
+                        assert q(VipVO.class).eq(VipVO_.uuid, vipVO.uuid).isExists()
                         assert !q(UsedIpVO.class).eq(UsedIpVO_.uuid, vipVO.usedIpUuid).isExists()
                     }
                 }.execute()
             }
-        })
+        }
+
 
 
     }

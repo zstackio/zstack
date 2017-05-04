@@ -51,7 +51,6 @@ public class VipVO extends ResourceVO {
     private String useFor;
 
     @Column
-    @ForeignKey(parentEntityClass = UsedIpVO.class, onDeleteAction = ReferenceOption.CASCADE)
     private String usedIpUuid;
 
     @Column
