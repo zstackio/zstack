@@ -293,7 +293,7 @@ public class ZSClient {
                 urlBuilder.addQueryParameter("limit", String.format("%s", qaction.limit));
             }
             if (qaction.start != null) {
-                urlBuilder.addQueryParameter("limit", String.format("%s", qaction.start));
+                urlBuilder.addQueryParameter("start", String.format("%s", qaction.start));
             }
             if (qaction.count != null) {
                 urlBuilder.addQueryParameter("count", String.format("%s", qaction.count));
