@@ -213,22 +213,23 @@ public class ZSClient {
                     waittingApis.put(jobUuid, this);
                 }
 
-                Response response = http.newCall(request).execute();
-                if (!response.isSuccessful()) {
-                    return httpError(response.code(), response.body().string());
-                }
-
-                if (response.code() == 200 || response.code() == 204) {
-                    return writeApiResult(response);
-                } else if (response.code() == 202) {
-
-                    if (config.webHook != null) {
-                        return webHookResult();
-                    } else {
-                        return pollResult(response);
+                try (Response response = http.newCall(request).execute()) {
+                    if (!response.isSuccessful()) {
+                        return httpError(response.code(), response.body().string());
                     }
-                } else {
-                    throw new ApiException(String.format("[Internal Error] the server returns an unknown status code[%s]", response.code()));
+
+                    if (response.code() == 200 || response.code() == 204) {
+                        return writeApiResult(response);
+                    } else if (response.code() == 202) {
+
+                        if (config.webHook != null) {
+                            return webHookResult();
+                        } else {
+                            return pollResult(response);
+                        }
+                    } else {
+                        throw new ApiException(String.format("[Internal Error] the server returns an unknown status code[%s]", response.code()));
+                    }
                 }
             } catch (IOException e) {
                 throw new ApiException(e);
@@ -468,31 +469,32 @@ public class ZSClient {
                             .build();
 
                     try {
-                        Response response = http.newCall(req).execute();
-                        if (response.code() != 200 && response.code() != 503 && response.code() != 202) {
-                            done(httpError(response.code(), response.body().string()));
-                            return;
-                        }
+                        try (Response response = http.newCall(req).execute()) {
+                            if (response.code() != 200 && response.code() != 503 && response.code() != 202) {
+                                done(httpError(response.code(), response.body().string()));
+                                return;
+                            }
 
-                        // 200 means the task has been completed successfully,
-                        // or a 505 indicates a failure,
-                        // otherwise a 202 returned means it is still
-                        // in processing
-                        if (response.code() == 200 || response.code() == 503) {
-                            done(writeApiResult(response));
-                            return;
-                        }
+                            // 200 means the task has been completed successfully,
+                            // or a 505 indicates a failure,
+                            // otherwise a 202 returned means it is still
+                            // in processing
+                            if (response.code() == 200 || response.code() == 503) {
+                                done(writeApiResult(response));
+                                return;
+                            }
 
-                        count += interval;
-                        if (count >= expiredTime) {
-                            ApiResult res = new ApiResult();
-                            res.error = errorCode(
-                                    Constants.POLLING_TIMEOUT_ERROR,
-                                    "timeout of polling async API result",
-                                    String.format("polling result of api[%s] timeout after %s ms", action.getClass().getSimpleName(), timeout)
-                            );
+                            count += interval;
+                            if (count >= expiredTime) {
+                                ApiResult res = new ApiResult();
+                                res.error = errorCode(
+                                        Constants.POLLING_TIMEOUT_ERROR,
+                                        "timeout of polling async API result",
+                                        String.format("polling result of api[%s] timeout after %s ms", action.getClass().getSimpleName(), timeout)
+                                );
 
-                            done(res);
+                                done(res);
+                            }
                         }
                     } catch (Throwable e) {
                         //TODO: logging
@@ -536,20 +538,21 @@ public class ZSClient {
                         .build();
 
                 try {
-                    Response response = http.newCall(req).execute();
-                    if (response.code() != 200 && response.code() != 503 && response.code() != 202) {
-                        return httpError(response.code(), response.body().string());
-                    }
+                    try (Response response = http.newCall(req).execute()) {
+                        if (response.code() != 200 && response.code() != 503 && response.code() != 202) {
+                            return httpError(response.code(), response.body().string());
+                        }
 
-                    // 200 means the task has been completed
-                    // otherwise a 202 returned means it is still
-                    // in processing
-                    if (response.code() == 200 || response.code() == 503) {
-                        return writeApiResult(response);
-                    }
+                        // 200 means the task has been completed
+                        // otherwise a 202 returned means it is still
+                        // in processing
+                        if (response.code() == 200 || response.code() == 503) {
+                            return writeApiResult(response);
+                        }
 
-                    TimeUnit.MILLISECONDS.sleep(interval);
-                    current += interval;
+                        TimeUnit.MILLISECONDS.sleep(interval);
+                        current += interval;
+                    }
                 } catch (InterruptedException e) {
                     //ignore
                 } catch (IOException e) {

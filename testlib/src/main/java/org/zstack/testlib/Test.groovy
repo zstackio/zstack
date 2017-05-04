@@ -1,5 +1,6 @@
 package org.zstack.testlib
 
+import okhttp3.OkHttpClient
 import org.zstack.core.Platform
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.componentloader.ComponentLoader
@@ -22,6 +23,8 @@ import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
+import java.util.logging.Level
+import java.util.logging.Logger
 
 /**
  * Created by xing5 on 2017/2/12.
@@ -50,6 +53,7 @@ abstract class Test implements ApiHelper {
 
     Test() {
         _springSpec = new SpringSpec()
+        Logger.getLogger(OkHttpClient.class.getName()).setLevel(Level.FINE)
     }
 
     static EnvSpec makeEnv(@DelegatesTo(strategy=Closure.DELEGATE_FIRST, value=EnvSpec.class) Closure c) {
