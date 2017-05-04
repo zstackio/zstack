@@ -24,6 +24,7 @@ public interface KVMConstant {
     String KVM_CHECK_L2VLAN_NETWORK_PATH = "/network/l2vlan/checkbridge";
     String KVM_CHECK_L2VXLAN_NETWORK_PATH = "/network/l2vxlan/checkcidr";
     String KVM_REALIZE_L2VXLAN_NETWORK_PATH = "/network/l2vxlan/createbridge";
+    String KVM_POPULATE_FDB_L2VXLAN_NETWORK_PATH = "/network/l2vxlan/populatefdb";
     String KVM_ATTACH_ISO_PATH = "/vm/iso/attach";
     String KVM_DETACH_ISO_PATH = "/vm/iso/detach";
     String KVM_START_VM_PATH = "/vm/start";

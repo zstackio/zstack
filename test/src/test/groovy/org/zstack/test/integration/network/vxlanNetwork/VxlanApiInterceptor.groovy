@@ -91,6 +91,11 @@ class VxlanApiInterceptor extends SubCase {
 
                 attachBackupStorage("sftp")
             }
+
+            zone {
+                name = "zone2"
+                description = "test"
+            }
         }
     }
 
@@ -197,10 +202,35 @@ class VxlanApiInterceptor extends SubCase {
             delegate.vni = 10000
         }
 
+        createL2VxlanNetwork {
+            delegate.poolUuid = poolinv.getUuid()
+            delegate.name = "TestVxlan4"
+            delegate.vni = 1001
+        }
+
+        ZoneSpec zone2 = env.specByName("zone2")
+
         expect(AssertionError.class) {
             createL2VxlanNetwork {
                 delegate.poolUuid = poolinv.getUuid()
-                delegate.name = "TestVxlan4"
+                delegate.name = "TestVxlan5"
+                delegate.vni = 1001
+            }
+        }
+
+        expect(AssertionError.class) {
+            createL2VxlanNetwork {
+                delegate.poolUuid = poolinv.getUuid()
+                delegate.name = "TestVxlan6"
+                delegate.zoneUuid = zone2.inventory.getUuid()
+                delegate.vni = 1002
+            }
+        }
+
+        expect(AssertionError.class) {
+            createL2VxlanNetwork {
+                delegate.poolUuid = poolinv.getUuid()
+                delegate.name = "TestVxlan7"
                 delegate.zoneUuid = zone.inventory.getUuid()
                 delegate.vni = 10001
             }

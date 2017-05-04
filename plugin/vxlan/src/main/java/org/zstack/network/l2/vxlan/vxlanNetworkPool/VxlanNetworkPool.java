@@ -174,8 +174,11 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
         List<VtepVO> vteps = Q.New(VtepVO.class).eq(VtepVO_.poolUuid, msg.getPoolUuid()).eq(VtepVO_.vtepIp, msg.getVtepIp()).list();
         for (VtepVO vtep: vteps) {
             if (!vtep.getHostUuid().equals(msg.getHostUuid())) {
-                logger.warn(String.format("Same vtepip[%s] in host[%s] and host[%s], which in same cluster[%s]",
+                logger.warn(String.format("same vtepip[%s] in host[%s] and host[%s], which in same cluster[%s]",
                         msg.getVtepIp(), vtep.getHostUuid(), msg.getHostUuid(), msg.getClusterUuid()));
+            } else {
+                logger.debug(String.format("get duplicate vtep create msg for ip [%s] in host [%s]",
+                        msg.getVtepIp(), vtep.getHostUuid()));
             }
 
             CreateVtepReply reply = new CreateVtepReply();
@@ -227,7 +230,7 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
         final APIDetachL2NetworkFromClusterEvent evt = new APIDetachL2NetworkFromClusterEvent(msg.getId());
 
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
-        chain.setName(String.format("Detach-l2-vxlan-pool-%s", msg.getL2NetworkUuid()));
+        chain.setName(String.format("detach-l2-vxlan-pool-%s", msg.getL2NetworkUuid()));
         chain.then(new NoRollbackFlow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {
