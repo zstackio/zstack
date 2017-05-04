@@ -55,7 +55,6 @@ public class InstantiateVxlanNetworkForNewCreatedVmExtension implements PreVmIns
             return;
         }
 
-        List<String> needRelizeUuids = new ArrayList<>();
         ErrorCodeList errList = new ErrorCodeList();
 
         new While<>(vxlanUuids).all((uuid, completion1) -> {
@@ -83,7 +82,7 @@ public class InstantiateVxlanNetworkForNewCreatedVmExtension implements PreVmIns
                     completion.fail(errList.getCauses().get(0));
                     return;
                 }
-                logger.info(String.format("check and realize vxlan networks[uuid: %s] for vm[uuid: %s] done", needRelizeUuids, spec.getVmInventory().getUuid()));
+                logger.info(String.format("check and realize vxlan networks[uuid: %s] for vm[uuid: %s] done", vxlanUuids, spec.getVmInventory().getUuid()));
                 completion.success();
             }
         });

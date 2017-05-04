@@ -394,15 +394,15 @@ public class KVMAgentCommands {
     }
 
     public static class PopulateVxlanFdbCmd extends AgentCommand {
-        private String interf;
+        private Integer vni;
         private List<String> peers;
 
-        public String getInterf() {
-            return interf;
+        public Integer getVni() {
+            return vni;
         }
 
-        public void setInterf(String interf) {
-            this.interf = interf;
+        public void setVni(Integer vni) {
+            this.vni = vni;
         }
 
         public List<String> getPeers() {

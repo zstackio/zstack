@@ -38,7 +38,6 @@ public class VxlanNetworkFactory implements L2NetworkFactory, Component {
 
     @Override
     public L2NetworkInventory createL2Network(L2NetworkVO ovo, APICreateL2NetworkMsg msg) {
-        // TODO(WeiW) logical seems not right since the message using is not normal
         APICreateL2VxlanNetworkMsg amsg = (APICreateL2VxlanNetworkMsg) msg;
         VxlanNetworkVO vo = new VxlanNetworkVO(ovo);
 
