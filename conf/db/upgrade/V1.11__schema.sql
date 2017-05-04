@@ -441,6 +441,8 @@ CREATE TABLE `zstack`.`VtepVO` (
   `clusterUuid` varchar(32) NOT NULL,
   `type` varchar(32) NOT NULL,
   `poolUuid` varchar(32) NOT NULL,
+	`createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+	`lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -458,6 +460,8 @@ CREATE TABLE `zstack`.`VniRangeVO` (
   `l2NetworkUuid` varchar(32) NOT NULL COMMENT 'l3 network uuid',
   `startVni` INT NOT NULL COMMENT 'start vni',
   `endVni` INT NOT NULL COMMENT 'end vni',
+	`createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+	`lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -467,6 +471,7 @@ ALTER TABLE VxlanNetworkPoolVO ADD CONSTRAINT fkVxlanNetworkPoolVOL2NetworkEO FO
 
 ALTER TABLE VtepVO ADD CONSTRAINT fkVtepVOHostEO FOREIGN KEY (hostUuid) REFERENCES HostEO (uuid) ON DELETE CASCADE;
 ALTER TABLE VtepVO ADD CONSTRAINT fkVtepVOClusterEO FOREIGN KEY (clusterUuid) REFERENCES ClusterEO (uuid) ON DELETE CASCADE;
+ALTER TABLE VtepVO ADD UNIQUE KEY `ukVtepIpPoolUuid` (`vtepIp`,`poolUuid`) USING BTREE;
 
 ALTER TABLE VniRangeVO ADD CONSTRAINT fkVniRangeVOL2NetworkEO  FOREIGN KEY (l2NetworkUuid) REFERENCES L2NetworkEO (uuid) ON DELETE CASCADE;
 

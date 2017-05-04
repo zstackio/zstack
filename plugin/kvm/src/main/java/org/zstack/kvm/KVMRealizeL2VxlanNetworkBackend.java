@@ -32,9 +32,7 @@ import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.kvm.KVMConstant.KVM_VXLAN_TYPE;
@@ -70,7 +68,15 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
         final L2VxlanNetworkInventory l2vxlan = (L2VxlanNetworkInventory) l2Network;
         final String vtepIp = Q.New(VtepVO.class).select(VtepVO_.vtepIp).eq(VtepVO_.hostUuid, hostUuid).findValue();
         List<String> peers = Q.New(VtepVO.class).select(VtepVO_.vtepIp).eq(VtepVO_.poolUuid, l2vxlan.getPoolUuid()).listValues();
-        peers.remove(vtepIp);
+        Set<String> p = new HashSet<String>(peers);
+        p.remove(vtepIp);
+        peers.clear();
+        peers.addAll(p);
+
+        String info = String.format(
+                "get vtep peers [%s] and vtep ip [%s] for l2Network[uuid:%s, type:%s, vni:%s] on kvm host[uuid:%s]", peers,
+                vtepIp, l2Network.getUuid(), l2Network.getType(), l2vxlan.getVni(), hostUuid);
+        logger.debug(info);
 
         final KVMAgentCommands.CreateVxlanBridgeCmd cmd = new KVMAgentCommands.CreateVxlanBridgeCmd();
         cmd.setVtepIp(vtepIp);
@@ -175,6 +181,7 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
                         if (!reply.isSuccess()) {
                             logger.warn(reply.getError().toString());
                         }
+                        //TODO(WeiW): Populate fdb here~
                         completion.success();
                     }
                 });

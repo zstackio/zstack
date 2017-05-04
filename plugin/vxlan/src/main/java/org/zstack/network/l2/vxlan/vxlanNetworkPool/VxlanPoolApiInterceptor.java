@@ -1,5 +1,6 @@
 package org.zstack.network.l2.vxlan.vxlanNetworkPool;
 
+import org.apache.commons.lang.ObjectUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
 import org.zstack.core.db.DatabaseFacade;
@@ -8,6 +9,7 @@ import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.message.APIMessage;
+import org.zstack.network.l2.vxlan.vxlanNetwork.APICreateL2VxlanNetworkMsg;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -25,6 +27,8 @@ public class VxlanPoolApiInterceptor implements ApiMessageInterceptor {
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
         if (msg instanceof APICreateVniRangeMsg) {
             validate((APICreateVniRangeMsg) msg);
+        } else if (msg instanceof APICreateL2VxlanNetworkMsg) {
+            validate((APICreateL2VxlanNetworkMsg) msg);
         } else if (msg instanceof  APIDeleteVniRangeMsg) {
             validate((APIDeleteVniRangeMsg) msg);
         }
@@ -34,6 +38,18 @@ public class VxlanPoolApiInterceptor implements ApiMessageInterceptor {
     private void validate(APIDeleteVniRangeMsg msg) {
         VniRangeVO vo = Q.New(VniRangeVO.class).eq(VniRangeVO_.uuid, msg.getUuid()).find();
         msg.setL2NetworkUuid(vo.getL2NetworkUuid());
+    }
+
+    private void validate(APICreateL2VxlanNetworkMsg msg) {
+        VxlanNetworkPoolVO vo = Q.New(VxlanNetworkPoolVO.class).eq(VxlanNetworkPoolVO_.uuid, msg.getPoolUuid()).find();
+        if (msg.getZoneUuid() != null && !msg.getZoneUuid().equals(vo.getZoneUuid()))  {
+            throw new ApiMessageInterceptionException(Platform.err(SysErrors.INVALID_ARGUMENT_ERROR,
+                    String.format("the zone uuid provided not equals to zone uuid of pool [%s], please correct it or do not fill it",
+                            msg.getPoolUuid())
+            ));
+        } else if (msg.getZoneUuid() == null ) {
+            msg.setZoneUuid(vo.getZoneUuid());
+        }
     }
 
     private void validate(APICreateVniRangeMsg msg) {
