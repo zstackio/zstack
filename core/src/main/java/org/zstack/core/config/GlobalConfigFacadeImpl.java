@@ -18,8 +18,6 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
-import static org.zstack.core.Platform.argerr;
-
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
@@ -32,6 +30,8 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static org.zstack.core.Platform.argerr;
 
 public class GlobalConfigFacadeImpl extends AbstractService implements GlobalConfigFacade {
     private static final CLogger logger = Utils.getLogger(GlobalConfigFacadeImpl.class);
@@ -96,8 +96,8 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
 
     private void handle(APIUpdateGlobalConfigMsg msg) {
         APIUpdateGlobalConfigEvent evt = new APIUpdateGlobalConfigEvent(msg.getId());
-        GlobalConfig c = allConfigs.get(msg.getIdentity());
-        if (c == null) {
+        GlobalConfig globalConfig = allConfigs.get(msg.getIdentity());
+        if (globalConfig == null) {
             ErrorCode err = argerr("Unable to find GlobalConfig[category: %s, name: %s]", msg.getCategory(), msg.getName());
             evt.setError(err);
             bus.publish(evt);
@@ -105,9 +105,9 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
         }
 
         try {
-            c.updateValue(msg.getValue());
+            globalConfig.updateValue(msg.getValue());
 
-            GlobalConfigInventory inv = GlobalConfigInventory.valueOf(c.reload());
+            GlobalConfigInventory inv = GlobalConfigInventory.valueOf(globalConfig.reload());
             evt.setInventory(inv);
         } catch (GlobalConfigException e) {
             evt.setError(argerr(e.getMessage()));
@@ -336,13 +336,34 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                             }
                         }
 
+                        if (typeClass != null && (Boolean.class).isAssignableFrom(typeClass)) {
+                            if (newValue == null ||
+                                    (!newValue.equalsIgnoreCase("true") &&
+                                            !newValue.equalsIgnoreCase("false"))
+                                    ) {
+                                String err = String.format("GlobalConfig[category:%s, name:%s]'s value[%s] is not a valid boolean string[true, false].",
+                                        g.getCategory(), g.getName(), newValue);
+                                throw new GlobalConfigException(err);
+                            }
+
+                            if (g.getDefaultValue() == null ||
+                                    (!g.getDefaultValue().equalsIgnoreCase("true") &&
+                                            !g.getDefaultValue().equalsIgnoreCase("false"))
+                                    ) {
+                                String err = String.format("GlobalConfig[category:%s, name:%s]'s default value[%s] is not a valid boolean string[true, false].",
+                                        g.getCategory(), g.getName(), g.getDefaultValue());
+                                throw new GlobalConfigException(err);
+
+                            }
+                        }
+
                         if (regularExpression != null) {
                             Pattern p = Pattern.compile(regularExpression);
                             if (newValue != null) {
                                 Matcher mt = p.matcher(newValue);
                                 if (!mt.matches()) {
                                     String err = String.format("GlobalConfig[category:%s, name:%s]'s value[%s] doesn't match validatorRegularExpression[%s]",
-                                            g.getCategory(), g.getName(), g.value(), regularExpression);
+                                            g.getCategory(), g.getName(), newValue, regularExpression);
                                     throw new GlobalConfigException(err);
                                 }
                             }
