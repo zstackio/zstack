@@ -120,6 +120,7 @@ class EnvSpec implements Node {
     private ConcurrentHashMap<String, Closure> defaultHttpHandlers = [:]
     private ConcurrentHashMap<String, Closure> defaultHttpPostHandlers = [:]
     protected ConcurrentHashMap<Class, List<Tuple>> messageHandlers = [:]
+    private ConcurrentHashMap<Class, List<Tuple>> defaultMessageHandlers = [:]
     private static RestTemplate restTemplate
     private static Set<Class> simulatorClasses = Platform.reflections.getSubTypesOf(Simulator.class)
 
@@ -215,6 +216,7 @@ class EnvSpec implements Node {
 
     void cleanMessageHandlers() {
         messageHandlers.clear()
+        messageHandlers.putAll(defaultMessageHandlers)
     }
 
     void cleanSimulatorAndMessageHandlers() {
@@ -493,6 +495,8 @@ class EnvSpec implements Node {
         defaultHttpHandlers.putAll(httpHandlers)
         defaultHttpPostHandlers = [:]
         defaultHttpPostHandlers.putAll(httpPostHandlers)
+        defaultMessageHandlers = [:]
+        defaultMessageHandlers.putAll(messageHandlers)
 
         if (cl != null) {
             cl.delegate = this
