@@ -21,10 +21,7 @@ import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
-import org.zstack.header.allocator.AllocateHostDryRunReply;
-import org.zstack.header.allocator.DesignatedAllocateHostMsg;
-import org.zstack.header.allocator.HostAllocatorConstant;
-import org.zstack.header.allocator.HostAllocatorError;
+import org.zstack.header.allocator.*;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.cluster.ClusterVO;
@@ -42,11 +39,8 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
+import org.zstack.header.image.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
-import org.zstack.header.image.ImageEO;
-import org.zstack.header.image.ImageInventory;
-import org.zstack.header.image.ImageStatus;
-import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.*;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.storage.primary.*;
@@ -71,6 +65,9 @@ import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+
+import static org.zstack.core.Platform.err;
+import static org.zstack.core.Platform.operr;
 
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
@@ -3059,8 +3056,31 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             @Override
             public void run(SyncTaskChain chain) {
-                changeOffering(msg);
-                chain.next();
+                APIChangeInstanceOfferingEvent evt = new APIChangeInstanceOfferingEvent(msg.getId());
+
+                refreshVO();
+                ErrorCode allowed = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
+                if (allowed != null) {
+                    throw new OperationFailureException(operr("operation is not allowed to vm[uuid:%s] which is in the state of state:%s", self.getUuid(), self.getState()));
+                }
+
+                changeOffering(msg, new Completion(msg, chain) {
+                    @Override
+                    public void success() {
+                        refreshVO();
+                        evt.setInventory(getSelfInventory());
+                        bus.publish(evt);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        evt.setError(errorCode);
+                        bus.publish(evt);
+                        chain.next();
+                    }
+                });
+
             }
 
             @Override
@@ -3070,16 +3090,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 
-    private void changeOffering(APIChangeInstanceOfferingMsg msg) {
-        APIChangeInstanceOfferingEvent evt = new APIChangeInstanceOfferingEvent(msg.getId());
-
-        refreshVO();
-        ErrorCode allowed = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
-        if (allowed != null) {
-            bus.replyErrorByMessageType(msg, allowed);
-            return;
-        }
-
+    private void changeOffering(APIChangeInstanceOfferingMsg msg, final Completion completion) {
         final InstanceOfferingVO newOfferingVO = dbf.findByUuid(msg.getInstanceOfferingUuid(), InstanceOfferingVO.class);
         final InstanceOfferingInventory inv = InstanceOfferingInventory.valueOf(newOfferingVO);
         final VmInstanceInventory vm = getSelfInventory();
@@ -3098,38 +3109,11 @@ public class VmInstanceBase extends AbstractVmInstance {
 
 
         if (self.getState() == VmInstanceState.Stopped) {
-            changeInstanceOfferingForStoppedVm(exts, newOfferingVO, vm, inv, evt);
-            return;
-        } else {
-            if (self.getState() != VmInstanceState.Running) {
-                throw new OperationFailureException(operr("The state of vm[uuid:%s] is %s. Only these state[%s] is allowed.",
-                        self.getUuid(), self.getState(),
-                        StringUtils.join(list(VmInstanceState.Running, VmInstanceState.Stopped), ",")));
-            }
+            changeCpuAndMemoryForStoppedVm(newOfferingVO.getCpuNum(), newOfferingVO.getMemorySize());
+            completion.success();
+        } else if (self.getState() == VmInstanceState.Running) {
+            changeCpuAndMemoryForRunningVm(newOfferingVO.getCpuNum(), newOfferingVO.getMemorySize(), completion);
         }
-
-        String instanceOfferingOnlineChange = VmSystemTags.INSTANCEOFFERING_ONLIECHANGE
-                .getTokenByResourceUuid(self.getUuid(), VmSystemTags.INSTANCEOFFERING_ONLINECHANGE_TOKEN);
-
-        if ((instanceOfferingOnlineChange != null
-                && instanceOfferingOnlineChange.equals("true"))
-                && self.getCpuNum() <= newOfferingVO.getCpuNum()
-                && self.getMemorySize() <= newOfferingVO.getMemorySize()) {
-            stretchInstanceOfferingForRunningVm(exts, newOfferingVO, vm, inv, evt);
-        } else {
-            pendingChangeInstanceOfferingForRunningVmNextStart(exts, newOfferingVO, vm, inv, evt);
-        }
-    }
-
-    private void pendingChangeInstanceOfferingForRunningVmNextStart(List<ChangeInstanceOfferingExtensionPoint> exts,
-                                                                    final InstanceOfferingVO newOfferingVO,
-                                                                    final VmInstanceInventory vm,
-                                                                    final InstanceOfferingInventory inv,
-                                                                    APIChangeInstanceOfferingEvent evt) {
-        pendingCpuAndMemoryForNextStart(newOfferingVO.getCpuNum(), newOfferingVO.getCpuSpeed(), newOfferingVO.getMemorySize());
-
-        self.setInstanceOfferingUuid(newOfferingVO.getUuid());
-        self = dbf.updateAndRefresh(self);
 
         CollectionUtils.safeForEach(exts, new ForEachFunction<ChangeInstanceOfferingExtensionPoint>() {
             @Override
@@ -3137,78 +3121,128 @@ public class VmInstanceBase extends AbstractVmInstance {
                 arg.afterChangeInstanceOffering(vm, inv);
             }
         });
-
-        evt.setInventory(getSelfInventory());
-        bus.publish(evt);
     }
 
-    private void pendingCpuAndMemoryForNextStart(int cpuNum, long cpuSpeed, long memorySize) {
-        Map m = new HashMap();
-        m.put(VmSystemTags.PENDING_CAPACITY_CHNAGE_CPU_NUM_TOKEN, cpuNum);
-        m.put(VmSystemTags.PENDING_CAPACITY_CHNAGE_CPU_SPEED_TOKEN, cpuSpeed);
-        m.put(VmSystemTags.PENDING_CAPACITY_CHNAGE_MEMORY_TOKEN, memorySize);
-        SystemTagCreator creator = VmSystemTags.PENDING_CAPACITY_CHANGE.newSystemTagCreator(self.getUuid());
-        creator.inherent = true;
-        creator.recreate = true;
-        creator.setTagByTokens(m);
-        creator.create();
-    }
-
-    private void changeInstanceOfferingForStoppedVm(List<ChangeInstanceOfferingExtensionPoint> exts,
-                                                    final InstanceOfferingVO newOfferingVO,
-                                                    final VmInstanceInventory vm,
-                                                    final InstanceOfferingInventory inv,
-                                                    APIChangeInstanceOfferingEvent evt) {
-        self.setInstanceOfferingUuid(newOfferingVO.getUuid());
-        self.setCpuNum(newOfferingVO.getCpuNum());
-        self.setCpuSpeed(newOfferingVO.getCpuSpeed());
-        self.setMemorySize(newOfferingVO.getMemorySize());
+    private void changeCpuAndMemoryForStoppedVm(final int cpuNum, final long memorySize) {
+        self.setCpuNum(cpuNum);
+        self.setMemorySize(memorySize);
         self = dbf.updateAndRefresh(self);
-
-        CollectionUtils.safeForEach(exts, new ForEachFunction<ChangeInstanceOfferingExtensionPoint>() {
-            @Override
-            public void run(ChangeInstanceOfferingExtensionPoint arg) {
-                arg.afterChangeInstanceOffering(vm, inv);
-            }
-        });
-
-        evt.setInventory(getSelfInventory());
-        bus.publish(evt);
     }
 
-    private void stretchInstanceOfferingForRunningVm(List<ChangeInstanceOfferingExtensionPoint> exts,
-                                                     final InstanceOfferingVO newOfferingVO,
-                                                     final VmInstanceInventory vm,
-                                                     final InstanceOfferingInventory inv,
-                                                     APIChangeInstanceOfferingEvent evt) {
-        OnlineChangeVmCpuMemoryMsg hmsg = new OnlineChangeVmCpuMemoryMsg();
-        hmsg.setVmInstanceUuid(self.getUuid());
-        hmsg.setHostUuid(self.getHostUuid());
-        hmsg.setInstanceOfferingInventory(inv);
-        bus.makeTargetServiceIdByResourceUuid(hmsg, HostConstant.SERVICE_ID, self.getHostUuid());
-        bus.send(hmsg, new CloudBusCallBack(null) {
-            @Override
-            public void run(MessageReply reply) {
-                if (!reply.isSuccess()) {
-                    evt.setError(reply.getError());
-                } else {
-                    OnlineChangeVmCpuMemoryReply hr = reply.castReply();
-                    self.setInstanceOfferingUuid(newOfferingVO.getUuid());
-                    self.setCpuNum(hr.getInstanceOfferingInventory().getCpuNum());
-                    self.setMemorySize(hr.getInstanceOfferingInventory().getMemorySize());
-                    self = dbf.updateAndRefresh(self);
+    private void changeCpuAndMemoryForRunningVm(final int cpuNum, final long memorySize, final Completion completion) {
+        final int oldCpuNum = self.getCpuNum();
+        final long oldMemorySize = self.getMemorySize();
 
-                    CollectionUtils.safeForEach(exts, new ForEachFunction<ChangeInstanceOfferingExtensionPoint>() {
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName(String.format("change-cpu-and-memory-of-vm-%s", self.getUuid()));
+        chain.then(new Flow() {
+            String __name__ = String.format("allocate-host-capacity-on-host-%s", self.getHostUuid());
+
+            @Override
+            public void run(FlowTrigger chain, Map data) {
+                DesignatedAllocateHostMsg msg = new DesignatedAllocateHostMsg();
+                msg.setCpuCapacity(cpuNum - oldCpuNum);
+                msg.setMemoryCapacity(memorySize - oldMemorySize);
+                msg.setAllocatorStrategy(self.getAllocatorStrategy());
+                msg.setVmInstance(VmInstanceInventory.valueOf(self));
+                msg.setHostUuid(self.getHostUuid());
+                msg.setL3NetworkUuids(CollectionUtils.transformToList(self.getVmNics(), new Function<String, VmNicVO>() {
+                    @Override
+                    public String call(VmNicVO arg) {
+                        return arg.getL3NetworkUuid();
+                    }
+                }));
+
+                msg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
+                bus.send(msg, new CloudBusCallBack(chain) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            chain.fail(reply.getError());
+                        } else {
+                            logger.debug(String.format("reserve memory %s bytes and cpu %s on host[uuid:%s]", memorySize - self.getMemorySize(), cpuNum - self.getCpuNum(), self.getHostUuid()));
+                            chain.next();
+                        }
+                    }
+                });
+            }
+
+            @Override
+            public void rollback(FlowRollback chain, Map data) {
+                ReturnHostCapacityMsg msg = new ReturnHostCapacityMsg();
+                msg.setCpuCapacity(cpuNum - oldCpuNum);
+                msg.setMemoryCapacity(memorySize - oldMemorySize);
+                msg.setHostUuid(self.getHostUuid());
+                msg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
+                bus.send(msg);
+                chain.rollback();
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = String.format("change-cpu-of-vm-%s", self.getUuid());
+
+            @Override
+            public void run(FlowTrigger chain, Map data) {
+                if (cpuNum != self.getCpuNum()) {
+                    IncreaseVmCpuMsg msg = new IncreaseVmCpuMsg();
+                    msg.setVmInstanceUuid(self.getUuid());
+                    msg.setHostUuid(self.getHostUuid());
+                    msg.setCpuNum(cpuNum);
+                    bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, self.getHostUuid());
+                    bus.send(msg, new CloudBusCallBack(chain) {
                         @Override
-                        public void run(ChangeInstanceOfferingExtensionPoint arg) {
-                            arg.afterChangeInstanceOffering(vm, inv);
+                        public void run(MessageReply reply) {
+                            if (!reply.isSuccess()) {
+                                logger.error("failed to update cpu");
+                                chain.fail(reply.getError());
+                            } else {
+                                IncreaseVmCpuReply r = reply.castReply();
+                                self.setCpuNum(r.getCpuNum());
+                                chain.next();
+                            }
                         }
                     });
-                    evt.setInventory(getSelfInventory());
+                } else {
+                    chain.next();
                 }
-                bus.publish(evt);
             }
-        });
+        }).then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger chain, Map data) {
+                if (memorySize != self.getMemorySize()) {
+                    IncreaseVmMemoryMsg msg = new IncreaseVmMemoryMsg();
+                    msg.setVmInstanceUuid(self.getUuid());
+                    msg.setHostUuid(self.getHostUuid());
+                    msg.setMemorySize(memorySize);
+                    bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, self.getHostUuid());
+                    bus.send(msg, new CloudBusCallBack(chain) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (!reply.isSuccess()) {
+                                logger.error("failed to update memory");
+                                chain.fail(reply.getError());
+                            } else {
+                                IncreaseVmMemoryReply r = reply.castReply();
+                                self.setMemorySize(r.getMemorySize());
+                                chain.next();
+                            }
+                        }
+                    });
+                } else {
+                    chain.next();
+                }
+            }
+        }).done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                dbf.update(self);
+                completion.success();
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                completion.fail(errCode);
+            }
+        }).start();
     }
 
     private void handle(final APIUpdateVmInstanceMsg msg) {
@@ -3220,6 +3254,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             @Override
             public void run(SyncTaskChain chain) {
+                APIUpdateVmInstanceEvent evt = new APIUpdateVmInstanceEvent(msg.getId());
                 refreshVO();
 
                 List<Runnable> extensions = new ArrayList<Runnable>();
@@ -3274,12 +3309,8 @@ public class VmInstanceBase extends AbstractVmInstance {
                     update = true;
                 }
 
-                if (msg.getCpuNum() != null || msg.getMemorySize() != null) {
-                    changeCpuAndMemory(msg);
-                    update = true;
-                }
                 if (update) {
-                    self = dbf.updateAndRefresh(self);
+                    dbf.update(self);
                 }
 
                 CollectionUtils.safeForEach(extensions, new ForEachFunction<Runnable>() {
@@ -3289,10 +3320,28 @@ public class VmInstanceBase extends AbstractVmInstance {
                     }
                 });
 
-                APIUpdateVmInstanceEvent evt = new APIUpdateVmInstanceEvent(msg.getId());
-                evt.setInventory(getSelfInventory());
-                bus.publish(evt);
-                chain.next();
+                if (msg.getCpuNum() != null || msg.getMemorySize() != null) {
+                    changeCpuAndMemory(msg, new Completion(msg, chain) {
+                        @Override
+                        public void success() {
+                            refreshVO();
+                            evt.setInventory(getSelfInventory());
+                            bus.publish(evt);
+                            chain.next();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            evt.setError(errorCode);
+                            bus.publish(evt);
+                            chain.next();
+                        }
+                    });
+                } else {
+                    evt.setInventory(getSelfInventory());
+                    bus.publish(evt);
+                    chain.next();
+                }
             }
 
             @Override
@@ -3397,14 +3446,17 @@ public class VmInstanceBase extends AbstractVmInstance {
         return vos;
     }
 
-    private void changeCpuAndMemory(APIUpdateVmInstanceMsg msg) {
+    private void changeCpuAndMemory(APIUpdateVmInstanceMsg msg, Completion completion) {
         // add some systemTag and can be appliance for the next start
         int cpuNum = msg.getCpuNum() == null ? self.getCpuNum() : msg.getCpuNum();
         long memory = msg.getMemorySize() == null ? self.getMemorySize() : msg.getMemorySize();
-        pendingCpuAndMemoryForNextStart(cpuNum, self.getCpuSpeed(), memory);
-        self.setCpuNum(cpuNum);
-        self.setMemorySize(memory);
-        self = dbf.updateAndRefresh(self);
+
+        if (self.getState().equals(VmInstanceState.Running)) {
+            changeCpuAndMemoryForRunningVm(cpuNum, memory, completion);
+        } else if (self.getState().equals(VmInstanceState.Stopped)) {
+            changeCpuAndMemoryForStoppedVm(cpuNum, memory);
+            completion.success();
+        }
     }
 
     private void handle(APIGetVmAttachableDataVolumeMsg msg) {
@@ -3644,24 +3696,6 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 
-    protected void applyPendingCapacityChangeIfNeed() {
-        String pendingCapacityChange = VmSystemTags.PENDING_CAPACITY_CHANGE.getTag(self.getUuid());
-        if (pendingCapacityChange != null) {
-            // the instance offering had been changed, apply new capacity to myself
-            Map<String, String> tokens = VmSystemTags.PENDING_CAPACITY_CHANGE.getTokensByTag(pendingCapacityChange);
-            int cpuNum = Integer.valueOf(tokens.get(VmSystemTags.PENDING_CAPACITY_CHNAGE_CPU_NUM_TOKEN));
-            int cpuSpeed = Integer.valueOf(tokens.get(VmSystemTags.PENDING_CAPACITY_CHNAGE_CPU_SPEED_TOKEN));
-            long memory = Long.valueOf(tokens.get(VmSystemTags.PENDING_CAPACITY_CHNAGE_MEMORY_TOKEN));
-
-            self.setCpuNum(cpuNum);
-            self.setCpuSpeed(cpuSpeed);
-            self.setMemorySize(memory);
-            self = dbf.updateAndRefresh(self);
-
-            VmSystemTags.PENDING_CAPACITY_CHANGE.deleteInherentTag(self.getUuid());
-        }
-    }
-
     protected void startVm(final Message msg, final Completion completion) {
         refreshVO();
         ErrorCode allowed = validateOperationByState(msg, self.getState(), null);
@@ -3677,8 +3711,6 @@ public class VmInstanceBase extends AbstractVmInstance {
             startVmFromNewCreate(struct, completion);
             return;
         }
-
-        applyPendingCapacityChangeIfNeed();
 
         VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
         ErrorCode preStart = extEmitter.preStartVm(inv);
@@ -4508,6 +4540,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             completion.fail(allowed);
             return;
         }
+
         VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
         final VmInstanceSpec spec = buildSpecFromInventory(inv, VmOperation.Resume);
         spec.setMessage(msg);

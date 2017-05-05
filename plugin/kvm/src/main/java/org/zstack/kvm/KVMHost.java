@@ -115,7 +115,8 @@ public class KVMHost extends HostBase implements Host {
     private String detachIsoPath;
     private String checkVmStatePath;
     private String getConsolePortPath;
-    private String onlineChangeCpuMemoryPath;
+    private String onlineIncreaseCpuPath;
+    private String onlineIncreaseMemPath;
     private String deleteConsoleFirewall;
 
     private String agentPackageName = KVMGlobalProperty.AGENT_PACKAGE_NAME;
@@ -215,8 +216,12 @@ public class KVMHost extends HostBase implements Host {
         getConsolePortPath = ub.build().toString();
 
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
-        ub.path(KVMConstant.KVM_VM_ONLINE_CHANGE_CPUMEMORY);
-        onlineChangeCpuMemoryPath = ub.build().toString();
+        ub.path(KVMConstant.KVM_VM_ONLINE_INCREASE_CPU);
+        onlineIncreaseCpuPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_VM_ONLINE_INCREASE_MEMORY);
+        onlineIncreaseMemPath = ub.build().toString();
 
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_DELETE_CONSOLE_FIREWALL_PATH);
@@ -337,6 +342,10 @@ public class KVMHost extends HostBase implements Host {
             handle((VmDirectlyDestroyOnHypervisorMsg) msg);
         } else if (msg instanceof OnlineChangeVmCpuMemoryMsg) {
             handle((OnlineChangeVmCpuMemoryMsg) msg);
+        } else if (msg instanceof IncreaseVmCpuMsg) {
+            handle((IncreaseVmCpuMsg) msg);
+        } else if (msg instanceof IncreaseVmMemoryMsg) {
+            handle((IncreaseVmMemoryMsg) msg);
         } else if (msg instanceof PauseVmOnHypervisorMsg) {
             handle((PauseVmOnHypervisorMsg) msg);
         } else if (msg instanceof ResumeVmOnHypervisorMsg) {
@@ -344,6 +353,56 @@ public class KVMHost extends HostBase implements Host {
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(final IncreaseVmCpuMsg msg) {
+        IncreaseVmCpuReply reply = new IncreaseVmCpuReply();
+
+        IncreaseCpuCmd cmd = new IncreaseCpuCmd();
+        cmd.setVmUuid(msg.getVmInstanceUuid());
+        cmd.setCpuNum(msg.getCpuNum());
+        new Http<>(onlineIncreaseCpuPath, cmd, IncreaseCpuResponse.class).call(new ReturnValueCompletion<IncreaseCpuResponse>(msg) {
+            @Override
+            public void success(IncreaseCpuResponse ret) {
+                if (!ret.isSuccess()) {
+                    reply.setError(operr(ret.getError()));
+                } else {
+                    reply.setCpuNum(ret.getCpuNum());
+                }
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(final IncreaseVmMemoryMsg msg) {
+        IncreaseVmMemoryReply reply = new IncreaseVmMemoryReply();
+
+        IncreaseMemoryCmd cmd = new IncreaseMemoryCmd();
+        cmd.setVmUuid(msg.getVmInstanceUuid());
+        cmd.setMemorySize(msg.getMemorySize());
+        new Http<>(onlineIncreaseMemPath, cmd, IncreaseMemoryResponse.class).call(new ReturnValueCompletion<IncreaseMemoryResponse>(msg) {
+            @Override
+            public void success(IncreaseMemoryResponse ret) {
+                if (!ret.isSuccess()) {
+                    reply.setError(operr(ret.getError()));
+                } else {
+                    reply.setMemorySize(ret.getMemorySize());
+                }
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     private void directlyDestroy(final VmDirectlyDestroyOnHypervisorMsg msg, final NoErrorCompletion completion) {
@@ -425,33 +484,30 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private void handle(final OnlineChangeVmCpuMemoryMsg msg) {
-        final OnlineChangeVmCpuMemoryReply reply = new OnlineChangeVmCpuMemoryReply();
-
-        ChangeCpuMemoryCmd cmd = new ChangeCpuMemoryCmd();
-        cmd.setVmUuid(msg.getVmInstanceUuid());
-        cmd.setCpuNum(msg.getInstanceOfferingInventory().getCpuNum());
-        cmd.setMemorySize(msg.getInstanceOfferingInventory().getMemorySize());
-        new Http<>(onlineChangeCpuMemoryPath, cmd, ChangeCpuMemoryResponse.class).call(new ReturnValueCompletion<ChangeCpuMemoryResponse>(msg) {
-            @Override
-            public void success(ChangeCpuMemoryResponse ret) {
-                if (!ret.isSuccess()) {
-                    reply.setError(operr(ret.getError()));
-                } else {
-                    InstanceOfferingInventory inventory = new InstanceOfferingInventory();
-                    inventory.setCpuNum(ret.getCpuNum());
-                    inventory.setMemorySize(ret.getMemorySize());
-                    reply.setInstanceOfferingInventory(inventory);
-
-                }
-                bus.reply(msg, reply);
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                reply.setError(errorCode);
-                bus.reply(msg, reply);
-            }
-        });
+//        final OnlineChangeVmCpuMemoryReply reply = new OnlineChangeVmCpuMemoryReply();
+//
+//        ChangeCpuMemoryCmd cmd = new ChangeCpuMemoryCmd();
+//        cmd.setVmUuid(msg.getVmInstanceUuid());
+//        cmd.setCpuNum(msg.getCpuNum());
+//        cmd.setMemorySize(msg.getMemorySize());
+//        new Http<>(onlineChangeCpuMemoryPath, cmd, ChangeCpuMemoryResponse.class).call(new ReturnValueCompletion<ChangeCpuMemoryResponse>(msg) {
+//            @Override
+//            public void success(ChangeCpuMemoryResponse ret) {
+//                if (!ret.isSuccess()) {
+//                    reply.setError(operr(ret.getError()));
+//                } else {
+//                    reply.setCpuNum(ret.getCpuNum());
+//                    reply.setMemorySize(ret.getMemorySize());
+//                }
+//                bus.reply(msg, reply);
+//            }
+//
+//            @Override
+//            public void fail(ErrorCode errorCode) {
+//                reply.setError(errorCode);
+//                bus.reply(msg, reply);
+//            }
+//        });
     }
 
     private void handle(final GetVmConsoleAddressFromHostMsg msg) {
@@ -1819,9 +1875,11 @@ public class KVMHost extends HostBase implements Host {
         cmd.setVmInstanceUuid(spec.getVmInventory().getUuid());
         cmd.setCpuSpeed(spec.getVmInventory().getCpuSpeed());
         cmd.setMemory(spec.getVmInventory().getMemorySize());
+        cmd.setMaxMemory(self.getCapacity().getTotalPhysicalMemory());
         cmd.setUseVirtio(virtio);
         cmd.setClock(ImagePlatform.isType(platform, ImagePlatform.Windows, ImagePlatform.WindowsVirtio) ? "localtime" : "utc");
         cmd.setVideoType(VmGlobalConfig.VM_VIDEO_TYPE.value(String.class));
+        cmd.setInstanceOfferingOnlineChange(VmSystemTags.INSTANCEOFFERING_ONLIECHANGE.getTokenByResourceUuid(spec.getVmInventory().getUuid(), VmSystemTags.INSTANCEOFFERING_ONLINECHANGE_TOKEN) != null);
 
         VolumeTO rootVolume = new VolumeTO();
         rootVolume.setInstallPath(spec.getDestRootVolume().getInstallPath());

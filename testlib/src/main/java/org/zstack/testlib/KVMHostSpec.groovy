@@ -254,5 +254,13 @@ class KVMHostSpec extends HostSpec {
         simulator(KVMConstant.KVM_LOGIN_ISCSI_PATH) {
             return new KVMAgentCommands.LoginIscsiTargetRsp()
         }
+
+        simulator(KVMConstant.KVM_VM_ONLINE_INCREASE_CPU) {
+            return new KVMAgentCommands.IncreaseCpuResponse()
+        }
+
+        simulator(KVMConstant.KVM_VM_ONLINE_INCREASE_MEMORY) {
+            return new KVMAgentCommands.IncreaseMemoryResponse()
+        }
     }
 }
