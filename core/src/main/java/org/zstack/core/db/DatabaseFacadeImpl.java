@@ -723,7 +723,13 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
             return;
         }
 
-        info.hardDelete(ids);
+        try {
+            logger.info(String.format("clean EO[%s], to be cleaning data: %s", info.eoClass.getSimpleName(), ids.toString()));
+            info.hardDelete(ids);
+        }catch (Exception e){
+            // If has foreign key constraint, Allow cleanup failed
+            logger.info(String.format("clean EO[%s], an error has occurred, please ignore", info.eoClass.getSimpleName()));
+        }
     }
 
     @Override
