@@ -3279,7 +3279,17 @@ public class VmInstanceBase extends AbstractVmInstance {
                 }
                 if (update) {
                     self = dbf.updateAndRefresh(self);
+
+                    //if(VmInstanceState.Running == self.getState()){
+                        RecalculateHostCapacityMsg msg = new RecalculateHostCapacityMsg();
+                        msg.setHostUuid(self.getHostUuid());
+                        msg.setZoneUuid(self.getZoneUuid());
+                        bus.makeLocalServiceId(msg, HostAllocatorConstant.SERVICE_ID);
+                        bus.send(msg);
+                    //}
+
                 }
+
 
                 CollectionUtils.safeForEach(extensions, new ForEachFunction<Runnable>() {
                     @Override
