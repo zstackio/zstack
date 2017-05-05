@@ -30,7 +30,8 @@ public interface KVMConstant {
     String KVM_DESTROY_VM_PATH = "/vm/destroy";
     String KVM_MIGRATE_VM_PATH = "/vm/migrate";
     String KVM_GET_VNC_PORT_PATH = "/vm/getvncport";
-    String KVM_VM_ONLINE_CHANGE_CPUMEMORY = "/vm/online/changecpumem";
+    String KVM_VM_ONLINE_INCREASE_CPU = "/vm/increase/cpu";
+    String KVM_VM_ONLINE_INCREASE_MEMORY = "/vm/increase/mem";
     String KVM_VM_SYNC_PATH = "/vm/vmsync";
     String KVM_ATTACH_VOLUME = "/vm/attachdatavolume";
     String KVM_DETACH_VOLUME = "/vm/detachdatavolume";
