@@ -482,6 +482,7 @@ CREATE TABLE  `zstack`.`TaskProgressVO` (
     `arguments` text DEFAULT NULL,
     `opaque` text DEFAULT NULL,
     `time` bigint unsigned NOT NULL,
+    `timeToDelete` bigint unsigned DEFAULT NULL,
     PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
