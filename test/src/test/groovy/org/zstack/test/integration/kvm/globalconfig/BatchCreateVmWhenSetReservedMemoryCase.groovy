@@ -1,5 +1,9 @@
 package org.zstack.test.integration.kvm.globalconfig
 
+import org.zstack.core.db.Q
+import org.zstack.header.vm.VmInstanceState
+import org.zstack.header.vm.VmInstanceVO
+import org.zstack.header.vm.VmInstanceVO_
 import org.zstack.network.securitygroup.SecurityGroupConstant
 import org.zstack.sdk.CreateVmInstanceAction
 import org.zstack.sdk.GetCpuMemoryCapacityAction
@@ -12,6 +16,7 @@ import org.zstack.utils.data.SizeUnit
  */
 class BatchCreateVmWhenSetReservedMemoryCase extends SubCase {
     EnvSpec env
+    int correctCount = 9
 
     @Override
     void clean() {
@@ -121,7 +126,7 @@ class BatchCreateVmWhenSetReservedMemoryCase extends SubCase {
         def _1CPU1G = (env.specByName("instanceOffering") as InstanceOfferingSpec).inventory.uuid
         def l3uuid = (env.specByName("pubL3") as L3NetworkSpec).inventory.uuid
 
-        for(int i=0;i++;i<num){
+        for (int i = 0; i < num; i++) {
             createVmInstance {
                 def vmName = "VM"+i
                 name = vmName
@@ -130,12 +135,21 @@ class BatchCreateVmWhenSetReservedMemoryCase extends SubCase {
                 l3NetworkUuids = [l3uuid]
             }
         }
+        assert correctCount == Q.New(VmInstanceVO.class).select(VmInstanceVO_.uuid).eq(VmInstanceVO_.state, VmInstanceState.Running).listValues().size()
         expect(AssertionError.class) {
             createVmInstance {
                 name = "VMM"
                 instanceOfferingUuid = _1CPU1G
                 imageUuid = thisImageUuid
                 l3NetworkUuids = [l3uuid]
+            }
+        }
+        List<String> vmUuids = Q.New(VmInstanceVO.class).select(VmInstanceVO_.uuid).eq(VmInstanceVO_.state, VmInstanceState.Running).listValues()
+        assert vmUuids.size() == correctCount
+        //free resource
+        for (String vmUuid : vmUuids) {
+            destroyVmInstance {
+                uuid = vmUuid
             }
         }
     }
@@ -156,11 +170,12 @@ class BatchCreateVmWhenSetReservedMemoryCase extends SubCase {
                     l3NetworkUuids = [l3uuid]
                 }
             }
-
             threads.add(thread)
         })
 
         threads.each { it.join() }
+
+        assert correctCount  == Q.New(VmInstanceVO.class).select(VmInstanceVO_.uuid).eq(VmInstanceVO_.state, VmInstanceState.Running).listValues().size()
 
         GetCpuMemoryCapacityAction getCpuMemoryCapacityAction = new GetCpuMemoryCapacityAction()
         getCpuMemoryCapacityAction.all = true
