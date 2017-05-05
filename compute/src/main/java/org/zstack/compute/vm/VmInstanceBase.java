@@ -3773,6 +3773,13 @@ public class VmInstanceBase extends AbstractVmInstance {
                         return arg.getUuid().equals(l3Uuid) ? arg : null;
                     }
                 });
+
+                if(l3 == null){
+                    ErrorCode err = errf.instantiateErrorCode(SysErrors.RESOURCE_NOT_FOUND,
+                            String.format("Unable to find L3Network[uuid:%s] to start the current vm, it may have been deleted, Operation suggestion: delete this vm, recreate a new vm", l3Uuid));
+                    completion.fail(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR, err));
+                    return;
+                }
                 DebugUtils.Assert(l3 != null, "where is the L3???");
                 l3s.add(l3);
             }
