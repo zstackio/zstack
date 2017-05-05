@@ -9,6 +9,7 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -51,8 +52,6 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
-import static org.zstack.core.Platform.operr;
-
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -60,6 +59,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
+import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
@@ -595,24 +595,33 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                 flow(new NoRollbackFlow() {
                     String __name__ = "update-volumes-info-in-db-to-dst-host";
 
-                    @Transactional
                     private void updateVolumesInfo(final List<String> volUuids) {
-                        SimpleQuery<LocalStorageResourceRefVO> q = dbf.createQuery(LocalStorageResourceRefVO.class);
-                        q.add(LocalStorageResourceRefVO_.resourceUuid, Op.IN, volUuids);
-                        q.add(LocalStorageResourceRefVO_.resourceType, Op.EQ, VolumeVO.class.getSimpleName());
-                        List<LocalStorageResourceRefVO> oldRefs = q.list();
+                        new SQLBatch() {
+                            @Override
+                            protected void scripts() {
+                                List<LocalStorageResourceRefVO> oldRefs = sql(
+                                        "select ref" +
+                                                " from LocalStorageResourceRefVO ref" +
+                                                " where ref.resourceUuid in (:resourceUuids)" +
+                                                " and ref.resourceType = :resourceType",
+                                        LocalStorageResourceRefVO.class)
+                                        .param("resourceUuids", volUuids)
+                                        .param("resourceType", VolumeVO.class.getSimpleName())
+                                        .list();
 
-                        for (final LocalStorageResourceRefVO ref : oldRefs) {
-                            LocalStorageResourceRefVO newRef = new LocalStorageResourceRefVO();
-                            newRef.setHostUuid(dstHostUuid);
-                            newRef.setResourceUuid(ref.getResourceUuid());
-                            newRef.setPrimaryStorageUuid(ref.getPrimaryStorageUuid());
-                            newRef.setResourceType(ref.getResourceType());
-                            newRef.setSize(ref.getSize());
-                            newRef.setCreateDate(ref.getCreateDate());
-                            dbf.getEntityManager().persist(newRef);
-                            dbf.getEntityManager().remove(ref);
-                        }
+                                for (final LocalStorageResourceRefVO ref : oldRefs) {
+                                    LocalStorageResourceRefVO newRef = new LocalStorageResourceRefVO();
+                                    newRef.setHostUuid(dstHostUuid);
+                                    newRef.setResourceUuid(ref.getResourceUuid());
+                                    newRef.setPrimaryStorageUuid(ref.getPrimaryStorageUuid());
+                                    newRef.setResourceType(ref.getResourceType());
+                                    newRef.setSize(ref.getSize());
+                                    newRef.setCreateDate(ref.getCreateDate());
+                                    dbf.getEntityManager().persist(newRef);
+                                    dbf.getEntityManager().remove(ref);
+                                }
+                            }
+                        }.execute();
                     }
 
                     @Override
@@ -631,24 +640,33 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                     flow(new NoRollbackFlow() {
                         String __name__ = "update-snapshots-info-in-db-to-dst-host";
 
-                        @Transactional
                         private void updateSnapshotsInfo(final List<String> spUuids) {
-                            SimpleQuery<LocalStorageResourceRefVO> q = dbf.createQuery(LocalStorageResourceRefVO.class);
-                            q.add(LocalStorageResourceRefVO_.resourceUuid, Op.IN, spUuids);
-                            q.add(LocalStorageResourceRefVO_.resourceType, Op.EQ, VolumeSnapshotVO.class.getSimpleName());
-                            List<LocalStorageResourceRefVO> oldRefs = q.list();
+                            new SQLBatch() {
+                                @Override
+                                protected void scripts() {
+                                    List<LocalStorageResourceRefVO> oldRefs = sql(
+                                            "select ref" +
+                                                    " from LocalStorageResourceRefVO ref" +
+                                                    " where ref.resourceUuid in (:resourceUuids)" +
+                                                    " and ref.resourceType = :resourceType",
+                                            LocalStorageResourceRefVO.class)
+                                            .param("resourceUuids", spUuids)
+                                            .param("resourceType", VolumeSnapshotVO.class.getSimpleName())
+                                            .list();
 
-                            for (final LocalStorageResourceRefVO ref : oldRefs) {
-                                LocalStorageResourceRefVO newRef = new LocalStorageResourceRefVO();
-                                newRef.setHostUuid(dstHostUuid);
-                                newRef.setResourceUuid(ref.getResourceUuid());
-                                newRef.setPrimaryStorageUuid(ref.getPrimaryStorageUuid());
-                                newRef.setResourceType(ref.getResourceType());
-                                newRef.setSize(ref.getSize());
-                                newRef.setCreateDate(ref.getCreateDate());
-                                dbf.getEntityManager().persist(newRef);
-                                dbf.getEntityManager().remove(ref);
-                            }
+                                    for (final LocalStorageResourceRefVO ref : oldRefs) {
+                                        LocalStorageResourceRefVO newRef = new LocalStorageResourceRefVO();
+                                        newRef.setHostUuid(dstHostUuid);
+                                        newRef.setResourceUuid(ref.getResourceUuid());
+                                        newRef.setPrimaryStorageUuid(ref.getPrimaryStorageUuid());
+                                        newRef.setResourceType(ref.getResourceType());
+                                        newRef.setSize(ref.getSize());
+                                        newRef.setCreateDate(ref.getCreateDate());
+                                        dbf.getEntityManager().persist(newRef);
+                                        dbf.getEntityManager().remove(ref);
+                                    }
+                                }
+                            }.execute();
                         }
 
                         @Override
