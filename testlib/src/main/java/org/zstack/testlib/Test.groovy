@@ -36,7 +36,7 @@ abstract class Test implements ApiHelper {
     static Object deployer
     static Map<String, String> apiPaths = new ConcurrentHashMap<>()
 
-    private final long DEFAULT_MESSAGE_TIMEOUT = TimeUnit.SECONDS.toMillis(10)
+    private final long DEFAULT_MESSAGE_TIMEOUT = TimeUnit.SECONDS.toMillis(25)
     private final int PHASE_NONE = 0
     private final int PHASE_SETUP = 1
     private final int PHASE_ENV = 2
