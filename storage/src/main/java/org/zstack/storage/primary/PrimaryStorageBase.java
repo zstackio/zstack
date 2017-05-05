@@ -480,12 +480,6 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
                 detachHook(msg.getClusterUuid(), new Completion(msg, chain) {
                     @Override
                     public void success() {
-                        SimpleQuery<PrimaryStorageClusterRefVO> q = dbf.createQuery(PrimaryStorageClusterRefVO.class);
-                        q.add(PrimaryStorageClusterRefVO_.clusterUuid, Op.EQ, msg.getClusterUuid());
-                        q.add(PrimaryStorageClusterRefVO_.primaryStorageUuid, Op.EQ, msg.getPrimaryStorageUuid());
-                        List<PrimaryStorageClusterRefVO> refs = q.list();
-                        dbf.removeCollection(refs, PrimaryStorageClusterRefVO.class);
-
                         self = dbf.reload(self);
                         extpEmitter.afterDetach(self, msg.getClusterUuid());
 
@@ -785,6 +779,14 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             throw new OperationFailureException(errf.instantiateErrorCode(PrimaryStorageErrors.DETACH_ERROR, e.getMessage()));
         }
 
+        // if not, HA will allocate wrong host, rollback when API fail
+        SimpleQuery<PrimaryStorageClusterRefVO> q = dbf.createQuery(PrimaryStorageClusterRefVO.class);
+        q.add(PrimaryStorageClusterRefVO_.clusterUuid, Op.EQ, msg.getClusterUuid());
+        q.add(PrimaryStorageClusterRefVO_.primaryStorageUuid, Op.EQ, msg.getPrimaryStorageUuid());
+        List<PrimaryStorageClusterRefVO> refs = q.list();
+        dbf.removeCollection(refs, PrimaryStorageClusterRefVO.class);
+
+
         String issuer = PrimaryStorageVO.class.getSimpleName();
         List<PrimaryStorageDetachStruct> ctx = new ArrayList<>();
         PrimaryStorageDetachStruct struct = new PrimaryStorageDetachStruct();
@@ -801,6 +803,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
             @Override
             public void fail(ErrorCode errorCode) {
+                //has removed RefVO before, roll back
+                dbf.updateAndRefresh(refs.get(0));
                 evt.setError(errorCode);
                 bus.publish(evt);
             }
