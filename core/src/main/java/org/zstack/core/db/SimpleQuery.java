@@ -42,7 +42,7 @@ public interface SimpleQuery<T> {
     enum Op {
         EQ("="),
         NOT_EQ("!="),
-        NOT_NULL("not null"),
+        NOT_NULL("is not null"),
         NULL("is null"),
         IN("in"),
         NOT_IN("not in"),

@@ -3,8 +3,14 @@ package org.zstack.test.integration.kvm.vm
 import org.springframework.http.HttpEntity
 import org.springframework.web.util.UriComponentsBuilder
 import org.zstack.core.Platform
+import org.zstack.core.db.Q
+import org.zstack.core.db.SQL
 import org.zstack.core.progress.ProgressCommands
+import org.zstack.core.progress.ProgressGlobalConfig
+import org.zstack.core.progress.ProgressReportService
 import org.zstack.header.core.progress.ProgressConstants
+import org.zstack.header.core.progress.TaskProgressVO
+import org.zstack.header.core.progress.TaskProgressVO_
 import org.zstack.header.core.progress.TaskType
 import org.zstack.header.rest.RESTConstant
 import org.zstack.header.rest.RESTFacade
@@ -38,6 +44,71 @@ class VmProgressCase extends SubCase {
     @Override
     void environment() {
         env = Env.noVmEnv()
+    }
+
+    void testProgressDeleteAfterApiDone() {
+        bean(ProgressReportService.class).setDELETE_DELAY(1)
+
+        String apiUuid = Platform.getUuid()
+        createVmInstance {
+            apiId = apiUuid
+            imageUuid = env.inventoryByName("image1").uuid
+            instanceOfferingUuid = env.inventoryByName("instanceOffering").uuid
+            l3NetworkUuids = [env.inventoryByName("l3").uuid]
+            name = "vm"
+        }
+
+        assert retryInSecs {
+            return {
+                assert !Q.New(TaskProgressVO.class).eq(TaskProgressVO_.apiId, apiUuid).isExists()
+            }
+        }
+    }
+
+    void testProgressTTL() {
+        // set DELETE_DELAY to a very big value so the progress entries won't be deleted
+        // after API completes
+        bean(ProgressReportService.class).setDELETE_DELAY(1000)
+
+        String apiUuid = Platform.getUuid()
+        createVmInstance {
+            apiId = apiUuid
+            imageUuid = env.inventoryByName("image1").uuid
+            instanceOfferingUuid = env.inventoryByName("instanceOffering").uuid
+            l3NetworkUuids = [env.inventoryByName("l3").uuid]
+            name = "vm"
+        }
+
+        // confirm the progress entries are still there
+        assert Q.New(TaskProgressVO.class).eq(TaskProgressVO_.apiId, apiUuid).isExists()
+
+        // set the TTL to 1s
+        ProgressGlobalConfig.PROGRESS_TTL.updateValue(1)
+
+        assert retryInSecs {
+            return {
+                // confirm the progress entries are deleted
+                assert !Q.New(TaskProgressVO.class).eq(TaskProgressVO_.apiId, apiUuid).isExists()
+            }
+        }
+    }
+
+    void testNoProgressWhenProgressIsTurnedOff() {
+        ProgressGlobalConfig.PROGRESS_ON.updateValue(false)
+
+        String apiUuid = Platform.getUuid()
+        createVmInstance {
+            apiId = apiUuid
+            imageUuid = env.inventoryByName("image1").uuid
+            instanceOfferingUuid = env.inventoryByName("instanceOffering").uuid
+            l3NetworkUuids = [env.inventoryByName("l3").uuid]
+            name = "vm"
+        }
+
+        assert !Q.New(TaskProgressVO.class).isExists()
+
+        // reopen it
+        ProgressGlobalConfig.PROGRESS_ON.updateValue(true)
     }
 
     void testCreateVmProgress() {
@@ -149,12 +220,23 @@ class VmProgressCase extends SubCase {
         }
 
         assert invs.size() != 0
+
+        SQL.New(TaskProgressVO.class).hardDelete();
     }
 
     @Override
     void test() {
         env.create {
+            int deleteDelay =  bean(ProgressReportService.class).getDELETE_DELAY()
+            ProgressGlobalConfig.CLEANUP_THREAD_INTERVAL.updateValue(1)
+
             testCreateVmProgress()
+            testNoProgressWhenProgressIsTurnedOff()
+            testProgressDeleteAfterApiDone()
+            testProgressTTL()
+
+            // recover the DELETE_DELAY to the default value
+            bean(ProgressReportService.class).setDELETE_DELAY(deleteDelay)
         }
     }
 }

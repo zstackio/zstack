@@ -2,6 +2,7 @@ package org.zstack.header.core.progress;
 
 import javax.persistence.metamodel.SingularAttribute;
 import javax.persistence.metamodel.StaticMetamodel;
+import java.sql.Timestamp;
 
 /**
  * Created by xing5 on 2017/3/20.
@@ -17,5 +18,6 @@ public class TaskProgressVO_ {
     public static volatile SingularAttribute<TaskProgressVO, String> content;
     public static volatile SingularAttribute<TaskProgressVO, String> arguments;
     public static volatile SingularAttribute<TaskProgressVO, String> managementUuid;
+    public static volatile SingularAttribute<TaskProgressVO, Long> timeToDelete;
     public static volatile SingularAttribute<TaskProgressVO, Long> time;
 }

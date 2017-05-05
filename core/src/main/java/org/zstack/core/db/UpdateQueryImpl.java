@@ -28,7 +28,7 @@ public class UpdateQueryImpl implements UpdateQuery {
 
     private Class entityClass;
     private Map<SingularAttribute, Object> setValues = new HashMap<>();
-    private Map<SingularAttribute, Cond> andConditions = new HashMap<>();
+    private Map<SingularAttribute, List<Cond>> andConditions = new HashMap<>();
 
     private class Cond {
         SingularAttribute attr;
@@ -53,10 +53,6 @@ public class UpdateQueryImpl implements UpdateQuery {
 
     @Override
     public UpdateQuery condAnd(SingularAttribute attr, Op op, Object val) {
-        if (andConditions.containsKey(attr)) {
-            throw new CloudRuntimeException(String.format("unable to add the same condition[%s] twice", attr.getName()));
-        }
-
         if ((op == Op.IN || op == Op.NOT_IN) && !(val instanceof Collection)) {
             throw new CloudRuntimeException(String.format("for operation IN or NOT IN, a Collection value is expected, but %s got", val.getClass()));
         }
@@ -66,7 +62,12 @@ public class UpdateQueryImpl implements UpdateQuery {
         cond.op = op;
         cond.val = val;
 
-        andConditions.put(attr, cond);
+        List<Cond> conds = andConditions.get(attr);
+        if (conds == null) {
+            conds = new ArrayList<>();
+            andConditions.put(attr, conds);
+        }
+        conds.add(cond);
         return this;
     }
 
@@ -148,13 +149,17 @@ public class UpdateQueryImpl implements UpdateQuery {
         }
 
         List<String> condstrs = new ArrayList<>();
-        for (Cond cond : andConditions.values()) {
-            if (Op.IN == cond.op || Op.NOT_IN == cond.op) {
-                condstrs.add(String.format("vo.%s %s (:cond_%s)", cond.attr.getName(), cond.op.toString(), cond.attr.getName()));
-            } else if (Op.NULL == cond.op || Op.NOT_NULL == cond.op) {
-                condstrs.add(String.format("vo.%s %s", cond.attr.getName(), cond.op));
-            } else {
-                condstrs.add(String.format("vo.%s %s :cond_%s", cond.attr.getName(), cond.op.toString(), cond.attr.getName()));
+        for (List<Cond> conds : andConditions.values()) {
+            for (int i=0; i<conds.size(); i++) {
+                Cond cond = conds.get(i);
+                String condName = String.format("cond_%s_%s", cond.attr.getName(), i);
+                if (Op.IN == cond.op || Op.NOT_IN == cond.op) {
+                    condstrs.add(String.format("vo.%s %s (:%s)", cond.attr.getName(), cond.op.toString(), condName));
+                } else if (Op.NULL == cond.op || Op.NOT_NULL == cond.op) {
+                    condstrs.add(String.format("vo.%s %s", cond.attr.getName(), cond.op));
+                } else {
+                    condstrs.add(String.format("vo.%s %s :%s", cond.attr.getName(), cond.op.toString(), condName));
+                }
             }
         }
 
@@ -162,8 +167,16 @@ public class UpdateQueryImpl implements UpdateQuery {
     }
 
     private void fillConditions(Query q) {
-        for (Cond cond : andConditions.values()) {
-            q.setParameter("cond_" + cond.attr.getName(), cond.val);
+        for (List<Cond> conds : andConditions.values()) {
+            for (int i=0; i<conds.size(); i++) {
+                Cond cond = conds.get(i);
+                if (Op.NULL == cond.op || Op.NOT_NULL == cond.op) {
+                    continue;
+                }
+
+                q.setParameter("cond_" + cond.attr.getName() + String.format("_%s", i), cond.val);
+            }
+
         }
     }
 
