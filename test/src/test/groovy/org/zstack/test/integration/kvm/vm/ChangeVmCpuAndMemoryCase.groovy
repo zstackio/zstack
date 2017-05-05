@@ -30,7 +30,7 @@ import static org.zstack.utils.CollectionDSL.map
 /**
  * Created by AlanJager on 2017/4/26.
  */
-class OnlineChangeVmCpuAndMemoryCase extends SubCase {
+class ChangeVmCpuAndMemoryCase extends SubCase {
     EnvSpec env
     VmInstanceInventory vm
     DatabaseFacade dbf
@@ -185,7 +185,8 @@ class OnlineChangeVmCpuAndMemoryCase extends SubCase {
             testChangeMemoryWhenVmRunning()
             testFailureCameoutAfterAllocateHostCapacityTheCapacityWillBeReturned()
             testDecreaseVmCpuAndMemoryReturnFail()
-            testPlantformFailureWhenVmIsRunning()
+            testPlatformFailureWhenVmIsRunning()
+            testPlatformWhenVmStopped()
         }
     }
 
@@ -367,7 +368,7 @@ class OnlineChangeVmCpuAndMemoryCase extends SubCase {
         }
     }
 
-    void testPlantformFailureWhenVmIsRunning() {
+    void testPlatformFailureWhenVmIsRunning() {
         VmInstanceVO vo = dbFindByUuid(vm.uuid, VmInstanceVO.class)
         vo.setPlatform(ImagePlatform.Windows.toString())
         dbf.updateAndRefresh(vo)
@@ -375,7 +376,7 @@ class OnlineChangeVmCpuAndMemoryCase extends SubCase {
         assert vo.platform == ImagePlatform.Windows.toString()
         UpdateVmInstanceAction updateVmInstanceAction = new UpdateVmInstanceAction()
         updateVmInstanceAction.uuid = vm.uuid
-        updateVmInstanceAction.cpuNum = 1
+        updateVmInstanceAction.cpuNum = 20
         updateVmInstanceAction.sessionId = adminSession()
         UpdateVmInstanceAction.Result updateVmInstanceResult = updateVmInstanceAction.call()
         assert updateVmInstanceResult.error != null
@@ -387,7 +388,7 @@ class OnlineChangeVmCpuAndMemoryCase extends SubCase {
         assert vo.platform == ImagePlatform.WindowsVirtio.toString()
         updateVmInstanceAction = new UpdateVmInstanceAction()
         updateVmInstanceAction.uuid = vm.uuid
-        updateVmInstanceAction.cpuNum = 1
+        updateVmInstanceAction.cpuNum = 20
         updateVmInstanceAction.sessionId = adminSession()
         updateVmInstanceResult = updateVmInstanceAction.call()
         assert updateVmInstanceResult.error != null
@@ -399,9 +400,32 @@ class OnlineChangeVmCpuAndMemoryCase extends SubCase {
         assert vo.platform == ImagePlatform.Other.toString()
         updateVmInstanceAction = new UpdateVmInstanceAction()
         updateVmInstanceAction.uuid = vm.uuid
-        updateVmInstanceAction.cpuNum = 1
+        updateVmInstanceAction.cpuNum = 20
         updateVmInstanceAction.sessionId = adminSession()
         updateVmInstanceResult = updateVmInstanceAction.call()
         assert updateVmInstanceResult.error != null
+    }
+
+    void testPlatformWhenVmStopped() {
+        VmInstanceVO vo = dbFindByUuid(vm.uuid, VmInstanceVO.class)
+        assert vo.platform == ImagePlatform.Other.toString()
+        stopVmInstance {
+            uuid = vm.uuid
+        }
+        vo = dbFindByUuid(vm.uuid, VmInstanceVO.class)
+        assert vo.state == VmInstanceState.Stopped
+
+        updateVmInstance {
+            uuid = vm.uuid
+            cpuNum = 20
+        }
+        vo = dbFindByUuid(vm.uuid, VmInstanceVO.class)
+        assert vo.cpuNum == 20
+
+        startVmInstance {
+            uuid = vm.uuid
+        }
+        vo = dbFindByUuid(vm.uuid, VmInstanceVO.class)
+        assert vo.state == VmInstanceState.Running
     }
 }
