@@ -1026,7 +1026,8 @@ public class RestServer implements Component, CloudBusEventListener {
 
     private void build() {
         Reflections reflections = Platform.getReflections();
-        Set<Class<?>> classes = reflections.getTypesAnnotatedWith(RestRequest.class);
+        Set<Class<?>> classes = reflections.getTypesAnnotatedWith(RestRequest.class).stream()
+                .filter(it -> it.isAnnotationPresent(RestRequest.class)).collect(Collectors.toSet());
 
         for (Class clz : classes) {
             RestRequest at = (RestRequest) clz.getAnnotation(RestRequest.class);
