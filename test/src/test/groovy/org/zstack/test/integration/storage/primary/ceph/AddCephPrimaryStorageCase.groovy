@@ -22,6 +22,7 @@ import java.util.concurrent.TimeUnit
 
 import static org.zstack.core.Platform.operr
 
+// maybe unstable case
 class AddCephPrimaryStorageCase extends SubCase {
     private final static CLogger logger = Utils.getLogger(AddCephPrimaryStorageCase.class)
 
