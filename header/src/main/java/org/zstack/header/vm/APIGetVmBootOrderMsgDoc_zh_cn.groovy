@@ -7,7 +7,7 @@ doc {
 
     category "vmInstance"
 
-    desc "获得一个云主机的启动设备列表"
+    desc """获得一个云主机的启动设备列表"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIGetVmBootOrderMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

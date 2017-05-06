@@ -7,7 +7,7 @@ doc {
 
     category "storage.primary"
 
-    desc "迁移本地存储上存放的云盘"
+    desc """迁移本地存储上存放的云盘"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APILocalStorageMigrateVolumeMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

@@ -9,7 +9,7 @@ doc {
 
     category "network.l2.vlan"
 
-    desc "查询二层Vlan网络"
+    desc """查询二层Vlan网络"""
 
     rest {
         request {
@@ -21,7 +21,7 @@ doc {
 
             clz APIQueryL2VlanNetworkMsg.class
 
-            desc ""
+            desc """"""
             
 			params APIQueryMessage.class
         }

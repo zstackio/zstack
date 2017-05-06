@@ -21,7 +21,7 @@ doc {
 
             clz APISetVmStaticIpMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

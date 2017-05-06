@@ -7,7 +7,7 @@ doc {
 
     category "volume"
 
-    desc "删除云盘"
+    desc """删除云盘"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIDeleteDataVolumeMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

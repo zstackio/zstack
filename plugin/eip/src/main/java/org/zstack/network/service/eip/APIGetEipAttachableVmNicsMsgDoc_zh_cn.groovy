@@ -7,7 +7,7 @@ doc {
 
     category "弹性IP"
 
-    desc "获取可绑定指定弹性IP的云主机网卡"
+    desc """获取可绑定指定弹性IP的云主机网卡"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIGetEipAttachableVmNicsMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

@@ -7,7 +7,7 @@ doc {
 
     category "snapshot.volume"
 
-    desc "更新云盘快照信息"
+    desc """更新云盘快照信息"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIUpdateVolumeSnapshotMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

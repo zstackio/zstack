@@ -7,7 +7,7 @@ doc {
 
     category "vmInstance"
 
-    desc "停止一个云主机"
+    desc """停止一个云主机"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIStopVmInstanceMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

@@ -7,7 +7,7 @@ doc {
 
     category "storage.primary"
 
-    desc "从集群卸载主存储"
+    desc """从集群卸载主存储"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIDetachPrimaryStorageFromClusterMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

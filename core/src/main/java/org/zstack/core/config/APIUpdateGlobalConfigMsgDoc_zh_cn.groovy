@@ -7,7 +7,7 @@ doc {
 
     category "globalConfig"
 
-    desc "更新全局配置"
+    desc """更新全局配置"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIUpdateGlobalConfigMsg.class
 
-            desc "更新全局配置"
+            desc """更新全局配置"""
             
 			params {
 

@@ -9,7 +9,7 @@ doc {
 
     category "identity"
 
-    desc "查询账户资源引用"
+    desc """查询账户资源引用"""
 
     rest {
         request {
@@ -20,7 +20,7 @@ doc {
 
             clz APIQueryAccountResourceRefMsg.class
 
-            desc "查询账户资源引用"
+            desc """查询账户资源引用"""
             
 			params APIQueryMessage.class
         }

@@ -7,7 +7,7 @@ doc {
 
     category "storage.primary"
 
-    desc "重连主存储"
+    desc """重连主存储"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIReconnectPrimaryStorageMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

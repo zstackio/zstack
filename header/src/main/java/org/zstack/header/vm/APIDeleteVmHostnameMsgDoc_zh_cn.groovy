@@ -7,7 +7,7 @@ doc {
 
     category "vmInstance"
 
-    desc "删除云主机的Hostname。注意，该删除操作仅仅是删除配置在数据库中以及DHCP服务器上的云主机hostname，无法改变云主机内部手动配置的hostname。"
+    desc """删除云主机的Hostname。注意，该删除操作仅仅是删除配置在数据库中以及DHCP服务器上的云主机hostname，无法改变云主机内部手动配置的hostname。"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIDeleteVmHostnameMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

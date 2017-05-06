@@ -9,7 +9,7 @@ doc {
 
     category "storage.primary"
 
-    desc "查询主存储"
+    desc """查询主存储"""
 
     rest {
         request {
@@ -20,7 +20,7 @@ doc {
 
             clz APIQueryPrimaryStorageMsg.class
 
-            desc ""
+            desc """"""
             
 			params APIQueryMessage.class
         }

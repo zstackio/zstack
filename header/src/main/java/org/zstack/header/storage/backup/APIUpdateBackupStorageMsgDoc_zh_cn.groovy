@@ -7,7 +7,7 @@ doc {
 
     category "storage.backup"
 
-    desc "更新镜像服务器信息"
+    desc """更新镜像服务器信息"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIUpdateBackupStorageMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

@@ -7,7 +7,7 @@ doc {
 
     category "identity"
 
-    desc "创建用户"
+    desc """创建用户"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APICreateUserMsg.class
 
-            desc "创建用户"
+            desc """创建用户"""
             
 			params {
 

@@ -7,7 +7,7 @@ doc {
 
     category "vmInstance"
 
-    desc "获取一个云主机可以热迁移的物理机列表"
+    desc """获取一个云主机可以热迁移的物理机列表"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIGetVmMigrationCandidateHostsMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

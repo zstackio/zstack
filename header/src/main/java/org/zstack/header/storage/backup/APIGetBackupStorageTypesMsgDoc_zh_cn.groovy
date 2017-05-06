@@ -7,7 +7,7 @@ doc {
 
     category "storage.backup"
 
-    desc "获取镜像服务器类型列表"
+    desc """获取镜像服务器类型列表"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIGetBackupStorageTypesMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

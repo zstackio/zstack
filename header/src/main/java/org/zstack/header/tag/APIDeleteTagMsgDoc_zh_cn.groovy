@@ -7,7 +7,7 @@ doc {
 
     category "tag"
 
-    desc "删除标签"
+    desc """删除标签"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIDeleteTagMsg.class
 
-            desc "删除标签"
+            desc """删除标签"""
             
 			params {
 

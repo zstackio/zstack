@@ -9,7 +9,7 @@ doc {
 
     category "云主机"
 
-    desc "查询云主机"
+    desc """查询云主机"""
 
     rest {
         request {
@@ -21,7 +21,7 @@ doc {
 
             clz APIQueryVmInstanceMsg.class
 
-            desc ""
+            desc """"""
             
 			params APIQueryMessage.class
         }

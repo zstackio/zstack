@@ -7,7 +7,7 @@ doc {
 
     category "volume"
 
-    desc "恢复云盘"
+    desc """恢复云盘"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIRecoverDataVolumeMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

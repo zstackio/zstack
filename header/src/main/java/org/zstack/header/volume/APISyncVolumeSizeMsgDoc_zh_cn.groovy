@@ -7,7 +7,7 @@ doc {
 
     category "volume"
 
-    desc "同步云盘大小"
+    desc """同步云盘大小"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APISyncVolumeSizeMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

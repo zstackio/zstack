@@ -7,7 +7,7 @@ doc {
 
     category "vip"
 
-    desc "更改VIP启用状态"
+    desc """更改VIP启用状态"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIChangeVipStateMsg.class
 
-            desc "更改VIP启用状态"
+            desc """更改VIP启用状态"""
             
 			params {
 

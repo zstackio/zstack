@@ -9,7 +9,7 @@ doc {
 
     category "storage.primary"
 
-    desc "查询本地存储资源引用"
+    desc """查询本地存储资源引用"""
 
     rest {
         request {
@@ -20,7 +20,7 @@ doc {
 
             clz APIQueryLocalStorageResourceRefMsg.class
 
-            desc ""
+            desc """"""
             
 			params APIQueryMessage.class
         }

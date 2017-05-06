@@ -7,7 +7,7 @@ doc {
 
     category "volume"
 
-    desc "彻底删除云盘"
+    desc """彻底删除云盘"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIExpungeDataVolumeMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

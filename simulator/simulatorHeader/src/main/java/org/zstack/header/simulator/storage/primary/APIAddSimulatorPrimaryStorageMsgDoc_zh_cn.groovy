@@ -7,7 +7,7 @@ doc {
 
     category "storage.primary"
 
-    desc "在这里填写API描述"
+    desc """在这里填写API描述"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIAddSimulatorPrimaryStorageMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

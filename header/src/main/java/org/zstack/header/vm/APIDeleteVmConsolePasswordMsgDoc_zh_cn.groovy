@@ -7,7 +7,7 @@ doc {
 
     category "vmInstance"
 
-    desc "删除一个云主机的控制台密码"
+    desc """删除一个云主机的控制台密码"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIDeleteVmConsolePasswordMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

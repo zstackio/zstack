@@ -9,7 +9,7 @@ doc {
 
     category "identity"
 
-    desc "查询账户"
+    desc """查询账户"""
 
     rest {
         request {
@@ -21,7 +21,7 @@ doc {
 
             clz APIQueryAccountMsg.class
 
-            desc "查询账户"
+            desc """查询账户"""
             
 			params APIQueryMessage.class
         }

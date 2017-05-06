@@ -7,7 +7,7 @@ doc {
 
     category "ldap"
 
-    desc "删除LDAP绑定"
+    desc """删除LDAP绑定"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIDeleteLdapBindingMsg.class
 
-            desc "删除LDAP绑定"
+            desc """删除LDAP绑定"""
             
 			params {
 

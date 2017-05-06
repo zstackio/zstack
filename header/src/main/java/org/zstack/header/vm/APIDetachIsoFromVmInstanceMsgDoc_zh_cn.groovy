@@ -7,7 +7,7 @@ doc {
 
     category "vmInstance"
 
-    desc "如果云主机上挂载有ISO，卸载它"
+    desc """如果云主机上挂载有ISO，卸载它"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIDetachIsoFromVmInstanceMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

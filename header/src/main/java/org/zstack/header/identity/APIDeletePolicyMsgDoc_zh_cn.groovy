@@ -7,7 +7,7 @@ doc {
 
     category "identity"
 
-    desc "删除策略"
+    desc """删除策略"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIDeletePolicyMsg.class
 
-            desc "删除策略"
+            desc """删除策略"""
             
 			params {
 

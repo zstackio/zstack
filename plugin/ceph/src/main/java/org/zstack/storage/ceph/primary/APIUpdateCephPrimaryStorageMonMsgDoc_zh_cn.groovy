@@ -7,7 +7,7 @@ doc {
 
     category "storage.ceph.primary"
 
-    desc "更新 Ceph 主存储 mon 节点"
+    desc """更新 Ceph 主存储 mon 节点"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIUpdateCephPrimaryStorageMonMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

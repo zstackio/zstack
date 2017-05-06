@@ -24,7 +24,7 @@ doc {
 
             clz APIGetVmCapabilitiesMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

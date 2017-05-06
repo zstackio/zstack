@@ -9,7 +9,7 @@ doc {
 
     category "network.service"
 
-    desc "查询网络服务模块"
+    desc """查询网络服务模块"""
 
     rest {
         request {
@@ -20,7 +20,7 @@ doc {
 
             clz APIQueryNetworkServiceProviderMsg.class
 
-            desc ""
+            desc """"""
             
 			params APIQueryMessage.class
         }

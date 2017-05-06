@@ -7,7 +7,7 @@ doc {
 
     category "storage.backup"
 
-    desc "在这里填写API描述"
+    desc """在这里填写API描述"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIAddSimulatorBackupStorageMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

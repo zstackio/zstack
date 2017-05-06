@@ -7,7 +7,7 @@ doc {
 
     category "vmInstance"
 
-    desc "暂停一个云主机，云主机状态仍然存在内存里面，稍后可以恢复"
+    desc """暂停一个云主机，云主机状态仍然存在内存里面，稍后可以恢复"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIPauseVmInstanceMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

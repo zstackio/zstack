@@ -7,7 +7,7 @@ doc {
 
     category "负载均衡"
 
-    desc "刷新负载均衡器"
+    desc """刷新负载均衡器"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIRefreshLoadBalancerMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

@@ -7,18 +7,18 @@ doc {
 
     category "storage.primary"
 
-    desc "获取本地存储中物理机本地盘磁盘容量"
+    desc """获取本地存储中物理机本地盘磁盘容量"""
 
     rest {
         request {
-			url "GET /v1/primary-storage/local-storage/{primaryStorageUuid}/hosts/{hostUuid}/capacities"
+			url "GET /v1/primary-storage/local-storage/{primaryStorageUuid}/capacities"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
 
             clz APIGetLocalStorageHostDiskCapacityMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 
@@ -26,7 +26,7 @@ doc {
 					name "hostUuid"
 					enclosedIn "params"
 					desc "物理机UUID"
-					location "url"
+					location "query"
 					type "String"
 					optional true
 					since "0.6"

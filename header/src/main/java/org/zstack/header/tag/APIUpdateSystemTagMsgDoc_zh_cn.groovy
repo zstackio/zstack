@@ -7,7 +7,7 @@ doc {
 
     category "tag"
 
-    desc "更新系统标签"
+    desc """更新系统标签"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIUpdateSystemTagMsg.class
 
-            desc "更新系统标签"
+            desc """更新系统标签"""
             
 			params {
 

@@ -7,7 +7,7 @@ doc {
 
     category "三层网络"
 
-    desc "检查IP可用性"
+    desc """检查IP可用性"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APICheckIpAvailabilityMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

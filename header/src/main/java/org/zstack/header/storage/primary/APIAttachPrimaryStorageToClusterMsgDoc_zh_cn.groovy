@@ -7,7 +7,7 @@ doc {
 
     category "storage.primary"
 
-    desc "向集群添加主存储"
+    desc """向集群添加主存储"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIAttachPrimaryStorageToClusterMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

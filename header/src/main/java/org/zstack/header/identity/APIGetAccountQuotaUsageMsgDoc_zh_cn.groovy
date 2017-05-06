@@ -7,7 +7,7 @@ doc {
 
     category "identity"
 
-    desc "获取账户配额使用情况"
+    desc """获取账户配额使用情况"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIGetAccountQuotaUsageMsg.class
 
-            desc "获取账户配额使用情况"
+            desc """获取账户配额使用情况"""
             
 			params {
 

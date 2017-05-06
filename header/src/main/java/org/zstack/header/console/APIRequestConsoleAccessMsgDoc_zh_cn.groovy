@@ -7,7 +7,7 @@ doc {
 
     category "console"
 
-    desc "请求控制台访问地址"
+    desc """请求控制台访问地址"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIRequestConsoleAccessMsg.class
 
-            desc "请求控制台访问地址"
+            desc """请求控制台访问地址"""
             
 			params {
 

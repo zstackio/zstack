@@ -7,7 +7,7 @@ doc {
 
     category "identity"
 
-    desc "解除资源共享"
+    desc """解除资源共享"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIRevokeResourceSharingMsg.class
 
-            desc "解除资源共享"
+            desc """解除资源共享"""
             
 			params {
 

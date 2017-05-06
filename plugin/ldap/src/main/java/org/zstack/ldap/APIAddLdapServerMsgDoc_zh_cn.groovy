@@ -7,7 +7,7 @@ doc {
 
     category "ldap"
 
-    desc "添加LDAP服务器"
+    desc """添加LDAP服务器"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIAddLdapServerMsg.class
 
-            desc "添加LDAP服务器"
+            desc """添加LDAP服务器"""
             
 			params {
 

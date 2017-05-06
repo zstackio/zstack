@@ -7,7 +7,7 @@ doc {
 
     category "volume"
 
-    desc "获取云盘格式"
+    desc """获取云盘格式"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIGetVolumeFormatMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

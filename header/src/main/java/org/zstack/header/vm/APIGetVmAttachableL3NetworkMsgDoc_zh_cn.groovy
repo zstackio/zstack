@@ -7,7 +7,7 @@ doc {
 
     category "vmInstance"
 
-    desc "获取一个云主机可加载网络三层网络列表"
+    desc """获取一个云主机可加载网络三层网络列表"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIGetVmAttachableL3NetworkMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

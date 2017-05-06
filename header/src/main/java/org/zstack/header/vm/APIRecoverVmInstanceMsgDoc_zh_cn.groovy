@@ -7,7 +7,7 @@ doc {
 
     category "vmInstance"
 
-    desc "恢复一个处于Destroyed状态的云主机。恢复后云主机处于Stopped状态并且没有IP地址"
+    desc """恢复一个处于Destroyed状态的云主机。恢复后云主机处于Stopped状态并且没有IP地址"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIRecoverVmInstanceMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

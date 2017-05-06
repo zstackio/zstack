@@ -7,7 +7,7 @@ doc {
 
     category "gc"
 
-    desc "在这里填写API描述"
+    desc """在这里填写API描述"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APITriggerGCJobMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

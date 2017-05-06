@@ -7,7 +7,7 @@ doc {
 
     category "host.allocator"
 
-    desc "获取创建镜像的备份存储候选"
+    desc """获取创建镜像的备份存储候选"""
 
     rest {
         request {
@@ -19,7 +19,7 @@ doc {
 
             clz APIGetCandidateBackupStorageForCreatingImageMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

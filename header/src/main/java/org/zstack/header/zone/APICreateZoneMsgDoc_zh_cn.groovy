@@ -7,7 +7,7 @@ doc {
 
     category "zone"
 
-    desc "创建一个新的区域"
+    desc """创建一个新的区域"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APICreateZoneMsg.class
 
-            desc "创建一个新的区域"
+            desc """创建一个新的区域"""
             
 			params {
 

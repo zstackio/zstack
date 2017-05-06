@@ -7,7 +7,7 @@ doc {
 
     category "tag"
 
-    desc "创建用户标签"
+    desc """创建用户标签"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APICreateUserTagMsg.class
 
-            desc "创建用户标签"
+            desc """创建用户标签"""
             
 			params {
 

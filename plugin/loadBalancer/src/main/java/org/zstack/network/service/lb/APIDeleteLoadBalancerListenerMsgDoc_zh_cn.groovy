@@ -7,7 +7,7 @@ doc {
 
     category "负载均衡"
 
-    desc "删除负载均衡监听器"
+    desc """删除负载均衡监听器"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIDeleteLoadBalancerListenerMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

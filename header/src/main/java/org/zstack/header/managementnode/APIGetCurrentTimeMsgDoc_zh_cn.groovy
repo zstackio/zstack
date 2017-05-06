@@ -7,7 +7,7 @@ doc {
 
     category "managementNode"
 
-    desc "获取当前时间"
+    desc """获取当前时间"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIGetCurrentTimeMsg.class
 
-            desc "获取当前时间"
+            desc """获取当前时间"""
             
 			params {
 

@@ -7,7 +7,7 @@ doc {
 
     category "vip"
 
-    desc "删除VIP"
+    desc """删除VIP"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIDeleteVipMsg.class
 
-            desc "删除VIP"
+            desc """删除VIP"""
             
 			params {
 

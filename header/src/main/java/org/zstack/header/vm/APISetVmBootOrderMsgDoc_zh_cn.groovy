@@ -7,7 +7,7 @@ doc {
 
     category "vmInstance"
 
-    desc "指定一个云主机的启动设备"
+    desc """指定一个云主机的启动设备"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APISetVmBootOrderMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

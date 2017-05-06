@@ -7,7 +7,7 @@ doc {
 
     category "二层网络"
 
-    desc "获取二层网络类型"
+    desc """获取二层网络类型"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIGetL2NetworkTypesMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

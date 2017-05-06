@@ -7,7 +7,7 @@ doc {
 
     category "storage.ceph.backup"
 
-    desc "更新 Ceph 镜像服务器 mon 节点"
+    desc """更新 Ceph 镜像服务器 mon 节点"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIUpdateCephBackupStorageMonMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

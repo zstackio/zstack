@@ -7,7 +7,7 @@ doc {
 
     category "host"
 
-    desc "更新物理机启用状态"
+    desc """更新物理机启用状态"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIChangeHostStateMsg.class
 
-            desc "更新物理机启用状态"
+            desc """更新物理机启用状态"""
             
 			params {
 

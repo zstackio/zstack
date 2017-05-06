@@ -7,7 +7,7 @@ doc {
 
     category "host"
 
-    desc "添加KVM主机"
+    desc """添加KVM主机"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIAddKVMHostMsg.class
 
-            desc "添加KVM主机"
+            desc """添加KVM主机"""
             
 			params {
 

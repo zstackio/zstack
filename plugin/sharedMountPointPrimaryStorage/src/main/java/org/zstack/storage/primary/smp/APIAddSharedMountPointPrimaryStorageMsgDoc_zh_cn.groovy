@@ -7,7 +7,7 @@ doc {
 
     category "storage.primary"
 
-    desc "添加一个共享挂载点的主存储"
+    desc """添加一个共享挂载点的主存储"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIAddSharedMountPointPrimaryStorageMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

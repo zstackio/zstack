@@ -9,7 +9,7 @@ doc {
 
     category "portForwarding"
 
-    desc "用户可以使用QueryPortForwardingRule来查询规则"
+    desc """用户可以使用QueryPortForwardingRule来查询规则"""
 
     rest {
         request {
@@ -21,7 +21,7 @@ doc {
 
             clz APIQueryPortForwardingRuleMsg.class
 
-            desc "用户可以使用QueryPortForwardingRule来查询规则"
+            desc """用户可以使用QueryPortForwardingRule来查询规则"""
             
 			params APIQueryMessage.class
         }

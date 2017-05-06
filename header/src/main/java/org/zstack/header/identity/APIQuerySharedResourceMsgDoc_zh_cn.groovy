@@ -9,7 +9,7 @@ doc {
 
     category "identity"
 
-    desc "查询共享资源"
+    desc """查询共享资源"""
 
     rest {
         request {
@@ -20,7 +20,7 @@ doc {
 
             clz APIQuerySharedResourceMsg.class
 
-            desc "查询共享资源"
+            desc """查询共享资源"""
             
 			params APIQueryMessage.class
         }

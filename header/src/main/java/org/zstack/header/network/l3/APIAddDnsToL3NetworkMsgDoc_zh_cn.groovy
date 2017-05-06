@@ -7,7 +7,7 @@ doc {
 
     category "三层网络"
 
-    desc "向三层网络添加DNS"
+    desc """向三层网络添加DNS"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIAddDnsToL3NetworkMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

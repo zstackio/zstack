@@ -7,7 +7,7 @@ doc {
 
     category "ldap"
 
-    desc "创建LDAP绑定"
+    desc """创建LDAP绑定"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APICreateLdapBindingMsg.class
 
-            desc "创建LDAP绑定"
+            desc """创建LDAP绑定"""
             
 			params {
 

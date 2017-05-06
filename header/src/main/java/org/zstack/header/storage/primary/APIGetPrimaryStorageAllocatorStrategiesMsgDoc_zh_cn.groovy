@@ -7,7 +7,7 @@ doc {
 
     category "storage.primary"
 
-    desc "获取主存储分配策略清单"
+    desc """获取主存储分配策略清单"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIGetPrimaryStorageAllocatorStrategiesMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

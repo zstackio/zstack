@@ -7,7 +7,7 @@ doc {
 
     category "core.progress"
 
-    desc "获取任务进度"
+    desc """获取任务进度"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIGetTaskProgressMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

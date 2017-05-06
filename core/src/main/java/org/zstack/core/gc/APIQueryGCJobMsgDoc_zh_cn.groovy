@@ -9,7 +9,7 @@ doc {
 
     category "gc"
 
-    desc "在这里填写API描述"
+    desc """在这里填写API描述"""
 
     rest {
         request {
@@ -21,7 +21,7 @@ doc {
 
             clz APIQueryGCJobMsg.class
 
-            desc ""
+            desc """"""
             
 			params APIQueryMessage.class
         }

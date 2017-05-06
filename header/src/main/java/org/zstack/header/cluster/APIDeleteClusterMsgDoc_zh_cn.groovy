@@ -7,7 +7,7 @@ doc {
 
     category "cluster"
 
-    desc "管理员可以使用DeleteCluster命令来删除一个集群"
+    desc """管理员可以使用DeleteCluster命令来删除一个集群"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIDeleteClusterMsg.class
 
-            desc "管理员可以使用DeleteCluster命令来删除一个集群"
+            desc """管理员可以使用DeleteCluster命令来删除一个集群"""
             
 			params {
 

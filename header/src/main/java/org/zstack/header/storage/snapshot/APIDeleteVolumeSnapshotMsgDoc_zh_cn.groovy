@@ -7,7 +7,7 @@ doc {
 
     category "snapshot.volume"
 
-    desc "删除云盘快照"
+    desc """删除云盘快照"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIDeleteVolumeSnapshotMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

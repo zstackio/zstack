@@ -9,7 +9,7 @@ doc {
 
     category "securityGroup"
 
-    desc "查询安全组"
+    desc """查询安全组"""
 
     rest {
         request {
@@ -21,7 +21,7 @@ doc {
 
             clz APIQuerySecurityGroupMsg.class
 
-            desc "查询安全组"
+            desc """查询安全组"""
             
 			params APIQueryMessage.class
         }

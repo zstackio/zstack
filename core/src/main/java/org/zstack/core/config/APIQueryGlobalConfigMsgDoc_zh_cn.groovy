@@ -9,7 +9,7 @@ doc {
 
     category "globalConfig"
 
-    desc "在这里填写API描述"
+    desc """在这里填写API描述"""
 
     rest {
         request {
@@ -20,7 +20,7 @@ doc {
 
             clz APIQueryGlobalConfigMsg.class
 
-            desc ""
+            desc """"""
             
 			params APIQueryMessage.class
         }

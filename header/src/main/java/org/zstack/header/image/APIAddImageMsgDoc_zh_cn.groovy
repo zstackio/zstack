@@ -7,7 +7,7 @@ doc {
 
     category "image"
 
-    desc "向镜像服务器添加镜像"
+    desc """向镜像服务器添加镜像"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIAddImageMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

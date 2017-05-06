@@ -7,7 +7,7 @@ doc {
 
     category "identity"
 
-    desc "输入资源的UUID可以获得该资源的名称，例如知道虚拟机的UUID，用于获得虚拟机名称。该API的特点在在于无需知道某个UUID具体代表什么资源，易于UI用作UUID到名称的翻译"
+    desc """输入资源的UUID可以获得该资源的名称，例如知道虚拟机的UUID，用于获得虚拟机名称。该API的特点在在于无需知道某个UUID具体代表什么资源，易于UI用作UUID到名称的翻译"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIGetResourceNamesMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

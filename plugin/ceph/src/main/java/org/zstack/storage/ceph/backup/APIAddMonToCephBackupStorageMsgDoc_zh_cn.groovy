@@ -7,7 +7,7 @@ doc {
 
     category "storage.ceph.backup"
 
-    desc "为 Ceph 镜像服务器添加 mon 节点"
+    desc """为 Ceph 镜像服务器添加 mon 节点"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIAddMonToCephBackupStorageMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

@@ -7,7 +7,7 @@ doc {
 
     category "负载均衡"
 
-    desc "创建负载均衡监听器"
+    desc """创建负载均衡监听器"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APICreateLoadBalancerListenerMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

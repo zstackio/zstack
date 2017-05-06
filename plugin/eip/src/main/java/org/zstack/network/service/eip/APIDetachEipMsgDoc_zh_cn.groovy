@@ -7,7 +7,7 @@ doc {
 
     category "弹性IP"
 
-    desc "解绑弹性IP"
+    desc """解绑弹性IP"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIDetachEipMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

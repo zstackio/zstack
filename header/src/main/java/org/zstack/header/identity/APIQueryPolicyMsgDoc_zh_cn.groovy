@@ -9,7 +9,7 @@ doc {
 
     category "identity"
 
-    desc "查询策略"
+    desc """查询策略"""
 
     rest {
         request {
@@ -21,7 +21,7 @@ doc {
 
             clz APIQueryPolicyMsg.class
 
-            desc "查询策略"
+            desc """查询策略"""
             
 			params APIQueryMessage.class
         }

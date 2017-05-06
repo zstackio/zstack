@@ -7,7 +7,7 @@ doc {
 
     category "弹性IP"
 
-    desc "删除弹性IP"
+    desc """删除弹性IP"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIDeleteEipMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

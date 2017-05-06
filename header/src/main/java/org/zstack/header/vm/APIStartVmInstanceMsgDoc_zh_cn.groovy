@@ -7,7 +7,7 @@ doc {
 
     category "vmInstance"
 
-    desc "启动一个云主机"
+    desc """启动一个云主机"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIStartVmInstanceMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

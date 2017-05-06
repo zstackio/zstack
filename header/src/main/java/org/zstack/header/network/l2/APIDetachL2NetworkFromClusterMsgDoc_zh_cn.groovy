@@ -7,7 +7,7 @@ doc {
 
     category "二层网络"
 
-    desc "从集群上卸载二层网络"
+    desc """从集群上卸载二层网络"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIDetachL2NetworkFromClusterMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

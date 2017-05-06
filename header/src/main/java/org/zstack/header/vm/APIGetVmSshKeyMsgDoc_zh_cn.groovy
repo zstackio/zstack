@@ -7,7 +7,7 @@ doc {
 
     category "vmInstance"
 
-    desc "获取一个云主机的SSH Key，该SSH key是通过SetVmSshKey设置的。"
+    desc """获取一个云主机的SSH Key，该SSH key是通过SetVmSshKey设置的。"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIGetVmSshKeyMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

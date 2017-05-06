@@ -7,7 +7,7 @@ doc {
 
     category "portForwarding"
 
-    desc "用户可以使用CreatePortForwardingRule来创建一个端口转发规则, 并可以同时挂载或者不挂载到虚拟机网卡上"
+    desc """用户可以使用CreatePortForwardingRule来创建一个端口转发规则, 并可以同时挂载或者不挂载到虚拟机网卡上"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APICreatePortForwardingRuleMsg.class
 
-            desc "用户可以使用CreatePortForwardingRule来创建一个端口转发规则, 并可以同时挂载或者不挂载到虚拟机网卡上"
+            desc """用户可以使用CreatePortForwardingRule来创建一个端口转发规则, 并可以同时挂载或者不挂载到虚拟机网卡上"""
             
 			params {
 

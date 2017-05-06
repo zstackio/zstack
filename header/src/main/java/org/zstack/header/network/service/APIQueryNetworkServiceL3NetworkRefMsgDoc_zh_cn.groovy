@@ -9,7 +9,7 @@ doc {
 
     category "三层网络"
 
-    desc "查询网络服务与三层网络引用"
+    desc """查询网络服务与三层网络引用"""
 
     rest {
         request {
@@ -20,7 +20,7 @@ doc {
 
             clz APIQueryNetworkServiceL3NetworkRefMsg.class
 
-            desc ""
+            desc """"""
             
 			params APIQueryMessage.class
         }

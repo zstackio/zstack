@@ -7,7 +7,7 @@ doc {
 
     category "configuration"
 
-    desc "创建云主机规格"
+    desc """创建云主机规格"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APICreateInstanceOfferingMsg.class
 
-            desc "创建云主机规格"
+            desc """创建云主机规格"""
             
 			params {
 

@@ -7,7 +7,7 @@ doc {
 
     category "三层网络"
 
-    desc "获取三层网络类型"
+    desc """获取三层网络类型"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIGetL3NetworkTypesMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

@@ -7,7 +7,7 @@ doc {
 
     category "console"
 
-    desc "重连控制台代理Agent"
+    desc """重连控制台代理Agent"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIReconnectConsoleProxyAgentMsg.class
 
-            desc "重连控制台代理Agent"
+            desc """重连控制台代理Agent"""
             
 			params {
 

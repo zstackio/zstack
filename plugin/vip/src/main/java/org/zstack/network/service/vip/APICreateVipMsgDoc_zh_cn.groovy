@@ -7,7 +7,7 @@ doc {
 
     category "vip"
 
-    desc "创建VIP"
+    desc """创建VIP"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APICreateVipMsg.class
 
-            desc "创建VIP"
+            desc """创建VIP"""
             
 			params {
 

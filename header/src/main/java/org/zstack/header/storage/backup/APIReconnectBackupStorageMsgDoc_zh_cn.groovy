@@ -7,7 +7,7 @@ doc {
 
     category "storage.backup"
 
-    desc "重连镜像服务器"
+    desc """重连镜像服务器"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIReconnectBackupStorageMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

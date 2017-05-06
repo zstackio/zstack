@@ -7,7 +7,7 @@ doc {
 
     category "securityGroup"
 
-    desc "删除安全组"
+    desc """删除安全组"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIDeleteSecurityGroupMsg.class
 
-            desc "删除安全组"
+            desc """删除安全组"""
             
 			params {
 

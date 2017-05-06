@@ -7,7 +7,7 @@ doc {
 
     category "二层网络"
 
-    desc "挂载二层网络到集群"
+    desc """挂载二层网络到集群"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIAttachL2NetworkToClusterMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

@@ -7,7 +7,7 @@ doc {
 
     category "volume"
 
-    desc "从云主机上卸载云盘"
+    desc """从云主机上卸载云盘"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIDetachDataVolumeFromVmMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

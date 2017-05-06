@@ -7,7 +7,7 @@ doc {
 
     category "storage.ceph.primary"
 
-    desc "从 Ceph 主存储删除 mon 节点"
+    desc """从 Ceph 主存储删除 mon 节点"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIRemoveMonFromCephPrimaryStorageMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

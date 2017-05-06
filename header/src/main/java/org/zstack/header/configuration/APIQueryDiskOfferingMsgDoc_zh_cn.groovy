@@ -9,7 +9,7 @@ doc {
 
     category "configuration"
 
-    desc "查询云盘规格"
+    desc """查询云盘规格"""
 
     rest {
         request {
@@ -21,7 +21,7 @@ doc {
 
             clz APIQueryDiskOfferingMsg.class
 
-            desc "查询云盘规格"
+            desc """查询云盘规格"""
             
 			params APIQueryMessage.class
         }

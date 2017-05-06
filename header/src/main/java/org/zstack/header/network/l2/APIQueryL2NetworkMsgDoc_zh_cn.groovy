@@ -9,7 +9,7 @@ doc {
 
     category "二层网络"
 
-    desc "查询二层网络"
+    desc """查询二层网络"""
 
     rest {
         request {
@@ -21,7 +21,7 @@ doc {
 
             clz APIQueryL2NetworkMsg.class
 
-            desc ""
+            desc """"""
             
 			params APIQueryMessage.class
         }

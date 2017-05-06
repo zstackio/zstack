@@ -7,7 +7,7 @@ doc {
 
     category "portForwarding"
 
-    desc "改变端口转发规则的状态"
+    desc """改变端口转发规则的状态"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIChangePortForwardingRuleStateMsg.class
 
-            desc "改变端口转发规则的状态"
+            desc """改变端口转发规则的状态"""
             
 			params {
 

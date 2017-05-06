@@ -7,7 +7,7 @@ doc {
 
     category "storage.ceph.backup"
 
-    desc "从 Ceph 镜像服务器删除 mon 节点"
+    desc """从 Ceph 镜像服务器删除 mon 节点"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIRemoveMonFromCephBackupStorageMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

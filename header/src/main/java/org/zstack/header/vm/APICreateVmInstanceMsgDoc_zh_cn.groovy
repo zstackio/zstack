@@ -7,7 +7,7 @@ doc {
 
     category "云主机"
 
-    desc "创建一个新的云主机"
+    desc """创建一个新的云主机"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APICreateVmInstanceMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

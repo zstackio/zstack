@@ -7,7 +7,7 @@ doc {
 
     category "vmInstance"
 
-    desc "加载一个ISO镜像到Running或Stopped的云主机"
+    desc """加载一个ISO镜像到Running或Stopped的云主机"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIAttachIsoToVmInstanceMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

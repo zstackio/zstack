@@ -7,7 +7,7 @@ doc {
 
     category "vmInstance"
 
-    desc "动态添加一个网络到Running或者Stopped的云主机"
+    desc """动态添加一个网络到Running或者Stopped的云主机"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIAttachL3NetworkToVmMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

@@ -7,7 +7,7 @@ doc {
 
     category "storage.primary"
 
-    desc "刷新主存储容量"
+    desc """刷新主存储容量"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APISyncPrimaryStorageCapacityMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

@@ -7,7 +7,7 @@ doc {
 
     category "portForwarding"
 
-    desc "用户可以使用DetachPortForwardingRule来从一个虚拟机网卡卸载一个规则"
+    desc """用户可以使用DetachPortForwardingRule来从一个虚拟机网卡卸载一个规则"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIDetachPortForwardingRuleMsg.class
 
-            desc "用户可以使用DetachPortForwardingRule来从一个虚拟机网卡卸载一个规则"
+            desc """用户可以使用DetachPortForwardingRule来从一个虚拟机网卡卸载一个规则"""
             
 			params {
 

@@ -7,7 +7,7 @@ doc {
 
     category "ldap"
 
-    desc "删除LDAP服务器"
+    desc """删除LDAP服务器"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIDeleteLdapServerMsg.class
 
-            desc "删除LDAP服务器"
+            desc """删除LDAP服务器"""
             
 			params {
 

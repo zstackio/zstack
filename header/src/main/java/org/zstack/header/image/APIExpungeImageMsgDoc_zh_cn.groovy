@@ -7,7 +7,7 @@ doc {
 
     category "image"
 
-    desc "彻底删除镜像"
+    desc """彻底删除镜像"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIExpungeImageMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

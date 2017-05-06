@@ -7,7 +7,7 @@ doc {
 
     category "vmInstance"
 
-    desc "在这里填写API描述"
+    desc """在这里填写API描述"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APISetVmSshKeyMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

@@ -7,7 +7,7 @@ doc {
 
     category "storage.ceph.primary"
 
-    desc "添加 Ceph 主存储"
+    desc """添加 Ceph 主存储"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIAddCephPrimaryStorageMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

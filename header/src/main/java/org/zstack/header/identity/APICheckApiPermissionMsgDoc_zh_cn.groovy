@@ -7,7 +7,7 @@ doc {
 
     category "identity"
 
-    desc "检查API权限"
+    desc """检查API权限"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APICheckApiPermissionMsg.class
 
-            desc "检查API权限"
+            desc """检查API权限"""
             
 			params {
 

@@ -7,7 +7,7 @@ doc {
 
     category "volume"
 
-    desc "从云盘创建快照"
+    desc """从云盘创建快照"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APICreateVolumeSnapshotMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

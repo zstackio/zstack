@@ -7,7 +7,7 @@ doc {
 
     category "vmInstance"
 
-    desc "彻底删除一个处于Destroyed状态的云主机。该操作会从数据库里面删除云主机并在主存储上删除该云主机的根云盘。该操作一旦执行就不可恢复"
+    desc """彻底删除一个处于Destroyed状态的云主机。该操作会从数据库里面删除云主机并在主存储上删除该云主机的根云盘。该操作一旦执行就不可恢复"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIExpungeVmInstanceMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

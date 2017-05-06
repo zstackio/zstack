@@ -9,7 +9,7 @@ doc {
 
     category "storage.backup"
 
-    desc "查询镜像服务器"
+    desc """查询镜像服务器"""
 
     rest {
         request {
@@ -21,7 +21,7 @@ doc {
 
             clz APIQueryBackupStorageMsg.class
 
-            desc ""
+            desc """"""
             
 			params APIQueryMessage.class
         }

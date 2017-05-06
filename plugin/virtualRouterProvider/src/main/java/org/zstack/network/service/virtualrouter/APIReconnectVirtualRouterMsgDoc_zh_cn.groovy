@@ -7,7 +7,7 @@ doc {
 
     category "虚拟路由器"
 
-    desc "重连虚拟路由器"
+    desc """重连虚拟路由器"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIReconnectVirtualRouterMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

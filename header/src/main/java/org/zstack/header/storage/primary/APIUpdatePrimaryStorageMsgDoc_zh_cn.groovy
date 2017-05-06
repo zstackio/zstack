@@ -7,7 +7,7 @@ doc {
 
     category "storage.primary"
 
-    desc "更新主存储信息"
+    desc """更新主存储信息"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIUpdatePrimaryStorageMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

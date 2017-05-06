@@ -9,7 +9,7 @@ doc {
 
     category "snapshot.volume"
 
-    desc "查询快照树"
+    desc """查询快照树"""
 
     rest {
         request {
@@ -21,7 +21,7 @@ doc {
 
             clz APIQueryVolumeSnapshotTreeMsg.class
 
-            desc ""
+            desc """"""
             
 			params APIQueryMessage.class
         }

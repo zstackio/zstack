@@ -7,7 +7,7 @@ doc {
 
     category "volume"
 
-    desc "获取云盘支持的类型的能力"
+    desc """获取云盘支持的类型的能力"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIGetVolumeCapabilitiesMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

@@ -7,7 +7,7 @@ doc {
 
     category "三层网络"
 
-    desc "添加IP地址范围"
+    desc """添加IP地址范围"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIAddIpRangeMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

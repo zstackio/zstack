@@ -7,7 +7,7 @@ doc {
 
     category "portForwarding"
 
-    desc "用户可以使用AttachPortForwardingRule来挂载一个规则到虚拟机网卡上"
+    desc """用户可以使用AttachPortForwardingRule来挂载一个规则到虚拟机网卡上"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIAttachPortForwardingRuleMsg.class
 
-            desc "用户可以使用AttachPortForwardingRule来挂载一个规则到虚拟机网卡上"
+            desc """用户可以使用AttachPortForwardingRule来挂载一个规则到虚拟机网卡上"""
             
 			params {
 

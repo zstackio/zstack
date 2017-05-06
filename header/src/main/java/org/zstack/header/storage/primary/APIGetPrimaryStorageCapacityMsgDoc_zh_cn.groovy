@@ -7,7 +7,7 @@ doc {
 
     category "storage.primary"
 
-    desc "获取主存储容量"
+    desc """获取主存储容量"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIGetPrimaryStorageCapacityMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

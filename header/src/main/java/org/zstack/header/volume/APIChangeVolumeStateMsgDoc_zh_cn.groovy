@@ -7,7 +7,7 @@ doc {
 
     category "volume"
 
-    desc "开启或关闭云盘"
+    desc """开启或关闭云盘"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIChangeVolumeStateMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

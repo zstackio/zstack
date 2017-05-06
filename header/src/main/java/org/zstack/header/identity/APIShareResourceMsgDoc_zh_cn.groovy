@@ -7,7 +7,7 @@ doc {
 
     category "identity"
 
-    desc "共享资源给账户"
+    desc """共享资源给账户"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIShareResourceMsg.class
 
-            desc "共享资源给账户"
+            desc """共享资源给账户"""
             
 			params {
 

@@ -7,7 +7,7 @@ doc {
 
     category "host"
 
-    desc "更新KVM机信息"
+    desc """更新KVM机信息"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIUpdateKVMHostMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

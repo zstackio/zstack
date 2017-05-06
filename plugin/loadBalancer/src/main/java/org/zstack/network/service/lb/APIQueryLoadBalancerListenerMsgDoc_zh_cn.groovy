@@ -9,7 +9,7 @@ doc {
 
     category "负载均衡"
 
-    desc "查询负载均衡监听器"
+    desc """查询负载均衡监听器"""
 
     rest {
         request {
@@ -21,7 +21,7 @@ doc {
 
             clz APIQueryLoadBalancerListenerMsg.class
 
-            desc ""
+            desc """"""
             
 			params APIQueryMessage.class
         }

@@ -7,7 +7,7 @@ doc {
 
     category "三层网络"
 
-    desc "获取空闲IP"
+    desc """获取空闲IP"""
 
     rest {
         request {
@@ -19,7 +19,7 @@ doc {
 
             clz APIGetFreeIpMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

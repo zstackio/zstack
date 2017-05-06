@@ -9,7 +9,7 @@ doc {
 
     category "network.l2"
 
-    desc "在这里填写API描述"
+    desc """在这里填写API描述"""
 
     rest {
         request {
@@ -21,7 +21,7 @@ doc {
 
             clz APIQueryL2VxlanNetworkPoolMsg.class
 
-            desc ""
+            desc """"""
             
 			params APIQueryMessage.class
         }

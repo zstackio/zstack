@@ -7,7 +7,7 @@ doc {
 
     category "storage.primary"
 
-    desc "添加 NFS 主存储"
+    desc """添加 NFS 主存储"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIAddNfsPrimaryStorageMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

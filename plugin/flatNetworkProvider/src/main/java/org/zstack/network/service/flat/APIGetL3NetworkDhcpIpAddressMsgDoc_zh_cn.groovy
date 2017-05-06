@@ -7,7 +7,7 @@ doc {
 
     category "三层网络"
 
-    desc "获取网络DHCP服务所用地址"
+    desc """获取网络DHCP服务所用地址"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIGetL3NetworkDhcpIpAddressMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

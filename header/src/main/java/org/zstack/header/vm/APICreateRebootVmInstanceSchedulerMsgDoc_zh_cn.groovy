@@ -7,7 +7,7 @@ doc {
 
     category "vmInstance"
 
-    desc "创建重启云主机的定时任务"
+    desc """创建重启云主机的定时任务"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APICreateRebootVmInstanceSchedulerMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

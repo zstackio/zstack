@@ -7,7 +7,7 @@ doc {
 
     category "vmInstance"
 
-    desc "设置云主机Hostname。注意，ZStack通过DHCP服务器配置云主机hostname，如果云主机本身采用静态hostname方式，该API配置的hostname不生效。"
+    desc """设置云主机Hostname。注意，ZStack通过DHCP服务器配置云主机hostname，如果云主机本身采用静态hostname方式，该API配置的hostname不生效。"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APISetVmHostnameMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

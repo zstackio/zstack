@@ -7,7 +7,7 @@ doc {
 
     category "ldap"
 
-    desc "清理无效的LDAP绑定"
+    desc """清理无效的LDAP绑定"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APICleanInvalidLdapBindingMsg.class
 
-            desc "清理无效的LDAP绑定"
+            desc """清理无效的LDAP绑定"""
             
 			params {
 
