@@ -9,7 +9,7 @@ doc {
 
     category "系统云主机"
 
-    desc "查询系统云主机"
+    desc """查询系统云主机"""
 
     rest {
         request {
@@ -21,7 +21,7 @@ doc {
 
             clz APIQueryApplianceVmMsg.class
 
-            desc ""
+            desc """"""
             
 			params APIQueryMessage.class
         }

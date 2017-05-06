@@ -7,7 +7,7 @@ doc {
 
     category "storage.backup"
 
-    desc "获取镜像服务器存储容量"
+    desc """获取镜像服务器存储容量"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIGetBackupStorageCapacityMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

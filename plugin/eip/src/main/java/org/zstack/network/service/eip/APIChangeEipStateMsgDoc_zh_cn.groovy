@@ -7,7 +7,7 @@ doc {
 
     category "弹性IP"
 
-    desc "更改弹性IP状态"
+    desc """更改弹性IP状态"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIChangeEipStateMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

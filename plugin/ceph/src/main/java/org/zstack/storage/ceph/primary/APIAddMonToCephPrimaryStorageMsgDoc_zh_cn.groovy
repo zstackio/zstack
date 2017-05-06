@@ -7,7 +7,7 @@ doc {
 
     category "stroage.ceph.primary"
 
-    desc "为 Ceph 主存储添加 mon 节点"
+    desc """为 Ceph 主存储添加 mon 节点"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIAddMonToCephPrimaryStorageMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

@@ -7,7 +7,7 @@ doc {
 
     category "zone"
 
-    desc "更新区域的名称、描述、系统标签或者用户标签"
+    desc """更新区域的名称、描述、系统标签或者用户标签"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIUpdateZoneMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

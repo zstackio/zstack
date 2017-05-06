@@ -7,7 +7,7 @@ doc {
 
     category "三层网络"
 
-    desc "删除三层网络"
+    desc """删除三层网络"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIDeleteL3NetworkMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

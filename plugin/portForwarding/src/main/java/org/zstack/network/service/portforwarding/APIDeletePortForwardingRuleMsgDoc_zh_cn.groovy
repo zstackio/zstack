@@ -7,7 +7,7 @@ doc {
 
     category "portForwarding"
 
-    desc "删除端口转发规则"
+    desc """删除端口转发规则"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIDeletePortForwardingRuleMsg.class
 
-            desc "删除端口转发规则"
+            desc """删除端口转发规则"""
             
 			params {
 

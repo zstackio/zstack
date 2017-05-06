@@ -7,7 +7,7 @@ doc {
 
     category "identity"
 
-    desc "将用于添加到用户组"
+    desc """将用于添加到用户组"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIAddUserToGroupMsg.class
 
-            desc "将用于添加到用户组"
+            desc """将用于添加到用户组"""
             
 			params {
 

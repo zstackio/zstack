@@ -7,7 +7,7 @@ doc {
 
     category "host"
 
-    desc "重连物理机"
+    desc """重连物理机"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIReconnectHostMsg.class
 
-            desc "重新连接物理机"
+            desc """重新连接物理机"""
             
 			params {
 

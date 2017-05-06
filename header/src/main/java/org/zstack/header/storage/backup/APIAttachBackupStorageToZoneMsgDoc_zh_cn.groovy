@@ -7,7 +7,7 @@ doc {
 
     category "storage.backup"
 
-    desc "挂载镜像服务器至区域"
+    desc """挂载镜像服务器至区域"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIAttachBackupStorageToZoneMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

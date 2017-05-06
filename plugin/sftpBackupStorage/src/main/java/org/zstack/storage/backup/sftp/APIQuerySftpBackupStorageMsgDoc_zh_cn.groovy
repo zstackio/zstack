@@ -9,7 +9,7 @@ doc {
 
     category "storage.backup.sftp"
 
-    desc "查询所有的Sftp镜像服务器"
+    desc """查询所有的Sftp镜像服务器"""
 
     rest {
         request {
@@ -21,7 +21,7 @@ doc {
 
             clz APIQuerySftpBackupStorageMsg.class
 
-            desc ""
+            desc """"""
             
 			params APIQueryMessage.class
         }

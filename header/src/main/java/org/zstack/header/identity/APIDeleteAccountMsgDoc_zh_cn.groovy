@@ -7,7 +7,7 @@ doc {
 
     category "identity"
 
-    desc "删除账户"
+    desc """删除账户"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIDeleteAccountMsg.class
 
-            desc "删除账户"
+            desc """删除账户"""
             
 			params {
 

@@ -7,7 +7,7 @@ doc {
 
     category "三层网络"
 
-    desc "更新IP地址范围"
+    desc """更新IP地址范围"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIUpdateIpRangeMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

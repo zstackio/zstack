@@ -7,7 +7,7 @@ doc {
 
     category "vmInstance"
 
-    desc "获取一个云主机的控制台密码"
+    desc """获取一个云主机的控制台密码"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIGetVmConsolePasswordMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

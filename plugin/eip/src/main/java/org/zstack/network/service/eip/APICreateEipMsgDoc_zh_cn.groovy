@@ -7,7 +7,7 @@ doc {
 
     category "弹性IP"
 
-    desc "创建弹性IP"
+    desc """创建弹性IP"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APICreateEipMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

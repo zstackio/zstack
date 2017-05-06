@@ -7,7 +7,7 @@ doc {
 
     category "storage.primary"
 
-    desc "更改主存储状态"
+    desc """更改主存储状态"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIChangePrimaryStorageStateMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

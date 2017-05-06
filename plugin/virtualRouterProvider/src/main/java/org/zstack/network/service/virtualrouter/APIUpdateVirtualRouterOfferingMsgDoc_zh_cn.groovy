@@ -7,7 +7,7 @@ doc {
 
     category "虚拟路由器"
 
-    desc "更新虚拟路由器规格"
+    desc """更新虚拟路由器规格"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIUpdateVirtualRouterOfferingMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

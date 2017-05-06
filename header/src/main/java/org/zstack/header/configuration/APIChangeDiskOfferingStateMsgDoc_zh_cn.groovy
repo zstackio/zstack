@@ -7,7 +7,7 @@ doc {
 
     category "configuration"
 
-    desc "更改云盘规格的启用状态"
+    desc """更改云盘规格的启用状态"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIChangeDiskOfferingStateMsg.class
 
-            desc "更改云盘规格的启用状态"
+            desc """更改云盘规格的启用状态"""
             
 			params {
 

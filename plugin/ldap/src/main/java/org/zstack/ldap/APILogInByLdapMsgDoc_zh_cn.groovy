@@ -7,7 +7,7 @@ doc {
 
     category "ldap"
 
-    desc "使用LDAP身份登录"
+    desc """使用LDAP身份登录"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APILogInByLdapMsg.class
 
-            desc "使用LDAP身份登录"
+            desc """使用LDAP身份登录"""
             
 			params {
 

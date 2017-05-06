@@ -7,7 +7,7 @@ doc {
 
     category "image"
 
-    desc "删除镜像"
+    desc """删除镜像"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIDeleteImageMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

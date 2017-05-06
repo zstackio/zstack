@@ -7,7 +7,7 @@ doc {
 
     category "image"
 
-    desc "获取实时镜像大小信息"
+    desc """获取实时镜像大小信息"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APISyncImageSizeMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

@@ -9,7 +9,7 @@ doc {
 
     category "虚拟路由器"
 
-    desc "查询虚拟路由器规格"
+    desc """查询虚拟路由器规格"""
 
     rest {
         request {
@@ -21,7 +21,7 @@ doc {
 
             clz APIQueryVirtualRouterOfferingMsg.class
 
-            desc ""
+            desc """"""
             
 			params APIQueryMessage.class
         }

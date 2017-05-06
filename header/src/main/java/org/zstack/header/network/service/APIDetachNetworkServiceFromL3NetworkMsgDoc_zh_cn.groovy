@@ -7,7 +7,7 @@ doc {
 
     category "三层网络"
 
-    desc "从三层网络卸载网络服务"
+    desc """从三层网络卸载网络服务"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIDetachNetworkServiceFromL3NetworkMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

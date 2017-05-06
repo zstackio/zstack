@@ -9,7 +9,7 @@ doc {
 
     category "identity"
 
-    desc "查询配额"
+    desc """查询配额"""
 
     rest {
         request {
@@ -20,7 +20,7 @@ doc {
 
             clz APIQueryQuotaMsg.class
 
-            desc "查询配额"
+            desc """查询配额"""
             
 			params APIQueryMessage.class
         }

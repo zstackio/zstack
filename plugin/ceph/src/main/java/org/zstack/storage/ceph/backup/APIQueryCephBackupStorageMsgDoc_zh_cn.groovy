@@ -9,7 +9,7 @@ doc {
 
     category "storage.ceph.backup"
 
-    desc "查询 Ceph 镜像服务器"
+    desc """查询 Ceph 镜像服务器"""
 
     rest {
         request {
@@ -21,7 +21,7 @@ doc {
 
             clz APIQueryCephBackupStorageMsg.class
 
-            desc ""
+            desc """"""
             
 			params APIQueryMessage.class
         }

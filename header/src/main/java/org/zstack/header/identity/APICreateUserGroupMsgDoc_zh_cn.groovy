@@ -7,7 +7,7 @@ doc {
 
     category "identity"
 
-    desc "创建用户组"
+    desc """创建用户组"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APICreateUserGroupMsg.class
 
-            desc "创建用户组"
+            desc """创建用户组"""
             
 			params {
 

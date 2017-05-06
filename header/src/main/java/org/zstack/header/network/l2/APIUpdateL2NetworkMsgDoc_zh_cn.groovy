@@ -7,7 +7,7 @@ doc {
 
     category "二层网络"
 
-    desc "更新二层网络"
+    desc """更新二层网络"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIUpdateL2NetworkMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

@@ -7,7 +7,7 @@ doc {
 
     category "二层网络"
 
-    desc "创建Vlan二层网络"
+    desc """创建Vlan二层网络"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APICreateL2VlanNetworkMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

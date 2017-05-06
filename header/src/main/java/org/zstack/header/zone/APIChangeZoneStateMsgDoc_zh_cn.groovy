@@ -7,7 +7,7 @@ doc {
 
     category "zone"
 
-    desc "改变区域的可用状态"
+    desc """改变区域的可用状态"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIChangeZoneStateMsg.class
 
-            desc "改变区域的可用状态"
+            desc """改变区域的可用状态"""
             
 			params {
 

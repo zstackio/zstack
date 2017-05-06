@@ -7,7 +7,7 @@ doc {
 
     category "core.scheduler"
 
-    desc "删除定时任务"
+    desc """删除定时任务"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIDeleteSchedulerMsg.class
 
-            desc "删除定时任务"
+            desc """删除定时任务"""
             
 			params {
 

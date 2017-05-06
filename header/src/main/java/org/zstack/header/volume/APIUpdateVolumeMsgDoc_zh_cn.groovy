@@ -7,7 +7,7 @@ doc {
 
     category "volume"
 
-    desc "修改云盘属性"
+    desc """修改云盘属性"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIUpdateVolumeMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

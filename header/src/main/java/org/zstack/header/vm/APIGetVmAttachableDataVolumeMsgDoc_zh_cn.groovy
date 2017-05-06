@@ -7,7 +7,7 @@ doc {
 
     category "vmInstance"
 
-    desc "获取一个云主机可以加载的云盘列表"
+    desc """获取一个云主机可以加载的云盘列表"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIGetVmAttachableDataVolumeMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

@@ -7,7 +7,7 @@ doc {
 
     category "identity"
 
-    desc "创建策略"
+    desc """创建策略"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APICreatePolicyMsg.class
 
-            desc "创建策略"
+            desc """创建策略"""
             
 			params {
 

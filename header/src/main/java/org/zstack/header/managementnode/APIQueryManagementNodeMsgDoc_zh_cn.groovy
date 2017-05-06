@@ -9,7 +9,7 @@ doc {
 
     category "managementNode"
 
-    desc "查询管理节点"
+    desc """查询管理节点"""
 
     rest {
         request {
@@ -21,7 +21,7 @@ doc {
 
             clz APIQueryManagementNodeMsg.class
 
-            desc "查询管理节点"
+            desc """查询管理节点"""
             
 			params APIQueryMessage.class
         }

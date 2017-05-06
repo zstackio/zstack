@@ -7,7 +7,7 @@ doc {
 
     category "identity"
 
-    desc "使用用户身份登录"
+    desc """使用用户身份登录"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APILogInByUserMsg.class
 
-            desc "使用用户身份登录"
+            desc """使用用户身份登录"""
             
 			params {
 

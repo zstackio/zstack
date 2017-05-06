@@ -7,7 +7,7 @@ doc {
 
     category "portForwarding"
 
-    desc "更新端口转发规则"
+    desc """更新端口转发规则"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIUpdatePortForwardingRuleMsg.class
 
-            desc "更新端口转发规则"
+            desc """更新端口转发规则"""
             
 			params {
 

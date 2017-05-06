@@ -7,7 +7,7 @@ doc {
 
     category "vmInstance"
 
-    desc "将云主机热迁移至另一个物理机"
+    desc """将云主机热迁移至另一个物理机"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIMigrateVmMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

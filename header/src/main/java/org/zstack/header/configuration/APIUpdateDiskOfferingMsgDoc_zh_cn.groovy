@@ -7,7 +7,7 @@ doc {
 
     category "configuration"
 
-    desc "更新云盘规格"
+    desc """更新云盘规格"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIUpdateDiskOfferingMsg.class
 
-            desc "更新云盘规格"
+            desc """更新云盘规格"""
             
 			params {
 

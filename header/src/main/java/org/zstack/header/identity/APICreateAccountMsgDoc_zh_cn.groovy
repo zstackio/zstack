@@ -7,7 +7,7 @@ doc {
 
     category "identity"
 
-    desc "创建账户"
+    desc """创建账户"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APICreateAccountMsg.class
 
-            desc "创建账户"
+            desc """创建账户"""
             
 			params {
 

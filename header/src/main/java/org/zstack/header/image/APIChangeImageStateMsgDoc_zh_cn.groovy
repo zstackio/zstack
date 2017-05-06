@@ -7,7 +7,7 @@ doc {
 
     category "image"
 
-    desc "修改镜像状态"
+    desc """修改镜像状态"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIChangeImageStateMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

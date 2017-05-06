@@ -9,7 +9,7 @@ doc {
 
     category "configuration"
 
-    desc "查询云主机规格"
+    desc """查询云主机规格"""
 
     rest {
         request {
@@ -21,7 +21,7 @@ doc {
 
             clz APIQueryInstanceOfferingMsg.class
 
-            desc "查询云主机规格"
+            desc """查询云主机规格"""
             
 			params APIQueryMessage.class
         }

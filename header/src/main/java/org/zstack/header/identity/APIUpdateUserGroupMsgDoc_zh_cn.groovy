@@ -7,7 +7,7 @@ doc {
 
     category "identity"
 
-    desc "更新用户组"
+    desc """更新用户组"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIUpdateUserGroupMsg.class
 
-            desc "更新用户组"
+            desc """更新用户组"""
             
 			params {
 

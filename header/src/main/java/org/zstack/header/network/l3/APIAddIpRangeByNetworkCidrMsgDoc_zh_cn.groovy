@@ -7,7 +7,7 @@ doc {
 
     category "三层网络"
 
-    desc "通过网络CIDR添加IP地址范围"
+    desc """通过网络CIDR添加IP地址范围"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIAddIpRangeByNetworkCidrMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

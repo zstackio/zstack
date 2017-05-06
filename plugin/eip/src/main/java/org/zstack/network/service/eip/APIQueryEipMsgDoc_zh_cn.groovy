@@ -9,7 +9,7 @@ doc {
 
     category "弹性IP"
 
-    desc "查询弹性IP"
+    desc """查询弹性IP"""
 
     rest {
         request {
@@ -21,7 +21,7 @@ doc {
 
             clz APIQueryEipMsg.class
 
-            desc ""
+            desc """"""
             
 			params APIQueryMessage.class
         }

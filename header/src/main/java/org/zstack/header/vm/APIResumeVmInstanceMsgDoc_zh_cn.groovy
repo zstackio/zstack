@@ -7,7 +7,7 @@ doc {
 
     category "vmInstance"
 
-    desc "恢复一个被暂停的云主机，云主机从内存中恢复运行"
+    desc """恢复一个被暂停的云主机，云主机从内存中恢复运行"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIResumeVmInstanceMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

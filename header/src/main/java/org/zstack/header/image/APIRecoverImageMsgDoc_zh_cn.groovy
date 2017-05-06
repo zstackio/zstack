@@ -7,7 +7,7 @@ doc {
 
     category "image"
 
-    desc "恢复被删除（但未彻底删除）的镜像"
+    desc """恢复被删除（但未彻底删除）的镜像"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIRecoverImageMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

@@ -7,7 +7,7 @@ doc {
 
     category "虚拟路由器"
 
-    desc "创建虚拟路由器规格"
+    desc """创建虚拟路由器规格"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APICreateVirtualRouterOfferingMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

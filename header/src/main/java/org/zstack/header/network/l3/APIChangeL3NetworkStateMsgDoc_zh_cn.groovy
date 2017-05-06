@@ -7,7 +7,7 @@ doc {
 
     category "三层网络"
 
-    desc "改变三层网络状态"
+    desc """改变三层网络状态"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIChangeL3NetworkStateMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

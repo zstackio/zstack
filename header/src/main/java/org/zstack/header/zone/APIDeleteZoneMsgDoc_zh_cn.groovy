@@ -7,7 +7,7 @@ doc {
 
     category "zone"
 
-    desc "删除一个区域"
+    desc """删除一个区域"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIDeleteZoneMsg.class
 
-            desc "删除一个区域"
+            desc """删除一个区域"""
             
 			params {
 

@@ -7,7 +7,7 @@ doc {
 
     category "snapshot.volume"
 
-    desc "将云盘回滚至某个指定的快照"
+    desc """将云盘回滚至某个指定的快照"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIRevertVolumeFromSnapshotMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

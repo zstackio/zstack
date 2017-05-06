@@ -7,7 +7,7 @@ doc {
 
     category "三层网络"
 
-    desc "获取IP网络地址容量"
+    desc """获取IP网络地址容量"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIGetIpAddressCapacityMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

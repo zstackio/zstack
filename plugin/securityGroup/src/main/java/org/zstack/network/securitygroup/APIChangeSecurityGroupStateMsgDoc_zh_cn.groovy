@@ -7,7 +7,7 @@ doc {
 
     category "securityGroup"
 
-    desc "改变安全组状态"
+    desc """改变安全组状态"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIChangeSecurityGroupStateMsg.class
 
-            desc "改变安全组状态"
+            desc """改变安全组状态"""
             
 			params {
 

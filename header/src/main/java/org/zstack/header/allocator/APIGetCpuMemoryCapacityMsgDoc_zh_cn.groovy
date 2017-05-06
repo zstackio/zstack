@@ -7,7 +7,7 @@ doc {
 
     category "分配器"
 
-    desc "获取cpu和内存容量"
+    desc """获取cpu和内存容量"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIGetCpuMemoryCapacityMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

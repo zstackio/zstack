@@ -7,7 +7,7 @@ doc {
 
     category "identity"
 
-    desc "绑定策略到用户组"
+    desc """绑定策略到用户组"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIAttachPolicyToUserGroupMsg.class
 
-            desc "绑定策略到用户组"
+            desc """绑定策略到用户组"""
             
 			params {
 

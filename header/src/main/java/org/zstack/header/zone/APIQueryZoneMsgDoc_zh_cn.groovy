@@ -9,7 +9,7 @@ doc {
 
     category "zone"
 
-    desc "管理员可以使用QueryZone来查询区域"
+    desc """管理员可以使用QueryZone来查询区域"""
 
     rest {
         request {
@@ -21,7 +21,7 @@ doc {
 
             clz APIQueryZoneMsg.class
 
-            desc ""
+            desc """"""
             
 			params APIQueryMessage.class
         }

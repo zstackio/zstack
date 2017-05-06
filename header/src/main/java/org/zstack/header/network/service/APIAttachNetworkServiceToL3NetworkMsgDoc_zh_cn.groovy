@@ -7,7 +7,7 @@ doc {
 
     category "三层网络"
 
-    desc "挂载网络服务到三层网络"
+    desc """挂载网络服务到三层网络"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIAttachNetworkServiceToL3NetworkMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

@@ -7,7 +7,7 @@ doc {
 
     category "三层网络"
 
-    desc "从三层网络移除DNS"
+    desc """从三层网络移除DNS"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIRemoveDnsFromL3NetworkMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

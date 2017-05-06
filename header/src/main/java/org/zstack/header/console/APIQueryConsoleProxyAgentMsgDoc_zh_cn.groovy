@@ -9,7 +9,7 @@ doc {
 
     category "console"
 
-    desc "查询控制台代理Agent"
+    desc """查询控制台代理Agent"""
 
     rest {
         request {
@@ -21,7 +21,7 @@ doc {
 
             clz APIQueryConsoleProxyAgentMsg.class
 
-            desc "查询控制台代理Agent"
+            desc """查询控制台代理Agent"""
             
 			params APIQueryMessage.class
         }

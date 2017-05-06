@@ -7,7 +7,7 @@ doc {
 
     category "storage.backup.sftp"
 
-    desc "更新Sftp镜像服务器属性"
+    desc """更新Sftp镜像服务器属性"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIUpdateSftpBackupStorageMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

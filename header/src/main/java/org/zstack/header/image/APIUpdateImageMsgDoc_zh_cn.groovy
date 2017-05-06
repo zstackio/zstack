@@ -7,7 +7,7 @@ doc {
 
     category "image"
 
-    desc "更新镜像信息"
+    desc """更新镜像信息"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIUpdateImageMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

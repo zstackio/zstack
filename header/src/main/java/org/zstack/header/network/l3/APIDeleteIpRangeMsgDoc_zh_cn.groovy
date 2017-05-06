@@ -7,7 +7,7 @@ doc {
 
     category "三层网络"
 
-    desc "删除IP地址范围"
+    desc """删除IP地址范围"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIDeleteIpRangeMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

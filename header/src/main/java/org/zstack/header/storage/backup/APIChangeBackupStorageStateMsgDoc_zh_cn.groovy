@@ -7,7 +7,7 @@ doc {
 
     category "storage.backup"
 
-    desc "更改镜像服务器的可用状态"
+    desc """更改镜像服务器的可用状态"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIChangeBackupStorageStateMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

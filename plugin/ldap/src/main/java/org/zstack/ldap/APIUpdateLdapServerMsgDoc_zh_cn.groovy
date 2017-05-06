@@ -7,7 +7,7 @@ doc {
 
     category "ldap"
 
-    desc "更新LDAP服务器"
+    desc """更新LDAP服务器"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIUpdateLdapServerMsg.class
 
-            desc "更新LDAP服务器"
+            desc """更新LDAP服务器"""
             
 			params {
 

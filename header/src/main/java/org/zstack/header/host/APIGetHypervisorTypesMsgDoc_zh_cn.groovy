@@ -7,7 +7,7 @@ doc {
 
     category "host"
 
-    desc "获取云主机虚拟化技术类型"
+    desc """获取云主机虚拟化技术类型"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIGetHypervisorTypesMsg.class
 
-            desc "获取云主机的虚拟化技术类型"
+            desc """获取云主机的虚拟化技术类型"""
             
 			params {
 

@@ -9,7 +9,7 @@ doc {
 
     category "identity"
 
-    desc "查询用户组"
+    desc """查询用户组"""
 
     rest {
         request {
@@ -21,7 +21,7 @@ doc {
 
             clz APIQueryUserGroupMsg.class
 
-            desc "查询用户组"
+            desc """查询用户组"""
             
 			params APIQueryMessage.class
         }

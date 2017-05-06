@@ -7,7 +7,7 @@ doc {
 
     category "securityGroup"
 
-    desc "用户可以使用AddVmNicToSecurityGroup来添加虚拟机网卡到安全组"
+    desc """用户可以使用AddVmNicToSecurityGroup来添加虚拟机网卡到安全组"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIAddVmNicToSecurityGroupMsg.class
 
-            desc "用户可以使用AddVmNicToSecurityGroup来添加虚拟机网卡到安全组"
+            desc """用户可以使用AddVmNicToSecurityGroup来添加虚拟机网卡到安全组"""
             
 			params {
 

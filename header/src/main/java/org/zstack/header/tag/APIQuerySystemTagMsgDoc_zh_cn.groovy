@@ -9,7 +9,7 @@ doc {
 
     category "tag"
 
-    desc "查询系统标签"
+    desc """查询系统标签"""
 
     rest {
         request {
@@ -21,7 +21,7 @@ doc {
 
             clz APIQuerySystemTagMsg.class
 
-            desc "查询系统标签"
+            desc """查询系统标签"""
             
 			params APIQueryMessage.class
         }

@@ -7,7 +7,7 @@ doc {
 
     category "identity"
 
-    desc "删除用户组"
+    desc """删除用户组"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIDeleteUserGroupMsg.class
 
-            desc "删除用户组"
+            desc """删除用户组"""
             
 			params {
 

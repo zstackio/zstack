@@ -9,7 +9,7 @@ doc {
 
     category "三层网络"
 
-    desc "查询三层网络"
+    desc """查询三层网络"""
 
     rest {
         request {
@@ -21,7 +21,7 @@ doc {
 
             clz APIQueryL3NetworkMsg.class
 
-            desc ""
+            desc """"""
             
 			params APIQueryMessage.class
         }

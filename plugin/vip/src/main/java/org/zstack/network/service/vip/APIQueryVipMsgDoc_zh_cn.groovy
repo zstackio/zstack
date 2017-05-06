@@ -9,7 +9,7 @@ doc {
 
     category "vip"
 
-    desc "查询VIP"
+    desc """查询VIP"""
 
     rest {
         request {
@@ -21,7 +21,7 @@ doc {
 
             clz APIQueryVipMsg.class
 
-            desc "查询VIP"
+            desc """查询VIP"""
             
 			params APIQueryMessage.class
         }

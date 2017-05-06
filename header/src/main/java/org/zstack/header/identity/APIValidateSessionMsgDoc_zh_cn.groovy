@@ -7,7 +7,7 @@ doc {
 
     category "identity"
 
-    desc "验证会话的有效性"
+    desc """验证会话的有效性"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIValidateSessionMsg.class
 
-            desc "验证会话的有效性"
+            desc """验证会话的有效性"""
             
 			params {
 

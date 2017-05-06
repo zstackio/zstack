@@ -7,7 +7,7 @@ doc {
 
     category "vmInstance"
 
-    desc "删除云主机三层网络上指定的IP"
+    desc """删除云主机三层网络上指定的IP"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIDeleteVmStaticIpMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

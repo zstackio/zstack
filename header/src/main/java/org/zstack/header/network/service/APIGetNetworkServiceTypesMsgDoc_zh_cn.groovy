@@ -7,7 +7,7 @@ doc {
 
     category "network.service"
 
-    desc "获取网络服务类型"
+    desc """获取网络服务类型"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIGetNetworkServiceTypesMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

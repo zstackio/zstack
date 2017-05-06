@@ -7,7 +7,7 @@ doc {
 
     category "image"
 
-    desc "从指定的云盘创建出一个数据云盘镜像"
+    desc """从指定的云盘创建出一个数据云盘镜像"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APICreateDataVolumeTemplateFromVolumeMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

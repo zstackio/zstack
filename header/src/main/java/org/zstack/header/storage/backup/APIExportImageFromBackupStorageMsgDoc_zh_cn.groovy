@@ -7,7 +7,7 @@ doc {
 
     category "storage.backup"
 
-    desc "从镜像服务器中导出镜像"
+    desc """从镜像服务器中导出镜像"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIExportImageFromBackupStorageMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

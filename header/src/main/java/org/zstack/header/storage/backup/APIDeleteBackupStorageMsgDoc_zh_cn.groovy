@@ -7,7 +7,7 @@ doc {
 
     category "storage.backup"
 
-    desc "删除指定的镜像服务器"
+    desc """删除指定的镜像服务器"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIDeleteBackupStorageMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

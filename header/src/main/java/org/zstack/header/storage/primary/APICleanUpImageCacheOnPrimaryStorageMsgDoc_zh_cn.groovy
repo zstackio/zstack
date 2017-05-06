@@ -7,7 +7,7 @@ doc {
 
     category "storage.primary"
 
-    desc "尝试从主存储清除镜像缓存"
+    desc """尝试从主存储清除镜像缓存"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APICleanUpImageCacheOnPrimaryStorageMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

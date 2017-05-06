@@ -7,7 +7,7 @@ doc {
 
     category "identity"
 
-    desc "变更资源所有者"
+    desc """变更资源所有者"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIChangeResourceOwnerMsg.class
 
-            desc "变更资源所有者"
+            desc """变更资源所有者"""
             
 			params {
 

@@ -7,7 +7,7 @@ doc {
 
     category "host"
 
-    desc "更新云主机信息"
+    desc """更新云主机信息"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIUpdateHostMsg.class
 
-            desc "更新云主机信息"
+            desc """更新云主机信息"""
             
 			params {
 

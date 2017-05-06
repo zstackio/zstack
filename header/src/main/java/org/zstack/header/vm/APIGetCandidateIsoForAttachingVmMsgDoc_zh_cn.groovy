@@ -7,7 +7,7 @@ doc {
 
     category "vmInstance"
 
-    desc "获取一个云主机以加载的ISO列表"
+    desc """获取一个云主机以加载的ISO列表"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIGetCandidateIsoForAttachingVmMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

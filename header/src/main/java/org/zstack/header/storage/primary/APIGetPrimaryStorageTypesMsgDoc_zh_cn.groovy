@@ -7,7 +7,7 @@ doc {
 
     category "storage.primary"
 
-    desc "获取主存储类型列表"
+    desc """获取主存储类型列表"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIGetPrimaryStorageTypesMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

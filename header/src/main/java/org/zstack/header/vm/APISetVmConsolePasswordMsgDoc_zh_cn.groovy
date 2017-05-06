@@ -7,7 +7,7 @@ doc {
 
     category "vmInstance"
 
-    desc "设置一个云主机控制台密码"
+    desc """设置一个云主机控制台密码"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APISetVmConsolePasswordMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

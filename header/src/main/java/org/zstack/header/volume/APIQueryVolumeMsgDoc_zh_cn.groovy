@@ -9,7 +9,7 @@ doc {
 
     category "volume"
 
-    desc "获取云盘清单"
+    desc """获取云盘清单"""
 
     rest {
         request {
@@ -21,7 +21,7 @@ doc {
 
             clz APIQueryVolumeMsg.class
 
-            desc ""
+            desc """"""
             
 			params APIQueryMessage.class
         }

@@ -21,7 +21,7 @@ doc {
 
             clz APIGetVmConsoleAddressMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

@@ -7,7 +7,7 @@ doc {
 
     category "storage.primary"
 
-    desc "删除主存储"
+    desc """删除主存储"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIDeletePrimaryStorageMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

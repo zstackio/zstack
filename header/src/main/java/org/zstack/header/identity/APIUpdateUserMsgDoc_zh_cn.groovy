@@ -7,7 +7,7 @@ doc {
 
     category "identity"
 
-    desc "更新用户"
+    desc """更新用户"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIUpdateUserMsg.class
 
-            desc "更新用户"
+            desc """更新用户"""
             
 			params {
 

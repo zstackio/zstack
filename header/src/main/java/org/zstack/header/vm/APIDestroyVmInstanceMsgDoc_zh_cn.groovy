@@ -7,7 +7,7 @@ doc {
 
     category "vmInstance"
 
-    desc "删除一个云主机"
+    desc """删除一个云主机"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIDestroyVmInstanceMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

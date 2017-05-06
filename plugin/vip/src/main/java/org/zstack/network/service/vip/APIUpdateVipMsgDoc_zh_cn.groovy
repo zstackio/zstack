@@ -7,7 +7,7 @@ doc {
 
     category "vip"
 
-    desc "更新VIP"
+    desc """更新VIP"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIUpdateVipMsg.class
 
-            desc "更新VIP"
+            desc """更新VIP"""
             
 			params {
 

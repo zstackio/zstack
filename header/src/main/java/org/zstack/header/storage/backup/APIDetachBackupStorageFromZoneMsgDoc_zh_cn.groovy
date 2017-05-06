@@ -7,7 +7,7 @@ doc {
 
     category "storage.backup"
 
-    desc "从区域中卸载已经挂载的镜像服务器"
+    desc """从区域中卸载已经挂载的镜像服务器"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIDetachBackupStorageFromZoneMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

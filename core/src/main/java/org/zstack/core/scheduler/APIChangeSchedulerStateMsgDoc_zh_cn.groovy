@@ -7,7 +7,7 @@ doc {
 
     category "core.scheduler"
 
-    desc "改变定时任务状态"
+    desc """改变定时任务状态"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIChangeSchedulerStateMsg.class
 
-            desc "改变定时任务状态"
+            desc """改变定时任务状态"""
             
 			params {
 

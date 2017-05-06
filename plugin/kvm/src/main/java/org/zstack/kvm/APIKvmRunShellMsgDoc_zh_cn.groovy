@@ -7,7 +7,7 @@ doc {
 
     category "host"
 
-    desc "KVM运行命令"
+    desc """KVM运行命令"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIKvmRunShellMsg.class
 
-            desc "KVM运行命令"
+            desc """KVM运行命令"""
             
 			params {
 

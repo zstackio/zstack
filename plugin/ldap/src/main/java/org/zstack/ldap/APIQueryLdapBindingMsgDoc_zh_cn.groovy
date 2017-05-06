@@ -9,7 +9,7 @@ doc {
 
     category "ldap"
 
-    desc "查询LDAP绑定"
+    desc """查询LDAP绑定"""
 
     rest {
         request {
@@ -21,7 +21,7 @@ doc {
 
             clz APIQueryLdapBindingMsg.class
 
-            desc ""
+            desc """"""
             
 			params APIQueryMessage.class
         }

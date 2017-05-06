@@ -7,7 +7,7 @@ doc {
 
     category "identity"
 
-    desc "更新配额"
+    desc """更新配额"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIUpdateQuotaMsg.class
 
-            desc "更新配额"
+            desc """更新配额"""
             
 			params {
 

@@ -9,7 +9,7 @@ doc {
 
     category "core.scheduler"
 
-    desc "查询定时任务"
+    desc """查询定时任务"""
 
     rest {
         request {
@@ -21,7 +21,7 @@ doc {
 
             clz APIQuerySchedulerMsg.class
 
-            desc "查询定时任务"
+            desc """查询定时任务"""
             
 			params APIQueryMessage.class
         }

@@ -7,7 +7,7 @@ doc {
 
     category "snapshot.volume"
 
-    desc "创建快照的定时任务"
+    desc """创建快照的定时任务"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APICreateVolumeSnapshotSchedulerMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

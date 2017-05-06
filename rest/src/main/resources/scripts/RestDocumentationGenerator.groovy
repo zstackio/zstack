@@ -1559,7 +1559,7 @@ doc {
 
     category "${doc._category}"
 
-    desc "${doc._desc}"
+    desc \"\"\"${doc._desc}\"\"\"
 
     rest {
         request {
@@ -1570,7 +1570,7 @@ ${doc._rest._request._headers.collect { "\t\t\t" + it.toString() }.join("\n")}
 
             clz ${doc._rest._request._clz.simpleName}.class
 
-            desc "${doc._rest._request._desc}"
+            desc \"\"\"${doc._rest._request._desc}\"\"\"
             
 ${paramString}
         }
@@ -1602,7 +1602,7 @@ doc {
 
     category "${category}"
 
-    desc "在这里填写API描述"
+    desc \"\"\"在这里填写API描述\"\"\"
 
     rest {
         request {
@@ -1612,7 +1612,7 @@ ${urls()}
 
             clz ${apiClass.simpleName}.class
 
-            desc ""
+            desc \"\"\"\"\"\"
             
 ${paramString}
         }

@@ -7,7 +7,7 @@ doc {
 
     category "vmInstance"
 
-    desc "从Running或Stopped的云主机上卸载一个网络"
+    desc """从Running或Stopped的云主机上卸载一个网络"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIDetachL3NetworkFromVmMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

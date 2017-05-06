@@ -7,7 +7,7 @@ doc {
 
     category "vmInstance"
 
-    desc "获取可以创建指定云主机参数的目的区域、集群、物理机。用户可以使用该API，通过指定云主机参数获得可以创建满足参数云主机的目的地。"
+    desc """获取可以创建指定云主机参数的目的区域、集群、物理机。用户可以使用该API，通过指定云主机参数获得可以创建满足参数云主机的目的地。"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIGetCandidateZonesClustersHostsForCreatingVmMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

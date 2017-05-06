@@ -7,7 +7,7 @@ doc {
 
     category "managementNode"
 
-    desc "获取当前版本"
+    desc """获取当前版本"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIGetVersionMsg.class
 
-            desc "获取当前版本"
+            desc """获取当前版本"""
             
 			params {
 

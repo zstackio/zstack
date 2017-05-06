@@ -7,7 +7,7 @@ doc {
 
     category "三层网络"
 
-    desc "创建三层网络"
+    desc """创建三层网络"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APICreateL3NetworkMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

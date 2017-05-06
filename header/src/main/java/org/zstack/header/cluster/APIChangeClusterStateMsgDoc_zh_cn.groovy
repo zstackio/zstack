@@ -7,7 +7,7 @@ doc {
 
     category "cluster"
 
-    desc "管理员可以使用ChangeClusterState来改变一个集群的可用状态"
+    desc """管理员可以使用ChangeClusterState来改变一个集群的可用状态"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIChangeClusterStateMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

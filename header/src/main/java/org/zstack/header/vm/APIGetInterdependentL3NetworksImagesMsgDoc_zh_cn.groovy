@@ -23,7 +23,7 @@ doc {
 
             clz APIGetInterdependentL3NetworksImagesMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

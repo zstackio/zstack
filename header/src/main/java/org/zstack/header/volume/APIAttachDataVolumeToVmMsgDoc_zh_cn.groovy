@@ -7,7 +7,7 @@ doc {
 
     category "volume"
 
-    desc "挂载云盘到云主机上"
+    desc """挂载云盘到云主机上"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIAttachDataVolumeToVmMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

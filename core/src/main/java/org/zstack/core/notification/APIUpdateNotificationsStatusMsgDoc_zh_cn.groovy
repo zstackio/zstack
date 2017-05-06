@@ -7,7 +7,7 @@ doc {
 
     category "notification"
 
-    desc "在这里填写API描述"
+    desc """在这里填写API描述"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIUpdateNotificationsStatusMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

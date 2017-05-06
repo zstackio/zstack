@@ -7,7 +7,7 @@ doc {
 
     category "securityGroup"
 
-    desc "更新安全组"
+    desc """更新安全组"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIUpdateSecurityGroupMsg.class
 
-            desc "更新安全组"
+            desc """更新安全组"""
             
 			params {
 

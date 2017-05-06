@@ -7,7 +7,7 @@ doc {
 
     category "identity"
 
-    desc "从用户组中移除用户"
+    desc """从用户组中移除用户"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIRemoveUserFromGroupMsg.class
 
-            desc "从用户组中移除用户"
+            desc """从用户组中移除用户"""
             
 			params {
 

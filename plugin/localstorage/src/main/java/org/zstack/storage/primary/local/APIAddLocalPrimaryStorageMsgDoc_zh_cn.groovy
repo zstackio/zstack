@@ -7,7 +7,7 @@ doc {
 
     category "storage.primary"
 
-    desc "添加类型为本地存储的主存储"
+    desc """添加类型为本地存储的主存储"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIAddLocalPrimaryStorageMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

@@ -7,7 +7,7 @@ doc {
 
     category "vmInstance"
 
-    desc "删除云主机SSH Key，该Key是之前通过SetVmSshKey设置的。"
+    desc """删除云主机SSH Key，该Key是之前通过SetVmSshKey设置的。"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIDeleteVmSshKeyMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

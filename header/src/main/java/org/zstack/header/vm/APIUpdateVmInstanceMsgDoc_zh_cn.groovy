@@ -7,7 +7,7 @@ doc {
 
     category "vmInstance"
 
-    desc "更新一个云主机的信息"
+    desc """更新一个云主机的信息"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIUpdateVmInstanceMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

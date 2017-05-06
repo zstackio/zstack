@@ -7,7 +7,7 @@ doc {
 
     category "负载均衡"
 
-    desc "添加云主机网卡到负载均衡"
+    desc """添加云主机网卡到负载均衡"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIAddVmNicToLoadBalancerMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

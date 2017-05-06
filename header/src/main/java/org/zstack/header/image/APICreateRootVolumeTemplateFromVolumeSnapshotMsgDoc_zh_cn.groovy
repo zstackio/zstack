@@ -7,7 +7,7 @@ doc {
 
     category "image"
 
-    desc "从云盘快照创建根云盘镜像"
+    desc """从云盘快照创建根云盘镜像"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APICreateRootVolumeTemplateFromVolumeSnapshotMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

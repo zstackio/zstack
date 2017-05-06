@@ -7,7 +7,7 @@ doc {
 
     category "configuration"
 
-    desc "创建云盘规格"
+    desc """创建云盘规格"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APICreateDiskOfferingMsg.class
 
-            desc "创建云盘规格"
+            desc """创建云盘规格"""
             
 			params {
 

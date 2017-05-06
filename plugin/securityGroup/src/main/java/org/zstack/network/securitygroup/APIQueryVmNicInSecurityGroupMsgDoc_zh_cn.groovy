@@ -9,7 +9,7 @@ doc {
 
     category "securityGroup"
 
-    desc "查询应用了安全组的网卡列表"
+    desc """查询应用了安全组的网卡列表"""
 
     rest {
         request {
@@ -20,7 +20,7 @@ doc {
 
             clz APIQueryVmNicInSecurityGroupMsg.class
 
-            desc "查询应用了安全组的网卡列表"
+            desc """查询应用了安全组的网卡列表"""
             
 			params APIQueryMessage.class
         }

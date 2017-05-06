@@ -7,7 +7,7 @@ doc {
 
     category "volume"
 
-    desc "获取云盘是否能被加载"
+    desc """获取云盘是否能被加载"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIGetDataVolumeAttachableVmMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

@@ -7,7 +7,7 @@ doc {
 
     category "core.scheduler"
 
-    desc "更新定时任务"
+    desc """更新定时任务"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIUpdateSchedulerMsg.class
 
-            desc "更新定时任务"
+            desc """更新定时任务"""
             
 			params {
 

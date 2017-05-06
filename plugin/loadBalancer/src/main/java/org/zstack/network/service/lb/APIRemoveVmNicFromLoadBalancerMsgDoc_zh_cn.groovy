@@ -7,7 +7,7 @@ doc {
 
     category "负载均衡"
 
-    desc "从负载均衡移除云主机网卡"
+    desc """从负载均衡移除云主机网卡"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIRemoveVmNicFromLoadBalancerMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

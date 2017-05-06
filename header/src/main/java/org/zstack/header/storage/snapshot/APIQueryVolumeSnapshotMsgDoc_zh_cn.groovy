@@ -9,7 +9,7 @@ doc {
 
     category "snapshot.volume"
 
-    desc "查询云盘快照"
+    desc """查询云盘快照"""
 
     rest {
         request {
@@ -21,7 +21,7 @@ doc {
 
             clz APIQueryVolumeSnapshotMsg.class
 
-            desc ""
+            desc """"""
             
 			params APIQueryMessage.class
         }

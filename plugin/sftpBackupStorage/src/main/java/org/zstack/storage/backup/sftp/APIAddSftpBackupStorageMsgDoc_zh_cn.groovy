@@ -7,7 +7,7 @@ doc {
 
     category "storage.backup.sftp"
 
-    desc "添加sftp镜像服务器"
+    desc """添加sftp镜像服务器"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIAddSftpBackupStorageMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

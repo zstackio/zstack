@@ -7,7 +7,7 @@ doc {
 
     category "identity"
 
-    desc "将策略从用户组解绑"
+    desc """将策略从用户组解绑"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIDetachPolicyFromUserGroupMsg.class
 
-            desc "将策略从用户组解绑"
+            desc """将策略从用户组解绑"""
             
 			params {
 

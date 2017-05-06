@@ -7,7 +7,7 @@ doc {
 
     category "vmInstance"
 
-    desc "重启一个云主机"
+    desc """重启一个云主机"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIRebootVmInstanceMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 

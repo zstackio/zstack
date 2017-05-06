@@ -7,7 +7,7 @@ doc {
 
     category "host"
 
-    desc "删除物理机"
+    desc """删除物理机"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIDeleteHostMsg.class
 
-            desc "删除一个物理机"
+            desc """删除一个物理机"""
             
 			params {
 

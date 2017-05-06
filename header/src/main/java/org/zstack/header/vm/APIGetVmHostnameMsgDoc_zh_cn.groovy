@@ -7,7 +7,7 @@ doc {
 
     category "vmInstance"
 
-    desc "获取云主机指定的Hostname。该Hostname是用户之前用SetVmHostname指定的。"
+    desc """获取云主机指定的Hostname。该Hostname是用户之前用SetVmHostname指定的。"""
 
     rest {
         request {
@@ -18,7 +18,7 @@ doc {
 
             clz APIGetVmHostnameMsg.class
 
-            desc ""
+            desc """"""
             
 			params {
 
