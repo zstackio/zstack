@@ -38,6 +38,7 @@
             <zstack:extension interface="org.zstack.kvm.KVMHostConnectExtensionPoint" order="-1"/>
             <zstack:extension interface="org.zstack.network.service.userdata.UserdataBackend" />
             <zstack:extension interface="org.zstack.header.network.l3.L3NetworkDeleteExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.vm.VmInstanceMigrateExtensionPoint" />
         </zstack:plugin>
     </bean>
 
