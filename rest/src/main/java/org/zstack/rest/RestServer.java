@@ -124,7 +124,8 @@ public class RestServer implements Component, CloudBusEventListener {
 
         try {
             Class clz = GroovyUtils.getClass("scripts/SdkApiTemplate.groovy", RestServer.class.getClassLoader());
-            Set<Class<?>> apiClasses = Platform.getReflections().getTypesAnnotatedWith(RestRequest.class);
+            Set<Class<?>> apiClasses = Platform.getReflections().getTypesAnnotatedWith(RestRequest.class)
+                    .stream().filter(it -> it.isAnnotationPresent(RestRequest.class)).collect(Collectors.toSet());
 
             List<SdkFile> allFiles = new ArrayList<>();
             for (Class apiClz : apiClasses) {
