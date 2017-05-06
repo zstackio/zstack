@@ -1293,19 +1293,21 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                 return;
             }
 
-            SimpleQuery<AccountResourceRefVO> q = dbf.createQuery(AccountResourceRefVO.class);
-            q.select(AccountResourceRefVO_.accountUuid, AccountResourceRefVO_.resourceUuid, AccountResourceRefVO_.resourceType);
-            q.add(AccountResourceRefVO_.resourceUuid, Op.IN, resourceUuids);
-            List<Tuple> ts = q.listTuple();
+            List<Tuple> ts = SQL.New(
+                    " select avo.name ,arrf.accountUuid ,arrf.resourceUuid ,arrf.resourceType " +
+                            "from AccountResourceRefVO arrf ,AccountVO avo " +
+                            "where arrf.resourceUuid in (:resourceUuids) and avo.uuid = arrf.accountUuid",Tuple.class)
+                    .param("resourceUuids",resourceUuids).list();
 
             for (Tuple t : ts) {
-                String resourceOwnerAccountUuid = t.get(0, String.class);
-                String resourceUuid = t.get(1, String.class);
-                String resourceType = t.get(2, String.class);
+                String resourceOwnerName = t.get(0, String.class);
+                String resourceOwnerAccountUuid = t.get(1, String.class);
+                String resourceUuid = t.get(2, String.class);
+                String resourceType = t.get(3, String.class);
                 if (!session.getAccountUuid().equals(resourceOwnerAccountUuid)) {
                     throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.PERMISSION_DENIED,
-                            String.format("operation denied. The resource[uuid: %s, type: %s, ownerAccountUuid:%s] doesn't belong to the account[uuid: %s]",
-                                    resourceUuid, resourceType, resourceOwnerAccountUuid, session.getAccountUuid())
+                            String.format("operation denied. The resource[uuid: %s, type: %s,ownerAccountName:%s, ownerAccountUuid:%s] doesn't belong to the account[uuid: %s]",
+                                    resourceUuid, resourceType, resourceOwnerName, resourceOwnerAccountUuid, session.getAccountUuid())
                     ));
                 } else {
                     if (logger.isTraceEnabled()) {
