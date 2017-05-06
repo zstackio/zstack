@@ -116,13 +116,11 @@ class DeleteEipCase extends SubCase{
         deleteVip{
             uuid = vipUuid
         }
-        new SQLBatch(){
-            @Override
-            protected void scripts() {
-                assert !q(VipVO.class).eq(VipVO_.uuid, vipUuid).isExists()
-                assert !q(UsedIpVO.class).eq(UsedIpVO_.uuid, vip.usedIpUuid).isExists()
-            }
-        }.execute()
+
+        assert !Q.New(VipVO.class).eq(VipVO_.uuid, vipUuid).isExists()
+        assert retryInSecs(){
+            return !Q.New(UsedIpVO.class).eq(UsedIpVO_.uuid, vip.usedIpUuid).isExists()
+        }
 
     }
 
@@ -136,6 +134,7 @@ class DeleteEipCase extends SubCase{
         deleteEip {
             uuid = eipInv.uuid
         }
+
         new SQLBatch(){
             @Override
             protected void scripts() {
@@ -145,6 +144,7 @@ class DeleteEipCase extends SubCase{
             }
         }.execute()
     }
+
     void testOnlyDeleteUsedIp(){
         EipInventory eipInv = env.inventoryByName("eip") as EipInventory
         L3NetworkInventory l3Inv = env.inventoryByName("pubL3") as L3NetworkInventory
