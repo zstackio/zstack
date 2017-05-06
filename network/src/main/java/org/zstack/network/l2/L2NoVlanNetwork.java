@@ -3,16 +3,22 @@ package org.zstack.network.l2;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.thread.ChainTask;
+import org.zstack.core.thread.SyncTaskChain;
+import org.zstack.core.thread.ThreadFacade;
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.workflow.*;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.core.inventory.InventoryFacade;
 import org.zstack.core.workflow.*;
@@ -24,12 +30,15 @@ import org.zstack.header.network.l2.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import javax.persistence.TypedQuery;
 import java.util.*;
+import static java.util.Arrays.asList;
+import static org.zstack.core.Platform.argerr;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class L2NoVlanNetwork implements L2Network {
     private static final CLogger logger = Utils.getLogger(L2NoVlanNetwork.class);
-    
+
     @Autowired
     protected L2NetworkExtensionPointEmitter extpEmitter;
     @Autowired
@@ -44,6 +53,8 @@ public class L2NoVlanNetwork implements L2Network {
     protected CascadeFacade casf;
     @Autowired
     protected ErrorFacade errf;
+    @Autowired
+    protected ThreadFacade thdf;
 
     protected L2NetworkVO self;
 
@@ -391,41 +402,25 @@ public class L2NoVlanNetwork implements L2Network {
     }
 
     private void handle(final APIAttachL2NetworkToClusterMsg msg) {
-        final APIAttachL2NetworkToClusterEvent evt = new APIAttachL2NetworkToClusterEvent(msg.getId());
-        SimpleQuery<L2NetworkClusterRefVO> rq = dbf.createQuery(L2NetworkClusterRefVO.class);
-        rq.add(L2NetworkClusterRefVO_.clusterUuid, Op.EQ, msg.getClusterUuid());
-        rq.add(L2NetworkClusterRefVO_.l2NetworkUuid, Op.EQ, msg.getL2NetworkUuid());
-        long count = rq.count();
-        if (count != 0) {
-            evt.setInventory((L2NetworkInventory) inventoryMgr.valueOf(self));
-            bus.publish(evt);
-            return;
-        }
-
-        SimpleQuery<HostVO> query = dbf.createQuery(HostVO.class);
-        query.add(HostVO_.clusterUuid, Op.EQ, msg.getClusterUuid());
-        query.add(HostVO_.state, Op.NOT_IN, HostState.PreMaintenance, HostState.Maintenance);
-        query.add(HostVO_.status, Op.EQ, HostStatus.Connected);
-        final List<HostVO> hosts = query.list();
-        List<HostInventory> hvinvs = HostInventory.valueOf(hosts);
-
-        prepareL2NetworkOnHosts(hvinvs, new Completion(msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
             @Override
-            public void success() {
-                L2NetworkClusterRefVO rvo = new L2NetworkClusterRefVO();
-                rvo.setClusterUuid(msg.getClusterUuid());
-                rvo.setL2NetworkUuid(self.getUuid());
-                dbf.persist(rvo);
-                logger.debug(String.format("successfully attached L2Network[uuid:%s] to cluster [uuid:%s]", self.getUuid(), msg.getClusterUuid()));
-                self = dbf.findByUuid(self.getUuid(), L2NetworkVO.class);
-                evt.setInventory((L2NetworkInventory) inventoryMgr.valueOf(self));
-                bus.publish(evt);
+            public String getSyncSignature() {
+                return String.format("attach-l2-network-to-cluster-%s", msg.getClusterUuid());
             }
 
             @Override
-            public void fail(ErrorCode errorCode) {
-                evt.setError(errf.instantiateErrorCode(L2Errors.ATTACH_ERROR, errorCode));
-                bus.publish(evt);
+            public void run(SyncTaskChain chain) {
+                attachL2NetworkToCluster(msg, new NoErrorCompletion(msg,chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return getSyncSignature();
             }
         });
     }
@@ -500,5 +495,95 @@ public class L2NoVlanNetwork implements L2Network {
                 bus.publish(evt);
             }
         }).start();
+    }
+
+    private void  attachL2NetworkToCluster(final APIAttachL2NetworkToClusterMsg msg, final NoErrorCompletion completion){
+        final APIAttachL2NetworkToClusterEvent evt = new APIAttachL2NetworkToClusterEvent(msg.getId());
+
+        long count = Q.New(L2NetworkClusterRefVO.class).eq(L2NetworkClusterRefVO_.clusterUuid, msg.getClusterUuid())
+                .eq(L2NetworkClusterRefVO_.l2NetworkUuid, msg.getL2NetworkUuid()).count();
+        if (count != 0) {
+            evt.setInventory((L2NetworkInventory) inventoryMgr.valueOf(self));
+            bus.publish(evt);
+            completion.done();
+            return;
+        }
+        
+        new SQLBatch() {
+
+            @Override
+            protected void scripts() {
+
+                String type = Q.New(L2NetworkVO.class).select(L2NetworkVO_.type).eq(L2NetworkVO_.uuid, msg.getL2NetworkUuid()).findValue();
+
+                if (L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE.equals(type)) {
+                    List<L2NetworkVO> l2s = SQL.New("select l2" +
+                            " from L2NetworkVO l2, L2NetworkClusterRefVO ref" +
+                            " where l2.uuid = ref.l2NetworkUuid" +
+                            " and ref.clusterUuid = :clusterUuid" +
+                            " and type = 'L2NoVlanNetwork'")
+                            .param("clusterUuid", msg.getClusterUuid()).list();
+
+                    if (l2s.isEmpty()) {
+                        return;
+                    }
+
+                    L2NetworkVO tl2 = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.uuid, msg.getL2NetworkUuid()).find();
+                    for (L2NetworkVO l2 : l2s) {
+                        if (l2.getPhysicalInterface().equals(tl2.getPhysicalInterface())) {
+                            throw new ApiMessageInterceptionException(argerr("There has been a l2Network[uuid:%s, name:%s] attached to cluster[uuid:%s] that has physical interface[%s]. Failed to attach l2Network[uuid:%s]",
+                                    l2.getUuid(), l2.getName(), msg.getClusterUuid(), l2.getPhysicalInterface(), tl2.getUuid()));
+                        }
+                    }
+                } else if (L2NetworkConstant.L2_VLAN_NETWORK_TYPE.equals(type)) {
+                    List<L2VlanNetworkVO> l2s = SQL.New("select l2" +
+                            " from L2VlanNetworkVO l2, L2NetworkClusterRefVO ref" +
+                            " where l2.uuid = ref.l2NetworkUuid" +
+                            " and ref.clusterUuid = :clusterUuid")
+                            .param("clusterUuid", msg.getClusterUuid()).list();
+                    if (l2s.isEmpty()) {
+                        return;
+                    }
+
+                    L2VlanNetworkVO tl2 = Q.New(L2VlanNetworkVO.class).eq(L2VlanNetworkVO_.uuid, msg.getL2NetworkUuid()).find();
+
+                    for (L2VlanNetworkVO vl2 : l2s) {
+                        if (vl2.getVlan() == tl2.getVlan() && vl2.getPhysicalInterface().equals(tl2.getPhysicalInterface())) {
+                            throw new OperationFailureException(argerr("There has been a L2VlanNetwork[uuid:%s, name:%s] attached to cluster[uuid:%s] that has physical interface[%s], vlan[%s]. Failed to attach L2VlanNetwork[uuid:%s]",
+                                    vl2.getUuid(), vl2.getName(), msg.getClusterUuid(), vl2.getPhysicalInterface(), vl2.getVlan(), tl2.getUuid()));
+                        }
+                    }
+                }
+
+            }
+
+        }.execute();
+
+        List<HostVO> hosts = Q.New(HostVO.class).eq(HostVO_.clusterUuid,msg.getClusterUuid())
+                .notIn(HostVO_.state,asList(HostState.PreMaintenance, HostState.Maintenance))
+                .eq(HostVO_.status,HostStatus.Connected).list();
+        List<HostInventory> hvinvs = HostInventory.valueOf(hosts);
+
+        prepareL2NetworkOnHosts(hvinvs, new Completion(msg,completion) {
+            @Override
+            public void success() {
+                L2NetworkClusterRefVO rvo = new L2NetworkClusterRefVO();
+                rvo.setClusterUuid(msg.getClusterUuid());
+                rvo.setL2NetworkUuid(self.getUuid());
+                dbf.persist(rvo);
+                logger.debug(String.format("successfully attached L2Network[uuid:%s] to cluster [uuid:%s]", self.getUuid(), msg.getClusterUuid()));
+                self = dbf.findByUuid(self.getUuid(), L2NetworkVO.class);
+                evt.setInventory((L2NetworkInventory) inventoryMgr.valueOf(self));
+                bus.publish(evt);
+                completion.done();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                evt.setError(errf.instantiateErrorCode(L2Errors.ATTACH_ERROR, errorCode));
+                bus.publish(evt);
+                completion.done();
+            }
+        });
     }
 }
