@@ -38,7 +38,7 @@ import org.zstack.test.integration.storage.StorageTest
 import org.zstack.utils.gson.JSONObjectUtil
 import sun.awt.image.ImageCache;
 /**
- * Created by xing5 on 2017/2/27.
+ * Created by MaJin on 2017/2/27.
  */
 class AttachIsoCase extends SubCase {
     EnvSpec env
@@ -63,6 +63,8 @@ class AttachIsoCase extends SubCase {
 
     @Override
     void clean() {
+        env.cleanSimulatorHandlers()
+        env.cleanAfterSimulatorHandlers()
         env.delete()
     }
 
