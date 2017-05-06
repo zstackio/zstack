@@ -8,7 +8,7 @@ import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.cloudbus.CloudBusListCallBack;
+import org.zstack.core.componentloader.PluginDSL;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
@@ -16,12 +16,13 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.inventory.InventoryFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
+import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
 import org.zstack.header.message.APIDeleteMessage;
@@ -29,9 +30,11 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
+import org.zstack.header.network.l3.APICreateL3NetworkMsg;
 import org.zstack.network.l2.L2NetworkExtensionPointEmitter;
 import org.zstack.network.l2.L2NetworkManager;
 import org.zstack.network.l2.L2NoVlanNetwork;
+import org.zstack.network.l2.vxlan.vtep.*;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO_;
 import org.zstack.tag.TagManager;
@@ -49,7 +52,7 @@ import static org.zstack.utils.CollectionDSL.map;
  * Created by weiwang on 01/03/2017.
  */
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
-public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkPoolManager {
+public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkPoolManager, GlobalApiMessageInterceptor {
     private static final CLogger logger = Utils.getLogger(VxlanNetworkPool.class);
 
     @Autowired
@@ -70,6 +73,8 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
     protected ErrorFacade errf;
     @Autowired
     private TagManager tagMgr;
+    @Autowired
+    private VxlanNetworkChecker vxlanInterceptor;
 
     private Map<String, VniAllocatorStrategy> vniAllocatorStrategies = Collections.synchronizedMap(new HashMap<String, VniAllocatorStrategy>());
 
@@ -77,8 +82,16 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
         super(vo);
     }
 
+    public VxlanNetworkPool(){
+        super(null);
+    }
+
     private VxlanNetworkPoolVO getSelf() {
         return (VxlanNetworkPoolVO) self;
+    }
+
+    protected L2NetworkInventory getSelfInventory() {
+        return L2VxlanNetworkPoolInventory.valueOf(getSelf());
     }
 
     @Override
@@ -106,6 +119,8 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
             handle((AllocateVniMsg) msg);
         } else if (msg instanceof L2NetworkDeletionMsg) {
             handle((L2NetworkDeletionMsg) msg);
+        } else if (msg instanceof CreateVtepMsg) {
+            handle((CreateVtepMsg) msg);
         } else if (msg instanceof L2NetworkMessage) {
             superHandle((L2NetworkMessage) msg);
         } else {
@@ -155,6 +170,44 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
         bus.reply(msg, reply);
     }
 
+    private void handle(CreateVtepMsg msg) {
+        List<VtepVO> vteps = Q.New(VtepVO.class).eq(VtepVO_.poolUuid, msg.getPoolUuid()).eq(VtepVO_.vtepIp, msg.getVtepIp()).list();
+        for (VtepVO vtep: vteps) {
+            if (!vtep.getHostUuid().equals(msg.getHostUuid())) {
+                logger.warn(String.format("same vtepip[%s] in host[%s] and host[%s], which in same cluster[%s]",
+                        msg.getVtepIp(), vtep.getHostUuid(), msg.getHostUuid(), msg.getClusterUuid()));
+            } else {
+                logger.warn(String.format("get duplicate vtep create msg for ip [%s] in host [%s]",
+                        msg.getVtepIp(), vtep.getHostUuid()));
+            }
+
+            CreateVtepReply reply = new CreateVtepReply();
+            reply.setInventory(VtepInventory.valueOf(vtep));
+            bus.reply(msg, reply);
+
+            return;
+        }
+
+        VtepVO vo = new VtepVO();
+
+        vo.setUuid(Platform.getUuid());
+        vo.setClusterUuid(msg.getClusterUuid());
+        vo.setHostUuid(msg.getHostUuid());
+        vo.setPort(msg.getPort());
+        vo.setType(msg.getType());
+        vo.setVtepIp(msg.getVtepIp());
+        vo.setPoolUuid(msg.getPoolUuid());
+        vo = dbf.persistAndRefresh(vo);
+
+        VtepInventory inv = VtepInventory.valueOf(vo);
+        String info = String.format("successfully create Vtep, %s", JSONObjectUtil.toJsonString(inv));
+        logger.debug(info);
+
+        CreateVtepReply reply = new CreateVtepReply();
+        reply.setInventory(inv);
+        bus.reply(msg, reply);
+    }
+
     private void handleApiMessage(APIMessage msg) {
         if (msg instanceof APIDeleteL2NetworkMsg) {
             handle((APIDeleteL2NetworkMsg) msg);
@@ -164,6 +217,8 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
             handle((APICreateVniRangeMsg) msg);
         } else if (msg instanceof APIDetachL2NetworkFromClusterMsg) {
             handle((APIDetachL2NetworkFromClusterMsg) msg);
+        } else if (msg instanceof APIDeleteVniRangeMsg) {
+            handle((APIDeleteVniRangeMsg) msg);
         } else if (msg instanceof L2NetworkMessage) {
             superHandle((L2NetworkMessage) msg);
         } else {
@@ -181,6 +236,11 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
             public void run(FlowTrigger trigger, Map data) {
                 List<String> uuids = Q.New(VxlanNetworkVO.class)
                         .select(VxlanNetworkVO_.uuid).eq(VxlanNetworkVO_.poolUuid, msg.getL2NetworkUuid()).listValues();
+
+                if (uuids.isEmpty()) {
+                    logger.info(String.format("There are no vxlan networks for vxlan pool %s", msg.getL2NetworkUuid()));
+                    trigger.next();
+                }
 
                 logger.info(String.format("Detach l2 vxlan networks %s for vxlan pool %s", uuids, msg.getL2NetworkUuid()));
 
@@ -285,7 +345,7 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
             return;
         }
 
-        // Todo(WeiW): Need to validate
+        // Todo(WeiW): Need to validate!
         for (String tag : msg.getSystemTags()) {
             tagMgr.createNonInherentSystemTag(msg.getL2NetworkUuid(), tag, L2NetworkVO.class.getSimpleName());
         }
@@ -314,6 +374,7 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
                     dbf.persist(rvo);
                 }
 
+
                 logger.debug(String.format("successfully attached L2VxlanNetworkPool[uuid:%s] to cluster [uuid:%s]", self.getUuid(), msg.getClusterUuid()));
                 self = dbf.findByUuid(self.getUuid(), L2NetworkVO.class);
                 evt.setInventory((L2NetworkInventory) inventoryMgr.valueOf(self));
@@ -322,6 +383,9 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
 
             @Override
             public void fail(ErrorCode errorCode) {
+                for (String tag : msg.getSystemTags()) {
+                    VxlanSystemTags.VXLAN_POOL_CLUSTER_VTEP_CIDR.delete(msg.getL2NetworkUuid(), tag);
+                }
                 evt.setError(errf.instantiateErrorCode(L2Errors.ATTACH_ERROR, errorCode));
                 bus.publish(evt);
             }
@@ -351,7 +415,7 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
         }).run(new NoErrorCompletion() {
             @Override
             public void done() {
-                if (errList.getCauses() != null) {
+                if (!errList.getCauses().isEmpty()) {
                     APIDeleteL2NetworkEvent evt = new APIDeleteL2NetworkEvent(msg.getId());
                     bus.makeTargetServiceIdByResourceUuid(msg, L2NetworkConstant.SERVICE_ID, msg.getL2NetworkUuid());
                     evt.setError(errList.getCauses().get(0));
@@ -363,24 +427,66 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
         });
     }
 
+    private void handle(final APIDeleteVniRangeMsg msg) {
+        APIDeleteVniRangeEvent evt = new APIDeleteVniRangeEvent(msg.getId());
+        VniRangeVO vo = Q.New(VniRangeVO.class).eq(VniRangeVO_.uuid, msg.getUuid()).find();
+
+        List<String> uuids = Q.New(VxlanNetworkVO.class)
+                .select(VxlanNetworkVO_.uuid).eq(VxlanNetworkVO_.poolUuid, vo.getL2NetworkUuid())
+                .gte(VxlanNetworkVO_.vni, vo.getStartVni()).lte(VxlanNetworkVO_.vni, vo.getEndVni()).listValues();
+
+        if (uuids.isEmpty()) {
+            logger.info(String.format("there are no vxlan networks for vni range[%s] and delete vni range directly", msg.getUuid()));
+            dbf.remove(vo);
+            bus.makeTargetServiceIdByResourceUuid(msg, L2NetworkConstant.SERVICE_ID, msg.getL2NetworkUuid());
+            bus.publish(evt);
+        }
+
+        logger.info(String.format("delete l2 vxlan networks[%s] for vni range[%s]", uuids, msg.getUuid()));
+
+        new While<>(uuids).all((uuid, completion) -> {
+            DeleteL2NetworkMsg dmsg = new DeleteL2NetworkMsg();
+            dmsg.setUuid(uuid);
+            bus.makeTargetServiceIdByResourceUuid(dmsg, L2NetworkConstant.SERVICE_ID, dmsg.getL2NetworkUuid());
+            bus.send(dmsg, new CloudBusCallBack(completion) {
+                @Override
+                public void run(MessageReply reply) {
+                    if (!reply.isSuccess()) {
+                        logger.warn(reply.getError().toString());
+                    } else {
+                        logger.debug(String.format("delete l2 vxlan network %s for vni range %s success", uuid, msg.getL2NetworkUuid()));
+                    }
+                    completion.done();
+                }
+            });
+        }).run(new NoErrorCompletion(msg) {
+            @Override
+            public void done() {
+                dbf.remove(vo);
+                bus.makeTargetServiceIdByResourceUuid(msg, L2NetworkConstant.SERVICE_ID, msg.getL2NetworkUuid());
+                bus.publish(evt);
+            }
+        });
+    }
+
     private void prepareL2NetworkOnHosts(final String l2NetworkUuid, final List<HostInventory> hosts, final Completion completion) {
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("prepare-l2-%s-on-hosts", self.getUuid()));
         chain.then(new NoRollbackFlow() {
             @Override
             public void run(final FlowTrigger trigger, Map data) {
-                new While<>(hosts).all((h, completion) -> {
+                new While<>(hosts).all((h, completion1) -> {
                     CheckL2NetworkOnHostMsg cmsg = new CheckL2NetworkOnHostMsg();
                     cmsg.setHostUuid(h.getUuid());
                     cmsg.setL2NetworkUuid(l2NetworkUuid);
-                    bus.makeTargetServiceIdByResourceUuid(cmsg, L2NetworkConstant.SERVICE_ID, h.getUuid());
-                    bus.send(cmsg, new CloudBusCallBack(completion) {
+                    bus.makeTargetServiceIdByResourceUuid(cmsg, L2NetworkConstant.SERVICE_ID, l2NetworkUuid);
+                    bus.send(cmsg, new CloudBusCallBack(completion1) {
                         @Override
                         public void run(MessageReply reply) {
                             if (!reply.isSuccess()) {
                                 trigger.fail(reply.getError());
                             }
-                            completion.done();
+                            completion1.done();
                         }
                     });
                 }).run(new NoErrorCompletion() {
@@ -428,6 +534,14 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
         }).start();
     }
 
+    protected void realizeNetwork(String hostUuid, String htype, Completion completion) {
+        final HypervisorType hvType = HypervisorType.valueOf(htype);
+        final L2NetworkType l2Type = L2NetworkType.valueOf(self.getType());
+
+        L2NetworkRealizationExtensionPoint ext = l2Mgr.getRealizationExtension(l2Type, hvType);
+        ext.realize(getSelfInventory(), hostUuid, completion);
+    }
+
     private void superHandle(L2NetworkMessage msg) {
         super.handleMessage((Message) msg);
     }
@@ -462,4 +576,21 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
         }
         return attachedClusters;
     }
+
+    @Override
+    public List<Class> getMessageClassToIntercept() {
+        return Arrays.asList(APIAttachL2NetworkToClusterMsg.class, APICreateL3NetworkMsg.class);
+    }
+
+    @Override
+    public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
+        vxlanInterceptor.intercept(msg);
+        return msg;
+    }
+
+    @Override
+    public InterceptorPosition getPosition() {
+        return InterceptorPosition.FRONT;
+    }
+
 }

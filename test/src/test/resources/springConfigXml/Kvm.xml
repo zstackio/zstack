@@ -56,6 +56,20 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="KVMRealizeL2VxlanNetworkBackend" class="org.zstack.kvm.KVMRealizeL2VxlanNetworkBackend">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.network.l2.L2NetworkRealizationExtensionPoint" />
+            <zstack:extension interface="org.zstack.kvm.KVMCompleteNicInformationExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="KVMRealizeL2VxlanNetworkPoolBackend" class="org.zstack.kvm.KVMRealizeL2VxlanNetworkPoolBackend">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.network.l2.L2NetworkRealizationExtensionPoint" />
+            <zstack:extension interface="org.zstack.kvm.KVMCompleteNicInformationExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
     <bean id="KVMExtensionEmitter" class="org.zstack.kvm.KVMExtensionEmitter">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component" />

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <service xmlns="http://zstack.org/schema/zstack">
     <id>network.l2</id>
+    <interceptor>VxlanPoolApiInterceptor</interceptor>
 
     <message>
         <name>org.zstack.network.l2.vxlan.vxlanNetworkPool.APICreateL2VxlanNetworkPoolMsg</name>
@@ -27,6 +28,10 @@
     <message>
         <name>org.zstack.network.l2.vxlan.vxlanNetwork.APIQueryL2VxlanNetworkMsg</name>
         <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.network.l2.vxlan.vxlanNetworkPool.APIDeleteVniRangeMsg</name>
     </message>
 
 </service>

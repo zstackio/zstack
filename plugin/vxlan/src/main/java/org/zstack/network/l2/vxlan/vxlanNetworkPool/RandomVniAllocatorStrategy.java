@@ -105,7 +105,7 @@ public class RandomVniAllocatorStrategy extends AbstractVniAllocatorStrategy {
             q.add(VxlanNetworkVO_.vni, SimpleQuery.Op.GTE, s);
             q.add(VxlanNetworkVO_.vni, SimpleQuery.Op.LTE, te);
             q.add(VxlanNetworkVO_.poolUuid, SimpleQuery.Op.EQ, poolUuid);
-            List<Long> used = q.listValue();
+            List<Integer> used = q.listValue();
             if (te - s + 1 == used.size()) {
                 s += step;
                 continue;
@@ -119,15 +119,15 @@ public class RandomVniAllocatorStrategy extends AbstractVniAllocatorStrategy {
         return null;
     }
 
-    private static Integer randomAllocateVni(Integer startVni, Integer endVni, List<Long> allocatedVnis) {
+    private static Integer randomAllocateVni(Integer startVni, Integer endVni, List<Integer> allocatedVnis) {
         int total = (endVni - startVni + 1);
         if (total == allocatedVnis.size()) {
             return null;
         }
 
         BitSet full = new BitSet(total);
-        for (long alloc : allocatedVnis) {
-            full.set((int) (alloc - startVni));
+        for (Integer alloc : allocatedVnis) {
+            full.set(alloc - startVni);
         }
 
         Random random = new Random();

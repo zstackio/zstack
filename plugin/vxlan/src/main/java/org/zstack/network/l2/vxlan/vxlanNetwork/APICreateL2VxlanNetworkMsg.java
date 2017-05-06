@@ -7,12 +7,14 @@ import org.zstack.header.message.OverriddenApiParam;
 import org.zstack.header.message.OverriddenApiParams;
 import org.zstack.header.network.l2.APICreateL2NetworkMsg;
 import org.zstack.header.rest.RestRequest;
+import org.zstack.header.zone.ZoneVO;
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolConstant;
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolVO;
 
 @Action(category = VxlanNetworkPoolConstant.ACTION_CATEGORY)
 @OverriddenApiParams({
-        @OverriddenApiParam(field = "physicalInterface", param = @APIParam(maxLength = 1024, required = false))
+        @OverriddenApiParam(field = "physicalInterface", param = @APIParam(maxLength = 1024, required = false)),
+        @OverriddenApiParam(field = "zoneUuid", param = @APIParam(maxLength = 1024, required = false, resourceType = ZoneVO.class))
 })
 @RestRequest(
         path = "/l2-networks/vxlan",
@@ -21,7 +23,7 @@ import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolVO;
         parameterName = "params"
 )
 public class APICreateL2VxlanNetworkMsg extends APICreateL2NetworkMsg {
-    @APIParam(required = false, numberRange = {1, 16777215})
+    @APIParam(required = false, numberRange = {1, 16777214})
     private Integer vni;
 
     @APIParam(required = true, resourceType = VxlanNetworkPoolVO.class)
@@ -46,11 +48,6 @@ public class APICreateL2VxlanNetworkMsg extends APICreateL2NetworkMsg {
 
     public void setPoolUuid(String poolUuid) {
         this.poolUuid = poolUuid;
-    }
-
-    @Override
-    public String getPhysicalInterface() {
-        return "No use";
     }
 
     public static APICreateL2VxlanNetworkMsg __example__() {

@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class AttachAliyunKeyAction extends AbstractAction {
+public class DeleteVniRangeAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public AttachAliyunKeyResult value;
+        public DeleteVniRangeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -24,6 +24,9 @@ public class AttachAliyunKeyAction extends AbstractAction {
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
+
+    @Param(required = false)
+    public java.lang.String deleteMode = "Permissive";
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -46,8 +49,8 @@ public class AttachAliyunKeyAction extends AbstractAction {
             return ret;
         }
         
-        AttachAliyunKeyResult value = res.getResult(AttachAliyunKeyResult.class);
-        ret.value = value == null ? new AttachAliyunKeyResult() : value; 
+        DeleteVniRangeResult value = res.getResult(DeleteVniRangeResult.class);
+        ret.value = value == null ? new DeleteVniRangeResult() : value; 
 
         return ret;
     }
@@ -72,11 +75,11 @@ public class AttachAliyunKeyAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/hybrid/aliyun/key/{uuid}";
+        info.httpMethod = "DELETE";
+        info.path = "/l2-networks/vxlan-pool/vni-ranges/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "attachAliyunKey";
+        info.parameterName = "params";
         return info;
     }
 

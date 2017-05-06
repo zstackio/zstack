@@ -11,6 +11,7 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import java.sql.Timestamp;
 
 /**
  * Created by weiwang on 02/03/2017.
@@ -38,6 +39,29 @@ public class VtepVO extends ResourceVO {
 
     @Column
     private String type;
+
+
+    @Column
+    private Timestamp createDate;
+
+    @Column
+    private Timestamp lastOpDate;
+
+    public Timestamp getCreateDate() {
+        return createDate;
+    }
+
+    public void setCreateDate(Timestamp createDate) {
+        this.createDate = createDate;
+    }
+
+    public Timestamp getLastOpDate() {
+        return lastOpDate;
+    }
+
+    public void setLastOpDate(Timestamp lastOpDate) {
+        this.lastOpDate = lastOpDate;
+    }
 
     public String getHostUuid() {
         return hostUuid;
