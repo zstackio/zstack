@@ -18,6 +18,7 @@ import org.zstack.header.image.ImageDeletionPolicyManager
 import org.zstack.header.message.Message
 import org.zstack.header.rest.RESTConstant
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager
+import org.zstack.header.vo.EO
 import org.zstack.header.volume.VolumeDeletionPolicyManager
 import org.zstack.image.ImageGlobalConfig
 import org.zstack.sdk.AddCephBackupStorageAction
@@ -535,6 +536,14 @@ class EnvSpec implements Node {
         }
     }
 
+    private void cleanupEO() {
+        DatabaseFacade dbf = Test.componentLoader.getComponent(DatabaseFacade.class)
+
+        Platform.reflections.getTypesAnnotatedWith(EO.class).findAll { it.isAnnotationPresent(EO.class) }.each {
+            dbf.eoCleanup(it)
+        }
+    }
+
     void delete() {
         try {
             ImageGlobalConfig.DELETION_POLICY.updateValue(ImageDeletionPolicyManager.ImageDeletionPolicy.Direct.toString())
@@ -556,6 +565,8 @@ class EnvSpec implements Node {
             if (GLOBAL_DELETE_HOOK != null) {
                 GLOBAL_DELETE_HOOK()
             }
+
+            cleanupEO()
 
             makeSureAllEntitiesDeleted()
         } catch (StopTestSuiteException e) {
