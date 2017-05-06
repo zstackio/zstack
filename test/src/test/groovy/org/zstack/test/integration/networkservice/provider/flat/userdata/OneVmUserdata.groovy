@@ -2,16 +2,25 @@ package org.zstack.test.integration.networkservice.provider.flat.userdata
 
 import org.springframework.http.HttpEntity
 import org.zstack.compute.vm.VmSystemTags
+import org.zstack.header.network.service.NetworkServiceType
+import org.zstack.header.vm.VmInstanceVO
+import org.zstack.kvm.KVMAgentCommands
+import org.zstack.kvm.KVMConstant
+import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.flat.BridgeNameFinder
+import org.zstack.network.service.flat.FlatNetworkServiceConstant
 import org.zstack.network.service.flat.FlatNetworkSystemTags
 import org.zstack.network.service.flat.FlatUserdataBackend
+import org.zstack.network.service.userdata.UserdataConstant
 import org.zstack.network.service.userdata.UserdataGlobalProperty
+import org.zstack.sdk.HostInventory
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.VmNicInventory
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
 import org.zstack.test.integration.networkservice.provider.flat.FlatNetworkServiceEnv
 import org.zstack.testlib.*
+import org.zstack.utils.data.SizeUnit
 
 /**
  * Created by xing5 on 2017/2/26.
@@ -30,19 +39,98 @@ class OneVmUserdata extends SubCase {
 
     @Override
     void environment() {
-        env = FlatNetworkServiceEnv.oneHostNoVmEnv()
+        env = env {
+            instanceOffering {
+                name = "instanceOffering"
+                memory = SizeUnit.GIGABYTE.toByte(8)
+                cpu = 4
+            }
+
+            sftpBackupStorage {
+                name = "sftp"
+                url = "/sftp"
+                username = "root"
+                password = "password"
+                hostname = "localhost"
+
+                image {
+                    name = "image"
+                    url = "http://zstack.org/download/test.qcow2"
+                }
+            }
+
+            zone {
+                name = "zone"
+                description = "test"
+
+                cluster {
+                    name = "cluster"
+                    hypervisorType = "KVM"
+
+                    kvm {
+                        name = "kvm"
+                        managementIp = "localhost"
+                        username = "root"
+                        password = "password"
+                    }
+
+                    kvm {
+                        name = "kvm1"
+                        managementIp = "127.0.0.1"
+                        username = "root"
+                        password = "password"
+                    }
+
+                    attachPrimaryStorage("local")
+                    attachL2Network("l2")
+                }
+
+                nfsPrimaryStorage {
+                    name = "local"
+                    url = "127.0.0.1:/nfs"
+                }
+
+                l2NoVlanNetwork {
+                    name = "l2"
+                    physicalInterface = "eth0"
+
+                    l3Network {
+                        name = "l3"
+
+                        service {
+                            provider = FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING
+                            types = [NetworkServiceType.DHCP.toString(), EipConstant.EIP_NETWORK_SERVICE_TYPE, UserdataConstant.USERDATA_TYPE_STRING]
+                        }
+
+                        ip {
+                            startIp = "192.168.100.10"
+                            endIp = "192.168.100.100"
+                            netmask = "255.255.255.0"
+                            gateway = "192.168.100.1"
+                        }
+                    }
+                }
+
+                attachBackupStorage("sftp")
+            }
+        }
     }
 
     @Override
     void test() {
         env.create {
             l3 = (env.specByName("l3") as L3NetworkSpec).inventory
+            def oldValue =  FlatUserdataBackend.UserdataReleseGC.INTERVAL
+            FlatUserdataBackend.UserdataReleseGC.INTERVAL = 1
 
             testSetUserdataWhenCreateVm()
             testDeleteUserdataWhenStopVm()
             testSetUserdataWhenStartVm()
             testSetAndDeleteUserddataWhenRebootVm()
             testDeleteUserdataWhenDestroyVm()
+            testUserdataForMigratedVm()
+
+            FlatUserdataBackend.UserdataReleseGC.INTERVAL = oldValue
         }
     }
 
@@ -60,6 +148,156 @@ class OneVmUserdata extends SubCase {
                 uuid = vm.uuid
             }
         }
+    }
+
+    void testUserdataForMigratedVm() {
+        VmInstanceInventory vm = createVmInstance {
+            name = "vm"
+            imageUuid = env.inventoryByName("image").uuid
+            l3NetworkUuids = [l3.uuid]
+            instanceOfferingUuid = env.inventoryByName("instanceOffering").uuid
+            systemTags = [VmSystemTags.USERDATA.instantiateTag([(VmSystemTags.USERDATA_TOKEN): userdata])]
+            hostUuid = env.inventoryByName("kvm").uuid
+        }
+
+        def testUserdataOnVmMigrationSuccess = {
+            def applyCmd = null
+            def releaseCmd = null
+            env.afterSimulator(FlatUserdataBackend.APPLY_USER_DATA) { rsp, HttpEntity<String> e ->
+                FlatUserdataBackend.ApplyUserdataCmd cmd = json(e.body, FlatUserdataBackend.ApplyUserdataCmd.class)
+                applyCmd = cmd
+                return rsp
+            }
+
+            env.afterSimulator(FlatUserdataBackend.RELEASE_USER_DATA) { rsp, HttpEntity<String> e ->
+                FlatUserdataBackend.ReleaseUserdataCmd cmd = json(e.body, FlatUserdataBackend.ReleaseUserdataCmd.class)
+                releaseCmd = cmd
+                return rsp
+            }
+
+            HostInventory kvm1 = env.inventoryByName("kvm1")
+            migrateVm {
+                vmInstanceUuid = vm.uuid
+                hostUuid = kvm1.uuid
+            }
+
+            assert applyCmd != null
+            assert releaseCmd != null
+        }
+
+        def testGCOnUserdataOnVmMigrationSuccessButFailedToReleaseUserdataOnSrcHost = {
+            def releaseCmd = null
+            boolean releaseSuccess = false
+
+            env.afterSimulator(FlatUserdataBackend.RELEASE_USER_DATA) { rsp, HttpEntity<String> e ->
+                if (!releaseSuccess) {
+                    throw new Exception("failed to release on purpose")
+                }
+
+                FlatUserdataBackend.ReleaseUserdataCmd cmd = json(e.body, FlatUserdataBackend.ReleaseUserdataCmd.class)
+                releaseCmd = cmd
+                return rsp
+            }
+
+            HostInventory kvm = env.inventoryByName("kvm")
+            HostInventory kvm1 = env.inventoryByName("kvm1")
+            VmInstanceVO vmvo = dbFindByUuid(vm.uuid, VmInstanceVO.class)
+            String srcHostUuid = vmvo.getHostUuid()
+            String targetHostUuid = vmvo.getHostUuid() == kvm.uuid ? kvm1.uuid : kvm.uuid
+
+            migrateVm {
+                vmInstanceUuid = vmvo.uuid
+                hostUuid = targetHostUuid
+            }
+
+            releaseSuccess = true
+
+            assert retryInSecs {
+                return {
+                    assert releaseCmd != null
+                    assert releaseCmd.hostUuid == srcHostUuid
+                }
+            }
+        }
+
+        def testUserdataReleaseOnDestHostWhenVmMigrationFailure = {
+            FlatUserdataBackend.ReleaseUserdataCmd releaseCmd = null
+            env.afterSimulator(FlatUserdataBackend.RELEASE_USER_DATA) { rsp, HttpEntity<String> e ->
+                FlatUserdataBackend.ReleaseUserdataCmd cmd = json(e.body, FlatUserdataBackend.ReleaseUserdataCmd.class)
+                releaseCmd = cmd
+                return rsp
+            }
+
+            env.simulator(KVMConstant.KVM_MIGRATE_VM_PATH) {
+                throw new Exception("on purpose")
+            }
+
+            HostInventory kvm = env.inventoryByName("kvm")
+            HostInventory kvm1 = env.inventoryByName("kvm1")
+            VmInstanceVO vmvo = dbFindByUuid(vm.uuid, VmInstanceVO.class)
+            String targetHostUuid = vmvo.getHostUuid() == kvm.uuid ? kvm1.uuid : kvm.uuid
+
+            expect(AssertionError.class) {
+                migrateVm {
+                    vmInstanceUuid = vm.uuid
+                    hostUuid = targetHostUuid
+                }
+            }
+
+            assert retryInSecs {
+                return {
+                    assert releaseCmd != null
+                    assert releaseCmd.hostUuid == targetHostUuid
+                }
+            }
+        }
+
+        def testGCOnUserdataOnVmMigrationFailureButFailedToReleaseUserdataOnDstHost = {
+            def releaseCmd = null
+            boolean releaseSuccess = false
+
+            env.afterSimulator(FlatUserdataBackend.RELEASE_USER_DATA) { rsp, HttpEntity<String> e ->
+                if (!releaseSuccess) {
+                    throw new Exception("failed to release on purpose")
+                }
+
+                FlatUserdataBackend.ReleaseUserdataCmd cmd = json(e.body, FlatUserdataBackend.ReleaseUserdataCmd.class)
+                releaseCmd = cmd
+                return rsp
+            }
+
+            HostInventory kvm = env.inventoryByName("kvm")
+            HostInventory kvm1 = env.inventoryByName("kvm1")
+            VmInstanceVO vmvo = dbFindByUuid(vm.uuid, VmInstanceVO.class)
+            String targetHostUuid = vmvo.getHostUuid() == kvm.uuid ? kvm1.uuid : kvm.uuid
+
+            env.simulator(KVMConstant.KVM_MIGRATE_VM_PATH) {
+                throw new Exception("on purpose")
+            }
+
+            expect(AssertionError.class) {
+                migrateVm {
+                    vmInstanceUuid = vm.uuid
+                    hostUuid = targetHostUuid
+                }
+            }
+
+            assert releaseCmd == null
+
+            releaseSuccess = true
+
+            assert retryInSecs {
+                return {
+                    assert releaseCmd != null
+                    assert releaseCmd.hostUuid == targetHostUuid
+                }
+            }
+        }
+
+        testUserdataOnVmMigrationSuccess()
+        testGCOnUserdataOnVmMigrationSuccessButFailedToReleaseUserdataOnSrcHost()
+        testUserdataReleaseOnDestHostWhenVmMigrationFailure()
+        testGCOnUserdataOnVmMigrationFailureButFailedToReleaseUserdataOnDstHost()
     }
 
     void testSetAndDeleteUserddataWhenRebootVm() {

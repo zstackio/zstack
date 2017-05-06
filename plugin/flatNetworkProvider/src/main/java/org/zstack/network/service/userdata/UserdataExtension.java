@@ -116,7 +116,7 @@ public class UserdataExtension extends AbstractNetworkServiceExtension implement
 
         UserdataStruct struct = new UserdataStruct();
         struct.setL3NetworkUuid(servedVm.getVmInventory().getDefaultL3NetworkUuid());
-        struct.setVmSpec(servedVm);
+        struct.setParametersFromVmSpec(servedVm);
         struct.setUserdata(servedVm.getUserdata());
 
         UserdataBackend bkd = getUserdataBackend(provider.getType());
@@ -151,7 +151,7 @@ public class UserdataExtension extends AbstractNetworkServiceExtension implement
 
         UserdataStruct struct = new UserdataStruct();
         struct.setL3NetworkUuid(servedVm.getVmInventory().getDefaultL3NetworkUuid());
-        struct.setVmSpec(servedVm);
+        struct.setParametersFromVmSpec(servedVm);
         struct.setUserdata(servedVm.getUserdata());
 
         UserdataBackend bkd = getUserdataBackend(provider.getType());

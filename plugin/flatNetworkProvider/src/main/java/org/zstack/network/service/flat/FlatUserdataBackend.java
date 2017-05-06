@@ -3,32 +3,42 @@ package org.zstack.network.service.flat;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.vm.UserdataBuilder;
-import org.zstack.core.asyncbatch.AsyncBatchRunner;
-import org.zstack.core.asyncbatch.LoopAsyncBatch;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.Q;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.gc.GC;
+import org.zstack.core.gc.GCCompletion;
+import org.zstack.core.gc.TimeBasedGarbageCollector;
 import org.zstack.core.logging.Log;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostConstant;
+import org.zstack.header.host.HostStatus;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkDeleteExtensionPoint;
 import org.zstack.header.network.l3.L3NetworkException;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.network.service.*;
+import org.zstack.header.network.service.NetworkServiceL3NetworkRefInventory;
+import org.zstack.header.network.service.NetworkServiceProviderType;
+import org.zstack.header.network.service.NetworkServiceProviderVO;
+import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceMigrateExtensionPoint;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.kvm.*;
 import org.zstack.kvm.KVMAgentCommands.AgentResponse;
+import org.zstack.network.service.NetworkProviderFinder;
 import org.zstack.network.service.NetworkServiceFilter;
 import org.zstack.network.service.userdata.UserdataBackend;
 import org.zstack.network.service.userdata.UserdataConstant;
@@ -38,19 +48,20 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
-
-import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.*;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
  * Created by frank on 10/13/2015.
  */
-public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExtensionPoint, L3NetworkDeleteExtensionPoint {
+public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExtensionPoint,
+        L3NetworkDeleteExtensionPoint, VmInstanceMigrateExtensionPoint {
     private static final CLogger logger = Utils.getLogger(FlatUserdataBackend.class);
 
     @Autowired
@@ -272,6 +283,147 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
         }
     }
 
+    private UserdataStruct makeUserdataStructForMigratingVm(VmInstanceInventory inv, String hostUuid) {
+        String providerType = new NetworkProviderFinder().getNetworkProviderTypeByNetworkServiceType(inv.getDefaultL3NetworkUuid(), UserdataConstant.USERDATA_TYPE_STRING);
+        if (providerType == null || !FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING.equals(providerType)) {
+            return null;
+        }
+
+        String userdata = new UserdataBuilder().buildByVmUuid(inv.getUuid());
+        if (userdata == null) {
+            return null;
+        }
+
+        UserdataStruct struct = new UserdataStruct();
+        struct.setParametersFromVmInventory(inv);
+        struct.setHostUuid(hostUuid);
+        struct.setL3NetworkUuid(inv.getDefaultL3NetworkUuid());
+        struct.setUserdata(userdata);
+        return struct;
+    }
+
+
+    @Override
+    public void preMigrateVm(VmInstanceInventory inv, String destHostUuid) {
+        UserdataStruct struct = makeUserdataStructForMigratingVm(inv, destHostUuid);
+        if (struct == null) {
+            return;
+        }
+
+        FutureCompletion completion = new FutureCompletion(null);
+        applyUserdata(struct, completion);
+        completion.await();
+
+        if (!completion.isSuccess()) {
+            throw new OperationFailureException(completion.getErrorCode());
+        }
+    }
+
+    @Override
+    public void beforeMigrateVm(VmInstanceInventory inv, String destHostUuid) {
+
+    }
+
+    public static class UserdataReleseGC extends TimeBasedGarbageCollector {
+        public static long INTERVAL = 300;
+
+        @GC
+        public UserdataStruct struct;
+
+        @Override
+        protected void triggerNow(GCCompletion completion) {
+            HostStatus status = Q.New(HostVO.class).select(HostVO_.status).eq(HostVO_.uuid, struct.getHostUuid()).findValue();
+            if (status == null) {
+                // host deleted
+                completion.cancel();
+                return;
+            }
+
+            if (status != HostStatus.Connected) {
+                completion.fail(operr("host[uuid:%s] is not connected", struct.getHostUuid()));
+                return;
+            }
+
+            ReleaseUserdataCmd cmd = new ReleaseUserdataCmd();
+            cmd.hostUuid = struct.getHostUuid();
+            cmd.bridgeName = new BridgeNameFinder().findByL3Uuid(struct.getL3NetworkUuid());
+            cmd.namespaceName = FlatDhcpBackend.makeNamespaceName(cmd.bridgeName, struct.getL3NetworkUuid());
+            cmd.vmIp = CollectionUtils.find(struct.getVmNics(), arg -> arg.getL3NetworkUuid().equals(struct.getL3NetworkUuid()) ? arg.getIp() : null);
+
+            KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+            msg.setHostUuid(struct.getHostUuid());
+            msg.setCommand(cmd);
+            msg.setCommandTimeout(TimeUnit.MINUTES.toMillis(5));
+            msg.setPath(RELEASE_USER_DATA);
+            bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, struct.getHostUuid());
+            bus.send(msg, new CloudBusCallBack(completion) {
+                @Override
+                public void run(MessageReply reply) {
+                    if (!reply.isSuccess()) {
+                        completion.fail(reply.getError());
+                        return;
+                    }
+
+                    KVMHostAsyncHttpCallReply r = reply.castReply();
+                    ReleaseUserdataRsp rsp = r.toResponse(ReleaseUserdataRsp.class);
+                    if (!rsp.isSuccess()) {
+                        completion.fail(operr(rsp.getError()));
+                        return;
+                    }
+
+                    completion.success();
+                }
+            });
+        }
+    }
+
+    @Override
+    public void afterMigrateVm(VmInstanceInventory inv, String srcHostUuid) {
+        UserdataStruct struct = makeUserdataStructForMigratingVm(inv, srcHostUuid);
+        if (struct == null) {
+            return;
+        }
+
+        releaseUserdata(struct, new Completion(null) {
+            @Override
+            public void success() {
+                // nothing
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                logger.warn(String.format("failed to release userdata on the source host[uuid:%s]" +
+                        " for the migrated VM[uuid: %s, name:%s], %s. GC will take care it", srcHostUuid, inv.getUuid(), inv.getName(), errorCode));
+                UserdataReleseGC gc = new UserdataReleseGC();
+                gc.struct = struct;
+                gc.submit(UserdataReleseGC.INTERVAL, TimeUnit.SECONDS);
+            }
+        });
+    }
+
+    @Override
+    public void failedToMigrateVm(VmInstanceInventory inv, String destHostUuid, ErrorCode reason) {
+        UserdataStruct struct = makeUserdataStructForMigratingVm(inv, destHostUuid);
+        if (struct == null) {
+            return;
+        }
+
+        // clean the userdata that set on the dest host
+        releaseUserdata(struct, new Completion(null) {
+            @Override
+            public void success() {
+                // nothing
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                UserdataReleseGC gc = new UserdataReleseGC();
+                gc.struct = struct;
+                gc.submit(UserdataReleseGC.INTERVAL, TimeUnit.SECONDS);
+            }
+        });
+    }
+
     public static class UserdataTO {
         public MetadataTO metadata;
         public String userdata;
@@ -300,6 +452,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
     }
 
     public static class ApplyUserdataCmd extends KVMAgentCommands.AgentCommand {
+        public String hostUuid;
         public UserdataTO userdata;
     }
 
@@ -308,6 +461,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
     }
 
     public static class ReleaseUserdataCmd extends KVMAgentCommands.AgentCommand {
+        public String hostUuid;
         public String vmIp;
         public String bridgeName;
         public String namespaceName;
@@ -324,7 +478,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
     @Override
     public void applyUserdata(final UserdataStruct struct, final Completion completion) {
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
-        chain.setName(String.format("flat-network-userdata-set-for-vm-%s", struct.getVmSpec().getVmInventory().getUuid()));
+        chain.setName(String.format("flat-network-userdata-set-for-vm-%s", struct.getVmUuid()));
         chain.then(new ShareFlow() {
             String dhcpServerIp;
 
@@ -359,14 +513,15 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
                         ApplyUserdataCmd cmd = new ApplyUserdataCmd();
+                        cmd.hostUuid = struct.getHostUuid();
 
                         MetadataTO to = new MetadataTO();
-                        to.vmUuid = struct.getVmSpec().getVmInventory().getUuid();
+                        to.vmUuid = struct.getVmUuid();
                         UserdataTO uto = new UserdataTO();
                         uto.metadata = to;
                         uto.userdata = struct.getUserdata();
                         uto.dhcpServerIp = dhcpServerIp;
-                        uto.vmIp = CollectionUtils.find(struct.getVmSpec().getDestNics(), new Function<String, VmNicInventory>() {
+                        uto.vmIp = CollectionUtils.find(struct.getVmNics(), new Function<String, VmNicInventory>() {
                             @Override
                             public String call(VmNicInventory arg) {
                                 return arg.getL3NetworkUuid().equals(struct.getL3NetworkUuid()) ? arg.getIp() : null;
@@ -378,11 +533,11 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                         cmd.userdata = uto;
 
                         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
-                        msg.setHostUuid(struct.getVmSpec().getDestHost().getUuid());
+                        msg.setHostUuid(struct.getHostUuid());
                         msg.setCommand(cmd);
                         msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
                         msg.setPath(APPLY_USER_DATA);
-                        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, struct.getVmSpec().getDestHost().getUuid());
+                        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, struct.getHostUuid());
                         bus.send(msg, new CloudBusCallBack(trigger) {
                             @Override
                             public void run(MessageReply reply) {
@@ -425,7 +580,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
     @Override
     public void releaseUserdata(final UserdataStruct struct, final Completion completion) {
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
-        chain.setName(String.format("flat-network-userdata-release-for-vm-%s", struct.getVmSpec().getVmInventory().getUuid()));
+        chain.setName(String.format("flat-network-userdata-release-for-vm-%s", struct.getVmUuid()));
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
@@ -435,9 +590,10 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
                         ReleaseUserdataCmd cmd = new ReleaseUserdataCmd();
+                        cmd.hostUuid = struct.getHostUuid();
                         cmd.bridgeName = new BridgeNameFinder().findByL3Uuid(struct.getL3NetworkUuid());
                         cmd.namespaceName = FlatDhcpBackend.makeNamespaceName(cmd.bridgeName, struct.getL3NetworkUuid());
-                        cmd.vmIp = CollectionUtils.find(struct.getVmSpec().getDestNics(), new Function<String, VmNicInventory>() {
+                        cmd.vmIp = CollectionUtils.find(struct.getVmNics(), new Function<String, VmNicInventory>() {
                             @Override
                             public String call(VmNicInventory arg) {
                                 return arg.getL3NetworkUuid().equals(struct.getL3NetworkUuid()) ? arg.getIp() : null;
@@ -445,11 +601,11 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                         });
 
                         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
-                        msg.setHostUuid(struct.getVmSpec().getDestHost().getUuid());
+                        msg.setHostUuid(struct.getHostUuid());
                         msg.setCommand(cmd);
                         msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
                         msg.setPath(RELEASE_USER_DATA);
-                        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, struct.getVmSpec().getDestHost().getUuid());
+                        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, struct.getHostUuid());
                         bus.send(msg, new CloudBusCallBack(trigger) {
                             @Override
                             public void run(MessageReply reply) {
