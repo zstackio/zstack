@@ -79,6 +79,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.err;
 import static org.zstack.utils.CollectionDSL.*;
 
 
@@ -3775,9 +3776,10 @@ public class VmInstanceBase extends AbstractVmInstance {
                 });
 
                 if(l3 == null){
-                    ErrorCode err = errf.instantiateErrorCode(SysErrors.RESOURCE_NOT_FOUND,
-                            String.format("Unable to find L3Network[uuid:%s] to start the current vm, it may have been deleted, Operation suggestion: delete this vm, recreate a new vm", l3Uuid));
-                    completion.fail(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR, err));
+                    completion.fail(err(
+                            SysErrors.OPERATION_ERROR,
+                            "Unable to find L3Network[uuid:%s] to start the current vm, it may have been deleted, Operation suggestion: delete this vm, recreate a new vm",
+                            l3Uuid));
                     return;
                 }
                 DebugUtils.Assert(l3 != null, "where is the L3???");
