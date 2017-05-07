@@ -16,6 +16,9 @@ import org.zstack.core.ansible.AnsibleConstant;
 import org.zstack.core.ansible.AnsibleGlobalProperty;
 import org.zstack.core.ansible.AnsibleRunner;
 import org.zstack.core.ansible.SshFileMd5Checker;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -43,6 +46,7 @@ import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.network.l2.*;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
+import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.vm.*;
@@ -60,6 +64,9 @@ import org.zstack.utils.path.PathUtil;
 import org.zstack.utils.ssh.Ssh;
 import org.zstack.utils.ssh.SshResult;
 import org.zstack.utils.ssh.SshShell;
+
+import static org.zstack.core.Platform.inerr;
+import static org.zstack.core.Platform.operr;
 
 import javax.persistence.TypedQuery;
 import java.util.*;
@@ -2415,7 +2422,11 @@ public class KVMHost extends HostBase implements Host {
         chain.done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
-                completion.success();
+                if(noAccessedStorage()){
+                    completion.fail(operr("host can not access any primary storage, please check network"));
+                }else {
+                    completion.success();
+                }
             }
         }).error(new FlowErrorHandler(completion) {
             @Override
@@ -2425,6 +2436,19 @@ public class KVMHost extends HostBase implements Host {
                 completion.fail(errf.instantiateErrorCode(HostErrors.CONNECTION_ERROR, err, errCode));
             }
         }).start();
+    }
+
+    @Transactional
+    public boolean noAccessedStorage(){
+        long noAccessed = Q.New(PrimaryStorageHostRefVO.class)
+                .eq(PrimaryStorageHostRefVO_.hostUuid, self.getUuid())
+                .eq(PrimaryStorageHostRefVO_.status, PrimaryStorageHostStatus.Disconnected)
+                .count();
+        long all = Q.New(PrimaryStorageClusterRefVO.class)
+                .eq(PrimaryStorageClusterRefVO_.clusterUuid, self.getClusterUuid())
+                .count();
+        
+        return noAccessed == all && all > 0;
     }
 
     private void createHostVersionSystemTags(String distro, String release, String version) {
