@@ -75,7 +75,7 @@ public class NfsPrimaryToSftpBackupKVMBackend implements NfsPrimaryToBackupStora
     @Override
     public void createVolumeFromImageCache(final PrimaryStorageInventory primaryStorage, final ImageCacheInventory image,
                                            final VolumeInventory volume, final ReturnValueCompletion<String> completion) {
-        HostInventory host = primaryStorageFactory.getConnectedHostForOperation(primaryStorage);
+        HostInventory host = primaryStorageFactory.getConnectedHostForOperation(primaryStorage).get(0);
 
         final String installPath = NfsPrimaryStorageKvmHelper.makeRootVolumeInstallUrl(primaryStorage, volume);
         final String accountUuid = acntMgr.getOwnerAccountUuidOfResource(volume.getUuid());
@@ -129,7 +129,7 @@ public class NfsPrimaryToSftpBackupKVMBackend implements NfsPrimaryToBackupStora
                     return;
                 }
 
-                HostInventory host = primaryStorageFactory.getConnectedHostForOperation(pinv);
+                HostInventory host = primaryStorageFactory.getConnectedHostForOperation(pinv).get(0);
                 final GetSftpBackupStorageDownloadCredentialReply greply = reply.castReply();
                 DownloadBitsFromSftpBackupStorageCmd cmd = new DownloadBitsFromSftpBackupStorageCmd();
                 cmd.setHostname(greply.getHostname());
@@ -187,7 +187,7 @@ public class NfsPrimaryToSftpBackupKVMBackend implements NfsPrimaryToBackupStora
             }
 
             private void upload(final String hostname, String sshKey, int sshPort, String username) {
-                final HostInventory host = primaryStorageFactory.getConnectedHostForOperation(pinv);
+                final HostInventory host = primaryStorageFactory.getConnectedHostForOperation(pinv).get(0);
                 UploadToSftpCmd cmd = new UploadToSftpCmd();
                 cmd.setBackupStorageHostName(hostname);
                 cmd.setBackupStorageUserName(username);

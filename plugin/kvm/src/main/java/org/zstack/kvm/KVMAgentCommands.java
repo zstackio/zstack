@@ -48,6 +48,7 @@ public class KVMAgentCommands {
 
         public void setError(String error) {
             this.error = error;
+            this.success = false;
         }
 
         @Override
@@ -1557,5 +1558,11 @@ public class KVMAgentCommands {
     public static class ReconnectMeCmd {
         public String hostUuid;
         public String reason;
+    }
+
+    public static class ReportPsStatusCmd {
+        public String hostUuid;
+        public List<String> psUuids;
+        public String psStatus;
     }
 }

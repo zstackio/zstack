@@ -3,7 +3,9 @@ package org.zstack.test.integration.network.l2network
 import org.zstack.core.asyncbatch.While
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.Q
+import org.zstack.header.core.FutureCompletion
 import org.zstack.header.core.NoErrorCompletion
+import org.zstack.header.core.workflow.WhileCompletion
 import org.zstack.header.network.l2.L2NetworkClusterRefVO
 import org.zstack.header.network.l2.L2NetworkClusterRefVO_
 import org.zstack.sdk.ClusterInventory
@@ -133,21 +135,28 @@ public class AttachL2NetworkCase extends SubCase{
         new While<>(list).all(new While.Do<String>() {
 
             @Override
-            void accept(String item, NoErrorCompletion completion) {
+            void accept(String item, WhileCompletion completion) {
                 attachL2NetworkToCluster {
                     l2NetworkUuid = item
                     clusterUuid = cluster.uuid
                 }
+                completion.done()
             }
         }).run(new NoErrorCompletion(){
 
             @Override
             void done() {
+
+            }
+        })
+
+        retryInSecs{
+            return {
                 L2NetworkClusterRefVO ref = Q.New(L2NetworkClusterRefVO.class).eq(L2NetworkClusterRefVO_.clusterUuid,cluster.uuid).find();
                 assert ref.l2NetworkUuid == l21.uuid
                 assert Q.New(L2NetworkClusterRefVO.class).eq(L2NetworkClusterRefVO_.clusterUuid,cluster.uuid).count() == 1l
             }
-        })
+        }
     }
 
     void testAttachL2VlanNetworkSynchronously(){
@@ -158,19 +167,26 @@ public class AttachL2NetworkCase extends SubCase{
         new While<>(list).all(new While.Do<String>() {
 
             @Override
-            void accept(String item, NoErrorCompletion completion) {
+            void accept(String item, WhileCompletion completion) {
                 attachL2NetworkToCluster {
                     l2NetworkUuid = item
                     clusterUuid = cluster.uuid
                 }
+                completion.done()
             }
         }).run(new NoErrorCompletion(){
 
             @Override
             void done() {
-                assert Q.New(L2NetworkClusterRefVO.class).eq(L2NetworkClusterRefVO_.clusterUuid,cluster.uuid).count() == 2l
+
             }
         })
+
+        retryInSecs{
+            return {
+                assert Q.New(L2NetworkClusterRefVO.class).eq(L2NetworkClusterRefVO_.clusterUuid,cluster.uuid).count() == 2l
+            }
+        }
     }
     @Override
     public void clean() {
