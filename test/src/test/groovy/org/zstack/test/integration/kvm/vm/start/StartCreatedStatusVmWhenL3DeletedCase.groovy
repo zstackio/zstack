@@ -54,13 +54,6 @@ class StartCreatedStatusVmWhenL3DeletedCase extends SubCase {
         StartVmInstanceAction.Result result = startVmInstanceAction.call()
         assert null != result.error
         assert result.error.details.indexOf("Unable to find L3Network") > -1
-
-        // clean EO There is a bug, fix pr is ready,
-        // so need delete  vm
-        destroyVmInstance {
-            uuid = newVm.uuid
-        }
-
     }
 
     @Override
