@@ -1,6 +1,5 @@
 package org.zstack.test.integration.network.vxlanNetwork
 
-import org.zstack.header.apimediator.ApiMessageInterceptionException
 import org.zstack.sdk.L2VxlanNetworkPoolInventory
 import org.zstack.sdk.VniRangeInventory
 import org.zstack.test.integration.network.NetworkTest
@@ -12,7 +11,7 @@ import org.zstack.utils.data.SizeUnit
 /**
  * Created by weiwang on 17/03/2017.
  */
-class VxlanApiInterceptor extends SubCase {
+class VxlanApiInterceptorCase extends SubCase {
     EnvSpec env
 
     @Override

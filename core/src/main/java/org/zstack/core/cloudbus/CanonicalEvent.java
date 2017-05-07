@@ -3,6 +3,9 @@ package org.zstack.core.cloudbus;
 import org.zstack.header.message.LocalEvent;
 import org.zstack.utils.JsonWrapper;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 /**
  * Created with IntelliJ IDEA.
  * User: frank
@@ -13,6 +16,14 @@ public class CanonicalEvent extends LocalEvent {
     private String path;
     private Object content;
     private String managementNodeId;
+
+    public Map toStructForWebhook() {
+        Map m = new LinkedHashMap();
+        m.put("path", path);
+        m.put("content", content);
+        m.put("managementNodeId", managementNodeId);
+        return m;
+    }
 
     public String getManagementNodeId() {
         return managementNodeId;

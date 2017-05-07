@@ -134,5 +134,6 @@
         <class>org.zstack.core.notification.NotificationVO</class>
         <class>org.zstack.core.notification.NotificationSubscriptionVO</class>
         <class>org.zstack.header.vo.ResourceVO</class>
+        <class>org.zstack.header.core.webhooks.WebhookVO</class>
     </persistence-unit>
 </persistence>

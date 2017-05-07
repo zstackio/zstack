@@ -29,4 +29,5 @@ public interface EventFacade {
 
     String META_DATA_MANAGEMENT_NODE_ID = "metadata::managementNodeId";
     String META_DATA_PATH = "metadata::path";
+    String WEBHOOK_TYPE = "CanonicalEvent";
 }

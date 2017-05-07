@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>webhook</id>
+    <interceptor>WebhookApiInterceptor</interceptor>
+
+    <message>
+        <name>org.zstack.header.core.webhooks.APICreateWebhookMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.core.webhooks.APIDeleteWebhookMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.core.webhooks.APIUpdateWebhookMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.core.webhooks.APIQueryWebhookMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+</service>

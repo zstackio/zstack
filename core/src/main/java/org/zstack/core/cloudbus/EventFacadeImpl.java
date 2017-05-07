@@ -2,12 +2,27 @@ package org.zstack.core.cloudbus;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
+import org.zstack.core.db.Q;
 import org.zstack.core.thread.AsyncThread;
+import org.zstack.core.webhook.WebhookCaller;
+import org.zstack.header.core.webhooks.WebhookVO_;
 import org.zstack.header.Component;
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
+import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
+import org.zstack.header.core.webhooks.APICreateWebhookMsg;
+import org.zstack.header.core.webhooks.WebhookInventory;
+import org.zstack.header.core.webhooks.WebhookVO;
+import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Event;
+import org.zstack.utils.gson.JSONObjectUtil;
+
+import static org.zstack.core.Platform.argerr;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
+
+import static java.util.Arrays.asList;
 
 /**
  * Created with IntelliJ IDEA.
@@ -15,7 +30,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Time: 11:39 PM
  * To change this template use File | Settings | File Templates.
  */
-public class EventFacadeImpl implements EventFacade, CloudBusEventListener, Component {
+public class EventFacadeImpl implements EventFacade, CloudBusEventListener, Component, GlobalApiMessageInterceptor {
     @Autowired
     private CloudBus bus;
 
@@ -23,6 +38,35 @@ public class EventFacadeImpl implements EventFacade, CloudBusEventListener, Comp
     private final Map<String, CallbackWrapper> local =  Collections.synchronizedMap(new HashMap<>());
 
     private EventSubscriberReceipt unsubscriber;
+
+    @Override
+    public List<Class> getMessageClassToIntercept() {
+        return asList(APICreateWebhookMsg.class);
+    }
+
+    @Override
+    public InterceptorPosition getPosition() {
+        return InterceptorPosition.FRONT;
+    }
+
+    @Override
+    public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
+        if (msg instanceof APICreateWebhookMsg) {
+            validate((APICreateWebhookMsg) msg);
+        }
+
+        return msg;
+    }
+
+    private void validate(APICreateWebhookMsg msg) {
+        if (!EventFacade.WEBHOOK_TYPE.equals(msg.getType())) {
+            return;
+        }
+
+        if (msg.getOpaque() == null) {
+            throw new ApiMessageInterceptionException(argerr("for webhooks with type[%s], the field opaque cannot be null", EventFacade.WEBHOOK_TYPE));
+        }
+    }
 
     private class CallbackWrapper {
         String path;
@@ -174,8 +218,27 @@ public class EventFacadeImpl implements EventFacade, CloudBusEventListener, Comp
         }
         
         fireLocal(evt);
+
+        callWebhooks(evt);
         
         bus.publish(evt);
+    }
+
+    private void callWebhooks(CanonicalEvent event) {
+        new WebhookCaller() {
+            @Override
+            public void call() {
+                List<WebhookVO> vos = Q.New(WebhookVO.class).eq(WebhookVO_.type, EventFacade.WEBHOOK_TYPE).list();
+                vos = vos.stream().filter(
+                        vo -> event.getPath().matches(
+                                createRegexFromGlob(vo.getOpaque().replaceAll("\\{.*\\}", ".*"))
+                        )).collect(Collectors.toList());
+
+                if (!vos.isEmpty()) {
+                    postToWebhooks(WebhookInventory.valueOf(vos), JSONObjectUtil.toJsonString(event));
+                }
+            }
+        }.call();
     }
 
     private void fireLocal(CanonicalEvent cevt) {
