@@ -290,6 +290,19 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
                     throw new ApiMessageInterceptionException(argerr("field[%s] of message[%s] is mandatory, can not be null", f.getName(), msg.getClass().getName()));
                 }
 
+                if (at.required() && value != null) {
+                    if((value instanceof String) && StringUtils.isEmpty((String) value)){
+                        throw new ApiMessageInterceptionException(argerr("field[%s] of message[%s] is mandatory, can not be an empty string", f.getName(), msg.getClass().getName()));
+                    }else if (value instanceof Collection) {
+                        for (Object v : (Collection)value) {
+                            if (v instanceof String && StringUtils.isEmpty((String)v)) {
+                                throw new ApiMessageInterceptionException(argerr("field[%s] cannot contain any empty string", f.getName()));
+                            }
+                        }
+                    }
+
+                }
+
                 if (value != null && at.validValues().length > 0) {
                     List vals = Arrays.asList(at.validValues());
 
