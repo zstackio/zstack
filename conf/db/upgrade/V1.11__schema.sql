@@ -771,4 +771,10 @@ INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "VolumeSnapshotTreeEO
 INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "VtepVO" FROM VtepVO t;
 INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "ZoneEO" FROM ZoneEO t;
 
+# Foreign keys for table VirtualRouterLoadBalancerRefVO
+
+ALTER TABLE `zstack`.`VirtualRouterLoadBalancerRefVO` ADD CONSTRAINT fkVirtualRouterLoadBalancerRefVOVirtualRouterVmVO FOREIGN KEY (virtualRouterVmUuid) REFERENCES VirtualRouterVmVO (uuid) ON DELETE CASCADE;
+ALTER TABLE `zstack`.`VirtualRouterLoadBalancerRefVO` ADD CONSTRAINT fkVirtualRouterLoadBalancerRefVOLoadBalancerVO FOREIGN KEY (loadBalancerUuid) REFERENCES LoadBalancerVO (uuid) ON DELETE CASCADE;
+ALTER TABLE `zstack`.`VirtualRouterLoadBalancerRefVO` ADD UNIQUE INDEX(`virtualRouterVmUuid`,`loadBalancerUuid`);
+
 
