@@ -42,7 +42,7 @@ public class While<T> {
     }
 
     private void run(Iterator<T> it, NoErrorCompletion completion) {
-        if (!it.hasNext()) {
+        if (!it.hasNext() || items.isEmpty()) {
             completion.done();
             return;
         }

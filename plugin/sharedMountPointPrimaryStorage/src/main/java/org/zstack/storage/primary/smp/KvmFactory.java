@@ -11,10 +11,14 @@ import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.PrimaryStorageConstant;
+import org.zstack.header.storage.primary.PrimaryStorageHostRefVO;
+import org.zstack.header.storage.primary.PrimaryStorageHostStatus;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.kvm.KVMConstant;
 import org.zstack.kvm.KVMHostConnectExtensionPoint;
 import org.zstack.kvm.KVMHostConnectedContext;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
 import java.util.List;
@@ -24,6 +28,8 @@ import java.util.Map;
  * Created by xing5 on 2016/3/26.
  */
 public class KvmFactory implements HypervisorFactory, KVMHostConnectExtensionPoint {
+    private final static CLogger logger = Utils.getLogger(KvmFactory.class);
+
     @Autowired
     private DatabaseFacade dbf;
     @Autowired
@@ -73,11 +79,24 @@ public class KvmFactory implements HypervisorFactory, KVMHostConnectExtensionPoi
                 bus.send(msg, new CloudBusCallBack(trigger) {
                     @Override
                     public void run(MessageReply reply) {
+                        /* pending support
+                        PrimaryStorageHostRefVO ref = new PrimaryStorageHostRefVO();
+                        ref.setHostUuid(context.getInventory().getUuid());
+                        ref.setPrimaryStorageUuid(psUuid);
+                        */
+
                         if (!reply.isSuccess()) {
+                            //ref.setStatus(PrimaryStorageHostStatus.Disconnected);
+                            logger.warn(String.format("fail to init smp[uuid:%s] from host[uuid:%s], because:%s"
+                                    ,psUuid, context.getInventory().getUuid(),reply.getError().toString()));
                             trigger.fail(reply.getError());
                         } else {
+                            //ref.setStatus(PrimaryStorageHostStatus.Connected);
+                            logger.debug(String.format("succeed to init smp[uuid:%s] from host[uuid:%s]"
+                                    ,psUuid, context.getInventory().getUuid()));
                             trigger.next();
                         }
+                        //dbf.update(ref);
                     }
                 });
             }
