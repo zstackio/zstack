@@ -124,6 +124,7 @@ use:
         action.call()
 
         // wait echo finished
+        // todo; unstable assert
         retryInSecs{
             assert Q.New(CephPrimaryStorageMonVO.class).count() == 0l: "failed to add cephPS, all monVO should be removed, but some left"
         }
