@@ -12,6 +12,7 @@ class CoreLibraryTest extends Test {
         spring {
             include("CloudBusAopProxy.xml")
             include("ZoneManager.xml")
+            include("webhook.xml")
         }
     }
 

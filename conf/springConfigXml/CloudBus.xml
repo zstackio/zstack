@@ -22,8 +22,9 @@
 
     <bean id="EventFacade" class = "org.zstack.core.cloudbus.EventFacadeImpl">
     	<zstack:plugin>
-			<zstack:extension interface="org.zstack.header.Component" />
-		</zstack:plugin>
+		<zstack:extension interface="org.zstack.header.Component" />
+		<zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor" />
+	</zstack:plugin>
     </bean>
     
     <bean id="ResourceDestinationMaker" class="org.zstack.core.cloudbus.ResourceDestinationMakerImpl" />

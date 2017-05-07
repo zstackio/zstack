@@ -1,6 +1,7 @@
 package org.zstack.header.rest;
 
 import org.springframework.http.HttpEntity;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 import org.zstack.header.core.Completion;
 
@@ -50,4 +51,12 @@ public interface RESTFacade {
     String makeUrl(String path);
 
     void installBeforeAsyncJsonPostInterceptor(BeforeAsyncJsonPostInterceptor interceptor);
+
+    // timeout are in milliseconds
+    static RestTemplate createRestTemplate(int readTimeout, int connectTimeout) {
+        HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory();
+        factory.setReadTimeout(readTimeout);
+        factory.setConnectTimeout(connectTimeout);
+        return new RestTemplate(factory);
+    }
 }

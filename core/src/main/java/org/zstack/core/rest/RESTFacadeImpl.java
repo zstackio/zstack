@@ -112,10 +112,7 @@ public class RESTFacadeImpl implements RESTFacade {
         sendCommandUrl = ub.build().toUriString();
 
         logger.debug(String.format("RESTFacade built callback url: %s", callbackUrl));
-        HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory();
-        factory.setReadTimeout(CoreGlobalProperty.REST_FACADE_READ_TIMEOUT);
-        factory.setConnectTimeout(CoreGlobalProperty.REST_FACADE_CONNECT_TIMEOUT);
-        template = new RestTemplate(factory);
+        template = RESTFacade.createRestTemplate(CoreGlobalProperty.REST_FACADE_READ_TIMEOUT, CoreGlobalProperty.REST_FACADE_CONNECT_TIMEOUT);
     }
 
     void notifyCallback(HttpServletRequest req, HttpServletResponse rsp) {

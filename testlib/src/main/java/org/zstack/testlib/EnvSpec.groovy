@@ -60,6 +60,7 @@ import org.zstack.sdk.CreateVirtualRouterOfferingAction
 import org.zstack.sdk.CreateVmInstanceAction
 import org.zstack.sdk.CreateVolumeSnapshotAction
 import org.zstack.sdk.CreateVolumeSnapshotSchedulerAction
+import org.zstack.sdk.CreateWebhookAction
 import org.zstack.sdk.CreateZoneAction
 import org.zstack.sdk.DeleteAccountAction
 import org.zstack.sdk.DeleteBackupStorageAction
@@ -84,6 +85,7 @@ import org.zstack.sdk.DeleteUserAction
 import org.zstack.sdk.DeleteUserGroupAction
 import org.zstack.sdk.DeleteVipAction
 import org.zstack.sdk.DeleteVolumeSnapshotAction
+import org.zstack.sdk.DeleteWebhookAction
 import org.zstack.sdk.DeleteZoneAction
 import org.zstack.sdk.DestroyVmInstanceAction
 import org.zstack.sdk.ErrorCode
@@ -165,6 +167,7 @@ class EnvSpec implements Node {
             [AddSharedMountPointPrimaryStorageAction.metaClass, AddSharedMountPointPrimaryStorageAction.Result.metaClass, DeletePrimaryStorageAction.class],
             [CreateVipAction.metaClass, CreateVipAction.Result.metaClass, DeleteVipAction.class],
             [CreateVirtualRouterOfferingAction.metaClass, CreateVirtualRouterOfferingAction.Result.metaClass, DeleteInstanceOfferingAction.class],
+            [CreateWebhookAction.metaClass, CreateWebhookAction.Result.metaClass, DeleteWebhookAction.class],
     ]
 
     static Closure GLOBAL_DELETE_HOOK
