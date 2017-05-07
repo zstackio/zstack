@@ -12,6 +12,7 @@ import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -30,6 +31,8 @@ import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -50,6 +53,7 @@ import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.operr;
 
 import javax.persistence.LockModeType;
@@ -300,8 +304,27 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handle((MergeVolumeSnapshotOnPrimaryStorageMsg) msg);
         } else if (msg instanceof DeleteSnapshotOnPrimaryStorageMsg) {
             handle((DeleteSnapshotOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof UpdatePrimaryStorageHostStatusMsg) {
+            handle((UpdatePrimaryStorageHostStatusMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
+        }
+    }
+
+    protected void handle(UpdatePrimaryStorageHostStatusMsg msg){
+        updatePrimaryStorageHostStatus(msg.getPrimaryStorageUuids(), msg.getHostUuid(), msg.getStatus());
+    }
+
+    @Transactional
+    private void updatePrimaryStorageHostStatus(List<String> psUuids, String hostUuid, PrimaryStorageHostStatus status){
+        for(String psUuid : psUuids){
+            PrimaryStorageHostRefVO ref = new PrimaryStorageHostRefVO();
+            ref.setHostUuid(hostUuid);
+            ref.setPrimaryStorageUuid(psUuid);
+            ref.setStatus(status);
+            dbf.getEntityManager().merge(ref);
+            logger.debug(String.format("From agent report: change status between primary storage[uuid:%s] and host[uuid:%s] to %s in db",
+                    psUuid, hostUuid, status));
         }
     }
 

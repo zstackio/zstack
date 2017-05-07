@@ -13,6 +13,7 @@ import org.zstack.core.db.SQL
 import org.zstack.core.notification.NotificationVO
 import org.zstack.header.core.NoErrorCompletion
 import org.zstack.header.core.progress.TaskProgressVO
+import org.zstack.header.core.workflow.WhileCompletion
 import org.zstack.header.identity.AccountConstant
 import org.zstack.header.image.ImageDeletionPolicyManager
 import org.zstack.header.message.Message
@@ -424,7 +425,7 @@ class EnvSpec implements Node {
         List<ErrorCode> errors = []
         new While<GlobalConfigInventory>(res.value.inventories).all(new While.Do<GlobalConfigInventory>() {
             @Override
-            void accept(GlobalConfigInventory config, NoErrorCompletion completion) {
+            void accept(GlobalConfigInventory config, WhileCompletion completion) {
                 def ua = new UpdateGlobalConfigAction()
                 ua.category = config.category
                 ua.name = config.name

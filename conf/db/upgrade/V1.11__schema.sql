@@ -754,4 +754,17 @@ ALTER TABLE `zstack`.`VirtualRouterLoadBalancerRefVO` ADD CONSTRAINT fkVirtualRo
 ALTER TABLE `zstack`.`VirtualRouterLoadBalancerRefVO` ADD UNIQUE INDEX(`virtualRouterVmUuid`,`loadBalancerUuid`);
 
 
+
 UPDATE InstanceOfferingVO SET allocatorStrategy="LeastVmPreferredHostAllocatorStrategy" WHERE allocatorStrategy="Mevoco" ;
+
+CREATE TABLE  `zstack`.`PrimaryStorageHostRefVO` (
+     `primaryStorageUuid` varchar(32) NOT NULL,
+     `hostUuid` varchar(32) NOT NULL,
+     `status` varchar(32) NOT NULL,
+     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+     `createDate` timestamp,
+      CONSTRAINT `fkPrimaryStorageHostRefVOPrimaryStorageEO` FOREIGN KEY (`primaryStorageUuid`) REFERENCES `zstack`.`PrimaryStorageEO` (`uuid`) ON DELETE CASCADE,
+      CONSTRAINT `fkPrimaryStorageHostRefVOHostEO` FOREIGN KEY (`hostUuid`) REFERENCES `zstack`.`HostEO` (`uuid`) ON DELETE CASCADE,
+      PRIMARY KEY (`primaryStorageUuid`, `hostUuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
