@@ -1,4 +1,4 @@
-package org.zstack.test.integration.storage.primary.smp.capacity
+package org.zstack.test.integration.storage.primary.smp
 
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.Q
