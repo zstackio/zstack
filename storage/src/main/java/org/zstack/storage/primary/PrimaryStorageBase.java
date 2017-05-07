@@ -1052,29 +1052,4 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
         return count == 0;
     }
-
-    public void resetDefaultCapacityWhenUnmounted() {
-        if(!isUnmounted()){
-            logger.warn(String.format("ps[%s] is mounted, Don't allow reset ps capacity",this.self.getUuid()));
-            return;
-        }
-
-       resetDefaultCapacity();
-    }
-
-    public void resetDefaultCapacity() {
-        PrimaryStorageCapacityUpdater pupdater = new PrimaryStorageCapacityUpdater(this.self.getUuid());
-        pupdater.run(new PrimaryStorageCapacityUpdaterRunnable() {
-            @Override
-            public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
-                cap.setTotalCapacity(0);
-                cap.setAvailableCapacity(0);
-                cap.setTotalPhysicalCapacity(0);
-                cap.setAvailablePhysicalCapacity(0);
-                cap.setSystemUsedCapacity(0L);
-                return cap;
-            }
-        });
-        logger.info(String.format("reset ps[%s] capacity successfully", this.self.getUuid()));
-    }
 }
