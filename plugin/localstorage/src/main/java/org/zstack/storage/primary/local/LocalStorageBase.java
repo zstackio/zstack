@@ -15,6 +15,7 @@ import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
@@ -38,10 +39,9 @@ import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshot
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO_;
-import org.zstack.header.volume.VolumeConstant;
-import org.zstack.header.volume.VolumeInventory;
-import org.zstack.header.volume.VolumeType;
-import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
+import org.zstack.header.volume.*;
 import org.zstack.storage.primary.PrimaryStorageBase;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManager;
@@ -54,6 +54,7 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 
 import javax.persistence.LockModeType;
@@ -186,6 +187,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
         q.setParameter("psUuid", self.getUuid());
         List<String> hostUuids = q.getResultList();
 
+
         if (hostUuids.isEmpty()) {
             reply.setInventories(new ArrayList<HostInventory>());
             bus.reply(msg, reply);
@@ -196,7 +198,55 @@ public class LocalStorageBase extends PrimaryStorageBase {
         TypedQuery<HostVO> hq = dbf.getEntityManager().createQuery(sql, HostVO.class);
         hq.setParameter("uuids", hostUuids);
         hq.setParameter("hstatus", HostStatus.Connected);
-        List<HostVO> hosts = hq.getResultList();
+        LinkedList<HostVO> hosts = new LinkedList<>(hq.getResultList());
+
+        //When migrate the rootVolume, need to check if the network environment meets the requirement of vm running after migrate
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                Boolean isRootVolume = (Q.New(VolumeVO.class).select(VolumeVO_.type)
+                        .eq(VolumeVO_.uuid,msg.getVolumeUuid())
+                        .findValue() == VolumeType.Root);
+                if(isRootVolume){
+                    Tuple tuple = Q.New(VmInstanceVO.class)
+                            .select(VmInstanceVO_.clusterUuid, VmInstanceVO_.uuid)
+                            .eq(VmInstanceVO_.rootVolumeUuid, msg.getVolumeUuid()).findTuple();
+                    String originClusterUuid = tuple.get(0,String.class);
+                    String originVmUuid = tuple.get(1,String.class);
+                    if(originClusterUuid == null){
+                        throw new ApiMessageInterceptionException(
+                                err(SysErrors.INTERNAL,"The clusterUuid of vm cannot be null when migrate the vm"));
+                    }
+                    for(int i = 0; i < hosts.size(); i++){
+                        String destClusterUuid = Q.New(HostVO.class).select(HostVO_.clusterUuid)
+                                .eq(HostVO_.uuid,hosts.get(i).getUuid()).findValue();
+                        checkIfNetworkMeetRequirments(originClusterUuid,originVmUuid,destClusterUuid,i);
+                    }
+
+                }
+            }
+
+            void checkIfNetworkMeetRequirments(String originClusterUuid,String orginVmUuid,String destClusterUuid,int hostBucket){
+                if(!originClusterUuid.equals(destClusterUuid)){
+                    List<String> originL2NetworkList  = sql("select l2NetworkUuid from L3NetworkVO" +
+                            " where uuid in(select l3NetworkUuid from VmNicVO where vmInstanceUuid = :vmUuid)")
+                            .param("vmUuid",orginVmUuid).list();
+                    List<String> l2NetworkList = sql("select l2NetworkUuid from L2NetworkClusterRefVO" +
+                            " where clusterUuid = :clusterUuid")
+                            .param("clusterUuid",destClusterUuid).list();
+
+                    for(String l2:originL2NetworkList){
+                        if(!l2NetworkList.contains(l2)){
+                            //remove inappropriate host from list
+                            hosts.remove(hostBucket);
+                            return;
+                        }
+                    }
+                }
+            }
+
+        }.execute();
+
         reply.setInventories(HostInventory.valueOf(hosts));
         bus.reply(msg, reply);
     }
@@ -461,12 +511,41 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 done(new FlowDoneHandler(msg, completion) {
                     @Override
                     public void handle(Map data) {
-                        LocalStorageResourceRefVO vo = Q.New(LocalStorageResourceRefVO.class)
-                                .eq(LocalStorageResourceRefVO_.resourceUuid, volumeRefVO.getResourceUuid())
-                                .eq(LocalStorageResourceRefVO_.primaryStorageUuid, volumeRefVO.getPrimaryStorageUuid())
-                                .eq(LocalStorageResourceRefVO_.hostUuid, msg.getDestHostUuid())
-                                .find();
-                        reply.setInventory(LocalStorageResourceRefInventory.valueOf(vo));
+                        new SQLBatch(){
+                            //migrate the rooVolume and need to update the ClusterUuid of vm
+                            @Override
+                            protected void scripts() {
+                                Boolean isRootVolume = (Q.New(VolumeVO.class).select(VolumeVO_.type)
+                                        .eq(VolumeVO_.uuid,volumeRefVO.getResourceUuid())
+                                        .findValue() == VolumeType.Root);
+                                if(isRootVolume){
+                                    Tuple tuple = Q.New(VmInstanceVO.class)
+                                            .select(VmInstanceVO_.clusterUuid, VmInstanceVO_.uuid)
+                                            .eq(VmInstanceVO_.rootVolumeUuid, volumeRefVO.getResourceUuid()).findTuple();
+                                    String originClusterUuid = tuple.get(0,String.class);
+                                    String vmUuid = tuple.get(1,String.class);
+                                    String clusterUuid = Q.New(HostVO.class).select(HostVO_.clusterUuid)
+                                            .eq(HostVO_.uuid,msg.getDestHostUuid()).findValue();
+
+                                    if(!originClusterUuid.equals(clusterUuid)){
+                                        sql("update  VmInstanceEO" +
+                                                " set clusterUuid = :clusterUuid" +
+                                                " where uuid = :vmUuid")
+                                                .param("clusterUuid",clusterUuid)
+                                                .param("vmUuid",vmUuid).execute();
+                                    }
+                                }
+
+
+                                LocalStorageResourceRefVO vo = Q.New(LocalStorageResourceRefVO.class)
+                                        .eq(LocalStorageResourceRefVO_.resourceUuid, volumeRefVO.getResourceUuid())
+                                        .eq(LocalStorageResourceRefVO_.primaryStorageUuid, volumeRefVO.getPrimaryStorageUuid())
+                                        .eq(LocalStorageResourceRefVO_.hostUuid, msg.getDestHostUuid())
+                                        .find();
+                                reply.setInventory(LocalStorageResourceRefInventory.valueOf(vo));
+                            }
+                        }.execute();
+
                         bus.reply(msg, reply);
                     }
                 });
