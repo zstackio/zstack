@@ -8,6 +8,9 @@ import org.zstack.header.host.Host
 import org.zstack.header.host.HostStatus
 import org.zstack.header.host.HostVO
 import org.zstack.header.host.HostVO_
+import org.zstack.header.storage.primary.PrimaryStorageHostRefVO
+import org.zstack.header.storage.primary.PrimaryStorageHostRefVO_
+import org.zstack.header.storage.primary.PrimaryStorageHostStatus
 import org.zstack.header.storage.primary.PrimaryStorageVO
 import org.zstack.header.storage.primary.PrimaryStorageVO_
 import org.zstack.sdk.AttachPrimaryStorageToClusterAction
@@ -199,15 +202,10 @@ class InvalidUrlCase extends SubCase {
             sessionId = currentEnvSpec.session.uuid
         }
 
-        retryInSecs(){
-            List<HostInventory> hostInvs = queryHost {
-                conditions = ["status=${HostStatus.Disconnected}"]
-            }as List<HostInventory>
-
-            return {
-                assert hostInvs.size() == 1
-            }
-        }
+        assert Q.New(PrimaryStorageHostRefVO.class).select(PrimaryStorageHostRefVO_.status)
+                .eq(PrimaryStorageHostRefVO_.hostUuid, host.uuid)
+                .eq(PrimaryStorageHostRefVO_.primaryStorageUuid, psInv.uuid)
+                .findValue() == PrimaryStorageHostStatus.Disconnected
 
         assert Q.New(PrimaryStorageVO.class)
                 .eq(PrimaryStorageVO_.uuid, psInv.uuid)
@@ -225,9 +223,9 @@ class InvalidUrlCase extends SubCase {
         a.uuid = host.uuid
         a.sessionId = currentEnvSpec.session.uuid
 
-        retryInSecs{
-            assert a.call().error != null
-        }
+
+        assert a.call().error != null
+
     }
 
     void testReconnectHost(){

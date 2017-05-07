@@ -22,22 +22,29 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.rest.RESTFacade;
+import org.zstack.header.rest.SyncHttpCallHandler;
 import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.CreateTemplateFromVolumeSnapshotExtensionPoint;
 import org.zstack.header.volume.VolumeFormat;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.volume.VolumeVO_;
+import org.zstack.kvm.KVMAgentCommands;
 import org.zstack.kvm.KVMConstant;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.primary.PrimaryStorageSystemTags;
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackendCommands.NfsPrimaryStorageAgentResponse;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
 import static org.zstack.core.Platform.operr;
 
+import javax.persistence.LockModeType;
+import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import java.util.Collections;
 import java.util.HashMap;
@@ -49,7 +56,9 @@ import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
 public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, PrimaryStorageFactory, Component, CreateTemplateFromVolumeSnapshotExtensionPoint, RecalculatePrimaryStorageCapacityExtensionPoint,
-        PrimaryStorageDetachExtensionPoint, HostDeleteExtensionPoint{
+        PrimaryStorageDetachExtensionPoint, PrimaryStorageAttachExtensionPoint, HostDeleteExtensionPoint{
+    private static CLogger logger = Utils.getLogger(NfsPrimaryStorageFactory.class);
+
     @Autowired
     private DatabaseFacade dbf;
     @Autowired
@@ -62,6 +71,8 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
     private ErrorFacade errf;
     @Autowired
     private CloudBus bus;
+    @Autowired
+    private RESTFacade restf;
 
     private Map<String, NfsPrimaryStorageBackend> backends = new HashMap<String, NfsPrimaryStorageBackend>();
     private Map<String, Map<String, NfsPrimaryToBackupStorageMediator>> mediators =
@@ -186,7 +197,37 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
                 }
             }
         });
+
+        restf.registerSyncHttpCallHandler(KVMConstant.KVM_REPORT_PS_STATUS, KVMAgentCommands.ReportPsStatusCmd.class, new SyncHttpCallHandler<KVMAgentCommands.ReportPsStatusCmd>() {
+            @Override
+            public String handleSyncHttpCall(KVMAgentCommands.ReportPsStatusCmd cmd) {
+                //TODO how to do for other storage?
+                String psUuid = getNfsPrimaryStorageUuidFromPath(cmd.psPath, cmd.hostUuid);
+                if(psUuid != null){
+                    updateNfsHostStatus(psUuid, cmd.hostUuid, PrimaryStorageHostStatus.valueOf(cmd.psStatus));
+                }
+                return null;
+            }
+        });
+
         return true;
+    }
+
+    @Transactional
+    private String getNfsPrimaryStorageUuidFromPath(String mountPath, String hostUuid){
+        //TODO : modify to sql
+        String clusterUuid = Q.New(HostVO.class).select(HostVO_.clusterUuid).eq(HostVO_.uuid, hostUuid).findValue();
+        List<String> psUuids = Q.New(PrimaryStorageClusterRefVO.class).select(PrimaryStorageClusterRefVO_.primaryStorageUuid)
+                .eq(PrimaryStorageClusterRefVO_.clusterUuid, clusterUuid)
+                .listValues();
+        if(psUuids.isEmpty()){
+            return null;
+        }
+        return Q.New(PrimaryStorageVO.class).select(PrimaryStorageVO_.uuid)
+                .eq(PrimaryStorageVO_.type, NfsPrimaryStorageConstant.NFS_PRIMARY_STORAGE_TYPE)
+                .eq(PrimaryStorageVO_.url, mountPath)
+                .in(PrimaryStorageClusterRefVO_.primaryStorageUuid, psUuids)
+                .findValue();
     }
 
     @Override
@@ -203,24 +244,48 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
     }
 
     @Transactional
-    public HostInventory getConnectedHostForOperation(PrimaryStorageInventory pri) {
+    public List<HostInventory> getConnectedHostForOperation(PrimaryStorageInventory pri, int startPage, int pageLimit) {
         if (pri.getAttachedClusterUuids().isEmpty()) {
             throw new OperationFailureException(operr("cannot find a Connected host to execute command for nfs primary storage[uuid:%s]", pri.getUuid()));
         }
 
-        String sql = "select h from HostVO h where h.state = :state and h.status = :connectionState and h.clusterUuid in (:clusterUuids)";
+        String sql = "select h from HostVO h " +
+                "where h.state = :state and h.status = :connectionState and h.clusterUuid in (:clusterUuids) " +
+                "and h.uuid not in (select ref.hostUuid from PrimaryStorageHostRefVO ref " +
+                "where ref.primaryStorageUuid = :psUuid and ref.hostUuid = h.uuid and ref.status = :status)";
         TypedQuery<HostVO> q = dbf.getEntityManager().createQuery(sql, HostVO.class);
         q.setParameter("state", HostState.Enabled);
         q.setParameter("connectionState", HostStatus.Connected);
         q.setParameter("clusterUuids", pri.getAttachedClusterUuids());
-        q.setMaxResults(1);
+        q.setParameter("psUuid", pri.getUuid());
+        q.setParameter("status", PrimaryStorageHostStatus.Disconnected);
+
+        q.setFirstResult(startPage * pageLimit);
+        if (pageLimit > 0){
+            q.setMaxResults(pageLimit);
+        }
+
         List<HostVO> ret = q.getResultList();
-        if (ret.isEmpty()) {
+        if (ret.isEmpty() && q.getFirstResult() == 0) {
             throw new OperationFailureException(operr("cannot find a Connected host to execute command for nfs primary storage[uuid:%s]", pri.getUuid()));
         } else {
+            logger.debug("success all host");
             Collections.shuffle(ret);
-            return HostInventory.valueOf(ret.get(0));
+            return HostInventory.valueOf(ret);
         }
+    }
+
+    public List<HostInventory> getConnectedHostForOperation(PrimaryStorageInventory pri) {
+        return getConnectedHostForOperation(pri, 0, 0);
+    }
+
+    @Transactional
+    public final void updateNfsHostStatus(String psUuid, String huuid, PrimaryStorageHostStatus status){
+        PrimaryStorageHostRefVO ref = new PrimaryStorageHostRefVO();
+        ref.setPrimaryStorageUuid(psUuid);
+        ref.setHostUuid(huuid);
+        ref.setStatus(status);
+        dbf.getEntityManager().merge(ref);
     }
 
     @Override
@@ -457,6 +522,20 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
 
     @Override
     public void afterDetachPrimaryStorage(PrimaryStorageInventory inventory, String clusterUuid) {
+        new SQLBatch(){
+            @Override
+            protected void scripts() {
+                List<String> huuids = Q.New(HostVO.class).select(HostVO_.uuid)
+                        .eq(HostVO_.clusterUuid, clusterUuid)
+                        .listValues();
+                SQL.New(PrimaryStorageHostRefVO.class)
+                        .eq(PrimaryStorageHostRefVO_.primaryStorageUuid, inventory.getUuid())
+                        .in(PrimaryStorageHostRefVO_.hostUuid, huuids)
+                        .hardDelete();
+            }
+        }.execute();
+        logger.debug("succeed delete PrimaryStorageHostRef record");
+
         RecalculatePrimaryStorageCapacityMsg rmsg = new RecalculatePrimaryStorageCapacityMsg();
         rmsg.setPrimaryStorageUuid(inventory.getUuid());
         bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, inventory.getUuid());
@@ -506,5 +585,34 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
                 .param("cuuid", clusterUuid)
                 .param("ptype", NfsPrimaryStorageConstant.NFS_PRIMARY_STORAGE_TYPE)
                 .list();
+    }
+
+    @Override
+    public void preAttachPrimaryStorage(PrimaryStorageInventory inventory, String clusterUuid) throws PrimaryStorageException {
+
+    }
+
+    @Override
+    public void beforeAttachPrimaryStorage(PrimaryStorageInventory inventory, String clusterUuid) {
+
+    }
+
+    @Override
+    public void failToAttachPrimaryStorage(PrimaryStorageInventory inventory, String clusterUuid) {
+
+    }
+
+    @Override
+    public void afterAttachPrimaryStorage(PrimaryStorageInventory inventory, String clusterUuid) {
+        new SQLBatch(){
+            @Override
+            protected void scripts() {
+                Q.New(HostVO.class).select(HostVO_.uuid)
+                        .eq(HostVO_.clusterUuid, clusterUuid)
+                        .listValues().forEach(huuid ->
+                        updateNfsHostStatus(inventory.getUuid(), (String)huuid, PrimaryStorageHostStatus.Connected));
+            }
+        }.execute();
+        logger.debug("succeed add PrimaryStorageHostRef record");
     }
 }

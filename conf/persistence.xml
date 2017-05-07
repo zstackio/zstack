@@ -26,6 +26,7 @@
         <class>org.zstack.header.storage.primary.PrimaryStorageEO</class>
         <class>org.zstack.header.storage.primary.PrimaryStorageClusterRefVO</class>
         <class>org.zstack.header.storage.primary.PrimaryStorageCapacityVO</class>
+        <class>org.zstack.header.storage.primary.PrimaryStorageHostRefVO</class>
         <class>org.zstack.header.storage.backup.BackupStorageVO</class>
         <class>org.zstack.header.storage.backup.BackupStorageEO</class>
         <class>org.zstack.header.storage.backup.BackupStorageZoneRefVO</class>
