@@ -6,6 +6,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -647,11 +649,22 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                 done(new FlowDoneHandler(completion) {
                     @Override
                     public void handle(Map data) {
-                        VirtualRouterLoadBalancerRefVO ref = new VirtualRouterLoadBalancerRefVO();
-                        ref.setLoadBalancerUuid(struct.getLb().getUuid());
-                        ref.setVirtualRouterVmUuid(vr.getUuid());
-                        dbf.persist(ref);
 
+                        new SQLBatch(){
+
+                            @Override
+                            protected void scripts() {
+                                List<VirtualRouterLoadBalancerRefVO> refs = Q.New(VirtualRouterLoadBalancerRefVO.class)
+                                        .eq(VirtualRouterLoadBalancerRefVO_.loadBalancerUuid,struct.getLb().getUuid())
+                                        .eq(VirtualRouterLoadBalancerRefVO_.virtualRouterVmUuid, vr.getUuid()).list();
+                                if (refs.size() == 0) {
+                                    VirtualRouterLoadBalancerRefVO ref = new VirtualRouterLoadBalancerRefVO();
+                                    ref.setLoadBalancerUuid(struct.getLb().getUuid());
+                                    ref.setVirtualRouterVmUuid(vr.getUuid());
+                                    persist(ref);
+                                }
+                            }
+                        }.execute();
                         completion.success();
                     }
                 });
