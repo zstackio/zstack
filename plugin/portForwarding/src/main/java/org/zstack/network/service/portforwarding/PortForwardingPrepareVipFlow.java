@@ -68,7 +68,7 @@ public class PortForwardingPrepareVipFlow implements Flow {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                //TODO
+                //TODO add GC
                 logger.warn(errorCode.toString());
                 trigger.rollback();
             }

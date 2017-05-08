@@ -15,6 +15,7 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.errorcode.schema.Error;
 import org.zstack.core.logging.Log;
+import org.zstack.core.notification.N;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.FutureCompletion;
@@ -1085,11 +1086,11 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                             @Override
                             public void fail(ErrorCode errorCode) {
                                 errors.add(errorCode);
-                                logger.warn(String.format("failed to update the nfs[uuid:%s, name:%s] mount point" +
-                                                " from %s to %s in the cluster[uuid:%s], Disconnected this host[uuid:%s], %s",
-                                        pinv.getUuid(), pinv.getName(), oldMountPoint, newMountPoint, clusterUuid, hostUuid, errorCode));
 
-                                //TODO: need notification to UI
+                                N.New(HostVO.class, hostUuid).warn_("unable to update the nfs[uuid:%s, name:%s] mount point" +
+                                                " from %s to %s on the host[uuid:%s], %s. Put the host into Disconnected state",
+                                        pinv.getUuid(), pinv.getName(), oldMountPoint, newMountPoint, errorCode, hostUuid);
+
                                 ChangeHostConnectionStateMsg cmsg = new ChangeHostConnectionStateMsg();
                                 cmsg.setConnectionStateEvent(HostStatusEvent.disconnected.toString());
                                 cmsg.setHostUuid(hostUuid);

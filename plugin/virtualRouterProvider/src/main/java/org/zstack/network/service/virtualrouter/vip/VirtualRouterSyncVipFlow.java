@@ -45,7 +45,6 @@ public class VirtualRouterSyncVipFlow implements Flow {
         vipExt.createVipOnVirtualRouterVm(vr, invs, new Completion(chain) {
             @Override
             public void success() {
-                //TODO: remove this, we need to remove VirtualRouterVipVO table
                 List<VirtualRouterVipVO> vrvips = new ArrayList<>();
                 for (VipVO vip : vips) {
                     VirtualRouterVipVO vo = dbf.findByUuid(vip.getUuid(), VirtualRouterVipVO.class);

@@ -396,7 +396,7 @@ public class SftpBackupStorage extends BackupStorageBase {
                 if (!ret.isSuccess()) {
                     logger.warn(String.format("failed to delete bits[%s], schedule clean up, %s",
                             msg.getInstallPath(), ret.getError()));
-                    //TODO: schedule cleanup
+                    //TODO GC
                 } else {
                     updateCapacity(ret.getTotalCapacity(), ret.getAvailableCapacity());
                 }

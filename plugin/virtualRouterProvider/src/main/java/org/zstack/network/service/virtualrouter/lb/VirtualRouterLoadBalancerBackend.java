@@ -384,7 +384,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
                             @Override
                             public void fail(ErrorCode errorCode) {
-                                //TODO
+                                //TODO GC
                                 logger.warn(errorCode.toString());
                                 trigger.rollback();
                             }

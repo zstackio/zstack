@@ -8,6 +8,7 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.logging.Log;
+import org.zstack.core.notification.N;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NopeCompletion;
@@ -48,6 +49,7 @@ import javax.persistence.TypedQuery;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -128,9 +130,8 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
 
             @Override
             public void fail(ErrorCode errorCode) {
-                //TODO
-                logger.warn(String.format("failed to apply eips for the vm[uuid:%s, name:%s] on the host[uuid:%s], %s",
-                        inv.getUuid(), inv.getName(), inv.getHostUuid(), errorCode));
+                N.New(VmInstanceVO.class, inv.getUuid()).warn_("after migration, failed to apply EIPs[uuids:%s] to the vm[uuid:%s, name:%s] on the destination host[uuid:%s], %s",
+                        eips.stream().map(e -> e.vip).collect(Collectors.toList()), inv.getUuid(), inv.getName(), inv.getHostUuid(), errorCode);
             }
         });
     }
@@ -281,8 +282,9 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
 
                         @Override
                         public void fail(ErrorCode errorCode) {
-                            //TODO
-                            logger.warn(errorCode.toString());
+                            N.New(VmInstanceVO.class, vm.getUuid()).warn_("after migration, failed to apply EIPs[uuids:%s] to the vm[uuid:%s, name:%s] on the destination host[uuid:%s], %s." +
+                                            "You may need to reboot the VM to resolve the issue",
+                                    eips.stream().map(e -> e.vip).collect(Collectors.toList()), vm.getUuid(), vm.getName(), applyHostUuidForRollback, errorCode);
                         }
                     });
                 }
