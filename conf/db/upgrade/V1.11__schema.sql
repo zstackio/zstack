@@ -778,3 +778,4 @@ ALTER TABLE `zstack`.`VirtualRouterLoadBalancerRefVO` ADD CONSTRAINT fkVirtualRo
 ALTER TABLE `zstack`.`VirtualRouterLoadBalancerRefVO` ADD UNIQUE INDEX(`virtualRouterVmUuid`,`loadBalancerUuid`);
 
 
+UPDATE InstanceOfferingVO SET allocatorStrategy="LeastVmPreferredHostAllocatorStrategy" WHERE allocatorStrategy="Mevoco" ;
