@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class GetNicQosAction extends AbstractAction {
+public class DeleteVirtualRouterLocalAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public GetNicQosResult value;
+        public DeleteVirtualRouterLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,6 +26,9 @@ public class GetNicQosAction extends AbstractAction {
     public java.lang.String uuid;
 
     @Param(required = false)
+    public java.lang.String deleteMode = "Permissive";
+
+    @Param(required = false)
     public java.util.List systemTags;
 
     @Param(required = false)
@@ -33,6 +36,10 @@ public class GetNicQosAction extends AbstractAction {
 
     @Param(required = true)
     public String sessionId;
+
+    public long timeout;
+    
+    public long pollingInterval;
 
 
     private Result makeResult(ApiResult res) {
@@ -42,8 +49,8 @@ public class GetNicQosAction extends AbstractAction {
             return ret;
         }
         
-        GetNicQosResult value = res.getResult(GetNicQosResult.class);
-        ret.value = value == null ? new GetNicQosResult() : value; 
+        DeleteVirtualRouterLocalResult value = res.getResult(DeleteVirtualRouterLocalResult.class);
+        ret.value = value == null ? new DeleteVirtualRouterLocalResult() : value; 
 
         return ret;
     }
@@ -68,11 +75,11 @@ public class GetNicQosAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
-        info.path = "/vm-instances/{uuid}/nic-qos";
+        info.httpMethod = "DELETE";
+        info.path = "/hybrid/aliyun/vrouter/{uuid}";
         info.needSession = true;
-        info.needPoll = false;
-        info.parameterName = "";
+        info.needPoll = true;
+        info.parameterName = "params";
         return info;
     }
 

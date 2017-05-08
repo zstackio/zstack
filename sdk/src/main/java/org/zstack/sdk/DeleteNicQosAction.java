@@ -76,7 +76,7 @@ public class DeleteNicQosAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
-        info.path = "/vm-instances/{uuid}/qos";
+        info.path = "/vm-instances/{uuid}/nic-qos";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";
