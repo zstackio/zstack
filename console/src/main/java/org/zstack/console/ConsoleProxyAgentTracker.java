@@ -4,11 +4,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
+import org.zstack.core.notification.N;
 import org.zstack.core.tacker.PingTracker;
-import org.zstack.header.console.ConsoleBackend;
-import org.zstack.header.console.PingConsoleProxyAgentMsg;
-import org.zstack.header.console.PingConsoleProxyAgentReply;
-import org.zstack.header.console.ReconnectConsoleProxyMsg;
+import org.zstack.header.console.*;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.utils.Utils;
@@ -62,7 +60,7 @@ public class ConsoleProxyAgentTracker extends PingTracker {
     public void handleReply(final String resourceUuid, MessageReply reply) {
         if (!reply.isSuccess()) {
             //TODO
-            logger.warn(String.format("unable to ping the console proxy agent[uuid:%s]", resourceUuid));
+            N.New(ConsoleProxyVO.class, resourceUuid).warn_("unable to ping the console proxy agent[uuid:%s], %s", resourceUuid, reply.getError());
             return;
         }
 
@@ -76,10 +74,11 @@ public class ConsoleProxyAgentTracker extends PingTracker {
             bus.send(rmsg, new CloudBusCallBack(null) {
                 @Override
                 public void run(MessageReply reply) {
-                    //TODO
                     if (!reply.isSuccess()) {
-                        logger.warn(String.format("failed to reconnect console proxy agent[uuid:%s], %s", resourceUuid,
-                                reply.getError()));
+                        N.New(ConsoleProxyVO.class, resourceUuid).warn_("failed to reconnect console proxy agent[uuid:%s], %s", resourceUuid,
+                                reply.getError());
+                    } else {
+                        N.New(ConsoleProxyVO.class, resourceUuid).info_("successfully reconnected the console proxy agent[uuid:%s]", resourceUuid);
                     }
                 }
             });

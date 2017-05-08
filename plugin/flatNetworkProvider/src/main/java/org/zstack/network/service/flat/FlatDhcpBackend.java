@@ -13,6 +13,7 @@ import org.zstack.core.defer.Deferred;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.logging.Event;
 import org.zstack.core.logging.Log;
+import org.zstack.core.notification.N;
 import org.zstack.core.thread.SyncTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
@@ -745,9 +746,9 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
                         @Override
                         public void fail(ErrorCode errorCode) {
-                            //TODO
-                            logger.warn(String.format("failed to re-apply DHCP info of the vm[uuid:%s] to the host[uuid:%s], %s",
-                                    vm.getUuid(), applyHostUuidForRollback, errorCode));
+                            N.New(VmInstanceVO.class, vm.getUuid()).warn_("failed to re-apply DHCP configuration of" +
+                                    " the vm[uuid:%s] to the host[uuid:%s], %s. You may need to reboot the VM to" +
+                                    " make the DHCP works",  vm.getUuid(), applyHostUuidForRollback, errorCode);
                         }
                     });
                 }
@@ -1165,7 +1166,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             @Override
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {
-                    //TODO:
+                    //TODO: Add GC and notification
                     logger.warn(String.format("failed to release dhcp%s for vm[uuid: %s] on the kvm host[uuid:%s]; %s",
                             cmd.dhcp, vmUuid, hostUuid, reply.getError()));
                     completion.done();
@@ -1175,7 +1176,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 KVMHostAsyncHttpCallReply r = reply.castReply();
                 ReleaseDhcpRsp rsp = r.toResponse(ReleaseDhcpRsp.class);
                 if (!rsp.isSuccess()) {
-                    //TODO
+                    //TODO Add GC and notification
                     logger.warn(String.format("failed to release dhcp%s for vm[uuid: %s] on the kvm host[uuid:%s]; %s",
                             cmd.dhcp, vmUuid, hostUuid, rsp.getError()));
                     completion.done();

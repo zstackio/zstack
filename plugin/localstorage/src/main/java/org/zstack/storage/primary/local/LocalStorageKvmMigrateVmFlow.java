@@ -420,7 +420,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                                     @Override
                                     public void run(MessageReply reply) {
                                         if (!reply.isSuccess()) {
-                                            //TODO
+                                            //TODO add GC
                                             logger.warn(String.format("failed to delete %s on the host[uuid:%s] of local storage[uuid:%s], %s",
                                                     backingImage.path, dstHostUuid, ref.getPrimaryStorageUuid(), reply.getError()));
                                         }
@@ -704,7 +704,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                                     for (MessageReply r : replies) {
                                         VolumeSnapshotInventory sp = allSnapshots.get(replies.indexOf(r));
                                         if (!r.isSuccess()) {
-                                            //TODO
+                                            //TODO add GC
                                             logger.warn(String.format("failed to delete the snapshot[%s] on the local primary storage[uuid:%s], %s",
                                                     sp.getPrimaryStorageInstallPath(), ref.getPrimaryStorageUuid(), r.getError()));
                                         }
@@ -739,7 +739,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                             public void run(List<MessageReply> replies) {
                                 for (MessageReply r : replies) {
                                     if (!r.isSuccess()) {
-                                        //TODO:
+                                        //TODO: add GC
                                         VolumeInventory vol = volumesOnLocalStorage.get(replies.indexOf(r));
                                         logger.warn(String.format("failed to delete the volume[%s] in the host[uuid:%s] for the local" +
                                                         " primary storage[uuid:%s] during after the vm[uuid:%s] migrated to the host[uuid:%s, ip:%s], %s",
@@ -806,7 +806,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
             @Override
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {
-                    //TODO
+                    //TODO recalculate host capacity
                     logger.warn(String.format("failed to return capacity[%s] to the host[uuid:%s] of local storage[uuid:%s], %s",
                             size, dstHostUuid, primaryStorageUuid, reply.getError()));
                 }
@@ -1129,7 +1129,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                         bus.send(msg, new CloudBusCallBack(null) {
                             @Override
                             public void run(MessageReply reply) {
-                                //TODO
+                                //TODO GC
                                 logger.warn(String.format("failed to delete %s on the local primary storage[uuid:%s], host[uuid:%s], %s",
                                         p.volume.getInstallPath(), p.volume.getPrimaryStorageUuid(), dstHostUuid, reply.getError()));
                             }
@@ -1236,7 +1236,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                             @Override
                             public void run(MessageReply r) {
                                 if (!r.isSuccess()) {
-                                    //TODO
+                                    //TODO GC
                                     logger.warn(String.format("failed to delete %s on the local primary storage[uuid:%s], host[uuid:%s], %s",
                                             vol.getInstallPath(), vol.getPrimaryStorageUuid(), dstHostUuid, r.getError()));
                                 }

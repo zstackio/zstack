@@ -17,6 +17,7 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.notification.N;
 import org.zstack.core.thread.CancelablePeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -1157,8 +1158,8 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                             @Override
                             public void run(MessageReply reply) {
                                 if (!reply.isSuccess()) {
-                                    //TODO
-                                    logger.warn(String.format("failed to expunge the image[uuid:%s], %s", images, reply.getError()));
+                                    N.New(ImageVO.class, imageUuid).warn_("failed to expunge the image[uuid:%s] on the backup storage[uuid:%s], will try it later. %s",
+                                            imageUuid, bsUuid, reply.getError());
                                 }
                             }
                         });

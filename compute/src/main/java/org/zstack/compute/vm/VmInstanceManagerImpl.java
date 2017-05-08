@@ -47,8 +47,6 @@ import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudConfigureFailException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.AfterChangeHostStatusExtensionPoint;
-import org.zstack.header.host.HostCanonicalEvents;
-import org.zstack.header.host.HostCanonicalEvents.HostStatusChangedData;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.identity.*;
@@ -102,6 +100,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
+import static org.zstack.compute.vm.VmNotification.vmInfo_;
+import static org.zstack.compute.vm.VmNotification.vmWarn_;
 import static org.zstack.utils.CollectionDSL.list;
 
 public class VmInstanceManagerImpl extends AbstractService implements
@@ -1685,42 +1685,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
     }
 
-    private List<String> getVmInUnknownStateManagedByUs() {
-        int qun = 10000;
-        SimpleQuery q = dbf.createQuery(VmInstanceVO.class);
-        q.add(VmInstanceVO_.state, Op.EQ, VmInstanceState.Unknown);
-        long amount = q.count();
-        int times = (int) (amount / qun) + (amount % qun != 0 ? 1 : 0);
-        int start = 0;
-        List<String> ret = new ArrayList<>();
-        for (int i = 0; i < times; i++) {
-            q = dbf.createQuery(VmInstanceVO.class);
-            q.select(VmInstanceVO_.uuid, VmInstanceVO_.hostUuid);
-            q.add(VmInstanceVO_.state, Op.EQ, VmInstanceState.Unknown);
-            q.setLimit(qun);
-            q.setStart(start);
-            List<Tuple> lst = q.listTuple();
-            start += qun;
-            for (Tuple t : lst) {
-                String vmUuid = t.get(0, String.class);
-                if (!destMaker.isManagedByUs(vmUuid)) {
-                    continue;
-                }
-
-                String hostUuid = t.get(1, String.class);
-                if (hostUuid == null) {
-                    //TODO
-                    logger.warn(String.format("the vm[uuid:%s] is in Unknown state, but its hostUuid is null," +
-                            " we cannot check its real state", vmUuid));
-                    continue;
-                }
-
-                ret.add(vmUuid);
-            }
-        }
-        return ret;
-    }
-
     @Override
     @AsyncThread
     public void managementNodeReady() {
@@ -1946,9 +1910,12 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     @Override
                     public void run(MessageReply reply) {
                         if(!reply.isSuccess()){
-                            //TODO: Need notification
+                            vmWarn_("the host[uuid:%s] becomes Disconnected, but the vm[uuid:%s] fails to change it's state to Unknown, %s",
+                                    hostUuid, vmUuid, reply.getError()).uuid(vmUuid);
                            logger.warn(String.format( "fail to change vm[uuid:%s]'s state to Unknown,%s",
                                    vmUuid, reply.getError()));
+                        } else {
+                            vmInfo_("the host[uuid:%s] becomes Disconnected, change the VM[uuid:%s]' state to Unknown", hostUuid, vmUuid).uuid(vmUuid);
                         }
                         completion.done();
                     }

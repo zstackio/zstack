@@ -109,7 +109,7 @@ public class ApplyPortforwardingRuleOnVirtualRouterVmFlow implements Flow {
                     if (!reply.isSuccess()) {
                         String err = String.format("failed to revoke port forwarding rules %s, because %s", JSONObjectUtil.toJsonString(to), reply.getError());
                         logger.warn(err);
-                        //TODO: schedule a job to clean up
+                        //TODO GC
                     } else {
                         VirtualRouterAsyncHttpCallReply re = reply.castReply();
                         RevokePortForwardingRuleRsp ret = re.toResponse(RevokePortForwardingRuleRsp.class);
@@ -119,7 +119,7 @@ public class ApplyPortforwardingRuleOnVirtualRouterVmFlow implements Flow {
                         } else {
                             String err = String.format("failed to revoke port forwarding rules %, because %s", JSONObjectUtil.toJsonString(to), ret.getError());
                             logger.warn(err);
-                            //TODO: schedule a job to clean up
+                            //TODO GC
                         }
                     }
 
