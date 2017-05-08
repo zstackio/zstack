@@ -1,8 +1,16 @@
 package org.zstack.test.integration.network.vxlanNetwork
 
+import org.springframework.http.HttpEntity
+import org.zstack.header.vm.VmInstanceSpec
+import org.zstack.kvm.KVMAgentCommands
+import org.zstack.kvm.KVMConstant
+import org.zstack.kvm.KVMHostAsyncHttpCallReply
 import org.zstack.sdk.*
 import org.zstack.test.integration.network.NetworkTest
 import org.zstack.testlib.EnvSpec
+import org.zstack.testlib.ImageSpec
+import org.zstack.testlib.InstanceOfferingSpec
+import org.zstack.testlib.KVMHostSpec
 import org.zstack.testlib.SubCase
 import org.zstack.testlib.ZoneSpec
 import org.zstack.utils.data.SizeUnit
@@ -56,7 +64,7 @@ class OneVxlanNetworkLifeCycleCase extends SubCase {
                     hypervisorType = "KVM"
 
                     kvm {
-                        name = "kvm"
+                        name = "kvm1"
                         managementIp = "localhost"
                         username = "root"
                         password = "password"
@@ -74,7 +82,7 @@ class OneVxlanNetworkLifeCycleCase extends SubCase {
                     hypervisorType = "KVM"
 
                     kvm {
-                        name = "kvm"
+                        name = "kvm2"
                         managementIp = "127.0.0.1"
                         username = "root"
                         password = "password"
@@ -104,18 +112,20 @@ class OneVxlanNetworkLifeCycleCase extends SubCase {
     void testVxlanNetwork() {
         ZoneSpec zone = env.specByName("zone")
         String cuuid1 = zone.getClusters().get(0).inventory.getUuid()
-
         String cuuid2 = zone.getClusters().get(1).inventory.getUuid()
+
         L2VxlanNetworkPoolInventory poolinv = createL2VxlanNetworkPool {
             delegate.name = "TestVxlanPool"
             delegate.zoneUuid = zone.inventory.getUuid()
         }
 
+        L2VxlanNetworkPoolInventory poolinv2 = queryL2VxlanNetworkPool{}[0]
+
         createVniRange {
-            delegate.startVni = 10
+            delegate.startVni = 100
             delegate.endVni = 10000
             delegate.l2NetworkUuid = poolinv.getUuid()
-            delegate.name = "TestRange"
+            delegate.name = "TestRange1"
         }
 
         attachL2NetworkToCluster {
@@ -126,7 +136,7 @@ class OneVxlanNetworkLifeCycleCase extends SubCase {
 
         L2NetworkInventory netinv = createL2VxlanNetwork {
             delegate.poolUuid = poolinv.getUuid()
-            delegate.name = "TestVxlan"
+            delegate.name = "TestVxlan1"
             delegate.zoneUuid = zone.inventory.getUuid()
         }
 
@@ -170,6 +180,28 @@ class OneVxlanNetworkLifeCycleCase extends SubCase {
             delegate.networkServices = netServices
         }
 
+        env.simulator(KVMConstant.KVM_CHECK_L2VXLAN_NETWORK_PATH) { HttpEntity<String> entity, EnvSpec spec ->
+            KVMAgentCommands.CheckVxlanCidrResponse resp = new KVMAgentCommands.CheckVxlanCidrResponse()
+            resp.vtepIp = "127.0.0.1"
+            resp.setSuccess(true)
+            return resp
+        }
+
+        env.simulator(KVMConstant.KVM_REALIZE_L2VXLAN_NETWORK_PATH) { HttpEntity<String> entity, EnvSpec spec ->
+            return new KVMAgentCommands.CreateVlanBridgeResponse()
+        }
+
+        createVmInstance {
+            delegate.name = "TestVm"
+            delegate.instanceOfferingUuid = (env.specByName("instanceOffering") as InstanceOfferingSpec).inventory.uuid
+            delegate.imageUuid = (env.specByName("image1") as ImageSpec).inventory.uuid
+            delegate.l3NetworkUuids = [l3.getUuid()]
+        }
+
+        reconnectHost {
+            delegate.uuid = (env.specByName("kvm1") as KVMHostSpec).inventory.uuid
+        }
+
         detachL2NetworkFromCluster {
             delegate.l2NetworkUuid = poolinv.getUuid()
             delegate.clusterUuid = cuuid2
@@ -200,7 +232,6 @@ class OneVxlanNetworkLifeCycleCase extends SubCase {
         assert nets.isEmpty()
         assert l3Nets.isEmpty()
         assert tags.isEmpty()
-
     }
 
 

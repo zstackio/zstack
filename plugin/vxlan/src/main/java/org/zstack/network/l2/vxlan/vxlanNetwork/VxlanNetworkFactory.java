@@ -21,7 +21,7 @@ import java.util.List;
  * Created by weiwang on 02/03/2017.
  */
 public class VxlanNetworkFactory implements L2NetworkFactory, Component {
-    private static CLogger logger = Utils.getLogger(VxlanNetwork.class);
+    private static CLogger logger = Utils.getLogger(VxlanNetworkFactory.class);
     static L2NetworkType type = new L2NetworkType(VxlanNetworkConstant.VXLAN_NETWORK_TYPE);
 
     @Autowired
@@ -38,6 +38,7 @@ public class VxlanNetworkFactory implements L2NetworkFactory, Component {
 
     @Override
     public L2NetworkInventory createL2Network(L2NetworkVO ovo, APICreateL2NetworkMsg msg) {
+        // TODO(WeiW) logical seems not right since the message using is not normal
         APICreateL2VxlanNetworkMsg amsg = (APICreateL2VxlanNetworkMsg) msg;
         VxlanNetworkVO vo = new VxlanNetworkVO(ovo);
 
@@ -53,6 +54,9 @@ public class VxlanNetworkFactory implements L2NetworkFactory, Component {
         AllocateVniReply r = reply.castReply();
         vo.setVni(r.getVni());
         vo.setPoolUuid((amsg.getPoolUuid()));
+        if (vo.getPhysicalInterface() == null) {
+            vo.setPhysicalInterface("No use");
+        }
         vo = dbf.persistAndRefresh(vo);
 
         SimpleQuery<L2NetworkClusterRefVO> q = dbf.createQuery(L2NetworkClusterRefVO.class);
