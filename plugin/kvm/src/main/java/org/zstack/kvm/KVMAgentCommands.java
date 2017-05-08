@@ -694,6 +694,7 @@ public class KVMAgentCommands {
         private long vmInternalId;
         private String vmName;
         private long memory;
+        private long maxMemory;
         private int cpuNum;
         private long cpuSpeed;
         private int socketNum;
@@ -713,6 +714,14 @@ public class KVMAgentCommands {
         private String hostManagementIp;
         private String clock;
         private String videoType;
+
+        public long getMaxMemory() {
+            return maxMemory;
+        }
+
+        public void setMaxMemory(long maxMemory) {
+            this.maxMemory = maxMemory;
+        }
 
         public String getVideoType() {
             return videoType;
@@ -946,6 +955,72 @@ public class KVMAgentCommands {
         public int getCpuNum() {
             return cpuNum;
         }
+
+        public void setMemorySize(long memorySize) {
+            this.memorySize = memorySize;
+        }
+
+        public long getMemorySize() {
+            return memorySize;
+        }
+    }
+
+    public static class IncreaseCpuCmd extends AgentCommand{
+        private String vmUuid;
+        private int cpuNum;
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setCpuNum(int cpuNum) {
+            this.cpuNum = cpuNum;
+        }
+
+        public int getCpuNum() {
+            return cpuNum;
+        }
+    }
+
+    public static class IncreaseCpuResponse extends AgentResponse{
+        private int cpuNum;
+
+        public void setCpuNum(int cpuNum) {
+            this.cpuNum = cpuNum;
+        }
+
+        public int getCpuNum() {
+            return cpuNum;
+        }
+    }
+
+    public static class IncreaseMemoryCmd extends AgentCommand{
+        private String vmUuid;
+        private long memorySize;
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setMemorySize(long memorySize) {
+            this.memorySize = memorySize;
+        }
+
+        public long getMemorySize() {
+            return memorySize;
+        }
+    }
+
+    public static class IncreaseMemoryResponse extends AgentResponse{
+        private long memorySize;
 
         public void setMemorySize(long memorySize) {
             this.memorySize = memorySize;

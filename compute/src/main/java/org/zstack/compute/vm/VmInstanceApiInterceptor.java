@@ -1,12 +1,10 @@
 package org.zstack.compute.vm;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
-import org.zstack.core.db.SQL;
-import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.allocator.HostCapacityVO;
@@ -24,6 +22,7 @@ import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
+import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.image.ImageState;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.image.ImageVO_;
@@ -37,6 +36,7 @@ import org.zstack.utils.network.NetworkUtils;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.CollectionDSL.list;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
@@ -95,41 +95,132 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             validate((APIGetInterdependentL3NetworksImagesMsg) msg);
         } else if (msg instanceof APIUpdateVmInstanceMsg) {
             validate((APIUpdateVmInstanceMsg) msg);
-        }else if (msg instanceof APISetVmConsolePasswordMsg) {
+        } else if (msg instanceof APISetVmConsolePasswordMsg) {
             validate((APISetVmConsolePasswordMsg) msg);
+        } else if (msg instanceof APIChangeInstanceOfferingMsg) {
+            validate((APIChangeInstanceOfferingMsg) msg);
         }
+
         setServiceId(msg);
         return msg;
     }
 
-    @Transactional(readOnly = true)
-    private void validate(APIUpdateVmInstanceMsg msg) {
-        Integer cpuSum = msg.getCpuNum();
-        Long memorySize = msg.getMemorySize();
-        if (cpuSum == null && memorySize == null) {
-            return;
-        }
-        VmInstanceState vmState = Q.New(VmInstanceVO.class).select(VmInstanceVO_.state).eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid()).findValue();
-        if (VmInstanceState.Stopped.equals(vmState)) {
-            return;
-        }
-        Tuple result = SQL.New(
-                "select sum(hc.availableCpu), sum(hc.availableMemory), vm.cpuNum, vm.memorySize" +
-                " from HostCapacityVO hc, HostVO host, VmInstanceVO vm" +
-                " where hc.uuid = host.uuid" +
-                " and host.state = :hstate" +
-                " and host.status = :hstatus", Tuple.class
-        ).param("hstate", HostState.Enabled).param("hstatus", HostStatus.Connected).find();
-        Long availableCpu = (Long) result.get(0);
-        Long availableMemory = (Long) result.get(1);
-        Integer usedCpu = (Integer) result.get(2);
-        Long usedMemory = (Long) result.get(3);
+    private void validate(APIChangeInstanceOfferingMsg msg) {
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                VmInstanceVO vo = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid()).find();
+                InstanceOfferingVO instanceOfferingVO = Q.New(InstanceOfferingVO.class).eq(InstanceOfferingVO_.uuid, msg.getInstanceOfferingUuid()).find();
 
-        if ((cpuSum != null && cpuSum > (usedCpu + availableCpu) || (memorySize != null && memorySize > (usedMemory + availableMemory)))) {
-            throw new ApiMessageInterceptionException(argerr(
-                    "the host doesn't have enough capacity"
-            ));
-        }
+                if (!VmInstanceState.Stopped.equals(vo.getState()) && !VmInstanceState.Running.equals(vo.getState())) {
+                    throw new OperationFailureException(operr("The state of vm[uuid:%s] is %s. Only these state[%s] is allowed to update cpu or memory.",
+                            vo.getUuid(), vo.getState(),
+                            StringUtils.join(list(VmInstanceState.Running, VmInstanceState.Stopped), ",")));
+                }
+
+                if (VmInstanceState.Stopped.equals(vo.getState())) {
+                    return;
+                }
+                Integer cpuSum = instanceOfferingVO.getCpuNum();
+                Long memorySize = instanceOfferingVO.getMemorySize();
+
+                Tuple result = SQL.New(
+                        "select sum(hc.availableCpu), sum(hc.availableMemory), vm.cpuNum, vm.memorySize" +
+                                " from HostCapacityVO hc, HostVO host, VmInstanceVO vm" +
+                                " where hc.uuid = host.uuid" +
+                                " and host.state = :hstate" +
+                                " and host.status = :hstatus", Tuple.class
+                ).param("hstate", HostState.Enabled).param("hstatus", HostStatus.Connected).find();
+                Long availableCpu = (Long) result.get(0);
+                Long availableMemory = (Long) result.get(1);
+                Integer usedCpu = (Integer) result.get(2);
+                Long usedMemory = (Long) result.get(3);
+
+                if ((cpuSum > (usedCpu + availableCpu) || (memorySize > (usedMemory + availableMemory)))) {
+                    throw new ApiMessageInterceptionException(argerr(
+                            "the host doesn't have enough capacity"
+                    ));
+                }
+
+                if (ImagePlatform.Windows.toString().equals(vo.getPlatform())
+                        || ImagePlatform.WindowsVirtio.toString().equals(vo.getPlatform())
+                        || ImagePlatform.Other.toString().equals(vo.getPlatform())) {
+                    throw new ApiMessageInterceptionException(argerr("unable to update memory or cpu of current vm[uuid:%s]." +
+                            " Please stop it and then update", msg.getVmInstanceUuid()));
+                }
+
+                if (instanceOfferingVO.getCpuNum() < vo.getCpuNum() || instanceOfferingVO.getMemorySize() < vo.getMemorySize()) {
+                    throw new ApiMessageInterceptionException(argerr(
+                            "can't not decrease capacity when vm[:uuid] is running", vo.getUuid()
+                    ));
+                }
+            }
+        }.execute();
+    }
+
+
+    private void validate(APIUpdateVmInstanceMsg msg) {
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                VmInstanceVO vo = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid()).find();
+                Integer cpuSum = msg.getCpuNum();
+                Long memorySize = msg.getMemorySize();
+                if (cpuSum == null && memorySize == null) {
+                    return;
+                }
+
+                if (!VmInstanceState.Stopped.equals(vo.getState()) && !VmInstanceState.Running.equals(vo.getState())) {
+                    throw new OperationFailureException(operr("The state of vm[uuid:%s] is %s. Only these state[%s] is allowed to update cpu or memory.",
+                            vo.getUuid(), vo.getState(),
+                            StringUtils.join(list(VmInstanceState.Running, VmInstanceState.Stopped), ",")));
+                }
+
+
+                VmInstanceState vmState = Q.New(VmInstanceVO.class).select(VmInstanceVO_.state).eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid()).findValue();
+                if (VmInstanceState.Stopped.equals(vmState)) {
+                    return;
+                }
+                Tuple result = SQL.New(
+                        "select sum(hc.availableCpu), sum(hc.availableMemory), vm.cpuNum, vm.memorySize" +
+                                " from HostCapacityVO hc, HostVO host, VmInstanceVO vm" +
+                                " where hc.uuid = host.uuid" +
+                                " and host.state = :hstate" +
+                                " and host.status = :hstatus", Tuple.class
+                ).param("hstate", HostState.Enabled).param("hstatus", HostStatus.Connected).find();
+                Long availableCpu = (Long) result.get(0);
+                Long availableMemory = (Long) result.get(1);
+                Integer usedCpu = (Integer) result.get(2);
+                Long usedMemory = (Long) result.get(3);
+
+                if ((cpuSum != null && cpuSum > (usedCpu + availableCpu) || (memorySize != null && memorySize > (usedMemory + availableMemory)))) {
+                    throw new ApiMessageInterceptionException(argerr(
+                            "the host doesn't have enough capacity"
+                    ));
+                }
+
+                if (msg.getCpuNum() != null || msg.getMemorySize() != null) {
+                    if (ImagePlatform.Windows.toString().equals(vo.getPlatform())
+                            || ImagePlatform.WindowsVirtio.toString().equals(vo.getPlatform())
+                            || ImagePlatform.Other.toString().equals(vo.getPlatform())) {
+                        throw new OperationFailureException(operr("unable to update memory or cpu of current vm[uuid:%s]." +
+                                " Please stop it and then update", msg.getUuid()));
+                    }
+                }
+
+                if (msg.getCpuNum() != null && msg.getCpuNum() < vo.getCpuNum()) {
+                    throw new ApiMessageInterceptionException(argerr(
+                            "can't not decrease cpu of vm[:uuid] when it is running", vo.getUuid()
+                    ));
+                }
+
+                if (msg.getMemorySize() != null && msg.getMemorySize() < vo.getMemorySize()) {
+                    throw new ApiMessageInterceptionException(argerr(
+                            "can't not decrease memory size of vm[:uuid] when it is running", vo.getUuid()
+                    ));
+                }
+            }
+        }.execute();
     }
 
 
