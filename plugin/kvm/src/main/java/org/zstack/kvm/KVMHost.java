@@ -1121,7 +1121,7 @@ public class KVMHost extends HostBase implements Host {
                             @Override
                             public void success(AgentResponse ret) {
                                 if (!ret.isSuccess()) {
-                                    //TODO
+                                    //TODO: add GC
                                     logger.warn(String.format("failed to harden VM[uuid:%s]'s console, %s", vmUuid, ret.getError()));
                                 }
 
@@ -1130,7 +1130,7 @@ public class KVMHost extends HostBase implements Host {
 
                             @Override
                             public void fail(ErrorCode errorCode) {
-                                //TODO
+                                //TODO add GC
                                 logger.warn(String.format("failed to harden VM[uuid:%s]'s console, %s", vmUuid, errorCode));
                                 // continue
                                 trigger.next();

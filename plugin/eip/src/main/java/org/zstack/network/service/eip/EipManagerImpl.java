@@ -40,6 +40,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 
 import javax.persistence.Tuple;
@@ -372,10 +373,10 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
 
                             @Override
                             public void fail(ErrorCode errorCode) {
-                                //TODO
+                                //TODO: add GC instead of failing the API
                                 logger.warn(String.format("failed to detach eip[uuid:%s, ip:%s, vm nic uuid:%s] on service provider[%s], service provider will garbage collect. %s",
                                         struct.getEip().getUuid(), struct.getVip().getIp(), struct.getNic().getUuid(), providerType, errorCode));
-                                trigger.next();
+                                trigger.fail(errorCode);
                             }
                         });
                     }
@@ -676,10 +677,10 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
 
                             @Override
                             public void fail(ErrorCode errorCode) {
-                                //TODO
+                                //TODO add GC instead of failing the API
                                 logger.warn(String.format("failed to detach eip[uuid:%s, ip:%s, vm nic uuid:%s] on service provider[%s], service provider will garbage collect. %s",
                                         struct.getEip().getUuid(), struct.getVip().getIp(), struct.getNic().getUuid(), providerType, errorCode));
-                                trigger.next();
+                                trigger.fail(errorCode);
                             }
                         });
                     }

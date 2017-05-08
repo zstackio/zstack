@@ -13,6 +13,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.notification.N;
 import org.zstack.header.Component;
 import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
@@ -345,6 +346,9 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
 
     @Override
     public void beforeDeleteHost(final HostInventory inventory) {
+        // TODO re-write and add notifications to affected resoruces
+        // TODO move the logic to cascade extension
+
         SimpleQuery<LocalStorageHostRefVO> q = dbf.createQuery(LocalStorageHostRefVO.class);
         q.select(LocalStorageHostRefVO_.primaryStorageUuid);
         q.add(LocalStorageHostRefVO_.hostUuid, Op.EQ, inventory.getUuid());
@@ -396,7 +400,6 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
                     for (MessageReply r : replies) {
                         if (!r.isSuccess()) {
                             String vmUuid = vmUuids.get(replies.indexOf(r));
-                            //TODO
                             logger.warn(String.format("failed to destroy the vm[uuid:%s], %s", vmUuid, r.getError()));
                         }
                     }

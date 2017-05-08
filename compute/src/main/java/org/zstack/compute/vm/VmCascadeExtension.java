@@ -51,6 +51,8 @@ import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
+import static org.zstack.compute.vm.VmNotification.vmWarn_;
+
 /**
  */
 public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
@@ -387,7 +389,8 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                     for (MessageReply r : replies) {
                         DetachNicFromVmMsg msg = msgs.get(replies.indexOf(r));
                         if (!r.isSuccess()) {
-                            //TODO: send alarm
+                            vmWarn_("unable to detach a nic[uuid:%s] from the vm[uuid:%s], %s", msg.getVmNicUuid(), msg.getVmInstanceUuid(), r.getError())
+                                    .uuid(msg.getVmInstanceUuid());
                             logger.warn(String.format("failed to detach nic[uuid:%s] from the vm[uuid:%s], %s",
                                     msg.getVmNicUuid(), msg.getVmInstanceUuid(), r.getError()));
                         } else {

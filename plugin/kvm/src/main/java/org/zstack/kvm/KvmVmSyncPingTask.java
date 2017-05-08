@@ -8,6 +8,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.notification.N;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
@@ -121,12 +122,11 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
                         q.add(VmInstanceVO_.uuid, Op.EQ, cmd.vmUuid);
                         VmInstanceState stateInDb = q.findValue();
                         if (stateInDb == null) {
-                            //TODO: handle anonymous vm
-                            logger.warn(String.format("an anonymous VM[uuid:%s, state:%s] is detected on the host[uuid:%s]", cmd.hostUuid, state, cmd.hostUuid));
+                            N.New(HostVO.class, cmd.hostUuid).warn_("an anonymous VM[uuid:%s, state:%s] is detected on the host[uuid:%s]", cmd.hostUuid, state, cmd.hostUuid);
                             chain.next();
                             return;
                         }
-                                    VmStateChangedOnHostMsg msg = new VmStateChangedOnHostMsg();
+                        VmStateChangedOnHostMsg msg = new VmStateChangedOnHostMsg();
                         msg.setVmStateAtTracingMoment(stateInDb);
                         msg.setVmInstanceUuid(cmd.vmUuid);
                         msg.setStateOnHost(state);
@@ -136,9 +136,10 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
                             @Override
                             public void run(MessageReply reply) {
                                 if (!reply.isSuccess()) {
-                                    //TODO
-                                    logger.warn(String.format("failed to report state[%s] of the vm[uuid:%s] on the host[uuid:%s]",
-                                            cmd.vmState, cmd.vmUuid, cmd.hostUuid));
+                                    N.New(HostVO.class, cmd.hostUuid).warn_("failed to report state[%s] of the vm[uuid:%s] on the host[uuid:%s], %s",
+                                            cmd.vmState, cmd.vmUuid, cmd.hostUuid, reply.getError());
+                                    N.New(VmInstanceVO.class, cmd.vmUuid).warn_("failed to report state[%s] of the vm[uuid:%s] on the host[uuid:%s], %s",
+                                            cmd.vmState, cmd.vmUuid, cmd.hostUuid, reply.getError());
                                 }
 
                                 chain.next();
@@ -209,9 +210,8 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
 
             @Override
             public void fail(ErrorCode errorCode) {
-                //TODO
-                logger.warn(String.format("failed to sync VM states on the KVM host[uuid:%s, name:%s, ip:%s], %s",
-                        host.getUuid(), host.getName(), host.getManagementIp(), errorCode));
+                N.New(HostVO.class, host.getUuid()).warn_("failed to sync VM states on the host[uuid:%s, name:%s], %s",
+                        host.getUuid(), host.getName(), errorCode);
                 completion.done();
             }
         });

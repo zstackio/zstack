@@ -694,7 +694,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                     String hostUuid = hostUuids.get(replies.indexOf(reply));
 
                     if (!reply.isSuccess()) {
-                        //TODO
                         logger.warn(String.format("cannot get the physical capacity of local storage on the host[uuid:%s], %s", hostUuid, reply.getError()));
                         continue;
                     }
@@ -703,7 +702,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                     AgentResponse rsp = r.toResponse(AgentResponse.class);
 
                     if (!rsp.isSuccess()) {
-                        //TODO
                         logger.warn(String.format("cannot get the physical capacity of local storage on the host[uuid:%s], %s", hostUuid, rsp.getError()));
                         continue;
                     }
@@ -2067,7 +2065,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
                                 @Override
                                 public void fail(ErrorCode errorCode) {
-                                    //TODO
+                                    //TODO add GC
                                     logger.warn(String.format("failed to delete %s on the host[uuid:%s], %s",
                                             struct.getDestHostUuid(), context.backingFilePath, errorCode));
                                 }
@@ -2218,7 +2216,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
                                 @Override
                                 public void fail(ErrorCode errorCode) {
-                                    //TODO
+                                    //TODO add GC
                                     logger.warn(String.format("failed to delete %s on the host[uuid:%s], %s",
                                             path, struct.getDestHostUuid(), errorCode));
                                     doDelete(it);
@@ -2517,7 +2515,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
                             @Override
                             public void fail(ErrorCode errorCode) {
-                                //TODO: cleanup
+                                //TODO: add GC
                                 logger.warn(String.format("failed to delete %s on local primary storage[uuid: %s], %s; need a cleanup", temporaryTemplatePath, self.getUuid(), errorCode));
                                 trigger.next();
                             }
