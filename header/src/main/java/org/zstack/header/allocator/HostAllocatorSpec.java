@@ -29,8 +29,17 @@ public class HostAllocatorSpec {
     private boolean allowNoL3Networks;
     private boolean listAllHosts;
     private String requiredBackupStorageUuid;
+    private String requiredPrimaryStorageUuid;
     private Map<String, List<String>> backupStoragePrimaryStorageMetrics;
     private boolean dryRun;
+
+    public String getRequiredPrimaryStorageUuid() {
+        return requiredPrimaryStorageUuid;
+    }
+
+    public void setRequiredPrimaryStorageUuid(String requiredPrimaryStorageUuid) {
+        this.requiredPrimaryStorageUuid = requiredPrimaryStorageUuid;
+    }
 
     public boolean isDryRun() {
         return dryRun;
@@ -193,6 +202,7 @@ public class HostAllocatorSpec {
         spec.setDiskOfferings(msg.getDiskOfferings());
         spec.setAllowNoL3Networks(msg.isAllowNoL3Networks());
         spec.setRequiredBackupStorageUuid(msg.getRequiredBackupStorageUuid());
+        spec.setRequiredPrimaryStorageUuid(msg.getRequiredPrimaryStorageUuid());
         return spec;
     }
 

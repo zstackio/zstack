@@ -23,6 +23,15 @@ public class AllocateHostMsg extends NeedReplyMessage {
     private boolean allowNoL3Networks;
     private boolean listAllHosts;
     private String requiredBackupStorageUuid;
+    private String requiredPrimaryStorageUuid;
+
+    public String getRequiredPrimaryStorageUuid() {
+        return requiredPrimaryStorageUuid;
+    }
+
+    public void setRequiredPrimaryStorageUuid(String requiredPrimaryStorageUuid) {
+        this.requiredPrimaryStorageUuid = requiredPrimaryStorageUuid;
+    }
 
     public String getRequiredBackupStorageUuid() {
         return requiredBackupStorageUuid;
