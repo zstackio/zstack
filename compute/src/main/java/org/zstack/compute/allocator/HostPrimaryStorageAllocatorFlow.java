@@ -73,6 +73,15 @@ public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
             psUuids.add(t.get(0, String.class));
         }
 
+        if (spec.getRequiredPrimaryStorageUuid() != null) {
+            if (psUuids.contains(spec.getRequiredPrimaryStorageUuid())) {
+                psUuids.clear();
+                psUuids.add(0, spec.getRequiredPrimaryStorageUuid());
+            } else {
+                return new ArrayList<>();
+            }
+        }
+
         sql = "select i.primaryStorageUuid from ImageCacheVO i where i.primaryStorageUuid in (:psUuids) and i.imageUuid = :iuuid";
         TypedQuery<String> iq = dbf.getEntityManager().createQuery(sql, String.class);
         iq.setParameter("psUuids", psUuids);
