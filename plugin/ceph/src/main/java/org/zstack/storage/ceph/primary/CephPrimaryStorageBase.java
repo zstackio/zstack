@@ -2,6 +2,7 @@ package org.zstack.storage.ceph.primary;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.Q;
@@ -17,6 +18,7 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.core.*;
@@ -69,6 +71,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.zstack.core.Platform.i18n;
+import static org.zstack.core.Platform.inerr;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -218,6 +221,22 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         public void setFsid(String fsid) {
             this.fsid = fsid;
         }
+    }
+
+    public static class CheckCmd extends AgentCommand {
+        List<Pool> pools;
+
+        public List<Pool> getPools() {
+            return pools;
+        }
+
+        public void setPools(List<Pool> pools) {
+            this.pools = pools;
+        }
+    }
+
+    public static class CheckRsp extends AgentResponse{
+
     }
 
     public static class CreateEmptyVolumeCmd extends AgentCommand {
@@ -675,6 +694,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static final String GET_FACTS = "/ceph/primarystorage/facts";
     public static final String DELETE_IMAGE_CACHE = "/ceph/primarystorage/deleteimagecache";
     public static final String ADD_POOL_PATH = "/ceph/primarystorage/addpool";
+    public static final String CHECK_POOL_PATH = "/ceph/primarystorage/checkpool";
     public static final String CHECK_BITS_PATH = "/ceph/primarystorage/snapshot/checkbits";
 
     private final Map<String, BackupStorageMediator> backupStorageMediators = new HashMap<String, BackupStorageMediator>();
@@ -1922,11 +1942,10 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 });
 
                 flow(new NoRollbackFlow() {
-                    String __name__ = "init";
-
+                    String __name__ = "check_pool";
+                    
                     @Override
-                    public void run(final FlowTrigger trigger, Map data) {
-                        InitCmd cmd = new InitCmd();
+                    public void run(FlowTrigger trigger, Map data) {
                         List<Pool> pools = new ArrayList<Pool>();
 
                         Pool p = new Pool();
@@ -1944,8 +1963,50 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                         p.predefined = CephSystemTags.PREDEFINED_PRIMARY_STORAGE_DATA_VOLUME_POOL.hasTag(self.getUuid());
                         pools.add(p);
 
-                        cmd.pools = pools;
+                        if(!newAdded){
+                            CheckCmd check = new CheckCmd();
+                            check.setPools(pools);
+                            httpCall(CHECK_POOL_PATH, check, CheckRsp.class, new ReturnValueCompletion<CheckRsp>(trigger) {
+                                @Override
+                                public void fail(ErrorCode err) {
+                                    trigger.fail(err);
+                                }
 
+                                @Override
+                                public void success(CheckRsp ret) {
+                                    trigger.next();
+                                }
+                            });
+                        }else {
+                            trigger.next();
+                        }
+                    }
+                });
+                flow(new NoRollbackFlow() {
+                    String __name__ = "init";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+
+                        List<Pool> pools = new ArrayList<Pool>();
+
+                        Pool p = new Pool();
+                        p.name = getSelf().getImageCachePoolName();
+                        p.predefined = CephSystemTags.PREDEFINED_PRIMARY_STORAGE_IMAGE_CACHE_POOL.hasTag(self.getUuid());
+                        pools.add(p);
+
+                        p = new Pool();
+                        p.name = getSelf().getRootVolumePoolName();
+                        p.predefined = CephSystemTags.PREDEFINED_PRIMARY_STORAGE_ROOT_VOLUME_POOL.hasTag(self.getUuid());
+                        pools.add(p);
+
+                        p = new Pool();
+                        p.name = getSelf().getDataVolumePoolName();
+                        p.predefined = CephSystemTags.PREDEFINED_PRIMARY_STORAGE_DATA_VOLUME_POOL.hasTag(self.getUuid());
+                        pools.add(p);
+
+                        InitCmd cmd = new InitCmd();
+                        cmd.pools = pools;
                         httpCall(INIT_PATH, cmd, InitRsp.class, new ReturnValueCompletion<InitRsp>(trigger) {
                             @Override
                             public void fail(ErrorCode err) {

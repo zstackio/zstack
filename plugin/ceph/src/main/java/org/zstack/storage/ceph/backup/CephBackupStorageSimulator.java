@@ -19,6 +19,8 @@ import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.storage.backup.BackupStorageVO_;
 import org.zstack.storage.ceph.backup.CephBackupStorageBase.*;
 import org.zstack.storage.ceph.backup.CephBackupStorageSimulatorConfig.CephBackupStorageConfig;
+import org.zstack.storage.ceph.primary.CephPrimaryStorageBase;
+import org.zstack.storage.ceph.primary.CephPrimaryStorageSimulatorConfig;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -133,6 +135,24 @@ public class CephBackupStorageSimulator {
             rsp.fsid = cbc.fsid;
             rsp.totalCapacity = cbc.totalCapacity;
             rsp.availableCapacity = cbc.availCapacity;
+        }
+
+        reply(entity, rsp);
+        return null;
+    }
+
+    @RequestMapping(value= CephBackupStorageBase.CHECK_POOL_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String checkPool(HttpEntity<String> entity) {
+        CheckCmd cmd = JSONObjectUtil.toObject(entity.getBody(), CheckCmd.class);
+        CephBackupStorageConfig cbc = getConfig(cmd);
+
+        CheckRsp rsp = new CheckRsp();
+        if (!config.monInitSuccess) {
+            rsp.error = "on purpose";
+            rsp.success = false;
+        } else {
+            rsp.success = true;
         }
 
         reply(entity, rsp);

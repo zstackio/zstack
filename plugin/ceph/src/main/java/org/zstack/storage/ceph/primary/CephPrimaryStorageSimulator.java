@@ -121,6 +121,25 @@ public class CephPrimaryStorageSimulator {
         return null;
     }
 
+    @RequestMapping(value= CephPrimaryStorageBase.CHECK_POOL_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String checkPool(HttpEntity<String> entity) {
+        CheckCmd cmd = JSONObjectUtil.toObject(entity.getBody(), CheckCmd.class);
+        CephPrimaryStorageConfig cpc = getConfig(cmd);
+
+        CheckRsp rsp = new CheckRsp();
+        if (!config.monInitSuccess) {
+            rsp.error = "on purpose";
+            rsp.success = false;
+        } else {
+            rsp.success = true;
+        }
+
+        reply(entity, rsp);
+        return null;
+    }
+
+
     private void setCapacity(AgentCommand cmd, AgentResponse rsp, long size) {
         CephPrimaryStorageConfig cpc = getConfig(cmd);
         rsp.totalCapacity = cpc.totalCapacity;

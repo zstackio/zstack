@@ -95,6 +95,15 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
             return rsp
         }
 
+        simulator(CephPrimaryStorageBase.CHECK_POOL_PATH) { HttpEntity<String> e, EnvSpec spec ->
+            def cmd = JSONObjectUtil.toObject(e.body, CephPrimaryStorageBase.CheckCmd.class)
+            CephPrimaryStorageSpec bspec = spec.specByUuid(cmd.uuid)
+            assert bspec != null: "cannot find the primary storage[uuid:${cmd.uuid}}, check your environment()"
+
+            def rsp = new CephPrimaryStorageBase.CheckRsp()
+            rsp.success = true
+            return rsp
+        }
 
         simulator(CephPrimaryStorageBase.CREATE_VOLUME_PATH) {
             return new CephPrimaryStorageBase.CreateEmptyVolumeRsp()

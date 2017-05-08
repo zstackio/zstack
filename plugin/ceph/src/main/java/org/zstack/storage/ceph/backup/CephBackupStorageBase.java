@@ -29,6 +29,7 @@ import org.zstack.header.storage.backup.*;
 import org.zstack.storage.backup.BackupStorageBase;
 import org.zstack.storage.ceph.*;
 import org.zstack.storage.ceph.CephMonBase.PingResult;
+import org.zstack.storage.ceph.primary.CephPrimaryStorageBase;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageVO;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageVO_;
 import org.zstack.utils.CollectionUtils;
@@ -157,6 +158,22 @@ public class CephBackupStorageBase extends BackupStorageBase {
         public void setFsid(String fsid) {
             this.fsid = fsid;
         }
+    }
+
+    public static class CheckCmd extends AgentCommand {
+        List<Pool> pools;
+
+        public List<Pool> getPools() {
+            return pools;
+        }
+
+        public void setPools(List<Pool> pools) {
+            this.pools = pools;
+        }
+    }
+
+    public static class CheckRsp extends AgentResponse {
+
     }
 
     @ApiTimeout(apiClasses = {APIAddImageMsg.class})
@@ -413,6 +430,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
     public static final String DUMP_IMAGE_METADATA_TO_FILE = "/ceph/backupstorage/dumpimagemetadatatofile";
     public static final String GET_IMAGES_METADATA = "/ceph/backupstorage/getimagesmetadata";
     public static final String DELETE_IMAGES_METADATA = "/ceph/backupstorage/deleteimagesmetadata";
+    public static final String CHECK_POOL_PATH = "/ceph/backupstorage/checkpool";
 
     protected String makeImageInstallPath(String imageUuid) {
         return String.format("ceph://%s/%s", getSelf().getPoolName(), imageUuid);
@@ -923,14 +941,48 @@ public class CephBackupStorageBase extends BackupStorageBase {
                 });
 
                 flow(new NoRollbackFlow() {
+                    String _name_ = "check-pool";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+
+                        Pool p = new Pool();
+                        p.name = getSelf().getPoolName();
+                        p.predefined = CephSystemTags.PREDEFINED_BACKUP_STORAGE_POOL.hasTag(self.getUuid());
+
+                        if(!newAdded){
+                            CheckCmd check = new CheckCmd();
+                            check.setPools(list(p));
+                            httpCall(CHECK_POOL_PATH, check, CheckRsp.class, new ReturnValueCompletion<CheckRsp>(trigger) {
+                                @Override
+                                public void fail(ErrorCode err) {
+                                    trigger.fail(err);
+                                }
+
+                                @Override
+                                public void success(CheckRsp ret) {
+                                    trigger.next();
+                                }
+                            });
+                        } else {
+                            trigger.next();
+                        }
+
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
                     String __name__ = "init";
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        InitCmd cmd = new InitCmd();
+
                         Pool p = new Pool();
                         p.name = getSelf().getPoolName();
                         p.predefined = CephSystemTags.PREDEFINED_BACKUP_STORAGE_POOL.hasTag(self.getUuid());
+
+
+                        InitCmd cmd = new InitCmd();
                         cmd.pools = list(p);
 
                         httpCall(INIT_PATH, cmd, InitRsp.class, new ReturnValueCompletion<InitRsp>(trigger) {
