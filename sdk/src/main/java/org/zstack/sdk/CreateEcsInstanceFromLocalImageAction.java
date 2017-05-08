@@ -61,7 +61,7 @@ public class CreateEcsInstanceFromLocalImageAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String ecsSecurityGroupUuid;
 
-    @Param(required = true, validRegexValues = "^[a-zA-Z]\\w{7,17}$", maxLength = 30, minLength = 8, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, validRegexValues = "^[a-zA-Z][\\w\\W]{7,17}$", maxLength = 30, minLength = 8, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String ecsRootPassword;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,200L}, noTrim = false)
