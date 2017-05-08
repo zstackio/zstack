@@ -859,6 +859,11 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
                 self = dbf.reload(self);
                 extpEmitter.afterAttach(self, msg.getClusterUuid());
 
+                RecalculatePrimaryStorageCapacityMsg rmsg = new RecalculatePrimaryStorageCapacityMsg();
+                rmsg.setPrimaryStorageUuid(self.getUuid());
+                bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
+                bus.send(rmsg);
+
                 PrimaryStorageInventory pinv = (PrimaryStorageInventory) invf.valueOf(self);
                 evt.setInventory(pinv);
                 logger.debug(String.format("successfully attached primary storage[name:%s, uuid:%s]",

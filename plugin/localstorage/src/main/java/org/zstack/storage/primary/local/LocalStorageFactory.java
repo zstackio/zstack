@@ -9,8 +9,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.Component;
@@ -36,6 +35,7 @@ import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.volume.*;
 import org.zstack.kvm.KVMConstant;
+import org.zstack.storage.primary.ImageCacheCleaner;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -61,7 +61,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         GetAttachableVolumeExtensionPoint, RecalculatePrimaryStorageCapacityExtensionPoint, HostMaintenancePolicyExtensionPoint,
         AddExpandedQueryExtensionPoint, VolumeGetAttachableVmExtensionPoint, RecoverDataVolumeExtensionPoint,
         RecoverVmExtensionPoint, VmPreMigrationExtensionPoint, CreateTemplateFromVolumeSnapshotExtensionPoint, HostAfterConnectedExtensionPoint,
-        InstantiateDataVolumeOnCreationExtensionPoint, PrimaryStorageAttachExtensionPoint {
+        InstantiateDataVolumeOnCreationExtensionPoint, PrimaryStorageAttachExtensionPoint, PrimaryStorageDetachExtensionPoint {
     private final static CLogger logger = Utils.getLogger(LocalStorageFactory.class);
     public static PrimaryStorageType type = new PrimaryStorageType(LocalStorageConstants.LOCAL_STORAGE_TYPE);
 
@@ -80,6 +80,8 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
     private CloudBus bus;
     @Autowired
     private ErrorFacade errf;
+    @Autowired
+    private LocalStorageImageCleaner imageCacheCleaner;
 
     private Map<String, LocalStorageBackupStorageMediator> backupStorageMediatorMap = new HashMap<String, LocalStorageBackupStorageMediator>();
 
@@ -887,6 +889,143 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
 
     @Override
     public void afterAttachPrimaryStorage(PrimaryStorageInventory inventory, String clusterUuid) {
-        recalculatePrimaryStorageCapacity(clusterUuid);
+
+    }
+
+    @Override
+    public void preDetachPrimaryStorage(PrimaryStorageInventory inventory, String clusterUuid) throws PrimaryStorageException {
+
+    }
+
+    @Override
+    public void beforeDetachPrimaryStorage(PrimaryStorageInventory inventory, String clusterUuid) {
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                List<String> hostUuids = SQL.New("select host.uuid from HostVO host, PrimaryStorageClusterRefVO ref, ClusterVO cluster" +
+                        " where host.clusterUuid = cluster.uuid" +
+                        " and ref.clusterUuid = host.clusterUuid" +
+                        " and ref.primaryStorageUuid = :psUuid")
+                        .param("psUuid", inventory.getUuid())
+                        .list();
+                if (hostUuids == null || hostUuids.isEmpty()) {
+                    return;
+                }
+
+                logger.debug(String.format("the host[uuid:%s] belongs to the storage[uuid:%s], starts to delete vms and" +
+                        " volumes on the host", inventory.getUuid(), String.join(",", hostUuids)));
+
+                final List<String> vmUuids = SQL.New("select vm.uuid" +
+                        " from VolumeVO vol, LocalStorageResourceRefVO ref, VmInstanceVO vm" +
+                        " where ref.primaryStorageUuid = :psUuid" +
+                        " and vol.type = :vtype" +
+                        " and ref.resourceUuid = vol.uuid" +
+                        " and ref.resourceType = :rtype" +
+                        " and ref.hostUuid in :huuids" +
+                        " and vm.uuid = vol.vmInstanceUuid")
+                        .param("vtype", VolumeType.Root)
+                        .param("rtype", VolumeVO.class.getSimpleName())
+                        .param("huuids", hostUuids)
+                        .param("psUuid", inventory.getUuid())
+                        .list();
+
+                // destroy vms
+                if (!vmUuids.isEmpty()) {
+                    List<DestroyVmInstanceMsg> msgs = CollectionUtils.transformToList(vmUuids, new Function<DestroyVmInstanceMsg, String>() {
+                        @Override
+                        public DestroyVmInstanceMsg call(String uuid) {
+                            DestroyVmInstanceMsg msg = new DestroyVmInstanceMsg();
+                            msg.setVmInstanceUuid(uuid);
+                            bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, uuid);
+                            return msg;
+                        }
+                    });
+
+                    final FutureCompletion completion = new FutureCompletion(null);
+                    bus.send(msgs, new CloudBusListCallBack(completion) {
+                        @Override
+                        public void run(List<MessageReply> replies) {
+                            for (MessageReply r : replies) {
+                                if (!r.isSuccess()) {
+                                    String vmUuid = vmUuids.get(replies.indexOf(r));
+                                    //TODO
+                                    logger.warn(String.format("failed to destroy the vm[uuid:%s], %s", vmUuid, r.getError()));
+                                }
+                            }
+
+                            completion.success();
+                        }
+                    });
+
+                    completion.await(TimeUnit.MINUTES.toMillis(15));
+                }
+
+                final List<String> volUuids = SQL.New("select vol.uuid" +
+                        " from VolumeVO vol, LocalStorageResourceRefVO ref" +
+                        " where ref.primaryStorageUuid = :psUuid" +
+                        " and vol.type = :vtype" +
+                        " and ref.resourceUuid = vol.uuid" +
+                        " and ref.resourceType = :rtype" +
+                        " and ref.hostUuid = :huuid")
+                        .param("psUuid", inventory.getUuid())
+                        .param("vtype", VolumeType.Data)
+                        .param("rtype", VolumeVO.class.getSimpleName())
+                        .param("huuid", inventory.getUuid())
+                        .list();
+
+                // delete data volumes
+                if (!volUuids.isEmpty()) {
+                    List<DeleteVolumeMsg> msgs = CollectionUtils.transformToList(volUuids, new Function<DeleteVolumeMsg, String>() {
+                        @Override
+                        public DeleteVolumeMsg call(String uuid) {
+                            DeleteVolumeMsg msg = new DeleteVolumeMsg();
+                            msg.setUuid(uuid);
+                            msg.setDetachBeforeDeleting(true);
+                            msg.setDeletionPolicy(VolumeDeletionPolicyManager.VolumeDeletionPolicy.Delay.toString());
+                            bus.makeTargetServiceIdByResourceUuid(msg, VolumeConstant.SERVICE_ID, uuid);
+                            return msg;
+                        }
+                    });
+
+                    final FutureCompletion completion = new FutureCompletion(null);
+                    bus.send(msgs, new CloudBusListCallBack(completion) {
+                        @Override
+                        public void run(List<MessageReply> replies) {
+                            for (MessageReply r : replies) {
+                                if (!r.isSuccess()) {
+                                    String uuid = volUuids.get(replies.indexOf(r));
+                                    //TODO
+                                    logger.warn(String.format("failed to delete the data volume[uuid:%s], %s", uuid,
+                                            r.getError()));
+                                }
+                            }
+
+                            completion.success();
+                        }
+                    });
+
+                    completion.await(TimeUnit.MINUTES.toMillis(15));
+                }
+
+                // TODO
+                // clean image cache on the hosts belong to the cluster
+                new ImageCacheCleaner() {
+                    @Override
+                    protected String getPrimaryStorageType() {
+                        return inventory.getType();
+                    }
+                }.cleanup(inventory.getUuid());
+            }
+        }.execute();
+    }
+
+    @Override
+    public void failToDetachPrimaryStorage(PrimaryStorageInventory inventory, String clusterUuid) {
+
+    }
+
+    @Override
+    public void afterDetachPrimaryStorage(PrimaryStorageInventory inventory, String clusterUuid) {
+
     }
 }
