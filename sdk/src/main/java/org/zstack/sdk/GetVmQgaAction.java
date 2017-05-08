@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class GetNicQosAction extends AbstractAction {
+public class GetVmQgaAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public GetNicQosResult value;
+        public GetVmQgaResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -42,8 +42,8 @@ public class GetNicQosAction extends AbstractAction {
             return ret;
         }
         
-        GetNicQosResult value = res.getResult(GetNicQosResult.class);
-        ret.value = value == null ? new GetNicQosResult() : value; 
+        GetVmQgaResult value = res.getResult(GetVmQgaResult.class);
+        ret.value = value == null ? new GetVmQgaResult() : value; 
 
         return ret;
     }
@@ -69,7 +69,7 @@ public class GetNicQosAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/vm-instances/{uuid}/nic-qos";
+        info.path = "/vm-instances/{uuid}/qga";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";
