@@ -163,7 +163,7 @@ public class UserdataExtension extends AbstractNetworkServiceExtension implement
 
             @Override
             public void fail(ErrorCode errorCode) {
-                //TODO
+                //TODO add GC
                 logger.warn(String.format("unable to release user data for vm[uuid:%s], %s", servedVm.getVmInventory().getUuid(), errorCode));
                 completion.done();
             }

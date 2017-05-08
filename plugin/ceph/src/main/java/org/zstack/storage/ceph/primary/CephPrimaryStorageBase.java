@@ -9,6 +9,7 @@ import org.zstack.core.db.SQL;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.notification.N;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
@@ -1254,7 +1255,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
                                     @Override
                                     public void fail(ErrorCode errorCode) {
-                                        //TODO
+                                        //TODO GC
                                         logger.warn(String.format("unable to delete %s, %s. Need a cleanup", cachePath, errorCode));
                                     }
                                 });
@@ -2054,9 +2055,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
                         @Override
                         public void fail(ErrorCode errorCode) {
-                            //TODO
-                            logger.warn(String.format("failed to reconnect the mon[uuid:%s] of the ceph primary" +
-                                    " storage[uuid:%s, name:%s], %s", mon.getSelf().getUuid(), self.getUuid(), self.getName(), errorCode));
+                            N.New(PrimaryStorageVO.class, self.getUuid()).warn_("failed to reconnect the mon[uuid:%s] server of the ceph primary" +
+                                    " storage[uuid:%s, name:%s], %s", mon.getSelf().getUuid(), self.getUuid(), self.getName(), errorCode);
                             releaseLock.done();
                         }
                     });

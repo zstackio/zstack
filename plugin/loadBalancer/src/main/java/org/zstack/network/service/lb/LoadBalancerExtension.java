@@ -123,7 +123,7 @@ public class LoadBalancerExtension extends AbstractNetworkServiceExtension imple
                             @Override
                             public void run(MessageReply reply) {
                                 if (!reply.isSuccess()) {
-                                    //TODO: clean up
+                                    //TODO: add GC
                                     logger.warn(String.format("failed to deactive vm nics[uuids: %s] on the load balancer[uuid:%s]", msg.getVmNicUuids(), msg.getLoadBalancerUuid()));
                                 }
                             }

@@ -1077,7 +1077,7 @@ public class KvmBackend extends HypervisorBackend {
 
                                 @Override
                                 public void fail(ErrorCode errorCode) {
-                                    //TODO
+                                    //TODO GC
                                     logger.warn(String.format("failed to delete %s, %s", temporaryTemplatePath, errorCode));
                                 }
                             });
@@ -1134,7 +1134,7 @@ public class KvmBackend extends HypervisorBackend {
 
                             @Override
                             public void fail(ErrorCode errorCode) {
-                                //TODO: cleanup
+                                //TODO: GC
                                 logger.warn(String.format("failed to delete %s on shared mount point primary storage[uuid: %s], %s; need a cleanup", temporaryTemplatePath, self.getUuid(), errorCode));
                             }
                         });

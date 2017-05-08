@@ -415,7 +415,7 @@ public class FusionstorBackupStorageBase extends BackupStorageBase {
     protected void handle(final DeleteBitsOnBackupStorageMsg msg) {
         final DeleteBitsOnBackupStorageReply reply = new DeleteBitsOnBackupStorageReply();
         if (!canDelete(msg.getInstallPath())) {
-            //TODO: the image is still referred, need to cleanup
+            //TODO: GC, the image is still referred, need to cleanup
             bus.reply(msg, reply);
             return;
         }
@@ -426,7 +426,7 @@ public class FusionstorBackupStorageBase extends BackupStorageBase {
         httpCall(DELETE_IMAGE_PATH, cmd, DeleteRsp.class, new ReturnValueCompletion<DeleteRsp>(msg) {
             @Override
             public void fail(ErrorCode err) {
-                //TODO
+                //TODO GC, instead of error
                 reply.setError(err);
                 bus.reply(msg, reply);
             }

@@ -77,6 +77,8 @@ import java.util.Map;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.core.Platform.err;
+
+import static org.zstack.compute.vm.VmNotification.vmWarn_;
 import static org.zstack.utils.CollectionDSL.*;
 
 
@@ -123,7 +125,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {
-                    //TODO
+                    vmWarn_("unable to check state of the vm[uuid:%s] on the host[uuid:%s], %s;" +
+                            "put the VM into the Unknown state", self.getUuid(), hostUuid, reply.getError()).uuid(self.getUuid());
                     logger.warn(String.format("unable to check state of the vm[uuid:%s] on the host[uuid:%s], %s." +
                                     " Put the vm to Unknown state",
                             self.getUuid(), hostUuid, reply.getError()));
@@ -1032,7 +1035,10 @@ public class VmInstanceBase extends AbstractVmInstance {
         }).error(new FlowErrorHandler(completion) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                //TODO
+                vmWarn_("failed to handle abnormal lifecycle of the vm[uuid:%s, original state: %s, current state:%s," +
+                                "original host: %s, current host: %s], %s", self.getUuid(), originalState, currentState,
+                        originalHostUuid, currentHostUuid, errCode).uuid(self.getUuid());
+
                 logger.warn(String.format("failed to handle abnormal lifecycle of the vm[uuid:%s, original state: %s, current state:%s," +
                                 "original host: %s, current host: %s], %s", self.getUuid(), originalState, currentState,
                         originalHostUuid, currentHostUuid, errCode));
