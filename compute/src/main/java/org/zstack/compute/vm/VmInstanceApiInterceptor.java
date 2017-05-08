@@ -3,12 +3,15 @@ package org.zstack.compute.vm;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.config.GlobalConfigVO;
+import org.zstack.core.config.GlobalConfigVO_;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.header.allocator.HostCapacityOverProvisioningManager;
 import org.zstack.header.allocator.HostCapacityVO;
 import org.zstack.header.allocator.HostCapacityVO_;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
@@ -33,6 +36,7 @@ import org.zstack.header.vm.*;
 import org.zstack.header.zone.ZoneState;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.header.zone.ZoneVO_;
+import org.zstack.utils.SizeUtils;
 import org.zstack.utils.network.NetworkUtils;
 
 import static org.zstack.core.Platform.argerr;
@@ -55,6 +59,9 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
     private DatabaseFacade dbf;
     @Autowired
     private ErrorFacade errf;
+    @Autowired
+    private HostCapacityOverProvisioningManager ratioMgr;
+
 
     private void setServiceId(APIMessage msg) {
         if (msg instanceof VmInstanceMessage) {
@@ -95,7 +102,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             validate((APIGetInterdependentL3NetworksImagesMsg) msg);
         } else if (msg instanceof APIUpdateVmInstanceMsg) {
             validate((APIUpdateVmInstanceMsg) msg);
-        }else if (msg instanceof APISetVmConsolePasswordMsg) {
+        } else if (msg instanceof APISetVmConsolePasswordMsg) {
             validate((APISetVmConsolePasswordMsg) msg);
         }
         setServiceId(msg);
@@ -104,31 +111,53 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
     @Transactional(readOnly = true)
     private void validate(APIUpdateVmInstanceMsg msg) {
-        Integer cpuSum = msg.getCpuNum();
-        Long memorySize = msg.getMemorySize();
-        if (cpuSum == null && memorySize == null) {
+        Integer requestCpu = msg.getCpuNum();
+        Long requestMemory = msg.getMemorySize();
+        if (requestCpu == null && requestMemory == null) {
             return;
         }
-        VmInstanceState vmState = Q.New(VmInstanceVO.class).select(VmInstanceVO_.state).eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid()).findValue();
+        Tuple tuple  = Q.New(VmInstanceVO.class).select(VmInstanceVO_.state,VmInstanceVO_.hostUuid).eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid()).findTuple();
+        VmInstanceState vmState = (VmInstanceState)tuple.get(0);
+        String hostUuid = (String)tuple.get(1);
         if (VmInstanceState.Stopped.equals(vmState)) {
             return;
         }
-        Tuple result = SQL.New(
-                "select sum(hc.availableCpu), sum(hc.availableMemory), vm.cpuNum, vm.memorySize" +
+
+        Tuple result = SQL.New("select sum(hc.availableCpu), sum(hc.availableMemory), vm.cpuNum, vm.memorySize" +
                 " from HostCapacityVO hc, HostVO host, VmInstanceVO vm" +
                 " where hc.uuid = host.uuid" +
                 " and host.state = :hstate" +
-                " and host.status = :hstatus", Tuple.class
-        ).param("hstate", HostState.Enabled).param("hstatus", HostStatus.Connected).find();
+                " and host.status = :hstatus", Tuple.class)
+                .param("hstate", HostState.Enabled)
+                .param("hstatus", HostStatus.Connected)
+                .find();
         Long availableCpu = (Long) result.get(0);
         Long availableMemory = (Long) result.get(1);
         Integer usedCpu = (Integer) result.get(2);
         Long usedMemory = (Long) result.get(3);
-
-        if ((cpuSum != null && cpuSum > (usedCpu + availableCpu) || (memorySize != null && memorySize > (usedMemory + availableMemory)))) {
-            throw new ApiMessageInterceptionException(argerr(
-                    "the host doesn't have enough capacity"
-            ));
+        List<String> results = SQL.New("select value from GlobalConfigVO where name='reservedMemory' or name='overProvisioning.memory' or name='cpu.overProvisioning.ratio' ").list();
+        if (results.size() == 3) { //Enterprise Edition
+            Long reservedMemory = SizeUtils.sizeStringToBytes(results.get(0));
+            Double overProvisioningMemory = Double.parseDouble(results.get(1));
+            Double overProvisioningCpu = Double.parseDouble(results.get(2));
+            Double totalAvailablMemory = (availableMemory + usedMemory - reservedMemory) * overProvisioningMemory;
+            Double totalAvailableCpu = (availableCpu + usedCpu )* overProvisioningCpu;
+            if ((requestCpu != null && requestCpu > totalAvailableCpu ) || (requestMemory != null && requestMemory > totalAvailablMemory )) {
+                throw new ApiMessageInterceptionException(argerr(
+                        "the host doesn't have enough capacity"
+                ));
+            }
+        } else if (results.size() == 1) { //Open Source Edition
+            Long reservedMemory = SizeUtils.sizeStringToBytes(results.get(0));
+            Long totalAvailablMemory = availableMemory + usedMemory - reservedMemory;
+            Long totalAvailabllCpu = availableCpu + usedCpu;
+            if ((requestCpu != null && requestCpu > totalAvailabllCpu ) || (requestMemory != null && requestMemory > totalAvailablMemory )) {
+                throw new ApiMessageInterceptionException(argerr(
+                        "the host doesn't have enough capacity"
+                ));
+            }else{
+                throw new ApiMessageInterceptionException(argerr("Shouldn't be here"));
+        }
         }
     }
 
@@ -194,7 +223,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         q.add(VmNicVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
         if (!q.isExists()) {
             throw new ApiMessageInterceptionException(argerr("the VM[uuid:%s] has no nic on the L3 network[uuid:%s]", msg.getVmInstanceUuid(),
-                            msg.getL3NetworkUuid()));
+                    msg.getL3NetworkUuid()));
         }
     }
 
@@ -204,7 +233,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         q.add(VmNicVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
         if (!q.isExists()) {
             throw new ApiMessageInterceptionException(argerr("the VM[uuid:%s] has no nic on the L3 network[uuid:%s]", msg.getVmInstanceUuid(),
-                            msg.getL3NetworkUuid()));
+                    msg.getL3NetworkUuid()));
         }
     }
 
@@ -240,7 +269,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
         if (!VmInstanceState.Running.equals(state) && !VmInstanceState.Stopped.equals(state)) {
             throw new ApiMessageInterceptionException(operr("unable to detach a L3 network. The vm[uuid: %s] is not Running or Stopped; the current state is %s",
-                            msg.getVmInstanceUuid(), state));
+                    msg.getVmInstanceUuid(), state));
         }
 
         SimpleQuery<VmNicVO> nq = dbf.createQuery(VmNicVO.class);
@@ -248,7 +277,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         nq.add(VmNicVO_.vmInstanceUuid, Op.EQ, msg.getVmInstanceUuid());
         if (nq.isExists()) {
             throw new ApiMessageInterceptionException(operr("unable to attach a L3 network. The L3 network[uuid:%s] is already attached to the vm[uuid: %s]",
-                            msg.getL3NetworkUuid(), msg.getVmInstanceUuid()));
+                    msg.getL3NetworkUuid(), msg.getVmInstanceUuid()));
         }
 
         SimpleQuery<L3NetworkVO> l3q = dbf.createQuery(L3NetworkVO.class);
@@ -306,7 +335,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
         if (!VmInstanceState.Running.equals(state) && !VmInstanceState.Stopped.equals(state)) {
             throw new ApiMessageInterceptionException(operr("unable to detach a L3 network. The vm[uuid: %s] is not Running or Stopped; the current state is %s",
-                            msg.getVmInstanceUuid(), state));
+                    msg.getVmInstanceUuid(), state));
         }
 
         msg.setVmInstanceUuid(vmUuid);
@@ -478,7 +507,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(APISetVmConsolePasswordMsg msg) {
         String pwd = msg.getConsolePassword();
-        if (pwd.startsWith("password")){
+        if (pwd.startsWith("password")) {
             throw new ApiMessageInterceptionException(argerr("The console password cannot start with 'password' which may trigger a VNC security issue"));
         }
     }
