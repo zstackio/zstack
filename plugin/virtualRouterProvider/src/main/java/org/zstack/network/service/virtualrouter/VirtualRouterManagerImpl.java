@@ -13,6 +13,7 @@ import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.GLock;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -48,6 +49,7 @@ import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.header.network.l3.IpRangeInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.network.l3.L3NetworkVO_;
 import org.zstack.header.network.service.*;
 import org.zstack.header.query.AddExpandedQueryExtensionPoint;
 import org.zstack.header.query.ExpandedQueryAliasStruct;
@@ -69,6 +71,7 @@ import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.NetworkUtils;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
@@ -228,6 +231,33 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                 }
             }
 
+            private void checkIsIpRangeOverlap(){
+                String priStartIp;
+                String priEndIp;
+                String pubStartIp;
+                String pubEndIp;
+
+                L3NetworkVO pubL3Network = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid,msg.getOffering().getPublicNetworkUuid()).find();
+                List<IpRangeInventory> priIpranges = l3Network.getIpRanges();
+                List<IpRangeInventory> pubIpranges = IpRangeInventory.valueOf(pubL3Network.getIpRanges());
+
+
+                for(IpRangeInventory priIprange : priIpranges){
+                    for(IpRangeInventory pubIprange : pubIpranges){
+
+                        priStartIp = priIprange.getStartIp();
+                        priEndIp = priIprange.getEndIp();
+                        pubStartIp = pubIprange.getStartIp();
+                        pubEndIp = pubIprange.getEndIp();
+
+                        if(NetworkUtils.isIpv4RangeOverlap(priStartIp,priEndIp,pubStartIp,pubEndIp)){
+                            throw new OperationFailureException(argerr("cannot create virtual Router vm while virtual router network overlaps with private network in ip "));
+                        }
+
+                    }
+                }
+
+            }
             void create() {
                 List<String> neededService = l3Network.getNetworkServiceTypesFromProvider(new Callable<String>() {
                     @Override
@@ -245,6 +275,8 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                     failAndReply(errf.instantiateErrorCode(VirtualRouterErrors.NO_PUBLIC_NETWORK_IN_OFFERING, err));
                     return;
                 }
+
+                checkIsIpRangeOverlap();
 
                 ImageVO imgvo = dbf.findByUuid(offering.getImageUuid(), ImageVO.class);
 
