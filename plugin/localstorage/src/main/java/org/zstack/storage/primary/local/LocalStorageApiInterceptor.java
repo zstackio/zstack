@@ -92,8 +92,8 @@ public class LocalStorageApiInterceptor implements ApiMessageInterceptor {
                     throw new ApiMessageInterceptionException(argerr("the primary storage[uuid:%s] is not found", msg.getPrimaryStorageUuid()));
                 }
 
-                if (vo.getState() == PrimaryStorageState.Disabled) {
-                    throw new ApiMessageInterceptionException(argerr("the primary storage[uuid:%s] is disabled cold migrate is not allowed", ref.getPrimaryStorageUuid()));
+                if (vo.getState() == PrimaryStorageState.Disabled || vo.getState() == PrimaryStorageState.Maintenance) {
+                    throw new ApiMessageInterceptionException(argerr("the primary storage[uuid:%s] is disabled or maintenance cold migrate is not allowed", ref.getPrimaryStorageUuid()));
                 }
 
                 //3.confirm the dest host belong to the local storage where the volume locates
