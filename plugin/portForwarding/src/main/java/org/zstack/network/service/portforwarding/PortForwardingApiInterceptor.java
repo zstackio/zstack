@@ -67,7 +67,7 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
 
         String vmNicUuid = t.get(1, String.class);
         if (vmNicUuid != null) {
-            throw new ApiMessageInterceptionException(operr("Port forwarding rule[uuid:%s] has been attached to vm nic[uuid:%s] already", msg.getRuleUuid(), vmNicUuid));
+            return ;
         }
     }
 
