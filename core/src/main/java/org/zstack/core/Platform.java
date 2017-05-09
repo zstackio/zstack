@@ -1,5 +1,6 @@
 package org.zstack.core;
 
+import com.google.gson.JsonParser;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.LocaleUtils;
 import org.apache.commons.lang.StringUtils;
@@ -25,6 +26,7 @@ import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.utils.*;
 import org.zstack.utils.data.StringTemplate;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.logging.CLoggerImpl;
 import org.zstack.utils.network.NetworkUtils;
@@ -621,9 +623,25 @@ public class Platform {
 
     public static String i18n(String str, Object...args) {
         if (args != null) {
-            return String.format(str, args);
+            return formatNoException(str, args);
         } else {
             return str;
+        }
+    }
+
+    /**
+     *  If an exception occurs, direct return current format string
+     *
+     *  background:
+     *  If format string like "% xxx"，will throw FormatFlagsConversionMismatchException，
+     *  user will see the error message that 'java.util.FormatFlagsConversionMismatchException: Conversion = c, Flags =' if we don't catch it
+     */
+    private static String formatNoException(String format, Object... args){
+        try{
+            return String.format(format, args);
+        }catch (Exception e){
+            logger.error("String.format Error, format = " + format + ", args = " + JSONObjectUtil.toJsonString(args), e);
+            return format;
         }
     }
 
@@ -653,7 +671,7 @@ public class Platform {
     public static ErrorCode err(Enum errCode, String fmt, Object...args) {
         ErrorFacade errf = getComponentLoader().getComponent(ErrorFacade.class);
         if (SysErrors.INTERNAL == errCode) {
-            return errf.instantiateErrorCode(errCode, String.format(fmt, args));
+            return errf.instantiateErrorCode(errCode, formatNoException(fmt, args));
         } else {
             return errf.instantiateErrorCode(errCode, i18n(fmt, args));
         }
