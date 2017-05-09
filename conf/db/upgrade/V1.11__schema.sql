@@ -349,6 +349,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- ----------------------------
 CREATE TABLE `HybridAccountVO` (
   `uuid` varchar(32) UNIQUE NOT NULL,
+  `name` varchar(32) UNIQUE NOT NULL,
   `accountUuid` varchar(32) NOT NULL,
   `userUuid` varchar(32) DEFAULT NULL,
   `type` varchar(32) NOT NULL,
@@ -524,7 +525,7 @@ CREATE TABLE `VpcVirtualRouterVO` (
 	  `vrId` varchar(32) NOT NULL,
 	  `vpcUuid` varchar(32) NOT NULL,
 	  `vRouterName` varchar(32) NOT NULL,
-	  `description` varchar(1024) NOT NULL,
+	  `description` varchar(1024) DEFAULT NULL,
 	  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
 	  `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
 	  PRIMARY KEY (`uuid`),
@@ -550,7 +551,7 @@ CREATE TABLE `VirtualRouterInterfaceVO` (
 	  `name` varchar(64) NOT NULL,
 	  `status` varchar(32) NOT NULL,
 	  `oppositeInterfaceUuid` varchar(32) NOT NULL,
-	  `description` varchar(128) NOT NULL,
+	  `description` varchar(128) DEFAULT NULL,
 	  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
 	  `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
 	  PRIMARY KEY (`uuid`),
@@ -595,7 +596,7 @@ CREATE TABLE `ConnectionAccessPointVO` (
 	  `dataCenterUuid` varchar(32) NOT NULL,
 	  `status` varchar(32) NOT NULL,
 	  `hostOperator` varchar(32) NOT NULL,
-	  `description` varchar(128) NOT NULL,
+	  `description` varchar(128) DEFAULT NULL,
 	  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
 	  `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
 	  PRIMARY KEY (`uuid`),
@@ -624,7 +625,7 @@ CREATE TABLE `VirtualBorderRouterVO` (
 	  `peeringSubnetMask` varchar(32) NOT NULL,
 	  `physicalConnectionId` varchar(32) NOT NULL,
 	  `accessPointUuid` varchar(32) NOT NULL,
-	  `description` varchar(128) NOT NULL,
+	  `description` varchar(128) DEFAULT NULL,
 	  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
 	  `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
 	  PRIMARY KEY (`uuid`),
@@ -694,7 +695,7 @@ INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.vRout
 INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.vSwitchName, "EcsVSwitchVO" FROM EcsVSwitchVO t;
 INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "EcsVpcVO" FROM EcsVpcVO t;
 INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "EcsInstanceVO" FROM EcsInstanceVO t;
-INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "HybridAccountVO" FROM HybridAccountVO t;
+INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "HybridAccountVO" FROM HybridAccountVO t;
 INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "HybridEipAddressVO" FROM HybridEipAddressVO t;
 INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.bucketName, "OssBucketVO" FROM OssBucketVO t;
 INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "IdentityZoneVO" FROM IdentityZoneVO t;
