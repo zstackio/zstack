@@ -90,7 +90,8 @@ class VirtualRouterPortForwardingCase extends SubCase {
 
         getPortForwardingAttachableVmNicsAction.ruleUuid = r1.uuid
         res = getPortForwardingAttachableVmNicsAction.call()
-        assert res.error != null
+        assert res.error == null
+        assert res.value.inventories.size() == 0
 
         // rule4 share the same vip with rule1, so it's attachable to the vm1
         // and only attachable to the vm1 because the vm2 is on another private L3
@@ -121,7 +122,8 @@ class VirtualRouterPortForwardingCase extends SubCase {
 
         getPortForwardingAttachableVmNicsAction.ruleUuid = r4Uuid
         res = getPortForwardingAttachableVmNicsAction.call()
-        assert res.error != null
+        assert res.error == null
+        assert res.value.inventories.size() == 0
         detachPortForwardingRule {
             uuid = r4Uuid
         }
