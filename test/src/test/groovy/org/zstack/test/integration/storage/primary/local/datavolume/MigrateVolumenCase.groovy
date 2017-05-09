@@ -56,7 +56,12 @@ class MigrateVolumenCase extends SubCase{
         localStorageMigrateVolumeAction.destHostUuid = kvm1.inventory.uuid
         localStorageMigrateVolumeAction.sessionId = adminSession()
         LocalStorageMigrateVolumeAction.Result res = localStorageMigrateVolumeAction.call()
-        res.error != null
+        assert res.error != null
+        assert res.error.code.toString() == "SYS.1007"
+        assert res.error.description.toString() == "One or more API argument is invalid"
+        String errorDetails = res.error.details.toString()
+        int index = errorDetails.indexOf("is disabled or maintenance cold migrate is not allowed");
+        assert index != -1
     }
 
     @Override
