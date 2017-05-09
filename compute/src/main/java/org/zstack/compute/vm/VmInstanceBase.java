@@ -40,8 +40,11 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
-import org.zstack.header.image.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
+import org.zstack.header.image.ImageEO;
+import org.zstack.header.image.ImageInventory;
+import org.zstack.header.image.ImageStatus;
+import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.*;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.storage.primary.*;
@@ -66,10 +69,6 @@ import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
-import static org.zstack.core.Platform.*;
-
-import static org.zstack.core.Platform.err;
-import static org.zstack.core.Platform.operr;
 
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
@@ -77,6 +76,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.zstack.core.Platform.err;
+import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.*;
 
 
@@ -1550,6 +1551,8 @@ public class VmInstanceBase extends AbstractVmInstance {
                 extEmitter.afterDestroyVm(inv);
                 logger.debug(String.format("successfully deleted vm instance[name:%s, uuid:%s]", self.getName(), self.getUuid()));
                 if (deletionPolicy == VmInstanceDeletionPolicy.Direct) {
+                    self = dbf.reload(self);
+                    changeVmStateInDb(VmInstanceStateEvent.destroyed);
                     dbf.remove(getSelf());
                 } else if (deletionPolicy == VmInstanceDeletionPolicy.DBOnly) {
                     new SQLBatch() {
