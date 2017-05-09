@@ -469,6 +469,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                         new Vip(vip.getUuid()).modify(s, new ReturnValueCompletion<UnmodifyVip>(trigger) {
                             @Override
                             public void success(UnmodifyVip ret) {
+                                success = true;
                                 rollback = ret;
                                 trigger.next();
                             }

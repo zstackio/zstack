@@ -778,3 +778,7 @@ CREATE TABLE  `zstack`.`WebhookVO` (
     `createDate` timestamp,
     PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+# Foreign keys for table LoadBalancerListenerVO
+ALTER TABLE LoadBalancerListenerVO DROP FOREIGN KEY fkLoadBalancerListenerVOLoadBalancerVO;
+ALTER TABLE LoadBalancerListenerVO ADD CONSTRAINT fkLoadBalancerListenerVOLoadBalancerVO FOREIGN KEY (loadBalancerUuid) REFERENCES LoadBalancerVO (uuid) ON DELETE RESTRICT ;
