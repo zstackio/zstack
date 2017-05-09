@@ -40,7 +40,6 @@ public class VtepVO extends ResourceVO {
     @Column
     private String type;
 
-
     @Column
     private Timestamp createDate;
 
