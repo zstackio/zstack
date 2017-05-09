@@ -20,4 +20,7 @@ public interface CephConstants {
 
     String AFTER_ADD_IMAGE = "afterAddImage";
 
+    String CEPH_SCECRET_KEY = "ceph_secret_key";
+
+    String CEPH_SECRECT_UUID = "ceph_secret_uuid";
 }
