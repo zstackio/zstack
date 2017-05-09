@@ -56,9 +56,9 @@ import org.zstack.identity.AccountManager;
 import org.zstack.network.service.eip.APIGetEipAttachableVmNicsMsg;
 import org.zstack.network.service.eip.EipConstant;
 import org.zstack.network.service.eip.GetCandidateVmNicsForEipInVirtualRouterExtensionPoint;
-import org.zstack.network.service.lb.LoadBalancerConstants;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.network.service.vip.VipVO_;
+import org.zstack.network.service.lb.*;
 import org.zstack.network.service.virtualrouter.eip.VirtualRouterEipRefInventory;
 import org.zstack.network.service.virtualrouter.portforwarding.VirtualRouterPortForwardingRuleRefInventory;
 import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipInventory;
@@ -73,6 +73,8 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 
+import static org.codehaus.groovy.runtime.DefaultGroovyMethods.collect;
+import static org.codehaus.groovy.runtime.InvokerHelper.asList;
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 
@@ -90,7 +92,7 @@ import static org.zstack.utils.CollectionDSL.map;
 
 public class VirtualRouterManagerImpl extends AbstractService implements VirtualRouterManager,
         PrepareDbInitialValueExtensionPoint, L2NetworkCreateExtensionPoint,
-        GlobalApiMessageInterceptor, AddExpandedQueryExtensionPoint, GetCandidateVmNicsForEipInVirtualRouterExtensionPoint {
+        GlobalApiMessageInterceptor, AddExpandedQueryExtensionPoint, GetCandidateVmNicsForLoadBalancerExtensionPoint, GetCandidateVmNicsForEipInVirtualRouterExtensionPoint {
 	private final static CLogger logger = Utils.getLogger(VirtualRouterManagerImpl.class);
 	
 	private final static List<String> supportedL2NetworkTypes = new ArrayList<String>();
@@ -1044,7 +1046,6 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                         .param("l3Uuids", candidates.stream().map(VmNicInventory::getL3NetworkUuid).collect(Collectors.toList()))
                         .param("providerType", Arrays.asList(VyosConstants.PROVIDER_TYPE.toString(),VirtualRouterConstant.PROVIDER_TYPE.toString()))
                         .list();
-
                 List<VmNicInventory> vmNicInVirtualRouter = candidates.stream().filter(nic -> inners.contains(nic.getL3NetworkUuid())).collect(Collectors.toList());
 
                 if(vmNicInVirtualRouter.size() == 0){
@@ -1082,6 +1083,58 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
             }
         }.execute();
+    }
+
+    @Override
+    public List<VmNicInventory> getCandidateVmNicsForLoadBalancerInVirtualRouter(APIGetCandidateVmNicsForLoadBalancerMsg msg, List<VmNicInventory> candidates) {
+
+        return new SQLBatchWithReturn<List<VmNicInventory>>(){
+
+            @Override
+            protected List<VmNicInventory> scripts() {
+
+                //1.get the vm nics which are managed by vrouter or virtual router.
+                List<String>  inners = sql("select l3.uuid from L3NetworkVO l3, NetworkServiceL3NetworkRefVO ref, NetworkServiceProviderVO pro" +
+                        " where l3.uuid = ref.l3NetworkUuid and ref.networkServiceProviderUuid = pro.uuid and l3.uuid in (:l3Uuids)" +
+                        " and pro.type in (:providerType)", String.class)
+                        .param("l3Uuids", candidates.stream().map(VmNicInventory::getL3NetworkUuid).collect(Collectors.toList()))
+                        .param("providerType", Arrays.asList(VyosConstants.PROVIDER_TYPE.toString(),VirtualRouterConstant.PROVIDER_TYPE.toString()))
+                        .list();
+
+                List<VmNicInventory> ret = candidates.stream().filter(nic -> inners.contains(nic.getL3NetworkUuid())).collect(Collectors.toList());
+                if(ret.size() == 0){
+                    return new ArrayList<VmNicInventory>();
+                }
+
+                //2.check the l3 of vm nic is peer l3 of the loadbalancer
+                List<Tuple> tuples = sql("select vm.managementNetworkUuid, vm.defaultRouteL3NetworkUuid from VipVO vip, ApplianceVmVO vm" +
+                        " where vip.uuid = (select vipUuid from LoadBalancerVO where uuid = :lbUuid)" +
+                        " and vm.defaultRouteL3NetworkUuid = vip.l3NetworkUuid", Tuple.class)
+                        .param("lbUuid",msg.getLoadBalancerUuid()).list();
+                if(tuples.size() == 0){
+                    return new ArrayList<VmNicInventory>();
+                }
+
+                List<String> publics = new ArrayList<>();
+                List<String> managements = new ArrayList<>();
+                for(Tuple tuple: tuples){
+                    publics.add((String) tuple.get(0));
+                    managements.add((String) tuple.get(1));
+                }
+
+                List<String> peerL3Uuids = sql("select l3NetworkUuid from VmNicVO"  +
+                        " where vmInstanceUuid in (select uuid from ApplianceVmVO where defaultRouteL3NetworkUuid in (:publics))" +
+                        " and l3NetworkUuid not in (:publics)" +
+                        " and l3NetworkUuid not in (:managements)")
+                        .param("publics",publics)
+                        .param("managements",managements).list();
+
+
+                return ret.stream().filter(nic -> peerL3Uuids.contains(nic.getL3NetworkUuid())).collect(Collectors.toList());
+
+            }
+        }.execute();
+
     }
 
 }

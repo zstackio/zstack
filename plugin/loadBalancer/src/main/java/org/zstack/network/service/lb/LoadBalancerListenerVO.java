@@ -17,7 +17,7 @@ import java.util.Set;
 @Table
 public class LoadBalancerListenerVO extends ResourceVO {
     @Column
-    @ForeignKey(parentEntityClass = LoadBalancerVO.class, parentKey = "uuid", onDeleteAction = ReferenceOption.CASCADE)
+    @ForeignKey(parentEntityClass = LoadBalancerVO.class, parentKey = "uuid", onDeleteAction = ReferenceOption.RESTRICT)
     private String loadBalancerUuid;
 
     @Column

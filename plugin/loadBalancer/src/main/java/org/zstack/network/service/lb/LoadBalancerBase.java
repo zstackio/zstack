@@ -6,10 +6,9 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.core.db.UpdateQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
@@ -30,6 +29,7 @@ import org.zstack.header.vm.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.network.service.vip.*;
 import org.zstack.tag.TagManager;
+
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
@@ -40,7 +40,6 @@ import static org.zstack.core.Platform.operr;
 
 import javax.persistence.TypedQuery;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 
@@ -65,6 +64,9 @@ public class LoadBalancerBase {
     private AccountManager acntMgr;
     @Autowired
     private TagManager tagMgr;
+
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     private LoadBalancerVO self;
 
@@ -517,48 +519,77 @@ public class LoadBalancerBase {
     private void handle(APIGetCandidateVmNicsForLoadBalancerMsg msg) {
         APIGetCandidateVmNicsForLoadBalancerReply reply = new APIGetCandidateVmNicsForLoadBalancerReply();
 
-        String sql = "select vip.peerL3NetworkUuid from VipVO vip where vip.uuid = :uuid";
-        TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
-        q.setParameter("uuid", self.getVipUuid());
-        List<String> ret = q.getResultList();
+        List<String> ret = SQL.New("select vip.peerL3NetworkUuid" +
+                " from VipVO vip" +
+                " where vip.uuid = :uuid")
+                .param("uuid", self.getVipUuid()).list();
         String peerL3Uuid = ret.isEmpty() ? null : ret.get(0);
 
         if (peerL3Uuid != null) {
             // the load balancer has been bound to a private L3 network
-            sql = "select nic from VmNicVO nic, VmInstanceVO vm where nic.l3NetworkUuid = :l3Uuid and nic.uuid not in (select ref.vmNicUuid from LoadBalancerListenerVmNicRefVO ref" +
-                    " where ref.listenerUuid = :luuid) and nic.vmInstanceUuid = vm.uuid and vm.type = :vmType and vm.state in (:vmStates)";
-            TypedQuery<VmNicVO> pq = dbf.getEntityManager().createQuery(sql, VmNicVO.class);
-            pq.setParameter("l3Uuid", peerL3Uuid);
-            pq.setParameter("luuid", msg.getListenerUuid());
-            pq.setParameter("vmType", VmInstanceConstant.USER_VM_TYPE);
-            pq.setParameter("vmStates", asList(VmInstanceState.Running, VmInstanceState.Stopped));
-            List<VmNicVO> nics = pq.getResultList();
-            reply.setInventories(VmNicInventory.valueOf(nics));
+            List<VmNicVO> nics = SQL.New("select nic" +
+                    " from VmNicVO nic, VmInstanceVO vm" +
+                    " where nic.l3NetworkUuid = :l3Uuid" +
+                    " and nic.uuid not in (select ref.vmNicUuid from LoadBalancerListenerVmNicRefVO ref where ref.listenerUuid = :luuid)" +
+                    " and nic.vmInstanceUuid = vm.uuid" +
+                    " and vm.type = :vmType" +
+                    " and vm.state in (:vmStates)")
+                    .param("l3Uuid", peerL3Uuid)
+                    .param("luuid", msg.getListenerUuid())
+                    .param("vmType", VmInstanceConstant.USER_VM_TYPE)
+                    .param("vmStates", asList(VmInstanceState.Running, VmInstanceState.Stopped)).list();
+            reply.setInventories(callGetCandidateVmNicsForLoadBalancerExtensionPoint(msg, VmNicInventory.valueOf(nics)));
             bus.reply(msg, reply);
             return;
         }
 
         // the load balancer has not been bound to any private L3 network
-        sql = "select l3.uuid from L3NetworkVO l3, NetworkServiceL3NetworkRefVO ref where l3.uuid = ref.l3NetworkUuid" +
-                " and ref.networkServiceType = :type";
-        q = dbf.getEntityManager().createQuery(sql, String.class);
-        q.setParameter("type", LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
-        List<String> l3Uuids = q.getResultList();
+        List<String> l3Uuids = SQL.New("select l3.uuid" +
+                " from L3NetworkVO l3, NetworkServiceL3NetworkRefVO ref" +
+                " where l3.uuid = ref.l3NetworkUuid" +
+                " and ref.networkServiceType = :type")
+                .param("type", LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING).list();
         if (l3Uuids.isEmpty()) {
             reply.setInventories(new ArrayList<>());
             bus.reply(msg, reply);
             return;
         }
 
-        sql = "select nic from VmNicVO nic, VmInstanceVO vm where nic.l3NetworkUuid in (select l3.uuid from L3NetworkVO l3, NetworkServiceL3NetworkRefVO ref where l3.uuid = ref.l3NetworkUuid" +
-                " and ref.networkServiceType = :type) and nic.vmInstanceUuid = vm.uuid and vm.type = :vmType and vm.state in (:vmStates)";
-        TypedQuery<VmNicVO> nq = dbf.getEntityManager().createQuery(sql, VmNicVO.class);
-        nq.setParameter("type", LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
-        nq.setParameter("vmType", VmInstanceConstant.USER_VM_TYPE);
-        nq.setParameter("vmStates", asList(VmInstanceState.Running, VmInstanceState.Stopped));
-        List<VmNicVO> nics = nq.getResultList();
-        reply.setInventories(VmNicInventory.valueOf(nics));
+        new SQLBatch(){
+
+            @Override
+            protected void scripts() {
+                List<String> guestNetworks = sql("select l3.uuid" +
+                        " from L3NetworkVO l3, NetworkServiceL3NetworkRefVO ref" +
+                        " where l3.uuid = ref.l3NetworkUuid" +
+                        " and ref.networkServiceType = :type")
+                        .param("type", LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING)
+                        .list();
+
+                List<VmNicVO> nics = sql("select nic" +
+                        " from VmNicVO nic, VmInstanceVO vm" +
+                        " where nic.l3NetworkUuid in (:guestNetworks)" +
+                        " and nic.vmInstanceUuid = vm.uuid" +
+                        " and vm.type = :vmType" +
+                        " and vm.state in (:vmStates)")
+                        .param("guestNetworks",guestNetworks)
+                        .param("vmType", VmInstanceConstant.USER_VM_TYPE)
+                        .param("vmStates", asList(VmInstanceState.Running, VmInstanceState.Stopped))
+                        .list();
+
+                reply.setInventories(callGetCandidateVmNicsForLoadBalancerExtensionPoint(msg, VmNicInventory.valueOf(nics)));
+            }
+        }.execute();
+
         bus.reply(msg, reply);
+    }
+
+    private List<VmNicInventory> callGetCandidateVmNicsForLoadBalancerExtensionPoint(APIGetCandidateVmNicsForLoadBalancerMsg msg, List<VmNicInventory> candidates) {
+        List<VmNicInventory> ret = candidates;
+        for (GetCandidateVmNicsForLoadBalancerExtensionPoint extp : pluginRgty.getExtensionList(GetCandidateVmNicsForLoadBalancerExtensionPoint.class)) {
+            ret = extp.getCandidateVmNicsForLoadBalancerInVirtualRouter(msg, ret);
+        }
+        return ret;
     }
 
     private void handle(final APIRefreshLoadBalancerMsg msg) {
@@ -683,7 +714,18 @@ public class LoadBalancerBase {
                 done(new FlowDoneHandler(completion) {
                     @Override
                     public void handle(Map data) {
-                        dbf.remove(self);
+                        new SQLBatch(){
+
+                            @Override
+                            protected void scripts() {
+                                for(LoadBalancerListenerVO lbListener :self.getListeners()){
+                                    sql(LoadBalancerListenerVO.class)
+                                            .eq(LoadBalancerListenerVO_.uuid,lbListener.getUuid())
+                                            .delete();
+                                }
+                                sql(LoadBalancerVO.class).eq(LoadBalancerVO_.uuid,self.getUuid()).delete();
+                            }
+                        }.execute();
                         completion.success();
                     }
                 });
