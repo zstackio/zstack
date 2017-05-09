@@ -1,0 +1,1 @@
+ALTER TABLE VmInstanceEO ADD CONSTRAINT fkVmInstanceEOVolumeEO FOREIGN KEY (rootVolumeUuid) REFERENCES VolumeEO (uuid) ON DELETE SET NULL;
