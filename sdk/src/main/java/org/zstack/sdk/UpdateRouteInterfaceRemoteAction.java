@@ -79,7 +79,7 @@ public class UpdateRouteInterfaceRemoteAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/hybrid/aliyun/router-interface/{uuid}/actions";
+        info.path = "/hybrid/aliyun/router-interface/{riUuid}/actions";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "updateRouteInterfaceRemote";

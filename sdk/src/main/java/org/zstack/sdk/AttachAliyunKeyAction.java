@@ -73,10 +73,10 @@ public class AttachAliyunKeyAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/hybrid/aliyun/key/{uuid}";
+        info.path = "/hybrid/aliyun/key/{uuid}/attach";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "attachAliyunKey";
+        info.parameterName = "params";
         return info;
     }
 

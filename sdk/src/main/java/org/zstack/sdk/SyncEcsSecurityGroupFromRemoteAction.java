@@ -78,11 +78,11 @@ public class SyncEcsSecurityGroupFromRemoteAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/hybrid/aliyun/security-group/{uuid}/actions";
+        info.httpMethod = "GET";
+        info.path = "/hybrid/aliyun/security-group/{ecsVpcUuid}/sync";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "syncEcsSecurityGroupFromRemote";
+        info.parameterName = "";
         return info;
     }
 

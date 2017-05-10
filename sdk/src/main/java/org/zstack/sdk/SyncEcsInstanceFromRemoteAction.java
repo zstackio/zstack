@@ -75,11 +75,11 @@ public class SyncEcsInstanceFromRemoteAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/hybrid/aliyun/ecs/{uuid}/actions";
+        info.httpMethod = "GET";
+        info.path = "/hybrid/aliyun/ecs/{dataCenterUuid}/sync";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "syncEcsInstanceFromRemote";
+        info.parameterName = "";
         return info;
     }
 
