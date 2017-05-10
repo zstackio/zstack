@@ -21,6 +21,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
+import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.query.AddExpandedQueryExtensionPoint;
 import org.zstack.header.query.ExpandedQueryAliasStruct;
@@ -762,6 +763,11 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
     public void preVmMigration(VmInstanceInventory vm) {
         if (!LocalStoragePrimaryStorageGlobalConfig.ALLOW_LIVE_MIGRATION.value(Boolean.class)) {
             refuseLiveMigrationForLocalStorage(vm);
+        }
+
+        if (!ImagePlatform.Linux.toString().equals(vm.getPlatform())) {
+            throw new OperationFailureException(operr("unable to live migrate vm[uuid:%s] with local storage." +
+                    " Only linux guest is supported. Current platform is [%s]", vm.getUuid(), vm.getPlatform()));
         }
     }
 
