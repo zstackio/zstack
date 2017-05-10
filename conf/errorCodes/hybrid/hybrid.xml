@@ -41,5 +41,13 @@
         <id>1009</id>
         <description>no such connection access point</description>
     </code>
+    <code>
+        <id>1010</id>
+        <description>no such ecs vswitch</description>
+    </code>
+    <code>
+        <id>1011</id>
+        <description>no such ecs security group</description>
+    </code>
 </error>
 

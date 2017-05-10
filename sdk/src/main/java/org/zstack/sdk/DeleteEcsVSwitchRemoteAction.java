@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SetVolumeQosAction extends AbstractAction {
+public class DeleteEcsVSwitchRemoteAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public SetVolumeQosResult value;
+        public DeleteEcsVSwitchRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,8 +25,8 @@ public class SetVolumeQosAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {1024L,9223372036854775807L}, noTrim = false)
-    public java.lang.Long volumeBandwidth;
+    @Param(required = false)
+    public java.lang.String deleteMode = "Permissive";
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -49,8 +49,8 @@ public class SetVolumeQosAction extends AbstractAction {
             return ret;
         }
         
-        SetVolumeQosResult value = res.getResult(SetVolumeQosResult.class);
-        ret.value = value == null ? new SetVolumeQosResult() : value; 
+        DeleteEcsVSwitchRemoteResult value = res.getResult(DeleteEcsVSwitchRemoteResult.class);
+        ret.value = value == null ? new DeleteEcsVSwitchRemoteResult() : value; 
 
         return ret;
     }
@@ -75,11 +75,11 @@ public class SetVolumeQosAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/volumes/{uuid}/actions";
+        info.httpMethod = "DELETE";
+        info.path = "/hybrid/aliyun/vswitch/remote/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "setVolumeQos";
+        info.parameterName = "params";
         return info;
     }
 

@@ -23,6 +23,9 @@ public class AddAliyunKeySecretAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String name;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String key;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
@@ -84,7 +87,7 @@ public class AddAliyunKeySecretAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
+        info.httpMethod = "PUT";
         info.path = "/hybrid/aliyun/key";
         info.needSession = true;
         info.needPoll = true;
