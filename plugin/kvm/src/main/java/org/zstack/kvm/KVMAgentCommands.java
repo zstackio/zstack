@@ -1639,4 +1639,10 @@ public class KVMAgentCommands {
         public String hostUuid;
         public String reason;
     }
+
+    public static class ReportPsStatusCmd {
+        public String hostUuid;
+        public String psPath;
+        public String psStatus;
+    }
 }

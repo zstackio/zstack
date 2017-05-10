@@ -60,6 +60,7 @@ public interface KVMConstant {
 
     String KVM_REPORT_VM_STATE = "/kvm/reportvmstate";
     String KVM_RECONNECT_ME = "/kvm/reconnectme";
+    String KVM_REPORT_PS_STATUS = "/kvm/reportstoragestatus";
     String KVM_ANSIBLE_LOG_PATH_FROMAT = "/kvm/ansiblelog/{uuid}";
 
     String KVM_AGENT_OWNER = "kvm";
