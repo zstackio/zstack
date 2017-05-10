@@ -128,7 +128,6 @@ public class LocalStorageKvmFactory implements LocalStorageHypervisorFactory, KV
                 @Override
                 public void run(MessageReply reply) {
                     if (!reply.isSuccess()) {
-                        //TODO:
                         logger.warn(String.format("failed to sync primary storage[uuid:%s] capacity, %s",
                                 priUuids, reply.getError()));
                     }

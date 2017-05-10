@@ -10,6 +10,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.notification.N;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
@@ -241,7 +242,9 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
 
                 @Override
                 public void fail(ErrorCode errorCode) {
-                    //TODO
+                    N.New(VmInstanceVO.class, vm.getUuid()).warn_("failed to delete a console proxy[vmUuid:%s, host IP: %s, host port: %s, proxy IP: %s, proxy port: %s, %s",
+                            vm.getUuid(), vo.getTargetHostname(), vo.getTargetPort(), vo.getProxyHostname(), vo.getProxyPort(), errorCode.toString());
+
                     logger.warn(String.format("failed to delete a console proxy[vmUuid:%s, host IP: %s, host port: %s, proxy IP: %s, proxy port: %s, %s",
                             vm.getUuid(), vo.getTargetHostname(), vo.getTargetPort(), vo.getProxyHostname(), vo.getProxyPort(), errorCode.toString()));
                     latch.ack();

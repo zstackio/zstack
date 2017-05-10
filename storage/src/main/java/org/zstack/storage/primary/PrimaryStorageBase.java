@@ -12,6 +12,7 @@ import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -46,6 +47,7 @@ import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeReportPrimaryStorageCapacityUsageMsg;
 import org.zstack.header.volume.VolumeReportPrimaryStorageCapacityUsageReply;
+import org.zstack.header.volume.VolumeType;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -910,14 +912,6 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
     }
 
-    private List<String> getAllVmsUuid(String PrimaryStorageUuid) {
-        String sql = "select vm.uuid from VmInstanceVO vm, VolumeVO vol where vol.primaryStorageUuid =:uuid and vol.vmInstanceUuid = vm.uuid";
-        Query q = dbf.getEntityManager().createQuery(sql);
-        q.setParameter("uuid", PrimaryStorageUuid);
-        List<String> vmUUids= q.getResultList();
-        return vmUUids;
-    }
-
     protected void handle(APIChangePrimaryStorageStateMsg msg) {
         APIChangePrimaryStorageStateEvent evt = new APIChangePrimaryStorageStateEvent(msg.getId());
 
@@ -936,8 +930,9 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         extpEmitter.beforeChange(self, event);
         if (PrimaryStorageStateEvent.maintain == event) {
             logger.warn(String.format("Primary Storage %s  will enter maintenance mode, ignore unknown status VMs", msg.getPrimaryStorageUuid()));
-            List<String> vmUuids = getAllVmsUuid(msg.getPrimaryStorageUuid());
-            //TODO: Add alert if some vms on disconnect host
+            List<String> vmUuids = SQL.New("select vm.uuid from VmInstanceVO vm, VolumeVO vol" +
+                    " where vol.primaryStorageUuid =:uuid and vol.vmInstanceUuid = vm.uuid and vol.type = :volType", String.class)
+                    .param("uuid", self.getUuid()).param("volType", VolumeType.Root).list();
             if ( vmUuids.size() != 0 ) {
                 stopAllVms(vmUuids);
             }

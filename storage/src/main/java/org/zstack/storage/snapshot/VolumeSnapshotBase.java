@@ -284,7 +284,7 @@ public class VolumeSnapshotBase implements VolumeSnapshot {
                 error(new FlowErrorHandler(msg) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
-                        // TODO
+                        // TODO GC
                         logger.warn(String.format("failed to delete snapshot[uuid:%s, name:%s] on primary storage[uuid:%s], the primary storage should cleanup",
                                 self.getUuid(), self.getName(), self.getPrimaryStorageUuid()));
                         finish();

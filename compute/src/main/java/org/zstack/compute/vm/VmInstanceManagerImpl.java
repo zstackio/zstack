@@ -10,14 +10,11 @@ import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.DbEntityLister;
-import org.zstack.core.db.SQLBatchWithReturn;
-import org.zstack.core.db.Q;
-import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.jsonlabel.JsonLabel;
+import org.zstack.core.notification.N;
 import org.zstack.core.scheduler.SchedulerConstant;
 import org.zstack.core.scheduler.SchedulerFacade;
 import org.zstack.core.thread.AsyncThread;
@@ -47,8 +44,6 @@ import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudConfigureFailException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.AfterChangeHostStatusExtensionPoint;
-import org.zstack.header.host.HostCanonicalEvents;
-import org.zstack.header.host.HostCanonicalEvents.HostStatusChangedData;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.identity.*;
@@ -89,9 +84,7 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
-
-import static org.zstack.core.Platform.argerr;
-import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.*;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
@@ -1685,42 +1678,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
     }
 
-    private List<String> getVmInUnknownStateManagedByUs() {
-        int qun = 10000;
-        SimpleQuery q = dbf.createQuery(VmInstanceVO.class);
-        q.add(VmInstanceVO_.state, Op.EQ, VmInstanceState.Unknown);
-        long amount = q.count();
-        int times = (int) (amount / qun) + (amount % qun != 0 ? 1 : 0);
-        int start = 0;
-        List<String> ret = new ArrayList<>();
-        for (int i = 0; i < times; i++) {
-            q = dbf.createQuery(VmInstanceVO.class);
-            q.select(VmInstanceVO_.uuid, VmInstanceVO_.hostUuid);
-            q.add(VmInstanceVO_.state, Op.EQ, VmInstanceState.Unknown);
-            q.setLimit(qun);
-            q.setStart(start);
-            List<Tuple> lst = q.listTuple();
-            start += qun;
-            for (Tuple t : lst) {
-                String vmUuid = t.get(0, String.class);
-                if (!destMaker.isManagedByUs(vmUuid)) {
-                    continue;
-                }
-
-                String hostUuid = t.get(1, String.class);
-                if (hostUuid == null) {
-                    //TODO
-                    logger.warn(String.format("the vm[uuid:%s] is in Unknown state, but its hostUuid is null," +
-                            " we cannot check its real state", vmUuid));
-                    continue;
-                }
-
-                ret.add(vmUuid);
-            }
-        }
-        return ret;
-    }
-
     @Override
     @AsyncThread
     public void managementNodeReady() {
@@ -1946,9 +1903,10 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     @Override
                     public void run(MessageReply reply) {
                         if(!reply.isSuccess()){
-                            //TODO: Need notification
-                           logger.warn(String.format( "fail to change vm[uuid:%s]'s state to Unknown,%s",
-                                   vmUuid, reply.getError()));
+                            N.New(VmInstanceVO.class, vmUuid).warn_("the host[uuid:%s] becomes Disconnected, but the vm[uuid:%s] fails to change it's state to Unknown, %s",
+                                    hostUuid, vmUuid, reply.getError());
+                        } else {
+                            N.New(VmInstanceVO.class, vmUuid).info_("the host[uuid:%s] becomes Disconnected, change the VM[uuid:%s]' state to Unknown", hostUuid, vmUuid);
                         }
                         completion.done();
                     }
