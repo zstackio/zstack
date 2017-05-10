@@ -3143,7 +3143,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 DesignatedAllocateHostMsg msg = new DesignatedAllocateHostMsg();
                 msg.setCpuCapacity(cpuNum - oldCpuNum);
                 msg.setMemoryCapacity(memorySize - oldMemorySize);
-                msg.setAllocatorStrategy(self.getAllocatorStrategy());
+                msg.setAllocatorStrategy(HostAllocatorConstant.DESIGNATED_HOST_ALLOCATOR_STRATEGY_TYPE);
                 msg.setVmInstance(VmInstanceInventory.valueOf(self));
                 msg.setHostUuid(self.getHostUuid());
                 msg.setL3NetworkUuids(CollectionUtils.transformToList(self.getVmNics(), new Function<String, VmNicVO>() {
@@ -3152,7 +3152,6 @@ public class VmInstanceBase extends AbstractVmInstance {
                         return arg.getL3NetworkUuid();
                     }
                 }));
-
                 msg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
                 bus.send(msg, new CloudBusCallBack(chain) {
                     @Override
