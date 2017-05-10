@@ -12,7 +12,6 @@ import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
 import org.zstack.network.securitygroup.SecurityGroupConstant
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant
-import org.zstack.sdk.CreateSystemTagResult
 import org.zstack.sdk.HostInventory
 import org.zstack.sdk.InstanceOfferingInventory
 import org.zstack.sdk.SystemTagInventory
@@ -184,6 +183,8 @@ class ChangeVmCpuAndMemoryCase extends SubCase {
             testChangeCpuWhenVmRunning()
             testChangeMemoryWhenVmRunning()
             testFailureCameoutAfterAllocateHostCapacityTheCapacityWillBeReturned()
+            testCannotFindHostWontMakeChangeVmCpuAndMemoryChainRollback()
+            testUpdateCpuOrMemoryWhenVMisUnknownOrDestroy()
             testDecreaseVmCpuAndMemoryReturnFail()
             testPlatformFailureWhenVmIsRunning()
             testPlatformWhenVmStopped()
@@ -371,6 +372,28 @@ class ChangeVmCpuAndMemoryCase extends SubCase {
         env.cleanAfterSimulatorHandlers()
     }
 
+    void testCannotFindHostWontMakeChangeVmCpuAndMemoryChainRollback() {
+        HostInventory host = env.inventoryByName("kvm")
+        HostVO vo = dbFindByUuid(host.uuid, HostVO.class)
+
+        UpdateVmInstanceAction updateVmInstanceAction = new UpdateVmInstanceAction()
+        updateVmInstanceAction.uuid = vm.uuid
+        updateVmInstanceAction.cpuNum = vo.getCapacity().getAvailableCpu() + 10
+        updateVmInstanceAction.sessionId = adminSession()
+        UpdateVmInstanceAction.Result updateVmInstanceResult = updateVmInstanceAction.call()
+        assert updateVmInstanceResult.error != null
+
+        retryInSecs {
+            vo = dbFindByUuid(host.uuid, HostVO.class)
+            return {
+                assert vo.getCapacity().getAvailableCpu() == vo.getCapacity().getTotalCpu() - 10
+                assert vo.getCapacity().getAvailableMemory() == vo.getCapacity().getTotalMemory() - SizeUnit.GIGABYTE.toByte(8) - SizeUnit.MEGABYTE.toByte(512)
+            }
+        }
+
+        env.cleanAfterSimulatorHandlers()
+    }
+
     void testUpdateCpuOrMemoryWhenVMisUnknownOrDestroy() {
         VmInstanceVO vo = dbFindByUuid(vm.uuid, VmInstanceVO.class)
         vo.setState(VmInstanceState.Unknown)
@@ -395,6 +418,12 @@ class ChangeVmCpuAndMemoryCase extends SubCase {
         updateVmInstanceAction2.sessionId = adminSession()
         UpdateVmInstanceAction.Result updateVmInstanceResult2 = updateVmInstanceAction.call()
         assert updateVmInstanceResult2.error != null
+
+        vo = dbFindByUuid(vm.uuid, VmInstanceVO.class)
+        vo.setState(VmInstanceState.Running)
+        dbf.updateAndRefresh(vo)
+        vo = dbFindByUuid(vm.uuid, VmInstanceVO.class)
+        assert vo.state == VmInstanceState.Running
     }
 
     void testPlatformFailureWhenVmIsRunning() {
