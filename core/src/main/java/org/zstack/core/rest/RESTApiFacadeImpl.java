@@ -6,6 +6,7 @@ import org.springframework.context.annotation.ClassPathScanningCandidateComponen
 import org.springframework.core.type.filter.AssignableTypeFilter;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusEventListener;
+import org.zstack.header.Component;
 import org.zstack.header.apimediator.ApiMediatorConstant;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.*;
@@ -25,11 +26,10 @@ import javax.persistence.EntityTransaction;
 import javax.persistence.Query;
 import java.util.*;
 
-public class RESTApiFacadeImpl implements RESTApiFacade, CloudBusEventListener {
+public class RESTApiFacadeImpl implements RESTApiFacade, CloudBusEventListener, Component {
     private static final CLogger logger = Utils.getLogger(RESTApiFacadeImpl.class);
 
     private EntityManagerFactory entityManagerFactory;
-    private EntityManager entityManager = null;
     private Set<String> basePkgNames;
     private List<String> processingRequests = Collections.synchronizedList(new ArrayList<String>(100));
 
@@ -194,5 +194,15 @@ public class RESTApiFacadeImpl implements RESTApiFacade, CloudBusEventListener {
             basePkgNames.add("org.zstack");
         }
         return basePkgNames;
+    }
+
+    @Override
+    public boolean start() {
+        return true;
+    }
+
+    @Override
+    public boolean stop() {
+        return true;
     }
 }
