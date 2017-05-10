@@ -56,4 +56,26 @@
 
     <bean id="VxlanNetworkChecker" class="org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkCheckerImpl" />
 
+    <bean id="KVMConnectExtensionForVxlanNetwork" class="org.zstack.network.l2.vxlan.vxlanNetworkPool.KVMConnectExtensionForVxlanNetwork">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.kvm.KVMHostConnectExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.host.HostConnectionReestablishExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
+
+    <bean id="KVMRealizeL2VxlanNetworkBackend" class="org.zstack.network.l2.vxlan.vxlanNetworkPool.KVMRealizeL2VxlanNetworkBackend">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.network.l2.L2NetworkRealizationExtensionPoint" />
+            <zstack:extension interface="org.zstack.kvm.KVMCompleteNicInformationExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="KVMRealizeL2VxlanNetworkPoolBackend" class="org.zstack.network.l2.vxlan.vxlanNetworkPool.KVMRealizeL2VxlanNetworkPoolBackend">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.network.l2.L2NetworkRealizationExtensionPoint" />
+            <zstack:extension interface="org.zstack.kvm.KVMCompleteNicInformationExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
 </beans>
