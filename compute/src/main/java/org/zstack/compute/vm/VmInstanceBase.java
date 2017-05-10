@@ -15,6 +15,7 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
 import org.zstack.core.jsonlabel.JsonLabel;
+import org.zstack.core.notification.N;
 import org.zstack.core.scheduler.SchedulerFacade;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
@@ -71,6 +72,7 @@ import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+import static org.zstack.core.Platform.*;
 
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
@@ -78,10 +80,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.zstack.core.Platform.operr;
-import static org.zstack.core.Platform.err;
-
-import static org.zstack.compute.vm.VmNotification.vmWarn_;
 import static org.zstack.utils.CollectionDSL.*;
 
 
@@ -128,11 +126,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {
-                    vmWarn_("unable to check state of the vm[uuid:%s] on the host[uuid:%s], %s;" +
-                            "put the VM into the Unknown state", self.getUuid(), hostUuid, reply.getError()).uuid(self.getUuid());
-                    logger.warn(String.format("unable to check state of the vm[uuid:%s] on the host[uuid:%s], %s." +
-                                    " Put the vm to Unknown state",
-                            self.getUuid(), hostUuid, reply.getError()));
+                    N.New(VmInstanceVO.class, self.getUuid()).warn_("unable to check state of the vm[uuid:%s] on the host[uuid:%s], %s;" +
+                            "put the VM into the Unknown state", self.getUuid(), hostUuid, reply.getError());
                     self = dbf.reload(self);
                     changeVmStateInDb(VmInstanceStateEvent.unknown);
                     completion.done();
@@ -1038,13 +1033,10 @@ public class VmInstanceBase extends AbstractVmInstance {
         }).error(new FlowErrorHandler(completion) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                vmWarn_("failed to handle abnormal lifecycle of the vm[uuid:%s, original state: %s, current state:%s," +
+                N.New(VmInstanceVO.class, self.getUuid()).warn_("failed to handle abnormal lifecycle of the vm[uuid:%s, original state: %s, current state:%s," +
                                 "original host: %s, current host: %s], %s", self.getUuid(), originalState, currentState,
-                        originalHostUuid, currentHostUuid, errCode).uuid(self.getUuid());
+                        originalHostUuid, currentHostUuid, errCode);
 
-                logger.warn(String.format("failed to handle abnormal lifecycle of the vm[uuid:%s, original state: %s, current state:%s," +
-                                "original host: %s, current host: %s], %s", self.getUuid(), originalState, currentState,
-                        originalHostUuid, currentHostUuid, errCode));
                 reply.setError(errCode);
                 bus.reply(msg, reply);
                 completion.done();

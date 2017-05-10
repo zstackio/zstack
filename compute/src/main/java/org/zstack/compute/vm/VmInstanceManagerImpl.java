@@ -10,14 +10,11 @@ import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.DbEntityLister;
-import org.zstack.core.db.SQLBatchWithReturn;
-import org.zstack.core.db.Q;
-import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.jsonlabel.JsonLabel;
+import org.zstack.core.notification.N;
 import org.zstack.core.scheduler.SchedulerConstant;
 import org.zstack.core.scheduler.SchedulerFacade;
 import org.zstack.core.thread.AsyncThread;
@@ -87,9 +84,7 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
-
-import static org.zstack.core.Platform.argerr;
-import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.*;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
@@ -100,8 +95,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
-import static org.zstack.compute.vm.VmNotification.vmInfo_;
-import static org.zstack.compute.vm.VmNotification.vmWarn_;
 import static org.zstack.utils.CollectionDSL.list;
 
 public class VmInstanceManagerImpl extends AbstractService implements
@@ -1910,12 +1903,10 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     @Override
                     public void run(MessageReply reply) {
                         if(!reply.isSuccess()){
-                            vmWarn_("the host[uuid:%s] becomes Disconnected, but the vm[uuid:%s] fails to change it's state to Unknown, %s",
-                                    hostUuid, vmUuid, reply.getError()).uuid(vmUuid);
-                           logger.warn(String.format( "fail to change vm[uuid:%s]'s state to Unknown,%s",
-                                   vmUuid, reply.getError()));
+                            N.New(VmInstanceVO.class, vmUuid).warn_("the host[uuid:%s] becomes Disconnected, but the vm[uuid:%s] fails to change it's state to Unknown, %s",
+                                    hostUuid, vmUuid, reply.getError());
                         } else {
-                            vmInfo_("the host[uuid:%s] becomes Disconnected, change the VM[uuid:%s]' state to Unknown", hostUuid, vmUuid).uuid(vmUuid);
+                            N.New(VmInstanceVO.class, vmUuid).info_("the host[uuid:%s] becomes Disconnected, change the VM[uuid:%s]' state to Unknown", hostUuid, vmUuid);
                         }
                         completion.done();
                     }
