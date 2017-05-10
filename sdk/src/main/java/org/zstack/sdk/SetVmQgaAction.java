@@ -76,7 +76,7 @@ public class SetVmQgaAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/vm-instances/{uuid}/qga";
+        info.path = "/vm-instances/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "setVmQga";
