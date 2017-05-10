@@ -192,7 +192,7 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
                 if (!reply.isSuccess()) {
                     logger.warn(String.format("failed to release snat[%s] on virtual router[name:%s, uuid:%s] for vm[uuid: %s, name: %s], %s",
                             struct, vr.getName(), vr.getUuid(), spec.getVmInventory().getUuid(), spec.getVmInventory().getName(), reply.getError()));
-                    //TODO: schedule a job to clean up
+                    //TODO GC
                 } else {
                     VirtualRouterAsyncHttpCallReply re = reply.castReply();
                     RemoveSNATRsp ret = re.toResponse(RemoveSNATRsp.class);
@@ -202,7 +202,7 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
                                 vr.getUuid(), vr.getManagementNic().getIp(), JSONObjectUtil.toJsonString(info), spec.getVmInventory().getUuid(), spec.getVmInventory().getName(),
                                 struct.getL3Network().getUuid(), struct.getL3Network().getName(), ret.getError());
                         logger.warn(err);
-                        //TODO: schedule a job to clean up
+                        //TODO GC
                     } else {
                         String msg = String.format(
                                 "virtual router[uuid:%s, ip:%s] released snat[%s] for vm[uuid:%s, name:%s] on L3Network[uuid:%s, name:%s], because %s",

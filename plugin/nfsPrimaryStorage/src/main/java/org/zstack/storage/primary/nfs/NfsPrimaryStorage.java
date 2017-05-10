@@ -12,6 +12,7 @@ import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.notification.N;
 import org.zstack.core.thread.SyncTask;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
@@ -55,6 +56,7 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
+import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 
 import javax.persistence.Tuple;
@@ -143,7 +145,6 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
 
                            @Override
                            public void fail(ErrorCode errorCode) {
-                               //TODO: bring the host to an error state
                                logger.warn(String.format("failed to update the nfs[uuid:%s, name:%s] mount point" +
                                                " from %s to %s in the cluster[uuid:%s], %s", self.getUuid(), self.getName(),
                                        oldUrl, newUrl, item, errorCode));
@@ -450,9 +451,9 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                 gc.hypervisorType = bkd.getHypervisorType().toString();
                 gc.submit(NfsPrimaryStorageGlobalConfig.GC_INTERVAL.value(Long.class), TimeUnit.SECONDS);
 
-                //TODO: alarm
-                logger.warn(String.format("failed to delete the volume snapshot[uuid:%s], %s. GC job is submitted",
-                        sinv.getUuid(), errorCode));
+                N.New(PrimaryStorageVO.class, self.getUuid()).warn_("NFS primary storage[uuid:%s] failed to delete a volume snapshot[uuid:%s], %s. A GC" +
+                        " job[uuid:%s] is scheduled to cleanup it in the interval of %s seconds",
+                        self.getUuid(), sinv.getUuid(), errorCode, NfsPrimaryStorageGlobalConfig.GC_INTERVAL.value(Long.class));
                 bus.reply(msg, reply);
             }
         });
@@ -1029,7 +1030,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
     protected void hookToKVMHostConnectedEventToChangeStatusToConnected() {
         // hook on host connected event to reconnect the primary storage once there is
         // a host connected in attached clusters
-        evtf.on(HostCanonicalEvents.HOST_STATUS_CHANGED_PATH, new AutoOffEventCallback() {
+        evtf.onLocal(HostCanonicalEvents.HOST_STATUS_CHANGED_PATH, new AutoOffEventCallback() {
             {
                 uniqueIdentity = String.format("connect-nfs-%s-when-host-connected", self.getUuid());
             }
@@ -1064,8 +1065,8 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                 future.await();
 
                 if (!future.isSuccess()) {
-                    //TODO
-                    logger.warn(String.format("%s", future.getErrorCode()));
+                    N.New(PrimaryStorageVO.class, self.getUuid()).warn_("unable to reconnect the primary storage[uuid:%s, name:%s], %s",
+                            self.getUuid(), self.getName(), future.getErrorCode());
                 }
 
                 return future.isSuccess();

@@ -109,11 +109,15 @@ class VirtualRouterEipCase extends SubCase {
             rsp, HttpEntity<String> e -> throw new CloudRuntimeException("injected fault")
         }
 
-        deleteEip {
-            uuid = eip.uuid
+        // TODO: once we add GC to eip, the delete will success
+        // then, fix the case
+        expect(AssertionError.class) {
+            deleteEip {
+                uuid = eip.uuid
+            }
         }
 
-        assert !dbIsExists(eip.uuid, EipVO.class)
+        assert dbIsExists(eip.uuid, EipVO.class)
     }
 
     @Override

@@ -16,6 +16,7 @@ import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.notification.N;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
@@ -270,8 +271,7 @@ public class ImageBase implements Image {
             @Override
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {
-                    //TODO
-                    logger.warn(String.format("failed to return capacity[%s] to the backup storage[uuid:%s]", size, bsUuid));
+                    N.New(BackupStorageVO.class, bsUuid).warn_("failed to return capacity[%s] to the backup storage[uuid:%s], %s", size, bsUuid, reply.getError());
                 }
             }
         });

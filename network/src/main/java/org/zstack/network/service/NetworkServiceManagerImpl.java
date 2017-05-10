@@ -9,6 +9,7 @@ import org.zstack.core.db.DbEntityLister;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.notification.N;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.Completion;
@@ -495,9 +496,8 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
 
             @Override
             public void fail(ErrorCode errorCode) {
-                //TODO
-                logger.warn(String.format("failed to release a network service when rolling back attaching l3[uuid:%s] to vm[uuid:%s], %s",
-                        l3.getUuid(), spec.getVmInventory().getUuid(), errorCode));
+                N.New(VmInstanceVO.class, spec.getVmInventory().getUuid()).warn_("unable to release a network service of the VM[uuid:%s] when rolling back an attached" +
+                        " L3 network[uuid: %s], %s. You may need to reboot the VM to fix the issue", spec.getVmInventory().getUuid(), l3.getUuid(), errorCode);
                 completion.done();
             }
         });

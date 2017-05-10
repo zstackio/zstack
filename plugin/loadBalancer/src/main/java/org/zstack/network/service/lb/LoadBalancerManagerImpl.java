@@ -157,7 +157,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
 
                             @Override
                             public void fail(ErrorCode errorCode) {
-                                //TODO
+                                //TODO add GC
                                 logger.warn(errorCode.toString());
                                 trigger.rollback();
                             }

@@ -186,7 +186,7 @@ public class FlatDnsBackend implements NetworkServiceDnsBackend, KVMHostConnectE
                 for (MessageReply reply : replies) {
                     String huuid = hostUuids.get(replies.indexOf(reply));
                     if (!reply.isSuccess()) {
-                        //TODO
+                        //TODO: GC
                         logger.warn(String.format("failed to apply dns%s to the kvm host[uuid:%s], %s", dns, huuid, reply.getError()));
                         continue;
                     }
@@ -194,7 +194,7 @@ public class FlatDnsBackend implements NetworkServiceDnsBackend, KVMHostConnectE
                     KVMHostAsyncHttpCallReply re = reply.castReply();
                     SetDnsRsp rsp = re.toResponse(SetDnsRsp.class);
                     if (!rsp.isSuccess()) {
-                        //TODO
+                        //TODO GC
                         logger.warn(String.format("failed to apply dns%s to the kvm host[uuid:%s], %s", dns, huuid, rsp.getError()));
                     }
                 }

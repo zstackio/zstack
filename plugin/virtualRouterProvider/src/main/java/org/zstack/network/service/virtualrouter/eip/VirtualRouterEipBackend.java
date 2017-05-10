@@ -244,7 +244,7 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
 
         final VirtualRouterVmInventory vr = VirtualRouterVmInventory.valueOf(vrvo);
 
-        //TODO: how to cleanup on failure
+        //TODO: add GC
         final FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("revoke-eip-%s-vr-%s", struct.getEip().getUuid(), vr.getUuid()));
         chain.then(new NoRollbackFlow() {

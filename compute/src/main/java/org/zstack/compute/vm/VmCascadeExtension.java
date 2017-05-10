@@ -11,6 +11,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.db.UpdateQuery;
+import org.zstack.core.notification.N;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.configuration.InstanceOfferingInventory;
@@ -387,7 +388,7 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                     for (MessageReply r : replies) {
                         DetachNicFromVmMsg msg = msgs.get(replies.indexOf(r));
                         if (!r.isSuccess()) {
-                            //TODO: send alarm
+                            N.New(VmInstanceVO.class, msg.getVmInstanceUuid()).warn_("unable to detach a nic[uuid:%s] from the vm[uuid:%s], %s", msg.getVmNicUuid(), msg.getVmInstanceUuid(), r.getError());
                             logger.warn(String.format("failed to detach nic[uuid:%s] from the vm[uuid:%s], %s",
                                     msg.getVmNicUuid(), msg.getVmInstanceUuid(), r.getError()));
                         } else {

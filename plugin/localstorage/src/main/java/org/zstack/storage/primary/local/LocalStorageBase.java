@@ -487,7 +487,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
                                     @Override
                                     public void fail(ErrorCode errorCode) {
-                                        //TODO
+                                        //TODO GC
                                         logger.warn(String.format("failed to delete %s on the host[uuid:%s], %s",
                                                 path, struct.getSrcHostUuid(), errorCode));
                                         run();

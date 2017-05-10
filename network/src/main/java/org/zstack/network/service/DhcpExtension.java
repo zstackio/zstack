@@ -2,6 +2,7 @@ package org.zstack.network.service;
 
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.notification.N;
 import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
@@ -14,11 +15,8 @@ import org.zstack.header.network.service.DhcpStruct;
 import org.zstack.header.network.service.NetworkServiceDhcpBackend;
 import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.network.service.NetworkServiceType;
-import org.zstack.header.vm.VmDefaultL3NetworkChangedExtensionPoint;
-import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceSpec.HostName;
-import org.zstack.header.vm.VmNicInventory;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -210,8 +208,8 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
 
                 @Override
                 public void fail(ErrorCode errorCode) {
-                    //TODO
-                    logger.warn(errorCode.toString());
+                    N.New(VmInstanceVO.class, vm.getUuid()).warn_("unable to change the VM[uuid:%s]'s default L3 network in the DHCP backend, %s. You may need to reboot" +
+                            " the VM to use the new default L3 network setting", vm.getUuid(), errorCode);
                 }
             });
         }
