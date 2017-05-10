@@ -76,10 +76,10 @@ public class SyncRouterInterfaceFromRemoteAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/hybrid/aliyun/router-interface/{uuid}/actions";
+        info.path = "/hybrid/aliyun/router-interface/{dataCenterUuid}/sync";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "syncRouterInterfaceFromRemote";
+        info.parameterName = "";
         return info;
     }
 

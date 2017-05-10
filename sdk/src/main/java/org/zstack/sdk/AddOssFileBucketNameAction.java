@@ -78,7 +78,7 @@ public class AddOssFileBucketNameAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
+        info.httpMethod = "PUT";
         info.path = "/hybrid/aliyun/oss-bucket";
         info.needSession = true;
         info.needPoll = true;
