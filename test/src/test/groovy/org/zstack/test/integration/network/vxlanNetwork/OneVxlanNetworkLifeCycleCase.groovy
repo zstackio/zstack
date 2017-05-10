@@ -5,6 +5,9 @@ import org.zstack.header.vm.VmInstanceSpec
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
 import org.zstack.kvm.KVMHostAsyncHttpCallReply
+import org.zstack.network.l2.L2NoVlanNetwork
+import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanKvmAgentCommands
+import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolConstant
 import org.zstack.sdk.*
 import org.zstack.test.integration.network.NetworkTest
 import org.zstack.testlib.EnvSpec
@@ -128,6 +131,13 @@ class OneVxlanNetworkLifeCycleCase extends SubCase {
             delegate.name = "TestRange1"
         }
 
+        env.simulator(VxlanNetworkPoolConstant.VXLAN_KVM_CHECK_L2VXLAN_NETWORK_PATH) { HttpEntity<String> entity, EnvSpec spec ->
+            VxlanKvmAgentCommands.CheckVxlanCidrResponse resp = new VxlanKvmAgentCommands.CheckVxlanCidrResponse()
+            resp.vtepIp = "127.0.0.1"
+            resp.setSuccess(true)
+            return resp
+        }
+
         attachL2NetworkToCluster {
             delegate.l2NetworkUuid = poolinv.getUuid()
             delegate.clusterUuid = cuuid1
@@ -180,15 +190,9 @@ class OneVxlanNetworkLifeCycleCase extends SubCase {
             delegate.networkServices = netServices
         }
 
-        env.simulator(KVMConstant.KVM_CHECK_L2VXLAN_NETWORK_PATH) { HttpEntity<String> entity, EnvSpec spec ->
-            KVMAgentCommands.CheckVxlanCidrResponse resp = new KVMAgentCommands.CheckVxlanCidrResponse()
-            resp.vtepIp = "127.0.0.1"
-            resp.setSuccess(true)
-            return resp
-        }
 
-        env.simulator(KVMConstant.KVM_REALIZE_L2VXLAN_NETWORK_PATH) { HttpEntity<String> entity, EnvSpec spec ->
-            return new KVMAgentCommands.CreateVlanBridgeResponse()
+        env.simulator(VxlanNetworkPoolConstant.VXLAN_KVM_REALIZE_L2VXLAN_NETWORK_PATH) { HttpEntity<String> entity, EnvSpec spec ->
+            return new VxlanKvmAgentCommands.CreateVxlanBridgeResponse()
         }
 
         createVmInstance {

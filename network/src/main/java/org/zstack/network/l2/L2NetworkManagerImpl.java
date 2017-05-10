@@ -36,8 +36,7 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
 
-public class L2NetworkManagerImpl extends AbstractService implements L2NetworkManager,
-        HostAddExtensionPoint {
+public class L2NetworkManagerImpl extends AbstractService implements L2NetworkManager {
     private static final CLogger logger = Utils.getLogger(L2NetworkManagerImpl.class);
     
     @Autowired
@@ -275,45 +274,5 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
         }
 
         createExtensions = pluginRgty.getExtensionList(L2NetworkCreateExtensionPoint.class);
-    }
-
-    @Override
-    public void beforeAddHost(HostInventory host, Completion completion) {
-        completion.success();
-    }
-
-    @Override
-    public void afterAddHost(HostInventory host, final Completion completion) {
-        SimpleQuery<L2NetworkClusterRefVO> q = dbf.createQuery(L2NetworkClusterRefVO.class);
-        q.select(L2NetworkClusterRefVO_.l2NetworkUuid);
-        q.add(L2NetworkClusterRefVO_.clusterUuid, SimpleQuery.Op.EQ, host.getClusterUuid());
-        List<String> l2uuids = q.listValue();
-        if (l2uuids.isEmpty()) {
-            completion.success();
-            return;
-        }
-
-        List<PrepareL2NetworkOnHostMsg> msgs = new ArrayList<PrepareL2NetworkOnHostMsg>();
-        for (String l2uuid : l2uuids) {
-            PrepareL2NetworkOnHostMsg msg = new PrepareL2NetworkOnHostMsg();
-            msg.setL2NetworkUuid(l2uuid);
-            msg.setHost(host);
-            bus.makeTargetServiceIdByResourceUuid(msg, L2NetworkConstant.SERVICE_ID, l2uuid);
-            msgs.add(msg);
-        }
-
-        bus.send(msgs, new CloudBusListCallBack(completion) {
-            @Override
-            public void run(List<MessageReply> replies) {
-                for (MessageReply reply : replies) {
-                    if (!reply.isSuccess()) {
-                        completion.fail(reply.getError());
-                        return;
-                    }
-                }
-
-                completion.success();
-            }
-        });
     }
 }

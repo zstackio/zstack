@@ -15,10 +15,8 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.*;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
-import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory;
-import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkConstant;
-import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
-import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolConstant;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
 import java.util.*;
@@ -36,27 +34,22 @@ public class KVMConnectExtensionForL2Network implements KVMHostConnectExtensionP
     @Autowired
     private KVMRealizeL2VlanNetworkBackend vlanNetworkBackend;
     @Autowired
-    private KVMRealizeL2VxlanNetworkBackend vxlanNetworkBackend;
-    @Autowired
     private ErrorFacade errf;
     @Autowired
     private CloudBus bus;
 
     @Transactional
     private List<L2NetworkInventory> getL2Networks(String clusterUuid) {
-        String sql = "select l2 from L2NetworkVO l2, L2NetworkClusterRefVO ref where l2.uuid = ref.l2NetworkUuid and ref.clusterUuid = :clusterUuid and l2.type not in (:noNeedCheckTypes)";
+        String sql = "select l2 from L2NetworkVO l2, L2NetworkClusterRefVO ref where l2.uuid = ref.l2NetworkUuid and ref.clusterUuid = :clusterUuid and l2.type in (:supportTypes)";
         TypedQuery<L2NetworkVO> q = dbf.getEntityManager().createQuery(sql, L2NetworkVO.class);
         q.setParameter("clusterUuid", clusterUuid);
-        q.setParameter("noNeedCheckTypes", getNoNeedCheckNetworkType());
+        q.setParameter("supportTypes", getSupportTypes());
         List<L2NetworkVO> vos = q.getResultList();
         List<L2NetworkInventory> ret = new ArrayList<L2NetworkInventory>(vos.size());
         for (L2NetworkVO vo : vos) {
             if (L2NetworkConstant.L2_VLAN_NETWORK_TYPE.equals(vo.getType())) {
                 L2VlanNetworkVO vlanvo = dbf.getEntityManager().find(L2VlanNetworkVO.class, vo.getUuid());
                 ret.add(L2VlanNetworkInventory.valueOf(vlanvo));
-            } else if (VxlanNetworkConstant.VXLAN_NETWORK_TYPE.equals(vo.getType())) {
-                VxlanNetworkVO vxlanvo = dbf.getEntityManager().find(VxlanNetworkVO.class, vo.getUuid());
-                ret.add(L2VxlanNetworkInventory.valueOf(vxlanvo));
             } else {
                 ret.add(L2NetworkInventory.valueOf(vo));
             }
@@ -64,8 +57,8 @@ public class KVMConnectExtensionForL2Network implements KVMHostConnectExtensionP
         return ret;
     }
 
-    private List<String> getNoNeedCheckNetworkType() {
-        List<String> types = Arrays.asList(VxlanNetworkPoolConstant.VXLAN_NETWORK_POOL_TYPE, VxlanNetworkConstant.VXLAN_NETWORK_TYPE);
+    private List<String> getSupportTypes() {
+        List<String> types = Arrays.asList(L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE, L2NetworkConstant.L2_VLAN_NETWORK_TYPE);
         return types;
     }
 
@@ -78,47 +71,25 @@ public class KVMConnectExtensionForL2Network implements KVMHostConnectExtensionP
         final L2NetworkInventory l2 = it.next();
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("prepare-l2-%s-for-kvm-%s-connect", l2.getUuid(), hostUuid));
-        if (!l2.getType().equals(VxlanNetworkConstant.VXLAN_NETWORK_TYPE)) {
-            chain.then(new NoRollbackFlow() {
-                @Override
-                public void run(final FlowTrigger trigger, Map data) {
-                    CheckNetworkPhysicalInterfaceMsg cmsg = new CheckNetworkPhysicalInterfaceMsg();
-                    cmsg.setHostUuid(hostUuid);
-                    cmsg.setPhysicalInterface(l2.getPhysicalInterface());
-                    bus.makeTargetServiceIdByResourceUuid(cmsg, HostConstant.SERVICE_ID, hostUuid);
-                    bus.send(cmsg, new CloudBusCallBack(completion) {
-                        @Override
-                        public void run(MessageReply reply) {
-                            if (!reply.isSuccess()) {
-                                trigger.fail(reply.getError());
-                            } else {
-                                trigger.next();
-                            }
+        chain.then(new NoRollbackFlow() {
+            @Override
+            public void run(final FlowTrigger trigger, Map data) {
+                CheckNetworkPhysicalInterfaceMsg cmsg = new CheckNetworkPhysicalInterfaceMsg();
+                cmsg.setHostUuid(hostUuid);
+                cmsg.setPhysicalInterface(l2.getPhysicalInterface());
+                bus.makeTargetServiceIdByResourceUuid(cmsg, HostConstant.SERVICE_ID, hostUuid);
+                bus.send(cmsg, new CloudBusCallBack(completion) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            trigger.fail(reply.getError());
+                        } else {
+                            trigger.next();
                         }
-                    });
-                }
-            });
-        } else {
-            chain.then(new NoRollbackFlow() {
-                @Override
-                public void run(final FlowTrigger trigger, Map data) {
-                    CheckL2NetworkOnHostMsg cmsg = new CheckL2NetworkOnHostMsg();
-                    cmsg.setHostUuid(hostUuid);
-                    cmsg.setL2NetworkUuid(l2.getUuid());
-                    bus.makeTargetServiceIdByResourceUuid(cmsg, HostConstant.SERVICE_ID, hostUuid);
-                    bus.send(cmsg, new CloudBusCallBack(completion) {
-                        @Override
-                        public void run(MessageReply reply) {
-                            if (!reply.isSuccess()) {
-                                trigger.fail(reply.getError());
-                            } else {
-                                trigger.next();
-                            }
-                        }
-                    });
-                }
-            });
-        }
+                    }
+                });
+            }
+        });
 
         if (l2.getType().equals(L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE)) {
             chain.then(new NoRollbackFlow() {
@@ -142,23 +113,6 @@ public class KVMConnectExtensionForL2Network implements KVMHostConnectExtensionP
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
                     vlanNetworkBackend.realize(l2, hostUuid, true, new Completion(trigger) {
-                        @Override
-                        public void success() {
-                            trigger.next();
-                        }
-
-                        @Override
-                        public void fail(ErrorCode errorCode) {
-                            trigger.fail(errorCode);
-                        }
-                    });
-                }
-            });
-        } else if (VxlanNetworkConstant.VXLAN_NETWORK_TYPE.equals(l2.getType())) {
-            chain.then(new NoRollbackFlow() {
-                @Override
-                public void run(final FlowTrigger trigger, Map data) {
-                    vxlanNetworkBackend.realize(l2, hostUuid, true, new Completion(trigger) {
                         @Override
                         public void success() {
                             trigger.next();
@@ -219,6 +173,7 @@ public class KVMConnectExtensionForL2Network implements KVMHostConnectExtensionP
             @Override
             public void run(final FlowTrigger trigger, Map data) {
                 List<L2NetworkInventory> l2s = getL2Networks(context.getInventory().getClusterUuid());
+
                 if (l2s.isEmpty()) {
                     trigger.next();
                     return;

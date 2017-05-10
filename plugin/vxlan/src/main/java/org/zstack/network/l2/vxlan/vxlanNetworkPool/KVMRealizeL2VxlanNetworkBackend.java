@@ -1,6 +1,5 @@
-package org.zstack.kvm;
+package org.zstack.network.l2.vxlan.vxlanNetworkPool;
 
-import org.apache.commons.lang.ObjectUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
@@ -18,28 +17,25 @@ import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.host.HypervisorType;
-import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.L2NetworkConstant;
 import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.header.network.l2.L2NetworkRealizationExtensionPoint;
 import org.zstack.header.network.l2.L2NetworkType;
 import org.zstack.header.vm.VmNicInventory;
+import org.zstack.kvm.*;
 import org.zstack.network.l2.vxlan.vtep.*;
 import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkConstant;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
-import org.zstack.network.l2.vxlan.vxlanNetworkPool.*;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
-import static org.zstack.kvm.KVMConstant.KVM_VXLAN_TYPE;
-import static org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolConstant.VXLAN_PORT;
+import static org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolConstant.*;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
@@ -72,7 +68,7 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
 
     public void realize(final L2NetworkInventory l2Network, final String hostUuid, boolean noStatusCheck, final Completion completion) {
         final L2VxlanNetworkInventory l2vxlan = (L2VxlanNetworkInventory) l2Network;
-        final String vtepIp = Q.New(VtepVO.class).select(VtepVO_.vtepIp).eq(VtepVO_.hostUuid, hostUuid).findValue();
+        final String vtepIp = Q.New(VtepVO.class).select(VtepVO_.vtepIp).eq(VtepVO_.hostUuid, hostUuid).eq(VtepVO_.poolUuid, l2vxlan.getPoolUuid()).findValue();
         List<String> peers = Q.New(VtepVO.class).select(VtepVO_.vtepIp).eq(VtepVO_.poolUuid, l2vxlan.getPoolUuid()).listValues();
         Set<String> p = new HashSet<String>(peers);
         p.remove(vtepIp);
@@ -84,7 +80,7 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
                 vtepIp, l2Network.getUuid(), l2Network.getType(), l2vxlan.getVni(), hostUuid);
         logger.debug(info);
 
-        final KVMAgentCommands.CreateVxlanBridgeCmd cmd = new KVMAgentCommands.CreateVxlanBridgeCmd();
+        final VxlanKvmAgentCommands.CreateVxlanBridgeCmd cmd = new VxlanKvmAgentCommands.CreateVxlanBridgeCmd();
         cmd.setVtepIp(vtepIp);
         cmd.setBridgeName(makeBridgeName(l2vxlan.getVni()));
         cmd.setVni(l2vxlan.getVni());
@@ -95,7 +91,7 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
         msg.setCommand(cmd);
         msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
         msg.setNoStatusCheck(noStatusCheck);
-        msg.setPath(KVMConstant.KVM_REALIZE_L2VXLAN_NETWORK_PATH);
+        msg.setPath(VXLAN_KVM_REALIZE_L2VXLAN_NETWORK_PATH);
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
@@ -106,7 +102,7 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
                 }
 
                 KVMHostAsyncHttpCallReply hreply = reply.castReply();
-                KVMAgentCommands.CreateVxlanBridgeResponse rsp = hreply.toResponse(KVMAgentCommands.CreateVxlanBridgeResponse.class);
+                VxlanKvmAgentCommands.CreateVxlanBridgeResponse rsp = hreply.toResponse(VxlanKvmAgentCommands.CreateVxlanBridgeResponse.class);
                 if (!rsp.isSuccess()) {
                     ErrorCode err = operr("failed to create bridge[%s] for l2Network[uuid:%s, type:%s, vni:%s] on kvm host[uuid:%s], because %s",
                             cmd.getBridgeName(), l2Network.getUuid(), l2Network.getType(), l2vxlan.getVni(), hostUuid, rsp.getError());
@@ -144,7 +140,7 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
         chain.then(new NoRollbackFlow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                KVMAgentCommands.CheckVxlanCidrCmd cmd = new KVMAgentCommands.CheckVxlanCidrCmd();
+                VxlanKvmAgentCommands.CheckVxlanCidrCmd cmd = new VxlanKvmAgentCommands.CheckVxlanCidrCmd();
                 cmd.setCidr(getAttachedCidrs(l2vxlan.getPoolUuid()).get(clusterUuid));
                 if (!l2Network.getPhysicalInterface().equals("No use")) {
                     cmd.setPhysicalInterfaceName(l2Network.getPhysicalInterface());
@@ -154,7 +150,7 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
                 msg.setHostUuid(hostUuid);
                 msg.setCommand(cmd);
                 msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
-                msg.setPath(KVMConstant.KVM_CHECK_L2VXLAN_NETWORK_PATH);
+                msg.setPath(VXLAN_KVM_CHECK_L2VXLAN_NETWORK_PATH);
                 msg.setNoStatusCheck(noStatusCheck);
                 bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
                 bus.send(msg, new CloudBusCallBack(completion) {
@@ -166,7 +162,7 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
                         }
 
                         KVMHostAsyncHttpCallReply hreply = reply.castReply();
-                        KVMAgentCommands.CheckVxlanCidrResponse rsp = hreply.toResponse(KVMAgentCommands.CheckVxlanCidrResponse.class);
+                        VxlanKvmAgentCommands.CheckVxlanCidrResponse rsp = hreply.toResponse(VxlanKvmAgentCommands.CheckVxlanCidrResponse.class);
                         if (!rsp.isSuccess()) {
                             ErrorCode err = operr("failed to check cidr[%s] for l2VxlanNetwork[uuid:%s, name:%s] on kvm host[uuid:%s], %s",
                                     cmd.getCidr(), l2vxlan.getUuid(), l2vxlan.getName(), hostUuid, rsp.getError());
@@ -224,43 +220,49 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
 
                 List<VtepVO> vteps = Q.New(VtepVO.class).eq(VtepVO_.poolUuid, l2vxlan.getPoolUuid()).list();
 
-                new While<>(vteps).all((vtep, completion) -> {
-
-                    List<String> peers = new ArrayList<>();
-                    for (VtepVO vo: vteps) {
-                        if (peers.contains(vo.getVtepIp()) || vo.getVtepIp().equals(vtep.getVtepIp())) {
-                            continue;
-                        } else {
-                            peers.add(vo.getVtepIp());
-                        }
-                    }
-
-                    KVMAgentCommands.PopulateVxlanFdbCmd cmd = new KVMAgentCommands.PopulateVxlanFdbCmd();
-                    cmd.setPeers(peers);
-                    cmd.setVni(l2vxlan.getVni());
-
-                    KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
-                    msg.setHostUuid(vtep.getHostUuid());
-                    msg.setCommand(cmd);
-                    msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
-                    msg.setPath(KVMConstant.KVM_POPULATE_FDB_L2VXLAN_NETWORK_PATH);
-                    msg.setNoStatusCheck(noStatusCheck);
-                    bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
-                    bus.send(msg, new CloudBusCallBack(completion) {
-                        @Override
-                        public void run(MessageReply reply) {
-                            if (!reply.isSuccess()) {
-                                logger.warn(reply.getError().toString());
+                if (vteps.size() == 1) {
+                    logger.debug("no need to populate fdb since there are only on vtep");
+                    trigger.next();
+                } else {
+                    new While<>(vteps).all((vtep, completion1) -> {
+                        List<String> peers = new ArrayList<>();
+                        for (VtepVO vo : vteps) {
+                            if (peers.contains(vo.getVtepIp()) || vo.getVtepIp().equals(vtep.getVtepIp())) {
+                                continue;
+                            } else {
+                                peers.add(vo.getVtepIp());
                             }
-                            completion.done();
+                        }
+
+                        logger.info(String.format("populate fdb for vtep %s in vxlan network %s", vtep.getVtepIp(), l2vxlan.getUuid()));
+
+                        VxlanKvmAgentCommands.PopulateVxlanFdbCmd cmd = new VxlanKvmAgentCommands.PopulateVxlanFdbCmd();
+                        cmd.setPeers(peers);
+                        cmd.setVni(l2vxlan.getVni());
+
+                        KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+                        msg.setHostUuid(vtep.getHostUuid());
+                        msg.setCommand(cmd);
+                        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
+                        msg.setPath(VXLAN_KVM_POPULATE_FDB_L2VXLAN_NETWORK_PATH);
+                        msg.setNoStatusCheck(noStatusCheck);
+                        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
+                        bus.send(msg, new CloudBusCallBack(completion1) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    logger.warn(reply.getError().toString());
+                                }
+                                completion1.done();
+                            }
+                        });
+                    }).run(new NoErrorCompletion() {
+                        @Override
+                        public void done() {
+                            trigger.next();
                         }
                     });
-                }).run(new NoErrorCompletion() {
-                    @Override
-                    public void done() {
-                        trigger.next();
-                    }
-                });
+                }
             }
         }).done(new FlowDoneHandler(completion) {
             @Override
