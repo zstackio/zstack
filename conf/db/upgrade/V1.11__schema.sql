@@ -652,6 +652,14 @@ CREATE TABLE `ResourceVO` (
   PRIMARY KEY (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+INSERT IGNORE INTO ResourceVO (uuid,resourceType) SELECT t.resourceUuid , t.resourceType FROM AccountResourceRefVO t;
+INSERT IGNORE INTO ResourceVO (uuid,resourceType) SELECT t.resourceUuid , t.resourceType FROM SystemTagVO t;
+INSERT IGNORE INTO ResourceVO (uuid,resourceType) SELECT t.resourceUuid , t.resourceType FROM UserTagVO t;
+UPDATE JsonLabelVO SET resourceUuid=UUID();
+UPDATE JsonLabelVO SET resourceUuid=REPLACE(resourceUuid,'-','7');
+INSERT IGNORE INTO ResourceVO (uuid) SELECT t.resourceUuid FROM JsonLabelVO t;
+
+
 ALTER TABLE AccountResourceRefVO ADD CONSTRAINT fkAccountResourceRefVOResourceVO FOREIGN KEY (resourceUuid) REFERENCES ResourceVO (uuid) ON DELETE CASCADE;
 ALTER TABLE SystemTagVO ADD CONSTRAINT fkSystemTagVOResourceVO FOREIGN KEY (resourceUuid) REFERENCES ResourceVO (uuid) ON DELETE CASCADE;
 ALTER TABLE UserTagVO ADD CONSTRAINT fkUserTagVOResourceVO FOREIGN KEY (resourceUuid) REFERENCES ResourceVO (uuid) ON DELETE CASCADE;
@@ -686,67 +694,67 @@ DROP TRIGGER IF EXISTS trigger_clean_AccountResourceRefVO_for_VolumeSnapshotEO;
 
 
 
-INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "DataCenterVO" FROM DataCenterVO t;
-INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "EcsImageVO" FROM EcsImageVO t;
-INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "EcsSecurityGroupRuleVO" FROM EcsSecurityGroupRuleVO t;
-INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "EcsInstanceConsoleProxyVO" FROM EcsInstanceConsoleProxyVO t;
-INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "EcsSecurityGroupVO" FROM EcsSecurityGroupVO t;
-INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.vRouterName, "VpcVirtualRouterVO" FROM VpcVirtualRouterVO t;
-INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.vSwitchName, "EcsVSwitchVO" FROM EcsVSwitchVO t;
-INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "EcsVpcVO" FROM EcsVpcVO t;
-INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "EcsInstanceVO" FROM EcsInstanceVO t;
-INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "HybridAccountVO" FROM HybridAccountVO t;
-INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "HybridEipAddressVO" FROM HybridEipAddressVO t;
-INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.bucketName, "OssBucketVO" FROM OssBucketVO t;
-INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "IdentityZoneVO" FROM IdentityZoneVO t;
-INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "ConnectionAccessPointVO" FROM ConnectionAccessPointVO t;
-INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "VirtualBorderRouterVO" FROM VirtualBorderRouterVO t;
-INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "VirtualRouterInterfaceVO" FROM VirtualRouterInterfaceVO t;
-INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "VpcVirtualRouteEntryVO" FROM VpcVirtualRouteEntryVO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "DataCenterVO" FROM DataCenterVO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "EcsImageVO" FROM EcsImageVO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "EcsSecurityGroupRuleVO" FROM EcsSecurityGroupRuleVO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "EcsInstanceConsoleProxyVO" FROM EcsInstanceConsoleProxyVO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "EcsSecurityGroupVO" FROM EcsSecurityGroupVO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.vRouterName, "VpcVirtualRouterVO" FROM VpcVirtualRouterVO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.vSwitchName, "EcsVSwitchVO" FROM EcsVSwitchVO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "EcsVpcVO" FROM EcsVpcVO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "EcsInstanceVO" FROM EcsInstanceVO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "HybridAccountVO" FROM HybridAccountVO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "HybridEipAddressVO" FROM HybridEipAddressVO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.bucketName, "OssBucketVO" FROM OssBucketVO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "IdentityZoneVO" FROM IdentityZoneVO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "ConnectionAccessPointVO" FROM ConnectionAccessPointVO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "VirtualBorderRouterVO" FROM VirtualBorderRouterVO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "VirtualRouterInterfaceVO" FROM VirtualRouterInterfaceVO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "VpcVirtualRouteEntryVO" FROM VpcVirtualRouteEntryVO t;
 
 
 
 
-INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "EipVO" FROM EipVO t;
-INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "AccountVO" FROM AccountVO t;
-INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "BackupStorageEO" FROM BackupStorageEO t;
-INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "CephBackupStorageMonVO" FROM CephBackupStorageMonVO t;
-INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "CephPrimaryStorageMonVO" FROM CephPrimaryStorageMonVO t;
-INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "CephPrimaryStoragePoolVO" FROM CephPrimaryStoragePoolVO t;
-INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "ClusterEO" FROM ClusterEO t;
-INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "ConsoleProxyVO" FROM ConsoleProxyVO t;
-INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "DiskOfferingEO" FROM DiskOfferingEO t;
-INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "EipVO" FROM EipVO t;
-INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "GarbageCollectorVO" FROM GarbageCollectorVO t;
-INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "HostEO" FROM HostEO t;
-INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "ImageEO" FROM ImageEO t;
-INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "InstanceOfferingEO" FROM InstanceOfferingEO t;
-INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "IpRangeEO" FROM IpRangeEO t;
-INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "L2NetworkEO" FROM L2NetworkEO t;
-INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "L3NetworkEO" FROM L3NetworkEO t;
-INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "LdapServerVO" FROM LdapServerVO t;
-INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "LoadBalancerListenerVO" FROM LoadBalancerListenerVO t;
-INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "LoadBalancerVO" FROM LoadBalancerVO t;
-INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "PolicyVO" FROM PolicyVO t;
-INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "PortForwardingRuleVO" FROM PortForwardingRuleVO t;
-INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "PrimaryStorageEO" FROM PrimaryStorageEO t;
-INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "QuotaVO" FROM QuotaVO t;
-INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.jobName, "SchedulerVO" FROM SchedulerVO t;
-INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "SecurityGroupRuleVO" FROM SecurityGroupRuleVO t;
-INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "SecurityGroupVO" FROM SecurityGroupVO t;
-INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "UserGroupVO" FROM UserGroupVO t;
-INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "UserVO" FROM UserVO t;
-INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "VCenterDatacenterVO" FROM VCenterDatacenterVO t;
-INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "VCenterVO" FROM VCenterVO t;
-INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "VipVO" FROM VipVO t;
-INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "VmInstanceEO" FROM VmInstanceEO t;
-INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "VmNicVO" FROM VmNicVO t;
-INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "VniRangeVO" FROM VniRangeVO t;
-INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "VolumeEO" FROM VolumeEO t;
-INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "VolumeSnapshotEO" FROM VolumeSnapshotEO t;
-INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "VolumeSnapshotTreeEO" FROM VolumeSnapshotTreeEO t;
-INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "VtepVO" FROM VtepVO t;
-INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "ZoneEO" FROM ZoneEO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "EipVO" FROM EipVO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "AccountVO" FROM AccountVO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "BackupStorageEO" FROM BackupStorageEO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "CephBackupStorageMonVO" FROM CephBackupStorageMonVO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "CephPrimaryStorageMonVO" FROM CephPrimaryStorageMonVO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "CephPrimaryStoragePoolVO" FROM CephPrimaryStoragePoolVO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "ClusterEO" FROM ClusterEO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "ConsoleProxyVO" FROM ConsoleProxyVO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "DiskOfferingEO" FROM DiskOfferingEO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "EipVO" FROM EipVO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "GarbageCollectorVO" FROM GarbageCollectorVO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "HostEO" FROM HostEO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "ImageEO" FROM ImageEO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "InstanceOfferingEO" FROM InstanceOfferingEO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "IpRangeEO" FROM IpRangeEO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "L2NetworkEO" FROM L2NetworkEO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "L3NetworkEO" FROM L3NetworkEO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "LdapServerVO" FROM LdapServerVO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "LoadBalancerListenerVO" FROM LoadBalancerListenerVO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "LoadBalancerVO" FROM LoadBalancerVO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "PolicyVO" FROM PolicyVO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "PortForwardingRuleVO" FROM PortForwardingRuleVO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "PrimaryStorageEO" FROM PrimaryStorageEO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "QuotaVO" FROM QuotaVO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.jobName, "SchedulerVO" FROM SchedulerVO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "SecurityGroupRuleVO" FROM SecurityGroupRuleVO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "SecurityGroupVO" FROM SecurityGroupVO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "UserGroupVO" FROM UserGroupVO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "UserVO" FROM UserVO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "VCenterDatacenterVO" FROM VCenterDatacenterVO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "VCenterVO" FROM VCenterVO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "VipVO" FROM VipVO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "VmInstanceEO" FROM VmInstanceEO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "VmNicVO" FROM VmNicVO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "VniRangeVO" FROM VniRangeVO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "VolumeEO" FROM VolumeEO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "VolumeSnapshotEO" FROM VolumeSnapshotEO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "VolumeSnapshotTreeEO" FROM VolumeSnapshotTreeEO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "VtepVO" FROM VtepVO t;
+INSERT IGNORE INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "ZoneEO" FROM ZoneEO t;
 
 # Foreign keys for table VirtualRouterLoadBalancerRefVO
 
@@ -755,4 +763,6 @@ ALTER TABLE `zstack`.`VirtualRouterLoadBalancerRefVO` ADD CONSTRAINT fkVirtualRo
 ALTER TABLE `zstack`.`VirtualRouterLoadBalancerRefVO` ADD UNIQUE INDEX(`virtualRouterVmUuid`,`loadBalancerUuid`);
 
 
-UPDATE InstanceOfferingVO SET allocatorStrategy="LeastVmPreferredHostAllocatorStrategy" WHERE allocatorStrategy="Mevoco" ;
+UPDATE InstanceOfferingVO SET allocatorStrategy="LeastVmPreferredHostAllocatorStrategy" WHERE allocatorStrategy="Mevoco";
+
+UPDATE VmInstanceVO SET allocatorStrategy="LeastVmPreferredHostAllocatorStrategy" WHERE allocatorStrategy="Mevoco";
