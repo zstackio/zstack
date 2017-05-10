@@ -76,10 +76,10 @@ public class SyncEcsImageFromRemoteAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/hybrid/aliyun/image/{uuid}/actions";
+        info.path = "/hybrid/aliyun/image/{uuid}/sync";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "syncEcsImageFromRemote";
+        info.parameterName = "";
         return info;
     }
 

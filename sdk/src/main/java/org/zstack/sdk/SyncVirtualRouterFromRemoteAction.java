@@ -79,10 +79,10 @@ public class SyncVirtualRouterFromRemoteAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/hybrid/aliyun/vrouter/{uuid}/actions";
+        info.path = "/hybrid/aliyun/vrouter/{vpcUuid}/sync";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "syncVirtualRouterFromRemote";
+        info.parameterName = "";
         return info;
     }
 

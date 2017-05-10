@@ -73,10 +73,10 @@ public class DetachAliyunKeyAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/hybrid/aliyun/key/{uuid}";
+        info.path = "/hybrid/aliyun/key/{uuid}/detach";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "detachAliyunKey";
+        info.parameterName = "params";
         return info;
     }
 

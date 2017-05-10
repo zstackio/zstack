@@ -79,10 +79,10 @@ public class SyncEcsVSwitchFromRemoteAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/hybrid/aliyun/vswitch/{uuid}/actions";
+        info.path = "/hybrid/aliyun/vswitch/{identityZoneUuid}/sync";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "syncEcsVSwitchFromRemote";
+        info.parameterName = "";
         return info;
     }
 
