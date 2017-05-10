@@ -5,7 +5,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.logging.Log;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
@@ -62,8 +61,6 @@ public class KvmFactory implements HypervisorFactory, KVMHostConnectExtensionPoi
                     trigger.next();
                     return;
                 }
-
-                new Log(context.getInventory().getUuid()).log(SMPLabel.INIT, psUuid);
 
                 InitKvmHostMsg msg = new InitKvmHostMsg();
                 msg.setHypervisorType(context.getInventory().getHypervisorType());

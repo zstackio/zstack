@@ -3,11 +3,9 @@ package org.zstack.compute.allocator;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.zstack.compute.vm.VmLabels;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.core.logging.Log;
 import org.zstack.header.allocator.AbstractHostAllocatorFlow;
 import org.zstack.header.host.HostState;
 import org.zstack.header.host.HostStatus;
@@ -81,17 +79,12 @@ public class HostStateAndHypervisorAllocatorFlow extends AbstractHostAllocatorFl
 
             String error;
             if (isNoConnectedHost()) {
-                Log log = new Log(spec.getVmInstance().getUuid());
-                log.log(VmLabels.VM_START_ALLOCATE_HOST_STATE_HYPERVISOR_FAILURE_NO_CONNECTED_HOST, candidates.size());
-                error = log.toString();
+                error = String.format("no Connected hosts found in the [%s] candidate hosts", candidates.size());
             } else if (isNoEnabledHost()) {
-                Log log = new Log(spec.getVmInstance().getUuid());
-                log.log(VmLabels.VM_START_ALLOCATE_HOST_STATE_HYPERVISOR_FAILURE_NO_ENABLED_HOST, candidates.size());
-                error = log.toString();
+                error = String.format("no Enabled hosts found in the [%s] candidate hosts", candidates.size());
             } else if (isNoHypervisor(spec.getHypervisorType())) {
-                Log log = new Log(spec.getVmInstance().getUuid());
-                log.log(VmLabels.VM_START_ALLOCATE_HOST_STATE_HYPERVISOR_FAILURE_NO_HYPERVISOR, candidates.size(), spec.getHypervisorType());
-                error = log.toString();
+                error = String.format("no Enabled hosts found in the [%s] candidate hosts having the hypervisor type [%s]",
+                        candidates.size(), spec.getHypervisorType());
             } else {
                 StringBuilder sb = new StringBuilder("no host having");
                 sb.append(String.format(" state=Enabled"));
@@ -105,9 +98,8 @@ public class HostStateAndHypervisorAllocatorFlow extends AbstractHostAllocatorFl
 
             fail(error);
         } else {
-            new Log(spec.getVmInstance().getUuid())
-                    .log(VmLabels.VM_START_ALLOCATE_HOST_STATE_HYPERVISOR_SUCCESS, ret.size(),
-                            spec.getHypervisorType());
+            logger.info(String.format("found [%s] hosts with hypervisor type [%s] are Enabled and Connected",
+                    ret.size(), spec.getHypervisorType()));
             next(ret);
         }
     }

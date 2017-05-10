@@ -44,7 +44,6 @@
     <Import resource="unitTestSuiteXml/flatNetwork.xml"/>
     <Import resource="unitTestSuiteXml/scheduler.xml"/>
     <Import resource="unitTestSuiteXml/ldap.xml"/>
-    <Import resource="unitTestSuiteXml/alert.xml"/>
     <Import resource="unitTestSuiteXml/vyos.xml"/>
     <!--
     <Import resource="unitTestSuiteXml/console.xml"/>

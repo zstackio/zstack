@@ -7,7 +7,6 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.logging.Log;
 import org.zstack.header.allocator.*;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.configuration.DiskOfferingVO;
@@ -116,7 +115,6 @@ public class VmAllocateHostFlow implements Flow {
         }
 
         AllocateHostMsg msg = this.prepareMsg(data);
-        new Log(spec.getVmInventory().getUuid()).log(VmLabels.VM_START_ALLOCATE_HOST);
 
         bus.send(msg, new CloudBusCallBack(chain) {
             @Override

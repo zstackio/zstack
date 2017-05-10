@@ -13,8 +13,6 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.errorcode.schema.Error;
-import org.zstack.core.logging.Log;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.FutureCompletion;
@@ -52,10 +50,6 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
-import static org.zstack.core.Platform.createComponentLoaderFromWebApplicationContext;
-import static org.zstack.core.Platform.err;
-import static org.zstack.core.Platform.operr;
-
 import javax.persistence.Query;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
@@ -66,6 +60,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
+
+import static org.zstack.core.Platform.operr;
 
 public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         KVMHostConnectExtensionPoint, HostConnectionReestablishExtensionPoint {
@@ -1126,8 +1122,6 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                     trigger.next();
                     return;
                 }
-
-                new Log(context.getInventory().getUuid()).log(NfsPrimaryStorageLabels.INIT);
 
                 if (context.isNewAddedHost() && !CoreGlobalProperty.UNIT_TEST_ON && !invs.isEmpty()) {
                     checkQemuImgVersionInOtherClusters(context, invs);

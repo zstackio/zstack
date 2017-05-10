@@ -13,7 +13,6 @@ import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.logging.Event;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
@@ -44,12 +43,12 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 
-import static org.zstack.core.Platform.operr;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+
+import static org.zstack.core.Platform.operr;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public abstract class HostBase extends AbstractHost {
@@ -593,9 +592,9 @@ public abstract class HostBase extends AbstractHost {
 
                 if(!Q.New(HostVO.class).eq(HostVO_.uuid, msg.getHostUuid()).isExists()){
                     reply.setNoReconnect(true);
-                }else if (changeConnectionState(HostStatusEvent.disconnected)) {
-                    new Event().log(HostLogLabel.HOST_STATUS_DISCONNECTED, self.getUuid(), self.getName(), errorCode.toString());
                 }
+
+                changeConnectionState(HostStatusEvent.disconnected);
                 
                 bus.reply(msg, reply);
             }
@@ -875,8 +874,6 @@ public abstract class HostBase extends AbstractHost {
                             @Override
                             public void handle(ErrorCode errCode, Map data) {
                                 changeConnectionState(HostStatusEvent.disconnected);
-
-                                new Event().log(HostLogLabel.HOST_STATUS_DISCONNECTED, self.getUuid(), self.getName(), errCode.toString());
 
                                 reply.setError(errCode);
                                 bus.reply(msg, reply);

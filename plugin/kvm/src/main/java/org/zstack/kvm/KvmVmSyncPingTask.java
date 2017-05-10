@@ -8,7 +8,6 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.logging.Log;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
@@ -33,10 +32,10 @@ import org.zstack.kvm.KVMConstant.KvmVmState;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import static org.zstack.core.Platform.operr;
-
 import java.util.HashMap;
 import java.util.Map;
+
+import static org.zstack.core.Platform.operr;
 
 public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailureExtensionPoint, KVMHostConnectExtensionPoint,
         HostConnectionReestablishExtensionPoint, HostAfterConnectedExtensionPoint, Component {
@@ -178,8 +177,6 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
         return new NoRollbackFlow() {
             @Override
             public void run(final FlowTrigger trigger, Map data) {
-                new Log(context.getInventory().getUuid()).log(KVMHostLabel.SYNC_VM_STATE);
-
                 syncVm(context.getInventory(), new Completion(trigger) {
                     String __name__ = "sync-vm-state";
 

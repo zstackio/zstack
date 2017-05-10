@@ -25,7 +25,6 @@ class BeanConstructor {
             "Aspect.xml",
             "keyValueFacade.xml",
             "jmx.xml",
-            "logFacade.xml",
             "Error.xml",
             "gc.xml",
             "debug.xml",

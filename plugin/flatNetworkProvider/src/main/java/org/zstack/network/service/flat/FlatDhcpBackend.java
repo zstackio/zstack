@@ -11,8 +11,6 @@ import org.zstack.core.db.GLock;
 import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.logging.Event;
-import org.zstack.core.logging.Log;
 import org.zstack.core.thread.SyncTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
@@ -23,7 +21,6 @@ import org.zstack.header.core.*;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostErrors;
@@ -51,9 +48,6 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 
-import static org.zstack.core.Platform.argerr;
-import static org.zstack.core.Platform.operr;
-
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
@@ -61,6 +55,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
+import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.*;
 
 /**
@@ -440,8 +436,6 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             @Override
             public void fail(ErrorCode errorCode) {
                 if (!errorCode.isError(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE)) {
-                    new Event().log(FlatNetworkLabels.DELETE_NAMESPACE_FAILURE, inventory.getName(), inventory.getUuid(),
-                            getHostUuid(), errorCode.toString());
                     return;
                 }
 
@@ -820,8 +814,6 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                     trigger.next();
                     return;
                 }
-
-                new Log(context.getInventory().getUuid()).log(FlatNetworkLabel.SYNC_DHCP);
 
                 // to flush ebtables
                 ConnectCmd cmd = new ConnectCmd();
