@@ -1,6 +1,7 @@
 package org.zstack.header.network.l2;
 
 import org.springframework.http.HttpMethod;
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
@@ -36,6 +37,7 @@ import org.zstack.header.rest.RestRequest;
  * @result see :ref:`APIDeleteL2NetworkEvent`
  * @since 0.1.0
  */
+@Action(category = L2NetworkConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/l2-networks/{uuid}",
         method = HttpMethod.DELETE,
