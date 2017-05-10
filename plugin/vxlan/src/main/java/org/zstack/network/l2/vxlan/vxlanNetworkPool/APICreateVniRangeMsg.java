@@ -10,7 +10,6 @@ import org.zstack.header.rest.RestRequest;
 /**
  * Created by weiwang on 09/03/2017.
  */
-@Action(category = VxlanNetworkPoolConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/l2-networks/vxlan-pool/{l2NetworkUuid}/vni-ranges",
         method = HttpMethod.POST,

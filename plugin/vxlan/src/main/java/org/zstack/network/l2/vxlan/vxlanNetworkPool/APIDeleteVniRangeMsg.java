@@ -11,7 +11,6 @@ import org.zstack.header.rest.RestRequest;
 /**
  * Created by weiwang on 03/05/2017.
  */
-@Action(category = VxlanNetworkPoolConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/l2-networks/vxlan-pool/vni-ranges/{uuid}",
         method = HttpMethod.DELETE,
