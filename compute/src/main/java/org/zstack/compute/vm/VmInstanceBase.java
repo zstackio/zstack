@@ -4126,6 +4126,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         for (VolumeInventory vol : inv.getAllVolumes()) {
             if (vol.getUuid().equals(inv.getRootVolumeUuid())) {
                 spec.setDestRootVolume(vol);
+                spec.setRequiredPrimaryStorageUuidForRootVolume(vol.getPrimaryStorageUuid());
             } else {
                 dataVols.add(vol);
             }
