@@ -3,7 +3,9 @@ package org.zstack.core.notification;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.header.core.ExceptionSafe;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -24,6 +26,7 @@ public class N {
     }
 
     public static N New(Class resourceClass, String resourceUuid) {
+        DebugUtils.Assert(resourceClass != null, "resourceClass cannot be null");
         return new N(resourceClass, resourceUuid);
     }
 
@@ -33,14 +36,8 @@ public class N {
     }
 
     private N(Class resourceClass, String resourceUuid) {
-        super();
-
-        NotificationAttributes at = (NotificationAttributes) resourceClass.getAnnotation(NotificationAttributes.class);
-        if (at == null) {
-            throw new CloudRuntimeException(String.format("class[%s] has no @NotificationAttributes defined", resourceClass));
-        }
-
-        builder.resource(resourceUuid, resourceClass.getSimpleName()).name(at.name());
+        this();
+        builder.resource(resourceUuid, resourceClass.getSimpleName());
     }
 
     private void send() {
