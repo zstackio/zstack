@@ -17,6 +17,6 @@ public class VniRangeVO_ extends ResourceVO_ {
     public static volatile SingularAttribute<VniRangeVO, Integer> startVni;
     public static volatile SingularAttribute<VniRangeVO, Integer> endVni;
     public static volatile SingularAttribute<VniRangeVO, String> l2NetworkUuid;
-    public static volatile SingularAttribute<VtepVO, Timestamp> createDate;
-    public static volatile SingularAttribute<VtepVO, Timestamp> lastOpDate;
+    public static volatile SingularAttribute<VniRangeVO, Timestamp> createDate;
+    public static volatile SingularAttribute<VniRangeVO, Timestamp> lastOpDate;
 }

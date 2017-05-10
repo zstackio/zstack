@@ -345,7 +345,6 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
             return;
         }
 
-        // Todo(WeiW): Need to validate!
         for (String tag : msg.getSystemTags()) {
             tagMgr.createNonInherentSystemTag(msg.getL2NetworkUuid(), tag, L2NetworkVO.class.getSimpleName());
         }

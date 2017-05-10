@@ -37,7 +37,7 @@ public class VniRangeInventory {
 
     private Timestamp lastOpDate;
 
-    @Queryable(mappingClass = VxlanNetworkVO.class,
+    @Queryable(mappingClass = VxlanNetworkPoolVO.class,
             joinColumn = @JoinColumn(name = "uuid", referencedColumnName = "l2NetworkUuid"))
     private String l2NetworkUuid;
 

@@ -7,6 +7,7 @@ import org.zstack.header.query.Queryable;
 import org.zstack.header.search.Inventory;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.L2VxlanNetworkPoolInventory;
+import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolVO;
 
 import javax.persistence.JoinColumn;
 import java.sql.Timestamp;
@@ -38,7 +39,7 @@ public class VtepInventory {
 
     private Timestamp lastOpDate;
 
-    @Queryable(mappingClass = VxlanNetworkVO.class,
+    @Queryable(mappingClass = VxlanNetworkPoolVO.class,
             joinColumn = @JoinColumn(name = "uuid", referencedColumnName = "poolUuid"))
     private String poolUuid;
 
@@ -115,7 +116,6 @@ public class VtepInventory {
     public void setPoolUuid(String poolUuid) {
         this.poolUuid = poolUuid;
     }
-
 
     public Timestamp getCreateDate() {
         return createDate;
