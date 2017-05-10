@@ -11,7 +11,6 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.gc.GC;
 import org.zstack.core.gc.GCCompletion;
 import org.zstack.core.gc.TimeBasedGarbageCollector;
-import org.zstack.core.logging.Log;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
@@ -48,7 +47,6 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
-import static org.zstack.core.Platform.*;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
@@ -56,6 +54,8 @@ import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+
+import static org.zstack.core.Platform.operr;
 
 /**
  * Created by frank on 10/13/2015.
@@ -191,8 +191,6 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                     trigger.next();
                     return;
                 }
-
-                new Log(context.getInventory().getUuid()).log(FlatNetworkLabel.SYNC_USERDATA);
 
                 BatchApplyUserdataCmd cmd = new BatchApplyUserdataCmd();
                 cmd.userdata = tos;

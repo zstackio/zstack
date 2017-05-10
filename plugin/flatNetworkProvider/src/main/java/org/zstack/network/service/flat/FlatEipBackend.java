@@ -2,12 +2,10 @@ package org.zstack.network.service.flat;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
-import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.logging.Log;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NopeCompletion;
@@ -41,14 +39,13 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
-import static org.zstack.core.Platform.operr;
-
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
@@ -495,8 +492,6 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
                     trigger.next();
                     return;
                 }
-
-                new Log(context.getInventory().getUuid()).log(FlatNetworkLabel.SYNC_EIP);
 
                 batchApplyEips(tos, context.getInventory().getUuid(), true, new Completion(trigger) {
                     @Override

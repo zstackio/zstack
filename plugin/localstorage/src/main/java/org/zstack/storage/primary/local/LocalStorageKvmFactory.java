@@ -6,7 +6,6 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.logging.Log;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
@@ -23,12 +22,12 @@ import org.zstack.kvm.KVMHostConnectedContext;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import static org.zstack.core.Platform.operr;
-
 import javax.persistence.TypedQuery;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import static org.zstack.core.Platform.operr;
 
 /**
  * Created by frank on 6/30/2015.
@@ -80,7 +79,6 @@ public class LocalStorageKvmFactory implements LocalStorageHypervisorFactory, KV
                     return;
                 }
 
-                new Log(context.getInventory().getUuid()).log(LocalStorageLabels.INIT);
                 Iterator<String> iterator = priUuids.iterator();
                 initLocalStorage(iterator, trigger, data, context);
             }

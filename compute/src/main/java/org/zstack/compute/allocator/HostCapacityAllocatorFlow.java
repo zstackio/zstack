@@ -3,9 +3,7 @@ package org.zstack.compute.allocator;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.zstack.compute.vm.VmLabels;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.logging.Log;
 import org.zstack.header.allocator.AbstractHostAllocatorFlow;
 import org.zstack.header.allocator.HostCapacityOverProvisioningManager;
 import org.zstack.header.allocator.HostCpuOverProvisioningManager;
@@ -62,7 +60,6 @@ public class HostCapacityAllocatorFlow extends AbstractHostAllocatorFlow {
             fail(String.format("no host having cpu[%s], memory[%s bytes] found",
                     spec.getCpuCapacity(), spec.getMemoryCapacity()));
         } else {
-            new Log(spec.getVmInstance().getUuid()).log(VmLabels.VM_START_ALLOCATE_HOST_STATE_CAPACITY_SUCCESS, candidates.size());
             next(ret);
         }
     }

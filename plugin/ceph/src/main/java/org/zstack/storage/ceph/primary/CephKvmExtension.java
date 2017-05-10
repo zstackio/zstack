@@ -4,7 +4,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.logging.Log;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
@@ -20,7 +19,6 @@ import org.zstack.kvm.KVMHostConnectExtensionPoint;
 import org.zstack.kvm.KVMHostConnectedContext;
 import org.zstack.kvm.KVMHostFactory;
 import org.zstack.storage.ceph.CephConstants;
-import org.zstack.storage.ceph.CephLabel;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
@@ -68,8 +66,6 @@ public class CephKvmExtension implements KVMHostConnectExtensionPoint, HostConne
         if (psUuids.isEmpty()) {
             return;
         }
-
-        new Log(hostUuid).log(CephLabel.PS_CREATE_SECRET, psUuids);
 
         List<CreateKvmSecretMsg> msgs = CollectionUtils.transformToList(psUuids, new Function<CreateKvmSecretMsg, String>() {
             @Override

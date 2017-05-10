@@ -36,7 +36,6 @@ public class BeanConstructor {
             "<import resource=\"springConfigXml/Aspect.xml\" />",
             "<import resource=\"springConfigXml/keyValueFacade.xml\" />",
             "<import resource=\"springConfigXml/jmx.xml\" />",
-            "<import resource=\"springConfigXml/logFacade.xml\" />",
             "<import resource=\"springConfigXml/Error.xml\" />",
             "<import resource=\"springConfigXml/gc.xml\" />",
             "<import resource=\"springConfigXml/debug.xml\" />",

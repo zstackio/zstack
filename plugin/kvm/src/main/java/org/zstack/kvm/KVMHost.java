@@ -19,14 +19,12 @@ import org.zstack.core.ansible.SshFileMd5Checker;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.logging.Log;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.Constants;
-import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.core.AsyncLatch;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
@@ -63,12 +61,11 @@ import org.zstack.utils.ssh.Ssh;
 import org.zstack.utils.ssh.SshResult;
 import org.zstack.utils.ssh.SshShell;
 
-import static org.zstack.core.Platform.operr;
-
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
+import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
@@ -2486,8 +2483,6 @@ public class KVMHost extends HostBase implements Host {
                                         checkList = KVMGlobalConfig.HOST_DNS_CHECK_LIST.value();
                                     }
 
-                                    new Log(self.getUuid()).log(KVMHostLabel.ADD_HOST_CHECK_DNS, checkList);
-
                                     checkList = checkList.replaceAll(",", " ");
 
                                     SshShell sshShell = new SshShell();
@@ -2515,8 +2510,6 @@ public class KVMHost extends HostBase implements Host {
 
                         @Override
                         public void run(FlowTrigger trigger, Map data) {
-                            new Log(self.getUuid()).log(KVMHostLabel.ADD_HOST_CHECK_PING_MGMT_NODE);
-
                             SshShell sshShell = new SshShell();
                             sshShell.setHostname(getSelf().getManagementIp());
                             sshShell.setUsername(getSelf().getUsername());
@@ -2543,8 +2536,6 @@ public class KVMHost extends HostBase implements Host {
 
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
-                            new Log(self.getUuid()).log(KVMHostLabel.CALL_ANSIBLE);
-
                             String srcPath = PathUtil.findFileOnClassPath(String.format("ansible/kvm/%s", agentPackageName), true).getAbsolutePath();
                             String destPath = String.format("/var/lib/zstack/kvm/package/%s", agentPackageName);
                             SshFileMd5Checker checker = new SshFileMd5Checker();
@@ -2594,8 +2585,6 @@ public class KVMHost extends HostBase implements Host {
 
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
-                            new Log(self.getUuid()).log(KVMHostLabel.ECHO_AGENT);
-
                             restf.echo(echoPath, new Completion(trigger) {
                                 @Override
                                 public void success() {
@@ -2651,8 +2640,6 @@ public class KVMHost extends HostBase implements Host {
 
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
-                            new Log(self.getUuid()).log(KVMHostLabel.COLLECT_HOST_FACTS);
-
                             HostFactCmd cmd = new HostFactCmd();
                             new Http<>(hostFactPath, cmd, HostFactResponse.class)
                                     .call(new ReturnValueCompletion<HostFactResponse>(trigger) {
@@ -2705,8 +2692,6 @@ public class KVMHost extends HostBase implements Host {
 
                         @Override
                         public void run(FlowTrigger trigger, Map data) {
-                            new Log(self.getUuid()).log(KVMHostLabel.PREPARE_FIREWALL);
-
                             String script = "which iptables > /dev/null && iptables -C FORWARD -j REJECT --reject-with icmp-host-prohibited > /dev/null 2>&1 && iptables -D FORWARD -j REJECT --reject-with icmp-host-prohibited > /dev/null 2>&1 || true";
                             runShell(script);
                             trigger.next();

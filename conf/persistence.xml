@@ -125,11 +125,6 @@
         <class>org.zstack.network.service.lb.LoadBalancerListenerVO</class>
         <class>org.zstack.header.console.ConsoleProxyAgentVO</class>
         <class>org.zstack.header.storage.primary.ImageCacheShadowVO</class>
-        <class>org.zstack.alert.AlarmVO</class>
-        <class>org.zstack.alert.AlarmLabelVO</class>
-        <class>org.zstack.alert.AlertVO</class>
-        <class>org.zstack.alert.AlertLabelVO</class>
-        <class>org.zstack.alert.AlertTimestampVO</class>
         <class>org.zstack.ldap.LdapServerVO</class>
         <class>org.zstack.ldap.LdapAccountRefVO</class>
         <class>org.zstack.core.jsonlabel.JsonLabelVO</class>

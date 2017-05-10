@@ -1,11 +1,9 @@
 package org.zstack.kvm;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.zstack.compute.host.HostLogLabel;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.logging.Log;
 import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.allocator.UnableToReserveHostCapacityException;
 import org.zstack.header.cluster.ReportHostCapacityMessage;
@@ -22,9 +20,9 @@ import org.zstack.kvm.KVMAgentCommands.HostCapacityCmd;
 import org.zstack.kvm.KVMAgentCommands.HostCapacityResponse;
 import org.zstack.utils.SizeUtils;
 
-import static org.zstack.core.Platform.operr;
-
 import java.util.Map;
+
+import static org.zstack.core.Platform.operr;
 
 public class KVMHostCapacityExtension implements KVMHostConnectExtensionPoint, HostConnectionReestablishExtensionPoint {
     @Autowired
@@ -53,8 +51,6 @@ public class KVMHostCapacityExtension implements KVMHostConnectExtensionPoint, H
         if (rsp.getTotalMemory() < SizeUtils.sizeStringToBytes(KVMGlobalConfig.RESERVED_MEMORY_CAPACITY.value())) {
             throw new UnableToReserveHostCapacityException(String.format("The host[uuid:%s]'s memory capacity[%s] is lower than the minimal required capacity[%s]",
                     host.getUuid(), rsp.getTotalMemory(), SizeUtils.sizeStringToBytes(KVMGlobalConfig.RESERVED_MEMORY_CAPACITY.value())));
-        } else {
-            new Log(host.getUuid()).log(HostLogLabel.CHECK_HOST_CPU_AND_MEMORY_CONFIGURATION);
         }
 
         ReportHostCapacityMessage rmsg = new ReportHostCapacityMessage();
@@ -95,8 +91,6 @@ public class KVMHostCapacityExtension implements KVMHostConnectExtensionPoint, H
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                new Log(context.getInventory().getUuid()).log(KVMHostLabel.SYNC_HOST_CAPACITY);
-
                 reportCapacity(context.getInventory(), new Completion(trigger) {
                     @Override
                     public void success() {

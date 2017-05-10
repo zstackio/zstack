@@ -13,7 +13,6 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.defer.Deferred;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.logging.Log;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.SyncThread;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -36,14 +35,17 @@ import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.search.GetQuery;
 import org.zstack.search.SearchQuery;
 import org.zstack.tag.TagManager;
-import org.zstack.utils.*;
+import org.zstack.utils.Bucket;
+import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.ObjectUtils;
+import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 
-import static org.zstack.core.Platform.operr;
-
 import javax.persistence.Tuple;
 import java.util.*;
+
+import static org.zstack.core.Platform.operr;
 
 public class HostManagerImpl extends AbstractService implements HostManager, ManagementNodeChangeListener,
         ManagementNodeReadyExtensionPoint {
@@ -200,8 +202,6 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         final HostVO vo = factory.createHost(hvo, msg);
         final AddHostMsg amsg = getAddHostMsg(msg);
 
-        new Log(vo.getUuid()).log(HostLogLabel.ADD_HOST_WRITE_DB);
-
         if (msg instanceof APIAddHostMsg) {
             tagMgr.createTagsFromAPICreateMessage((APIAddHostMsg)msg, vo.getUuid(), HostVO.class.getSimpleName());
         }
@@ -243,8 +243,6 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
 
             @Override
             public void run(final FlowTrigger trigger, Map data) {
-                new Log(inv.getUuid()).log(HostLogLabel.ADD_HOST_CONNECT);
-
                 ConnectHostMsg connectMsg = new ConnectHostMsg(vo.getUuid());
                 connectMsg.setNewAdd(true);
                 connectMsg.setStartPingTaskOnFailure(false);
@@ -265,8 +263,6 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                new Log(inv.getUuid()).log(HostLogLabel.ADD_HOST_CHECK_OS_VERSION_IN_CLUSTER);
-
                 String distro = HostSystemTags.OS_DISTRIBUTION.getTokenByResourceUuid(vo.getUuid(), HostSystemTags.OS_DISTRIBUTION_TOKEN);
                 String release = HostSystemTags.OS_RELEASE.getTokenByResourceUuid(vo.getUuid(), HostSystemTags.OS_RELEASE_TOKEN);
                 String version = HostSystemTags.OS_VERSION.getTokenByResourceUuid(vo.getUuid(), HostSystemTags.OS_VERSION_TOKEN);
@@ -343,7 +339,6 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
                 inv.setStatus(HostStatus.Connected.toString());
                 completion.success(inv);
 
-                new Log(inv.getUuid()).log(HostLogLabel.ADD_HOST_SUCCESS);
                 logger.debug(String.format("successfully added host[name:%s, hypervisor:%s, uuid:%s]", vo.getName(), vo.getHypervisorType(), vo.getUuid()));
             }
         }).error(new FlowErrorHandler(amsg) {

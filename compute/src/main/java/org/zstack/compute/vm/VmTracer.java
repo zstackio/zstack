@@ -6,14 +6,10 @@ import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.logging.Event;
 import org.zstack.core.thread.SyncTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.vm.VmInstanceConstant;
-import org.zstack.header.vm.VmInstanceState;
-import org.zstack.header.vm.VmInstanceVO;
-import org.zstack.header.vm.VmStateChangedOnHostMsg;
+import org.zstack.header.vm.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -88,15 +84,13 @@ public abstract class VmTracer {
         private void handleAnonymousVm(final String vmUuid, final VmInstanceState actualState, VmInstanceState expected) {
             final VmInstanceVO vm = dbf.findByUuid(vmUuid, VmInstanceVO.class);
             if (vm == null) {
-                new Event().log(VmLabels.STRANGER_VM, hostUuid, vmUuid);
-                /*
                 logger.debug(String.format("[Vm Tracer] detects stranger vm[identity:%s, state:%s]", vmUuid, actualState));
-                StrangerVmFoundData data = new StrangerVmFoundData();
+                VmTracerCanonicalEvents.StrangerVmFoundData data = new VmTracerCanonicalEvents.StrangerVmFoundData();
                 data.setVmIdentity(vmUuid);
                 data.setVmState(actualState);
                 data.setHostUuid(hostUuid);
                 evtf.fire(VmTracerCanonicalEvents.STRANGER_VM_FOUND_PATH, data);
-                */
+
                 return;
             }
 

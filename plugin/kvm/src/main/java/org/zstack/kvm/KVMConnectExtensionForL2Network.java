@@ -6,13 +6,12 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.logging.Log;
-import org.zstack.header.core.workflow.*;
-import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.core.workflow.*;
+import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.FutureCompletion;
+import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.*;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
@@ -21,11 +20,11 @@ import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkConstant;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolConstant;
 
-import static org.zstack.core.Platform.operr;
-
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+
+import static org.zstack.core.Platform.operr;
 
 /**
  */
@@ -224,8 +223,6 @@ public class KVMConnectExtensionForL2Network implements KVMHostConnectExtensionP
                     trigger.next();
                     return;
                 }
-
-                new Log(context.getInventory().getUuid()).log(KVMHostLabel.PREPARE_L2_NETWORK);
 
                 prepareNetwork(l2s.iterator(), context.getInventory().getUuid(), new Completion(trigger) {
                     @Override

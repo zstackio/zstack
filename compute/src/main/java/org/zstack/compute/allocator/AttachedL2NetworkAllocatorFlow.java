@@ -4,11 +4,8 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
-import org.zstack.compute.vm.VmLabels;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.logging.Log;
-import org.zstack.core.logging.LogLevel;
 import org.zstack.header.allocator.AbstractHostAllocatorFlow;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostVO;
@@ -108,11 +105,8 @@ public class AttachedL2NetworkAllocatorFlow extends AbstractHostAllocatorFlow {
         }
 
         if (candidates.isEmpty()) {
-            new Log(spec.getVmInstance().getUuid()).setLevel(LogLevel.ERROR)
-                    .log(VmLabels.VM_START_ALLOCATE_HOST_L2_FAILURE, candidates.size());
             fail(String.format("no host found in clusters that has attached to L2Networks which have L3Networks%s", spec.getL3NetworkUuids()));
         } else {
-            new Log(spec.getVmInstance().getUuid()).log(VmLabels.VM_START_ALLOCATE_HOST_L2_SUCCESS, candidates.size());
             next(candidates);
         }
     }

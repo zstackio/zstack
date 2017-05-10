@@ -8,7 +8,6 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.logging.Log;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
@@ -67,8 +66,6 @@ public class FlatDnsBackend implements NetworkServiceDnsBackend, KVMHostConnectE
             completion.success();
             return;
         }
-
-        new Log(host.getUuid()).log(FlatNetworkLabel.SYNC_DNS);
 
         SetDnsCmd cmd = new SetDnsCmd();
         cmd.dns = dns;

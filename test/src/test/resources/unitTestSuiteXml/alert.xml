@@ -1,4 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<UnitTestSuiteConfig xmlns="http://zstack.org/schema/zstack" timeout="600">
-    <TestCase class="org.zstack.test.mevoco.alert.TestSimulatorVmAlarm"/>
-</UnitTestSuiteConfig>

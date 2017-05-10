@@ -6,7 +6,6 @@ import org.zstack.core.cloudbus.AutoOffEventCallback;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.logging.Event;
 import org.zstack.header.Component;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostCanonicalEvents;
@@ -25,13 +24,13 @@ import org.zstack.network.service.flat.FlatDhcpBackend.DeleteNamespaceRsp;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import static org.zstack.core.Platform.operr;
-
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import static org.zstack.core.Platform.operr;
 
 /**
  * Created by xing5 on 2016/6/25.
@@ -136,8 +135,6 @@ public class FlatDhcpUpgradeExtension implements Component {
                         @Override
                         public void fail(ErrorCode errorCode) {
                             if (!errorCode.isError(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE)) {
-                                new Event().log(FlatNetworkLabels.DELETE_NAMESPACE_FAILURE, l3.getName(), l3.getUuid(),
-                                        getHostUuid(), errorCode.toString());
                                 return;
                             }
 
