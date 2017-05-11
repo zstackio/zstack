@@ -87,7 +87,7 @@ public class AddAliyunKeySecretAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
+        info.httpMethod = "POST";
         info.path = "/hybrid/aliyun/key";
         info.needSession = true;
         info.needPoll = true;
