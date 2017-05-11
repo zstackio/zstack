@@ -83,7 +83,7 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
         int timeoutInSeconds = ApplianceVmGlobalConfig.CONNECT_TIMEOUT.value(Integer.class);
         long timeout = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(timeoutInSeconds);
 
-        if (isReconnect && !NetworkUtils.isRemotePortOpen(mgmtNicIp, 22, 2)) {
+        if (isReconnect && !NetworkUtils.isRemotePortOpen(mgmtNicIp, 22, 2000)) {
             throw new OperationFailureException(operr("unable to ssh in to the vyos[%s], the ssh port seems not open", mgmtNicIp));
         }
 
