@@ -48,6 +48,8 @@ import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.*;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.storage.primary.*;
+import org.zstack.header.storage.snapshot.VolumeSnapshotTreeVO;
+import org.zstack.header.storage.snapshot.VolumeSnapshotTreeVO_;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.ChangeVmMetaDataMsg.AtomicHostUuid;
 import org.zstack.header.vm.ChangeVmMetaDataMsg.AtomicVmState;
@@ -159,6 +161,11 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     protected void destroy(final VmInstanceDeletionPolicy deletionPolicy, final Completion completion) {
         if (deletionPolicy == VmInstanceDeletionPolicy.DBOnly) {
+            completion.success();
+            return;
+        }
+
+        if (deletionPolicy == VmInstanceDeletionPolicy.KeepVolume && self.getState().equals(VmInstanceState.Destroyed)) {
             completion.success();
             return;
         }
@@ -1555,13 +1562,14 @@ public class VmInstanceBase extends AbstractVmInstance {
                     self = dbf.reload(self);
                     changeVmStateInDb(VmInstanceStateEvent.destroyed);
                     dbf.remove(getSelf());
-                } else if (deletionPolicy == VmInstanceDeletionPolicy.DBOnly) {
+                } else if (deletionPolicy == VmInstanceDeletionPolicy.DBOnly || deletionPolicy == VmInstanceDeletionPolicy.KeepVolume) {
                     new SQLBatch() {
                         @Override
                         protected void scripts() {
                             sql(VmNicVO.class).eq(VmNicVO_.vmInstanceUuid, self.getUuid()).hardDelete();
                             sql(VolumeVO.class).eq(VolumeVO_.vmInstanceUuid, self.getUuid())
-                                    .eq(VolumeVO_.type, VolumeType.Root).hardDelete();
+                                    .eq(VolumeVO_.type, VolumeType.Root)
+                                    .hardDelete();
                             sql(VmInstanceVO.class).eq(VmInstanceVO_.uuid, self.getUuid()).hardDelete();
                         }
                     }.execute();
@@ -1615,7 +1623,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 self = dbf.findByUuid(self.getUuid(), VmInstanceVO.class);
                 if (self == null || self.getState() == VmInstanceState.Destroyed) {
                     // the vm has been destroyed, most likely by rollback
-                    if (deletionPolicy != VmInstanceDeletionPolicy.DBOnly) {
+                    if (deletionPolicy != VmInstanceDeletionPolicy.DBOnly && deletionPolicy != VmInstanceDeletionPolicy.KeepVolume) {
                         bus.reply(msg, r);
                         chain.next();
                         return;

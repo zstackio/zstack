@@ -2,13 +2,14 @@ package org.zstack.compute.vm;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.AbstractAsyncCascadeExtension;
 import org.zstack.core.cascade.CascadeAction;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.db.UpdateQuery;
 import org.zstack.core.notification.N;
@@ -17,6 +18,7 @@ import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
@@ -32,12 +34,9 @@ import org.zstack.header.network.l3.IpRangeInventory;
 import org.zstack.header.network.l3.IpRangeVO;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
-import org.zstack.header.storage.primary.PrimaryStorageConstant;
-import org.zstack.header.storage.primary.PrimaryStorageDetachStruct;
-import org.zstack.header.storage.primary.PrimaryStorageInventory;
-import org.zstack.header.storage.primary.PrimaryStorageVO;
+import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.*;
-import org.zstack.header.volume.VolumeType;
+import org.zstack.header.volume.*;
 import org.zstack.header.zone.ZoneInventory;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.utils.CollectionUtils;
@@ -326,32 +325,32 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                 }
             });
         } else if (op == OP_DELETION) {
-            List<VmInstanceDeletionMsg> msgs = new ArrayList<>();
-            for (VmDeletionStruct inv : vminvs) {
+            new While<>(vminvs).all((inv, noErrorCompletion) -> {
                 VmInstanceDeletionMsg msg = new VmInstanceDeletionMsg();
                 // Upon primary storage deletion, the VM instance records will be deleted
                 // accordingly.  However, the VMs are still kept in their hosts.
                 if (PrimaryStorageVO.class.getSimpleName().equals(action.getParentIssuer())) {
-                    msg.setDeletionPolicy(VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy.DBOnly.toString());
+                    msg.setDeletionPolicy(VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy.KeepVolume.toString());
                 }
                 msg.setForceDelete(action.isActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE));
                 msg.setVmInstanceUuid(inv.getInventory().getUuid());
                 bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, inv.getInventory().getUuid());
-                msgs.add(msg);
-            }
-
-            bus.send(msgs, 20, new CloudBusListCallBack(completion) {
-                @Override
-                public void run(List<MessageReply> replies) {
-                    if (!action.isActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE)) {
-                        for (MessageReply r : replies) {
-                            if (!r.isSuccess()) {
-                                completion.fail(r.getError());
-                                return;
+                bus.send(msg, new CloudBusCallBack(noErrorCompletion) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!action.isActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE)) {
+                            if (!reply.isSuccess()) {
+                                // TODO
+                                logger.warn(reply.getError().toString());
                             }
                         }
-                    }
 
+                        noErrorCompletion.done();
+                    }
+                });
+            }).run(new NoErrorCompletion(completion) {
+                @Override
+                public void done() {
                     if (ZoneVO.class.getSimpleName().equals(action.getRootIssuer())) {
                         dbf.removeByPrimaryKeys(vminvs
                                         .stream()
@@ -359,6 +358,7 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                                         .collect(Collectors.toList()),
                                 VmInstanceVO.class);
                     }
+
                     completion.success();
                 }
             });

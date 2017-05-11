@@ -13,9 +13,7 @@ import org.zstack.core.db.TransactionalCallback.Operation;
 import org.zstack.header.Component;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APIListMessage;
-import org.zstack.header.vo.EO;
-import org.zstack.header.vo.SoftDeletionCascade;
-import org.zstack.header.vo.SoftDeletionCascades;
+import org.zstack.header.vo.*;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.FieldUtils;
@@ -724,6 +722,7 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
         }
 
         info.hardDelete(ids);
+
     }
 
     @Override
