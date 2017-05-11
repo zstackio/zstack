@@ -28,6 +28,9 @@ public class AddOssFileBucketNameAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String regionId;
 
+    @Param(required = false, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String description;
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 
@@ -78,7 +81,7 @@ public class AddOssFileBucketNameAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
+        info.httpMethod = "POST";
         info.path = "/hybrid/aliyun/oss-bucket";
         info.needSession = true;
         info.needPoll = true;

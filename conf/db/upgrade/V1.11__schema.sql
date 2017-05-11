@@ -83,7 +83,7 @@ CREATE TABLE `EcsSecurityGroupRuleVO` (
 	  `protocol` varchar(32) NOT NULL,
 	  `nicType` varchar(32) NOT NULL,
 	  `policy` varchar(32) NOT NULL,
-	  `sourceGroupId` varchar(128) NOT NULL,
+	  `externalGroupId` varchar(128) DEFAULT NULL,
 	  `direction` varchar(128) NOT NULL,
 	  `priority` varchar(128) NOT NULL,
 	  `description` varchar(1024) DEFAULT NULL,
