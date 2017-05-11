@@ -36,16 +36,13 @@ import org.zstack.kvm.*;
 import org.zstack.storage.ceph.*;
 import org.zstack.storage.ceph.primary.KVMCephVolumeTO.MonInfo;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
-import org.zstack.tag.SystemTag;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
-
 import static org.zstack.core.Platform.operr;
-
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
@@ -54,8 +51,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
-
 import static org.zstack.utils.CollectionDSL.e;
+import static org.zstack.utils.CollectionDSL.list;
 import static org.zstack.utils.CollectionDSL.map;
 
 /**
@@ -335,6 +332,28 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
 
         cmd.setDataVolumes(dtos);
         cmd.setBootIso(convertIsoToCephIfNeeded(cmd.getBootIso()));
+
+        if(spec.getDestRootVolume() == null || spec.getDestRootVolume().getPrimaryStorageUuid() == null){
+            return;
+        }
+
+        createSecret(host.getUuid(), spec.getDestRootVolume().getPrimaryStorageUuid());
+    }
+
+    private void createSecret(final String hostUuid, String puuid) {
+        logger.info(String.format("create secret before start vm on kvm, hostUuid = %s, puuid = %s", hostUuid, puuid));
+
+        CreateKvmSecretMsg msg = new CreateKvmSecretMsg();
+        msg.setPrimaryStorageUuid(puuid);
+        msg.setHostUuids(list(hostUuid));
+        bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, puuid);
+
+        MessageReply reply = bus.call(msg);
+        if (!reply.isSuccess()) {
+            ErrorCode error = reply.getError();
+            String errorDetail = error != null ? error.getDetails() : "no error detail";
+            logger.warn(String.format("create secret fail, hostUuid = %s, puuid = %s, error = %s", hostUuid, puuid, errorDetail));
+        }
     }
 
     @Override
