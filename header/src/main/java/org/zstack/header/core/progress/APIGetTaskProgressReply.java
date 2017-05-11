@@ -19,4 +19,10 @@ public class APIGetTaskProgressReply extends APIReply {
     public void setInventories(List<TaskProgressInventory> inventories) {
         this.inventories = inventories;
     }
+
+    public static APIGetTaskProgressReply __example__() {
+        APIGetTaskProgressReply msg = new APIGetTaskProgressReply();
+        return msg;
+    }
+    
 }

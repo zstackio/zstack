@@ -14,4 +14,10 @@ public class APIDeleteNotificationsEvent extends APIEvent {
     public APIDeleteNotificationsEvent(String apiId) {
         super(apiId);
     }
+
+    public static APIDeleteNotificationsEvent __example__() {
+        APIDeleteNotificationsEvent msg = new APIDeleteNotificationsEvent();
+        return msg;
+    }
+    
 }

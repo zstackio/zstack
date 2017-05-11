@@ -15,4 +15,10 @@ public class APIListPrimaryStorageReply extends APIReply {
         this.inventories = inventories;
     }
 
+
+    public static APIListPrimaryStorageReply __example__() {
+        APIListPrimaryStorageReply msg = new APIListPrimaryStorageReply();
+        return msg;
+    }
+    
 }

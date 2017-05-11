@@ -159,4 +159,10 @@ public class APIGetVolumeSnapshotTreeReply extends APIReply {
         this.inventories = inventories;
     }
 
+
+    public static APIGetVolumeSnapshotTreeReply __example__() {
+        APIGetVolumeSnapshotTreeReply msg = new APIGetVolumeSnapshotTreeReply();
+        return msg;
+    }
+    
 }

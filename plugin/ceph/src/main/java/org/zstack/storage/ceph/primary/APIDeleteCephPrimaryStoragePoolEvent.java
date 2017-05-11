@@ -14,4 +14,10 @@ public class APIDeleteCephPrimaryStoragePoolEvent extends APIEvent {
     public APIDeleteCephPrimaryStoragePoolEvent(String apiId) {
         super(apiId);
     }
+
+    public static APIDeleteCephPrimaryStoragePoolEvent __example__() {
+        APIDeleteCephPrimaryStoragePoolEvent msg = new APIDeleteCephPrimaryStoragePoolEvent();
+        return msg;
+    }
+    
 }
