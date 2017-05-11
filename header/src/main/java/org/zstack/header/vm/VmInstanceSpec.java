@@ -189,7 +189,6 @@ public class VmInstanceSpec implements Serializable {
     private List<String> bootOrders;
     private boolean gcOnStopFailure;
     private String consolePassword;
-    private boolean instanceOfferingOnlineChange;
     private VmAccountPreference accountPerference;
 
     public VmAccountPreference getAccountPerference() {
@@ -238,14 +237,6 @@ public class VmInstanceSpec implements Serializable {
 
     public void setConsolePassword(String consolePassword) {
         this.consolePassword = consolePassword;
-    }
-
-    public boolean getInstanceOfferingOnlineChange() {
-        return instanceOfferingOnlineChange;
-    }
-
-    public void setInstanceOfferingOnlineChange(boolean instanceOfferingOnlineChange) {
-        this.instanceOfferingOnlineChange = instanceOfferingOnlineChange;
     }
 
     public String getUserdata() {

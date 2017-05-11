@@ -22,4 +22,6 @@ public class VmGlobalConfig {
     public static GlobalConfig VM_CLEAN_TRAFFIC = new GlobalConfig(CATEGORY, "cleanTraffic");
     @GlobalConfigValidation(validValues = {"cirrus","vga", "qxl"})
     public static GlobalConfig VM_VIDEO_TYPE = new GlobalConfig(CATEGORY, "videoType");
+    @GlobalConfigValidation
+    public static GlobalConfig NUMA = new GlobalConfig(CATEGORY, "numa");
 }

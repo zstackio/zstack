@@ -112,6 +112,12 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 VmInstanceVO vo = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid()).find();
                 InstanceOfferingVO instanceOfferingVO = Q.New(InstanceOfferingVO.class).eq(InstanceOfferingVO_.uuid, msg.getInstanceOfferingUuid()).find();
 
+                if (!VmGlobalConfig.NUMA.value(Boolean.class) && !VmInstanceState.Stopped.equals(vo.getState())) {
+                    throw new ApiMessageInterceptionException(argerr(
+                            "the VM cannot do online cpu/memory update because it is not of NUMA architecture. Please stop the VM then do the cpu/memory update again"
+                    ));
+                }
+
                 if (!VmInstanceState.Stopped.equals(vo.getState()) && !VmInstanceState.Running.equals(vo.getState())) {
                     throw new OperationFailureException(operr("The state of vm[uuid:%s] is %s. Only these state[%s] is allowed to update cpu or memory.",
                             vo.getUuid(), vo.getState(),
@@ -122,12 +128,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                     return;
                 }
 
-                if (ImagePlatform.Windows.toString().equals(vo.getPlatform())
-                        || ImagePlatform.WindowsVirtio.toString().equals(vo.getPlatform())
-                        || ImagePlatform.Other.toString().equals(vo.getPlatform())) {
-                    throw new ApiMessageInterceptionException(argerr("unable to update memory or cpu of current vm[uuid:%s]." +
-                            " Please stop it and then update", msg.getVmInstanceUuid()));
-                }
+
 
                 if (instanceOfferingVO.getCpuNum() < vo.getCpuNum() || instanceOfferingVO.getMemorySize() < vo.getMemorySize()) {
                     throw new ApiMessageInterceptionException(argerr(
@@ -146,8 +147,15 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 VmInstanceVO vo = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid()).find();
                 Integer cpuSum = msg.getCpuNum();
                 Long memorySize = msg.getMemorySize();
-                if (cpuSum == null && memorySize == null) {
+                if ((cpuSum == null && memorySize == null)) {
                     return;
+                }
+
+                VmInstanceState vmState = Q.New(VmInstanceVO.class).select(VmInstanceVO_.state).eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid()).findValue();
+                if (!VmGlobalConfig.NUMA.value(Boolean.class) && !VmInstanceState.Stopped.equals(vmState)) {
+                    throw new ApiMessageInterceptionException(argerr(
+                            "the VM cannot do online cpu/memory update because it is not of NUMA architecture. Please stop the VM then do the cpu/memory update again"
+                    ));
                 }
 
                 if (!VmInstanceState.Stopped.equals(vo.getState()) && !VmInstanceState.Running.equals(vo.getState())) {
@@ -157,18 +165,8 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 }
 
 
-                VmInstanceState vmState = Q.New(VmInstanceVO.class).select(VmInstanceVO_.state).eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid()).findValue();
                 if (VmInstanceState.Stopped.equals(vmState)) {
                     return;
-                }
-
-                if (msg.getCpuNum() != null || msg.getMemorySize() != null) {
-                    if (ImagePlatform.Windows.toString().equals(vo.getPlatform())
-                            || ImagePlatform.WindowsVirtio.toString().equals(vo.getPlatform())
-                            || ImagePlatform.Other.toString().equals(vo.getPlatform())) {
-                        throw new OperationFailureException(operr("unable to update memory or cpu of current vm[uuid:%s]." +
-                                " Please stop it and then update", msg.getUuid()));
-                    }
                 }
 
                 if (msg.getCpuNum() != null && msg.getCpuNum() < vo.getCpuNum()) {

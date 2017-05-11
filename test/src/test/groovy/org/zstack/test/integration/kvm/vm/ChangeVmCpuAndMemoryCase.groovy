@@ -1,6 +1,7 @@
 package org.zstack.test.integration.kvm.vm
 
 import org.springframework.http.HttpEntity
+import org.zstack.compute.vm.VmGlobalConfig
 import org.zstack.compute.vm.VmSystemTags
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.header.host.HostVO
@@ -168,6 +169,7 @@ class ChangeVmCpuAndMemoryCase extends SubCase {
     @Override
     void test() {
         env.create {
+            VmGlobalConfig.NUMA.updateValue(true)
             vm = env.inventoryByName("vm")
 
             dbf = bean(DatabaseFacade.class)
@@ -182,12 +184,11 @@ class ChangeVmCpuAndMemoryCase extends SubCase {
             testChangeCpuAndMemoryWhenVmStopped()
             testChangeCpuWhenVmRunning()
             testChangeMemoryWhenVmRunning()
+            testNumaGlobalConfig()
             testFailureCameoutAfterAllocateHostCapacityTheCapacityWillBeReturned()
             testCannotFindHostWontMakeChangeVmCpuAndMemoryChainRollback()
             testUpdateCpuOrMemoryWhenVMisUnknownOrDestroy()
             testDecreaseVmCpuAndMemoryReturnFail()
-            testPlatformFailureWhenVmIsRunning()
-            testPlatformWhenVmStopped()
         }
     }
 
@@ -324,6 +325,26 @@ class ChangeVmCpuAndMemoryCase extends SubCase {
         env.cleanAfterSimulatorHandlers()
     }
 
+    void testNumaGlobalConfig() {
+        VmGlobalConfig.NUMA.updateValue(false)
+
+        UpdateVmInstanceAction updateVmInstanceAction = new UpdateVmInstanceAction()
+        updateVmInstanceAction.uuid = vm.uuid
+        updateVmInstanceAction.cpuNum = 100
+        updateVmInstanceAction.sessionId = adminSession()
+        UpdateVmInstanceAction.Result updateVmInstanceResult = updateVmInstanceAction.call()
+        assert updateVmInstanceResult.error != null
+
+        VmGlobalConfig.NUMA.updateValue(true)
+
+        UpdateVmInstanceAction updateVmInstanceAction2 = new UpdateVmInstanceAction()
+        updateVmInstanceAction2.uuid = vm.uuid
+        updateVmInstanceAction2.memorySize = SizeUnit.GIGABYTE.toByte(8)
+        updateVmInstanceAction2.sessionId = adminSession()
+        UpdateVmInstanceAction.Result updateVmInstanceResult2 = updateVmInstanceAction2.call()
+        assert updateVmInstanceResult2.error == null
+    }
+
     void testDecreaseVmCpuAndMemoryReturnFail() {
         UpdateVmInstanceAction updateVmInstanceAction = new UpdateVmInstanceAction()
         updateVmInstanceAction.uuid = vm.uuid
@@ -422,67 +443,6 @@ class ChangeVmCpuAndMemoryCase extends SubCase {
         vo = dbFindByUuid(vm.uuid, VmInstanceVO.class)
         vo.setState(VmInstanceState.Running)
         dbf.updateAndRefresh(vo)
-        vo = dbFindByUuid(vm.uuid, VmInstanceVO.class)
-        assert vo.state == VmInstanceState.Running
-    }
-
-    void testPlatformFailureWhenVmIsRunning() {
-        VmInstanceVO vo = dbFindByUuid(vm.uuid, VmInstanceVO.class)
-        vo.setPlatform(ImagePlatform.Windows.toString())
-        dbf.updateAndRefresh(vo)
-        vo = dbFindByUuid(vm.uuid, VmInstanceVO.class)
-        assert vo.platform == ImagePlatform.Windows.toString()
-        UpdateVmInstanceAction updateVmInstanceAction = new UpdateVmInstanceAction()
-        updateVmInstanceAction.uuid = vm.uuid
-        updateVmInstanceAction.cpuNum = 20
-        updateVmInstanceAction.sessionId = adminSession()
-        UpdateVmInstanceAction.Result updateVmInstanceResult = updateVmInstanceAction.call()
-        assert updateVmInstanceResult.error != null
-
-
-        vo.setPlatform(ImagePlatform.WindowsVirtio.toString())
-        dbf.updateAndRefresh(vo)
-        vo = dbFindByUuid(vm.uuid, VmInstanceVO.class)
-        assert vo.platform == ImagePlatform.WindowsVirtio.toString()
-        updateVmInstanceAction = new UpdateVmInstanceAction()
-        updateVmInstanceAction.uuid = vm.uuid
-        updateVmInstanceAction.cpuNum = 20
-        updateVmInstanceAction.sessionId = adminSession()
-        updateVmInstanceResult = updateVmInstanceAction.call()
-        assert updateVmInstanceResult.error != null
-
-
-        vo.setPlatform(ImagePlatform.Other.toString())
-        dbf.updateAndRefresh(vo)
-        vo = dbFindByUuid(vm.uuid, VmInstanceVO.class)
-        assert vo.platform == ImagePlatform.Other.toString()
-        updateVmInstanceAction = new UpdateVmInstanceAction()
-        updateVmInstanceAction.uuid = vm.uuid
-        updateVmInstanceAction.cpuNum = 20
-        updateVmInstanceAction.sessionId = adminSession()
-        updateVmInstanceResult = updateVmInstanceAction.call()
-        assert updateVmInstanceResult.error != null
-    }
-
-    void testPlatformWhenVmStopped() {
-        VmInstanceVO vo = dbFindByUuid(vm.uuid, VmInstanceVO.class)
-        assert vo.platform == ImagePlatform.Other.toString()
-        stopVmInstance {
-            uuid = vm.uuid
-        }
-        vo = dbFindByUuid(vm.uuid, VmInstanceVO.class)
-        assert vo.state == VmInstanceState.Stopped
-
-        updateVmInstance {
-            uuid = vm.uuid
-            cpuNum = 20
-        }
-        vo = dbFindByUuid(vm.uuid, VmInstanceVO.class)
-        assert vo.cpuNum == 20
-
-        startVmInstance {
-            uuid = vm.uuid
-        }
         vo = dbFindByUuid(vm.uuid, VmInstanceVO.class)
         assert vo.state == VmInstanceState.Running
     }
