@@ -15,4 +15,10 @@ public class APIListImageReply extends APIReply {
         this.inventories = inventories;
     }
 
+
+    public static APIListImageReply __example__() {
+        APIListImageReply msg = new APIListImageReply();
+        return msg;
+    }
+    
 }

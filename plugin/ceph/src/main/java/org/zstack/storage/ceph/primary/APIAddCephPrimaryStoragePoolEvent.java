@@ -24,4 +24,10 @@ public class APIAddCephPrimaryStoragePoolEvent extends APIEvent {
     public void setInventory(CephPrimaryStoragePoolInventory inventory) {
         this.inventory = inventory;
     }
+
+    public static APIAddCephPrimaryStoragePoolEvent __example__() {
+        APIAddCephPrimaryStoragePoolEvent msg = new APIAddCephPrimaryStoragePoolEvent();
+        return msg;
+    }
+    
 }
