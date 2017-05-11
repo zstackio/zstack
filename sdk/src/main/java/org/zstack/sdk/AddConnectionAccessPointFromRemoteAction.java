@@ -75,7 +75,7 @@ public class AddConnectionAccessPointFromRemoteAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
+        info.httpMethod = "POST";
         info.path = "/hybrid/aliyun/access-point";
         info.needSession = true;
         info.needPoll = true;

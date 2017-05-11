@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class CreateEcsVpcRemoteAction extends AbstractAction {
+public class CreateOssBucketRemoteAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public CreateEcsVpcRemoteResult value;
+        public CreateOssBucketRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -23,15 +23,12 @@ public class CreateEcsVpcRemoteAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String dataCenterUuid;
+    public java.lang.String regionId;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String cidrBlock;
+    @Param(required = true, maxLength = 128, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String bucketName;
 
-    @Param(required = true, maxLength = 64, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 256, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
     @Param(required = false)
@@ -58,8 +55,8 @@ public class CreateEcsVpcRemoteAction extends AbstractAction {
             return ret;
         }
         
-        CreateEcsVpcRemoteResult value = res.getResult(CreateEcsVpcRemoteResult.class);
-        ret.value = value == null ? new CreateEcsVpcRemoteResult() : value; 
+        CreateOssBucketRemoteResult value = res.getResult(CreateOssBucketRemoteResult.class);
+        ret.value = value == null ? new CreateOssBucketRemoteResult() : value; 
 
         return ret;
     }
@@ -85,7 +82,7 @@ public class CreateEcsVpcRemoteAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/hybrid/aliyun/vpc";
+        info.path = "/hybrid/aliyun/oss-bucket/remote";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";

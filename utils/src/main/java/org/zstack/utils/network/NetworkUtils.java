@@ -304,6 +304,13 @@ public class NetworkUtils {
         return (int) (e - s + 1);
     }
 
+    public static int getTotalIpInCidr(String cidr) {
+        DebugUtils.Assert(isCidr(cidr), String.format("%s is not a cidr", cidr));
+        SubnetUtils.SubnetInfo range = new SubnetUtils(cidr).getInfo();
+
+        return getTotalIpInRange(range.getLowAddress(), range.getHighAddress());
+    }
+
 
     public static String getIpAddressByName(String hostName) throws UnknownHostException {
         InetAddress ia = InetAddress.getByName(hostName);
@@ -467,6 +474,15 @@ public class NetworkUtils {
     public static boolean isIpRoutedByDefaultGateway(String ip) {
         ShellResult res = ShellUtils.runAndReturn(String.format("ip route get %s | grep -q \"via $(ip route | awk '/default/ {print $3}')\"", ip));
         return res.isReturnCode(0);
+    }
+
+    public static boolean isSubCidr(String cidr, String subCidr) {
+        DebugUtils.Assert(isCidr(cidr), String.format("%s is not a cidr", cidr));
+        DebugUtils.Assert(isCidr(subCidr), String.format("%s is not a cidr", subCidr));
+
+        SubnetUtils.SubnetInfo range = new SubnetUtils(cidr).getInfo();
+        SubnetUtils.SubnetInfo sub = new SubnetUtils(subCidr).getInfo();
+        return range.isInRange(sub.getLowAddress()) && range.isInRange(sub.getHighAddress());
     }
 }
 

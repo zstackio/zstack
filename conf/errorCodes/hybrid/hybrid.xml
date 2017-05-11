@@ -49,5 +49,9 @@
         <id>1011</id>
         <description>no such ecs security group</description>
     </code>
+    <code>
+        <id>1012</id>
+        <description>no such oss bucket</description>
+    </code>
 </error>
 
