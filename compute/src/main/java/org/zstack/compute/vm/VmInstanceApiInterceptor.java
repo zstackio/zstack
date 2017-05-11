@@ -146,8 +146,15 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 VmInstanceVO vo = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid()).find();
                 Integer cpuSum = msg.getCpuNum();
                 Long memorySize = msg.getMemorySize();
-                if (cpuSum == null && memorySize == null) {
+                if ((cpuSum == null && memorySize == null)) {
                     return;
+                }
+
+                VmInstanceState vmState = Q.New(VmInstanceVO.class).select(VmInstanceVO_.state).eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid()).findValue();
+                if (!VmGlobalConfig.NUMA.value(Boolean.class) && !VmInstanceState.Stopped.equals(vmState)) {
+                    throw new ApiMessageInterceptionException(argerr(
+                            "cannot do cpu or memory update because numa not allowed when vm not in the state of %s", vmState
+                    ));
                 }
 
                 if (!VmInstanceState.Stopped.equals(vo.getState()) && !VmInstanceState.Running.equals(vo.getState())) {
@@ -157,18 +164,8 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 }
 
 
-                VmInstanceState vmState = Q.New(VmInstanceVO.class).select(VmInstanceVO_.state).eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid()).findValue();
                 if (VmInstanceState.Stopped.equals(vmState)) {
                     return;
-                }
-
-                if (msg.getCpuNum() != null || msg.getMemorySize() != null) {
-                    if (ImagePlatform.Windows.toString().equals(vo.getPlatform())
-                            || ImagePlatform.WindowsVirtio.toString().equals(vo.getPlatform())
-                            || ImagePlatform.Other.toString().equals(vo.getPlatform())) {
-                        throw new OperationFailureException(operr("unable to update memory or cpu of current vm[uuid:%s]." +
-                                " Please stop it and then update", msg.getUuid()));
-                    }
                 }
 
                 if (msg.getCpuNum() != null && msg.getCpuNum() < vo.getCpuNum()) {
