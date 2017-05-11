@@ -3135,13 +3135,14 @@ public class VmInstanceBase extends AbstractVmInstance {
         chain.setName(String.format("change-cpu-and-memory-of-vm-%s", self.getUuid()));
         chain.then(new Flow() {
             String __name__ = String.format("allocate-host-capacity-on-host-%s", self.getHostUuid());
+            boolean result = false;
 
             @Override
             public void run(FlowTrigger chain, Map data) {
                 DesignatedAllocateHostMsg msg = new DesignatedAllocateHostMsg();
                 msg.setCpuCapacity(cpuNum - oldCpuNum);
                 msg.setMemoryCapacity(memorySize - oldMemorySize);
-                msg.setAllocatorStrategy(self.getAllocatorStrategy());
+                msg.setAllocatorStrategy(HostAllocatorConstant.DESIGNATED_HOST_ALLOCATOR_STRATEGY_TYPE);
                 msg.setVmInstance(VmInstanceInventory.valueOf(self));
                 msg.setHostUuid(self.getHostUuid());
                 msg.setL3NetworkUuids(CollectionUtils.transformToList(self.getVmNics(), new Function<String, VmNicVO>() {
@@ -3150,7 +3151,6 @@ public class VmInstanceBase extends AbstractVmInstance {
                         return arg.getL3NetworkUuid();
                     }
                 }));
-
                 msg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
                 bus.send(msg, new CloudBusCallBack(chain) {
                     @Override
@@ -3158,6 +3158,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                         if (!reply.isSuccess()) {
                             chain.fail(reply.getError());
                         } else {
+                            result = true;
                             logger.debug(String.format("reserve memory %s bytes and cpu %s on host[uuid:%s]", memorySize - self.getMemorySize(), cpuNum - self.getCpuNum(), self.getHostUuid()));
                             chain.next();
                         }
@@ -3167,12 +3168,15 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             @Override
             public void rollback(FlowRollback chain, Map data) {
-                ReturnHostCapacityMsg msg = new ReturnHostCapacityMsg();
-                msg.setCpuCapacity(cpuNum - oldCpuNum);
-                msg.setMemoryCapacity(memorySize - oldMemorySize);
-                msg.setHostUuid(self.getHostUuid());
-                msg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
-                bus.send(msg);
+                if (result) {
+                    ReturnHostCapacityMsg msg = new ReturnHostCapacityMsg();
+                    msg.setCpuCapacity(cpuNum - oldCpuNum);
+                    msg.setMemoryCapacity(memorySize - oldMemorySize);
+                    msg.setHostUuid(self.getHostUuid());
+                    msg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
+                    bus.send(msg);
+                }
+
                 chain.rollback();
             }
         }).then(new NoRollbackFlow() {
