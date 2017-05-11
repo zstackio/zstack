@@ -716,6 +716,15 @@ public class KVMAgentCommands {
         private String hostManagementIp;
         private String clock;
         private String videoType;
+        private boolean useNuma;
+
+        public boolean isUseNuma() {
+            return useNuma;
+        }
+
+        public void setUseNuma(boolean useNuma) {
+            this.useNuma = useNuma;
+        }
 
         public long getMaxMemory() {
             return maxMemory;

@@ -54,4 +54,12 @@
 		<defaultValue>cirrus</defaultValue>
 		<type>java.lang.String</type>
 	</config>
+
+	<config>
+		<category>vm</category>
+		<name>numa</name>
+		<description>whether to use numa structure</description>
+		<type>java.lang.Boolean</type>
+		<defaultValue>false</defaultValue>
+	</config>
 </globalConfig>
