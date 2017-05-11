@@ -1,7 +1,7 @@
 #!/bin/sh
 
 usage() {
-    echo "usage:$0 [deploydb|deploy|xml-java-schema|premium|sdk|doc]"
+    echo "usage:$0 [deploydb|deploy|xml-java-schema|premium|sdk|doc|docpremium|md|mdpremium]"
 }
 
 py() {
@@ -42,20 +42,19 @@ doc() {
     cd - > /dev/null
 }
 
-md() {
-    cd test
-    mvn test -Dtest=TestGenerateMarkDownDoc
-    cd - > /dev/null
-}
-
 docpremium() {
     if [ -d premium/test-premium ]; then
         cd premium/test-premium
     else
         cd test
     fi
-
     mvn test -Dtest=TestGenerateDocTemplate
+    cd - > /dev/null
+}
+
+md() {
+    cd test
+    mvn test -Dtest=TestGenerateMarkDownDoc
     cd - > /dev/null
 }
 
@@ -149,6 +148,12 @@ run_profile() {
         sdk
     elif test x$1 = x'doc'; then
 	doc
+    elif test x$1 = x'docpremium'; then
+    docpremium
+    elif test x$1 = x'md'; then
+    md
+    elif test x$1 = x'mdpremium'; then
+    mdpremium 
     elif test x$1 = x'py'; then
 	py
     elif test x$1 = x'pysdk'; then
