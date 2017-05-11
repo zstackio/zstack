@@ -464,15 +464,13 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
 
             completion.await(TimeUnit.MINUTES.toMillis(15));
         }
-    }
 
-    @Override
-    public void afterDeleteHost(final HostInventory inventory) {
         final List<String> priUuids = getLocalStorageInCluster(inventory.getClusterUuid());
         if (priUuids == null || priUuids.isEmpty()) {
             return;
         }
 
+        // decrease ps capacity
         for (String priUuid : priUuids) {
             RemoveHostFromLocalStorageMsg msg = new RemoveHostFromLocalStorageMsg();
             msg.setPrimaryStorageUuid(priUuid);
@@ -488,6 +486,10 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
                         inventory.getUuid(), priUuid));
             }
         }
+    }
+
+    @Override
+    public void afterDeleteHost(final HostInventory inventory) {
     }
 
     @Override
