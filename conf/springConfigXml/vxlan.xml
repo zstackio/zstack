@@ -78,4 +78,10 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="VtepCascadeExtension" class="org.zstack.network.l2.vxlan.vtep.VtepCascadeExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
 </beans>

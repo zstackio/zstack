@@ -154,7 +154,7 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
                 msg.setPath(VXLAN_KVM_CHECK_L2VXLAN_NETWORK_PATH);
                 msg.setNoStatusCheck(noStatusCheck);
                 bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
-                bus.send(msg, new CloudBusCallBack(completion) {
+                bus.send(msg, new CloudBusCallBack(trigger) {
                     @Override
                     public void run(MessageReply reply) {
                         if (!reply.isSuccess()) {
@@ -187,6 +187,7 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
                 if (vtepIps.contains(data.get(vtepIp))) {
                     data.put(needPopulate, false);
                     trigger.next();
+                    return;
                 } else {
                     data.put(needPopulate, true);
                 }
@@ -200,12 +201,13 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
                 cmsg.setType(KVM_VXLAN_TYPE);
 
                 bus.makeTargetServiceIdByResourceUuid(cmsg, L2NetworkConstant.SERVICE_ID, l2vxlan.getPoolUuid());
-                bus.send(cmsg, new CloudBusCallBack(completion) {
+                bus.send(cmsg, new CloudBusCallBack(trigger) {
                     @Override
                     public void run(MessageReply reply) {
                         if (!reply.isSuccess()) {
                             logger.warn(reply.getError().toString());
                             trigger.fail(reply.getError());
+                            return;
                         }
                         logger.debug(String.format("created new vtep [%s] on vxlan network pool [%s]", cmsg.getVtepIp(), ((L2VxlanNetworkInventory) l2Network).getPoolUuid()));
                         trigger.next();
@@ -217,53 +219,55 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
             public void run(FlowTrigger trigger, Map data) {
                 if (data.get(needPopulate).equals(false)) {
                     trigger.next();
+                    return;
                 }
 
                 List<VtepVO> vteps = Q.New(VtepVO.class).eq(VtepVO_.poolUuid, l2vxlan.getPoolUuid()).list();
 
                 if (vteps.size() == 1) {
-                    logger.debug("no need to populate fdb since there are only on vtep");
+                    logger.debug("no need to populate fdb since there are only one vtep");
                     trigger.next();
-                } else {
-                    new While<>(vteps).all((vtep, completion1) -> {
-                        List<String> peers = new ArrayList<>();
-                        for (VtepVO vo : vteps) {
-                            if (peers.contains(vo.getVtepIp()) || vo.getVtepIp().equals(vtep.getVtepIp())) {
-                                continue;
-                            } else {
-                                peers.add(vo.getVtepIp());
-                            }
+                    return;
+                }
+
+                new While<>(vteps).all((vtep, completion1) -> {
+                    List<String> peers = new ArrayList<>();
+                    for (VtepVO vo : vteps) {
+                        if (peers.contains(vo.getVtepIp()) || vo.getVtepIp().equals(vtep.getVtepIp())) {
+                            continue;
+                        } else {
+                            peers.add(vo.getVtepIp());
                         }
+                    }
 
-                        logger.info(String.format("populate fdb for vtep %s in vxlan network %s", vtep.getVtepIp(), l2vxlan.getUuid()));
+                    logger.info(String.format("populate fdb for vtep %s in vxlan network %s", vtep.getVtepIp(), l2vxlan.getUuid()));
 
-                        VxlanKvmAgentCommands.PopulateVxlanFdbCmd cmd = new VxlanKvmAgentCommands.PopulateVxlanFdbCmd();
-                        cmd.setPeers(peers);
-                        cmd.setVni(l2vxlan.getVni());
+                    VxlanKvmAgentCommands.PopulateVxlanFdbCmd cmd = new VxlanKvmAgentCommands.PopulateVxlanFdbCmd();
+                    cmd.setPeers(peers);
+                    cmd.setVni(l2vxlan.getVni());
 
-                        KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
-                        msg.setHostUuid(vtep.getHostUuid());
-                        msg.setCommand(cmd);
-                        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
-                        msg.setPath(VXLAN_KVM_POPULATE_FDB_L2VXLAN_NETWORK_PATH);
-                        msg.setNoStatusCheck(noStatusCheck);
-                        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
-                        bus.send(msg, new CloudBusCallBack(completion1) {
-                            @Override
-                            public void run(MessageReply reply) {
-                                if (!reply.isSuccess()) {
-                                    logger.warn(reply.getError().toString());
-                                }
-                                completion1.done();
-                            }
-                        });
-                    }).run(new NoErrorCompletion() {
+                    KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+                    msg.setHostUuid(vtep.getHostUuid());
+                    msg.setCommand(cmd);
+                    msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
+                    msg.setPath(VXLAN_KVM_POPULATE_FDB_L2VXLAN_NETWORK_PATH);
+                    msg.setNoStatusCheck(noStatusCheck);
+                    bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
+                    bus.send(msg, new CloudBusCallBack(completion1) {
                         @Override
-                        public void done() {
-                            trigger.next();
+                        public void run(MessageReply reply) {
+                            if (!reply.isSuccess()) {
+                                logger.warn(reply.getError().toString());
+                            }
+                            completion1.done();
                         }
                     });
-                }
+                }).run(new NoErrorCompletion() {
+                    @Override
+                    public void done() {
+                        trigger.next();
+                    }
+                });
             }
         }).done(new FlowDoneHandler(completion) {
             @Override

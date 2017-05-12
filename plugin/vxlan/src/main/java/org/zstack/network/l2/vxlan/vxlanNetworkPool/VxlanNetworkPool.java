@@ -121,6 +121,8 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
             handle((L2NetworkDeletionMsg) msg);
         } else if (msg instanceof CreateVtepMsg) {
             handle((CreateVtepMsg) msg);
+        } else if (msg instanceof DeleteVtepMsg) {
+            handle((DeleteVtepMsg) msg);
         } else if (msg instanceof L2NetworkMessage) {
             superHandle((L2NetworkMessage) msg);
         } else {
@@ -208,6 +210,13 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
         bus.reply(msg, reply);
     }
 
+    private void handle(DeleteVtepMsg msg) {
+        DeleteVtepReply reply = new DeleteVtepReply();
+        VtepVO vo = dbf.findByUuid(msg.getVtepUuid(), VtepVO.class);
+        dbf.remove(vo);
+        bus.reply(msg, reply);
+    }
+
     private void handleApiMessage(APIMessage msg) {
         if (msg instanceof APIDeleteL2NetworkMsg) {
             handle((APIDeleteL2NetworkMsg) msg);
@@ -240,6 +249,7 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
                 if (uuids.isEmpty()) {
                     logger.info(String.format("There are no vxlan networks for vxlan pool %s", msg.getL2NetworkUuid()));
                     trigger.next();
+                    return;
                 }
 
                 logger.info(String.format("Detach l2 vxlan networks %s for vxlan pool %s", uuids, msg.getL2NetworkUuid()));

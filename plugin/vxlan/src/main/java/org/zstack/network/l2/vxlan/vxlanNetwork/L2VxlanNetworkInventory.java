@@ -9,6 +9,7 @@ import org.zstack.header.query.Queryable;
 import org.zstack.header.search.Inventory;
 import org.zstack.header.search.Parent;
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.L2VxlanNetworkPoolInventory;
+import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolVO;
 
 import javax.persistence.JoinColumn;
 import java.util.ArrayList;
@@ -29,7 +30,7 @@ public class L2VxlanNetworkInventory extends L2NetworkInventory {
      */
     private Integer vni;
 
-    @Queryable(mappingClass = VxlanNetworkVO.class,
+    @Queryable(mappingClass = VxlanNetworkPoolVO.class,
             joinColumn = @JoinColumn(name = "uuid", referencedColumnName = "poolUuid"))
     private String poolUuid;
 
