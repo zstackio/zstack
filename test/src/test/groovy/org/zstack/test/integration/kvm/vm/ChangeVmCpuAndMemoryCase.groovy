@@ -5,7 +5,6 @@ import org.zstack.compute.vm.VmGlobalConfig
 import org.zstack.compute.vm.VmSystemTags
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.header.host.HostVO
-import org.zstack.header.image.ImagePlatform
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
@@ -184,6 +183,7 @@ class ChangeVmCpuAndMemoryCase extends SubCase {
             testChangeCpuAndMemoryWhenVmStopped()
             testChangeCpuWhenVmRunning()
             testChangeMemoryWhenVmRunning()
+            testIncreaseMemoryAutoAlignment()
             testNumaGlobalConfig()
             testFailureCameoutAfterAllocateHostCapacityTheCapacityWillBeReturned()
             testCannotFindHostWontMakeChangeVmCpuAndMemoryChainRollback()
@@ -323,6 +323,64 @@ class ChangeVmCpuAndMemoryCase extends SubCase {
         }
 
         env.cleanAfterSimulatorHandlers()
+    }
+
+    void testIncreaseMemoryAutoAlignment() {
+        HostInventory host = env.inventoryByName("kvm")
+
+        KVMAgentCommands.IncreaseMemoryCmd cmd = null
+        env.afterSimulator(KVMConstant.KVM_VM_ONLINE_INCREASE_MEMORY) { KVMAgentCommands.IncreaseMemoryResponse rsp, HttpEntity<String> e ->
+            cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.IncreaseMemoryCmd.class)
+            rsp.memorySize = SizeUnit.GIGABYTE.toByte(8)
+            rsp.success = true
+            return rsp
+        }
+
+        HostVO beforeVO = dbFindByUuid(host.uuid, HostVO.class)
+
+        UpdateVmInstanceAction updateVmInstanceAction = new UpdateVmInstanceAction()
+        updateVmInstanceAction.uuid = vm.uuid
+        updateVmInstanceAction.memorySize = SizeUnit.GIGABYTE.toByte(8) + SizeUnit.MEGABYTE.toByte(1)
+        updateVmInstanceAction.sessionId = adminSession()
+        UpdateVmInstanceAction.Result updateVmInstanceResult = updateVmInstanceAction.call()
+        assert updateVmInstanceResult.error == null
+
+        env.cleanAfterSimulatorHandlers()
+        env.afterSimulator(KVMConstant.KVM_VM_ONLINE_INCREASE_MEMORY) { KVMAgentCommands.IncreaseMemoryResponse rsp, HttpEntity<String> e ->
+            cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.IncreaseMemoryCmd.class)
+            rsp.memorySize = SizeUnit.GIGABYTE.toByte(8) + SizeUnit.MEGABYTE.toByte(128)
+            rsp.success = true
+            return rsp
+        }
+
+        UpdateVmInstanceAction updateVmInstanceAction2 = new UpdateVmInstanceAction()
+        updateVmInstanceAction2.uuid = vm.uuid
+        updateVmInstanceAction2.memorySize = SizeUnit.GIGABYTE.toByte(8) + SizeUnit.MEGABYTE.toByte(65)
+        updateVmInstanceAction2.sessionId = adminSession()
+        UpdateVmInstanceAction.Result updateVmInstanceResult2 = updateVmInstanceAction2.call()
+        assert updateVmInstanceResult2.error == null
+
+        assert SizeUnit.MEGABYTE.toByte(65) % SizeUnit.MEGABYTE.toByte(128) > SizeUnit.MEGABYTE.toByte(128) / 2
+        assert ((long) (SizeUnit.GIGABYTE.toByte(8) / SizeUnit.MEGABYTE.toByte(128) + (long) 1) * SizeUnit.MEGABYTE.toByte(128)) == ((long) SizeUnit.GIGABYTE.toByte(8) + SizeUnit.MEGABYTE.toByte(128))
+        HostVO afterVO = dbFindByUuid(host.uuid, HostVO.class)
+        assert beforeVO.getCapacity().getAvailableMemory() == afterVO.getCapacity().getAvailableMemory() + SizeUnit.MEGABYTE.toByte(128)
+
+        stopVmInstance {
+            uuid = vm.uuid
+        }
+        VmInstanceVO vo = dbFindByUuid(vm.uuid, VmInstanceVO.class)
+        assert vo.state == VmInstanceState.Stopped
+
+        updateVmInstance {
+            uuid = vm.uuid
+            memorySize = SizeUnit.GIGABYTE.toByte(8)
+        }
+
+        startVmInstance {
+            uuid = vm.uuid
+        }
+        vo = dbFindByUuid(vm.uuid, VmInstanceVO.class)
+        assert vo.state == VmInstanceState.Running
     }
 
     void testNumaGlobalConfig() {
