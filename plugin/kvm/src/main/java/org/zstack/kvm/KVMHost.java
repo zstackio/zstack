@@ -1073,6 +1073,7 @@ public class KVMHost extends HostBase implements Host {
                         cmd.setSrcHostIp(self.getManagementIp());
                         cmd.setStorageMigrationPolicy(storageMigrationPolicy == null ? null : storageMigrationPolicy.toString());
                         cmd.setVmUuid(vmUuid);
+                        cmd.setUseNuma(VmGlobalConfig.NUMA.value(Boolean.class));
                         new Http<>(migrateVmPath, cmd, MigrateVmResponse.class).call(new ReturnValueCompletion<MigrateVmResponse>(trigger) {
                             @Override
                             public void success(MigrateVmResponse ret) {
