@@ -32,6 +32,8 @@ import org.zstack.header.vm.*;
 import org.zstack.header.zone.ZoneState;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.header.zone.ZoneVO_;
+import org.zstack.utils.SizeUtils;
+import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.network.NetworkUtils;
 
 import static org.zstack.core.Platform.argerr;
@@ -127,8 +129,6 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 if (VmInstanceState.Stopped.equals(vo.getState())) {
                     return;
                 }
-
-
 
                 if (instanceOfferingVO.getCpuNum() < vo.getCpuNum() || instanceOfferingVO.getMemorySize() < vo.getMemorySize()) {
                     throw new ApiMessageInterceptionException(argerr(

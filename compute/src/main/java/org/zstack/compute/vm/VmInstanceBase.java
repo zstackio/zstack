@@ -65,6 +65,7 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.ObjectUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -3134,9 +3135,35 @@ public class VmInstanceBase extends AbstractVmInstance {
         final int oldCpuNum = self.getCpuNum();
         final long oldMemorySize = self.getMemorySize();
 
+        class AlignmentStruct {
+            long alignedMemory;
+        }
+
+        final AlignmentStruct struct = new AlignmentStruct();
+        struct.alignedMemory = memorySize;
+
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("change-cpu-and-memory-of-vm-%s", self.getUuid()));
-        chain.then(new Flow() {
+        chain.then(new NoRollbackFlow() {
+            String __name__ = "align-memory";
+
+            @Override
+            public void run(FlowTrigger chain, Map data) {
+                // align memory
+                long increaseMemory = memorySize - oldMemorySize;
+                long remainderMemory = increaseMemory % SizeUnit.MEGABYTE.toByte(128);
+                if (increaseMemory != 0 && remainderMemory != 0) {
+                    if (remainderMemory > SizeUnit.MEGABYTE.toByte(128) / 2) {
+                        struct.alignedMemory = (memorySize / SizeUnit.MEGABYTE.toByte(128) + 1) * SizeUnit.MEGABYTE.toByte(128);
+                    } else {
+                        struct.alignedMemory = memorySize / SizeUnit.MEGABYTE.toByte(128) * SizeUnit.MEGABYTE.toByte(128);
+                    }
+
+                    N.New(VmInstanceVO.class, self.getUuid()).info_("automatically align memory from %s to %s", memorySize, struct.alignedMemory);
+                }
+                chain.next();
+            }
+        }).then(new Flow() {
             String __name__ = String.format("allocate-host-capacity-on-host-%s", self.getHostUuid());
             boolean result = false;
 
@@ -3144,7 +3171,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             public void run(FlowTrigger chain, Map data) {
                 DesignatedAllocateHostMsg msg = new DesignatedAllocateHostMsg();
                 msg.setCpuCapacity(cpuNum - oldCpuNum);
-                msg.setMemoryCapacity(memorySize - oldMemorySize);
+                msg.setMemoryCapacity(struct.alignedMemory - oldMemorySize);
                 msg.setAllocatorStrategy(HostAllocatorConstant.DESIGNATED_HOST_ALLOCATOR_STRATEGY_TYPE);
                 msg.setVmInstance(VmInstanceInventory.valueOf(self));
                 msg.setHostUuid(self.getHostUuid());
@@ -3174,7 +3201,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 if (result) {
                     ReturnHostCapacityMsg msg = new ReturnHostCapacityMsg();
                     msg.setCpuCapacity(cpuNum - oldCpuNum);
-                    msg.setMemoryCapacity(memorySize - oldMemorySize);
+                    msg.setMemoryCapacity(struct.alignedMemory - oldMemorySize);
                     msg.setHostUuid(self.getHostUuid());
                     msg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
                     bus.send(msg);
@@ -3211,13 +3238,15 @@ public class VmInstanceBase extends AbstractVmInstance {
                 }
             }
         }).then(new NoRollbackFlow() {
+            String __name__ = String.format("change-memory-of-vm-%s", self.getUuid());
+
             @Override
             public void run(FlowTrigger chain, Map data) {
                 if (memorySize != self.getMemorySize()) {
                     IncreaseVmMemoryMsg msg = new IncreaseVmMemoryMsg();
                     msg.setVmInstanceUuid(self.getUuid());
                     msg.setHostUuid(self.getHostUuid());
-                    msg.setMemorySize(memorySize);
+                    msg.setMemorySize(struct.alignedMemory);
                     bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, self.getHostUuid());
                     bus.send(msg, new CloudBusCallBack(chain) {
                         @Override
