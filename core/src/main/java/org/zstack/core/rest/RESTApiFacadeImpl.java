@@ -141,7 +141,7 @@ public class RESTApiFacadeImpl implements RESTApiFacade, CloudBusEventListener, 
         return rsp;
     }
 
-    private EntityManager getEntityManager() {
+    private synchronized EntityManager getEntityManager() {
         return entityManagerFactory.createEntityManager();
     }
 
