@@ -251,7 +251,7 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
             if (!cidr.equals(rcidr)) {
                 throw new ApiMessageInterceptionException(argerr("multiple CIDR on the same L3 network is not allowed. There has been a IP" +
                                 " range[uuid:%s, CIDR:%s], the new IP range[CIDR:%s] is not in the CIDR with the existing one",
-                        ipr.getUuid(), rcidr, cidr));
+                        r.getUuid(), rcidr, cidr));
             }
         }
     }
