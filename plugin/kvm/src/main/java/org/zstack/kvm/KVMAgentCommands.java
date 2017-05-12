@@ -1258,6 +1258,15 @@ public class KVMAgentCommands {
         private String destHostIp;
         private String storageMigrationPolicy;
         private String srcHostIp;
+        private boolean useNuma;
+        
+        public boolean isUseNuma() {
+            return useNuma;
+        }
+
+        public void setUseNuma(boolean useNuma) {
+            this.useNuma = useNuma;
+        }
 
         public String getSrcHostIp() {
             return srcHostIp;
