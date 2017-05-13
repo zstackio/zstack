@@ -364,6 +364,16 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
+                        boolean callBackend = Q.New(VmInstanceVO.class).select(VmInstanceVO_.state)
+                                .eq(VmInstanceVO_.uuid, nicvo.getVmInstanceUuid()).findValue() == VmInstanceState.Running;
+
+                        if (!callBackend) {
+                            logger.warn(String.format("the vm[uuid:%s] is not running, no need to delete the EIP[uuid:%s] from the backend",
+                                    nicvo.getVmInstanceUuid(), struct.getEip().getUuid()));
+                            trigger.next();
+                            return;
+                        }
+
                         EipBackend bkd = getEipBackend(providerType.toString());
                         bkd.revokeEip(struct, new Completion(trigger) {
                             @Override
