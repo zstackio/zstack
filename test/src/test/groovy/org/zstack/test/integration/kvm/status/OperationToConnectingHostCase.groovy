@@ -11,6 +11,8 @@ import org.zstack.kvm.KVMConstant
 import org.zstack.network.securitygroup.SecurityGroupConstant
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant
 import org.zstack.sdk.ChangeHostStateAction
+import org.zstack.sdk.ReconnectHostAction
+import org.zstack.sdk.UpdateHostAction
 import org.zstack.test.compute.host.ChangeHostStateExtension
 import org.zstack.test.integration.kvm.Env
 import org.zstack.test.kvm.KVMStartVmExtension
@@ -22,7 +24,7 @@ import org.zstack.utils.data.SizeUnit
 /**
  * Created by Administrator on 2017-03-03.
  */
-class MaintainHostCase extends SubCase {
+class OperationToConnectingHostCase extends SubCase {
     EnvSpec env
 
     @Override
@@ -73,6 +75,21 @@ class MaintainHostCase extends SubCase {
 
         ChangeHostStateAction.Result res = action.call()
         assert res.error != null
+
+
+        UpdateHostAction a1 = new UpdateHostAction()
+        a1.description = "hahaha"
+        a1.uuid = hostUuid
+        a1.sessionId = currentEnvSpec.session.uuid
+
+        assert a1.call().error != null
+
+
+        ReconnectHostAction a2 = new ReconnectHostAction()
+        a2.uuid = hostUuid
+        a2.sessionId = currentEnvSpec.session.uuid
+
+        assert action.call().error != null
 
 
     }
