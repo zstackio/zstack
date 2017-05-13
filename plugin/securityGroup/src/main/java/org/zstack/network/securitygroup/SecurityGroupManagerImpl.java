@@ -523,9 +523,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             handle((APIListVmNicInSecurityGroupMsg) msg);
         } else if (msg instanceof APIAttachSecurityGroupToL3NetworkMsg) {
             handle((APIAttachSecurityGroupToL3NetworkMsg) msg);
-        } else if (msg instanceof APIQueryVmNicInSecurityGroupMsg) {
-            handle((APIQueryVmNicInSecurityGroupMsg) msg);
-        } else if (msg instanceof APIChangeSecurityGroupStateMsg) {
+        }  else if (msg instanceof APIChangeSecurityGroupStateMsg) {
             handle((APIChangeSecurityGroupStateMsg) msg);
         } else if (msg instanceof APIDetachSecurityGroupFromL3NetworkMsg) {
             handle((APIDetachSecurityGroupFromL3NetworkMsg) msg);
@@ -673,13 +671,6 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         APIChangeSecurityGroupStateEvent evt = new APIChangeSecurityGroupStateEvent(msg.getId());
         evt.setInventory(SecurityGroupInventory.valueOf(vo));
         bus.publish(evt);
-    }
-
-    private void handle(APIQueryVmNicInSecurityGroupMsg msg) {
-        List<VmNicSecurityGroupRefInventory> invs = qf.query(msg, VmNicSecurityGroupRefInventory.class);
-        APIQueryVmNicInSecurityGroupReply reply = new APIQueryVmNicInSecurityGroupReply();
-        reply.setInventories(invs);
-        bus.reply(msg, reply);
     }
 
     private void handle(APIAttachSecurityGroupToL3NetworkMsg msg) {

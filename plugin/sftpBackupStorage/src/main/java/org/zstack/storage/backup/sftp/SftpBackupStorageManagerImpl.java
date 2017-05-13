@@ -24,19 +24,10 @@ public class SftpBackupStorageManagerImpl extends AbstractService implements Sft
             handle((APISearchSftpBackupStorageMsg)msg);
         } else if (msg instanceof APIGetSftpBackupStorageMsg) {
             handle((APIGetSftpBackupStorageMsg)msg);
-        } else if (msg instanceof APIQuerySftpBackupStorageMsg) {
-            handle((APIQuerySftpBackupStorageMsg)msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
 	}
-
-	private void handle(APIQuerySftpBackupStorageMsg msg) {
-	    List<SftpBackupStorageInventory> invs = qf.query(msg, SftpBackupStorageInventory.class);
-	    APIQuerySftpBackupStorageReply reply = new APIQuerySftpBackupStorageReply();
-	    reply.setInventories(invs);
-	    bus.reply(msg, reply);
-    }
 
     private void handle(APIGetSftpBackupStorageMsg msg) {
 	    GetQuery q = new GetQuery();

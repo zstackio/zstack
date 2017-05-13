@@ -46,6 +46,7 @@
     
     <message>
         <name>org.zstack.network.securitygroup.APIQueryVmNicInSecurityGroupMsg</name>
+        <serviceId>query</serviceId>
     </message>
 
     <message>
