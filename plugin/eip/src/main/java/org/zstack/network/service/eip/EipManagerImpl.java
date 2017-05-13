@@ -224,10 +224,19 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         return VmNicInventory.valueOf(nics);
     }
 
+    private List<VmNicInventory> callCandidateVmNicsForEipInVirtualRouterExtensionPoint(APIGetEipAttachableVmNicsMsg msg, List<VmNicInventory> vmNics) {
+        List<VmNicInventory> ret = new ArrayList<>();
+        for (GetCandidateVmNicsForEipInVirtualRouterExtensionPoint extp : pluginRgty.getExtensionList(GetCandidateVmNicsForEipInVirtualRouterExtensionPoint.class)) {
+            ret = extp.getCandidateVmNicsForEipInVirtualRouter(msg,vmNics);
+        }
+        return ret;
+    }
+
+
     private void handle(APIGetEipAttachableVmNicsMsg msg) {
         APIGetEipAttachableVmNicsReply reply = new APIGetEipAttachableVmNicsReply();
         List<VmNicInventory> nics = getAttachableVmNicForEip(msg.getEipUuid(), msg.getVipUuid());
-        reply.setInventories(nics);
+        reply.setInventories(callCandidateVmNicsForEipInVirtualRouterExtensionPoint(msg,nics));
         bus.reply(msg, reply);
     }
 
@@ -1143,4 +1152,6 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
             acntMgr.changeResourceOwner(uuid, newOwnerUuid);
         }
     }
+
+
 }

@@ -100,6 +100,7 @@
             <zstack:extension interface="org.zstack.header.network.l2.L2NetworkCreateExtensionPoint" />
             <zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor" />
             <zstack:extension interface="org.zstack.header.query.AddExpandedQueryExtensionPoint" />
+            <zstack:extension interface="org.zstack.network.service.eip.GetCandidateVmNicsForEipInVirtualRouterExtensionPoint" />
         </zstack:plugin>
     </bean>
 
