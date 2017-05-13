@@ -29,7 +29,7 @@ class LiveMigrateVmCase extends SubCase {
 
     @Override
     void environment() {
-        env = Env.localStorageOneVmWithOneDataVolumeEnv()
+        env = Env.localStorageOneVmEnv()
     }
 
     @Override
