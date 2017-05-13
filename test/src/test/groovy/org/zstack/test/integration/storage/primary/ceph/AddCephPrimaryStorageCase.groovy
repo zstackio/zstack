@@ -18,8 +18,6 @@ import org.zstack.testlib.Test
 import org.zstack.utils.Utils
 import org.zstack.utils.logging.CLogger
 
-import java.util.concurrent.TimeUnit
-
 import static org.zstack.core.Platform.operr
 
 // maybe unstable case
@@ -127,7 +125,10 @@ use:
         // wait echo finished
         // todo; unstable assert
         retryInSecs{
-            assert Q.New(CephPrimaryStorageMonVO.class).count() == 0l: "failed to add cephPS, all monVO should be removed, but some left"
+            logger.error("unstable assert count")
+            return {
+                assert Q.New(CephPrimaryStorageMonVO.class).count() == 0l: "after failed to add cephPS, all monVO should be removed, but some left"
+            }
         }
     }
 
