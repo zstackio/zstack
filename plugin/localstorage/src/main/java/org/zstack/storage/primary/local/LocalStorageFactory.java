@@ -13,7 +13,6 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.notification.N;
 import org.zstack.header.Component;
 import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
@@ -768,6 +767,12 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
     public void preVmMigration(VmInstanceInventory vm) {
         if (!LocalStoragePrimaryStorageGlobalConfig.ALLOW_LIVE_MIGRATION.value(Boolean.class)) {
             refuseLiveMigrationForLocalStorage(vm);
+        }
+
+        // forbid live migration with data volumes for local storage
+        if (vm.getAllVolumes().size() > 1) {
+            throw new OperationFailureException(operr("unable to live migrate vm[uuid:%s] with data volumes on local storage." +
+                    " Need detach all data volumes first.", vm.getUuid()));
         }
 
         if (!ImagePlatform.Linux.toString().equals(vm.getPlatform())) {
