@@ -1,11 +1,15 @@
 package org.zstack.network.service.virtualrouter.lb;
 
+import com.google.common.base.Predicate;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -26,9 +30,11 @@ import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipBackend;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
+import javax.annotation.Nullable;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 
 /**
  * Created by frank on 8/17/2015.
@@ -94,7 +100,7 @@ public class VirtualRouterSyncLbOnStartFlow implements Flow {
 
         new VirtualRouterRoleManager().makeLoadBalancerRole(vr.getUuid());
 
-        final List<LoadBalancerVO> lbs = new Callable<List<LoadBalancerVO>>() {
+        Collection<LoadBalancerVO> lbs = new Callable<List<LoadBalancerVO>>() {
             @Override
             @Transactional(readOnly = true)
             public List<LoadBalancerVO> call() {
@@ -135,8 +141,13 @@ public class VirtualRouterSyncLbOnStartFlow implements Flow {
             return;
         }
 
+        Map<String, LoadBalancerVO> tmp = new HashMap<>();
+        lbs.forEach(vo -> tmp.put(String.format("%s-%s", vo.getUuid(), vr.getUuid()), vo));
+        lbs = tmp.values();
+
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("sync-lb-on-vr-%s", vr.getUuid()));
+        Collection<LoadBalancerVO> finalLbs = lbs;
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
@@ -165,7 +176,7 @@ public class VirtualRouterSyncLbOnStartFlow implements Flow {
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
                         SimpleQuery<VipVO> q = dbf.createQuery(VipVO.class);
-                        q.add(VipVO_.uuid, Op.IN, CollectionUtils.transformToList(lbs, new Function<String, LoadBalancerVO>() {
+                        q.add(VipVO_.uuid, Op.IN, CollectionUtils.transformToList(finalLbs, new Function<String, LoadBalancerVO>() {
                             @Override
                             public String call(LoadBalancerVO arg) {
                                 return arg.getVipUuid();
@@ -183,27 +194,31 @@ public class VirtualRouterSyncLbOnStartFlow implements Flow {
                     @Override
                     public void run(final FlowTrigger trigger, final Map data) {
                         List<LoadBalancerStruct> structs = new ArrayList<LoadBalancerStruct>();
-                        for (LoadBalancerVO vo : lbs) {
+                        for (LoadBalancerVO vo : finalLbs) {
                             structs.add(makeStruct(vo));
                         }
 
                         bkd.syncOnStart(vr, structs, new Completion(trigger) {
                             @Override
                             public void success() {
-                                List<VirtualRouterLoadBalancerRefVO> refs = new ArrayList<VirtualRouterLoadBalancerRefVO>();
-                                for (LoadBalancerVO vo : lbs) {
-                                    SimpleQuery<VirtualRouterLoadBalancerRefVO> q = dbf.createQuery(VirtualRouterLoadBalancerRefVO.class);
-                                    q.add(VirtualRouterLoadBalancerRefVO_.loadBalancerUuid, Op.EQ, vo.getUuid());
-                                    q.add(VirtualRouterLoadBalancerRefVO_.virtualRouterVmUuid, Op.EQ, vr.getUuid());
-                                    if (!q.isExists()) {
-                                        VirtualRouterLoadBalancerRefVO ref = new VirtualRouterLoadBalancerRefVO();
-                                        ref.setLoadBalancerUuid(vo.getUuid());
-                                        ref.setVirtualRouterVmUuid(vr.getUuid());
-                                        refs.add(ref);
+                                List<VirtualRouterLoadBalancerRefVO> refs = new ArrayList<>();
+                                new SQLBatch() {
+                                    @Override
+                                    protected void scripts() {
+                                        for (LoadBalancerVO vo : finalLbs) {
+                                            if (!q(VirtualRouterLoadBalancerRefVO.class)
+                                                    .eq(VirtualRouterLoadBalancerRefVO_.loadBalancerUuid, vo.getUuid())
+                                                    .eq(VirtualRouterLoadBalancerRefVO_.virtualRouterVmUuid, vr.getUuid()).isExists()) {
+                                                VirtualRouterLoadBalancerRefVO ref = new VirtualRouterLoadBalancerRefVO();
+                                                ref.setLoadBalancerUuid(vo.getUuid());
+                                                ref.setVirtualRouterVmUuid(vr.getUuid());
+                                                ref = persist(ref);
+                                                refs.add(ref);
+                                            }
+                                        }
                                     }
-                                }
+                                }.execute();
 
-                                dbf.persistCollection(refs);
                                 data.put(VirtualRouterSyncLbOnStartFlow.class, refs);
                                 trigger.next();
                             }
