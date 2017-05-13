@@ -33,7 +33,7 @@ public class VxlanNetworkPoolFactory implements L2NetworkFactory, Component {
     public L2NetworkInventory createL2Network(L2NetworkVO ovo, APICreateL2NetworkMsg msg) {
         VxlanNetworkPoolVO vo = new VxlanNetworkPoolVO(ovo);
         if (vo.getPhysicalInterface() == null) {
-            vo.setPhysicalInterface("No use");
+            vo.setPhysicalInterface("");
         }
         vo = dbf.persistAndRefresh(vo);
         L2VxlanNetworkPoolInventory inv = L2VxlanNetworkPoolInventory.valueOf(vo);

@@ -134,6 +134,7 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
     public void check(L2NetworkInventory l2Network, String hostUuid, boolean noStatusCheck, Completion completion) {
         final L2VxlanNetworkInventory l2vxlan = (L2VxlanNetworkInventory) l2Network;
         final String clusterUuid = Q.New(HostVO.class).select(HostVO_.clusterUuid).eq(HostVO_.uuid, hostUuid).findValue();
+        final VxlanNetworkPoolVO poolVO = Q.New(VxlanNetworkPoolVO.class).eq(VxlanNetworkPoolVO_.uuid, l2vxlan.getPoolUuid()).find();
 
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("check-l2-vxlan-%s-on-host-%s", l2Network.getUuid(), hostUuid));
@@ -142,8 +143,8 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
             public void run(FlowTrigger trigger, Map data) {
                 VxlanKvmAgentCommands.CheckVxlanCidrCmd cmd = new VxlanKvmAgentCommands.CheckVxlanCidrCmd();
                 cmd.setCidr(getAttachedCidrs(l2vxlan.getPoolUuid()).get(clusterUuid));
-                if (!l2Network.getPhysicalInterface().equals("No use")) {
-                    cmd.setPhysicalInterfaceName(l2Network.getPhysicalInterface());
+                if (!poolVO.getPhysicalInterface().isEmpty()) {
+                    cmd.setPhysicalInterfaceName(poolVO.getPhysicalInterface());
                 }
 
                 KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();

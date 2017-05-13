@@ -69,7 +69,7 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
 
         VxlanKvmAgentCommands.CheckVxlanCidrCmd cmd = new VxlanKvmAgentCommands.CheckVxlanCidrCmd();
         cmd.setCidr(getAttachedCidrs(vxlanPool.getUuid()).get(clusterUuid));
-        if (!l2Network.getPhysicalInterface().equals("No use")) {
+        if (!l2Network.getPhysicalInterface().isEmpty()) {
             cmd.setPhysicalInterfaceName(l2Network.getPhysicalInterface());
         }
 
@@ -128,7 +128,6 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
         KVMAgentCommands.NicTO to = new KVMAgentCommands.NicTO();
         to.setMac(nic.getMac());
         to.setUuid(nic.getUuid());
-        to.setBridgeName("No use");
         to.setDeviceId(nic.getDeviceId());
         to.setNicInternalName(nic.getInternalName());
         return to;

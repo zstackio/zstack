@@ -54,7 +54,7 @@ public class VxlanNetworkFactory implements L2NetworkFactory, Component {
         vo.setVni(r.getVni());
         vo.setPoolUuid((amsg.getPoolUuid()));
         if (vo.getPhysicalInterface() == null) {
-            vo.setPhysicalInterface("No use");
+            vo.setPhysicalInterface("");
         }
         vo = dbf.persistAndRefresh(vo);
 
