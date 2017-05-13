@@ -1,6 +1,5 @@
 package org.zstack.test.integration.networkservice.provider.virtualrouter.loadbalancer
 
-import org.zstack.appliancevm.ApplianceVm
 import org.zstack.appliancevm.ApplianceVmVO
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.header.network.service.NetworkServiceType
@@ -20,7 +19,7 @@ import org.zstack.utils.data.SizeUnit
 /**
  * Created by heathhose on 17-5-5.
  */
-class VirtualRouterDownActiveLoadBalancerCase extends SubCase{
+class VirtualRouterLoadBalancerCase extends SubCase{
     DatabaseFacade dbf
     EnvSpec env
 
@@ -139,6 +138,13 @@ class VirtualRouterDownActiveLoadBalancerCase extends SubCase{
                         instancePort = 22
                         useVmNic("vm", "l3")
                     }
+
+                    listener {
+                        protocol = "tcp"
+                        loadBalancerPort = 33
+                        instancePort = 33
+                        useVmNic("vm", "l3")
+                    }
                 }
             }
 
@@ -160,6 +166,8 @@ class VirtualRouterDownActiveLoadBalancerCase extends SubCase{
     }
 
     void virtualRouterDownReconnectVm(){
+        // test a lb with multiple listeners, once the vr destroyed and recreated,
+        // database has only one VirtualRouterLoadBalancerRefVO for the lb and vr
         assert dbf.count(VirtualRouterLoadBalancerRefVO.class) == 1
         ApplianceVmVO vr = dbf.listAll(ApplianceVmVO.class).get(0)
         VmInstanceInventory vm = env.inventoryByName("vm")
@@ -167,22 +175,19 @@ class VirtualRouterDownActiveLoadBalancerCase extends SubCase{
         destroyVmInstance {
             uuid = vr.uuid
         }
-        retryInSecs{
-            assert dbf.count(VirtualRouterVmVO.class) == 0
-            assert dbf.count(VirtualRouterLoadBalancerRefVO.class) == 0
-        }
+
+        assert dbf.count(VirtualRouterVmVO.class) == 0
+        assert dbf.count(VirtualRouterLoadBalancerRefVO.class) == 0
 
         rebootVmInstance {
             uuid = vm.uuid
         }
-        retryInSecs{
-            List<VirtualRouterLoadBalancerRefVO> list = dbf.listAll(VirtualRouterLoadBalancerRefVO.class)
-            assert list.size() == 1
-            assert list.get(0).getLoadBalancerUuid() == load.getUuid()
-        }
 
-
+        List<VirtualRouterLoadBalancerRefVO> list = dbf.listAll(VirtualRouterLoadBalancerRefVO.class)
+        assert list.size() == 1
+        assert list.get(0).getLoadBalancerUuid() == load.getUuid()
     }
+
     @Override
     void clean() {
         env.delete()
