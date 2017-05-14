@@ -34,6 +34,7 @@
         <value>NFS</value>
         <value>SharedMountPoint</value>
         <value>LocalStorage</value>
+        <value>ZSES</value>
     </util:list>
 
     <util:list id="CephMetric">
