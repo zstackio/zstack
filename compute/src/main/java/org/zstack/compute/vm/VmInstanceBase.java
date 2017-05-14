@@ -3161,12 +3161,15 @@ public class VmInstanceBase extends AbstractVmInstance {
                 long increaseMemory = memorySize - oldMemorySize;
                 long remainderMemory = increaseMemory % SizeUnit.MEGABYTE.toByte(128);
                 if (increaseMemory != 0 && remainderMemory != 0) {
-                    if (remainderMemory > SizeUnit.MEGABYTE.toByte(128) / 2) {
-                        struct.alignedMemory = (memorySize / SizeUnit.MEGABYTE.toByte(128) + 1) * SizeUnit.MEGABYTE.toByte(128);
-                    } else {
+                    if (remainderMemory < SizeUnit.MEGABYTE.toByte(128) / 2) {
                         struct.alignedMemory = memorySize / SizeUnit.MEGABYTE.toByte(128) * SizeUnit.MEGABYTE.toByte(128);
+                    } else {
+                        struct.alignedMemory = (memorySize / SizeUnit.MEGABYTE.toByte(128) + 1) * SizeUnit.MEGABYTE.toByte(128);
                     }
 
+                    if (struct.alignedMemory == oldMemorySize) {
+                        struct.alignedMemory = oldMemorySize + SizeUnit.MEGABYTE.toByte(128);
+                    }
                     N.New(VmInstanceVO.class, self.getUuid()).info_("automatically align memory from %s to %s", memorySize, struct.alignedMemory);
                 }
                 chain.next();
@@ -3250,7 +3253,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             @Override
             public void run(FlowTrigger chain, Map data) {
-                if (memorySize != self.getMemorySize()) {
+                if (struct.alignedMemory != self.getMemorySize()) {
                     IncreaseVmMemoryMsg msg = new IncreaseVmMemoryMsg();
                     msg.setVmInstanceUuid(self.getUuid());
                     msg.setHostUuid(self.getHostUuid());
