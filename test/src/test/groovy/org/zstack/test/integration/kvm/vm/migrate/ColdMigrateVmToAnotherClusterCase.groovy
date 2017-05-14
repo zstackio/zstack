@@ -199,9 +199,7 @@ class ColdMigrateVmToAnotherClusterCase extends SubCase{
             uuid = vmi.uuid
         }
         retryInSecs{
-            return {
-                assert dbFindByUuid(vmi.uuid,VmInstanceVO.class).state == VmInstanceState.Stopped
-            }
+            assert dbFindByUuid(vmi.uuid,VmInstanceVO.class).state == VmInstanceState.Stopped
         }
 
         localStorageMigrateVolume {
@@ -209,9 +207,7 @@ class ColdMigrateVmToAnotherClusterCase extends SubCase{
             destHostUuid = hosti.uuid
         }
         retryInSecs{
-            return {
-                assert dbFindByUuid(vmi.uuid,VmInstanceVO.class).clusterUuid == clusteri.uuid
-            }
+            assert dbFindByUuid(vmi.uuid,VmInstanceVO.class).clusterUuid == clusteri.uuid
         }
     }
 

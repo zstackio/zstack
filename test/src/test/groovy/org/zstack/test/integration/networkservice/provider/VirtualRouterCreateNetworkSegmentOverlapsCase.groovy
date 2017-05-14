@@ -205,9 +205,7 @@ class VirtualRouterCreateNetworkSegmentOverlapsCase extends SubCase{
         }
 
         retryInSecs{
-            return{
-                assert dbf.count(ApplianceVmVO.class) == 1
-            }
+            assert dbf.count(ApplianceVmVO.class) == 1
         }
     }
 
@@ -226,12 +224,9 @@ class VirtualRouterCreateNetworkSegmentOverlapsCase extends SubCase{
             uuid = vr.uuid
         }
         retryInSecs{
-            return{
-                assert dbf.count(ApplianceVmVO.class) == 0
-            }
+            assert dbf.count(ApplianceVmVO.class) == 0
         }
 
-        
         expect(AssertionError.class){
             createVmInstance {
                 name = "vm-2"
@@ -241,9 +236,7 @@ class VirtualRouterCreateNetworkSegmentOverlapsCase extends SubCase{
             }
         }
         retryInSecs{
-            return{
-                assert dbf.count(ApplianceVmVO.class) == 0
-            }
+            assert dbf.count(ApplianceVmVO.class) == 0
         }
 
     }

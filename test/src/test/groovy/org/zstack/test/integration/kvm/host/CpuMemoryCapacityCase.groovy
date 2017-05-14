@@ -97,10 +97,8 @@ class CpuMemoryCapacityCase extends SubCase {
         reconnectRes.error !=null
 
         retryInSecs{
-            return {
-                assert Q.New(HostVO.class).select(HostVO_.status).eq(HostVO_.uuid, kvm1Inv.uuid).findValue().toString() == HostStatus.Disconnected.toString()
-                assert Q.New(HostVO.class).select(HostVO_.status).eq(HostVO_.uuid, kvm2Inv.uuid).findValue().toString() == HostStatus.Disconnected.toString()
-            }
+            assert Q.New(HostVO.class).select(HostVO_.status).eq(HostVO_.uuid, kvm1Inv.uuid).findValue().toString() == HostStatus.Disconnected.toString()
+            assert Q.New(HostVO.class).select(HostVO_.status).eq(HostVO_.uuid, kvm2Inv.uuid).findValue().toString() == HostStatus.Disconnected.toString()
         }
         if (Q.New(HostVO.class).select(HostVO_.status).eq(HostVO_.uuid, kvm3Inv.uuid).findValue().toString() != HostStatus.Connected.toString()) {
             reconnectHost {
@@ -108,9 +106,7 @@ class CpuMemoryCapacityCase extends SubCase {
             }
         }
         retryInSecs{
-            return {
-                assert Q.New(HostVO.class).select(HostVO_.status).eq(HostVO_.uuid, kvm3Inv.uuid).findValue().toString() == HostStatus.Connected.toString()
-            }
+            assert Q.New(HostVO.class).select(HostVO_.status).eq(HostVO_.uuid, kvm3Inv.uuid).findValue().toString() == HostStatus.Connected.toString()
         }
 
         res = action.call()

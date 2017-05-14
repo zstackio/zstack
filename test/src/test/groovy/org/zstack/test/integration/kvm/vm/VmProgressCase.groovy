@@ -58,10 +58,8 @@ class VmProgressCase extends SubCase {
             name = "vm"
         }
 
-        assert retryInSecs {
-            return {
-                assert !Q.New(TaskProgressVO.class).eq(TaskProgressVO_.apiId, apiUuid).isExists()
-            }
+        retryInSecs {
+            assert !Q.New(TaskProgressVO.class).eq(TaskProgressVO_.apiId, apiUuid).isExists()
         }
     }
 
@@ -85,11 +83,9 @@ class VmProgressCase extends SubCase {
         // set the TTL to 1s
         ProgressGlobalConfig.PROGRESS_TTL.updateValue(1)
 
-        assert retryInSecs {
-            return {
-                // confirm the progress entries are deleted
-                assert !Q.New(TaskProgressVO.class).eq(TaskProgressVO_.apiId, apiUuid).isExists()
-            }
+        retryInSecs {
+            // confirm the progress entries are deleted
+            assert !Q.New(TaskProgressVO.class).eq(TaskProgressVO_.apiId, apiUuid).isExists()
         }
     }
 
@@ -211,7 +207,7 @@ class VmProgressCase extends SubCase {
         ft.run()
 
         retryInSecs(30) {
-            return { assert vmError == null: "$vmError"}
+            assert vmError == null: "$vmError"
         }
 
         List<TaskProgressInventory> invs = getTaskProgress {

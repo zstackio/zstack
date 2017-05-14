@@ -215,9 +215,9 @@ class DeleteHostCase extends SubCase{
             uuid = vm.hostUuid
         }
 
-        assert retryInSecs(4){
+        retryInSecs(4){
             VolumeVO volumeVO = dbFindByUuid(vol.uuid, VolumeVO.class)
-            return null == volumeVO && null == dbFindByUuid(vm.uuid, VmInstanceVO.class)
+            assert null == volumeVO && null == dbFindByUuid(vm.uuid, VmInstanceVO.class)
         }
 
         newVm = queryVmInstance {

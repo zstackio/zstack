@@ -199,10 +199,8 @@ class EventBasedGarbageCollectorCase extends SubCase {
         // trigger again, confirm the event is no longer hooked
         evtf.fire(EVENT_PATH, "trigger it")
 
-        assert retryInSecs {
-            return {
-                assert count == 1
-            }
+        retryInSecs {
+            assert count == 1
         }
     }
 
@@ -261,10 +259,8 @@ class EventBasedGarbageCollectorCase extends SubCase {
         // trigger again, confirm the event is no longer hooked
         evtf.fire(EVENT_PATH, "trigger it")
 
-        assert retryInSecs {
-            return {
-                assert count == 1
-            }
+        retryInSecs {
+            assert count == 1
         }
 
     }
@@ -319,12 +315,10 @@ class EventBasedGarbageCollectorCase extends SubCase {
         // wait for EventBasedGarbageCollector.fail() called
         latch.await(10, TimeUnit.SECONDS)
 
-        assert retryInSecs {
-            return {
-                GarbageCollectorVO vo = dbf.findByUuid(gc.uuid, GarbageCollectorVO.class)
-                assert vo.status == GCStatus.Idle
-                dbf.remove(vo)
-            }
+        retryInSecs {
+            GarbageCollectorVO vo = dbf.findByUuid(gc.uuid, GarbageCollectorVO.class)
+            assert vo.status == GCStatus.Idle
+            dbf.remove(vo)
         }
     }
 
@@ -361,10 +355,8 @@ class EventBasedGarbageCollectorCase extends SubCase {
         TimeUnit.SECONDS.sleep(1)
         evtf.fire(EVENT_PATH3, "trigger it")
 
-        assert retryInSecs {
-            return {
-                assert count == 2
-            }
+        retryInSecs {
+            assert count == 2
         }
     }
 
@@ -390,10 +382,8 @@ class EventBasedGarbageCollectorCase extends SubCase {
         gcMgr.managementNodeReady()
         evtf.fire(EVENT_PATH, "trigger it")
 
-        assert retryInSecs {
-            return {
-                assert dbFindByUuid(gc.uuid, GarbageCollectorVO.class).status == GCStatus.Done
-            }
+        retryInSecs {
+            assert dbFindByUuid(gc.uuid, GarbageCollectorVO.class).status == GCStatus.Done
         }
     }
 
@@ -419,12 +409,10 @@ class EventBasedGarbageCollectorCase extends SubCase {
         gcMgr.managementNodeReady()
         evtf.fire(EVENT_PATH, "trigger it")
 
-        assert retryInSecs {
-            return {
-                vo = dbf.findByUuid(gc.uuid, GarbageCollectorVO.class)
-                assert vo.status == GCStatus.Idle
-                dbf.remove(vo)
-            }
+        retryInSecs {
+            vo = dbf.findByUuid(gc.uuid, GarbageCollectorVO.class)
+            assert vo.status == GCStatus.Idle
+            dbf.remove(vo)
         }
     }
 
@@ -453,11 +441,9 @@ class EventBasedGarbageCollectorCase extends SubCase {
         // load orphan jobs
         gcMgr.managementNodeReady()
 
-        assert retryInSecs {
-            return {
-                assert called
-                assert dbFindByUuid(gc.uuid, GarbageCollectorVO.class).status == GCStatus.Done
-            }
+        retryInSecs {
+            assert called
+            assert dbFindByUuid(gc.uuid, GarbageCollectorVO.class).status == GCStatus.Done
         }
     }
 
@@ -501,14 +487,12 @@ class EventBasedGarbageCollectorCase extends SubCase {
         evtf.fire(EVENT_PATH, "trigger it")
         latch.await(10, TimeUnit.SECONDS)
         retryInSecs{
-            return {
-                assert count == 1
-                assert name == gc.name
-                assert description == gc.description
-                assert ctx != null
-                assert ctx.text == gc.context.text
-                assert dbFindByUuid(gc.uuid, GarbageCollectorVO.class).status == GCStatus.Done
-            }
+            assert count == 1
+            assert name == gc.name
+            assert description == gc.description
+            assert ctx != null
+            assert ctx.text == gc.context.text
+            assert dbFindByUuid(gc.uuid, GarbageCollectorVO.class).status == GCStatus.Done
         }
     }
 
@@ -533,10 +517,8 @@ class EventBasedGarbageCollectorCase extends SubCase {
         GCGlobalConfig.SCAN_ORPHAN_JOB_INTERVAL.updateValue(1)
         gcMgr.start()
 
-        assert retryInSecs {
-            return {
-                assert dbFindByUuid(gc.uuid, GarbageCollectorVO.class).status == GCStatus.Done
-            }
+        retryInSecs {
+            assert dbFindByUuid(gc.uuid, GarbageCollectorVO.class).status == GCStatus.Done
         }
     }
 
@@ -560,12 +542,10 @@ class EventBasedGarbageCollectorCase extends SubCase {
 
         TimeUnit.SECONDS.sleep(1)
 
-        assert retryInSecs {
-            return {
-                // trigger again, confirm the event is no longer hooked
-                assert !dbIsExists(gc.uuid, GarbageCollectorVO.class)
-                assert count == 0
-            }
+        retryInSecs {
+            // trigger again, confirm the event is no longer hooked
+            assert !dbIsExists(gc.uuid, GarbageCollectorVO.class)
+            assert count == 0
         }
     }
 

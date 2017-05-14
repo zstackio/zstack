@@ -88,10 +88,8 @@ class VirtualRouterOperationCase extends SubCase {
             cmd = JSONObjectUtil.toObject(e.body, VirtualRouterCommands.InitCommand.class)
             return rsp
         }
-        assert retryInSecs(5, 1) {
-            return {
-                assert cmd != null
-            }
+        retryInSecs(5, 1) {
+            assert cmd != null
         }
     }
 }

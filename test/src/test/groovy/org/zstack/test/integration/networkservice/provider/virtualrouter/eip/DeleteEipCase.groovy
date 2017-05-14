@@ -118,8 +118,8 @@ class DeleteEipCase extends SubCase{
         }
 
         assert !Q.New(VipVO.class).eq(VipVO_.uuid, vipUuid).isExists()
-        assert retryInSecs(){
-            return !Q.New(UsedIpVO.class).eq(UsedIpVO_.uuid, vip.usedIpUuid).isExists()
+        retryInSecs(){
+            assert !Q.New(UsedIpVO.class).eq(UsedIpVO_.uuid, vip.usedIpUuid).isExists()
         }
 
     }
@@ -157,16 +157,14 @@ class DeleteEipCase extends SubCase{
         bus.makeTargetServiceIdByResourceUuid(rmsg, L3NetworkConstant.SERVICE_ID, l3Inv.uuid)
         assert bus.call(rmsg).success
         retryInSecs(){
-            return {
-                new SQLBatch(){
-                    @Override
-                    protected void scripts() {
-                        assert q(EipVO.class).eq(EipVO_.uuid, eipInv.uuid).isExists()
-                        assert q(VipVO.class).eq(VipVO_.uuid, vipVO.uuid).isExists()
-                        assert !q(UsedIpVO.class).eq(UsedIpVO_.uuid, vipVO.usedIpUuid).isExists()
-                    }
-                }.execute()
-            }
+            new SQLBatch(){
+                @Override
+                protected void scripts() {
+                    assert q(EipVO.class).eq(EipVO_.uuid, eipInv.uuid).isExists()
+                    assert q(VipVO.class).eq(VipVO_.uuid, vipVO.uuid).isExists()
+                    assert !q(UsedIpVO.class).eq(UsedIpVO_.uuid, vipVO.usedIpUuid).isExists()
+                }
+            }.execute()
         }
 
 

@@ -204,9 +204,7 @@ class InvalidUrlCase extends SubCase {
                 conditions = ["status=${HostStatus.Disconnected}"]
             }as List<HostInventory>
 
-            return {
-                assert hostInvs.size() == 1
-            }
+            assert hostInvs.size() == 1
         }
 
         assert Q.New(PrimaryStorageVO.class)

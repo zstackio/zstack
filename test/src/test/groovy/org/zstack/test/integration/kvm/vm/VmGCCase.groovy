@@ -95,11 +95,9 @@ class VmGCCase extends SubCase {
                 conditions=["context~=%${vm.uuid}%"]
             }[0]
 
-            return {
-                assert cmd != null
-                assert cmd.uuid == vm.uuid
-                assert inv.status == GCStatus.Done.toString()
-            }
+            assert cmd != null
+            assert cmd.uuid == vm.uuid
+            assert inv.status == GCStatus.Done.toString()
         }
 
         deleteGCJob {
@@ -121,7 +119,7 @@ class VmGCCase extends SubCase {
                 conditions=["context~=%${vm.uuid}%"]
             }[0]
 
-            return { assert inv.status == GCStatus.Done.toString() }
+            assert inv.status == GCStatus.Done.toString()
         }
 
         deleteGCJob {
@@ -154,11 +152,9 @@ class VmGCCase extends SubCase {
                 conditions=["context~=%${vm.uuid}%"]
             }[0]
 
-            return  {
-                // no destroy command sent beacuse the vm is recovered
-                assert cmd == null
-                assert inv.status == GCStatus.Done.toString()
-            }
+            // no destroy command sent beacuse the vm is recovered
+            assert cmd == null
+            assert inv.status == GCStatus.Done.toString()
         }
 
         deleteGCJob {
@@ -234,10 +230,8 @@ class VmGCCase extends SubCase {
                 conditions=["context~=%${vm.uuid}%"]
             }[0]
 
-            return {
-                assert cmd == null
-                assert inv.status == GCStatus.Done.toString()
-            }
+            assert cmd == null
+            assert inv.status == GCStatus.Done.toString()
         }
 
         deleteGCJob {
@@ -266,10 +260,8 @@ class VmGCCase extends SubCase {
                 conditions=["context~=%${vm.uuid}%"]
             }[0]
 
-            return {
-                assert cmd == null
-                assert inv.status == GCStatus.Done.toString()
-            }
+            assert cmd == null
+            assert inv.status == GCStatus.Done.toString()
         }
 
         deleteGCJob {
@@ -297,11 +289,9 @@ class VmGCCase extends SubCase {
                 conditions=["context~=%${vm.uuid}%"]
             }[0]
 
-            return {
-                assert cmd != null
-                assert cmd.uuid == vm.uuid
-                assert inv.status == GCStatus.Done.toString()
-            }
+            assert cmd != null
+            assert cmd.uuid == vm.uuid
+            assert inv.status == GCStatus.Done.toString()
         }
 
         deleteGCJob {

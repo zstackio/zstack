@@ -103,7 +103,7 @@ class LocalStorageMigrateVolumeCase extends SubCase{
         }
 
         retryInSecs(6) {
-            return calledCheckMD5 && calledCopyToRemote
+            assert calledCheckMD5 && calledCopyToRemote
         }
     }
     

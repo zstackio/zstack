@@ -46,8 +46,8 @@ test the vr is set to never stop
         reconnectHost {
             uuid = host1.uuid
         }
-        assert retryInSecs {
-            return dbf.listAll(VirtualRouterVmVO.class).size() == 1 && dbFindByUuid(vr.uuid,VmInstanceVO.class).state == VmInstanceState.Running
+        retryInSecs {
+            assert dbf.listAll(VirtualRouterVmVO.class).size() == 1 && dbFindByUuid(vr.uuid,VmInstanceVO.class).state == VmInstanceState.Running
         }
 
         destroyVmInstance {
@@ -58,8 +58,8 @@ test the vr is set to never stop
         rebootVmInstance {
             uuid = vmi.uuid
         }
-        assert retryInSecs {
-            return dbf.listAll(VirtualRouterVmVO.class).size() == 1 && dbf.listAll(VirtualRouterVmVO.class).get(0).state == VmInstanceState.Running
+        retryInSecs {
+            assert dbf.listAll(VirtualRouterVmVO.class).size() == 1 && dbf.listAll(VirtualRouterVmVO.class).get(0).state == VmInstanceState.Running
         }
     }
     @Override

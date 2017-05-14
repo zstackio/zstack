@@ -91,10 +91,8 @@ class SMPAttachCase extends SubCase{
         PrimaryStorageVO vo = dbFindByUuid(primaryStorageInventory.uuid, PrimaryStorageVO.class)
         retryInSecs(3) {
             vo = dbFindByUuid(primaryStorageInventory.uuid, PrimaryStorageVO.class)
-            return {
-                vo.getAttachedClusterRefs().isEmpty()
-                cmd != null
-            }
+            assert vo.getAttachedClusterRefs().isEmpty()
+            assert cmd != null
         }
 
         env.cleanSimulatorAndMessageHandlers()

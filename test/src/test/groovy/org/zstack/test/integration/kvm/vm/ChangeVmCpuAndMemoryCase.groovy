@@ -221,12 +221,10 @@ class ChangeVmCpuAndMemoryCase extends SubCase {
         }
 
         retryInSecs {
-            return {
-                assert cmd != null
-                assert cmd2 != null
-                assert result.cpuNum == 2
-                assert result.memorySize == SizeUnit.GIGABYTE.toByte(4)
-            }
+            assert cmd != null
+            assert cmd2 != null
+            assert result.cpuNum == 2
+            assert result.memorySize == SizeUnit.GIGABYTE.toByte(4)
         }
 
         env.cleanAfterSimulatorHandlers()
@@ -288,10 +286,8 @@ class ChangeVmCpuAndMemoryCase extends SubCase {
         }
 
         retryInSecs {
-            return {
-                assert vmInstanceInventory.cpuNum == 8
-                assert cmd != null
-            }
+            assert vmInstanceInventory.cpuNum == 8
+            assert cmd != null
         }
 
         env.cleanAfterSimulatorHandlers()
@@ -316,10 +312,8 @@ class ChangeVmCpuAndMemoryCase extends SubCase {
 
         retryInSecs {
             vo = dbFindByUuid(vm.uuid, VmInstanceVO.class)
-            return {
-                assert vo.memorySize == SizeUnit.GIGABYTE.toByte(8)
-                assert cmd != null
-            }
+            assert vo.memorySize == SizeUnit.GIGABYTE.toByte(8)
+            assert cmd != null
         }
 
         env.cleanAfterSimulatorHandlers()
@@ -383,11 +377,9 @@ class ChangeVmCpuAndMemoryCase extends SubCase {
         HostVO vo
         retryInSecs {
             vo = dbFindByUuid(host.uuid, HostVO.class)
-            return {
-                assert vo.getCapacity().getAvailableCpu() == vo.getCapacity().getTotalCpu() - 10
-                assert vo.getCapacity().getAvailableMemory() == vo.getCapacity().getTotalMemory() - SizeUnit.GIGABYTE.toByte(8) - SizeUnit.MEGABYTE.toByte(512)
-                assert cmd != null
-            }
+            assert vo.getCapacity().getAvailableCpu() == vo.getCapacity().getTotalCpu() - 10
+            assert vo.getCapacity().getAvailableMemory() == vo.getCapacity().getTotalMemory() - SizeUnit.GIGABYTE.toByte(8) - SizeUnit.MEGABYTE.toByte(512)
+            assert cmd != null
         }
 
         env.cleanAfterSimulatorHandlers()
@@ -406,10 +398,8 @@ class ChangeVmCpuAndMemoryCase extends SubCase {
 
         retryInSecs {
             vo = dbFindByUuid(host.uuid, HostVO.class)
-            return {
-                assert vo.getCapacity().getAvailableCpu() == vo.getCapacity().getTotalCpu() - 10
-                assert vo.getCapacity().getAvailableMemory() == vo.getCapacity().getTotalMemory() - SizeUnit.GIGABYTE.toByte(8) - SizeUnit.MEGABYTE.toByte(512)
-            }
+            assert vo.getCapacity().getAvailableCpu() == vo.getCapacity().getTotalCpu() - 10
+            assert vo.getCapacity().getAvailableMemory() == vo.getCapacity().getTotalMemory() - SizeUnit.GIGABYTE.toByte(8) - SizeUnit.MEGABYTE.toByte(512)
         }
 
         env.cleanAfterSimulatorHandlers()

@@ -65,7 +65,7 @@ class LocalStorageGCCase extends SubCase {
                 conditions = ["context~=%${vol.uuid}%".toString()]
             }[0]
 
-            return { assert inv.status == GCStatus.Idle.toString() }
+            assert inv.status == GCStatus.Idle.toString()
         }
 
         boolean called = false
@@ -80,7 +80,7 @@ class LocalStorageGCCase extends SubCase {
         }
 
         retryInSecs {
-            return { assert called }
+            assert called
         }
 
         retryInSecs {
@@ -88,7 +88,7 @@ class LocalStorageGCCase extends SubCase {
                 conditions = ["context~=%${vol.uuid}%".toString()]
             }[0]
 
-            return { assert inv.status == GCStatus.Done.toString() }
+            assert inv.status == GCStatus.Done.toString()
         }
     }
 
@@ -113,7 +113,7 @@ class LocalStorageGCCase extends SubCase {
                 conditions = ["context~=%${vol.uuid}%".toString()]
             }[0]
 
-            return { assert inv.status == GCStatus.Idle.toString() }
+            assert inv.status == GCStatus.Idle.toString()
         }
 
         deleteHost {
@@ -125,7 +125,7 @@ class LocalStorageGCCase extends SubCase {
                 conditions = ["context~=%${vol.uuid}%".toString()]
             }[0]
 
-            return { assert inv.status == GCStatus.Done.toString() }
+            assert inv.status == GCStatus.Done.toString()
         }
     }
 
@@ -150,7 +150,7 @@ class LocalStorageGCCase extends SubCase {
                 conditions = ["context~=%${vol.uuid}%".toString()]
             }[0]
 
-            return { assert inv.status == GCStatus.Idle.toString() }
+            assert inv.status == GCStatus.Idle.toString()
         }
 
         detachPrimaryStorageFromCluster {
@@ -167,7 +167,7 @@ class LocalStorageGCCase extends SubCase {
                 conditions = ["context~=%${vol.uuid}%".toString()]
             }[0]
 
-            return { assert inv.status == GCStatus.Done.toString() }
+            assert inv.status == GCStatus.Done.toString()
         }
     }
 

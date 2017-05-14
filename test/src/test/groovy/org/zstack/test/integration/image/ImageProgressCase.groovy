@@ -114,7 +114,7 @@ class ImageProgressCase extends SubCase {
         trigger.quit()
 
         retryInSecs(30) {
-            return { assert err == null: "$err" }
+            assert err == null: "$err"
         }
 
         List<TaskProgressInventory> invs = getTaskProgress {

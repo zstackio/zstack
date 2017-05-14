@@ -94,7 +94,7 @@ class CloudBusShardingCase extends SubCase {
         ManagementNodeVO vo
         retryInSecs(5) {
             vo = dbFindByUuid(Platform.getManagementServerId(), ManagementNodeVO.class)
-            return vo == null
+            assert null == vo
         }
 
         TimeUnit.SECONDS.sleep(5)
