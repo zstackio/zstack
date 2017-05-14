@@ -78,9 +78,8 @@ class ReconnectHostCase extends SubCase{
                 List<VmInstanceInventory> vmInvs = queryVmInstance {
                     conditions=["state=${VmInstanceState.Running}"]
                 } as List<VmInstanceInventory>
-                return {
-                    assert vmInvs.size() == 2
-                }
+
+                assert vmInvs.size() == 2
             }
             assert runVm == numberOfVm * (i + 1)
             assert unknownVm == numberOfVm * (i + 1)

@@ -70,13 +70,11 @@ class CanonicalEventWebhookCase extends SubCase {
         bean(EventFacade.class).fire(eventPath, content)
 
         retryInSecs {
-            return {
-                assert count == 1
-                assert evt != null
-                assert evt.path == eventPath
-                assert evt.content == content
-                assert evt.managementNodeId == Platform.getManagementServerId()
-            }
+            assert count == 1
+            assert evt != null
+            assert evt.path == eventPath
+            assert evt.content == content
+            assert evt.managementNodeId == Platform.getManagementServerId()
         }
     }
 
@@ -109,17 +107,15 @@ class CanonicalEventWebhookCase extends SubCase {
             bean(EventFacade.class).fire(path, content)
 
             retryInSecs {
-                return {
-                    assert evts.size() == 2
-                    CanonicalEvent evt1 = evts[0]
-                    CanonicalEvent evt2 = evts[1]
-                    assert evt1.path == path
-                    assert evt1.content == content
-                    assert evt1.managementNodeId == Platform.getManagementServerId()
-                    assert evt2.path == path
-                    assert evt2.content == content
-                    assert evt2.managementNodeId == Platform.getManagementServerId()
-                }
+                assert evts.size() == 2
+                CanonicalEvent evt1 = evts[0]
+                CanonicalEvent evt2 = evts[1]
+                assert evt1.path == path
+                assert evt1.content == content
+                assert evt1.managementNodeId == Platform.getManagementServerId()
+                assert evt2.path == path
+                assert evt2.content == content
+                assert evt2.managementNodeId == Platform.getManagementServerId()
             }
         }
 
@@ -137,9 +133,7 @@ class CanonicalEventWebhookCase extends SubCase {
             bean(EventFacade.class).fire(path, content)
 
             retryInSecs {
-                return {
-                    assert evts.size() == 1
-                }
+                assert evts.size() == 1
             }
         }
 
@@ -157,9 +151,7 @@ class CanonicalEventWebhookCase extends SubCase {
             bean(EventFacade.class).fire(path, content)
 
             retryInSecs {
-                return {
-                    assert evts.size() == 0
-                }
+                assert evts.size() == 0
             }
         }
 

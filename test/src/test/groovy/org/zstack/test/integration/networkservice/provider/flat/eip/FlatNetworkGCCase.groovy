@@ -61,7 +61,7 @@ class FlatNetworkGCCase extends SubCase {
                 conditions=["context~=%${eip.guestIp}%".toString()]
             }[0]
 
-            return { assert inv.status == GCStatus.Idle.toString() }
+            assert inv.status == GCStatus.Idle.toString()
         }
 
 
@@ -81,10 +81,8 @@ class FlatNetworkGCCase extends SubCase {
                 conditions=["context~=%${eip.guestIp}%".toString()]
             }[0]
 
-            return {
-                assert called
-                assert inv.status == GCStatus.Done.toString()
-            }
+            assert called
+            assert inv.status == GCStatus.Done.toString()
         }
 
         // clean the GC job so it won't effect following cases
@@ -105,11 +103,11 @@ class FlatNetworkGCCase extends SubCase {
         GarbageCollectorInventory inv
 
         retryInSecs {
-             inv = queryGCJob {
+            inv = queryGCJob {
                 conditions=["context~=%${eip.guestIp}%".toString()]
             }[0]
 
-            return { assert inv.status == GCStatus.Idle.toString() }
+            assert inv.status == GCStatus.Idle.toString()
         }
 
         boolean called = false
@@ -127,10 +125,8 @@ class FlatNetworkGCCase extends SubCase {
                 conditions=["context~=%${eip.guestIp}%".toString()]
             }[0]
 
-            return  {
-                assert !called
-                assert inv.status == GCStatus.Done.toString()
-            }
+            assert !called
+            assert inv.status == GCStatus.Done.toString()
         }
 
         deleteGCJob {
@@ -155,7 +151,7 @@ class FlatNetworkGCCase extends SubCase {
                 conditions=["context~=%$bridgeName%".toString()]
             }[0]
 
-            return { assert inv.status == GCStatus.Idle.toString() }
+            assert inv.status == GCStatus.Idle.toString()
         }
 
         boolean called = false
@@ -173,10 +169,8 @@ class FlatNetworkGCCase extends SubCase {
                 conditions=["context~=%$bridgeName%".toString()]
             }[0]
 
-            return {
-                assert called
-                assert inv.status == GCStatus.Done.toString()
-            }
+            assert called
+            assert inv.status == GCStatus.Done.toString()
         }
 
         // cleanup the job for following cases
@@ -203,9 +197,7 @@ class FlatNetworkGCCase extends SubCase {
                 conditions=["context~=%$bridgeName%".toString()]
             }[0]
 
-            return {
-                assert inv.status == GCStatus.Idle.toString()
-            }
+            assert inv.status == GCStatus.Idle.toString()
         }
 
         boolean called = false
@@ -223,10 +215,8 @@ class FlatNetworkGCCase extends SubCase {
                 conditions=["context~=%$bridgeName%".toString()]
             }[0]
 
-            return {
-                assert !called
-                assert inv.status == GCStatus.Done.toString()
-            }
+            assert !called
+            assert inv.status == GCStatus.Done.toString()
         }
     }
 

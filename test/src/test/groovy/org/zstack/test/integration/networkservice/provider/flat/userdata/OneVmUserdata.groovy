@@ -212,11 +212,9 @@ class OneVmUserdata extends SubCase {
 
             releaseSuccess = true
 
-            assert retryInSecs {
-                return {
-                    assert releaseCmd != null
-                    assert releaseCmd.hostUuid == srcHostUuid
-                }
+            retryInSecs {
+                assert releaseCmd != null
+                assert releaseCmd.hostUuid == srcHostUuid
             }
         }
 
@@ -244,11 +242,9 @@ class OneVmUserdata extends SubCase {
                 }
             }
 
-            assert retryInSecs {
-                return {
-                    assert releaseCmd != null
-                    assert releaseCmd.hostUuid == targetHostUuid
-                }
+            retryInSecs {
+                assert releaseCmd != null
+                assert releaseCmd.hostUuid == targetHostUuid
             }
         }
 
@@ -286,11 +282,9 @@ class OneVmUserdata extends SubCase {
 
             releaseSuccess = true
 
-            assert retryInSecs {
-                return {
-                    assert releaseCmd != null
-                    assert releaseCmd.hostUuid == targetHostUuid
-                }
+            retryInSecs {
+                assert releaseCmd != null
+                assert releaseCmd.hostUuid == targetHostUuid
             }
         }
 

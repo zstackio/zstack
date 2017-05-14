@@ -515,7 +515,8 @@ mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
         return judge
     }
 
-    protected boolean retryInSecs(int total=15, int interval=1, Closure c) {
+    @Deprecated
+    protected boolean retryInSecs3(int total=15, int interval=1, Closure c) {
         int count = 0
 
         def ret = null
@@ -532,6 +533,34 @@ mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
         }
 
         return getRetryReturnValue(ret, true)
+    }
+
+    protected boolean retryInSecs(int total = 8, int interval = 1, Closure c) {
+        int count = 0
+        def ret = false
+
+        while (count < total) {
+            try {
+                def r = c()
+                ret = r == null || (r != null && r instanceof Boolean && r) ? true : false
+            } catch (Throwable t) {
+
+                // Only the last retry time to throw one
+                if (total - count == 1) {
+                    throw t
+                }
+            }
+
+            // Get one successful return, Direct return to success
+            if (ret) {
+                return ret
+            }
+            TimeUnit.SECONDS.sleep(interval)
+            count += interval
+        }
+
+        // Retry time over, no successful return，or always throw exception
+        return false
     }
 
     protected boolean retryInMillis(int total, int interval=500, Closure c) {

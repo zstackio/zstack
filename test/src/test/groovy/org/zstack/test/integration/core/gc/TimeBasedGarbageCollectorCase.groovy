@@ -92,11 +92,9 @@ class TimeBasedGarbageCollectorCase extends SubCase {
         }
         gc.submit(500, TimeUnit.MILLISECONDS)
 
-        assert retryInSecs {
-            return {
-                assert count == 1
-                assert dbFindByUuid(gc.uuid, GarbageCollectorVO.class).status == GCStatus.Done
-            }
+        retryInSecs {
+            assert count == 1
+            assert dbFindByUuid(gc.uuid, GarbageCollectorVO.class).status == GCStatus.Done
         }
 
         // confirm the GC is not called anymore
@@ -115,12 +113,10 @@ class TimeBasedGarbageCollectorCase extends SubCase {
         }
         gc.submit(500, TimeUnit.MILLISECONDS)
 
-        assert retryInSecs {
-            return {
-                GarbageCollectorVO vo = dbFindByUuid(gc.uuid, GarbageCollectorVO.class)
-                assert vo != null
-                assert count > 1
-            }
+        retryInSecs {
+            GarbageCollectorVO vo = dbFindByUuid(gc.uuid, GarbageCollectorVO.class)
+            assert vo != null
+            assert count > 1
         }
 
         gc.doCancel()
@@ -138,11 +134,9 @@ class TimeBasedGarbageCollectorCase extends SubCase {
         gc.submit(500, TimeUnit.MILLISECONDS)
 
 
-        assert retryInSecs {
-            return {
-                assert called
-                assert dbFindByUuid(gc.uuid, GarbageCollectorVO.class).status == GCStatus.Done
-            }
+        retryInSecs {
+            assert called
+            assert dbFindByUuid(gc.uuid, GarbageCollectorVO.class).status == GCStatus.Done
         }
     }
 
@@ -156,13 +150,11 @@ class TimeBasedGarbageCollectorCase extends SubCase {
         }
         gc.submit(500, TimeUnit.MILLISECONDS)
 
-        assert retryInSecs {
-            return {
-                // confirm the job is still there
-                GarbageCollectorVO vo = dbFindByUuid(gc.uuid, GarbageCollectorVO.class)
-                assert count > 1
-                assert vo != null
-            }
+        retryInSecs {
+            // confirm the job is still there
+            GarbageCollectorVO vo = dbFindByUuid(gc.uuid, GarbageCollectorVO.class)
+            assert count > 1
+            assert vo != null
         }
 
         gc.doCancel()
@@ -188,11 +180,9 @@ class TimeBasedGarbageCollectorCase extends SubCase {
 
         gcMgr.managementNodeReady()
 
-        assert retryInSecs {
-            return {
-                assert called
-                assert dbFindByUuid(gc.uuid, GarbageCollectorVO.class).status == GCStatus.Done
-            }
+        retryInSecs {
+            assert called
+            assert dbFindByUuid(gc.uuid, GarbageCollectorVO.class).status == GCStatus.Done
         }
     }
 
@@ -213,12 +203,10 @@ class TimeBasedGarbageCollectorCase extends SubCase {
 
         gcMgr.managementNodeReady()
 
-        assert retryInSecs {
-            return {
-                vo = dbFindByUuid(gc.uuid, GarbageCollectorVO.class)
-                assert vo != null
-                assert vo.status == GCStatus.Idle
-            }
+        retryInSecs {
+            vo = dbFindByUuid(gc.uuid, GarbageCollectorVO.class)
+            assert vo != null
+            assert vo.status == GCStatus.Idle
         }
     }
 
@@ -241,11 +229,9 @@ class TimeBasedGarbageCollectorCase extends SubCase {
 
         gcMgr.managementNodeReady()
 
-        assert retryInSecs {
-            return {
-                assert called
-                assert dbFindByUuid(gc.uuid, GarbageCollectorVO.class).status == GCStatus.Done
-            }
+        retryInSecs {
+            assert called
+            assert dbFindByUuid(gc.uuid, GarbageCollectorVO.class).status == GCStatus.Done
         }
     }
 
@@ -269,11 +255,9 @@ class TimeBasedGarbageCollectorCase extends SubCase {
             return Behavior.SUCCESS
         }
 
-        assert retryInSecs {
-            return {
-                assert called
-                assert dbFindByUuid(gc.uuid, GarbageCollectorVO.class).status == GCStatus.Done
-            }
+        retryInSecs {
+            assert called
+            assert dbFindByUuid(gc.uuid, GarbageCollectorVO.class).status == GCStatus.Done
         }
     }
 
@@ -299,11 +283,9 @@ class TimeBasedGarbageCollectorCase extends SubCase {
             sessionId = adminSessionUuid
         }
 
-        assert retryInSecs {
-            return {
-                assert called
-                assert dbFindByUuid(gc.uuid, GarbageCollectorVO.class).status == GCStatus.Done
-            }
+        retryInSecs {
+            assert called
+            assert dbFindByUuid(gc.uuid, GarbageCollectorVO.class).status == GCStatus.Done
         }
     }
 
@@ -325,11 +307,9 @@ class TimeBasedGarbageCollectorCase extends SubCase {
             sessionId = adminSessionUuid
         }
 
-        assert retryInSecs {
-            return {
-                assert called
-                assert dbFindByUuid(gc.uuid, GarbageCollectorVO.class).status == GCStatus.Done
-            }
+        retryInSecs {
+            assert called
+            assert dbFindByUuid(gc.uuid, GarbageCollectorVO.class).status == GCStatus.Done
         }
     }
 

@@ -206,10 +206,8 @@ class VmDestroyingCase extends SubCase {
         retryInSecs {
             VmInstanceVO vo = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vm.uuid).list().get(0)
 
-            return {
-                assert vo.state == VmInstanceState.Destroyed
-                assert cmd != null
-            }
+            assert vo.state == VmInstanceState.Destroyed
+            assert cmd != null
         }
 
         recoverVmInstance {

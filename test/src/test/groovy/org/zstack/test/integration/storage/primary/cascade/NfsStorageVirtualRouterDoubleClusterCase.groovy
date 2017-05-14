@@ -189,9 +189,7 @@ use:
         }
         retryInSecs(3,1){
             long count = dbf.count(VmInstanceVO.class)
-            return {
-                assert count == 1
-            }
+            assert count == 1
         }
     }
 

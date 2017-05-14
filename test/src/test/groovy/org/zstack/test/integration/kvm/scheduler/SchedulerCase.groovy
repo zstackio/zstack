@@ -88,9 +88,9 @@ class SchedulerCase extends SubCase {
             startTime = 0
             repeatCount = 1
         }
-        boolean ret = retryInSecs(20, 5) {
+        retryInSecs(20, 5) {
             String state2 = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vm_uuid).select(VmInstanceVO_.state).findValue()
-            return state2 == "Running"
+            assert state2 == "Running"
         }
 
     }
@@ -116,9 +116,9 @@ class SchedulerCase extends SubCase {
         deleteScheduler{
             uuid = sInv.uuid
         }
-        assert retryInSecs(5, 1) {
+        retryInSecs(5, 1) {
             String state2 = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vm_uuid).select(VmInstanceVO_.state).findValue()
-            return {assert state2 == "Stopped"}
+            assert state2 == "Stopped"
         }
 
     }

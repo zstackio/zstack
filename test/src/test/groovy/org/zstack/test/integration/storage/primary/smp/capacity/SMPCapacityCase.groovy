@@ -82,25 +82,21 @@ class SMPCapacityCase extends SubCase{
         PrimaryStorageCapacityVO vo
         retryInSecs {
             vo = dbFindByUuid(primaryStorageSpec.inventory.uuid, PrimaryStorageCapacityVO.class)
-            return {
-                assert vo.getAvailablePhysicalCapacity() == 0L
-                assert vo.getAvailableCapacity() == 0L
-                assert vo.getTotalPhysicalCapacity() == 0L
-                assert vo.getTotalCapacity() == 0L
-                assert vo.getSystemUsedCapacity() == 0L
-            }
+            assert vo.getAvailablePhysicalCapacity() == 0L
+            assert vo.getAvailableCapacity() == 0L
+            assert vo.getTotalPhysicalCapacity() == 0L
+            assert vo.getTotalCapacity() == 0L
+            assert vo.getSystemUsedCapacity() == 0L
         }
 
         PrimaryStorageVO primaryStorageVO
         retryInSecs {
             primaryStorageVO = dbFindByUuid(primaryStorageSpec.inventory.uuid, PrimaryStorageVO.class)
-            return {
-                assert primaryStorageVO.getCapacity().getTotalCapacity() == 0L
-                assert primaryStorageVO.getCapacity().getSystemUsedCapacity() == 0L
-                assert primaryStorageVO.getCapacity().getAvailableCapacity() == 0L
-                assert primaryStorageVO.getCapacity().getTotalPhysicalCapacity() == 0L
-                assert primaryStorageVO.getCapacity().getAvailablePhysicalCapacity() == 0L
-            }
+            assert primaryStorageVO.getCapacity().getTotalCapacity() == 0L
+            assert primaryStorageVO.getCapacity().getSystemUsedCapacity() == 0L
+            assert primaryStorageVO.getCapacity().getAvailableCapacity() == 0L
+            assert primaryStorageVO.getCapacity().getTotalPhysicalCapacity() == 0L
+            assert primaryStorageVO.getCapacity().getAvailablePhysicalCapacity() == 0L
         }
     }
 

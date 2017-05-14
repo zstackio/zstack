@@ -95,12 +95,10 @@ class NotificationCase extends SubCase {
         }
 
         retryInSecs {
-            return {
-                assert invs != null
-                assert invs.size() == 1
-                NotificationInventory inv = invs[0]
-                assert inv.sender == NotificationConstant.API_SENDER
-            }
+            assert invs != null
+            assert invs.size() == 1
+            NotificationInventory inv = invs[0]
+            assert inv.sender == NotificationConstant.API_SENDER
         }
     }
 
