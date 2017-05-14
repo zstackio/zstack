@@ -27,27 +27,27 @@ class RetryInSecsCase extends SubCase {
 
     void baseTest(){
         // do nothing, expect true
-        assert retryInSecs3(2){
+        assert retryInSecs(2){
         }
 
         // return a not boolean object, expect false
-        assert !retryInSecs3(2){
+        assert !retryInSecs(2){
             return new Object()
         }
 
-        assert retryInSecs3(2){
+        assert retryInSecs(2){
             return new Boolean(true)
         }
 
-        assert retryInSecs3(){
+        assert retryInSecs(){
             return true
         }
 
-        assert !retryInSecs3(2){
+        assert !retryInSecs(2){
             return false
         }
 
-        retryInSecs3(3){
+        retryInSecs(3){
             assert 1 == 1
             assert 2 == 2
             assert 1000 * 1 == 100 * 10
@@ -62,7 +62,7 @@ class RetryInSecsCase extends SubCase {
         // case
         int retryTimes = 3
         long startTime = System.currentTimeMillis()
-        assert retryInSecs3(retryTimes){
+        assert retryInSecs(retryTimes){
             return true
         }
         long endTime = System.currentTimeMillis()
@@ -72,7 +72,7 @@ class RetryInSecsCase extends SubCase {
         retryTimes = 2
         long currentTime = 0
         startTime = System.currentTimeMillis()
-        retryInSecs3(retryTimes){
+        retryInSecs(retryTimes){
 
             if(retryTimes - currentTime == 1){
                 assert true
@@ -89,7 +89,7 @@ class RetryInSecsCase extends SubCase {
         retryTimes = 3
         startTime = System.currentTimeMillis()
         try {
-            retryInSecs3(retryTimes){
+            retryInSecs(retryTimes){
                 assert new Object() == new Object().class
                 assert 1 == 2
             }
@@ -103,7 +103,7 @@ class RetryInSecsCase extends SubCase {
         // case
         retryTimes = 2
         startTime = System.currentTimeMillis()
-        assert !retryInSecs3(retryTimes){
+        assert !retryInSecs(retryTimes){
             return false
         }
         endTime = System.currentTimeMillis()
