@@ -219,6 +219,11 @@ class InvalidUrlCase extends SubCase {
             rsp.setSuccess(false)
             return rsp
         }
+
+        retryInSecs(){
+            assert Q.New(HostVO.class).eq(HostVO_.uuid, host.uuid).select(HostVO_.status).findValue() != HostStatus.Connecting
+        }
+
         ReconnectHostAction a = new ReconnectHostAction()
         a.uuid = host.uuid
         a.sessionId = currentEnvSpec.session.uuid
@@ -236,6 +241,10 @@ class InvalidUrlCase extends SubCase {
             rsp.totalCapacity = spec.totalCapacity
             rsp.availableCapacity = spec.availableCapacity
             return rsp
+        }
+
+        retryInSecs(){
+            assert Q.New(HostVO.class).eq(HostVO_.uuid, host.uuid).select(HostVO_.status).findValue() != HostStatus.Connecting
         }
 
         reconnectHost {
