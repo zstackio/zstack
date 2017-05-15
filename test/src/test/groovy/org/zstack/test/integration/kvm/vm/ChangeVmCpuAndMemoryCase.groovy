@@ -323,6 +323,23 @@ class ChangeVmCpuAndMemoryCase extends SubCase {
     void testIncreaseMemoryAutoAlignment() {
         HostInventory host = env.inventoryByName("kvm")
 
+        stopVmInstance {
+            uuid = vm.uuid
+        }
+        VmInstanceVO vo = dbFindByUuid(vm.uuid, VmInstanceVO.class)
+        assert vo.state == VmInstanceState.Stopped
+
+        updateVmInstance {
+            uuid = vm.uuid
+            memorySize = SizeUnit.MEGABYTE.toByte(1)
+        }
+
+        startVmInstance {
+            uuid = vm.uuid
+        }
+        vo = dbFindByUuid(vm.uuid, VmInstanceVO.class)
+        assert vo.state == VmInstanceState.Running
+
         KVMAgentCommands.IncreaseMemoryCmd cmd = null
         env.afterSimulator(KVMConstant.KVM_VM_ONLINE_INCREASE_MEMORY) { KVMAgentCommands.IncreaseMemoryResponse rsp, HttpEntity<String> e ->
             cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.IncreaseMemoryCmd.class)
@@ -333,76 +350,112 @@ class ChangeVmCpuAndMemoryCase extends SubCase {
 
         updateVmInstance {
             uuid = vm.uuid
-            memorySize = SizeUnit.GIGABYTE.toByte(8)
+            memorySize = SizeUnit.MEGABYTE.toByte(1)
         }
+
+        // test increase 1MB
         assert cmd == null
-
-        HostVO beforeVO = dbFindByUuid(host.uuid, HostVO.class)
-
         UpdateVmInstanceAction updateVmInstanceAction = new UpdateVmInstanceAction()
         updateVmInstanceAction.uuid = vm.uuid
-        updateVmInstanceAction.memorySize = SizeUnit.GIGABYTE.toByte(8) + SizeUnit.MEGABYTE.toByte(1)
+        updateVmInstanceAction.memorySize = SizeUnit.MEGABYTE.toByte(1) + SizeUnit.MEGABYTE.toByte(1)
         updateVmInstanceAction.sessionId = adminSession()
         UpdateVmInstanceAction.Result updateVmInstanceResult = updateVmInstanceAction.call()
         assert updateVmInstanceResult.error == null
         assert cmd != null
-        assert cmd.memorySize == (long) SizeUnit.GIGABYTE.toByte(8) + (long) SizeUnit.MEGABYTE.toByte(128)
+        assert cmd.memorySize == (long) SizeUnit.MEGABYTE.toByte(1) + (long) SizeUnit.MEGABYTE.toByte(128)
 
-        env.cleanAfterSimulatorHandlers()
+        // test increase 64MB align to 128MB
         cmd = null
-        env.afterSimulator(KVMConstant.KVM_VM_ONLINE_INCREASE_MEMORY) { KVMAgentCommands.IncreaseMemoryResponse rsp, HttpEntity<String> e ->
-            cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.IncreaseMemoryCmd.class)
-            rsp.memorySize = cmd.memorySize
-            rsp.success = true
-            return rsp
-        }
-
-        env.cleanAfterSimulatorHandlers()
-        cmd = null
-        env.afterSimulator(KVMConstant.KVM_VM_ONLINE_INCREASE_MEMORY) { KVMAgentCommands.IncreaseMemoryResponse rsp, HttpEntity<String> e ->
-            cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.IncreaseMemoryCmd.class)
-            rsp.memorySize = cmd.memorySize
-            rsp.success = true
-            return rsp
-        }
-
         UpdateVmInstanceAction updateVmInstanceAction2 = new UpdateVmInstanceAction()
         updateVmInstanceAction2.uuid = vm.uuid
-        updateVmInstanceAction2.memorySize = SizeUnit.GIGABYTE.toByte(8) + SizeUnit.MEGABYTE.toByte(192)
+        updateVmInstanceAction2.memorySize = (long) SizeUnit.MEGABYTE.toByte(1) + (long) SizeUnit.MEGABYTE.toByte(128) + SizeUnit.MEGABYTE.toByte(64)
         updateVmInstanceAction2.sessionId = adminSession()
         UpdateVmInstanceAction.Result updateVmInstanceResult2 = updateVmInstanceAction2.call()
         assert updateVmInstanceResult2.error == null
 
-        assert SizeUnit.MEGABYTE.toByte(192) % SizeUnit.MEGABYTE.toByte(128) == SizeUnit.MEGABYTE.toByte(128) / 2
-        assert ((long) (SizeUnit.GIGABYTE.toByte(8) + SizeUnit.MEGABYTE.toByte(192))/ SizeUnit.MEGABYTE.toByte(128) + (long) 1) * SizeUnit.MEGABYTE.toByte(128) == cmd.memorySize
-        assert ((long) SizeUnit.GIGABYTE.toByte(8) + SizeUnit.MEGABYTE.toByte(256)) == cmd.memorySize
+        assert SizeUnit.MEGABYTE.toByte(64) % SizeUnit.MEGABYTE.toByte(128) == SizeUnit.MEGABYTE.toByte(128) / 2
+        assert ((((long) (SizeUnit.MEGABYTE.toByte(64))/ SizeUnit.MEGABYTE.toByte(128)) + (long) 1) * SizeUnit.MEGABYTE.toByte(128)
+        + (long) SizeUnit.MEGABYTE.toByte(1) + (long) SizeUnit.MEGABYTE.toByte(128)) == cmd.memorySize
+        assert ((long) SizeUnit.MEGABYTE.toByte(1) + SizeUnit.MEGABYTE.toByte(256)) == cmd.memorySize
         assert cmd != null
 
-        env.cleanAfterSimulatorHandlers()
+        // test increase 63MB align to 128MB
         cmd = null
-        env.afterSimulator(KVMConstant.KVM_VM_ONLINE_INCREASE_MEMORY) { KVMAgentCommands.IncreaseMemoryResponse rsp, HttpEntity<String> e ->
-            cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.IncreaseMemoryCmd.class)
-            rsp.memorySize = cmd.memorySize
-            rsp.success = true
-            return rsp
-        }
-
         UpdateVmInstanceAction updateVmInstanceAction3 = new UpdateVmInstanceAction()
         updateVmInstanceAction3.uuid = vm.uuid
-        updateVmInstanceAction3.memorySize = SizeUnit.GIGABYTE.toByte(8) + SizeUnit.MEGABYTE.toByte(447)
+        updateVmInstanceAction3.memorySize = (long) SizeUnit.MEGABYTE.toByte(1) + SizeUnit.MEGABYTE.toByte(256) + SizeUnit.MEGABYTE.toByte(63)
         updateVmInstanceAction3.sessionId = adminSession()
         UpdateVmInstanceAction.Result updateVmInstanceResult3 = updateVmInstanceAction3.call()
         assert updateVmInstanceResult3.error == null
 
-        assert SizeUnit.MEGABYTE.toByte(447) % SizeUnit.MEGABYTE.toByte(128) < SizeUnit.MEGABYTE.toByte(128) / 2
-        assert ((long) (SizeUnit.GIGABYTE.toByte(8) + SizeUnit.MEGABYTE.toByte(447))/ SizeUnit.MEGABYTE.toByte(128)) * SizeUnit.MEGABYTE.toByte(128) == cmd.memorySize
-        assert cmd.memorySize == SizeUnit.GIGABYTE.toByte(8) + SizeUnit.MEGABYTE.toByte(384)
+        assert SizeUnit.MEGABYTE.toByte(63) % SizeUnit.MEGABYTE.toByte(128) < SizeUnit.MEGABYTE.toByte(128) / 2
+        assert (((long) (SizeUnit.MEGABYTE.toByte(63)) / SizeUnit.MEGABYTE.toByte(128) + (long) 1) * SizeUnit.MEGABYTE.toByte(128)
+        + (long) SizeUnit.MEGABYTE.toByte(1) + SizeUnit.MEGABYTE.toByte(256)) == cmd.memorySize
+        assert cmd.memorySize == SizeUnit.MEGABYTE.toByte(1) + SizeUnit.MEGABYTE.toByte(384)
+        assert cmd != null
+
+        // test increase 129MB align to 128MB
+        cmd = null
+        UpdateVmInstanceAction updateVmInstanceAction4 = new UpdateVmInstanceAction()
+        updateVmInstanceAction4.uuid = vm.uuid
+        updateVmInstanceAction4.memorySize = (long) SizeUnit.MEGABYTE.toByte(1) + SizeUnit.MEGABYTE.toByte(384) + SizeUnit.MEGABYTE.toByte(129)
+        updateVmInstanceAction4.sessionId = adminSession()
+        UpdateVmInstanceAction.Result updateVmInstanceResult4 = updateVmInstanceAction4.call()
+        assert updateVmInstanceResult4.error == null
+
+        assert SizeUnit.MEGABYTE.toByte(129) % SizeUnit.MEGABYTE.toByte(128) < SizeUnit.MEGABYTE.toByte(128) / 2
+        assert (((long) (SizeUnit.MEGABYTE.toByte(129)) / SizeUnit.MEGABYTE.toByte(128)) * SizeUnit.MEGABYTE.toByte(128) + (long) SizeUnit.MEGABYTE.toByte(1) + SizeUnit.MEGABYTE.toByte(384)) == cmd.memorySize
+        assert cmd.memorySize == SizeUnit.MEGABYTE.toByte(1) + SizeUnit.MEGABYTE.toByte(512)
+        assert cmd != null
+
+
+        // test increase 128MB
+        cmd = null
+        UpdateVmInstanceAction updateVmInstanceAction5 = new UpdateVmInstanceAction()
+        updateVmInstanceAction5.uuid = vm.uuid
+        updateVmInstanceAction5.memorySize = (long) SizeUnit.MEGABYTE.toByte(1) + SizeUnit.MEGABYTE.toByte(512) + SizeUnit.MEGABYTE.toByte(128)
+        updateVmInstanceAction5.sessionId = adminSession()
+        UpdateVmInstanceAction.Result updateVmInstanceResult5 = updateVmInstanceAction5.call()
+        assert updateVmInstanceResult5.error == null
+
+        assert SizeUnit.MEGABYTE.toByte(128) % SizeUnit.MEGABYTE.toByte(128) == 0
+        assert cmd.memorySize == SizeUnit.MEGABYTE.toByte(1) + SizeUnit.MEGABYTE.toByte(640)
+        assert cmd != null
+
+        // test increase 193MB align to 256MB
+        cmd = null
+        UpdateVmInstanceAction updateVmInstanceAction6 = new UpdateVmInstanceAction()
+        updateVmInstanceAction6.uuid = vm.uuid
+        updateVmInstanceAction6.memorySize = (long) SizeUnit.MEGABYTE.toByte(1) + SizeUnit.MEGABYTE.toByte(640) + SizeUnit.MEGABYTE.toByte(193)
+        updateVmInstanceAction6.sessionId = adminSession()
+        UpdateVmInstanceAction.Result updateVmInstanceResult6 = updateVmInstanceAction6.call()
+        assert updateVmInstanceResult6.error == null
+
+        assert SizeUnit.MEGABYTE.toByte(193) % SizeUnit.MEGABYTE.toByte(128) > SizeUnit.MEGABYTE.toByte(128) / 2
+        assert ((((long) (SizeUnit.MEGABYTE.toByte(193)) / SizeUnit.MEGABYTE.toByte(128) + (long) 1)) * SizeUnit.MEGABYTE.toByte(128) + SizeUnit.MEGABYTE.toByte(640) + (long) SizeUnit.MEGABYTE.toByte(1)) == cmd.memorySize
+        assert cmd.memorySize == SizeUnit.MEGABYTE.toByte(1) + SizeUnit.MEGABYTE.toByte(640) + SizeUnit.MEGABYTE.toByte(256)
+        assert cmd != null
+
+
+        // test update vm memory to 31GB align to 31GB + 128MB
+        cmd = null
+        UpdateVmInstanceAction updateVmInstanceAction7 = new UpdateVmInstanceAction()
+        updateVmInstanceAction7.uuid = vm.uuid
+        updateVmInstanceAction7.memorySize = (long) SizeUnit.GIGABYTE.toByte(31)
+        updateVmInstanceAction7.sessionId = adminSession()
+        UpdateVmInstanceAction.Result updateVmInstanceResult7 = updateVmInstanceAction7.call()
+        assert updateVmInstanceResult7.error == null
+
+        long increase = (long) SizeUnit.GIGABYTE.toByte(31) - (long) SizeUnit.MEGABYTE.toByte(1) - SizeUnit.MEGABYTE.toByte(896)
+        assert increase % SizeUnit.MEGABYTE.toByte(128) > SizeUnit.MEGABYTE.toByte(128) / 2
+        assert ((((increase / SizeUnit.MEGABYTE.toByte(128)) as long) + (long) 1) * SizeUnit.MEGABYTE.toByte(128))
+        + SizeUnit.MEGABYTE.toByte(1) + SizeUnit.MEGABYTE.toByte(896) == cmd.memorySize
         assert cmd != null
 
         stopVmInstance {
             uuid = vm.uuid
         }
-        VmInstanceVO vo = dbFindByUuid(vm.uuid, VmInstanceVO.class)
+        vo = dbFindByUuid(vm.uuid, VmInstanceVO.class)
         assert vo.state == VmInstanceState.Stopped
 
         updateVmInstance {
