@@ -131,10 +131,11 @@ class CheckHostMemCapacityWhenCreateVmCase extends SubCase {
         InstanceOfferingInventory biggerOffering = env.inventoryByName("bigger")
 
         CreateVmInstanceAction createVmInstanceAction = new CreateVmInstanceAction(
-               sessionId : Test.currentEnvSpec.session.uuid,
-               instanceOfferingUuid : biggerOffering.uuid,
-               l3NetworkUuids : [vm.defaultL3NetworkUuid],
-               imageUuid : vm.imageUuid
+                name: "newVm",
+                sessionId : Test.currentEnvSpec.session.uuid,
+                instanceOfferingUuid : biggerOffering.uuid,
+                l3NetworkUuids : [vm.defaultL3NetworkUuid],
+                imageUuid : vm.imageUuid
         )
         assert null != createVmInstanceAction.call().error
     }
