@@ -34,7 +34,6 @@ class ChangeVmCpuAndMemoryCase extends SubCase {
     EnvSpec env
     VmInstanceInventory vm
     DatabaseFacade dbf
-    SystemTagInventory systemTagInventory
 
     @Override
     void clean() {
@@ -170,21 +169,17 @@ class ChangeVmCpuAndMemoryCase extends SubCase {
     void test() {
         env.create {
             VmGlobalConfig.NUMA.updateValue(true)
-            vm = env.inventoryByName("vm")
+            vm = env.inventoryByName("vm") as VmInstanceInventory
 
             dbf = bean(DatabaseFacade.class)
 
-            systemTagInventory = createSystemTag {
-                resourceUuid = vm.uuid
-                resourceType = VmInstanceVO.class.getSimpleName()
-                tag = VmSystemTags.INSTANCEOFFERING_ONLIECHANGE.instantiateTag(map(e(VmSystemTags.INSTANCEOFFERING_ONLINECHANGE_TOKEN, "true")))
-            }
 
             testOnlineChangeCpuAndMemory()
             testChangeCpuAndMemoryWhenVmStopped()
             testChangeCpuWhenVmRunning()
             testChangeMemoryWhenVmRunning()
             testIncreaseMemoryAutoAlignment()
+            testRandomIncreaseMemoryCase()
             testNumaGlobalConfig()
             testFailureCameoutAfterAllocateHostCapacityTheCapacityWillBeReturned()
             testCannotFindHostWontMakeChangeVmCpuAndMemoryChainRollback()
@@ -214,8 +209,6 @@ class ChangeVmCpuAndMemoryCase extends SubCase {
             return rsp
         }
 
-        assert VmSystemTags.INSTANCEOFFERING_ONLIECHANGE
-                .getTokenByResourceUuid(vm.getUuid(), VmSystemTags.INSTANCEOFFERING_ONLINECHANGE_TOKEN) == "true"
         VmInstanceInventory result = changeInstanceOffering {
             vmInstanceUuid = vm.uuid
             instanceOfferingUuid = instanceOffering.uuid
@@ -469,6 +462,86 @@ class ChangeVmCpuAndMemoryCase extends SubCase {
         vo = dbFindByUuid(vm.uuid, VmInstanceVO.class)
         assert vo.state == VmInstanceState.Running
         env.cleanAfterSimulatorHandlers()
+    }
+
+    void testRandomIncreaseMemoryCase() {
+        stopVmInstance {
+            uuid = vm.uuid
+        }
+        VmInstanceVO vo = dbFindByUuid(vm.uuid, VmInstanceVO.class)
+        assert vo.state == VmInstanceState.Stopped
+
+        updateVmInstance {
+            uuid = vm.uuid
+            memorySize = SizeUnit.BYTE.toByte(1)
+        }
+
+        startVmInstance {
+            uuid = vm.uuid
+        }
+        vo = dbFindByUuid(vm.uuid, VmInstanceVO.class)
+        assert vo.state == VmInstanceState.Running
+
+        def random = new Random()
+        10.times{
+            checkAlignmentCondition(SizeUnit.MEGABYTE.toByte(random.nextInt(1000)))
+        }
+
+        stopVmInstance {
+            uuid = vm.uuid
+        }
+        vo = dbFindByUuid(vm.uuid, VmInstanceVO.class)
+        assert vo.state == VmInstanceState.Stopped
+
+        updateVmInstance {
+            uuid = vm.uuid
+            memorySize = SizeUnit.GIGABYTE.toByte(8)
+        }
+
+        startVmInstance {
+            uuid = vm.uuid
+        }
+        vo = dbFindByUuid(vm.uuid, VmInstanceVO.class)
+        assert vo.state == VmInstanceState.Running
+        env.cleanAfterSimulatorHandlers()
+    }
+
+    void checkAlignmentCondition(long increaseMem) {
+        KVMAgentCommands.IncreaseMemoryCmd cmd = null
+        env.afterSimulator(KVMConstant.KVM_VM_ONLINE_INCREASE_MEMORY) { KVMAgentCommands.IncreaseMemoryResponse rsp, HttpEntity<String> e ->
+            cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.IncreaseMemoryCmd.class)
+            rsp.memorySize = cmd.memorySize
+            rsp.success = true
+            return rsp
+        }
+
+        VmInstanceVO vo = dbFindByUuid(vm.uuid, VmInstanceVO.class)
+
+        UpdateVmInstanceAction updateVmInstanceAction = new UpdateVmInstanceAction()
+        updateVmInstanceAction.uuid = vm.uuid
+        updateVmInstanceAction.memorySize = vo.getMemorySize() + increaseMem
+        updateVmInstanceAction.sessionId = adminSession()
+        UpdateVmInstanceAction.Result updateVmInstanceResult = updateVmInstanceAction.call()
+        assert updateVmInstanceResult.error == null
+
+        if (increaseMem % SizeUnit.MEGABYTE.toByte(128) == 0 as long) {
+            assert cmd != null
+            assert cmd.memorySize == vo.getMemorySize() + increaseMem
+        } else {
+            def reminder = increaseMem % SizeUnit.MEGABYTE.toByte(128) as long
+            if (reminder < SizeUnit.MEGABYTE.toByte(128) / 2) {
+                if (increaseMem > SizeUnit.MEGABYTE.toByte(128)) {
+                    assert cmd != null
+                    assert cmd.memorySize == vo.getMemorySize() + (increaseMem / SizeUnit.MEGABYTE.toByte(128) as long) * SizeUnit.MEGABYTE.toByte(128)
+                } else {
+                    assert cmd != null
+                    assert cmd.memorySize == vo.getMemorySize() + SizeUnit.MEGABYTE.toByte(128)
+                }
+            } else {
+                assert cmd != null
+                assert cmd.memorySize == vo.getMemorySize() + ((increaseMem / SizeUnit.MEGABYTE.toByte(128) as long) + 1) * SizeUnit.MEGABYTE.toByte(128)
+            }
+        }
     }
 
     void testNumaGlobalConfig() {
