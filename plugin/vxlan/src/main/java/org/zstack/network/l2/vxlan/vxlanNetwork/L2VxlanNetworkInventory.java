@@ -30,8 +30,6 @@ public class L2VxlanNetworkInventory extends L2NetworkInventory {
      */
     private Integer vni;
 
-    @Queryable(mappingClass = VxlanNetworkPoolVO.class,
-            joinColumn = @JoinColumn(name = "uuid", referencedColumnName = "poolUuid"))
     private String poolUuid;
 
     public L2VxlanNetworkInventory() {

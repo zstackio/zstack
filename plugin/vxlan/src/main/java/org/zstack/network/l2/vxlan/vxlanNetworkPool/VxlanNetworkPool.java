@@ -1,5 +1,6 @@
 package org.zstack.network.l2.vxlan.vxlanNetworkPool;
 
+import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -38,6 +39,7 @@ import org.zstack.network.l2.vxlan.vtep.*;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO_;
 import org.zstack.tag.TagManager;
+import org.zstack.utils.ExceptionDSL;
 import org.zstack.utils.TagUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -199,7 +201,15 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
         vo.setType(msg.getType());
         vo.setVtepIp(msg.getVtepIp());
         vo.setPoolUuid(msg.getPoolUuid());
-        vo = dbf.persistAndRefresh(vo);
+        try {
+            vo = dbf.persistAndRefresh(vo);
+        } catch (Throwable t) {
+            if (!ExceptionDSL.isCausedBy(t, ConstraintViolationException.class)) {
+                throw t;
+            }
+
+            // the vtep is already attached
+        }
 
         VtepInventory inv = VtepInventory.valueOf(vo);
         String info = String.format("successfully create Vtep, %s", JSONObjectUtil.toJsonString(inv));

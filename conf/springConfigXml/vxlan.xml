@@ -54,6 +54,13 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="L2VxlanNetwork" class="org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetwork">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.network.l2.L2Network" />
+            <zstack:extension interface="org.zstack.header.vm.VmInstanceMigrateExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
     <bean id="VxlanNetworkChecker" class="org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkCheckerImpl" />
 
     <bean id="KVMConnectExtensionForVxlanNetwork" class="org.zstack.network.l2.vxlan.vxlanNetworkPool.KVMConnectExtensionForVxlanNetwork">

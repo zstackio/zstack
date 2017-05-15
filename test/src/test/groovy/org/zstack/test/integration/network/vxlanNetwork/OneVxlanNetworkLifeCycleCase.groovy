@@ -66,7 +66,7 @@ class OneVxlanNetworkLifeCycleCase extends SubCase {
                         totalMem = SizeUnit.GIGABYTE.toByte(20)
                     }
 
-                    attachPrimaryStorage("local")
+                    attachPrimaryStorage("nfs-ps")
 
                 }
 
@@ -81,13 +81,18 @@ class OneVxlanNetworkLifeCycleCase extends SubCase {
                         password = "password"
                     }
 
-                    attachPrimaryStorage("local")
+                    attachPrimaryStorage("nfs-ps")
 
                 }
 
                 localPrimaryStorage {
                     name = "local"
                     url = "/local_ps"
+                }
+
+                nfsPrimaryStorage {
+                    name = "nfs-ps"
+                    url = "127.0.0.1:/nfs_root"
                 }
 
                 attachBackupStorage("sftp")
@@ -155,16 +160,20 @@ class OneVxlanNetworkLifeCycleCase extends SubCase {
             delegate.conditions = ["uuid=${netinv.getUuid()}".toString()]
         }[0]
 
+        queryL2VxlanNetwork {
+            delegate.conditions = ["poolUuid=${poolinv.getUuid()}".toString()]
+        }[0]
+
         assert netinv.getAttachedClusterUuids().size() == 2
 
-        L3NetworkInventory l3 = createL3Network {
-            delegate.name = "TestL3Net"
+        L3NetworkInventory l3_1 = createL3Network {
+            delegate.name = "TestL3Net1"
             delegate.l2NetworkUuid = netinv.getUuid()
         }
 
         addIpRange {
             delegate.name = "TestIpRange"
-            delegate.l3NetworkUuid = l3.getUuid()
+            delegate.l3NetworkUuid = l3_1.getUuid()
             delegate.startIp = "192.168.100.2"
             delegate.endIp = "192.168.100.253"
             delegate.gateway = "192.168.100.1"
@@ -179,10 +188,9 @@ class OneVxlanNetworkLifeCycleCase extends SubCase {
         netServices.put(networkServiceProvider.getUuid(), asList("DHCP", "Eip", "Userdata"))
 
         attachNetworkServiceToL3Network {
-            delegate.l3NetworkUuid = l3.getUuid()
+            delegate.l3NetworkUuid = l3_1.getUuid()
             delegate.networkServices = netServices
         }
-
 
         env.simulator(VxlanNetworkPoolConstant.VXLAN_KVM_REALIZE_L2VXLAN_NETWORK_PATH) { HttpEntity<String> entity, EnvSpec spec ->
             return new VxlanKvmAgentCommands.CreateVxlanBridgeResponse()
@@ -192,11 +200,45 @@ class OneVxlanNetworkLifeCycleCase extends SubCase {
             return new VxlanKvmAgentCommands.PopulateVxlanFdbResponse()
         }
 
+        L2NetworkInventory netinv2 = createL2VxlanNetwork {
+            delegate.poolUuid = poolinv.getUuid()
+            delegate.name = "TestVxlan1"
+            delegate.zoneUuid = zone.inventory.getUuid()
+        }
+
+        L3NetworkInventory l3_2 = createL3Network {
+            delegate.name = "TestL3Net2"
+            delegate.l2NetworkUuid = netinv2.getUuid()
+        }
+
+        addIpRange {
+            delegate.name = "TestIpRange"
+            delegate.l3NetworkUuid = l3_2.getUuid()
+            delegate.startIp = "192.168.100.2"
+            delegate.endIp = "192.168.100.253"
+            delegate.gateway = "192.168.100.1"
+            delegate.netmask = "255.255.255.0"
+        }
+
+        attachNetworkServiceToL3Network {
+            delegate.l3NetworkUuid = l3_2.getUuid()
+            delegate.networkServices = netServices
+        }
+
         createVmInstance {
+            delegate.name = "TestVm3"
+            delegate.instanceOfferingUuid = (env.specByName("instanceOffering") as InstanceOfferingSpec).inventory.uuid
+            delegate.imageUuid = (env.specByName("image1") as ImageSpec).inventory.uuid
+            delegate.l3NetworkUuids = [l3_1.getUuid(), l3_2.getUuid()]
+            delegate.defaultL3NetworkUuid = l3_1.getUuid()
+            delegate.hostUuid = (env.specByName("kvm2") as HostSpec).inventory.uuid
+        }
+
+        VmInstanceInventory vm1 = createVmInstance {
             delegate.name = "TestVm1"
             delegate.instanceOfferingUuid = (env.specByName("instanceOffering") as InstanceOfferingSpec).inventory.uuid
             delegate.imageUuid = (env.specByName("image1") as ImageSpec).inventory.uuid
-            delegate.l3NetworkUuids = [l3.getUuid()]
+            delegate.l3NetworkUuids = [l3_1.getUuid()]
             delegate.hostUuid = (env.specByName("kvm1") as HostSpec).inventory.uuid
         }
 
@@ -204,12 +246,17 @@ class OneVxlanNetworkLifeCycleCase extends SubCase {
             delegate.name = "TestVm2"
             delegate.instanceOfferingUuid = (env.specByName("instanceOffering") as InstanceOfferingSpec).inventory.uuid
             delegate.imageUuid = (env.specByName("image1") as ImageSpec).inventory.uuid
-            delegate.l3NetworkUuids = [l3.getUuid()]
+            delegate.l3NetworkUuids = [l3_1.getUuid()]
             delegate.hostUuid = (env.specByName("kvm2") as HostSpec).inventory.uuid
         }
 
         reconnectHost {
             delegate.uuid = (env.specByName("kvm1") as KVMHostSpec).inventory.uuid
+        }
+
+        migrateVm {
+            delegate.vmInstanceUuid = vm1.getUuid()
+            delegate.hostUuid = (env.specByName("kvm2") as HostSpec).inventory.uuid
         }
 
         poolinv = queryL2VxlanNetworkPool{}[0]

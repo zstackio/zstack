@@ -15,6 +15,7 @@ class NetworkTest extends Test {
         sftpBackupStorage()
         flatNetwork()
         securityGroup()
+        nfsPrimaryStorage()
         include("vip.xml")
         include("vxlan.xml")
     }

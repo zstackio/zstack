@@ -101,6 +101,11 @@ public class VtepCascadeExtension extends AbstractAsyncCascadeExtension {
     private void handleDeletion(final CascadeAction action, final Completion completion) {
         List<VtepInventory> vteps = vtepFromAction(action);
 
+        if (vteps == null) {
+            completion.success();
+            return;
+        }
+
         new While<>(vteps).all((vtep, completion1) -> {
             DeleteVtepMsg msg = new DeleteVtepMsg();
             msg.setL2NetworkUuid(vtep.getPoolUuid());
