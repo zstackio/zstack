@@ -3162,13 +3162,15 @@ public class VmInstanceBase extends AbstractVmInstance {
                 long remainderMemory = increaseMemory % SizeUnit.MEGABYTE.toByte(128);
                 if (increaseMemory != 0 && remainderMemory != 0) {
                     if (remainderMemory < SizeUnit.MEGABYTE.toByte(128) / 2) {
-                        struct.alignedMemory = memorySize / SizeUnit.MEGABYTE.toByte(128) * SizeUnit.MEGABYTE.toByte(128);
+                        increaseMemory = increaseMemory / SizeUnit.MEGABYTE.toByte(128) * SizeUnit.MEGABYTE.toByte(128);
                     } else {
-                        struct.alignedMemory = (memorySize / SizeUnit.MEGABYTE.toByte(128) + 1) * SizeUnit.MEGABYTE.toByte(128);
+                        increaseMemory = (increaseMemory / SizeUnit.MEGABYTE.toByte(128) + 1) * SizeUnit.MEGABYTE.toByte(128);
                     }
 
-                    if (struct.alignedMemory == oldMemorySize) {
+                    if (increaseMemory == 0) {
                         struct.alignedMemory = oldMemorySize + SizeUnit.MEGABYTE.toByte(128);
+                    } else {
+                        struct.alignedMemory = oldMemorySize + increaseMemory;
                     }
                     N.New(VmInstanceVO.class, self.getUuid()).info_("automatically align memory from %s to %s", memorySize, struct.alignedMemory);
                 }
