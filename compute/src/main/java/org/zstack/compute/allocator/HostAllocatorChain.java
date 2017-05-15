@@ -94,7 +94,7 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
                 cap.setAvailableCpu(availCpu);
 
                 long availMemory = cap.getAvailableMemory() - ratioMgr.calculateMemoryByRatio(hostUuid, requestMemory);
-                if (availMemory - SizeUtils.sizeStringToBytes(reservedMemoryOfGlobalConfig) <= 0) {
+                if (availMemory - SizeUtils.sizeStringToBytes(reservedMemoryOfGlobalConfig) < 0) {
                     throw new UnableToReserveHostCapacityException(
                             String.format("no enough memory[%s] on the host[uuid:%s]", requestMemory, hostUuid));
                 }
@@ -157,7 +157,7 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
                     return;
                 } catch (UnableToReserveHostCapacityException e) {
                     logger.debug(String.format("[Host Allocation]: %s on host[uuid:%s]. try next one",
-                            e.getMessage(), h.getUuid()));
+                            e.getMessage(), h.getUuid()), e);
                 }
             }
 
