@@ -76,7 +76,7 @@ public class SetVolumeQosAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/volumes/{uuid}/actions";
+        info.path = "/volumes/qos/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "setVolumeQos";

@@ -76,7 +76,7 @@ public class SetImageQgaAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/images/{uuid}/actions";
+        info.path = "/images/qga/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "setImageQga";
