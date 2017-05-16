@@ -16,7 +16,7 @@ import org.zstack.utils.data.SizeUnit
  */
 class BatchCreateVmWhenSetReservedMemoryCase extends SubCase {
     EnvSpec env
-    int correctCount = 9
+    int correctCount = 10
 
     @Override
     void clean() {
@@ -117,7 +117,7 @@ class BatchCreateVmWhenSetReservedMemoryCase extends SubCase {
     @Override
     void test() {
         env.create {
-            testOrderCreateVms(9)
+            testOrderCreateVms(10)
             testConcurrentCreateVMs(10)
         }
     }
@@ -182,7 +182,7 @@ class BatchCreateVmWhenSetReservedMemoryCase extends SubCase {
         getCpuMemoryCapacityAction.sessionId = adminSession()
         GetCpuMemoryCapacityAction.Result res = getCpuMemoryCapacityAction.call()
         assert res.error == null
-        assert res.value.availableMemory != SizeUnit.GIGABYTE.toByte(0)
+        assert res.value.availableMemory == SizeUnit.GIGABYTE.toByte(0)
 
         CreateVmInstanceAction createVmInstanceAction = new CreateVmInstanceAction()
         createVmInstanceAction.name = "VMM"
