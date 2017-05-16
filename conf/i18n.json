@@ -5250,7 +5250,7 @@
   {
     "raw": "after removing primary storage%s to avoid, there is no candidate primary storage anymore",
     "en_US": "after removing primary storage{0} to avoid, there is no candidate primary storage anymore",
-    "zh_CN": "把主存储{0}移到排除列表后，就没有申请的主存储了",
+    "zh_CN": "把主存储{0}移到排除列表后，就没有候选的主存储了",
     "arguments": [
       "spec.getAvoidPrimaryStorageUuids()"
     ],
