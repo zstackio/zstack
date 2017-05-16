@@ -2,10 +2,15 @@ package org.zstack.test.integration.kvm.scheduler
 
 
 import org.zstack.core.db.Q
+import org.zstack.core.db.SQL
+import org.zstack.core.scheduler.SchedulerFacadeImpl
 import org.zstack.header.core.scheduler.SchedulerVO
 import org.zstack.header.core.scheduler.SchedulerVO_
+import org.zstack.header.managementnode.ManagementNodeVO
+import org.zstack.header.managementnode.ManagementNodeVO_
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.header.vm.VmInstanceVO_
+import org.zstack.portal.managementnode.ManagementNodeManagerImpl
 import org.zstack.sdk.CreateStartVmInstanceSchedulerAction
 import org.zstack.sdk.SchedulerInventory
 import org.zstack.sdk.VmInstanceInventory
