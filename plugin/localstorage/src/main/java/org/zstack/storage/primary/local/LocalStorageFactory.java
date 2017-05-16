@@ -765,6 +765,20 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
     @Override
     @Transactional(readOnly = true, noRollbackForClassName = {"org.zstack.header.errorcode.OperationFailureException"})
     public void preVmMigration(VmInstanceInventory vm) {
+        // if not local storage, return
+        String sql = "select count(ps)" +
+                " from PrimaryStorageVO ps" +
+                " where ps.uuid = :uuid" +
+                " and ps.type = :type";
+        TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
+        q.setParameter("uuid", vm.getRootVolume().getPrimaryStorageUuid());
+        q.setParameter("type", LocalStorageConstants.LOCAL_STORAGE_TYPE);
+        q.setMaxResults(1);
+        Long count = q.getSingleResult();
+        if (count == 0) {
+            return;
+        }
+
         if (!LocalStoragePrimaryStorageGlobalConfig.ALLOW_LIVE_MIGRATION.value(Boolean.class)) {
             refuseLiveMigrationForLocalStorage(vm);
         }
