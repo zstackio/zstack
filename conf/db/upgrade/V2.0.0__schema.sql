@@ -66,3 +66,4 @@ INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "BaremetalPxeServerVO
 INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "BaremetalChessisVO" FROM BaremetalChessisVO t;
 INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "BaremetalHostCfgVO" FROM BaremetalHostCfgVO t;
 INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "BaremetalHostNicCfgVO" FROM BaremetalHostNicCfgVO t;
+alter table OssBucketVO add description varchar(1024) DEFAULT NULL;

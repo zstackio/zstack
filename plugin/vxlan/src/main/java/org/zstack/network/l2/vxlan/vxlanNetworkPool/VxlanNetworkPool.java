@@ -406,7 +406,7 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
                 .select(VxlanNetworkVO_.uuid).eq(VxlanNetworkVO_.poolUuid, msg.getL2NetworkUuid()).listValues();
         ErrorCodeList errList = new ErrorCodeList();
 
-        new While<>(uuids).all((String uuid, NoErrorCompletion completion) -> {
+        new While<>(uuids).all((String uuid, WhileCompletion completion) -> {
             DeleteL2NetworkMsg dmsg = new DeleteL2NetworkMsg();
             dmsg.setUuid(uuid);
             dmsg.setForceDelete(msg.getDeletionMode() == APIDeleteMessage.DeletionMode.Enforcing ? true : false);
