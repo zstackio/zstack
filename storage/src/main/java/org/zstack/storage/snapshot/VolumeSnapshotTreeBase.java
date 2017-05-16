@@ -51,6 +51,8 @@ import org.zstack.header.volume.VolumeFormat;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
+import org.zstack.storage.volume.FireSnapShotCanonicalEvent;
+import org.zstack.storage.volume.FireVolumeCanonicalEvent;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -1347,6 +1349,8 @@ public class VolumeSnapshotTreeBase {
             @Override
             public void handle(Map data) {
                 casf.asyncCascadeFull(CascadeConstant.DELETION_CLEANUP_CODE, issuer, ctx, new NopeCompletion());
+                new FireSnapShotCanonicalEvent()
+                        .fireSnapShotStatusChangedEvent(currentRoot.getStatus(), VolumeSnapshotInventory.valueOf(currentRoot));
                 bus.publish(evt);
             }
         }).error(new FlowErrorHandler(msg) {
