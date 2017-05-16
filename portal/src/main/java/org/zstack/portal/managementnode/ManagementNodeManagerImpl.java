@@ -660,7 +660,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 
                 List<String> nodesInDb = new ArrayList<String>();
                 for (ManagementNodeVO vo : all) {
-                    if (!StringDSL.isZstackUuid(vo.getUuid())) {
+                    if (!StringDSL.isZStackUuid(vo.getUuid())) {
                         logger.warn(String.format("found a weird management node, it's UUID not a ZStack uuid, delete it. %s",
                                 JSONObjectUtil.toJsonString(ManagementNodeInventory.valueOf(vo))));
                         dbf.remove(vo);
