@@ -8,6 +8,8 @@ import org.zstack.core.db.SQL
 import org.zstack.core.errorcode.ErrorFacade
 import org.zstack.core.gc.*
 import org.zstack.testlib.SubCase
+import org.zstack.utils.Utils
+import org.zstack.utils.logging.CLogger
 
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -19,7 +21,7 @@ class EventBasedGarbageCollectorCase extends SubCase {
     static final String EVENT_PATH = "/test/gc"
     static final String EVENT_PATH2 = "/test/gc2"
     static final String EVENT_PATH3 = "/test/gc3"
-
+    private final static CLogger logger = Utils.getLogger(EventBasedGarbageCollectorCase.class)
 
     DatabaseFacade dbf
     EventFacade evtf
@@ -71,7 +73,7 @@ class EventBasedGarbageCollectorCase extends SubCase {
         }
     }
 
-    static Map<String, Closure<EventBasedGCInDbBehavior>> testLogicForJobLoadedFromDbMap = new HashedMap<String, Closure<EventBasedGCInDbBehavior>>()
+    static Map<String, Closure<EventBasedGCInDbBehavior>> testLogicForJobLoadedFromDbMap = new HashedMap<>()
 
     static enum EventBasedGCInDbBehavior {
         SUCCESS,
@@ -118,7 +120,7 @@ class EventBasedGarbageCollectorCase extends SubCase {
         }
     }
 
-    static Map<String, Closure<EventBasedGCInDbBehavior>> testTriggerNowForJobLoadedFromDbMap = new HashedMap<String, Closure<EventBasedGCInDbBehavior>>()
+    static Map<String, Closure<EventBasedGCInDbBehavior>> testTriggerNowForJobLoadedFromDbMap = new HashedMap<>()
 
     static class EventBasedGCInDbTriggerNow extends EventBasedGarbageCollector {
         Closure trigger = { true }
@@ -377,6 +379,7 @@ class EventBasedGarbageCollectorCase extends SubCase {
 
         Closure<EventBasedGCInDbBehavior> testLogicForJobLoadedFromDb = { return EventBasedGCInDbBehavior.CANCEL }
         testLogicForJobLoadedFromDbMap.put(gc.name,testLogicForJobLoadedFromDb)
+        logger.debug(String.format("testLogicForJobLoadedFromDbMap put gc.name:%s",gc.name))
 
         // load orphan jobs
         gcMgr.managementNodeReady()

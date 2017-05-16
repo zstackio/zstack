@@ -67,6 +67,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
     private DatabaseFacade dbf;
 
     public static class EipTO {
+        public String eipUuid;
         public String vmUuid;
         public String nicUuid;
         public String vip;
@@ -533,6 +534,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
 
     private EipTO eipStructToEipTO(EipStruct struct) {
         EipTO to = new EipTO();
+        to.eipUuid = struct.getEip().getUuid();
         to.vmUuid = struct.getNic().getVmInstanceUuid();
         to.nicUuid = struct.getNic().getUuid();
         to.nicName = struct.getNic().getInternalName();
