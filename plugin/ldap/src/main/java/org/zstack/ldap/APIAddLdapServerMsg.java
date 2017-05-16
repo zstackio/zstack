@@ -8,7 +8,8 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/ldap/servers",
         method = HttpMethod.POST,
-        responseClass = APIAddLdapServerEvent.class
+        responseClass = APIAddLdapServerEvent.class,
+        parameterName = "params"
 )
 public class APIAddLdapServerMsg extends APIMessage {
     @APIParam(maxLength = 255)

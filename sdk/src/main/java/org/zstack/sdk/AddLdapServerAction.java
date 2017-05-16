@@ -94,7 +94,7 @@ public class AddLdapServerAction extends AbstractAction {
         info.path = "/ldap/servers";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 
