@@ -57,7 +57,7 @@
     <bean id="L2VxlanNetwork" class="org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetwork">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.network.l2.L2Network" />
-            <zstack:extension interface="org.zstack.header.vm.VmInstanceMigrateExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.vm.VmInstanceMigrateExtensionPoint" order="9999"/>
         </zstack:plugin>
     </bean>
 
