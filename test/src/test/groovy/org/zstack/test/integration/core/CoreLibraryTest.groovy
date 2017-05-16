@@ -8,7 +8,6 @@ import org.zstack.testlib.Test
 class CoreLibraryTest extends Test {
     @Override
     void setup() {
-        INCLUDE_CORE_SERVICES = false
         spring {
             include("CloudBusAopProxy.xml")
             include("ZoneManager.xml")
