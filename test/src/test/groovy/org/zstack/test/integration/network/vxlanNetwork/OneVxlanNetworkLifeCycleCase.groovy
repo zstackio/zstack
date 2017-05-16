@@ -3,6 +3,7 @@ package org.zstack.test.integration.network.vxlanNetwork
 import org.springframework.http.HttpEntity
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanKvmAgentCommands
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolConstant
+import org.zstack.network.service.flat.FlatDhcpBackend
 import org.zstack.sdk.*
 import org.zstack.test.integration.network.NetworkTest
 import org.zstack.testlib.*
@@ -254,10 +255,25 @@ class OneVxlanNetworkLifeCycleCase extends SubCase {
             delegate.uuid = (env.specByName("kvm1") as KVMHostSpec).inventory.uuid
         }
 
+        List<String> record = new ArrayList<>()
+
+        env.simulator(VxlanNetworkPoolConstant.VXLAN_KVM_REALIZE_L2VXLAN_NETWORK_PATH) { HttpEntity<String> entity, EnvSpec spec ->
+            record.add(VxlanNetworkPoolConstant.VXLAN_KVM_REALIZE_L2VXLAN_NETWORK_PATH)
+            return new VxlanKvmAgentCommands.CreateVxlanBridgeResponse()
+        }
+
+        env.simulator(FlatDhcpBackend.PREPARE_DHCP_PATH) { HttpEntity<String> entity, EnvSpec spec ->
+            record.add(FlatDhcpBackend.PREPARE_DHCP_PATH)
+            return new FlatDhcpBackend.PrepareDhcpRsp()
+        }
+
         migrateVm {
             delegate.vmInstanceUuid = vm1.getUuid()
             delegate.hostUuid = (env.specByName("kvm2") as HostSpec).inventory.uuid
         }
+
+        assert record.get(0).equals(VxlanNetworkPoolConstant.VXLAN_KVM_REALIZE_L2VXLAN_NETWORK_PATH)
+        assert record.get(1).equals(FlatDhcpBackend.PREPARE_DHCP_PATH)
 
         poolinv = queryL2VxlanNetworkPool{}[0]
 
