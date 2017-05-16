@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <service xmlns="http://zstack.org/schema/zstack">
     <id>core.progress</id>
+    <interceptor>ProgressApiInterceptor</interceptor>
 
     <message>
         <name>org.zstack.header.core.progress.APIGetTaskProgressMsg</name>

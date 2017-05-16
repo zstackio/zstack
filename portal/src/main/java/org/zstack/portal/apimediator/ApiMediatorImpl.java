@@ -237,7 +237,7 @@ public class ApiMediatorImpl extends AbstractService implements ApiMediator, Glo
         if (msg instanceof APICreateMessage) {
             APICreateMessage cmsg = (APICreateMessage) msg;
             if (cmsg.getResourceUuid() != null) {
-                if (!StringDSL.isZstackUuid(cmsg.getResourceUuid())) {
+                if (!StringDSL.isZStackUuid(cmsg.getResourceUuid())) {
                     throw new ApiMessageInterceptionException(argerr("resourceUuid[%s] is not a valid uuid. A valid uuid is a UUID(v4 recommended) with '-' stripped. " +
                                     "see http://en.wikipedia.org/wiki/Universally_unique_identifier for format of UUID, the regular expression ZStack uses" +
                                     " to validate a UUID is '[0-9a-f]{8}[0-9a-f]{4}[1-5][0-9a-f]{3}[89ab][0-9a-f]{3}[0-9a-f]{12}'", cmsg.getResourceUuid()));

@@ -81,7 +81,7 @@ public class ImageUpgradeExtension implements Component {
                         psType, c.getId()));
             }
 
-            if (!StringDSL.isZstackUuid(imgUuid)) {
+            if (!StringDSL.isZStackUuid(imgUuid)) {
                 throw new CloudRuntimeException(String.format("the image UUID[%s] parsed from the URL[%s] of the ImageCacheVO[id:%s] " +
                         "on the primary storage[type:%s] looks no correct", imgUuid, c.getInstallUrl(), c.getId(), psType));
             }

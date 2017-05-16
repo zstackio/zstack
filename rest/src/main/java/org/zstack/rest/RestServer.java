@@ -36,8 +36,8 @@ import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.rest.RestResponse;
 import org.zstack.rest.sdk.DocumentGenerator;
-import org.zstack.rest.sdk.SdkTemplate;
 import org.zstack.rest.sdk.SdkFile;
+import org.zstack.rest.sdk.SdkTemplate;
 import org.zstack.utils.*;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -708,6 +708,20 @@ public class RestServer implements Component, CloudBusEventListener {
         if (parameter == null) {
             msg = (APIMessage) api.apiClass.newInstance();
         } else {
+            // check boolean type parameters
+            for (Field f : api.apiClass.getDeclaredFields()) {
+                if (f.getType().isAssignableFrom(boolean.class)) {
+                    String booleanValue = ((Map) parameter).get(f.getName()).toString();
+                    if (!(booleanValue.equalsIgnoreCase("true") ||
+                            booleanValue.equalsIgnoreCase("false"))) {
+                        throw new RestException(HttpStatus.BAD_REQUEST.value(),
+                                String.format("Invalid value for boolean field [%s]," +
+                                                " [%s] is not a valid boolean string[true, false].",
+                                        f.getName(), booleanValue));
+                    }
+                }
+            }
+
             msg = JSONObjectUtil.rehashObject(parameter, (Class<APIMessage>) api.apiClass);
         }
 

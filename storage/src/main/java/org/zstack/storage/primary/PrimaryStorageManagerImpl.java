@@ -78,7 +78,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             public void validateSystemTag(String resourceUuid, Class resourceType, String systemTag) {
                 String uuid = PrimaryStorageSystemTags.PRIMARY_STORAGE_ALLOCATOR_UUID_TAG.getTokenByTag(
                         systemTag, PrimaryStorageSystemTags.PRIMARY_STORAGE_ALLOCATOR_UUID_TAG_TOKEN);
-                if (!StringDSL.isZstackUuid(uuid)) {
+                if (!StringDSL.isZStackUuid(uuid)) {
                     throw new ApiMessageInterceptionException(argerr("%s is invalid. %s is not a valid zstack uuid", systemTag, uuid));
                 }
 
