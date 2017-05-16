@@ -117,7 +117,7 @@ class BatchCreateVmWhenSetReservedMemoryCase extends SubCase {
     @Override
     void test() {
         env.create {
-            testOrderCreateVms(9)
+            testOrderCreateVms(10)
             testConcurrentCreateVMs(10)
         }
     }
