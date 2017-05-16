@@ -22,7 +22,7 @@ public class CreateResourcePriceAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, validValues = {"cpu","memory","rootVolume","dataVolume"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, validValues = {"cpu","memory","rootVolume","dataVolume","snapShot"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String resourceName;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
