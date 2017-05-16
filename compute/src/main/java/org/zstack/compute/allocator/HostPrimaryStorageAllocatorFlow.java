@@ -57,12 +57,14 @@ public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
                 " and ps.state = :state" +
                 " and ps.status = :status" +
                 " and ref.clusterUuid = h.clusterUuid" +
-                " and h.uuid in (:huuids)";
+                " and h.uuid in (:huuids)"+
+                " and cap.availableCapacity > :rootVolumeSize";
 
         TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
         q.setParameter("state", PrimaryStorageState.Enabled);
         q.setParameter("status", PrimaryStorageStatus.Connected);
         q.setParameter("huuids", huuids);
+        q.setParameter("rootVolumeSize", spec.getDiskSize());
         List<Tuple> ts = q.getResultList();
         if (ts.isEmpty()) {
             return new ArrayList<>();
