@@ -8,11 +8,15 @@ import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.thread.ChainTask;
+import org.zstack.core.thread.SyncTaskChain;
+import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -71,6 +75,8 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
     private PluginRegistry pluginRgty;
     @Autowired
     private TagManager tagMgr;
+    @Autowired
+    private ThreadFacade thdf;
 
     private Map<String, LoadBalancerBackend> backends = new HashMap<String, LoadBalancerBackend>();
 
@@ -108,7 +114,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
         }
     }
 
-    private void handle(final APICreateLoadBalancerMsg msg) {
+    private void createLoadBalancer(APICreateLoadBalancerMsg msg, NoErrorCompletion completion) {
         final APICreateLoadBalancerEvent evt = new APICreateLoadBalancerEvent(msg.getId());
 
         final VipInventory vip = VipInventory.valueOf(dbf.findByUuid(msg.getVipUuid(), VipVO.class));
@@ -189,6 +195,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                     public void handle(Map data) {
                         evt.setInventory(LoadBalancerInventory.valueOf(dbf.reload(vo)));
                         bus.publish(evt);
+                        completion.done();
                     }
                 });
 
@@ -197,10 +204,35 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                     public void handle(ErrorCode errCode, Map data) {
                         evt.setError(errCode);
                         bus.publish(evt);
+                        completion.done();
                     }
                 });
             }
         }).start();
+    }
+
+    private void handle(final APICreateLoadBalancerMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return String.format("create-lb-%s", msg.getName());
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                createLoadBalancer(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return "create-lb";
+            }
+        });
     }
 
     @Override
