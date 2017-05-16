@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SyncEcsSecurityGroupFromRemoteAction extends AbstractAction {
+public class SyncEcsSecurityGroupRuleFromRemoteAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public SyncEcsSecurityGroupFromRemoteResult value;
+        public SyncEcsSecurityGroupRuleFromRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -23,7 +23,7 @@ public class SyncEcsSecurityGroupFromRemoteAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String ecsVpcUuid;
+    public java.lang.String uuid;
 
     @Param(required = false)
     public java.lang.String resourceUuid;
@@ -49,8 +49,8 @@ public class SyncEcsSecurityGroupFromRemoteAction extends AbstractAction {
             return ret;
         }
         
-        SyncEcsSecurityGroupFromRemoteResult value = res.getResult(SyncEcsSecurityGroupFromRemoteResult.class);
-        ret.value = value == null ? new SyncEcsSecurityGroupFromRemoteResult() : value; 
+        SyncEcsSecurityGroupRuleFromRemoteResult value = res.getResult(SyncEcsSecurityGroupRuleFromRemoteResult.class);
+        ret.value = value == null ? new SyncEcsSecurityGroupRuleFromRemoteResult() : value; 
 
         return ret;
     }
@@ -76,7 +76,7 @@ public class SyncEcsSecurityGroupFromRemoteAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/hybrid/aliyun/security-group/{ecsVpcUuid}/sync";
+        info.path = "/hybrid/aliyun/security-group-rule/{ecsVpcUuid}/sync";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "";
