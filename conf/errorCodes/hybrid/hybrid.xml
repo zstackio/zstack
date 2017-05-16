@@ -53,5 +53,13 @@
         <id>1012</id>
         <description>no such oss bucket</description>
     </code>
+    <code>
+        <id>1013</id>
+        <description>no such virtual border router</description>
+    </code>
+    <code>
+        <id>1014</id>
+        <description>no such virtual router</description>
+    </code>
 </error>
 
