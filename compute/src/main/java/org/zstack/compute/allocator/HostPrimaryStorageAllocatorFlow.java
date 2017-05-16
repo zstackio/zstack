@@ -98,7 +98,7 @@ public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
             } else {
                 // the primary storage doesn't have the image in cache
                 // so we need to add the image size
-                cap = ratioMgr.calculatePrimaryStorageAvailableCapacityByRatio(psUuid, cap) + spec.getImage().getActualSize();
+                cap = ratioMgr.calculatePrimaryStorageAvailableCapacityByRatio(psUuid, cap) - spec.getImage().getActualSize();
             }
 
             if (cap > spec.getDiskSize()) {
