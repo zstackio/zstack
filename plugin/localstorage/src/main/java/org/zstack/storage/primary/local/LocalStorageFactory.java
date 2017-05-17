@@ -10,10 +10,13 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.Component;
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
+import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
@@ -22,6 +25,7 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
 import org.zstack.header.image.ImagePlatform;
+import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.query.AddExpandedQueryExtensionPoint;
 import org.zstack.header.query.ExpandedQueryAliasStruct;
@@ -61,7 +65,8 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         MarshalVmOperationFlowExtensionPoint, HostDeleteExtensionPoint, VmAttachVolumeExtensionPoint,
         GetAttachableVolumeExtensionPoint, RecalculatePrimaryStorageCapacityExtensionPoint, HostMaintenancePolicyExtensionPoint,
         AddExpandedQueryExtensionPoint, VolumeGetAttachableVmExtensionPoint, RecoverDataVolumeExtensionPoint,
-        RecoverVmExtensionPoint, VmPreMigrationExtensionPoint, CreateTemplateFromVolumeSnapshotExtensionPoint, HostAfterConnectedExtensionPoint,
+        RecoverVmExtensionPoint, VmPreMigrationExtensionPoint, CreateTemplateFromVolumeSnapshotExtensionPoint,
+        HostAfterConnectedExtensionPoint, GlobalApiMessageInterceptor,
         InstantiateDataVolumeOnCreationExtensionPoint, PrimaryStorageAttachExtensionPoint {
     private final static CLogger logger = Utils.getLogger(LocalStorageFactory.class);
     public static PrimaryStorageType type = new PrimaryStorageType(LocalStorageConstants.LOCAL_STORAGE_TYPE);
@@ -904,5 +909,39 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
     @Override
     public void afterAttachPrimaryStorage(PrimaryStorageInventory inventory, String clusterUuid) {
         recalculatePrimaryStorageCapacity(clusterUuid);
+    }
+
+    @Override
+    public List<Class> getMessageClassToIntercept() {
+        List<Class> clzs = new ArrayList<Class>(1);
+        clzs.add(APICreateVmInstanceMsg.class);
+        return clzs;
+    }
+
+    @Override
+    public InterceptorPosition getPosition() {
+        return InterceptorPosition.END;
+    }
+
+    @Override
+    public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
+        if (msg instanceof APICreateVmInstanceMsg) {
+            validate((APICreateVmInstanceMsg) msg);
+        }
+        return msg;
+    }
+
+    private void validate(APICreateVmInstanceMsg msg) {
+        if(msg.getPrimaryStorageUuidForRootVolume() != null){
+            List<String> psUuids = Q.New(PrimaryStorageVO.class)
+                    .select(PrimaryStorageVO_.uuid)
+                    .eq(PrimaryStorageVO_.type, LocalStorageConstants.LOCAL_STORAGE_TYPE)
+                    .listValues();
+            if(!psUuids.isEmpty() && !psUuids.contains(msg.getPrimaryStorageUuidForRootVolume())){
+                throw new ApiMessageInterceptionException(argerr(
+                        "the type of primary storage[uuid:%s] cheesed is not local storage, " +
+                                "cannot create vm on other storage when cluster has attached local primary storage"));
+            }
+        }
     }
 }
