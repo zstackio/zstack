@@ -4,33 +4,19 @@ import org.springframework.http.HttpEntity
 import org.zstack.core.db.Q
 import org.zstack.header.Constants
 import org.zstack.header.agent.AgentResponse
-import org.zstack.header.host.Host
 import org.zstack.header.host.HostStatus
 import org.zstack.header.host.HostVO
 import org.zstack.header.host.HostVO_
-import org.zstack.header.storage.primary.PrimaryStorageHostRefVO
-import org.zstack.header.storage.primary.PrimaryStorageHostRefVO_
-import org.zstack.header.storage.primary.PrimaryStorageHostStatus
-import org.zstack.header.storage.primary.PrimaryStorageVO
-import org.zstack.header.storage.primary.PrimaryStorageVO_
-import org.zstack.sdk.AttachPrimaryStorageToClusterAction
-import org.zstack.sdk.HostInventory
-import org.zstack.sdk.PrimaryStorageInventory
-import org.zstack.sdk.ClusterInventory
-import org.zstack.sdk.ReconnectBackupStorageAction
-import org.zstack.sdk.ReconnectHostAction
-import org.zstack.sdk.ReconnectPrimaryStorageAction
-import org.zstack.sdk.UpdatePrimaryStorageAction
+import org.zstack.header.storage.primary.*
+import org.zstack.sdk.*
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackend
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackendCommands
 import org.zstack.test.integration.storage.Env
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
-import org.zstack.testlib.HttpError
 import org.zstack.testlib.NfsPrimaryStorageSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.gson.JSONObjectUtil
-
 /**
  * Created by MaJin on 2017-04-24.
  */
@@ -65,10 +51,10 @@ class InvalidUrlCase extends SubCase {
             testAttachNfsToClusterWithInvalidUrl()
             testAttachNfsToCluster()
             testUpdateValidUrl()
-            testUpdateUrlNotAllHostReturnFailure();
-            testReconnectHostWithInvalidNfsUrl();
-            testReconnectHost();
-            testUpdateValidUrl();
+            testUpdateUrlNotAllHostReturnFailure()
+            testReconnectHostWithInvalidNfsUrl()
+            testReconnectHost()
+            testUpdateValidUrl()
             testUpdateInvalidUrl()
             testReconnectHostWithInvalidNfsUrl()
             testReconnectHost()
