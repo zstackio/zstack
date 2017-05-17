@@ -25,9 +25,6 @@ public class SyncVirtualRouterFromRemoteAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String vpcUuid;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vRouterUuid;
-
     @Param(required = false)
     public java.lang.String resourceUuid;
 
