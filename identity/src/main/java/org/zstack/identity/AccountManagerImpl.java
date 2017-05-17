@@ -17,6 +17,8 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.PeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
+import org.zstack.header.APIIsOpensourceVersionMsg;
+import org.zstack.header.APIIsOpensourceVersionReply;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
@@ -348,9 +350,17 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             handle((APIChangeResourceOwnerMsg) msg);
         } else if (msg instanceof APIGetResourceNamesMsg) {
             handle((APIGetResourceNamesMsg) msg);
+        } else if (msg instanceof APIIsOpensourceVersionMsg) {
+            handle((APIIsOpensourceVersionMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIIsOpensourceVersionMsg msg) {
+        APIIsOpensourceVersionReply reply = new APIIsOpensourceVersionReply();
+        reply.setOpensource(true);
+        bus.reply(msg, reply);
     }
 
     private void handle(APIGetResourceNamesMsg msg) {
