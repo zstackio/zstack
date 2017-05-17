@@ -1,9 +1,12 @@
 package org.zstack.test.integration.storage.primary.nfs
 
 import org.springframework.http.HttpEntity
+import org.zstack.core.cloudbus.EventCallback
+import org.zstack.core.cloudbus.EventFacade
 import org.zstack.core.db.Q
 import org.zstack.header.Constants
 import org.zstack.header.agent.AgentResponse
+import org.zstack.header.host.HostCanonicalEvents
 import org.zstack.header.host.HostStatus
 import org.zstack.header.host.HostVO
 import org.zstack.header.host.HostVO_
@@ -16,7 +19,9 @@ import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.NfsPrimaryStorageSpec
 import org.zstack.testlib.SubCase
+import org.zstack.utils.Utils
 import org.zstack.utils.gson.JSONObjectUtil
+import org.zstack.utils.logging.CLogger
 /**
  * Created by MaJin on 2017-04-24.
  */
@@ -26,6 +31,7 @@ class InvalidUrlCase extends SubCase {
     PrimaryStorageInventory psInv
     HostInventory host
     HostInventory host1
+    private static final CLogger logger = Utils.getLogger(InvalidUrlCase.class)
 
     @Override
     void setup() {
@@ -51,14 +57,19 @@ class InvalidUrlCase extends SubCase {
             testAttachNfsToClusterWithInvalidUrl()
             testAttachNfsToCluster()
             testUpdateValidUrl()
-            testUpdateUrlNotAllHostReturnFailure()
-            testReconnectHostWithInvalidNfsUrl()
-            testReconnectHost()
-            testUpdateValidUrl()
+
+            testUpdateUrlNotAllHostReturnFailure();
+            testReconnectHostWithInvalidNfsUrl();
+            logger.debug("1st reconn")
+            testReconnectHost();
+            testUpdateValidUrl();
+
             testUpdateInvalidUrl()
             testReconnectHostWithInvalidNfsUrl()
+            logger.debug("2nd reconn")
             testReconnectHost()
             testReconnectNfsWithInvalidUrl()
+            logger.debug("3rd reconn")
             testReconnectHost()
             testReconnectNfs()
         }
@@ -109,9 +120,8 @@ class InvalidUrlCase extends SubCase {
         a.primaryStorageUuid = psInv.uuid
         a.sessionId = currentEnvSpec.session.uuid
 
-        retryInSecs{
-            assert a.call().error != null
-        }
+
+        assert a.call().error != null
 
     }
 
@@ -214,7 +224,6 @@ class InvalidUrlCase extends SubCase {
         a.uuid = host.uuid
         a.sessionId = currentEnvSpec.session.uuid
 
-
         assert a.call().error != null
 
     }
@@ -263,12 +272,26 @@ class InvalidUrlCase extends SubCase {
             return rsp
         }
 
+        boolean success = false
+        bean(EventFacade.class).onLocal(HostCanonicalEvents.HOST_STATUS_CHANGED_PATH, new EventCallback() {
+            @Override
+            protected void run(Map tokens, Object data) {
+                def evt = (HostCanonicalEvents.HostStatusChangedData)data
+                if(evt.newStatus == HostStatus.Disconnected.toString() && evt.oldStatus == HostStatus.Connecting.toString()){
+                    success = true
+                }
+            }
+        })
+
+
         ReconnectPrimaryStorageAction a = new ReconnectPrimaryStorageAction()
         a.uuid = psInv.uuid
         a.sessionId = currentEnvSpec.session.uuid
 
-        retryInSecs{
-            assert a.call().error != null
+        assert a.call().error != null
+
+        retryInSecs(){
+            assert success
         }
     }
 }
