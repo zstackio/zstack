@@ -28,7 +28,7 @@ public class CreateEcsSecurityGroupRuleRemoteAction extends AbstractAction {
     @Param(required = true, validValues = {"ingress","egress"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String direction;
 
-    @Param(required = true, validValues = {"tcp","udp","icmp","gre","all"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, validValues = {"TCP","UDP","ICMP","GRE","ALL"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String protocol;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
@@ -40,7 +40,7 @@ public class CreateEcsSecurityGroupRuleRemoteAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String cidr;
 
-    @Param(required = false, validValues = {"accept","drop"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, validValues = {"Accept","Drop"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String policy = "accept";
 
     @Param(required = false, validValues = {"intranet","internet"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)

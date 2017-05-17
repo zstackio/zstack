@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SyncEcsSecurityGroupFromRemoteAction extends AbstractAction {
+public class CreateVpcVirtualRouterEntryRemoteAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public SyncEcsSecurityGroupFromRemoteResult value;
+        public CreateVpcVirtualRouterEntryRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -23,7 +23,19 @@ public class SyncEcsSecurityGroupFromRemoteAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String ecsVpcUuid;
+    public java.lang.String vRouterUuid;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String destinationCidrBlock;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String nextHopUuid;
+
+    @Param(required = true, validValues = {"Instance","RouterInterface"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String nextHopType;
+
+    @Param(required = true, validValues = {"vbr","vrouter"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String vRouterType;
 
     @Param(required = false)
     public java.lang.String resourceUuid;
@@ -49,8 +61,8 @@ public class SyncEcsSecurityGroupFromRemoteAction extends AbstractAction {
             return ret;
         }
         
-        SyncEcsSecurityGroupFromRemoteResult value = res.getResult(SyncEcsSecurityGroupFromRemoteResult.class);
-        ret.value = value == null ? new SyncEcsSecurityGroupFromRemoteResult() : value; 
+        CreateVpcVirtualRouterEntryRemoteResult value = res.getResult(CreateVpcVirtualRouterEntryRemoteResult.class);
+        ret.value = value == null ? new CreateVpcVirtualRouterEntryRemoteResult() : value; 
 
         return ret;
     }
@@ -75,11 +87,11 @@ public class SyncEcsSecurityGroupFromRemoteAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
-        info.path = "/hybrid/aliyun/security-group/{ecsVpcUuid}/sync";
+        info.httpMethod = "POST";
+        info.path = "/hybrid/aliyun/route-entry";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 
