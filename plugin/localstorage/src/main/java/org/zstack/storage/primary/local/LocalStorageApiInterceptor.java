@@ -14,6 +14,7 @@ import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.storage.primary.*;
+import org.zstack.header.vm.APICreateVmInstanceMsg;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
@@ -47,6 +48,8 @@ public class LocalStorageApiInterceptor implements ApiMessageInterceptor {
             validate((APILocalStorageMigrateVolumeMsg) msg);
         } else if (msg instanceof APILocalStorageGetVolumeMigratableHostsMsg) {
             validate((APILocalStorageGetVolumeMigratableHostsMsg) msg);
+        } else if (msg instanceof APICreateVmInstanceMsg) {
+            validate((APICreateVmInstanceMsg) msg);
         }
 
         return msg;
@@ -174,6 +177,20 @@ public class LocalStorageApiInterceptor implements ApiMessageInterceptor {
         }
         if (url.startsWith("/dev") || url.startsWith("/proc") || url.startsWith("/sys")) {
             throw new ApiMessageInterceptionException(argerr(" the url contains an invalid folder[/dev or /proc or /sys]"));
+        }
+    }
+
+    private void validate(APICreateVmInstanceMsg msg) {
+        if(msg.getPrimaryStorageUuidForRootVolume() != null){
+            List<String> psUuids = Q.New(PrimaryStorageVO.class)
+                    .select(PrimaryStorageVO_.uuid)
+                    .eq(PrimaryStorageVO_.type, LocalStorageConstants.LOCAL_STORAGE_TYPE)
+                    .listValues();
+            if(!psUuids.isEmpty() && !psUuids.contains(msg.getPrimaryStorageUuidForRootVolume())){
+                throw new ApiMessageInterceptionException(argerr(
+                        "the type of primary storage[uuid:%s] cheesed is not local storage, " +
+                                "cannot create vm on other storage when cluster has attached local primary storage"));
+            }
         }
     }
 }
