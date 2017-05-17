@@ -14,6 +14,8 @@ import org.zstack.header.storage.primary.APIAddPrimaryStorageMsg;
 public class APIAddSimulatorPrimaryStorageMsg extends APIAddPrimaryStorageMsg {
 	private long totalCapacity = 100000000;
     private long availableCapacity = 10000000;
+    private long availablePhysicalCapacity = 10000000;
+    private long totalPhysicalCapacity = 10000000;
 	
 	public APIAddSimulatorPrimaryStorageMsg() {
 	}
@@ -32,7 +34,24 @@ public class APIAddSimulatorPrimaryStorageMsg extends APIAddPrimaryStorageMsg {
 	public void setTotalCapacity(long totalCapacity) {
     	this.totalCapacity = totalCapacity;
     }
- 
+
+
+    public long getAvailablePhysicalCapacity() {
+        return availablePhysicalCapacity;
+    }
+
+    public void setAvailablePhysicalCapacity(long availablePhysicalCapacity) {
+        this.availablePhysicalCapacity = availablePhysicalCapacity;
+    }
+
+    public long getTotalPhysicalCapacity() {
+        return totalPhysicalCapacity;
+    }
+
+    public void setTotalPhysicalCapacity(long totalPhysicalCapacity) {
+        this.totalPhysicalCapacity = totalPhysicalCapacity;
+    }
+
     public static APIAddSimulatorPrimaryStorageMsg __example__() {
         APIAddSimulatorPrimaryStorageMsg msg = new APIAddSimulatorPrimaryStorageMsg();
         msg.setUrl("/simulator");
