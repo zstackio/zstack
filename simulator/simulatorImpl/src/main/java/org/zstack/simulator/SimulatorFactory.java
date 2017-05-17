@@ -37,6 +37,7 @@ public class SimulatorFactory implements HypervisorFactory, HostBaseExtensionFac
         svo.setMemoryCapacity(smsg.getMemoryCapacity());
         svo.setCpuCapacity(smsg.getCpuCapacity());
         svo.setUuid(vo.getUuid());
+        dbf.persistAndRefresh(svo);
 
         SystemTagCreator creator = HostSystemTags.OS_DISTRIBUTION.newSystemTagCreator(vo.getUuid());
         creator.setTagByTokens(map(e(HostSystemTags.OS_DISTRIBUTION_TOKEN, "zstack")));
@@ -53,7 +54,6 @@ public class SimulatorFactory implements HypervisorFactory, HostBaseExtensionFac
         creator.inherent = true;
         creator.create();
 
-        svo = dbf.persistAndRefresh(svo);
         return svo;
     }
 

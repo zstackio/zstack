@@ -31,6 +31,8 @@ public class SimulatorPrimaryStorageFactory implements PrimaryStorageFactory {
         cvo.setUuid(vo.getUuid());
         cvo.setAvailableCapacity(smsg.getAvailableCapacity());
         cvo.setTotalCapacity(smsg.getTotalCapacity());
+        cvo.setAvailablePhysicalCapacity(smsg.getAvailablePhysicalCapacity());
+        cvo.setTotalPhysicalCapacity(smsg.getTotalPhysicalCapacity());
         dbf.persist(cvo);
         return PrimaryStorageInventory.valueOf(vo);
     }
