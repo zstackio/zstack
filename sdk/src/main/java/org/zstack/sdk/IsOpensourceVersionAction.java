@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class AttachPolicyToUserGroupAction extends AbstractAction {
+public class IsOpensourceVersionAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public AttachPolicyToUserGroupResult value;
+        public IsOpensourceVersionResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -22,24 +22,11 @@ public class AttachPolicyToUserGroupAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String policyUuid;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String groupUuid;
-
     @Param(required = false)
     public java.util.List systemTags;
 
     @Param(required = false)
     public java.util.List userTags;
-
-    @Param(required = true)
-    public String sessionId;
-
-    public long timeout;
-    
-    public long pollingInterval;
 
 
     private Result makeResult(ApiResult res) {
@@ -49,8 +36,8 @@ public class AttachPolicyToUserGroupAction extends AbstractAction {
             return ret;
         }
         
-        AttachPolicyToUserGroupResult value = res.getResult(AttachPolicyToUserGroupResult.class);
-        ret.value = value == null ? new AttachPolicyToUserGroupResult() : value; 
+        IsOpensourceVersionResult value = res.getResult(IsOpensourceVersionResult.class);
+        ret.value = value == null ? new IsOpensourceVersionResult() : value; 
 
         return ret;
     }
@@ -75,11 +62,11 @@ public class AttachPolicyToUserGroupAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/accounts/groups/{groupUuid}/policies";
-        info.needSession = true;
-        info.needPoll = true;
-        info.parameterName = "params";
+        info.httpMethod = "GET";
+        info.path = "/meta-data/opensource";
+        info.needSession = false;
+        info.needPoll = false;
+        info.parameterName = "";
         return info;
     }
 

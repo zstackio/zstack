@@ -8,4 +8,7 @@ public interface Constants {
     String THREAD_CONTEXT_API = "api";
     String THREAD_CONTEXT_TASK_NAME = "task-name";
     String THREAD_CONTEXT_PROGRESS_ENABLED = "progress-enabled";
+
+    String CATEGORY_RESOURCE = "resource";
+    String CATEGORY_METADATA = "metadata";
 }

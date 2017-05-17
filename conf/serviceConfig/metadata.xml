@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>identity</id>
+
+    <message>
+        <name>org.zstack.header.APIIsOpensourceVersionMsg</name>
+    </message>
+</service>
