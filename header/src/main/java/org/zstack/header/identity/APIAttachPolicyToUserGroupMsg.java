@@ -11,7 +11,8 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/accounts/groups/{groupUuid}/policies",
         method = HttpMethod.POST,
-        responseClass = APIAttachPolicyToUserGroupEvent.class
+        responseClass = APIAttachPolicyToUserGroupEvent.class,
+        parameterName = "params"
 )
 public class APIAttachPolicyToUserGroupMsg extends APIMessage implements AccountMessage {
     @APIParam(resourceType = PolicyVO.class, checkAccount = true, operationTarget = true)
