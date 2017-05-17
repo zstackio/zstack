@@ -3,8 +3,11 @@ package org.zstack.test.integration.kvm.host
 import groovy.transform.Synchronized
 import org.zstack.compute.vm.VmInstanceBase
 import org.zstack.core.cloudbus.CloudBus
+import org.zstack.core.cloudbus.EventCallback
+import org.zstack.core.cloudbus.EventFacade
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.Q
+import org.zstack.header.host.HostCanonicalEvents
 import org.zstack.header.host.HostStatus
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceStateEvent
@@ -68,7 +71,19 @@ class ReconnectHostCase extends SubCase{
             bus.reply(msg, reply)
         }
 
+
         for (int i = 0; i < RECONNECT_TIME; i++) {
+            boolean success = false
+            bean(EventFacade.class).onLocal(HostCanonicalEvents.HOST_STATUS_CHANGED_PATH, new EventCallback() {
+                @Override
+                protected void run(Map tokens, Object data) {
+                    def evt = (HostCanonicalEvents.HostStatusChangedData)data
+                    if(evt.newStatus == HostStatus.Connected.toString() && evt.oldStatus == HostStatus.Connecting.toString()){
+                        success = true
+                    }
+                }
+            })
+
             reconnectHost {
                 uuid = vmInv.hostUuid
                 sessionId = currentEnvSpec.session.uuid
@@ -80,6 +95,7 @@ class ReconnectHostCase extends SubCase{
                 } as List<VmInstanceInventory>
 
                 assert vmInvs.size() == 2
+                assert success
             }
             assert runVm == numberOfVm * (i + 1)
             assert unknownVm == numberOfVm * (i + 1)
