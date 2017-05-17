@@ -26,7 +26,7 @@ public class CreateVpcVirtualRouterEntryRemoteAction extends AbstractAction {
     public java.lang.String vRouterUuid;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String destinationCidrBlock;
+    public java.lang.String dstCidrBlock;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String nextHopUuid;

@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SyncEcsSecurityGroupRuleFromRemoteAction extends AbstractAction {
+public class GetConnectionAccessPointFromRemoteAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public SyncEcsSecurityGroupRuleFromRemoteResult value;
+        public GetConnectionAccessPointFromRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -23,10 +23,7 @@ public class SyncEcsSecurityGroupRuleFromRemoteAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
+    public java.lang.String dataCenterUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -37,10 +34,6 @@ public class SyncEcsSecurityGroupRuleFromRemoteAction extends AbstractAction {
     @Param(required = true)
     public String sessionId;
 
-    public long timeout;
-    
-    public long pollingInterval;
-
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -49,8 +42,8 @@ public class SyncEcsSecurityGroupRuleFromRemoteAction extends AbstractAction {
             return ret;
         }
         
-        SyncEcsSecurityGroupRuleFromRemoteResult value = res.getResult(SyncEcsSecurityGroupRuleFromRemoteResult.class);
-        ret.value = value == null ? new SyncEcsSecurityGroupRuleFromRemoteResult() : value; 
+        GetConnectionAccessPointFromRemoteResult value = res.getResult(GetConnectionAccessPointFromRemoteResult.class);
+        ret.value = value == null ? new GetConnectionAccessPointFromRemoteResult() : value; 
 
         return ret;
     }
@@ -76,9 +69,9 @@ public class SyncEcsSecurityGroupRuleFromRemoteAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/hybrid/aliyun/security-group-rule/{uuid}/sync";
+        info.path = "/hybrid/aliyun/access-point{dataCenterUuid}/remote";
         info.needSession = true;
-        info.needPoll = true;
+        info.needPoll = false;
         info.parameterName = "";
         return info;
     }

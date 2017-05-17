@@ -2228,7 +2228,7 @@ class CreateRouteEntryForConnectionRemoteAction(AbstractAction):
 
     PARAMS = {
         'vRouterUuid': ParamAnnotation(required=True,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'destinationCidrBlock': ParamAnnotation(required=True,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
+        'dstCidrBlock': ParamAnnotation(required=True,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
         'vRouterInterfaceUuid': ParamAnnotation(required=True,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
         'vRouterType': ParamAnnotation(required=True,valid_values=['vbr','vrouter'],non_empty=False,null_elements=False,empty_string=True,no_trim=False),
         'resourceUuid': ParamAnnotation(),
@@ -2240,7 +2240,7 @@ class CreateRouteEntryForConnectionRemoteAction(AbstractAction):
     def __init__(self):
         super(CreateRouteEntryForConnectionRemoteAction, self).__init__()
         self.vRouterUuid = None
-        self.destinationCidrBlock = None
+        self.dstCidrBlock = None
         self.vRouterInterfaceUuid = None
         self.vRouterType = None
         self.resourceUuid = None
@@ -5543,7 +5543,7 @@ class UpdateRouteInterfaceRemoteAction(AbstractAction):
     PARAM_NAME = 'updateRouteInterfaceRemote'
 
     PARAMS = {
-        'riUuid': ParamAnnotation(required=True,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
+        'uuid': ParamAnnotation(required=True,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
         'op': ParamAnnotation(required=True,valid_values=['active','inactive'],non_empty=False,null_elements=False,empty_string=True,no_trim=False),
         'vRouterType': ParamAnnotation(required=True,valid_values=['vbr','vrouter'],non_empty=False,null_elements=False,empty_string=True,no_trim=False),
         'systemTags': ParamAnnotation(),
@@ -5553,7 +5553,7 @@ class UpdateRouteInterfaceRemoteAction(AbstractAction):
 
     def __init__(self):
         super(UpdateRouteInterfaceRemoteAction, self).__init__()
-        self.riUuid = None
+        self.uuid = None
         self.op = None
         self.vRouterType = None
         self.systemTags = None
