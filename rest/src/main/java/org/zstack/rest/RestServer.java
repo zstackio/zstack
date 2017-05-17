@@ -711,7 +711,11 @@ public class RestServer implements Component, CloudBusEventListener {
             // check boolean type parameters
             for (Field f : api.apiClass.getDeclaredFields()) {
                 if (f.getType().isAssignableFrom(boolean.class)) {
-                    String booleanValue = ((Map) parameter).get(f.getName()).toString();
+                    Object booleanObject = ((Map) parameter).get(f.getName());
+                    if (booleanObject == null) {
+                        continue;
+                    }
+                    String booleanValue = booleanObject.toString();
                     if (!(booleanValue.equalsIgnoreCase("true") ||
                             booleanValue.equalsIgnoreCase("false"))) {
                         throw new RestException(HttpStatus.BAD_REQUEST.value(),
