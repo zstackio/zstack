@@ -65,6 +65,7 @@ public class VmAllocateHostForStoppedVmFlow implements Flow {
             }
         }));
         msg.setClusterUuid(spec.getRequiredClusterUuid());
+        msg.setRequiredPrimaryStorageUuid(spec.getVmInventory().getRootVolume().getPrimaryStorageUuid());
         msg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
         msg.setAvoidHostUuids(getAvoidHost(spec));
         amsg = msg;

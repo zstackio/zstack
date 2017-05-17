@@ -34,7 +34,7 @@ import org.zstack.utils.gson.JSONObjectUtil
 import javax.persistence.Tuple
 
 /**
- * Created by Administrator on 2017-05-08.
+ * Created by MaJin on 2017-05-08.
  */
 class MultiNfsAttachMultiClusterMultiHostCase extends SubCase{
     EnvSpec env

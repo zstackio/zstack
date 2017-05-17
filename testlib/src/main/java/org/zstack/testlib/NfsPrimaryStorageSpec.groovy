@@ -118,7 +118,9 @@ class NfsPrimaryStorageSpec extends PrimaryStorageSpec {
         }
 
         simulator(NfsPrimaryStorageKVMBackend.REVERT_VOLUME_FROM_SNAPSHOT_PATH) {
-            return new NfsPrimaryStorageKVMBackendCommands.RevertVolumeFromSnapshotResponse()
+            def rsp = new NfsPrimaryStorageKVMBackendCommands.RevertVolumeFromSnapshotResponse()
+            rsp.newVolumeInstallPath = "/new/volume/install/path"
+            return rsp
         }
 
         simulator(NfsPrimaryStorageKVMBackend.REBASE_MERGE_SNAPSHOT_PATH) {

@@ -60,6 +60,7 @@ public class VmAllocateHostForMigrateVmFlow implements Flow {
         msg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
         msg.setAllocatorStrategy(HostAllocatorConstant.MIGRATE_VM_ALLOCATOR_TYPE);
         msg.setVmOperation(spec.getCurrentVmOperation().toString());
+        msg.setRequiredPrimaryStorageUuid(spec.getVmInventory().getRootVolume().getPrimaryStorageUuid());
         msg.setL3NetworkUuids(CollectionUtils.transformToList(spec.getL3Networks(), new Function<String, L3NetworkInventory>() {
             @Override
             public String call(L3NetworkInventory arg) {
