@@ -40,7 +40,6 @@ import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackendCommands
 import org.zstack.test.integration.storage.Env
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
-import org.zstack.testlib.HttpError
 import org.zstack.testlib.NfsPrimaryStorageSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.Utils
@@ -82,11 +81,18 @@ class InvalidUrlCase extends SubCase {
             testAttachNfsToClusterWithInvalidUrl()
             testAttachNfsToCluster()
             testUpdateValidUrl()
+<<<<<<< HEAD
             testUpdateUrlNotAllHostReturnFailure();
             testReconnectHostWithInvalidNfsUrl();
             logger.debug("1st reconn")
             testReconnectHost();
             testUpdateValidUrl();
+=======
+            testUpdateUrlNotAllHostReturnFailure()
+            testReconnectHostWithInvalidNfsUrl()
+            testReconnectHost()
+            testUpdateValidUrl()
+>>>>>>> 5c4afd8... fix bug in InvalidUrlCase
             testUpdateInvalidUrl()
             testReconnectHostWithInvalidNfsUrl()
             logger.debug("2nd reconn")
