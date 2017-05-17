@@ -23,7 +23,7 @@ public class UpdateRouteInterfaceRemoteAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String riUuid;
+    public java.lang.String uuid;
 
     @Param(required = true, validValues = {"active","inactive"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String op;
@@ -79,7 +79,7 @@ public class UpdateRouteInterfaceRemoteAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/hybrid/aliyun/router-interface/{riUuid}/actions";
+        info.path = "/hybrid/aliyun/router-interface/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "updateRouteInterfaceRemote";
