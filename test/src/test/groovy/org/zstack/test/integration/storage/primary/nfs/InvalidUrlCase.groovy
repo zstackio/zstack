@@ -10,8 +10,18 @@ import org.zstack.header.host.HostCanonicalEvents
 import org.zstack.header.host.HostStatus
 import org.zstack.header.host.HostVO
 import org.zstack.header.host.HostVO_
-import org.zstack.header.storage.primary.*
-import org.zstack.sdk.*
+import org.zstack.header.storage.primary.PrimaryStorageHostRefVO
+import org.zstack.header.storage.primary.PrimaryStorageHostRefVO_
+import org.zstack.header.storage.primary.PrimaryStorageHostStatus
+import org.zstack.header.storage.primary.PrimaryStorageVO
+import org.zstack.header.storage.primary.PrimaryStorageVO_
+import org.zstack.sdk.AttachPrimaryStorageToClusterAction
+import org.zstack.sdk.HostInventory
+import org.zstack.sdk.PrimaryStorageInventory
+import org.zstack.sdk.ClusterInventory
+import org.zstack.sdk.ReconnectHostAction
+import org.zstack.sdk.ReconnectPrimaryStorageAction
+import org.zstack.sdk.UpdatePrimaryStorageAction
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackend
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackendCommands
 import org.zstack.test.integration.storage.Env
@@ -22,9 +32,7 @@ import org.zstack.testlib.SubCase
 import org.zstack.utils.Utils
 import org.zstack.utils.gson.JSONObjectUtil
 import org.zstack.utils.logging.CLogger
-/**
- * Created by MaJin on 2017-04-24.
- */
+
 class InvalidUrlCase extends SubCase {
     EnvSpec env
     ClusterInventory cluInv
