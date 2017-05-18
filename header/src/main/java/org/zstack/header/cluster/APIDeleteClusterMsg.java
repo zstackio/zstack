@@ -37,8 +37,7 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/clusters/{uuid}",
         method = HttpMethod.DELETE,
-        responseClass = APIDeleteClusterEvent.class,
-        parameterName = "params"
+        responseClass = APIDeleteClusterEvent.class
 )
 public class APIDeleteClusterMsg extends APIDeleteMessage implements ClusterMessage {
     /**

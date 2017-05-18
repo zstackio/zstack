@@ -40,8 +40,7 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/vm-instances/{uuid}",
         method = HttpMethod.DELETE,
-        responseClass = APIDestroyVmInstanceEvent.class,
-        parameterName = "null"
+        responseClass = APIDestroyVmInstanceEvent.class
 )
 public class APIDestroyVmInstanceMsg extends APIDeleteMessage implements VmInstanceMessage {
     /**

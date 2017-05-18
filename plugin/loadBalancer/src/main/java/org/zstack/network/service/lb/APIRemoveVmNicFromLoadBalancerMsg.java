@@ -19,7 +19,6 @@ import java.util.List;
 @Action(category = LoadBalancerConstants.ACTION_CATEGORY)
 @RestRequest(
         path = "/load-balancers/listeners/{listenerUuid}/vm-instances/nics",
-        parameterName = "params",
         method = HttpMethod.DELETE,
         responseClass = APIRemoveVmNicFromLoadBalancerEvent.class
 )

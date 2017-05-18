@@ -19,7 +19,6 @@ import org.zstack.header.rest.RestRequest;
         path = "/images/{uuid}/actions",
         isAction = true,
         responseClass = APIChangeImageStateEvent.class,
-        parameterName = "params",
         method = HttpMethod.PUT
 )
 public class APIChangeImageStateMsg extends APIMessage implements ImageMessage {

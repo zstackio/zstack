@@ -19,7 +19,6 @@ import java.util.List;
         path = "/images/{imageUuid}/actions",
         method = HttpMethod.PUT,
         responseClass = APIRecoverImageEvent.class,
-        parameterName = "params",
         isAction = true
 )
 public class APIRecoverImageMsg extends APIMessage implements ImageMessage {

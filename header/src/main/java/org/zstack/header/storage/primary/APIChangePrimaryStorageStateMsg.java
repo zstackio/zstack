@@ -37,7 +37,6 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/primary-storage/{uuid}/actions",
         isAction = true,
-        parameterName = "params",
         responseClass = APIChangePrimaryStorageStateEvent.class,
         method = HttpMethod.PUT
 )

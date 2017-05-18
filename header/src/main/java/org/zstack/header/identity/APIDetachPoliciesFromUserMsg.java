@@ -18,7 +18,6 @@ import static org.zstack.utils.CollectionDSL.list;
 @RestRequest(
         path = "/accounts/users/{userUuid}/policies",
         method = HttpMethod.DELETE,
-        parameterName = "params",
         responseClass = APIDetachPoliciesFromUserEvent.class
 )
 public class APIDetachPoliciesFromUserMsg extends APIMessage implements AccountMessage {

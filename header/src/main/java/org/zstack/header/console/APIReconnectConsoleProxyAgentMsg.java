@@ -17,7 +17,6 @@ import static org.zstack.utils.CollectionDSL.list;
 @RestRequest(
         path = "/consoles/agents",
         isAction = true,
-        parameterName = "params",
         responseClass = APIReconnectConsoleProxyAgentEvent.class,
         method = HttpMethod.PUT
 )

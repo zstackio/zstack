@@ -7,8 +7,7 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/accounts/sessions/{sessionUuid}",
         method = HttpMethod.DELETE,
-        responseClass = APILogOutReply.class,
-        parameterName = "null"
+        responseClass = APILogOutReply.class
 )
 public class APILogOutMsg extends APISessionMessage {
     private String sessionUuid;

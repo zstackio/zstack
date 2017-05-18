@@ -15,7 +15,6 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/accounts/policies/{uuid}",
         method = HttpMethod.DELETE,
-        parameterName = "params",
         responseClass = APIDeletePolicyEvent.class
 )
 public class APIDeletePolicyMsg extends APIDeleteMessage implements AccountMessage {

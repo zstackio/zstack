@@ -38,8 +38,7 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/primary-storage/{uuid}",
         method = HttpMethod.DELETE,
-        responseClass = APIDeletePrimaryStorageEvent.class,
-        parameterName = "null"
+        responseClass = APIDeletePrimaryStorageEvent.class
 )
 public class APIDeletePrimaryStorageMsg extends APIDeleteMessage implements PrimaryStorageMessage {
     /**
