@@ -6,6 +6,7 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import java.io.Serializable;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Objects;
 
 public class ErrorCode implements Serializable, Cloneable {
     private String code;
@@ -141,5 +142,35 @@ public class ErrorCode implements Serializable, Cloneable {
         }
 
         return false;
+    }
+
+    @Override
+    public boolean equals(Object t) {
+        if (this == t){
+            return true;
+        }
+        if (!(t instanceof ErrorCode)){
+            return false;
+        }
+
+        ErrorCode other = (ErrorCode)t;
+        return Objects.equals(this.code, other.code) &&
+                // might has endless loop
+                Objects.equals(this.cause, other.cause) &&
+                Objects.equals(this.details, other.details) &&
+                Objects.equals(this.opaque, other.opaque);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = 17;
+        result = result * 31 + (code == null ? 0 : code.hashCode());
+        //TODO: might has endless loop
+        //result = result * 31 + (cause == null || cause.details == null ? 0 : cause.details.hashCode());
+        result = result * 31 + (cause == null ? 0 : cause.hashCode());
+        result = result * 31 + (details == null ? 0 : details.hashCode());
+        result = result * 31 + (opaque == null ? 0 : opaque.hashCode());
+
+        return result;
     }
 }
