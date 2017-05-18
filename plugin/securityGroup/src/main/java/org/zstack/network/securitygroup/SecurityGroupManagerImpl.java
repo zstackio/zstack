@@ -250,7 +250,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         }
 
         private List<RuleTO> calculateRuleTOBySecurityGroup(List<String> sgUuids, String l3Uuid) {
-            List<RuleTO> ret = new ArrayList<RuleTO>();
+            List<RuleTO> ret = new ArrayList<>();
 
             for (String sgUuid : sgUuids) {
                 String sql = "select r from SecurityGroupRuleVO r where r.securityGroupUuid = :sgUuid";
@@ -261,13 +261,18 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                     continue;
                 }
 
-                sql = "select nic.ip from VmNicVO nic, VmNicSecurityGroupRefVO ref where ref.vmNicUuid = nic.uuid and ref.securityGroupUuid = :sgUuid and nic.l3NetworkUuid = :l3Uuid";
+                sql = "select nic.ip" +
+                        " from VmNicVO nic, VmNicSecurityGroupRefVO ref" +
+                        " where ref.vmNicUuid = nic.uuid" +
+                        " and ref.securityGroupUuid = :sgUuid" +
+                        " and nic.l3NetworkUuid = :l3Uuid" +
+                        " and nic.ip is not null";
                 TypedQuery<String> internalIpQuery = dbf.getEntityManager().createQuery(sql, String.class);
                 internalIpQuery.setParameter("sgUuid", sgUuid);
                 internalIpQuery.setParameter("l3Uuid", l3Uuid);
                 List<String> internalIps = internalIpQuery.getResultList();
                 List<Pair<String, String>> ipRanges = NetworkUtils.findConsecutiveIpRange(internalIps);
-                List<String> internalIpRanges = new ArrayList<String>(ipRanges.size());
+                List<String> internalIpRanges = new ArrayList<>(ipRanges.size());
                 for (Pair<String, String> p : ipRanges) {
                     if (p.first().equals(p.second())) {
                         internalIpRanges.add(p.first());
