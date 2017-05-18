@@ -2,14 +2,18 @@ package org.zstack.test.integration.networkservice.provider.virtualrouter.loadba
 
 import org.zstack.appliancevm.ApplianceVmVO
 import org.zstack.core.db.DatabaseFacade
+import org.zstack.core.db.Q
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.lb.LoadBalancerConstants
+import org.zstack.network.service.lb.LoadBalancerVO
+import org.zstack.network.service.lb.LoadBalancerVO_
 import org.zstack.network.service.portforwarding.PortForwardingConstant
 import org.zstack.network.service.virtualrouter.VirtualRouterVmVO
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerRefVO
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants
 import org.zstack.sdk.LoadBalancerInventory
+import org.zstack.sdk.UpdateLoadBalancerAction
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
 import org.zstack.testlib.EnvSpec
@@ -162,6 +166,7 @@ class VirtualRouterLoadBalancerCase extends SubCase{
         dbf = bean(DatabaseFacade.class)
         env.create {
             virtualRouterDownReconnectVm()
+            updateLoadBalancerCase()
         }
     }
 
@@ -188,6 +193,26 @@ class VirtualRouterLoadBalancerCase extends SubCase{
         assert list.get(0).getLoadBalancerUuid() == load.getUuid()
     }
 
+    void updateLoadBalancerCase() {
+        LoadBalancerInventory load = env.inventoryByName("lb")
+        def _name = "test2"
+        def _description = "info2"
+        LoadBalancerVO lbvo = Q.New(LoadBalancerVO.class).eq(LoadBalancerVO_.uuid, load.uuid).find()
+        def lbUuid = lbvo.uuid
+
+        UpdateLoadBalancerAction updateLoadBalancerAction = new UpdateLoadBalancerAction()
+        updateLoadBalancerAction.uuid  = lbUuid
+        updateLoadBalancerAction.name = _name
+        updateLoadBalancerAction.description = _description
+        updateLoadBalancerAction.sessionId = adminSession()
+        UpdateLoadBalancerAction.Result res = updateLoadBalancerAction.call()
+        assert res.error == null
+        assert res.value.inventory.name == _name
+        assert res.value.inventory.description == _description
+        LoadBalancerVO lbvo2 = Q.New(LoadBalancerVO.class).eq(LoadBalancerVO_.uuid, load.uuid).find()
+        assert lbvo2.name == _name
+        assert lbvo2.description == _description
+    }
     @Override
     void clean() {
         env.delete()

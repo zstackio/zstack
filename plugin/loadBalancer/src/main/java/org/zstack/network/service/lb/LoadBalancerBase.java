@@ -33,6 +33,7 @@ import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
@@ -510,6 +511,8 @@ public class LoadBalancerBase {
             handle((APIRefreshLoadBalancerMsg) msg);
         } else if (msg instanceof APIGetCandidateVmNicsForLoadBalancerMsg) {
             handle((APIGetCandidateVmNicsForLoadBalancerMsg) msg);
+        } else if (msg instanceof APIUpdateLoadBalancerMsg) {
+            handle((APIUpdateLoadBalancerMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -1171,5 +1174,44 @@ public class LoadBalancerBase {
         evt.setInventory(LoadBalancerListenerInventory.valueOf(vo));
         bus.publish(evt);
         completion.done();
+    }
+
+    private void handle(APIUpdateLoadBalancerMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return getSyncId();
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                APIUpdateLoadBalancerEvent evt = new APIUpdateLoadBalancerEvent(msg.getId());
+
+                final LoadBalancerInventory lb = new LoadBalancerInventory();
+
+                boolean update = false;
+                if (msg.getName() != null) {
+                    self.setName(msg.getName());
+                    update = true;
+                }
+                if (msg.getDescription() != null) {
+                    self.setDescription(msg.getDescription());
+                    update = true;
+                }
+
+                if (update) {
+                    dbf.update(self);
+                }
+
+                evt.setInventory(getInventory());
+                bus.publish(evt);
+                chain.next();
+            }
+
+            @Override
+            public String getName() {
+                return "update-lb-info";
+            }
+        });
     }
 }
