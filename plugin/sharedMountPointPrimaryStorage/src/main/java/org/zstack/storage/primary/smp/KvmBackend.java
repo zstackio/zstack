@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.vm.ImageBackupStorageSelector;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.ChainTask;
@@ -86,6 +87,9 @@ public class KvmBackend extends HypervisorBackend {
         public String uuid;
     }
 
+    public static class ConnectRsp extends AgentRsp {
+        public List<String> otherUuids;
+    }
 
     @ApiTimeout(apiClasses = {APICreateVmInstanceMsg.class})
     public static class CreateVolumeFromCacheCmd extends AgentCmd {
@@ -265,9 +269,14 @@ public class KvmBackend extends HypervisorBackend {
         cmd.uuid = self.getUuid();
         cmd.mountPoint = self.getMountPath();
 
-        httpCall(CONNECT_PATH, hostUuid, cmd, true, AgentRsp.class, new ReturnValueCompletion<AgentRsp>(completion) {
+        httpCall(CONNECT_PATH, hostUuid, cmd, true, ConnectRsp.class, new ReturnValueCompletion<ConnectRsp>(completion) {
             @Override
-            public void success(AgentRsp rsp) {
+            public void success(ConnectRsp rsp) {
+                List<String> uuids = checkOccupy(rsp.otherUuids);
+                if(uuids != null && !uuids.isEmpty()){
+                    completion.fail(operr(String.format("this mount point[%s] in host[uuid:%s] has been occupied by other storages[uuids:%s], please attach this directly",self.getMountPath(),hostUuid ,uuids)));
+                    return;
+                }
                 completion.success();
             }
 
@@ -276,6 +285,14 @@ public class KvmBackend extends HypervisorBackend {
                 completion.fail(errorCode);
             }
         });
+    }
+
+    @Transactional
+    private List<String> checkOccupy(List<String> uuids){
+        return Q.New(PrimaryStorageVO.class).select(PrimaryStorageVO_.uuid)
+                .in(PrimaryStorageVO_.uuid, uuids)
+                .eq(PrimaryStorageVO_.type, SMPConstants.SMP_TYPE)
+                .listValues();
     }
 
     @Override
