@@ -17,7 +17,7 @@ public @interface RestRequest {
     String[] optionalPaths() default  {};
     HttpMethod method();
     boolean isAction() default false;
-    String parameterName() default "";
+    String parameterName() default RESTConstant.DEFAULT_PARAMETER_NAME;
     String[] mappingFields() default {};
     Class responseClass();
     String category() default "";
