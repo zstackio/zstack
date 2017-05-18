@@ -15,6 +15,7 @@ import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
 
 import javax.persistence.JoinColumn;
 import java.util.*;
+import java.util.regex.Pattern;
 
 @PythonClassInventory
 @Inventory(mappingVOClass = VxlanNetworkPoolVO.class, collectionValueOfMethod = "valueOf1",
@@ -48,8 +49,12 @@ public class L2VxlanNetworkPoolInventory extends L2NetworkInventory {
 
     protected L2VxlanNetworkPoolInventory(VxlanNetworkPoolVO vo) {
         super(vo);
+        String patern = "\\{.*\\}";
         attachedCidrs = new HashMap<>();
         for (Map<String, String> tag : VxlanSystemTags.VXLAN_POOL_CLUSTER_VTEP_CIDR.getTokensOfTagsByResourceUuid(vo.getUuid())) {
+            if (!Pattern.matches(patern, tag.get(VxlanSystemTags.VTEP_CIDR_TOKEN))) {
+                continue;
+            }
             attachedCidrs.put(tag.get(VxlanSystemTags.CLUSTER_UUID_TOKEN),
                     tag.get(VxlanSystemTags.VTEP_CIDR_TOKEN).split("[{}]")[1]);
         }

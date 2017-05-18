@@ -1,9 +1,13 @@
 package org.zstack.test.integration.network.vxlanNetwork
 
+import org.springframework.http.HttpEntity
+import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanKvmAgentCommands
+import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolConstant
 import org.zstack.sdk.L2VxlanNetworkPoolInventory
 import org.zstack.sdk.VniRangeInventory
 import org.zstack.test.integration.network.NetworkTest
 import org.zstack.testlib.EnvSpec
+import org.zstack.testlib.HostSpec
 import org.zstack.testlib.SubCase
 import org.zstack.testlib.ZoneSpec
 import org.zstack.utils.data.SizeUnit
@@ -169,7 +173,7 @@ class VxlanApiInterceptorCase extends SubCase {
             attachL2NetworkToCluster {
                 delegate.l2NetworkUuid = poolinv.getUuid()
                 delegate.clusterUuid = cuuid1
-                delegate.systemTags = ["l2NetworkUuid::${poolinv.getUuid()}::clusterUuid::${cuuid1}::cidr::300.268.100.0/24".toString()]
+                delegate.systemTags = ["l2NetworkUuid::${poolinv.getUuid()}::clusterUuid::${cuuid1}::cidr::{300.268.100.0/24}".toString()]
             }
         }
 
@@ -267,9 +271,32 @@ class VxlanApiInterceptorCase extends SubCase {
             }
         }
 
+        env.simulator(VxlanNetworkPoolConstant.VXLAN_KVM_CHECK_L2VXLAN_NETWORK_PATH) { HttpEntity<String> entity, EnvSpec spec ->
+            VxlanKvmAgentCommands.CheckVxlanCidrResponse resp = new VxlanKvmAgentCommands.CheckVxlanCidrResponse()
+            resp.vtepIp = "192.168.100.10"
+            resp.setSuccess(true)
+            return resp
+        }
+        attachL2NetworkToCluster {
+            delegate.l2NetworkUuid = poolinv.getUuid()
+            delegate.clusterUuid = cuuid1
+            delegate.systemTags = ["l2NetworkUuid::${poolinv.getUuid()}::clusterUuid::${cuuid1}::cidr::{192.168.100.0/24}".toString()]
+        }
+
+        // Since pool1 has attached to cluster1 and has a vni range [100, 10000], the attach of
+        // pool2 will fail for it has a overlap vni range [100, 101]
+        expect(AssertionError.class) {
+            attachL2NetworkToCluster {
+                delegate.l2NetworkUuid = poolinv2.getUuid()
+                delegate.clusterUuid = cuuid1
+                delegate.systemTags = ["l2NetworkUuid::${poolinv.getUuid()}::clusterUuid::${cuuid1}::cidr::{192.168.101.0/24}".toString()]
+            }
+        }
+
         deleteVniRange {
             delegate.uuid = vniRange.getUuid()
         }
+
     }
 
     @Override
