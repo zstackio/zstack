@@ -82,7 +82,7 @@ public class DeleteVmStaticIpAction extends AbstractAction {
         info.path = "/vm-instances/{vmInstanceUuid}/static-ips";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

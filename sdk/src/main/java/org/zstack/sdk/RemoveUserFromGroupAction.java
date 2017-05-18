@@ -79,7 +79,7 @@ public class RemoveUserFromGroupAction extends AbstractAction {
         info.path = "/accounts/groups/{groupUuid}/users/{userUuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "null";
+        info.parameterName = "";
         return info;
     }
 

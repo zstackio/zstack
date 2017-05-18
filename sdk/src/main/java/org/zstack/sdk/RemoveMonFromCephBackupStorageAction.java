@@ -79,7 +79,7 @@ public class RemoveMonFromCephBackupStorageAction extends AbstractAction {
         info.path = "/backup-storage/ceph/{uuid}/mons";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

@@ -79,7 +79,7 @@ public class DeleteNicQosAction extends AbstractAction {
         info.path = "/vm-instances/{uuid}/nic-qos";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

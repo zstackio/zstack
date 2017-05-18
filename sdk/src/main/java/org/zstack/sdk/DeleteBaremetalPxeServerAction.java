@@ -79,7 +79,7 @@ public class DeleteBaremetalPxeServerAction extends AbstractAction {
         info.path = "/baremetal/pxeserver/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

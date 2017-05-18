@@ -79,7 +79,7 @@ public class DeleteEcsSecurityGroupRuleRemoteAction extends AbstractAction {
         info.path = "/hybrid/aliyun/security-group-rule/remote/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

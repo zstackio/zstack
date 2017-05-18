@@ -69,7 +69,7 @@ public class LogOutAction extends AbstractAction {
         info.path = "/accounts/sessions/{sessionUuid}";
         info.needSession = false;
         info.needPoll = false;
-        info.parameterName = "null";
+        info.parameterName = "";
         return info;
     }
 

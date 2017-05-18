@@ -79,7 +79,7 @@ public class DeleteAllEcsInstancesFromDataCenterAction extends AbstractAction {
         info.path = "/hybrid/aliyun/dc-ecs/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

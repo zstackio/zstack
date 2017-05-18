@@ -79,7 +79,7 @@ public class DeleteBaremetalChessisAction extends AbstractAction {
         info.path = "/baremetal/chessis/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

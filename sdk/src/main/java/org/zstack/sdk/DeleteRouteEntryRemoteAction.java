@@ -82,7 +82,7 @@ public class DeleteRouteEntryRemoteAction extends AbstractAction {
         info.path = "/hybrid/aliyun/route-entry/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

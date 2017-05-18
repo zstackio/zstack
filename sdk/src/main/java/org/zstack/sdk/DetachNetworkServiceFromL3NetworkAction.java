@@ -79,7 +79,7 @@ public class DetachNetworkServiceFromL3NetworkAction extends AbstractAction {
         info.path = "/l3-networks/{l3NetworkUuid}/network-services";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

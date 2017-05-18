@@ -79,7 +79,7 @@ public class DetachPrimaryStorageFromClusterAction extends AbstractAction {
         info.path = "/clusters/{clusterUuid}/primary-storage/{primaryStorageUuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "null";
+        info.parameterName = "";
         return info;
     }
 

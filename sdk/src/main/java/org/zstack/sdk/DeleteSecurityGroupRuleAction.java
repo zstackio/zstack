@@ -76,7 +76,7 @@ public class DeleteSecurityGroupRuleAction extends AbstractAction {
         info.path = "/security-groups/rules";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

@@ -79,7 +79,7 @@ public class DeleteEcsVSwitchInLocalAction extends AbstractAction {
         info.path = "/hybrid/aliyun/vswitch/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

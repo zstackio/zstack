@@ -79,7 +79,7 @@ public class DetachPolicyFromUserAction extends AbstractAction {
         info.path = "/accounts/users/{userUuid}/policies/{policyUuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "null";
+        info.parameterName = "";
         return info;
     }
 

@@ -79,7 +79,7 @@ public class DeleteEcsVpcRemoteAction extends AbstractAction {
         info.path = "/hybrid/aliyun/vpc/remote/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

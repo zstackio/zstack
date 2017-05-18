@@ -76,7 +76,7 @@ public class DetachIsoFromVmInstanceAction extends AbstractAction {
         info.path = "/vm-instances/{vmInstanceUuid}/iso";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "null";
+        info.parameterName = "";
         return info;
     }
 
