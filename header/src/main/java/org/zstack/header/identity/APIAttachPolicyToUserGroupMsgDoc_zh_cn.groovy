@@ -24,7 +24,7 @@ doc {
 
 				column {
 					name "policyUuid"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "权限策略UUID"
 					location "body"
 					type "String"
@@ -34,7 +34,7 @@ doc {
 				}
 				column {
 					name "groupUuid"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "用户组UUID"
 					location "url"
 					type "String"

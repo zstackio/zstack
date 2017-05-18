@@ -11,7 +11,7 @@ doc {
 
     rest {
         request {
-			url "POST /v1/l2-networks/vxlan-pool/{l2NetworkUuid}/vni-range"
+			url "POST /v1/l2-networks/vxlan-pool/{l2NetworkUuid}/vni-ranges"
 
 			header (Authorization: 'OAuth the-session-uuid')
 

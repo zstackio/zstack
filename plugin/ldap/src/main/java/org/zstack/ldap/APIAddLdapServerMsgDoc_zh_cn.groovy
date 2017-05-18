@@ -24,7 +24,7 @@ doc {
 
 				column {
 					name "name"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "资源名称"
 					location "body"
 					type "String"
@@ -34,7 +34,7 @@ doc {
 				}
 				column {
 					name "description"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "资源的详细描述"
 					location "body"
 					type "String"
@@ -44,7 +44,7 @@ doc {
 				}
 				column {
 					name "url"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "LDAP服务器访问地址"
 					location "body"
 					type "String"
@@ -54,7 +54,7 @@ doc {
 				}
 				column {
 					name "base"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "LDAP服务查询BaseDN"
 					location "body"
 					type "String"
@@ -64,7 +64,7 @@ doc {
 				}
 				column {
 					name "username"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "访问LDAP服务器使用的用户名"
 					location "body"
 					type "String"
@@ -74,7 +74,7 @@ doc {
 				}
 				column {
 					name "password"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "密码"
 					location "body"
 					type "String"
@@ -84,7 +84,7 @@ doc {
 				}
 				column {
 					name "encryption"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "加密方式"
 					location "body"
 					type "String"
