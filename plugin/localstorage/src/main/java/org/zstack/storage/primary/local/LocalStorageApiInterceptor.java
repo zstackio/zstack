@@ -2,7 +2,10 @@ package org.zstack.storage.primary.local;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.db.*;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQLBatch;
+import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
@@ -13,20 +16,21 @@ import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.message.APIMessage;
-import org.zstack.header.storage.primary.*;
+import org.zstack.header.storage.primary.PrimaryStorageState;
+import org.zstack.header.storage.primary.PrimaryStorageVO;
+import org.zstack.header.storage.primary.PrimaryStorageVO_;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
-import org.zstack.header.volume.*;
-
-import javax.persistence.Tuple;
-
-import static org.zstack.core.Platform.argerr;
-import static org.zstack.core.Platform.err;
-import static org.zstack.core.Platform.operr;
+import org.zstack.header.volume.VolumeStatus;
+import org.zstack.header.volume.VolumeType;
+import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.volume.VolumeVO_;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.zstack.core.Platform.*;
 
 /**
  * Created by frank on 7/1/2015.
@@ -81,6 +85,7 @@ public class LocalStorageApiInterceptor implements ApiMessageInterceptor {
                 if (ref == null) {
                     throw new ApiMessageInterceptionException(argerr("the volume[uuid:%s] is not on any local primary storage", msg.getVolumeUuid()));
                 }
+                msg.setPrimaryStorageUuid(ref.getPrimaryStorageUuid());
 
                 if (ref.getHostUuid().equals(msg.getDestHostUuid())) {
                     throw new ApiMessageInterceptionException(argerr("the volume[uuid:%s] is already on the host[uuid:%s]", msg.getVolumeUuid(), msg.getDestHostUuid()));
@@ -158,8 +163,6 @@ public class LocalStorageApiInterceptor implements ApiMessageInterceptor {
                             }
                         }
                     }
-
-                    msg.setPrimaryStorageUuid(ref.getPrimaryStorageUuid());
                 }
 
             }
