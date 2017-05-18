@@ -58,7 +58,7 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
     private static String needPopulate = "needPopulate";
 
     private String makeBridgeName(int vxlan) {
-        return String.format("br_vxlan_%s",vxlan);
+        return String.format("br_vx_%s",vxlan);
     }
 
     @Override

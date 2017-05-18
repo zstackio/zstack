@@ -5,13 +5,14 @@ import org.zstack.core.db.Q;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.message.APIMessage;
-import org.zstack.header.network.l2.APIAttachL2NetworkToClusterMsg;
-import org.zstack.header.network.l2.L2NetworkVO;
-import org.zstack.header.network.l2.L2NetworkVO_;
+import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.APICreateL3NetworkMsg;
+import org.zstack.network.l2.vxlan.vtep.VtepVO;
+import org.zstack.network.l2.vxlan.vtep.VtepVO_;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkConstant;
 import org.zstack.utils.network.NetworkUtils;
 
+import java.util.List;
 import java.util.StringTokenizer;
 import java.util.regex.Pattern;
 
@@ -63,6 +64,41 @@ public class VxlanNetworkCheckerImpl implements VxlanNetworkChecker {
                 }
             }
         }
+
+        String overlapedPool = getOverlapVniRangePool(msg.getL2NetworkUuid(), msg.getClusterUuid());
+
+        if (overlapedPool != null) {
+            throw new ApiMessageInterceptionException(Platform.err(SysErrors.INVALID_ARGUMENT_ERROR,
+                    String.format("overlap vni range with vxlan network pool [%s]", overlapedPool)
+            ));
+        }
+
+    }
+
+    private String getOverlapVniRangePool(String l2NetworkUuid, String clusterUuid) {
+        List<VniRangeVO> checkRanges = Q.New(VniRangeVO.class).eq(VniRangeVO_.l2NetworkUuid, l2NetworkUuid).list();
+        List<String> l2Uuids = Q.New(L2NetworkClusterRefVO.class).select(L2NetworkClusterRefVO_.l2NetworkUuid).eq(L2NetworkClusterRefVO_.clusterUuid, clusterUuid).listValues();
+
+        for (String l2Uuid : l2Uuids) {
+            List<VniRangeVO> ranges = Q.New(VniRangeVO.class).eq(VniRangeVO_.l2NetworkUuid, l2Uuid).list();
+            for (VniRangeVO range : ranges) {
+                Boolean result = checkRanges.stream()
+                        .map(r -> isVniRangeOverlap(r.getStartVni(), r.getEndVni(), range.getStartVni(), range.getEndVni()))
+                        .reduce(true, (l, r) -> l && r);
+                if (result.equals(true)) {
+                    return l2Uuid;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    public static boolean isVniRangeOverlap(Integer startVni1, Integer endVni1, Integer startVni2, Integer endVni2) {
+        if ((startVni1 >= startVni2 && startVni1 <= endVni2) || (startVni1 <= startVni2 && startVni2 <= endVni1)) {
+            return true;
+        }
+        return false;
     }
 
     private void validate(APICreateL3NetworkMsg msg) {
