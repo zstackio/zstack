@@ -11,6 +11,7 @@ import org.zstack.testlib.HostSpec
 import org.zstack.testlib.SubCase
 import org.zstack.testlib.ZoneSpec
 import org.zstack.utils.data.SizeUnit
+import org.zstack.utils.network.NetworkUtils
 
 /**
  * Created by weiwang on 17/03/2017.
@@ -156,6 +157,15 @@ class VxlanApiInterceptorCase extends SubCase {
             createVniRange {
                 delegate.startVni = 50
                 delegate.endVni = 100
+                delegate.l2NetworkUuid = poolinv.getUuid()
+                delegate.name = "TestRange5"
+            }
+        }
+
+        expect(AssertionError.class) {
+            createVniRange {
+                delegate.startVni = 50
+                delegate.endVni = 20000
                 delegate.l2NetworkUuid = poolinv.getUuid()
                 delegate.name = "TestRange5"
             }

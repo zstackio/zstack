@@ -3,7 +3,6 @@ package org.zstack.network.l2;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
@@ -27,10 +26,10 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.*;
 import org.zstack.header.message.*;
 import org.zstack.header.network.l2.*;
+import org.zstack.network.service.NetworkServiceGlobalConfig;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.TypedQuery;
 import java.util.*;
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.argerr;
@@ -62,8 +61,7 @@ public class L2NoVlanNetwork implements L2Network {
         this.self = self;
     }
 
-    @Override
-    public void deleteHook() {
+    public L2NoVlanNetwork() {
     }
 
     protected L2NetworkInventory getSelfInventory() {
@@ -585,5 +583,9 @@ public class L2NoVlanNetwork implements L2Network {
                 completion.done();
             }
         });
+    }
+
+    @Override
+    public void deleteHook() {
     }
 }

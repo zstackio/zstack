@@ -5,11 +5,12 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.Component;
 import org.zstack.header.network.l2.*;
+import org.zstack.network.service.NetworkServiceGlobalConfig;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.FieldPrinter;
 import org.zstack.utils.logging.CLogger;
 
-public class L2NoVlanL2NetworkFactory implements L2NetworkFactory, Component {
+public class L2NoVlanL2NetworkFactory implements L2NetworkFactory, Component, L2NetworkDefaultMtu{
     private static L2NetworkType type = new L2NetworkType(L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE);
     private static CLogger logger = Utils.getLogger(L2NoVlanL2NetworkFactory.class);
     private static FieldPrinter printer = Utils.getFieldPrinter();
@@ -45,5 +46,16 @@ public class L2NoVlanL2NetworkFactory implements L2NetworkFactory, Component {
     @Override
     public boolean stop() {
         return true;
+    }
+
+
+    @Override
+    public String getL2NetworkType() {
+        return L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE;
+    }
+
+    @Override
+    public Integer getDefaultMtu() {
+        return Integer.valueOf(NetworkServiceGlobalConfig.DHCP_MTU_NO_VLAN.getDefaultValue());
     }
 }

@@ -1,14 +1,16 @@
 package org.zstack.network.l2;
 
-import org.zstack.header.network.l2.L2NetworkInventory;
-import org.zstack.header.network.l2.L2NetworkVO;
-import org.zstack.header.network.l2.L2VlanNetworkInventory;
-import org.zstack.header.network.l2.L2VlanNetworkVO;
+import org.zstack.header.network.l2.*;
+import org.zstack.network.service.NetworkServiceGlobalConfig;
 
 public class L2VlanNetwork extends L2NoVlanNetwork {
     
     public L2VlanNetwork(L2NetworkVO self) {
         super(self);
+    }
+
+
+    public L2VlanNetwork() {
     }
     
     private L2VlanNetworkVO getSelf() {
@@ -19,5 +21,5 @@ public class L2VlanNetwork extends L2NoVlanNetwork {
     protected L2NetworkInventory getSelfInventory() {
         return L2VlanNetworkInventory.valueOf(getSelf());
     }
-    
+
 }

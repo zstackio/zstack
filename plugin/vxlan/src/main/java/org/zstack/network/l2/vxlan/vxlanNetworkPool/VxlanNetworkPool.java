@@ -54,7 +54,7 @@ import static org.zstack.utils.CollectionDSL.map;
  * Created by weiwang on 01/03/2017.
  */
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
-public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkPoolManager, GlobalApiMessageInterceptor {
+public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkPoolManager {
     private static final CLogger logger = Utils.getLogger(VxlanNetworkPool.class);
 
     @Autowired
@@ -75,8 +75,6 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
     protected ErrorFacade errf;
     @Autowired
     private TagManager tagMgr;
-    @Autowired
-    private VxlanNetworkChecker vxlanInterceptor;
 
     private Map<String, VniAllocatorStrategy> vniAllocatorStrategies = Collections.synchronizedMap(new HashMap<String, VniAllocatorStrategy>());
 
@@ -567,7 +565,6 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
 
     @Override
     public VniAllocatorStrategy getVniAllocatorStrategy(VniAllocatorType type) {
-        // Note(WeiW): This may need move to manager
         for (VniAllocatorStrategy f : pluginRgty.getExtensionList(VniAllocatorStrategy.class)) {
             VniAllocatorStrategy old = vniAllocatorStrategies.get(f.getType().toString());
             if (old != null) {
@@ -594,22 +591,6 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
                     tokens.get(VxlanSystemTags.VTEP_CIDR_TOKEN).split("[{}]")[1]);
         }
         return attachedClusters;
-    }
-
-    @Override
-    public List<Class> getMessageClassToIntercept() {
-        return Arrays.asList(APIAttachL2NetworkToClusterMsg.class, APICreateL3NetworkMsg.class);
-    }
-
-    @Override
-    public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
-        vxlanInterceptor.intercept(msg);
-        return msg;
-    }
-
-    @Override
-    public InterceptorPosition getPosition() {
-        return InterceptorPosition.FRONT;
     }
 
 }
