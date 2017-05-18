@@ -13,8 +13,8 @@ doc {
         request {
 			url "DELETE /v1/l2-networks/vxlan-pool/vni-ranges/{uuid}"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header(Authorization: 'OAuth the-session-uuid')
 
             clz APIDeleteVniRangeMsg.class
 

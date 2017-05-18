@@ -13,8 +13,8 @@ doc {
         request {
 			url "POST /v1/web-hooks"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header(Authorization: 'OAuth the-session-uuid')
 
             clz APICreateWebhookMsg.class
 

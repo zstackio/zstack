@@ -24,7 +24,7 @@ doc {
 
 				column {
 					name "agentUuids"
-					enclosedIn "params"
+					enclosedIn "reconnectConsoleProxyAgent"
 					desc "控制台代理Agent的UUID"
 					location "body"
 					type "List"
