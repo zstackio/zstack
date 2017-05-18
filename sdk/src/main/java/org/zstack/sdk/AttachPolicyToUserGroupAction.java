@@ -79,7 +79,7 @@ public class AttachPolicyToUserGroupAction extends AbstractAction {
         info.path = "/accounts/groups/{groupUuid}/policies";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 
