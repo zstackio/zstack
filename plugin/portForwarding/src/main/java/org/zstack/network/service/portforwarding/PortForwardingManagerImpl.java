@@ -699,7 +699,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         final PortForwardingRuleVO rule = it.next();
         if (rule.getVmNicUuid() == null) {
             dbf.remove(rule);
-            completion.success();
+            releaseServicesOnVip(it, completion);
             return;
         }
 
