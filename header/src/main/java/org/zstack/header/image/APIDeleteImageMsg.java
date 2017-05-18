@@ -17,7 +17,6 @@ import java.util.List;
 @RestRequest(
         path = "/images/{uuid}",
         method = HttpMethod.DELETE,
-        parameterName = "params",
         responseClass = APIDeleteImageEvent.class
 )
 public class APIDeleteImageMsg extends APIDeleteMessage implements ImageMessage {

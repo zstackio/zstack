@@ -20,7 +20,6 @@ import java.util.List;
         path = "/images/{imageUuid}/actions",
         method = HttpMethod.PUT,
         responseClass = APIExpungeImageEvent.class,
-        parameterName = "params",
         isAction = true
 )
 public class APIExpungeImageMsg extends APIMessage implements ImageMessage {

@@ -14,7 +14,6 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = ImageConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/images/{uuid}/actions",
-        parameterName = "params",
         method = HttpMethod.PUT,
         responseClass = APIUpdateImageEvent.class,
         isAction = true

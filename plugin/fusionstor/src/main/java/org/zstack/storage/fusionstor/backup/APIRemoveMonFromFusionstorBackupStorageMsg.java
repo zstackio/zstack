@@ -16,8 +16,7 @@ import static org.codehaus.groovy.runtime.InvokerHelper.asList;
 @RestRequest(
         path = "/backup-storage/fusionstor/{uuid}/mons",
         method = HttpMethod.DELETE,
-        responseClass = APIRemoveMonFromFusionstorBackupStorageEvent.class,
-        parameterName = "params"
+        responseClass = APIRemoveMonFromFusionstorBackupStorageEvent.class
 )
 public class APIRemoveMonFromFusionstorBackupStorageMsg extends APIMessage implements BackupStorageMessage {
     @APIParam(resourceType = FusionstorBackupStorageVO.class)

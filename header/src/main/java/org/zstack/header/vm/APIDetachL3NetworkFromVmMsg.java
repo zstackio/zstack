@@ -16,8 +16,7 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/vm-instances/nics/{vmNicUuid}",
         method = HttpMethod.DELETE,
-        responseClass = APIDetachL3NetworkFromVmEvent.class,
-        parameterName = "null"
+        responseClass = APIDetachL3NetworkFromVmEvent.class
 )
 public class APIDetachL3NetworkFromVmMsg extends APIMessage implements VmInstanceMessage {
     @APIParam(resourceType = VmNicVO.class, checkAccount = true, operationTarget = true)

@@ -21,7 +21,6 @@ import java.util.*;
 @RestRequest(
         path = "/l3-networks/{l3NetworkUuid}/network-services",
         method = HttpMethod.DELETE,
-        parameterName = "params",
         responseClass = APIDetachNetworkServiceFromL3NetworkEvent.class
 )
 public class APIDetachNetworkServiceFromL3NetworkMsg extends APIMessage implements L3NetworkMessage {

@@ -16,8 +16,7 @@ import org.zstack.header.rest.RestRequest;
         path = "/instance-offerings/virtual-routers/{uuid}/actions",
         responseClass = APIUpdateInstanceOfferingEvent.class,
         method = HttpMethod.PUT,
-        isAction = true,
-        parameterName = "params"
+        isAction = true
 )
 public class APIUpdateVirtualRouterOfferingMsg extends APIUpdateInstanceOfferingMsg {
     private Boolean isDefault;

@@ -16,8 +16,7 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/vm-instances/{uuid}/console-password",
         method = HttpMethod.DELETE,
-        responseClass = APIDeleteVmConsolePasswordEvent.class,
-        parameterName = "null"
+        responseClass = APIDeleteVmConsolePasswordEvent.class
 )
 public class APIDeleteVmConsolePasswordMsg extends APIMessage implements VmInstanceMessage {
     @APIParam(resourceType = VmInstanceVO.class, checkAccount = true, operationTarget = true)

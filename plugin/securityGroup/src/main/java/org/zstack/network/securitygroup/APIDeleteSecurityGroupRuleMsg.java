@@ -56,8 +56,7 @@ import static java.util.Arrays.asList;
 @RestRequest(
         path = "/security-groups/rules",
         method = HttpMethod.DELETE,
-        responseClass = APIDeleteSecurityGroupRuleEvent.class,
-        parameterName = "params"
+        responseClass = APIDeleteSecurityGroupRuleEvent.class
 )
 public class APIDeleteSecurityGroupRuleMsg extends APIMessage {
     /**

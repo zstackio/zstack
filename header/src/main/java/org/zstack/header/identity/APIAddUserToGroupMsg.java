@@ -10,7 +10,6 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = AccountConstant.ACTION_CATEGORY, accountOnly = true)
 @RestRequest(
         path = "/accounts/groups/{groupUuid}/users",
-        isAction = true,
         responseClass = APIAddUserToGroupEvent.class,
         method = HttpMethod.POST,
         parameterName = "params"
