@@ -31,10 +31,7 @@ import org.zstack.header.query.APIQueryMessage;
 import org.zstack.header.query.APIQueryReply;
 import org.zstack.header.query.QueryCondition;
 import org.zstack.header.query.QueryOp;
-import org.zstack.header.rest.APINoSee;
-import org.zstack.header.rest.RESTFacade;
-import org.zstack.header.rest.RestRequest;
-import org.zstack.header.rest.RestResponse;
+import org.zstack.header.rest.*;
 import org.zstack.rest.sdk.DocumentGenerator;
 import org.zstack.rest.sdk.SdkFile;
 import org.zstack.rest.sdk.SdkTemplate;
@@ -1043,14 +1040,27 @@ public class RestServer implements Component, CloudBusEventListener {
         return substituteUrl(p, m);
     }
 
+    private void collectRestRequestErrConfigApi(List<String> errorApiList, Class apiClass, RestRequest apiRestRequest){
+        if (apiRestRequest.isAction() && !RESTConstant.DEFAULT_PARAMETER_NAME.equals(apiRestRequest.parameterName())) {
+            errorApiList.add(String.format("Error Api[%s]", apiClass.getName()));
+        } else if (apiRestRequest.isAction() && HttpMethod.PUT != apiRestRequest.method()) {
+            errorApiList.add(String.format("Error Api[%s]", apiClass.getName()));
+        }else if (!RESTConstant.DEFAULT_PARAMETER_NAME.equals(apiRestRequest.parameterName()) && (HttpMethod.PUT == apiRestRequest.method() || HttpMethod.DELETE == apiRestRequest.method())){
+            errorApiList.add(String.format("Error Api[%s]", apiClass.getName()));
+        }
+    }
+
     private void build() {
         Reflections reflections = Platform.getReflections();
         Set<Class<?>> classes = reflections.getTypesAnnotatedWith(RestRequest.class).stream()
                 .filter(it -> it.isAnnotationPresent(RestRequest.class)).collect(Collectors.toSet());
 
+        List<String> errorApiList = new ArrayList();
         for (Class clz : classes) {
             RestRequest at = (RestRequest) clz.getAnnotation(RestRequest.class);
             Api api = new Api(clz, at);
+
+            collectRestRequestErrConfigApi(errorApiList, clz, at);
 
             List<String> paths = new ArrayList<>();
             if (!"null".equals(api.path)) {
@@ -1086,6 +1096,11 @@ public class RestServer implements Component, CloudBusEventListener {
             }
 
             responseAnnotationByClass.put(api.apiResponseClass, new RestResponseWrapper(api.responseAnnotation, api.apiResponseClass));
+        }
+
+        if (errorApiList.size() > 0){
+            logger.error(String.format("Error Api list : %s", errorApiList));
+            throw new RuntimeException(String.format("Error Api list : %s", errorApiList));
         }
 
         // below codes are checking if there

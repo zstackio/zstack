@@ -88,7 +88,7 @@ public class UpdateBaremetalChessisAction extends AbstractAction {
         info.path = "/baremetal/chessis/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "g";
+        info.parameterName = "updateBaremetalChessis";
         return info;
     }
 
