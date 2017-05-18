@@ -81,18 +81,11 @@ class InvalidUrlCase extends SubCase {
             testAttachNfsToClusterWithInvalidUrl()
             testAttachNfsToCluster()
             testUpdateValidUrl()
-<<<<<<< HEAD
             testUpdateUrlNotAllHostReturnFailure();
             testReconnectHostWithInvalidNfsUrl();
             logger.debug("1st reconn")
             testReconnectHost();
             testUpdateValidUrl();
-=======
-            testUpdateUrlNotAllHostReturnFailure()
-            testReconnectHostWithInvalidNfsUrl()
-            testReconnectHost()
-            testUpdateValidUrl()
->>>>>>> 5c4afd8... fix bug in InvalidUrlCase
             testUpdateInvalidUrl()
             testReconnectHostWithInvalidNfsUrl()
             logger.debug("2nd reconn")
