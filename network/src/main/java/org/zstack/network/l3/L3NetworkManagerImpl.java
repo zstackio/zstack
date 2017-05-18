@@ -8,10 +8,7 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.DbEntityLister;
-import org.zstack.core.db.SQLBatchWithReturn;
-import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.AbstractService;
@@ -30,8 +27,11 @@ import org.zstack.header.network.l2.L2NetworkVO_;
 import org.zstack.header.network.l3.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
+import org.zstack.network.service.MtuGetter;
+import org.zstack.network.service.NetworkServiceSystemTag;
 import org.zstack.search.GetQuery;
 import org.zstack.search.SearchQuery;
+import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.ObjectUtils;
 import org.zstack.utils.Utils;
@@ -44,6 +44,8 @@ import java.util.*;
 import java.util.concurrent.Callable;
 
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.CollectionDSL.e;
 
 public class L3NetworkManagerImpl extends AbstractService implements L3NetworkManager, ReportQuotaExtensionPoint,
         ResourceOwnerPreChangeExtensionPoint {
@@ -97,6 +99,10 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
             handle((APICreateL3NetworkMsg) msg);
         } else if (msg instanceof APIListL3NetworkMsg) {
             handle((APIListL3NetworkMsg) msg);
+        } else if (msg instanceof APISetL3NetworkMtuMsg) {
+            handle((APISetL3NetworkMtuMsg) msg);
+        } else if (msg instanceof APIGetL3NetworkMtuMsg) {
+            handle((APIGetL3NetworkMtuMsg) msg);
         } else if (msg instanceof L3NetworkMessage) {
             passThrough((L3NetworkMessage) msg);
         } else if (msg instanceof APIListIpRangeMsg) {
@@ -112,6 +118,31 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(final APISetL3NetworkMtuMsg msg) {
+        final APISetL3NetworkMtuEvent evt = new APISetL3NetworkMtuEvent(msg.getId());
+
+        NetworkServiceSystemTag.L3_MTU.delete(msg.getL3NetworkUuid());
+        SystemTagCreator creator = NetworkServiceSystemTag.L3_MTU.newSystemTagCreator(msg.getL3NetworkUuid());
+        creator.ignoreIfExisting = true;
+        creator.inherent = false;
+        creator.setTagByTokens(
+                map(
+                        e(NetworkServiceSystemTag.MTU_TOKEN, msg.getMtu()),
+                        e(NetworkServiceSystemTag.L3_UUID_TOKEN, msg.getL3NetworkUuid())
+                )
+        );
+        creator.create();
+
+        bus.publish(evt);
+    }
+
+    private void handle(final APIGetL3NetworkMtuMsg msg) {
+        APIGetL3NetworkMtuReply reply = new APIGetL3NetworkMtuReply();
+
+        reply.setMtu(new MtuGetter().getMtu(msg.getL3NetworkUuid()));
+        bus.reply(msg, reply);
     }
 
     private void handle(final APIGetIpAddressCapacityMsg msg) {

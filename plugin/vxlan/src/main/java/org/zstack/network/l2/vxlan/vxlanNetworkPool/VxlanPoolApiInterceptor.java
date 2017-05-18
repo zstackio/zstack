@@ -72,9 +72,9 @@ public class VxlanPoolApiInterceptor implements ApiMessageInterceptor {
     }
 
     private boolean checkOverlap(Integer checktart, Integer checkEnd, Integer existStart, Integer existEnd){
-        if ((checktart >= existStart) && (checktart <= existEnd)) {
+        if ((existStart <= checktart) && (checktart <= existEnd)) {
             return true;
-        } else if ((checkEnd >= existStart) && (checkEnd <= existEnd)) {
+        } else if ((checktart <= existStart) && (existStart <= existEnd)) {
             return true;
         }
         return false;

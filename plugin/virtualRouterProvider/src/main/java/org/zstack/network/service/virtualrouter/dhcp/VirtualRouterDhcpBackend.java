@@ -70,6 +70,7 @@ public class VirtualRouterDhcpBackend extends AbstractVirtualRouterBackend imple
                 e.setNetmask(struct.getNetmask());
                 e.setDnsDomain(struct.getDnsDomain());
                 e.setHostname(struct.getHostname());
+                e.setMtu(struct.getMtu());
 
                 if (e.isDefaultL3Network()) {
                     if (e.getHostname() == null) {

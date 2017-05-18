@@ -2,10 +2,12 @@ package org.zstack.test.integration.networkservice.provider.flat.dhcp
 
 import org.springframework.http.HttpEntity
 import org.zstack.header.network.l3.UsedIpVO
+import org.zstack.network.service.NetworkServiceGlobalConfig
 import org.zstack.network.service.flat.BridgeNameFinder
 import org.zstack.network.service.flat.FlatDhcpBackend
 import org.zstack.network.service.flat.FlatDhcpBackend.DhcpInfo
 import org.zstack.network.service.flat.FlatNetworkSystemTags
+import org.zstack.sdk.GetL3NetworkMtuResult
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.VmNicInventory
@@ -43,6 +45,7 @@ class OneVmDhcp extends SubCase {
             testSetDhcpWhenCreateVm()
             testReleaseDhcpWhenStopVm()
             testSetDhcpWhenStartVm()
+            testSetDhcpMtu()
             testSetDhcpReleaseDhcpWhenRebootVm()
             testSetDhcpWhenReconnectHost()
             testReleaseDhcpWhenDestroyVm()
@@ -147,6 +150,56 @@ class OneVmDhcp extends SubCase {
                 uuid = vm.uuid
             }
         }
+    }
+
+    void testSetDhcpMtu() {
+        FlatDhcpBackend.ApplyDhcpCmd cmd = null
+
+        env.afterSimulator(FlatDhcpBackend.APPLY_DHCP_PATH) { rsp, HttpEntity<String> e ->
+            cmd = JSONObjectUtil.toObject(e.body, FlatDhcpBackend.ApplyDhcpCmd.class)
+            return rsp
+        }
+
+        updateGlobalConfig {
+            category = NetworkServiceGlobalConfig.CATEGORY
+            name = "defaultDhcpMtu.l2NoVlanNetwork"
+            value = 1600
+            sessionId = adminSession()
+        }
+
+        rebootVmInstance {
+            uuid = vm.uuid
+        }
+
+        DhcpInfo info = cmd.dhcp[0]
+        assert info.mtu.equals(Integer.valueOf(NetworkServiceGlobalConfig.DHCP_MTU_NO_VLAN.getDefaultValue()));
+
+
+        setL3NetworkMtu {
+            delegate.mtu = 1450
+            delegate.l3NetworkUuid = l3.getUuid()
+        }
+        rebootVmInstance {
+            uuid = vm.uuid
+        }
+
+        info = cmd.dhcp[0]
+        assert info.mtu.equals(1450)
+
+        GetL3NetworkMtuResult r = getL3NetworkMtu {
+            delegate.l3NetworkUuid = l3.getUuid()
+        }
+        assert r.mtu.equals(1450)
+
+        setL3NetworkMtu {
+            delegate.mtu = 1400
+            delegate.l3NetworkUuid = l3.getUuid()
+        }
+        reconnectHost {
+            delegate.uuid = vm.getHostUuid()
+        }
+        info = cmd.dhcp[0]
+        assert info.mtu.equals(1400)
     }
 
     private void testSetDhcpWhenVmOperations(Closure vmOperation) {

@@ -4,16 +4,23 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.Component;
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
+import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
+import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l2.*;
+import org.zstack.header.network.l3.APICreateL3NetworkMsg;
 import org.zstack.query.QueryFacade;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * Created by weiwang on 03/03/2017.
  */
-public class VxlanNetworkPoolFactory implements L2NetworkFactory, Component {
+public class VxlanNetworkPoolFactory implements L2NetworkFactory, Component, GlobalApiMessageInterceptor {
     private static CLogger logger = Utils.getLogger(VxlanNetworkPoolFactory.class);
     static L2NetworkType type = new L2NetworkType(VxlanNetworkPoolConstant.VXLAN_NETWORK_POOL_TYPE);
 
@@ -23,6 +30,8 @@ public class VxlanNetworkPoolFactory implements L2NetworkFactory, Component {
     private CloudBus bus;
     @Autowired
     private QueryFacade qf;
+    @Autowired
+    private VxlanNetworkChecker vxlanInterceptor;
 
     @Override
     public L2NetworkType getType() {
@@ -55,5 +64,22 @@ public class VxlanNetworkPoolFactory implements L2NetworkFactory, Component {
     @Override
     public boolean stop() {
         return true;
+    }
+
+
+    @Override
+    public List<Class> getMessageClassToIntercept() {
+        return Arrays.asList(APIAttachL2NetworkToClusterMsg.class, APICreateL3NetworkMsg.class);
+    }
+
+    @Override
+    public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
+        vxlanInterceptor.intercept(msg);
+        return msg;
+    }
+
+    @Override
+    public InterceptorPosition getPosition() {
+        return InterceptorPosition.FRONT;
     }
 }

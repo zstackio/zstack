@@ -17,6 +17,7 @@ public class DhcpStruct {
     private L3NetworkInventory l3Network;
     private boolean isDefaultL3Network;
     private String dnsDomain;
+    private Integer mtu;
 
     @Override
     public String toString() {
@@ -29,6 +30,7 @@ public class DhcpStruct {
         sb.append(String.format("l3NetworkUuid: %s,", l3Network.getUuid()));
         sb.append(String.format("dnsDomain: %s", dnsDomain));
         sb.append(String.format("isDefaultL3Network: %s", isDefaultL3Network));
+        sb.append(String.format("mtu: %s", mtu));
         sb.append("]");
         return sb.toString();
     }
@@ -96,4 +98,13 @@ public class DhcpStruct {
     public void setL3Network(L3NetworkInventory l3Network) {
         this.l3Network = l3Network;
     }
+
+    public Integer getMtu() {
+        return mtu;
+    }
+
+    public void setMtu(Integer mtu) {
+        this.mtu = mtu;
+    }
+
 }

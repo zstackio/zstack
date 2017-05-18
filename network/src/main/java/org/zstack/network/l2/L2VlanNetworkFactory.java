@@ -8,6 +8,7 @@ import org.zstack.header.AbstractService;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.network.l2.*;
+import org.zstack.network.service.NetworkServiceGlobalConfig;
 import org.zstack.query.QueryFacade;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -15,7 +16,7 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.List;
 
-public class L2VlanNetworkFactory extends AbstractService implements L2NetworkFactory {
+public class L2VlanNetworkFactory extends AbstractService implements L2NetworkFactory, L2NetworkDefaultMtu {
     private static CLogger logger = Utils.getLogger(L2VlanNetworkFactory.class);
     static L2NetworkType type = new L2NetworkType(L2NetworkConstant.L2_VLAN_NETWORK_TYPE);
     
@@ -92,5 +93,15 @@ public class L2VlanNetworkFactory extends AbstractService implements L2NetworkFa
     @Override
     public String getId() {
         return bus.makeLocalServiceId(L2NetworkConstant.L2_VLAN_NETWORK_FACTORY_SERVICE_ID);
+    }
+
+    @Override
+    public String getL2NetworkType() {
+        return L2NetworkConstant.L2_VLAN_NETWORK_TYPE;
+    }
+
+    @Override
+    public Integer getDefaultMtu() {
+        return Integer.valueOf(NetworkServiceGlobalConfig.DHCP_MTU_VLAN.getDefaultValue());
     }
 }

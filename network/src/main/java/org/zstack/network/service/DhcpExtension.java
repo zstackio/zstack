@@ -1,5 +1,12 @@
 package org.zstack.network.service;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.GlobalProperty;
+import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.config.GlobalConfig;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.notification.N;
@@ -8,15 +15,16 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.network.l3.L3NetworkVO;
-import org.zstack.header.network.l3.L3NetworkVO_;
+import org.zstack.header.message.MessageReply;
+import org.zstack.header.network.l2.*;
+import org.zstack.header.network.l3.*;
 import org.zstack.header.network.service.DhcpStruct;
 import org.zstack.header.network.service.NetworkServiceDhcpBackend;
 import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceSpec.HostName;
+import org.zstack.network.l2.L2NetworkDefaultMtu;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -32,6 +40,12 @@ import java.util.*;
  */
 public class DhcpExtension extends AbstractNetworkServiceExtension implements Component, VmDefaultL3NetworkChangedExtensionPoint {
     private static final CLogger logger = Utils.getLogger(DhcpExtension.class);
+
+    @Autowired
+    private PluginRegistry pluginRgty;
+    @Autowired
+    private CloudBus bus;
+
     private Map<NetworkServiceProviderType, NetworkServiceDhcpBackend> dhcpBackends = new HashMap<NetworkServiceProviderType, NetworkServiceDhcpBackend>();
 
     private final String RESULT = String.format("result.%s", DhcpExtension.class.getName());
@@ -137,6 +151,8 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
                 spec.getVmInventory().getDefaultL3NetworkUuid().equals(l3.getUuid()));
         struct.setMac(nic.getMac());
         struct.setNetmask(nic.getNetmask());
+        struct.setMtu(new MtuGetter().getMtu(l3.getUuid()));
+
         return struct;
     }
 

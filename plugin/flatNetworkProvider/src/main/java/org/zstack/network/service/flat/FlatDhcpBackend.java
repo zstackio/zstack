@@ -6,8 +6,10 @@ import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.GLock;
+import org.zstack.core.db.Q;
 import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -29,6 +31,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.L2NetworkVO;
+import org.zstack.header.network.l2.L2NetworkVO_;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.network.service.DhcpStruct;
 import org.zstack.header.network.service.NetworkServiceDhcpBackend;
@@ -38,8 +41,8 @@ import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmAbnormalLifeCycleStruct.VmAbnormalLifeCycleOperation;
 import org.zstack.kvm.*;
 import org.zstack.kvm.KvmCommandSender.SteppingSendCallback;
-import org.zstack.network.service.NetworkProviderFinder;
-import org.zstack.network.service.NetworkServiceProviderLookup;
+import org.zstack.network.l2.L2NetworkDefaultMtu;
+import org.zstack.network.service.*;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
@@ -78,6 +81,8 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     private ThreadFacade thdf;
     @Autowired
     private ApiTimeoutManager timeoutMgr;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     public static final String APPLY_DHCP_PATH = "/flatnetworkprovider/dhcp/apply";
     public static final String PREPARE_DHCP_PATH = "/flatnetworkprovider/dhcp/prepare";
@@ -170,6 +175,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                     nic.getL3NetworkUuid()
             );
             DebugUtils.Assert(info.bridgeName != null, "bridge name cannot be null");
+            info.mtu = new MtuGetter().getMtu(nic.getL3NetworkUuid());
             info.mac = nic.getMac();
             info.netmask = nic.getNetmask();
             info.isDefaultL3Network = nic.getL3NetworkUuid().equals(vmDefaultL3.get(nic.getVmInstanceUuid()));
@@ -203,7 +209,6 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
         return dhcpInfoList;
     }
-
 
     @Override
     @MessageSafe
@@ -876,6 +881,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         public String bridgeName;
         public String namespaceName;
         public String l3NetworkUuid;
+        public Integer mtu;
     }
 
     public static class ApplyDhcpCmd extends KVMAgentCommands.AgentCommand {
@@ -971,6 +977,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 info.l3NetworkUuid = arg.getL3Network().getUuid();
                 info.bridgeName = l3Bridges.get(arg.getL3Network().getUuid());
                 info.namespaceName = makeNamespaceName(info.bridgeName, arg.getL3Network().getUuid());
+                info.mtu = arg.getMtu();
                 return info;
             }
         });

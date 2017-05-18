@@ -26,21 +26,21 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
-import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.l3.L3NetworkVO_;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceMigrateExtensionPoint;
 import org.zstack.header.vm.VmNicInventory;
+import org.zstack.network.l2.L2NetworkDefaultMtu;
 import org.zstack.network.l2.L2NetworkExtensionPointEmitter;
 import org.zstack.network.l2.L2NetworkManager;
 import org.zstack.network.l2.L2NoVlanNetwork;
+import org.zstack.network.service.NetworkServiceGlobalConfig;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 
@@ -48,7 +48,7 @@ import static org.zstack.core.Platform.operr;
  * Created by weiwang on 01/03/2017.
  */
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
-public class VxlanNetwork extends L2NoVlanNetwork implements VmInstanceMigrateExtensionPoint {
+public class VxlanNetwork extends L2NoVlanNetwork {
     private static final CLogger logger = Utils.getLogger(VxlanNetwork.class);
 
     @Autowired
@@ -250,76 +250,4 @@ public class VxlanNetwork extends L2NoVlanNetwork implements VmInstanceMigrateEx
         super.handleMessage((Message) msg);
     }
 
-    @Override
-    public void preMigrateVm(VmInstanceInventory inv, String destHostUuid) {
-        List<VmNicInventory> nics = inv.getVmNics();
-        List<L3NetworkVO> l3vos = new ArrayList<>();
-        nics.stream().forEach((nic -> l3vos.add(Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid ,nic.getL3NetworkUuid()).find())));
-
-        List<String> vxlanUuids = new ArrayList<>();
-        for (L3NetworkVO l3 : l3vos) {
-            String type = Q.New(L2NetworkVO.class).select(L2NetworkVO_.type).eq(L2NetworkVO_.uuid, l3.getL2NetworkUuid()).findValue();
-            if (type.equals(VxlanNetworkConstant.VXLAN_NETWORK_TYPE)) {
-                vxlanUuids.add(l3.getL2NetworkUuid());
-            }
-        }
-
-        if (vxlanUuids.isEmpty()) {
-            return;
-        }
-
-        ErrorCodeList errList = new ErrorCodeList();
-        FutureCompletion completion = new FutureCompletion(null);
-
-        new While<>(vxlanUuids).all((uuid, completion1) -> {
-            PrepareL2NetworkOnHostMsg msg = new PrepareL2NetworkOnHostMsg();
-            msg.setL2NetworkUuid(uuid);
-            msg.setHost(HostInventory.valueOf((HostVO) Q.New(HostVO.class).eq(HostVO_.uuid, destHostUuid).find()));
-            bus.makeTargetServiceIdByResourceUuid(msg, L2NetworkConstant.SERVICE_ID, uuid);
-            bus.send(msg, new CloudBusCallBack(completion1) {
-                @Override
-                public void run(MessageReply reply) {
-                    if (!reply.isSuccess()) {
-                        logger.warn(reply.getError().toString());
-                        errList.getCauses().add(reply.getError());
-                    } else {
-                        logger.debug(String.format("check and realize vxlan network[uuid: %s] for vm[uuid: %s] successed", uuid, inv.getUuid()));
-                    }
-                    completion1.done();
-
-                }
-            });
-        }).run(new NoErrorCompletion(completion) {
-            @Override
-            public void done() {
-                if (!errList.getCauses().isEmpty()) {
-                    completion.fail(errList.getCauses().get(0));
-                    return;
-                }
-                logger.info(String.format("check and realize vxlan networks[uuid: %s] for vm[uuid: %s] done", vxlanUuids, inv.getUuid()));
-                completion.success();
-            }
-        });
-
-        completion.await(TimeUnit.MINUTES.toMillis(30));
-        if (!completion.isSuccess()) {
-            throw new OperationFailureException(operr("cannot configure vxlan network for vm[uuid:%s] on the destination host[uuid:%s]",
-                    inv.getUuid(), destHostUuid).causedBy(completion.getErrorCode()));
-        }
-    }
-
-    @Override
-    public void  beforeMigrateVm(VmInstanceInventory inv, String destHostUuid) {
-
-    }
-
-    @Override
-    public void  afterMigrateVm(VmInstanceInventory inv, String srcHostUuid) {
-
-    }
-
-    @Override
-    public void  failedToMigrateVm(VmInstanceInventory inv, String destHostUuid, ErrorCode reason) {
-
-    }
 }
