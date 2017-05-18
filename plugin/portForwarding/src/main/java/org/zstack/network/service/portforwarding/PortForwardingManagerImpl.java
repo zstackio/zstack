@@ -6,10 +6,7 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
-import org.zstack.core.db.SQLBatch;
-import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -52,6 +49,7 @@ import org.zstack.utils.logging.CLogger;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static org.zstack.utils.CollectionDSL.list;
@@ -183,59 +181,81 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         bus.publish(evt);
     }
 
-    @Transactional(readOnly = true)
     private List<VmNicInventory> getAttachableVmNics(String ruleUuid) {
-        String sql = "select l3.zoneUuid, vip.uuid, vip.peerL3NetworkUuid from L3NetworkVO l3, VipVO vip, PortForwardingRuleVO rule where vip.l3NetworkUuid = l3.uuid and vip.uuid = rule.vipUuid and rule.uuid = :ruleUuid";
-        TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
-        q.setParameter("ruleUuid", ruleUuid);
-        Tuple t = q.getSingleResult();
-        String zoneUuid = t.get(0, String.class);
-        String vipUuid = t.get(1, String.class);
-        String vipPeerL3Uuid = t.get(2, String.class);
+        return new SQLBatchWithReturn<List<VmNicInventory>>(){
 
-        List<String> l3Uuids;
-        if (vipPeerL3Uuid == null) {
-            sql = "select l3.uuid from L3NetworkVO l3, VipVO vip, NetworkServiceL3NetworkRefVO ref where l3.system = :system and l3.uuid != vip.l3NetworkUuid and l3.uuid = ref.l3NetworkUuid and ref.networkServiceType = :nsType and l3.zoneUuid = :zoneUuid and vip.uuid = :vipUuid";
-            TypedQuery<String> l3q = dbf.getEntityManager().createQuery(sql, String.class);
-            l3q.setParameter("vipUuid", vipUuid);
-            l3q.setParameter("system", false);
-            l3q.setParameter("zoneUuid", zoneUuid);
-            l3q.setParameter("nsType", PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
-            l3Uuids = l3q.getResultList();
-        } else {
-            l3Uuids = asList(vipPeerL3Uuid);
-        }
+            @Override
+            protected List<VmNicInventory> scripts() {
+                Tuple t = sql("select l3.zoneUuid, vip.uuid, vip.peerL3NetworkUuid" +
+                        " from L3NetworkVO l3, VipVO vip, PortForwardingRuleVO rule" +
+                        " where vip.l3NetworkUuid = l3.uuid" +
+                        " and vip.uuid = rule.vipUuid" +
+                        " and rule.uuid = :ruleUuid",Tuple.class)
+                        .param("ruleUuid", ruleUuid).find();
+                String zoneUuid = t.get(0, String.class);
+                String vipUuid = t.get(1, String.class);
+                String vipPeerL3Uuid = t.get(2, String.class);
 
-        if (l3Uuids.isEmpty()) {
-            return new ArrayList<>();
-        }
+                //1.check the l3 of vm nic has been attached to port forwarding service
+                List<String> l3Uuids;
+                if (vipPeerL3Uuid == null) {
+                    l3Uuids = sql("select l3.uuid" +
+                            " from L3NetworkVO l3, VipVO vip, NetworkServiceL3NetworkRefVO ref" +
+                            " where l3.system = :system" +
+                            " and l3.uuid != vip.l3NetworkUuid" +
+                            " and l3.uuid = ref.l3NetworkUuid" +
+                            " and ref.networkServiceType = :nsType" +
+                            " and l3.zoneUuid = :zoneUuid" +
+                            " and vip.uuid = :vipUuid")
+                            .param("vipUuid", vipUuid)
+                            .param("system", false)
+                            .param("zoneUuid", zoneUuid)
+                            .param("nsType", PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE).list();
+                } else {
+                    l3Uuids = Collections.singletonList(vipPeerL3Uuid);
+                }
 
-        sql = "select pf.privatePortStart, pf.privatePortEnd, pf.protocolType from PortForwardingRuleVO pf where pf.uuid = :ruleUuid";
-        q = dbf.getEntityManager().createQuery(sql, Tuple.class);
-        q.setParameter("ruleUuid", ruleUuid);
-        t = q.getSingleResult();
-        int sport = t.get(0, Integer.class);
-        int eport = t.get(1, Integer.class);
-        PortForwardingProtocolType protocol = t.get(2, PortForwardingProtocolType.class);
+                if (l3Uuids.isEmpty()) {
+                    return new ArrayList<>();
+                }
 
-        sql = "select nic from VmNicVO nic, VmInstanceVO vm where nic.l3NetworkUuid in (:l3Uuids)" +
-                " and nic.vmInstanceUuid = vm.uuid and vm.type = :vmType and vm.state in (:vmStates)" +
-                " and nic.uuid not in (select pf.vmNicUuid from PortForwardingRuleVO pf" +
-                " where pf.protocolType = :protocol and pf.vmNicUuid is not null and" +
-                " ((pf.privatePortStart >= :sport and pf.privatePortStart <= :eport) or" +
-                " (pf.privatePortStart <= :sport and :sport <= pf.privatePortEnd)))" +
-                " and nic.uuid not in (select pf1.vmNicUuid from PortForwardingRuleVO pf1 where pf1.vipUuid != :vipUuid" +
-                " and pf1.vmNicUuid is not null)";
-        TypedQuery<VmNicVO> nq = dbf.getEntityManager().createQuery(sql, VmNicVO.class);
-        nq.setParameter("l3Uuids", l3Uuids);
-        nq.setParameter("vmType", VmInstanceConstant.USER_VM_TYPE);
-        nq.setParameter("vmStates", asList(VmInstanceState.Running, VmInstanceState.Stopped));
-        nq.setParameter("sport", sport);
-        nq.setParameter("eport", eport);
-        nq.setParameter("protocol", protocol);
-        nq.setParameter("vipUuid", vipUuid);
-        List<VmNicVO> nics = nq.getResultList();
-        return VmNicInventory.valueOf(nics);
+                //2.check the state of port forwarding and vm
+                t = sql("select pf.privatePortStart, pf.privatePortEnd, pf.protocolType" +
+                        " from PortForwardingRuleVO pf" +
+                        " where pf.uuid = :ruleUuid",Tuple.class)
+                        .param("ruleUuid", ruleUuid).find();
+                int sport = t.get(0, Integer.class);
+                int eport = t.get(1, Integer.class);
+                PortForwardingProtocolType protocol = t.get(2, PortForwardingProtocolType.class);
+
+                List<VmNicVO> nics = sql("select nic from VmNicVO nic, VmInstanceVO vm where nic.l3NetworkUuid in (:l3Uuids)" +
+                        " and nic.vmInstanceUuid = vm.uuid and vm.type = :vmType and vm.state in (:vmStates)" +
+                        " and nic.uuid not in (select pf.vmNicUuid from PortForwardingRuleVO pf" +
+                        " where pf.protocolType = :protocol and pf.vmNicUuid is not null and" +
+                        " ((pf.privatePortStart >= :sport and pf.privatePortStart <= :eport) or" +
+                        " (pf.privatePortStart <= :sport and :sport <= pf.privatePortEnd)))")
+                        .param("l3Uuids", l3Uuids)
+                        .param("vmType", VmInstanceConstant.USER_VM_TYPE)
+                        .param("vmStates", asList(VmInstanceState.Running, VmInstanceState.Stopped))
+                        .param("sport", sport)
+                        .param("eport", eport)
+                        .param("protocol", protocol).list();
+
+                if(nics.isEmpty()){
+                    return new ArrayList<>();
+                }
+
+                //3.exclude the vm which  has port forwarding rules that have different VIPs
+                List<String> usedVm = sql("select nic.vmInstanceUuid" +
+                        " from PortForwardingRuleVO pf1, VmNicVO nic" +
+                        " where pf1.vipUuid != :vipUuid" +
+                        " and pf1.vmNicUuid is not null" +
+                        " and pf1.vmNicUuid = nic.uuid")
+                        .param("vipUuid",vipUuid).list();
+
+                return VmNicInventory.valueOf(nics.stream().filter(nic -> !usedVm.contains(nic.getVmInstanceUuid())).collect(Collectors.toList()));
+            }
+        }.execute();
     }
 
     private void handle(APIGetPortForwardingAttachableVmNicsMsg msg) {
