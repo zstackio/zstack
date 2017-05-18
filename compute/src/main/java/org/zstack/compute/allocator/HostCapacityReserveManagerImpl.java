@@ -99,6 +99,11 @@ public class HostCapacityReserveManagerImpl implements HostCapacityReserveManage
             clusterq.add(HostVO_.state,Op.EQ, HostState.Enabled);
             clusterq.add(HostVO_.status,Op.EQ, HostStatus.Connected);
             List<Tuple> clusterTuple = clusterq.listTuple();
+
+            if (clusterTuple.isEmpty()) {
+                return;
+            }
+
             Map<String, List<String>> clusterHostUuidMap = new HashMap<>(clusterTuple.size());
             List<String> clusterUuids = new ArrayList<>(clusterTuple.size());
             for (Tuple t : clusterTuple) {
@@ -153,8 +158,14 @@ public class HostCapacityReserveManagerImpl implements HostCapacityReserveManage
             zoneq.add(HostVO_.state,Op.EQ, HostState.Enabled);
             zoneq.add(HostVO_.status,Op.EQ, HostStatus.Connected);
             List<Tuple> zoneTuples = zoneq.listTuple();
+
+            if (zoneTuples.isEmpty()) {
+                return;
+            }
+
             List<String> zoneUuids = new ArrayList<>();
             Map<String, List<String>> zoneHostUuidMap = new HashMap<>();
+
             for (Tuple t : zoneTuples) {
                 String huuid = t.get(0, String.class);
                 String zuuid = t.get(1, String.class);
