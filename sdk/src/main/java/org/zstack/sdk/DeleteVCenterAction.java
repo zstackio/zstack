@@ -79,7 +79,7 @@ public class DeleteVCenterAction extends AbstractAction {
         info.path = "/vcenters/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

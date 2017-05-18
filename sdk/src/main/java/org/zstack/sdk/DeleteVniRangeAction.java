@@ -79,7 +79,7 @@ public class DeleteVniRangeAction extends AbstractAction {
         info.path = "/l2-networks/vxlan-pool/vni-ranges/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

@@ -79,7 +79,7 @@ public class DeleteBaremetalHostCfgAction extends AbstractAction {
         info.path = "/baremetal/hostcfg/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

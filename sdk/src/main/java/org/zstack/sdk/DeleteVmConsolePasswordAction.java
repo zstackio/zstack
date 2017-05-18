@@ -76,7 +76,7 @@ public class DeleteVmConsolePasswordAction extends AbstractAction {
         info.path = "/vm-instances/{uuid}/console-password";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "null";
+        info.parameterName = "";
         return info;
     }
 

@@ -76,7 +76,7 @@ public class DeleteVmSshKeyAction extends AbstractAction {
         info.path = "/vm-instances/{uuid}/ssh-keys";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "null";
+        info.parameterName = "";
         return info;
     }
 

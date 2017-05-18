@@ -79,7 +79,7 @@ public class DeleteRouterInterfaceLocalAction extends AbstractAction {
         info.path = "/hybrid/aliyun/router-interface/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

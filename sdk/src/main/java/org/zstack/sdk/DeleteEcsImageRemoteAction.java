@@ -79,7 +79,7 @@ public class DeleteEcsImageRemoteAction extends AbstractAction {
         info.path = "/hybrid/aliyun/image/remote/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

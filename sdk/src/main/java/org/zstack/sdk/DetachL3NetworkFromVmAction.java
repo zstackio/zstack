@@ -76,7 +76,7 @@ public class DetachL3NetworkFromVmAction extends AbstractAction {
         info.path = "/vm-instances/nics/{vmNicUuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "null";
+        info.parameterName = "";
         return info;
     }
 

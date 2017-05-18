@@ -79,7 +79,7 @@ public class AddUserToGroupAction extends AbstractAction {
         info.path = "/accounts/groups/{groupUuid}/users";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "addUserToGroup";
+        info.parameterName = "params";
         return info;
     }
 

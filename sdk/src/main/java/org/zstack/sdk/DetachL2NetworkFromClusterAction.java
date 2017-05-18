@@ -79,7 +79,7 @@ public class DetachL2NetworkFromClusterAction extends AbstractAction {
         info.path = "/l2-networks/{l2NetworkUuid}/clusters/{clusterUuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "null";
+        info.parameterName = "";
         return info;
     }
 

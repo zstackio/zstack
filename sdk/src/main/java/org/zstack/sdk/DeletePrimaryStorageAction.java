@@ -79,7 +79,7 @@ public class DeletePrimaryStorageAction extends AbstractAction {
         info.path = "/primary-storage/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "null";
+        info.parameterName = "";
         return info;
     }
 

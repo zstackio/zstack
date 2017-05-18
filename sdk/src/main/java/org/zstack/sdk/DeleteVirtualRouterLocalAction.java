@@ -79,7 +79,7 @@ public class DeleteVirtualRouterLocalAction extends AbstractAction {
         info.path = "/hybrid/aliyun/vrouter/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

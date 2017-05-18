@@ -79,7 +79,7 @@ public class DeleteDataCenterInLocalAction extends AbstractAction {
         info.path = "/hybrid/data-center/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

@@ -79,7 +79,7 @@ public class DeleteZoneAction extends AbstractAction {
         info.path = "/zones/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "zone";
+        info.parameterName = "";
         return info;
     }
 

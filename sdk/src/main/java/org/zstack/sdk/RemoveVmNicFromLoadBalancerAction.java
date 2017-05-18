@@ -79,7 +79,7 @@ public class RemoveVmNicFromLoadBalancerAction extends AbstractAction {
         info.path = "/load-balancers/listeners/{listenerUuid}/vm-instances/nics";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

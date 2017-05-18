@@ -76,7 +76,7 @@ public class DeleteVolumeQosAction extends AbstractAction {
         info.path = "/volumes/{uuid}/qos";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 
