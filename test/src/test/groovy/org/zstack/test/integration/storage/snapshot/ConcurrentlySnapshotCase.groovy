@@ -262,10 +262,9 @@ class ConcurrentlySnapshotCase extends SubCase {
 
         CephBackupStorageBase.DeleteCmd cmd = null
         env.afterSimulator(CephBackupStorageBase.DELETE_IMAGE_PATH) { CephBackupStorageBase.DeleteRsp rsp, HttpEntity<String> e ->
-            cmd = json(e.body, CephPrimaryStorageBase.DeleteCmd.class)
+            cmd = json(e.body, CephBackupStorageBase.DeleteCmd.class)
             return rsp
         }
-
 
         VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy.Direct.toString())
         destroyVmInstance {
