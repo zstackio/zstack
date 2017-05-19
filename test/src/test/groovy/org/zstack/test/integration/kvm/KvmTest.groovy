@@ -14,6 +14,7 @@ class KvmTest extends Test {
         flatNetwork()
         securityGroup()
         kvm()
+        ceph()
     }
 
     @Override
