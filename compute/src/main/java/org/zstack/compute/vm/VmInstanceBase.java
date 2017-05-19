@@ -3199,7 +3199,10 @@ public class VmInstanceBase extends AbstractVmInstance {
                     @Override
                     public void run(MessageReply reply) {
                         if (!reply.isSuccess()) {
-                            chain.fail(reply.getError());
+                            ErrorCode err = operr("host[uuid:%s] capacity is not enough to offer cpu[%s], memory[%s bytes]",
+                                    self.getHostUuid(), cpuNum - oldCpuNum, struct.alignedMemory - oldMemorySize);
+                            err.setCause(reply.getError());
+                            chain.fail(err);
                         } else {
                             result = true;
                             logger.debug(String.format("reserve memory %s bytes and cpu %s on host[uuid:%s]", memorySize - self.getMemorySize(), cpuNum - self.getCpuNum(), self.getHostUuid()));
