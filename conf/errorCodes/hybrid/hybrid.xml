@@ -55,11 +55,15 @@
     </code>
     <code>
         <id>1013</id>
-        <description>no such virtual border router</description>
+        <description>no such vpn gateway</description>
     </code>
     <code>
         <id>1014</id>
-        <description>no such virtual router</description>
+        <description>no such vpn connection</description>
+    </code>
+    <code>
+        <id>1015</id>
+        <description>no such user vpn gateway</description>
     </code>
 </error>
 
