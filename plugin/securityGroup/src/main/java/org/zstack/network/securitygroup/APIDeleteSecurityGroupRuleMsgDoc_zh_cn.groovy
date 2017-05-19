@@ -24,7 +24,7 @@ doc {
 
 				column {
 					name "ruleUuids"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "安全组规则的uuid列表"
 					location "body"
 					type "List"

@@ -24,7 +24,7 @@ doc {
 
 				column {
 					name "hostUuid"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "物理机UUID"
 					location "query"
 					type "String"
@@ -34,7 +34,7 @@ doc {
 				}
 				column {
 					name "primaryStorageUuid"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "主存储UUID"
 					location "url"
 					type "String"

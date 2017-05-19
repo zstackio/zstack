@@ -24,7 +24,7 @@ doc {
 
 				column {
 					name "zoneUuids"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "区域UUID列表"
 					location "query"
 					type "List"
@@ -34,7 +34,7 @@ doc {
 				}
 				column {
 					name "clusterUuids"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "集群UUID列表"
 					location "query"
 					type "List"
@@ -44,7 +44,7 @@ doc {
 				}
 				column {
 					name "primaryStorageUuids"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "主存储UUID列表"
 					location "query"
 					type "List"
@@ -54,7 +54,7 @@ doc {
 				}
 				column {
 					name "all"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "当主存储UUID列表为空时，该项为真表示查询系统中所有的主存储。"
 					location "query"
 					type "boolean"

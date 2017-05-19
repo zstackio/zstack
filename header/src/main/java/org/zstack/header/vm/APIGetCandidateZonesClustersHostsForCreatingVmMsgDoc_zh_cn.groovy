@@ -24,7 +24,7 @@ doc {
 
 				column {
 					name "instanceOfferingUuid"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "计算规格UUID"
 					location "query"
 					type "String"
@@ -34,7 +34,7 @@ doc {
 				}
 				column {
 					name "imageUuid"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "镜像UUID"
 					location "query"
 					type "String"
@@ -44,7 +44,7 @@ doc {
 				}
 				column {
 					name "l3NetworkUuids"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "三层网络列表"
 					location "query"
 					type "List"
@@ -54,7 +54,7 @@ doc {
 				}
 				column {
 					name "rootDiskOfferingUuid"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "根云盘规格。仅在`imageUuid`指定的镜像是ISO时需要指定"
 					location "query"
 					type "String"
@@ -64,7 +64,7 @@ doc {
 				}
 				column {
 					name "dataDiskOfferingUuids"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "云盘规格列表"
 					location "query"
 					type "List"
@@ -74,7 +74,7 @@ doc {
 				}
 				column {
 					name "zoneUuid"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "区域UUID"
 					location "query"
 					type "String"
@@ -84,7 +84,7 @@ doc {
 				}
 				column {
 					name "clusterUuid"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "集群UUID"
 					location "query"
 					type "String"
@@ -94,7 +94,7 @@ doc {
 				}
 				column {
 					name "defaultL3NetworkUuid"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "默认三层网络UUID"
 					location "query"
 					type "String"

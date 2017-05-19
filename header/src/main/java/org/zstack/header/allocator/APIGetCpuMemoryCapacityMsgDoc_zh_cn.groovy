@@ -24,7 +24,7 @@ doc {
 
 				column {
 					name "zoneUuids"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "区域的uuid"
 					location "query"
 					type "List"
@@ -34,7 +34,7 @@ doc {
 				}
 				column {
 					name "clusterUuids"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "集群的UUID。用于挂载网络、存储等"
 					location "query"
 					type "List"
@@ -44,7 +44,7 @@ doc {
 				}
 				column {
 					name "hostUuids"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "物理机的UUID。用于添加、删除host等"
 					location "query"
 					type "List"
@@ -54,7 +54,7 @@ doc {
 				}
 				column {
 					name "all"
-					enclosedIn "params"
+					enclosedIn ""
 					desc ""
 					location "query"
 					type "boolean"

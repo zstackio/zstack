@@ -29,7 +29,7 @@ doc {
 
 				column {
 					name "zoneUuid"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "区域UUID。必须指定，以确定三层网络和镜像依赖关系。"
 					location "query"
 					type "String"
@@ -39,7 +39,7 @@ doc {
 				}
 				column {
 					name "l3NetworkUuids"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "三层网络UUID列表"
 					location "query"
 					type "List"
@@ -49,7 +49,7 @@ doc {
 				}
 				column {
 					name "imageUuid"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "镜像UUID"
 					location "query"
 					type "String"

@@ -25,7 +25,7 @@ doc {
 
 				column {
 					name "l3NetworkUuid"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "三层网络UUID"
 					location "query"
 					type "String"
@@ -35,7 +35,7 @@ doc {
 				}
 				column {
 					name "ipRangeUuid"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "IP段UUID"
 					location "query"
 					type "String"
@@ -45,7 +45,7 @@ doc {
 				}
 				column {
 					name "start"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "起始值"
 					location "query"
 					type "String"
@@ -55,7 +55,7 @@ doc {
 				}
 				column {
 					name "limit"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "数量限制"
 					location "query"
 					type "int"

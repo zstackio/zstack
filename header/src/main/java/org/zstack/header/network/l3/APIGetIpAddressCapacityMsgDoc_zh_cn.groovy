@@ -24,7 +24,7 @@ doc {
 
 				column {
 					name "zoneUuids"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "区域UUID"
 					location "query"
 					type "List"
@@ -34,7 +34,7 @@ doc {
 				}
 				column {
 					name "l3NetworkUuids"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "三层网络UUID"
 					location "query"
 					type "List"
@@ -44,7 +44,7 @@ doc {
 				}
 				column {
 					name "ipRangeUuids"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "IP地址范围UUID"
 					location "query"
 					type "List"
@@ -54,7 +54,7 @@ doc {
 				}
 				column {
 					name "all"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "系统全局"
 					location "query"
 					type "boolean"

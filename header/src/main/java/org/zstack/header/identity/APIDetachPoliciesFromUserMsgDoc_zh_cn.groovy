@@ -24,7 +24,7 @@ doc {
 
 				column {
 					name "policyUuids"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "策略UUID列表"
 					location "body"
 					type "List"
@@ -34,7 +34,7 @@ doc {
 				}
 				column {
 					name "userUuid"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "用户UUID"
 					location "url"
 					type "String"

@@ -24,7 +24,7 @@ doc {
 
 				column {
 					name "uuid"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "资源的UUID，唯一标示该资源"
 					location "url"
 					type "String"
@@ -34,7 +34,7 @@ doc {
 				}
 				column {
 					name "monHostnames"
-					enclosedIn "params"
+					enclosedIn ""
 					desc ""
 					location "body"
 					type "List"

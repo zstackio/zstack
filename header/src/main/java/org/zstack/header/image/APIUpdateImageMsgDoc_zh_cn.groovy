@@ -24,7 +24,7 @@ doc {
 
 				column {
 					name "uuid"
-					enclosedIn "params"
+					enclosedIn "updateImage"
 					desc "镜像的UUID，唯一标示该镜像"
 					location "url"
 					type "String"
@@ -34,7 +34,7 @@ doc {
 				}
 				column {
 					name "name"
-					enclosedIn "params"
+					enclosedIn "updateImage"
 					desc "镜像名称"
 					location "body"
 					type "String"
@@ -44,7 +44,7 @@ doc {
 				}
 				column {
 					name "description"
-					enclosedIn "params"
+					enclosedIn "updateImage"
 					desc "镜像的详细描述"
 					location "body"
 					type "String"
@@ -54,7 +54,7 @@ doc {
 				}
 				column {
 					name "guestOsType"
-					enclosedIn "params"
+					enclosedIn "updateImage"
 					desc "镜像对应的客户机操作系统类型"
 					location "body"
 					type "String"
@@ -64,7 +64,7 @@ doc {
 				}
 				column {
 					name "mediaType"
-					enclosedIn "params"
+					enclosedIn "updateImage"
 					desc "镜像的类型"
 					location "body"
 					type "String"
@@ -74,7 +74,7 @@ doc {
 				}
 				column {
 					name "format"
-					enclosedIn "params"
+					enclosedIn "updateImage"
 					desc "镜像的格式"
 					location "body"
 					type "String"
@@ -84,7 +84,7 @@ doc {
 				}
 				column {
 					name "system"
-					enclosedIn "params"
+					enclosedIn "updateImage"
 					desc "标识是否为系统镜像"
 					location "body"
 					type "Boolean"
@@ -94,7 +94,7 @@ doc {
 				}
 				column {
 					name "platform"
-					enclosedIn "params"
+					enclosedIn "updateImage"
 					desc "镜像的系统平台"
 					location "body"
 					type "String"

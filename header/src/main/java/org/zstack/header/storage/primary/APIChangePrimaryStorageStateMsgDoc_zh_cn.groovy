@@ -24,7 +24,7 @@ doc {
 
 				column {
 					name "uuid"
-					enclosedIn "params"
+					enclosedIn "changePrimaryStorageState"
 					desc "主存储的UUID，唯一标示该资源"
 					location "url"
 					type "String"
@@ -34,7 +34,7 @@ doc {
 				}
 				column {
 					name "stateEvent"
-					enclosedIn "params"
+					enclosedIn "changePrimaryStorageState"
 					desc "主存储的目标状态"
 					location "body"
 					type "String"

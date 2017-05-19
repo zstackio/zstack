@@ -24,7 +24,7 @@ doc {
 
 				column {
 					name "managementNodeId"
-					enclosedIn "params"
+					enclosedIn ""
 					desc ""
 					location "query"
 					type "String"

@@ -24,7 +24,7 @@ doc {
 
 				column {
 					name "imageUuid"
-					enclosedIn "params"
+					enclosedIn "recoverImage"
 					desc "镜像UUID"
 					location "url"
 					type "String"
@@ -34,7 +34,7 @@ doc {
 				}
 				column {
 					name "backupStorageUuids"
-					enclosedIn "params"
+					enclosedIn "recoverImage"
 					desc "镜像服务器UUID列表"
 					location "body"
 					type "List"

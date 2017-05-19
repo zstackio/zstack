@@ -11,7 +11,7 @@ doc {
 
     rest {
         request {
-			url "GET /v1/volumes/{uuid}/actions"
+			url "PUT /v1/volumes/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
@@ -36,7 +36,7 @@ doc {
 					name "systemTags"
 					enclosedIn ""
 					desc ""
-					location "query"
+					location "body"
 					type "List"
 					optional true
 					since "0.6"
@@ -46,7 +46,7 @@ doc {
 					name "userTags"
 					enclosedIn ""
 					desc "用户标签"
-					location "query"
+					location "body"
 					type "List"
 					optional true
 					since "0.6"

@@ -24,7 +24,7 @@ doc {
 
 				column {
 					name "uuid"
-					enclosedIn "params"
+					enclosedIn "changeImageState"
 					desc "镜像的UUID，唯一标示该镜像"
 					location "url"
 					type "String"
@@ -34,7 +34,7 @@ doc {
 				}
 				column {
 					name "stateEvent"
-					enclosedIn "params"
+					enclosedIn "changeImageState"
 					desc "镜像的状态"
 					location "body"
 					type "String"
