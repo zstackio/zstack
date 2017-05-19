@@ -1177,6 +1177,12 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                                 }
                             });
 
+                            // update ps availableCapacity
+                            RecalculatePrimaryStorageCapacityMsg msg = new RecalculatePrimaryStorageCapacityMsg();
+                            msg.setPrimaryStorageUuid(inv.getUuid());
+                            bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, inv.getUuid());
+                            bus.send(msg);
+
                             if (!PrimaryStorageStatus.Connected.toString().equals(inv.getStatus())) {
                                 // use sync call here to make sure the NFS primary storage connected before continue to the next step
                                 ChangePrimaryStorageStatusMsg cmsg = new ChangePrimaryStorageStatusMsg();
