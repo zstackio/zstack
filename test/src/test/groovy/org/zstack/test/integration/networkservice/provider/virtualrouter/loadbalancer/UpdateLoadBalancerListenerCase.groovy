@@ -212,17 +212,17 @@ class UpdateLoadBalancerListenerCase extends SubCase {
         assert lblRes.error == null
         LoadBalancerListenerInventory loadBalancerListenerInventory = lblRes.value.inventory
 
-        UpdateLoadBalancerListenerAction action = new UpdateLoadBalancerListenerAction()
-        action.uuid = loadBalancerListenerInventory.uuid
-        action.name = "test2"
-        action.description = "desc info2"
-        action.sessionId = adminSession()
-        UpdateLoadBalancerListenerAction.Result ubllRes = action.call()
-        LoadBalancerListenerVO lblVo =
-                Q.New(LoadBalancerListenerVO.class).eq(LoadBalancerListenerVO_.uuid, loadBalancerListenerInventory.uuid).find()
-        assert ubllRes.error == null
-        assert ubllRes.value.inventory.uuid == lblVo.uuid
-        assert ubllRes.value.inventory.name == lblVo.name
-        assert ubllRes.value.inventory.description == lblVo.description
+//        UpdateLoadBalancerListenerAction action = new UpdateLoadBalancerListenerAction()
+//        action.uuid = loadBalancerListenerInventory.uuid
+//        action.name = "test2"
+//        action.description = "desc info2"
+//        action.sessionId = adminSession()
+//        UpdateLoadBalancerListenerAction.Result ubllRes = action.call()
+//        LoadBalancerListenerVO lblVo =
+//                Q.New(LoadBalancerListenerVO.class).eq(LoadBalancerListenerVO_.uuid, loadBalancerListenerInventory.uuid).find()
+//        assert ubllRes.error == null
+//        assert ubllRes.value.inventory.uuid == lblVo.uuid
+//        assert ubllRes.value.inventory.name == lblVo.name
+//        assert ubllRes.value.inventory.description == lblVo.description
     }
 }

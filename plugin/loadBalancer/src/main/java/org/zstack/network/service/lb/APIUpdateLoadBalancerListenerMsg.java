@@ -17,20 +17,21 @@ import org.zstack.header.tag.TagResourceType;
 @TagResourceType(LoadBalancerListenerVO.class)
 @Action(category = LoadBalancerConstants.ACTION_CATEGORY)
 @RestRequest(
-        path = "/load-balancers/{uuid}/listeners",
+        path = "/load-balancers/listeners/{uuid}",
         isAction = true,
         method = HttpMethod.PUT,
         responseClass = APIUpdateLoadBalancerListenerEvent.class,
         parameterName = "params"
 )
-public class APIUpdateLoadBalancerListenerMsg extends APIMessage {
+public class APIUpdateLoadBalancerListenerMsg extends APIMessage implements LoadBalancerListenerMsg {
     @APIParam(resourceType = LoadBalancerListenerVO.class, checkAccount = true, operationTarget = true)
     private String uuid;
     @APIParam(maxLength = 255, required = false)
     private String name;
     @APIParam(maxLength = 2048, required = false)
     private String description;
-
+    @APINoSee
+    private String loadBalancerUuid;
 
     public String getUuid() {
         return uuid;
@@ -57,7 +58,19 @@ public class APIUpdateLoadBalancerListenerMsg extends APIMessage {
         this.description = description;
     }
 
- 
+    public String getLoadBalancerUuid() {
+        return loadBalancerUuid;
+    }
+
+    public void setLoadBalancerUuid(String loadBalancerUuid) {
+        this.loadBalancerUuid = loadBalancerUuid;
+    }
+
+    @Override
+    public String getLoadBalancerListenerUuid() {
+        return uuid;
+    }
+
     public static APIUpdateLoadBalancerListenerMsg __example__() {
         APIUpdateLoadBalancerListenerMsg msg = new APIUpdateLoadBalancerListenerMsg();
 

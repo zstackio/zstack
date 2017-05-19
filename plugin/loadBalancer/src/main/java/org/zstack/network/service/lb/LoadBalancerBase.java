@@ -513,6 +513,8 @@ public class LoadBalancerBase {
             handle((APIGetCandidateVmNicsForLoadBalancerMsg) msg);
         } else if (msg instanceof APIUpdateLoadBalancerMsg) {
             handle((APIUpdateLoadBalancerMsg) msg);
+        } else if (msg instanceof APIUpdateLoadBalancerListenerMsg) {
+            handle((APIUpdateLoadBalancerListenerMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -1211,5 +1213,45 @@ public class LoadBalancerBase {
         });
     }
 
+    private void handle(APIUpdateLoadBalancerListenerMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return getSyncId();
+            }
 
+            @Override
+            public void run(SyncTaskChain chain) {
+                LoadBalancerListenerVO lblVo = new LoadBalancerListenerVO();
+                LoadBalancerListenerInventory lbi = new LoadBalancerListenerInventory();
+                APIUpdateLoadBalancerListenerEvent evt = new APIUpdateLoadBalancerListenerEvent(msg.getId());
+
+                lblVo = dbf.findByUuid(msg.getUuid(), LoadBalancerListenerVO.class);
+                if (lblVo == null) {
+                    return;
+                }
+                boolean update = false;
+                if (msg.getName() != null) {
+                    lblVo.setName(msg.getName());
+                    update = true;
+                }
+                if (msg.getDescription() != null) {
+                    lblVo.setDescription(msg.getDescription());
+                    update = true;
+                }
+                if (update) {
+                    dbf.update(lblVo);
+                }
+
+                evt.setInventory( LoadBalancerListenerInventory.valueOf(lblVo));
+                bus.publish(evt);
+                chain.next();
+            }
+
+            @Override
+            public String getName() {
+                return "update-lb-listener";
+            }
+        });
+    }
 }
