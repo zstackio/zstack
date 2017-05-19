@@ -7,7 +7,6 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/management-nodes/ready",
         method = HttpMethod.GET,
-        parameterName = "params",
         responseClass = APIIsReadyToGoReply.class,
         category = "other"
 )

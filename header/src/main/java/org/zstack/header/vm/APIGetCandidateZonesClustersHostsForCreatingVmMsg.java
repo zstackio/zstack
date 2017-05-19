@@ -21,8 +21,7 @@ import static java.util.Arrays.asList;
 @RestRequest(
         path = "/vm-instances/candidate-destinations",
         method = HttpMethod.GET,
-        responseClass = APIGetCandidateZonesClustersHostsForCreatingVmReply.class,
-        parameterName = "params"
+        responseClass = APIGetCandidateZonesClustersHostsForCreatingVmReply.class
 )
 public class APIGetCandidateZonesClustersHostsForCreatingVmMsg extends APISyncCallMessage {
     @APIParam(resourceType = InstanceOfferingVO.class, checkAccount = true)

@@ -16,8 +16,7 @@ import static java.util.Arrays.asList;
         path = "/l2-networks",
         optionalPaths = {"/l2-networks/{uuid}"},
         method = HttpMethod.GET,
-        responseClass = APIQueryL2NetworkReply.class,
-        parameterName = "null"
+        responseClass = APIQueryL2NetworkReply.class
 )
 public class APIQueryL2NetworkMsg extends APIQueryMessage {
 

@@ -19,8 +19,7 @@ import static java.util.Arrays.asList;
         path = "/l2-networks/vxlan-pool/vni-range",
         optionalPaths = {"/l2-networks/vxlan-pool/vni-range/{uuid}"},
         method = HttpMethod.GET,
-        responseClass = APIQueryVniRangeReply.class,
-        parameterName = "null"
+        responseClass = APIQueryVniRangeReply.class
 )
 public class APIQueryVniRangeMsg extends APIQueryMessage {
     public static List<String> __example__() {

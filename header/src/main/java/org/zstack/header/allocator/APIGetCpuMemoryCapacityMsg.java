@@ -15,8 +15,7 @@ import static org.zstack.utils.CollectionDSL.list;
 @RestRequest(
         path = "/hosts/capacities/cpu-memory",
         method = HttpMethod.GET,
-        responseClass = APIGetCpuMemoryCapacityReply.class,
-        parameterName = "params"
+        responseClass = APIGetCpuMemoryCapacityReply.class
 )
 public class APIGetCpuMemoryCapacityMsg extends APISyncCallMessage {
     @APIParam(required = false, resourceType = ZoneVO.class)

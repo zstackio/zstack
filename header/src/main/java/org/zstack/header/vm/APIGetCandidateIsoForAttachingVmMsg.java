@@ -13,8 +13,7 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/vm-instances/{vmInstanceUuid}/iso-candidates",
         method = HttpMethod.GET,
-        responseClass = APIGetCandidateIsoForAttachingVmReply.class,
-        parameterName = "null"
+        responseClass = APIGetCandidateIsoForAttachingVmReply.class
 )
 public class APIGetCandidateIsoForAttachingVmMsg extends APISyncCallMessage implements VmInstanceMessage {
     @APIParam(resourceType = VmInstanceVO.class)

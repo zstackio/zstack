@@ -14,8 +14,7 @@ import static java.util.Arrays.asList;
         path = "/l2-networks/vlan",
         optionalPaths = {"/l2-networks/vlan/{uuid}"},
         method = HttpMethod.GET,
-        responseClass = APIQueryL2VlanNetworkReply.class,
-        parameterName = "null"
+        responseClass = APIQueryL2VlanNetworkReply.class
 )
 public class APIQueryL2VlanNetworkMsg extends APIQueryMessage {
 
