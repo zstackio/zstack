@@ -72,7 +72,7 @@ public class GetCandidateVmForAttachingIsoAction extends AbstractAction {
         info.path = "/images/iso/{isoUuid}/vm-candidates";
         info.needSession = true;
         info.needPoll = false;
-        info.parameterName = "null";
+        info.parameterName = "";
         return info;
     }
 

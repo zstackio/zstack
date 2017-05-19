@@ -81,7 +81,7 @@ public class GetCpuMemoryCapacityAction extends AbstractAction {
         info.path = "/hosts/capacities/cpu-memory";
         info.needSession = true;
         info.needPoll = false;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

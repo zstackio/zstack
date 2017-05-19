@@ -69,7 +69,7 @@ public class GetHypervisorTypesAction extends AbstractAction {
         info.path = "/hosts/hypervisor-types";
         info.needSession = true;
         info.needPoll = false;
-        info.parameterName = "null";
+        info.parameterName = "";
         return info;
     }
 

@@ -81,7 +81,7 @@ public class GetIpAddressCapacityAction extends AbstractAction {
         info.path = "/ip-capacity";
         info.needSession = true;
         info.needPoll = false;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

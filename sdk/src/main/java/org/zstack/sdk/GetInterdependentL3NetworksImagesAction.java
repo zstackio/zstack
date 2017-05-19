@@ -78,7 +78,7 @@ public class GetInterdependentL3NetworksImagesAction extends AbstractAction {
         info.path = "/images-l3networks/dependencies";
         info.needSession = true;
         info.needPoll = false;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

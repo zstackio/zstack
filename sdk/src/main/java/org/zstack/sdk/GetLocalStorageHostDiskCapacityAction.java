@@ -75,7 +75,7 @@ public class GetLocalStorageHostDiskCapacityAction extends AbstractAction {
         info.path = "/primary-storage/local-storage/{primaryStorageUuid}/capacities";
         info.needSession = true;
         info.needPoll = false;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

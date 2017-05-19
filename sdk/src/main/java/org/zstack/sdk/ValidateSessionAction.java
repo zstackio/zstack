@@ -69,7 +69,7 @@ public class ValidateSessionAction extends AbstractAction {
         info.path = "/accounts/sessions/{sessionUuid}/valid";
         info.needSession = false;
         info.needPoll = false;
-        info.parameterName = "null";
+        info.parameterName = "";
         return info;
     }
 

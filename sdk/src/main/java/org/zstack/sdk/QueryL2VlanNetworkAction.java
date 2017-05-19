@@ -61,7 +61,7 @@ public class QueryL2VlanNetworkAction extends QueryAction {
         info.path = "/l2-networks/vlan";
         info.needSession = true;
         info.needPoll = false;
-        info.parameterName = "null";
+        info.parameterName = "";
         return info;
     }
 

@@ -72,7 +72,7 @@ public class GetVmAttachableDataVolumeAction extends AbstractAction {
         info.path = "/vm-instances/{vmInstanceUuid}/data-volume-candidates";
         info.needSession = true;
         info.needPoll = false;
-        info.parameterName = "null";
+        info.parameterName = "";
         return info;
     }
 

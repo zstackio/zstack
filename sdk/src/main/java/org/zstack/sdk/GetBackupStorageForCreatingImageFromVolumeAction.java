@@ -75,7 +75,7 @@ public class GetBackupStorageForCreatingImageFromVolumeAction extends AbstractAc
         info.path = "/images/volumes/{volumeUuid}/candidate-backup-storage";
         info.needSession = true;
         info.needPoll = false;
-        info.parameterName = "null";
+        info.parameterName = "";
         return info;
     }
 

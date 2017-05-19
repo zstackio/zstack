@@ -61,7 +61,7 @@ public class QueryL2VxlanNetworkPoolAction extends QueryAction {
         info.path = "/l2-networks/vxlan-pool";
         info.needSession = true;
         info.needPoll = false;
-        info.parameterName = "null";
+        info.parameterName = "";
         return info;
     }
 

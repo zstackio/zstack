@@ -87,7 +87,7 @@ public class PrometheusQueryPassThroughAction extends AbstractAction {
         info.path = "/prometheus/all";
         info.needSession = true;
         info.needPoll = false;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

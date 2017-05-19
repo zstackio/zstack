@@ -72,7 +72,7 @@ public class PrometheusQueryMetadataAction extends AbstractAction {
         info.path = "/prometheus/meta-data";
         info.needSession = true;
         info.needPoll = false;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 
