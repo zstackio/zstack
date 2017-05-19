@@ -81,7 +81,7 @@ public class GetFreeIpOfIpRangeAction extends AbstractAction {
         info.path = "/l3-networks/ip-ranges/{ipRangeUuid}/ip/free";
         info.needSession = true;
         info.needPoll = false;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

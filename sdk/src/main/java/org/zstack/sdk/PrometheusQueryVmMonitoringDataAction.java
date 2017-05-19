@@ -90,7 +90,7 @@ public class PrometheusQueryVmMonitoringDataAction extends AbstractAction {
         info.path = "/prometheus/vm-instances";
         info.needSession = true;
         info.needPoll = false;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

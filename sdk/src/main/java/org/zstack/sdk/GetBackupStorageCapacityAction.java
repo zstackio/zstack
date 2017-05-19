@@ -78,7 +78,7 @@ public class GetBackupStorageCapacityAction extends AbstractAction {
         info.path = "/backup-storage/capacities";
         info.needSession = true;
         info.needPoll = false;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

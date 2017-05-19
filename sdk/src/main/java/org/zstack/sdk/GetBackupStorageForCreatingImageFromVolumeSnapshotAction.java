@@ -75,7 +75,7 @@ public class GetBackupStorageForCreatingImageFromVolumeSnapshotAction extends Ab
         info.path = "/images/volume-snapshots/{volumeSnapshotUuid}/candidate-backup-storage";
         info.needSession = true;
         info.needPoll = false;
-        info.parameterName = "null";
+        info.parameterName = "";
         return info;
     }
 

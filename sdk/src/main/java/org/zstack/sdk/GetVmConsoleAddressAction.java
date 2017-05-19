@@ -72,7 +72,7 @@ public class GetVmConsoleAddressAction extends AbstractAction {
         info.path = "/vm-instances/{uuid}/console-addresses";
         info.needSession = true;
         info.needPoll = false;
-        info.parameterName = "null";
+        info.parameterName = "";
         return info;
     }
 

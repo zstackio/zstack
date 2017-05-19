@@ -81,7 +81,7 @@ public class GetFreeIpOfL3NetworkAction extends AbstractAction {
         info.path = "/l3-networks/{l3NetworkUuid}/ip/free";
         info.needSession = true;
         info.needPoll = false;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

@@ -61,7 +61,7 @@ public class QueryVniRangeAction extends QueryAction {
         info.path = "/l2-networks/vxlan-pool/vni-range";
         info.needSession = true;
         info.needPoll = false;
-        info.parameterName = "null";
+        info.parameterName = "";
         return info;
     }
 

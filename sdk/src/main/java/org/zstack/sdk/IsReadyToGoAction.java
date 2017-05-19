@@ -72,7 +72,7 @@ public class IsReadyToGoAction extends AbstractAction {
         info.path = "/management-nodes/ready";
         info.needSession = true;
         info.needPoll = false;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

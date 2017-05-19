@@ -72,7 +72,7 @@ public class GetCandidateIsoForAttachingVmAction extends AbstractAction {
         info.path = "/vm-instances/{vmInstanceUuid}/iso-candidates";
         info.needSession = true;
         info.needPoll = false;
-        info.parameterName = "null";
+        info.parameterName = "";
         return info;
     }
 

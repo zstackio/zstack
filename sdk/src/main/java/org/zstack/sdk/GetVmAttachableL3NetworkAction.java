@@ -72,7 +72,7 @@ public class GetVmAttachableL3NetworkAction extends AbstractAction {
         info.path = "/vm-instances/{vmInstanceUuid}/l3-networks-candidates";
         info.needSession = true;
         info.needPoll = false;
-        info.parameterName = "null";
+        info.parameterName = "";
         return info;
     }
 

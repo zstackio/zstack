@@ -69,7 +69,7 @@ public class GetHostAllocatorStrategiesAction extends AbstractAction {
         info.path = "/hosts/allocators/strategies";
         info.needSession = true;
         info.needPoll = false;
-        info.parameterName = "null";
+        info.parameterName = "";
         return info;
     }
 

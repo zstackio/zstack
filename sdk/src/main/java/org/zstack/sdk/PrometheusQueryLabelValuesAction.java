@@ -72,7 +72,7 @@ public class PrometheusQueryLabelValuesAction extends AbstractAction {
         info.path = "/prometheus/labels";
         info.needSession = true;
         info.needPoll = false;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

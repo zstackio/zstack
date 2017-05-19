@@ -72,7 +72,7 @@ public class GetVmBootOrderAction extends AbstractAction {
         info.path = "/vm-instances/{uuid}/boot-orders";
         info.needSession = true;
         info.needPoll = false;
-        info.parameterName = "null";
+        info.parameterName = "";
         return info;
     }
 

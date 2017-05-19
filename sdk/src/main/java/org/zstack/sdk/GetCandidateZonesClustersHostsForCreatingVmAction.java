@@ -93,7 +93,7 @@ public class GetCandidateZonesClustersHostsForCreatingVmAction extends AbstractA
         info.path = "/vm-instances/candidate-destinations";
         info.needSession = true;
         info.needPoll = false;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 
