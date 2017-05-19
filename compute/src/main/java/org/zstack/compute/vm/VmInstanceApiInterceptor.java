@@ -101,10 +101,26 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             validate((APISetVmConsolePasswordMsg) msg);
         } else if (msg instanceof APIChangeInstanceOfferingMsg) {
             validate((APIChangeInstanceOfferingMsg) msg);
+        } else if (msg instanceof APIMigrateVmMsg) {
+            validate((APIMigrateVmMsg) msg);
         }
 
         setServiceId(msg);
         return msg;
+    }
+
+    private void validate(APIMigrateVmMsg msg) {
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                VmInstanceVO vo = findByUuid(msg.getVmInstanceUuid(), VmInstanceVO.class);
+                if (vo.getHostUuid().equals(msg.getHostUuid())) {
+                    throw new ApiMessageInterceptionException(argerr(
+                            "the vm[uuid:%s] is already on host[uuid:%s]", msg.getVmInstanceUuid(), msg.getHostUuid()
+                    ));
+                }
+            }
+        }.execute();
     }
 
     private void validate(APIChangeInstanceOfferingMsg msg) {
