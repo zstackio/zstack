@@ -24,7 +24,7 @@ doc {
 
 				column {
 					name "l3NetworkUuid"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "三层网络UUID"
 					location "url"
 					type "String"
@@ -34,7 +34,7 @@ doc {
 				}
 				column {
 					name "networkServices"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "网络服务"
 					location "body"
 					type "Map"

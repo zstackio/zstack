@@ -24,7 +24,7 @@ doc {
 
 				column {
 					name "uuid"
-					enclosedIn "params"
+					enclosedIn "changeDiskOfferingState"
 					desc "资源的UUID，唯一标示该资源"
 					location "url"
 					type "String"
@@ -34,7 +34,7 @@ doc {
 				}
 				column {
 					name "stateEvent"
-					enclosedIn "params"
+					enclosedIn "changeDiskOfferingState"
 					desc "状态事件"
 					location "body"
 					type "String"

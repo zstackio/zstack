@@ -24,7 +24,7 @@ doc {
 
 				column {
 					name "vmInstanceUuid"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "云主机UUID"
 					location "url"
 					type "String"
@@ -34,7 +34,7 @@ doc {
 				}
 				column {
 					name "l3NetworkUuid"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "三层网络UUID"
 					location "body"
 					type "String"

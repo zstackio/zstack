@@ -24,7 +24,7 @@ doc {
 
 				column {
 					name "vmNicUuids"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "云主机网卡UUID"
 					location "body"
 					type "List"
@@ -34,7 +34,7 @@ doc {
 				}
 				column {
 					name "listenerUuid"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "负载均衡监听器UUID"
 					location "url"
 					type "String"

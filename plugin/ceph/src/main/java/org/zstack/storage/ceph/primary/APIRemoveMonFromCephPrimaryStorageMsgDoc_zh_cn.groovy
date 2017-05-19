@@ -24,7 +24,7 @@ doc {
 
 				column {
 					name "uuid"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "Ceph 主存储的UUID"
 					location "url"
 					type "String"
@@ -34,7 +34,7 @@ doc {
 				}
 				column {
 					name "monHostnames"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "mon 节点名字列表"
 					location "body"
 					type "List"

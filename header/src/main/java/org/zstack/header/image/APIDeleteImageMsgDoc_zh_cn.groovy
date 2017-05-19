@@ -24,7 +24,7 @@ doc {
 
 				column {
 					name "uuid"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "镜像的UUID，唯一标示该镜像"
 					location "url"
 					type "String"
@@ -34,7 +34,7 @@ doc {
 				}
 				column {
 					name "backupStorageUuids"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "镜像服务器UUID列表"
 					location "body"
 					type "List"
@@ -44,7 +44,7 @@ doc {
 				}
 				column {
 					name "deleteMode"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "删除模式(Permissive 或者 Enforcing, 默认 Permissive)"
 					location "body"
 					type "String"

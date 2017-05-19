@@ -24,7 +24,7 @@ doc {
 
 				column {
 					name "zoneUuids"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "区域UUID列表"
 					location "query"
 					type "List"
@@ -34,7 +34,7 @@ doc {
 				}
 				column {
 					name "backupStorageUuids"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "镜像服务器UUID列表"
 					location "query"
 					type "List"
@@ -44,7 +44,7 @@ doc {
 				}
 				column {
 					name "all"
-					enclosedIn "params"
+					enclosedIn ""
 					desc "当镜像服务器UUID列表为空时，该项为真表示查询系统中所有的镜像服务器。"
 					location "query"
 					type "boolean"

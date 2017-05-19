@@ -24,7 +24,7 @@ doc {
 
 				column {
 					name "uuid"
-					enclosedIn "params"
+					enclosedIn "updateL2Network"
 					desc "资源的UUID，唯一标示该资源"
 					location "url"
 					type "String"
@@ -34,7 +34,7 @@ doc {
 				}
 				column {
 					name "name"
-					enclosedIn "params"
+					enclosedIn "updateL2Network"
 					desc "普通二层网络名称"
 					location "body"
 					type "String"
@@ -44,7 +44,7 @@ doc {
 				}
 				column {
 					name "description"
-					enclosedIn "params"
+					enclosedIn "updateL2Network"
 					desc "普通二层网络的详细描述"
 					location "body"
 					type "String"
