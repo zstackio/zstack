@@ -156,7 +156,6 @@ class UpdateLoadBalancerListenerCase extends SubCase {
     }
 
     void testUpdateLoadBalancerListener() {
-
         L3NetworkInventory publicL3 = env.inventoryByName("PUBLIC-MANAGEMENT-L3") as L3NetworkInventory
         VmInstanceInventory vm1 = env.inventoryByName("vm1") as VmInstanceInventory
         VmInstanceInventory vm2 = env.inventoryByName("vm2") as VmInstanceInventory

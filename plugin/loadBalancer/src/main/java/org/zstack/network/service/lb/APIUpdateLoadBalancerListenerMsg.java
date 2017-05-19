@@ -26,7 +26,7 @@ import org.zstack.header.tag.TagResourceType;
 public class APIUpdateLoadBalancerListenerMsg extends APIMessage {
     @APIParam(resourceType = LoadBalancerListenerVO.class, checkAccount = true, operationTarget = true)
     private String uuid;
-    @APIParam(maxLength = 255)
+    @APIParam(maxLength = 255, required = false)
     private String name;
     @APIParam(maxLength = 2048, required = false)
     private String description;
