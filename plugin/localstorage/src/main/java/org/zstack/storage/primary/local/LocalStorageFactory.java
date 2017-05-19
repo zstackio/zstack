@@ -552,14 +552,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         if (volUuids.isEmpty()) {
             return candidates;
         }
-
-        List<VolumeVO> uninstantiatedVolumes = CollectionUtils.transformToList(candidates, new Function<VolumeVO, VolumeVO>() {
-            @Override
-            public VolumeVO call(VolumeVO arg) {
-                return arg.getStatus() == VolumeStatus.NotInstantiated ? arg : null;
-            }
-        });
-
+        
         String sql = "select ref.hostUuid" +
                 " from LocalStorageResourceRefVO ref" +
                 " where ref.resourceUuid = :volUuid" +
@@ -590,8 +583,6 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
                 return toExclude.contains(arg.getUuid()) ? null : arg;
             }
         });
-
-        candidates.addAll(uninstantiatedVolumes);
 
         return candidates;
     }
