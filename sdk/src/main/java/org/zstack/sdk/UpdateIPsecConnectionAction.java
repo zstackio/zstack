@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class UpdateLoadBalancerAction extends AbstractAction {
+public class UpdateIPsecConnectionAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public UpdateLoadBalancerResult value;
+        public UpdateIPsecConnectionResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,7 +32,7 @@ public class UpdateLoadBalancerAction extends AbstractAction {
     public java.lang.String description;
 
     @Param(required = false)
-    public java.lang.String resourceUuid;
+    public java.lang.String deleteMode = "Permissive";
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -55,8 +55,8 @@ public class UpdateLoadBalancerAction extends AbstractAction {
             return ret;
         }
         
-        UpdateLoadBalancerResult value = res.getResult(UpdateLoadBalancerResult.class);
-        ret.value = value == null ? new UpdateLoadBalancerResult() : value; 
+        UpdateIPsecConnectionResult value = res.getResult(UpdateIPsecConnectionResult.class);
+        ret.value = value == null ? new UpdateIPsecConnectionResult() : value; 
 
         return ret;
     }
@@ -82,10 +82,10 @@ public class UpdateLoadBalancerAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/load-balancers/{uuid}/actions";
+        info.path = "/ipsec/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "updateLoadBalancer";
+        info.parameterName = "updateIPsecConnection";
         return info;
     }
 

@@ -1,6 +1,7 @@
 package org.zstack.test.integration.networkservice.provider.virtualrouter.loadbalancer
 
 import org.zstack.core.db.Q
+import org.zstack.core.db.SQL
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.header.vm.VmInstanceVO_
@@ -152,11 +153,11 @@ class UpdateLoadBalancerListenerCase extends SubCase {
     void test() {
         env.create {
             testUpdateLoadBalancerListener()
+            cleanEnvironment()
         }
     }
 
     void testUpdateLoadBalancerListener() {
-
         L3NetworkInventory publicL3 = env.inventoryByName("PUBLIC-MANAGEMENT-L3") as L3NetworkInventory
         VmInstanceInventory vm1 = env.inventoryByName("vm1") as VmInstanceInventory
         VmInstanceInventory vm2 = env.inventoryByName("vm2") as VmInstanceInventory
@@ -225,5 +226,9 @@ class UpdateLoadBalancerListenerCase extends SubCase {
         assert ubllRes.value.inventory.uuid == lblVo.uuid
         assert ubllRes.value.inventory.name == lblVo.name
         assert ubllRes.value.inventory.description == lblVo.description
+    }
+
+    void cleanEnvironment(){
+        SQL.New(LoadBalancerListenerVO.class).hardDelete()
     }
 }

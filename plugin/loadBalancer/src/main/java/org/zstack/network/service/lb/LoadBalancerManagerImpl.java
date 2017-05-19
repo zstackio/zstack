@@ -105,8 +105,6 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
     protected void handleApiMessage(APIMessage msg) {
         if (msg instanceof APICreateLoadBalancerMsg) {
             handle((APICreateLoadBalancerMsg) msg);
-        } else if (msg instanceof APIUpdateLoadBalancerListenerMsg) {
-            handle((APIUpdateLoadBalancerListenerMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -483,59 +481,4 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
 
         return list(quota);
     }
-
-    private void handle(APIUpdateLoadBalancerListenerMsg msg) {
-        FlowChain chain = FlowChainBuilder.newShareFlowChain();
-        chain.setName(String.format("update-lb-listener-%s", msg.getName()));
-        chain.then(new ShareFlow() {
-            LoadBalancerListenerVO lblVo = new LoadBalancerListenerVO();
-            APIUpdateLoadBalancerListenerEvent evt = new APIUpdateLoadBalancerListenerEvent(msg.getId());
-
-            @Override
-            public void setup() {
-
-                flow(new NoRollbackFlow() {
-                    String __name__ = "update-to-db";
-
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        lblVo = dbf.findByUuid(msg.getUuid(), LoadBalancerListenerVO.class);
-                        if (lblVo == null) {
-                            return;
-                        }
-                        boolean update = false;
-                        if (msg.getName() != null) {
-                            lblVo.setName(msg.getName());
-                            update = true;
-                        }
-                        if (msg.getDescription() != null) {
-                            lblVo.setDescription(msg.getDescription());
-                            update = true;
-                        }
-                        if (update) {
-                            dbf.update(lblVo);
-                        }
-                        trigger.next();
-                    }
-                });
-
-                done(new FlowDoneHandler(msg) {
-                    @Override
-                    public void handle(Map data) {
-                        evt.setInventory(LoadBalancerListenerInventory.valueOf(dbf.reload(lblVo)));
-                        bus.publish(evt);
-                    }
-                });
-
-                error(new FlowErrorHandler(msg) {
-                    @Override
-                    public void handle(ErrorCode errCode, Map data) {
-                        evt.setError(errCode);
-                        bus.publish(evt);
-                    }
-                });
-            }
-        }).start();
-    }
-
 }

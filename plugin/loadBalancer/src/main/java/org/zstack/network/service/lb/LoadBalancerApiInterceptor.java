@@ -2,7 +2,9 @@ package org.zstack.network.service.lb;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -12,6 +14,7 @@ import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIMessage;
+import org.zstack.header.network.l3.*;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.network.service.vip.VipVO_;
 import org.zstack.tag.PatternedSystemTag;
@@ -31,6 +34,8 @@ import static org.zstack.utils.CollectionDSL.map;
  */
 public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
     @Autowired
+    private CloudBus bus;
+    @Autowired
     private DatabaseFacade dbf;
     @Autowired
     private ErrorFacade errf;
@@ -49,8 +54,9 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
             validate((APIRemoveVmNicFromLoadBalancerMsg) msg);
         } else if (msg instanceof APIGetCandidateVmNicsForLoadBalancerMsg) {
             validate((APIGetCandidateVmNicsForLoadBalancerMsg) msg);
+        } else if(msg instanceof APIUpdateLoadBalancerListenerMsg){
+            validate((APIUpdateLoadBalancerListenerMsg) msg);
         }
-
         return msg;
     }
 
@@ -247,5 +253,13 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
         }
 
         msg.setLoadBalancerUuid(lbUuid);
+    }
+    private void validate(APIUpdateLoadBalancerListenerMsg msg) {
+        String loadBalancerUuid = Q.New(LoadBalancerListenerVO.class).
+                select(LoadBalancerListenerVO_.loadBalancerUuid).
+                eq(LoadBalancerListenerVO_.uuid,msg.
+                        getLoadBalancerListenerUuid()).findValue();
+        msg.setLoadBalancerUuid(loadBalancerUuid);
+        bus.makeTargetServiceIdByResourceUuid(msg, LoadBalancerConstants.SERVICE_ID, loadBalancerUuid);
     }
 }
