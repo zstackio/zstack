@@ -20,8 +20,7 @@ import static java.util.Arrays.asList;
 @RestRequest(
         path = "/images-l3networks/dependencies",
         method = HttpMethod.GET,
-        responseClass = APIGetInterdependentL3NetworkImageReply.class,
-        parameterName = "params"
+        responseClass = APIGetInterdependentL3NetworkImageReply.class
 )
 public class APIGetInterdependentL3NetworksImagesMsg extends APISyncCallMessage {
     @APIParam(resourceType = ZoneVO.class)

@@ -14,8 +14,7 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/images/iso/{isoUuid}/vm-candidates",
         method = HttpMethod.GET,
-        responseClass = APIGetCandidateVmForAttachingIsoReply.class,
-        parameterName = "null"
+        responseClass = APIGetCandidateVmForAttachingIsoReply.class
 )
 public class APIGetCandidateVmForAttachingIsoMsg extends APISyncCallMessage {
     @APIParam(resourceType = ImageVO.class)

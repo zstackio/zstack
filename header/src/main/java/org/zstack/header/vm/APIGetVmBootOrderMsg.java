@@ -13,8 +13,7 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/vm-instances/{uuid}/boot-orders",
         method = HttpMethod.GET,
-        responseClass = APIGetVmBootOrderReply.class,
-        parameterName = "null"
+        responseClass = APIGetVmBootOrderReply.class
 )
 public class APIGetVmBootOrderMsg extends APISyncCallMessage implements VmInstanceMessage {
     @APIParam(resourceType = VmInstanceVO.class)

@@ -13,8 +13,7 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/vm-instances/{uuid}/console-passwords",
         method = HttpMethod.GET,
-        responseClass = APIGetVmConsolePasswordReply.class,
-        parameterName = "null"
+        responseClass = APIGetVmConsolePasswordReply.class
 )
 public class APIGetVmConsolePasswordMsg extends APISyncCallMessage implements VmInstanceMessage {
     @APIParam(resourceType = VmInstanceVO.class)

@@ -14,7 +14,6 @@ import java.util.List;
  */
 @RestRequest(
         path = "/primary-storage/capacities",
-        parameterName = "params",
         method = HttpMethod.GET,
         responseClass = APIGetPrimaryStorageCapacityReply.class
 )

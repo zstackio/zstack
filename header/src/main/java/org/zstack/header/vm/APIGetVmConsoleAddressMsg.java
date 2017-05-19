@@ -11,8 +11,7 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/vm-instances/{uuid}/console-addresses",
         method = HttpMethod.GET,
-        responseClass = APIGetVmConsoleAddressReply.class,
-        parameterName = "null"
+        responseClass = APIGetVmConsoleAddressReply.class
 )
 public class APIGetVmConsoleAddressMsg extends APISyncCallMessage implements VmInstanceMessage {
     @APIParam(resourceType = VmInstanceVO.class)

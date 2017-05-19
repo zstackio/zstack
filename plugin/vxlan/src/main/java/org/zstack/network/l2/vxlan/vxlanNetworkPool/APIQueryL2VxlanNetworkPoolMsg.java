@@ -20,8 +20,7 @@ import static java.util.Arrays.asList;
         path = "/l2-networks/vxlan-pool",
         optionalPaths = {"/l2-networks/vxlan-pool/{uuid}"},
         method = HttpMethod.GET,
-        responseClass = APIQueryL2VxlanNetworkPoolReply.class,
-        parameterName = "null"
+        responseClass = APIQueryL2VxlanNetworkPoolReply.class
 )
 public class APIQueryL2VxlanNetworkPoolMsg extends APIQueryMessage {
 

@@ -16,7 +16,6 @@ import java.util.List;
 @RestRequest(
         path = "/ip-capacity",
         method = HttpMethod.GET,
-        parameterName = "params",
         responseClass = APIGetIpAddressCapacityReply.class
 )
 public class APIGetIpAddressCapacityMsg extends APISyncCallMessage {

@@ -13,8 +13,7 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/vm-instances/{vmInstanceUuid}/l3-networks-candidates",
         method = HttpMethod.GET,
-        responseClass = APIGetVmAttachableL3NetworkReply.class,
-        parameterName = "null"
+        responseClass = APIGetVmAttachableL3NetworkReply.class
 )
 public class APIGetVmAttachableL3NetworkMsg extends APISyncCallMessage implements VmInstanceMessage {
     @APIParam(resourceType = VmInstanceVO.class, checkAccount = true)

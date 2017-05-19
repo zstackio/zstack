@@ -12,8 +12,7 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/vm-instances/{vmInstanceUuid}/data-volume-candidates",
         method = HttpMethod.GET,
-        responseClass = APIGetVmAttachableDataVolumeReply.class,
-        parameterName = "null"
+        responseClass = APIGetVmAttachableDataVolumeReply.class
 )
 public class APIGetVmAttachableDataVolumeMsg extends APISyncCallMessage implements VmInstanceMessage {
     @APIParam(resourceType = VmInstanceVO.class)
