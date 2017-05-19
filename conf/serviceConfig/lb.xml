@@ -49,4 +49,7 @@
         <serviceId>query</serviceId>
     </message>
 
+    <message>
+        <name>org.zstack.network.service.lb.APIUpdateLoadBalancerListenerMsg</name>
+    </message>
 </service>
