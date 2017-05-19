@@ -69,11 +69,11 @@ public class LoadBalancerBase {
     @Autowired
     private PluginRegistry pluginRgty;
 
-    private LoadBalancerVO self;
-
     private String getSyncId() {
         return String.format("operate-lb-%s", self.getUuid());
     }
+
+    private LoadBalancerVO self;
 
     protected LoadBalancerInventory getInventory() {
         return LoadBalancerInventory.valueOf(self);
@@ -1214,4 +1214,6 @@ public class LoadBalancerBase {
             }
         });
     }
+
+
 }
