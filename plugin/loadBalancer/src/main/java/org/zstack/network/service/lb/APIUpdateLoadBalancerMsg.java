@@ -15,14 +15,14 @@ import org.zstack.network.service.vip.VipVO;
 @RestRequest(
         path = "/load-balancers/{uuid}/actions",
         method = HttpMethod.PUT,
-        isAction = true,
         responseClass = APIUpdateLoadBalancerEvent.class,
-        parameterName = "params"
+        isAction = true
+        //parameterName = "updateLoadBalancer"
 )
 public class APIUpdateLoadBalancerMsg extends APICreateMessage  implements LoadBalancerMessage {
     @APIParam(resourceType = LoadBalancerVO.class, checkAccount = true, operationTarget = true)
     private String uuid;
-    @APIParam(maxLength = 255)
+    @APIParam(maxLength = 255, required = false)
     private String name;
     @APIParam(maxLength = 2048, required = false)
     private String description;

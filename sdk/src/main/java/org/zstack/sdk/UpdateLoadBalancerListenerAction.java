@@ -25,7 +25,7 @@ public class UpdateLoadBalancerListenerAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
 
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
@@ -79,7 +79,7 @@ public class UpdateLoadBalancerListenerAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/load-balancers/{uuid}/listeners";
+        info.path = "/load-balancers/listeners/{uuid}";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "updateLoadBalancerListener";
