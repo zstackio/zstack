@@ -1165,12 +1165,11 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                             new PrimaryStorageCapacityUpdater(inv.getUuid()).run(new PrimaryStorageCapacityUpdaterRunnable() {
                                 @Override
                                 public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
-                                    if (cap.getTotalCapacity() == 0 && cap.getAvailableCapacity() == 0) {
-                                        // init
-                                        cap.setTotalCapacity(rsp.getTotalCapacity());
-                                        cap.setAvailableCapacity(rsp.getAvailableCapacity());
-                                    }
 
+                                    // Do not directly update availableCapacity, because availableCapacity is not equal to availablePhysicalCapacity
+                                    // cap.setAvailableCapacity(rsp.getAvailableCapacity());
+
+                                    cap.setTotalCapacity(rsp.getTotalCapacity());
                                     cap.setTotalPhysicalCapacity(rsp.getTotalCapacity());
                                     cap.setAvailablePhysicalCapacity(rsp.getAvailableCapacity());
 
