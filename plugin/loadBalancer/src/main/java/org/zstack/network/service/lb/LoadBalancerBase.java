@@ -538,13 +538,7 @@ public class LoadBalancerBase {
                     .param("luuid", msg.getListenerUuid())
                     .param("vmType", VmInstanceConstant.USER_VM_TYPE)
                     .param("vmStates", asList(VmInstanceState.Running, VmInstanceState.Stopped)).list();
-
-            if(nics == null || nics.isEmpty()){
-                reply.setInventories(new ArrayList<VmNicInventory>());
-            }else{
-                reply.setInventories(callGetCandidateVmNicsForLoadBalancerExtensionPoint(msg, VmNicInventory.valueOf(nics)));
-            }
-
+            reply.setInventories(callGetCandidateVmNicsForLoadBalancerExtensionPoint(msg, VmNicInventory.valueOf(nics)));
             bus.reply(msg, reply);
             return;
         }
@@ -591,6 +585,10 @@ public class LoadBalancerBase {
     }
 
     private List<VmNicInventory> callGetCandidateVmNicsForLoadBalancerExtensionPoint(APIGetCandidateVmNicsForLoadBalancerMsg msg, List<VmNicInventory> candidates) {
+        if(candidates.isEmpty()){
+            return candidates;
+        }
+
         List<VmNicInventory> ret = candidates;
         for (GetCandidateVmNicsForLoadBalancerExtensionPoint extp : pluginRgty.getExtensionList(GetCandidateVmNicsForLoadBalancerExtensionPoint.class)) {
             ret = extp.getCandidateVmNicsForLoadBalancerInVirtualRouter(msg, ret);
