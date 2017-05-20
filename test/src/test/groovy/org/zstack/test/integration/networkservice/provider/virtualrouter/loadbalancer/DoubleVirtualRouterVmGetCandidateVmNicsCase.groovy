@@ -28,6 +28,11 @@ import org.zstack.utils.data.SizeUnit
 class DoubleVirtualRouterVmGetCandidateVmNicsCase extends SubCase{
 
     EnvSpec env
+
+    VmInstanceInventory vm
+    VmInstanceInventory vm2
+    LoadBalancerListenerInventory listener
+
     @Override
     void setup() {
         useSpring(NetworkServiceProviderTest.springSpec)
@@ -205,8 +210,8 @@ class DoubleVirtualRouterVmGetCandidateVmNicsCase extends SubCase{
     void test() {
         env.create {
             testCreateDoubleVmDoubleVirtualRouterVm()
-            testGetCandidateVmNicsForLoadBalancer()
             testAddWrongVmNicToLoadBalancer()
+            testGetCandidateVmNicsForLoadBalancer()
         }
     }
 
@@ -232,7 +237,7 @@ class DoubleVirtualRouterVmGetCandidateVmNicsCase extends SubCase{
             tag = "guestL3Network::${l32.uuid}".toString()
         }
 
-        def vm = createVmInstance {
+        vm = createVmInstance {
             name = "vm1"
             imageUuid = image.uuid
             l3NetworkUuids = [l31.uuid]
@@ -240,8 +245,7 @@ class DoubleVirtualRouterVmGetCandidateVmNicsCase extends SubCase{
             hostUuid = host1.uuid
         } as VmInstanceInventory
 
-
-        def vm2 = createVmInstance {
+        vm2 = createVmInstance {
             name = "vm2"
             imageUuid = image.uuid
             l3NetworkUuids = [l32.uuid]
@@ -258,15 +262,7 @@ class DoubleVirtualRouterVmGetCandidateVmNicsCase extends SubCase{
     }
 
     void testGetCandidateVmNicsForLoadBalancer(){
-        def lb = env.inventoryByName("lb") as LoadBalancerInventory
         def l31 = env.inventoryByName("l3-1") as L3NetworkInventory
-        def listener  = createLoadBalancerListener {
-            name = "listener"
-            protocol = "tcp"
-            loadBalancerPort = 22
-            instancePort = 22
-            loadBalancerUuid = lb.uuid
-        } as LoadBalancerListenerInventory
 
         def vmNics = getCandidateVmNicsForLoadBalancer {
             listenerUuid = listener.getUuid()
@@ -275,16 +271,42 @@ class DoubleVirtualRouterVmGetCandidateVmNicsCase extends SubCase{
         assert vmNics.size() == 1
         assert vmNics.get(0).getL3NetworkUuid() == l31.uuid
 
+
+        destroyVmInstance {
+            uuid = vm.uuid
+        }
+        vmNics = getCandidateVmNicsForLoadBalancer {
+            listenerUuid = listener.getUuid()
+        } as List<VmNicInventory>
+        assert vmNics.size() == 0
+
+
+        destroyVmInstance {
+            uuid = vm2.uuid
+        }
+        vmNics = getCandidateVmNicsForLoadBalancer {
+            listenerUuid = listener.getUuid()
+        } as List<VmNicInventory>
+        assert vmNics.size() == 0
     }
+
     void testAddWrongVmNicToLoadBalancer(){
         def lb = env.inventoryByName("lb") as LoadBalancerInventory
+
+        listener  = createLoadBalancerListener {
+            name = "listener"
+            protocol = "tcp"
+            loadBalancerPort = 22
+            instancePort = 22
+            loadBalancerUuid = lb.uuid
+        } as LoadBalancerListenerInventory
+
         def vm2 = queryVmInstance { conditions = ["name=vm2"] } as List<VmInstanceInventory>
-        def listener = queryLoadBalancerListener { conditions = ["name=listener"] } as List<LoadBalancerListenerInventory>
 
         expect(AssertionError.class){
             addVmNicToLoadBalancer {
                 vmNicUuids = [vm2.get(0).getVmNics().get(0).getUuid()]
-                listenerUuid = listener.get(0).uuid
+                listenerUuid = listener.uuid
             }
         }
 

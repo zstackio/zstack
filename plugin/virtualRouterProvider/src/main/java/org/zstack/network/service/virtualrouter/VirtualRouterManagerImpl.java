@@ -1088,14 +1088,14 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     @Override
     public List<VmNicInventory> getCandidateVmNicsForLoadBalancerInVirtualRouter(APIGetCandidateVmNicsForLoadBalancerMsg msg, List<VmNicInventory> candidates) {
 
+        if(candidates.isEmpty()){
+            return candidates;
+        }
+
         return new SQLBatchWithReturn<List<VmNicInventory>>(){
 
             @Override
             protected List<VmNicInventory> scripts() {
-
-                if(candidates == null || candidates.isEmpty()){
-                    return new ArrayList<VmNicInventory>();
-                }
 
                 //1.get the vm nics which are managed by vrouter or virtual router.
                 List<String>  inners = sql("select l3.uuid from L3NetworkVO l3, NetworkServiceL3NetworkRefVO ref, NetworkServiceProviderVO pro" +
