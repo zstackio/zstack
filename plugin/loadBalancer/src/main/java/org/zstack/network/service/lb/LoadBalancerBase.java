@@ -538,7 +538,13 @@ public class LoadBalancerBase {
                     .param("luuid", msg.getListenerUuid())
                     .param("vmType", VmInstanceConstant.USER_VM_TYPE)
                     .param("vmStates", asList(VmInstanceState.Running, VmInstanceState.Stopped)).list();
-            reply.setInventories(callGetCandidateVmNicsForLoadBalancerExtensionPoint(msg, VmNicInventory.valueOf(nics)));
+
+            if(nics == null || nics.isEmpty()){
+                reply.setInventories(new ArrayList<VmNicInventory>());
+            }else{
+                reply.setInventories(callGetCandidateVmNicsForLoadBalancerExtensionPoint(msg, VmNicInventory.valueOf(nics)));
+            }
+
             bus.reply(msg, reply);
             return;
         }

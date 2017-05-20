@@ -1093,6 +1093,10 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
             @Override
             protected List<VmNicInventory> scripts() {
 
+                if(candidates == null || candidates.isEmpty()){
+                    return new ArrayList<VmNicInventory>();
+                }
+
                 //1.get the vm nics which are managed by vrouter or virtual router.
                 List<String>  inners = sql("select l3.uuid from L3NetworkVO l3, NetworkServiceL3NetworkRefVO ref, NetworkServiceProviderVO pro" +
                         " where l3.uuid = ref.l3NetworkUuid and ref.networkServiceProviderUuid = pro.uuid and l3.uuid in (:l3Uuids)" +
