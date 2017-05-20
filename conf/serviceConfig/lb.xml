@@ -36,6 +36,10 @@
     </message>
 
     <message>
+        <name>org.zstack.network.service.lb.APIUpdateLoadBalancerMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.network.service.lb.APIQueryLoadBalancerListenerMsg</name>
         <serviceId>query</serviceId>
     </message>
@@ -43,5 +47,9 @@
     <message>
         <name>org.zstack.network.service.lb.APIQueryLoadBalancerMsg</name>
         <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.network.service.lb.APIUpdateLoadBalancerListenerMsg</name>
     </message>
 </service>
