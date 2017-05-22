@@ -4,6 +4,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -15,6 +17,7 @@ import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HypervisorType;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
+import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.image.ImageState;
 import org.zstack.header.image.ImageStatus;
 import org.zstack.header.image.ImageVO;
@@ -29,6 +32,7 @@ import static org.zstack.core.Platform.operr;
 import javax.persistence.Tuple;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * Created with IntelliJ IDEA.
@@ -157,57 +161,70 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
     }
 
     private void validate(APIAttachDataVolumeToVmMsg msg) {
-        VolumeVO vol = dbf.findByUuid(msg.getVolumeUuid(), VolumeVO.class);
 
-        if (vol.getType() == VolumeType.Root) {
-            throw new ApiMessageInterceptionException(operr("the volume[uuid:%s, name:%s] is Root Volume, can't attach it",
+        new SQLBatch(){
+            @Override
+            protected void scripts() {
+                long count = sql("select count(vm.uuid)" +
+                        " from VmInstanceVO vm, ImageVO image" +
+                        " where vm.uuid = :vmUuid" +
+                        " and vm.imageUuid = image.uuid" +
+                        " and image.platform = :platformType")
+                        .param("vmUuid",msg.getVmInstanceUuid())
+                        .param("platformType", ImagePlatform.Other).find();
+                if(count > 0){
+                   throw new ApiMessageInterceptionException(operr("the vm[uuid:%s] doesn't suport to attach volume on the basis of that the image platform type of the vm is other ", msg.getVmInstanceUuid()));
+                }
+
+                VolumeVO vol = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, msg.getVolumeUuid()).find();
+                if (vol.getType() == VolumeType.Root) {
+                    throw new ApiMessageInterceptionException(operr("the volume[uuid:%s, name:%s] is Root Volume, can't attach it",
                             vol.getUuid(), vol.getName()));
-        }
+                }
 
-        if (vol.getState() == VolumeState.Disabled) {
-            throw new ApiMessageInterceptionException(operr("data volume[uuid:%s] is Disabled, can't attach", vol.getUuid()));
-        }
+                if (vol.getState() == VolumeState.Disabled) {
+                    throw new ApiMessageInterceptionException(operr("data volume[uuid:%s] is Disabled, can't attach", vol.getUuid()));
+                }
 
-        if (vol.getStatus() == VolumeStatus.Deleted) {
-            throw new ApiMessageInterceptionException(operr("the volume[uuid:%s] is in status of deleted, cannot do the operation", vol.getUuid()));
-        }
+                if (vol.getStatus() == VolumeStatus.Deleted) {
+                    throw new ApiMessageInterceptionException(operr("the volume[uuid:%s] is in status of deleted, cannot do the operation", vol.getUuid()));
+                }
 
-        if (vol.getVmInstanceUuid() != null) {
-            throw new ApiMessageInterceptionException(operr("data volume[%s] has been attached to vm[uuid:%s], can't attach again",
+                if (vol.getVmInstanceUuid() != null) {
+                    throw new ApiMessageInterceptionException(operr("data volume[%s] has been attached to vm[uuid:%s], can't attach again",
                             vol.getUuid(), vol.getVmInstanceUuid()));
-        }
+                }
 
-        if (VolumeStatus.Ready != vol.getStatus() && VolumeStatus.NotInstantiated != vol.getStatus()) {
-            throw new ApiMessageInterceptionException(operr("data volume can only be attached when status is [%s, %s], current is %s",
+                if (VolumeStatus.Ready != vol.getStatus() && VolumeStatus.NotInstantiated != vol.getStatus()) {
+                    throw new ApiMessageInterceptionException(operr("data volume can only be attached when status is [%s, %s], current is %s",
                             VolumeStatus.Ready, VolumeStatus.NotInstantiated, vol.getStatus()));
-        }
+                }
 
-        SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
-        q.select(VmInstanceVO_.hypervisorType);
-        q.add(VmInstanceVO_.uuid, Op.EQ, msg.getVmInstanceUuid());
-        String hvType = q.findValue();
-        if (vol.getFormat() != null) {
-            HypervisorType volHvType = VolumeFormat.getMasterHypervisorTypeByVolumeFormat(vol.getFormat());
-            if (!hvType.equals(volHvType.toString())) {
-                throw new ApiMessageInterceptionException(operr("data volume[uuid:%s] has format[%s] that can only be attached to hypervisor[%s], but vm[uuid:%s] has hypervisor type[%s]. Can't attach",
+                String hvType = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid,msg.getVmInstanceUuid()).select(VmInstanceVO_.hypervisorType).findValue();
+                if (vol.getFormat() != null) {
+                    HypervisorType volHvType = VolumeFormat.getMasterHypervisorTypeByVolumeFormat(vol.getFormat());
+                    if (!hvType.equals(volHvType.toString())) {
+                        throw new ApiMessageInterceptionException(operr("data volume[uuid:%s] has format[%s] that can only be attached to hypervisor[%s], but vm[uuid:%s] has hypervisor type[%s]. Can't attach",
                                 vol.getUuid(), vol.getFormat(), volHvType, msg.getVmInstanceUuid(), hvType));
-            }
-        }
+                    }
+                }
 
-        MaxDataVolumeNumberExtensionPoint ext = maxDataVolumeNumberExtensions.get(hvType);
-        int maxDataVolumeNum = DEFAULT_MAX_DATA_VOLUME_NUMBER;
-        if (ext != null) {
-            maxDataVolumeNum = ext.getMaxDataVolumeNumber();
-        }
+                MaxDataVolumeNumberExtensionPoint ext = maxDataVolumeNumberExtensions.get(hvType);
+                int maxDataVolumeNum = DEFAULT_MAX_DATA_VOLUME_NUMBER;
+                if (ext != null) {
+                    maxDataVolumeNum = ext.getMaxDataVolumeNumber();
+                }
 
-        SimpleQuery<VolumeVO> vq = dbf.createQuery(VolumeVO.class);
-        vq.add(VolumeVO_.type, Op.EQ, VolumeType.Data);
-        vq.add(VolumeVO_.vmInstanceUuid, Op.EQ, msg.getVmInstanceUuid());
-        long count = vq.count();
-        if (count + 1 > maxDataVolumeNum) {
-            throw new ApiMessageInterceptionException(operr("hypervisor[%s] only allows max %s data volumes to be attached to a single vm; there have been %s data volumes attached to vm[uuid:%s]",
+                count = Q.New(VolumeVO.class).eq(VolumeVO_.type, VolumeType.Data).eq(VolumeVO_.vmInstanceUuid, msg.getVolumeUuid()).count();
+                if (count + 1 > maxDataVolumeNum) {
+                    throw new ApiMessageInterceptionException(operr("hypervisor[%s] only allows max %s data volumes to be attached to a single vm; there have been %s data volumes attached to vm[uuid:%s]",
                             hvType, maxDataVolumeNum, count, msg.getVmInstanceUuid()));
-        }
+                }
+
+
+            }
+        }.execute();
+
     }
 
     private void validate(APIBackupDataVolumeMsg msg) {
