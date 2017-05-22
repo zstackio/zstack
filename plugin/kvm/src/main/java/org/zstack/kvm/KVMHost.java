@@ -56,6 +56,7 @@ import org.zstack.tag.TagManager;
 import org.zstack.utils.*;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.NetworkUtils;
 import org.zstack.utils.path.PathUtil;
 import org.zstack.utils.ssh.Ssh;
 import org.zstack.utils.ssh.SshResult;
@@ -2227,6 +2228,10 @@ public class KVMHost extends HostBase implements Host {
                     @AfterDone
                     List<Runnable> afterDone = new ArrayList<>();
 
+                    private boolean isSshPortOpen() {
+                        return NetworkUtils.isRemotePortOpen(self.getManagementIp(), getSelf().getPort(), 2);
+                    }
+
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         PingCmd cmd = new PingCmd();
@@ -2234,7 +2239,13 @@ public class KVMHost extends HostBase implements Host {
                         restf.asyncJsonPost(pingPath, cmd, new JsonAsyncRESTCallback<PingResponse>(trigger) {
                             @Override
                             public void fail(ErrorCode err) {
-                                trigger.fail(err);
+                                if (isSshPortOpen()) {
+                                    logger.debug(String.format("ssh port of host[uuid:%s, ip:%s] is open, ping success",
+                                            self.getUuid(), self.getManagementIp()));
+                                    trigger.next();
+                                } else {
+                                    trigger.fail(err);
+                                }
                             }
 
                             @Override
@@ -2254,7 +2265,13 @@ public class KVMHost extends HostBase implements Host {
 
                                     trigger.next();
                                 } else {
-                                    trigger.fail(operr(ret.getError()));
+                                    if (isSshPortOpen()) {
+                                        logger.debug(String.format("ssh port of host[uuid:%s, ip:%s] is open, ping success",
+                                                self.getUuid(), self.getManagementIp()));
+                                        trigger.next();
+                                    } else {
+                                        trigger.fail(operr(ret.getError()));
+                                    }
                                 }
                             }
 
