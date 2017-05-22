@@ -16,6 +16,7 @@ class ImageTest extends Test {
         virtualRouter()
         vyos()
         kvm()
+        flatNetwork()
         securityGroup()
     }
 
