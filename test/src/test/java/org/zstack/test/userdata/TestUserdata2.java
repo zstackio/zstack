@@ -25,6 +25,8 @@ import org.zstack.test.*;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.utils.data.SizeUnit;
 
+import java.util.Base64;
+
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
@@ -83,7 +85,8 @@ public class TestUserdata2 {
         creator.session = api.getAdminSession();
         creator.instanceOfferingUuid = ioinv.getUuid();
         creator.name = "vm";
-        creator.systemTags.add(VmSystemTags.USERDATA.instantiateTag(map(e(VmSystemTags.USERDATA_TOKEN, userdata))));
+        creator.systemTags.add(VmSystemTags.USERDATA.instantiateTag(map(e(VmSystemTags.USERDATA_TOKEN,
+                new String(Base64.getEncoder().encode(userdata.getBytes()))))));
         creator.addL3Network(l3.getUuid());
         VmInstanceInventory vm = creator.create();
 
@@ -95,6 +98,7 @@ public class TestUserdata2 {
         Assert.assertEquals(1, cmd.userdata.size());
         UserdataTO to = cmd.userdata.get(0);
 
+        Assert.assertEquals(userdata, to.userdata);
         Assert.assertEquals(vm.getUuid(), to.metadata.vmUuid);
         Assert.assertEquals(nic.getIp(), to.vmIp);
         String brName = new BridgeNameFinder().findByL3Uuid(nic.getL3NetworkUuid());
