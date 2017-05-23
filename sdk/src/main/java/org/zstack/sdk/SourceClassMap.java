@@ -106,6 +106,7 @@ public class SourceClassMap {
 			put("org.zstack.ldap.LdapAccountRefInventory", "org.zstack.sdk.LdapAccountRefInventory");
 			put("org.zstack.ldap.LdapServerInventory", "org.zstack.sdk.LdapServerInventory");
 			put("org.zstack.license.LicenseInventory", "org.zstack.sdk.LicenseInventory");
+			put("org.zstack.mevoco.ShareableVolumeVmInstanceRefInventory", "org.zstack.sdk.ShareableVolumeVmInstanceRefInventory");
 			put("org.zstack.network.l2.vxlan.vtep.VtepInventory", "org.zstack.sdk.VtepInventory");
 			put("org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory", "org.zstack.sdk.L2VxlanNetworkInventory");
 			put("org.zstack.network.l2.vxlan.vxlanNetworkPool.L2VxlanNetworkPoolInventory", "org.zstack.sdk.L2VxlanNetworkPoolInventory");
@@ -243,6 +244,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.SecurityGroupRuleInventory", "org.zstack.network.securitygroup.SecurityGroupRuleInventory");
 			put("org.zstack.sdk.SessionInventory", "org.zstack.header.identity.SessionInventory");
 			put("org.zstack.sdk.SftpBackupStorageInventory", "org.zstack.storage.backup.sftp.SftpBackupStorageInventory");
+			put("org.zstack.sdk.ShareableVolumeVmInstanceRefInventory", "org.zstack.mevoco.ShareableVolumeVmInstanceRefInventory");
 			put("org.zstack.sdk.SharedResourceInventory", "org.zstack.header.identity.SharedResourceInventory");
 			put("org.zstack.sdk.ShellResult", "org.zstack.kvm.APIKvmRunShellEvent$ShellResult");
 			put("org.zstack.sdk.SimulatorHostInventory", "org.zstack.header.simulator.SimulatorHostInventory");
