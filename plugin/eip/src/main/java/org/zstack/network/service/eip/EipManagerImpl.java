@@ -235,9 +235,15 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
 
     private void handle(APIGetEipAttachableVmNicsMsg msg) {
         APIGetEipAttachableVmNicsReply reply = new APIGetEipAttachableVmNicsReply();
-        List<VmNicInventory> nics = getAttachableVmNicForEip(msg.getEipUuid(), msg.getVipUuid());
-        reply.setInventories(callCandidateVmNicsForEipInVirtualRouterExtensionPoint(msg,nics));
-        bus.reply(msg, reply);
+        String vmNicUuid = Q.New(EipVO.class).select(EipVO_.vmNicUuid).eq(EipVO_.uuid,msg.getEipUuid()).findValue();
+        if (vmNicUuid != null){
+            reply.setInventories(new ArrayList<>());
+            bus.reply(msg, reply);
+        } else {
+            List<VmNicInventory> nics = getAttachableVmNicForEip(msg.getEipUuid(), msg.getVipUuid());
+            reply.setInventories(callCandidateVmNicsForEipInVirtualRouterExtensionPoint(msg, nics));
+            bus.reply(msg, reply);
+        }
     }
 
     private void handle(APIChangeEipStateMsg msg) {

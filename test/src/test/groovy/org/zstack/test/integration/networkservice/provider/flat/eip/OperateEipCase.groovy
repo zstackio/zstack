@@ -1,17 +1,20 @@
 package org.zstack.test.integration.networkservice.provider.flat.eip
 
 import org.springframework.http.HttpEntity
+import org.zstack.core.db.Q
 import org.zstack.header.network.service.NetworkServiceType
-import org.zstack.network.service.eip.EipBackend
 import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.eip.EipVO
 import org.zstack.network.service.flat.FlatEipBackend
 import org.zstack.network.service.flat.FlatNetworkServiceConstant
 import org.zstack.network.service.userdata.UserdataConstant
+import org.zstack.network.service.vip.VipVO
+import org.zstack.network.service.vip.VipVO_
 import org.zstack.sdk.EipInventory
+import org.zstack.sdk.GetEipAttachableVmNicsAction
+import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
-import org.zstack.test.integration.networkservice.provider.flat.FlatNetworkServiceEnv
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
@@ -135,6 +138,7 @@ class OperateEipCase extends SubCase{
     void testAttachVmNicToEip(){
         def eip = env.inventoryByName("eip") as EipInventory
         def vm = env.inventoryByName("vm") as VmInstanceInventory
+        def pub_l3 = env.inventoryByName("pubL3") as L3NetworkInventory
         def cmd = null
         env.afterSimulator(FlatEipBackend.APPLY_EIP_PATH){ rsp,HttpEntity<String> entity ->
             cmd = json(entity.getBody(),FlatEipBackend.ApplyEipCmd.class)
@@ -148,6 +152,17 @@ class OperateEipCase extends SubCase{
 
         assert cmd != null
         assert dbFindByUuid(eip.uuid,EipVO.class).guestIp == vm.getVmNics().get(0).getIp()
+
+
+        String vipUuid = Q.New(VipVO.class).select(VipVO_.uuid).eq(VipVO_.l3NetworkUuid,pub_l3.uuid).findValue()
+        GetEipAttachableVmNicsAction getEipAttachableVmNicsAction = new GetEipAttachableVmNicsAction()
+        getEipAttachableVmNicsAction.eipUuid = eip.uuid
+        getEipAttachableVmNicsAction.vipUuid = vipUuid
+        getEipAttachableVmNicsAction.sessionId = adminSession()
+        GetEipAttachableVmNicsAction.Result  res = getEipAttachableVmNicsAction.call()
+        assert res.error == null
+        assert res.value.inventories != null
+        assert res.value.inventories.size() == 0
     }
 
     void testDeleteEip(){
