@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -67,19 +68,9 @@ public class EipApiInterceptor implements ApiMessageInterceptor {
         }
 
         if (msg.getEipUuid() != null) {
-            SimpleQuery<EipVO> q = dbf.createQuery(EipVO.class);
-            q.select(EipVO_.state, EipVO_.vmNicUuid);
-            q.add(EipVO_.uuid, Op.EQ, msg.getEipUuid());
-            Tuple t = q.findTuple();
-
-            EipState state = t.get(0, EipState.class);
+            EipState state = Q.New(EipVO.class).select(EipVO_.state).eq(EipVO_.uuid,msg.getEipUuid()).findValue();
             if (state != EipState.Enabled) {
                 throw new ApiMessageInterceptionException(operr("eip[uuid:%s] is not in state of Enabled, cannot get attachable vm nic", msg.getEipUuid()));
-            }
-
-            String vmNicUuid = t.get(1, String.class);
-            if (vmNicUuid != null) {
-                throw new ApiMessageInterceptionException(operr("eip[uuid:%s] has attached to vm nic[uuid:%s], cannot get attachable vm nic", msg.getEipUuid(), vmNicUuid));
             }
         }
     }
