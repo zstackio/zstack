@@ -8,12 +8,14 @@ import org.zstack.compute.allocator.HostAllocatorManager;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.BackupStorageVO;
@@ -33,6 +35,9 @@ import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.operr;
 
 /**
  * Created by frank on 7/2/2015.
@@ -77,11 +82,31 @@ public class LocalStorageAllocateCapacityFlow implements Flow {
         return q.getResultList().get(0);
     }
 
+    @Transactional(readOnly = true)
+    private String getRequiredStorageUuid(String hostUuid, String psUuid){
+        if(psUuid == null){
+            return getMostFreeLocalStorageUuid(hostUuid);
+        }else if(Q.New(LocalStorageHostRefVO.class)
+                .eq(LocalStorageHostRefVO_.hostUuid, hostUuid)
+                .eq(LocalStorageHostRefVO_.primaryStorageUuid, psUuid)
+                .isExists()){
+            return psUuid;
+        }else if(!Q.New(PrimaryStorageVO.class)
+                .eq(PrimaryStorageVO_.uuid, psUuid)
+                .eq(PrimaryStorageVO_.type, LocalStorageConstants.LOCAL_STORAGE_TYPE)
+                .isExists()){
+            throw new OperationFailureException(argerr("the type of primary storage[uuid:%s] chosen is not local storage, " +
+                    "check if the resource can be created on other storage when cluster has attached local primary storage", psUuid));
+        }else {
+            return getMostFreeLocalStorageUuid(hostUuid);
+        }
+    }
+
     @Override
     public void run(final FlowTrigger trigger, Map data) {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
 
-        String localStorageUuid = getMostFreeLocalStorageUuid(spec.getDestHost().getUuid());
+        String localStorageUuid = getRequiredStorageUuid(spec.getDestHost().getUuid(), spec.getRequiredPrimaryStorageUuidForRootVolume());
 
         SimpleQuery<BackupStorageVO> bq = dbf.createQuery(BackupStorageVO.class);
         bq.select(BackupStorageVO_.type);

@@ -579,10 +579,18 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
         new SQLBatch(){
             @Override
             protected void scripts() {
-                Q.New(HostVO.class).select(HostVO_.uuid)
-                        .eq(HostVO_.clusterUuid, clusterUuid)
-                        .listValues().forEach(huuid ->
-                        updateNfsHostStatus(inventory.getUuid(), (String)huuid, PrimaryStorageHostStatus.Connected));
+                if(Q.New(PrimaryStorageVO.class)
+                        .eq(PrimaryStorageVO_.uuid, inventory.getUuid())
+                        .eq(PrimaryStorageVO_.type, NfsPrimaryStorageConstant.NFS_PRIMARY_STORAGE_TYPE)
+                        .isExists()){
+
+                    Q.New(HostVO.class)
+                            .select(HostVO_.uuid)
+                            .eq(HostVO_.clusterUuid, clusterUuid)
+                            .listValues()
+                            .forEach(huuid ->
+                            updateNfsHostStatus(inventory.getUuid(), (String)huuid, PrimaryStorageHostStatus.Connected));
+                }
             }
         }.execute();
         logger.debug("succeed add PrimaryStorageHostRef record");
