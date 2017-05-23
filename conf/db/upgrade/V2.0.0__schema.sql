@@ -66,3 +66,19 @@ INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "BaremetalPxeServerVO
 INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "BaremetalChessisVO" FROM BaremetalChessisVO t;
 INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "BaremetalHostCfgVO" FROM BaremetalHostCfgVO t;
 INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "BaremetalHostNicCfgVO" FROM BaremetalHostNicCfgVO t;
+
+UPDATE ResourceVO SET resourceType = "BackupStorageVO" WHERE resourceType = "BackupStorageEO";
+UPDATE ResourceVO SET resourceType = "ClusterVO" WHERE resourceType = "ClusterEO";
+UPDATE ResourceVO SET resourceType = "HostVO" WHERE resourceType = "HostEO";
+UPDATE ResourceVO SET resourceType = "ImageVO" WHERE resourceType = "ImageEO";
+UPDATE ResourceVO SET resourceType = "InstanceOfferingVO" WHERE resourceType = "InstanceOfferingEO";
+UPDATE ResourceVO SET resourceType = "DiskOfferingVO" WHERE resourceType = "DiskOfferingEO";
+UPDATE ResourceVO SET resourceType = "IpRangeVO" WHERE resourceType = "IpRangeEO";
+UPDATE ResourceVO SET resourceType = "L2NetworkVO" WHERE resourceType = "L2NetworkEO";
+UPDATE ResourceVO SET resourceType = "L3NetworkVO" WHERE resourceType = "L3NetworkEO";
+UPDATE ResourceVO SET resourceType = "PrimaryStorageVO" WHERE resourceType = "PrimaryStorageEO";
+UPDATE ResourceVO SET resourceType = "VmInstanceVO" WHERE resourceType = "VmInstanceEO";
+UPDATE ResourceVO SET resourceType = "VolumeVO" WHERE resourceType = "VolumeEO";
+UPDATE ResourceVO SET resourceType = "VolumeSnapshotVO" WHERE resourceType = "VolumeSnapshotEO";
+UPDATE ResourceVO SET resourceType = "VolumeSnapshotTreeVO" WHERE resourceType = "VolumeSnapshotTreeEO";
+UPDATE ResourceVO SET resourceType = "ZoneVO" WHERE resourceType = "ZoneEO";
