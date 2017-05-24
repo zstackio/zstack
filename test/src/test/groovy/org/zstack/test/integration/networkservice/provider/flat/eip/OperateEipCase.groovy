@@ -2,6 +2,8 @@ package org.zstack.test.integration.networkservice.provider.flat.eip
 
 import org.springframework.http.HttpEntity
 import org.zstack.core.db.Q
+import org.zstack.header.host.HostStatus
+import org.zstack.header.host.HostVO
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.eip.EipVO
@@ -13,6 +15,7 @@ import org.zstack.network.service.vip.VipVO_
 import org.zstack.sdk.EipInventory
 import org.zstack.sdk.GetEipAttachableVmNicsAction
 import org.zstack.sdk.L3NetworkInventory
+import org.zstack.sdk.HostInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
 import org.zstack.testlib.EnvSpec
@@ -22,7 +25,7 @@ import org.zstack.utils.data.SizeUnit
 /**
  * Created by heathhose on 17-5-15.
  */
-class OperateEipCase extends SubCase{
+class OperateEipCase extends SubCase {
 
     EnvSpec env
 
@@ -33,7 +36,7 @@ class OperateEipCase extends SubCase{
 
     @Override
     void environment() {
-        env = env{
+        env = env {
             instanceOffering {
                 name = "instanceOffering"
                 memory = SizeUnit.GIGABYTE.toByte(8)
@@ -49,7 +52,7 @@ class OperateEipCase extends SubCase{
 
                 image {
                     name = "image"
-                    url  = "http://zstack.org/download/test.qcow2"
+                    url = "http://zstack.org/download/test.qcow2"
                 }
             }
 
@@ -131,17 +134,18 @@ class OperateEipCase extends SubCase{
     void test() {
         env.create {
             testAttachVmNicToEip()
+            testReconnectHostBatchApplyEips()
             testDeleteEip()
         }
     }
 
-    void testAttachVmNicToEip(){
+    void testAttachVmNicToEip() {
         def eip = env.inventoryByName("eip") as EipInventory
         def vm = env.inventoryByName("vm") as VmInstanceInventory
         def pub_l3 = env.inventoryByName("pubL3") as L3NetworkInventory
-        def cmd = null
-        env.afterSimulator(FlatEipBackend.APPLY_EIP_PATH){ rsp,HttpEntity<String> entity ->
-            cmd = json(entity.getBody(),FlatEipBackend.ApplyEipCmd.class)
+        FlatEipBackend.ApplyEipCmd cmd = new FlatEipBackend.ApplyEipCmd()
+        env.afterSimulator(FlatEipBackend.APPLY_EIP_PATH) { rsp, HttpEntity<String> entity ->
+            cmd = json(entity.getBody(), FlatEipBackend.ApplyEipCmd.class)
             return rsp
 
         }
@@ -150,26 +154,27 @@ class OperateEipCase extends SubCase{
             vmNicUuid = vm.getVmNics().get(0).getUuid()
         }
 
-        assert cmd != null
-        assert dbFindByUuid(eip.uuid,EipVO.class).guestIp == vm.getVmNics().get(0).getIp()
+        assert cmd.eip.eipUuid == eip.uuid
+        assert dbFindByUuid(eip.uuid, EipVO.class).guestIp == vm.getVmNics().get(0).getIp()
 
 
-        String vipUuid = Q.New(VipVO.class).select(VipVO_.uuid).eq(VipVO_.l3NetworkUuid,pub_l3.uuid).findValue()
+        String vipUuid = Q.New(VipVO.class).select(VipVO_.uuid).eq(VipVO_.l3NetworkUuid, pub_l3.uuid).findValue()
         GetEipAttachableVmNicsAction getEipAttachableVmNicsAction = new GetEipAttachableVmNicsAction()
         getEipAttachableVmNicsAction.eipUuid = eip.uuid
         getEipAttachableVmNicsAction.vipUuid = vipUuid
         getEipAttachableVmNicsAction.sessionId = adminSession()
-        GetEipAttachableVmNicsAction.Result  res = getEipAttachableVmNicsAction.call()
+        GetEipAttachableVmNicsAction.Result res = getEipAttachableVmNicsAction.call()
         assert res.error == null
         assert res.value.inventories != null
         assert res.value.inventories.size() == 0
     }
 
-    void testDeleteEip(){
+
+    void testDeleteEip() {
         def eip = env.inventoryByName("eip") as EipInventory
-        def cmd = null
-        env.afterSimulator(FlatEipBackend.DELETE_EIP_PATH){ rsp,HttpEntity<String> entity ->
-            cmd = json(entity.getBody(),FlatEipBackend.DeleteEipCmd.class)
+        FlatEipBackend.DeleteEipCmd cmd = new FlatEipBackend.DeleteEipCmd()
+        env.afterSimulator(FlatEipBackend.DELETE_EIP_PATH) { rsp, HttpEntity<String> entity ->
+            cmd = json(entity.getBody(), FlatEipBackend.DeleteEipCmd.class)
             return rsp
         }
 
@@ -177,11 +182,30 @@ class OperateEipCase extends SubCase{
             uuid = eip.uuid
         }
 
-        assert cmd != null
-        assert dbFindByUuid(eip.uuid,EipVO.class) == null
+        assert cmd.eip.eipUuid == eip.uuid
+        assert dbFindByUuid(eip.uuid, EipVO.class) == null
     }
+
+    void testReconnectHostBatchApplyEips() {
+        def host = env.inventoryByName("kvm") as HostInventory
+        def eip = env.inventoryByName("eip") as EipInventory
+        FlatEipBackend.BatchApplyEipCmd cmd = new FlatEipBackend.BatchApplyEipCmd()
+
+        env.afterSimulator(FlatEipBackend.BATCH_APPLY_EIP_PATH) { rsp, HttpEntity<String> entity ->
+            cmd = json(entity.getBody(), FlatEipBackend.BatchApplyEipCmd)
+            return rsp
+        }
+        reconnectHost {
+            uuid = host.uuid
+        }
+
+        assert cmd.eips.size() == 1
+        assert cmd.eips.get(0).eipUuid == eip.uuid
+        assert dbFindByUuid(host.uuid, HostVO.class).getStatus() == HostStatus.Connected
+    }
+
     @Override
     void clean() {
-       env.delete()
+        env.delete()
     }
 }
