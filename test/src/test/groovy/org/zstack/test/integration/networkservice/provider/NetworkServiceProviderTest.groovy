@@ -13,6 +13,7 @@ class NetworkServiceProviderTest extends Test {
         portForwarding()
         virtualRouter()
         flatNetwork()
+        securityGroup()
         eip()
         lb()
         vyos()
