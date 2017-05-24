@@ -58,7 +58,7 @@ class FlatNetworkGCCase extends SubCase {
 
         retryInSecs {
              inv = queryGCJob {
-                conditions=["context~=%${eip.guestIp}%".toString()]
+                conditions=["context~=%${eip.guestIp}%".toString(), "runnerClass=org.zstack.network.service.flat.FlatEipGC"]
             }[0]
 
             assert inv.status == GCStatus.Idle.toString()
@@ -78,7 +78,7 @@ class FlatNetworkGCCase extends SubCase {
 
         retryInSecs {
             inv = queryGCJob {
-                conditions=["context~=%${eip.guestIp}%".toString()]
+                conditions=["context~=%${eip.guestIp}%".toString(), "runnerClass=org.zstack.network.service.flat.FlatEipGC"]
             }[0]
 
             assert called
@@ -104,7 +104,7 @@ class FlatNetworkGCCase extends SubCase {
 
         retryInSecs {
             inv = queryGCJob {
-                conditions=["context~=%${eip.guestIp}%".toString()]
+                conditions=["context~=%${eip.guestIp}%".toString(),"runnerClass=org.zstack.network.service.flat.FlatEipGC"]
             }[0]
 
             assert inv.status == GCStatus.Idle.toString()
@@ -122,7 +122,7 @@ class FlatNetworkGCCase extends SubCase {
 
         retryInSecs {
             inv = queryGCJob {
-                conditions=["context~=%${eip.guestIp}%".toString()]
+                conditions=["context~=%${eip.guestIp}%".toString(),"runnerClass=org.zstack.network.service.flat.FlatEipGC"]
             }[0]
 
             assert !called
@@ -148,7 +148,7 @@ class FlatNetworkGCCase extends SubCase {
         GarbageCollectorInventory inv
         retryInSecs {
              inv = queryGCJob {
-                conditions=["context~=%$bridgeName%".toString()]
+                conditions=["context~=%$bridgeName%".toString(), "runnerClass=org.zstack.network.service.flat.FlatDHCPDeleteNamespaceGC"]
             }[0]
 
             assert inv.status == GCStatus.Idle.toString()
@@ -166,7 +166,7 @@ class FlatNetworkGCCase extends SubCase {
 
         retryInSecs {
             inv = queryGCJob {
-                conditions=["context~=%$bridgeName%".toString()]
+                conditions=["context~=%$bridgeName%".toString(), "runnerClass=org.zstack.network.service.flat.FlatDHCPDeleteNamespaceGC"]
             }[0]
 
             assert called
