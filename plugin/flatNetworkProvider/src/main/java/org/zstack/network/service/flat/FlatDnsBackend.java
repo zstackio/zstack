@@ -165,7 +165,7 @@ public class FlatDnsBackend implements NetworkServiceDnsBackend, KVMHostConnectE
             @Override
             public KVMHostAsyncHttpCallMsg call(String huuid) {
                 SetDnsCmd cmd = new SetDnsCmd();
-                cmd.dns = dns;
+                cmd.dns = l3.getDns();
 
                 KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
                 msg.setCommand(cmd);
