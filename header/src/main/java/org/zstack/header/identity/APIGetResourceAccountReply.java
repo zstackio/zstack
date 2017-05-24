@@ -1,6 +1,7 @@
 package org.zstack.header.identity;
 
 import org.zstack.header.message.APIReply;
+import org.zstack.header.rest.RestResponse;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -8,6 +9,7 @@ import java.util.Map;
 /**
  * Created by xing5 on 2016/4/8.
  */
+@RestResponse(allTo = "inventories")
 public class APIGetResourceAccountReply extends APIReply {
     private Map<String, AccountInventory> inventories;
 
