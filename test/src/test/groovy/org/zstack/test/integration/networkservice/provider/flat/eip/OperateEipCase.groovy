@@ -1,7 +1,11 @@
 package org.zstack.test.integration.networkservice.provider.flat.eip
 
 import org.springframework.http.HttpEntity
+import org.zstack.header.host.HostState
+import org.zstack.header.host.HostStatus
+import org.zstack.header.host.HostVO
 import org.zstack.header.network.service.NetworkServiceType
+import org.zstack.kvm.KVMConstant
 import org.zstack.network.service.eip.EipBackend
 import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.eip.EipVO
@@ -9,6 +13,7 @@ import org.zstack.network.service.flat.FlatEipBackend
 import org.zstack.network.service.flat.FlatNetworkServiceConstant
 import org.zstack.network.service.userdata.UserdataConstant
 import org.zstack.sdk.EipInventory
+import org.zstack.sdk.HostInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
 import org.zstack.test.integration.networkservice.provider.flat.FlatNetworkServiceEnv
@@ -129,6 +134,7 @@ class OperateEipCase extends SubCase{
         env.create {
             testAttachVmNicToEip()
             testDeleteEip()
+            testReconnectHostBatchApplyEips()
         }
     }
 
@@ -164,6 +170,16 @@ class OperateEipCase extends SubCase{
 
         assert cmd != null
         assert dbFindByUuid(eip.uuid,EipVO.class) == null
+    }
+
+    void testReconnectHostBatchApplyEips(){
+        def host = env.inventoryByName("kvm") as HostInventory
+
+        reconnectHost {
+            uuid = host.uuid
+        }
+
+        assert dbFindByUuid(host.uuid, HostVO.class).getStatus() == HostStatus.Connected
     }
     @Override
     void clean() {
