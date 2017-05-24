@@ -43,6 +43,7 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.storage.snapshot.VolumeSnapshotReportPrimaryStorageCapacityUsageMsg;
 import org.zstack.header.storage.snapshot.VolumeSnapshotReportPrimaryStorageCapacityUsageReply;
 import org.zstack.header.vm.StopVmInstanceMsg;
+import org.zstack.header.vm.VmAttachVolumeValidatorMethod;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeReportPrimaryStorageCapacityUsageMsg;
@@ -1050,5 +1051,19 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
                 .eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, this.self.getUuid()).count();
 
         return count == 0;
+    }
+
+    @VmAttachVolumeValidatorMethod
+    static void vmAttachVolumeValidator(String vmUuid, String volumeUuid) {
+        PrimaryStorageState state = SQL.New("select pri.state from PrimaryStorageVO pri " +
+                "where pri.uuid = (select vol.primaryStorageUuid from VolumeVO vol where vol.uuid = :volUuid)", PrimaryStorageState.class)
+                .param("volUuid", volumeUuid)
+                .find();
+
+        if(state == PrimaryStorageState.Maintenance){
+            throw new OperationFailureException(
+                    operr(String.format("cannot attach volume[uuid:%s] whose primary storage is Maintenance", volumeUuid)
+                    ));
+        }
     }
 }
