@@ -58,7 +58,7 @@ public class VirtualRouterDnsBackend extends AbstractVirtualRouterBackend implem
         }
 
         SetDnsCmd cmd = new SetDnsCmd();
-        cmd.setDns(CollectionUtils.transformToList(dns, new Function<DnsInfo, String>() {
+        cmd.setDns(CollectionUtils.transformToList(l3.getDns(), new Function<DnsInfo, String>() {
             @Override
             public DnsInfo call(String arg) {
                 DnsInfo info = new DnsInfo();
