@@ -5,7 +5,6 @@ import org.zstack.header.Constants;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.message.APISyncCallMessage;
 import org.zstack.header.rest.RestRequest;
-import org.zstack.header.vo.APIGetResourceNamesReply;
 
 import java.util.List;
 

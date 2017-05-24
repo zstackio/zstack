@@ -5,7 +5,7 @@ import org.zstack.header.identity.AccountInventory
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "账户清单"
 
 	ref {
 		name "error"

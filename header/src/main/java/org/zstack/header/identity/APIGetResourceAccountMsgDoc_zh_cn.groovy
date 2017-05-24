@@ -3,11 +3,11 @@ package org.zstack.header.identity
 import org.zstack.header.identity.APIGetResourceAccountReply
 
 doc {
-    title "GetResourceAccount"
+    title "查看资源所属账户"
 
     category "identity"
 
-    desc """在这里填写API描述"""
+    desc """输入资源的UUID可以获得该资源所属账户"""
 
     rest {
         request {
