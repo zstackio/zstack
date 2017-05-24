@@ -133,15 +133,15 @@ class OperateEipCase extends SubCase{
     void test() {
         env.create {
             testAttachVmNicToEip()
-            testDeleteEip()
             testReconnectHostBatchApplyEips()
+            testDeleteEip()
         }
     }
 
     void testAttachVmNicToEip(){
         def eip = env.inventoryByName("eip") as EipInventory
         def vm = env.inventoryByName("vm") as VmInstanceInventory
-        def cmd = null
+        FlatEipBackend.ApplyEipCmd cmd = new FlatEipBackend.ApplyEipCmd()
         env.afterSimulator(FlatEipBackend.APPLY_EIP_PATH){ rsp,HttpEntity<String> entity ->
             cmd = json(entity.getBody(),FlatEipBackend.ApplyEipCmd.class)
             return rsp
@@ -152,13 +152,15 @@ class OperateEipCase extends SubCase{
             vmNicUuid = vm.getVmNics().get(0).getUuid()
         }
 
-        assert cmd != null
+        assert cmd.eip.eipUuid == eip.uuid
         assert dbFindByUuid(eip.uuid,EipVO.class).guestIp == vm.getVmNics().get(0).getIp()
     }
 
+
+
     void testDeleteEip(){
         def eip = env.inventoryByName("eip") as EipInventory
-        def cmd = null
+        FlatEipBackend.DeleteEipCmd cmd = new FlatEipBackend.DeleteEipCmd()
         env.afterSimulator(FlatEipBackend.DELETE_EIP_PATH){ rsp,HttpEntity<String> entity ->
             cmd = json(entity.getBody(),FlatEipBackend.DeleteEipCmd.class)
             return rsp
@@ -168,19 +170,28 @@ class OperateEipCase extends SubCase{
             uuid = eip.uuid
         }
 
-        assert cmd != null
+        assert cmd.eip.eipUuid == eip.uuid
         assert dbFindByUuid(eip.uuid,EipVO.class) == null
     }
 
     void testReconnectHostBatchApplyEips(){
         def host = env.inventoryByName("kvm") as HostInventory
+        def eip = env.inventoryByName("eip") as EipInventory
+        FlatEipBackend.BatchApplyEipCmd cmd = new FlatEipBackend.BatchApplyEipCmd()
 
+        env.afterSimulator(FlatEipBackend.BATCH_APPLY_EIP_PATH){rsp, HttpEntity<String> entity ->
+            cmd = json(entity.getBody(), FlatEipBackend.BatchApplyEipCmd)
+            return rsp
+        }
         reconnectHost {
             uuid = host.uuid
         }
 
+        assert cmd.eips.size() == 1
+        assert cmd.eips.get(0).eipUuid == eip.uuid
         assert dbFindByUuid(host.uuid, HostVO.class).getStatus() == HostStatus.Connected
     }
+    
     @Override
     void clean() {
        env.delete()
