@@ -309,7 +309,7 @@ public class ZSClient {
                     urlBuilder.addQueryParameter("sort", String.format("%s", qaction.sortBy));
                 } else {
                     String d = "asc".equals(qaction.sortDirection) ? "+" : "-";
-                    urlBuilder.addQueryParameter("sort", String.format("%s%s", d, qaction.replyWithCount));
+                    urlBuilder.addQueryParameter("sort", String.format("%s%s", d, qaction.sortBy));
                 }
             }
             if (qaction.fields != null && !qaction.fields.isEmpty()) {
