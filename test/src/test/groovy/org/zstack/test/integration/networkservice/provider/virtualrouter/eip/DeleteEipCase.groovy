@@ -177,8 +177,6 @@ class DeleteEipCase extends SubCase{
             env.recreate("eip")
             testCreatePortForwarding()
             env.recreate("eip")
-            testOnlyDeleteUsedIp()
-            env.recreate("eip")
             testDeleteEipAfterTheVmDestroyed()
         }
     }
