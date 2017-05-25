@@ -10,9 +10,13 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.header.AbstractService;
 import org.zstack.header.message.Message;
+import org.zstack.storage.backup.BackupStoragePingTracker;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.BeanConstructor;
+import org.zstack.testlib.WebBeanConstructor;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -26,6 +30,7 @@ public class TestCloudBusSharding {
     boolean isSuccess = false;
     String servId = "FakeService";
     CountDownLatch startLatch = new CountDownLatch(1);
+    private final static CLogger logger = Utils.getLogger(TestCloudBusSharding.class);
 
     public static class HelloWorldMsg extends Message {
     }
@@ -69,7 +74,7 @@ public class TestCloudBusSharding {
 
     @Before
     public void setUp() throws Exception {
-        BeanConstructor con = new BeanConstructor();
+        WebBeanConstructor con = new WebBeanConstructor();
         /* This loads spring application context */
         loader = con.addXml("PortalForUnitTest.xml").addXml("AccountManager.xml").build();
         dbf = loader.getComponent(DatabaseFacade.class);
