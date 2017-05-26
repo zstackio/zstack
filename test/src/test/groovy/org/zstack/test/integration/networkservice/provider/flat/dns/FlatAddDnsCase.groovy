@@ -19,6 +19,7 @@ class FlatAddDnsCase extends SubCase {
     L3NetworkInventory l3
     String dns1 = "8.8.8.8"
     String dns2 = "8.8.4.4"
+    String dns3 = "1.2.4.8"
 
     @Override
     void clean() {
@@ -50,11 +51,43 @@ class FlatAddDnsCase extends SubCase {
             delegate.dns = dns1
         }
 
-        assert cmd == null
-        // Note(WeiW): Yes, actually though setDns of FlatDnsBackend has been implemented,
-        // but workflow will always return in
-        // org.zstack.network.service.DnsExtension.handle(org.zstack.header.network.service.AddDnsMsg),
-        // because the ptype is null
+        assert cmd != null
+        assert cmd.dns.contains(dns1)
+
+        addDnsToL3Network {
+            delegate.l3NetworkUuid = l3.getUuid()
+            delegate.dns = dns2
+        }
+
+        assert cmd != null
+        assert cmd.dns.containsAll([dns1, dns2])
+    }
+
+    void testRemoveDns() {
+        FlatDnsBackend.SetDnsCmd cmd = null
+
+        env.afterSimulator(FlatDnsBackend.SET_DNS_PATH) { rsp, HttpEntity<String> e ->
+            cmd = JSONObjectUtil.toObject(e.body, FlatDnsBackend.SetDnsCmd.class)
+            return rsp
+        }
+
+        removeDnsFromL3Network {
+            delegate.l3NetworkUuid = l3.getUuid()
+            delegate.dns = dns1
+        }
+
+        assert cmd != null
+        assert cmd.dns.contains(dns2)
+        assert !cmd.dns.contains(dns1)
+
+        addDnsToL3Network {
+            delegate.l3NetworkUuid = l3.getUuid()
+            delegate.dns = dns3
+        }
+
+        assert cmd != null
+        assert cmd.dns.containsAll([dns2, dns3])
+        assert !cmd.dns.contains(dns1)
     }
 
     @Override
@@ -62,6 +95,7 @@ class FlatAddDnsCase extends SubCase {
         env.create {
             l3 = (env.specByName("l3") as L3NetworkSpec).inventory
             testAddDns()
+            testRemoveDns()
         }
     }
 }
