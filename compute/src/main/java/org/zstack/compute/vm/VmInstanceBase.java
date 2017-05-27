@@ -3911,7 +3911,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         spec.getImageSpec().setInventory(ImageInventory.valueOf(imvo));
         spec.setCurrentVmOperation(VmOperation.NewCreate);
-        if (self.getZoneUuid() != null || self.getClusterUuid() != null || self.getHostUuid() != null) {
+        if (self.getClusterUuid() != null || self.getHostUuid() != null) {
             spec.setHostAllocatorStrategy(HostAllocatorConstant.DESIGNATED_HOST_ALLOCATOR_STRATEGY_TYPE);
         }
         buildHostname(spec);

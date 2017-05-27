@@ -718,6 +718,17 @@ public class VmInstanceManagerImpl extends AbstractService implements
     private CreateVmInstanceMsg fromAPICreateVmInstanceMsg(APICreateVmInstanceMsg msg) {
         CreateVmInstanceMsg cmsg = new CreateVmInstanceMsg();
 
+
+        if(msg.getZoneUuid() != null){
+            cmsg.setZoneUuid(msg.getZoneUuid());
+        }else{
+            String zoneUuid = Q.New(L3NetworkVO.class)
+                    .select(L3NetworkVO_.zoneUuid)
+                    .eq(L3NetworkVO_.uuid, msg.getL3NetworkUuids().get(0))
+                    .findValue();
+            cmsg.setZoneUuid(zoneUuid);
+        }
+
         InstanceOfferingVO iovo = dbf.findByUuid(msg.getInstanceOfferingUuid(), InstanceOfferingVO.class);
         cmsg.setInstanceOfferingUuid(iovo.getUuid());
         cmsg.setCpuNum(iovo.getCpuNum());
@@ -732,7 +743,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         cmsg.setType(msg.getType());
         cmsg.setRootDiskOfferingUuid(msg.getRootDiskOfferingUuid());
         cmsg.setDataDiskOfferingUuids(msg.getDataDiskOfferingUuids());
-        cmsg.setZoneUuid(msg.getZoneUuid());
+
         cmsg.setClusterUuid(msg.getClusterUuid());
         cmsg.setHostUuid(msg.getHostUuid());
         cmsg.setPrimaryStorageUuidForRootVolume(msg.getPrimaryStorageUuidForRootVolume());
