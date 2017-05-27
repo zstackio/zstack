@@ -1134,15 +1134,17 @@ public class VolumeBase implements Volume {
                     return ret;
                 }
 
-                //the vm doesn't suport to attach volume when  image platform type is other
-                ret = sql("select vm" +
+                //the vm doesn't suport to online attach volume when  image platform type is other
+                List<String> exclude = sql("select vm.uuid" +
                         " from VmInstanceVO vm, ImageVO image" +
                         " where vm.uuid in :vmUuids" +
                         " and vm.imageUuid = image.uuid" +
-                        " and image.platform != :platformType")
+                        " and image.platform = :platformType" +
+                        " and vm.state != :vmState")
                         .param("vmUuids",ret.stream().map(VmInstanceVO::getUuid).collect(Collectors.toList()))
+                        .param("vmState", VmInstanceState.Stopped)
                         .param("platformType", ImagePlatform.Other).list();
-
+                ret = ret.stream().filter(vm -> !exclude.contains(vm.getUuid())).collect(Collectors.toList());
                 if (ret.isEmpty()) {
                     return ret;
                 }
