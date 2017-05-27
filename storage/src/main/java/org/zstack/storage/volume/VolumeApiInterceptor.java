@@ -22,6 +22,7 @@ import org.zstack.header.image.ImageState;
 import org.zstack.header.image.ImageStatus;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APIMessage;
+import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.*;
@@ -169,11 +170,13 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
                         " from VmInstanceVO vm, ImageVO image" +
                         " where vm.uuid = :vmUuid" +
                         " and vm.imageUuid = image.uuid" +
-                        " and image.platform = :platformType")
+                        " and image.platform = :platformType" +
+                        " and vm.state != :vmState")
                         .param("vmUuid",msg.getVmInstanceUuid())
+                        .param("vmState", VmInstanceState.Stopped)
                         .param("platformType", ImagePlatform.Other).find();
                 if(count > 0){
-                   throw new ApiMessageInterceptionException(operr("the vm[uuid:%s] doesn't suport to attach volume on the basis of that the image platform type of the vm is other ", msg.getVmInstanceUuid()));
+                   throw new ApiMessageInterceptionException(operr("the vm[uuid:%s] doesn't suport to online attach volume[%s] on the basis of that the image platform type of the vm is other ", msg.getVmInstanceUuid(), msg.getVolumeUuid()));
                 }
 
                 VolumeVO vol = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, msg.getVolumeUuid()).find();
