@@ -46,7 +46,7 @@ class CreateVmWhenPSCapacityLessOrGreaterImageAndRootVolumeSize extends SubCase{
             }
 
             diskOffering {
-                name = "diskOffering-10G"
+                name = "diskOffering-20G"
                 diskSize = SizeUnit.GIGABYTE.toByte(20)
             }
 
@@ -156,7 +156,7 @@ class CreateVmWhenPSCapacityLessOrGreaterImageAndRootVolumeSize extends SubCase{
         PrimaryStorageInventory ps = env.inventoryByName("local")
         InstanceOfferingInventory instanceOffering = env.inventoryByName("instanceOffering")
         L3NetworkInventory l3 = env.inventoryByName("l3")
-        DiskOfferingInventory doIvo = env.inventoryByName("diskOffering-10G")
+        DiskOfferingInventory doIvo = env.inventoryByName("diskOffering-20G")
 
         env.simulator(SftpBackupStorageConstant.DOWNLOAD_IMAGE_PATH) { HttpEntity<String> e, EnvSpec spec ->
             def cmd = JSONObjectUtil.toObject(e.getBody(), SftpBackupStorageCommands.DownloadCmd.class)
@@ -193,7 +193,7 @@ class CreateVmWhenPSCapacityLessOrGreaterImageAndRootVolumeSize extends SubCase{
         PrimaryStorageInventory ps = env.inventoryByName("local")
         InstanceOfferingInventory instanceOffering = env.inventoryByName("instanceOffering")
         L3NetworkInventory l3 = env.inventoryByName("l3")
-        DiskOfferingInventory doIvo = env.inventoryByName("diskOffering-10G")
+        DiskOfferingInventory doIvo = env.inventoryByName("diskOffering-20G")
 
         env.simulator(SftpBackupStorageConstant.DOWNLOAD_IMAGE_PATH) { HttpEntity<String> e, EnvSpec spec ->
             def cmd = JSONObjectUtil.toObject(e.getBody(), SftpBackupStorageCommands.DownloadCmd.class)
