@@ -3,6 +3,8 @@ package org.zstack.test.integration.image
 import org.springframework.http.HttpEntity
 import org.zstack.header.image.ImagePlatform
 import org.zstack.header.network.service.NetworkServiceType
+import org.zstack.header.vm.VmInstanceState
+import org.zstack.header.vm.VmInstanceVO
 import org.zstack.header.volume.VolumeConstant
 import org.zstack.header.volume.VolumeStatus
 import org.zstack.header.volume.VolumeVO
@@ -21,7 +23,7 @@ import org.zstack.utils.data.SizeUnit
 /**
  * Created by heathhose on 17-5-22.
  */
-class LinuxImagePlatformOtherCase extends SubCase{
+class LinuxImagePlatformOtherHotPluginVolumeCase extends SubCase{
     def DOC = """
 The vm doesn't support to attach vm, which use image-1 that platform type is other
 """
@@ -131,7 +133,7 @@ The vm doesn't support to attach vm, which use image-1 that platform type is oth
             }
 
             vm {
-                name = "vm-1"
+                name = "vm-other"
                 useImage("image-1")
                 useL3Networks("l3")
                 useInstanceOffering("instanceOffering")
@@ -152,36 +154,74 @@ The vm doesn't support to attach vm, which use image-1 that platform type is oth
         env.create {
             testGetCandidateVmForAttaching()
             testAttachVolumeToVm()
+            testAttachVolumeToVmImageOther()
         }
     }
 
     void testGetCandidateVmForAttaching(){
-        def offer = env.inventoryByName("diskOffering") as DiskOfferingInventory
-        def vm  = env.inventoryByName("vm-2") as VmInstanceInventory
-
-        volume = createDataVolume {
+        def offering = env.inventoryByName("diskOffering") as DiskOfferingInventory
+        def vm = env.inventoryByName("vm-other") as VmInstanceInventory
+        def vm2  = env.inventoryByName("vm-2") as VmInstanceInventory
+        def volume = createDataVolume {
             name = "test-1"
-            diskOfferingUuid =  offer.uuid
+            diskOfferingUuid =  offering.uuid
         } as VolumeInventory
 
+        //vms are runing
         def vms = getDataVolumeAttachableVm {
             volumeUuid = volume.uuid
         } as List<VmInstanceInventory>
-
         assert vms.size() == 1
-        assert vms.get(0).uuid == vm.uuid
+        assert vms.get(0).uuid == vm2.uuid
+
+        //stop vm-other and retry
+        stopVmInstance {
+           uuid = vm.uuid
+        }
+        assert dbFindByUuid(vm.uuid, VmInstanceVO.class).getState() == VmInstanceState.Stopped
+        vms = getDataVolumeAttachableVm {
+            volumeUuid = volume.uuid
+        } as List<VmInstanceInventory>
+        assert vms.size() == 2
+
+        startVmInstance {
+            uuid = vm.uuid
+        }
+        assert dbFindByUuid(vm.uuid, VmInstanceVO.class).getState() == VmInstanceState.Running
     }
 
     void testAttachVolumeToVm(){
-        def vm = env.inventoryByName("vm-1") as VmInstanceInventory
-        def vm2 = env.inventoryByName("vm-2") as VmInstanceInventory
-
-        def cmd = null
+        def offering = env.inventoryByName("diskOffering") as DiskOfferingInventory
+        def vm = env.inventoryByName("vm-2") as VmInstanceInventory
+        def volume = createDataVolume {
+            name = "test-2" 
+            diskOfferingUuid =  offering.uuid
+        } as VolumeInventory
+        
+        KVMAgentCommands.AttachDataVolumeCmd cmd = null
         env.afterSimulator(KVMConstant.KVM_ATTACH_VOLUME){rsp, HttpEntity<String> entity ->
             cmd = json(entity.getBody(), KVMAgentCommands.AttachDataVolumeCmd.class)
             return rsp
         }
+        attachDataVolumeToVm {
+            volumeUuid = volume.uuid
+            vmInstanceUuid = vm.uuid
+        }
 
+        assert dbFindByUuid(volume.uuid,VolumeVO.class).status == VolumeStatus.Ready
+        assert cmd.vmUuid == vm.uuid
+        env.cleanAfterSimulatorHandlers()
+    }
+    
+    void testAttachVolumeToVmImageOther(){
+        def vm = env.inventoryByName("vm-other") as VmInstanceInventory
+        def offering = env.inventoryByName("diskOffering") as DiskOfferingInventory
+        def volume = createDataVolume {
+            name = "test-3"
+            diskOfferingUuid = offering.uuid
+        } as VolumeInventory
+
+        //vm is running and attach volume
         expect(AssertionError.class){
             attachDataVolumeToVm {
                 volumeUuid = volume.uuid
@@ -189,14 +229,17 @@ The vm doesn't support to attach vm, which use image-1 that platform type is oth
             }
         }
         assert dbFindByUuid(volume.uuid,VolumeVO.class).status == VolumeStatus.NotInstantiated
-        assert cmd == null
 
+        //stop vm and retry
+        //vm is stop and AttachDataVolumeCmd is not called
+        stopVmInstance {
+            uuid = vm.uuid
+        }
         attachDataVolumeToVm {
             volumeUuid = volume.uuid
-            vmInstanceUuid = vm2.uuid
+            vmInstanceUuid = vm.uuid
         }
         assert dbFindByUuid(volume.uuid,VolumeVO.class).status == VolumeStatus.Ready
-        assert cmd != null
 
     }
     @Override
