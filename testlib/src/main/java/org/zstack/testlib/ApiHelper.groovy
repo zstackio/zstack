@@ -2877,33 +2877,6 @@ trait ApiHelper {
     }
 
 
-    def createRouteEntryForConnectionRemote(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CreateRouteEntryForConnectionRemoteAction.class) Closure c) {
-        def a = new org.zstack.sdk.CreateRouteEntryForConnectionRemoteAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
-        c.resolveStrategy = Closure.OWNER_FIRST
-        c.delegate = a
-        c()
-        
-
-        if (System.getProperty("apipath") != null) {
-            if (a.apiId == null) {
-                a.apiId = Platform.uuid
-            }
-    
-            def tracker = new ApiPathTracker(a.apiId)
-            def out = errorOut(a.call())
-            def path = tracker.getApiPath()
-            if (!path.isEmpty()) {
-                Test.apiPaths[a.class.name] = path.join(" --->\n")
-            }
-        
-            return out
-        } else {
-            return errorOut(a.call())
-        }
-    }
-
-
     def createRouterInterfacePairRemote(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CreateRouterInterfacePairRemoteAction.class) Closure c) {
         def a = new org.zstack.sdk.CreateRouterInterfacePairRemoteAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -3608,7 +3581,7 @@ trait ApiHelper {
 
     def deleteBaremetalHostCfg(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeleteBaremetalHostCfgAction.class) Closure c) {
         def a = new org.zstack.sdk.DeleteBaremetalHostCfgAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
         c()
@@ -6983,33 +6956,6 @@ trait ApiHelper {
 
     def getNicQos(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetNicQosAction.class) Closure c) {
         def a = new org.zstack.sdk.GetNicQosAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
-        c.resolveStrategy = Closure.OWNER_FIRST
-        c.delegate = a
-        c()
-        
-
-        if (System.getProperty("apipath") != null) {
-            if (a.apiId == null) {
-                a.apiId = Platform.uuid
-            }
-    
-            def tracker = new ApiPathTracker(a.apiId)
-            def out = errorOut(a.call())
-            def path = tracker.getApiPath()
-            if (!path.isEmpty()) {
-                Test.apiPaths[a.class.name] = path.join(" --->\n")
-            }
-        
-            return out
-        } else {
-            return errorOut(a.call())
-        }
-    }
-
-
-    def getOssBuceketFileFromRemote(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetOssBuceketFileFromRemoteAction.class) Closure c) {
-        def a = new org.zstack.sdk.GetOssBuceketFileFromRemoteAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -12565,7 +12511,7 @@ trait ApiHelper {
 
     def updateBaremetalChessis(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdateBaremetalChessisAction.class) Closure c) {
         def a = new org.zstack.sdk.UpdateBaremetalChessisAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
         c()
