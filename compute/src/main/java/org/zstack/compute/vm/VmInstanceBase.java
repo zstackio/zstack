@@ -2134,26 +2134,32 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         if (bsUuids == null) {
             String sql = "select img" +
-                    " from ImageVO img, ImageBackupStorageRefVO ref, BackupStorageVO bs" +
+                    " from ImageVO img, ImageBackupStorageRefVO ref, BackupStorageVO bs, BackupStorageZoneRefVO bsRef" +
                     " where ref.imageUuid = img.uuid" +
                     " and img.mediaType = :imgType" +
                     " and img.status = :status" +
                     " and bs.uuid = ref.backupStorageUuid" +
-                    " and bs.type in (:bsTypes)";
+                    " and bs.type in (:bsTypes)" +
+                    " and bs.uuid = bsRef.backupStorageUuid" +
+                    " and bsRef.zoneUuid = :zoneUuid";
             TypedQuery<ImageVO> q = dbf.getEntityManager().createQuery(sql, ImageVO.class);
+            q.setParameter("zoneUuid", getSelfInventory().getZoneUuid());
             q.setParameter("imgType", ImageMediaType.ISO);
             q.setParameter("status", ImageStatus.Ready);
             q.setParameter("bsTypes", hostAllocatorMgr.getBackupStorageTypesByPrimaryStorageTypeFromMetrics(ps.getType()));
             reply.setInventories(ImageInventory.valueOf(q.getResultList()));
         } else if (!bsUuids.isEmpty()) {
             String sql = "select img" +
-                    " from ImageVO img, ImageBackupStorageRefVO ref, BackupStorageVO bs" +
+                    " from ImageVO img, ImageBackupStorageRefVO ref, BackupStorageVO bs, BackupStorageZoneRefVO bsRef" +
                     " where ref.imageUuid = img.uuid" +
                     " and img.mediaType = :imgType" +
                     " and img.status = :status" +
                     " and bs.uuid = ref.backupStorageUuid" +
-                    " and bs.uuid in (:bsUuids)";
+                    " and bs.uuid in (:bsUuids)" +
+                    " and bs.uuid = bsRef.backupStorageUuid" +
+                    " and bsRef.zoneUuid = :zoneUuid";
             TypedQuery<ImageVO> q = dbf.getEntityManager().createQuery(sql, ImageVO.class);
+            q.setParameter("zoneUuid", getSelfInventory().getZoneUuid());
             q.setParameter("imgType", ImageMediaType.ISO);
             q.setParameter("status", ImageStatus.Ready);
             q.setParameter("bsUuids", bsUuids);
