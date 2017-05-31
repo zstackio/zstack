@@ -46,6 +46,7 @@ import javax.servlet.http.HttpSession;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
@@ -1099,6 +1100,24 @@ public class RestServer implements Component, CloudBusEventListener {
 
             responseAnnotationByClass.put(api.apiResponseClass, new RestResponseWrapper(api.responseAnnotation, api.apiResponseClass));
         }
+
+        responseAnnotationByClass.put(APIEvent.class, new RestResponseWrapper(new RestResponse(){
+            @Override
+            public Class<? extends Annotation> annotationType() {
+                return null;
+            }
+
+            @Override
+            public String allTo() {
+                return "";
+            }
+
+            @Override
+            public String[] fieldsTo() {
+                return new String[0];
+            }
+
+        }, APIEvent.class));
 
         if (errorApiList.size() > 0){
             logger.error(String.format("Error Api list : %s", errorApiList));

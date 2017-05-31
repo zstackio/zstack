@@ -3,11 +3,13 @@ package org.zstack.test.integration.ldap.forcase
 import com.unboundid.ldap.sdk.LDAPInterface
 import com.unboundid.ldap.sdk.SearchResult
 import com.unboundid.ldap.sdk.SearchScope
+import org.zstack.sdk.AddLdapServerAction
 import org.zstack.sdk.LdapServerInventory
 import org.zstack.test.integration.ldap.Env
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.test.integration.ldap.LdapTest
+import org.zstack.testlib.Test
 
 /**
  * Created by Administrator on 2017-03-22.
@@ -63,6 +65,21 @@ class LdapConnCase extends SubCase {
             sessionId = currentEnvSpec.session.uuid
         } as LdapServerInventory
         String LdapUuid = result.uuid
+
+        AddLdapServerAction addLdapServerAction = new AddLdapServerAction(
+                name : "ldap0",
+                description : "test-ldap0",
+                base : LdapTest.DOMAIN_DSN,
+                url : "ldap://localhost:1888",
+                username : "",
+                password : "",
+                encryption : "None",
+                systemTags : ["ephemeral::validationOnly"],
+                sessionId : Test.currentEnvSpec.session.uuid
+        )
+        AddLdapServerAction.Result addLdapResult = addLdapServerAction.call()
+        assert null == addLdapResult.error
+        assert null == addLdapResult.value.inventory
 
         deleteLdapServer {
             uuid = LdapUuid
