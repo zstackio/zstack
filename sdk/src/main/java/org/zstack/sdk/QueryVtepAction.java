@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class GetL3NetworkMtuAction extends AbstractAction {
+public class QueryVtepAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public GetL3NetworkMtuResult value;
+        public QueryVtepResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -22,17 +22,6 @@ public class GetL3NetworkMtuAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String l3NetworkUuid;
-
-    @Param(required = false)
-    public java.util.List systemTags;
-
-    @Param(required = false)
-    public java.util.List userTags;
-
-    @Param(required = true)
-    public String sessionId;
 
 
     private Result makeResult(ApiResult res) {
@@ -42,8 +31,8 @@ public class GetL3NetworkMtuAction extends AbstractAction {
             return ret;
         }
         
-        GetL3NetworkMtuResult value = res.getResult(GetL3NetworkMtuResult.class);
-        ret.value = value == null ? new GetL3NetworkMtuResult() : value; 
+        QueryVtepResult value = res.getResult(QueryVtepResult.class);
+        ret.value = value == null ? new QueryVtepResult() : value; 
 
         return ret;
     }
@@ -69,7 +58,7 @@ public class GetL3NetworkMtuAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/l3-networks/{l3NetworkUuid}/mtu";
+        info.path = "/l2-networks/vteps";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";

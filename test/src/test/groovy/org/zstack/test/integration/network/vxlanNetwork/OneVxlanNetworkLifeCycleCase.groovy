@@ -288,6 +288,14 @@ class OneVxlanNetworkLifeCycleCase extends SubCase {
 
         assert poolinv.getAttachedVtepRefs().size().equals(1)
 
+        // Same to above, just test queryVtep API
+
+        List<VtepInventory> vtepinvs = queryVtep {
+            delegate.conditions = ["poolUuid=${poolinv.getUuid()}".toString()]
+        }
+
+        assert vtepinvs.size().equals(1)
+
         netinv = queryL2VxlanNetwork {
             delegate.conditions = ["uuid=${netinv.getUuid()}".toString()]
         }[0]
