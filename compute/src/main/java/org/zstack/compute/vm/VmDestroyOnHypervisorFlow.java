@@ -42,10 +42,15 @@ public class VmDestroyOnHypervisorFlow extends NoRollbackFlow {
             return;
         }
 
+        /*
+        // There may be inconsistencies in data，vm is Stopped in db，But it's actually running
+        // if not to destroy the vm, may cause deletion of disk failure in ceph
+        // So you need to destroy the vm, no matter what the state is
         if (VmInstanceState.Stopped.toString().equals(spec.getVmInventory().getState())) {
             chain.next();
             return;
         }
+        */
 
         DestroyVmOnHypervisorMsg msg = new DestroyVmOnHypervisorMsg();
         msg.setVmInventory(spec.getVmInventory());
