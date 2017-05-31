@@ -10,7 +10,6 @@ import java.util.Map;
 public enum VolumeSnapshotStatus {
     Creating,
     Ready,
-    Deleted,
     Deleting;
 
     static {
