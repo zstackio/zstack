@@ -38,8 +38,6 @@ public class VtepInventory {
 
     private Timestamp lastOpDate;
 
-    @Queryable(mappingClass = VxlanNetworkPoolVO.class,
-            joinColumn = @JoinColumn(name = "uuid", referencedColumnName = "poolUuid"))
     private String poolUuid;
 
     public VtepInventory() {
