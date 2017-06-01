@@ -208,9 +208,8 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
             throw new OperationFailureException(operr("cannot find a Connected host to execute command for nfs primary storage[uuid:%s]", pri.getUuid()));
         }
 
-        String sql = "select h from HostVO h where h.state = :state and h.status = :connectionState and h.clusterUuid in (:clusterUuids)";
+        String sql = "select h from HostVO h where h.status = :connectionState and h.clusterUuid in (:clusterUuids)";
         TypedQuery<HostVO> q = dbf.getEntityManager().createQuery(sql, HostVO.class);
-        q.setParameter("state", HostState.Enabled);
         q.setParameter("connectionState", HostStatus.Connected);
         q.setParameter("clusterUuids", pri.getAttachedClusterUuids());
         q.setMaxResults(1);
