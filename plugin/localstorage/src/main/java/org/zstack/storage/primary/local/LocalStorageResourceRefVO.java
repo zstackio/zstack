@@ -18,10 +18,6 @@ import java.sql.Timestamp;
 @Entity
 @Table
 @IdClass(CompositePrimaryKeyForLocalStorageResourceRefVO.class)
-@SoftDeletionCascades({
-        @SoftDeletionCascade(parent = VolumeVO.class, joinColumn = "resourceUuid"),
-        @SoftDeletionCascade(parent = VolumeSnapshotVO.class, joinColumn = "resourceUuid")
-})
 public class LocalStorageResourceRefVO {
     @Column
     @Id

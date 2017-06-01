@@ -964,7 +964,14 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         self.setState(nextState);
         self = dbf.updateAndRefresh(self);
         extpEmitter.afterChange(self, event, currState);
+
+        PrimaryStorageCanonicalEvent.PrimaryStorageStateChangedData data = new PrimaryStorageCanonicalEvent.PrimaryStorageStateChangedData();
+        data.setInventory(PrimaryStorageInventory.valueOf(self));
+        data.setPrimaryStorageUuid(self.getUuid());
+        data.setOldState(currState);
+        data.setNewState(nextState);
         evt.setInventory(PrimaryStorageInventory.valueOf(self));
+        evtf.fire(PrimaryStorageCanonicalEvent.PRIMARY_STORAGE_STATE_CHANGED_PATH, data);
         bus.publish(evt);
     }
 
