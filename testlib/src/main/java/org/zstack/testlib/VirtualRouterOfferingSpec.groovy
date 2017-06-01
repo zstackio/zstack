@@ -186,6 +186,10 @@ class VirtualRouterOfferingSpec extends InstanceOfferingSpec {
             return new VirtualRouterCommands.ConfigureNicRsp()
         }
 
+        simulator(VirtualRouterConstant.VR_REMOVE_NIC_PATH) {
+            return new VirtualRouterCommands.RemoveNicRsp()
+        }
+
         simulator(VirtualRouterConstant.VR_REMOVE_DHCP_PATH) {
             return new VirtualRouterCommands.RemoveDhcpEntryRsp()
         }
