@@ -1,6 +1,6 @@
 package org.zstack.sdk;
 
-public class BaremetalChessisInventory  {
+public class BaremetalChassisInventory  {
 
     public java.lang.String uuid;
     public void setUuid(java.lang.String uuid) {

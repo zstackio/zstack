@@ -16,13 +16,13 @@ CREATE TABLE `BaremetalPxeServerVO` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- ----------------------------
---  Table structure for `BaremetalChessisVO`
+--  Table structure for `BaremetalChassisVO`
 -- ----------------------------
-CREATE TABLE `BaremetalChessisVO` (
+CREATE TABLE `BaremetalChassisVO` (
   `uuid` varchar(32) NOT NULL UNIQUE COMMENT 'uuid',
-  `ipmiAddress` varchar(32) NOT NULL UNIQUE COMMENT 'baremetal chessis ipmi address',
-  `ipmiUsername` varchar(255) NOT NULL COMMENT 'baremetal chessis ipmi username',
-  `ipmiPassword` varchar(255) NOT NULL COMMENT 'baremetal chessis ipmi password',
+  `ipmiAddress` varchar(32) NOT NULL UNIQUE COMMENT 'baremetal chassis ipmi address',
+  `ipmiUsername` varchar(255) NOT NULL COMMENT 'baremetal chassis ipmi username',
+  `ipmiPassword` varchar(255) NOT NULL COMMENT 'baremetal chassis ipmi password',
   `provisioned` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'is baremetal host provisioned already',
   `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
   `createDate` timestamp,
@@ -34,14 +34,14 @@ CREATE TABLE `BaremetalChessisVO` (
 -- ----------------------------
 CREATE TABLE `BaremetalHostCfgVO` (
   `uuid` varchar(32) NOT NULL UNIQUE COMMENT 'uuid',
-  `chessisUuid` varchar(32) NOT NULL UNIQUE COMMENT 'baremetal chessis uuid',
+  `chassisUuid` varchar(32) NOT NULL UNIQUE COMMENT 'baremetal chassis uuid',
   `password` varchar(255) DEFAULT NULL COMMENT 'host root password',
   `vnc` tinyint(1) unsigned NOT NULL DEFAULT 1 COMMENT 'start vnc or not',
   `unattended` tinyint(1) unsigned NOT NULL DEFAULT 1 COMMENT 'unattended installation process or not',
   `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
   `createDate` timestamp,
   PRIMARY KEY  (`uuid`),
-  CONSTRAINT `fkBaremetalHostCfgVOBaremetalChessisVO` FOREIGN KEY (`chessisUuid`) REFERENCES `BaremetalChessisVO` (`uuid`) ON DELETE RESTRICT
+  CONSTRAINT `fkBaremetalHostCfgVOBaremetalChassisVO` FOREIGN KEY (`chassisUuid`) REFERENCES `BaremetalChassisVO` (`uuid`) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- ----------------------------
@@ -63,7 +63,7 @@ CREATE TABLE `BaremetalHostNicCfgVO` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "BaremetalPxeServerVO" FROM BaremetalPxeServerVO t;
-INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "BaremetalChessisVO" FROM BaremetalChessisVO t;
+INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "BaremetalChassisVO" FROM BaremetalChassisVO t;
 INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "BaremetalHostCfgVO" FROM BaremetalHostCfgVO t;
 INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "BaremetalHostNicCfgVO" FROM BaremetalHostNicCfgVO t;
 

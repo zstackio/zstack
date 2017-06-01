@@ -10,12 +10,12 @@ public class BaremetalHostCfgInventory  {
         return this.uuid;
     }
 
-    public java.lang.String chessisUuid;
-    public void setChessisUuid(java.lang.String chessisUuid) {
-        this.chessisUuid = chessisUuid;
+    public java.lang.String chassisUuid;
+    public void setChassisUuid(java.lang.String chassisUuid) {
+        this.chassisUuid = chassisUuid;
     }
-    public java.lang.String getChessisUuid() {
-        return this.chessisUuid;
+    public java.lang.String getChassisUuid() {
+        return this.chassisUuid;
     }
 
     public java.lang.String password;

@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class CreateBaremetalChessisAction extends AbstractAction {
+public class DeleteBaremetalChassisAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public CreateBaremetalChessisResult value;
+        public DeleteBaremetalChassisResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -23,16 +23,10 @@ public class CreateBaremetalChessisAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String ipmiAddress;
-
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String ipmiUsername;
-
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String ipmiPassword;
+    public java.lang.String uuid;
 
     @Param(required = false)
-    public java.lang.String resourceUuid;
+    public java.lang.String deleteMode = "Permissive";
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -55,8 +49,8 @@ public class CreateBaremetalChessisAction extends AbstractAction {
             return ret;
         }
         
-        CreateBaremetalChessisResult value = res.getResult(CreateBaremetalChessisResult.class);
-        ret.value = value == null ? new CreateBaremetalChessisResult() : value; 
+        DeleteBaremetalChassisResult value = res.getResult(DeleteBaremetalChassisResult.class);
+        ret.value = value == null ? new DeleteBaremetalChassisResult() : value; 
 
         return ret;
     }
@@ -81,11 +75,11 @@ public class CreateBaremetalChessisAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/baremetal/chessis";
+        info.httpMethod = "DELETE";
+        info.path = "/baremetal/chassis/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

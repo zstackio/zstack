@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class QueryBaremetalChessisAction extends QueryAction {
+public class CreateBaremetalChassisAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public QueryBaremetalChessisResult value;
+        public CreateBaremetalChassisResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -22,6 +22,30 @@ public class QueryBaremetalChessisAction extends QueryAction {
         }
     }
 
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String ipmiAddress;
+
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String ipmiUsername;
+
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String ipmiPassword;
+
+    @Param(required = false)
+    public java.lang.String resourceUuid;
+
+    @Param(required = false)
+    public java.util.List systemTags;
+
+    @Param(required = false)
+    public java.util.List userTags;
+
+    @Param(required = true)
+    public String sessionId;
+
+    public long timeout;
+    
+    public long pollingInterval;
 
 
     private Result makeResult(ApiResult res) {
@@ -31,8 +55,8 @@ public class QueryBaremetalChessisAction extends QueryAction {
             return ret;
         }
         
-        QueryBaremetalChessisResult value = res.getResult(QueryBaremetalChessisResult.class);
-        ret.value = value == null ? new QueryBaremetalChessisResult() : value; 
+        CreateBaremetalChassisResult value = res.getResult(CreateBaremetalChassisResult.class);
+        ret.value = value == null ? new CreateBaremetalChassisResult() : value; 
 
         return ret;
     }
@@ -57,11 +81,11 @@ public class QueryBaremetalChessisAction extends QueryAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
-        info.path = "/baremetal/chessis";
+        info.httpMethod = "POST";
+        info.path = "/baremetal/chassis";
         info.needSession = true;
-        info.needPoll = false;
-        info.parameterName = "";
+        info.needPoll = true;
+        info.parameterName = "params";
         return info;
     }
 
