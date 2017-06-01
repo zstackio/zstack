@@ -526,7 +526,9 @@ class ChangeVmCpuAndMemoryCase extends SubCase {
 
         if (increaseMem % SizeUnit.MEGABYTE.toByte(128) == 0 as long) {
             assert increaseMem == 0L ? cmd == null : cmd != null
-            assert cmd.memorySize == vo.getMemorySize() + increaseMem
+            if (cmd != null) {
+                assert cmd.memorySize == vo.getMemorySize() + increaseMem
+            }
         } else {
             def reminder = increaseMem % SizeUnit.MEGABYTE.toByte(128) as long
             if (reminder < SizeUnit.MEGABYTE.toByte(128) / 2) {
