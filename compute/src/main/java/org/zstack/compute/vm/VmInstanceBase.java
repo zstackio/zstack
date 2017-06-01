@@ -9,6 +9,7 @@ import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -2916,23 +2917,59 @@ public class VmInstanceBase extends AbstractVmInstance {
                     return;
                 }
 
+                FlowChain fchain = FlowChainBuilder.newSimpleFlowChain();
+                fchain.setName(String.format("detach-l3-network-to-vm-%s", msg.getVmInstanceUuid()));
+                fchain.then(new NoRollbackFlow() {
+                    String __name__ = "before-detach-nic";
 
-                detachNic(msg.getVmNicUuid(), new Completion(msg, chain) {
                     @Override
-                    public void success() {
+                    public void run(FlowTrigger trigger, Map data) {
+                        VmNicInventory nic = VmNicInventory.valueOf((VmNicVO) Q.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).find());
+                        beforeDetachNic(nic, new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                }).then(new NoRollbackFlow() {
+                    String __name__ = "detach-nic";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        detachNic(msg.getVmNicUuid(), new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.next();
+                            }
+                        });
+                    }
+                }).done(new FlowDoneHandler(msg) {
+                    @Override
+                    public void handle(Map data) {
                         self = dbf.reload(self);
-                        evt.setInventory(getSelfInventory());
+                        evt.setInventory(VmInstanceInventory.valueOf(self));
                         bus.publish(evt);
                         chain.next();
                     }
-
+                }).error(new FlowErrorHandler(msg) {
                     @Override
-                    public void fail(ErrorCode errorCode) {
-                        evt.setError(errorCode);
+                    public void handle(ErrorCode errCode, Map data) {
+                        evt.setError(errCode);
                         bus.publish(evt);
                         chain.next();
                     }
-                });
+                }).start();
             }
 
             @Override
@@ -2940,6 +2977,10 @@ public class VmInstanceBase extends AbstractVmInstance {
                 return "detach-nic";
             }
         });
+    }
+
+    protected void beforeDetachNic(VmNicInventory nicInventory, Completion completion) {
+        completion.success();
     }
 
     // switch vm default nic if vm current default nic is input parm nic
@@ -3531,20 +3572,63 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     private void handle(final APIAttachL3NetworkToVmMsg msg) {
         final APIAttachL3NetworkToVmEvent evt = new APIAttachL3NetworkToVmEvent(msg.getId());
-        attachNic(msg, msg.getL3NetworkUuid(), new ReturnValueCompletion<VmNicInventory>(msg) {
+        final String vmNicInvKey = "vmNicInventory";
+
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName(String.format("attach-l3-network-to-vm-%s", msg.getVmInstanceUuid()));
+        chain.then(new NoRollbackFlow() {
+            String __name__ = "attach-nic";
+
             @Override
-            public void success(VmNicInventory returnValue) {
+            public void run(FlowTrigger trigger, Map data) {
+                attachNic(msg, msg.getL3NetworkUuid(), new ReturnValueCompletion<VmNicInventory>(msg) {
+                    @Override
+                    public void success(VmNicInventory returnValue) {
+                        data.put(vmNicInvKey, returnValue);
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "after-attach-nic";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                afterAttachNic((VmNicInventory) data.get(vmNicInvKey), new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+        }).done(new FlowDoneHandler(msg) {
+            @Override
+            public void handle(Map data) {
                 self = dbf.reload(self);
                 evt.setInventory(VmInstanceInventory.valueOf(self));
                 bus.publish(evt);
             }
-
+        }).error(new FlowErrorHandler(msg) {
             @Override
-            public void fail(ErrorCode errorCode) {
-                evt.setError(errorCode);
+            public void handle(ErrorCode errCode, Map data) {
+                evt.setError(errCode);
                 bus.publish(evt);
             }
-        });
+        }).start();
+    }
+
+    protected void afterAttachNic(VmNicInventory nicInventory, Completion completion) {
+        completion.success();
     }
 
     private void detachVolume(final DetachDataVolumeFromVmMsg msg, final NoErrorCompletion completion) {

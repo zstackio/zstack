@@ -23,6 +23,7 @@ public interface VirtualRouterConstant {
 
 	public static final String VR_ECHO_PATH = "/echo";
 	public static final String VR_CONFIGURE_NIC_PATH = "/configurenic";
+	public static final String VR_REMOVE_NIC_PATH = "/removenic";
 	public static final String VR_ADD_DHCP_PATH = "/adddhcp";
 	public static final String VR_REMOVE_DHCP_PATH = "/removedhcp";
 	public static final String VR_SET_SNAT_PATH = "/setsnat";
