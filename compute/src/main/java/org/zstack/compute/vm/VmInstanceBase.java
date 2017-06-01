@@ -3540,20 +3540,60 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     private void handle(final APIAttachL3NetworkToVmMsg msg) {
         final APIAttachL3NetworkToVmEvent evt = new APIAttachL3NetworkToVmEvent(msg.getId());
-        attachNic(msg, msg.getL3NetworkUuid(), new ReturnValueCompletion<VmNicInventory>(msg) {
+        final String vmNicInvKey = "vmNicInventory";
+
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName(String.format("attach-l3-network-to-vm-%s", msg.getVmInstanceUuid()));
+        chain.then(new NoRollbackFlow() {
             @Override
-            public void success(VmNicInventory returnValue) {
+            public void run(FlowTrigger trigger, Map data) {
+                attachNic(msg, msg.getL3NetworkUuid(), new ReturnValueCompletion<VmNicInventory>(msg) {
+                    @Override
+                    public void success(VmNicInventory returnValue) {
+                        data.put(vmNicInvKey, returnValue);
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                afterAttachNic((VmNicInventory) data.get(vmNicInvKey), new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                        return;
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+        }).done(new FlowDoneHandler(msg) {
+            @Override
+            public void handle(Map data) {
                 self = dbf.reload(self);
                 evt.setInventory(VmInstanceInventory.valueOf(self));
                 bus.publish(evt);
             }
-
+        }).error(new FlowErrorHandler(msg) {
             @Override
-            public void fail(ErrorCode errorCode) {
-                evt.setError(errorCode);
+            public void handle(ErrorCode errCode, Map data) {
+                evt.setError(errCode);
                 bus.publish(evt);
             }
-        });
+        }).start();
+    }
+
+    protected void afterAttachNic(VmNicInventory nicInventory, Completion completion) {
+        completion.success();
     }
 
     private void detachVolume(final DetachDataVolumeFromVmMsg msg, final NoErrorCompletion completion) {

@@ -5,11 +5,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.appliancevm.*;
 import org.zstack.appliancevm.ApplianceVmConstant.Params;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
+import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -17,10 +19,13 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
+import org.zstack.header.message.MessageReply;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
+import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.PingCmd;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.PingRsp;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant.Param;
@@ -48,6 +53,8 @@ public class VirtualRouter extends ApplianceVmBase {
     protected RESTFacade restf;
     @Autowired
     protected ErrorFacade errf;
+    @Autowired
+    protected ApiTimeoutManager apiTimeoutManager;
 
     protected VirtualRouterVmInventory vr;
 
@@ -383,5 +390,45 @@ public class VirtualRouter extends ApplianceVmBase {
                 completion.fail(errCode);
             }
         }).start();
+    }
+
+    @Override
+    protected void afterAttachNic(VmNicInventory nicInventory, Completion completion) {
+        VirtualRouterCommands.ConfigureNicCmd cmd = new VirtualRouterCommands.ConfigureNicCmd();
+        VirtualRouterCommands.NicInfo info = new VirtualRouterCommands.NicInfo();
+        info.setIp(nicInventory.getIp());
+        info.setDefaultRoute(false);
+        info.setGateway(nicInventory.getGateway());
+        info.setMac(nicInventory.getMac());
+        info.setNetmask(nicInventory.getNetmask());
+
+        VirtualRouterAsyncHttpCallMsg cmsg = new VirtualRouterAsyncHttpCallMsg();
+        cmsg.setCommand(cmd);
+        cmsg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "30m"));
+        cmsg.setPath(VirtualRouterConstant.VR_CONFIGURE_NIC_PATH);
+        cmsg.setVmInstanceUuid(vr.getUuid());
+        cmsg.setCheckStatus(true);
+        bus.makeTargetServiceIdByResourceUuid(cmsg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
+        bus.send(cmsg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
+
+                VirtualRouterAsyncHttpCallReply re = reply.castReply();
+                VirtualRouterCommands.ConfigureNicRsp rsp = re.toResponse(VirtualRouterCommands.ConfigureNicRsp.class);
+                if (rsp.isSuccess()) {
+                    logger.debug(String.format("successfully add nic[%s] to virtual router vm[uuid:%s, ip:%s]",info, vr.getUuid(), vr.getManagementNic()
+                            .getIp()));
+                    completion.success();
+                } else {
+                    ErrorCode err = operr("unable to add nic[%s] to virtual router vm[uuid:%s ip:%s], because %s",
+                            info, vr.getUuid(), vr.getManagementNic().getIp(), rsp.getError());
+                    completion.fail(err);
+                }
+            }
+        });
     }
 }

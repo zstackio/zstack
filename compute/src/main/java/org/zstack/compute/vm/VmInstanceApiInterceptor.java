@@ -302,12 +302,9 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         Tuple t = q.findTuple();
         String type = t.get(0, String.class);
         VmInstanceState state = t.get(1, VmInstanceState.class);
-        if (!VmInstanceConstant.USER_VM_TYPE.equals(type)) {
-            throw new ApiMessageInterceptionException(operr("unable to attach a L3 network. The vm[uuid: %s] is not a user vm", type));
-        }
 
         if (!VmInstanceState.Running.equals(state) && !VmInstanceState.Stopped.equals(state)) {
-            throw new ApiMessageInterceptionException(operr("unable to detach a L3 network. The vm[uuid: %s] is not Running or Stopped; the current state is %s",
+            throw new ApiMessageInterceptionException(operr("unable to attach a L3 network. The vm[uuid: %s] is not Running or Stopped; the current state is %s",
                             msg.getVmInstanceUuid(), state));
         }
 
@@ -328,8 +325,10 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         if (l3state == L3NetworkState.Disabled) {
             throw new ApiMessageInterceptionException(operr("unable to attach a L3 network. The L3 network[uuid:%s] is disabled", msg.getL3NetworkUuid()));
         }
-        if (system) {
+        if (VmInstanceConstant.USER_VM_TYPE.equals(type) && system) {
             throw new ApiMessageInterceptionException(operr("unable to attach a L3 network. The L3 network[uuid:%s] is a system network", msg.getL3NetworkUuid()));
+        } else if (!VmInstanceConstant.USER_VM_TYPE.equals(type) && !system) {
+            throw new ApiMessageInterceptionException(operr("unable to attach a L3 network. The vm[uuid: %s] is not a user vm", type));
         }
 
         if (msg.getStaticIp() != null) {
@@ -367,10 +366,6 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         String vmUuid = t.get(0, String.class);
         String vmType = t.get(1, String.class);
         VmInstanceState state = t.get(2, VmInstanceState.class);
-
-        if (!VmInstanceConstant.USER_VM_TYPE.equals(vmType)) {
-            throw new ApiMessageInterceptionException(operr("unable to detach a L3 network. The vm[uuid: %s] is not a user vm", msg.getVmInstanceUuid()));
-        }
 
         if (!VmInstanceState.Running.equals(state) && !VmInstanceState.Stopped.equals(state)) {
             throw new ApiMessageInterceptionException(operr("unable to detach a L3 network. The vm[uuid: %s] is not Running or Stopped; the current state is %s",
