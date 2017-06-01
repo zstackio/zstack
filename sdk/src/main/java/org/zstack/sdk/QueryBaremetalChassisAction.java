@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class DeleteBaremetalChessisAction extends AbstractAction {
+public class QueryBaremetalChassisAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public DeleteBaremetalChessisResult value;
+        public QueryBaremetalChassisResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -22,24 +22,6 @@ public class DeleteBaremetalChessisAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = false)
-    public java.lang.String deleteMode = "Permissive";
-
-    @Param(required = false)
-    public java.util.List systemTags;
-
-    @Param(required = false)
-    public java.util.List userTags;
-
-    @Param(required = true)
-    public String sessionId;
-
-    public long timeout;
-    
-    public long pollingInterval;
 
 
     private Result makeResult(ApiResult res) {
@@ -49,8 +31,8 @@ public class DeleteBaremetalChessisAction extends AbstractAction {
             return ret;
         }
         
-        DeleteBaremetalChessisResult value = res.getResult(DeleteBaremetalChessisResult.class);
-        ret.value = value == null ? new DeleteBaremetalChessisResult() : value; 
+        QueryBaremetalChassisResult value = res.getResult(QueryBaremetalChassisResult.class);
+        ret.value = value == null ? new QueryBaremetalChassisResult() : value; 
 
         return ret;
     }
@@ -75,10 +57,10 @@ public class DeleteBaremetalChessisAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "DELETE";
-        info.path = "/baremetal/chessis/{uuid}";
+        info.httpMethod = "GET";
+        info.path = "/baremetal/chassis";
         info.needSession = true;
-        info.needPoll = true;
+        info.needPoll = false;
         info.parameterName = "";
         return info;
     }

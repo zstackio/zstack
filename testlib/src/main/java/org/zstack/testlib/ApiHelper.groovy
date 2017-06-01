@@ -1986,8 +1986,8 @@ trait ApiHelper {
     }
 
 
-    def createBaremetalChessis(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CreateBaremetalChessisAction.class) Closure c) {
-        def a = new org.zstack.sdk.CreateBaremetalChessisAction()
+    def createBaremetalChassis(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CreateBaremetalChassisAction.class) Closure c) {
+        def a = new org.zstack.sdk.CreateBaremetalChassisAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -3417,8 +3417,8 @@ trait ApiHelper {
     }
 
 
-    def deleteBaremetalChessis(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeleteBaremetalChessisAction.class) Closure c) {
-        def a = new org.zstack.sdk.DeleteBaremetalChessisAction()
+    def deleteBaremetalChassis(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeleteBaremetalChassisAction.class) Closure c) {
+        def a = new org.zstack.sdk.DeleteBaremetalChassisAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -7909,8 +7909,8 @@ trait ApiHelper {
     }
 
 
-    def queryBaremetalChessis(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryBaremetalChessisAction.class) Closure c) {
-        def a = new org.zstack.sdk.QueryBaremetalChessisAction()
+    def queryBaremetalChassis(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryBaremetalChassisAction.class) Closure c) {
+        def a = new org.zstack.sdk.QueryBaremetalChassisAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -11963,8 +11963,8 @@ trait ApiHelper {
     }
 
 
-    def updateBaremetalChessis(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdateBaremetalChessisAction.class) Closure c) {
-        def a = new org.zstack.sdk.UpdateBaremetalChessisAction()
+    def updateBaremetalChassis(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdateBaremetalChassisAction.class) Closure c) {
+        def a = new org.zstack.sdk.UpdateBaremetalChassisAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
