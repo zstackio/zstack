@@ -58,6 +58,22 @@ public class LicenseInventory  {
         return this.cpuNum;
     }
 
+    public java.lang.Integer availableHostNum;
+    public void setAvailableHostNum(java.lang.Integer availableHostNum) {
+        this.availableHostNum = availableHostNum;
+    }
+    public java.lang.Integer getAvailableHostNum() {
+        return this.availableHostNum;
+    }
+
+    public java.lang.Integer availableCpuNum;
+    public void setAvailableCpuNum(java.lang.Integer availableCpuNum) {
+        this.availableCpuNum = availableCpuNum;
+    }
+    public java.lang.Integer getAvailableCpuNum() {
+        return this.availableCpuNum;
+    }
+
     public boolean expired;
     public void setExpired(boolean expired) {
         this.expired = expired;
