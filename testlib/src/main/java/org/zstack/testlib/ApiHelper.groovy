@@ -6497,7 +6497,7 @@ trait ApiHelper {
 
     def getLicenseInfo(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetLicenseInfoAction.class) Closure c) {
         def a = new org.zstack.sdk.GetLicenseInfoAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
         c()
