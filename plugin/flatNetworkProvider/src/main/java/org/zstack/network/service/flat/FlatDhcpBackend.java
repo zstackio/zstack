@@ -271,7 +271,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             return;
         }
 
-        reply.setError(operr(String.format("Cannot find DhcpIp for l3 network[uuid:%s]", msg.getL3NetworkUuid())));
+        reply.setError(operr("Cannot find DhcpIp for l3 network[uuid:%s]", msg.getL3NetworkUuid()));
         bus.reply(msg, reply);
     }
 

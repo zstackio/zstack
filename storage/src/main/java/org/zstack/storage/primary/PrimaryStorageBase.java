@@ -1062,8 +1062,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
         if(state == PrimaryStorageState.Maintenance){
             throw new OperationFailureException(
-                    operr(String.format("cannot attach volume[uuid:%s] whose primary storage is Maintenance", volumeUuid)
-                    ));
+                    operr("cannot attach volume[uuid:%s] whose primary storage is Maintenance", volumeUuid));
         }
     }
 }
