@@ -50,8 +50,6 @@ public class HostApiInterceptor implements ApiMessageInterceptor {
             validate((APIDeleteHostMsg) msg);
         } else if (msg instanceof APIChangeHostStateMsg){
             validate((APIChangeHostStateMsg) msg);
-        } else if (msg instanceof APIReconnectHostMsg){
-            validate((APIReconnectHostMsg) msg);
         }
 
         return msg;
@@ -81,17 +79,6 @@ public class HostApiInterceptor implements ApiMessageInterceptor {
         if (hostStatus == HostStatus.Connecting){
             throw new ApiMessageInterceptionException(
                     operr("can not update host[uuid:%s]which is connecting or creating, please wait.", msg.getHostUuid()));
-        }
-    }
-
-    private void validate(APIReconnectHostMsg msg) {
-        HostStatus hostStatus = Q.New(HostVO.class)
-                .select(HostVO_.status)
-                .eq(HostVO_.uuid,msg.getHostUuid())
-                .findValue();
-        if (hostStatus == HostStatus.Connecting){
-            throw new ApiMessageInterceptionException(
-                    operr("can not reconnect host[uuid:%s]which is connecting or creating, please wait", msg.getHostUuid()));
         }
     }
 
