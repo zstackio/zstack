@@ -70,6 +70,8 @@ public class Platform {
     private static Reflections reflections;
 
     public static Reflections getReflections() {
+        logger.debug("3333333333333333333333");
+        logger.debug(reflections.toString());
         return reflections;
     }
 

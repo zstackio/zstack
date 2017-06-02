@@ -1055,15 +1055,16 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
     @VmAttachVolumeValidatorMethod
     static void vmAttachVolumeValidator(String vmUuid, String volumeUuid) {
+        logger.debug(String.format("start validator vm:%s, volume:%s",vmUuid, volumeUuid));
         PrimaryStorageState state = SQL.New("select pri.state from PrimaryStorageVO pri " +
                 "where pri.uuid = (select vol.primaryStorageUuid from VolumeVO vol where vol.uuid = :volUuid)", PrimaryStorageState.class)
                 .param("volUuid", volumeUuid)
                 .find();
 
+        logger.debug(String.format("ps state is %s", state));
         if(state == PrimaryStorageState.Maintenance){
             throw new OperationFailureException(
-                    operr(String.format("cannot attach volume[uuid:%s] whose primary storage is Maintenance", volumeUuid)
-                    ));
+                    operr("cannot attach volume[uuid:%s] whose primary storage is Maintenance", volumeUuid));
         }
     }
 }
