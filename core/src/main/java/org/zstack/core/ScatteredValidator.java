@@ -1,5 +1,6 @@
 package org.zstack.core;
 
+import com.sun.org.apache.regexp.internal.RE;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.utils.DebugUtils;
@@ -15,14 +16,12 @@ import java.util.Set;
  * Created by xing5 on 2017/5/2.
  */
 public abstract class ScatteredValidator {
-    protected static List<Method> methods;
-
-    protected static void collectValidatorMethods(Class annotationClass, Class...argTypes) {
+    protected static List<Method> collectValidatorMethods(Class annotationClass, Class...argTypes) {
         if (argTypes == null) {
             argTypes = new Class[]{};
         }
 
-        methods = new ArrayList<>();
+        List<Method> methods = new ArrayList<>();
         Set<Method> ms = Platform.getReflections().getMethodsAnnotatedWith(annotationClass);
         for (Method m : ms) {
             if (!Modifier.isStatic(m.getModifiers())) {
@@ -48,9 +47,10 @@ public abstract class ScatteredValidator {
             m.setAccessible(true);
             methods.add(m);
         }
+        return methods;
     }
 
-    protected void invokeValidatorMethods(Object...args) {
+    protected void invokeValidatorMethods(List<Method> methods, Object...args) {
         DebugUtils.Assert(methods != null, "call collectValidatorMethods in static block before calling any methods");
 
         for (Method m : methods) {
