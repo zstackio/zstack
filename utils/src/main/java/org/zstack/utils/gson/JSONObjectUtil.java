@@ -5,6 +5,11 @@ import com.google.gson.GsonBuilder;
 import org.json.JSONArray;
 
 import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+import static org.zstack.utils.CollectionDSL.e;
+import static org.zstack.utils.CollectionDSL.map;
 
 public class JSONObjectUtil {
     private static final Gson gson;
@@ -47,6 +52,21 @@ public class JSONObjectUtil {
     public static <T> T rehashObject(Object obj, Class<T> clazz) {
         String str = toJsonString(obj);
         return toObject(str, clazz);
+    }
+
+    public static String toTypedJsonString(Object obj) {
+        return toJsonString(map(e(obj.getClass().getName(), obj)));
+    }
+
+    public static <T> T fromTypedJsonString(String jstr) {
+        LinkedHashMap map = toObject(jstr, LinkedHashMap.class);
+        String className = (String) map.keySet().iterator().next();
+        try {
+            Class clz = Class.forName(className);
+            return rehashObject(map.values().iterator().next(), (Class<T>) clz);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static String dumpPretty(Object obj) {

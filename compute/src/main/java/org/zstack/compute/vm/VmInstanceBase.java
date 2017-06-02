@@ -32,6 +32,8 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.*;
+import org.zstack.header.core.scheduler.SchedulerVO;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -59,10 +61,7 @@ import org.zstack.header.vm.VmInstanceSpec.IsoSpec;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.tag.SystemTagCreator;
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.DebugUtils;
-import org.zstack.utils.ObjectUtils;
-import org.zstack.utils.Utils;
+import org.zstack.utils.*;
 import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.function.Function;
@@ -687,12 +686,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         refreshVO();
         final VmInstanceInventory inv = getSelfInventory();
         CollectionUtils.safeForEach(pluginRgty.getExtensionList(VmBeforeExpungeExtensionPoint.class),
-                new ForEachFunction<VmBeforeExpungeExtensionPoint>() {
-                    @Override
-                    public void run(VmBeforeExpungeExtensionPoint arg) {
-                        arg.vmBeforeExpunge(inv);
-                    }
-                });
+                arg -> arg.vmBeforeExpunge(inv));
 
         ErrorCode error = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
         if (error != null) {
@@ -713,6 +707,11 @@ public class VmInstanceBase extends AbstractVmInstance {
         chain.done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
+                CollectionUtils.safeForEach(pluginRgty.getExtensionList(VmAfterExpungeExtensionPoint.class),
+                        arg -> arg.vmAfterExpunge(inv));
+
+                callVmJustBeforeDeleteFromDbExtensionPoint();
+
                 dbf.removeCollection(self.getVmNics(), VmNicVO.class);
                 dbf.remove(self);
                 logger.debug(String.format("successfully expunged the vm[uuid:%s]", self.getUuid()));
@@ -1545,6 +1544,11 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 
+    private void callVmJustBeforeDeleteFromDbExtensionPoint() {
+        VmInstanceInventory inv = getSelfInventory();
+        CollectionUtils.safeForEach(pluginRgty.getExtensionList(VmJustBeforeDeleteFromDbExtensionPoint.class), p -> p.vmJustBeforeDeleteFromDb(inv));
+    }
+
     protected void doDestroy(final VmInstanceDeletionPolicy deletionPolicy, final Completion completion) {
         final VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
         extEmitter.beforeDestroyVm(inv);
@@ -1557,11 +1561,14 @@ public class VmInstanceBase extends AbstractVmInstance {
                 if (deletionPolicy == VmInstanceDeletionPolicy.Direct) {
                     self = dbf.reload(self);
                     changeVmStateInDb(VmInstanceStateEvent.destroyed);
+                    callVmJustBeforeDeleteFromDbExtensionPoint();
                     dbf.remove(getSelf());
                 } else if (deletionPolicy == VmInstanceDeletionPolicy.DBOnly || deletionPolicy == VmInstanceDeletionPolicy.KeepVolume) {
                     new SQLBatch() {
                         @Override
                         protected void scripts() {
+                            callVmJustBeforeDeleteFromDbExtensionPoint();
+
                             sql(VmNicVO.class).eq(VmNicVO_.vmInstanceUuid, self.getUuid()).hardDelete();
                             sql(VolumeVO.class).eq(VolumeVO_.vmInstanceUuid, self.getUuid())
                                     .eq(VolumeVO_.type, VolumeType.Root)

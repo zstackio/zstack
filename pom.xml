@@ -53,11 +53,11 @@
                 <artifactId>commons-dbcp</artifactId>
                 <version>1.4</version>
             </dependency>
-	    <dependency>
-	        <groupId>commons-collections</groupId>
-	        <artifactId>commons-collections</artifactId>
-	        <version>3.2.2</version>
-	    </dependency>
+            <dependency>
+                <groupId>commons-collections</groupId>
+                <artifactId>commons-collections</artifactId>
+                <version>3.2.2</version>
+            </dependency>
             <dependency>
                 <groupId>commons-codec</groupId>
                 <artifactId>commons-codec</artifactId>
@@ -285,11 +285,11 @@
                 <version>2.9.1</version>
             </dependency>
             <!-- https://mvnrepository.com/artifact/commons-beanutils/commons-beanutils -->
-	    <dependency>
-	        <groupId>commons-beanutils</groupId>
-	        <artifactId>commons-beanutils</artifactId>
-	        <version>1.9.3</version>
-	    </dependency>
+            <dependency>
+                <groupId>commons-beanutils</groupId>
+                <artifactId>commons-beanutils</artifactId>
+                <version>1.9.3</version>
+            </dependency>
             <dependency>
                 <groupId>org.javassist</groupId>
                 <artifactId>javassist</artifactId>
@@ -335,16 +335,41 @@
                 <artifactId>snakeyaml</artifactId>
                 <version>1.17</version>
             </dependency>
-   	    <dependency>
-   	        <groupId>com.squareup.okhttp3</groupId>
-   	        <artifactId>okhttp</artifactId>
-   	        <version>3.5.0</version>
-   	    </dependency>
-	    <dependency>
-	        <groupId>com.github.javaparser</groupId>
-	        <artifactId>javaparser-core</artifactId>
-	        <version>3.0.1</version>
-	    </dependency>
+            <dependency>
+                <groupId>com.squareup.okhttp3</groupId>
+                <artifactId>okhttp</artifactId>
+                <version>3.5.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.javaparser</groupId>
+                <artifactId>javaparser-core</artifactId>
+                <version>3.0.1</version>
+            </dependency>
+            <dependency>
+                <groupId>org.antlr</groupId>
+                <artifactId>antlr4</artifactId>
+                <version>4.7</version>
+            </dependency>
+            <dependency>
+                <groupId>org.antlr</groupId>
+                <artifactId>antlr4-runtime</artifactId>
+                <version>4.7</version>
+            </dependency>
+            <dependency>
+                <groupId>org.antlr</groupId>
+                <artifactId>antlr4-maven-plugin</artifactId>
+                <version>4.7</version>
+            </dependency>
+            <dependency>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>3.0.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.ben-manes.caffeine</groupId>
+                <artifactId>caffeine</artifactId>
+                <version>2.5.2</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -372,7 +397,6 @@
                     </docletArtifact>
                 </configuration>
             </plugin>
-
         </plugins>
     </build>
 

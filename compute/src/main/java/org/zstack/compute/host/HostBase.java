@@ -828,14 +828,31 @@ public abstract class HostBase extends AbstractHost {
                         });
 
                         flow(new NoRollbackFlow() {
-                            String __name__ = "check-license";
+                            String __name__ = "call-post-connect-extensions";
 
                             @Override
                             public void run(FlowTrigger trigger, Map data) {
+                                FlowChain postConnectChain = FlowChainBuilder.newSimpleFlowChain();
+                                postConnectChain.allowEmptyFlow();
+
+                                self = dbf.reload(self);
+                                HostInventory inv = getSelfInventory();
+
                                 for (PostHostConnectExtensionPoint p : pluginRgty.getExtensionList(PostHostConnectExtensionPoint.class)) {
-                                    p.postHostConnect(getSelfInventory());
+                                    postConnectChain.then(p.createPostHostConnectFlow(inv));
                                 }
-                                trigger.next();
+
+                                postConnectChain.done(new FlowDoneHandler(trigger) {
+                                    @Override
+                                    public void handle(Map data) {
+                                        trigger.next();
+                                    }
+                                }).error(new FlowErrorHandler(trigger) {
+                                    @Override
+                                    public void handle(ErrorCode errCode, Map data) {
+                                        trigger.fail(errCode);
+                                    }
+                                }).start();
                             }
                         });
 

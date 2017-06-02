@@ -47,11 +47,15 @@ import org.zstack.sdk.CreateDataVolumeFromVolumeTemplateAction
 import org.zstack.sdk.CreateDataVolumeTemplateFromVolumeAction
 import org.zstack.sdk.CreateDiskOfferingAction
 import org.zstack.sdk.CreateEipAction
+import org.zstack.sdk.CreateEmailMediaAction
 import org.zstack.sdk.CreateInstanceOfferingAction
 import org.zstack.sdk.CreateL2NoVlanNetworkAction
 import org.zstack.sdk.CreateL2VlanNetworkAction
 import org.zstack.sdk.CreateL3NetworkAction
 import org.zstack.sdk.CreateLoadBalancerAction
+import org.zstack.sdk.CreateMonitorTriggerAction
+import org.zstack.sdk.CreateMonitorTriggerActionAction
+import org.zstack.sdk.CreateNotificationMediaAction
 import org.zstack.sdk.CreatePolicyAction
 import org.zstack.sdk.CreatePortForwardingRuleAction
 import org.zstack.sdk.CreateRootVolumeTemplateFromRootVolumeAction
@@ -83,6 +87,9 @@ import org.zstack.sdk.DeleteIpRangeAction
 import org.zstack.sdk.DeleteL2NetworkAction
 import org.zstack.sdk.DeleteL3NetworkAction
 import org.zstack.sdk.DeleteLoadBalancerAction
+import org.zstack.sdk.DeleteMediaAction
+import org.zstack.sdk.DeleteMonitorTriggerAction
+import org.zstack.sdk.DeleteMonitorTriggerActionAction
 import org.zstack.sdk.DeletePolicyAction
 import org.zstack.sdk.DeletePortForwardingRuleAction
 import org.zstack.sdk.DeletePrimaryStorageAction
@@ -179,6 +186,10 @@ class EnvSpec implements Node {
             [CreateBaremetalPxeServerAction.metaClass, CreateBaremetalPxeServerAction.Result.metaClass, DeleteBaremetalPxeServerAction.class],
             [CreateBaremetalChassisAction.metaClass, CreateBaremetalChassisAction.Result.metaClass, DeleteBaremetalChassisAction.class],
             [CreateBaremetalHostCfgAction.metaClass, CreateBaremetalHostCfgAction.Result.metaClass, DeleteBaremetalHostCfgAction.class],
+            [CreateMonitorTriggerAction.metaClass, CreateMonitorTriggerAction.Result.metaClass, DeleteMonitorTriggerAction.class],
+            [CreateMonitorTriggerActionAction.metaClass, CreateMonitorTriggerActionAction.Result.metaClass, DeleteMonitorTriggerActionAction.class],
+            [CreateEmailMediaAction.metaClass, CreateEmailMediaAction.Result.metaClass, DeleteMediaAction.class],
+            [CreateNotificationMediaAction.metaClass, CreateNotificationMediaAction.Result.metaClass, DeleteMediaAction.class]
     ]
 
     static Closure GLOBAL_DELETE_HOOK
@@ -217,6 +228,14 @@ class EnvSpec implements Node {
         factory.setReadTimeout(CoreGlobalProperty.REST_FACADE_READ_TIMEOUT)
         factory.setConnectTimeout(CoreGlobalProperty.REST_FACADE_CONNECT_TIMEOUT)
         restTemplate = new RestTemplate(factory)
+    }
+
+    public Closure getSimulator(String path) {
+        return httpHandlers[path]
+    }
+
+    public Closure getPostSimulator(String path) {
+        return httpPostHandlers[path]
     }
 
     void cleanSimulatorHandlers() {
@@ -532,7 +551,8 @@ class EnvSpec implements Node {
                               "NetworkServiceTypeVO", "VmInstanceSequenceNumberVO",
                               "GarbageCollectorVO",
                               "TaskProgressVO", "NotificationVO", "TaskStepVO",
-                              "DataVolumeUsageVO", "RootVolumeUsageVO", "VmUsageVO", "ResourceVO","SecurityGroupSequenceNumberVO","SnapShotUsageVO"]) {
+                              "DataVolumeUsageVO", "RootVolumeUsageVO", "VmUsageVO",
+                              "ResourceVO","SecurityGroupSequenceNumberVO","SnapShotUsageVO", "MediaVO"]) {
                 // those tables will continue having entries during running a test suite
                 return
             }
@@ -687,12 +707,12 @@ class EnvSpec implements Node {
         String taskUuid = entity.getHeaders().getFirst(RESTConstant.TASK_UUID)
         if (taskUuid == null) {
             response.status = HttpStatus.OK.value()
-            response.writer.write(rsp == null ? "" : JSONObjectUtil.toJsonString(rsp))
+            response.writer.write(rsp == null ? "" :rsp instanceof String ? rsp : JSONObjectUtil.toJsonString(rsp))
             return
         }
 
         String callbackUrl = entity.getHeaders().getFirst(RESTConstant.CALLBACK_URL)
-        String rspBody = rsp == null ? "" : JSONObjectUtil.toJsonString(rsp)
+        String rspBody = rsp == null ? "" : rsp instanceof String ? rsp : JSONObjectUtil.toJsonString(rsp)
         HttpHeaders headers = new HttpHeaders()
         headers.setContentType(MediaType.APPLICATION_JSON)
         headers.setContentLength(rspBody.length())

@@ -13,6 +13,7 @@ import java.util.List;
 
 public class PathUtil {
     private static final CLogger logger = Utils.getLogger(PathUtil.class);
+    public static String HOME_DIR_PROPERTY_NAME = "user.home";
 
     public static String join(String... paths) {
         assert paths != null && paths.length > 0;
@@ -26,14 +27,14 @@ public class PathUtil {
 
     public static String absPath(String path) {
         if (path.startsWith("~")) {
-            path = path.replaceAll("~", System.getProperty("user.home"));
+            path = path.replaceAll("~", System.getProperty(HOME_DIR_PROPERTY_NAME));
         }
 
         return new File(path).getAbsolutePath();
     }
 
     public static String getZStackHomeFolder() {
-        String homeDir = System.getProperty("user.home");
+        String homeDir = System.getProperty(HOME_DIR_PROPERTY_NAME);
         File f = new File(homeDir);
         if (!f.exists()) {
             f.mkdirs();

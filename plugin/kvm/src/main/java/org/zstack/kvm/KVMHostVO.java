@@ -23,7 +23,6 @@ public class KVMHostVO extends HostVO {
     @ENCRYPTParam
     private String password;
 
-
     @Column
     private Integer port;
 

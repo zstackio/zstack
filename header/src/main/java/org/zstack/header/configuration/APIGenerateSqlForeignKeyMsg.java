@@ -1,6 +1,7 @@
 package org.zstack.header.configuration;
 
 import org.zstack.header.message.APIMessage;
+import org.zstack.header.rest.RestRequest;
 
 import java.util.List;
 

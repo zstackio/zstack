@@ -27,6 +27,7 @@
     	   <prop key="/asyncrest/callback">restFacadeController</prop>
     	   <prop key="/asyncrest/sendcommand">restFacadeController</prop>
     	   <prop key="/v1/**">restServerController</prop>
+    	   <prop key="/prometheus/api/v1/alerts">alertManagerController</prop>
     	   <prop key="/**">testlibController</prop>
     	 </props>
        </property>
@@ -35,5 +36,6 @@
     <bean name="restServerController" class="org.zstack.rest.RestServerController" />
     <bean name="testlibController" class="org.zstack.testlib.TestLibController" />
     <bean name="restFacadeController" class="org.zstack.core.rest.AsyncRESTCallController"/>
+    <bean name="alertManagerController" class="org.zstack.prometheus.monitoring.AlertManagerController"/>
 
 </beans>
