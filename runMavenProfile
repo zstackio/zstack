@@ -38,7 +38,7 @@ apihelper() {
 
 doc() {
     cd test
-    mvn test -Dtest=TestGenerateDocTemplate
+    mvn test -Dtest=TestGenerateDocTemplate $@
     cd - > /dev/null
 }
 
@@ -48,13 +48,13 @@ docpremium() {
     else
         cd test
     fi
-    mvn test -Dtest=TestGenerateDocTemplate
+    mvn test -Dtest=TestGenerateDocTemplate $@
     cd - > /dev/null
 }
 
 md() {
     cd test
-    mvn test -Dtest=TestGenerateMarkDownDoc
+    mvn test -Dtest=TestGenerateMarkDownDoc $@
     cd - > /dev/null
 }
 
@@ -65,7 +65,7 @@ mdpremium() {
         cd test
     fi
 
-    mvn test -Dtest=TestGenerateMarkDownDoc
+    mvn test -Dtest=TestGenerateMarkDownDoc $@
     cd - > /dev/null
 }
 

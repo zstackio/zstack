@@ -11,7 +11,7 @@ doc {
 
     rest {
         request {
-			url "GET /v1/primary-storage/local-storage/{primaryStorageUuid}/capacities"
+			url "GET /v1/primary-storage/local-storage/{primaryStorageUuid}/hosts/{hostUuid}/capacities"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
@@ -26,7 +26,7 @@ doc {
 					name "hostUuid"
 					enclosedIn ""
 					desc "物理机UUID"
-					location "query"
+					location "url"
 					type "String"
 					optional true
 					since "0.6"
