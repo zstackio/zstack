@@ -17,6 +17,8 @@ public class VmAttachVolumeValidator extends ScatteredValidator {
 
     public void validate(String vmUuid, String volumeUuid) {
         logger.debug("invoke validator");
+        logger.debug(vmUuid);
+        logger.debug(volumeUuid);
         invokeValidatorMethods(vmUuid, volumeUuid);
     }
 }

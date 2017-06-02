@@ -35,7 +35,11 @@ public abstract class ScatteredValidator {
         }
 
         methods = new ArrayList<>();
+        logger.debug("111111111111111");
+        logger.debug(annotationClass.getName());
         Set<Method> ms = Platform.getReflections().getMethodsAnnotatedWith(annotationClass);
+        logger.debug("222222222222222");
+        logger.debug(String.format("size:%s", ms.size()));
         if (ms.isEmpty()){
             logger.warn(String.format("no validator found in %s", getClassNameForStatic()));
         } else {
@@ -72,6 +76,10 @@ public abstract class ScatteredValidator {
     protected void invokeValidatorMethods(Object...args) {
         logger.debug("start invoke validator");
         DebugUtils.Assert(methods != null, "call collectValidatorMethods in static block before calling any methods");
+        logger.debug("start invoke validator 22222222");
+        logger.debug(String.format("method to do size:%s", methods.size()));
+        if(methods.size()>0)
+            logger.debug(methods.iterator().next().getName());
         for (Method m : methods) {
             try {
                 m.invoke(null, args);
