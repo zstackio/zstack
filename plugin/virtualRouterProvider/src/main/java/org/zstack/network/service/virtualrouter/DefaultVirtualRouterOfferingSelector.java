@@ -66,12 +66,16 @@ public class DefaultVirtualRouterOfferingSelector {
                 if (preferToBeDefault != null && preferToBeDefault) {
                     sql(VirtualRouterOfferingVO.class).set(VirtualRouterOfferingVO_.isDefault, false)
                             .eq(VirtualRouterOfferingVO_.zoneUuid, zoneUuid).update();
+                    reload(offering);
                     offering.setDefault(true);
                     merge(offering);
+
                 } else if (preferToBeDefault != null) {
                     offering.setDefault(false);
                     merge(offering);
                 }
+
+                flush();
             }
         }.execute();
     }
