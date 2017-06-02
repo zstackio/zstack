@@ -28,9 +28,6 @@ public class GetLicenseInfoAction extends AbstractAction {
     @Param(required = false)
     public java.util.List userTags;
 
-    @Param(required = true)
-    public String sessionId;
-
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -67,7 +64,7 @@ public class GetLicenseInfoAction extends AbstractAction {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/licenses";
-        info.needSession = true;
+        info.needSession = false;
         info.needPoll = false;
         info.parameterName = "";
         return info;
