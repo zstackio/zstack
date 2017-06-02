@@ -82,12 +82,6 @@ public class FlatProviderFactory implements NetworkServiceProviderFactory, Prepa
                 ref.setType(EipConstant.EIP_NETWORK_SERVICE_TYPE);
                 dbf.persist(ref);
             }
-            if (!types.contains(NetworkServiceType.DNS.toString())) {
-                NetworkServiceTypeVO ref = new NetworkServiceTypeVO();
-                ref.setNetworkServiceProviderUuid(flatProvider.getUuid());
-                ref.setType(NetworkServiceType.DNS.toString());
-                dbf.persist(ref);
-            }
 
             return;
         }
@@ -99,7 +93,7 @@ public class FlatProviderFactory implements NetworkServiceProviderFactory, Prepa
         rpvo.getNetworkServiceTypes().add(NetworkServiceType.DHCP.toString());
         rpvo.getNetworkServiceTypes().add(UserdataConstant.USERDATA_TYPE_STRING);
         rpvo.getNetworkServiceTypes().add(EipConstant.EIP_NETWORK_SERVICE_TYPE);
-        rpvo.getNetworkServiceTypes().add(NetworkServiceType.DNS.toString());
+        //rpvo.getNetworkServiceTypes().add(NetworkServiceType.DNS.toString());
         rpvo.setType(FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING);
         rpvo = dbf.persistAndRefresh(rpvo);
         flatProvider = NetworkServiceProviderInventory.valueOf(rpvo);

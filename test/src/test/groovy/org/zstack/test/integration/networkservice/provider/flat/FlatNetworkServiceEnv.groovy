@@ -137,8 +137,7 @@ class FlatNetworkServiceEnv {
 
                         service {
                             provider = FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING
-                            types = [NetworkServiceType.DHCP.toString(), EipConstant.EIP_NETWORK_SERVICE_TYPE,
-                                     UserdataConstant.USERDATA_TYPE_STRING, NetworkServiceType.DNS.toString()]
+                            types = [NetworkServiceType.DHCP.toString(), EipConstant.EIP_NETWORK_SERVICE_TYPE, UserdataConstant.USERDATA_TYPE_STRING]
                         }
 
                         ip {
