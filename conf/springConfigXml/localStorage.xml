@@ -33,6 +33,7 @@
             <zstack:extension
                     interface="org.zstack.header.storage.primary.InstantiateDataVolumeOnCreationExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.storage.primary.PrimaryStorageAttachExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor"/>
         </zstack:plugin>
     </bean>
 
