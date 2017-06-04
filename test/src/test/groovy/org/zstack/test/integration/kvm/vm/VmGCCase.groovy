@@ -2,9 +2,13 @@ package org.zstack.test.integration.kvm.vm
 
 import org.springframework.http.HttpEntity
 import org.zstack.core.cloudbus.CloudBus
+import org.zstack.core.cloudbus.EventCallback
+import org.zstack.core.cloudbus.EventFacade
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.gc.GCStatus
 import org.zstack.core.gc.GarbageCollectorVO
+import org.zstack.header.host.HostCanonicalEvents
+import org.zstack.header.host.HostStatus
 import org.zstack.header.message.MessageReply
 import org.zstack.header.vm.StopVmInstanceMsg
 import org.zstack.header.vm.VmInstanceConstant
@@ -83,6 +87,16 @@ class VmGCCase extends SubCase {
             return rsp
         }
 
+        boolean success = false
+        bean(EventFacade.class).onLocal(HostCanonicalEvents.HOST_STATUS_CHANGED_PATH, new EventCallback() {
+            @Override
+            protected void run(Map tokens, Object data) {
+                def evt = (HostCanonicalEvents.HostStatusChangedData)data
+                if(evt.newStatus == HostStatus.Connected.toString() && evt.oldStatus == HostStatus.Connecting.toString()){
+                    success = true
+                }
+            }
+        })
         // the host reconnecting will trigger the GC
         reconnectHost {
             uuid = vm.hostUuid
@@ -98,6 +112,7 @@ class VmGCCase extends SubCase {
             assert cmd != null
             assert cmd.uuid == vm.uuid
             assert inv.status == GCStatus.Done.toString()
+            assert success
         }
 
         deleteGCJob {
@@ -135,6 +150,16 @@ class VmGCCase extends SubCase {
         }
 
         // the host reconnecting will trigger the GC
+        boolean success = false
+        bean(EventFacade.class).onLocal(HostCanonicalEvents.HOST_STATUS_CHANGED_PATH, new EventCallback() {
+            @Override
+            protected void run(Map tokens, Object data) {
+                def evt = (HostCanonicalEvents.HostStatusChangedData)data
+                if(evt.newStatus == HostStatus.Connected.toString() && evt.oldStatus == HostStatus.Connecting.toString()){
+                    success = true
+                }
+            }
+        })
         reconnectHost {
             uuid = vm.hostUuid
         }
@@ -155,6 +180,7 @@ class VmGCCase extends SubCase {
             // no destroy command sent beacuse the vm is recovered
             assert cmd == null
             assert inv.status == GCStatus.Done.toString()
+            assert success
         }
 
         deleteGCJob {

@@ -160,6 +160,7 @@ class FlatNetworkGCCase extends SubCase {
             return rsp
         }
 
+
         reconnectHost {
             uuid = host.uuid
         }
