@@ -2,7 +2,6 @@ package org.zstack.image;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
-import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.AsyncBatchRunner;
 import org.zstack.core.asyncbatch.LoopAsyncBatch;
@@ -379,7 +378,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
                                 if (fail == backupStorageNum) {
                                     ErrorCode errCode = operr("failed to create data volume template from volume[uuid:%s] on all backup storage%s. See cause for one of errors",
-                                            msg.getVolumeUuid(), msg.getBackupStorageUuids()).causedBy(err);
+                                                    msg.getVolumeUuid(), msg.getBackupStorageUuids()).causedBy(err);
 
                                     trigger.fail(errCode);
                                 } else {
@@ -890,10 +889,6 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
             vo.setUuid(Platform.getUuid());
         }
 
-        if (!CoreGlobalProperty.UNIT_TEST_ON){
-            long imageSizeAsked = new ImageQuotaUtil().getImageSizeQuotaUseHttpHead(msg);
-            vo.setActualSize(imageSizeAsked);
-        }
         vo.setName(msg.getName());
         vo.setDescription(msg.getDescription());
         if (msg.getFormat().equals(ImageConstant.ISO_FORMAT_STRING)) {
@@ -1361,7 +1356,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                     quotaCompareInfo.request = imageNumAsked;
                     new QuotaUtil().CheckQuota(quotaCompareInfo);
                 }
-                new ImageQuotaUtil().getImageSizeQuotaUseHttpHead(msg, pairs);
+                new ImageQuotaUtil().checkImageSizeQuotaUseHttpHead(msg, pairs);
             }
         };
 
