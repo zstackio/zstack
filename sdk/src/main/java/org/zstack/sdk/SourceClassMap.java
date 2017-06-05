@@ -11,6 +11,8 @@ public class SourceClassMap {
 			put("org.zstack.billing.PriceInventory", "org.zstack.sdk.PriceInventory");
 			put("org.zstack.billing.RootVolumeSpending", "org.zstack.sdk.RootVolumeSpending");
 			put("org.zstack.billing.RootVolumeSpendingInventory", "org.zstack.sdk.RootVolumeSpendingInventory");
+			put("org.zstack.billing.SnapShotSpendingInventory", "org.zstack.sdk.SnapShotSpendingInventory");
+			put("org.zstack.billing.SnapshotSpending", "org.zstack.sdk.SnapshotSpending");
 			put("org.zstack.billing.Spending", "org.zstack.sdk.Spending");
 			put("org.zstack.billing.SpendingDetails", "org.zstack.sdk.SpendingDetails");
 			put("org.zstack.billing.VmSpending", "org.zstack.sdk.VmSpending");
@@ -38,7 +40,7 @@ public class SourceClassMap {
 			put("org.zstack.header.baremetal.BaremetalException", "org.zstack.sdk.BaremetalException");
 			put("org.zstack.header.baremetal.host.BaremetalHostCfgInventory", "org.zstack.sdk.BaremetalHostCfgInventory");
 			put("org.zstack.header.baremetal.host.BaremetalHostNicCfgStruct", "org.zstack.sdk.BaremetalHostNicCfgStruct");
-			put("org.zstack.header.baremetal.power.BaremetalChessisInventory", "org.zstack.sdk.BaremetalChessisInventory");
+			put("org.zstack.header.baremetal.power.BaremetalChassisInventory", "org.zstack.sdk.BaremetalChassisInventory");
 			put("org.zstack.header.baremetal.pxeserver.BaremetalPxeServerInventory", "org.zstack.sdk.BaremetalPxeServerInventory");
 			put("org.zstack.header.cluster.ClusterInventory", "org.zstack.sdk.ClusterInventory");
 			put("org.zstack.header.configuration.DiskOfferingInventory", "org.zstack.sdk.DiskOfferingInventory");
@@ -159,7 +161,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.AliyunOssException", "org.zstack.header.aliyun.AliyunOssException");
 			put("org.zstack.sdk.ApplianceVmInventory", "org.zstack.appliancevm.ApplianceVmInventory");
 			put("org.zstack.sdk.BackupStorageInventory", "org.zstack.header.storage.backup.BackupStorageInventory");
-			put("org.zstack.sdk.BaremetalChessisInventory", "org.zstack.header.baremetal.power.BaremetalChessisInventory");
+			put("org.zstack.sdk.BaremetalChassisInventory", "org.zstack.header.baremetal.power.BaremetalChassisInventory");
 			put("org.zstack.sdk.BaremetalException", "org.zstack.header.baremetal.BaremetalException");
 			put("org.zstack.sdk.BaremetalHostCfgInventory", "org.zstack.header.baremetal.host.BaremetalHostCfgInventory");
 			put("org.zstack.sdk.BaremetalHostNicCfgStruct", "org.zstack.header.baremetal.host.BaremetalHostNicCfgStruct");
@@ -253,7 +255,9 @@ public class SourceClassMap {
 			put("org.zstack.sdk.SharedResourceInventory", "org.zstack.header.identity.SharedResourceInventory");
 			put("org.zstack.sdk.ShellResult", "org.zstack.kvm.APIKvmRunShellEvent$ShellResult");
 			put("org.zstack.sdk.SimulatorHostInventory", "org.zstack.header.simulator.SimulatorHostInventory");
+			put("org.zstack.sdk.SnapShotSpendingInventory", "org.zstack.billing.SnapShotSpendingInventory");
 			put("org.zstack.sdk.SnapshotLeafInventory", "org.zstack.header.storage.snapshot.VolumeSnapshotTree$SnapshotLeafInventory");
+			put("org.zstack.sdk.SnapshotSpending", "org.zstack.billing.SnapshotSpending");
 			put("org.zstack.sdk.Spending", "org.zstack.billing.Spending");
 			put("org.zstack.sdk.SpendingDetails", "org.zstack.billing.SpendingDetails");
 			put("org.zstack.sdk.SystemTagInventory", "org.zstack.header.tag.SystemTagInventory");

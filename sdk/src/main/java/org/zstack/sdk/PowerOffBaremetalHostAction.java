@@ -23,7 +23,7 @@ public class PowerOffBaremetalHostAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String chessisUuid;
+    public java.lang.String chassisUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -73,7 +73,7 @@ public class PowerOffBaremetalHostAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/baremetal/chessis/{uuid}/actions";
+        info.path = "/baremetal/chassis/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "powerOffBaremetalHost";

@@ -1,6 +1,6 @@
 package org.zstack.sdk;
 
-public class ProvisionBaremetalHostResult {
+public class CreateBaremetalChassisResult {
     public BaremetalChassisInventory inventory;
     public void setInventory(BaremetalChassisInventory inventory) {
         this.inventory = inventory;

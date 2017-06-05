@@ -1986,8 +1986,8 @@ trait ApiHelper {
     }
 
 
-    def createBaremetalChessis(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CreateBaremetalChessisAction.class) Closure c) {
-        def a = new org.zstack.sdk.CreateBaremetalChessisAction()
+    def createBaremetalChassis(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CreateBaremetalChassisAction.class) Closure c) {
+        def a = new org.zstack.sdk.CreateBaremetalChassisAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -2877,33 +2877,6 @@ trait ApiHelper {
     }
 
 
-    def createRouteEntryForConnectionRemote(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CreateRouteEntryForConnectionRemoteAction.class) Closure c) {
-        def a = new org.zstack.sdk.CreateRouteEntryForConnectionRemoteAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
-        c.resolveStrategy = Closure.OWNER_FIRST
-        c.delegate = a
-        c()
-        
-
-        if (System.getProperty("apipath") != null) {
-            if (a.apiId == null) {
-                a.apiId = Platform.uuid
-            }
-    
-            def tracker = new ApiPathTracker(a.apiId)
-            def out = errorOut(a.call())
-            def path = tracker.getApiPath()
-            if (!path.isEmpty()) {
-                Test.apiPaths[a.class.name] = path.join(" --->\n")
-            }
-        
-            return out
-        } else {
-            return errorOut(a.call())
-        }
-    }
-
-
     def createRouterInterfacePairRemote(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CreateRouterInterfacePairRemoteAction.class) Closure c) {
         def a = new org.zstack.sdk.CreateRouterInterfacePairRemoteAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -3579,8 +3552,8 @@ trait ApiHelper {
     }
 
 
-    def deleteBaremetalChessis(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeleteBaremetalChessisAction.class) Closure c) {
-        def a = new org.zstack.sdk.DeleteBaremetalChessisAction()
+    def deleteBaremetalChassis(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeleteBaremetalChassisAction.class) Closure c) {
+        def a = new org.zstack.sdk.DeleteBaremetalChassisAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -7008,33 +6981,6 @@ trait ApiHelper {
     }
 
 
-    def getOssBuceketFileFromRemote(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetOssBuceketFileFromRemoteAction.class) Closure c) {
-        def a = new org.zstack.sdk.GetOssBuceketFileFromRemoteAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
-        c.resolveStrategy = Closure.OWNER_FIRST
-        c.delegate = a
-        c()
-        
-
-        if (System.getProperty("apipath") != null) {
-            if (a.apiId == null) {
-                a.apiId = Platform.uuid
-            }
-    
-            def tracker = new ApiPathTracker(a.apiId)
-            def out = errorOut(a.call())
-            def path = tracker.getApiPath()
-            if (!path.isEmpty()) {
-                Test.apiPaths[a.class.name] = path.join(" --->\n")
-            }
-        
-            return out
-        } else {
-            return errorOut(a.call())
-        }
-    }
-
-
     def getOssBucketFileFromRemote(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetOssBucketFileFromRemoteAction.class) Closure c) {
         def a = new org.zstack.sdk.GetOssBucketFileFromRemoteAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -8341,8 +8287,8 @@ trait ApiHelper {
     }
 
 
-    def queryBaremetalChessis(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryBaremetalChessisAction.class) Closure c) {
-        def a = new org.zstack.sdk.QueryBaremetalChessisAction()
+    def queryBaremetalChassis(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryBaremetalChassisAction.class) Closure c) {
+        def a = new org.zstack.sdk.QueryBaremetalChassisAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -12563,8 +12509,8 @@ trait ApiHelper {
     }
 
 
-    def updateBaremetalChessis(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdateBaremetalChessisAction.class) Closure c) {
-        def a = new org.zstack.sdk.UpdateBaremetalChessisAction()
+    def updateBaremetalChassis(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdateBaremetalChassisAction.class) Closure c) {
+        def a = new org.zstack.sdk.UpdateBaremetalChassisAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a

@@ -3193,13 +3193,13 @@ class QueryEcsImageFromLocalAction(QueryAction):
 
 class PowerResetBaremetalHostAction(AbstractAction):
     HTTP_METHOD = 'PUT'
-    PATH = '/baremetal/chessis/{uuid}/actions'
+    PATH = '/baremetal/chassis/{uuid}/actions'
     NEED_SESSION = True
     NEED_POLL = True
     PARAM_NAME = 'powerResetBaremetalHost'
 
     PARAMS = {
-        'chessisUuid': ParamAnnotation(required=True,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
+        'chassisUuid': ParamAnnotation(required=True,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
         'systemTags': ParamAnnotation(),
         'userTags': ParamAnnotation(),
         'sessionId': ParamAnnotation(required=True)
@@ -3207,7 +3207,7 @@ class PowerResetBaremetalHostAction(AbstractAction):
 
     def __init__(self):
         super(PowerResetBaremetalHostAction, self).__init__()
-        self.chessisUuid = None
+        self.chassisUuid = None
         self.systemTags = None
         self.userTags = None
         self.sessionId = None
@@ -4381,9 +4381,9 @@ class CreateVolumeSnapshotSchedulerAction(AbstractAction):
         self.sessionId = None
 
 
-class QueryBaremetalChessisAction(QueryAction):
+class QueryBaremetalChassisAction(QueryAction):
     HTTP_METHOD = 'GET'
-    PATH = '/baremetal/chessis'
+    PATH = '/baremetal/chassis'
     NEED_SESSION = True
     NEED_POLL = False
     PARAM_NAME = ''
@@ -4404,7 +4404,7 @@ class QueryBaremetalChessisAction(QueryAction):
     }
 
     def __init__(self):
-        super(QueryBaremetalChessisAction, self).__init__()
+        super(QueryBaremetalChassisAction, self).__init__()
         self.conditions = None
         self.limit = None
         self.start = None
@@ -6260,7 +6260,7 @@ class UpdateBaremetalHostCfgAction(AbstractAction):
         'vnc': ParamAnnotation(required=False,valid_values=['true','false'],non_empty=False,null_elements=False,empty_string=True,no_trim=False),
         'unattended': ParamAnnotation(required=False,valid_values=['true','false'],non_empty=False,null_elements=False,empty_string=True,no_trim=False),
         'nicCfgs': ParamAnnotation(required=False,non_empty=True,null_elements=False,empty_string=True,no_trim=False),
-        'chessisUuid': ParamAnnotation(),
+        'chassisUuid': ParamAnnotation(),
         'systemTags': ParamAnnotation(),
         'userTags': ParamAnnotation(),
         'sessionId': ParamAnnotation(required=True)
@@ -6273,7 +6273,7 @@ class UpdateBaremetalHostCfgAction(AbstractAction):
         self.vnc = None
         self.unattended = None
         self.nicCfgs = None
-        self.chessisUuid = None
+        self.chassisUuid = None
         self.systemTags = None
         self.userTags = None
         self.sessionId = None
@@ -6687,12 +6687,12 @@ class CreateVirtualRouterOfferingAction(AbstractAction):
         self.sessionId = None
 
 
-class UpdateBaremetalChessisAction(AbstractAction):
+class UpdateBaremetalChassisAction(AbstractAction):
     HTTP_METHOD = 'PUT'
-    PATH = '/baremetal/chessis/{uuid}/actions'
+    PATH = '/baremetal/chassis/{uuid}/actions'
     NEED_SESSION = True
     NEED_POLL = True
-    PARAM_NAME = 'updateBaremetalChessis'
+    PARAM_NAME = 'updateBaremetalChassis'
 
     PARAMS = {
         'uuid': ParamAnnotation(required=True,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
@@ -6706,7 +6706,7 @@ class UpdateBaremetalChessisAction(AbstractAction):
     }
 
     def __init__(self):
-        super(UpdateBaremetalChessisAction, self).__init__()
+        super(UpdateBaremetalChassisAction, self).__init__()
         self.uuid = None
         self.ipmiAddress = None
         self.ipmiUsername = None
@@ -10877,7 +10877,7 @@ class CreateBaremetalHostCfgAction(AbstractAction):
     PARAM_NAME = 'params'
 
     PARAMS = {
-        'chessisUuid': ParamAnnotation(required=True,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
+        'chassisUuid': ParamAnnotation(required=True,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
         'password': ParamAnnotation(required=False,max_length=255,non_empty=False,null_elements=False,empty_string=False,no_trim=False),
         'vnc': ParamAnnotation(required=False,valid_values=['true','false'],non_empty=False,null_elements=False,empty_string=True,no_trim=False),
         'unattended': ParamAnnotation(required=False,valid_values=['true','false'],non_empty=False,null_elements=False,empty_string=True,no_trim=False),
@@ -10890,7 +10890,7 @@ class CreateBaremetalHostCfgAction(AbstractAction):
 
     def __init__(self):
         super(CreateBaremetalHostCfgAction, self).__init__()
-        self.chessisUuid = None
+        self.chassisUuid = None
         self.password = None
         self.vnc = None
         self.unattended = None
@@ -11189,13 +11189,13 @@ class DeleteEcsInstanceAction(AbstractAction):
 
 class ProvisionBaremetalHostAction(AbstractAction):
     HTTP_METHOD = 'PUT'
-    PATH = '/baremetal/chessis/{uuid}/actions'
+    PATH = '/baremetal/chassis/{uuid}/actions'
     NEED_SESSION = True
     NEED_POLL = True
     PARAM_NAME = 'provisionBaremetalHost'
 
     PARAMS = {
-        'chessisUuid': ParamAnnotation(required=True,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
+        'chassisUuid': ParamAnnotation(required=True,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
         'systemTags': ParamAnnotation(),
         'userTags': ParamAnnotation(),
         'sessionId': ParamAnnotation(required=True)
@@ -11203,7 +11203,7 @@ class ProvisionBaremetalHostAction(AbstractAction):
 
     def __init__(self):
         super(ProvisionBaremetalHostAction, self).__init__()
-        self.chessisUuid = None
+        self.chassisUuid = None
         self.systemTags = None
         self.userTags = None
         self.sessionId = None
@@ -11281,9 +11281,9 @@ class AttachPoliciesToUserAction(AbstractAction):
         self.sessionId = None
 
 
-class DeleteBaremetalChessisAction(AbstractAction):
+class DeleteBaremetalChassisAction(AbstractAction):
     HTTP_METHOD = 'DELETE'
-    PATH = '/baremetal/chessis/{uuid}'
+    PATH = '/baremetal/chassis/{uuid}'
     NEED_SESSION = True
     NEED_POLL = True
     PARAM_NAME = 'params'
@@ -11297,7 +11297,7 @@ class DeleteBaremetalChessisAction(AbstractAction):
     }
 
     def __init__(self):
-        super(DeleteBaremetalChessisAction, self).__init__()
+        super(DeleteBaremetalChassisAction, self).__init__()
         self.uuid = None
         self.deleteMode = None
         self.systemTags = None
@@ -11383,13 +11383,13 @@ class QueryHostAction(QueryAction):
 
 class PowerOffBaremetalHostAction(AbstractAction):
     HTTP_METHOD = 'PUT'
-    PATH = '/baremetal/chessis/{uuid}/actions'
+    PATH = '/baremetal/chassis/{uuid}/actions'
     NEED_SESSION = True
     NEED_POLL = True
     PARAM_NAME = 'powerOffBaremetalHost'
 
     PARAMS = {
-        'chessisUuid': ParamAnnotation(required=True,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
+        'chassisUuid': ParamAnnotation(required=True,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
         'systemTags': ParamAnnotation(),
         'userTags': ParamAnnotation(),
         'sessionId': ParamAnnotation(required=True)
@@ -11397,7 +11397,7 @@ class PowerOffBaremetalHostAction(AbstractAction):
 
     def __init__(self):
         super(PowerOffBaremetalHostAction, self).__init__()
-        self.chessisUuid = None
+        self.chassisUuid = None
         self.systemTags = None
         self.userTags = None
         self.sessionId = None
@@ -12371,13 +12371,13 @@ class DeleteBaremetalHostCfgAction(AbstractAction):
 
 class PowerOnBaremetalHostAction(AbstractAction):
     HTTP_METHOD = 'PUT'
-    PATH = '/baremetal/chessis/{uuid}/actions'
+    PATH = '/baremetal/chassis/{uuid}/actions'
     NEED_SESSION = True
     NEED_POLL = True
     PARAM_NAME = 'powerOnBaremetalHost'
 
     PARAMS = {
-        'chessisUuid': ParamAnnotation(required=True,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
+        'chassisUuid': ParamAnnotation(required=True,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
         'systemTags': ParamAnnotation(),
         'userTags': ParamAnnotation(),
         'sessionId': ParamAnnotation(required=True)
@@ -12385,7 +12385,7 @@ class PowerOnBaremetalHostAction(AbstractAction):
 
     def __init__(self):
         super(PowerOnBaremetalHostAction, self).__init__()
-        self.chessisUuid = None
+        self.chassisUuid = None
         self.systemTags = None
         self.userTags = None
         self.sessionId = None
@@ -13501,9 +13501,9 @@ class AddCephBackupStorageAction(AbstractAction):
         self.sessionId = None
 
 
-class CreateBaremetalChessisAction(AbstractAction):
+class CreateBaremetalChassisAction(AbstractAction):
     HTTP_METHOD = 'POST'
-    PATH = '/baremetal/chessis'
+    PATH = '/baremetal/chassis'
     NEED_SESSION = True
     NEED_POLL = True
     PARAM_NAME = 'params'
@@ -13519,7 +13519,7 @@ class CreateBaremetalChessisAction(AbstractAction):
     }
 
     def __init__(self):
-        super(CreateBaremetalChessisAction, self).__init__()
+        super(CreateBaremetalChassisAction, self).__init__()
         self.ipmiAddress = None
         self.ipmiUsername = None
         self.ipmiPassword = None
