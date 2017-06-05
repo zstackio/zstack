@@ -1,11 +1,13 @@
 package org.zstack.network.l2.vxlan.vxlanNetwork;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.Component;
 import org.zstack.header.core.FutureCompletion;
@@ -23,6 +25,7 @@ import org.zstack.header.network.l3.L3NetworkVO_;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceMigrateExtensionPoint;
 import org.zstack.header.vm.VmNicInventory;
+import org.zstack.identity.AccountManager;
 import org.zstack.network.l2.L2NetworkDefaultMtu;
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.AllocateVniMsg;
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.AllocateVniReply;
@@ -51,6 +54,8 @@ public class VxlanNetworkFactory implements L2NetworkFactory, Component, VmInsta
     private CloudBus bus;
     @Autowired
     private QueryFacade qf;
+    @Autowired
+    protected AccountManager acntMgr;
 
     @Override
     public L2NetworkType getType() {
@@ -60,7 +65,6 @@ public class VxlanNetworkFactory implements L2NetworkFactory, Component, VmInsta
     @Override
     public L2NetworkInventory createL2Network(L2NetworkVO ovo, APICreateL2NetworkMsg msg) {
         APICreateL2VxlanNetworkMsg amsg = (APICreateL2VxlanNetworkMsg) msg;
-        VxlanNetworkVO vo = new VxlanNetworkVO(ovo);
 
         AllocateVniMsg vniMsg = new AllocateVniMsg();
         vniMsg.setL2NetworkUuid(amsg.getPoolUuid());
@@ -70,26 +74,41 @@ public class VxlanNetworkFactory implements L2NetworkFactory, Component, VmInsta
         if (!reply.isSuccess()) {
             throw new OperationFailureException(reply.getError());
         }
-
         AllocateVniReply r = reply.castReply();
-        vo.setVni(r.getVni());
-        vo.setPoolUuid((amsg.getPoolUuid()));
-        if (vo.getPhysicalInterface() == null) {
-            vo.setPhysicalInterface("");
-        }
-        vo = dbf.persistAndRefresh(vo);
 
-        SimpleQuery<L2NetworkClusterRefVO> q = dbf.createQuery(L2NetworkClusterRefVO.class);
-        q.add(L2NetworkClusterRefVO_.l2NetworkUuid, SimpleQuery.Op.EQ, amsg.getPoolUuid());
-        final List<L2NetworkClusterRefVO> refs = q.list();
-        for (L2NetworkClusterRefVO ref : refs) {
-            L2NetworkClusterRefVO rvo = new L2NetworkClusterRefVO();
-            rvo.setClusterUuid(ref.getClusterUuid());
-            rvo.setL2NetworkUuid(vo.getUuid());
-            dbf.persist(rvo);
-        }
+        VxlanNetworkVO vo = new SQLBatchWithReturn<VxlanNetworkVO>() {
+            @Override
+            protected VxlanNetworkVO scripts() {
+                VxlanNetworkVO vo = new VxlanNetworkVO(ovo);
+                String uuid = msg.getResourceUuid() == null ? Platform.getUuid() : msg.getResourceUuid();
+                vo.setUuid(uuid);
+                vo.setVni(r.getVni());
+                vo.setPoolUuid((amsg.getPoolUuid()));
+                if (vo.getPhysicalInterface() == null) {
+                    vo.setPhysicalInterface("");
+                }
+                dbf.getEntityManager().persist(vo);
 
-        vo = dbf.reload(vo);
+                SimpleQuery<L2NetworkClusterRefVO> q = dbf.createQuery(L2NetworkClusterRefVO.class);
+                q.add(L2NetworkClusterRefVO_.l2NetworkUuid, SimpleQuery.Op.EQ, amsg.getPoolUuid());
+                final List<L2NetworkClusterRefVO> refs = q.list();
+                for (L2NetworkClusterRefVO ref : refs) {
+                    L2NetworkClusterRefVO rvo = new L2NetworkClusterRefVO();
+                    rvo.setClusterUuid(ref.getClusterUuid());
+                    rvo.setL2NetworkUuid(uuid);
+                    dbf.getEntityManager().persist(rvo);
+                    dbf.getEntityManager().flush();
+                    dbf.getEntityManager().refresh(rvo);
+                }
+
+                acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), VxlanNetworkVO.class);
+
+                dbf.getEntityManager().flush();
+                dbf.getEntityManager().refresh(vo);
+
+                return vo;
+            }
+        }.execute();
 
         L2VxlanNetworkInventory inv = L2VxlanNetworkInventory.valueOf(vo);
         String info = String.format("successfully create L2VxlanNetwork, %s", JSONObjectUtil.toJsonString(inv));
