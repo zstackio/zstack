@@ -92,11 +92,19 @@ public class ImageQuotaUtil {
     public void checkImageSizeQuotaUseHttpHead(APIAddImageMsg msg, Map<String, Quota.QuotaPair> pairs) {
         long imageSizeQuota = pairs.get(ImageConstant.QUOTA_IMAGE_SIZE).getValue();
         long imageSizeUsed = new ImageQuotaUtil().getUsedImageSize(msg.getSession().getAccountUuid());
+        long imageSizeAsked = getImageSizeQuotaUseHttpHead(msg);
+        if ((imageSizeQuota == 0) || (imageSizeUsed + imageSizeAsked > imageSizeQuota)) {
+            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
+                    String.format("quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
+                            msg.getSession().getAccountUuid(), ImageConstant.QUOTA_IMAGE_SIZE, imageSizeQuota)
+            ));
+        }
+    }
 
-        long imageSizeAsked;
+    public long getImageSizeQuotaUseHttpHead(APIAddImageMsg msg){
+        long imageSizeAsked = 0;
         String url = msg.getUrl();
         url = url.trim();
-
         if (url.startsWith("file:///")) {
             GetImageSizeOnBackupStorageMsg cmsg = new GetImageSizeOnBackupStorageMsg();
             cmsg.setBackupStorageUuid(msg.getBackupStorageUuids().get(0));
@@ -111,27 +119,16 @@ public class ImageQuotaUtil {
 
             imageSizeAsked = ((GetImageSizeOnBackupStorageReply) reply).getSize();
         } else if (url.startsWith("http") || url.startsWith("https")) {
-            String len;
+            String len = null;
+            HttpHeaders header = restf.getRESTTemplate().headForHeaders(url);
             try {
-                HttpHeaders header = restf.getRESTTemplate().headForHeaders(url);
                 len = header.getFirst("Content-Length");
             } catch (Exception e) {
                 logger.warn(String.format("cannot get image.  The image url : %s. description: %s.name: %s",
                         url, msg.getDescription(), msg.getName()));
-                return;
             }
-
             imageSizeAsked = len == null ? 0 : Long.valueOf(len);
-        } else {
-            // bypass the check
-            imageSizeAsked = 0;
         }
-
-        if ((imageSizeQuota == 0) || (imageSizeUsed + imageSizeAsked > imageSizeQuota)) {
-            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
-                    String.format("quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
-                            msg.getSession().getAccountUuid(), ImageConstant.QUOTA_IMAGE_SIZE, imageSizeQuota)
-            ));
-        }
+        return imageSizeAsked;
     }
 }
