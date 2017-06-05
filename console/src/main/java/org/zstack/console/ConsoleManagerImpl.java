@@ -8,6 +8,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
@@ -24,6 +25,7 @@ import org.zstack.header.host.HypervisorType;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.identity.SessionLogoutExtensionPoint;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
+import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.managementnode.ManagementNodeVO;
 import org.zstack.header.managementnode.ManagementNodeVO_;
 import org.zstack.header.message.APIMessage;
@@ -43,7 +45,7 @@ import java.util.Map;
  * To change this template use File | Settings | File Templates.
  */
 public class ConsoleManagerImpl extends AbstractService implements ConsoleManager, VmInstanceMigrateExtensionPoint, ManagementNodeChangeListener,
-        VmReleaseResourceExtensionPoint, SessionLogoutExtensionPoint {
+        VmReleaseResourceExtensionPoint, SessionLogoutExtensionPoint, ManagementNodeReadyExtensionPoint {
     private static CLogger logger = Utils.getLogger(ConsoleManagerImpl.class);
 
     @Autowired
@@ -299,4 +301,19 @@ public class ConsoleManagerImpl extends AbstractService implements ConsoleManage
     }
 
 
+    @Override
+    public void managementNodeReady() {
+        updateConsoleProxyOverriddenIp();
+    }
+
+    private void updateConsoleProxyOverriddenIp() {
+        ConsoleProxyAgentVO vo = Q.New(ConsoleProxyAgentVO.class)
+                .eq(ConsoleProxyAgentVO_.uuid, Platform.getManagementServerId())
+                .notEq(ConsoleProxyAgentVO_.consoleProxyOverriddenIp, CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IP)
+                .findValue();
+
+        if (vo != null) {
+            vo.setConsoleProxyOverriddenIp(CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IP);
+        }
+    }
 }
