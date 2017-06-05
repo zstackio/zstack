@@ -23,7 +23,7 @@ public class CreateBaremetalHostCfgAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String chessisUuid;
+    public java.lang.String chassisUuid;
 
     @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
     public java.lang.String password;

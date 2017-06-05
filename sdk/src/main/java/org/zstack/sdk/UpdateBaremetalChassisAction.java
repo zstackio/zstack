@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class UpdateBaremetalChessisAction extends AbstractAction {
+public class UpdateBaremetalChassisAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public UpdateBaremetalChessisResult value;
+        public UpdateBaremetalChassisResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -58,8 +58,8 @@ public class UpdateBaremetalChessisAction extends AbstractAction {
             return ret;
         }
         
-        UpdateBaremetalChessisResult value = res.getResult(UpdateBaremetalChessisResult.class);
-        ret.value = value == null ? new UpdateBaremetalChessisResult() : value; 
+        UpdateBaremetalChassisResult value = res.getResult(UpdateBaremetalChassisResult.class);
+        ret.value = value == null ? new UpdateBaremetalChassisResult() : value; 
 
         return ret;
     }
@@ -85,10 +85,10 @@ public class UpdateBaremetalChessisAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/baremetal/chessis/{uuid}/actions";
+        info.path = "/baremetal/chassis/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "updateBaremetalChessis";
+        info.parameterName = "updateBaremetalChassis";
         return info;
     }
 

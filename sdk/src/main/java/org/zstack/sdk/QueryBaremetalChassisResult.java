@@ -1,11 +1,11 @@
 package org.zstack.sdk;
 
-public class QueryBaremetalChessisResult {
-    public java.util.List<BaremetalChessisInventory> inventories;
-    public void setInventories(java.util.List<BaremetalChessisInventory> inventories) {
+public class QueryBaremetalChassisResult {
+    public java.util.List<BaremetalChassisInventory> inventories;
+    public void setInventories(java.util.List<BaremetalChassisInventory> inventories) {
         this.inventories = inventories;
     }
-    public java.util.List<BaremetalChessisInventory> getInventories() {
+    public java.util.List<BaremetalChassisInventory> getInventories() {
         return this.inventories;
     }
 

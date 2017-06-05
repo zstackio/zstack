@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class CreateRouteEntryForConnectionRemoteAction extends AbstractAction {
+public class DeleteBaremetalChassisAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public CreateRouteEntryForConnectionRemoteResult value;
+        public DeleteBaremetalChassisResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -23,19 +23,10 @@ public class CreateRouteEntryForConnectionRemoteAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vRouterUuid;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String destinationCidrBlock;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vRouterInterfaceUuid;
-
-    @Param(required = true, validValues = {"vbr","vrouter"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vRouterType;
+    public java.lang.String uuid;
 
     @Param(required = false)
-    public java.lang.String resourceUuid;
+    public java.lang.String deleteMode = "Permissive";
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -58,8 +49,8 @@ public class CreateRouteEntryForConnectionRemoteAction extends AbstractAction {
             return ret;
         }
         
-        CreateRouteEntryForConnectionRemoteResult value = res.getResult(CreateRouteEntryForConnectionRemoteResult.class);
-        ret.value = value == null ? new CreateRouteEntryForConnectionRemoteResult() : value; 
+        DeleteBaremetalChassisResult value = res.getResult(DeleteBaremetalChassisResult.class);
+        ret.value = value == null ? new DeleteBaremetalChassisResult() : value; 
 
         return ret;
     }
@@ -84,8 +75,8 @@ public class CreateRouteEntryForConnectionRemoteAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/hybrid/aliyun/route-entry";
+        info.httpMethod = "DELETE";
+        info.path = "/baremetal/chassis/{uuid}";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";
