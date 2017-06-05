@@ -42,8 +42,9 @@ import static org.zstack.utils.CollectionDSL.list;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
+import java.io.UnsupportedEncodingException;
 import java.util.*;
-
+import static java.util.Arrays.asList;
 /**
  * Created with IntelliJ IDEA.
  * User: frank
@@ -381,6 +382,19 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APICreateVmInstanceMsg msg) {
+        final Base64.Encoder encoder = Base64.getEncoder();
+        if (msg.getSystemTags() != null && msg.getSystemTags().toString().split("::").length >=2 ) {
+            String [] texts = msg.getSystemTags().toString().split("::");
+            final byte[] systemTagText;
+            final String encodedTagsText;
+            try {
+                systemTagText = texts[1].getBytes("UTF-8");
+                encodedTagsText = encoder.encodeToString(systemTagText);
+            } catch (UnsupportedEncodingException e) {
+                throw new ApiMessageInterceptionException(operr("system tag cannot to encode base64"));
+            }
+            msg.setSystemTags(asList(encodedTagsText));
+        }
         SimpleQuery<InstanceOfferingVO> iq = dbf.createQuery(InstanceOfferingVO.class);
         iq.select(InstanceOfferingVO_.state);
         iq.add(InstanceOfferingVO_.uuid, Op.EQ, msg.getInstanceOfferingUuid());
