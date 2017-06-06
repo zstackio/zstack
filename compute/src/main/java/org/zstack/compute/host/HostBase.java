@@ -874,6 +874,9 @@ public abstract class HostBase extends AbstractHost {
                             @Override
                             public void handle(ErrorCode errCode, Map data) {
                                 changeConnectionState(HostStatusEvent.disconnected);
+                                if (!msg.isNewAdd()) {
+                                    tracker.trackHost(self.getUuid());
+                                }
 
                                 reply.setError(errCode);
                                 bus.reply(msg, reply);
