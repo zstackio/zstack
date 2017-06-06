@@ -124,6 +124,11 @@ class OneVmUserdata extends SubCase {
             FlatUserdataBackend.UserdataReleseGC.INTERVAL = 1
 
             testSetUserdataWhenCreateVm()
+            testDeleteUserdataWhenStopVm()
+            testSetUserdataWhenStartVm()
+            testSetAndDeleteUserddataWhenRebootVm()
+            testDeleteUserdataWhenDestroyVm()
+            testUserdataForMigratedVm()
 
             FlatUserdataBackend.UserdataReleseGC.INTERVAL = oldValue
         }
@@ -321,7 +326,7 @@ class OneVmUserdata extends SubCase {
                 imageUuid = image.inventory.uuid
                 l3NetworkUuids = [l3.uuid]
                 instanceOfferingUuid = offering.inventory.uuid
-                systemTags = [VmSystemTags.USERDATA.instantiateTag([(VmSystemTags.USERDATA_TOKEN): new String(Base64.getEncoder().encode(userdata.getBytes()))])]
+                systemTags = [VmSystemTags.USERDATA.instantiateTag([(VmSystemTags.USERDATA_TOKEN): userdata])]
             }
         }
     }
