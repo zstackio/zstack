@@ -2229,6 +2229,9 @@ public class KVMHost extends HostBase implements Host {
                     List<Runnable> afterDone = new ArrayList<>();
 
                     private boolean isSshPortOpen() {
+                        if (CoreGlobalProperty.UNIT_TEST_ON) {
+                            return false;
+                        }
                         return NetworkUtils.isRemotePortOpen(self.getManagementIp(), getSelf().getPort(), 2);
                     }
 
