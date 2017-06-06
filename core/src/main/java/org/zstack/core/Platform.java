@@ -620,10 +620,10 @@ public class Platform {
     }
 
     public static String i18n(String str, Object...args) {
-        if (args != null) {
-            return String.format(str, args);
-        } else {
+        if (args == null || args.length == 0) {
             return str;
+        } else {
+            return String.format(str, args);
         }
     }
 
