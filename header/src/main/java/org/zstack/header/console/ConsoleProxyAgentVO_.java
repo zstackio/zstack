@@ -12,6 +12,7 @@ public class ConsoleProxyAgentVO_ {
     public static volatile SingularAttribute<ConsoleProxyAgentVO, String> uuid;
     public static volatile SingularAttribute<ConsoleProxyAgentVO, String> description;
     public static volatile SingularAttribute<ConsoleProxyAgentVO, String> managementIp;
+    public static volatile SingularAttribute<ConsoleProxyAgentVO, String> consoleProxyOverriddenIp;
     public static volatile SingularAttribute<ConsoleProxyAgentVO, String> type;
     public static volatile SingularAttribute<ConsoleProxyAgentVO, String> status;
     public static volatile SingularAttribute<ConsoleProxyAgentVO, String> state;
