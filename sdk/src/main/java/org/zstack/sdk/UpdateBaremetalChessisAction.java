@@ -43,9 +43,6 @@ public class UpdateBaremetalChessisAction extends AbstractAction {
     @Param(required = false)
     public java.util.List userTags;
 
-    @Param(required = true)
-    public String sessionId;
-
     public long timeout;
     
     public long pollingInterval;
@@ -86,7 +83,7 @@ public class UpdateBaremetalChessisAction extends AbstractAction {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/baremetal/chessis/{uuid}/actions";
-        info.needSession = true;
+        info.needSession = false;
         info.needPoll = true;
         info.parameterName = "updateBaremetalChessis";
         return info;

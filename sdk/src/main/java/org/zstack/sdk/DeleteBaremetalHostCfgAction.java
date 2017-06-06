@@ -34,9 +34,6 @@ public class DeleteBaremetalHostCfgAction extends AbstractAction {
     @Param(required = false)
     public java.util.List userTags;
 
-    @Param(required = true)
-    public String sessionId;
-
     public long timeout;
     
     public long pollingInterval;
@@ -77,7 +74,7 @@ public class DeleteBaremetalHostCfgAction extends AbstractAction {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/baremetal/hostcfg/{uuid}";
-        info.needSession = true;
+        info.needSession = false;
         info.needPoll = true;
         info.parameterName = "params";
         return info;
