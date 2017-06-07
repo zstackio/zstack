@@ -10,7 +10,7 @@ fi
 pypi_path=file://$cwd/../../../static/pypi/simple
 
 usage() {
-    echo "usage:$0 [zstack-cli|zstack-ctl|zstack-dashboard]"
+    echo "usage:$0 [zstack-cli|zstack-ctl|zstack-dashboard|zstack-ui]"
     exit 1
 }
 
@@ -131,6 +131,13 @@ elif [ $tool = 'zstack-dashboard' ]; then
     fi
 
     chmod +x /etc/init.d/zstack-dashboard
+
+elif [ $tool = 'zstack-ui' ]; then
+    cd $cwd
+    mkdir -p /usr/local/zstack/zstack-ui/
+    cp -f zstack-ui.war /usr/local/zstack/zstack-ui/
+    cp -f zstack-ui /etc/init.d/
+    chmod a+x /etc/init.d/zstack-ui
 else
     usage
 fi
