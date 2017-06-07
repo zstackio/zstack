@@ -32,7 +32,7 @@ public class CoreGlobalProperty {
     public static String USER_HOME;
     @GlobalProperty(name = "RESTFacade.readTimeout", defaultValue = "300000")
     public static int REST_FACADE_READ_TIMEOUT;
-    @GlobalProperty(name = "RESTFacade.connectTimeout", defaultValue = "300000")
+    @GlobalProperty(name = "RESTFacade.connectTimeout", defaultValue = "15000")
     public static int REST_FACADE_CONNECT_TIMEOUT;
     @GlobalProperty(name = "upgradeStartOn", defaultValue = "false")
     public static boolean IS_UPGRADE_START;
