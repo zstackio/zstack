@@ -56,25 +56,35 @@ public class ResourceVO {
         return f;
     }
 
-    @PrePersist
-    private void prePersist() {
-        resourceType = getClass().getSimpleName();
+    public boolean hasNameField() {
+        return getNameField() != null;
+    }
 
+    public String getValueOfNameField() {
         try {
+            String name = null;
             Field nameField = getNameField();
             if (nameField != null) {
-                resourceName = (String) nameField.get(this);
+                name = (String) nameField.get(this);
             }
+
+            return name;
         } catch (IllegalAccessException e) {
             throw new CloudRuntimeException(e);
         }
     }
 
-    String getResourceName() {
+    @PrePersist
+    private void prePersist() {
+        resourceType = getClass().getSimpleName();
+        resourceName = getValueOfNameField();
+    }
+
+    public String getResourceName() {
         return resourceName;
     }
 
-    void setResourceName(String resourceName) {
+    public void setResourceName(String resourceName) {
         this.resourceName = resourceName;
     }
 
