@@ -9,7 +9,7 @@ public class QueryBaremetalHostCfgAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryBaremetalPxeServerResult value;
+        public QueryBaremetalHostCfgResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -31,8 +31,8 @@ public class QueryBaremetalHostCfgAction extends QueryAction {
             return ret;
         }
         
-        QueryBaremetalPxeServerResult value = res.getResult(QueryBaremetalPxeServerResult.class);
-        ret.value = value == null ? new QueryBaremetalPxeServerResult() : value; 
+        QueryBaremetalHostCfgResult value = res.getResult(QueryBaremetalHostCfgResult.class);
+        ret.value = value == null ? new QueryBaremetalHostCfgResult() : value; 
 
         return ret;
     }
