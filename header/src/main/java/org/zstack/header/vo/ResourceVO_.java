@@ -10,6 +10,6 @@ import javax.persistence.metamodel.StaticMetamodel;
 @StaticMetamodel(ResourceVO.class)
 public class ResourceVO_ {
     public static volatile SingularAttribute<ResourceVO, String> uuid;
-    public static volatile SingularAttribute<ResourceVO, String> name;
+    public static volatile SingularAttribute<ResourceVO, String> resourceName;
     public static volatile SingularAttribute<ResourceVO, String> resourceType;
 }

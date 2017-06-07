@@ -39,10 +39,7 @@ import org.zstack.header.notification.ApiNotificationFactory;
 import org.zstack.header.notification.ApiNotificationFactoryExtensionPoint;
 import org.zstack.header.search.APIGetMessage;
 import org.zstack.header.search.APISearchMessage;
-import org.zstack.header.vo.APIGetResourceNamesMsg;
-import org.zstack.header.vo.APIGetResourceNamesReply;
-import org.zstack.header.vo.ResourceInventory;
-import org.zstack.header.vo.ResourceVO;
+import org.zstack.header.vo.*;
 import org.zstack.utils.*;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -715,6 +712,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             collectDefaultQuota();
             configureGlobalConfig();
             setupCanonicalEvents();
+            updateResourceVONameOnEntityUpdate();
 
             for (ReportApiAccountControlExtensionPoint ext : pluginRgty.getExtensionList(ReportApiAccountControlExtensionPoint.class)) {
                 List<Class> apis = ext.reportApiAccountControl();
@@ -726,6 +724,20 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             throw new CloudRuntimeException(e);
         }
         return true;
+    }
+
+    private void updateResourceVONameOnEntityUpdate() {
+        dbf.installEntityLifeCycleCallback(null, EntityEvent.PRE_UPDATE, (evt, o) -> {
+            if (o instanceof ResourceVO) {
+                ResourceVO rvo = (ResourceVO) o;
+                if (rvo.hasNameField()) {
+                    String name = rvo.getValueOfNameField();
+                    if (name != null) {
+                        rvo.setResourceName(name);
+                    }
+                }
+            }
+        });
     }
 
     private void setupCanonicalEvents() {
