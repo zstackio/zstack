@@ -1,7 +1,5 @@
 package org.zstack.core.scheduler
 
-import org.zstack.core.scheduler.APIQuerySchedulerReply
-import org.zstack.header.query.APIQueryMessage
 import org.zstack.header.query.APIQueryMessage
 
 doc {
@@ -19,7 +17,7 @@ doc {
 			header (Authorization: 'OAuth the-session-uuid')
 
 
-            clz APIQuerySchedulerMsg.class
+            clz APIQuerySchedulerJobMsg.class
 
             desc """查询定时任务"""
             
@@ -27,7 +25,7 @@ doc {
         }
 
         response {
-            clz APIQuerySchedulerReply.class
+            clz APIQuerySchedulerJobReply.class
         }
     }
 }

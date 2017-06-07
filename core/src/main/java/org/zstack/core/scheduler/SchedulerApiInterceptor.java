@@ -8,12 +8,9 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
-import org.zstack.header.core.scheduler.APICreateSchedulerJobMessage;
-import org.zstack.header.core.scheduler.SchedulerState;
-import org.zstack.header.core.scheduler.SchedulerVO;
-import org.zstack.header.core.scheduler.SchedulerVO_;
+import org.zstack.header.core.scheduler.*;
 import org.zstack.header.message.APIMessage;
-import static org.zstack.core.Platform.argerr;
+
 import static org.zstack.core.Platform.operr;
 
 /**
@@ -36,10 +33,10 @@ public class SchedulerApiInterceptor implements ApiMessageInterceptor {
     @Override
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
         setServiceId(msg);
-        if (msg instanceof APIDeleteSchedulerMsg) {
-            validate((APIDeleteSchedulerMsg) msg);
-        } else if (msg instanceof APIUpdateSchedulerMsg) {
-            validate((APIUpdateSchedulerMsg) msg);
+        if (msg instanceof APIDeleteSchedulerJobMsg) {
+            validate((APIDeleteSchedulerJobMsg) msg);
+        } else if (msg instanceof APIUpdateSchedulerJobMsg) {
+            validate((APIUpdateSchedulerJobMsg) msg);
         } else if (msg instanceof APICreateSchedulerJobMessage) {
             validate((APICreateSchedulerJobMessage) msg);
         } else if (msg instanceof APIChangeSchedulerStateMsg) {
@@ -48,17 +45,13 @@ public class SchedulerApiInterceptor implements ApiMessageInterceptor {
         return msg;
     }
 
-    private void validate(APIDeleteSchedulerMsg msg) {
-        if (!dbf.isExist(msg.getUuid(), SchedulerVO.class)) {
-            APIDeleteSchedulerEvent evt = new APIDeleteSchedulerEvent(msg.getId());
-            bus.publish(evt);
-            throw new StopRoutingException();
-        }
+    private void validate(APIDeleteSchedulerJobMsg msg) {
+        
     }
 
-    private void validate(APIUpdateSchedulerMsg msg) {
-        if (!dbf.isExist(msg.getUuid(), SchedulerVO.class)) {
-            APIUpdateSchedulerEvent evt = new APIUpdateSchedulerEvent(msg.getId());
+    private void validate(APIUpdateSchedulerJobMsg msg) {
+        if (!dbf.isExist(msg.getUuid(), SchedulerJobVO.class)) {
+            APIUpdateSchedulerJobEvent evt = new APIUpdateSchedulerJobEvent(msg.getId());
             bus.publish(evt);
             throw new StopRoutingException();
         }
@@ -66,21 +59,21 @@ public class SchedulerApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APIChangeSchedulerStateMsg msg) {
-        if (!dbf.isExist(msg.getUuid(), SchedulerVO.class)) {
-            APIUpdateSchedulerEvent evt = new APIUpdateSchedulerEvent(msg.getId());
-            bus.publish(evt);
-            throw new StopRoutingException();
-        }
-        SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
-        q.select(SchedulerVO_.state);
-        q.add(SchedulerVO_.uuid, SimpleQuery.Op.EQ, msg.getUuid());
-        String state = q.findValue();
-        if (msg.getStateEvent().equals("enable") && state.equals(SchedulerState.Enabled.toString())) {
-            throw new ApiMessageInterceptionException(operr("can not enable a Enabled scheduler" ));
-        }
-        if (msg.getStateEvent().equals("disable") && state.equals(SchedulerState.Disabled.toString())) {
-            throw new ApiMessageInterceptionException(operr("can not disable a Disabled scheduler"));
-        }
+//        if (!dbf.isExist(msg.getUuid(), SchedulerJobVO.class)) {
+//            APIUpdateSchedulerJobEvent evt = new APIUpdateSchedulerJobEvent(msg.getId());
+//            bus.publish(evt);
+//            throw new StopRoutingException();
+//        }
+//        SimpleQuery<SchedulerJobVO> q = dbf.createQuery(SchedulerJobVO.class);
+//        q.select(SchedulerJobVO.state);
+//        q.add(SchedulerJobVO.uuid, SimpleQuery.Op.EQ, msg.getUuid());
+//        String state = q.findValue();
+//        if (msg.getStateEvent().equals("enable") && state.equals(SchedulerState.Enabled.toString())) {
+//            throw new ApiMessageInterceptionException(operr("can not enable a Enabled scheduler" ));
+//        }
+//        if (msg.getStateEvent().equals("disable") && state.equals(SchedulerState.Disabled.toString())) {
+//            throw new ApiMessageInterceptionException(operr("can not disable a Disabled scheduler"));
+//        }
     }
 
     private void validate(APICreateSchedulerJobMessage msg) {

@@ -1,7 +1,5 @@
 package org.zstack.core.scheduler
 
-import org.zstack.core.scheduler.APIUpdateSchedulerEvent
-
 doc {
     title "UpdateScheduler"
 
@@ -16,7 +14,7 @@ doc {
 			header (Authorization: 'OAuth the-session-uuid')
 
 
-            clz APIUpdateSchedulerMsg.class
+            clz APIUpdateSchedulerJobMsg.class
 
             desc """更新定时任务"""
             
@@ -76,7 +74,7 @@ doc {
         }
 
         response {
-            clz APIUpdateSchedulerEvent.class
+            clz APIUpdateSchedulerJobEvent.class
         }
     }
 }

@@ -1,6 +1,6 @@
 package org.zstack.sdk;
 
-public class QuerySchedulerResult {
+public class QuerySchedulerJobResult {
     public java.util.List<SchedulerJobInventory> inventories;
     public void setInventories(java.util.List<SchedulerJobInventory> inventories) {
         this.inventories = inventories;

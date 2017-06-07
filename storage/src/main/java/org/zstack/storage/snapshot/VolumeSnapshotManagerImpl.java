@@ -440,7 +440,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
     }
 
     private void handle(APICreateVolumeSnapshotSchedulerJobMsg msg) {
-        APICreateVolumeSnapshotSchedulerEvent evt = new APICreateVolumeSnapshotSchedulerEvent(msg.getId());
+        APICreateVolumeSnapshotSchedulerJobEvent evt = new APICreateVolumeSnapshotSchedulerJobEvent(msg.getId());
 
         CreateVolumeSnapshotJob job = new CreateVolumeSnapshotJob(msg);
         job.setVolumeUuid(msg.getVolumeUuid());
@@ -458,7 +458,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         vo.setDescription(msg.getDescription());
         vo.setTargetResourceUuid(msg.getVolumeUuid());
         vo.setJobData(JSONObjectUtil.toJsonString(job));
-        vo.setManagementNodeUuid(Platform.getUuid());
+        vo.setManagementNodeUuid(Platform.getManagementServerId());
         dbf.persistAndRefresh(vo);
         acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), SchedulerJobVO.class);
 

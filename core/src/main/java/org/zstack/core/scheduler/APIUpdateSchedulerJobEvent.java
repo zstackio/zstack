@@ -10,14 +10,14 @@ import java.sql.Timestamp;
  * Created by Mei Lei<meilei007@gmail.com> on 7/18/16.
  */
 @RestResponse(allTo = "inventory")
-public class APIUpdateSchedulerEvent extends  APIEvent{
+public class APIUpdateSchedulerJobEvent extends  APIEvent{
     private SchedulerJobInventory inventory;
 
-    public APIUpdateSchedulerEvent(String apiId) {
+    public APIUpdateSchedulerJobEvent(String apiId) {
         super(apiId);
     }
 
-    public APIUpdateSchedulerEvent() {
+    public APIUpdateSchedulerJobEvent() {
         super(null);
     }
 
@@ -29,8 +29,8 @@ public class APIUpdateSchedulerEvent extends  APIEvent{
         this.inventory = inventory;
     }
  
-    public static APIUpdateSchedulerEvent __example__() {
-        APIUpdateSchedulerEvent event = new APIUpdateSchedulerEvent();
+    public static APIUpdateSchedulerJobEvent __example__() {
+        APIUpdateSchedulerJobEvent event = new APIUpdateSchedulerJobEvent();
         SchedulerJobInventory scheduler = new SchedulerJobInventory();
         scheduler.setUuid(uuid());
         scheduler.setName("Test");

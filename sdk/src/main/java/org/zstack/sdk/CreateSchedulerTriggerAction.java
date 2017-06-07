@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class UpdateSchedulerAction extends AbstractAction {
+public class CreateSchedulerTriggerAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public UpdateSchedulerResult value;
+        public CreateSchedulerTriggerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -22,14 +22,26 @@ public class UpdateSchedulerAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
 
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Integer schedulerInterval;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Integer repeatCount;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.sql.Timestamp startTime;
+
+    @Param(required = true, validValues = {"simple","cron"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String schedulerType;
+
+    @Param(required = false)
+    public java.lang.String resourceUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -52,8 +64,8 @@ public class UpdateSchedulerAction extends AbstractAction {
             return ret;
         }
         
-        UpdateSchedulerResult value = res.getResult(UpdateSchedulerResult.class);
-        ret.value = value == null ? new UpdateSchedulerResult() : value; 
+        CreateSchedulerTriggerResult value = res.getResult(CreateSchedulerTriggerResult.class);
+        ret.value = value == null ? new CreateSchedulerTriggerResult() : value; 
 
         return ret;
     }
@@ -78,11 +90,11 @@ public class UpdateSchedulerAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/schedulers/{uuid}/actions";
+        info.httpMethod = "POST";
+        info.path = "/scheduler/trigger";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "updateScheduler";
+        info.parameterName = "params";
         return info;
     }
 

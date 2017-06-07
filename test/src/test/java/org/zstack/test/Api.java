@@ -4192,7 +4192,7 @@ public class Api implements CloudBusEventListener {
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
-        APICreateVolumeSnapshotSchedulerEvent evt = sender.send(msg, APICreateVolumeSnapshotSchedulerEvent.class);
+        APICreateVolumeSnapshotSchedulerJobEvent evt = sender.send(msg, APICreateVolumeSnapshotSchedulerJobEvent.class);
         logger.debug(MessageCommandRecorder.endAndToString());
         return evt.getInventory().getUuid();
     }
@@ -4207,12 +4207,12 @@ public class Api implements CloudBusEventListener {
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
-        APICreateVolumeSnapshotSchedulerEvent evt = sender.send(msg, APICreateVolumeSnapshotSchedulerEvent.class);
+        APICreateVolumeSnapshotSchedulerJobEvent evt = sender.send(msg, APICreateVolumeSnapshotSchedulerJobEvent.class);
         logger.debug(MessageCommandRecorder.endAndToString());
     }
 
     public SchedulerJobInventory updateScheduler(String uuid, String schedulerName, String schedulerDescription, SessionInventory session) throws ApiSenderException {
-        APIUpdateSchedulerMsg msg = new APIUpdateSchedulerMsg();
+        APIUpdateSchedulerJobMsg msg = new APIUpdateSchedulerJobMsg();
         if (schedulerName != null) {
             msg.setName(schedulerName);
         }
@@ -4226,19 +4226,19 @@ public class Api implements CloudBusEventListener {
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
-        APIUpdateSchedulerEvent evt = sender.send(msg, APIUpdateSchedulerEvent.class);
+        APIUpdateSchedulerJobEvent evt = sender.send(msg, APIUpdateSchedulerJobEvent.class);
         logger.debug(MessageCommandRecorder.endAndToString());
         return evt.getInventory();
     }
 
     public void deleteScheduler(String uuid, SessionInventory session) throws ApiSenderException {
-        APIDeleteSchedulerMsg msg = new APIDeleteSchedulerMsg();
+        APIDeleteSchedulerJobMsg msg = new APIDeleteSchedulerJobMsg();
         msg.setSession(session == null ? adminSession : session);
         msg.setUuid(uuid);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
-        APIDeleteSchedulerEvent evt = sender.send(msg, APIDeleteSchedulerEvent.class);
+        APIDeleteSchedulerJobEvent evt = sender.send(msg, APIDeleteSchedulerJobEvent.class);
         logger.debug(MessageCommandRecorder.endAndToString());
     }
 

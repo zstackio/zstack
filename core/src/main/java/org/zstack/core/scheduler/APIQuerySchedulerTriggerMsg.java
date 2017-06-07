@@ -8,22 +8,23 @@ import org.zstack.header.query.AutoQuery;
 import org.zstack.header.rest.RestRequest;
 
 import java.util.List;
+
 import static java.util.Arrays.asList;
 
 /**
- * Created by Mei Lei<meilei007@gmail.com> on 7/18/16.
+ * Created by AlanJager on 2017/6/8.
  */
-@Action(category = SchedulerConstant.ACTION_CATEGORY, names = {"read"})
-@AutoQuery(replyClass = APIQuerySchedulerReply.class, inventoryClass = SchedulerJobInventory.class)
-@RestRequest(
-        path = "/schedulers",
-        optionalPaths = {"/schedulers/{uuid}"},
-        method = HttpMethod.GET,
-        responseClass = APIQuerySchedulerReply.class
-)
-public class APIQuerySchedulerMsg extends APIQueryMessage {
 
+@Action(category = SchedulerConstant.ACTION_CATEGORY, names = {"read"})
+@AutoQuery(replyClass = APIQuerySchedulerJobReply.class, inventoryClass = SchedulerJobInventory.class)
+@RestRequest(
+        path = "/scheduler/triggers",
+        optionalPaths = {"/scheduler/triggers/{uuid}"},
+        method = HttpMethod.GET,
+        responseClass = APIQuerySchedulerTriggerReply.class
+)
+public class APIQuerySchedulerTriggerMsg extends APIQueryMessage {
     public static List<String> __example__() {
-        return asList("name=TestScheduler", "state=Enabled");
+        return asList("name=TestSchedulerTrigger", "name=trigger");
     }
 }

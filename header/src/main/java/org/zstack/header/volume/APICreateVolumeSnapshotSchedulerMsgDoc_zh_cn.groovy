@@ -154,7 +154,7 @@ doc {
         }
 
         response {
-            clz APICreateVolumeSnapshotSchedulerEvent.class
+            clz APICreateVolumeSnapshotSchedulerJobEvent.class
         }
     }
 }

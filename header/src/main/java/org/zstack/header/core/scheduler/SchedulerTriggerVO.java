@@ -24,10 +24,10 @@ public class SchedulerTriggerVO extends ResourceVO{
     private String description;
 
     @Column
-    private String type;
+    private String schedulerType;
 
     @Column
-    private Integer interval;
+    private Integer schedulerInterval;
 
     @Column
     private Integer repeatCount;
@@ -112,19 +112,19 @@ public class SchedulerTriggerVO extends ResourceVO{
         this.description = description;
     }
 
-    public String getType() {
-        return type;
+    public String getSchedulerType() {
+        return schedulerType;
     }
 
-    public void setType(String type) {
-        this.type = type;
+    public void setSchedulerType(String schedulerType) {
+        this.schedulerType = schedulerType;
     }
 
-    public Integer getInterval() {
-        return interval;
+    public Integer getSchedulerInterval() {
+        return schedulerInterval;
     }
 
-    public void setInterval(Integer interval) {
-        this.interval = interval;
+    public void setSchedulerInterval(Integer schedulerInterval) {
+        this.schedulerInterval = schedulerInterval;
     }
 }

@@ -2,7 +2,7 @@ package org.zstack.header.vm;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.core.scheduler.APICreateSchedulerJobMessage;
-import org.zstack.header.core.scheduler.SchedulerVO;
+import org.zstack.header.core.scheduler.SchedulerJobVO;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
@@ -56,7 +56,7 @@ public class APICreateRebootVmInstanceSchedulerJobMsg extends APICreateScheduler
             @Override
             public void after(APIEvent evt) {
                 if (evt.isSuccess()) {
-                    ntfy("Reboot vm scheduler was created").resource(((APICreateRebootVmInstanceSchedulerEvent) evt).getInventory().getUuid(), SchedulerVO.class.getSimpleName())
+                    ntfy("Reboot vm scheduler was created").resource(((APICreateRebootVmInstanceSchedulerEvent) evt).getInventory().getUuid(), SchedulerJobVO.class.getSimpleName())
                         .messageAndEvent(that, evt).done();
                 }
             }

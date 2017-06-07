@@ -1,7 +1,7 @@
 package org.zstack.core.scheduler;
 
 import org.springframework.http.HttpMethod;
-import org.zstack.header.core.scheduler.SchedulerVO;
+import org.zstack.header.core.scheduler.SchedulerJobVO;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
@@ -14,13 +14,13 @@ import org.zstack.header.rest.RestRequest;
  */
 @Action(category = SchedulerConstant.ACTION_CATEGORY)
 @RestRequest(
-        path = "/schedulers/{uuid}/actions",
-        responseClass = APIUpdateSchedulerEvent.class,
+        path = "/scheduler/jobs/{uuid}/actions",
+        responseClass = APIUpdateSchedulerJobEvent.class,
         isAction = true,
         method = HttpMethod.PUT
 )
-public class APIUpdateSchedulerMsg extends APIMessage implements SchedulerMessage {
-    @APIParam(resourceType = SchedulerVO.class)
+public class APIUpdateSchedulerJobMsg extends APIMessage implements SchedulerMessage {
+    @APIParam(resourceType = SchedulerJobVO.class)
     private String uuid;
     @APIParam(maxLength = 255, required = false, emptyString = false)
     private String name;
@@ -58,8 +58,8 @@ public class APIUpdateSchedulerMsg extends APIMessage implements SchedulerMessag
 
 
  
-    public static APIUpdateSchedulerMsg __example__() {
-        APIUpdateSchedulerMsg msg = new APIUpdateSchedulerMsg();
+    public static APIUpdateSchedulerJobMsg __example__() {
+        APIUpdateSchedulerJobMsg msg = new APIUpdateSchedulerJobMsg();
         msg.setUuid(uuid());
         msg.setName("Test2");
         msg.setDescription("new test");
@@ -72,7 +72,7 @@ public class APIUpdateSchedulerMsg extends APIMessage implements SchedulerMessag
         return new ApiNotification() {
             @Override
             public void after(APIEvent evt) {
-                ntfy("Updating").resource(uuid, SchedulerVO.class.getSimpleName())
+                ntfy("Updating").resource(uuid, SchedulerJobVO.class.getSimpleName())
                         .messageAndEvent(that, evt).done();
             }
         };

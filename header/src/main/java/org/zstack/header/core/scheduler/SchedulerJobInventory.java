@@ -13,7 +13,7 @@ import java.util.List;
 /**
  * Created by root on 7/18/16.
  */
-@Inventory(mappingVOClass = SchedulerJobVO.class, collectionValueOfMethod = "valueOf1")
+@Inventory(mappingVOClass = SchedulerJobVO.class)
 @PythonClassInventory
 public class SchedulerJobInventory implements Serializable {
     private String uuid;
@@ -49,7 +49,7 @@ public class SchedulerJobInventory implements Serializable {
         return new SchedulerJobInventory(vo);
     }
 
-    public static List<SchedulerJobInventory> valueOf1(Collection<SchedulerJobVO> vos) {
+    public static List<SchedulerJobInventory> valueOf(Collection<SchedulerJobVO> vos) {
         List<SchedulerJobInventory> invs = new ArrayList<SchedulerJobInventory>(vos.size());
         for (SchedulerJobVO vo : vos) {
             invs.add(SchedulerJobInventory.valueOf(vo));

@@ -1,7 +1,5 @@
 package org.zstack.core.scheduler
 
-import org.zstack.core.scheduler.APIDeleteSchedulerEvent
-
 doc {
     title "DeleteScheduler"
 
@@ -16,7 +14,7 @@ doc {
 			header (Authorization: 'OAuth the-session-uuid')
 
 
-            clz APIDeleteSchedulerMsg.class
+            clz APIDeleteSchedulerJobMsg.class
 
             desc """删除定时任务"""
             
@@ -66,7 +64,7 @@ doc {
         }
 
         response {
-            clz APIDeleteSchedulerEvent.class
+            clz APIDeleteSchedulerJobEvent.class
         }
     }
 }

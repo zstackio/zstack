@@ -7,18 +7,18 @@ import org.zstack.header.rest.RestResponse;
  * Created by Mei Lei<meilei007@gmail.com> on 7/15/16.
  */
 @RestResponse
-public class APIDeleteSchedulerEvent extends APIEvent{
+public class APIDeleteSchedulerJobEvent extends APIEvent{
 
-    public APIDeleteSchedulerEvent(String apiId) {
+    public APIDeleteSchedulerJobEvent(String apiId) {
         super(apiId);
     }
 
-    public APIDeleteSchedulerEvent() {
+    public APIDeleteSchedulerJobEvent() {
         super(null);
     }
  
-    public static APIDeleteSchedulerEvent __example__() {
-        APIDeleteSchedulerEvent event = new APIDeleteSchedulerEvent();
+    public static APIDeleteSchedulerJobEvent __example__() {
+        APIDeleteSchedulerJobEvent event = new APIDeleteSchedulerJobEvent();
         event.setSuccess(true);
         return event;
     }

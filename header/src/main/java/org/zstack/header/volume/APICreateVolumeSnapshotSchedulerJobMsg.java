@@ -13,7 +13,7 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/volumes/{volumeUuid}/schedulers/creating-volume-snapshots",
         method = HttpMethod.POST,
-        responseClass = APICreateVolumeSnapshotSchedulerEvent.class,
+        responseClass = APICreateVolumeSnapshotSchedulerJobEvent.class,
         parameterName = "params"
 )
 public class APICreateVolumeSnapshotSchedulerJobMsg extends APICreateSchedulerJobMessage implements VolumeMessage {

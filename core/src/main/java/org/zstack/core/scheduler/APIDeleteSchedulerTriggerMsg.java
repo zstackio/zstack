@@ -1,7 +1,7 @@
 package org.zstack.core.scheduler;
 
 import org.springframework.http.HttpMethod;
-import org.zstack.header.core.scheduler.SchedulerVO;
+import org.zstack.header.core.scheduler.SchedulerTriggerVO;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIEvent;
@@ -11,21 +11,21 @@ import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
 
 /**
- * Created by Mei Lei<meilei007@gmail.com> on 7/15/16.
+ * Created by AlanJager on 2017/6/8.
  */
+
 @Action(category = SchedulerConstant.ACTION_CATEGORY)
 @RestRequest(
-        path = "/schedulers/{uuid}",
+        path = "/scheduler/triggers/{uuid}",
         method = HttpMethod.DELETE,
-        responseClass = APIDeleteSchedulerEvent.class
+        responseClass = APIDeleteSchedulerTriggerEvent.class
 )
-public class APIDeleteSchedulerMsg extends APIDeleteMessage {
-
-    @APIParam(resourceType = SchedulerVO.class, successIfResourceNotExisting = true)
+public class APIDeleteSchedulerTriggerMsg extends APIDeleteMessage {
+    @APIParam(resourceType = SchedulerTriggerVO.class, successIfResourceNotExisting = true)
     private String uuid;
 
 
-    public APIDeleteSchedulerMsg() {
+    public APIDeleteSchedulerTriggerMsg() {
 
     }
 
@@ -38,9 +38,9 @@ public class APIDeleteSchedulerMsg extends APIDeleteMessage {
     }
 
 
- 
-    public static APIDeleteSchedulerMsg __example__() {
-        APIDeleteSchedulerMsg msg = new APIDeleteSchedulerMsg();
+
+    public static APIDeleteSchedulerTriggerMsg __example__() {
+        APIDeleteSchedulerTriggerMsg msg = new APIDeleteSchedulerTriggerMsg();
         msg.setUuid(uuid());
         return msg;
     }
@@ -51,10 +51,9 @@ public class APIDeleteSchedulerMsg extends APIDeleteMessage {
         return new ApiNotification() {
             @Override
             public void after(APIEvent evt) {
-                ntfy("Deleting").resource(uuid, SchedulerVO.class.getSimpleName())
+                ntfy("Deleting").resource(uuid, SchedulerTriggerVO.class.getSimpleName())
                         .messageAndEvent(that, evt).done();
             }
         };
     }
-
 }

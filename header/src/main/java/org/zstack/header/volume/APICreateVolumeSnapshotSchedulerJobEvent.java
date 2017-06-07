@@ -10,7 +10,7 @@ import java.sql.Timestamp;
  * Created by root on 7/12/16.
  */
 @RestResponse(allTo = "inventory")
-public class APICreateVolumeSnapshotSchedulerEvent extends APIEvent {
+public class APICreateVolumeSnapshotSchedulerJobEvent extends APIEvent {
     private SchedulerJobInventory inventory;
 
     public SchedulerJobInventory getInventory() {
@@ -21,16 +21,16 @@ public class APICreateVolumeSnapshotSchedulerEvent extends APIEvent {
         this.inventory = inventory;
     }
 
-    public APICreateVolumeSnapshotSchedulerEvent(String apiId) {
+    public APICreateVolumeSnapshotSchedulerJobEvent(String apiId) {
         super(apiId);
     }
 
-    public APICreateVolumeSnapshotSchedulerEvent() {
+    public APICreateVolumeSnapshotSchedulerJobEvent() {
         super(null);
     }
  
-    public static APICreateVolumeSnapshotSchedulerEvent __example__() {
-        APICreateVolumeSnapshotSchedulerEvent event = new APICreateVolumeSnapshotSchedulerEvent();
+    public static APICreateVolumeSnapshotSchedulerJobEvent __example__() {
+        APICreateVolumeSnapshotSchedulerJobEvent event = new APICreateVolumeSnapshotSchedulerJobEvent();
         SchedulerJobInventory scheduler = new SchedulerJobInventory();
         scheduler.setUuid(uuid());
         scheduler.setName("Test");

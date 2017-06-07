@@ -3,6 +3,7 @@ package org.zstack.core.scheduler;
 import org.quartz.*;
 import org.quartz.impl.StdSchedulerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.method.P;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
@@ -16,7 +17,6 @@ import org.zstack.core.thread.SyncThread;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.scheduler.*;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.identity.AccountResourceRefInventory;
 import org.zstack.header.identity.ResourceOwnerPreChangeExtensionPoint;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
@@ -63,15 +63,78 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
     @Override
     @MessageSafe
     public void handleMessage(Message msg) {
-        if (msg instanceof APIDeleteSchedulerMsg) {
-            handle((APIDeleteSchedulerMsg) msg);
-        } else if (msg instanceof APIUpdateSchedulerMsg) {
-            handle((APIUpdateSchedulerMsg) msg);
+        if (msg instanceof APIDeleteSchedulerJobMsg) {
+            handle((APIDeleteSchedulerJobMsg) msg);
+        } else if (msg instanceof APIUpdateSchedulerJobMsg) {
+            handle((APIUpdateSchedulerJobMsg) msg);
         } else if (msg instanceof APIChangeSchedulerStateMsg) {
             handle((APIChangeSchedulerStateMsg) msg);
+        } else if (msg instanceof APICreateSchedulerTriggerMsg) {
+            handle((APICreateSchedulerTriggerMsg) msg);
+        } else if (msg instanceof APIUpdateSchedulerTriggerMsg) {
+            handle((APIUpdateSchedulerTriggerMsg) msg);
+        } else if (msg instanceof APIDeleteSchedulerTriggerMsg) {
+            handle((APIDeleteSchedulerTriggerMsg) msg);
+        } else if (msg instanceof APIAddSchedulerJobToSchedulerTriggerMsg) {
+            handle((APIAddSchedulerJobToSchedulerTriggerMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIAddSchedulerJobToSchedulerTriggerMsg msg) {
+        // run scheduler
+    }
+
+    private void handle(APIDeleteSchedulerTriggerMsg msg) {
+        APIDeleteSchedulerTriggerEvent evt = new APIDeleteSchedulerTriggerEvent(msg.getId());
+        dbf.removeByPrimaryKey(msg.getUuid(), SchedulerTriggerVO.class);
+        bus.publish(evt);
+    }
+
+    private void handle(APIUpdateSchedulerTriggerMsg msg) {
+        APIUpdateSchedulerTriggerEvent evt = new APIUpdateSchedulerTriggerEvent(msg.getId());
+        SchedulerTriggerVO vo = updateSchedulerTrigger(msg);
+
+        if (vo != null) {
+            dbf.updateAndRefresh(vo);
+        }
+        evt.setInventory(SchedulerTriggerInventory.valueOf(vo));
+        bus.publish(evt);
+    }
+
+    private SchedulerTriggerVO updateSchedulerTrigger(APIUpdateSchedulerTriggerMsg msg) {
+        SchedulerTriggerVO vo = dbf.findByUuid(msg.getUuid(), SchedulerTriggerVO.class);
+
+        if (msg.getName() != null) {
+            vo.setName(msg.getName());
+        }
+
+        if (msg.getDescription() != null) {
+            vo.setDescription(msg.getDescription());
+        }
+
+        return vo;
+    }
+
+    private void handle(APICreateSchedulerTriggerMsg msg) {
+        APICreateSchedulerTriggerEvent evt = new APICreateSchedulerTriggerEvent(msg.getId());
+        SchedulerTriggerVO vo = new SchedulerTriggerVO();
+        if (msg.getResourceUuid() != null) {
+            vo.setUuid(msg.getResourceUuid());
+        } else {
+            vo.setUuid(Platform.getUuid());
+        }
+        vo.setName(msg.getName());
+        vo.setDescription(msg.getDescription());
+        vo.setStartTime(msg.getStartTime());
+        vo.setRepeatCount(msg.getRepeatCount());
+        vo.setSchedulerInterval(msg.getSchedulerInterval());
+        vo.setSchedulerType(msg.getSchedulerType());
+        dbf.persist(vo);
+
+        evt.setInventory(SchedulerTriggerInventory.valueOf(vo));
+        bus.publish(evt);
     }
 
     private void handle(APIChangeSchedulerStateMsg msg) {
@@ -90,40 +153,23 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
 
     }
 
-    private void handle(APIDeleteSchedulerMsg msg) {
-        APIDeleteSchedulerEvent evt = new APIDeleteSchedulerEvent(msg.getId());
-        SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
-        q.select(SchedulerVO_.jobName);
-        q.add(SchedulerVO_.uuid, SimpleQuery.Op.EQ, msg.getUuid());
-        String jobName = q.findValue();
-        SimpleQuery<SchedulerVO> q2 = dbf.createQuery(SchedulerVO.class);
-        q2.select(SchedulerVO_.jobGroup);
-        q2.add(SchedulerVO_.uuid, SimpleQuery.Op.EQ, msg.getUuid());
-        String jobGroup = q2.findValue();
-        try {
-            scheduler.deleteJob(jobKey(jobName, jobGroup));
-            dbf.removeByPrimaryKey(msg.getUuid(), SchedulerVO.class);
-            bus.publish(evt);
-        } catch (SchedulerException e) {
-            evt.setError(errf.instantiateErrorCode(SysErrors.DELETE_RESOURCE_ERROR, e.getMessage()));
-            bus.publish(evt);
-            logger.warn(String.format("Delete Scheduler %s failed!", msg.getUuid()));
-            throw new RuntimeException(e);
-        }
-
+    private void handle(APIDeleteSchedulerJobMsg msg) {
+        APIDeleteSchedulerJobEvent evt = new APIDeleteSchedulerJobEvent(msg.getId());
+        dbf.removeByPrimaryKey(msg.getUuid(), SchedulerJobVO.class);
+        bus.publish(evt);
     }
 
-    private void handle(APIUpdateSchedulerMsg msg) {
-        SchedulerJobVO vo = updateScheduler(msg);
+    private void handle(APIUpdateSchedulerJobMsg msg) {
+        SchedulerJobVO vo = updateSchedulerJob(msg);
         if (vo != null) {
             self = dbf.updateAndRefresh(vo);
         }
-        APIUpdateSchedulerEvent evt = new APIUpdateSchedulerEvent(msg.getId());
+        APIUpdateSchedulerJobEvent evt = new APIUpdateSchedulerJobEvent(msg.getId());
         evt.setInventory(getInventory());
         bus.publish(evt);
     }
 
-    private SchedulerJobVO updateScheduler(APIUpdateSchedulerMsg msg) {
+    private SchedulerJobVO updateSchedulerJob(APIUpdateSchedulerJobMsg msg) {
         SchedulerJobVO self = dbf.findByUuid(msg.getSchedulerUuid(), SchedulerJobVO.class);
         if (msg.getName() != null) {
             self.setName(msg.getName());
@@ -136,7 +182,6 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
 
 
     public String getId() {
-
         return bus.makeLocalServiceId(SchedulerConstant.SERVICE_ID);
     }
 
@@ -282,7 +327,6 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
                 }
             }
         }
-
     }
 
     private void loadSchedulerJobs() {

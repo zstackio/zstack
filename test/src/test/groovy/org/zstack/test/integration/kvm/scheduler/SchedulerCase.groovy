@@ -1,15 +1,20 @@
 package org.zstack.test.integration.kvm.scheduler
 
+import org.zstack.core.scheduler.SchedulerConstant
 import org.zstack.header.core.scheduler.SchedulerJobVO
+import org.zstack.header.core.scheduler.SchedulerTriggerVO
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.network.securitygroup.SecurityGroupConstant
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant
 import org.zstack.sdk.SchedulerJobInventory
+import org.zstack.sdk.SchedulerTriggerInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
+
+import java.sql.Timestamp
 
 /**
  * Created by AlanJager on 2017/6/7.
@@ -144,29 +149,92 @@ class SchedulerCase extends SubCase {
     @Override
     void test() {
         env.create {
-            testCreateSchedulerJob()
+            testSchedulerJobAPI()
+            testSchedulerTriggerAPI()
         }
     }
     
-    void testCreateSchedulerJob() {
+    void testSchedulerJobAPI() {
         VmInstanceInventory vm = env.inventoryByName("vm")
 
+        // test create scheduler job
         SchedulerJobInventory startInv = createStartVmInstanceSchedulerJob {
             vmUuid = vm.uuid
             name = "start"
         } as SchedulerJobInventory
+        SchedulerJobVO startVO = dbFindByUuid(startInv.getUuid(), SchedulerJobVO.class)
+        assert startVO.name == startInv.name
 
         SchedulerJobInventory rebootInv = createRebootVmInstanceSchedulerJob {
             vmUuid = vm.uuid
             name = "reboot"
         } as SchedulerJobInventory
+        SchedulerJobVO rebootVO = dbFindByUuid(rebootInv.getUuid(), SchedulerJobVO.class)
+        assert rebootVO.name == rebootInv.name
+
 
         SchedulerJobInventory stopInv = createStopVmInstanceSchedulerJob {
             vmUuid = vm.uuid
             name = "stop"
         } as SchedulerJobInventory
+        SchedulerJobVO stopVO = dbFindByUuid(stopInv.getUuid(), SchedulerJobVO.class)
+        assert stopVO.name == stopInv.name
 
-        SchedulerJobVO startVO = dbFindByUuid(startInv.getUuid(), SchedulerJobVO.class)
-        assert startVO.name == startInv.name
+        SchedulerJobInventory snapshotSchedulerInv = createVolumeSnapshotSchedulerJob {
+            name = "snapshot"
+            volumeUuid = vm.getRootVolumeUuid()
+            snapShotName = "test"
+        } as SchedulerJobInventory
+        SchedulerJobVO createVolumeSnapshotSchedulerVO = dbFindByUuid(snapshotSchedulerInv.getUuid(), SchedulerJobVO.class)
+        assert createVolumeSnapshotSchedulerVO.name == snapshotSchedulerInv.name
+
+        // test update scheduler api
+        updateSchedulerJob {
+            uuid = startInv.uuid
+            name = "new name"
+        }
+        startVO = dbFindByUuid(startInv.getUuid(), SchedulerJobVO.class)
+        assert startVO.name == "new name"
+
+        // test delete scheduler api
+        deleteSchedulerJob {
+            uuid = stopInv.uuid
+        }
+        retryInSecs {
+            stopVO = dbFindByUuid(stopInv.getUuid(), SchedulerJobVO.class)
+            assert stopVO == null
+        }
+    }
+
+    void testSchedulerTriggerAPI() {
+        VmInstanceInventory vm = env.inventoryByName("vm")
+
+        // test create scheduler trigger
+        SchedulerTriggerInventory inv = createSchedulerTrigger {
+            name = "trigger"
+            description = "this is a trigger"
+            schedulerInterval = 12222
+            repeatCount = 22222
+            startTime = new Timestamp(System.currentTimeMillis())
+            schedulerType = SchedulerConstant.SIMPLE_TYPE_STRING.toString()
+        }
+        SchedulerTriggerVO vo = dbFindByUuid(inv.uuid, SchedulerTriggerVO.class)
+        assert vo.name == inv.name
+
+        // test update scheduler trigger
+        updateSchedulerTrigger {
+            uuid = inv.uuid
+            name = "new trigger"
+            description = "this is a new trigger desc"
+        }
+        vo = dbFindByUuid(inv.uuid, SchedulerTriggerVO.class)
+        assert vo.name == "new trigger"
+
+        // test delete scheduler trigger
+        deleteSchedulerTrigger {
+            uuid = inv.uuid
+        }
+        vo = dbFindByUuid(inv.uuid, SchedulerTriggerVO.class)
+        assert vo == null
     }
 }

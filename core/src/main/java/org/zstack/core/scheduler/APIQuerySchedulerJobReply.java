@@ -13,7 +13,7 @@ import static java.util.Arrays.asList;
  * Created by Mei Lei<meilei007@gmail.com> on 7/18/16.
  */
 @RestResponse(allTo = "inventories")
-public class APIQuerySchedulerReply extends APIQueryReply {
+public class APIQuerySchedulerJobReply extends APIQueryReply {
     private List<SchedulerJobInventory> inventories;
 
     public List<SchedulerJobInventory> getInventories() {
@@ -24,8 +24,8 @@ public class APIQuerySchedulerReply extends APIQueryReply {
         this.inventories = inventories;
     }
  
-    public static APIQuerySchedulerReply __example__() {
-        APIQuerySchedulerReply reply = new APIQuerySchedulerReply();
+    public static APIQuerySchedulerJobReply __example__() {
+        APIQuerySchedulerJobReply reply = new APIQuerySchedulerJobReply();
         SchedulerJobInventory scheduler = new SchedulerJobInventory();
         scheduler.setUuid(uuid());
         scheduler.setName("test");

@@ -9,4 +9,6 @@ public interface SchedulerConstant {
 
     String QUOTA_SCHEDULER_NUM = "scheduler.num";
 
+    String SIMPLE_TYPE_STRING = "simple";
+    String CRON_TYPE_STRING = "cron";
 }

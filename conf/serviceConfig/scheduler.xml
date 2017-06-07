@@ -3,16 +3,16 @@
     <id>core.scheduler</id>
     <interceptor>SchedulerApiInterceptor</interceptor>
     <message>
-      <name>org.zstack.core.scheduler.APIDeleteSchedulerMsg</name>
+      <name>org.zstack.core.scheduler.APIDeleteSchedulerJobMsg</name>
     </message>
 
     <message>
-        <name>org.zstack.core.scheduler.APIQuerySchedulerMsg</name>
+        <name>org.zstack.core.scheduler.APIQuerySchedulerJobMsg</name>
         <serviceId>query</serviceId>
     </message>
 
     <message>
-        <name>org.zstack.core.scheduler.APIUpdateSchedulerMsg</name>
+        <name>org.zstack.core.scheduler.APIUpdateSchedulerJobMsg</name>
     </message>
 
     <message>
@@ -21,6 +21,22 @@
 
     <message>
         <name>org.zstack.core.scheduler.APIChangeSchedulerStateMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.core.scheduler.APICreateSchedulerTriggerMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.core.scheduler.APIUpdateSchedulerTriggerMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.core.scheduler.APIDeleteSchedulerTriggerMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.core.scheduler.APIAddSchedulerJobToSchedulerTriggerMsg</name>
     </message>
 
 </service>

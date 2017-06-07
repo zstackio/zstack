@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class CreateVolumeSnapshotSchedulerJobAction extends AbstractAction {
+public class DeleteSchedulerTriggerAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public CreateVolumeSnapshotSchedulerJobResult value;
+        public DeleteSchedulerTriggerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -23,22 +23,10 @@ public class CreateVolumeSnapshotSchedulerJobAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String volumeUuid;
-
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String snapShotName;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String volumeSnapshotDescription;
-
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
+    public java.lang.String uuid;
 
     @Param(required = false)
-    public java.lang.String resourceUuid;
+    public java.lang.String deleteMode = "Permissive";
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -61,8 +49,8 @@ public class CreateVolumeSnapshotSchedulerJobAction extends AbstractAction {
             return ret;
         }
         
-        CreateVolumeSnapshotSchedulerJobResult value = res.getResult(CreateVolumeSnapshotSchedulerJobResult.class);
-        ret.value = value == null ? new CreateVolumeSnapshotSchedulerJobResult() : value; 
+        DeleteSchedulerTriggerResult value = res.getResult(DeleteSchedulerTriggerResult.class);
+        ret.value = value == null ? new DeleteSchedulerTriggerResult() : value; 
 
         return ret;
     }
@@ -87,11 +75,11 @@ public class CreateVolumeSnapshotSchedulerJobAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/volumes/{volumeUuid}/schedulers/creating-volume-snapshots";
+        info.httpMethod = "DELETE";
+        info.path = "/scheduler/triggers/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

@@ -7,12 +7,12 @@ import java.sql.Timestamp;
 /**
  * Created by AlanJager on 2017/6/7.
  */
-@StaticMetamodel(SchedulerTriggerVO_.class)
+@StaticMetamodel(SchedulerTriggerVO.class)
 public class SchedulerTriggerVO_ {
     public static volatile SingularAttribute<SchedulerTriggerVO, String> name;
     public static volatile SingularAttribute<SchedulerTriggerVO, String> description;
-    public static volatile SingularAttribute<SchedulerTriggerVO, String> type;
-    public static volatile SingularAttribute<SchedulerTriggerVO, Integer> interval;
+    public static volatile SingularAttribute<SchedulerTriggerVO, String> schedulerType;
+    public static volatile SingularAttribute<SchedulerTriggerVO, Integer> schedulerInterval;
     public static volatile SingularAttribute<SchedulerTriggerVO, Integer> repeatCount;
     public static volatile SingularAttribute<SchedulerTriggerVO, String> managementNodeUuid;
     public static volatile SingularAttribute<SchedulerTriggerVO, Timestamp> createDate;
