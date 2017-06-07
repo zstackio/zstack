@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.vm.ImageBackupStorageSelector;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.ChainTask;
@@ -84,8 +85,8 @@ public class KvmBackend extends HypervisorBackend {
 
     public static class ConnectCmd extends AgentCmd {
         public String uuid;
+        public List<String> existUuids;
     }
-
 
     @ApiTimeout(apiClasses = {APICreateVmInstanceMsg.class})
     public static class CreateVolumeFromCacheCmd extends AgentCmd {
@@ -264,6 +265,7 @@ public class KvmBackend extends HypervisorBackend {
         ConnectCmd cmd = new ConnectCmd();
         cmd.uuid = self.getUuid();
         cmd.mountPoint = self.getMountPath();
+        cmd.existUuids = listExistUuids();
 
         httpCall(CONNECT_PATH, hostUuid, cmd, true, AgentRsp.class, new ReturnValueCompletion<AgentRsp>(completion) {
             @Override
@@ -276,6 +278,13 @@ public class KvmBackend extends HypervisorBackend {
                 completion.fail(errorCode);
             }
         });
+    }
+
+    @Transactional(readOnly = true)
+    private final List<String> listExistUuids(){
+        return Q.New(PrimaryStorageVO.class).select(PrimaryStorageVO_.uuid)
+                .eq(PrimaryStorageVO_.type, SMPConstants.SMP_TYPE)
+                .listValues();
     }
 
     @Override
@@ -1333,7 +1342,7 @@ public class KvmBackend extends HypervisorBackend {
         }
 
         class Result {
-            List<ErrorCode> errorCodes = new ArrayList<ErrorCode>();
+            Set<ErrorCode> errorCodes = new HashSet<>();
             List<String> huuids = new ArrayList<String>();
         }
 
@@ -1342,12 +1351,15 @@ public class KvmBackend extends HypervisorBackend {
             @Override
             public void done() {
                 if (!ret.errorCodes.isEmpty()) {
-                    String mountPathErrorInfo = "Can't find mount path on ";
+                    StringBuffer mountPathErrorInfo = new StringBuffer();
+                    mountPathErrorInfo.append("can't access mount point on ");
                     for(String hostUuid : ret.huuids) {
-                        mountPathErrorInfo += String.format("host[uuid:%s] ", hostUuid);
+                        mountPathErrorInfo.append(String.format("host[uuid:%s] ", hostUuid));
                     }
-                    completion.fail(errf.stringToOperationError(String.format("unable to connect the shared mount point storage[uuid:%s, name:%s] to" +
-                            " the cluster[uuid:%s], %s", self.getUuid(), self.getName(), clusterUuid, mountPathErrorInfo), ret.errorCodes));
+                    completion.fail(errf.stringToOperationError(
+                            String.format("unable to connect the shared mount point storage[uuid:%s, name:%s] to the cluster[uuid:%s], %s",
+                                    self.getUuid(), self.getName(), clusterUuid, new String(mountPathErrorInfo)),
+                            new ArrayList<>(ret.errorCodes)));
                 } else {
                     completion.success();
                 }
