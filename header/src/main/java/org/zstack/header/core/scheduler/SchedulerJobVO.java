@@ -31,6 +31,9 @@ public class SchedulerJobVO extends ResourceVO {
     private String jobName;
 
     @Column
+    private String jobData;
+
+    @Column
     @ForeignKey(parentEntityClass = ManagementNodeVO.class, onDeleteAction = ForeignKey.ReferenceOption.CASCADE)
     private String managementNodeUuid;
 
@@ -100,6 +103,14 @@ public class SchedulerJobVO extends ResourceVO {
 
     public Timestamp getLastOpDate() {
         return lastOpDate;
+    }
+
+    public String getJobData() {
+        return jobData;
+    }
+
+    public void setJobData(String jobData) {
+        this.jobData = jobData;
     }
 
     public void setLastOpDate(Timestamp lastOpDate) {

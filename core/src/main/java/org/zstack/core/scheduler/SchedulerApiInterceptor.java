@@ -8,11 +8,10 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
-import org.zstack.header.core.scheduler.APICreateSchedulerMessage;
+import org.zstack.header.core.scheduler.APICreateSchedulerJobMessage;
 import org.zstack.header.core.scheduler.SchedulerState;
 import org.zstack.header.core.scheduler.SchedulerVO;
 import org.zstack.header.core.scheduler.SchedulerVO_;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.message.APIMessage;
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
@@ -41,8 +40,8 @@ public class SchedulerApiInterceptor implements ApiMessageInterceptor {
             validate((APIDeleteSchedulerMsg) msg);
         } else if (msg instanceof APIUpdateSchedulerMsg) {
             validate((APIUpdateSchedulerMsg) msg);
-        } else if (msg instanceof APICreateSchedulerMessage ) {
-            validate((APICreateSchedulerMessage) msg);
+        } else if (msg instanceof APICreateSchedulerJobMessage) {
+            validate((APICreateSchedulerJobMessage) msg);
         } else if (msg instanceof APIChangeSchedulerStateMsg) {
             validate((APIChangeSchedulerStateMsg) msg);
         }
@@ -84,7 +83,7 @@ public class SchedulerApiInterceptor implements ApiMessageInterceptor {
         }
     }
 
-    private void validate(APICreateSchedulerMessage msg) {
+    private void validate(APICreateSchedulerJobMessage msg) {
         if (msg.getType().equals("simple")) {
             if (msg.getInterval() == null) {
                 if (msg.getRepeatCount() != null) {

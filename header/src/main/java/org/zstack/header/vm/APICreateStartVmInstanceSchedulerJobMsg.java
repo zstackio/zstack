@@ -2,7 +2,7 @@ package org.zstack.header.vm;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.cluster.ClusterVO;
-import org.zstack.header.core.scheduler.APICreateSchedulerMessage;
+import org.zstack.header.core.scheduler.APICreateSchedulerJobMessage;
 import org.zstack.header.core.scheduler.SchedulerVO;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.identity.Action;
@@ -22,7 +22,7 @@ import org.zstack.header.rest.RestRequest;
         parameterName = "params",
         responseClass = APICreateStartVmInstanceSchedulerEvent.class
 )
-public class APICreateStartVmInstanceSchedulerMsg extends APICreateSchedulerMessage implements VmInstanceMessage {
+public class APICreateStartVmInstanceSchedulerJobMsg extends APICreateSchedulerJobMessage implements VmInstanceMessage {
     /**
      * @desc vm uuid
      */
@@ -64,14 +64,10 @@ public class APICreateStartVmInstanceSchedulerMsg extends APICreateSchedulerMess
     }
 
  
-    public static APICreateStartVmInstanceSchedulerMsg __example__() {
-        APICreateStartVmInstanceSchedulerMsg msg = new APICreateStartVmInstanceSchedulerMsg();
-        msg.setSchedulerName("create-vm-scheduler");
-        msg.setSchedulerDescription("for test create vm scheduler");
-        msg.setStartTime(0L);
-        msg.setType("simple");
-        msg.setInterval(5);
-        msg.setRepeatCount(10);
+    public static APICreateStartVmInstanceSchedulerJobMsg __example__() {
+        APICreateStartVmInstanceSchedulerJobMsg msg = new APICreateStartVmInstanceSchedulerJobMsg();
+        msg.setName("create-vm-scheduler");
+        msg.setDescription("for test create vm scheduler");
         msg.setVmUuid(uuid());
         return msg;
     }

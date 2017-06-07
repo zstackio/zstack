@@ -19,6 +19,7 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.scheduler.SchedulerInventory;
+import org.zstack.header.core.scheduler.SchedulerJobVO;
 import org.zstack.header.core.scheduler.SchedulerVO;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -40,15 +41,15 @@ import org.zstack.utils.DebugUtils;
 import org.zstack.utils.ExceptionDSL;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import static org.zstack.core.Platform.operr;
 
+import javax.persistence.Parameter;
 import javax.persistence.Query;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
-import java.sql.Time;
-import java.sql.Timestamp;
 import java.util.*;
 
 import static org.zstack.utils.CollectionDSL.list;
@@ -440,28 +441,32 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         }).start();
     }
 
-    private void handle(APICreateVolumeSnapshotSchedulerMsg msg) {
+    private void handle(APICreateVolumeSnapshotSchedulerJobMsg msg) {
         APICreateVolumeSnapshotSchedulerEvent evt = new APICreateVolumeSnapshotSchedulerEvent(msg.getId());
+
         CreateVolumeSnapshotJob job = new CreateVolumeSnapshotJob(msg);
         job.setVolumeUuid(msg.getVolumeUuid());
         job.setTargetResourceUuid(msg.getVolumeUuid());
         job.setSnapShotName(msg.getSnapShotName());
         job.setSnapShotDescription(msg.getVolumeSnapshotDescription());
-        SchedulerVO schedulerVO = schedulerFacade.runScheduler(job);
-        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), schedulerVO.getUuid(), SchedulerVO.class);
-        if (schedulerVO != null) {
-            schedulerVO = dbf.reload(schedulerVO);
-            SchedulerInventory sinv = SchedulerInventory.valueOf(schedulerVO);
-            evt.setInventory(sinv);
-        }
+
+        SchedulerJobVO vo = new SchedulerJobVO();
+        vo.setName(msg.getName());
+        vo.setDescription(msg.getDescription());
+        vo.setTargetResourceUuid(msg.getVolumeUuid());
+        vo.setJobData(JSONObjectUtil.toJsonString(job));
+        vo.setManagementNodeUuid(Platform.getUuid());
+        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), SchedulerJobVO.class);
+        dbf.persistAndRefresh(vo);
+
         bus.publish(evt);
     }
 
     private void handleApiMessage(APIMessage msg) {
         if (msg instanceof APIGetVolumeSnapshotTreeMsg) {
             handle((APIGetVolumeSnapshotTreeMsg) msg);
-        } else if (msg instanceof APICreateVolumeSnapshotSchedulerMsg) {
-            handle((APICreateVolumeSnapshotSchedulerMsg) msg);
+        } else if (msg instanceof APICreateVolumeSnapshotSchedulerJobMsg) {
+            handle((APICreateVolumeSnapshotSchedulerJobMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }

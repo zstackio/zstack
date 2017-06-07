@@ -3,7 +3,7 @@ package org.zstack.core.scheduler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.header.core.scheduler.APICreateSchedulerMessage;
+import org.zstack.header.core.scheduler.APICreateSchedulerJobMessage;
 
 import java.sql.Timestamp;
 import java.util.Date;
@@ -35,7 +35,7 @@ public class AbstractSchedulerJob implements SchedulerJob {
     public AbstractSchedulerJob() {
     }
 
-    public AbstractSchedulerJob(APICreateSchedulerMessage msg) {
+    public AbstractSchedulerJob(APICreateSchedulerJobMessage msg) {
         String jobIdentifyUuid = Platform.getUuid();
         Date date = new Date();
         createDate = new Timestamp(date.getTime());

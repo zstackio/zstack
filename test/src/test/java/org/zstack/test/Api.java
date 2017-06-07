@@ -4183,7 +4183,7 @@ public class Api implements CloudBusEventListener {
 
     public String createVolumeSnapshotScheduler(String volUuid, SessionInventory session, String type, Long startDate, Integer interval, Integer repeatCount) throws ApiSenderException {
         Date date = new Date();
-        APICreateVolumeSnapshotSchedulerMsg msg = new APICreateVolumeSnapshotSchedulerMsg();
+        APICreateVolumeSnapshotSchedulerJobMsg msg = new APICreateVolumeSnapshotSchedulerJobMsg();
         msg.setSession(session == null ? adminSession : session);
         msg.setSchedulerName("test");
         msg.setInterval(interval);
@@ -4204,7 +4204,7 @@ public class Api implements CloudBusEventListener {
     }
 
     public void createCronScheduler(String volUuid, String type, String cronTask, SessionInventory session) throws ApiSenderException {
-        APICreateVolumeSnapshotSchedulerMsg msg = new APICreateVolumeSnapshotSchedulerMsg();
+        APICreateVolumeSnapshotSchedulerJobMsg msg = new APICreateVolumeSnapshotSchedulerJobMsg();
         msg.setSession(session == null ? adminSession : session);
         msg.setSchedulerName("testCron");
         msg.setCron(cronTask);
@@ -4256,7 +4256,7 @@ public class Api implements CloudBusEventListener {
                                         Integer interval,
                                         Integer repeatCount,
                                         SessionInventory session) throws ApiSenderException {
-        APICreateStopVmInstanceSchedulerMsg msg = new APICreateStopVmInstanceSchedulerMsg();
+        APICreateStopVmInstanceSchedulerJobMsg msg = new APICreateStopVmInstanceSchedulerJobMsg();
         msg.setSession(session == null ? adminSession : session);
         msg.setSchedulerName("stopvm");
         msg.setInterval(interval);
@@ -4279,7 +4279,7 @@ public class Api implements CloudBusEventListener {
                                          Integer interval,
                                          Integer repeatCount,
                                          SessionInventory session) throws ApiSenderException {
-        APICreateStartVmInstanceSchedulerMsg msg = new APICreateStartVmInstanceSchedulerMsg();
+        APICreateStartVmInstanceSchedulerJobMsg msg = new APICreateStartVmInstanceSchedulerJobMsg();
         msg.setSession(session == null ? adminSession : session);
         msg.setSchedulerName("startvm");
         msg.setInterval(interval);
@@ -4302,7 +4302,7 @@ public class Api implements CloudBusEventListener {
                                                         Integer interval,
                                                         Integer repeatCount,
                                                         SessionInventory session) throws ApiSenderException {
-        APICreateRebootVmInstanceSchedulerMsg msg = new APICreateRebootVmInstanceSchedulerMsg();
+        APICreateRebootVmInstanceSchedulerJobMsg msg = new APICreateRebootVmInstanceSchedulerJobMsg();
         msg.setSession(session == null ? adminSession : session);
         msg.setSchedulerName("rebootvm");
         msg.setInterval(interval);

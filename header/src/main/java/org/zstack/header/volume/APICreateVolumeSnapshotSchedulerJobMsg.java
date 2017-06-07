@@ -1,7 +1,7 @@
 package org.zstack.header.volume;
 
 import org.springframework.http.HttpMethod;
-import org.zstack.header.core.scheduler.APICreateSchedulerMessage;
+import org.zstack.header.core.scheduler.APICreateSchedulerJobMessage;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
@@ -16,7 +16,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APICreateVolumeSnapshotSchedulerEvent.class,
         parameterName = "params"
 )
-public class APICreateVolumeSnapshotSchedulerMsg extends APICreateSchedulerMessage implements VolumeMessage {
+public class APICreateVolumeSnapshotSchedulerJobMsg extends APICreateSchedulerJobMessage implements VolumeMessage {
     /**
      * @desc volume uuid. See :ref:`VolumeInventory`
      */
@@ -59,14 +59,10 @@ public class APICreateVolumeSnapshotSchedulerMsg extends APICreateSchedulerMessa
     }
 
  
-    public static APICreateVolumeSnapshotSchedulerMsg __example__() {
-        APICreateVolumeSnapshotSchedulerMsg msg = new APICreateVolumeSnapshotSchedulerMsg();
-        msg.setSchedulerName("snapshot-scheduler");
-        msg.setSchedulerDescription("for test snapshot scheduler");
-        msg.setStartTime(0L);
-        msg.setType("simple");
-        msg.setInterval(5);
-        msg.setRepeatCount(10);
+    public static APICreateVolumeSnapshotSchedulerJobMsg __example__() {
+        APICreateVolumeSnapshotSchedulerJobMsg msg = new APICreateVolumeSnapshotSchedulerJobMsg();
+        msg.setName("snapshot-scheduler");
+        msg.setDescription("for test snapshot scheduler");
         msg.setSnapShotName("test-snapshot-scheduler");
         msg.setVolumeUuid(uuid());
         return msg;

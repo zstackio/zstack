@@ -1,7 +1,5 @@
 package org.zstack.header.vm
 
-import org.zstack.header.vm.APICreateStopVmInstanceSchedulerEvent
-
 doc {
     title "CreateStopVmInstanceScheduler"
 
@@ -16,7 +14,7 @@ doc {
 			header (Authorization: 'OAuth the-session-uuid')
 
 
-            clz APICreateStopVmInstanceSchedulerMsg.class
+            clz APICreateStopVmInstanceSchedulerJobMsg.class
 
             desc """"""
             

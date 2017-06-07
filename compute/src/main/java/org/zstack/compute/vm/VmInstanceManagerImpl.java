@@ -36,7 +36,7 @@ import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
-import org.zstack.header.core.scheduler.APICreateSchedulerMessage;
+import org.zstack.header.core.scheduler.APICreateSchedulerJobMessage;
 import org.zstack.header.core.workflow.FlowChain;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -1139,8 +1139,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         check((APIChangeResourceOwnerMsg) msg, pairs);
                     } else if (msg instanceof APIRecoverVmInstanceMsg) {
                         check((APIRecoverVmInstanceMsg) msg, pairs);
-                    } else if (msg instanceof APICreateSchedulerMessage) {
-                        check((APICreateSchedulerMessage) msg, pairs);
+                    } else if (msg instanceof APICreateSchedulerJobMessage) {
+                        check((APICreateSchedulerJobMessage) msg, pairs);
                     }
                 } else {
                     if (msg instanceof APIChangeResourceOwnerMsg) {
@@ -1611,7 +1611,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 }
             }
 
-            private void check(APICreateSchedulerMessage msg, Map<String, Quota.QuotaPair> pairs) {
+            private void check(APICreateSchedulerJobMessage msg, Map<String, Quota.QuotaPair> pairs) {
                 String currentAccountUuid = msg.getSession().getAccountUuid();
                 String resourceTargetOwnerAccountUuid = msg.getSession().getAccountUuid();
 
@@ -1677,11 +1677,11 @@ public class VmInstanceManagerImpl extends AbstractService implements
         quota.addMessageNeedValidation(APIChangeResourceOwnerMsg.class);
         quota.addMessageNeedValidation(StartVmInstanceMsg.class);
         // scheduler
-        quota.addMessageNeedValidation(APICreateSchedulerMessage.class);
-        quota.addMessageNeedValidation(APICreateStartVmInstanceSchedulerMsg.class);
-        quota.addMessageNeedValidation(APICreateVolumeSnapshotSchedulerMsg.class);
-        quota.addMessageNeedValidation(APICreateRebootVmInstanceSchedulerMsg.class);
-        quota.addMessageNeedValidation(APICreateStopVmInstanceSchedulerMsg.class);
+        quota.addMessageNeedValidation(APICreateSchedulerJobMessage.class);
+        quota.addMessageNeedValidation(APICreateStartVmInstanceSchedulerJobMsg.class);
+        quota.addMessageNeedValidation(APICreateVolumeSnapshotSchedulerJobMsg.class);
+        quota.addMessageNeedValidation(APICreateRebootVmInstanceSchedulerJobMsg.class);
+        quota.addMessageNeedValidation(APICreateStopVmInstanceSchedulerJobMsg.class);
 
 
         quota.setOperator(checker);

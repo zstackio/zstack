@@ -5,7 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.scheduler.AbstractSchedulerJob;
-import org.zstack.header.core.scheduler.APICreateSchedulerMessage;
+import org.zstack.header.core.scheduler.APICreateSchedulerJobMessage;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.StopVmInstanceMsg;
 import org.zstack.header.vm.VmInstanceConstant;
@@ -28,7 +28,7 @@ public class StopVmInstanceJob extends AbstractSchedulerJob {
     private String vmUuid;
 
 
-    public StopVmInstanceJob(APICreateSchedulerMessage msg) {
+    public StopVmInstanceJob(APICreateSchedulerJobMessage msg) {
         super(msg);
     }
 

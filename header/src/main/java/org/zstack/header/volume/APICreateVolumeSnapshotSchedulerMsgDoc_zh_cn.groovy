@@ -1,7 +1,5 @@
 package org.zstack.header.volume
 
-import org.zstack.header.volume.APICreateVolumeSnapshotSchedulerEvent
-
 doc {
     title "CreateVolumeSnapshotScheduler"
 
@@ -16,7 +14,7 @@ doc {
 			header (Authorization: 'OAuth the-session-uuid')
 
 
-            clz APICreateVolumeSnapshotSchedulerMsg.class
+            clz APICreateVolumeSnapshotSchedulerJobMsg.class
 
             desc """"""
             

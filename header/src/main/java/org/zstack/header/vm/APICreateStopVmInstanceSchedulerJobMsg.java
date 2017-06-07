@@ -1,7 +1,7 @@
 package org.zstack.header.vm;
 
 import org.springframework.http.HttpMethod;
-import org.zstack.header.core.scheduler.APICreateSchedulerMessage;
+import org.zstack.header.core.scheduler.APICreateSchedulerJobMessage;
 import org.zstack.header.core.scheduler.SchedulerVO;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIEvent;
@@ -20,7 +20,7 @@ import org.zstack.header.rest.RestRequest;
         method = HttpMethod.POST,
         parameterName = "params"
 )
-public class APICreateStopVmInstanceSchedulerMsg extends APICreateSchedulerMessage implements VmInstanceMessage {
+public class APICreateStopVmInstanceSchedulerJobMsg extends APICreateSchedulerJobMessage implements VmInstanceMessage {
     /**
      * @desc vm uuid
      */
@@ -40,14 +40,10 @@ public class APICreateStopVmInstanceSchedulerMsg extends APICreateSchedulerMessa
         return getVmUuid();
     }
  
-    public static APICreateStopVmInstanceSchedulerMsg __example__() {
-        APICreateStopVmInstanceSchedulerMsg msg = new APICreateStopVmInstanceSchedulerMsg();
-        msg.setSchedulerName("vm-scheduler");
-        msg.setSchedulerDescription("for test stop vm scheduler");
-        msg.setStartTime(0L);
-        msg.setType("simple");
-        msg.setInterval(5);
-        msg.setRepeatCount(10);
+    public static APICreateStopVmInstanceSchedulerJobMsg __example__() {
+        APICreateStopVmInstanceSchedulerJobMsg msg = new APICreateStopVmInstanceSchedulerJobMsg();
+        msg.setName("vm-scheduler");
+        msg.setDescription("for test stop vm scheduler");
         msg.setVmUuid(uuid());
         return msg;
     }

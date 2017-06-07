@@ -6,7 +6,7 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.scheduler.AbstractSchedulerJob;
 import org.zstack.core.scheduler.SchedulerFacadeImpl;
-import org.zstack.header.core.scheduler.APICreateSchedulerMessage;
+import org.zstack.header.core.scheduler.APICreateSchedulerJobMessage;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeCreateSnapshotMsg;
@@ -27,7 +27,7 @@ public class CreateVolumeSnapshotJob extends AbstractSchedulerJob {
     private String snapShotName;
     private String snapShotDescription;
 
-    public CreateVolumeSnapshotJob(APICreateSchedulerMessage msg) {
+    public CreateVolumeSnapshotJob(APICreateSchedulerJobMessage msg) {
         super(msg);
     }
 
