@@ -38,6 +38,30 @@ class ResourceCase extends SubCase {
         }
     }
 
+    void testUpdateResourceName() {
+        ZoneInventory zone = envSpec.inventoryByName("zone")
+        ClusterInventory cluster = envSpec.inventoryByName("cluster")
+
+        updateZone {
+            name = "thisZone"
+            uuid = zone.uuid
+        }
+
+        updateCluster {
+            name = "thisCluster"
+            uuid = cluster.uuid
+        }
+
+        List<ResourceInventory> invs = getResourceNames {
+            uuids = [zone.uuid, cluster.uuid]
+        }
+
+        ResourceInventory zinv = invs.find { it.uuid == zone.uuid }
+        assert zinv.resourceName == "thisZone"
+        ResourceInventory cinv = invs.find { it.uuid == cluster.uuid }
+        assert cinv.resourceName == "thisCluster"
+    }
+
     void testQueryResource() {
         ZoneInventory zone = envSpec.inventoryByName("zone")
         ClusterInventory cluster = envSpec.inventoryByName("cluster")
@@ -59,6 +83,7 @@ class ResourceCase extends SubCase {
     void test() {
         envSpec.create {
             testQueryResource()
+            testUpdateResourceName()
         }
     }
 }
