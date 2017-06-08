@@ -26,4 +26,6 @@ public interface AccountManager {
     void checkApiMessagePermission(APIMessage msg);
 
     boolean isAdmin(SessionInventory session);
+
+    void adminAdoptAllOrphanedResource();
 }
