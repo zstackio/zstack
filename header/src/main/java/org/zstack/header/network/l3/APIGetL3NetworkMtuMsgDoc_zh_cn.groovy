@@ -1,33 +1,33 @@
-package org.zstack.header.identity
+package org.zstack.header.network.l3
 
-import org.zstack.header.identity.APIGetResourceAccountReply
+import org.zstack.header.network.l3.APIGetL3NetworkMtuReply
 
 doc {
-    title "查看资源所属账户"
+    title "GetL3NetworkMtu"
 
-    category "identity"
+    category "network.l3"
 
-    desc """输入资源的UUID可以获得该资源所属账户"""
+    desc """在这里填写API描述"""
 
     rest {
         request {
-			url "GET /v1/resources/accounts"
+			url "GET /v1/l3-networks/{l3NetworkUuid}/mtu"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
 
-            clz APIGetResourceAccountMsg.class
+            clz APIGetL3NetworkMtuMsg.class
 
             desc """"""
             
 			params {
 
 				column {
-					name "resourceUuids"
+					name "l3NetworkUuid"
 					enclosedIn ""
-					desc ""
-					location "query"
-					type "List"
+					desc "三层网络UUID"
+					location "url"
+					type "String"
 					optional false
 					since "0.6"
 					
@@ -56,7 +56,7 @@ doc {
         }
 
         response {
-            clz APIGetResourceAccountReply.class
+            clz APIGetL3NetworkMtuReply.class
         }
     }
 }

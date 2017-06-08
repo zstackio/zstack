@@ -1,6 +1,8 @@
 package org.zstack.network.l2.vxlan.vtep
 
 import java.lang.Integer
+import java.sql.Timestamp
+import java.sql.Timestamp
 
 doc {
 
@@ -34,6 +36,18 @@ doc {
 		name "type"
 		desc ""
 		type "String"
+		since "0.6"
+	}
+	field {
+		name "createDate"
+		desc "创建时间"
+		type "Timestamp"
+		since "0.6"
+	}
+	field {
+		name "lastOpDate"
+		desc "最后一次修改时间"
+		type "Timestamp"
 		since "0.6"
 	}
 	field {
