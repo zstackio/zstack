@@ -79,7 +79,7 @@ public class DeleteVpcUserVpnGatewayRemoteAction extends AbstractAction {
         info.path = "/hybrid/user-gateway/{uuid}/remote";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

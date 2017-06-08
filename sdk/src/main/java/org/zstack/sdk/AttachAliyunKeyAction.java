@@ -76,7 +76,7 @@ public class AttachAliyunKeyAction extends AbstractAction {
         info.path = "/hybrid/aliyun/key/{uuid}/attach";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "attachAliyunKey";
         return info;
     }
 

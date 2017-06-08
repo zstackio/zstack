@@ -79,7 +79,7 @@ public class DeleteVpcVpnConnectionLocalAction extends AbstractAction {
         info.path = "/hybrid/vpn-connection/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

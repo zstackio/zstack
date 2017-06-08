@@ -91,7 +91,7 @@ public class CreateVpcVirtualRouterEntryRemoteAction extends AbstractAction {
         info.path = "/hybrid/aliyun/route-entry";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

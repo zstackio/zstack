@@ -76,7 +76,7 @@ public class DetachAliyunKeyAction extends AbstractAction {
         info.path = "/hybrid/aliyun/key/{uuid}/detach";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "detachAliyunKey";
         return info;
     }
 

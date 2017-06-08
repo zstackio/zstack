@@ -79,7 +79,7 @@ public class DeleteOssBucketRemoteAction extends AbstractAction {
         info.path = "/hybrid/aliyun/oss-bucket/remote/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

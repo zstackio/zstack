@@ -91,7 +91,7 @@ public class CreateEcsVSwitchRemoteAction extends AbstractAction {
         info.path = "/hybrid/aliyun/vswitch";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

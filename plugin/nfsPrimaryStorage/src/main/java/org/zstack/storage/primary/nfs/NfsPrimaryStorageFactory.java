@@ -221,7 +221,7 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
         }
 
         String sql = "select h from HostVO h " +
-                "where h.state = :state and h.status = :connectionState and h.clusterUuid in (:clusterUuids) " +
+                "where h.status = :connectionState and h.clusterUuid in (:clusterUuids) " +
                 "and h.uuid not in (select ref.hostUuid from PrimaryStorageHostRefVO ref " +
                 "where ref.primaryStorageUuid = :psUuid and ref.hostUuid = h.uuid and ref.status = :status)";
         TypedQuery<HostVO> q = dbf.getEntityManager().createQuery(sql, HostVO.class);

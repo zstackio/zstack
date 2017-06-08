@@ -94,7 +94,7 @@ public class CreateVpnIpsecAction extends AbstractAction {
         info.path = "/hybrid/vpn-connection/ipsec";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

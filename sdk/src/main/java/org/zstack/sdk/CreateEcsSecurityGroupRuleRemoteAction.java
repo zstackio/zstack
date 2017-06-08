@@ -106,7 +106,7 @@ public class CreateEcsSecurityGroupRuleRemoteAction extends AbstractAction {
         info.path = "/hybrid/aliyun/security-group-rule";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 
