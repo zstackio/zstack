@@ -47,9 +47,6 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
-import static org.zstack.core.Platform.argerr;
-import static org.zstack.core.Platform.operr;
-
 import javax.persistence.Query;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
@@ -64,6 +61,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
 
 public class AccountManagerImpl extends AbstractService implements AccountManager, PrepareDbInitialValueExtensionPoint,
@@ -89,6 +88,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     private GlobalConfigFacade gcf;
 
     private List<String> resourceTypeForAccountRef;
+    private Map<String, Class> resourceTypeClassMap = new HashMap<>();
     private List<Class> resourceTypes;
     private Map<String, SessionInventory> sessions = new ConcurrentHashMap<>();
     private Map<Class, List<Quota>> messageQuotaMap = new HashMap<>();
@@ -680,9 +680,10 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
     private void buildResourceTypes() throws ClassNotFoundException {
         resourceTypes = new ArrayList<>();
-        for (String resrouceTypeName : resourceTypeForAccountRef) {
-            Class<?> rs = Class.forName(resrouceTypeName);
+        for (String resourceTypeName : resourceTypeForAccountRef) {
+            Class<?> rs = Class.forName(resourceTypeName);
             resourceTypes.add(rs);
+            resourceTypeClassMap.put(rs.getSimpleName(), rs);
         }
     }
 
@@ -949,6 +950,33 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         if (!quotas.isEmpty()) {
             dbf.persistCollection(quotas);
         }
+    }
+
+    public void adminAdoptAllOrphanedResource() {
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                Query q = dbf.getEntityManager().createNativeQuery(
+                        "select uuid, resourceName, resourceType" +
+                                " from ResourceVO rvo" +
+                                " where rvo.uuid not in ( select resourceUuid from AccountResourceRefVO )" +
+                                " and rvo.resourceType in (:rTypes)");
+                q.setParameter("rTypes", resourceTypeClassMap.keySet());
+                List<Object[]> objs = q.getResultList();
+
+                List<ResourceVO> resourceVOs = objs.stream().map(ResourceVO::new).collect(Collectors.toList());
+
+                List<AccountResourceRefVO> accountResourceRefVOs = resourceVOs.stream()
+                        .map(i ->
+                                AccountResourceRefVO.newOwn(
+                                        AccountConstant.INITIAL_SYSTEM_ADMIN_UUID,
+                                        i.getUuid(),
+                                        resourceTypeClassMap.get(i.getResourceType()))
+                        ).collect(Collectors.toList());
+
+                accountResourceRefVOs.forEach(this::persist);
+            }
+        }.execute();
     }
 
     private void startExpiredSessionCollector() {
