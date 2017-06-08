@@ -1122,8 +1122,8 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                 List<String> publics = new ArrayList<>();
                 List<String> managements = new ArrayList<>();
                 for(Tuple tuple: tuples){
-                    publics.add((String) tuple.get(0));
-                    managements.add((String) tuple.get(1));
+                    publics.add((String) tuple.get(1));
+                    managements.add((String) tuple.get(0));
                 }
 
                 List<String> peerL3Uuids = sql("select l3NetworkUuid from VmNicVO"  +
