@@ -119,23 +119,12 @@ public class LocalStorageAllocateCapacityFlow implements Flow {
         msgs.add(rmsg);
 
         if (!spec.getDataDiskOfferings().isEmpty()) {
-            boolean hasOtherNonLocalStoragePrimaryStorage = isThereOtherNonLocalStoragePrimaryStorageForTheHost(
-                    spec.getDestHost().getUuid(), localStorageUuid);
-
             for (DiskOfferingInventory dinv : spec.getDataDiskOfferings()) {
                 AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
                 amsg.setSize(dinv.getDiskSize());
                 amsg.setRequiredHostUuid(spec.getDestHost().getUuid());
-                if (hasOtherNonLocalStoragePrimaryStorage) {
-                    amsg.setAllocationStrategy(dinv.getAllocatorStrategy());
-                    amsg.addExcludePrimaryStorageUuid(localStorageUuid);
-                    amsg.addExcludeAllocatorStrategy(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY);
-                    logger.debug("there are non-local primary storage in the cluster, use it for data volumes");
-                } else {
-                    amsg.setAllocationStrategy(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY);
-                    amsg.setRequiredPrimaryStorageUuid(localStorageUuid);
-                }
-
+                amsg.setAllocationStrategy(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY);
+                amsg.setRequiredPrimaryStorageUuid(localStorageUuid);
                 amsg.setRequiredPrimaryStorageTypes(primaryStorageTypes);
                 amsg.setDiskOfferingUuid(dinv.getUuid());
                 bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);

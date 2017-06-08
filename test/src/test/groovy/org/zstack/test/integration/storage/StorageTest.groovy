@@ -17,6 +17,11 @@ class StorageTest extends Test {
         vyos()
         kvm()
         securityGroup()
+        localStorage()
+        flatNetwork()
+        portForwarding()
+        eip()
+        lb()
     }
 
     @Override
