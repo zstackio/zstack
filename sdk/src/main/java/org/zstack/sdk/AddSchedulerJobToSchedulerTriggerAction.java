@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class CreateRebootVmInstanceSchedulerJobAction extends AbstractAction {
+public class AddSchedulerJobToSchedulerTriggerAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public CreateRebootVmInstanceSchedulerResult value;
+        public AddSchedulerJobToSchedulerTriggerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -23,19 +23,10 @@ public class CreateRebootVmInstanceSchedulerJobAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vmUuid;
+    public java.lang.String schedulerJobUuid;
 
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = false)
-    public java.lang.String targetResourceUuid;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String schedulerTriggerUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -58,8 +49,8 @@ public class CreateRebootVmInstanceSchedulerJobAction extends AbstractAction {
             return ret;
         }
         
-        CreateRebootVmInstanceSchedulerResult value = res.getResult(CreateRebootVmInstanceSchedulerResult.class);
-        ret.value = value == null ? new CreateRebootVmInstanceSchedulerResult() : value; 
+        AddSchedulerJobToSchedulerTriggerResult value = res.getResult(AddSchedulerJobToSchedulerTriggerResult.class);
+        ret.value = value == null ? new AddSchedulerJobToSchedulerTriggerResult() : value; 
 
         return ret;
     }
@@ -85,10 +76,10 @@ public class CreateRebootVmInstanceSchedulerJobAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/vm-instances/{vmUuid}/schedulers/rebooting";
+        info.path = "/scheduler/jobs/{schedulerJobUuid}/scheduler/triggers/{schedulerTriggerUuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

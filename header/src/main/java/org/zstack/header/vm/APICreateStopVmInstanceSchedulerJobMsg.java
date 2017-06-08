@@ -39,6 +39,11 @@ public class APICreateStopVmInstanceSchedulerJobMsg extends APICreateSchedulerJo
     public String getVmInstanceUuid() {
         return getVmUuid();
     }
+
+    @Override
+    public String getTargetResourceUuid() {
+        return getVmUuid();
+    }
  
     public static APICreateStopVmInstanceSchedulerJobMsg __example__() {
         APICreateStopVmInstanceSchedulerJobMsg msg = new APICreateStopVmInstanceSchedulerJobMsg();

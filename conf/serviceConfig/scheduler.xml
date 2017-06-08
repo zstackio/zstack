@@ -39,4 +39,7 @@
         <name>org.zstack.core.scheduler.APIAddSchedulerJobToSchedulerTriggerMsg</name>
     </message>
 
+    <message>
+        <name>org.zstack.core.scheduler.APIRemoveSchedulerJobFromSchedulerTriggerMsg</name>
+    </message>
 </service>

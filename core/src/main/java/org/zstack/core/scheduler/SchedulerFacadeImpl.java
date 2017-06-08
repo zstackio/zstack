@@ -3,13 +3,14 @@ package org.zstack.core.scheduler;
 import org.quartz.*;
 import org.quartz.impl.StdSchedulerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.method.P;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.AsyncThread;
@@ -27,11 +28,15 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.Query;
 import java.sql.Timestamp;
 import java.util.*;
 
+import static org.quartz.CronScheduleBuilder.cronSchedule;
+import static org.quartz.JobBuilder.newJob;
 import static org.quartz.JobKey.jobKey;
+import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
+import static org.quartz.TriggerBuilder.newTrigger;
+import static org.quartz.TriggerKey.triggerKey;
 
 /**
  * Created by Mei Lei on 6/22/16.
@@ -51,6 +56,14 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
     private transient ResourceDestinationMaker destinationMaker;
 
     private Scheduler scheduler;
+
+    public Scheduler getScheduler() {
+        return scheduler;
+    }
+
+    public void setScheduler(Scheduler scheduler) {
+        this.scheduler = scheduler;
+    }
 
     protected SchedulerJobVO self;
 
@@ -77,13 +90,60 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
             handle((APIDeleteSchedulerTriggerMsg) msg);
         } else if (msg instanceof APIAddSchedulerJobToSchedulerTriggerMsg) {
             handle((APIAddSchedulerJobToSchedulerTriggerMsg) msg);
+        } else if (msg instanceof APIRemoveSchedulerJobFromSchedulerTriggerMsg) {
+            handle((APIRemoveSchedulerJobFromSchedulerTriggerMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
     }
 
+    private void handle(APIRemoveSchedulerJobFromSchedulerTriggerMsg msg) {
+        APIRemoveSchedulerJobFromSchedulerTriggerEvent evt = new APIRemoveSchedulerJobFromSchedulerTriggerEvent(msg.getId());
+        try {
+            scheduler.unscheduleJob(triggerKey(msg.getSchedulerTriggerUuid(), msg.getSchedulerTriggerUuid() + "." + msg.getSchedulerJobUuid()));
+        } catch (SchedulerException se) {
+            throw new RuntimeException(se);
+        }
+
+        SQL.New(SchedulerJobSchedulerTriggerRefVO.class)
+                .eq(SchedulerJobSchedulerTriggerRefVO_.schedulerJobUuid, msg.getSchedulerJobUuid())
+                .eq(SchedulerJobSchedulerTriggerRefVO_.schedulerTriggerUuid, msg.getSchedulerTriggerUuid())
+                .delete();
+
+        bus.publish(evt);
+    }
+
     private void handle(APIAddSchedulerJobToSchedulerTriggerMsg msg) {
+        APIAddSchedulerJobToSchedulerTriggerEvent evt = new APIAddSchedulerJobToSchedulerTriggerEvent(msg.getId());
         // run scheduler
+        SchedulerTask task = prepareSchedulerTaskFromMsg(msg);
+        if (runScheduler(task)) {
+            SchedulerJobSchedulerTriggerRefVO vo = new SchedulerJobSchedulerTriggerRefVO();
+            vo.setUuid(Platform.getUuid());
+            vo.setSchedulerJobUuid(msg.getSchedulerJobUuid());
+            vo.setSchedulerTriggerUuid(msg.getSchedulerTriggerUuid());
+            dbf.persistAndRefresh(vo);
+            bus.publish(evt);
+        }
+
+    }
+
+    private SchedulerTask prepareSchedulerTaskFromMsg(APIAddSchedulerJobToSchedulerTriggerMsg msg) {
+        SchedulerJobVO job = dbf.findByUuid(msg.getSchedulerJobUuid(), SchedulerJobVO.class);
+        SchedulerTriggerVO trigger = dbf.findByUuid(msg.getSchedulerTriggerUuid(), SchedulerTriggerVO.class);
+        SchedulerTask task = new SchedulerTask();
+        task.setStartTime(trigger.getStartTime());
+        task.setJobUuid(job.getUuid());
+        task.setTargetResourceUuid(job.getTargetResourceUuid());
+        task.setJobClassName(job.getJobClassName());
+        task.setJobData(job.getJobData());
+        task.setTriggerUuid(trigger.getUuid());
+        task.setTaskInterval(trigger.getSchedulerInterval());
+        task.setTaskRepeatCount(trigger.getRepeatCount());
+        task.setType(trigger.getSchedulerType());
+        task.setStopTime(trigger.getStopTime());
+
+        return task;
     }
 
     private void handle(APIDeleteSchedulerTriggerMsg msg) {
@@ -127,7 +187,12 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
         }
         vo.setName(msg.getName());
         vo.setDescription(msg.getDescription());
-        vo.setStartTime(msg.getStartTime());
+        if (msg.getStartTime() == 0) {
+            vo.setStartTime(null);
+        } else {
+            vo.setStartTime(new Timestamp(msg.getStartTime()));
+        }
+
         vo.setRepeatCount(msg.getRepeatCount());
         vo.setSchedulerInterval(msg.getSchedulerInterval());
         vo.setSchedulerType(msg.getSchedulerType());
@@ -208,27 +273,19 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
     }
 
     @Transactional
-    private void updateSchedulerStatus(String uuid, String status) {
-        String sql = "update SchedulerVO scheduler set scheduler.state= :state where scheduler.uuid = :schedulerUuid";
-        Query q = dbf.getEntityManager().createQuery(sql);
-        q.setParameter("state", status);
-        q.setParameter("schedulerUuid", uuid);
-        q.executeUpdate();
+    private void updateSchedulerStatus(String uuid, String state) {
+        SQL.New(SchedulerJobSchedulerTriggerRefVO.class)
+                .eq(SchedulerJobSchedulerTriggerRefVO_.uuid, uuid)
+                .set(SchedulerJobSchedulerTriggerRefVO_.state, state)
+                .update();
     }
-
 
     public void pauseSchedulerJob(String uuid) {
         logger.debug(String.format("Scheduler %s will change status to Disabled", uuid));
-        SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
-        q.select(SchedulerVO_.jobName);
-        q.add(SchedulerVO_.uuid, SimpleQuery.Op.EQ, uuid);
-        String jobName = q.findValue();
-        SimpleQuery<SchedulerVO> q2 = dbf.createQuery(SchedulerVO.class);
-        q2.select(SchedulerVO_.jobGroup);
-        q2.add(SchedulerVO_.uuid, SimpleQuery.Op.EQ, uuid);
-        String jobGroup = q2.findValue();
+        SchedulerJobSchedulerTriggerRefVO vo = dbf.findByUuid(uuid, SchedulerJobSchedulerTriggerRefVO.class);
+
         try {
-            scheduler.pauseJob(jobKey(jobName, jobGroup));
+            scheduler.pauseJob(jobKey(vo.getSchedulerJobUuid(), vo.getSchedulerTriggerUuid()));
             updateSchedulerStatus(uuid, SchedulerState.Disabled.toString());
             self = dbf.findByUuid(uuid, SchedulerJobVO.class);
         } catch (SchedulerException e) {
@@ -242,16 +299,17 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
             logger.debug(String.format("Scheduler %s not managed by us, will not be resume", uuid));
         } else {
             logger.debug(String.format("Scheduler %s will change status to Enabled", uuid));
-            SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
-            q.select(SchedulerVO_.jobName);
-            q.add(SchedulerVO_.uuid, SimpleQuery.Op.EQ, uuid);
-            String jobName = q.findValue();
-            SimpleQuery<SchedulerVO> q2 = dbf.createQuery(SchedulerVO.class);
-            q2.select(SchedulerVO_.jobGroup);
-            q2.add(SchedulerVO_.uuid, SimpleQuery.Op.EQ, uuid);
-            String jobGroup = q2.findValue();
+//            SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
+//            q.select(SchedulerVO_.jobName);
+//            q.add(SchedulerVO_.uuid, SimpleQuery.Op.EQ, uuid);
+//            String jobName = q.findValue();
+//            SimpleQuery<SchedulerVO> q2 = dbf.createQuery(SchedulerVO.class);
+//            q2.select(SchedulerVO_.jobGroup);
+//            q2.add(SchedulerVO_.uuid, SimpleQuery.Op.EQ, uuid);
+//            String jobGroup = q2.findValue();
+            SchedulerJobSchedulerTriggerRefVO vo = dbf.findByUuid(uuid, SchedulerJobSchedulerTriggerRefVO.class);
             try {
-                scheduler.resumeJob(jobKey(jobName, jobGroup));
+                scheduler.resumeJob(jobKey(vo.getSchedulerJobUuid(), vo.getSchedulerTriggerUuid()));
                 updateSchedulerStatus(uuid, SchedulerState.Enabled.toString());
                 self = dbf.findByUuid(uuid, SchedulerJobVO.class);
             } catch (SchedulerException e) {
@@ -267,17 +325,18 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
             logger.debug(String.format("Scheduler %s not managed by us, will not be deleted", uuid));
         } else {
             logger.debug(String.format("Scheduler %s will be deleted", uuid));
-            SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
-            q.select(SchedulerVO_.jobName);
-            q.add(SchedulerVO_.uuid, SimpleQuery.Op.EQ, uuid);
-            String jobName = q.findValue();
-            SimpleQuery<SchedulerVO> q2 = dbf.createQuery(SchedulerVO.class);
-            q2.select(SchedulerVO_.jobGroup);
-            q2.add(SchedulerVO_.uuid, SimpleQuery.Op.EQ, uuid);
-            String jobGroup = q2.findValue();
+//            SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
+//            q.select(SchedulerVO_.jobName);
+//            q.add(SchedulerVO_.uuid, SimpleQuery.Op.EQ, uuid);
+//            String jobName = q.findValue();
+//            SimpleQuery<SchedulerVO> q2 = dbf.createQuery(SchedulerVO.class);
+//            q2.select(SchedulerVO_.jobGroup);
+//            q2.add(SchedulerVO_.uuid, SimpleQuery.Op.EQ, uuid);
+//            String jobGroup = q2.findValue();
+            SchedulerJobSchedulerTriggerRefVO vo = dbf.findByUuid(uuid, SchedulerJobSchedulerTriggerRefVO.class);
             try {
-                scheduler.deleteJob(jobKey(jobName, jobGroup));
-                dbf.removeByPrimaryKey(uuid, SchedulerVO.class);
+                scheduler.deleteJob(jobKey(vo.getSchedulerJobUuid(), vo.getSchedulerTriggerUuid()));
+                dbf.removeByPrimaryKey(uuid, SchedulerJobSchedulerTriggerRefVO.class);
             } catch (SchedulerException e) {
                 logger.warn(String.format("Delete Scheduler %s failed!", uuid));
                 throw new RuntimeException(e);
@@ -286,6 +345,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
     }
 
     private List<String> getSchedulerManagedByUs() {
+        // TODO use scheduler job to find tasks
         SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
         q.select(SchedulerVO_.uuid);
         q.add(SchedulerVO_.managementNodeUuid, SimpleQuery.Op.NULL);
@@ -311,6 +371,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
         if (ours.isEmpty()) {
             logger.debug("no Scheduler managed by us");
         } else {
+            // TODO use refs to reboot scheduler jobs
             logger.debug(String.format("Scheduler is going to load %s jobs", ours.size()));
             SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
             q.add(SchedulerVO_.uuid, SimpleQuery.Op.IN, ours);
@@ -319,7 +380,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
                 try {
                     SchedulerJob rebootJob = (SchedulerJob) JSONObjectUtil.toObject(schedulerRecord.getJobData(), Class.forName(schedulerRecord.getJobClassName()));
                     if (schedulerRecord.getState().equals(SchedulerState.Enabled.toString())) {
-                        runScheduler(rebootJob, false);
+//                        runScheduler(rebootJob, false);
                     }
                 } catch (ClassNotFoundException e) {
                     logger.warn(String.format("Load Scheduler %s failed!", schedulerRecord.getUuid()));
@@ -365,161 +426,109 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
         }
     }
 
-    public SchedulerVO runScheduler(SchedulerJob schedulerJob) {
+    public boolean runScheduler(SchedulerTask schedulerJob) {
         return runScheduler(schedulerJob, true);
     }
 
-    private SchedulerVO runScheduler(SchedulerJob schedulerJob, boolean saveDB) {
+    private boolean runScheduler(SchedulerTask schedulerJob, boolean saveDB) {
         logger.debug(String.format("Starting to generate Scheduler job %s", schedulerJob.getClass().getName()));
-        Timestamp start = null;
         Boolean startNow = false;
-        SchedulerVO vo = new SchedulerVO();
-        Timestamp create = new Timestamp(System.currentTimeMillis());
-//        if (schedulerJob.getStartTime() != null) {
-//            if (!schedulerJob.getStartTime().equals(new Date(0))) {
-//                start = new Timestamp(schedulerJob.getStartTime().getTime());
-//            } else {
-//                startNow = true;
-//                start = create;
-//            }
-//        }
-//        String jobData = JSONObjectUtil.toJsonString(schedulerJob);
-//        String jobClassName = schedulerJob.getClass().getName();
-//        if (saveDB) {
-//            if (schedulerJob.getType().equals("simple")) {
-//                vo.setRepeatCount(schedulerJob.getRepeat());
-//                vo.setSchedulerInterval(schedulerJob.getSchedulerInterval());
-//                if (schedulerJob.getRepeat() != null) {
-//                    if (schedulerJob.getRepeat() == 1) {
-//                        vo.setStopTime(start);
-//                    } else {
-//                        if (start != null) {
-//                            vo.setStopTime(new Timestamp( start.getTime() + (long) schedulerJob.getRepeat() * (long) schedulerJob.getSchedulerInterval() * 1000L));
-//                        } else {
-//                            vo.setStopTime(new Timestamp( create.getTime() + (long) schedulerJob.getRepeat() * (long) schedulerJob.getSchedulerInterval() * 1000L));
-//                        }
-//                    }
-//                } else {
-//                    vo.setStopTime(null);
-//                }
-//                vo.setStartTime(start);
-//            } else if (schedulerJob.getType().equals("cron")) {
-//                vo.setCronScheduler(schedulerJob.getCron());
-//                vo.setStopTime(null);
-//            } else {
-//                logger.error(String.format("Unknown scheduler job type %s", schedulerJob.getType()));
-//            }
-//
-//            vo.setJobData(jobData);
-//
-//            if (schedulerJob.getResourceUuid() != null) {
-//                vo.setUuid(schedulerJob.getResourceUuid());
-//            } else {
-//                vo.setUuid(Platform.getUuid());
-//            }
-//            vo.setSchedulerJob(jobClassName.substring(jobClassName.lastIndexOf(".") + 1));
-//            vo.setSchedulerType(schedulerJob.getType());
-//            vo.setSchedulerName(schedulerJob.getSchedulerName());
-//            vo.setCreateDate(create);
-//            vo.setJobName(schedulerJob.getJobName());
-//            vo.setJobGroup(schedulerJob.getJobGroup());
-//            vo.setTriggerName(schedulerJob.getTriggerName());
-//            vo.setTriggerGroup(schedulerJob.getTriggerGroup());
-//            vo.setJobClassName(jobClassName);
-//            vo.setManagementNodeUuid(Platform.getManagementServerId());
-//            vo.setTargetResourceUuid(schedulerJob.getTargetResourceUuid());
-//        }
-//
-//        try {
-//
-//            JobDetail job = newJob(SchedulerRunner.class)
-//                    .withIdentity(schedulerJob.getJobName(), schedulerJob.getJobGroup())
-//                    .usingJobData("jobClassName", jobClassName)
-//                    .usingJobData("jobData", jobData)
-//                    .build();
-//            if (schedulerJob.getType().equals("simple")) {
-//                Trigger trigger;
-//                if (schedulerJob.getRepeat() != null) {
-//                    if (schedulerJob.getRepeat() == 1) {
-//                        //repeat only once, ignore interval
-//                        if (startNow) {
-//                            trigger = newTrigger()
-//                                    .withIdentity(schedulerJob.getTriggerName(), schedulerJob.getTriggerGroup())
-//                                    .withSchedule(simpleSchedule()
-//                                    .withMisfireHandlingInstructionNextWithRemainingCount())
-//                                    .build();
-//                        } else {
-//                            trigger = newTrigger()
-//                                    .withIdentity(schedulerJob.getTriggerName(), schedulerJob.getTriggerGroup())
-//                                    .startAt(schedulerJob.getStartTime())
-//                                    .withSchedule(simpleSchedule()
-//                                    .withMisfireHandlingInstructionNextWithRemainingCount())
-//                                    .build();
-//                        }
-//
-//                    } else {
-//                        //repeat more than once
-//                        if (startNow) {
-//                            trigger = newTrigger()
-//                                    .withIdentity(schedulerJob.getTriggerName(), schedulerJob.getTriggerGroup())
-//                                    .withSchedule(simpleSchedule()
-//                                            .withIntervalInSeconds(schedulerJob.getSchedulerInterval())
-//                                            .withRepeatCount(schedulerJob.getRepeat() - 1)
-//                                            .withMisfireHandlingInstructionNextWithRemainingCount())
-//                                    .build();
-//                        } else {
-//                            trigger = newTrigger()
-//                                    .withIdentity(schedulerJob.getTriggerName(), schedulerJob.getTriggerGroup())
-//                                    .startAt(schedulerJob.getStartTime())
-//                                    .withSchedule(simpleSchedule()
-//                                            .withIntervalInSeconds(schedulerJob.getSchedulerInterval())
-//                                            .withRepeatCount(schedulerJob.getRepeat() - 1)
-//                                            .withMisfireHandlingInstructionNextWithRemainingCount())
-//                                    .build();
-//                        }
-//                    }
-//                } else {
-//                    if (startNow) {
-//                        trigger = newTrigger()
-//                                .withIdentity(schedulerJob.getTriggerName(), schedulerJob.getTriggerGroup())
-//                                .withSchedule(simpleSchedule()
-//                                        .withIntervalInSeconds(schedulerJob.getSchedulerInterval())
-//                                        .repeatForever()
-//                                        .withMisfireHandlingInstructionNextWithRemainingCount())
-//                                .build();
-//                    } else {
-//                        trigger = newTrigger()
-//                                .withIdentity(schedulerJob.getTriggerName(), schedulerJob.getTriggerGroup())
-//                                .startAt(schedulerJob.getStartTime())
-//                                .withSchedule(simpleSchedule()
-//                                        .withIntervalInSeconds(schedulerJob.getSchedulerInterval())
-//                                        .repeatForever()
-//                                        .withMisfireHandlingInstructionNextWithRemainingCount())
-//                                .build();
-//                    }
-//                }
-//
-//                scheduler.scheduleJob(job, trigger);
-//            } else if (schedulerJob.getType().equals("cron")) {
-//                CronTrigger trigger = newTrigger()
-//                        .withIdentity(schedulerJob.getTriggerName(), schedulerJob.getTriggerGroup())
-//                        .withSchedule(cronSchedule(schedulerJob.getCron())
-//                        .withMisfireHandlingInstructionIgnoreMisfires())
-//                        .build();
-//                scheduler.scheduleJob(job, trigger);
-//            }
-//        } catch (SchedulerException se) {
-//            logger.warn(String.format("Run Scheduler  %s failed", vo.getUuid()));
-//            throw new RuntimeException(se);
-//        }
-//
-//        if (saveDB) {
-//            logger.debug(String.format("Save Scheduler job %s to database", schedulerJob.getClass().getName()));
-//            vo.setState(SchedulerState.Enabled.toString());
-//            dbf.persist(vo);
-//            return vo;
-//        }
-        return null;
+        String jobData = schedulerJob.getJobData();
+        String jobClassName = schedulerJob.getJobClassName();
+
+        Timestamp start = new Timestamp(System.currentTimeMillis());
+        if (schedulerJob.getStartTime() == null && schedulerJob.getType().equals(SchedulerConstant.SIMPLE_TYPE_STRING)) {
+            startNow = true;
+        }
+        try {
+            JobDetail job = newJob(SchedulerRunner.class)
+                    .withIdentity(schedulerJob.getJobUuid(), schedulerJob.getTriggerUuid())
+                    .usingJobData("jobClassName", jobClassName)
+                    .usingJobData("jobData", jobData)
+                    .build();
+
+            String triggerGroup = schedulerJob.getTriggerUuid() + "." + schedulerJob.getJobUuid();
+            String triggerId = schedulerJob.getTriggerUuid();
+
+            // use triggerUuid.jobUuid as the key of a new trigger and jobUuid as group name
+            // to support that several jobs use same trigger
+            if (schedulerJob.getType().equals("simple")) {
+                Trigger trigger;
+                if (schedulerJob.getTaskRepeatCount() != null) {
+                    if (schedulerJob.getTaskRepeatCount() == 1) {
+                        //repeat only once, ignore interval
+                        if (startNow) {
+                            trigger = newTrigger()
+                                    .withIdentity(triggerId, triggerGroup)
+                                    .withSchedule(simpleSchedule()
+                                    .withMisfireHandlingInstructionNextWithRemainingCount())
+                                    .build();
+                        } else {
+                            trigger = newTrigger()
+                                    .withIdentity(triggerId, triggerGroup)
+                                    .startAt(schedulerJob.getStartTime())
+                                    .withSchedule(simpleSchedule()
+                                    .withMisfireHandlingInstructionNextWithRemainingCount())
+                                    .build();
+                        }
+
+                    } else {
+                        //repeat more than once
+                        if (startNow) {
+                            trigger = newTrigger()
+                                    .withIdentity(triggerId, triggerGroup)
+                                    .withSchedule(simpleSchedule()
+                                            .withIntervalInSeconds(schedulerJob.getTaskInterval())
+                                            .withRepeatCount(schedulerJob.getTaskRepeatCount() - 1)
+                                            .withMisfireHandlingInstructionNextWithRemainingCount())
+                                    .build();
+                        } else {
+                            trigger = newTrigger()
+                                    .withIdentity(triggerId, triggerGroup)
+                                    .startAt(schedulerJob.getStartTime())
+                                    .withSchedule(simpleSchedule()
+                                            .withIntervalInSeconds(schedulerJob.getTaskInterval())
+                                            .withRepeatCount(schedulerJob.getTaskRepeatCount() - 1)
+                                            .withMisfireHandlingInstructionNextWithRemainingCount())
+                                    .build();
+                        }
+                    }
+                } else {
+                    if (startNow) {
+                        trigger = newTrigger()
+                                .withIdentity(triggerId, triggerGroup)
+                                .withSchedule(simpleSchedule()
+                                        .withIntervalInSeconds(schedulerJob.getTaskInterval())
+                                        .repeatForever()
+                                        .withMisfireHandlingInstructionNextWithRemainingCount())
+                                .build();
+                    } else {
+                        trigger = newTrigger()
+                                .withIdentity(triggerId, triggerGroup)
+                                .startAt(schedulerJob.getStartTime())
+                                .withSchedule(simpleSchedule()
+                                        .withIntervalInSeconds(schedulerJob.getTaskInterval())
+                                        .repeatForever()
+                                        .withMisfireHandlingInstructionNextWithRemainingCount())
+                                .build();
+                    }
+                }
+
+                scheduler.scheduleJob(job, trigger);
+            } else if (schedulerJob.getType().equals(SchedulerConstant.CRON_TYPE_STRING)) {
+                CronTrigger trigger = newTrigger()
+                        .withIdentity(triggerId, triggerGroup)
+                        .withSchedule(cronSchedule(schedulerJob.getCron())
+                        .withMisfireHandlingInstructionIgnoreMisfires())
+                        .build();
+                scheduler.scheduleJob(job, trigger);
+            }
+        } catch (SchedulerException se) {
+            logger.warn(String.format("Run Scheduler task by job[uuid:%s] and trigger[uuid:%s] failed", schedulerJob.getJobUuid(), schedulerJob.getTriggerUuid()));
+            throw new RuntimeException(se);
+        }
+
+        return true;
     }
 
     @AsyncThread

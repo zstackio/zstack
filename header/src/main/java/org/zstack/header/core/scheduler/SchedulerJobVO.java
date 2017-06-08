@@ -16,7 +16,7 @@ import java.sql.Timestamp;
 
 @Entity
 @Table
-@ResourceAttributes(nameField = "jobName")
+@ResourceAttributes
 public class SchedulerJobVO extends ResourceVO {
     @Column
     private String targetResourceUuid;
@@ -28,7 +28,7 @@ public class SchedulerJobVO extends ResourceVO {
     private String description;
 
     @Column
-    private String jobName;
+    private String jobClassName;
 
     @Column
     private String jobData;
@@ -77,12 +77,12 @@ public class SchedulerJobVO extends ResourceVO {
         this.description = description;
     }
 
-    public String getJobName() {
-        return jobName;
+    public String getJobClassName() {
+        return jobClassName;
     }
 
-    public void setJobName(String jobName) {
-        this.jobName = jobName;
+    public void setJobClassName(String jobClassName) {
+        this.jobClassName = jobClassName;
     }
 
     public String getManagementNodeUuid() {

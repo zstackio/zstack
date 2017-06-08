@@ -13,9 +13,8 @@ import java.sql.Timestamp;
 @Table
 public class SchedulerJobSchedulerTriggerRefVO {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column
-    private long id;
+    private String uuid;
 
     @Column
     @ForeignKey(parentEntityClass = SchedulerJobVO.class)
@@ -43,12 +42,12 @@ public class SchedulerJobSchedulerTriggerRefVO {
     @Column
     private Timestamp lastOpDate;
 
-    public long getId() {
-        return id;
+    public String getUuid() {
+        return uuid;
     }
 
-    public void setId(long id) {
-        this.id = id;
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
     }
 
     public String getSchedulerJobUuid() {

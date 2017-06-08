@@ -10,7 +10,7 @@ import java.sql.Timestamp;
 
 @StaticMetamodel(SchedulerJobSchedulerTriggerRefVO.class)
 public class SchedulerJobSchedulerTriggerRefVO_ {
-    public static volatile SingularAttribute<SchedulerJobSchedulerTriggerRefVO, String> id;
+    public static volatile SingularAttribute<SchedulerJobSchedulerTriggerRefVO, String> uuid;
     public static volatile SingularAttribute<SchedulerJobSchedulerTriggerRefVO, String> schedulerJobUuid;
     public static volatile SingularAttribute<SchedulerJobSchedulerTriggerRefVO, String> schedulerTriggerUuid;
     public static volatile SingularAttribute<SchedulerJobSchedulerTriggerRefVO, String> status;

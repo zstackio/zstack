@@ -2,6 +2,7 @@ package org.zstack.core.scheduler;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.core.scheduler.SchedulerJobSchedulerTriggerRefVO;
+import org.zstack.header.core.scheduler.SchedulerJobVO;
 import org.zstack.header.core.scheduler.SchedulerTriggerVO;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
@@ -17,7 +18,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIAddSchedulerJobToSchedulerTriggerEvent.class
 )
 public class APIAddSchedulerJobToSchedulerTriggerMsg extends APIMessage {
-    @APIParam(resourceType = SchedulerJobSchedulerTriggerRefVO.class)
+    @APIParam(resourceType = SchedulerJobVO.class)
     private String schedulerJobUuid;
 
     @APIParam(resourceType = SchedulerTriggerVO.class)
@@ -29,6 +30,22 @@ public class APIAddSchedulerJobToSchedulerTriggerMsg extends APIMessage {
     public APIAddSchedulerJobToSchedulerTriggerMsg(String schedulerJobUuid, String schedulerTriggerUuid) {
         super();
         this.schedulerJobUuid = schedulerJobUuid;
+        this.schedulerTriggerUuid = schedulerTriggerUuid;
+    }
+
+    public String getSchedulerJobUuid() {
+        return schedulerJobUuid;
+    }
+
+    public void setSchedulerJobUuid(String schedulerJobUuid) {
+        this.schedulerJobUuid = schedulerJobUuid;
+    }
+
+    public String getSchedulerTriggerUuid() {
+        return schedulerTriggerUuid;
+    }
+
+    public void setSchedulerTriggerUuid(String schedulerTriggerUuid) {
         this.schedulerTriggerUuid = schedulerTriggerUuid;
     }
 }

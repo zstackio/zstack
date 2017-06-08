@@ -35,10 +35,13 @@ public class CreateSchedulerTriggerAction extends AbstractAction {
     public java.lang.Integer repeatCount;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.sql.Timestamp startTime;
+    public java.lang.Long startTime;
 
     @Param(required = true, validValues = {"simple","cron"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String schedulerType;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String cron;
 
     @Param(required = false)
     public java.lang.String resourceUuid;

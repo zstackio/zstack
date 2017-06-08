@@ -14,7 +14,7 @@ import java.util.List;
 @Inventory(mappingVOClass = SchedulerJobSchedulerTriggerRefVO.class)
 @PythonClassInventory
 public class SchedulerJobSchedulerTriggerInventory {
-    private long id;
+    private String uuid;
     private String schedulerJobUuid;
     private String schedulerTriggerUuid;
     private String status;
@@ -25,7 +25,7 @@ public class SchedulerJobSchedulerTriggerInventory {
     private Timestamp lastOpDate;
 
     protected SchedulerJobSchedulerTriggerInventory(SchedulerJobSchedulerTriggerRefVO vo) {
-        this.setId(vo.getId());
+        this.setUuid(vo.getUuid());
         this.setSchedulerJobUuid(vo.getSchedulerJobUuid());
         this.setSchedulerTriggerUuid(vo.getSchedulerTriggerUuid());
         this.setStatus(vo.getStatus());
@@ -48,12 +48,12 @@ public class SchedulerJobSchedulerTriggerInventory {
         return invs;
     }
 
-    public long getId() {
-        return id;
+    public String getUuid() {
+        return uuid;
     }
 
-    public void setId(long id) {
-        this.id = id;
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
     }
 
     public String getSchedulerJobUuid() {

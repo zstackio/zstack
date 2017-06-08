@@ -26,10 +26,12 @@ public class SchedulerRunner implements Job {
         try {
             runnerJob = (SchedulerJob) JSONObjectUtil.toObject(jobData, Class.forName(jobClassName));
             runnerJob.run();
-        } catch (ClassNotFoundException e) {
+        } catch (Exception e) {
             logger.warn(String.format("Class %s Not found error", jobClassName));
+            logger.warn(String.format("Class %s Not found error", runnerJob.getClass().getName()));
             throw new RuntimeException(e);
         }
+
     }
 
         public String getJobClassName() {

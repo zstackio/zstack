@@ -36,10 +36,13 @@ public class APICreateSchedulerTriggerMsg extends APICreateMessage {
     private Integer repeatCount;
 
     @APIParam(required = false)
-    private Timestamp startTime;
+    private Long startTime;
 
     @APIParam(required = true, validValues = {"simple", "cron"})
     private String schedulerType;
+
+    @APIParam(required = false)
+    private String cron;
 
     public String getSchedulerType() {
         return schedulerType;
@@ -81,11 +84,19 @@ public class APICreateSchedulerTriggerMsg extends APICreateMessage {
         this.repeatCount = repeatCount;
     }
 
-    public Timestamp getStartTime() {
+    public Long getStartTime() {
         return startTime;
     }
 
-    public void setStartTime(Timestamp startTime) {
+    public String getCron() {
+        return cron;
+    }
+
+    public void setCron(String cron) {
+        this.cron = cron;
+    }
+
+    public void setStartTime(Long startTime) {
         this.startTime = startTime;
     }
 }

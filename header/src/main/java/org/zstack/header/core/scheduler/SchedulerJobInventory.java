@@ -28,7 +28,7 @@ public class SchedulerJobInventory implements Serializable {
     @APINoSee
     private String jobData;
     @APINoSee
-    private String jobName;
+    private String jobClassName;
 
     protected SchedulerJobInventory(SchedulerJobVO vo) {
         uuid = vo.getUuid();
@@ -38,7 +38,7 @@ public class SchedulerJobInventory implements Serializable {
         createDate = vo.getCreateDate();
         lastOpDate = vo.getLastOpDate();
         jobData = vo.getJobData();
-        jobName = vo.getJobName();
+        jobClassName = vo.getJobClassName();
     }
 
     public SchedulerJobInventory() {
@@ -73,6 +73,14 @@ public class SchedulerJobInventory implements Serializable {
         this.name = name;
     }
 
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
     public Timestamp getCreateDate() {
         return createDate;
     }
@@ -101,23 +109,15 @@ public class SchedulerJobInventory implements Serializable {
         return targetResourceUuid;
     }
 
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public String getJobName() {
-        return jobName;
-    }
-
-    public void setJobName(String jobName) {
-        this.jobName = jobName;
-    }
-
     public void setTargetResourceUuid(String targetResourceUuid) {
         this.targetResourceUuid = targetResourceUuid;
+    }
+
+    public String getJobClassName() {
+        return jobClassName;
+    }
+
+    public void setJobClassName(String jobClassName) {
+        this.jobClassName = jobClassName;
     }
 }

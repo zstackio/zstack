@@ -4522,6 +4522,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         StopVmInstanceJob job = new StopVmInstanceJob(msg);
         job.setVmUuid(msg.getVmInstanceUuid());
         job.setTargetResourceUuid(msg.getVmInstanceUuid());
+        job.setAccountUuid(msg.getSession().getAccountUuid());
 
         SchedulerJobVO vo = new SchedulerJobVO();
         if (job.getResourceUuid() != null) {
@@ -4534,6 +4535,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         vo.setTargetResourceUuid(msg.getVmInstanceUuid());
         vo.setJobData(JSONObjectUtil.toJsonString(job));
         vo.setManagementNodeUuid(Platform.getManagementServerId());
+        vo.setJobClassName(job.getClass().getName());
         dbf.persistAndRefresh(vo);
         acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), SchedulerJobVO.class);
 
@@ -4546,6 +4548,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         StartVmInstanceJob job = new StartVmInstanceJob(msg);
         job.setVmUuid(msg.getVmInstanceUuid());
         job.setTargetResourceUuid(msg.getVmInstanceUuid());
+        job.setAccountUuid(msg.getSession().getAccountUuid());
 
         SchedulerJobVO vo = new SchedulerJobVO();
         if (job.getResourceUuid() != null) {
@@ -4558,6 +4561,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         vo.setTargetResourceUuid(msg.getVmInstanceUuid());
         vo.setJobData(JSONObjectUtil.toJsonString(job));
         vo.setManagementNodeUuid(Platform.getManagementServerId());
+        vo.setJobClassName(job.getClass().getName());
         dbf.persistAndRefresh(vo);
         acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), SchedulerJobVO.class);
 
@@ -4570,6 +4574,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         RebootVmInstanceJob job = new RebootVmInstanceJob(msg);
         job.setVmUuid(msg.getVmInstanceUuid());
         job.setTargetResourceUuid(msg.getVmInstanceUuid());
+        job.setAccountUuid(msg.getSession().getAccountUuid());
 
         SchedulerJobVO vo = new SchedulerJobVO();
         if (job.getResourceUuid() != null) {
@@ -4582,6 +4587,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         vo.setTargetResourceUuid(msg.getVmInstanceUuid());
         vo.setJobData(JSONObjectUtil.toJsonString(job));
         vo.setManagementNodeUuid(Platform.getManagementServerId());
+        vo.setJobClassName(job.getClass().getName());
         dbf.persistAndRefresh(vo);
         acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), SchedulerJobVO.class);
 

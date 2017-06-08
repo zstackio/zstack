@@ -40,6 +40,11 @@ public class APICreateRebootVmInstanceSchedulerJobMsg extends APICreateScheduler
     public String getVmInstanceUuid() {
         return getVmUuid();
     }
+
+    @Override
+    public String getTargetResourceUuid() {
+        return getVmUuid();
+    }
  
     public static APICreateRebootVmInstanceSchedulerJobMsg __example__() {
         APICreateRebootVmInstanceSchedulerJobMsg msg = new APICreateRebootVmInstanceSchedulerJobMsg();

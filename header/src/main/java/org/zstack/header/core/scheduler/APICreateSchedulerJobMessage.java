@@ -16,6 +16,8 @@ public class APICreateSchedulerJobMessage extends APICreateMessage {
     @APINoSee
     private String jobName;
 
+    private String targetResourceUuid;
+
     public String getName() {
         return name;
     }
@@ -34,6 +36,14 @@ public class APICreateSchedulerJobMessage extends APICreateMessage {
 
     public String getJobName() {
         return jobName;
+    }
+
+    public String getTargetResourceUuid() {
+        return targetResourceUuid;
+    }
+
+    public void setTargetResourceUuid(String targetResourceUuid) {
+        this.targetResourceUuid = targetResourceUuid;
     }
 
     public void setJobName(String jobName) {

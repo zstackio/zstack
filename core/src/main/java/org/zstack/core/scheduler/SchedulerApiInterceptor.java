@@ -3,7 +3,6 @@ package org.zstack.core.scheduler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
@@ -11,7 +10,7 @@ import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.core.scheduler.*;
 import org.zstack.header.message.APIMessage;
 
-import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.argerr;
 
 /**
  * Created by Mei Lei on 7/5/16.
@@ -41,8 +40,50 @@ public class SchedulerApiInterceptor implements ApiMessageInterceptor {
             validate((APICreateSchedulerJobMessage) msg);
         } else if (msg instanceof APIChangeSchedulerStateMsg) {
             validate((APIChangeSchedulerStateMsg) msg);
+        } else if (msg instanceof APICreateSchedulerTriggerMsg) {
+            validate((APICreateSchedulerTriggerMsg) msg);
         }
         return msg;
+    }
+
+    private void validate(APICreateSchedulerTriggerMsg msg) {
+        if (msg.getSchedulerType().equals("simple")) {
+            if (msg.getStartTime() == null) {
+                throw new ApiMessageInterceptionException(argerr("startTime must be set when use simple scheduler"));
+            } else if (msg.getStartTime() != null && msg.getStartTime() < 0) {
+                throw new ApiMessageInterceptionException(argerr("startTime must be positive integer or 0"));
+            } else if (msg.getStartTime() != null && msg.getStartTime() > 2147454847 ){
+                //  mysql timestamp range is '1970-01-01 00:00:01' UTC to '2038-01-19 03:14:07' UTC.
+                //  we accept 0 as startDate means start from current time
+                throw new ApiMessageInterceptionException(argerr("startTime out of range"));
+            }
+
+            if (msg.getSchedulerInterval() == null && msg.getRepeatCount() == null) {
+                throw new ApiMessageInterceptionException(argerr("interval must be set when use simple scheduler when repeat forever"));
+            } else if (msg.getSchedulerInterval() == null && msg.getRepeatCount() != null && msg.getRepeatCount() != 1) {
+                throw new ApiMessageInterceptionException(argerr("interval must be set when use simple scheduler when repeat more than once"));
+            } else if (msg.getSchedulerInterval() != null && msg.getRepeatCount() != 0) {
+                if (msg.getSchedulerInterval() <= 0) {
+                    throw new ApiMessageInterceptionException(argerr("interval must be positive integer"));
+                } else if (msg.getRepeatCount() <= 0) {
+                    throw new ApiMessageInterceptionException(argerr("repeat count must be positive integer"));
+                } else if ((long) msg.getSchedulerInterval() * (long) msg.getRepeatCount() * 1000L + msg.getStartTime() < 0 ) {
+                    throw new ApiMessageInterceptionException(argerr("duration time out of range"));
+                } else if ((long) msg.getSchedulerInterval() * (long) msg.getRepeatCount() * 1000L + msg.getStartTime() > 2147454847000L) {
+                    throw new ApiMessageInterceptionException(argerr("stopTime out of mysql timestamp range"));
+                }
+            }
+        } else if (msg.getSchedulerType().equals("cron")) {
+            if (msg.getCron() == null || ( msg.getCron() != null && msg.getCron().isEmpty())) {
+                throw new ApiMessageInterceptionException(argerr("cron must be set when use cron scheduler"));
+            }
+            if ( (! msg.getCron().contains("?")) || msg.getCron().split(" ").length != 6) {
+                throw new ApiMessageInterceptionException(argerr("cron task must follow format like this : \"0 0/3 17-23 * * ?\" "));
+            }
+            if (msg.getSchedulerInterval() != null || msg.getRepeatCount() != null || msg.getStartTime() != null) {
+                throw new ApiMessageInterceptionException(argerr("cron scheduler only need to specify cron task"));
+            }
+        }
     }
 
     private void validate(APIDeleteSchedulerJobMsg msg) {
@@ -77,52 +118,9 @@ public class SchedulerApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APICreateSchedulerJobMessage msg) {
-//        if (msg.getType().equals("simple")) {
-//            if (msg.getInterval() == null) {
-//                if (msg.getRepeatCount() != null) {
-//                    if (msg.getRepeatCount() != 1) {
-//                        throw new ApiMessageInterceptionException(argerr("interval must be set when use simple scheduler when repeat more than once"));
-//                    }
-//                } else {
-//                    throw new ApiMessageInterceptionException(argerr("interval must be set when use simple scheduler when repeat forever"));
-//                }
-//            } else if (msg.getInterval() != null) {
-//                if (msg.getRepeatCount() != null) {
-//                    if (msg.getInterval() <= 0) {
-//                        throw new ApiMessageInterceptionException(argerr("interval must be positive integer"));
-//                    } else if ((long) msg.getInterval() * (long) msg.getRepeatCount() * 1000L + msg.getStartTime() < 0 ) {
-//                        throw new ApiMessageInterceptionException(argerr("duration time out of range"));
-//                    } else if ((long) msg.getInterval() * (long) msg.getRepeatCount() * 1000L + msg.getStartTime() > 2147454847000L) {
-//                        throw new ApiMessageInterceptionException(argerr("stopTime out of mysql timestamp range"));
-//                    }
-//                }
-//            }
-//
-//            if (msg.getStartTime() == null) {
-//                throw new ApiMessageInterceptionException(argerr("startTime must be set when use simple scheduler"));
-//            } else if (msg.getStartTime() != null && msg.getStartTime() < 0) {
-//                throw new ApiMessageInterceptionException(argerr("startTime must be positive integer or 0"));
-//            } else if (msg.getStartTime() != null && msg.getStartTime() > 2147454847 ){
-//                //  mysql timestamp range is '1970-01-01 00:00:01' UTC to '2038-01-19 03:14:07' UTC.
-//                //  we accept 0 as startDate means start from current time
-//                throw new ApiMessageInterceptionException(argerr("startTime out of range"));
-//            }
-//
-//            if (msg.getRepeatCount() != null && msg.getRepeatCount() <= 0) {
-//                throw new ApiMessageInterceptionException(argerr("repeatCount must be positive integer"));
-//            }
-//        }
-//
-//        if (msg.getType().equals("cron")) {
-//            if (msg.getCron() == null || ( msg.getCron() != null && msg.getCron().isEmpty())) {
-//                throw new ApiMessageInterceptionException(argerr("cron must be set when use cron scheduler"));
-//            }
-//            if ( (! msg.getCron().contains("?")) || msg.getCron().split(" ").length != 6) {
-//                throw new ApiMessageInterceptionException(argerr("cron task must follow format like this : \"0 0/3 17-23 * * ?\" "));
-//            }
-//            if (msg.getInterval() != null || msg.getRepeatCount() != null || msg.getStartTime() != null) {
-//                throw new ApiMessageInterceptionException(argerr("cron scheduler only need to specify cron task"));
-//            }
+//        ResourceVO vo = Q.New(ResourceVO.class).eq(ResourceVO_.uuid, msg.getTargetResourceUuid()).find();
+//        if (vo == null) {
+//            throw new ApiMessageInterceptionException(argerr("resource[uuid:%s] does not exists", msg.getTargetResourceUuid()));
 //        }
     }
 

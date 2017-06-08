@@ -58,7 +58,11 @@ public class APICreateVolumeSnapshotSchedulerJobMsg extends APICreateSchedulerJo
         this.volumeSnapshotDescription = volumeSnapshotDescription;
     }
 
- 
+    @Override
+    public String getTargetResourceUuid() {
+        return getVolumeUuid();
+    }
+
     public static APICreateVolumeSnapshotSchedulerJobMsg __example__() {
         APICreateVolumeSnapshotSchedulerJobMsg msg = new APICreateVolumeSnapshotSchedulerJobMsg();
         msg.setName("snapshot-scheduler");
