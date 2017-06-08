@@ -393,7 +393,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             } catch (UnsupportedEncodingException e) {
                 throw new ApiMessageInterceptionException(operr("system tag cannot to encode base64"));
             }
-            msg.setSystemTags(asList(encodedTagsText));
+            msg.setSystemTags(asList(texts[0]+"::"+encodedTagsText));
         }
         SimpleQuery<InstanceOfferingVO> iq = dbf.createQuery(InstanceOfferingVO.class);
         iq.select(InstanceOfferingVO_.state);
