@@ -1,6 +1,7 @@
 package org.zstack.network.service.portforwarding;
 
 import org.zstack.header.vm.VmNicVO;
+import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 import org.zstack.header.vo.Index;
@@ -12,6 +13,7 @@ import java.sql.Timestamp;
 
 @Entity
 @Table
+@BaseResource
 public class PortForwardingRuleVO extends ResourceVO {
     @Column
     @Index

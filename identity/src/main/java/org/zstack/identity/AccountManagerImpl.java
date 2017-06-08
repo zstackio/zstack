@@ -39,15 +39,15 @@ import org.zstack.header.notification.ApiNotificationFactory;
 import org.zstack.header.notification.ApiNotificationFactoryExtensionPoint;
 import org.zstack.header.search.APIGetMessage;
 import org.zstack.header.search.APISearchMessage;
-import org.zstack.header.vo.*;
+import org.zstack.header.vo.APIGetResourceNamesMsg;
+import org.zstack.header.vo.APIGetResourceNamesReply;
+import org.zstack.header.vo.ResourceInventory;
+import org.zstack.header.vo.ResourceVO;
 import org.zstack.utils.*;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
-
-import static org.zstack.core.Platform.argerr;
-import static org.zstack.core.Platform.operr;
 
 import javax.persistence.Query;
 import javax.persistence.Tuple;
@@ -63,6 +63,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
 
 public class AccountManagerImpl extends AbstractService implements AccountManager, PrepareDbInitialValueExtensionPoint,
@@ -88,6 +90,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     private GlobalConfigFacade gcf;
 
     private List<String> resourceTypeForAccountRef;
+    private Map<String, Class> resourceTypeClassMap = new HashMap<>();
+    private Map<String, Class> childrenResourceTypeClassMap = new HashMap<>();
     private List<Class> resourceTypes;
     private Map<String, SessionInventory> sessions = new ConcurrentHashMap<>();
     private Map<Class, List<Quota>> messageQuotaMap = new HashMap<>();
@@ -687,9 +691,12 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
     private void buildResourceTypes() throws ClassNotFoundException {
         resourceTypes = new ArrayList<>();
-        for (String resrouceTypeName : resourceTypeForAccountRef) {
-            Class<?> rs = Class.forName(resrouceTypeName);
+        for (String resourceTypeName : resourceTypeForAccountRef) {
+            Class<?> rs = Class.forName(resourceTypeName);
             resourceTypes.add(rs);
+            resourceTypeClassMap.put(rs.getSimpleName(), rs);
+            childrenResourceTypeClassMap.put(rs.getSimpleName(), rs);
+            Platform.getAllChildrenResourceType(rs.getSimpleName()).forEach(it -> childrenResourceTypeClassMap.put(it, rs));
         }
     }
 
@@ -971,6 +978,33 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         if (!quotas.isEmpty()) {
             dbf.persistCollection(quotas);
         }
+    }
+
+    public void adminAdoptAllOrphanedResource() {
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                Query q = dbf.getEntityManager().createNativeQuery(
+                        "select uuid, resourceName, resourceType" +
+                                " from ResourceVO rvo" +
+                                " where rvo.uuid not in ( select resourceUuid from AccountResourceRefVO )" +
+                                " and rvo.resourceType in (:rTypes)");
+                q.setParameter("rTypes", childrenResourceTypeClassMap.keySet());
+                List<Object[]> objs = q.getResultList();
+
+                List<ResourceVO> resourceVOs = objs.stream().map(ResourceVO::new).collect(Collectors.toList());
+
+                List<AccountResourceRefVO> accountResourceRefVOs = resourceVOs.stream()
+                        .map(i ->
+                                AccountResourceRefVO.newOwn(
+                                        AccountConstant.INITIAL_SYSTEM_ADMIN_UUID,
+                                        i.getUuid(),
+                                        childrenResourceTypeClassMap.get(i.getResourceType()))
+                        ).collect(Collectors.toList());
+
+                accountResourceRefVOs.forEach(this::persist);
+            }
+        }.execute();
     }
 
     private void startExpiredSessionCollector() {

@@ -1,5 +1,6 @@
 package org.zstack.network.service.lb;
 
+import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 import org.zstack.header.vo.NoView;
@@ -15,6 +16,7 @@ import java.util.Set;
  */
 @Entity
 @Table
+@BaseResource
 public class LoadBalancerListenerVO extends ResourceVO {
     @Column
     @ForeignKey(parentEntityClass = LoadBalancerVO.class, parentKey = "uuid", onDeleteAction = ReferenceOption.RESTRICT)

@@ -1,5 +1,6 @@
 package org.zstack.network.securitygroup;
 
+import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 import org.zstack.header.vo.ResourceVO;
@@ -9,6 +10,7 @@ import java.sql.Timestamp;
 
 @Entity
 @Table
+@BaseResource
 public class SecurityGroupRuleVO extends ResourceVO {
     @Column
     @ForeignKey(parentEntityClass = SecurityGroupVO.class, onDeleteAction = ReferenceOption.CASCADE)

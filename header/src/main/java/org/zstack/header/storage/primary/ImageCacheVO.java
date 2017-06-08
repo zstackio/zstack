@@ -1,6 +1,7 @@
 package org.zstack.header.storage.primary;
 
 import org.zstack.header.image.ImageConstant.ImageMediaType;
+import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 import org.zstack.header.vo.ShadowEntity;
@@ -10,6 +11,7 @@ import java.sql.Timestamp;
 
 @Entity
 @Table
+@BaseResource
 public class ImageCacheVO implements ShadowEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

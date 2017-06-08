@@ -1,6 +1,7 @@
 package org.zstack.header.console;
 
 import org.zstack.header.managementnode.ManagementNodeVO;
+import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.ForeignKey;
 
 import javax.persistence.*;
@@ -11,6 +12,7 @@ import java.sql.Timestamp;
  */
 @Table
 @Entity
+@BaseResource
 public class ConsoleProxyAgentVO {
     @Id
     @Column

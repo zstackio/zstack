@@ -1,5 +1,6 @@
 package org.zstack.header.storage.primary;
 
+import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.EO;
 import org.zstack.header.vo.NoView;
 
@@ -10,6 +11,7 @@ import java.util.Set;
 @Entity
 @Table
 @EO(EOClazz = PrimaryStorageEO.class)
+@BaseResource
 public class PrimaryStorageVO extends PrimaryStorageAO {
     @OneToMany(fetch = FetchType.EAGER)
     @JoinColumn(name = "primaryStorageUuid", insertable = false, updatable = false)

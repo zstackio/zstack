@@ -1,6 +1,7 @@
 package org.zstack.header.console;
 
 import org.zstack.header.vm.VmInstanceEO;
+import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 import org.zstack.header.vo.ResourceVO;
@@ -16,6 +17,7 @@ import java.sql.Timestamp;
  */
 @Entity
 @Table
+@BaseResource
 public class ConsoleProxyVO extends ResourceVO {
     @Column
     @ForeignKey(parentEntityClass = VmInstanceEO.class, onDeleteAction = ReferenceOption.CASCADE)

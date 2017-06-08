@@ -23,6 +23,7 @@ import org.zstack.header.core.encrypt.ENCRYPT;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.vo.BaseResource;
 import org.zstack.utils.*;
 import org.zstack.utils.data.StringTemplate;
 import org.zstack.utils.logging.CLogger;
@@ -43,6 +44,7 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
@@ -74,6 +76,8 @@ public class Platform {
     }
 
     public static Set<Method> encryptedMethodsMap;
+
+    public static Map<String, String> childResourceToBaseResourceMap = new HashMap<>();
 
     private static Map<String, String> linkGlobalPropertyMap(String prefix) {
         Map<String, String> ret = new HashMap<String, String>();
@@ -340,6 +344,16 @@ public class Platform {
             // TODO: get code version from MANIFEST file
             codeVersion = "0.1.0";
 
+            Set<Class> baseResourceClasses = reflections.getTypesAnnotatedWith(BaseResource.class).stream()
+                    .filter(clz -> clz.isAnnotationPresent(BaseResource.class)).collect(Collectors.toSet());
+            for (Class clz : baseResourceClasses) {
+                Set<Class> childResourceClasses = reflections.getSubTypesOf(clz);
+                childResourceToBaseResourceMap.put(clz.getSimpleName(), clz.getSimpleName());
+                for (Class child : childResourceClasses) {
+                    childResourceToBaseResourceMap.put(child.getSimpleName(), clz.getSimpleName());
+                }
+            }
+
             File globalPropertiesFile = PathUtil.findFileOnClassPath("zstack.properties", true);
             FileInputStream in = new FileInputStream(globalPropertiesFile);
             System.getProperties().load(in);
@@ -359,6 +373,22 @@ public class Platform {
             }
 
         }
+    }
+
+    public static String getBaseResourceType(String childResourceType) {
+        String type = childResourceToBaseResourceMap.get(childResourceType);
+        if (type == null) {
+            throw new CloudRuntimeException(String.format("cannot find base resource type for the child resource type[%s]", childResourceType));
+        }
+        return type;
+    }
+
+    public static List<String> getAllChildrenResourceType(String baseResourceType) {
+        return childResourceToBaseResourceMap.entrySet()
+                .stream()
+                .filter(map -> baseResourceType.equals(map.getValue()))
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
     }
 
     private static Set<Method> getAllEncryptPassword() {

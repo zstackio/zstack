@@ -12,6 +12,7 @@ import java.sql.Timestamp;
  */
 @Table
 @Entity
+@BaseResource
 public class TaskProgressVO {
     @Id
     @Column

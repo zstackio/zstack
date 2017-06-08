@@ -1,5 +1,6 @@
 package org.zstack.core.gc;
 
+import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.ResourceVO;
 
 import javax.persistence.*;
@@ -10,6 +11,7 @@ import java.sql.Timestamp;
  */
 @Entity
 @Table
+@BaseResource
 public class GarbageCollectorVO extends ResourceVO {
     @Column
     private String name;

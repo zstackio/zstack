@@ -13,10 +13,6 @@ import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
-import org.zstack.core.db.SQLBatch;
-import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -39,8 +35,6 @@ import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
-import static org.zstack.core.Platform.argerr;
-
 import javax.persistence.Query;
 import javax.persistence.Tuple;
 import java.util.ArrayList;
@@ -48,6 +42,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.zstack.core.Platform.argerr;
 import static org.zstack.utils.CollectionDSL.list;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
@@ -189,6 +184,7 @@ public class AccountBase extends AbstractAccount {
                     @Override
                     public void handle(Map data) {
                         dbf.remove(vo);
+                        acntMgr.adminAdoptAllOrphanedResource();
                         bus.publish(evt);
 
                         AccountDeletedData evtData = new AccountDeletedData();
