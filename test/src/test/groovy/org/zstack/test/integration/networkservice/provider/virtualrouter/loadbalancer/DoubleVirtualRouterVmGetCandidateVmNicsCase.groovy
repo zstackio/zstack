@@ -138,6 +138,17 @@ class DoubleVirtualRouterVmGetCandidateVmNicsCase extends SubCase{
                             gateway = "11.168.100.1"
                         }
                     }
+
+                    l3Network {
+                        name = "manageL3-1"
+
+                        ip {
+                            startIp = "11.167.100.10"
+                            endIp = "11.167.100.100"
+                            netmask = "255.255.255.0"
+                            gateway = "11.167.100.1"
+                        }
+                    }
                 }
 
                 l2NoVlanNetwork {
@@ -175,6 +186,17 @@ class DoubleVirtualRouterVmGetCandidateVmNicsCase extends SubCase{
                             gateway = "11.168.200.1"
                         }
                     }
+
+                    l3Network {
+                        name = "manageL3-2"
+
+                        ip {
+                            startIp = "11.167.200.10"
+                            endIp = "11.167.200.100"
+                            netmask = "255.255.255.0"
+                            gateway = "11.167.200.1"
+                        }
+                    }
                 }
 
                 attachBackupStorage("sftp")
@@ -183,8 +205,8 @@ class DoubleVirtualRouterVmGetCandidateVmNicsCase extends SubCase{
                     name = "vr1"
                     memory = SizeUnit.MEGABYTE.toByte(512)
                     cpu = 2
-                    useManagementL3Network("pubL3-1")
                     usePublicL3Network("pubL3-1")
+                    useManagementL3Network("manageL3-1")
                     useImage("vr")
                 }
 
@@ -192,8 +214,8 @@ class DoubleVirtualRouterVmGetCandidateVmNicsCase extends SubCase{
                     name = "vr2"
                     memory = SizeUnit.MEGABYTE.toByte(512)
                     cpu = 2
-                    useManagementL3Network("pubL3-2")
                     usePublicL3Network("pubL3-2")
+                    useManagementL3Network("manageL3-2")
                     useImage("vr")
                 }
 
