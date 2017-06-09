@@ -755,13 +755,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
 
     public void volumeBeforeExpunge(VolumeInventory volume) {
         logger.debug(String.format("will delete scheduler before expunge volume %s", volume.getUuid()));
-        SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
-        q.add(SchedulerVO_.targetResourceUuid, Op.EQ, volume.getUuid());
-        q.select(SchedulerVO_.uuid);
-        List<String> uuids = q.listValue();
-        for (String uuid : uuids) {
-            schedulerFacade.deleteSchedulerJob(uuid);
-        }
+        schedulerFacade.deleteSchedulerJobByResourceUuid(volume.getUuid());
     }
 
     public void preRecoverDataVolume(VolumeInventory volume) {

@@ -68,6 +68,8 @@ CREATE TABLE  `zstack`.`SchedulerJobSchedulerTriggerRefVO` (
     `schedulerTriggerUuid` varchar(32) NOT NULL,
     `jobGroup` varchar(255),
     `triggerGroup` varchar(255),
+    `taskData` varchar(65535),
+    `taskClassName` varchar(255),
     `status` varchar(255),
     `state` varchar(255),
     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,

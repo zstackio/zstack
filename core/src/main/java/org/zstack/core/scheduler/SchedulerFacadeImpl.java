@@ -8,10 +8,7 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.cloudbus.ResourceDestinationMaker;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
-import org.zstack.core.db.SQL;
-import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.*;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.SyncThread;
@@ -122,6 +119,8 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
             vo.setUuid(Platform.getUuid());
             vo.setSchedulerJobUuid(msg.getSchedulerJobUuid());
             vo.setSchedulerTriggerUuid(msg.getSchedulerTriggerUuid());
+            vo.setTaskData(JSONObjectUtil.toJsonString(task));
+            vo.setTaskClassName(task.getClass().getName());
             dbf.persistAndRefresh(vo);
             bus.publish(evt);
         }
@@ -320,7 +319,28 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
         }
     }
 
-    public void deleteSchedulerJob(String uuid) {
+    public void deleteSchedulerJobByResourceUuid(String uuid) {
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                List<String> jobUuids = Q.New(SchedulerJobVO.class)
+                        .select(SchedulerJobVO_.uuid)
+                        .eq(SchedulerJobVO_.targetResourceUuid, uuid)
+                        .listValues();
+
+                List<String> uuids = Q.New(SchedulerJobSchedulerTriggerRefVO.class)
+                        .select(SchedulerJobSchedulerTriggerRefVO_.uuid)
+                        .in(SchedulerJobSchedulerTriggerRefVO_.schedulerJobUuid, jobUuids)
+                        .listValues();
+
+                for (String uuid : uuids) {
+                    deleteSchedulerJob(uuid);
+                }
+            }
+        }.execute();
+    }
+
+    private void deleteSchedulerJob(String uuid) {
         if (!destinationMaker.isManagedByUs(uuid)) {
             logger.debug(String.format("Scheduler %s not managed by us, will not be deleted", uuid));
         } else {
@@ -344,27 +364,39 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
         }
     }
 
-    private List<String> getSchedulerManagedByUs() {
+    private void loadSchedulerManagedByUs() {
         // TODO use scheduler job to find tasks
-        SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
-        q.select(SchedulerVO_.uuid);
-        q.add(SchedulerVO_.managementNodeUuid, SimpleQuery.Op.NULL);
-        List<String> ids = q.listValue();
+//        SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
+//        q.select(SchedulerVO_.uuid);
+//        q.add(SchedulerVO_.managementNodeUuid, SimpleQuery.Op.NULL);
+//        List<String> ids = q.listValue();
 
-        List<String> ours = new ArrayList<String>();
-        for (String id : ids) {
-            if (destinationMaker.isManagedByUs(id)) {
-                ours.add(id);
-                q = dbf.createQuery(SchedulerVO.class);
-                q.add(SchedulerVO_.uuid, SimpleQuery.Op.IN, ours);
-                List<SchedulerVO> vos = q.list();
-                for (SchedulerVO vo : vos) {
-                    vo.setManagementNodeUuid(Platform.getManagementServerId());
-                    dbf.updateAndRefresh(vo);
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                List<String> ids = Q.New(SchedulerJobVO.class)
+                        .select(SchedulerJobVO_.uuid)
+                        .isNull(SchedulerJobVO_.managementNodeUuid)
+                        .listValues();
+
+                if (ids == null) {
+                    return;
                 }
+                List<String> ours = new ArrayList<String>();
+                for (String id : ids) {
+                    if (destinationMaker.isManagedByUs(id)) {
+                        ours.add(id);
+                        List<SchedulerJobVO> vos = Q.New(SchedulerJobVO.class).in(SchedulerJobVO_.uuid, ours).list();
+                        for (SchedulerJobVO vo : vos) {
+                            vo.setManagementNodeUuid(Platform.getManagementServerId());
+                            merge(vo);
+                        }
+                    }
+                }
+                jobLoader(ours);
             }
-        }
-        return ours;
+        }.execute();
+
     }
 
     private void jobLoader(List<String> ours) {
@@ -373,14 +405,16 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
         } else {
             // TODO use refs to reboot scheduler jobs
             logger.debug(String.format("Scheduler is going to load %s jobs", ours.size()));
-            SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
-            q.add(SchedulerVO_.uuid, SimpleQuery.Op.IN, ours);
-            List<SchedulerVO> schedulerRecords = q.list();
-            for (SchedulerVO schedulerRecord : schedulerRecords) {
+//            SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
+//            q.add(SchedulerVO_.uuid, SimpleQuery.Op.IN, ours);
+//            List<SchedulerVO> schedulerRecords = q.list();
+            List<SchedulerJobSchedulerTriggerRefVO> schedulerRecords = Q.New(SchedulerJobSchedulerTriggerRefVO.class)
+                    .in(SchedulerJobSchedulerTriggerRefVO_.schedulerJobUuid, ours).list();
+            for (SchedulerJobSchedulerTriggerRefVO schedulerRecord : schedulerRecords) {
                 try {
-                    SchedulerJob rebootJob = (SchedulerJob) JSONObjectUtil.toObject(schedulerRecord.getJobData(), Class.forName(schedulerRecord.getJobClassName()));
+                    SchedulerTask rebootJob = (SchedulerTask) JSONObjectUtil.toObject(schedulerRecord.getTaskData(), Class.forName(schedulerRecord.getTaskClassName()));
                     if (schedulerRecord.getState().equals(SchedulerState.Enabled.toString())) {
-//                        runScheduler(rebootJob, false);
+                        runScheduler(rebootJob, false);
                     }
                 } catch (ClassNotFoundException e) {
                     logger.warn(String.format("Load Scheduler %s failed!", schedulerRecord.getUuid()));
@@ -391,8 +425,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
     }
 
     private void loadSchedulerJobs() {
-        List<String> ours = getSchedulerManagedByUs();
-        jobLoader(ours);
+        loadSchedulerManagedByUs();
     }
 
     private void takeOverScheduler() {
@@ -638,12 +671,15 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
 
     public void vmBeforeExpunge(VmInstanceInventory inv) {
         logger.debug(String.format("will delete scheduler before expunge vm"));
-        SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
-        q.add(SchedulerVO_.targetResourceUuid, SimpleQuery.Op.EQ, inv.getUuid());
-        q.select(SchedulerVO_.uuid);
-        List<String> uuids = q.listValue();
-        for (String uuid : uuids) {
-            deleteSchedulerJob(uuid);
-        }
+
+        deleteSchedulerJobByResourceUuid(inv.getUuid());
+
+//        SimpleQuery<SchedulerJobVO> q = dbf.createQuery(SchedulerJobVO.class);
+//        q.add(SchedulerJobVO_.targetResourceUuid, SimpleQuery.Op.EQ, inv.getUuid());
+//        q.select(SchedulerJobVO_.uuid);
+//        List<String> uuids = q.listValue();
+//        for (String uuid : uuids) {
+//            deleteSchedulerJob(uuid);
+//        }
     }
 }

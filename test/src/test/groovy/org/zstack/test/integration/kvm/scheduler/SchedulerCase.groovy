@@ -10,6 +10,7 @@ import org.zstack.core.scheduler.SchedulerFacadeImpl
 import org.zstack.header.core.scheduler.SchedulerJobSchedulerTriggerRefVO
 import org.zstack.header.core.scheduler.SchedulerJobSchedulerTriggerRefVO_
 import org.zstack.header.core.scheduler.SchedulerJobVO
+import org.zstack.header.core.scheduler.SchedulerState
 import org.zstack.header.core.scheduler.SchedulerTriggerVO
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.header.vm.VmInstanceState
@@ -166,6 +167,7 @@ class SchedulerCase extends SubCase {
             testSchedulerTriggerAPI()
             testSchedulerTriggerApiMessageInterceptor()
             testAddAndRemoveSchedulerJobToOrFromTriggerAPI()
+            testPauseResumeDeleteSchedulerTask()
         }
     }
     
@@ -511,7 +513,8 @@ class SchedulerCase extends SubCase {
         }
     }
 
-    void testPauseSchedulerTask() {
+    void testPauseResumeDeleteSchedulerTask() {
+        VmInstanceInventory vm = env.inventoryByName("vm")
         SchedulerJobInventory job = createStartVmInstanceSchedulerJob {
             vmUuid = vm.uuid
             name = "start"
@@ -536,6 +539,20 @@ class SchedulerCase extends SubCase {
                 .eq(SchedulerJobSchedulerTriggerRefVO_.schedulerTriggerUuid, trigger.getUuid())
                 .find()
 
+
         scheduler.pauseSchedulerJob(ref.uuid)
+        ref = Q.New(SchedulerJobSchedulerTriggerRefVO.class)
+                .eq(SchedulerJobSchedulerTriggerRefVO_.schedulerJobUuid, job.getUuid())
+                .eq(SchedulerJobSchedulerTriggerRefVO_.schedulerTriggerUuid, trigger.getUuid())
+                .find()
+        assert ref.state == SchedulerState.Disabled.toString()
+
+
+        scheduler.resumeSchedulerJob(ref.uuid)
+        ref = Q.New(SchedulerJobSchedulerTriggerRefVO.class)
+                .eq(SchedulerJobSchedulerTriggerRefVO_.schedulerJobUuid, job.getUuid())
+                .eq(SchedulerJobSchedulerTriggerRefVO_.schedulerTriggerUuid, trigger.getUuid())
+                .find()
+        assert ref.state == SchedulerState.Enabled.toString()
     }
 }

@@ -1,5 +1,7 @@
 package org.zstack.header.core.scheduler;
 
+import org.zstack.header.vo.ResourceVO_;
+
 import javax.persistence.metamodel.SingularAttribute;
 import javax.persistence.metamodel.StaticMetamodel;
 import java.sql.Timestamp;
@@ -9,8 +11,7 @@ import java.sql.Timestamp;
  */
 
 @StaticMetamodel(SchedulerJobSchedulerTriggerRefVO.class)
-public class SchedulerJobSchedulerTriggerRefVO_ {
-    public static volatile SingularAttribute<SchedulerJobSchedulerTriggerRefVO, String> uuid;
+public class SchedulerJobSchedulerTriggerRefVO_ extends ResourceVO_ {
     public static volatile SingularAttribute<SchedulerJobSchedulerTriggerRefVO, String> schedulerJobUuid;
     public static volatile SingularAttribute<SchedulerJobSchedulerTriggerRefVO, String> schedulerTriggerUuid;
     public static volatile SingularAttribute<SchedulerJobSchedulerTriggerRefVO, String> status;

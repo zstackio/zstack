@@ -10,5 +10,5 @@ public interface SchedulerFacade extends Component {
     boolean runScheduler(SchedulerTask job);
     void pauseSchedulerJob(String uuid);
     void resumeSchedulerJob(String uuid);
-    void deleteSchedulerJob(String uuid);
+    void deleteSchedulerJobByResourceUuid(String uuid);
 }

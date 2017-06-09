@@ -37,6 +37,12 @@ public class SchedulerJobSchedulerTriggerRefVO {
     private String triggerGroup;
 
     @Column
+    private String taskData;
+
+    @Column
+    private String taskClassName;
+
+    @Column
     private Timestamp createDate;
 
     @Column
@@ -96,6 +102,22 @@ public class SchedulerJobSchedulerTriggerRefVO {
 
     public void setTriggerGroup(String triggerGroup) {
         this.triggerGroup = triggerGroup;
+    }
+
+    public String getTaskData() {
+        return taskData;
+    }
+
+    public void setTaskData(String taskData) {
+        this.taskData = taskData;
+    }
+
+    public String getTaskClassName() {
+        return taskClassName;
+    }
+
+    public void setTaskClassName(String taskClassName) {
+        this.taskClassName = taskClassName;
     }
 
     public Timestamp getCreateDate() {

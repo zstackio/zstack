@@ -1,5 +1,7 @@
 package org.zstack.header.core.scheduler;
 
+import org.zstack.header.vo.ResourceVO_;
+
 import javax.persistence.metamodel.SingularAttribute;
 import javax.persistence.metamodel.StaticMetamodel;
 import java.sql.Timestamp;
@@ -8,8 +10,7 @@ import java.sql.Timestamp;
  * Created by AlanJager on 2017/6/7.
  */
 @StaticMetamodel(SchedulerTriggerVO.class)
-public class SchedulerTriggerVO_ {
-    public static volatile SingularAttribute<SchedulerTriggerVO, String> uuid;
+public class SchedulerTriggerVO_ extends ResourceVO_ {
     public static volatile SingularAttribute<SchedulerTriggerVO, String> name;
     public static volatile SingularAttribute<SchedulerTriggerVO, String> description;
     public static volatile SingularAttribute<SchedulerTriggerVO, String> schedulerType;
