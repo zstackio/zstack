@@ -7,6 +7,7 @@ import org.zstack.header.storage.snapshot.APIDeleteVolumeSnapshotMsg;
 import org.zstack.header.vm.APICreateVmInstanceMsg;
 import org.zstack.header.vm.VmBootDevice;
 import org.zstack.header.volume.APICreateVolumeSnapshotMsg;
+import org.zstack.network.securitygroup.SecurityGroupMembersTO;
 import org.zstack.network.securitygroup.SecurityGroupRuleTO;
 
 import java.util.ArrayList;
@@ -1230,6 +1231,21 @@ public class KVMAgentCommands {
     }
 
     public static class RefreshAllRulesOnHostResponse extends AgentResponse {
+    }
+
+    public static class UpdateGroupMemberCmd extends AgentCommand {
+        private List<SecurityGroupMembersTO> updateGroupTOs;
+
+        public void setUpdateGroupTOs(List<SecurityGroupMembersTO> updateGroupTOs) {
+            this.updateGroupTOs = updateGroupTOs;
+        }
+
+        public List<SecurityGroupMembersTO> getUpdateGroupTOs() {
+            return updateGroupTOs;
+        }
+    }
+
+    public static class UpdateGroupMemberResponse extends AgentResponse {
     }
 
     public static class CleanupUnusedRulesOnHostCmd extends AgentCommand {

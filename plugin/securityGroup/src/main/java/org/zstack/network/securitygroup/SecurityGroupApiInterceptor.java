@@ -195,6 +195,10 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APIAddSecurityGroupRuleMsg msg) {
+        if(msg.getRemoteSecurityGroupUuids() != null && msg.getRemoteSecurityGroupUuids().contains(msg.getSecurityGroupUuid())){
+            throw new ApiMessageInterceptionException(argerr("remote security group cannot be itself"));
+        }
+
         // Basic check
         for (SecurityGroupRuleAO ao : msg.getRules()) {
             if (ao.getType() == null) {
@@ -215,12 +219,14 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
             try {
                 SecurityGroupRuleProtocolType.valueOf(ao.getProtocol());
             } catch (Exception e) {
-                throw new ApiMessageInterceptionException(argerr("invalid protocol[%s]. Valid protocols are [TCP, UDP, ICMP]. rule dump: %s",
+                throw new ApiMessageInterceptionException(argerr("invalid protocol[%s]. Valid protocols are [TCP, UDP, ICMP, ALL]. rule dump: %s",
                                 ao.getProtocol(), JSONObjectUtil.toJsonString(ao)));
             }
 
-            if (ao.getStartPort() == null) {
+            if (ao.getStartPort() == null && !SecurityGroupRuleProtocolType.ALL.toString().equals(ao.getProtocol())) {
                 throw new ApiMessageInterceptionException(argerr("startPort can not be null. rule dump: %s", JSONObjectUtil.toJsonString(ao)));
+            } else if (ao.getStartPort() != null && SecurityGroupRuleProtocolType.ALL.toString().equals(ao.getProtocol())){
+                throw new ApiMessageInterceptionException(argerr("can not set port for protocol [type:ALL]. rule dump: %s", JSONObjectUtil.toJsonString(ao)));
             }
 
             if (SecurityGroupRuleProtocolType.ICMP.toString().equals(ao.getProtocol())) {
@@ -228,7 +234,9 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
                     throw new ApiMessageInterceptionException(argerr("invalid ICMP type[%s]. Valid type is [-1, 255]. rule dump: %s",
                                     ao.getStartPort(), JSONObjectUtil.toJsonString(ao)));
                 }
-            } else {
+            } else if(SecurityGroupRuleProtocolType.ALL.toString().equals(ao.getProtocol())){
+                ao.setStartPort(-1);
+            } else{
                 if (ao.getStartPort() < 0 || ao.getStartPort() > 65535) {
                     throw new ApiMessageInterceptionException(argerr("invalid startPort[%s]. Valid range is [0, 65535]. rule dump: %s",
                                     ao.getStartPort(), JSONObjectUtil.toJsonString(ao)));
@@ -245,6 +253,8 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
                     throw new ApiMessageInterceptionException(argerr("invalid ICMP code[%s]. Valid range is [-1, 3]. rule dump: %s",
                                     ao.getEndPort(), JSONObjectUtil.toJsonString(ao)));
                 }
+            } else if(SecurityGroupRuleProtocolType.ALL.toString().equals(ao.getProtocol())){
+                ao.setEndPort(-1);
             } else {
                 if (ao.getEndPort() < 0 || ao.getEndPort() > 65535) {
                     throw new ApiMessageInterceptionException(argerr("invalid endPort[%s]. Valid range is [0, 65535]. rule dump: %s",
@@ -280,10 +290,14 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
             ao.setStartPort(svo.getStartPort());
             ao.setEndPort(svo.getEndPort());
 
+
             for (SecurityGroupRuleAO sao : msg.getRules()) {
-                if (checkSecurityGroupRuleEqual(ao, sao)) {
-                    throw new ApiMessageInterceptionException(argerr("rule exist. rule dump: %s",
-                                    JSONObjectUtil.toJsonString(sao)));
+                if (checkSecurityGroupRuleEqual(ao, sao) && (
+                        msg.getRemoteSecurityGroupUuids() == null ||
+                        msg.getRemoteSecurityGroupUuids().contains(svo.getRemoteSecurityGroupUuid())
+                )) {
+                    throw new ApiMessageInterceptionException(argerr("rule exist. rule dump: %s, remoteSecurityGroupUuid:[%s]",
+                                    JSONObjectUtil.toJsonString(sao), svo.getRemoteSecurityGroupUuid()));
                 }
             }
 

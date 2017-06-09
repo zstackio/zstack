@@ -28,6 +28,9 @@ public class AddSecurityGroupRuleAction extends AbstractAction {
     @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List rules;
 
+    @Param(required = false, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List remoteSecurityGroupUuids;
+
     @Param(required = false)
     public java.util.List systemTags;
 

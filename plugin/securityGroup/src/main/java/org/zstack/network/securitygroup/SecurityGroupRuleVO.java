@@ -36,6 +36,10 @@ public class SecurityGroupRuleVO extends ResourceVO {
 
     @Column
     private String allowedCidr;
+
+    @Column
+    @ForeignKey(parentEntityClass = SecurityGroupVO.class, onDeleteAction = ReferenceOption.CASCADE)
+    private String remoteSecurityGroupUuid;
     
     @Column
     private Timestamp createDate;
@@ -102,6 +106,14 @@ public class SecurityGroupRuleVO extends ResourceVO {
 
     public void setAllowedCidr(String allowedCidr) {
         this.allowedCidr = allowedCidr;
+    }
+
+    public void setRemoteSecurityGroupUuid(String remoteSecurityGroupUuid) {
+        this.remoteSecurityGroupUuid = remoteSecurityGroupUuid;
+    }
+
+    public String getRemoteSecurityGroupUuid() {
+        return remoteSecurityGroupUuid;
     }
 
     public Timestamp getCreateDate() {

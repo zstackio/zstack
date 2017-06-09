@@ -21,6 +21,7 @@ import org.zstack.network.securitygroup.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import static org.codehaus.groovy.runtime.InvokerHelper.asList;
 import static org.zstack.core.Platform.operr;
 
 import java.util.Map;
@@ -31,6 +32,7 @@ public class KVMSecurityGroupBackend implements SecurityGroupHypervisorBackend, 
     public static final String SECURITY_GROUP_APPLY_RULE_PATH = "/securitygroup/applyrules";
     public static final String SECURITY_GROUP_REFRESH_RULE_ON_HOST_PATH = "/securitygroup/refreshrulesonhost";
     public static final String SECURITY_GROUP_CLEANUP_UNUSED_RULE_ON_HOST_PATH = "/securitygroup/cleanupunusedrules";
+    public static final String SECURITY_GROUP_UPDATE_GROUP_MEMBER = "/securitygroup/updategroupmember";
 
     @Autowired
     private CloudBus bus;
@@ -113,6 +115,37 @@ public class KVMSecurityGroupBackend implements SecurityGroupHypervisorBackend, 
         } else {
             reApplyAllRulesOnHost(hto, complete);
         }
+    }
+
+    @Override
+    public void updateGroupMembers(SecurityGroupMembersTO gto, String hostUuid, Completion completion) {
+        KVMAgentCommands.UpdateGroupMemberCmd cmd = new KVMAgentCommands.UpdateGroupMemberCmd();
+        cmd.setUpdateGroupTOs(asList(gto));
+
+        KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+        msg.setHostUuid(hostUuid);
+        msg.setCommand(cmd);
+        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
+        msg.setPath(SECURITY_GROUP_UPDATE_GROUP_MEMBER);
+        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
+        bus.send(msg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
+
+                KVMHostAsyncHttpCallReply hreply = reply.castReply();
+                KVMAgentCommands.UpdateGroupMemberResponse rsp = hreply.toResponse(KVMAgentCommands.UpdateGroupMemberResponse.class);
+                if (!rsp.isSuccess()) {
+                    completion.fail(operr(rsp.getError()));
+                    return;
+                }
+
+                completion.success();
+            }
+        });
     }
 
     @Override

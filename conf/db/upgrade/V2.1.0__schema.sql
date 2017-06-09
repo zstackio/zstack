@@ -429,3 +429,8 @@ UPDATE PrimaryStorageCapacityVO t0,
 (SELECT SUM(systemUsedCapacity) ps_systemUsedCapacity , primaryStorageUuid FROM LocalStorageHostRefVO GROUP BY primaryStorageUuid) t1
 SET t0.systemUsedCapacity = t1.ps_systemUsedCapacity
 WHERE t0.uuid = t1.primaryStorageUuid;
+
+ALTER TABLE HostCapacityVO MODIFY availableCpu bigint(20) NOT NULL COMMENT 'used cpu of host in HZ';
+
+ALTER TABLE SecurityGroupRuleVO ADD COLUMN `remoteSecurityGroupUuid` varchar(255) DEFAULT NULL;
+ALTER TABLE SecurityGroupRuleVO ADD CONSTRAINT fkSecurityGroupRuleVORemoteSecurityGroupVO FOREIGN KEY (remoteSecurityGroupUuid) REFERENCES SecurityGroupVO (uuid) ON DELETE CASCADE ;

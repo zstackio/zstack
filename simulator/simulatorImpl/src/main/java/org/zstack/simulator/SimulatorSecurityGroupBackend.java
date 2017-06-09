@@ -61,7 +61,12 @@ public class SimulatorSecurityGroupBackend implements
 		complete.success();
 	}
 
-    @Override
+	@Override
+	public void updateGroupMembers(SecurityGroupMembersTO gto, String hostUuid, Completion completion) {
+
+	}
+
+	@Override
     public void cleanUpUnusedRuleOnHost(String hostUuid, Completion completion) {
         SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
         q.add(VmInstanceVO_.hostUuid, SimpleQuery.Op.EQ, hostUuid);
