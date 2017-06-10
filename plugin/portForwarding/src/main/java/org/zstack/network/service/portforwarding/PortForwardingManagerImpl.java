@@ -196,7 +196,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
                 String vipUuid = t.get(1, String.class);
                 String vipPeerL3Uuid = t.get(2, String.class);
 
-                //1.check the l3 of vm nic has been attached to port forwarding service
+                //0.check the l3 of vm nic has been attached to port forwarding service
                 List<String> l3Uuids;
                 if (vipPeerL3Uuid == null) {
                     l3Uuids = sql("select l3.uuid" +
@@ -215,6 +215,37 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
                     l3Uuids = Collections.singletonList(vipPeerL3Uuid);
                 }
 
+                if (l3Uuids.isEmpty()) {
+                    return new ArrayList<>();
+                }
+
+
+                // 1.select private l3
+                String rulePublicL3Uuid = sql("select l3NetworkUuid from VipVO where uuid = (select vipUuid from PortForwardingRuleVO where uuid = :ruleUuid)", String.class)
+                        .param("ruleUuid", ruleUuid).find();
+
+                List<String> vrouterUuids = sql("select uuid from VirtualRouterVmVO where publicNetworkUuid = :publicNetworkUuid",String.class)
+                        .param("publicNetworkUuid", rulePublicL3Uuid).list();
+                if(vrouterUuids.isEmpty()){
+                    return new ArrayList<>();
+                }
+
+                List<String> privateL3Uuids = new ArrayList<>();
+                for(String vrouterUuid : vrouterUuids){
+                    List<String> vrouterPrivateL3Uuids = sql("select l3NetworkUuid from VmNicVO " +
+                            " where vmInstanceUuid = :vrouterUuid" +
+                            " and l3NetworkUuid != :rulePublicL3Uuid " +
+                            " and l3NetworkUuid != (select managementNetworkUuid from ApplianceVmVO where uuid = :vrouterUuid)", String.class)
+                            .param("vrouterUuid", vrouterUuid)
+                            .param("rulePublicL3Uuid", rulePublicL3Uuid)
+                            .list();
+                    privateL3Uuids.addAll(vrouterPrivateL3Uuids);
+                }
+                if(privateL3Uuids.isEmpty()){
+                    return new ArrayList<>();
+                }
+
+                l3Uuids.stream().filter(l3 -> !privateL3Uuids.contains(l3));
                 if (l3Uuids.isEmpty()) {
                     return new ArrayList<>();
                 }
