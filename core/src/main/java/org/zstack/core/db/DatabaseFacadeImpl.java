@@ -13,7 +13,9 @@ import org.zstack.core.db.TransactionalCallback.Operation;
 import org.zstack.header.Component;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APIListMessage;
-import org.zstack.header.vo.*;
+import org.zstack.header.vo.EO;
+import org.zstack.header.vo.SoftDeletionCascade;
+import org.zstack.header.vo.SoftDeletionCascades;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.FieldUtils;
@@ -306,19 +308,13 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
         }
 
         private void softDelete(Collection ids) {
-            if (ids.size() == 1) {
-                String sql = String.format("update %s eo set eo.%s = (:date) where eo.%s = :id", eoClass.getSimpleName(), eoSoftDeleteColumn.getName(), eoPrimaryKeyField.getName());
-                Query q = getEntityManager().createQuery(sql);
-                q.setParameter("id", ids.iterator().next());
-                q.setParameter("date", new Timestamp(new Date().getTime()).toString());
-                q.executeUpdate();
-            } else {
-                String sql = String.format("update %s eo set eo.%s = (:date) where eo.%s in (:ids)", eoClass.getSimpleName(), eoSoftDeleteColumn.getName(), eoPrimaryKeyField.getName());
-                Query q = getEntityManager().createQuery(sql);
-                q.setParameter("ids", ids);
-                q.setParameter("date", new Timestamp(new Date().getTime()).toString());
-                q.executeUpdate();
-            }
+            String sql = String.format("update %s eo set eo.%s = (:date) where eo.%s in (:ids)",
+                    eoClass.getSimpleName(), eoSoftDeleteColumn.getName(), eoPrimaryKeyField.getName());
+            Query q = getEntityManager().createQuery(sql);
+            q.setParameter("ids", ids);
+            q.setParameter("date", new Timestamp(new Date().getTime()).toString());
+            q.executeUpdate();
+
             fireSoftDeleteExtension(ids, voClass);
             fireSoftDeleteExtensionByEOClass(ids, eoClass);
         }
@@ -338,18 +334,12 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
 
         private void hardDelete(Collection ids) {
             String tblName = hasEO() ? eoClass.getSimpleName() : voClass.getSimpleName();
+            String sql = String.format("delete from %s eo where eo.%s in (:ids)", tblName, voPrimaryKeyField.getName());
+            Query q = getEntityManager().createQuery(sql);
+            q.setParameter("ids", ids);
+            q.executeUpdate();
+            logger.debug(String.format("hard delete %s records from %s", ids.size(), tblName));
 
-            if (ids.size() == 1) {
-                String sql = String.format("delete from %s eo where eo.%s = :id", tblName, voPrimaryKeyField.getName());
-                Query q = getEntityManager().createQuery(sql);
-                q.setParameter("id", ids.iterator().next());
-                q.executeUpdate();
-            } else {
-                String sql = String.format("delete from %s eo where eo.%s in (:ids)", tblName, voPrimaryKeyField.getName());
-                Query q = getEntityManager().createQuery(sql);
-                q.setParameter("ids", ids);
-                q.executeUpdate();
-            }
             fireHardDeleteExtension(ids);
         }
 
@@ -709,6 +699,7 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
     private void _eoCleanup(Class VOClazz) {
         EntityInfo info = getEntityInfo(VOClazz);
         if (!info.hasEO()) {
+            logger.warn(String.format("Class[%s] doesn't has EO.", VOClazz));
             return;
         }
 
