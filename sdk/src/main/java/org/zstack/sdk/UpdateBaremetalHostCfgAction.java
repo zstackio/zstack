@@ -38,6 +38,9 @@ public class UpdateBaremetalHostCfgAction extends AbstractAction {
     public java.util.List nicCfgs;
 
     @Param(required = false)
+    public java.lang.String chassisUuid;
+
+    @Param(required = false)
     public java.util.List systemTags;
 
     @Param(required = false)

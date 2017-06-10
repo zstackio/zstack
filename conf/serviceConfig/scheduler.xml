@@ -1,45 +1,45 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <service xmlns="http://zstack.org/schema/zstack">
-    <id>core.scheduler</id>
+    <id>scheduler</id>
     <interceptor>SchedulerApiInterceptor</interceptor>
     <message>
-      <name>org.zstack.core.scheduler.APIDeleteSchedulerJobMsg</name>
+      <name>org.zstack.scheduler.APIDeleteSchedulerJobMsg</name>
     </message>
 
     <message>
-        <name>org.zstack.core.scheduler.APIQuerySchedulerJobMsg</name>
+        <name>org.zstack.scheduler.APIQuerySchedulerJobMsg</name>
         <serviceId>query</serviceId>
     </message>
 
     <message>
-        <name>org.zstack.core.scheduler.APIUpdateSchedulerJobMsg</name>
+        <name>org.zstack.scheduler.APIUpdateSchedulerJobMsg</name>
     </message>
 
     <message>
-        <name>org.zstack.header.core.scheduler.APICreateSchedulerJobMessage</name>
+        <name>org.zstack.scheduler.APIChangeSchedulerStateMsg</name>
     </message>
 
     <message>
-        <name>org.zstack.core.scheduler.APIChangeSchedulerStateMsg</name>
+        <name>org.zstack.scheduler.APICreateSchedulerTriggerMsg</name>
     </message>
 
     <message>
-        <name>org.zstack.core.scheduler.APICreateSchedulerTriggerMsg</name>
+        <name>org.zstack.scheduler.APIUpdateSchedulerTriggerMsg</name>
     </message>
 
     <message>
-        <name>org.zstack.core.scheduler.APIUpdateSchedulerTriggerMsg</name>
+        <name>org.zstack.scheduler.APIDeleteSchedulerTriggerMsg</name>
     </message>
 
     <message>
-        <name>org.zstack.core.scheduler.APIDeleteSchedulerTriggerMsg</name>
+        <name>org.zstack.scheduler.APIAddSchedulerJobToSchedulerTriggerMsg</name>
     </message>
 
     <message>
-        <name>org.zstack.core.scheduler.APIAddSchedulerJobToSchedulerTriggerMsg</name>
+        <name>org.zstack.scheduler.APIRemoveSchedulerJobFromSchedulerTriggerMsg</name>
     </message>
 
     <message>
-        <name>org.zstack.core.scheduler.APIRemoveSchedulerJobFromSchedulerTriggerMsg</name>
+        <name>org.zstack.scheduler.APICreateSchedulerJobMsg</name>
     </message>
 </service>

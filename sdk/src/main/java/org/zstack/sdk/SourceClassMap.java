@@ -49,6 +49,7 @@ public class SourceClassMap {
 			put("org.zstack.header.console.ConsoleProxyAgentInventory", "org.zstack.sdk.ConsoleProxyAgentInventory");
 			put("org.zstack.header.core.progress.TaskProgressInventory", "org.zstack.sdk.TaskProgressInventory");
 			put("org.zstack.header.core.scheduler.SchedulerJobInventory", "org.zstack.sdk.SchedulerJobInventory");
+			put("org.zstack.header.core.scheduler.SchedulerJobSchedulerTriggerInventory", "org.zstack.sdk.SchedulerJobSchedulerTriggerInventory");
 			put("org.zstack.header.core.scheduler.SchedulerTriggerInventory", "org.zstack.sdk.SchedulerTriggerInventory");
 			put("org.zstack.header.core.webhooks.WebhookInventory", "org.zstack.sdk.WebhookInventory");
 			put("org.zstack.header.datacenter.DataCenterInventory", "org.zstack.sdk.DataCenterInventory");
@@ -249,6 +250,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.RootVolumeSpending", "org.zstack.billing.RootVolumeSpending");
 			put("org.zstack.sdk.RootVolumeSpendingInventory", "org.zstack.billing.RootVolumeSpendingInventory");
 			put("org.zstack.sdk.SchedulerJobInventory", "org.zstack.header.core.scheduler.SchedulerJobInventory");
+			put("org.zstack.sdk.SchedulerJobSchedulerTriggerInventory", "org.zstack.header.core.scheduler.SchedulerJobSchedulerTriggerInventory");
 			put("org.zstack.sdk.SchedulerTriggerInventory", "org.zstack.header.core.scheduler.SchedulerTriggerInventory");
 			put("org.zstack.sdk.SecurityGroupIngressRuleTO", "org.zstack.network.securitygroup.SecurityGroupIngressRuleTO");
 			put("org.zstack.sdk.SecurityGroupInventory", "org.zstack.network.securitygroup.SecurityGroupInventory");

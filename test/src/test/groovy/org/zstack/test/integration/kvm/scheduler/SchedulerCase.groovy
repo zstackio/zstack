@@ -1,12 +1,16 @@
 package org.zstack.test.integration.kvm.scheduler
 
 import org.quartz.JobKey
+import org.quartz.Trigger
 import org.quartz.TriggerKey
 import org.quartz.impl.matchers.GroupMatcher
 import org.springframework.http.HttpEntity
+import org.zstack.compute.host.HostGlobalConfig
 import org.zstack.core.db.Q
-import org.zstack.core.scheduler.SchedulerConstant
-import org.zstack.core.scheduler.SchedulerFacadeImpl
+import org.zstack.kvm.KVMSecurityGroupBackend
+import org.zstack.network.securitygroup.SecurityGroupConstant
+import org.zstack.scheduler.SchedulerConstant
+import org.zstack.scheduler.SchedulerFacadeImpl
 import org.zstack.header.core.scheduler.SchedulerJobSchedulerTriggerRefVO
 import org.zstack.header.core.scheduler.SchedulerJobSchedulerTriggerRefVO_
 import org.zstack.header.core.scheduler.SchedulerJobVO
@@ -17,8 +21,10 @@ import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
-import org.zstack.network.securitygroup.SecurityGroupConstant
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant
+import org.zstack.scheduler.SchedulerType
+import org.zstack.sdk.AccountInventory
+import org.zstack.sdk.AddSchedulerJobToSchedulerTriggerAction
 import org.zstack.sdk.CreateSchedulerTriggerAction
 import org.zstack.sdk.SchedulerJobInventory
 import org.zstack.sdk.SchedulerTriggerInventory
@@ -27,6 +33,9 @@ import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
+import org.zstack.utils.gson.JSONObjectUtil
+
+import java.sql.Timestamp
 
 /**
  * Created by AlanJager on 2017/6/7.
@@ -167,40 +176,51 @@ class SchedulerCase extends SubCase {
             testSchedulerTriggerAPI()
             testSchedulerTriggerApiMessageInterceptor()
             testAddAndRemoveSchedulerJobToOrFromTriggerAPI()
+            testAddSchedulerJobToTriggerInterceptor()
             testPauseResumeDeleteSchedulerTask()
+            testTriggerStopTimeCalculation()
+            testVmStateChangeCauseSchedulerPause()
         }
     }
-    
+
     void testSchedulerJobAPI() {
         VmInstanceInventory vm = env.inventoryByName("vm")
 
         // test create scheduler job
-        SchedulerJobInventory startInv = createStartVmInstanceSchedulerJob {
-            vmUuid = vm.uuid
+        SchedulerJobInventory startInv = createSchedulerJob {
+            targetResourceUuid = vm.uuid
+            description = "a job to start a vm"
             name = "start"
+            type = SchedulerType.START_VM
         } as SchedulerJobInventory
         SchedulerJobVO startVO = dbFindByUuid(startInv.getUuid(), SchedulerJobVO.class)
         assert startVO.name == startInv.name
 
-        SchedulerJobInventory rebootInv = createRebootVmInstanceSchedulerJob {
-            vmUuid = vm.uuid
+        SchedulerJobInventory rebootInv = createSchedulerJob {
+            targetResourceUuid = vm.uuid
             name = "reboot"
+            type = SchedulerType.REBOOT_VM
         } as SchedulerJobInventory
         SchedulerJobVO rebootVO = dbFindByUuid(rebootInv.getUuid(), SchedulerJobVO.class)
         assert rebootVO.name == rebootInv.name
 
 
-        SchedulerJobInventory stopInv = createStopVmInstanceSchedulerJob {
-            vmUuid = vm.uuid
+        SchedulerJobInventory stopInv = createSchedulerJob {
+            targetResourceUuid = vm.uuid
             name = "stop"
+            type = SchedulerType.STOP_VM
         } as SchedulerJobInventory
         SchedulerJobVO stopVO = dbFindByUuid(stopInv.getUuid(), SchedulerJobVO.class)
         assert stopVO.name == stopInv.name
 
-        SchedulerJobInventory snapshotSchedulerInv = createVolumeSnapshotSchedulerJob {
+        Map<String, String> ps = new HashMap<>()
+        ps.put("snapshotName", "test")
+        ps.put("snapshotDescription", "test")
+        SchedulerJobInventory snapshotSchedulerInv = createSchedulerJob {
             name = "snapshot"
-            volumeUuid = vm.getRootVolumeUuid()
-            snapShotName = "test"
+            targetResourceUuid = vm.getRootVolumeUuid()
+            type = SchedulerType.VOLUME_SNAPSHOT
+            parameters = ps
         } as SchedulerJobInventory
         SchedulerJobVO createVolumeSnapshotSchedulerVO = dbFindByUuid(snapshotSchedulerInv.getUuid(), SchedulerJobVO.class)
         assert createVolumeSnapshotSchedulerVO.name == snapshotSchedulerInv.name
@@ -357,6 +377,42 @@ class SchedulerCase extends SubCase {
         assert ret9.error != null
     }
 
+    void testAddSchedulerJobToTriggerInterceptor() {
+        VmInstanceInventory vm = env.inventoryByName("vm")
+
+        SchedulerJobInventory job = createSchedulerJob {
+            targetResourceUuid = vm.uuid
+            name = "start"
+            type = SchedulerType.START_VM
+        } as SchedulerJobInventory
+
+        // test create scheduler trigger
+        SchedulerTriggerInventory trigger = createSchedulerTrigger {
+            name = "trigger"
+            description = "this is a trigger"
+            repeatCount = 1
+            startTime = 0
+            schedulerType = SchedulerConstant.SIMPLE_TYPE_STRING.toString()
+        } as SchedulerTriggerInventory
+
+        addSchedulerJobToSchedulerTrigger {
+            schedulerJobUuid = job.uuid
+            schedulerTriggerUuid = trigger.uuid
+        }
+
+        AddSchedulerJobToSchedulerTriggerAction action = new AddSchedulerJobToSchedulerTriggerAction()
+        action.schedulerJobUuid = job.getUuid()
+        action.schedulerTriggerUuid = trigger.getUuid()
+        action.sessionId = adminSession()
+        AddSchedulerJobToSchedulerTriggerAction.Result ret = action.call()
+        assert ret.error != null
+
+        removeSchedulerJobFromSchedulerTrigger {
+            schedulerJobUuid = job.uuid
+            schedulerTriggerUuid = trigger.uuid
+        }
+    }
+
     void testAddAndRemoveSchedulerJobToOrFromTriggerAPI() {
         VmInstanceInventory vm = env.inventoryByName("vm")
 
@@ -373,9 +429,10 @@ class SchedulerCase extends SubCase {
             return rsp
         }
 
-        SchedulerJobInventory job = createStartVmInstanceSchedulerJob {
-            vmUuid = vm.uuid
+        SchedulerJobInventory job = createSchedulerJob {
+            targetResourceUuid = vm.uuid
             name = "start"
+            type = SchedulerType.START_VM
         } as SchedulerJobInventory
 
         // test create scheduler trigger
@@ -383,7 +440,7 @@ class SchedulerCase extends SubCase {
             name = "trigger"
             description = "this is a trigger"
             repeatCount = 1
-            startTime = (new Date(0)).getTime()
+            startTime = 0
             schedulerType = SchedulerConstant.SIMPLE_TYPE_STRING.toString()
         } as SchedulerTriggerInventory
 
@@ -396,6 +453,11 @@ class SchedulerCase extends SubCase {
             vo = dbFindByUuid(vm.uuid, VmInstanceVO.class)
             assert vo.state == VmInstanceState.Running
             assert startVmCmd != null
+        }
+
+        removeSchedulerJobFromSchedulerTrigger {
+            schedulerJobUuid = job.uuid
+            schedulerTriggerUuid = trigger.uuid
         }
 
         //  create another scheduler trigger
@@ -451,9 +513,10 @@ class SchedulerCase extends SubCase {
 
         vo = dbFindByUuid(vm.uuid, VmInstanceVO.class)
         assert vo.state == VmInstanceState.Running
-        job = createStopVmInstanceSchedulerJob {
-            vmUuid = vm.uuid
+        job = createSchedulerJob {
+            targetResourceUuid = vm.uuid
             name = "stop"
+            type = SchedulerType.STOP_VM
         } as SchedulerJobInventory
 
         trigger = createSchedulerTrigger {
@@ -475,6 +538,11 @@ class SchedulerCase extends SubCase {
             assert stopVmCmd != null
         }
 
+        removeSchedulerJobFromSchedulerTrigger {
+            schedulerJobUuid = job.uuid
+            schedulerTriggerUuid = trigger.uuid
+        }
+
         startVmInstance {
             uuid = vm.uuid
         }
@@ -489,9 +557,10 @@ class SchedulerCase extends SubCase {
         startVmCmd = null
         startVmCmd = null
 
-        job = createRebootVmInstanceSchedulerJob {
-            vmUuid = vm.uuid
+        job = createSchedulerJob {
+            targetResourceUuid = vm.uuid
             name = "reboot"
+            type = SchedulerType.REBOOT_VM
         } as SchedulerJobInventory
 
         trigger = createSchedulerTrigger {
@@ -511,13 +580,58 @@ class SchedulerCase extends SubCase {
             assert startVmCmd != null
             assert stopVmCmd != null
         }
+
+        removeSchedulerJobFromSchedulerTrigger {
+            schedulerJobUuid = job.uuid
+            schedulerTriggerUuid = trigger.uuid
+        }
+
+        // test create volume snapshot job
+        KVMAgentCommands.TakeSnapshotCmd takeSnapshotCmd = null
+        env.afterSimulator(KVMConstant.KVM_TAKE_VOLUME_SNAPSHOT_PATH) { rsp, HttpEntity<String> e ->
+            takeSnapshotCmd = json(e.body, KVMAgentCommands.TakeSnapshotCmd.class)
+            return rsp
+        }
+
+        Map<String, String> ps = new HashMap<>()
+        ps.put("snapshotName", "test")
+        ps.put("snapshotDescription", "test")
+        job = createSchedulerJob {
+            targetResourceUuid = vm.getRootVolumeUuid()
+            name = "snapshot"
+            type = SchedulerType.VOLUME_SNAPSHOT
+            parameters = ps
+        } as SchedulerJobInventory
+
+        trigger = createSchedulerTrigger {
+            name = "trigger"
+            description = "this is a trigger"
+            repeatCount = 1
+            startTime = (new Date(0)).getTime()
+            schedulerType = SchedulerConstant.SIMPLE_TYPE_STRING.toString()
+        } as SchedulerTriggerInventory
+
+        addSchedulerJobToSchedulerTrigger {
+            schedulerJobUuid = job.getUuid()
+            schedulerTriggerUuid = trigger.getUuid()
+        }
+
+        retryInSecs {
+            assert takeSnapshotCmd != null
+        }
+
+        removeSchedulerJobFromSchedulerTrigger {
+            schedulerJobUuid = job.uuid
+            schedulerTriggerUuid = trigger.uuid
+        }
     }
 
     void testPauseResumeDeleteSchedulerTask() {
         VmInstanceInventory vm = env.inventoryByName("vm")
-        SchedulerJobInventory job = createStartVmInstanceSchedulerJob {
-            vmUuid = vm.uuid
+        SchedulerJobInventory job = createSchedulerJob {
+            targetResourceUuid = vm.uuid
             name = "start"
+            type = SchedulerType.START_VM
         } as SchedulerJobInventory
 
         SchedulerTriggerInventory trigger = createSchedulerTrigger {
@@ -554,5 +668,133 @@ class SchedulerCase extends SubCase {
                 .eq(SchedulerJobSchedulerTriggerRefVO_.schedulerTriggerUuid, trigger.getUuid())
                 .find()
         assert ref.state == SchedulerState.Enabled.toString()
+
+        removeSchedulerJobFromSchedulerTrigger {
+            schedulerJobUuid = job.uuid
+            schedulerTriggerUuid = trigger.uuid
+        }
+    }
+
+    void testTriggerStopTimeCalculation() {
+        SchedulerTriggerInventory trigger = createSchedulerTrigger {
+            name = "trigger"
+            description = "this is a trigger"
+            repeatCount = 2222
+            schedulerInterval = 222222
+            startTime = (new Date(0)).getTime() + 1
+            schedulerType = SchedulerConstant.SIMPLE_TYPE_STRING.toString()
+        } as SchedulerTriggerInventory
+
+        assert trigger.stopTime.getTime() == new Timestamp(1000L * 2222L * 222222L).getTime() + 1L * 1000L
+    }
+
+    void testVmStateChangeCauseSchedulerPause() {
+        HostGlobalConfig.AUTO_RECONNECT_ON_ERROR.updateValue(false)
+        HostGlobalConfig.PING_HOST_INTERVAL.updateValue(1)
+        VmInstanceInventory vm = env.inventoryByName("vm")
+
+
+        env.simulator(KVMSecurityGroupBackend.SECURITY_GROUP_REFRESH_RULE_ON_HOST_PATH) {
+            return new KVMAgentCommands.RefreshAllRulesOnHostResponse()
+        }
+
+        SchedulerJobInventory job = createSchedulerJob {
+            targetResourceUuid = vm.uuid
+            name = "start"
+            type = SchedulerType.START_VM
+        } as SchedulerJobInventory
+
+        SchedulerTriggerInventory trigger = createSchedulerTrigger {
+            name = "trigger"
+            description = "this is a trigger"
+            repeatCount = 2222
+            schedulerInterval = 222222
+            startTime = (new Date(0)).getTime()
+            schedulerType = SchedulerConstant.SIMPLE_TYPE_STRING.toString()
+        } as SchedulerTriggerInventory
+
+        addSchedulerJobToSchedulerTrigger {
+            schedulerJobUuid = job.uuid
+            schedulerTriggerUuid = trigger.uuid
+        }
+
+        env.afterSimulator(KVMConstant.KVM_PING_PATH) { KVMAgentCommands.PingResponse rsp, HttpEntity<String> e ->
+            KVMAgentCommands.PingCmd pingCmd = JSONObjectUtil.toObject(e.body,  KVMAgentCommands.PingCmd.class)
+            if (pingCmd.hostUuid == vm.hostUuid) {
+                rsp.success = false
+                rsp.setError("on purpose")
+            } else {
+                rsp.success = true
+            }
+            rsp.hostUuid = pingCmd.hostUuid
+            return rsp
+        }
+
+        VmInstanceVO vo
+        retryInSecs {
+            vo = dbFindByUuid(vm.uuid, VmInstanceVO.class)
+            assert vo.state == VmInstanceState.Unknown
+        }
+
+        Trigger.TriggerState state = scheduler.getScheduler().getTriggerState(TriggerKey.triggerKey(trigger.getUuid(), trigger.getUuid() + "." + job.getUuid()))
+        assert state == Trigger.TriggerState.PAUSED
+
+
+        env.afterSimulator(KVMConstant.KVM_PING_PATH) { KVMAgentCommands.PingResponse rsp, HttpEntity<String> e ->
+            KVMAgentCommands.PingCmd pingCmd = JSONObjectUtil.toObject(e.body,  KVMAgentCommands.PingCmd.class)
+            rsp.success = true
+            rsp.hostUuid = pingCmd.hostUuid
+            return rsp
+        }
+
+        reconnectHost {
+            uuid = vm.getHostUuid()
+        }
+        retryInSecs {
+            vo = dbFindByUuid(vm.uuid, VmInstanceVO.class)
+            assert vo.state == VmInstanceState.Running
+        }
+
+        state = scheduler.getScheduler().getTriggerState(TriggerKey.triggerKey(trigger.getUuid(), trigger.getUuid() + "." + job.getUuid()))
+        assert state == Trigger.TriggerState.NORMAL
+
+        AccountInventory account = createAccount {
+            name = "test"
+            password = "password"
+        } as AccountInventory
+
+        changeResourceOwner {
+            accountUuid = account.getUuid()
+            resourceUuid = vm.uuid
+        }
+        state = scheduler.getScheduler().getTriggerState(TriggerKey.triggerKey(trigger.getUuid(), trigger.getUuid() + "." + job.getUuid()))
+        assert state == Trigger.TriggerState.PAUSED
+
+        SchedulerJobSchedulerTriggerRefVO ref = Q.New(SchedulerJobSchedulerTriggerRefVO.class)
+                .eq(SchedulerJobSchedulerTriggerRefVO_.schedulerJobUuid, job.getUuid())
+                .eq(SchedulerJobSchedulerTriggerRefVO_.schedulerTriggerUuid, trigger.getUuid())
+                .find()
+        changeSchedulerState {
+            uuid = ref.getUuid()
+            stateEvent = "enable"
+        }
+        state = scheduler.getScheduler().getTriggerState(TriggerKey.triggerKey(trigger.getUuid(), trigger.getUuid() + "." + job.getUuid()))
+        assert state == Trigger.TriggerState.NORMAL
+
+
+        destroyVmInstance {
+            uuid = vm.uuid
+        }
+        state = scheduler.getScheduler().getTriggerState(TriggerKey.triggerKey(trigger.getUuid(), trigger.getUuid() + "." + job.getUuid()))
+        assert state == Trigger.TriggerState.PAUSED
+
+        expungeVmInstance {
+            uuid = vm.uuid
+        }
+
+        removeSchedulerJobFromSchedulerTrigger {
+            schedulerJobUuid = job.uuid
+            schedulerTriggerUuid = trigger.uuid
+        }
     }
 }

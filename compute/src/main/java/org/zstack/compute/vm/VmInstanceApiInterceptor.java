@@ -82,12 +82,6 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             validate((APISetVmStaticIpMsg) msg);
         } else if (msg instanceof APIStartVmInstanceMsg) {
             validate((APIStartVmInstanceMsg) msg);
-        } else if (msg instanceof APICreateStartVmInstanceSchedulerJobMsg) {
-            validate((APICreateStartVmInstanceSchedulerJobMsg) msg);
-        } else if (msg instanceof APICreateStopVmInstanceSchedulerJobMsg) {
-            validate((APICreateStopVmInstanceSchedulerJobMsg) msg);
-        } else if (msg instanceof APICreateRebootVmInstanceSchedulerJobMsg) {
-            validate((APICreateRebootVmInstanceSchedulerJobMsg) msg);
         } else if (msg instanceof APIGetInterdependentL3NetworksImagesMsg) {
             validate((APIGetInterdependentL3NetworksImagesMsg) msg);
         } else if (msg instanceof APIUpdateVmInstanceMsg) {
@@ -208,42 +202,6 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         // host uuid overrides cluster uuid
         if (msg.getHostUuid() != null) {
             msg.setClusterUuid(null);
-        }
-    }
-
-    private void validate(APICreateStartVmInstanceSchedulerJobMsg msg) {
-        // host uuid overrides cluster uuid
-        if (msg.getHostUuid() != null) {
-            msg.setClusterUuid(null);
-        }
-
-        SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
-        q.select(VmInstanceVO_.state);
-        q.add(VmInstanceVO_.uuid, Op.EQ, msg.getVmInstanceUuid());
-        VmInstanceState state = q.findValue();
-        if (state == VmInstanceState.Destroyed) {
-            throw new ApiMessageInterceptionException(operr("vm[uuid:%s] can only create scheduler when state is not Destroyed", msg.getVmInstanceUuid()));
-        }
-
-    }
-
-    private void validate(APICreateStopVmInstanceSchedulerJobMsg msg) {
-        SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
-        q.select(VmInstanceVO_.state);
-        q.add(VmInstanceVO_.uuid, Op.EQ, msg.getVmInstanceUuid());
-        VmInstanceState state = q.findValue();
-        if (state == VmInstanceState.Destroyed) {
-            throw new ApiMessageInterceptionException(operr("vm[uuid:%s] can only create scheduler when state is not Destroyed", msg.getVmInstanceUuid()));
-        }
-    }
-
-    private void validate(APICreateRebootVmInstanceSchedulerJobMsg msg) {
-        SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
-        q.select(VmInstanceVO_.state);
-        q.add(VmInstanceVO_.uuid, Op.EQ, msg.getVmInstanceUuid());
-        VmInstanceState state = q.findValue();
-        if (state == VmInstanceState.Destroyed) {
-            throw new ApiMessageInterceptionException(operr("vm[uuid:%s] can only create scheduler when state is not Destroyed", msg.getVmInstanceUuid()));
         }
     }
 

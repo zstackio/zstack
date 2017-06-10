@@ -4,7 +4,6 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.allocator.HostAllocatorManager;
-import org.zstack.core.Platform;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.*;
@@ -18,7 +17,6 @@ import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
 import org.zstack.core.jsonlabel.JsonLabel;
 import org.zstack.core.notification.N;
-import org.zstack.core.scheduler.SchedulerFacade;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
@@ -34,8 +32,6 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
-import org.zstack.header.core.scheduler.SchedulerJobInventory;
-import org.zstack.header.core.scheduler.SchedulerJobVO;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -109,8 +105,6 @@ public class VmInstanceBase extends AbstractVmInstance {
     protected PluginRegistry pluginRgty;
     @Autowired
     protected VmInstanceDeletionPolicyManager deletionPolicyMgr;
-    @Autowired
-    private SchedulerFacade schedulerFacade;
     @Autowired
     private HostAllocatorManager hostAllocatorMgr;
 
@@ -2031,18 +2025,18 @@ public class VmInstanceBase extends AbstractVmInstance {
     protected void handleApiMessage(APIMessage msg) {
         if (msg instanceof APIStopVmInstanceMsg) {
             handle((APIStopVmInstanceMsg) msg);
-        } else if (msg instanceof APICreateStopVmInstanceSchedulerJobMsg) {
-            handle((APICreateStopVmInstanceSchedulerJobMsg) msg);
+//        } else if (msg instanceof APICreateStopVmInstanceSchedulerJobMsg) {
+//            handle((APICreateStopVmInstanceSchedulerJobMsg) msg);
         } else if (msg instanceof APIRebootVmInstanceMsg) {
             handle((APIRebootVmInstanceMsg) msg);
-        } else if (msg instanceof APICreateRebootVmInstanceSchedulerJobMsg) {
-            handle((APICreateRebootVmInstanceSchedulerJobMsg) msg);
+//        } else if (msg instanceof APICreateRebootVmInstanceSchedulerJobMsg) {
+//            handle((APICreateRebootVmInstanceSchedulerJobMsg) msg);
         } else if (msg instanceof APIDestroyVmInstanceMsg) {
             handle((APIDestroyVmInstanceMsg) msg);
         } else if (msg instanceof APIStartVmInstanceMsg) {
             handle((APIStartVmInstanceMsg) msg);
-        } else if (msg instanceof APICreateStartVmInstanceSchedulerJobMsg) {
-            handle((APICreateStartVmInstanceSchedulerJobMsg) msg);
+//        } else if (msg instanceof APICreateStartVmInstanceSchedulerJobMsg) {
+//            handle((APICreateStartVmInstanceSchedulerJobMsg) msg);
         } else if (msg instanceof APIMigrateVmMsg) {
             handle((APIMigrateVmMsg) msg);
         } else if (msg instanceof APIAttachL3NetworkToVmMsg) {
@@ -4515,84 +4509,6 @@ public class VmInstanceBase extends AbstractVmInstance {
                 stopVm(msg, chain);
             }
         });
-    }
-
-    protected void handle(final APICreateStopVmInstanceSchedulerJobMsg msg) {
-        APICreateStopVmInstanceSchedulerEvent evt = new APICreateStopVmInstanceSchedulerEvent(msg.getId());
-        StopVmInstanceJob job = new StopVmInstanceJob(msg);
-        job.setVmUuid(msg.getVmInstanceUuid());
-        job.setTargetResourceUuid(msg.getVmInstanceUuid());
-        job.setAccountUuid(msg.getSession().getAccountUuid());
-
-        SchedulerJobVO vo = new SchedulerJobVO();
-        if (job.getResourceUuid() != null) {
-            vo.setUuid(job.getResourceUuid());
-        } else {
-            vo.setUuid(Platform.getUuid());
-        }
-        vo.setName(msg.getName());
-        vo.setDescription(msg.getDescription());
-        vo.setTargetResourceUuid(msg.getVmInstanceUuid());
-        vo.setJobData(JSONObjectUtil.toJsonString(job));
-        vo.setManagementNodeUuid(Platform.getManagementServerId());
-        vo.setJobClassName(job.getClass().getName());
-        dbf.persistAndRefresh(vo);
-        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), SchedulerJobVO.class);
-
-        evt.setInventory(SchedulerJobInventory.valueOf(vo));
-        bus.publish(evt);
-    }
-
-    protected void handle(final APICreateStartVmInstanceSchedulerJobMsg msg) {
-        APICreateStartVmInstanceSchedulerEvent evt = new APICreateStartVmInstanceSchedulerEvent(msg.getId());
-        StartVmInstanceJob job = new StartVmInstanceJob(msg);
-        job.setVmUuid(msg.getVmInstanceUuid());
-        job.setTargetResourceUuid(msg.getVmInstanceUuid());
-        job.setAccountUuid(msg.getSession().getAccountUuid());
-
-        SchedulerJobVO vo = new SchedulerJobVO();
-        if (job.getResourceUuid() != null) {
-            vo.setUuid(job.getResourceUuid());
-        } else {
-            vo.setUuid(Platform.getUuid());
-        }
-        vo.setName(msg.getName());
-        vo.setDescription(msg.getDescription());
-        vo.setTargetResourceUuid(msg.getVmInstanceUuid());
-        vo.setJobData(JSONObjectUtil.toJsonString(job));
-        vo.setManagementNodeUuid(Platform.getManagementServerId());
-        vo.setJobClassName(job.getClass().getName());
-        dbf.persistAndRefresh(vo);
-        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), SchedulerJobVO.class);
-
-        evt.setInventory(SchedulerJobInventory.valueOf(vo));
-        bus.publish(evt);
-    }
-
-    protected void handle(final APICreateRebootVmInstanceSchedulerJobMsg msg) {
-        APICreateRebootVmInstanceSchedulerEvent evt = new APICreateRebootVmInstanceSchedulerEvent(msg.getId());
-        RebootVmInstanceJob job = new RebootVmInstanceJob(msg);
-        job.setVmUuid(msg.getVmInstanceUuid());
-        job.setTargetResourceUuid(msg.getVmInstanceUuid());
-        job.setAccountUuid(msg.getSession().getAccountUuid());
-
-        SchedulerJobVO vo = new SchedulerJobVO();
-        if (job.getResourceUuid() != null) {
-            vo.setUuid(job.getResourceUuid());
-        } else {
-            vo.setUuid(Platform.getUuid());
-        }
-        vo.setName(msg.getName());
-        vo.setDescription(msg.getDescription());
-        vo.setTargetResourceUuid(msg.getVmInstanceUuid());
-        vo.setJobData(JSONObjectUtil.toJsonString(job));
-        vo.setManagementNodeUuid(Platform.getManagementServerId());
-        vo.setJobClassName(job.getClass().getName());
-        dbf.persistAndRefresh(vo);
-        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), SchedulerJobVO.class);
-
-        evt.setInventory(SchedulerJobInventory.valueOf(vo));
-        bus.publish(evt);
     }
 
     protected void pauseVm(final APIPauseVmInstanceMsg msg, final SyncTaskChain taskChain) {

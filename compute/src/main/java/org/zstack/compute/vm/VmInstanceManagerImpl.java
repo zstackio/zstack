@@ -15,8 +15,6 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.jsonlabel.JsonLabel;
 import org.zstack.core.notification.N;
-import org.zstack.core.scheduler.SchedulerConstant;
-import org.zstack.core.scheduler.SchedulerFacade;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.CancelablePeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
@@ -163,8 +161,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
     private EventFacade evtf;
     @Autowired
     private HostAllocatorManager hostAllocatorMgr;
-    @Autowired
-    private SchedulerFacade schedulerFacade;
 
     @Override
     @MessageSafe
@@ -1139,9 +1135,10 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         check((APIChangeResourceOwnerMsg) msg, pairs);
                     } else if (msg instanceof APIRecoverVmInstanceMsg) {
                         check((APIRecoverVmInstanceMsg) msg, pairs);
-                    } else if (msg instanceof APICreateSchedulerJobMessage) {
-                        check((APICreateSchedulerJobMessage) msg, pairs);
                     }
+//                    } else if (msg instanceof APICreateSchedulerJobMessage) {
+//                        check((APICreateSchedulerJobMessage) msg, pairs);
+//                    }
                 } else {
                     if (msg instanceof APIChangeResourceOwnerMsg) {
                         check((APIChangeResourceOwnerMsg) msg, pairs);
@@ -1195,10 +1192,10 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 usage.setUsed(new VmQuotaUtil().getUsedAllVolumeSize(accountUuid));
                 usages.add(usage);
 
-                usage = new Quota.QuotaUsage();
-                usage.setName(SchedulerConstant.QUOTA_SCHEDULER_NUM);
-                usage.setUsed(new VmQuotaUtil().getUsedSchedulerNum(accountUuid));
-                usages.add(usage);
+//                usage = new Quota.QuotaUsage();
+//                usage.setName(SchedulerConstant.QUOTA_SCHEDULER_NUM);
+//                usage.setUsed(new VmQuotaUtil().getUsedSchedulerNum(accountUuid));
+//                usages.add(usage);
 
                 return usages;
             }
@@ -1611,24 +1608,24 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 }
             }
 
-            private void check(APICreateSchedulerJobMessage msg, Map<String, Quota.QuotaPair> pairs) {
-                String currentAccountUuid = msg.getSession().getAccountUuid();
-                String resourceTargetOwnerAccountUuid = msg.getSession().getAccountUuid();
-
-                long schedulerNumQuota = pairs.get(SchedulerConstant.QUOTA_SCHEDULER_NUM).getValue();
-                long schedulerNumUsed = new VmQuotaUtil().getUsedSchedulerNum(resourceTargetOwnerAccountUuid);
-                {
-                    QuotaUtil.QuotaCompareInfo quotaCompareInfo;
-                    quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
-                    quotaCompareInfo.currentAccountUuid = currentAccountUuid;
-                    quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
-                    quotaCompareInfo.quotaName = SchedulerConstant.QUOTA_SCHEDULER_NUM;
-                    quotaCompareInfo.quotaValue = schedulerNumQuota;
-                    quotaCompareInfo.currentUsed = schedulerNumUsed;
-                    quotaCompareInfo.request = 1;
-                    new QuotaUtil().CheckQuota(quotaCompareInfo);
-                }
-            }
+//            private void check(APICreateSchedulerJobMessage msg, Map<String, Quota.QuotaPair> pairs) {
+//                String currentAccountUuid = msg.getSession().getAccountUuid();
+//                String resourceTargetOwnerAccountUuid = msg.getSession().getAccountUuid();
+//
+//                long schedulerNumQuota = pairs.get(SchedulerConstant.QUOTA_SCHEDULER_NUM).getValue();
+//                long schedulerNumUsed = new VmQuotaUtil().getUsedSchedulerNum(resourceTargetOwnerAccountUuid);
+//                {
+//                    QuotaUtil.QuotaCompareInfo quotaCompareInfo;
+//                    quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
+//                    quotaCompareInfo.currentAccountUuid = currentAccountUuid;
+//                    quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
+//                    quotaCompareInfo.quotaName = SchedulerConstant.QUOTA_SCHEDULER_NUM;
+//                    quotaCompareInfo.quotaValue = schedulerNumQuota;
+//                    quotaCompareInfo.currentUsed = schedulerNumUsed;
+//                    quotaCompareInfo.request = 1;
+//                    new QuotaUtil().CheckQuota(quotaCompareInfo);
+//                }
+//            }
         };
 
         Quota quota = new Quota();
@@ -1664,10 +1661,10 @@ public class VmInstanceManagerImpl extends AbstractService implements
         p.setValue(SizeUnit.TERABYTE.toByte(10));
         quota.addPair(p);
 
-        p = new Quota.QuotaPair();
-        p.setName(SchedulerConstant.QUOTA_SCHEDULER_NUM);
-        p.setValue(80);
-        quota.addPair(p);
+//        p = new Quota.QuotaPair();
+//        p.setName(SchedulerConstant.QUOTA_SCHEDULER_NUM);
+//        p.setValue(80);
+//        quota.addPair(p);
 
         quota.addMessageNeedValidation(APICreateVmInstanceMsg.class);
         quota.addMessageNeedValidation(APIRecoverVmInstanceMsg.class);
@@ -1677,11 +1674,11 @@ public class VmInstanceManagerImpl extends AbstractService implements
         quota.addMessageNeedValidation(APIChangeResourceOwnerMsg.class);
         quota.addMessageNeedValidation(StartVmInstanceMsg.class);
         // scheduler
-        quota.addMessageNeedValidation(APICreateSchedulerJobMessage.class);
-        quota.addMessageNeedValidation(APICreateStartVmInstanceSchedulerJobMsg.class);
-        quota.addMessageNeedValidation(APICreateVolumeSnapshotSchedulerJobMsg.class);
-        quota.addMessageNeedValidation(APICreateRebootVmInstanceSchedulerJobMsg.class);
-        quota.addMessageNeedValidation(APICreateStopVmInstanceSchedulerJobMsg.class);
+//        quota.addMessageNeedValidation(APICreateSchedulerJobMessage.class);
+//        quota.addMessageNeedValidation(APICreateStartVmInstanceSchedulerJobMsg.class);
+//        quota.addMessageNeedValidation(APICreateVolumeSnapshotSchedulerJobMsg.class);
+//        quota.addMessageNeedValidation(APICreateRebootVmInstanceSchedulerJobMsg.class);
+//        quota.addMessageNeedValidation(APICreateStopVmInstanceSchedulerJobMsg.class);
 
 
         quota.setOperator(checker);

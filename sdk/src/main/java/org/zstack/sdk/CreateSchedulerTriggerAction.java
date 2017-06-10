@@ -94,7 +94,7 @@ public class CreateSchedulerTriggerAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/scheduler/trigger";
+        info.path = "/scheduler/triggers";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";

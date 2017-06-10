@@ -20,7 +20,9 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.debug.APIDebugSignalEvent;
 import org.zstack.core.debug.APIDebugSignalMsg;
 import org.zstack.core.debug.DebugSignal;
-import org.zstack.core.scheduler.*;
+import org.zstack.network.securitygroup.SecurityGroupInventory;
+import org.zstack.network.securitygroup.VmNicSecurityGroupRefInventory;
+import org.zstack.scheduler.*;
 import org.zstack.header.allocator.APIGetCpuMemoryCapacityReply;
 import org.zstack.header.apimediator.APIIsReadyToGoMsg;
 import org.zstack.header.apimediator.ApiMediatorConstant;
@@ -89,10 +91,7 @@ import org.zstack.header.zone.ZoneInventory;
 import org.zstack.kvm.APIAddKVMHostMsg;
 import org.zstack.kvm.APIUpdateKVMHostMsg;
 import org.zstack.kvm.KVMHostInventory;
-import org.zstack.network.securitygroup.APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO;
 import org.zstack.network.securitygroup.*;
-import org.zstack.network.securitygroup.SecurityGroupInventory;
-import org.zstack.network.securitygroup.VmNicSecurityGroupRefInventory;
 import org.zstack.network.service.eip.APIUpdateEipEvent;
 import org.zstack.network.service.eip.APIUpdateEipMsg;
 import org.zstack.network.service.eip.EipInventory;
@@ -2329,13 +2328,13 @@ public class Api implements CloudBusEventListener {
         return createSecurityGroupByFullConfig(inv, adminSession);
     }
 
-    public SecurityGroupInventory addSecurityGroupRuleByFullConfig(String securityGroupUuid, SecurityGroupRuleAO ao) throws ApiSenderException {
-        List<SecurityGroupRuleAO> aos = new ArrayList<SecurityGroupRuleAO>(1);
+    public SecurityGroupInventory addSecurityGroupRuleByFullConfig(String securityGroupUuid, APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO ao) throws ApiSenderException {
+        List<APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO> aos = new ArrayList<APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO>(1);
         aos.add(ao);
         return addSecurityGroupRuleByFullConfig(securityGroupUuid, aos);
     }
 
-    public SecurityGroupInventory addSecurityGroupRuleByFullConfig(String securityGroupUuid, List<SecurityGroupRuleAO> aos) throws ApiSenderException {
+    public SecurityGroupInventory addSecurityGroupRuleByFullConfig(String securityGroupUuid, List<APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO> aos) throws ApiSenderException {
         return addSecurityGroupRuleByFullConfig(securityGroupUuid, aos, adminSession);
     }
 
@@ -2357,7 +2356,7 @@ public class Api implements CloudBusEventListener {
         );
     }
 
-    public SecurityGroupInventory addSecurityGroupRuleByFullConfig(String securityGroupUuid, List<SecurityGroupRuleAO> aos, SessionInventory session)
+    public SecurityGroupInventory addSecurityGroupRuleByFullConfig(String securityGroupUuid, List<APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO> aos, SessionInventory session)
             throws ApiSenderException {
         AddSecurityGroupRuleAction action = new AddSecurityGroupRuleAction();
         action.rules = aos;
@@ -4181,36 +4180,6 @@ public class Api implements CloudBusEventListener {
         sender.send(msg, APIDebugSignalEvent.class);
     }
 
-    public String createVolumeSnapshotScheduler(String volUuid, SessionInventory session, String type, Long startDate, Integer interval, Integer repeatCount) throws ApiSenderException {
-        Date date = new Date();
-        APICreateVolumeSnapshotSchedulerJobMsg msg = new APICreateVolumeSnapshotSchedulerJobMsg();
-        msg.setSession(session == null ? adminSession : session);
-        msg.setName("test");
-        msg.setSnapShotName("Snapshot-" + volUuid);
-        msg.setVolumeSnapshotDescription("Test snapshot");
-        msg.setVolumeUuid(volUuid);
-        msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
-        ApiSender sender = new ApiSender();
-        sender.setTimeout(timeout);
-        APICreateVolumeSnapshotSchedulerJobEvent evt = sender.send(msg, APICreateVolumeSnapshotSchedulerJobEvent.class);
-        logger.debug(MessageCommandRecorder.endAndToString());
-        return evt.getInventory().getUuid();
-    }
-
-    public void createCronScheduler(String volUuid, String type, String cronTask, SessionInventory session) throws ApiSenderException {
-        APICreateVolumeSnapshotSchedulerJobMsg msg = new APICreateVolumeSnapshotSchedulerJobMsg();
-        msg.setSession(session == null ? adminSession : session);
-        msg.setName("testCron");
-        msg.setSnapShotName("Snapshot-" + volUuid);
-        msg.setVolumeSnapshotDescription("Test snapshot");
-        msg.setVolumeUuid(volUuid);
-        msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
-        ApiSender sender = new ApiSender();
-        sender.setTimeout(timeout);
-        APICreateVolumeSnapshotSchedulerJobEvent evt = sender.send(msg, APICreateVolumeSnapshotSchedulerJobEvent.class);
-        logger.debug(MessageCommandRecorder.endAndToString());
-    }
-
     public SchedulerJobInventory updateScheduler(String uuid, String schedulerName, String schedulerDescription, SessionInventory session) throws ApiSenderException {
         APIUpdateSchedulerJobMsg msg = new APIUpdateSchedulerJobMsg();
         if (schedulerName != null) {
@@ -4240,58 +4209,6 @@ public class Api implements CloudBusEventListener {
         sender.setTimeout(timeout);
         APIDeleteSchedulerJobEvent evt = sender.send(msg, APIDeleteSchedulerJobEvent.class);
         logger.debug(MessageCommandRecorder.endAndToString());
-    }
-
-    public void stopVmInstanceScheduler(String vmUuid,
-                                        String type,
-                                        Long startDate,
-                                        Integer interval,
-                                        Integer repeatCount,
-                                        SessionInventory session) throws ApiSenderException {
-        APICreateStopVmInstanceSchedulerJobMsg msg = new APICreateStopVmInstanceSchedulerJobMsg();
-        msg.setSession(session == null ? adminSession : session);
-        msg.setName("stopvm");
-        msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
-        msg.setVmUuid(vmUuid);
-        ApiSender sender = new ApiSender();
-        sender.setTimeout(timeout);
-        APICreateStopVmInstanceSchedulerEvent evt = sender.send(msg, APICreateStopVmInstanceSchedulerEvent.class);
-        logger.debug(MessageCommandRecorder.endAndToString());
-    }
-
-    public void startVmInstanceScheduler(String vmUuid,
-                                         String type,
-                                         Long startDate,
-                                         Integer interval,
-                                         Integer repeatCount,
-                                         SessionInventory session) throws ApiSenderException {
-        APICreateStartVmInstanceSchedulerJobMsg msg = new APICreateStartVmInstanceSchedulerJobMsg();
-        msg.setSession(session == null ? adminSession : session);
-        msg.setName("startvm");
-        msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
-        msg.setVmUuid(vmUuid);
-        ApiSender sender = new ApiSender();
-        sender.setTimeout(timeout);
-        APICreateStartVmInstanceSchedulerEvent evt = sender.send(msg, APICreateStartVmInstanceSchedulerEvent.class);
-        logger.debug(MessageCommandRecorder.endAndToString());
-    }
-
-    public SchedulerJobInventory rebootVmInstanceScheduler(String vmUuid,
-                                                           String type,
-                                                           Long startDate,
-                                                           Integer interval,
-                                                           Integer repeatCount,
-                                                           SessionInventory session) throws ApiSenderException {
-        APICreateRebootVmInstanceSchedulerJobMsg msg = new APICreateRebootVmInstanceSchedulerJobMsg();
-        msg.setSession(session == null ? adminSession : session);
-        msg.setName("rebootvm");
-        msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
-        msg.setVmUuid(vmUuid);
-        ApiSender sender = new ApiSender();
-        sender.setTimeout(timeout);
-        APICreateRebootVmInstanceSchedulerEvent evt = sender.send(msg, APICreateRebootVmInstanceSchedulerEvent.class);
-        logger.debug(MessageCommandRecorder.endAndToString());
-        return evt.getInventory();
     }
 
     public SchedulerJobInventory changeSchedulerState(String uuid, String state, SessionInventory session) throws ApiSenderException {
