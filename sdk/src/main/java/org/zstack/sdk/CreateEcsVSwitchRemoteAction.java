@@ -22,6 +22,21 @@ public class CreateEcsVSwitchRemoteAction extends AbstractAction {
         }
     }
 
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String vpcUuid;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String identityZoneUuid;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String cidrBlock;
+
+    @Param(required = true, maxLength = 64, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String name;
+
+    @Param(required = false, maxLength = 256, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String description;
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 
@@ -76,7 +91,7 @@ public class CreateEcsVSwitchRemoteAction extends AbstractAction {
         info.path = "/hybrid/aliyun/vswitch";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

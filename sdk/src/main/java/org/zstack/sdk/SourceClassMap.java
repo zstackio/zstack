@@ -11,6 +11,8 @@ public class SourceClassMap {
 			put("org.zstack.billing.PriceInventory", "org.zstack.sdk.PriceInventory");
 			put("org.zstack.billing.RootVolumeSpending", "org.zstack.sdk.RootVolumeSpending");
 			put("org.zstack.billing.RootVolumeSpendingInventory", "org.zstack.sdk.RootVolumeSpendingInventory");
+			put("org.zstack.billing.SnapShotSpendingInventory", "org.zstack.sdk.SnapShotSpendingInventory");
+			put("org.zstack.billing.SnapshotSpending", "org.zstack.sdk.SnapshotSpending");
 			put("org.zstack.billing.Spending", "org.zstack.sdk.Spending");
 			put("org.zstack.billing.SpendingDetails", "org.zstack.sdk.SpendingDetails");
 			put("org.zstack.billing.VmSpending", "org.zstack.sdk.VmSpending");
@@ -54,6 +56,13 @@ public class SourceClassMap {
 			put("org.zstack.header.errorcode.ErrorCodeList", "org.zstack.sdk.ErrorCodeList");
 			put("org.zstack.header.host.HostInventory", "org.zstack.sdk.HostInventory");
 			put("org.zstack.header.hybrid.network.eip.HybridEipAddressInventory", "org.zstack.sdk.HybridEipAddressInventory");
+			put("org.zstack.header.hybrid.network.vpn.VpcUserVpnGatewayInventory", "org.zstack.sdk.VpcUserVpnGatewayInventory");
+			put("org.zstack.header.hybrid.network.vpn.VpcVpnConnectionInventory", "org.zstack.sdk.VpcVpnConnectionInventory");
+			put("org.zstack.header.hybrid.network.vpn.VpcVpnGatewayInventory", "org.zstack.sdk.VpcVpnGatewayInventory");
+			put("org.zstack.header.hybrid.network.vpn.VpcVpnIkeConfigInventory", "org.zstack.sdk.VpcVpnIkeConfigInventory");
+			put("org.zstack.header.hybrid.network.vpn.VpcVpnIkeConfigStruct", "org.zstack.sdk.VpcVpnIkeConfigStruct");
+			put("org.zstack.header.hybrid.network.vpn.VpcVpnIpSecConfigInventory", "org.zstack.sdk.VpcVpnIpSecConfigInventory");
+			put("org.zstack.header.hybrid.network.vpn.VpcVpnIpSecConfigStruct", "org.zstack.sdk.VpcVpnIpSecConfigStruct");
 			put("org.zstack.header.identity.AccountConstant$StatementEffect", "org.zstack.sdk.PolicyStatementEffect");
 			put("org.zstack.header.identity.AccountInventory", "org.zstack.sdk.AccountInventory");
 			put("org.zstack.header.identity.AccountResourceRefInventory", "org.zstack.sdk.AccountResourceRefInventory");
@@ -248,7 +257,9 @@ public class SourceClassMap {
 			put("org.zstack.sdk.SharedResourceInventory", "org.zstack.header.identity.SharedResourceInventory");
 			put("org.zstack.sdk.ShellResult", "org.zstack.kvm.APIKvmRunShellEvent$ShellResult");
 			put("org.zstack.sdk.SimulatorHostInventory", "org.zstack.header.simulator.SimulatorHostInventory");
+			put("org.zstack.sdk.SnapShotSpendingInventory", "org.zstack.billing.SnapShotSpendingInventory");
 			put("org.zstack.sdk.SnapshotLeafInventory", "org.zstack.header.storage.snapshot.VolumeSnapshotTree$SnapshotLeafInventory");
+			put("org.zstack.sdk.SnapshotSpending", "org.zstack.billing.SnapshotSpending");
 			put("org.zstack.sdk.Spending", "org.zstack.billing.Spending");
 			put("org.zstack.sdk.SpendingDetails", "org.zstack.billing.SpendingDetails");
 			put("org.zstack.sdk.SystemTagInventory", "org.zstack.header.tag.SystemTagInventory");
@@ -279,8 +290,15 @@ public class SourceClassMap {
 			put("org.zstack.sdk.VolumeSnapshotBackupStorageRefInventory", "org.zstack.header.storage.snapshot.VolumeSnapshotBackupStorageRefInventory");
 			put("org.zstack.sdk.VolumeSnapshotInventory", "org.zstack.header.storage.snapshot.VolumeSnapshotInventory");
 			put("org.zstack.sdk.VolumeSnapshotTreeInventory", "org.zstack.header.storage.snapshot.VolumeSnapshotTreeInventory");
+			put("org.zstack.sdk.VpcUserVpnGatewayInventory", "org.zstack.header.hybrid.network.vpn.VpcUserVpnGatewayInventory");
 			put("org.zstack.sdk.VpcVirtualRouteEntryInventory", "org.zstack.header.aliyun.network.vrouter.VpcVirtualRouteEntryInventory");
 			put("org.zstack.sdk.VpcVirtualRouterInventory", "org.zstack.header.aliyun.network.vrouter.VpcVirtualRouterInventory");
+			put("org.zstack.sdk.VpcVpnConnectionInventory", "org.zstack.header.hybrid.network.vpn.VpcVpnConnectionInventory");
+			put("org.zstack.sdk.VpcVpnGatewayInventory", "org.zstack.header.hybrid.network.vpn.VpcVpnGatewayInventory");
+			put("org.zstack.sdk.VpcVpnIkeConfigInventory", "org.zstack.header.hybrid.network.vpn.VpcVpnIkeConfigInventory");
+			put("org.zstack.sdk.VpcVpnIkeConfigStruct", "org.zstack.header.hybrid.network.vpn.VpcVpnIkeConfigStruct");
+			put("org.zstack.sdk.VpcVpnIpSecConfigInventory", "org.zstack.header.hybrid.network.vpn.VpcVpnIpSecConfigInventory");
+			put("org.zstack.sdk.VpcVpnIpSecConfigStruct", "org.zstack.header.hybrid.network.vpn.VpcVpnIpSecConfigStruct");
 			put("org.zstack.sdk.VtepInventory", "org.zstack.network.l2.vxlan.vtep.VtepInventory");
 			put("org.zstack.sdk.WebhookInventory", "org.zstack.header.core.webhooks.WebhookInventory");
 			put("org.zstack.sdk.ZoneInventory", "org.zstack.header.zone.ZoneInventory");

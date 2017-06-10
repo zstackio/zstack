@@ -78,11 +78,11 @@ public class SyncEcsVpcFromRemoteAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/hybrid/aliyun/vpc/{uuid}/actions";
+        info.httpMethod = "GET";
+        info.path = "/hybrid/aliyun/vpc/{dataCenterUuid}/sync";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "syncEcsVpcFromRemote";
+        info.parameterName = "";
         return info;
     }
 

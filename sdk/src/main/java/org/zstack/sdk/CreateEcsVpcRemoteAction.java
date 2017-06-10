@@ -22,6 +22,18 @@ public class CreateEcsVpcRemoteAction extends AbstractAction {
         }
     }
 
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String dataCenterUuid;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String cidrBlock;
+
+    @Param(required = true, maxLength = 64, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String name;
+
+    @Param(required = false, maxLength = 256, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String description;
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 
@@ -76,7 +88,7 @@ public class CreateEcsVpcRemoteAction extends AbstractAction {
         info.path = "/hybrid/aliyun/vpc";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

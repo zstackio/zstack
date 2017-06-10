@@ -10,7 +10,7 @@ import java.sql.Timestamp;
 @StaticMetamodel(AsyncRestVO.class)
 public class AsyncRestVO_ {
     public static volatile SingularAttribute<AsyncRestVO, String> uuid;
-    public static volatile SingularAttribute<AsyncRestVO, String> apiMessage;
+    public static volatile SingularAttribute<AsyncRestVO, String> requestData;
     public static volatile SingularAttribute<AsyncRestVO, AsyncRestState> state;
     public static volatile SingularAttribute<AsyncRestVO, String> result;
     public static volatile SingularAttribute<AsyncRestVO, Timestamp> createDate;

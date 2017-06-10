@@ -25,9 +25,6 @@ public class SyncVirtualRouterFromRemoteAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String vpcUuid;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vRouterUuid;
-
     @Param(required = false)
     public java.lang.String resourceUuid;
 
@@ -78,11 +75,11 @@ public class SyncVirtualRouterFromRemoteAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/hybrid/aliyun/vrouter/{uuid}/actions";
+        info.httpMethod = "GET";
+        info.path = "/hybrid/aliyun/vrouter/{vpcUuid}/sync";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "syncVirtualRouterFromRemote";
+        info.parameterName = "";
         return info;
     }
 

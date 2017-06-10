@@ -1,6 +1,6 @@
 package org.zstack.sdk;
 
-public class CreateRouteEntryForConnectionRemoteResult {
+public class CreateVpcVirtualRouterEntryRemoteResult {
     public VpcVirtualRouteEntryInventory inventory;
     public void setInventory(VpcVirtualRouteEntryInventory inventory) {
         this.inventory = inventory;

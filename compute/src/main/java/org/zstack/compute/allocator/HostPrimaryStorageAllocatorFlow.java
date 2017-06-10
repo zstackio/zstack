@@ -29,6 +29,11 @@ public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
         List<String> huuids = getHostUuidsFromCandidates();
 
         if (!VmOperation.NewCreate.toString().equals(spec.getVmOperation())) {
+            String sqlappend = "";
+            if (spec.getRequiredPrimaryStorageUuid() != null) {
+                sqlappend = String.format(" and pri.uuid = '%s'",spec.getRequiredPrimaryStorageUuid());
+            }
+
             String sql = "select h" +
                     " from HostVO h" +
                     " where h.uuid in :uuids" +
@@ -40,7 +45,9 @@ public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
                     " and pri.uuid = cap.uuid" +
                     " and (pri.state = :state or pri.state =:state1)" +
                     " and pri.status = :status" +
+                    sqlappend +
                     " )";
+
             TypedQuery<HostVO> query = dbf.getEntityManager().createQuery(sql, HostVO.class);
             query.setParameter("uuids", huuids);
             query.setParameter("state", PrimaryStorageState.Enabled);
@@ -134,9 +141,9 @@ public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
                     String.format("cannot find available primary storage[state: %s, status: %s, available capacity %s bytes]." +
                             " Check the state/status of primary storage and make sure they have been attached to clusters",
                             PrimaryStorageState.Enabled, PrimaryStorageStatus.Connected, spec.getDiskSize()) :
-                    String.format("cannot find available primary storage[state: %s, status: %s]." +
+                    String.format("cannot find available primary storage[state: %s or %s, status: %s]." +
                             " Check the state/status of primary storage and make sure they have been attached to clusters",
-                            PrimaryStorageState.Enabled, PrimaryStorageStatus.Connected);
+                            PrimaryStorageState.Enabled, PrimaryStorageState.Disabled, PrimaryStorageStatus.Connected);
             fail(err);
         } else {
             next(candidates);

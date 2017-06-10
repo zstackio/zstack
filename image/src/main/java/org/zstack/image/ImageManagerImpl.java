@@ -2,6 +2,7 @@ package org.zstack.image;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.AsyncBatchRunner;
 import org.zstack.core.asyncbatch.LoopAsyncBatch;
@@ -888,7 +889,10 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         } else {
             vo.setUuid(Platform.getUuid());
         }
-
+        if (!CoreGlobalProperty.UNIT_TEST_ON) {
+            long imageSizeAsked = new ImageQuotaUtil().getImageSizeQuotaUseHttpHead(msg);
+            vo.setActualSize(imageSizeAsked);
+        }
         vo.setName(msg.getName());
         vo.setDescription(msg.getDescription());
         if (msg.getFormat().equals(ImageConstant.ISO_FORMAT_STRING)) {

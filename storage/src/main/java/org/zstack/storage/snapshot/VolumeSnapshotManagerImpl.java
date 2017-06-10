@@ -35,6 +35,7 @@ import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
+import org.zstack.storage.volume.FireSnapShotCanonicalEvent;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.ExceptionDSL;
 import org.zstack.utils.Utils;
@@ -417,6 +418,11 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                             svo.setFormat(snapshot.getFormat());
                         }
                         svo = dbf.updateAndRefresh(svo);
+                        new FireSnapShotCanonicalEvent().
+                                fireSnapShotStatusChangedEvent(
+                                        VolumeSnapshotStatus.valueOf(snapshot.getStatus()),
+                                        VolumeSnapshotInventory.valueOf(svo))
+                        ;
                         ret.setInventory(VolumeSnapshotInventory.valueOf(svo));
                         bus.reply(msg, ret);
                     }

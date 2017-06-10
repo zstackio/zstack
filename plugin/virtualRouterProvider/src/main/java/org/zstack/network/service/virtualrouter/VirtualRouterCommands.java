@@ -106,6 +106,21 @@ public class VirtualRouterCommands {
 	
 	public static class ConfigureNicRsp extends AgentResponse {
 	}
+
+	public static class RemoveNicCmd extends AgentCommand {
+		private List<NicInfo> nics;
+
+		public List<NicInfo> getNics() {
+			return nics;
+		}
+
+		public void setNics(List<NicInfo> nics) {
+			this.nics = nics;
+		}
+	}
+
+	public static class RemoveNicRsp extends AgentResponse {
+	}
 	
 	public static class DhcpInfo {
 		private String ip;

@@ -79,7 +79,7 @@ public class AddConnectionAccessPointFromRemoteAction extends AbstractAction {
         info.path = "/hybrid/aliyun/access-point";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

@@ -22,6 +22,36 @@ public class CreateEcsSecurityGroupRuleRemoteAction extends AbstractAction {
         }
     }
 
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String groupUuid;
+
+    @Param(required = true, validValues = {"ingress","egress"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String direction;
+
+    @Param(required = true, validValues = {"TCP","UDP","ICMP","GRE","ALL"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String protocol;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String portRange;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String externalGroupId;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String cidr;
+
+    @Param(required = false, validValues = {"Accept","Drop"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String policy = "accept";
+
+    @Param(required = false, validValues = {"intranet","internet"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String nictype = "intranet";
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,100L}, noTrim = false)
+    public java.lang.Integer priority = 1;
+
+    @Param(required = false, maxLength = 256, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String description;
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 
@@ -76,7 +106,7 @@ public class CreateEcsSecurityGroupRuleRemoteAction extends AbstractAction {
         info.path = "/hybrid/aliyun/security-group-rule";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

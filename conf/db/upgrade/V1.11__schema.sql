@@ -83,7 +83,7 @@ CREATE TABLE `EcsSecurityGroupRuleVO` (
 	  `protocol` varchar(32) NOT NULL,
 	  `nicType` varchar(32) NOT NULL,
 	  `policy` varchar(32) NOT NULL,
-	  `sourceGroupId` varchar(128) NOT NULL,
+	  `externalGroupId` varchar(128) DEFAULT NULL,
 	  `direction` varchar(128) NOT NULL,
 	  `priority` varchar(128) NOT NULL,
 	  `description` varchar(1024) DEFAULT NULL,
@@ -782,3 +782,15 @@ CREATE TABLE  `zstack`.`WebhookVO` (
 # Foreign keys for table LoadBalancerListenerVO
 ALTER TABLE LoadBalancerListenerVO DROP FOREIGN KEY fkLoadBalancerListenerVOLoadBalancerVO;
 ALTER TABLE LoadBalancerListenerVO ADD CONSTRAINT fkLoadBalancerListenerVOLoadBalancerVO FOREIGN KEY (loadBalancerUuid) REFERENCES LoadBalancerVO (uuid) ON DELETE RESTRICT ;
+
+
+CREATE TABLE  `zstack`.`PrimaryStorageHostRefVO` (
+     `primaryStorageUuid` varchar(32) NOT NULL,
+     `hostUuid` varchar(32) NOT NULL,
+     `status` varchar(32) NOT NULL,
+     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+     `createDate` timestamp,
+      CONSTRAINT `fkPrimaryStorageHostRefVOPrimaryStorageEO` FOREIGN KEY (`primaryStorageUuid`) REFERENCES `zstack`.`PrimaryStorageEO` (`uuid`) ON DELETE CASCADE,
+      CONSTRAINT `fkPrimaryStorageHostRefVOHostEO` FOREIGN KEY (`hostUuid`) REFERENCES `zstack`.`HostEO` (`uuid`) ON DELETE CASCADE,
+      PRIMARY KEY (`primaryStorageUuid`, `hostUuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

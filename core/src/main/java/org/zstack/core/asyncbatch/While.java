@@ -1,6 +1,7 @@
 package org.zstack.core.asyncbatch;
 
 import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.workflow.WhileCompletion;
 import org.zstack.utils.DebugUtils;
 
 import java.util.Collection;
@@ -22,7 +23,7 @@ public class While<T> {
     private final int STEP = 3;
 
     public interface Do<T> {
-        void accept(T item, NoErrorCompletion completion);
+        void accept(T item, WhileCompletion completion);
     }
 
     public While(Collection<T> items) {
@@ -48,7 +49,12 @@ public class While<T> {
         }
 
         T t = it.next();
-        consumer.accept(t, new NoErrorCompletion(completion) {
+        consumer.accept(t, new WhileCompletion(completion) {
+            @Override
+            public void allDone() {
+                completion.done();
+            }
+
             @Override
             public void done() {
                 run(it, completion);
@@ -101,7 +107,11 @@ public class While<T> {
             t = it.next();
         }
 
-        consumer.accept(t, new NoErrorCompletion(completion) {
+        consumer.accept(t, new WhileCompletion(completion) {
+            @Override
+            public void allDone() {
+                completion.done();
+            }
             @Override
             public void done() {
                 runStep(it, completion);
@@ -117,7 +127,12 @@ public class While<T> {
             return;
         }
         for (T t : items) {
-            consumer.accept(t, new NoErrorCompletion() {
+            consumer.accept(t, new WhileCompletion(completion) {
+                @Override
+                public void allDone() {
+                    completion.done();
+                }
+
                 @Override
                 public void done() {
                     if (count.decrementAndGet() == 0) {
