@@ -1363,7 +1363,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     if (vmInstanceVO.getState().equals(VmInstanceState.Created)) {
                         return;
                     } else if (!vmInstanceVO.getState().equals(VmInstanceState.Stopped)
-                            && !vmInstanceVO.getState().equals(VmInstanceState.Running)) {
+                            && !vmInstanceVO.getState().equals(VmInstanceState.Running)
+                            && !vmInstanceVO.getState().equals(VmInstanceState.Starting)) {
                         throw new ApiMessageInterceptionException(errf.instantiateErrorCode(VmErrors.NOT_IN_CORRECT_STATE,
                                 String.format("Incorrect VM State.VM[uuid:%s] current state:%s. ",
                                         msg.getResourceUuid(), vmInstanceVO.getState())
