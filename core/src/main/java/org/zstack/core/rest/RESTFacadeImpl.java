@@ -320,6 +320,8 @@ public class RESTFacadeImpl implements RESTFacade {
             requestHeaders.setContentLength(body.length());
             requestHeaders.set(RESTConstant.TASK_UUID, taskUuid);
             requestHeaders.set(RESTConstant.CALLBACK_URL, callbackUrl);
+            MediaType JSON = MediaType.parseMediaType("application/json; charset=utf-8");
+            requestHeaders.setContentType(JSON);
 
             if (headers != null) {
                 for (Map.Entry<String, String> e : headers.entrySet()) {
