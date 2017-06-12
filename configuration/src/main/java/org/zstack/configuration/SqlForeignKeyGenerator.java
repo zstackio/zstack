@@ -2,7 +2,6 @@ package org.zstack.configuration;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
-import org.hibernate.annotations.OnDeleteAction;
 import org.zstack.header.configuration.APIGenerateSqlForeignKeyMsg;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.vo.EO;
@@ -11,6 +10,7 @@ import org.zstack.header.vo.ForeignKey.ReferenceOption;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.FieldUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.data.Pair;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
@@ -25,7 +25,59 @@ import java.util.*;
  */
 public class SqlForeignKeyGenerator {
     private static CLogger logger = Utils.getLogger(SqlForeignKeyGenerator.class);
-    private Map<Class, List<String>> entityForeignKeyIndexMap = new HashMap<Class, List<String>>();
+    private Map<Class, List<String>> entityForeignKeyIndexMap = new HashMap<>();
+
+    private String outputPath;
+    private List<String> basePkgs;
+    private List<Class> entityClass = new ArrayList<>();
+    private Map<Class, List<ForeignKeyInfo>> keyMap = new HashMap<>();
+    private Map<String, ForeignKeyInfo> allKeys = new HashMap<>();
+    private StringBuilder writer = new StringBuilder();
+
+    public SqlForeignKeyGenerator() {
+        basePkgs = Collections.singletonList("org.zstack");
+    }
+
+    SqlForeignKeyGenerator(APIGenerateSqlForeignKeyMsg msg) {
+        outputPath = msg.getOutputPath();
+        if (outputPath == null) {
+            outputPath = PathUtil.join(System.getProperty("user.home"), "zstack-sql", "foreignKeys.sql");
+        }
+        basePkgs = msg.getBasePackageNames();
+        if (basePkgs == null) {
+            basePkgs = Collections.singletonList("org.zstack");
+        }
+    }
+
+    public List<Pair<String, String>> generateEORelations() {
+        List<Pair<String, String>> result = new ArrayList<>();
+
+        for (String pkgName : basePkgs) {
+            entityClass.addAll(BeanUtils.scanClass(pkgName, Entity.class));
+        }
+
+        for (Class entity : entityClass) {
+            collectForeignKeys(entity);
+        }
+
+        List<Class> classes = new ArrayList<>();
+        classes.addAll(keyMap.keySet());
+        classes.sort(Comparator.comparing(Class::getSimpleName));
+
+        Map<String, Pair<String, String>> m = new HashMap<>();
+        for (Class clz : classes) {
+            for (ForeignKeyInfo f : keyMap.get(clz)) {
+                Pair<String, String> p = f.makeEOForeignKeyRelations();
+                if (p != null) {
+                    m.put(p.toString(), p);
+                }
+            }
+        }
+
+        result.addAll(m.values());
+
+        return result;
+    }
 
     private class ForeignKeyInfo {
         String fullName;
@@ -92,6 +144,17 @@ public class SqlForeignKeyGenerator {
             return StringUtils.join(strs, " ");
         }
 
+        private Pair<String, String> makeForeignKeyRelations() {
+            return new Pair<>(entity.getSimpleName(), parentClass.getSimpleName());
+        }
+
+        private Pair<String, String> makeEOForeignKeyRelations() {
+            if (entity.getSimpleName().endsWith("EO") && parentClass.getSimpleName().endsWith("EO")) {
+                return new Pair<>(entity.getSimpleName(), parentClass.getSimpleName());
+            }
+            return null;
+        }
+
         private String makeForeignKeyName() {
             String noIndexKeyName = String.format("fk%s%s", entity.getSimpleName(), parentClass.getSimpleName());
             List<String> keys = entityForeignKeyIndexMap.get(entity);
@@ -121,25 +184,6 @@ public class SqlForeignKeyGenerator {
                     parentKey,
                     makeReferenceAction()
             );
-        }
-    }
-
-    private String outputPath;
-    private List<String> basePkgs;
-
-    private List<Class> entityClass = new ArrayList<Class>();
-    private Map<Class, List<ForeignKeyInfo>> keyMap = new HashMap<Class, List<ForeignKeyInfo>>();
-    private Map<String, ForeignKeyInfo> allKeys = new HashMap<String, ForeignKeyInfo>();
-    private StringBuilder writer = new StringBuilder();
-
-    public SqlForeignKeyGenerator(APIGenerateSqlForeignKeyMsg msg) {
-        outputPath = msg.getOutputPath();
-        if (outputPath == null) {
-            outputPath = PathUtil.join(System.getProperty("user.home"), "zstack-sql", "foreignKeys.sql");
-        }
-        basePkgs = msg.getBasePackageNames();
-        if (basePkgs == null) {
-            basePkgs = Arrays.asList("org.zstack");
         }
     }
 

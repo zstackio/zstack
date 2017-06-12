@@ -5,6 +5,7 @@ import org.springframework.http.*
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory
 import org.springframework.web.client.RestTemplate
 import org.zstack.compute.vm.VmGlobalConfig
+import org.zstack.configuration.SqlForeignKeyGenerator
 import org.zstack.core.CoreGlobalProperty
 import org.zstack.core.Platform
 import org.zstack.core.asyncbatch.While
@@ -22,88 +23,10 @@ import org.zstack.header.vm.VmInstanceDeletionPolicyManager
 import org.zstack.header.vo.EO
 import org.zstack.header.volume.VolumeDeletionPolicyManager
 import org.zstack.image.ImageGlobalConfig
-import org.zstack.sdk.AddCephBackupStorageAction
-import org.zstack.sdk.AddCephPrimaryStorageAction
-import org.zstack.sdk.AddCephPrimaryStoragePoolAction
-import org.zstack.sdk.AddImageAction
-import org.zstack.sdk.AddImageStoreBackupStorageAction
-import org.zstack.sdk.AddIpRangeByNetworkCidrAction
-import org.zstack.sdk.AddKVMHostAction
-import org.zstack.sdk.AddLocalPrimaryStorageAction
-import org.zstack.sdk.AddNfsPrimaryStorageAction
-import org.zstack.sdk.AddSftpBackupStorageAction
-import org.zstack.sdk.AddSharedMountPointPrimaryStorageAction
-import org.zstack.sdk.ApiResult
-import org.zstack.sdk.CreateAccountAction
-import org.zstack.sdk.CreateBaremetalChassisAction
-import org.zstack.sdk.CreateBaremetalHostCfgAction
-import org.zstack.sdk.CreateBaremetalPxeServerAction
-import org.zstack.sdk.CreateClusterAction
-import org.zstack.sdk.CreateDataVolumeAction
-import org.zstack.sdk.CreateDataVolumeFromVolumeSnapshotAction
-import org.zstack.sdk.CreateDataVolumeFromVolumeTemplateAction
-import org.zstack.sdk.CreateDataVolumeTemplateFromVolumeAction
-import org.zstack.sdk.CreateDiskOfferingAction
-import org.zstack.sdk.CreateEipAction
-import org.zstack.sdk.CreateInstanceOfferingAction
-import org.zstack.sdk.CreateL2NoVlanNetworkAction
-import org.zstack.sdk.CreateL2VlanNetworkAction
-import org.zstack.sdk.CreateL3NetworkAction
-import org.zstack.sdk.CreateLoadBalancerAction
-import org.zstack.sdk.CreatePolicyAction
-import org.zstack.sdk.CreatePortForwardingRuleAction
-import org.zstack.sdk.CreateRebootVmInstanceSchedulerAction
-import org.zstack.sdk.CreateRootVolumeTemplateFromRootVolumeAction
-import org.zstack.sdk.CreateSecurityGroupAction
-import org.zstack.sdk.CreateStartVmInstanceSchedulerAction
-import org.zstack.sdk.CreateStopVmInstanceSchedulerAction
-import org.zstack.sdk.CreateUserAction
-import org.zstack.sdk.CreateUserGroupAction
-import org.zstack.sdk.CreateVipAction
-import org.zstack.sdk.CreateVirtualRouterOfferingAction
-import org.zstack.sdk.CreateVmInstanceAction
-import org.zstack.sdk.CreateVolumeSnapshotAction
-import org.zstack.sdk.CreateVolumeSnapshotSchedulerAction
-import org.zstack.sdk.CreateWebhookAction
-import org.zstack.sdk.CreateZoneAction
-import org.zstack.sdk.DeleteAccountAction
-import org.zstack.sdk.DeleteBackupStorageAction
-import org.zstack.sdk.DeleteBaremetalChassisAction
-import org.zstack.sdk.DeleteBaremetalHostCfgAction
-import org.zstack.sdk.DeleteBaremetalPxeServerAction
-import org.zstack.sdk.DeleteCephPrimaryStoragePoolAction
-import org.zstack.sdk.DeleteClusterAction
-import org.zstack.sdk.DeleteDataVolumeAction
-import org.zstack.sdk.DeleteDiskOfferingAction
-import org.zstack.sdk.DeleteEipAction
-import org.zstack.sdk.DeleteHostAction
-import org.zstack.sdk.DeleteImageAction
-import org.zstack.sdk.DeleteInstanceOfferingAction
-import org.zstack.sdk.DeleteIpRangeAction
-import org.zstack.sdk.DeleteL2NetworkAction
-import org.zstack.sdk.DeleteL3NetworkAction
-import org.zstack.sdk.DeleteLoadBalancerAction
-import org.zstack.sdk.DeletePolicyAction
-import org.zstack.sdk.DeletePortForwardingRuleAction
-import org.zstack.sdk.DeletePrimaryStorageAction
-import org.zstack.sdk.DeleteSchedulerAction
-import org.zstack.sdk.DeleteSecurityGroupAction
-import org.zstack.sdk.DeleteUserAction
-import org.zstack.sdk.DeleteUserGroupAction
-import org.zstack.sdk.DeleteVipAction
-import org.zstack.sdk.DeleteVolumeSnapshotAction
-import org.zstack.sdk.DeleteWebhookAction
-import org.zstack.sdk.DeleteZoneAction
-import org.zstack.sdk.DestroyVmInstanceAction
-import org.zstack.sdk.ErrorCode
-import org.zstack.sdk.GlobalConfigInventory
-import org.zstack.sdk.LogInByAccountAction
-import org.zstack.sdk.QueryGlobalConfigAction
-import org.zstack.sdk.SessionInventory
-import org.zstack.sdk.UpdateGlobalConfigAction
-import org.zstack.sdk.ZSClient
+import org.zstack.sdk.*
 import org.zstack.storage.volume.VolumeGlobalConfig
 import org.zstack.utils.DebugUtils
+import org.zstack.utils.data.Pair
 import org.zstack.utils.gson.JSONObjectUtil
 
 import javax.servlet.http.HttpServletRequest
@@ -549,12 +472,87 @@ class EnvSpec implements Node {
         }
     }
 
-    private void cleanupEO() {
-        DatabaseFacade dbf = Test.componentLoader.getComponent(DatabaseFacade.class)
+    class TraverseCleanEO {
+        Set<String> allNodes
+        List<Pair<String, String>> allLinks
+        HashMap<String, Boolean> execMap
+        DatabaseFacade dbf
+        Map<String, Class> eoSimpleNameEOClassMap
+        Map<String, Class> eoSimpleNameVOClassMap
 
-        Platform.reflections.getTypesAnnotatedWith(EO.class).findAll { it.isAnnotationPresent(EO.class) }.each {
-            dbf.eoCleanup(it)
+        TraverseCleanEO(List<Pair<String, String>> links,
+                        Set<String> nodes,
+                        Map<String, Class> eoNameEOClassMap,
+                        Map<String, Class> eoNameVOClassMap) {
+            eoSimpleNameEOClassMap = eoNameEOClassMap
+            eoSimpleNameVOClassMap = eoNameVOClassMap
+            dbf = Test.componentLoader.getComponent(DatabaseFacade.class)
+            allNodes = nodes
+            allLinks = new ArrayList<>()
+            links.forEach { it ->
+                if (nodes.contains(it.first()) && nodes.contains(it.second())) {
+                    allLinks.add(it)
+                }
+            }
         }
+
+        void traverse() {
+            execMap = new HashMap<>()
+            allNodes.forEach { it -> execMap.put(it, false) }
+
+            for (String allLinkNode : allNodes) {
+                process(allLinkNode, 0, new ArrayList<String>())
+            }
+        }
+
+        private void process(String current, int depth, List<String> history) {
+            if (execMap.get(current)) {
+                return
+            }
+
+            for (Pair<String, String> p : allLinks) {
+                if (p.first() == current
+                        && p.first() != p.second()
+                        && !execMap.get(p.second())) {
+                    List<String> forkHistory = new ArrayList<String>()
+                    forkHistory.addAll(history)
+                    forkHistory.add(current)
+                    process(p.second(), depth + 1, forkHistory)
+                }
+            }
+
+            if (!execMap.get(current)) {
+                logger.debug("cleanupEO:" + current
+                        + ", voClass:" + eoSimpleNameVOClassMap.get(current)
+                        + ", depth:" + depth
+                        + ", history: " + history.toString())
+                dbf.eoCleanup(eoSimpleNameVOClassMap.get(current))
+                execMap.put(current, true)
+            }
+        }
+    }
+
+    private void cleanupEO() {
+        SqlForeignKeyGenerator g = new SqlForeignKeyGenerator()
+
+        def vos = Platform.reflections.getTypesAnnotatedWith(EO.class).findAll { it.isAnnotationPresent(EO.class) }
+        logger.debug("cleanupEO->clean targets:" + vos.toString())
+        Map<String, Class> eoNameEOClassMap = new HashMap<>()
+        Map<String, Class> eoNameVOClassMap = new HashMap<>()
+        Set<String> nodes = new HashSet<>()
+        vos.forEach { it ->
+            EO at = (EO) it.getAnnotation(EO.class)
+            if (at != null) {
+                Class eoClass = at.EOClazz()
+                nodes.add(eoClass.getSimpleName())
+                eoNameEOClassMap.put(eoClass.getSimpleName(), eoClass)
+                eoNameVOClassMap.put(eoClass.getSimpleName(), it)
+            }
+        }
+
+        logger.debug("cleanupEO->clean targets:" + eoNameEOClassMap.toString())
+
+        new TraverseCleanEO(g.generateEORelations(), nodes, eoNameEOClassMap, eoNameVOClassMap).traverse()
     }
 
     void delete() {
