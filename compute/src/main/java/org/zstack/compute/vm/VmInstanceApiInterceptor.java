@@ -148,7 +148,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
                 if (instanceOfferingVO.getCpuNum() < vo.getCpuNum() || instanceOfferingVO.getMemorySize() < vo.getMemorySize()) {
                     throw new ApiMessageInterceptionException(argerr(
-                            "can't not decrease capacity when vm[:uuid] is running", vo.getUuid()
+                            "can't decrease capacity when vm[uuid:%s] is running", vo.getUuid()
                     ));
                 }
             }
@@ -187,13 +187,13 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
                 if (msg.getCpuNum() != null && msg.getCpuNum() < vo.getCpuNum()) {
                     throw new ApiMessageInterceptionException(argerr(
-                            "can't not decrease cpu of vm[:uuid] when it is running", vo.getUuid()
+                            "can't decrease cpu of vm[uuid:%s] when it is running", vo.getUuid()
                     ));
                 }
 
                 if (msg.getMemorySize() != null && msg.getMemorySize() < vo.getMemorySize()) {
                     throw new ApiMessageInterceptionException(argerr(
-                            "can't not decrease memory size of vm[:uuid] when it is running", vo.getUuid()
+                            "can't decrease memory size of vm[uuid:%s] when it is running", vo.getUuid()
                     ));
                 }
             }

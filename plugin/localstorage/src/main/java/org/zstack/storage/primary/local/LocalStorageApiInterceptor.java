@@ -159,7 +159,7 @@ public class LocalStorageApiInterceptor implements ApiMessageInterceptor {
                         for(String l2:originL2NetworkList){
                             if(!l2NetworkList.contains(l2)){
                                 throw new ApiMessageInterceptionException(
-                                        operr("The two clusters[uuid:%s,uuid:%s] cannot access each other in l2 network  when migrate the vm[uuid;%s] to another cluster", originClusterUuid, clusterUuid, vol.getVmInstanceUuid()));
+                                        operr("The two clusters[uuid:%s,uuid:%s] cannot access each other in l2 network  when migrate the vm[uuid:%s] to another cluster", originClusterUuid, clusterUuid, vol.getVmInstanceUuid()));
                             }
                         }
                     }
