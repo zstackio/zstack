@@ -2282,7 +2282,7 @@ public class KVMHost extends HostBase implements Host {
                             public Class<PingResponse> getReturnClass() {
                                 return PingResponse.class;
                             }
-                        });
+                        },TimeUnit.SECONDS, 60);
                     }
                 });
 

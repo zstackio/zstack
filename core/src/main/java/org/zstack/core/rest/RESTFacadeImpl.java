@@ -3,7 +3,6 @@ package org.zstack.core.rest;
 import org.apache.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
-import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
@@ -62,7 +61,7 @@ public class RESTFacadeImpl implements RESTFacade {
     private int port = 8080;
     private String path;
     private String callbackUrl;
-    private RestTemplate template;
+    private TimeoutRestTemplate template;
     private String baseUrl;
     private String sendCommandUrl;
 
@@ -342,7 +341,7 @@ public class RESTFacadeImpl implements RESTFacade {
                         @Override
                         @RetryCondition(onExceptions = {IOException.class, RestClientException.class, HttpClientErrorException.class})
                         protected ResponseEntity<String> call() {
-                            return template.exchange(url, HttpMethod.POST, req, String.class);
+                            return template.exchange(url, HttpMethod.POST, req, String.class, taskUuid, unit.toMillis(timeout), unit.toMillis(timeout));
                         }
                     }.run();
                 }
