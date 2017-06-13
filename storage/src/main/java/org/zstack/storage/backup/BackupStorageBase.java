@@ -87,6 +87,8 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
 
     abstract protected void handle(SyncImageSizeOnBackupStorageMsg msg);
 
+    abstract protected void handle(GetLocalFileSizeOnBackupStorageMsg msg);
+
     abstract protected void connectHook(boolean newAdd, Completion completion);
 
     abstract protected void pingHook(Completion completion);
@@ -200,6 +202,8 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
             handle((SyncImageSizeOnBackupStorageMsg) msg);
         } else if (msg instanceof GetImageSizeOnBackupStorageMsg) {
             handle((GetImageSizeOnBackupStorageMsg) msg);
+        } else if (msg instanceof GetLocalFileSizeOnBackupStorageMsg) {
+            handle((GetLocalFileSizeOnBackupStorageMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }

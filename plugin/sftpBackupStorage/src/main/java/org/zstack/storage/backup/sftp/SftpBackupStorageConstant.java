@@ -24,4 +24,5 @@ public interface SftpBackupStorageConstant {
     public static final String ANSIBLE_PLAYBOOK_NAME = "sftpbackupstorage.py";
     public static final String ANSIBLE_MODULE_PATH = "ansible/sftpbackupstorage";
     public static final String GET_IMAGE_SIZE = "/sftpbackupstorage/getimagesize";
+    public static final String GET_LOCAL_FILE_SIZE = "/sftpbackupstorage/getlocalfilesize/";
 }
