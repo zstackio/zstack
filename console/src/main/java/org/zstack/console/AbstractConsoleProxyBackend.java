@@ -242,10 +242,11 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
 
                 @Override
                 public void fail(ErrorCode errorCode) {
-                    N.New(VmInstanceVO.class, vm.getUuid()).warn_("failed to delete a console proxy[vmUuid:%s, host IP: %s, host port: %s, proxy IP: %s, proxy port: %s, %s",
+                    N.New(VmInstanceVO.class, vm.getUuid()).warn_(
+                            "failed to delete a console proxy[vmUuid:%s, host IP: %s, host port: %s, proxy IP: %s, proxy port: %s], %s",
                             vm.getUuid(), vo.getTargetHostname(), vo.getTargetPort(), vo.getProxyHostname(), vo.getProxyPort(), errorCode.toString());
 
-                    logger.warn(String.format("failed to delete a console proxy[vmUuid:%s, host IP: %s, host port: %s, proxy IP: %s, proxy port: %s, %s",
+                    logger.warn(String.format("failed to delete a console proxy[vmUuid:%s, host IP: %s, host port: %s, proxy IP: %s, proxy port: %s], %s",
                             vm.getUuid(), vo.getTargetHostname(), vo.getTargetPort(), vo.getProxyHostname(), vo.getProxyPort(), errorCode.toString()));
                     latch.ack();
                 }

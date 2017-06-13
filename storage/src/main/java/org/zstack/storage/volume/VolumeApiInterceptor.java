@@ -176,7 +176,7 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
                         .param("vmState", VmInstanceState.Stopped)
                         .param("platformType", ImagePlatform.Other).find();
                 if(count > 0){
-                   throw new ApiMessageInterceptionException(operr("the vm[uuid:%s] doesn't suport to online attach volume[%s] on the basis of that the image platform type of the vm is other ", msg.getVmInstanceUuid(), msg.getVolumeUuid()));
+                   throw new ApiMessageInterceptionException(operr("the vm[uuid:%s] doesn't support to online attach volume[%s] on the basis of that the image platform type of the vm is other ", msg.getVmInstanceUuid(), msg.getVolumeUuid()));
                 }
 
                 VolumeVO vol = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, msg.getVolumeUuid()).find();
