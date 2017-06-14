@@ -190,15 +190,7 @@ public class SftpBackupStorageCommands {
         }
     }
 
-    public static class GetLocalFileSizeCmd extends AgentCommand {
-        public String path ;
-    }
-
-    public static class GetLocalFileSizeRsp extends AgentResponse {
-        public long size;
-    }
-
-        public static class GetImageSizeCmd extends AgentCommand {
+    public static class GetImageSizeCmd extends AgentCommand {
         public String imageUuid;
         public String installPath;
     }

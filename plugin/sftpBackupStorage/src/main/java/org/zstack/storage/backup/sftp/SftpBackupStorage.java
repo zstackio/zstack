@@ -466,37 +466,6 @@ public class SftpBackupStorage extends BackupStorageBase {
         });
     }
 
-    @Override
-    protected void handle(GetLocalFileSizeOnBackupStorageMsg msg) {
-        GetLocalFileSizeOnBackupStorageReply reply = new GetLocalFileSizeOnBackupStorageReply();
-        GetLocalFileSizeCmd cmd = new GetLocalFileSizeCmd();
-        cmd.path = msg.getUrl();
-        restf.asyncJsonPost(buildUrl(SftpBackupStorageConstant.GET_LOCAL_FILE_SIZE), cmd,
-                new JsonAsyncRESTCallback<GetLocalFileSizeRsp>(msg) {
-                    @Override
-                    public void fail(ErrorCode err) {
-                        reply.setError(err);
-                        bus.reply(msg, reply);
-                    }
-
-                    @Override
-                    public void success(GetLocalFileSizeRsp rsp) {
-                        if (!rsp.isSuccess()) {
-                            reply.setError(operr(rsp.getError()));
-                        } else {
-                            reply.setSize(rsp.size);
-                        }
-
-                        bus.reply(msg, reply);
-                    }
-
-                    @Override
-                    public Class<GetLocalFileSizeRsp> getReturnClass() {
-                        return GetLocalFileSizeRsp.class;
-                    }
-        });
-    }
-
     private void handle(final GetSftpBackupStorageDownloadCredentialMsg msg) {
         final GetSftpBackupStorageDownloadCredentialReply reply = new GetSftpBackupStorageDownloadCredentialReply();
 
