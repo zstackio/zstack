@@ -61,16 +61,16 @@ public class APIChangeSchedulerStateMsg  extends APIMessage implements Scheduler
         return msg;
     }
 
-    public ApiNotification __notification__() {
-        APIMessage that = this;
-
-        return new ApiNotification() {
-            @Override
-            public void after(APIEvent evt) {
-                ntfy("Changing the state to", ((APIChangeSchedulerStateEvent)evt).getInventory().getState())
-                        .resource(uuid, SchedulerVO.class.getSimpleName())
-                        .messageAndEvent(that, evt).done();
-            }
-        };
-    }
+//    public ApiNotification __notification__() {
+//        APIMessage that = this;
+//
+//        return new ApiNotification() {
+//            @Override
+//            public void after(APIEvent evt) {
+//                ntfy("Changing the state to", ((APIChangeSchedulerStateEvent)evt).getInventory().getState())
+//                        .resource(uuid, SchedulerVO.class.getSimpleName())
+//                        .messageAndEvent(that, evt).done();
+//            }
+//        };
+//    }
 }

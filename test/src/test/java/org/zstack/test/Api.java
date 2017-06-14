@@ -30,7 +30,7 @@ import org.zstack.header.configuration.*;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.console.ConsoleInventory;
-import org.zstack.header.core.scheduler.SchedulerInventory;
+import org.zstack.header.core.scheduler.SchedulerJobInventory;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
 import org.zstack.header.host.HostInventory;
@@ -4185,13 +4185,7 @@ public class Api implements CloudBusEventListener {
         Date date = new Date();
         APICreateVolumeSnapshotSchedulerJobMsg msg = new APICreateVolumeSnapshotSchedulerJobMsg();
         msg.setSession(session == null ? adminSession : session);
-        msg.setSchedulerName("test");
-        msg.setInterval(interval);
-        if (repeatCount != null) {
-            msg.setRepeatCount(repeatCount);
-        }
-        msg.setType(type);
-        msg.setStartTime(startDate);
+        msg.setName("test");
         msg.setSnapShotName("Snapshot-" + volUuid);
         msg.setVolumeSnapshotDescription("Test snapshot");
         msg.setVolumeUuid(volUuid);
@@ -4206,9 +4200,7 @@ public class Api implements CloudBusEventListener {
     public void createCronScheduler(String volUuid, String type, String cronTask, SessionInventory session) throws ApiSenderException {
         APICreateVolumeSnapshotSchedulerJobMsg msg = new APICreateVolumeSnapshotSchedulerJobMsg();
         msg.setSession(session == null ? adminSession : session);
-        msg.setSchedulerName("testCron");
-        msg.setCron(cronTask);
-        msg.setType(type);
+        msg.setName("testCron");
         msg.setSnapShotName("Snapshot-" + volUuid);
         msg.setVolumeSnapshotDescription("Test snapshot");
         msg.setVolumeUuid(volUuid);
@@ -4219,14 +4211,14 @@ public class Api implements CloudBusEventListener {
         logger.debug(MessageCommandRecorder.endAndToString());
     }
 
-    public SchedulerInventory updateScheduler(String uuid, String schedulerName, String schedulerDescription, SessionInventory session) throws ApiSenderException {
+    public SchedulerJobInventory updateScheduler(String uuid, String schedulerName, String schedulerDescription, SessionInventory session) throws ApiSenderException {
         APIUpdateSchedulerMsg msg = new APIUpdateSchedulerMsg();
         if (schedulerName != null) {
-            msg.setSchedulerName(schedulerName);
+            msg.setName(schedulerName);
         }
 
         if (schedulerDescription != null) {
-            msg.setSchedulerDescription(schedulerDescription);
+            msg.setDescription(schedulerDescription);
         }
 
         msg.setSession(session == null ? adminSession : session);
@@ -4258,13 +4250,7 @@ public class Api implements CloudBusEventListener {
                                         SessionInventory session) throws ApiSenderException {
         APICreateStopVmInstanceSchedulerJobMsg msg = new APICreateStopVmInstanceSchedulerJobMsg();
         msg.setSession(session == null ? adminSession : session);
-        msg.setSchedulerName("stopvm");
-        msg.setInterval(interval);
-        if (repeatCount != null) {
-            msg.setRepeatCount(repeatCount);
-        }
-        msg.setType(type);
-        msg.setStartTime(startDate);
+        msg.setName("stopvm");
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         msg.setVmUuid(vmUuid);
         ApiSender sender = new ApiSender();
@@ -4281,13 +4267,7 @@ public class Api implements CloudBusEventListener {
                                          SessionInventory session) throws ApiSenderException {
         APICreateStartVmInstanceSchedulerJobMsg msg = new APICreateStartVmInstanceSchedulerJobMsg();
         msg.setSession(session == null ? adminSession : session);
-        msg.setSchedulerName("startvm");
-        msg.setInterval(interval);
-        if (repeatCount != null) {
-            msg.setRepeatCount(repeatCount);
-        }
-        msg.setType(type);
-        msg.setStartTime(startDate);
+        msg.setName("startvm");
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         msg.setVmUuid(vmUuid);
         ApiSender sender = new ApiSender();
@@ -4296,21 +4276,15 @@ public class Api implements CloudBusEventListener {
         logger.debug(MessageCommandRecorder.endAndToString());
     }
 
-    public SchedulerInventory rebootVmInstanceScheduler(String vmUuid,
-                                                        String type,
-                                                        Long startDate,
-                                                        Integer interval,
-                                                        Integer repeatCount,
-                                                        SessionInventory session) throws ApiSenderException {
+    public SchedulerJobInventory rebootVmInstanceScheduler(String vmUuid,
+                                                           String type,
+                                                           Long startDate,
+                                                           Integer interval,
+                                                           Integer repeatCount,
+                                                           SessionInventory session) throws ApiSenderException {
         APICreateRebootVmInstanceSchedulerJobMsg msg = new APICreateRebootVmInstanceSchedulerJobMsg();
         msg.setSession(session == null ? adminSession : session);
-        msg.setSchedulerName("rebootvm");
-        msg.setInterval(interval);
-        if (repeatCount != null) {
-            msg.setRepeatCount(repeatCount);
-        }
-        msg.setType(type);
-        msg.setStartTime(startDate);
+        msg.setName("rebootvm");
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         msg.setVmUuid(vmUuid);
         ApiSender sender = new ApiSender();
@@ -4320,7 +4294,7 @@ public class Api implements CloudBusEventListener {
         return evt.getInventory();
     }
 
-    public SchedulerInventory changeSchedulerState(String uuid, String state, SessionInventory session) throws ApiSenderException {
+    public SchedulerJobInventory changeSchedulerState(String uuid, String state, SessionInventory session) throws ApiSenderException {
         APIChangeSchedulerStateMsg msg = new APIChangeSchedulerStateMsg();
         msg.setSession(session == null ? adminSession : session);
         msg.setUuid(uuid);

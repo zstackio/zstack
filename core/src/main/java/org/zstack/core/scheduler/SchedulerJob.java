@@ -7,17 +7,8 @@ import java.util.Date;
  * Created by Mei Lei on 7/11/16.
  */
 public interface SchedulerJob {
-    Date getStartTime();
     Timestamp getCreateDate();
-    Integer getSchedulerInterval();
-    Integer getRepeat();
-    String getSchedulerName();
     String getJobName();
-    String getJobGroup();
-    String getTriggerName();
-    String getTriggerGroup();
-    String getType();
-    String getCron();
     String getResourceUuid();
     String getTargetResourceUuid();
     void run();

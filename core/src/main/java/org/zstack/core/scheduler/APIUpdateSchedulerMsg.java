@@ -23,9 +23,9 @@ public class APIUpdateSchedulerMsg extends APIMessage implements SchedulerMessag
     @APIParam(resourceType = SchedulerVO.class)
     private String uuid;
     @APIParam(maxLength = 255, required = false, emptyString = false)
-    private String schedulerName;
+    private String name;
     @APIParam(maxLength = 2048, required = false)
-    private String schedulerDescription;
+    private String description;
 
     public String getUuid() {
         return uuid;
@@ -35,20 +35,20 @@ public class APIUpdateSchedulerMsg extends APIMessage implements SchedulerMessag
         this.uuid = uuid;
     }
 
-    public String getSchedulerName() {
-        return schedulerName;
+    public String getName() {
+        return name;
     }
 
-    public void setSchedulerName(String schedulerName) {
-        this.schedulerName = schedulerName;
+    public void setName(String name) {
+        this.name = name;
     }
 
-    public String getSchedulerDescription() {
-        return schedulerDescription;
+    public String getDescription() {
+        return description;
     }
 
-    public void setSchedulerDescription(String schedulerDescription) {
-        this.schedulerDescription = schedulerDescription;
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     @Override
@@ -61,8 +61,8 @@ public class APIUpdateSchedulerMsg extends APIMessage implements SchedulerMessag
     public static APIUpdateSchedulerMsg __example__() {
         APIUpdateSchedulerMsg msg = new APIUpdateSchedulerMsg();
         msg.setUuid(uuid());
-        msg.setSchedulerName("Test2");
-        msg.setSchedulerDescription("new test");
+        msg.setName("Test2");
+        msg.setDescription("new test");
         return msg;
     }
 

@@ -34,9 +34,8 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
-import org.zstack.header.core.scheduler.SchedulerInventory;
+import org.zstack.header.core.scheduler.SchedulerJobInventory;
 import org.zstack.header.core.scheduler.SchedulerJobVO;
-import org.zstack.header.core.scheduler.SchedulerVO;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -4525,14 +4524,20 @@ public class VmInstanceBase extends AbstractVmInstance {
         job.setTargetResourceUuid(msg.getVmInstanceUuid());
 
         SchedulerJobVO vo = new SchedulerJobVO();
+        if (job.getResourceUuid() != null) {
+            vo.setUuid(job.getResourceUuid());
+        } else {
+            vo.setUuid(Platform.getUuid());
+        }
         vo.setName(msg.getName());
         vo.setDescription(msg.getDescription());
         vo.setTargetResourceUuid(msg.getVmInstanceUuid());
         vo.setJobData(JSONObjectUtil.toJsonString(job));
         vo.setManagementNodeUuid(Platform.getUuid());
-        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), SchedulerJobVO.class);
         dbf.persistAndRefresh(vo);
+        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), SchedulerJobVO.class);
 
+        evt.setInventory(SchedulerJobInventory.valueOf(vo));
         bus.publish(evt);
     }
 
@@ -4543,14 +4548,20 @@ public class VmInstanceBase extends AbstractVmInstance {
         job.setTargetResourceUuid(msg.getVmInstanceUuid());
 
         SchedulerJobVO vo = new SchedulerJobVO();
+        if (job.getResourceUuid() != null) {
+            vo.setUuid(job.getResourceUuid());
+        } else {
+            vo.setUuid(Platform.getUuid());
+        }
         vo.setName(msg.getName());
         vo.setDescription(msg.getDescription());
         vo.setTargetResourceUuid(msg.getVmInstanceUuid());
         vo.setJobData(JSONObjectUtil.toJsonString(job));
         vo.setManagementNodeUuid(Platform.getUuid());
-        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), SchedulerJobVO.class);
         dbf.persistAndRefresh(vo);
+        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), SchedulerJobVO.class);
 
+        evt.setInventory(SchedulerJobInventory.valueOf(vo));
         bus.publish(evt);
     }
 
@@ -4561,14 +4572,20 @@ public class VmInstanceBase extends AbstractVmInstance {
         job.setTargetResourceUuid(msg.getVmInstanceUuid());
 
         SchedulerJobVO vo = new SchedulerJobVO();
+        if (job.getResourceUuid() != null) {
+            vo.setUuid(job.getResourceUuid());
+        } else {
+            vo.setUuid(Platform.getUuid());
+        }
         vo.setName(msg.getName());
         vo.setDescription(msg.getDescription());
         vo.setTargetResourceUuid(msg.getVmInstanceUuid());
         vo.setJobData(JSONObjectUtil.toJsonString(job));
         vo.setManagementNodeUuid(Platform.getUuid());
-        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), SchedulerJobVO.class);
         dbf.persistAndRefresh(vo);
+        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), SchedulerJobVO.class);
 
+        evt.setInventory(SchedulerJobInventory.valueOf(vo));
         bus.publish(evt);
     }
 

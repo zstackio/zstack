@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class CreateVolumeSnapshotSchedulerAction extends AbstractAction {
+public class CreateStartVmInstanceSchedulerJobAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public CreateVolumeSnapshotSchedulerResult value;
+        public CreateStartVmInstanceSchedulerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -23,34 +23,19 @@ public class CreateVolumeSnapshotSchedulerAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String volumeUuid;
+    public java.lang.String vmUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String clusterUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String hostUuid;
 
     @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String snapShotName;
+    public java.lang.String name;
 
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String volumeSnapshotDescription;
-
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String schedulerName;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String schedulerDescription;
-
-    @Param(required = true, validValues = {"simple","cron"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String type;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Integer interval;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Integer repeatCount;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Long startTime;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String cron;
+    public java.lang.String description;
 
     @Param(required = false)
     public java.lang.String resourceUuid;
@@ -76,8 +61,8 @@ public class CreateVolumeSnapshotSchedulerAction extends AbstractAction {
             return ret;
         }
         
-        CreateVolumeSnapshotSchedulerResult value = res.getResult(CreateVolumeSnapshotSchedulerResult.class);
-        ret.value = value == null ? new CreateVolumeSnapshotSchedulerResult() : value; 
+        CreateStartVmInstanceSchedulerResult value = res.getResult(CreateStartVmInstanceSchedulerResult.class);
+        ret.value = value == null ? new CreateStartVmInstanceSchedulerResult() : value; 
 
         return ret;
     }
@@ -103,7 +88,7 @@ public class CreateVolumeSnapshotSchedulerAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/volumes/{volumeUuid}/schedulers/creating-volume-snapshots";
+        info.path = "/vm-instances/{vmUuid}/schedulers/starting";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";

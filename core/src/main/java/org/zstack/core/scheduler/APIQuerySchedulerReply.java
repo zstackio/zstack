@@ -1,6 +1,6 @@
 package org.zstack.core.scheduler;
 
-import org.zstack.header.core.scheduler.SchedulerInventory;
+import org.zstack.header.core.scheduler.SchedulerJobInventory;
 import org.zstack.header.query.APIQueryReply;
 import org.zstack.header.rest.RestResponse;
 
@@ -14,27 +14,22 @@ import static java.util.Arrays.asList;
  */
 @RestResponse(allTo = "inventories")
 public class APIQuerySchedulerReply extends APIQueryReply {
-    private List<SchedulerInventory> inventories;
+    private List<SchedulerJobInventory> inventories;
 
-    public List<SchedulerInventory> getInventories() {
+    public List<SchedulerJobInventory> getInventories() {
         return inventories;
     }
 
-    public void setInventories(List<SchedulerInventory> inventories) {
+    public void setInventories(List<SchedulerJobInventory> inventories) {
         this.inventories = inventories;
     }
  
     public static APIQuerySchedulerReply __example__() {
         APIQuerySchedulerReply reply = new APIQuerySchedulerReply();
-        SchedulerInventory scheduler = new SchedulerInventory();
+        SchedulerJobInventory scheduler = new SchedulerJobInventory();
         scheduler.setUuid(uuid());
-        scheduler.setSchedulerName("Test");
-        scheduler.setSchedulerType("simple");
-        scheduler.setRepeatCount(10);
-        scheduler.setJobClassName("CreateVolumeSnapshotJob");
-        scheduler.setState("Enabled");
+        scheduler.setName("test");
         scheduler.setTargetResourceUuid(uuid());
-        scheduler.setStartTime(new Timestamp(System.currentTimeMillis()));
         scheduler.setCreateDate(new Timestamp(System.currentTimeMillis()));
         scheduler.setLastOpDate(new Timestamp(System.currentTimeMillis()));
         reply.setInventories(asList(scheduler));

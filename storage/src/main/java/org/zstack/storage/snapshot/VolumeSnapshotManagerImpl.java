@@ -18,9 +18,8 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
-import org.zstack.header.core.scheduler.SchedulerInventory;
+import org.zstack.header.core.scheduler.SchedulerJobInventory;
 import org.zstack.header.core.scheduler.SchedulerJobVO;
-import org.zstack.header.core.scheduler.SchedulerVO;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -46,7 +45,6 @@ import org.zstack.utils.logging.CLogger;
 
 import static org.zstack.core.Platform.operr;
 
-import javax.persistence.Parameter;
 import javax.persistence.Query;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
@@ -451,14 +449,20 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         job.setSnapShotDescription(msg.getVolumeSnapshotDescription());
 
         SchedulerJobVO vo = new SchedulerJobVO();
+        if (job.getResourceUuid() != null) {
+            vo.setUuid(job.getResourceUuid());
+        } else {
+            vo.setUuid(Platform.getUuid());
+        }
         vo.setName(msg.getName());
         vo.setDescription(msg.getDescription());
         vo.setTargetResourceUuid(msg.getVolumeUuid());
         vo.setJobData(JSONObjectUtil.toJsonString(job));
         vo.setManagementNodeUuid(Platform.getUuid());
-        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), SchedulerJobVO.class);
         dbf.persistAndRefresh(vo);
+        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), SchedulerJobVO.class);
 
+        evt.setInventory(SchedulerJobInventory.valueOf(vo));
         bus.publish(evt);
     }
 

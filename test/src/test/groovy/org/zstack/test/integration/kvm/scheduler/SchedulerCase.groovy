@@ -1,27 +1,26 @@
 package org.zstack.test.integration.kvm.scheduler
 
-
-import org.zstack.core.db.Q
-import org.zstack.header.core.scheduler.SchedulerVO
-import org.zstack.header.core.scheduler.SchedulerVO_
-import org.zstack.header.vm.VmInstanceVO
-import org.zstack.header.vm.VmInstanceVO_
-import org.zstack.sdk.CreateStartVmInstanceSchedulerAction
-import org.zstack.sdk.SchedulerInventory
+import org.zstack.header.core.scheduler.SchedulerJobVO
+import org.zstack.header.network.service.NetworkServiceType
+import org.zstack.network.securitygroup.SecurityGroupConstant
+import org.zstack.network.service.virtualrouter.VirtualRouterConstant
+import org.zstack.sdk.SchedulerJobInventory
 import org.zstack.sdk.VmInstanceInventory
-import org.zstack.test.integration.kvm.Env
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
-import org.zstack.testlib.VmSpec
+import org.zstack.utils.data.SizeUnit
 
 /**
- * Created by Camile on 2017/3.
+ * Created by AlanJager on 2017/6/7.
  */
 class SchedulerCase extends SubCase {
     EnvSpec env
 
-    def DOC = """  """
+    @Override
+    void clean() {
+        env.delete()
+    }
 
     @Override
     void setup() {
@@ -30,96 +29,144 @@ class SchedulerCase extends SubCase {
 
     @Override
     void environment() {
-        env = Env.oneVmBasicEnv()
+        env = env {
+            instanceOffering {
+                name = "instanceOffering"
+                memory = SizeUnit.GIGABYTE.toByte(8)
+                cpu = 4
+            }
+
+            diskOffering {
+                name = "diskOffering"
+                diskSize = SizeUnit.GIGABYTE.toByte(20)
+            }
+
+            sftpBackupStorage {
+                name = "sftp"
+                url = "/sftp"
+                username = "root"
+                password = "password"
+                hostname = "localhost"
+
+                image {
+                    name = "image1"
+                    url = "http://zstack.org/download/test.qcow2"
+                }
+
+                image {
+                    name = "vr"
+                    url = "http://zstack.org/download/vr.qcow2"
+                }
+            }
+
+            zone {
+                name = "zone"
+                description = "test"
+
+                cluster {
+                    name = "cluster"
+                    hypervisorType = "KVM"
+
+                    kvm {
+                        name = "kvm"
+                        managementIp = "localhost"
+                        username = "root"
+                        password = "password"
+                    }
+
+                    attachPrimaryStorage("local")
+                    attachL2Network("l2")
+                }
+
+                localPrimaryStorage {
+                    name = "local"
+                    url = "/local_ps"
+                }
+
+                l2NoVlanNetwork {
+                    name = "l2"
+                    physicalInterface = "eth0"
+
+                    l3Network {
+                        name = "l3"
+
+                        service {
+                            provider = VirtualRouterConstant.PROVIDER_TYPE
+                            types = [NetworkServiceType.DHCP.toString(), NetworkServiceType.DNS.toString()]
+                        }
+
+                        service {
+                            provider = SecurityGroupConstant.SECURITY_GROUP_PROVIDER_TYPE
+                            types = [SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE]
+                        }
+
+                        ip {
+                            startIp = "192.168.100.10"
+                            endIp = "192.168.100.100"
+                            netmask = "255.255.255.0"
+                            gateway = "192.168.100.1"
+                        }
+                    }
+
+                    l3Network {
+                        name = "pubL3"
+
+                        ip {
+                            startIp = "12.16.10.10"
+                            endIp = "12.16.10.100"
+                            netmask = "255.255.255.0"
+                            gateway = "12.16.10.1"
+                        }
+                    }
+                }
+
+                virtualRouterOffering {
+                    name = "vr"
+                    memory = SizeUnit.MEGABYTE.toByte(512)
+                    cpu = 2
+                    useManagementL3Network("pubL3")
+                    usePublicL3Network("pubL3")
+                    useImage("vr")
+                }
+
+                attachBackupStorage("sftp")
+            }
+
+            vm {
+                name = "vm"
+                useInstanceOffering("instanceOffering")
+                useImage("image1")
+                useL3Networks("l3")
+            }
+        }
     }
 
     @Override
     void test() {
         env.create {
-            testCreateSchedulerAndChangeStateSuccess()
-            testReloadScheduler()
-            testDeleteScheduler()
+            testCreateSchedulerJob()
         }
     }
+    
+    void testCreateSchedulerJob() {
+        VmInstanceInventory vm = env.inventoryByName("vm")
 
-    @Override
-    void clean() {
-        env.delete()
-    }
+        SchedulerJobInventory startInv = createStartVmInstanceSchedulerJob {
+            vmUuid = vm.uuid
+            name = "start"
+        } as SchedulerJobInventory
 
-    void testCreateSchedulerAndChangeStateSuccess() {
-        String vm_uuid = (env.specByName("vm") as VmSpec).inventory.uuid
-        createRebootVmInstanceScheduler {
-            vmUuid = vm_uuid
-            schedulerName = "test"
-            schedulerDescription = "reboot vm"
-            type = "simple"
-            startTime = (System.currentTimeMillis() / 1000) + 6000
-            repeatCount = 1
-        }
-        SchedulerVO svo = Q.New(SchedulerVO.class).eq(SchedulerVO_.targetResourceUuid, vm_uuid).find()
-        assert svo != null
-        assert svo.state == "Enabled"
+        SchedulerJobInventory rebootInv = createRebootVmInstanceSchedulerJob {
+            vmUuid = vm.uuid
+            name = "reboot"
+        } as SchedulerJobInventory
 
-        changeSchedulerState {
-            uuid = svo.uuid
-            stateEvent = "disable"
-        }
-        SchedulerVO svo2 = Q.New(SchedulerVO.class).eq(SchedulerVO_.targetResourceUuid, vm_uuid).find()
-        assert svo2 != null
-        assert svo2.state == "Disabled"
-        String state = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vm_uuid).select(VmInstanceVO_.state).findValue()
-        assert state == "Running"
-    }
+        SchedulerJobInventory stopInv = createStopVmInstanceSchedulerJob {
+            vmUuid = vm.uuid
+            name = "stop"
+        } as SchedulerJobInventory
 
-    void testReloadScheduler() {
-        String vm_uuid = (env.specByName("vm") as VmSpec).inventory.uuid
-        VmInstanceInventory inv = stopVmInstance {
-            uuid = vm_uuid
-        }
-        String state = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vm_uuid).select(VmInstanceVO_.state).findValue()
-        assert state == "Stopped"
-
-        createStartVmInstanceScheduler {
-            vmUuid = vm_uuid
-            schedulerName = "start vm"
-            schedulerDescription = "description"
-            type = "simple"
-            startTime = 0
-            repeatCount = 1
-        }
-        retryInSecs(20, 5) {
-            String state2 = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vm_uuid).select(VmInstanceVO_.state).findValue()
-            assert state2 == "Running"
-        }
-
-    }
-    void testDeleteScheduler() {
-        String vm_uuid = (env.specByName("vm") as VmSpec).inventory.uuid
-        VmInstanceInventory inv = stopVmInstance {
-            uuid = vm_uuid
-        }
-        String state = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vm_uuid).select(VmInstanceVO_.state).findValue()
-        assert state == "Stopped"
-
-        CreateStartVmInstanceSchedulerAction a = new CreateStartVmInstanceSchedulerAction()
-        a.vmUuid = vm_uuid
-        a.schedulerName = "start vm"
-        a.schedulerDescription = "description"
-        a.type = "simple"
-        a.startTime = (System.currentTimeMillis() / 1000) + 5
-        a.repeatCount = 1
-        a.sessionId = adminSession()
-        CreateStartVmInstanceSchedulerAction.Result res = a.call()
-        assert res.error == null
-        SchedulerInventory sInv = res.value.inventory
-        deleteScheduler{
-            uuid = sInv.uuid
-        }
-        retryInSecs(5, 1) {
-            String state2 = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vm_uuid).select(VmInstanceVO_.state).findValue()
-            assert state2 == "Stopped"
-        }
-
+        SchedulerJobVO startVO = dbFindByUuid(startInv.getUuid(), SchedulerJobVO.class)
+        assert startVO.name == startInv.name
     }
 }

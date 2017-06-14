@@ -16,17 +16,9 @@ public class AbstractSchedulerJob implements SchedulerJob {
     @Autowired
     protected transient CloudBus bus;
 
-    private Date startDate;
-    private Integer interval;
-    private Integer repeat;
-    private String type;
-    private String cron;
-    private String schedulerName;
-    private String schedulerDescription;
+    private String name;
+    private String description;
     private String jobName;
-    private String jobGroup;
-    private String triggerGroup;
-    private String triggerName;
     private String resourceUuid;
     private String targetResourceUuid;
     private Timestamp createDate;
@@ -39,31 +31,12 @@ public class AbstractSchedulerJob implements SchedulerJob {
         String jobIdentifyUuid = Platform.getUuid();
         Date date = new Date();
         createDate = new Timestamp(date.getTime());
-        schedulerName = msg.getSchedulerName();
-        type = msg.getType();
+        name = msg.getName();
         resourceUuid = msg.getResourceUuid();
         accountUuid = msg.getSession().getAccountUuid();
 
-        if ( msg.getSchedulerDescription() != null && ! msg.getSchedulerDescription().isEmpty()) {
-            schedulerDescription = msg.getSchedulerDescription();
-        }
-
-        if ( msg.getCron() != null && ! msg.getCron().isEmpty()) {
-            cron = msg.getCron();
-        }
-
-        if ( msg.getStartTime() != 0) {
-            startDate = new Date(msg.getStartTime() * 1000);
-        } else {
-            startDate = new Date(System.currentTimeMillis());
-        }
-
-        if ( msg.getInterval() != null) {
-            interval = msg.getInterval();
-        }
-
-        if ( msg.getRepeatCount() != null) {
-            repeat = msg.getRepeatCount();
+        if ( msg.getDescription() != null && ! msg.getDescription().isEmpty()) {
+            description = msg.getDescription();
         }
 
         // jobName, jobGroup, triggerName, triggerGroup reserved for future API
@@ -74,86 +47,22 @@ public class AbstractSchedulerJob implements SchedulerJob {
             jobName = jobIdentifyUuid;
         }
 
-        if(msg.getJobGroup() != null && !msg.getJobGroup().isEmpty()) {
-            jobGroup = msg.getJobGroup();
-        }
-        else {
-            jobGroup = jobIdentifyUuid;
-        }
-
-        if(msg.getTriggerName() != null && !msg.getTriggerName().isEmpty()) {
-            triggerName = msg.getTriggerName();
-        }
-        else {
-            triggerName = jobIdentifyUuid;
-        }
-
-        if (msg.getTriggerGroup() != null && !msg.getTriggerGroup().isEmpty()) {
-            triggerGroup = msg.getTriggerGroup();
-        }
-        else {
-            triggerGroup = jobIdentifyUuid;
-        }
     }
 
-    public String getSchedulerDescription() {
-        return schedulerDescription;
+    public String getName() {
+        return name;
     }
 
-    public void setSchedulerDescription(String schedulerDescription) {
-        this.schedulerDescription = schedulerDescription;
+    public void setName(String name) {
+        this.name = name;
     }
 
-    public Date getStartTime() {
-        return startDate;
+    public String getDescription() {
+        return description;
     }
 
-    public void setStartDate(Date startDate) {
-        this.startDate = startDate;
-    }
-
-    public Integer getInterval() {
-        return interval;
-    }
-
-    public Integer getSchedulerInterval() {
-        return interval;
-    }
-
-    public void setInterval(Integer interval) {
-        this.interval = interval;
-    }
-
-    public Integer getRepeat() {
-        return repeat;
-    }
-
-    public void setRepeat(Integer repeat) {
-        this.repeat = repeat;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
-    }
-
-    public String getCron() {
-        return cron;
-    }
-
-    public void setCron(String cron) {
-        this.cron = cron;
-    }
-
-    public String getSchedulerName() {
-        return schedulerName;
-    }
-
-    public void setSchedulerName(String schedulerName) {
-        this.schedulerName = schedulerName;
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public String getJobName() {
@@ -162,30 +71,6 @@ public class AbstractSchedulerJob implements SchedulerJob {
 
     public void setJobName(String jobName) {
         this.jobName = jobName;
-    }
-
-    public String getJobGroup() {
-        return jobGroup;
-    }
-
-    public void setJobGroup(String jobGroup) {
-        this.jobGroup = jobGroup;
-    }
-
-    public String getTriggerGroup() {
-        return triggerGroup;
-    }
-
-    public void setTriggerGroup(String triggerGroup) {
-        this.triggerGroup = triggerGroup;
-    }
-
-    public String getTriggerName() {
-        return triggerName;
-    }
-
-    public void setTriggerName(String triggerName) {
-        this.triggerName = triggerName;
     }
 
     public Timestamp getCreateDate() {

@@ -1,6 +1,6 @@
 package org.zstack.header.vm;
 
-import org.zstack.header.core.scheduler.SchedulerInventory;
+import org.zstack.header.core.scheduler.SchedulerJobInventory;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.rest.RestResponse;
 
@@ -12,13 +12,13 @@ import java.sql.Timestamp;
 
 @RestResponse(allTo = "inventory")
 public class APICreateStartVmInstanceSchedulerEvent extends APIEvent {
-    private SchedulerInventory inventory;
+    private SchedulerJobInventory inventory;
 
-    public SchedulerInventory getInventory() {
+    public SchedulerJobInventory getInventory() {
         return inventory;
     }
 
-    public void setInventory(SchedulerInventory inventory) {
+    public void setInventory(SchedulerJobInventory inventory) {
         this.inventory = inventory;
     }
 
@@ -32,15 +32,11 @@ public class APICreateStartVmInstanceSchedulerEvent extends APIEvent {
  
     public static APICreateStartVmInstanceSchedulerEvent __example__() {
         APICreateStartVmInstanceSchedulerEvent event = new APICreateStartVmInstanceSchedulerEvent();
-        SchedulerInventory scheduler = new SchedulerInventory();
+        SchedulerJobInventory scheduler = new SchedulerJobInventory();
         scheduler.setUuid(uuid());
-        scheduler.setSchedulerName("Test");
-        scheduler.setSchedulerType("simple");
-        scheduler.setRepeatCount(10);
-        scheduler.setJobClassName("CreateVolumeSnapshotJob");
-        scheduler.setState("Enabled");
+        scheduler.setName("Test");
+        scheduler.setDescription("simple");
         scheduler.setTargetResourceUuid(uuid());
-        scheduler.setStartTime(new Timestamp(System.currentTimeMillis()));
         scheduler.setCreateDate(new Timestamp(System.currentTimeMillis()));
         scheduler.setLastOpDate(new Timestamp(System.currentTimeMillis()));
         event.setInventory(scheduler);

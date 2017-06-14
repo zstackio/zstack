@@ -1,7 +1,7 @@
 package org.zstack.core.scheduler;
 
 import org.springframework.http.HttpMethod;
-import org.zstack.header.core.scheduler.SchedulerInventory;
+import org.zstack.header.core.scheduler.SchedulerJobInventory;
 import org.zstack.header.identity.Action;
 import org.zstack.header.query.APIQueryMessage;
 import org.zstack.header.query.AutoQuery;
@@ -14,7 +14,7 @@ import static java.util.Arrays.asList;
  * Created by Mei Lei<meilei007@gmail.com> on 7/18/16.
  */
 @Action(category = SchedulerConstant.ACTION_CATEGORY, names = {"read"})
-@AutoQuery(replyClass = APIQuerySchedulerReply.class, inventoryClass = SchedulerInventory.class)
+@AutoQuery(replyClass = APIQuerySchedulerReply.class, inventoryClass = SchedulerJobInventory.class)
 @RestRequest(
         path = "/schedulers",
         optionalPaths = {"/schedulers/{uuid}"},

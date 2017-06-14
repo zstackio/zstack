@@ -1,11 +1,11 @@
 package org.zstack.sdk;
 
 public class ChangeSchedulerStateResult {
-    public SchedulerInventory inventory;
-    public void setInventory(SchedulerInventory inventory) {
+    public SchedulerJobInventory inventory;
+    public void setInventory(SchedulerJobInventory inventory) {
         this.inventory = inventory;
     }
-    public SchedulerInventory getInventory() {
+    public SchedulerJobInventory getInventory() {
         return this.inventory;
     }
 
