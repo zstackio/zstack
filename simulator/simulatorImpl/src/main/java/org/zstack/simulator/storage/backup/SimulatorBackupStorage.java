@@ -92,11 +92,6 @@ public class SimulatorBackupStorage extends BackupStorageBase {
     }
 
     @Override
-    protected void handle(GetLocalFileSizeOnBackupStorageMsg msg) {
-        throw new CloudRuntimeException("not supported yet");
-    }
-
-    @Override
     protected void connectHook(boolean newAdded, Completion completion) {
         completion.success();
     }
