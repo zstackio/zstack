@@ -1,10 +1,7 @@
 package org.zstack.header.vo;
 
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.utils.DebugUtils;
 import org.zstack.utils.FieldUtils;
-import org.zstack.utils.Utils;
-import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.*;
 import java.lang.reflect.Field;
@@ -88,7 +85,7 @@ public class ResourceVO {
         this.resourceName = resourceName;
     }
 
-    String getResourceType() {
+    public String getResourceType() {
         return resourceType;
     }
 

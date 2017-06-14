@@ -1,5 +1,7 @@
 package org.zstack.core.jsonlabel;
 
+import org.zstack.header.vo.BaseResource;
+
 import javax.persistence.*;
 import java.sql.Timestamp;
 
@@ -8,6 +10,7 @@ import java.sql.Timestamp;
  */
 @Entity
 @Table
+@BaseResource
 public class JsonLabelVO {
     @Id
     @GeneratedValue(strategy= GenerationType.IDENTITY)

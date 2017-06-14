@@ -4,6 +4,7 @@ import org.zstack.header.network.l3.L3NetworkEO;
 import org.zstack.header.network.l3.UsedIpVO;
 import org.zstack.header.search.SqlTrigger;
 import org.zstack.header.search.TriggerIndex;
+import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 import org.zstack.header.vo.Index;
@@ -14,6 +15,7 @@ import java.sql.Timestamp;
 
 @Entity
 @Table
+@BaseResource
 public class VmNicVO extends ResourceVO {
     @Column
     @ForeignKey(parentEntityClass = VmInstanceEO.class, onDeleteAction = ReferenceOption.CASCADE)

@@ -1,5 +1,6 @@
 package org.zstack.network.securitygroup;
 
+import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.Index;
 import org.zstack.header.vo.ResourceVO;
 
@@ -10,6 +11,7 @@ import java.util.Set;
 
 @Entity
 @Table
+@BaseResource
 public class SecurityGroupVO extends ResourceVO {
     @Column
     @Index

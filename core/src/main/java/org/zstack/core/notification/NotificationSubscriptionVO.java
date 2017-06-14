@@ -1,5 +1,7 @@
 package org.zstack.core.notification;
 
+import org.zstack.header.vo.BaseResource;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
@@ -11,6 +13,7 @@ import java.sql.Timestamp;
  */
 @Entity
 @Table
+@BaseResource
 public class NotificationSubscriptionVO {
     @Id
     @Column

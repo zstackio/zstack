@@ -1,5 +1,6 @@
 package org.zstack.header.identity;
 
+import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.vo.ResourceVO_;
 
@@ -11,6 +12,7 @@ import java.sql.Timestamp;
  */
 @Entity
 @Table
+@BaseResource
 public class QuotaVO extends ResourceVO {
     @Column
     private String name;

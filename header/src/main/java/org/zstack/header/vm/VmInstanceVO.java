@@ -1,5 +1,6 @@
 package org.zstack.header.vm;
 
+import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.EO;
 import org.zstack.header.vo.NoView;
 import org.zstack.header.volume.VolumeVO;
@@ -12,6 +13,7 @@ import java.util.Set;
 @Entity
 @Table
 @EO(EOClazz = VmInstanceEO.class)
+@BaseResource
 public class VmInstanceVO extends VmInstanceAO {
     @OneToMany(fetch = FetchType.EAGER)
     @JoinColumn(name = "vmInstanceUuid", insertable = false, updatable = false)

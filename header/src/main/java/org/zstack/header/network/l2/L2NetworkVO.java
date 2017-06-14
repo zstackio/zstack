@@ -1,5 +1,6 @@
 package org.zstack.header.network.l2;
 
+import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.EO;
 import org.zstack.header.vo.NoView;
 
@@ -10,6 +11,7 @@ import java.util.Set;
 @Entity
 @Table
 @EO(EOClazz = L2NetworkEO.class)
+@BaseResource
 public class L2NetworkVO extends L2NetworkAO {
     @OneToMany(fetch = FetchType.EAGER)
     @JoinColumn(name = "l2NetworkUuid", insertable = false, updatable = false)

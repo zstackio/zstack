@@ -27,6 +27,7 @@ public class AccountResourceRefVO {
     @Index
     private String resourceUuid;
 
+    // may be deprecated later, should not rely on it
     @Column
     @Index
     private String resourceType;
