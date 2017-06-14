@@ -24,7 +24,6 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.image.*;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
-import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.backup.*;
 import org.zstack.storage.backup.BackupStorageBase;
@@ -48,7 +47,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.zstack.utils.CollectionDSL.list;
-import static org.zstack.utils.URLBuilder.buildUrl;
 
 /**
  * Created by frank on 7/27/2015.
@@ -261,14 +259,6 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
     }
 
-    public static class GetLocalFileSizeCmd extends AgentCommand {
-        public String path ;
-    }
-
-    public static class GetLocalFileSizeRsp extends AgentResponse {
-        public long size;
-    }
-
     public static class GetImageSizeCmd extends AgentCommand {
         public String imageUuid;
         public String installPath;
@@ -441,7 +431,6 @@ public class CephBackupStorageBase extends BackupStorageBase {
     public static final String GET_IMAGES_METADATA = "/ceph/backupstorage/getimagesmetadata";
     public static final String DELETE_IMAGES_METADATA = "/ceph/backupstorage/deleteimagesmetadata";
     public static final String CHECK_POOL_PATH = "/ceph/backupstorage/checkpool";
-    public static final String GET_LOCAL_FILE_SIZE = "/ceph/backupstorage/getlocalfilesize";
 
     protected String makeImageInstallPath(String imageUuid) {
         return String.format("ceph://%s/%s", getSelf().getPoolName(), imageUuid);
@@ -802,26 +791,6 @@ public class CephBackupStorageBase extends BackupStorageBase {
             @Override
             public void fail(ErrorCode errorCode) {
                 reply.setError(errorCode);
-                bus.reply(msg, reply);
-            }
-        });
-    }
-
-    @Override
-    protected void handle(GetLocalFileSizeOnBackupStorageMsg msg) {
-        GetLocalFileSizeOnBackupStorageReply reply = new GetLocalFileSizeOnBackupStorageReply();
-        GetLocalFileSizeCmd cmd = new GetLocalFileSizeCmd();
-        cmd.path = msg.getUrl();
-        httpCall(GET_LOCAL_FILE_SIZE, cmd, GetLocalFileSizeRsp.class, new ReturnValueCompletion<GetLocalFileSizeRsp>(msg) {
-            @Override
-            public void fail(ErrorCode err) {
-                reply.setError(err);
-                bus.reply(msg, reply);
-            }
-
-            @Override
-            public void success(GetLocalFileSizeRsp ret) {
-                reply.setSize(ret.size);
                 bus.reply(msg, reply);
             }
         });
