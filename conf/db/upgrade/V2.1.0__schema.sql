@@ -16,3 +16,5 @@ CREATE TABLE `SnapShotUsageVO` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `id` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS EcsInstanceConsoleProxyVO;
