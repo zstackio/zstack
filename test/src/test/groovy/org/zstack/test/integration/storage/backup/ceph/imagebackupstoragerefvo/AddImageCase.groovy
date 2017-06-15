@@ -89,7 +89,7 @@ class AddImageCase extends SubCase{
 
         ImageInventory newImage1 = addImage {
             name = "image2"
-            url = "ceph://bak-t-9b278a2c62fb4ed281b1695a6ebdbc8c/335b922a93cd4c529a08c63e431f2345"
+            url = "http://my-site/foo.iso"
             backupStorageUuids = [bs.uuid]
             format = ImageConstant.ISO_FORMAT_STRING
         }
