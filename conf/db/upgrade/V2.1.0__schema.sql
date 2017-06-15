@@ -18,3 +18,5 @@ CREATE TABLE `SnapShotUsageVO` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS EcsInstanceConsoleProxyVO;
+
+ALTER TABLE OssBucketVO modify COLUMN bucketName varchar(64);
