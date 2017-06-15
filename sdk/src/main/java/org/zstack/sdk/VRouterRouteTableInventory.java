@@ -1,6 +1,6 @@
 package org.zstack.sdk;
 
-public class SchedulerJobInventory  {
+public class VRouterRouteTableInventory  {
 
     public java.lang.String uuid;
     public void setUuid(java.lang.String uuid) {
@@ -8,14 +8,6 @@ public class SchedulerJobInventory  {
     }
     public java.lang.String getUuid() {
         return this.uuid;
-    }
-
-    public java.lang.String targetResourceUuid;
-    public void setTargetResourceUuid(java.lang.String targetResourceUuid) {
-        this.targetResourceUuid = targetResourceUuid;
-    }
-    public java.lang.String getTargetResourceUuid() {
-        return this.targetResourceUuid;
     }
 
     public java.lang.String name;
@@ -34,14 +26,6 @@ public class SchedulerJobInventory  {
         return this.description;
     }
 
-    public java.lang.String state;
-    public void setState(java.lang.String state) {
-        this.state = state;
-    }
-    public java.lang.String getState() {
-        return this.state;
-    }
-
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
@@ -58,12 +42,20 @@ public class SchedulerJobInventory  {
         return this.lastOpDate;
     }
 
-    public java.util.List<String> triggersUuid;
-    public void setTriggersUuid(java.util.List<String> triggersUuid) {
-        this.triggersUuid = triggersUuid;
+    public java.util.List<VirtualRouterVRouterRouteTableRefInventory> attachedRouterRefs;
+    public void setAttachedRouterRefs(java.util.List<VirtualRouterVRouterRouteTableRefInventory> attachedRouterRefs) {
+        this.attachedRouterRefs = attachedRouterRefs;
     }
-    public java.util.List<String> getTriggersUuid() {
-        return this.triggersUuid;
+    public java.util.List<VirtualRouterVRouterRouteTableRefInventory> getAttachedRouterRefs() {
+        return this.attachedRouterRefs;
+    }
+
+    public java.util.List<VRouterRouteEntryInventory> routeEntries;
+    public void setRouteEntries(java.util.List<VRouterRouteEntryInventory> routeEntries) {
+        this.routeEntries = routeEntries;
+    }
+    public java.util.List<VRouterRouteEntryInventory> getRouteEntries() {
+        return this.routeEntries;
     }
 
 }
