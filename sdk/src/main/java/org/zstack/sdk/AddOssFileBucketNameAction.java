@@ -22,7 +22,7 @@ public class AddOssFileBucketNameAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, maxLength = 64, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String ossBucketName;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
