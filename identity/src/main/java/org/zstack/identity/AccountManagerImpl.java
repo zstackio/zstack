@@ -557,7 +557,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
         if (user == null) {
             reply.setError(errf.instantiateErrorCode(IdentityErrors.AUTHENTICATION_ERROR,
-                    "wrong username or password"
+                    "wrong account or username or password"
             ));
             bus.reply(msg, reply);
             return;
