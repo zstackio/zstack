@@ -44,9 +44,6 @@ public class CreateEcsInstanceFromLocalImageAction extends AbstractAction {
     public java.lang.String allocatePublicIp;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String identityZoneUuid;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String backupStorageUuid;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
