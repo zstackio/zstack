@@ -490,8 +490,10 @@ class EnvSpec implements Node {
             allNodes = nodes
             allLinks = new ArrayList<>()
             links.forEach { it ->
+                logger.debug(String.format("cleanupEO->link:%s->%s", it.first(), it.second()))
                 if (nodes.contains(it.first()) && nodes.contains(it.second())) {
                     allLinks.add(it)
+                    logger.debug(String.format("cleanupEO->add link:%s->%s", it.first(), it.second()))
                 }
             }
         }
@@ -522,10 +524,10 @@ class EnvSpec implements Node {
             }
 
             if (!execMap.get(current)) {
+                history.add(current)
                 logger.debug("cleanupEO:" + current
-                        + ", voClass:" + eoSimpleNameVOClassMap.get(current)
                         + ", depth:" + depth
-                        + ", history: " + history.toString())
+                        + ", history: " + history.join("->"))
                 dbf.eoCleanup(eoSimpleNameVOClassMap.get(current))
                 execMap.put(current, true)
             }
@@ -536,7 +538,7 @@ class EnvSpec implements Node {
         SqlForeignKeyGenerator g = new SqlForeignKeyGenerator()
 
         def vos = Platform.reflections.getTypesAnnotatedWith(EO.class).findAll { it.isAnnotationPresent(EO.class) }
-        logger.debug("cleanupEO->clean targets:" + vos.toString())
+        logger.debug(String.format("cleanupEO->clean targets(%s): %s", vos.size(), vos.toString()))
         Map<String, Class> eoNameEOClassMap = new HashMap<>()
         Map<String, Class> eoNameVOClassMap = new HashMap<>()
         Set<String> nodes = new HashSet<>()
@@ -550,7 +552,8 @@ class EnvSpec implements Node {
             }
         }
 
-        logger.debug("cleanupEO->clean targets:" + eoNameEOClassMap.toString())
+        logger.debug(String.format("cleanupEO->clean targets(%s): %s", eoNameEOClassMap.size(), eoNameEOClassMap.toString()))
+        logger.debug(String.format("cleanupEO->all nodes(%s): %s", nodes.size(), nodes.toString()))
 
         new TraverseCleanEO(g.generateEORelations(), nodes, eoNameEOClassMap, eoNameVOClassMap).traverse()
     }

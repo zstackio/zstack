@@ -145,12 +145,15 @@ public class SqlForeignKeyGenerator {
         }
 
         private Pair<String, String> makeForeignKeyRelations() {
-            return new Pair<>(entity.getSimpleName(), parentClass.getSimpleName());
+            return new Pair<>(parentClass.getSimpleName(), entity.getSimpleName());
         }
 
         private Pair<String, String> makeEOForeignKeyRelations() {
+            if (onDeleteAction != ReferenceOption.RESTRICT) {
+                return null;
+            }
             if (entity.getSimpleName().endsWith("EO") && parentClass.getSimpleName().endsWith("EO")) {
-                return new Pair<>(entity.getSimpleName(), parentClass.getSimpleName());
+                return new Pair<>(parentClass.getSimpleName(), entity.getSimpleName());
             }
             return null;
         }
