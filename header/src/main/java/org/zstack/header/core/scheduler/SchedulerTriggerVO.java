@@ -1,13 +1,15 @@
 package org.zstack.header.core.scheduler;
 
 import org.zstack.header.managementnode.ManagementNodeVO;
+import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.vo.ForeignKey;
+import org.zstack.header.vo.NoView;
 import org.zstack.header.vo.ResourceVO;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Table;
+import javax.persistence.*;
 import java.sql.Timestamp;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Created by AlanJager on 2017/6/7.
@@ -47,6 +49,18 @@ public class SchedulerTriggerVO extends ResourceVO{
 
     @Column
     private Timestamp lastOpDate;
+
+    @OneToMany(fetch = FetchType.EAGER)
+    @JoinColumn(name = "schedulerTriggerUuid", insertable = false, updatable = false)
+    @NoView
+    private Set<SchedulerJobSchedulerTriggerRefVO> addedJobRefs = new HashSet<SchedulerJobSchedulerTriggerRefVO>();
+
+    public SchedulerTriggerVO() {
+    }
+
+    public SchedulerTriggerVO(SchedulerTriggerVO other) {
+        this.addedJobRefs = other.addedJobRefs;
+    }
 
     public Integer getRepeatCount() {
         return repeatCount;
@@ -126,5 +140,13 @@ public class SchedulerTriggerVO extends ResourceVO{
 
     public void setSchedulerInterval(Integer schedulerInterval) {
         this.schedulerInterval = schedulerInterval;
+    }
+
+    public Set<SchedulerJobSchedulerTriggerRefVO> getAddedJobRefs() {
+        return addedJobRefs;
+    }
+
+    public void setAddedJobRefs(Set<SchedulerJobSchedulerTriggerRefVO> addedJobRefs) {
+        this.addedJobRefs = addedJobRefs;
     }
 }

@@ -2,6 +2,7 @@ package org.zstack.scheduler;
 
 import org.zstack.header.core.scheduler.SchedulerTriggerInventory;
 import org.zstack.header.query.APIQueryMessage;
+import org.zstack.header.query.APIQueryReply;
 import org.zstack.header.rest.RestResponse;
 
 import java.sql.Timestamp;
@@ -14,7 +15,7 @@ import static java.util.Arrays.asList;
  * Created by AlanJager on 2017/6/8.
  */
 @RestResponse(allTo = "inventories")
-public class APIQuerySchedulerTriggerReply  extends APIQueryMessage {
+public class APIQuerySchedulerTriggerReply  extends APIQueryReply {
     private List<SchedulerTriggerInventory> inventories;
 
     public List<SchedulerTriggerInventory> getInventories() {

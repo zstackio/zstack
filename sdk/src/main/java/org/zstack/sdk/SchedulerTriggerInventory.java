@@ -82,4 +82,12 @@ public class SchedulerTriggerInventory  {
         return this.lastOpDate;
     }
 
+    public java.util.List<String> jobsUuid;
+    public void setJobsUuid(java.util.List<String> jobsUuid) {
+        this.jobsUuid = jobsUuid;
+    }
+    public java.util.List<String> getJobsUuid() {
+        return this.jobsUuid;
+    }
+
 }

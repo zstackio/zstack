@@ -17,9 +17,11 @@ public class SchedulerJobSchedulerTriggerRefVO {
     private String uuid;
 
     @Column
+    @ForeignKey(parentEntityClass = SchedulerJobVO.class)
     private String schedulerJobUuid;
 
     @Column
+    @ForeignKey(parentEntityClass = SchedulerTriggerVO.class)
     private String schedulerTriggerUuid;
 
     @Column

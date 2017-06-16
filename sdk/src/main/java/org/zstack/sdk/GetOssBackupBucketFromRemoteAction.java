@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SyncEcsInstanceFromRemoteAction extends AbstractAction {
+public class GetOssBackupBucketFromRemoteAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public SyncEcsInstanceFromRemoteResult value;
+        public GetOssBackupBucketFromRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -22,15 +22,6 @@ public class SyncEcsInstanceFromRemoteAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String dataCenterUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Boolean onlyZstack = true;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
-
     @Param(required = false)
     public java.util.List systemTags;
 
@@ -40,10 +31,6 @@ public class SyncEcsInstanceFromRemoteAction extends AbstractAction {
     @Param(required = true)
     public String sessionId;
 
-    public long timeout;
-    
-    public long pollingInterval;
-
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -52,8 +39,8 @@ public class SyncEcsInstanceFromRemoteAction extends AbstractAction {
             return ret;
         }
         
-        SyncEcsInstanceFromRemoteResult value = res.getResult(SyncEcsInstanceFromRemoteResult.class);
-        ret.value = value == null ? new SyncEcsInstanceFromRemoteResult() : value; 
+        GetOssBackupBucketFromRemoteResult value = res.getResult(GetOssBackupBucketFromRemoteResult.class);
+        ret.value = value == null ? new GetOssBackupBucketFromRemoteResult() : value; 
 
         return ret;
     }
@@ -79,9 +66,9 @@ public class SyncEcsInstanceFromRemoteAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/hybrid/aliyun/ecs/{dataCenterUuid}/sync";
+        info.path = "/hybrid/backup-mysql/oss";
         info.needSession = true;
-        info.needPoll = true;
+        info.needPoll = false;
         info.parameterName = "";
         return info;
     }

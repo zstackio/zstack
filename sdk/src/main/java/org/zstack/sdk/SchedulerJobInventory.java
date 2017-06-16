@@ -50,4 +50,12 @@ public class SchedulerJobInventory  {
         return this.lastOpDate;
     }
 
+    public java.util.List<String> triggersUuid;
+    public void setTriggersUuid(java.util.List<String> triggersUuid) {
+        this.triggersUuid = triggersUuid;
+    }
+    public java.util.List<String> getTriggersUuid() {
+        return this.triggersUuid;
+    }
+
 }

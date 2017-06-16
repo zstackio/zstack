@@ -1,6 +1,9 @@
 package org.zstack.header.core.scheduler;
 
 import org.zstack.header.configuration.PythonClassInventory;
+import org.zstack.header.network.l2.L2NetworkInventory;
+import org.zstack.header.query.ExpandedQueries;
+import org.zstack.header.query.ExpandedQuery;
 import org.zstack.header.search.Inventory;
 
 import java.sql.Timestamp;
@@ -13,6 +16,12 @@ import java.util.List;
  */
 @Inventory(mappingVOClass = SchedulerJobSchedulerTriggerRefVO.class)
 @PythonClassInventory
+@ExpandedQueries({
+        @ExpandedQuery(expandedField = "trigger", inventoryClass = SchedulerTriggerInventory.class,
+                foreignKey = "schedulerTriggerUuid", expandedInventoryKey = "uuid"),
+        @ExpandedQuery(expandedField = "job", inventoryClass = SchedulerJobInventory.class,
+                foreignKey = "schedulerJobUuid", expandedInventoryKey = "uuid")
+})
 public class SchedulerJobSchedulerTriggerInventory {
     private String uuid;
     private String schedulerJobUuid;

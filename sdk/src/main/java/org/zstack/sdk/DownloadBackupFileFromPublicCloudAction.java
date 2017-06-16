@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SyncEcsInstanceFromRemoteAction extends AbstractAction {
+public class DownloadBackupFileFromPublicCloudAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public SyncEcsInstanceFromRemoteResult value;
+        public DownloadBackupFileFromPublicCloudResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -23,13 +23,13 @@ public class SyncEcsInstanceFromRemoteAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String dataCenterUuid;
+    public java.lang.String regionId;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Boolean onlyZstack = true;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String file;
 
-    @Param(required = false)
-    public java.lang.String resourceUuid;
+    @Param(required = true, validValues = {"aliyun"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String type;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -52,8 +52,8 @@ public class SyncEcsInstanceFromRemoteAction extends AbstractAction {
             return ret;
         }
         
-        SyncEcsInstanceFromRemoteResult value = res.getResult(SyncEcsInstanceFromRemoteResult.class);
-        ret.value = value == null ? new SyncEcsInstanceFromRemoteResult() : value; 
+        DownloadBackupFileFromPublicCloudResult value = res.getResult(DownloadBackupFileFromPublicCloudResult.class);
+        ret.value = value == null ? new DownloadBackupFileFromPublicCloudResult() : value; 
 
         return ret;
     }
@@ -78,11 +78,11 @@ public class SyncEcsInstanceFromRemoteAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
-        info.path = "/hybrid/aliyun/ecs/{dataCenterUuid}/sync";
+        info.httpMethod = "POST";
+        info.path = "/hybrid/backup-mysql/download";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 

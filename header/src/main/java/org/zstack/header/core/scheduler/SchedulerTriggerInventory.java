@@ -1,8 +1,11 @@
 package org.zstack.header.core.scheduler;
 
 import org.zstack.header.configuration.PythonClassInventory;
+import org.zstack.header.query.*;
 import org.zstack.header.search.Inventory;
 
+import javax.persistence.JoinColumn;
+import java.io.Serializable;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -14,7 +17,14 @@ import java.util.List;
 
 @Inventory(mappingVOClass = SchedulerTriggerVO.class)
 @PythonClassInventory
-public class SchedulerTriggerInventory {
+@ExpandedQueries({
+        @ExpandedQuery(expandedField = "schedulerJobSchedulerTriggerRef", inventoryClass = SchedulerJobSchedulerTriggerInventory.class,
+                foreignKey = "uuid", expandedInventoryKey = "schedulerTriggerUuid", hidden = true),
+})
+@ExpandedQueryAliases({
+        @ExpandedQueryAlias(alias = "job", expandedField = "schedulerJobSchedulerTriggerRef.job"),
+})
+public class SchedulerTriggerInventory implements Serializable {
     private String uuid;
     private String name;
     private String description;
@@ -25,6 +35,10 @@ public class SchedulerTriggerInventory {
     private Timestamp stopTime;
     private Timestamp createDate;
     private Timestamp lastOpDate;
+
+    @Queryable(mappingClass = SchedulerJobSchedulerTriggerInventory.class,
+            joinColumn = @JoinColumn(name = "schedulerTriggerUuid", referencedColumnName = "schedulerJobUuid"))
+    private List<String> jobsUuid;
 
     protected SchedulerTriggerInventory(SchedulerTriggerVO vo) {
         this.uuid = vo.getUuid();
@@ -37,6 +51,11 @@ public class SchedulerTriggerInventory {
         this.stopTime = vo.getStopTime();
         this.createDate = vo.getCreateDate();
         this.lastOpDate = vo.getLastOpDate();
+
+        jobsUuid = new ArrayList<String>(vo.getAddedJobRefs().size());
+        for (SchedulerJobSchedulerTriggerRefVO ref : vo.getAddedJobRefs()) {
+            jobsUuid.add(ref.getSchedulerJobUuid());
+        }
     }
 
     public SchedulerTriggerInventory() {
@@ -133,5 +152,13 @@ public class SchedulerTriggerInventory {
 
     public void setLastOpDate(Timestamp lastOpDate) {
         this.lastOpDate = lastOpDate;
+    }
+
+    public List<String> getJobsUuid() {
+        return jobsUuid;
+    }
+
+    public void setJobsUuid(List<String> jobsUuid) {
+        this.jobsUuid = jobsUuid;
     }
 }

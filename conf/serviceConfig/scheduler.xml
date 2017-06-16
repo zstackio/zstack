@@ -42,4 +42,9 @@
     <message>
         <name>org.zstack.scheduler.APICreateSchedulerJobMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.scheduler.APIQuerySchedulerTriggerMsg</name>
+        <serviceId>query</serviceId>
+    </message>
 </service>

@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SyncEcsInstanceFromRemoteAction extends AbstractAction {
+public class CreateOssBackupBucketRemoteAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public SyncEcsInstanceFromRemoteResult value;
+        public CreateOssBackupBucketRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -23,10 +23,7 @@ public class SyncEcsInstanceFromRemoteAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String dataCenterUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Boolean onlyZstack = true;
+    public java.lang.String regionId;
 
     @Param(required = false)
     public java.lang.String resourceUuid;
@@ -52,8 +49,8 @@ public class SyncEcsInstanceFromRemoteAction extends AbstractAction {
             return ret;
         }
         
-        SyncEcsInstanceFromRemoteResult value = res.getResult(SyncEcsInstanceFromRemoteResult.class);
-        ret.value = value == null ? new SyncEcsInstanceFromRemoteResult() : value; 
+        CreateOssBackupBucketRemoteResult value = res.getResult(CreateOssBackupBucketRemoteResult.class);
+        ret.value = value == null ? new CreateOssBackupBucketRemoteResult() : value; 
 
         return ret;
     }
@@ -78,11 +75,11 @@ public class SyncEcsInstanceFromRemoteAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
-        info.path = "/hybrid/aliyun/ecs/{dataCenterUuid}/sync";
+        info.httpMethod = "POST";
+        info.path = "/hybrid/backup-mysql/oss";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 

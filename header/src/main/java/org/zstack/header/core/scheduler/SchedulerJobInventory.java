@@ -1,9 +1,12 @@
 package org.zstack.header.core.scheduler;
 
 import org.zstack.header.configuration.PythonClassInventory;
+import org.zstack.header.query.*;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.search.Inventory;
+import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO;
 
+import javax.persistence.JoinColumn;
 import java.io.Serializable;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -15,6 +18,13 @@ import java.util.List;
  */
 @Inventory(mappingVOClass = SchedulerJobVO.class)
 @PythonClassInventory
+@ExpandedQueries({
+        @ExpandedQuery(expandedField = "schedulerJobSchedulerTriggerRef", inventoryClass = SchedulerJobSchedulerTriggerInventory.class,
+                foreignKey = "uuid", expandedInventoryKey = "schedulerJobUuid", hidden = true),
+})
+@ExpandedQueryAliases({
+        @ExpandedQueryAlias(alias = "trigger", expandedField = "schedulerJobSchedulerTriggerRef.trigger"),
+})
 public class SchedulerJobInventory implements Serializable {
     private String uuid;
     private String targetResourceUuid;
@@ -30,6 +40,10 @@ public class SchedulerJobInventory implements Serializable {
     @APINoSee
     private String jobClassName;
 
+    @Queryable(mappingClass = SchedulerJobSchedulerTriggerInventory.class,
+            joinColumn = @JoinColumn(name = "schedulerJobUuid", referencedColumnName = "schedulerTriggerUuid"))
+    private List<String> triggersUuid;
+
     protected SchedulerJobInventory(SchedulerJobVO vo) {
         uuid = vo.getUuid();
         name = vo.getName();
@@ -39,6 +53,11 @@ public class SchedulerJobInventory implements Serializable {
         lastOpDate = vo.getLastOpDate();
         jobData = vo.getJobData();
         jobClassName = vo.getJobClassName();
+
+        triggersUuid = new ArrayList<String>(vo.getAddedTriggerRefs().size());
+        for (SchedulerJobSchedulerTriggerRefVO ref : vo.getAddedTriggerRefs()) {
+            triggersUuid.add(ref.getSchedulerTriggerUuid());
+        }
     }
 
     public SchedulerJobInventory() {
@@ -120,4 +139,13 @@ public class SchedulerJobInventory implements Serializable {
     public void setJobClassName(String jobClassName) {
         this.jobClassName = jobClassName;
     }
+
+    public List<String> getTriggersUuid() {
+        return triggersUuid;
+    }
+
+    public void setTriggersUuid(List<String> triggersUuid) {
+        this.triggersUuid = triggersUuid;
+    }
+
 }

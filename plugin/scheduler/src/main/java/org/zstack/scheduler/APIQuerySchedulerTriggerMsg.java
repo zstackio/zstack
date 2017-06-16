@@ -1,7 +1,6 @@
 package org.zstack.scheduler;
 
 import org.springframework.http.HttpMethod;
-import org.zstack.header.core.scheduler.SchedulerJobInventory;
 import org.zstack.header.core.scheduler.SchedulerTriggerInventory;
 import org.zstack.header.identity.Action;
 import org.zstack.header.query.APIQueryMessage;
