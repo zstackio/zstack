@@ -12,7 +12,6 @@ import org.zstack.header.identity.AccountConstant
 import org.zstack.header.message.AbstractBeforeSendMessageInterceptor
 import org.zstack.header.message.Event
 import org.zstack.header.message.Message
-import org.zstack.header.message.MessageReply
 import org.zstack.sdk.SessionInventory
 import org.zstack.sdk.ZSClient
 import org.zstack.utils.ShellUtils
@@ -347,21 +346,6 @@ abstract class Test implements ApiHelper {
         return resultDir
     }
 
-    void collectFailureCaseLog(File dir, Class caseClass, String caseLogStartLine) {
-        File failureLogDir = new File([dir.absolutePath, "failureLogs", caseClass.name.replace(".", "_")].join("/"))
-        failureLogDir.mkdirs()
-        File failureLog = new File([failureLogDir.absolutePath, "case.log"].join("/"))
-
-        File mgmtLogPath = new File([System.getProperty("user.dir"), "management-server.log"].join("/"))
-
-        ShellUtils.run("""\
-start=`grep -nr "$caseLogStartLine" ${mgmtLogPath.absolutePath} | grep -v ShellUtils | gawk '{print \$1}' FS=":"`
-tail -n +\$start ${mgmtLogPath.absolutePath} > ${failureLog.absolutePath}
-
-mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
-""", false)
-    }
-
     protected void runSubCases() {
         def resultDir = [getResultDirBase(), this.class.name.replace(".", "_")].join("/")
         def dir = new File(resultDir)
@@ -375,7 +359,7 @@ mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
         def cases = new File([dir.absolutePath, "cases"].join("/"))
         cases.write(caseTypes.collect {it.name}.join("\n"))
 
-        if (System.hasProperty("list")) {
+        if (System.getProperty("list") != null) {
             return
         }
 
@@ -396,7 +380,7 @@ mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
             def c = r.caseType.newInstance() as Case
 
             String caseLogStartLine = "case log of ${c.class} starts here"
-            String caseLogEndLine  = "case lo of ${c.class} ends here"
+            String caseLogEndLine = "case log of ${c.class} ends here"
 
             logger.info("starts running a sub case[${c.class}] of suite[${this.class}]")
             new File([dir.absolutePath, "current-case"].join("/")).write("${c.class}")
@@ -431,21 +415,20 @@ mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
                 r.success = false
                 r.error = e.message
 
-                logger.error("a sub case [${c.class}] of suite[${this.class}] throw StopTestSuiteException, ${e.message}", e)
+                logger.error("a sub case[${c.class}] of suite[${this.class}] throws StopTestSuiteException, ${e.message}", e)
                 break
             } catch (Throwable t) {
                 hasFailure = true
-
                 r.success = false
                 r.error = t.message
 
-                logger.error("a sub case [${c.class}] of suite[${this.class}] fails, ${t.message}", t)
+                logger.error("a sub case[${c.class}] of suite[${this.class}] fails, ${t.message}", t)
             } finally {
                 def fname = c.class.name.replace(".", "_") + "." + (r.success ? "success" : "failure")
                 def rfile = new File([dir.absolutePath, fname].join("/"))
                 rfile.write(JSONObjectUtil.toJsonString(r))
 
-                logger.info("write test result of a sub case [${c.class}] of suite[${this.class}] to $fname")
+                logger.info("write test result of a sub case[${c.class}] of suite[${this.class}] to $fname")
                 logger.info(caseLogEndLine)
             }
         }
