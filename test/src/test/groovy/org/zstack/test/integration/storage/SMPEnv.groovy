@@ -140,7 +140,7 @@ use:
         }
     }
 
-    static EnvSpec twoHostsNoVmBasicEnv() {
+    static EnvSpec threeHostsNoVmBasicEnv() {
         return Test.makeEnv {
             instanceOffering {
                 name = "instanceOffering"

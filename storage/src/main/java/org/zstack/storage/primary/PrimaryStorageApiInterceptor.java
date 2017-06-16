@@ -4,6 +4,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -130,6 +132,28 @@ public class PrimaryStorageApiInterceptor implements ApiMessageInterceptor {
             if (count == 0) {
                 throw new ApiMessageInterceptionException(argerr("primary storage[uuid:%s] and cluster[uuid:%s] are not in the same zone",
                                 msg.getPrimaryStorageUuid(), msg.getClusterUuid()));
+            }
+        }
+        {
+            String url = Q.New(PrimaryStorageVO.class).select(PrimaryStorageVO_.url)
+                    .eq(PrimaryStorageVO_.uuid, msg.getPrimaryStorageUuid())
+                    .findValue();
+            long count = SQL.New("select count(ps)" +
+                    " from PrimaryStorageVO ps" +
+                    " where ps.uuid in" +
+                    " (" +
+                    " select ref.primaryStorageUuid from PrimaryStorageClusterRefVO ref" +
+                    " where ref.clusterUuid = :clusterUuid" +
+                    " )" +
+                    " and ps.url = :url", Long.class)
+                    .param("clusterUuid", msg.getClusterUuid())
+                    .param("url", url)
+                    .find();
+
+            if(count > 0){
+                throw new ApiMessageInterceptionException(
+                        argerr("url[%s] has been occupied, it cannot be duplicate in same cluster",
+                        url));
             }
         }
     }

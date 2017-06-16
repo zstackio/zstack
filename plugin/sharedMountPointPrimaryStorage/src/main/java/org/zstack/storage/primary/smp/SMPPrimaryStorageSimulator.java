@@ -41,7 +41,7 @@ public class SMPPrimaryStorageSimulator {
     String connect(HttpEntity<String> entity) {
         ConnectCmd cmd = JSONObjectUtil.toObject(entity.getBody(), ConnectCmd.class);
         config.connectCmds.add(cmd);
-        AgentRsp rsp = new AgentRsp();
+        ConnectRsp rsp = new ConnectRsp();
         rsp.totalCapacity = config.totalCapacity;
         rsp.availableCapacity = config.availableCapcacity;
         reply(entity, rsp);
