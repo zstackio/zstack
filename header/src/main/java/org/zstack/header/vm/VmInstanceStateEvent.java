@@ -12,6 +12,8 @@ public enum VmInstanceStateEvent {
     expunging,
     pausing,
     resuming,
+    volumeMigrating,
+    volumeMigrated,
 
     /* Below events are from zstack internal logic */
     unknown,

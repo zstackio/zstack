@@ -374,6 +374,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((ExpungeVmMsg) msg);
         } else if (msg instanceof HaStartVmInstanceMsg) {
             handle((HaStartVmInstanceMsg) msg);
+        } else if (msg instanceof OverlayMessage) {
+            handle((OverlayMessage) msg);
         } else {
             VmInstanceBaseExtensionFactory ext = vmMgr.getVmInstanceBaseExtensionFactory(msg);
             if (ext != null) {
@@ -4796,7 +4798,40 @@ public class VmInstanceBase extends AbstractVmInstance {
                 });
             }
         }).start();
+    }
 
+    private void handle(OverlayMessage msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                doOverlayMessage(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return "overlay-message";
+            }
+        });
+    }
+
+    private void doOverlayMessage(OverlayMessage msg, NoErrorCompletion noErrorCompletion) {
+        bus.send(msg.getMessage(), new CloudBusCallBack(msg, noErrorCompletion) {
+            @Override
+            public void run(MessageReply reply) {
+                bus.reply(msg, reply);
+                noErrorCompletion.done();
+            }
+        });
     }
 }
 

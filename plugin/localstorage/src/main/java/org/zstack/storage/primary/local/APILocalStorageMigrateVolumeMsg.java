@@ -73,7 +73,7 @@ public class APILocalStorageMigrateVolumeMsg extends APIMessage implements Prima
             @Override
             public void after(APIEvent evt) {
                 if (evt.isSuccess()) {
-                    ntfy("Migrated from primary storage[uuid:%s] to primary storage[uuid:%s]", primaryStorageUuid, destHostUuid)
+                    ntfy("Migrated to host[uuid:%s] on local primary storage[uuid:%s] ", destHostUuid, primaryStorageUuid)
                         .resource(volumeUuid, VolumeVO.class.getSimpleName())
                         .context("primaryStorageUuid", primaryStorageUuid)
                         .context("destHostUuid", destHostUuid)

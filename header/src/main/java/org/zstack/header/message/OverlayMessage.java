@@ -18,7 +18,14 @@ public class OverlayMessage extends NeedReplyMessage {
     public NeedReplyMessage getMessage() {
         try {
             Class clazz = Class.forName(messageClassName);
-            return (NeedReplyMessage) JSONObjectUtil.rehashObject(message, clazz);
+            NeedReplyMessage nmsg = (NeedReplyMessage) JSONObjectUtil.rehashObject(message, clazz);
+            if(nmsg instanceof OverlayMessage){
+                OverlayMessage omsg = (OverlayMessage)nmsg;
+                omsg.setMessage(omsg.getMessage());
+                return omsg;
+            }else {
+                return nmsg;
+            }
         } catch (ClassNotFoundException e) {
             throw new CloudRuntimeException(e);
         }
