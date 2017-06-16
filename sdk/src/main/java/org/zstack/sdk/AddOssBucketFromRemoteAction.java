@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class AddOssFileBucketNameAction extends AbstractAction {
+public class AddOssBucketFromRemoteAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public AddOssFileBucketNameResult value;
+        public AddOssBucketFromRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -23,7 +23,7 @@ public class AddOssFileBucketNameAction extends AbstractAction {
     }
 
     @Param(required = true, maxLength = 64, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String ossBucketName;
+    public java.lang.String bucketName;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String regionId;
@@ -55,8 +55,8 @@ public class AddOssFileBucketNameAction extends AbstractAction {
             return ret;
         }
         
-        AddOssFileBucketNameResult value = res.getResult(AddOssFileBucketNameResult.class);
-        ret.value = value == null ? new AddOssFileBucketNameResult() : value; 
+        AddOssBucketFromRemoteResult value = res.getResult(AddOssBucketFromRemoteResult.class);
+        ret.value = value == null ? new AddOssBucketFromRemoteResult() : value; 
 
         return ret;
     }

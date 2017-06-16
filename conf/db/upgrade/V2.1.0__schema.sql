@@ -19,4 +19,5 @@ CREATE TABLE `SnapShotUsageVO` (
 
 DROP TABLE IF EXISTS EcsInstanceConsoleProxyVO;
 
-ALTER TABLE OssBucketVO modify COLUMN bucketName varchar(64);
+ALTER TABLE OssBucketVO MODIFY COLUMN bucketName varchar(64);
+ALTER TABLE OssBucketVO ADD COLUMN regionName varchar(64) DEFAULT NULL;
