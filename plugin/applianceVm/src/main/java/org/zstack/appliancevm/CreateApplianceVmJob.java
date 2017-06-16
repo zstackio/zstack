@@ -7,6 +7,7 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -18,6 +19,8 @@ import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.image.ImageVO_;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.network.l3.L3NetworkVO_;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSequenceNumberVO;
 import org.zstack.header.vm.VmInstanceState;
@@ -71,6 +74,13 @@ public class CreateApplianceVmJob implements Job {
         }
         String defaultRouteL3NetworkUuid = spec.getDefaultRouteL3Network() != null ? spec.getDefaultRouteL3Network().getUuid() : spec.getManagementNic().getL3NetworkUuid();
         avo.setDefaultRouteL3NetworkUuid(defaultRouteL3NetworkUuid);
+
+        String zoneUuid = Q.New(L3NetworkVO.class)
+            .select(L3NetworkVO_.zoneUuid)
+            .eq(L3NetworkVO_.uuid, defaultRouteL3NetworkUuid)
+            .findValue();
+        avo.setZoneUuid(zoneUuid);
+
         avo.setDescription(spec.getDescription());
         avo.setImageUuid(spec.getTemplate().getUuid());
         avo.setInstanceOfferingUuid(spec.getInstanceOffering().getUuid());
