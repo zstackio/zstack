@@ -6,11 +6,14 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.BypassWhenUnitTest;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.host.HostConstant;
 import org.zstack.header.identity.IdentityErrors;
 import org.zstack.header.identity.Quota;
 import org.zstack.header.image.APIAddImageMsg;
@@ -18,14 +21,16 @@ import org.zstack.header.image.ImageConstant;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.rest.RESTFacade;
-import org.zstack.header.storage.backup.BackupStorageConstant;
-import org.zstack.header.storage.backup.GetImageSizeOnBackupStorageMsg;
-import org.zstack.header.storage.backup.GetImageSizeOnBackupStorageReply;
+import org.zstack.header.storage.backup.*;
+import org.zstack.header.vm.VmInstanceState;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
+import java.util.HashMap;
 import java.util.Map;
+
+import static org.zstack.core.Platform.operr;
 
 /**
  * Created by miao on 16-10-9.
@@ -101,23 +106,24 @@ public class ImageQuotaUtil {
         }
     }
 
-    public long getImageSizeQuotaUseHttpHead(APIAddImageMsg msg){
-        long imageSizeAsked = 0;
-        String url = msg.getUrl();
-        url = url.trim();
-        if (url.startsWith("file:///")) {
-            GetImageSizeOnBackupStorageMsg cmsg = new GetImageSizeOnBackupStorageMsg();
-            cmsg.setBackupStorageUuid(msg.getBackupStorageUuids().get(0));
-            cmsg.setImageUrl(url);
-            cmsg.setImageUuid(msg.getResourceUuid());
-            bus.makeTargetServiceIdByResourceUuid(cmsg, BackupStorageConstant.SERVICE_ID,
-                    msg.getBackupStorageUuids().get(0));
-            MessageReply reply = bus.call(cmsg);
-            if (!reply.isSuccess()) {
-                throw new OperationFailureException(reply.getError());
-            }
 
-            imageSizeAsked = ((GetImageSizeOnBackupStorageReply) reply).getSize();
+    public long getImageSizeQuotaUseHttpHead(APIAddImageMsg msg) {
+        long imageSizeAsked = 0;
+        final String url = msg.getUrl().trim();
+        if (url.startsWith("file:///")) {
+            GetLocalFileSizeOnBackupStorageMsg gmsg = new GetLocalFileSizeOnBackupStorageMsg();
+            String bsUuid = msg.getBackupStorageUuids().get(0);
+            gmsg.setBackupStorageUuid(bsUuid);
+            gmsg.setUrl(url.split("://")[1]);
+            bus.makeTargetServiceIdByResourceUuid(gmsg, BackupStorageConstant.SERVICE_ID, bsUuid);
+            GetLocalFileSizeOnBackupStorageReply reply = (GetLocalFileSizeOnBackupStorageReply) bus.call(gmsg);
+            if (!reply.isSuccess()) {
+                logger.warn(String.format("cannot get image. The image url : %s. description: %s.name: %s",
+                        url, msg.getDescription(), msg.getName()));
+                throw new OperationFailureException(reply.getError());
+            } else {
+                imageSizeAsked = reply.getSize();
+            }
         } else if (url.startsWith("http") || url.startsWith("https")) {
             String len = null;
             HttpHeaders header = restf.getRESTTemplate().headForHeaders(url);
