@@ -2,12 +2,12 @@ package org.zstack.sdk;
 
 public class OssBucketProperty  {
 
-    public java.lang.String ossBucketName;
-    public void setOssBucketName(java.lang.String ossBucketName) {
-        this.ossBucketName = ossBucketName;
+    public java.lang.String bucketName;
+    public void setBucketName(java.lang.String bucketName) {
+        this.bucketName = bucketName;
     }
-    public java.lang.String getOssBucketName() {
-        return this.ossBucketName;
+    public java.lang.String getBucketName() {
+        return this.bucketName;
     }
 
     public java.lang.String regionId;

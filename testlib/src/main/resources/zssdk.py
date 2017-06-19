@@ -12791,7 +12791,7 @@ class AddOssFileBucketNameAction(AbstractAction):
     PARAM_NAME = 'params'
 
     PARAMS = {
-        'ossBucketName': ParamAnnotation(required=True,max_length=32,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
+        'bucketName': ParamAnnotation(required=True,max_length=32,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
         'regionId': ParamAnnotation(required=True,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
         'resourceUuid': ParamAnnotation(),
         'systemTags': ParamAnnotation(),
@@ -12801,7 +12801,7 @@ class AddOssFileBucketNameAction(AbstractAction):
 
     def __init__(self):
         super(AddOssFileBucketNameAction, self).__init__()
-        self.ossBucketName = None
+        self.bucketName = None
         self.regionId = None
         self.resourceUuid = None
         self.systemTags = None

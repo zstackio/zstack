@@ -1,6 +1,6 @@
 package org.zstack.sdk;
 
-public class AddOssFileBucketNameResult {
+public class AddOssBucketFromRemoteResult {
     public OssBucketInventory inventory;
     public void setInventory(OssBucketInventory inventory) {
         this.inventory = inventory;

@@ -26,6 +26,14 @@ public class OssBucketInventory  {
         return this.regionId;
     }
 
+    public java.lang.String regionName;
+    public void setRegionName(java.lang.String regionName) {
+        this.regionName = regionName;
+    }
+    public java.lang.String getRegionName() {
+        return this.regionName;
+    }
+
     public java.lang.String description;
     public void setDescription(java.lang.String description) {
         this.description = description;
