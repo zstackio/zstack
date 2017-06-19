@@ -8,6 +8,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
@@ -23,9 +24,7 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HypervisorType;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.identity.SessionLogoutExtensionPoint;
-import org.zstack.header.managementnode.ManagementNodeChangeListener;
-import org.zstack.header.managementnode.ManagementNodeVO;
-import org.zstack.header.managementnode.ManagementNodeVO_;
+import org.zstack.header.managementnode.*;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.vm.*;
@@ -297,6 +296,4 @@ public class ConsoleManagerImpl extends AbstractService implements ConsoleManage
     @Override
     public void iJoin(String nodeId) {
     }
-
-
 }

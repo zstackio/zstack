@@ -103,6 +103,7 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
                     vo = new ConsoleProxyAgentVO();
                     vo.setManagementIp(Platform.getManagementServerIp());
                     vo.setUuid(Platform.getManagementServerId());
+                    vo.setConsoleProxyOverriddenIp(CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IP);
                     vo.setState(ConsoleProxyAgentState.Enabled);
                     vo.setStatus(ConsoleProxyAgentStatus.Connecting);
                     vo.setDescription(String.format("Console proxy agent running on the management node[uuid:%s]", Platform.getManagementServerId()));
