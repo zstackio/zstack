@@ -21,3 +21,4 @@ DROP TABLE IF EXISTS EcsInstanceConsoleProxyVO;
 
 ALTER TABLE OssBucketVO MODIFY COLUMN bucketName varchar(64);
 ALTER TABLE OssBucketVO ADD COLUMN regionName varchar(64) DEFAULT NULL;
+alter table `ConsoleProxyAgentVO` add `consoleProxyOverriddenIp` varchar(255) NOT NULL;

@@ -26,6 +26,9 @@ public class ConsoleProxyAgentVO {
     private String managementIp;
 
     @Column
+    private String consoleProxyOverriddenIp;
+
+    @Column
     private String type;
 
     @Column
@@ -69,6 +72,14 @@ public class ConsoleProxyAgentVO {
 
     public void setManagementIp(String managementIp) {
         this.managementIp = managementIp;
+    }
+
+    public String getConsoleProxyOverriddenIp() {
+        return consoleProxyOverriddenIp;
+    }
+
+    public void setConsoleProxyOverriddenIp(String consoleProxyOverriddenIp) {
+        this.consoleProxyOverriddenIp = consoleProxyOverriddenIp;
     }
 
     public String getType() {
