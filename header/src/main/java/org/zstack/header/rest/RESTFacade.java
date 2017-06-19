@@ -53,10 +53,10 @@ public interface RESTFacade {
     void installBeforeAsyncJsonPostInterceptor(BeforeAsyncJsonPostInterceptor interceptor);
 
     // timeout are in milliseconds
-    static RestTemplate createRestTemplate(int readTimeout, int connectTimeout) {
-        HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory();
+    static TimeoutRestTemplate createRestTemplate(int readTimeout, int connectTimeout) {
+        HttpComponentsClientHttpRequestFactory factory = new TimeoutHttpComponentsClientHttpRequestFactory();
         factory.setReadTimeout(readTimeout);
         factory.setConnectTimeout(connectTimeout);
-        return new RestTemplate(factory);
+        return new TimeoutRestTemplate(factory);
     }
 }
