@@ -55,8 +55,6 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
-import static org.zstack.core.Platform.operr;
-
 import javax.persistence.Tuple;
 import java.io.File;
 import java.util.ArrayList;
@@ -64,6 +62,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.taskProgress;
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -785,10 +784,14 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     private void createEmptyVolume(final VolumeInventory volume, final String hostUuid, final String backingFile, final ReturnValueCompletion<String> completion) {
         final CreateEmptyVolumeCmd cmd = new CreateEmptyVolumeCmd();
         cmd.setAccountUuid(acntMgr.getOwnerAccountUuidOfResource(volume.getUuid()));
-        if (VolumeType.Root.toString().equals(volume.getType())) {
-            cmd.setInstallUrl(makeRootVolumeInstallUrl(volume));
+        if (volume.getInstallPath() != null && !volume.getInstallPath().equals("")) {
+            cmd.setInstallUrl(volume.getInstallPath());
         } else {
-            cmd.setInstallUrl(makeDataVolumeInstallUrl(volume.getUuid()));
+            if (VolumeType.Root.toString().equals(volume.getType())) {
+                cmd.setInstallUrl(makeRootVolumeInstallUrl(volume));
+            } else {
+                cmd.setInstallUrl(makeDataVolumeInstallUrl(volume.getUuid()));
+            }
         }
         cmd.setName(volume.getName());
         cmd.setSize(volume.getSize());
