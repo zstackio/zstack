@@ -717,7 +717,16 @@ public class KVMAgentCommands {
         private String hostManagementIp;
         private String clock;
         private String videoType;
+        private boolean useAudio;
         private boolean useNuma;
+
+        public boolean isUseAudio() {
+            return useAudio;
+        }
+
+        public void setUseAudio(boolean useAudio) {
+            this.useAudio = useAudio;
+        }
 
         public boolean isUseNuma() {
             return useNuma;

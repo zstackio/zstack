@@ -17,8 +17,6 @@ import org.zstack.core.ansible.AnsibleGlobalProperty;
 import org.zstack.core.ansible.AnsibleRunner;
 import org.zstack.core.ansible.SshFileMd5Checker;
 import org.zstack.core.db.Q;
-import org.zstack.core.db.SQL;
-import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -65,9 +63,6 @@ import org.zstack.utils.path.PathUtil;
 import org.zstack.utils.ssh.Ssh;
 import org.zstack.utils.ssh.SshResult;
 import org.zstack.utils.ssh.SshShell;
-
-import static org.zstack.core.Platform.inerr;
-import static org.zstack.core.Platform.operr;
 
 import javax.persistence.TypedQuery;
 import java.util.*;
@@ -1885,6 +1880,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setUseVirtio(virtio);
         cmd.setClock(ImagePlatform.isType(platform, ImagePlatform.Windows, ImagePlatform.WindowsVirtio) ? "localtime" : "utc");
         cmd.setVideoType(VmGlobalConfig.VM_VIDEO_TYPE.value(String.class));
+        cmd.setUseAudio(VmGlobalConfig.VM_AUDIO.value(Boolean.class));
         cmd.setInstanceOfferingOnlineChange(VmSystemTags.INSTANCEOFFERING_ONLIECHANGE.getTokenByResourceUuid(spec.getVmInventory().getUuid(), VmSystemTags.INSTANCEOFFERING_ONLINECHANGE_TOKEN) != null);
 
         VolumeTO rootVolume = new VolumeTO();
