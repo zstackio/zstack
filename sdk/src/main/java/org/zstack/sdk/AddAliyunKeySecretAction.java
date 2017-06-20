@@ -91,7 +91,7 @@ public class AddAliyunKeySecretAction extends AbstractAction {
         info.path = "/hybrid/aliyun/key";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 
