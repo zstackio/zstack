@@ -2,6 +2,9 @@ package org.zstack.header.storage.primary;
 
 import org.zstack.header.configuration.PythonClass;
 
+import java.util.Arrays;
+import java.util.List;
+
 @PythonClass
 public interface PrimaryStorageConstant {
     String SERVICE_ID = "storage.primary";
@@ -24,5 +27,13 @@ public interface PrimaryStorageConstant {
     enum AllocatorParams {
         SPEC,
         CANDIDATES,
+    }
+
+    interface StatusConfig {
+        List<PrimaryStorageStatus> AVAILABLE_STATUSES = Arrays.asList(PrimaryStorageStatus.Connected);
+    }
+
+    interface StateConfig {
+        List<PrimaryStorageState> AVAILABLE_STATES = Arrays.asList(PrimaryStorageState.Enabled);
     }
 }
