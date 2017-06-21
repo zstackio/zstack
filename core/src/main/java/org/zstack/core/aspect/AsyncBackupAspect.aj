@@ -5,6 +5,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.*;
@@ -26,10 +27,15 @@ public aspect AsyncBackupAspect {
     private ErrorFacade errf;
 
     private boolean isAsyncBackup(Object backup) {
-        return backup instanceof Message || backup instanceof Completion || backup instanceof ReturnValueCompletion
+        return backup instanceof Message
+                || backup instanceof Completion
+                || backup instanceof ReturnValueCompletion
                 || backup instanceof AsyncLatch
-                || backup instanceof FlowTrigger || backup instanceof SyncTaskChain
-                || backup instanceof NoErrorCompletion || backup instanceof FlowRollback;
+                || backup instanceof FlowTrigger
+                || backup instanceof SyncTaskChain
+                || backup instanceof NoErrorCompletion
+                || backup instanceof FlowRollback
+                || backup instanceof ChainTask;
     }
 
 
