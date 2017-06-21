@@ -118,7 +118,7 @@ public class CreateEcsInstanceFromLocalImageAction extends AbstractAction {
         info.path = "/hybrid/aliyun/ecs";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 
