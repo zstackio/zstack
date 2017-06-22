@@ -160,7 +160,9 @@ public class LocalStorageAllocateCapacityFlow implements Flow {
                 AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
                 amsg.setSize(dinv.getDiskSize());
                 amsg.setRequiredHostUuid(spec.getDestHost().getUuid());
-                if (hasOtherNonLocalStoragePrimaryStorage) {
+                if(spec.getRequiredPrimaryStorageUuidForDataVolume() != null){
+                    amsg.setRequiredPrimaryStorageUuid(spec.getRequiredPrimaryStorageUuidForDataVolume());
+                } else if (hasOtherNonLocalStoragePrimaryStorage) {
                     amsg.setAllocationStrategy(dinv.getAllocatorStrategy());
                     amsg.addExcludePrimaryStorageUuid(localStorageUuid);
                     amsg.addExcludeAllocatorStrategy(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY);

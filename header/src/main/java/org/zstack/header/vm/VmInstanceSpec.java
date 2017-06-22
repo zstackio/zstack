@@ -21,13 +21,6 @@ import java.util.Map;
 
 
 public class VmInstanceSpec implements Serializable {
-    public String getRequiredPrimaryStorageUuidForRootVolume() {
-        return requiredPrimaryStorageUuidForRootVolume;
-    }
-
-    public void setRequiredPrimaryStorageUuidForRootVolume(String requiredPrimaryStorageUuidForRootVolume) {
-        this.requiredPrimaryStorageUuidForRootVolume = requiredPrimaryStorageUuidForRootVolume;
-    }
 
     public static class VolumeSpec {
         private PrimaryStorageInventory primaryStorageInventory;
@@ -174,6 +167,7 @@ public class VmInstanceSpec implements Serializable {
     private String requiredClusterUuid;
     private String requiredHostUuid;
     private String requiredPrimaryStorageUuidForRootVolume;
+    private String requiredPrimaryStorageUuidForDataVolume;
 
     private List<HostName> hostnames = new ArrayList<>();
     private HostInventory destHost;
@@ -413,5 +407,21 @@ public class VmInstanceSpec implements Serializable {
             }
         }
         return nsTypes;
+    }
+
+    public String getRequiredPrimaryStorageUuidForRootVolume() {
+        return requiredPrimaryStorageUuidForRootVolume;
+    }
+
+    public void setRequiredPrimaryStorageUuidForRootVolume(String requiredPrimaryStorageUuidForRootVolume) {
+        this.requiredPrimaryStorageUuidForRootVolume = requiredPrimaryStorageUuidForRootVolume;
+    }
+
+    public String getRequiredPrimaryStorageUuidForDataVolume() {
+        return requiredPrimaryStorageUuidForDataVolume;
+    }
+
+    public void setRequiredPrimaryStorageUuidForDataVolume(String requiredPrimaryStorageUuidForDataVolume) {
+        this.requiredPrimaryStorageUuidForDataVolume = requiredPrimaryStorageUuidForDataVolume;
     }
 }
