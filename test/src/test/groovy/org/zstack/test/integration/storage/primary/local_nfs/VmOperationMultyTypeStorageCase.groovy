@@ -1,10 +1,13 @@
 package org.zstack.test.integration.storage.primary.local_nfs
 
+import org.zstack.header.storage.primary.PrimaryStorageStateEvent
 import org.zstack.sdk.CreateVmInstanceAction
+import org.zstack.sdk.DiskOfferingInventory
 import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.InstanceOfferingInventory
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.PrimaryStorageInventory
+import org.zstack.sdk.VmInstanceInventory
 import org.zstack.test.integration.storage.Env
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
@@ -31,6 +34,7 @@ class VmOperationMultyTypeStorageCase extends SubCase{
     void test() {
         env.create {
             testCreateVmChooseNfs()
+            disableNfsPrimaryStorage()
         }
     }
 
@@ -54,5 +58,27 @@ class VmOperationMultyTypeStorageCase extends SubCase{
         a.sessionId = currentEnvSpec.session.uuid
 
         assert a.call().error != null
+    }
+
+    void disableNfsPrimaryStorage(){
+        PrimaryStorageInventory nfs = env.inventoryByName("nfs") as PrimaryStorageInventory
+        InstanceOfferingInventory ins = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
+        DiskOfferingInventory diskOfferingInventory = env.inventoryByName("diskOffering")
+        ImageInventory image = env.inventoryByName("image") as ImageInventory
+        L3NetworkInventory l3 = env.inventoryByName("l3") as L3NetworkInventory
+
+        changePrimaryStorageState {
+            uuid = nfs.uuid
+            stateEvent = PrimaryStorageStateEvent.disable.toString()
+        }
+
+        VmInstanceInventory vm = createVmInstance {
+            name = "vm"
+            imageUuid = image.uuid
+            l3NetworkUuids = [l3.uuid]
+            instanceOfferingUuid = ins.uuid
+            dataDiskOfferingUuids = [diskOfferingInventory.uuid]
+        }
+        assert vm.allVolumes.size() == 2
     }
 }

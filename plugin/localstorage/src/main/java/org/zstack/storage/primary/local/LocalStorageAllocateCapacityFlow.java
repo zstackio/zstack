@@ -37,7 +37,6 @@ import java.util.List;
 import java.util.Map;
 
 import static org.zstack.core.Platform.argerr;
-import static org.zstack.core.Platform.operr;
 
 /**
  * Created by frank on 7/2/2015.
@@ -61,11 +60,16 @@ public class LocalStorageAllocateCapacityFlow implements Flow {
                 " and ref.clusterUuid = host.clusterUuid" +
                 " and host.uuid = :huuid" +
                 " and pri.uuid != :puuid" +
-                " and pri.type != :pstype";
+                " and pri.type != :pstype" +
+                " and pri.status in (:psStatus)" +
+                " and pri.state in (:psState)";
         TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
         q.setParameter("huuid", hostUuid);
         q.setParameter("puuid", localStorageUuid);
         q.setParameter("pstype", LocalStorageConstants.LOCAL_STORAGE_TYPE);
+        q.setParameter("psStatus", PrimaryStorageConstant.StatusConfig.AVAILABLE_STATUSES);
+        q.setParameter("psState", PrimaryStorageConstant.StateConfig.AVAILABLE_STATES);
+
         return q.getSingleResult() > 0;
     }
 
