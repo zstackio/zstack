@@ -955,8 +955,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         if (PrimaryStorageStateEvent.maintain == event) {
             logger.warn(String.format("Primary Storage %s  will enter maintenance mode, ignore unknown status VMs", msg.getPrimaryStorageUuid()));
             List<String> vmUuids = SQL.New("select vm.uuid from VmInstanceVO vm, VolumeVO vol" +
-                    " where vol.primaryStorageUuid =:uuid and vol.vmInstanceUuid = vm.uuid and vol.type = :volType", String.class)
-                    .param("uuid", self.getUuid()).param("volType", VolumeType.Root).list();
+                    " where vol.primaryStorageUuid =:uuid and vol.vmInstanceUuid = vm.uuid group by vm.uuid", String.class)
+                    .param("uuid", self.getUuid()).list();
             if ( vmUuids.size() != 0 ) {
                 stopAllVms(vmUuids);
             }
