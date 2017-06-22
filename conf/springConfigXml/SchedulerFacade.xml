@@ -12,7 +12,7 @@
     http://zstack.org/schema/zstack/plugin.xsd"
     default-init-method="init" default-destroy-method="destroy">
 
-    <bean id="SchedulerFacadeImpl" class="org.zstack.core.scheduler.SchedulerFacadeImpl">
+    <bean id="SchedulerFacadeImpl" class="org.zstack.scheduler.SchedulerFacadeImpl">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component" />
             <zstack:extension interface="org.zstack.header.Service" />
@@ -35,7 +35,7 @@
     </property>
     </bean>
 
-    <bean id="SchedulerApiInterceptor" class="org.zstack.core.scheduler.SchedulerApiInterceptor">
+    <bean id="SchedulerApiInterceptor" class="org.zstack.scheduler.SchedulerApiInterceptor">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor" />
         </zstack:plugin>

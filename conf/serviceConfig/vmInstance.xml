@@ -13,21 +13,6 @@
         <name>org.zstack.header.vm.APIStopVmInstanceMsg</name>
     </message>
     <message>
-        <name>org.zstack.header.vm.APICreateStopVmInstanceSchedulerMsg</name>
-        <interceptor>SchedulerApiInterceptor</interceptor>
-        <interceptor>VmInstanceApiInterceptor</interceptor>
-    </message>
-    <message>
-        <name>org.zstack.header.vm.APICreateStartVmInstanceSchedulerMsg</name>
-        <interceptor>SchedulerApiInterceptor</interceptor>
-        <interceptor>VmInstanceApiInterceptor</interceptor>
-    </message>
-    <message>
-        <name>org.zstack.header.vm.APICreateRebootVmInstanceSchedulerMsg</name>
-        <interceptor>SchedulerApiInterceptor</interceptor>
-        <interceptor>VmInstanceApiInterceptor</interceptor>
-    </message>
-    <message>
         <name>org.zstack.header.vm.APIRebootVmInstanceMsg</name>
     </message>
     <message>

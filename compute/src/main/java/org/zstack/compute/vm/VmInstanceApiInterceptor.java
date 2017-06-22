@@ -7,8 +7,6 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.header.allocator.HostCapacityVO;
-import org.zstack.header.allocator.HostCapacityVO_;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
@@ -22,7 +20,6 @@ import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
-import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.image.ImageState;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.image.ImageVO_;
@@ -32,8 +29,6 @@ import org.zstack.header.vm.*;
 import org.zstack.header.zone.ZoneState;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.header.zone.ZoneVO_;
-import org.zstack.utils.SizeUtils;
-import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.network.NetworkUtils;
 
 import static org.zstack.core.Platform.argerr;
@@ -87,12 +82,6 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             validate((APISetVmStaticIpMsg) msg);
         } else if (msg instanceof APIStartVmInstanceMsg) {
             validate((APIStartVmInstanceMsg) msg);
-        } else if (msg instanceof APICreateStartVmInstanceSchedulerMsg) {
-            validate((APICreateStartVmInstanceSchedulerMsg) msg);
-        } else if (msg instanceof APICreateStopVmInstanceSchedulerMsg) {
-            validate((APICreateStopVmInstanceSchedulerMsg) msg);
-        } else if (msg instanceof APICreateRebootVmInstanceSchedulerMsg) {
-            validate((APICreateRebootVmInstanceSchedulerMsg) msg);
         } else if (msg instanceof APIGetInterdependentL3NetworksImagesMsg) {
             validate((APIGetInterdependentL3NetworksImagesMsg) msg);
         } else if (msg instanceof APIUpdateVmInstanceMsg) {
@@ -213,42 +202,6 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         // host uuid overrides cluster uuid
         if (msg.getHostUuid() != null) {
             msg.setClusterUuid(null);
-        }
-    }
-
-    private void validate(APICreateStartVmInstanceSchedulerMsg msg) {
-        // host uuid overrides cluster uuid
-        if (msg.getHostUuid() != null) {
-            msg.setClusterUuid(null);
-        }
-
-        SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
-        q.select(VmInstanceVO_.state);
-        q.add(VmInstanceVO_.uuid, Op.EQ, msg.getVmInstanceUuid());
-        VmInstanceState state = q.findValue();
-        if (state == VmInstanceState.Destroyed) {
-            throw new ApiMessageInterceptionException(operr("vm[uuid:%s] can only create scheduler when state is not Destroyed", msg.getVmInstanceUuid()));
-        }
-
-    }
-
-    private void validate(APICreateStopVmInstanceSchedulerMsg msg) {
-        SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
-        q.select(VmInstanceVO_.state);
-        q.add(VmInstanceVO_.uuid, Op.EQ, msg.getVmInstanceUuid());
-        VmInstanceState state = q.findValue();
-        if (state == VmInstanceState.Destroyed) {
-            throw new ApiMessageInterceptionException(operr("vm[uuid:%s] can only create scheduler when state is not Destroyed", msg.getVmInstanceUuid()));
-        }
-    }
-
-    private void validate(APICreateRebootVmInstanceSchedulerMsg msg) {
-        SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
-        q.select(VmInstanceVO_.state);
-        q.add(VmInstanceVO_.uuid, Op.EQ, msg.getVmInstanceUuid());
-        VmInstanceState state = q.findValue();
-        if (state == VmInstanceState.Destroyed) {
-            throw new ApiMessageInterceptionException(operr("vm[uuid:%s] can only create scheduler when state is not Destroyed", msg.getVmInstanceUuid()));
         }
     }
 

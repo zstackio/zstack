@@ -10,7 +10,7 @@ import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.scheduler.SchedulerFacade;
+import org.zstack.scheduler.SchedulerFacade;
 import org.zstack.core.thread.CancelablePeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -755,13 +755,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
 
     public void volumeBeforeExpunge(VolumeInventory volume) {
         logger.debug(String.format("will delete scheduler before expunge volume %s", volume.getUuid()));
-        SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
-        q.add(SchedulerVO_.targetResourceUuid, Op.EQ, volume.getUuid());
-        q.select(SchedulerVO_.uuid);
-        List<String> uuids = q.listValue();
-        for (String uuid : uuids) {
-            schedulerFacade.deleteSchedulerJob(uuid);
-        }
+        schedulerFacade.deleteSchedulerJobByResourceUuid(volume.getUuid());
     }
 
     public void preRecoverDataVolume(VolumeInventory volume) {

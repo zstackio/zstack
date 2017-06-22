@@ -212,6 +212,11 @@
         </dependency>
         <dependency>
             <groupId>org.zstack</groupId>
+            <artifactId>scheduler</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.zstack</groupId>
             <artifactId>sdk</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -220,10 +225,11 @@
             <artifactId>testlib</artifactId>
             <version>${project.version}</version>
         </dependency>
-	<dependency>
-	    <groupId>com.github.javaparser</groupId>
-	    <artifactId>javaparser-core</artifactId>
-	</dependency>
+	    <dependency>
+	        <groupId>com.github.javaparser</groupId>
+	        <artifactId>javaparser-core</artifactId>
+	    </dependency>
+
     </dependencies>
 
     <build>

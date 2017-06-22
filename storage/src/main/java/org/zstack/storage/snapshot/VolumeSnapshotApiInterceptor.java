@@ -9,7 +9,6 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.storage.backup.BackupStorageZoneRefVO;
 import org.zstack.header.storage.backup.BackupStorageZoneRefVO_;
@@ -58,8 +57,6 @@ public class VolumeSnapshotApiInterceptor implements ApiMessageInterceptor {
             validate((APIRevertVolumeFromSnapshotMsg) msg);
         } else if (msg instanceof APIDeleteVolumeSnapshotFromBackupStorageMsg) {
             validate((APIDeleteVolumeSnapshotFromBackupStorageMsg) msg);
-        } else if (msg instanceof APICreateVolumeSnapshotSchedulerMsg) {
-            validate((APICreateVolumeSnapshotSchedulerMsg) msg);
         } else if (msg instanceof APICreateVolumeSnapshotMsg) {
             validate((APICreateVolumeSnapshotMsg) msg);
         } else if (msg instanceof APIGetVolumeSnapshotTreeMsg) {
@@ -112,16 +109,6 @@ public class VolumeSnapshotApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APICreateVolumeSnapshotMsg msg) {
-        SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
-        q.select(VolumeVO_.status);
-        q.add(VolumeVO_.uuid, Op.EQ, msg.getVolumeUuid());
-        VolumeStatus status = q.findValue();
-        if (status != VolumeStatus.Ready) {
-            throw new ApiMessageInterceptionException(operr("volume[uuid:%s] is not in status Ready, current is %s, can't create snapshot", msg.getVolumeUuid(), status));
-        }
-    }
-
-    private void validate(APICreateVolumeSnapshotSchedulerMsg msg) {
         SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
         q.select(VolumeVO_.status);
         q.add(VolumeVO_.uuid, Op.EQ, msg.getVolumeUuid());
