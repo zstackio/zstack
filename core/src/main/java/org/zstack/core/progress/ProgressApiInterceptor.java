@@ -10,6 +10,7 @@ import org.zstack.header.core.progress.APIGetTaskProgressMsg;
 import org.zstack.header.message.APIMessage;
 
 import static org.zstack.core.Platform.argerr;
+import static org.zstack.utils.StringDSL.isApiId;
 import static org.zstack.utils.StringDSL.isZStackUuid;
 
 /**
@@ -33,8 +34,8 @@ public class ProgressApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APIGetTaskProgressMsg msg) {
-        if (!isZStackUuid(msg.getApiId())) {
-            throw new ApiMessageInterceptionException(argerr("parameter apiId[%s] is not a valid uuid."));
+        if (!isApiId(msg.getApiId())) {
+            throw new ApiMessageInterceptionException(argerr("parameter apiId[%s] is not a valid uuid.", msg.getApiId()));
         }
     }
 }
