@@ -56,6 +56,14 @@
 	</config>
 
 	<config>
+	<name>audio</name>
+	<description>whether to use Audio ac97 for VM</description>
+	<category>vm</category>
+	<defaultValue>false</defaultValue>
+	<type>java.lang.Boolean</type>
+	</config>
+
+	<config>
 		<category>vm</category>
 		<name>numa</name>
 		<description>whether to use numa structure</description>
