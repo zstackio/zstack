@@ -6,31 +6,23 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.BypassWhenUnitTest;
-import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.host.HostConstant;
 import org.zstack.header.identity.IdentityErrors;
 import org.zstack.header.identity.Quota;
 import org.zstack.header.image.APIAddImageMsg;
 import org.zstack.header.image.ImageConstant;
 import org.zstack.header.image.ImageVO;
-import org.zstack.header.message.MessageReply;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.backup.*;
-import org.zstack.header.vm.VmInstanceState;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
-import java.util.HashMap;
 import java.util.Map;
-
-import static org.zstack.core.Platform.operr;
 
 /**
  * Created by miao on 16-10-9.
@@ -97,7 +89,7 @@ public class ImageQuotaUtil {
     public void checkImageSizeQuotaUseHttpHead(APIAddImageMsg msg, Map<String, Quota.QuotaPair> pairs) {
         long imageSizeQuota = pairs.get(ImageConstant.QUOTA_IMAGE_SIZE).getValue();
         long imageSizeUsed = new ImageQuotaUtil().getUsedImageSize(msg.getSession().getAccountUuid());
-        long imageSizeAsked = getImageSizeQuotaUseHttpHead(msg);
+        long imageSizeAsked = getLocalImageSizeOnBackupStorage(msg);
         if ((imageSizeQuota == 0) || (imageSizeUsed + imageSizeAsked > imageSizeQuota)) {
             throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
                     String.format("quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
@@ -107,7 +99,7 @@ public class ImageQuotaUtil {
     }
 
 
-    public long getImageSizeQuotaUseHttpHead(APIAddImageMsg msg) {
+    public long getLocalImageSizeOnBackupStorage(APIAddImageMsg msg) {
         long imageSizeAsked = 0;
         final String url = msg.getUrl().trim();
         if (url.startsWith("file:///")) {
