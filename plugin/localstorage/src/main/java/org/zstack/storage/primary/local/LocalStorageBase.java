@@ -1185,6 +1185,12 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
             @Override
             protected void scripts() {
+
+                // delete the image cache
+                sql("delete from ImageCacheVO ic where ic.primaryStorageUuid = :psUuid and" +
+                        " ic.installUrl like :url").param("psUuid", self.getUuid())
+                        .param("url", String.format("%%%s%%", hostUuid)).execute();
+
                 List<LocalStorageResourceRefVO> refs = sql(
                         "select ref from LocalStorageResourceRefVO ref where ref.hostUuid = :huuid" +
                                 " and ref.primaryStorageUuid = :psUuid", LocalStorageResourceRefVO.class
@@ -1240,11 +1246,6 @@ public class LocalStorageBase extends PrimaryStorageBase {
                                 " the local storage[name:%s, uuid:%s]", vmUuidsToDelete, hostUuid, self.getName(), self.getUuid()));
                     }
                 }
-
-                // delete the image cache
-                sql("delete from ImageCacheVO ic where ic.primaryStorageUuid = :psUuid and" +
-                        " ic.installUrl like :url").param("psUuid", self.getUuid())
-                        .param("url", String.format("%%%s%%", hostUuid)).execute();
 
                 for (LocalStorageResourceRefVO ref : refs) {
                     dbf.getEntityManager().merge(ref);
