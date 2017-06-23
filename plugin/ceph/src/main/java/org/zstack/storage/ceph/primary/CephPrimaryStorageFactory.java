@@ -25,6 +25,7 @@ import org.zstack.header.storage.backup.BackupStorageConstant;
 import org.zstack.header.storage.backup.DeleteBitsOnBackupStorageMsg;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.CreateTemplateFromVolumeSnapshotExtensionPoint;
+import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.volume.SyncVolumeSizeMsg;
@@ -36,6 +37,7 @@ import org.zstack.kvm.*;
 import org.zstack.storage.ceph.*;
 import org.zstack.storage.ceph.primary.KVMCephVolumeTO.MonInfo;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
+import org.zstack.storage.snapshot.PostMarkRootVolumeAsSnapshotExtension;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
@@ -60,7 +62,7 @@ import static org.zstack.utils.CollectionDSL.map;
  */
 public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCapacityUpdateExtensionPoint, KVMStartVmExtensionPoint,
         KVMAttachVolumeExtensionPoint, KVMDetachVolumeExtensionPoint, CreateTemplateFromVolumeSnapshotExtensionPoint,
-        KvmSetupSelfFencerExtensionPoint, KVMPreAttachIsoExtensionPoint, Component {
+        KvmSetupSelfFencerExtensionPoint, KVMPreAttachIsoExtensionPoint, Component, PostMarkRootVolumeAsSnapshotExtension {
     private static final CLogger logger = Utils.getLogger(CephPrimaryStorageFactory.class);
 
     public static final PrimaryStorageType type = new PrimaryStorageType(CephConstants.CEPH_PRIMARY_STORAGE_TYPE);
@@ -497,5 +499,10 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
     @Override
     public void preAttachIsoExtensionPoint(KVMHostInventory host, AttachIsoCmd cmd) {
         cmd.iso = convertIsoToCephIfNeeded(cmd.iso);
+    }
+
+    @Override
+    public void afterMarkRootVolumeAsSnapshot(VolumeSnapshotInventory snapshot) {
+
     }
 }

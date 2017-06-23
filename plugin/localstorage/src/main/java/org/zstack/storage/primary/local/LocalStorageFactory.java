@@ -11,6 +11,8 @@ import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SQL;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -38,6 +40,7 @@ import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.volume.*;
 import org.zstack.kvm.KVMConstant;
+import org.zstack.storage.snapshot.PostMarkRootVolumeAsSnapshotExtension;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -63,7 +66,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         GetAttachableVolumeExtensionPoint, RecalculatePrimaryStorageCapacityExtensionPoint, HostMaintenancePolicyExtensionPoint,
         AddExpandedQueryExtensionPoint, VolumeGetAttachableVmExtensionPoint, RecoverDataVolumeExtensionPoint,
         RecoverVmExtensionPoint, VmPreMigrationExtensionPoint, CreateTemplateFromVolumeSnapshotExtensionPoint, HostAfterConnectedExtensionPoint,
-        InstantiateDataVolumeOnCreationExtensionPoint, PrimaryStorageAttachExtensionPoint {
+        InstantiateDataVolumeOnCreationExtensionPoint, PrimaryStorageAttachExtensionPoint, PostMarkRootVolumeAsSnapshotExtension {
     private final static CLogger logger = Utils.getLogger(LocalStorageFactory.class);
     public static PrimaryStorageType type = new PrimaryStorageType(LocalStorageConstants.LOCAL_STORAGE_TYPE) {
         @Override
@@ -936,5 +939,30 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
     @Override
     public void afterAttachPrimaryStorage(PrimaryStorageInventory inventory, String clusterUuid) {
         recalculatePrimaryStorageCapacity(clusterUuid);
+    }
+
+    @Override
+    public void afterMarkRootVolumeAsSnapshot(VolumeSnapshotInventory snapshot) {
+
+        new SQLBatch(){
+
+            @Override
+            protected void scripts() {
+                String type = Q.New(PrimaryStorageVO.class).eq(PrimaryStorageVO_.uuid, snapshot.getPrimaryStorageUuid()).select(PrimaryStorageVO_.type).findValue();
+                if(!type.equals(LocalStorageConstants.LOCAL_STORAGE_TYPE)){
+                    return;
+                }
+                LocalStorageResourceRefVO ref = new LocalStorageResourceRefVO();
+                ref.setPrimaryStorageUuid(snapshot.getPrimaryStorageUuid());
+                ref.setSize(snapshot.getSize());
+                ref.setResourceType(snapshot.getType());
+                ref.setResourceUuid(snapshot.getUuid());
+                ref.setHostUuid(Q.New(LocalStorageResourceRefVO.class)
+                        .select(LocalStorageResourceRefVO_.hostUuid)
+                        .eq(LocalStorageResourceRefVO_.resourceUuid, snapshot.getVolumeUuid()).findValue());
+                persist(ref);
+            }
+        }.execute();
+
     }
 }

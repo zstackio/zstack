@@ -17,6 +17,7 @@
             <zstack:extension interface="org.zstack.header.storage.snapshot.CreateTemplateFromVolumeSnapshotExtensionPoint" />
             <zstack:extension interface="org.zstack.header.host.HostDeleteExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.storage.primary.PrimaryStorageDetachExtensionPoint" />
+            <zstack:extension interface="org.zstack.storage.snapshot.PostMarkRootVolumeAsSnapshotExtension"/>
         </zstack:plugin>
     </bean>
 

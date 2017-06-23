@@ -13,12 +13,13 @@ import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.thread.ChainTask;
+import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
-import org.zstack.header.core.scheduler.SchedulerJobInventory;
-import org.zstack.header.core.scheduler.SchedulerJobVO;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -39,7 +40,6 @@ import org.zstack.utils.DebugUtils;
 import org.zstack.utils.ExceptionDSL;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import static org.zstack.core.Platform.operr;
@@ -112,6 +112,8 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
             handle((CreateVolumeSnapshotMsg) msg);
         } else if (msg instanceof VolumeSnapshotReportPrimaryStorageCapacityUsageMsg) {
             handle((VolumeSnapshotReportPrimaryStorageCapacityUsageMsg) msg);
+        } else if (msg instanceof MarkRootVolumeAsSnapshotMsg) {
+            handle((MarkRootVolumeAsSnapshotMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -132,6 +134,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         reply.setUsedSize(size == null ? 0 : size);
         bus.reply(msg, reply);
     }
+
 
 
     private void handle(APIGetVolumeSnapshotTreeMsg msg) {
@@ -428,6 +431,122 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
                         rollbackSnapshot(struct.getCurrent().getUuid());
+                        ret.setError(errCode);
+                        bus.reply(msg, ret);
+                    }
+                });
+            }
+        }).start();
+    }
+
+    private void handle(MarkRootVolumeAsSnapshotMsg msg) {
+        final MarkRootVolumeAsSnapshotReply ret = new MarkRootVolumeAsSnapshotReply();
+        VolumeInventory vol = msg.getVolume();
+
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("mark-rootVolume-%s-as-snapshot", vol.getUuid()));
+        chain.then(new ShareFlow() {
+            final VolumeSnapshotVO vo = new VolumeSnapshotVO();
+            VolumeSnapshotCapability capability;
+            @Override
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String _name_ = "ask-volume-snapshot-capability";
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        final String primaryStorageUuid = msg.getVolume().getPrimaryStorageUuid();
+                        AskVolumeSnapshotCapabilityMsg askMsg = new AskVolumeSnapshotCapabilityMsg();
+                        askMsg.setPrimaryStorageUuid(primaryStorageUuid);
+                        askMsg.setVolume(vol);
+                        bus.makeTargetServiceIdByResourceUuid(askMsg, PrimaryStorageConstant.SERVICE_ID, primaryStorageUuid);
+                        MessageReply reply = bus.call(askMsg);
+                        if (!reply.isSuccess()) {
+                            ret.setError(errf.stringToOperationError(
+                                    String.format("cannot ask primary storage[uuid:%s] for volume snapshot capability",
+                                            vol.getUuid()), reply.getError()));
+                            bus.reply(msg, ret);
+                            trigger.fail(ret.getError());
+                            return;
+                        }
+
+                        AskVolumeSnapshotCapabilityReply areply = reply.castReply();
+                        capability = areply.getCapability();
+                        if (!capability.isSupport()) {
+                            ret.setError(operr("primary storage[uuid:%s] doesn't support volume snapshot;" +
+                                    " cannot create snapshot for volume[uuid:%s]", primaryStorageUuid, vol.getUuid()));
+                            bus.reply(msg, ret);
+                            trigger.fail(ret.getError());
+                            return;
+                        }
+                        trigger.next();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String _name_ = "mark-rootVolume-as-snapshot";
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+
+                        vo.setUuid(Platform.getUuid());
+                        vo.setName(vol.getName());
+                        vo.setDescription(vol.getDescription());
+                        vo.setVolumeUuid(vol.getUuid());
+                        vo.setFormat(vol.getFormat());
+                        vo.setVolumeType(vol.getType());
+                        vo.setPrimaryStorageUuid(vol.getPrimaryStorageUuid());
+                        vo.setSize(vol.getSize());
+                        vo.setState(VolumeSnapshotState.Enabled);
+                        vo.setStatus(VolumeSnapshotStatus.Creating);
+
+
+                        if (VolumeSnapshotArrangementType.CHAIN == capability.getArrangementType()) {
+                            saveChainTypeSnapshot(vo);
+                        } else if (VolumeSnapshotArrangementType.INDIVIDUAL == capability.getArrangementType()) {
+                            saveIndividualTypeSnapshot(vo);
+                        } else {
+                            DebugUtils.Assert(false, "should not be here");
+                        }
+
+                        acntMgr.createAccountResourceRef(msg.getAccountUuid(), vo.getUuid(), VolumeSnapshotVO.class);
+                        trigger.next();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String _name_ = "post-mark-rootVolume-as-snapshot";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        List<PostMarkRootVolumeAsSnapshotExtension> extensions = pluginRgty.getExtensionList(PostMarkRootVolumeAsSnapshotExtension.class);
+                        for(PostMarkRootVolumeAsSnapshotExtension extension : extensions){
+                            extension.afterMarkRootVolumeAsSnapshot(VolumeSnapshotInventory.valueOf(vo));
+                        }
+                        trigger.next();
+                    }
+                });
+
+
+                done(new FlowDoneHandler(msg) {
+                    @Override
+                    public void handle(Map data) {
+                        VolumeSnapshotVO svo = dbf.findByUuid(vo.getUuid(), VolumeSnapshotVO.class);
+                        svo.setPrimaryStorageInstallPath(vol.getInstallPath());
+                        svo.setStatus(VolumeSnapshotStatus.Ready);
+                        if (vol.getFormat() != null) {
+                            svo.setFormat(vol.getFormat());
+                        }
+                        svo = dbf.updateAndRefresh(svo);
+                        new FireSnapShotCanonicalEvent().
+                                fireSnapShotStatusChangedEvent(svo.getStatus(), VolumeSnapshotInventory.valueOf(svo));
+                        ret.setInventory(VolumeSnapshotInventory.valueOf(svo));
+                        bus.reply(msg, ret);
+                    }
+                });
+
+                error(new FlowErrorHandler(msg) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        rollbackSnapshot(vo.getUuid());
                         ret.setError(errCode);
                         bus.reply(msg, ret);
                     }

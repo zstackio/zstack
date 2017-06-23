@@ -37,6 +37,7 @@
             <zstack:extension interface="org.zstack.header.storage.snapshot.CreateTemplateFromVolumeSnapshotExtensionPoint" />
             <zstack:extension interface="org.zstack.kvm.KvmSetupSelfFencerExtensionPoint" />
             <zstack:extension interface="org.zstack.header.Component" />
+            <zstack:extension interface="org.zstack.storage.snapshot.PostMarkRootVolumeAsSnapshotExtension"/>
         </zstack:plugin>
     </bean>
 

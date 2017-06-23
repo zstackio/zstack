@@ -48,6 +48,8 @@ import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.*;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.storage.primary.*;
+import org.zstack.header.storage.snapshot.MarkRootVolumeAsSnapshotMsg;
+import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.ChangeVmMetaDataMsg.AtomicHostUuid;
 import org.zstack.header.vm.ChangeVmMetaDataMsg.AtomicVmState;
@@ -4756,6 +4758,31 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             @Override
             public void setup() {
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "mark-root-volume-as-snapshot-on-primary-storage";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        MarkRootVolumeAsSnapshotMsg gmsg = new MarkRootVolumeAsSnapshotMsg();
+                        rootVolumeInventory.setDescription(String.format("save snapshot for reimage vm [uuid:%s]", msg.getVmInstanceUuid()));
+                        rootVolumeInventory.setName("reimage-vm-point");
+                        gmsg.setVolume(rootVolumeInventory);
+                        gmsg.setAccountUuid(msg.getSession().getAccountUuid());
+                        bus.makeLocalServiceId(gmsg, VolumeSnapshotConstant.SERVICE_ID);
+                        bus.send(gmsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (reply.isSuccess()) {
+                                    trigger.next();
+                                } else {
+                                    trigger.fail(reply.getError());
+                                }
+                            }
+                        });
+                    }
+                });
+
                 flow(new NoRollbackFlow() {
                     String __name__ = "reset-root-volume-from-image-on-primary-storage";
 
