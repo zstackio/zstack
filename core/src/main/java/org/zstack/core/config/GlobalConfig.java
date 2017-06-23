@@ -39,9 +39,9 @@ public class GlobalConfig {
     private String defaultValue;
     private volatile String value;
     private boolean linked;
-    private transient List<GlobalConfigUpdateExtensionPoint> updateExtensions = new ArrayList<GlobalConfigUpdateExtensionPoint>();
-    private transient List<GlobalConfigValidatorExtensionPoint> validators = new ArrayList<GlobalConfigValidatorExtensionPoint>();
-    private transient List<GlobalConfigUpdateExtensionPoint> localUpdateExtensions = new ArrayList<GlobalConfigUpdateExtensionPoint>();
+    private transient List<GlobalConfigUpdateExtensionPoint> updateExtensions = new ArrayList<>();
+    private transient List<GlobalConfigValidatorExtensionPoint> validators = new ArrayList<>();
+    private transient List<GlobalConfigUpdateExtensionPoint> localUpdateExtensions = new ArrayList<>();
     private GlobalConfigDef configDef;
 
     @Autowired

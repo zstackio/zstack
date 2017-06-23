@@ -64,7 +64,13 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         RecoverVmExtensionPoint, VmPreMigrationExtensionPoint, CreateTemplateFromVolumeSnapshotExtensionPoint, HostAfterConnectedExtensionPoint,
         InstantiateDataVolumeOnCreationExtensionPoint, PrimaryStorageAttachExtensionPoint {
     private final static CLogger logger = Utils.getLogger(LocalStorageFactory.class);
-    public static PrimaryStorageType type = new PrimaryStorageType(LocalStorageConstants.LOCAL_STORAGE_TYPE);
+    public static PrimaryStorageType type = new PrimaryStorageType(LocalStorageConstants.LOCAL_STORAGE_TYPE) {
+        @Override
+        public boolean isSupportVmLiveMigration() {
+            return supportVmLiveMigration &
+                    LocalStoragePrimaryStorageGlobalConfig.ALLOW_LIVE_MIGRATION.value(Boolean.class);
+        }
+    };
 
     static {
         type.setSupportVmLiveMigration(true);

@@ -12,7 +12,7 @@ public class PrimaryStorageType {
     private boolean exposed = true;
     private boolean supportHeartbeatFile;
     private boolean supportPingStorageGateway;
-    private boolean supportVmLiveMigration = true;
+    protected boolean supportVmLiveMigration = true;
     private boolean supportVolumeMigration;
     private boolean supportVolumeMigrationInCurrentPrimaryStorage;
     private boolean supportVolumeMigrationToOtherPrimaryStorage;
