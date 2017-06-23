@@ -4,7 +4,6 @@ import org.zstack.header.configuration.PythonClassInventory;
 import org.zstack.header.query.*;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.search.Inventory;
-import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO;
 
 import javax.persistence.JoinColumn;
 import java.io.Serializable;
@@ -30,6 +29,7 @@ public class SchedulerJobInventory implements Serializable {
     private String targetResourceUuid;
     private String name;
     private String description;
+    private String state;
     private Timestamp createDate;
     private Timestamp lastOpDate;
     /**
@@ -39,6 +39,7 @@ public class SchedulerJobInventory implements Serializable {
     private String jobData;
     @APINoSee
     private String jobClassName;
+
 
     @Queryable(mappingClass = SchedulerJobSchedulerTriggerInventory.class,
             joinColumn = @JoinColumn(name = "schedulerJobUuid", referencedColumnName = "schedulerTriggerUuid"))
@@ -148,4 +149,11 @@ public class SchedulerJobInventory implements Serializable {
         this.triggersUuid = triggersUuid;
     }
 
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
+    }
 }

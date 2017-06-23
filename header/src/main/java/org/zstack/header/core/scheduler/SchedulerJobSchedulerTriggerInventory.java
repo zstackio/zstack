@@ -26,8 +26,6 @@ public class SchedulerJobSchedulerTriggerInventory {
     private String uuid;
     private String schedulerJobUuid;
     private String schedulerTriggerUuid;
-    private String status;
-    private String state;
     private String jobGroup;
     private String triggerGroup;
     private Timestamp createDate;
@@ -37,8 +35,6 @@ public class SchedulerJobSchedulerTriggerInventory {
         this.setUuid(vo.getUuid());
         this.setSchedulerJobUuid(vo.getSchedulerJobUuid());
         this.setSchedulerTriggerUuid(vo.getSchedulerTriggerUuid());
-        this.setStatus(vo.getStatus());
-        this.setState(vo.getState());
         this.setJobGroup(vo.getJobGroup());
         this.setTriggerGroup(vo.getTriggerGroup());
         this.setCreateDate(vo.getCreateDate());
@@ -79,22 +75,6 @@ public class SchedulerJobSchedulerTriggerInventory {
 
     public void setSchedulerTriggerUuid(String schedulerTriggerUuid) {
         this.schedulerTriggerUuid = schedulerTriggerUuid;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public String getState() {
-        return state;
-    }
-
-    public void setState(String state) {
-        this.state = state;
     }
 
     public String getJobGroup() {

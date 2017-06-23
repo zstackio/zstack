@@ -2,6 +2,7 @@ package org.zstack.scheduler;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.core.scheduler.SchedulerJobSchedulerTriggerRefVO;
+import org.zstack.header.core.scheduler.SchedulerJobVO;
 import org.zstack.header.core.scheduler.SchedulerVO;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
@@ -19,7 +20,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIChangeSchedulerStateEvent.class
 )
 public class APIChangeSchedulerStateMsg  extends APIMessage implements SchedulerMessage  {
-    @APIParam(resourceType = SchedulerJobSchedulerTriggerRefVO.class)
+    @APIParam(resourceType = SchedulerJobVO.class)
     private String uuid;
     @APIParam(validValues={"enable", "disable"})
     private String stateEvent;

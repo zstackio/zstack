@@ -648,26 +648,14 @@ class SchedulerCase extends SubCase {
             schedulerTriggerUuid = trigger.uuid
         }
 
-        SchedulerJobSchedulerTriggerRefVO ref = Q.New(SchedulerJobSchedulerTriggerRefVO.class)
-                .eq(SchedulerJobSchedulerTriggerRefVO_.schedulerJobUuid, job.getUuid())
-                .eq(SchedulerJobSchedulerTriggerRefVO_.schedulerTriggerUuid, trigger.getUuid())
-                .find()
+        scheduler.pauseSchedulerJob(job.uuid)
+        SchedulerJobVO jobVO = dbFindByUuid(job.uuid, SchedulerJobVO.class)
+        assert jobVO.state == SchedulerState.Disabled.toString()
 
 
-        scheduler.pauseSchedulerJob(ref.uuid)
-        ref = Q.New(SchedulerJobSchedulerTriggerRefVO.class)
-                .eq(SchedulerJobSchedulerTriggerRefVO_.schedulerJobUuid, job.getUuid())
-                .eq(SchedulerJobSchedulerTriggerRefVO_.schedulerTriggerUuid, trigger.getUuid())
-                .find()
-        assert ref.state == SchedulerState.Disabled.toString()
-
-
-        scheduler.resumeSchedulerJob(ref.uuid)
-        ref = Q.New(SchedulerJobSchedulerTriggerRefVO.class)
-                .eq(SchedulerJobSchedulerTriggerRefVO_.schedulerJobUuid, job.getUuid())
-                .eq(SchedulerJobSchedulerTriggerRefVO_.schedulerTriggerUuid, trigger.getUuid())
-                .find()
-        assert ref.state == SchedulerState.Enabled.toString()
+        scheduler.resumeSchedulerJob(job.uuid)
+        jobVO = dbFindByUuid(job.uuid, SchedulerJobVO.class)
+        assert jobVO.state == SchedulerState.Enabled.toString()
 
         removeSchedulerJobFromSchedulerTrigger {
             schedulerJobUuid = job.uuid
@@ -770,12 +758,8 @@ class SchedulerCase extends SubCase {
         state = scheduler.getScheduler().getTriggerState(TriggerKey.triggerKey(trigger.getUuid(), trigger.getUuid() + "." + job.getUuid()))
         assert state == Trigger.TriggerState.PAUSED
 
-        SchedulerJobSchedulerTriggerRefVO ref = Q.New(SchedulerJobSchedulerTriggerRefVO.class)
-                .eq(SchedulerJobSchedulerTriggerRefVO_.schedulerJobUuid, job.getUuid())
-                .eq(SchedulerJobSchedulerTriggerRefVO_.schedulerTriggerUuid, trigger.getUuid())
-                .find()
         changeSchedulerState {
-            uuid = ref.getUuid()
+            uuid = job.getUuid()
             stateEvent = "enable"
         }
         state = scheduler.getScheduler().getTriggerState(TriggerKey.triggerKey(trigger.getUuid(), trigger.getUuid() + "." + job.getUuid()))
