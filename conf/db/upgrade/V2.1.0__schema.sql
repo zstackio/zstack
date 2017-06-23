@@ -21,7 +21,6 @@ DROP TABLE IF EXISTS EcsInstanceConsoleProxyVO;
 
 ALTER TABLE OssBucketVO MODIFY COLUMN bucketName varchar(64);
 ALTER TABLE OssBucketVO ADD COLUMN regionName varchar(64) DEFAULT NULL;
-alter table `ConsoleProxyAgentVO` add `consoleProxyOverriddenIp` varchar(255) NOT NULL;
 ALTER TABLE OssBucketVO modify COLUMN bucketName varchar(64);
 -- ----------------------------
 --  Table structure for `SchedulerJobVO`
@@ -109,4 +108,22 @@ CREATE TABLE `VirtualRouterVRouterRouteTableRefVO` (
   CONSTRAINT `VirutalRouterVRouterRouteTableRefVOVRouterRouteTableVO` FOREIGN KEY (`routeTableUuid`) REFERENCES `zstack`.`VRouterRouteTableVO` (`uuid`) ON DELETE CASCADE,
   CONSTRAINT `VirutalRouterVRouterRouteTableRefVOVirtualRouterVmVO` FOREIGN KEY (`virtualRouterVmUuid`) REFERENCES `zstack`.`VirtualRouterVmVO` (`uuid`) ON DELETE CASCADE,
   PRIMARY KEY (`id`)
+ALTER TABLE `ConsoleProxyAgentVO` ADD `consoleProxyOverriddenIp` varchar(255) NOT NULL;
+
+
+CREATE TABLE `OssUploadPartsVO` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `uploadId` varchar(32) NOT NULL,
+  `ossBucketUuid` varchar(32) NOT NULL,
+  `fileKey` varchar(128) NOT NULL,
+  `partNumber` varchar(32) NOT NULL,
+  `eTag` varchar(32) NOT NULL,
+  `partSize` bigint(32) NOT NULL,
+  `partCRC` bigint(32) NOT NULL,
+  `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  CONSTRAINT fkOssUploadPartsVOOssBucketVO FOREIGN KEY (ossBucketUuid) REFERENCES OssBucketVO (uuid) ON DELETE CASCADE,
+  PRIMARY KEY (`id`),
+  KEY `uploadId` (`uploadId`),
+  UNIQUE KEY `id` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
