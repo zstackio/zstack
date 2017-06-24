@@ -4,14 +4,18 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.notification.N;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.RebootVmInstanceMsg;
 import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.identity.AccountManager;
 import org.zstack.scheduler.APICreateSchedulerJobMsg;
 import org.zstack.scheduler.AbstractSchedulerJob;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+
+import java.util.Date;
 
 /**
  * Created by root on 8/16/16.
@@ -41,9 +45,11 @@ public class RebootVmInstanceJob  extends AbstractSchedulerJob {
             @Override
             public void run(MessageReply reply) {
                 if (reply.isSuccess()) {
-                    logger.debug(String.format("RebootVmInstanceJob for vm %s success", vmUuid));
+                    N.New(VmInstanceVO.class, vmUuid).info_("Reboot vm instance job for vm[uuid:%s] succeed [executed time:%s]",
+                            vmUuid, new Date().toString());
                 } else {
-                    logger.debug(String.format("RebootVmInstanceJob for vm %s failed", vmUuid));
+                    N.New(VmInstanceVO.class, vmUuid).info_("Reboot vm instance job for vm[uuid:%s] failed [executed time:%s]",
+                            vmUuid, new Date().toString());
                 }
             }
         });
