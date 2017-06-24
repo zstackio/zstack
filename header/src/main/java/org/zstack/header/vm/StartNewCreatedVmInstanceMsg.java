@@ -12,6 +12,7 @@ public class StartNewCreatedVmInstanceMsg extends NeedReplyMessage implements Vm
     private List<String> dataDiskOfferingUuids;
     private String rootDiskOfferingUuid;
     private String primaryStorageUuidForRootVolume;
+    private String primaryStorageUuidForDataVolume;
 
     public VmInstanceInventory getVmInstanceInventory() {
         return vmInstanceInventory;
@@ -56,5 +57,13 @@ public class StartNewCreatedVmInstanceMsg extends NeedReplyMessage implements Vm
 
     public void setPrimaryStorageUuidForRootVolume(String primaryStorageUuidForRootVolume) {
         this.primaryStorageUuidForRootVolume = primaryStorageUuidForRootVolume;
+    }
+
+    public String getPrimaryStorageUuidForDataVolume() {
+        return primaryStorageUuidForDataVolume;
+    }
+
+    public void setPrimaryStorageUuidForDataVolume(String primaryStorageUuidForDataVolume) {
+        this.primaryStorageUuidForDataVolume = primaryStorageUuidForDataVolume;
     }
 }

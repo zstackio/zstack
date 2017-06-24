@@ -84,6 +84,7 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
         // allocate ps for data volumes
         for (DiskOfferingInventory dinv : spec.getDataDiskOfferings()) {
             AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
+            amsg.setRequiredPrimaryStorageUuid(spec.getRequiredPrimaryStorageUuidForDataVolume());
             amsg.setSize(dinv.getDiskSize());
             amsg.setRequiredHostUuid(destHost.getUuid());
             amsg.setAllocationStrategy(dinv.getAllocatorStrategy());

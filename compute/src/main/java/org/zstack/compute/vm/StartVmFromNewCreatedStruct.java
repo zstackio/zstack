@@ -13,6 +13,7 @@ public class StartVmFromNewCreatedStruct {
     private List<String> l3NetworkUuids;
     private String rootDiskOfferingUuid;
     private String primaryStorageUuidForRootVolume;
+    private String primaryStorageUuidForDataVolume;
 
     public static String makeLabelKey(String vmUuid) {
         return String.format("not-start-vm-%s", vmUuid);
@@ -48,6 +49,7 @@ public class StartVmFromNewCreatedStruct {
         struct.setL3NetworkUuids(msg.getL3NetworkUuids());
         struct.setRootDiskOfferingUuid(msg.getRootDiskOfferingUuid());
         struct.setPrimaryStorageUuidForRootVolume(msg.getPrimaryStorageUuidForRootVolume());
+        struct.setPrimaryStorageUuidForDataVolume(msg.getPrimaryStorageUuidForDataVolume());
         return struct;
     }
 
@@ -57,6 +59,7 @@ public class StartVmFromNewCreatedStruct {
         struct.setL3NetworkUuids(msg.getL3NetworkUuids());
         struct.setRootDiskOfferingUuid(msg.getRootDiskOfferingUuid());
         struct.setPrimaryStorageUuidForRootVolume(msg.getPrimaryStorageUuidForRootVolume());
+        struct.setPrimaryStorageUuidForDataVolume(msg.getPrimaryStorageUuidForDataVolume());
         return struct;
     }
 
@@ -67,5 +70,13 @@ public class StartVmFromNewCreatedStruct {
 
     public void setPrimaryStorageUuidForRootVolume(String primaryStorageUuidForRootVolume) {
         this.primaryStorageUuidForRootVolume = primaryStorageUuidForRootVolume;
+    }
+
+    public String getPrimaryStorageUuidForDataVolume() {
+        return primaryStorageUuidForDataVolume;
+    }
+
+    public void setPrimaryStorageUuidForDataVolume(String primaryStorageUuidForDataVolume) {
+        this.primaryStorageUuidForDataVolume = primaryStorageUuidForDataVolume;
     }
 }

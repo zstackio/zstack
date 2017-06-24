@@ -3924,6 +3924,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         final VmInstanceSpec spec = new VmInstanceSpec();
         spec.setRequiredPrimaryStorageUuidForRootVolume(struct.getPrimaryStorageUuidForRootVolume());
+        spec.setRequiredPrimaryStorageUuidForDataVolume(struct.getPrimaryStorageUuidForDataVolume());
         spec.setVmInventory(inv);
         if (struct.getL3NetworkUuids() != null && !struct.getL3NetworkUuids().isEmpty()) {
             SimpleQuery<L3NetworkVO> nwquery = dbf.createQuery(L3NetworkVO.class);
