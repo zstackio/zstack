@@ -45,6 +45,7 @@
                 <value>org.zstack.network.service.lb.LoadBalancerVO</value>
                 <value>org.zstack.network.service.lb.LoadBalancerListenerVO</value>
                 <value>org.zstack.header.core.scheduler.SchedulerJobVO</value>
+                <value>org.zstack.header.core.scheduler.SchedulerTriggerVO</value>
                 <value>org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO</value>
             </list>
         </property>

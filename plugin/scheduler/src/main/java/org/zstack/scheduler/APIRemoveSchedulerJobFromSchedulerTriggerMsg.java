@@ -1,7 +1,6 @@
 package org.zstack.scheduler;
 
 import org.springframework.http.HttpMethod;
-import org.zstack.header.core.scheduler.SchedulerJobSchedulerTriggerRefVO;
 import org.zstack.header.core.scheduler.SchedulerJobVO;
 import org.zstack.header.core.scheduler.SchedulerTriggerVO;
 import org.zstack.header.message.APIEvent;

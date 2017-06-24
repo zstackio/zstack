@@ -35,8 +35,6 @@ public class APIAddSchedulerJobToSchedulerTriggerEvent extends APIEvent{
         vo.setUuid(uuid());
         vo.setSchedulerJobUuid(uuid());
         vo.setSchedulerTriggerUuid(uuid());
-        vo.setStatus(SchedulerState.Enabled.toString());
-        vo.setState(SchedulerState.Enabled.toString());
 
         SchedulerJobSchedulerTriggerInventory inv = SchedulerJobSchedulerTriggerInventory.valueOf(vo);
         evt.setInventory(inv);

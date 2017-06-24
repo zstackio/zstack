@@ -25,12 +25,6 @@ public class SchedulerJobSchedulerTriggerRefVO {
     private String schedulerTriggerUuid;
 
     @Column
-    private String status;
-
-    @Column
-    private String state;
-
-    @Column
     private String jobGroup;
 
     @Column
@@ -70,22 +64,6 @@ public class SchedulerJobSchedulerTriggerRefVO {
 
     public void setSchedulerTriggerUuid(String schedulerTriggerUuid) {
         this.schedulerTriggerUuid = schedulerTriggerUuid;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public String getState() {
-        return state;
-    }
-
-    public void setState(String state) {
-        this.state = state;
     }
 
     public String getJobGroup() {

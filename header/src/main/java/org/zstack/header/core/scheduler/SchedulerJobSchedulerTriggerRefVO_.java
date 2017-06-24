@@ -14,8 +14,6 @@ import java.sql.Timestamp;
 public class SchedulerJobSchedulerTriggerRefVO_ extends ResourceVO_ {
     public static volatile SingularAttribute<SchedulerJobSchedulerTriggerRefVO, String> schedulerJobUuid;
     public static volatile SingularAttribute<SchedulerJobSchedulerTriggerRefVO, String> schedulerTriggerUuid;
-    public static volatile SingularAttribute<SchedulerJobSchedulerTriggerRefVO, String> status;
-    public static volatile SingularAttribute<SchedulerJobSchedulerTriggerRefVO, String> state;
     public static volatile SingularAttribute<SchedulerJobSchedulerTriggerRefVO, String> jobGroup;
     public static volatile SingularAttribute<SchedulerJobSchedulerTriggerRefVO, String> triggerGroup;
     public static volatile SingularAttribute<SchedulerJobSchedulerTriggerRefVO, Timestamp> createDate;

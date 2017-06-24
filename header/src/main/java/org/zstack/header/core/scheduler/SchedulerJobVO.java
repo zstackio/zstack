@@ -45,6 +45,9 @@ public class SchedulerJobVO extends ResourceVO {
     @Column
     private Timestamp lastOpDate;
 
+    @Column
+    private String state;
+
     @OneToMany(fetch = FetchType.EAGER)
     @JoinColumn(name = "schedulerJobUuid", insertable = false, updatable = false)
     @NoView
@@ -126,6 +129,14 @@ public class SchedulerJobVO extends ResourceVO {
 
     public Set<SchedulerJobSchedulerTriggerRefVO> getAddedTriggerRefs() {
         return addedTriggerRefs;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
     }
 
     public void setAddedTriggerRefs(Set<SchedulerJobSchedulerTriggerRefVO> addedTriggerRefs) {
