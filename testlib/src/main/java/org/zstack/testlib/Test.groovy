@@ -477,7 +477,7 @@ mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
         } as SessionInventory
     }
 
-    private boolean getRetryReturnValue(ret, boolean throwError=false) {
+    private static boolean getRetryReturnValue(ret, boolean throwError = false) {
         boolean judge
 
         if (ret instanceof Closure) {
@@ -499,7 +499,7 @@ mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
     }
 
     @Deprecated
-    protected boolean retryInSecs3(int total=15, int interval=1, Closure c) {
+    protected static boolean retryInSecs3(int total = 15, int interval = 1, Closure c) {
         int count = 0
 
         def ret = null
@@ -525,16 +525,16 @@ mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
         while (count < total) {
             try {
                 def r = c()
-                ret = r == null || (r != null && r instanceof Boolean && r) ? true : false
+                ret = r == null || (r != null && r instanceof Boolean && r)
+            } catch (StopTestSuiteException e) {
+                throw e
             } catch (Throwable t) {
-
-                // Only the last retry time to throw one
+                logger.debug("[retryInSecs:${count + 1}/${total}]", t)
                 if (total - count == 1) {
                     throw t
                 }
             }
 
-            // Get one successful return, Direct return to success
             if (ret) {
                 return ret
             }
@@ -542,11 +542,11 @@ mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
             count += interval
         }
 
-        // Retry time over, no successful return，or always throw exception
         return false
     }
 
-    protected boolean retryInMillis(int total, int interval=500, Closure c) {
+    @Deprecated
+    protected static boolean retryInMillis(int total, int interval = 500, Closure c) {
         int count = 0
 
         def ret = null
