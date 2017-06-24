@@ -123,4 +123,8 @@ public class StringDSL {
     public static boolean isZStackUuid(String uuid) {
         return uuid != null && uuid.matches("[0-9a-f]{8}[0-9a-f]{4}[1-5][0-9a-f]{3}[89ab][0-9a-f]{3}[0-9a-f]{12}");
     }
+
+    public static boolean isApiId(String apiId) {
+        return apiId != null && apiId.matches("[0-9a-f]{8}[0-9a-f]{4}[0-9a-f]{4}[0-9a-f]{4}[0-9a-f]{12}");
+    }
 }
