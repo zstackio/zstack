@@ -44,7 +44,7 @@ class SharedMountPointPrimaryStorageSpec extends PrimaryStorageSpec {
             SharedMountPointPrimaryStorageSpec sspec = spec.specByUuid(cmd.uuid)
             assert sspec != null: "cannot find shared mount point storage[uuid:${cmd.uuid}]"
 
-            def rsp = new KvmBackend.AgentRsp()
+            def rsp = new KvmBackend.ConnectRsp()
             rsp.totalCapacity = sspec.totalCapacity
             rsp.availableCapacity = sspec.availableCapacity
             return rsp
