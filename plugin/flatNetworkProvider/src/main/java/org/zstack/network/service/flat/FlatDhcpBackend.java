@@ -152,6 +152,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         tq.setParameter("tag", TagUtils.tagPatternToSqlPattern(VmSystemTags.HOSTNAME.getTagFormat()));
         tq.setParameter("ttype", VmInstanceVO.class.getSimpleName());
         tq.setParameter("vmUuids", vmDefaultL3.keySet());
+        ts = tq.getResultList();
         Map<String, String> hostnames = new HashMap<String, String>();
         for (Tuple t : ts) {
             hostnames.put(t.get(1, String.class), t.get(0, String.class));
