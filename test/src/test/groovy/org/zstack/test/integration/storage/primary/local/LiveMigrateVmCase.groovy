@@ -5,8 +5,10 @@ import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.SQL
 import org.zstack.header.identity.AccountConstant
 import org.zstack.header.identity.SharedResourceVO
+import org.zstack.header.vm.VmInstanceConstant
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.sdk.AccountInventory
+import org.zstack.sdk.GetVmCapabilitiesResult
 import org.zstack.sdk.HostInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.storage.primary.local.LocalStorageKvmBackend
@@ -42,7 +44,6 @@ class LiveMigrateVmCase extends SubCase {
     @Override
     void test() {
         env.create {
-            LocalStoragePrimaryStorageGlobalConfig.ALLOW_LIVE_MIGRATION.updateValue(Boolean.TRUE.toString())
             testLiveMigrateVmWithDataVolume()
         }
     }
@@ -53,6 +54,19 @@ class LiveMigrateVmCase extends SubCase {
         def invs = queryHost {
         } as List<HostInventory>
         def targetHostUuid = invs.find { i -> i.uuid != vm1.getHostUuid() }.getUuid()
+
+        // default false
+        GetVmCapabilitiesResult capRes = getVmCapabilities {
+            uuid = vm1.getUuid()
+        } as GetVmCapabilitiesResult
+        assert !capRes.capabilities.get(VmInstanceConstant.Capability.LiveMigration.toString()) as Boolean
+
+        // set true
+        LocalStoragePrimaryStorageGlobalConfig.ALLOW_LIVE_MIGRATION.updateValue(Boolean.TRUE.toString())
+        GetVmCapabilitiesResult capRes2 = getVmCapabilities {
+            uuid = vm1.getUuid()
+        } as GetVmCapabilitiesResult
+        assert capRes2.capabilities.get(VmInstanceConstant.Capability.LiveMigration.toString()) as Boolean
 
         // record create empty volume cmd
         LocalStorageKvmBackend.CreateEmptyVolumeCmd cmd = null
