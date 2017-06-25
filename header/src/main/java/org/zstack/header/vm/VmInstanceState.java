@@ -23,6 +23,7 @@ public enum VmInstanceState {
     Pausing(VmInstanceStateEvent.pausing),
     Paused(VmInstanceStateEvent.paused),
     Resuming(VmInstanceStateEvent.resuming),
+    VolumeMigrating(VmInstanceStateEvent.volumeMigrating),
     Error(null),
     Unknown(VmInstanceStateEvent.unknown);
 
@@ -36,6 +37,7 @@ public enum VmInstanceState {
         intermediateStates.add(Migrating);
         intermediateStates.add(Pausing);
         intermediateStates.add(Resuming);
+        intermediateStates.add(VolumeMigrating);
 
         Created.transactions(
                 new Transaction(VmInstanceStateEvent.starting, VmInstanceState.Starting),
@@ -70,11 +72,18 @@ public enum VmInstanceState {
                 new Transaction(VmInstanceStateEvent.stopped, VmInstanceState.Stopped),
                 new Transaction(VmInstanceStateEvent.running, VmInstanceState.Running),
                 new Transaction(VmInstanceStateEvent.destroying, VmInstanceState.Destroying),
+                new Transaction(VmInstanceStateEvent.volumeMigrating, VmInstanceState.VolumeMigrating),
                 new Transaction(VmInstanceStateEvent.unknown, VmInstanceState.Unknown)
         );
         Migrating.transactions(
                 new Transaction(VmInstanceStateEvent.migrated, VmInstanceState.Running),
                 new Transaction(VmInstanceStateEvent.running, VmInstanceState.Running),
+                new Transaction(VmInstanceStateEvent.stopped, VmInstanceState.Stopped),
+                new Transaction(VmInstanceStateEvent.unknown, VmInstanceState.Unknown),
+                new Transaction(VmInstanceStateEvent.destroying, VmInstanceState.Destroying)
+        );
+        VolumeMigrating.transactions(
+                new Transaction(VmInstanceStateEvent.volumeMigrated, VmInstanceState.Stopped),
                 new Transaction(VmInstanceStateEvent.stopped, VmInstanceState.Stopped),
                 new Transaction(VmInstanceStateEvent.unknown, VmInstanceState.Unknown),
                 new Transaction(VmInstanceStateEvent.destroying, VmInstanceState.Destroying)

@@ -36,8 +36,7 @@ import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshot
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO_;
-import org.zstack.header.vm.VmInstanceVO;
-import org.zstack.header.vm.VmInstanceVO_;
+import org.zstack.header.vm.*;
 import org.zstack.header.volume.*;
 import org.zstack.storage.primary.PrimaryStorageBase;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
@@ -263,9 +262,42 @@ public class LocalStorageBase extends PrimaryStorageBase {
         omsg.setVolumeUuid(msg.getVolumeUuid());
         bus.makeTargetServiceIdByResourceUuid(omsg, VolumeConstant.SERVICE_ID, msg.getVolumeUuid());
 
-        bus.send(omsg, new CloudBusCallBack(msg) {
+        MigrateRootVolumeVmOverlayMsg vmsg = new MigrateRootVolumeVmOverlayMsg();
+
+        Tuple t = Q.New(VmInstanceVO.class).select(VmInstanceVO_.uuid, VmInstanceVO_.state)
+                .eq(VmInstanceVO_.rootVolumeUuid, msg.getVolumeUuid())
+                .findTuple();
+        String vmUuid = t == null ? null : t.get(0, String.class);
+        String originStateEvent = t == null ? null : t.get(1, VmInstanceState.class).getDrivenEvent().toString();
+
+        if(vmUuid != null){
+            ChangeVmStateMsg cmsg = new ChangeVmStateMsg();
+            cmsg.setStateEvent(VmInstanceStateEvent.volumeMigrating.toString());
+            cmsg.setVmInstanceUuid(vmUuid);
+            bus.makeTargetServiceIdByResourceUuid(cmsg, VmInstanceConstant.SERVICE_ID, vmUuid);
+            MessageReply reply = bus.call(cmsg);
+            if(!reply.isSuccess()){
+                evt.setError(reply.getError());
+                bus.publish(evt);
+                return;
+            }
+            vmsg.setMessage(omsg);
+            vmsg.setVmInstanceUuid(vmUuid);
+            bus.makeTargetServiceIdByResourceUuid(vmsg, VmInstanceConstant.SERVICE_ID, vmUuid);
+        }
+
+        bus.send(vmUuid == null ? omsg : vmsg, new CloudBusCallBack(msg) {
             @Override
             public void run(MessageReply reply) {
+                if(vmUuid != null){
+                    ChangeVmStateMsg cmsg = new ChangeVmStateMsg();
+                    cmsg.setStateEvent(reply.isSuccess() ? VmInstanceStateEvent.volumeMigrated.toString() : originStateEvent);
+                    cmsg.setVmInstanceUuid(vmUuid);
+                    bus.makeTargetServiceIdByResourceUuid(cmsg, VmInstanceConstant.SERVICE_ID, vmUuid);
+                    // if fail, host ping task will sync it state
+                    bus.call(cmsg);
+                }
+
                 if (!reply.isSuccess()) {
                     evt.setError(reply.getError());
                     bus.publish(evt);

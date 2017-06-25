@@ -121,7 +121,6 @@ public class LocalStorageApiInterceptor implements ApiMessageInterceptor {
                     throw new ApiMessageInterceptionException(argerr("the data volume[uuid:%s, name: %s] is still attached on the VM[uuid:%s]. Please detach" +
                             " it before migration", vol.getUuid(), vol.getName(), vol.getVmInstanceUuid()));
                 } else if (vol.getType() == VolumeType.Root) {
-
                     VmInstanceState vmstate = Q.New(VmInstanceVO.class)
                             .select(VmInstanceVO_.state)
                             .eq(VmInstanceVO_.uuid,vol.getVmInstanceUuid()).findValue();
@@ -129,7 +128,6 @@ public class LocalStorageApiInterceptor implements ApiMessageInterceptor {
                         throw new ApiMessageInterceptionException(operr("the volume[uuid:%s] is the root volume of the vm[uuid:%s]. Currently the vm is in" +
                                 " state of %s, please stop it before migration", vol.getUuid(), vol.getVmInstanceUuid(), vmstate));
                     }
-
 
                     long count = Q.New(VolumeVO.class)
                             .eq(VolumeVO_.type,VolumeType.Data)

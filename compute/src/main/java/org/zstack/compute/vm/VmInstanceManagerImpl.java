@@ -1938,5 +1938,4 @@ public class VmInstanceManagerImpl extends AbstractService implements
             future.await();
         }
     }
-
 }
