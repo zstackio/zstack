@@ -431,3 +431,19 @@ ALTER TABLE HostCapacityVO MODIFY availableCpu bigint(20) NOT NULL COMMENT 'used
 
 ALTER TABLE SecurityGroupRuleVO ADD COLUMN `remoteSecurityGroupUuid` varchar(255) DEFAULT NULL;
 ALTER TABLE SecurityGroupRuleVO ADD CONSTRAINT fkSecurityGroupRuleVORemoteSecurityGroupVO FOREIGN KEY (remoteSecurityGroupUuid) REFERENCES SecurityGroupVO (uuid) ON DELETE CASCADE ;
+
+-- ----------------------------
+--  Table structure for `BaremetalHardwareInfoVO`
+-- ----------------------------
+CREATE TABLE `BaremetalHardwareInfoVO` (
+  `uuid` varchar(32) NOT NULL UNIQUE COMMENT 'uuid',
+  `ipmiAddress` varchar(32) NOT NULL COMMENT 'baremetal chassis ipmi address',
+  `type` varchar(255) DEFAULT NULL,
+  `content` varchar(2048) DEFAULT NULL,
+  `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+  `createDate` timestamp,
+  PRIMARY KEY  (`uuid`),
+  CONSTRAINT `fkBaremetalHardwareInfoVOBaremetalChassisVO` FOREIGN KEY (`ipmiAddress`) REFERENCES `BaremetalChassisVO` (`ipmiAddress`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "BaremetalHardwareInfoVO" FROM BaremetalHardwareInfoVO t;
