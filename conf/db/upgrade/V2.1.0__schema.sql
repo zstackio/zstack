@@ -78,3 +78,35 @@ CREATE TABLE  `zstack`.`SchedulerJobSchedulerTriggerRefVO` (
     CONSTRAINT `fkSchedulerJobSchedulerTriggerRefVOSchedulerTriggerVO` FOREIGN KEY (`schedulerTriggerUuid`) REFERENCES `SchedulerTriggerVO` (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `VRouterRouteTableVO` (
+  `uuid` varchar(32) NOT NULL UNIQUE COMMENT 'uuid',
+  `type` varchar(32) NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `description` varchar(2048) DEFAULT NULL,
+  `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  PRIMARY KEY (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `VRouterRouteEntryVO` (
+  `uuid` varchar(32) NOT NULL UNIQUE COMMENT 'uuid',
+  `description` varchar(2048) DEFAULT NULL,
+  `routeTableUuid` varchar(32) NOT NULL,
+  `destination` varchar(64) NOT NULL,
+  `target` varchar(64) DEFAULT NULL,
+  `type` varchar(32) NOT NULL,
+  `distance` int unsigned NOT NULL,
+  `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  PRIMARY KEY (`uuid`),
+  CONSTRAINT fkRouteEntryVOVRouterRouteTableVO FOREIGN KEY (`routeTableUuid`) REFERENCES `zstack`.`VRouterRouteTableVO` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `VirtualRouterVRouterRouteTableRefVO` (
+  `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+  `virtualRouterVmUuid` varchar(32) NOT NULL UNIQUE COMMENT 'uuid',
+  `routeTableUuid` varchar(32) NOT NULL,
+  CONSTRAINT `VirutalRouterVRouterRouteTableRefVOVRouterRouteTableVO` FOREIGN KEY (`routeTableUuid`) REFERENCES `zstack`.`VRouterRouteTableVO` (`uuid`) ON DELETE CASCADE,
+  CONSTRAINT `VirutalRouterVRouterRouteTableRefVOVirtualRouterVmVO` FOREIGN KEY (`virtualRouterVmUuid`) REFERENCES `zstack`.`VirtualRouterVmVO` (`uuid`) ON DELETE CASCADE,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

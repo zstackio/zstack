@@ -484,5 +484,11 @@ public class NetworkUtils {
         SubnetUtils.SubnetInfo sub = new SubnetUtils(subCidr).getInfo();
         return range.isInRange(sub.getLowAddress()) && range.isInRange(sub.getHighAddress());
     }
+
+    public static String getNetworkAddressFromCidr(String cidr) {
+        DebugUtils.Assert(isCidr(cidr), String.format("%s is not a cidr", cidr));
+        SubnetUtils n = new SubnetUtils(cidr);
+        return String.format("%s/%s", n.getInfo().getNetworkAddress(), cidr.split("\\/")[1]);
+    }
 }
 

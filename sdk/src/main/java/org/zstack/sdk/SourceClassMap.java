@@ -153,6 +153,10 @@ public class SourceClassMap {
 			put("org.zstack.vmware.VCenterDatacenterInventory", "org.zstack.sdk.VCenterDatacenterInventory");
 			put("org.zstack.vmware.VCenterInventory", "org.zstack.sdk.VCenterInventory");
 			put("org.zstack.vmware.VCenterPrimaryStorageInventory", "org.zstack.sdk.VCenterPrimaryStorageInventory");
+			put("org.zstack.vrouterRoute.VRouterRouteEntryAO", "org.zstack.sdk.VRouterRouteEntryAO");
+			put("org.zstack.vrouterRoute.VRouterRouteEntryInventory", "org.zstack.sdk.VRouterRouteEntryInventory");
+			put("org.zstack.vrouterRoute.VRouterRouteTableInventory", "org.zstack.sdk.VRouterRouteTableInventory");
+			put("org.zstack.vrouterRoute.VirtualRouterVRouterRouteTableRefInventory", "org.zstack.sdk.VirtualRouterVRouterRouteTableRefInventory");
         }
     };
 
@@ -277,11 +281,15 @@ public class SourceClassMap {
 			put("org.zstack.sdk.VCenterDatacenterInventory", "org.zstack.vmware.VCenterDatacenterInventory");
 			put("org.zstack.sdk.VCenterInventory", "org.zstack.vmware.VCenterInventory");
 			put("org.zstack.sdk.VCenterPrimaryStorageInventory", "org.zstack.vmware.VCenterPrimaryStorageInventory");
+			put("org.zstack.sdk.VRouterRouteEntryAO", "org.zstack.vrouterRoute.VRouterRouteEntryAO");
+			put("org.zstack.sdk.VRouterRouteEntryInventory", "org.zstack.vrouterRoute.VRouterRouteEntryInventory");
+			put("org.zstack.sdk.VRouterRouteTableInventory", "org.zstack.vrouterRoute.VRouterRouteTableInventory");
 			put("org.zstack.sdk.VRouterType", "org.zstack.header.aliyun.network.vrouter.VRouterType");
 			put("org.zstack.sdk.VipInventory", "org.zstack.network.service.vip.VipInventory");
 			put("org.zstack.sdk.VirtualBorderRouterInventory", "org.zstack.header.aliyun.network.connection.VirtualBorderRouterInventory");
 			put("org.zstack.sdk.VirtualRouterInterfaceInventory", "org.zstack.header.aliyun.network.connection.VirtualRouterInterfaceInventory");
 			put("org.zstack.sdk.VirtualRouterOfferingInventory", "org.zstack.network.service.virtualrouter.VirtualRouterOfferingInventory");
+			put("org.zstack.sdk.VirtualRouterVRouterRouteTableRefInventory", "org.zstack.vrouterRoute.VirtualRouterVRouterRouteTableRefInventory");
 			put("org.zstack.sdk.VirtualRouterVmInventory", "org.zstack.network.service.virtualrouter.VirtualRouterVmInventory");
 			put("org.zstack.sdk.VmInstanceInventory", "org.zstack.header.vm.VmInstanceInventory");
 			put("org.zstack.sdk.VmNicInventory", "org.zstack.header.vm.VmNicInventory");
