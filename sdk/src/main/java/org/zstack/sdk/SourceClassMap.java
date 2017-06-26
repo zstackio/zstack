@@ -153,6 +153,14 @@ public class SourceClassMap {
 			put("org.zstack.vmware.VCenterDatacenterInventory", "org.zstack.sdk.VCenterDatacenterInventory");
 			put("org.zstack.vmware.VCenterInventory", "org.zstack.sdk.VCenterInventory");
 			put("org.zstack.vmware.VCenterPrimaryStorageInventory", "org.zstack.sdk.VCenterPrimaryStorageInventory");
+			put("org.zstack.vrouterRoute.APIGetVRouterRouteTableReply$1", "org.zstack.sdk.");
+			put("org.zstack.vrouterRoute.APIGetVRouterRouteTableReply$2", "org.zstack.sdk.");
+			put("org.zstack.vrouterRoute.APIGetVRouterRouteTableReply$3", "org.zstack.sdk.");
+			put("org.zstack.vrouterRoute.APIGetVRouterRouteTableReply$4", "org.zstack.sdk.");
+			put("org.zstack.vrouterRoute.APIGetVRouterRouteTableReply$5", "org.zstack.sdk.");
+			put("org.zstack.vrouterRoute.APIGetVRouterRouteTableReply$6", "org.zstack.sdk.");
+			put("org.zstack.vrouterRoute.APIGetVRouterRouteTableReply$7", "org.zstack.sdk.");
+			put("org.zstack.vrouterRoute.APIGetVRouterRouteTableReply$8", "org.zstack.sdk.");
 			put("org.zstack.vrouterRoute.VRouterRouteEntryAO", "org.zstack.sdk.VRouterRouteEntryAO");
 			put("org.zstack.vrouterRoute.VRouterRouteEntryInventory", "org.zstack.sdk.VRouterRouteEntryInventory");
 			put("org.zstack.vrouterRoute.VRouterRouteTableInventory", "org.zstack.sdk.VRouterRouteTableInventory");
@@ -162,6 +170,14 @@ public class SourceClassMap {
 
     final static HashMap<String, String> dstToSrcMapping = new HashMap() {
         {
+			put("org.zstack.sdk.", "org.zstack.vrouterRoute.APIGetVRouterRouteTableReply$1");
+			put("org.zstack.sdk.", "org.zstack.vrouterRoute.APIGetVRouterRouteTableReply$2");
+			put("org.zstack.sdk.", "org.zstack.vrouterRoute.APIGetVRouterRouteTableReply$3");
+			put("org.zstack.sdk.", "org.zstack.vrouterRoute.APIGetVRouterRouteTableReply$4");
+			put("org.zstack.sdk.", "org.zstack.vrouterRoute.APIGetVRouterRouteTableReply$5");
+			put("org.zstack.sdk.", "org.zstack.vrouterRoute.APIGetVRouterRouteTableReply$6");
+			put("org.zstack.sdk.", "org.zstack.vrouterRoute.APIGetVRouterRouteTableReply$7");
+			put("org.zstack.sdk.", "org.zstack.vrouterRoute.APIGetVRouterRouteTableReply$8");
 			put("org.zstack.sdk.AccountInventory", "org.zstack.header.identity.AccountInventory");
 			put("org.zstack.sdk.AccountResourceRefInventory", "org.zstack.header.identity.AccountResourceRefInventory");
 			put("org.zstack.sdk.AliyunException", "org.zstack.header.aliyun.AliyunException");
