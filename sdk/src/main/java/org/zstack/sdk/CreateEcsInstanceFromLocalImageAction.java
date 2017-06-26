@@ -43,6 +43,9 @@ public class CreateEcsInstanceFromLocalImageAction extends AbstractAction {
     @Param(required = false, validValues = {"true","false"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String allocatePublicIp;
 
+    @Param(required = false, validRegexValues = "[a-zA-Z0-9]{6}", maxLength = 6, minLength = 6, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String ecsConsolePassword;
+
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String backupStorageUuid;
 
