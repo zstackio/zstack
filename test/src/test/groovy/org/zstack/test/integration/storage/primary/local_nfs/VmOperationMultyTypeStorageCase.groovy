@@ -1,6 +1,7 @@
 package org.zstack.test.integration.storage.primary.local_nfs
 
 import org.zstack.header.storage.primary.PrimaryStorageStateEvent
+import org.zstack.sdk.AttachDataVolumeToVmAction
 import org.zstack.sdk.CreateVmInstanceAction
 import org.zstack.sdk.DiskOfferingInventory
 import org.zstack.sdk.ImageInventory
@@ -112,9 +113,12 @@ class VmOperationMultyTypeStorageCase extends SubCase{
             uuid = nfs.uuid
             stateEvent = PrimaryStorageStateEvent.disable.toString()
         }
-        attachDataVolumeToVm {
-            vmInstanceUuid = vm.uuid
-            volumeUuid = volume.uuid
-        }
+
+        AttachDataVolumeToVmAction action = new AttachDataVolumeToVmAction(
+                vmInstanceUuid: vm.uuid,
+                volumeUuid: volume.uuid,
+                sessionId: currentEnvSpec.session.uuid
+        )
+        assert action.call().error != null
     }
 }
