@@ -8,10 +8,10 @@ import org.zstack.core.asyncbatch.LoopAsyncBatch;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.errorcode.schema.Error;
 import org.zstack.core.notification.N;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.Completion;
@@ -21,6 +21,7 @@ import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
+import org.zstack.header.core.workflow.WhileCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
@@ -64,8 +65,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 
-import static org.zstack.core.Platform.operr;
-
 public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         KVMHostConnectExtensionPoint, HostConnectionReestablishExtensionPoint {
     private static final CLogger logger = Utils.getLogger(NfsPrimaryStorageKVMBackend.class);
@@ -84,6 +83,8 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     private NfsPrimaryStorageFactory nfsFactory;
     @Autowired
     private NfsPrimaryStorageManager nfsMgr;
+    @Autowired
+    protected ApiTimeoutManager timeoutManager;
 
     public static final String MOUNT_PRIMARY_STORAGE_PATH = "/nfsprimarystorage/mount";
     public static final String UNMOUNT_PRIMARY_STORAGE_PATH = "/nfsprimarystorage/unmount";
@@ -114,49 +115,27 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         MountCmd cmd = new MountCmd();
         cmd.setUrl(inv.getUrl());
         cmd.setMountPath(inv.getMountPath());
-        cmd.setUuid(inv.getUuid());
         cmd.setOptions(NfsSystemTags.MOUNT_OPTIONS.getTokenByResourceUuid(inv.getUuid(), NfsSystemTags.MOUNT_OPTIONS_TOKEN));
 
-        KVMHostSyncHttpCallMsg msg = new KVMHostSyncHttpCallMsg();
-        msg.setCommand(cmd);
-        msg.setPath(MOUNT_PRIMARY_STORAGE_PATH);
-        msg.setHostUuid(hostUuid);
-        msg.setNoStatusCheck(true);
-        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
-        bus.send(msg, new CloudBusCallBack(completion) {
+        httpCall(MOUNT_PRIMARY_STORAGE_PATH, hostUuid, cmd, true, MountAgentResponse.class, inv, new ReturnValueCompletion<MountAgentResponse>(completion) {
             @Override
-            public void run(MessageReply reply) {
-                if (!reply.isSuccess()) {
-                    ErrorCode err = reply.getError();
-
-                    if (reply.getError().getDetails().contains("java.net.SocketTimeoutException: Read timed out")) {
-                        // socket read timeout is caused by timeout of mounting a wrong URL
-                        err = errf.instantiateErrorCode(SysErrors.TIMEOUT, String.format("mount timeout. Please the check if the URL[%s] is" +
-                                " valid to mount", inv.getUrl()), reply.getError());
-                    }
-
-                    completion.fail(err);
-                    return;
-                }
-
-                MountAgentResponse rsp = ((KVMHostSyncHttpCallReply) reply).toResponse(MountAgentResponse.class);
-                if (!rsp.isSuccess()) {
-                    completion.fail(operr(rsp.getError()));
-                    return;
-                }
-
-                new PrimaryStorageCapacityUpdater(inv.getUuid()).update(
-                        rsp.getTotalCapacity(), rsp.getAvailableCapacity(), rsp.getTotalCapacity(), rsp.getAvailableCapacity()
-                );
-
+            public void success(MountAgentResponse returnValue) {
                 logger.debug(String.format(
                         "Successfully mounted nfs primary storage[uuid:%s] on kvm host[uuid:%s]",
                         inv.getUuid(), hostUuid));
                 completion.success();
             }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                if (errorCode.getDetails().contains("java.net.SocketTimeoutException: Read timed out")) {
+                    // socket read timeout is caused by timeout of mounting a wrong URL
+                    errorCode = errf.instantiateErrorCode(SysErrors.TIMEOUT, String.format("mount timeout. Please the check if the URL[%s] is" +
+                            " valid to mount", inv.getUrl()), errorCode);
+                }
+                completion.fail(errorCode);
+            }
         });
-
-
     }
 
     @Override
@@ -1096,78 +1075,42 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
             return;
         }
 
-        List<KVMHostAsyncHttpCallMsg> msgs = CollectionUtils.transformToList(huuids, new Function<KVMHostAsyncHttpCallMsg, String>() {
-            @Override
-            public KVMHostAsyncHttpCallMsg call(String arg) {
-                RemountCmd cmd = new RemountCmd();
-                cmd.setUuid(pinv.getUuid());
-                cmd.url = pinv.getUrl();
-                cmd.mountPath = pinv.getMountPath();
-                cmd.options = NfsSystemTags.MOUNT_OPTIONS.getTokenByResourceUuid(pinv.getUuid(), NfsSystemTags.MOUNT_OPTIONS_TOKEN);
+        List<ErrorCode> errs = new ArrayList<>();
+        new While<>(huuids).all((hostUuid, compl) -> {
+            RemountCmd cmd = new RemountCmd();
+            cmd.url = pinv.getUrl();
+            cmd.mountPath = pinv.getMountPath();
+            cmd.options = NfsSystemTags.MOUNT_OPTIONS.getTokenByResourceUuid(pinv.getUuid(), NfsSystemTags.MOUNT_OPTIONS_TOKEN);
 
-                KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
-                msg.setCommand(cmd);
-                msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
-                msg.setHostUuid(arg);
-                msg.setPath(REMOUNT_PATH);
-                bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, arg);
-                return msg;
-            }
-        });
-
-        bus.send(msgs, new CloudBusListCallBack(completion) {
-            private void reconnectHost(String huuid, ErrorCode error) {
-                logger.warn(String.format("failed to remount NFS primary storage[uuid:%s, name:%s] on the KVM host[uuid:%s]," +
-                        "%s. Start a reconnect to fix the problem", pinv.getUuid(), pinv.getName(), huuid, error));
-
-                ReconnectHostMsg rmsg = new ReconnectHostMsg();
-                rmsg.setHostUuid(huuid);
-                bus.makeTargetServiceIdByResourceUuid(rmsg, HostConstant.SERVICE_ID, huuid);
-                bus.send(rmsg);
-            }
-
-            @Override
-            public void run(List<MessageReply> replies) {
-                boolean reported = false;
-                List<ErrorCode> errors = new ArrayList<ErrorCode>();
-                boolean success = false;
-
-                for (MessageReply re : replies) {
-                    String huuid = huuids.get(replies.indexOf(re));
-
-                    if (!re.isSuccess()) {
-                        errors.add(re.getError());
-                        nfsFactory.updateNfsHostStatus(pinv.getUuid(), huuid, PrimaryStorageHostStatus.Disconnected);
-                        reconnectHost(huuid, re.getError());
-                        continue;
-                    }
-
-                    KVMHostAsyncHttpCallReply ar = re.castReply();
-                    NfsPrimaryStorageAgentResponse rsp = ar.toResponse(NfsPrimaryStorageAgentResponse.class);
-                    if (!rsp.isSuccess()) {
-                        ErrorCode err = operr(rsp.getError());
-                        errors.add(err);
-                        nfsFactory.updateNfsHostStatus(pinv.getUuid(), huuid, PrimaryStorageHostStatus.Disconnected);
-                        reconnectHost(huuid, err);
-                        continue;
-                    }
-
-                    success = true;
-                    nfsFactory.updateNfsHostStatus(pinv.getUuid(), huuid, PrimaryStorageHostStatus.Connected);
-                    logger.debug(String.format("succeed to remount nfs[uuid:%s] from host[uuid:%s]", pinv.getUuid(), huuid));
-                    if (!reported) {
-                        // Do not directly update availableCapacity, because availableCapacity is not equal to availablePhysicalCapacity
-                        new PrimaryStorageCapacityUpdater(pinv.getUuid()).update(
-                                rsp.getTotalCapacity(), null, rsp.getTotalCapacity(), rsp.getAvailableCapacity()
-                        );
-                        reported = true;
-                    }
+            httpCall(REMOUNT_PATH, hostUuid, cmd, NfsPrimaryStorageAgentResponse.class, pinv, new ReturnValueCompletion<NfsPrimaryStorageAgentResponse>(compl) {
+                @Override
+                public void success(NfsPrimaryStorageAgentResponse rsp) {
+                    logger.warn(String.format("remount NFS primary storage[uuid:%s, name:%s] on the KVM host[uuid:%s],", pinv.getUuid(), pinv.getName(), hostUuid));
+                    nfsFactory.updateNfsHostStatus(pinv.getUuid(), hostUuid, PrimaryStorageHostStatus.Connected);
+                    compl.done();
                 }
 
-                if (success) {
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    nfsFactory.updateNfsHostStatus(pinv.getUuid(), hostUuid, PrimaryStorageHostStatus.Disconnected);
+                    errs.add(errorCode);
+                    logger.warn(String.format("failed to remount NFS primary storage[uuid:%s, name:%s] on the KVM host[uuid:%s]," +
+                            "%s. Start a reconnect to fix the problem", pinv.getUuid(), pinv.getName(), hostUuid, errorCode.toString()));
+
+                    ReconnectHostMsg rmsg = new ReconnectHostMsg();
+                    rmsg.setHostUuid(hostUuid);
+                    bus.makeTargetServiceIdByResourceUuid(rmsg, HostConstant.SERVICE_ID, hostUuid);
+                    bus.send(rmsg);
+                    compl.done();
+                }
+            });
+        }).run(new NoErrorCompletion() {
+            @Override
+            public void done() {
+                if(!errs.isEmpty()){
+                    completion.fail(errs.get(0));
+                }else {
                     completion.success();
-                } else {
-                    completion.fail(errors.get(0));
                 }
             }
         });
@@ -1200,25 +1143,14 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                     @Override
                     public void run(NoErrorCompletion completion) {
                         UpdateMountPointCmd cmd = new UpdateMountPointCmd();
-                        cmd.setUuid(pinv.getUuid());
                         cmd.mountPath = pinv.getMountPath();
                         cmd.newMountPoint = newMountPoint;
                         cmd.oldMountPoint = oldMountPoint;
                         cmd.options = options;
 
-                        new KvmCommandSender(hostUuid).send(cmd, UPDATE_MOUNT_POINT_PATH, new KvmCommandFailureChecker() {
+                        httpCall(UPDATE_MOUNT_POINT_PATH, hostUuid, cmd, UpdateMountPointRsp.class, pinv, new ReturnValueCompletion<UpdateMountPointRsp>(completion) {
                             @Override
-                            public ErrorCode getError(KvmResponseWrapper wrapper) {
-                                UpdateMountPointRsp rsp = wrapper.getResponse(UpdateMountPointRsp.class);
-                                return rsp.isSuccess() ? null : operr(rsp.getError());
-                            }
-                        }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
-                            @Override
-                            public void success(KvmResponseWrapper w) {
-                                UpdateMountPointRsp rsp = w.getResponse(UpdateMountPointRsp.class);
-                                new PrimaryStorageCapacityUpdater(pinv.getUuid()).update(
-                                        rsp.getTotalCapacity(), rsp.getAvailableCapacity(), rsp.getTotalCapacity(), rsp.getAvailableCapacity()
-                                );
+                            public void success(UpdateMountPointRsp rsp) {
                                 completion.done();
                             }
 
@@ -1236,6 +1168,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                                 completion.done();
                             }
                         });
+
                     }
                 };
             }
@@ -1270,68 +1203,19 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                     checkQemuImgVersionInOtherClusters(context, invs);
                 }
 
-                new While<>(invs).all((inv, completion) -> {
+                new While<>(invs).all((PrimaryStorageInventory inv, WhileCompletion completion) -> {
                     RemountCmd cmd = new RemountCmd();
                     cmd.mountPath = inv.getMountPath();
                     cmd.url = inv.getUrl();
-                    cmd.setUuid(inv.getUuid());
                     cmd.options = NfsSystemTags.MOUNT_OPTIONS.getTokenByResourceUuid(inv.getUuid(), NfsSystemTags.MOUNT_OPTIONS_TOKEN);
 
-                    KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
-                    msg.setCommand(cmd);
-                    msg.setNoStatusCheck(true);
-                    msg.setPath(REMOUNT_PATH);
-                    msg.setHostUuid(huuid);
-                    msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
-                    bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, msg.getHostUuid());
-                    bus.send(msg, new CloudBusCallBack(completion) {
+                    httpCall(REMOUNT_PATH, huuid, cmd, true, NfsPrimaryStorageAgentResponse.class, inv, new ReturnValueCompletion<NfsPrimaryStorageAgentResponse>(completion) {
+
                         @Override
-                        public void run(MessageReply reply) {
-                            if (!reply.isSuccess()) {
-                                //TODO: need notification to UI
-                                nfsFactory.updateNfsHostStatus(inv.getUuid(), huuid, PrimaryStorageHostStatus.Disconnected);
-                                logger.warn(String.format("fail to mount nfs[uuid:%s] from host[uuid:%s], because:%s"
-                                        ,inv.getUuid(), huuid, reply.getError().toString()));
-                                completion.done();
-                                return;
-                            }
-
-                            KVMHostAsyncHttpCallReply r = reply.castReply();
-                            final NfsPrimaryStorageAgentResponse rsp = r.toResponse(NfsPrimaryStorageAgentResponse.class);
-
-                            if (!rsp.isSuccess()) {
-                                //TODO: need notification to UI
-                                nfsFactory.updateNfsHostStatus(inv.getUuid(), huuid, PrimaryStorageHostStatus.Disconnected);
-                                logger.warn(String.format("fail to mount nfs[uuid:%s] from host[uuid:%s], because:%s"
-                                        ,inv.getUuid(), huuid, rsp.getError()));
-                                completion.done();
-                                return;
-                            }
-
-                            new PrimaryStorageCapacityUpdater(inv.getUuid()).run(new PrimaryStorageCapacityUpdaterRunnable() {
-                                @Override
-                                public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
-
-                                    // Do not directly update availableCapacity, because availableCapacity is not equal to availablePhysicalCapacity
-                                    // cap.setAvailableCapacity(rsp.getAvailableCapacity());
-
-                                    cap.setTotalCapacity(rsp.getTotalCapacity());
-                                    cap.setTotalPhysicalCapacity(rsp.getTotalCapacity());
-                                    cap.setAvailablePhysicalCapacity(rsp.getAvailableCapacity());
-
-                                    return cap;
-                                }
-                            });
-
-                            // update ps availableCapacity
-                            RecalculatePrimaryStorageCapacityMsg msg = new RecalculatePrimaryStorageCapacityMsg();
-                            msg.setPrimaryStorageUuid(inv.getUuid());
-                            bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, inv.getUuid());
-                            bus.send(msg);
-
+                        public void success(NfsPrimaryStorageAgentResponse rsp) {
                             nfsFactory.updateNfsHostStatus(inv.getUuid(), huuid, PrimaryStorageHostStatus.Connected);
                             logger.debug(String.format("succeed to mount nfs[uuid:%s] from host[uuid:%s]"
-                                    ,inv.getUuid(), huuid));
+                                    , inv.getUuid(), huuid));
 
                             if (!PrimaryStorageStatus.Connected.toString().equals(inv.getStatus())) {
                                 // use sync call here to make sure the NFS primary storage connected before continue to the next step
@@ -1340,12 +1224,28 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                                 cmsg.setStatus(PrimaryStorageStatus.Connected.toString());
                                 bus.makeTargetServiceIdByResourceUuid(cmsg, PrimaryStorageConstant.SERVICE_ID, inv.getUuid());
                                 bus.call(cmsg);
-                                logger.debug(String.format("connect nfs[uuid:%s] completed",inv.getUuid()));
+                                logger.debug(String.format("connect nfs[uuid:%s] completed", inv.getUuid()));
                             }
+
+                            NfsRecalculatePrimaryStorageCapacityMsg msg = new NfsRecalculatePrimaryStorageCapacityMsg();
+                            msg.setPrimaryStorageUuid(inv.getUuid());
+                            msg.setRelease(false);
+                            bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, inv.getUuid());
+                            bus.send(msg);
+
+                            completion.done();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            //TODO: need notification to UI
+                            nfsFactory.updateNfsHostStatus(inv.getUuid(), huuid, PrimaryStorageHostStatus.Disconnected);
+                            logger.warn(String.format("fail to mount nfs[uuid:%s] from host[uuid:%s], because:%s"
+                                    , inv.getUuid(), huuid, errorCode.toString()));
+
                             completion.done();
                         }
                     });
-
                 }).run(new NoErrorCompletion(trigger) {
                     @Override
                     public void done() {
@@ -1354,5 +1254,52 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                 });
             }
         };
+    }
+
+    protected <T extends NfsPrimaryStorageAgentResponse> void httpCall(String path, final String hostUuid, NfsPrimaryStorageAgentCommand cmd, final Class<T> rspType, PrimaryStorageInventory inv, final ReturnValueCompletion<T> completion) {
+        httpCall(path, hostUuid, cmd, false, rspType, inv, completion);
+    }
+
+    private <T extends NfsPrimaryStorageAgentResponse> void httpCall(String path, final String hostUuid, NfsPrimaryStorageAgentCommand cmd, boolean noCheckStatus, final Class<T> rspType,  PrimaryStorageInventory inv, final ReturnValueCompletion<T> completion) {
+        cmd.setUuid(inv.getUuid());
+
+        KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+        msg.setHostUuid(hostUuid);
+        msg.setPath(path);
+        msg.setNoStatusCheck(noCheckStatus);
+        msg.setCommand(cmd);
+        msg.setCommandTimeout(timeoutManager.getTimeout(cmd.getClass(), "5m"));
+        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
+        bus.send(msg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
+
+                KVMHostAsyncHttpCallReply r = reply.castReply();
+                final T rsp = r.toResponse(rspType);
+                if (!rsp.isSuccess()) {
+                    completion.fail(operr(rsp.getError()));
+                    return;
+                }
+
+                if (rsp.getTotalCapacity() != null && rsp.getAvailableCapacity() != null) {
+                    new PrimaryStorageCapacityUpdater(inv.getUuid()).run(new PrimaryStorageCapacityUpdaterRunnable() {
+                                                                             @Override
+                                                                             public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
+                                                                                 cap.setTotalPhysicalCapacity(rsp.getTotalCapacity());
+                                                                                 cap.setAvailablePhysicalCapacity(rsp.getAvailableCapacity());
+                                                                                 cap.setTotalCapacity(rsp.getTotalCapacity());
+                                                                                 cap.setSystemUsedCapacity(null);
+                                                                                 return cap;
+                                                                             }
+                                                                         });
+                }
+
+                completion.success(rsp);
+            }
+        });
     }
 }

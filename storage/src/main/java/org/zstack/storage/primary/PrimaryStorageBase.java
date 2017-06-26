@@ -398,14 +398,14 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
                 connectHook(param, new Completion(chain, completion) {
                     @Override
                     public void success() {
+                        self = dbf.reload(self);
+                        changeStatus(PrimaryStorageStatus.Connected);
+                        logger.debug(String.format("successfully connected primary storage[uuid:%s]", self.getUuid()));
+
                         RecalculatePrimaryStorageCapacityMsg rmsg = new RecalculatePrimaryStorageCapacityMsg();
                         rmsg.setPrimaryStorageUuid(self.getUuid());
                         bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
                         bus.send(rmsg);
-
-                        self = dbf.reload(self);
-                        changeStatus(PrimaryStorageStatus.Connected);
-                        logger.debug(String.format("successfully connected primary storage[uuid:%s]", self.getUuid()));
 
                         tracker.track(self.getUuid());
 
