@@ -137,3 +137,29 @@ ALTER TABLE `BaremetalPxeServerVO` ADD COLUMN `name` varchar(255) DEFAULT NULL C
 ALTER TABLE `BaremetalPxeServerVO` ADD COLUMN `description` varchar(2048) DEFAULT NULL COMMENT 'baremetal pxeserver description';
 ALTER TABLE `BaremetalChassisVO` ADD COLUMN `name` varchar(255) DEFAULT NULL COMMENT 'baremetal chassis name';
 ALTER TABLE `BaremetalChassisVO` ADD COLUMN `description` varchar(2048) DEFAULT NULL COMMENT 'baremetal chassis description';
+
+CREATE TABLE `ConnectionRelationShipVO` (
+  `uuid` varchar(32) NOT NULL UNIQUE,
+  `name` varchar(128) NOT NULL,
+  `description` varchar(1024) DEFAULT NULL,
+  `relationShips` varchar(32) NOT NULL,
+  `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  PRIMARY KEY  (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `HybridConnectionRefVO` (
+  `uuid` varchar(32) NOT NULL UNIQUE,
+  `resourceType` varchar(32) NOT NULL,
+  `accountUuid` varchar(32) NOT NULL,
+  `direction` varchar(16) NOT NULL,
+  `connectionType` varchar(32) NOT NULL,
+  `connectionUuid` varchar(32) NOT NULL,
+  `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  CONSTRAINT fkHybridConnectionRefVOConnectionRelationShipVO FOREIGN KEY (connectionUuid) REFERENCES ConnectionRelationShipVO (uuid) ON DELETE CASCADE,
+  PRIMARY KEY  (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS AvailableIdentityZonesVO;
+

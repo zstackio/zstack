@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SyncEcsVSwitchFromRemoteAction extends AbstractAction {
+public class GetConnectionBetweenL3NetworkAndAliyunVSwitchAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public SyncEcsVSwitchFromRemoteResult value;
+        public GetConnectionBetweenL3NetworkAndAliyunVSwitchResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -23,13 +23,10 @@ public class SyncEcsVSwitchFromRemoteAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String dataCenterUuid;
+    public java.lang.String uuid;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vSwitchId;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
+    @Param(required = true, validValues = {"vswitch","l3network","vroutervm","vbr","vpc"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String resourceType;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -40,10 +37,6 @@ public class SyncEcsVSwitchFromRemoteAction extends AbstractAction {
     @Param(required = true)
     public String sessionId;
 
-    public long timeout;
-    
-    public long pollingInterval;
-
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -52,8 +45,8 @@ public class SyncEcsVSwitchFromRemoteAction extends AbstractAction {
             return ret;
         }
         
-        SyncEcsVSwitchFromRemoteResult value = res.getResult(SyncEcsVSwitchFromRemoteResult.class);
-        ret.value = value == null ? new SyncEcsVSwitchFromRemoteResult() : value; 
+        GetConnectionBetweenL3NetworkAndAliyunVSwitchResult value = res.getResult(GetConnectionBetweenL3NetworkAndAliyunVSwitchResult.class);
+        ret.value = value == null ? new GetConnectionBetweenL3NetworkAndAliyunVSwitchResult() : value; 
 
         return ret;
     }
@@ -79,9 +72,9 @@ public class SyncEcsVSwitchFromRemoteAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/hybrid/aliyun/vswitch/{dataCenterUuid}/sync";
+        info.path = "/hybrid/aliyun/connections";
         info.needSession = true;
-        info.needPoll = true;
+        info.needPoll = false;
         info.parameterName = "";
         return info;
     }

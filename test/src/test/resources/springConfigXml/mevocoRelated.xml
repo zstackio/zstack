@@ -11,6 +11,7 @@
     <import resource="hybrid/identityzone.xml"/>
     <import resource="hybrid/ecs.xml"/>
     <import resource="hybrid/vpn.xml"/>
+    <import resource="hybrid/connection.xml"/>
     <import resource="hybrid/hybridaccount.xml"/>
     <import resource="mevoco.xml"/>
     <import resource="license.xml"/>

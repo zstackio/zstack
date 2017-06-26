@@ -25,7 +25,10 @@ public class SourceClassMap {
 			put("org.zstack.header.aliyun.AliyunOssException", "org.zstack.sdk.AliyunOssException");
 			put("org.zstack.header.aliyun.ecs.EcsInstanceInventory", "org.zstack.sdk.EcsInstanceInventory");
 			put("org.zstack.header.aliyun.image.EcsImageInventory", "org.zstack.sdk.EcsImageInventory");
+			put("org.zstack.header.aliyun.network.HybridConnectionType", "org.zstack.sdk.HybridConnectionType");
 			put("org.zstack.header.aliyun.network.connection.ConnectionAccessPointInventory", "org.zstack.sdk.ConnectionAccessPointInventory");
+			put("org.zstack.header.aliyun.network.connection.ConnectionRelationShipInventory", "org.zstack.sdk.ConnectionRelationShipInventory");
+			put("org.zstack.header.aliyun.network.connection.ConnectionRelationShipProperty", "org.zstack.sdk.ConnectionRelationShipProperty");
 			put("org.zstack.header.aliyun.network.connection.VirtualBorderRouterInventory", "org.zstack.sdk.VirtualBorderRouterInventory");
 			put("org.zstack.header.aliyun.network.connection.VirtualRouterInterfaceInventory", "org.zstack.sdk.VirtualRouterInterfaceInventory");
 			put("org.zstack.header.aliyun.network.group.EcsSecurityGroupInventory", "org.zstack.sdk.EcsSecurityGroupInventory");
@@ -198,6 +201,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.CloneVmInstanceResults", "org.zstack.header.vm.CloneVmInstanceResults");
 			put("org.zstack.sdk.ClusterInventory", "org.zstack.header.cluster.ClusterInventory");
 			put("org.zstack.sdk.ConnectionAccessPointInventory", "org.zstack.header.aliyun.network.connection.ConnectionAccessPointInventory");
+			put("org.zstack.sdk.ConnectionRelationShipInventory", "org.zstack.header.aliyun.network.connection.ConnectionRelationShipInventory");
+			put("org.zstack.sdk.ConnectionRelationShipProperty", "org.zstack.header.aliyun.network.connection.ConnectionRelationShipProperty");
 			put("org.zstack.sdk.ConsoleInventory", "org.zstack.header.console.ConsoleInventory");
 			put("org.zstack.sdk.ConsoleProxyAgentInventory", "org.zstack.header.console.ConsoleProxyAgentInventory");
 			put("org.zstack.sdk.CreateRootVolumeTemplateFromVolumeSnapshotFailure", "org.zstack.header.image.APICreateRootVolumeTemplateFromVolumeSnapshotEvent$Failure");
@@ -226,6 +231,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.HostDiskCapacity", "org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply$HostDiskCapacity");
 			put("org.zstack.sdk.HostInventory", "org.zstack.header.host.HostInventory");
 			put("org.zstack.sdk.HybridAccountInventory", "org.zstack.hybrid.account.HybridAccountInventory");
+			put("org.zstack.sdk.HybridConnectionType", "org.zstack.header.aliyun.network.HybridConnectionType");
 			put("org.zstack.sdk.HybridEipAddressInventory", "org.zstack.header.hybrid.network.eip.HybridEipAddressInventory");
 			put("org.zstack.sdk.HybridType", "org.zstack.hybrid.core.HybridType");
 			put("org.zstack.sdk.IPsecConnectionInventory", "org.zstack.ipsec.IPsecConnectionInventory");
