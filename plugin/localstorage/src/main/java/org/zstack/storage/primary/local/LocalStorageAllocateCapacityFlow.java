@@ -11,10 +11,12 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.header.allocator.HostAllocatorError;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.message.MessageReply;
@@ -37,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.operr;
 
 /**
  * Created by frank on 7/2/2015.
@@ -160,7 +163,19 @@ public class LocalStorageAllocateCapacityFlow implements Flow {
                 AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
                 amsg.setSize(dinv.getDiskSize());
                 amsg.setRequiredHostUuid(spec.getDestHost().getUuid());
-                if(spec.getRequiredPrimaryStorageUuidForDataVolume() != null){
+                if(spec.getRequiredPrimaryStorageUuidForDataVolume() != null && hasOtherNonLocalStoragePrimaryStorage){
+
+                    PrimaryStorageVO requiredPrimaryStorageUuidForDataVolume = dbf.findByUuid(spec.getRequiredPrimaryStorageUuidForDataVolume(), PrimaryStorageVO.class);
+                    // data volume ps set local
+                    if(requiredPrimaryStorageUuidForDataVolume.getType().equals(LocalStorageConstants.LOCAL_STORAGE_TYPE)){
+                        ErrorCode errorCode = operr("The cluster mounts multiple primary storage[%s(%s), other non-LocalStorage primary storage], primaryStorageUuidForDataVolume cannot be specified %s",
+                                requiredPrimaryStorageUuidForDataVolume.getUuid(), requiredPrimaryStorageUuidForDataVolume.getType(),
+                                LocalStorageConstants.LOCAL_STORAGE_TYPE);
+                        trigger.fail(errorCode);
+                    }
+
+                    amsg.setRequiredPrimaryStorageUuid(spec.getRequiredPrimaryStorageUuidForDataVolume());
+                } else if (spec.getRequiredPrimaryStorageUuidForDataVolume() != null && !hasOtherNonLocalStoragePrimaryStorage){
                     amsg.setRequiredPrimaryStorageUuid(spec.getRequiredPrimaryStorageUuidForDataVolume());
                 } else if (hasOtherNonLocalStoragePrimaryStorage) {
                     amsg.setAllocationStrategy(dinv.getAllocatorStrategy());
