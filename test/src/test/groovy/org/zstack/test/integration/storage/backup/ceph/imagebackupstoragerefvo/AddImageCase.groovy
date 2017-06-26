@@ -1,3 +1,4 @@
+
 package org.zstack.test.integration.storage.backup.ceph.imagebackupstoragerefvo
 
 import org.zstack.core.db.Q
@@ -94,11 +95,31 @@ class AddImageCase extends SubCase{
             format = ImageConstant.ISO_FORMAT_STRING
         }
 
+        ImageInventory newImage2 = addImage {
+            name = "image3"
+            url = "file:///my-site/foo.iso"
+            backupStorageUuids = [bs.uuid]
+            format = ImageConstant.ISO_FORMAT_STRING
+        }
+
+        ImageInventory newImage3 = addImage {
+            name = "image4"
+            url = "/my-site/foo.qcow2"
+            backupStorageUuids = [bs.uuid]
+            format = ImageConstant.ISO_FORMAT_STRING
+        }
+
         assert 1 == Q.New(ImageBackupStorageRefVO.class)
                 .eq(ImageBackupStorageRefVO_.imageUuid, newImage.uuid)
                 .count()
         assert 1 == Q.New(ImageBackupStorageRefVO.class)
                 .eq(ImageBackupStorageRefVO_.imageUuid, newImage1.uuid)
+                .count()
+        assert 1 == Q.New(ImageBackupStorageRefVO.class)
+                .eq(ImageBackupStorageRefVO_.imageUuid, newImage2.uuid)
+                .count()
+        assert 1 == Q.New(ImageBackupStorageRefVO.class)
+                .eq(ImageBackupStorageRefVO_.imageUuid, newImage3.uuid)
                 .count()
     }
     
