@@ -54,6 +54,7 @@ public class SchedulerJobInventory implements Serializable {
         lastOpDate = vo.getLastOpDate();
         jobData = vo.getJobData();
         jobClassName = vo.getJobClassName();
+        state = vo.getState();
 
         triggersUuid = new ArrayList<String>(vo.getAddedTriggerRefs().size());
         for (SchedulerJobSchedulerTriggerRefVO ref : vo.getAddedTriggerRefs()) {
