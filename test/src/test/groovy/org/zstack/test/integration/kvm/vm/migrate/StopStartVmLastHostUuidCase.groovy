@@ -1,11 +1,7 @@
 package org.zstack.test.integration.kvm.vm.migrate
 
-import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
-import org.zstack.kvm.KVMAgentCommands
-import org.zstack.kvm.KVMSecurityGroupBackend
 import org.zstack.sdk.HostInventory
-import org.zstack.sdk.MigrateVmAction
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec

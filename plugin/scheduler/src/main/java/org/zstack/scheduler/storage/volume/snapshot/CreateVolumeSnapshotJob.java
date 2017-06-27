@@ -4,9 +4,12 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.notification.N;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeCreateSnapshotMsg;
+import org.zstack.header.volume.VolumeVO;
 import org.zstack.identity.AccountManager;
 import org.zstack.scheduler.APICreateSchedulerJobMsg;
 import org.zstack.scheduler.AbstractSchedulerJob;
@@ -15,6 +18,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.sql.Timestamp;
+import java.util.Date;
 
 /**
  * Created by Mei Lei on 7/11/16.
@@ -50,9 +54,11 @@ public class CreateVolumeSnapshotJob extends AbstractSchedulerJob {
                 @Override
                 public void run(MessageReply reply) {
                     if (reply.isSuccess()) {
-                        logger.debug(String.format("CreateVolumeSnapshotJob for volume %s success", volumeUuid));
+                        N.New(VolumeVO.class, volumeUuid).info_("Create snap shot of volume[uuid:%s] succeed [executed time:%s]",
+                                volumeUuid, new Date().toString());
                     } else {
-                        logger.debug(String.format("CreateVolumeSnapshotJob for volume %s failed", volumeUuid));
+                        N.New(VolumeVO.class, volumeUuid).info_("Create snap shot of volume[uuid:%s] failed [executed time:%s]",
+                                volumeUuid, new Date().toString());
                     }
                     SchedulerFacadeImpl.taskRunning.put(volumeUuid, false);
                 }
