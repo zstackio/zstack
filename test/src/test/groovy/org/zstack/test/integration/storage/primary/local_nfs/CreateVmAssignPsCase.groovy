@@ -222,26 +222,27 @@ class CreateVmAssignPsCase extends SubCase{
         checkVmDataDiskPs(vm, nfs.uuid)
 
         // assign root volume nfs ps
-        CreateVmInstanceAction a = new CreateVmInstanceAction()
-        a.name = "vm2"
-        a.instanceOfferingUuid = instanceOffering.uuid
-        a.imageUuid = image.uuid
-        a.l3NetworkUuids = [l3.uuid]
-        a.primaryStorageUuidForRootVolume = nfs.uuid
-        a.sessionId = currentEnvSpec.session.uuid
+        CreateVmInstanceAction a = new CreateVmInstanceAction(
+                name: "vm2",
+                instanceOfferingUuid: instanceOffering.uuid,
+                imageUuid: image.uuid,
+                l3NetworkUuids: [l3.uuid],
+                primaryStorageUuidForRootVolume: nfs.uuid,
+                sessionId: currentEnvSpec.session.uuid
+        )
         assert a.call().error != null
 
         // assign data volume local ps
-        vm = createVmInstance {
-            name = "vm2"
-            instanceOfferingUuid = instanceOffering.uuid
-            imageUuid = image.uuid
-            l3NetworkUuids = [l3.uuid]
-            dataDiskOfferingUuids = [diskOffering.uuid]
-            systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): local.uuid])]
-        }
-        checkVmDataDiskPs(vm, local.uuid)
-        checkVmRootDiskPs(vm, local.uuid)
+        CreateVmInstanceAction a2 = new CreateVmInstanceAction(
+                name: "vm2",
+                instanceOfferingUuid: instanceOffering.uuid,
+                imageUuid: image.uuid,
+                l3NetworkUuids: [l3.uuid],
+                dataDiskOfferingUuids: [diskOffering.uuid],
+                systemTags: [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): local.uuid])],
+                sessionId: currentEnvSpec.session.uuid
+        )
+        assert a2.call().error != null
 
         // assign data volume nfs ps
         vm = createVmInstance {
@@ -255,7 +256,46 @@ class CreateVmAssignPsCase extends SubCase{
         checkVmRootDiskPs(vm, local.uuid)
         checkVmDataDiskPs(vm, nfs.uuid)
 
-        // assign data , root volume ps
+        // assign root volume local ps, data volume local ps,
+        CreateVmInstanceAction a3 = new CreateVmInstanceAction(
+                name: "vm3",
+                instanceOfferingUuid: instanceOffering.uuid,
+                imageUuid: image.uuid,
+                l3NetworkUuids: [l3.uuid],
+                dataDiskOfferingUuids: [diskOffering.uuid],
+                primaryStorageUuidForRootVolume: local.uuid,
+                systemTags: [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): local.uuid])],
+                sessionId: currentEnvSpec.session.uuid
+        )
+        assert a3.call().error != null
+
+        // assign root volume nfs ps, data volume local ps
+        CreateVmInstanceAction a4 = new CreateVmInstanceAction(
+                name: "vm4",
+                instanceOfferingUuid: instanceOffering.uuid,
+                imageUuid: image.uuid,
+                l3NetworkUuids: [l3.uuid],
+                dataDiskOfferingUuids: [diskOffering.uuid],
+                primaryStorageUuidForRootVolume: nfs.uuid,
+                systemTags: [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): local.uuid])],
+                sessionId: currentEnvSpec.session.uuid
+        )
+        assert a4.call().error != null
+
+        // assign root volume nfs ps, data volume nfs ps
+        CreateVmInstanceAction a5 = new CreateVmInstanceAction(
+                name: "vm4",
+                instanceOfferingUuid: instanceOffering.uuid,
+                imageUuid: image.uuid,
+                l3NetworkUuids: [l3.uuid],
+                dataDiskOfferingUuids: [diskOffering.uuid],
+                primaryStorageUuidForRootVolume: nfs.uuid,
+                systemTags: [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): nfs.uuid])],
+                sessionId: currentEnvSpec.session.uuid
+        )
+        assert a5.call().error != null
+
+        // assign root volume local ps, data volume nfs ps
         vm = createVmInstance {
             name = "vm4"
             instanceOfferingUuid = instanceOffering.uuid
