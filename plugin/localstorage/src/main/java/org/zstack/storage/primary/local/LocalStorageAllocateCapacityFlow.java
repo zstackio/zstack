@@ -172,6 +172,7 @@ public class LocalStorageAllocateCapacityFlow implements Flow {
                                 requiredPrimaryStorageUuidForDataVolume.getUuid(), requiredPrimaryStorageUuidForDataVolume.getType(),
                                 LocalStorageConstants.LOCAL_STORAGE_TYPE);
                         trigger.fail(errorCode);
+                        return;
                     }
 
                     amsg.setRequiredPrimaryStorageUuid(spec.getRequiredPrimaryStorageUuidForDataVolume());
