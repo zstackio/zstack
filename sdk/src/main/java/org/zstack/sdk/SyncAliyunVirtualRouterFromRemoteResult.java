@@ -1,6 +1,6 @@
 package org.zstack.sdk;
 
-public class SyncRouteEntryFromRemoteResult {
+public class SyncAliyunVirtualRouterFromRemoteResult {
     public java.util.List<String> addEcs;
     public void setAddEcs(java.util.List<String> addEcs) {
         this.addEcs = addEcs;

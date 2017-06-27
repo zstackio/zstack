@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SyncVirtualRouterFromRemoteAction extends AbstractAction {
+public class CreateAliyunVpcVirtualRouterEntryRemoteAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public SyncVirtualRouterFromRemoteResult value;
+        public CreateAliyunVpcVirtualRouterEntryRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -23,7 +23,19 @@ public class SyncVirtualRouterFromRemoteAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vpcUuid;
+    public java.lang.String vRouterUuid;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String dstCidrBlock;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String nextHopUuid;
+
+    @Param(required = true, validValues = {"Instance","RouterInterface"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String nextHopType;
+
+    @Param(required = true, validValues = {"vbr","vrouter"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String vRouterType;
 
     @Param(required = false)
     public java.lang.String resourceUuid;
@@ -49,8 +61,8 @@ public class SyncVirtualRouterFromRemoteAction extends AbstractAction {
             return ret;
         }
         
-        SyncVirtualRouterFromRemoteResult value = res.getResult(SyncVirtualRouterFromRemoteResult.class);
-        ret.value = value == null ? new SyncVirtualRouterFromRemoteResult() : value; 
+        CreateAliyunVpcVirtualRouterEntryRemoteResult value = res.getResult(CreateAliyunVpcVirtualRouterEntryRemoteResult.class);
+        ret.value = value == null ? new CreateAliyunVpcVirtualRouterEntryRemoteResult() : value; 
 
         return ret;
     }
@@ -75,11 +87,11 @@ public class SyncVirtualRouterFromRemoteAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
-        info.path = "/hybrid/aliyun/vrouter/{vpcUuid}/sync";
+        info.httpMethod = "POST";
+        info.path = "/hybrid/aliyun/route-entry";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 

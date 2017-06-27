@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class DeleteRouteEntryRemoteAction extends AbstractAction {
+public class SyncAliyunVirtualRouterFromRemoteAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public DeleteRouteEntryRemoteResult value;
+        public SyncAliyunVirtualRouterFromRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -23,13 +23,10 @@ public class DeleteRouteEntryRemoteAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = true, validValues = {"vbr","vrouter"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String type;
+    public java.lang.String vpcUuid;
 
     @Param(required = false)
-    public java.lang.String deleteMode = "Permissive";
+    public java.lang.String resourceUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -52,8 +49,8 @@ public class DeleteRouteEntryRemoteAction extends AbstractAction {
             return ret;
         }
         
-        DeleteRouteEntryRemoteResult value = res.getResult(DeleteRouteEntryRemoteResult.class);
-        ret.value = value == null ? new DeleteRouteEntryRemoteResult() : value; 
+        SyncAliyunVirtualRouterFromRemoteResult value = res.getResult(SyncAliyunVirtualRouterFromRemoteResult.class);
+        ret.value = value == null ? new SyncAliyunVirtualRouterFromRemoteResult() : value; 
 
         return ret;
     }
@@ -78,8 +75,8 @@ public class DeleteRouteEntryRemoteAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "DELETE";
-        info.path = "/hybrid/aliyun/route-entry/{uuid}";
+        info.httpMethod = "GET";
+        info.path = "/hybrid/aliyun/vrouter/{vpcUuid}/sync";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "";

@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class CreateVpcVirtualRouterEntryRemoteAction extends AbstractAction {
+public class SyncAliyunRouteEntryFromRemoteAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public CreateVpcVirtualRouterEntryRemoteResult value;
+        public SyncAliyunRouteEntryFromRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -24,15 +24,6 @@ public class CreateVpcVirtualRouterEntryRemoteAction extends AbstractAction {
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String vRouterUuid;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String dstCidrBlock;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String nextHopUuid;
-
-    @Param(required = true, validValues = {"Instance","RouterInterface"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String nextHopType;
 
     @Param(required = true, validValues = {"vbr","vrouter"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String vRouterType;
@@ -61,8 +52,8 @@ public class CreateVpcVirtualRouterEntryRemoteAction extends AbstractAction {
             return ret;
         }
         
-        CreateVpcVirtualRouterEntryRemoteResult value = res.getResult(CreateVpcVirtualRouterEntryRemoteResult.class);
-        ret.value = value == null ? new CreateVpcVirtualRouterEntryRemoteResult() : value; 
+        SyncAliyunRouteEntryFromRemoteResult value = res.getResult(SyncAliyunRouteEntryFromRemoteResult.class);
+        ret.value = value == null ? new SyncAliyunRouteEntryFromRemoteResult() : value; 
 
         return ret;
     }
@@ -87,11 +78,11 @@ public class CreateVpcVirtualRouterEntryRemoteAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/hybrid/aliyun/route-entry";
+        info.httpMethod = "GET";
+        info.path = "/hybrid/aliyun/route-entry/{vRouterUuid}/sync";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

@@ -1,6 +1,5 @@
-package org.zstack.network.l2.vxlan.vtep
+package org.zstack.header.core.scheduler
 
-import java.lang.Integer
 import java.sql.Timestamp
 import java.sql.Timestamp
 
@@ -15,25 +14,25 @@ doc {
 		since "0.6"
 	}
 	field {
-		name "hostUuid"
-		desc "物理机UUID"
-		type "String"
-		since "0.6"
-	}
-	field {
-		name "vtepIp"
+		name "targetResourceUuid"
 		desc ""
 		type "String"
 		since "0.6"
 	}
 	field {
-		name "port"
-		desc ""
-		type "Integer"
+		name "name"
+		desc "资源名称"
+		type "String"
 		since "0.6"
 	}
 	field {
-		name "type"
+		name "description"
+		desc "资源的详细描述"
+		type "String"
+		since "0.6"
+	}
+	field {
+		name "state"
 		desc ""
 		type "String"
 		since "0.6"
@@ -51,9 +50,9 @@ doc {
 		since "0.6"
 	}
 	field {
-		name "poolUuid"
+		name "triggersUuid"
 		desc ""
-		type "String"
+		type "List"
 		since "0.6"
 	}
 }

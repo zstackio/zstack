@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SyncRouteEntryFromRemoteAction extends AbstractAction {
+public class DeleteAliyunRouteEntryRemoteAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public SyncRouteEntryFromRemoteResult value;
+        public DeleteAliyunRouteEntryRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -23,13 +23,13 @@ public class SyncRouteEntryFromRemoteAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vRouterUuid;
+    public java.lang.String uuid;
 
     @Param(required = true, validValues = {"vbr","vrouter"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vRouterType;
+    public java.lang.String type;
 
     @Param(required = false)
-    public java.lang.String resourceUuid;
+    public java.lang.String deleteMode = "Permissive";
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -52,8 +52,8 @@ public class SyncRouteEntryFromRemoteAction extends AbstractAction {
             return ret;
         }
         
-        SyncRouteEntryFromRemoteResult value = res.getResult(SyncRouteEntryFromRemoteResult.class);
-        ret.value = value == null ? new SyncRouteEntryFromRemoteResult() : value; 
+        DeleteAliyunRouteEntryRemoteResult value = res.getResult(DeleteAliyunRouteEntryRemoteResult.class);
+        ret.value = value == null ? new DeleteAliyunRouteEntryRemoteResult() : value; 
 
         return ret;
     }
@@ -78,8 +78,8 @@ public class SyncRouteEntryFromRemoteAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
-        info.path = "/hybrid/aliyun/route-entry/{vRouterUuid}/sync";
+        info.httpMethod = "DELETE";
+        info.path = "/hybrid/aliyun/route-entry/{uuid}";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "";
