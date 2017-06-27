@@ -11,7 +11,6 @@ import java.util.List;
 import static java.util.Arrays.asList;
 
 @AutoQuery(replyClass = APIQueryL2NetworkReply.class, inventoryClass = L2NetworkInventory.class)
-@Action(category = L2NetworkConstant.ACTION_CATEGORY, names = {"read"})
 @RestRequest(
         path = "/l2-networks",
         optionalPaths = {"/l2-networks/{uuid}"},
