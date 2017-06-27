@@ -93,4 +93,12 @@
         <id>1304</id>
         <description>failed to provision baremetal host</description>
     </code>
+    <code>
+        <id>1400</id>
+        <description>no pxe server found</description>
+    </code>
+    <code>
+        <id>1401</id>
+        <description>pxe server is not running</description>
+    </code>
 </error>
