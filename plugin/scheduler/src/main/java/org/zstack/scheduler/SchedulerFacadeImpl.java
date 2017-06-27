@@ -24,12 +24,14 @@ import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.Message;
 import org.zstack.header.vm.*;
 import org.zstack.identity.AccountManager;
+import org.zstack.scheduler.storage.volume.snapshot.CreateVolumeSnapshotJob;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import java.sql.Timestamp;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.quartz.CronScheduleBuilder.cronSchedule;
 import static org.quartz.JobBuilder.newJob;
@@ -58,10 +60,12 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
     private PluginRegistry pluginRgty;
     @Autowired
     private AccountManager acntMgr;
+    @Autowired
+    private SchedulerJobFactory schedulerJobFactory;
 
     private Scheduler scheduler;
 
-    public static Map<String, Boolean> taskRunning = new HashMap<String, Boolean>();
+    private ConcurrentHashMap<String, Boolean> taskRunning = new ConcurrentHashMap<>();
 
     public Scheduler getScheduler() {
         return scheduler;
@@ -69,12 +73,6 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
 
     public void setScheduler(Scheduler scheduler) {
         this.scheduler = scheduler;
-    }
-
-    protected SchedulerJobVO self;
-
-    protected SchedulerJobInventory getInventory() {
-        return SchedulerJobInventory.valueOf(self);
     }
 
     @Override
@@ -106,10 +104,11 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
     private void handle(APICreateSchedulerJobMsg msg) {
         APICreateSchedulerJobEvent evt = new APICreateSchedulerJobEvent(msg.getId());
 
-        final SchedulerJobFactory factory = new SchedulerJobFactoryImpl();
-        SchedulerJob job = factory.createSchedulerJob(msg);
+        SchedulerJob job = schedulerJobFactory.createSchedulerJob(msg);
         if (job == null) {
             throw new CloudRuntimeException("No suitable scheduler job %s can be found: " + msg.getType());
+        } else if (job instanceof CreateVolumeSnapshotJob) {
+            putVolumeToMap(msg.getTargetResourceUuid());
         }
         
         SchedulerJobVO vo = new SchedulerJobVO();
@@ -261,13 +260,15 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
     private void handle(APIChangeSchedulerStateMsg msg) {
         if (msg.getStateEvent().equals("enable")) {
             resumeSchedulerJob(msg.getUuid());
+            SchedulerJobVO vo = dbf.findByUuid(msg.getSchedulerUuid(), SchedulerJobVO.class);
             APIChangeSchedulerStateEvent evt = new APIChangeSchedulerStateEvent(msg.getId());
-            evt.setInventory(getInventory());
+            evt.setInventory(SchedulerJobInventory.valueOf(vo));
             bus.publish(evt);
         } else {
             pauseSchedulerJob(msg.getUuid());
+            SchedulerJobVO vo = dbf.findByUuid(msg.getSchedulerUuid(), SchedulerJobVO.class);
             APIChangeSchedulerStateEvent evt = new APIChangeSchedulerStateEvent(msg.getId());
-            evt.setInventory(getInventory());
+            evt.setInventory(SchedulerJobInventory.valueOf(vo));
             bus.publish(evt);
         }
 
@@ -280,26 +281,19 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
     }
 
     private void handle(APIUpdateSchedulerJobMsg msg) {
-        SchedulerJobVO vo = updateSchedulerJob(msg);
-        if (vo != null) {
-            self = dbf.updateAndRefresh(vo);
+        SchedulerJobVO vo = dbf.findByUuid(msg.getSchedulerUuid(), SchedulerJobVO.class);
+        if (msg.getName() != null) {
+            vo.setName(msg.getName());
         }
+
+        if (msg.getDescription() != null) {
+            vo.setDescription(msg.getDescription());
+        }
+        dbf.update(vo);
         APIUpdateSchedulerJobEvent evt = new APIUpdateSchedulerJobEvent(msg.getId());
-        evt.setInventory(getInventory());
+        evt.setInventory(SchedulerJobInventory.valueOf(vo));
         bus.publish(evt);
     }
-
-    private SchedulerJobVO updateSchedulerJob(APIUpdateSchedulerJobMsg msg) {
-        SchedulerJobVO self = dbf.findByUuid(msg.getSchedulerUuid(), SchedulerJobVO.class);
-        if (msg.getName() != null) {
-            self.setName(msg.getName());
-        }
-        if (msg.getDescription() != null) {
-            self.setDescription(msg.getDescription());
-        }
-        return self;
-    }
-
 
     public String getId() {
         return bus.makeLocalServiceId(SchedulerConstant.SERVICE_ID);
@@ -421,7 +415,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
                 List<SchedulerJobVO> vos = Q.New(SchedulerJobVO.class)
                         .select(SchedulerJobVO_.uuid)
                         .isNull(SchedulerJobVO_.managementNodeUuid)
-                        .list();
+                        .listValues();
 
                 if (vos.isEmpty()) {
                     return;
@@ -684,6 +678,18 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
         return uuids;
     }
 
+    private void putVolumeToMap(String volumeUuid) {
+        taskRunning.putIfAbsent(volumeUuid, false);
+    }
+
+    public boolean getVolumeLock(String volumeUuid) {
+        return taskRunning.replace(volumeUuid, false, true);
+    }
+
+    public boolean releaseVolumeLock(String volumeUuid) {
+        return taskRunning.put(volumeUuid, false);
+    }
+
     public String preDestroyVm(VmInstanceInventory inv) {
         return null;
     }
@@ -725,4 +731,5 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
 
         deleteSchedulerJobByResourceUuid(inv.getUuid());
     }
+
 }

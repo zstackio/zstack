@@ -29,6 +29,9 @@ public class CreateVolumeSnapshotJob extends AbstractSchedulerJob {
 
     @Autowired
     private transient AccountManager acntMgr;
+    @Autowired
+    private transient SchedulerFacadeImpl schdlrf;
+
     private String volumeUuid;
 
     public CreateVolumeSnapshotJob(APICreateSchedulerJobMsg msg) {
@@ -48,8 +51,7 @@ public class CreateVolumeSnapshotJob extends AbstractSchedulerJob {
         cmsg.setVolumeUuid(volumeUuid);
         cmsg.setAccountUuid(acntMgr.getOwnerAccountUuidOfResource(getVolumeUuid()));
         bus.makeTargetServiceIdByResourceUuid(cmsg, VolumeConstant.SERVICE_ID, getVolumeUuid());
-        if (SchedulerFacadeImpl.taskRunning.get(volumeUuid) == null || ! SchedulerFacadeImpl.taskRunning.get(volumeUuid)) {
-            SchedulerFacadeImpl.taskRunning.put(volumeUuid, true);
+        if (schdlrf.getVolumeLock(volumeUuid)){
             bus.send(cmsg, new CloudBusCallBack(null) {
                 @Override
                 public void run(MessageReply reply) {
@@ -60,7 +62,7 @@ public class CreateVolumeSnapshotJob extends AbstractSchedulerJob {
                         N.New(VolumeVO.class, volumeUuid).info_("Create snap shot of volume[uuid:%s] failed [executed time:%s]",
                                 volumeUuid, new Date().toString());
                     }
-                    SchedulerFacadeImpl.taskRunning.put(volumeUuid, false);
+                    schdlrf.releaseVolumeLock(volumeUuid);
                 }
             });
         } else {

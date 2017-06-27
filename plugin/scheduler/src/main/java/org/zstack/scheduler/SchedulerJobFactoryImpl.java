@@ -1,7 +1,7 @@
 package org.zstack.scheduler;
 
-import org.zstack.header.core.scheduler.SchedulerJobInventory;
-import org.zstack.header.core.scheduler.SchedulerJobVO;
+import org.springframework.beans.factory.annotation.Autowire;
+import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.scheduler.storage.volume.snapshot.CreateVolumeSnapshotJob;
 import org.zstack.scheduler.vm.RebootVmInstanceJob;
 import org.zstack.scheduler.vm.StartVmInstanceJob;
@@ -10,6 +10,7 @@ import org.zstack.scheduler.vm.StopVmInstanceJob;
 /**
  * Created by AlanJager on 2017/6/12.
  */
+@Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class SchedulerJobFactoryImpl implements SchedulerJobFactory {
     @Override
     public SchedulerJob createSchedulerJob(APICreateSchedulerJobMsg msg) {

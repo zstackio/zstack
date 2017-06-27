@@ -35,6 +35,12 @@
     </property>
     </bean>
 
+    <bean id="SchedulerJobFactory" class="org.zstack.scheduler.SchedulerJobFactoryImpl">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.scheduler.SchedulerJobFactory"/>
+        </zstack:plugin>
+    </bean>
+
     <bean id="SchedulerApiInterceptor" class="org.zstack.scheduler.SchedulerApiInterceptor">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor" />
