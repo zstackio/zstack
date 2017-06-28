@@ -16,6 +16,7 @@ public class ImageAO_ extends ResourceVO_ {
     public static volatile SingularAttribute<ImageAO, Long> size;
     public static volatile SingularAttribute<ImageAO, Long> actualSize;
     public static volatile SingularAttribute<ImageAO, String> md5Sum;
+    public static volatile SingularAttribute<ImageAO, String> exportMd5Sum;
     public static volatile SingularAttribute<ImageAO, String> type;
     public static volatile SingularAttribute<ImageAO, String> url;
     public static volatile SingularAttribute<ImageAO, Boolean> system;
