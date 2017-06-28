@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class QueryVirtualRouterFromLocalAction extends QueryAction {
+public class QueryAliyunVirtualRouterFromLocalAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public QueryVirtualRouterFromLocalResult value;
+        public QueryAliyunVirtualRouterFromLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -31,8 +31,8 @@ public class QueryVirtualRouterFromLocalAction extends QueryAction {
             return ret;
         }
         
-        QueryVirtualRouterFromLocalResult value = res.getResult(QueryVirtualRouterFromLocalResult.class);
-        ret.value = value == null ? new QueryVirtualRouterFromLocalResult() : value; 
+        QueryAliyunVirtualRouterFromLocalResult value = res.getResult(QueryAliyunVirtualRouterFromLocalResult.class);
+        ret.value = value == null ? new QueryAliyunVirtualRouterFromLocalResult() : value; 
 
         return ret;
     }

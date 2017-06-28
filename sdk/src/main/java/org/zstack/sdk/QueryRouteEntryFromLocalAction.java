@@ -9,7 +9,7 @@ public class QueryRouteEntryFromLocalAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryRouteEntryFromLocalResult value;
+        public QueryAliyunRouteEntryFromLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -31,8 +31,8 @@ public class QueryRouteEntryFromLocalAction extends QueryAction {
             return ret;
         }
         
-        QueryRouteEntryFromLocalResult value = res.getResult(QueryRouteEntryFromLocalResult.class);
-        ret.value = value == null ? new QueryRouteEntryFromLocalResult() : value; 
+        QueryAliyunRouteEntryFromLocalResult value = res.getResult(QueryAliyunRouteEntryFromLocalResult.class);
+        ret.value = value == null ? new QueryAliyunRouteEntryFromLocalResult() : value; 
 
         return ret;
     }

@@ -1,6 +1,6 @@
 package org.zstack.sdk;
 
-public class QueryRouteEntryFromLocalResult {
+public class QueryAliyunRouteEntryFromLocalResult {
     public java.util.List<VpcVirtualRouteEntryInventory> inventories;
     public void setInventories(java.util.List<VpcVirtualRouteEntryInventory> inventories) {
         this.inventories = inventories;
