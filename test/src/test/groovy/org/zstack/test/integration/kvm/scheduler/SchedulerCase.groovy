@@ -365,6 +365,7 @@ class SchedulerCase extends SubCase {
         CreateSchedulerTriggerAction.Result ret8 = action8.call()
         assert ret8.error != null
 
+        // start time out of range
         CreateSchedulerTriggerAction action9 = new CreateSchedulerTriggerAction()
         action9.name = "trigger"
         action9.description = "this is a trigger"
@@ -375,6 +376,17 @@ class SchedulerCase extends SubCase {
         action9.schedulerType = SchedulerConstant.SIMPLE_TYPE_STRING.toString()
         CreateSchedulerTriggerAction.Result ret9 = action9.call()
         assert ret9.error != null
+
+        // forever trigger
+        CreateSchedulerTriggerAction action10 = new CreateSchedulerTriggerAction()
+        action10.name = "trigger"
+        action10.description = "this is a trigger"
+        action10.sessionId = adminSession()
+        action10.schedulerInterval = 2
+        action10.startTime = 2037454847
+        action10.schedulerType = SchedulerConstant.SIMPLE_TYPE_STRING.toString()
+        CreateSchedulerTriggerAction.Result ret10 = action10.call()
+        assert ret10.error == null
     }
 
     void testAddSchedulerJobToTriggerInterceptor() {

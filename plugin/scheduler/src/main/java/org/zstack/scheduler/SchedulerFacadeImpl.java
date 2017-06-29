@@ -233,13 +233,12 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
 
         if (msg.getSchedulerType().equals(SchedulerConstant.SIMPLE_TYPE_STRING)) {
             // if execute once
-            if (msg.getStartTime() != null && msg.getStartTime() != 0) {
-                if (msg.getRepeatCount() != null && msg.getRepeatCount() == 1) {
+            if (msg.getStartTime() != null && msg.getStartTime() != 0 && msg.getRepeatCount() != null) {
+                if (msg.getRepeatCount() == 1) {
                     vo.setStopTime(start);
                 } else {
                     vo.setStopTime(new Timestamp(start.getTime() * 1000L + (long) msg.getRepeatCount() * (long) msg.getSchedulerInterval() * 1000L));
                 }
-
             } else {
                 vo.setStopTime(null);
             }
