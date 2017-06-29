@@ -18,6 +18,8 @@ import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.BackupStorageVO;
@@ -86,7 +88,14 @@ public class LocalStorageAllocateCapacityFlow implements Flow {
         q.setParameter("huuid", hostUuid);
         q.setParameter("state", PrimaryStorageState.Enabled);
         q.setParameter("status", PrimaryStorageStatus.Connected);
-        return q.getResultList().get(0);
+        List<String> result = q.getResultList();
+        if(result.isEmpty()){
+            String clusterUuid = Q.New(HostVO.class).select(HostVO_.clusterUuid)
+                    .eq(HostVO_.uuid, hostUuid).findValue();
+            throw new OperationFailureException(operr("There is no LocalStorage primary storage[state=%s,status=%s] on the cluster[%s]. Check the state/status of primary storage and make sure they have been attached to clusters"
+                    , PrimaryStorageState.Enabled, PrimaryStorageStatus.Connected, clusterUuid));
+        }
+        return result.get(0);
     }
 
     @Transactional(readOnly = true)
