@@ -1,5 +1,6 @@
 package org.zstack.test.integration.kvm.scheduler
 
+import org.quartz.JobDetail
 import org.quartz.JobKey
 import org.quartz.Trigger
 import org.quartz.TriggerKey
@@ -179,6 +180,7 @@ class SchedulerCase extends SubCase {
             testAddSchedulerJobToTriggerInterceptor()
             testPauseResumeDeleteSchedulerTask()
             testTriggerStopTimeCalculation()
+            testDeleteSchedulerJobWillRemoveJobTriggerRefFirst()
             testVmStateChangeCauseSchedulerPause()
         }
     }
@@ -664,7 +666,6 @@ class SchedulerCase extends SubCase {
         SchedulerJobVO jobVO = dbFindByUuid(job.uuid, SchedulerJobVO.class)
         assert jobVO.state == SchedulerState.Disabled.toString()
 
-
         scheduler.resumeSchedulerJob(job.uuid)
         jobVO = dbFindByUuid(job.uuid, SchedulerJobVO.class)
         assert jobVO.state == SchedulerState.Enabled.toString()
@@ -686,6 +687,27 @@ class SchedulerCase extends SubCase {
         } as SchedulerTriggerInventory
 
         assert trigger.stopTime.getTime() == new Timestamp(1000L * 2222L * 222222L).getTime() + 1L * 1000L
+
+        SchedulerTriggerInventory trigger1 = createSchedulerTrigger {
+            name = "trigger"
+            description = "this is a trigger"
+            schedulerInterval = 222222
+            startTime = (new Date(0)).getTime() + 1
+            schedulerType = SchedulerConstant.SIMPLE_TYPE_STRING.toString()
+        } as SchedulerTriggerInventory
+
+        assert trigger1.getStopTime() == null
+
+        SchedulerTriggerInventory trigger2 = createSchedulerTrigger {
+            name = "trigger"
+            description = "this is a trigger"
+            startTime = 0
+            repeatCount = 2222
+            schedulerInterval = 222222
+            schedulerType = SchedulerConstant.SIMPLE_TYPE_STRING.toString()
+        } as SchedulerTriggerInventory
+
+        assert trigger2.getStartTime() == null
     }
 
     void testVmStateChangeCauseSchedulerPause() {
@@ -792,5 +814,46 @@ class SchedulerCase extends SubCase {
             schedulerJobUuid = job.uuid
             schedulerTriggerUuid = trigger.uuid
         }
+    }
+
+    void testDeleteSchedulerJobWillRemoveJobTriggerRefFirst() {
+        VmInstanceInventory vm = env.inventoryByName("vm")
+
+        SchedulerJobInventory job = createSchedulerJob {
+            targetResourceUuid = vm.uuid
+            name = "start"
+            type = SchedulerType.START_VM
+        } as SchedulerJobInventory
+
+        SchedulerTriggerInventory trigger = createSchedulerTrigger {
+            name = "trigger"
+            description = "this is a trigger"
+            repeatCount = 2222
+            schedulerInterval = 222222
+            startTime = (new Date(0)).getTime()
+            schedulerType = SchedulerConstant.SIMPLE_TYPE_STRING.toString()
+        } as SchedulerTriggerInventory
+
+        addSchedulerJobToSchedulerTrigger {
+            schedulerJobUuid = job.uuid
+            schedulerTriggerUuid = trigger.uuid
+        }
+
+        JobDetail jobDetail = scheduler.getScheduler().getJobDetail(JobKey.jobKey(job.uuid, trigger.uuid))
+        String triggerName = trigger.uuid
+        String triggerGroup = trigger.getUuid() + "." + job.getUuid()
+        Trigger trigger1 = scheduler.getScheduler().getTrigger(TriggerKey.triggerKey(triggerName, triggerGroup))
+        assert jobDetail != null
+        assert trigger1 != null
+        deleteSchedulerJob {
+            uuid = job.uuid
+        }
+
+        // due to the job is deleted job detail will be null
+        jobDetail = scheduler.getScheduler().getJobDetail(JobKey.jobKey(job.uuid, trigger.uuid))
+        trigger1 = scheduler.getScheduler().getTrigger(TriggerKey.triggerKey(triggerName, triggerGroup))
+        assert jobDetail == null
+        assert trigger1 == null
+        assert !Q.New(SchedulerJobSchedulerTriggerRefVO.class).eq(SchedulerJobSchedulerTriggerRefVO_.schedulerJobUuid, job.uuid).isExists()
     }
 }

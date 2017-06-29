@@ -52,8 +52,8 @@ CREATE TABLE  `zstack`.`SchedulerTriggerVO` (
     `repeatCount` int unsigned DEFAULT NULL,
     `managementNodeUuid` varchar(32) DEFAULT NULL,
     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
-    `startTime` timestamp,
-    `stopTime` timestamp,
+    `startTime` timestamp NULL DEFAULT 0,
+    `stopTime` timestamp NULL DEFAULT 0,
     `createDate` timestamp,
     PRIMARY KEY  (`uuid`),
     CONSTRAINT `fkSchedulerTriggerVOManagementNodeVO` FOREIGN KEY (`managementNodeUuid`) REFERENCES `ManagementNodeVO` (`uuid`) ON DELETE SET NULL
