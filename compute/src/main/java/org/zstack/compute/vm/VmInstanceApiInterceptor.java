@@ -25,6 +25,7 @@ import org.zstack.header.image.ImageVO;
 import org.zstack.header.image.ImageVO_;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l3.*;
+import org.zstack.header.storage.primary.PrimaryStorageState;
 import org.zstack.header.vm.*;
 import org.zstack.header.zone.ZoneState;
 import org.zstack.header.zone.ZoneVO;
@@ -202,6 +203,19 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         // host uuid overrides cluster uuid
         if (msg.getHostUuid() != null) {
             msg.setClusterUuid(null);
+        }
+
+        // validate vm disks primary storage state
+        String sql = "select uuid from PrimaryStorageVO where uuid in (" +
+                " select distinct(primaryStorageUuid) from VolumeVO" +
+                " where vmInstanceUuid = :vmUuid and primaryStorageUuid is not null)" +
+                " and state = :psState";
+        List<String> result = SQL.New(sql, String.class)
+                .param("vmUuid", msg.getUuid())
+                .param("psState", PrimaryStorageState.Maintenance)
+                .list();
+        if(result != null && !result.isEmpty()){
+            throw new ApiMessageInterceptionException(argerr("the VM[uuid:%s] volume stored location primary storage is in a state of maintenance", msg.getVmInstanceUuid()));
         }
     }
 
