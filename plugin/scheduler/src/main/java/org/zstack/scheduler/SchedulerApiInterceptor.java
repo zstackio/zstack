@@ -1,7 +1,6 @@
 package org.zstack.scheduler;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.method.P;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
@@ -112,11 +111,6 @@ public class SchedulerApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APIDeleteSchedulerJobMsg msg) {
-        if (Q.New(SchedulerJobSchedulerTriggerRefVO.class)
-                .eq(SchedulerJobSchedulerTriggerRefVO_.schedulerJobUuid, msg.getUuid())
-                .isExists()) {
-            throw new ApiMessageInterceptionException(argerr("This job[uuid:%s] is added to some trigger, please remove it first", msg.getUuid()));
-        }
     }
 
     private void validate(APIUpdateSchedulerJobMsg msg) {

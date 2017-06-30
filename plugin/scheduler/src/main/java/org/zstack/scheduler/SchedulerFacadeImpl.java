@@ -151,11 +151,15 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
         APIAddSchedulerJobToSchedulerTriggerEvent evt = new APIAddSchedulerJobToSchedulerTriggerEvent(msg.getId());
         // run scheduler
         SchedulerTask task = prepareSchedulerTaskFromMsg(msg);
+
         if (runScheduler(task)) {
             SchedulerJobSchedulerTriggerRefVO vo = new SchedulerJobSchedulerTriggerRefVO();
             vo.setUuid(Platform.getUuid());
             vo.setSchedulerJobUuid(msg.getSchedulerJobUuid());
             vo.setSchedulerTriggerUuid(msg.getSchedulerTriggerUuid());
+            if (task.getStartTime() == null && task.getType().equals(SchedulerConstant.SIMPLE_TYPE_STRING)) {
+                task.setStartTime(new Timestamp(System.currentTimeMillis()));
+            }
             vo.setTaskData(JSONObjectUtil.toJsonString(task));
             vo.setTaskClassName(task.getClass().getName());
             dbf.persistAndRefresh(vo);
@@ -275,7 +279,29 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
 
     private void handle(APIDeleteSchedulerJobMsg msg) {
         APIDeleteSchedulerJobEvent evt = new APIDeleteSchedulerJobEvent(msg.getId());
-        dbf.removeByPrimaryKey(msg.getUuid(), SchedulerJobVO.class);
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                List<String> triggerUuids = Q.New(SchedulerJobSchedulerTriggerRefVO.class)
+                        .select(SchedulerJobSchedulerTriggerRefVO_.schedulerTriggerUuid)
+                        .eq(SchedulerJobSchedulerTriggerRefVO_.schedulerJobUuid, msg.getUuid())
+                        .listValues();
+                try {
+                    for (String triggerUuid : triggerUuids) {
+                        scheduler.deleteJob(jobKey(msg.getUuid(), triggerUuid));
+                    }
+                } catch (SchedulerException e) {
+                    logger.warn("Delete scheduler jobs failed!");
+                    throw new RuntimeException(e);
+                }
+                SQL.New(SchedulerJobSchedulerTriggerRefVO.class)
+                        .eq(SchedulerJobSchedulerTriggerRefVO_.schedulerJobUuid, msg.getUuid())
+                        .delete();
+                SQL.New(SchedulerJobVO.class)
+                        .eq(SchedulerJobVO_.uuid, msg.getUuid())
+                        .delete();
+            }
+        }.execute();
         bus.publish(evt);
     }
 
