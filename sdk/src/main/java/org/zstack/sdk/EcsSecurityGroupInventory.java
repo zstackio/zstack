@@ -26,12 +26,12 @@ public class EcsSecurityGroupInventory  {
         return this.securityGroupId;
     }
 
-    public java.lang.String securityGroupName;
-    public void setSecurityGroupName(java.lang.String securityGroupName) {
-        this.securityGroupName = securityGroupName;
+    public java.lang.String name;
+    public void setName(java.lang.String name) {
+        this.name = name;
     }
-    public java.lang.String getSecurityGroupName() {
-        return this.securityGroupName;
+    public java.lang.String getName() {
+        return this.name;
     }
 
     public java.lang.String description;
