@@ -69,10 +69,12 @@ class OneVmDhcp extends SubCase {
             uuid = l3.uuid
         }
 
-        assert cmd != null
-        assert cmd.namespaceName != null
+        retryInSecs(2){
+            assert cmd != null
+            assert cmd.namespaceName != null
+            assert cmd.bridgeName == brName
+        }
 
-        assert cmd.bridgeName == brName
         // make sure the DHCP server IP has been returned
         assert dbFindByUuid(dhcpServerIpUuid, UsedIpVO.class) == null
 
