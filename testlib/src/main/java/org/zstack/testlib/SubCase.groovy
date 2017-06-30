@@ -14,7 +14,12 @@ abstract class SubCase extends Test implements Case {
             throw t
         } finally {
             logger.info("start cleanup for case ${this.class}")
-            clean()
+            try{
+                clean()
+            }catch (Throwable t){
+                collectErrorLog()
+                throw t
+            }
         }
     }
 
