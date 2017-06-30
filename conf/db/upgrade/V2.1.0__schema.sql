@@ -162,4 +162,9 @@ CREATE TABLE `HybridConnectionRefVO` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS AvailableIdentityZonesVO;
+ALTER TABLE EcsVpcVO CHANGE COLUMN `vpcName` `name` varchar(128) NOT NULL;
+ALTER TABLE EcsVSwitchVO CHANGE COLUMN `vSwitchName` `name` varchar(128) NOT NULL;
+ALTER TABLE EcsSecurityGroupVO CHANGE COLUMN `securityGroupName` `name` varchar(128) NOT NULL;
+ALTER TABLE VpcVirtualRouterVO CHANGE COLUMN `vRouterName` `name` varchar(128) NOT NULL;
+ALTER TABLE HybridEipAddressVO ADD COLUMN `name` varchar(128) NOT NULL DEFAULT 'Unknown';
 

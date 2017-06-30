@@ -42,12 +42,12 @@ public class EcsVpcInventory  {
         return this.deleted;
     }
 
-    public java.lang.String vpcName;
-    public void setVpcName(java.lang.String vpcName) {
-        this.vpcName = vpcName;
+    public java.lang.String name;
+    public void setName(java.lang.String name) {
+        this.name = name;
     }
-    public java.lang.String getVpcName() {
-        return this.vpcName;
+    public java.lang.String getName() {
+        return this.name;
     }
 
     public java.lang.String cidrBlock;
