@@ -5,12 +5,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.header.allocator.AbstractHostAllocatorFlow;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostVO;
-import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
-import org.zstack.header.storage.primary.PrimaryStorageState;
-import org.zstack.header.storage.primary.PrimaryStorageStatus;
+import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 
 import javax.persistence.Tuple;
@@ -95,36 +95,66 @@ public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
         iq.setParameter("iuuid", spec.getImage().getUuid());
         List<String> hasImagePrimaryStorage = iq.getResultList();
 
-        List<String> psCandidates = new ArrayList<>();
-        for (Tuple t : ts) {
-            String psUuid = t.get(0, String.class);
-            long cap = t.get(1, Long.class);
+        List<String> hostCandidates = new ArrayList<>();
+        sql = "select h.uuid, ref.clusterUuid" +
+                " from PrimaryStorageClusterRefVO ref, HostVO h" +
+                " where ref.clusterUuid = h.clusterUuid" +
+                " and h.uuid in (:hostUuids)" +
+                " and ref.primaryStorageUuid in (:psUuids)";
+        TypedQuery<Tuple> hostCluster = dbf.getEntityManager().createQuery(sql, Tuple.class);
+        hostCluster.setParameter("hostUuids", huuids);
+        hostCluster.setParameter("psUuids", psUuids);
+        List<Tuple> result = hostCluster.getResultList();
+        for (Tuple t : result) {
+            String hostUuid = t.get(0, String.class);
+            String clusterUuid = t.get(1, String.class);
 
-            if (hasImagePrimaryStorage.contains(psUuid)) {
-                cap = ratioMgr.calculatePrimaryStorageAvailableCapacityByRatio(psUuid, cap);
-            } else {
-                // the primary storage doesn't have the image in cache
-                // so we need to add the image size
-                cap = ratioMgr.calculatePrimaryStorageAvailableCapacityByRatio(psUuid, cap) - spec.getImage().getActualSize();
+            List<String> clusterPsUuids = Q.New(PrimaryStorageClusterRefVO.class)
+                    .select(PrimaryStorageClusterRefVO_.primaryStorageUuid)
+                    .eq(PrimaryStorageClusterRefVO_.clusterUuid, clusterUuid)
+                    .in(PrimaryStorageClusterRefVO_.primaryStorageUuid, psUuids)
+                    .listValues();
+
+            if(clusterPsUuids.isEmpty()){
+                break;
             }
 
-            if (cap > spec.getDiskSize()) {
-                psCandidates.add(psUuid);
+            // background: http://dev.zstack.io/browse/ZSTAC-4852
+            // only fix problem one
+            long cap = 0L;
+            if(clusterPsUuids.size() == 1){
+                String psUuid = clusterPsUuids.get(0);
+                Long psAvaCap = Q.New(PrimaryStorageCapacityVO.class).select(PrimaryStorageCapacityVO_.availableCapacity)
+                        .eq(PrimaryStorageCapacityVO_.uuid, psUuid).findValue();
+
+                if (hasImagePrimaryStorage.contains(psUuid)) {
+                    cap = ratioMgr.calculatePrimaryStorageAvailableCapacityByRatio(psUuid, psAvaCap );
+                } else {
+                    // the primary storage doesn't have the image in cache
+                    // so we need to add the image size
+                    cap = ratioMgr.calculatePrimaryStorageAvailableCapacityByRatio(psUuid, psAvaCap) - spec.getImage().getActualSize();
+                }
+            }else{
+                // multi ps, don't consider image cache, because of cannot determine the primary storage associated with the root disk
+                for(String psUuid : clusterPsUuids){
+                    Long psAvaCap = Q.New(PrimaryStorageCapacityVO.class).select(PrimaryStorageCapacityVO_.availableCapacity)
+                            .eq(PrimaryStorageCapacityVO_.uuid, psUuid).findValue();
+                    cap = cap + ratioMgr.calculatePrimaryStorageAvailableCapacityByRatio(psUuid, psAvaCap);
+                }
+            }
+
+            if (cap >= spec.getDiskSize()) {
+                hostCandidates.add(hostUuid);
             }
         }
 
-        if (psCandidates.isEmpty()) {
+        if (hostCandidates.isEmpty()) {
             return new ArrayList<>();
         }
 
-        sql = "select h" +
-                " from HostVO h, PrimaryStorageClusterRefVO ref" +
-                " where ref.clusterUuid = h.clusterUuid" +
-                " and ref.primaryStorageUuid in (:psUuids)" +
-                " and h.uuid in (:huuids)";
+        sql = "select h from HostVO h where h.uuid in (:huuids)";
         TypedQuery<HostVO> hq = dbf.getEntityManager().createQuery(sql, HostVO.class);
-        hq.setParameter("psUuids", psCandidates);
-        hq.setParameter("huuids", huuids);
+        hq.setParameter("huuids", hostCandidates);
         return hq.getResultList();
     }
 
