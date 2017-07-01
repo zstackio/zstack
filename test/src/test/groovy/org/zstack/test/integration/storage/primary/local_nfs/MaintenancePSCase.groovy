@@ -2,6 +2,7 @@ package org.zstack.test.integration.storage.primary.local_nfs
 
 import org.zstack.header.storage.primary.PrimaryStorageStateEvent
 import org.zstack.header.vm.VmInstanceState
+import org.zstack.sdk.CreateVmInstanceAction
 import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.test.integration.storage.StorageTest
@@ -152,6 +153,18 @@ class MaintenancePSCase extends SubCase{
             assert vm.state == VmInstanceState.Stopped.toString()
         }
 
+        changePrimaryStorageState {
+            uuid = nfs.uuid
+            stateEvent = PrimaryStorageStateEvent.enable.toString()
+        }
+        CreateVmInstanceAction a = new CreateVmInstanceAction(
+                name: "vm2",
+                instanceOfferingUuid: vm.instanceOfferingUuid,
+                imageUuid: vm.imageUuid,
+                l3NetworkUuids: [vm.defaultL3NetworkUuid],
+                sessionId: currentEnvSpec.session.uuid
+        )
+        assert a.call().error.details.indexOf("no LocalStorage primary storage") > 0
     }
 
     @Override
