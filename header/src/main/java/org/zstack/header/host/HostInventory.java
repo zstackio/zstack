@@ -127,6 +127,10 @@ public class HostInventory implements Serializable {
             joinColumn = @JoinColumn(name = "uuid", referencedColumnName = "availableMemory"))
     private Long availableMemoryCapacity;
 
+    @Queryable(mappingClass = HostCapacityInventory.class,
+            joinColumn = @JoinColumn(name = "uuid", referencedColumnName = "cpuNum"))
+    private Integer cpuNum;
+
     /**
      * @desc the time this resource gets created
      */
@@ -154,10 +158,19 @@ public class HostInventory implements Serializable {
             this.setTotalMemoryCapacity(vo.getCapacity().getTotalMemory());
             this.setAvailableMemoryCapacity(vo.getCapacity().getAvailableMemory());
             this.setCpuSockets(vo.getCapacity().getCpuSockets());
+            this.setCpuNum(vo.getCapacity().getCpuNum());
         }
     }
 
     public HostInventory() {
+    }
+
+    public Integer getCpuNum() {
+        return cpuNum;
+    }
+
+    public void setCpuNum(Integer cpuNum) {
+        this.cpuNum = cpuNum;
     }
 
     public static HostInventory valueOf(HostVO vo) {

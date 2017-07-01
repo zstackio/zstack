@@ -25,6 +25,10 @@ public class N {
         return new N();
     }
 
+    public static N New(String resourceType, String resourceUuid) {
+        return new N(resourceType, resourceUuid);
+    }
+
     public static N New(Class resourceClass, String resourceUuid) {
         DebugUtils.Assert(resourceClass != null, "resourceClass cannot be null");
         return new N(resourceClass, resourceUuid);
@@ -35,6 +39,11 @@ public class N {
         builder.name(NotificationConstant.SYSTEM_SENDER).sender(NotificationConstant.SYSTEM_SENDER);
     }
 
+    private N(String resourceType, String resourceUuid) {
+        this();
+        builder.resource(resourceUuid, resourceType);
+    }
+
     private N(Class resourceClass, String resourceUuid) {
         this();
         builder.resource(resourceUuid, resourceClass.getSimpleName());
@@ -42,6 +51,11 @@ public class N {
 
     private void send() {
         mgr.send(builder);
+    }
+
+    public N sender(String sender) {
+        builder.name(sender).sender(sender);
+        return this;
     }
 
     public void warn_(String fmt, Object...args) {

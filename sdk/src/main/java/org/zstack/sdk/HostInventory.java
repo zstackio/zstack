@@ -114,6 +114,14 @@ public class HostInventory  {
         return this.availableMemoryCapacity;
     }
 
+    public java.lang.Integer cpuNum;
+    public void setCpuNum(java.lang.Integer cpuNum) {
+        this.cpuNum = cpuNum;
+    }
+    public java.lang.Integer getCpuNum() {
+        return this.cpuNum;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;

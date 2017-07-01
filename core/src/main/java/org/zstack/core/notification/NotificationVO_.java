@@ -11,7 +11,7 @@ import java.sql.Timestamp;
 public class NotificationVO_ {
     public static volatile SingularAttribute<NotificationVO, String> uuid;
     public static volatile SingularAttribute<NotificationVO, String> name;
-    public static volatile SingularAttribute<NotificationVO, String> senderUuid;
+    public static volatile SingularAttribute<NotificationVO, String> sender;
     public static volatile SingularAttribute<NotificationVO, Long> time;
     public static volatile SingularAttribute<NotificationVO, String> content;
     public static volatile SingularAttribute<NotificationVO, NotificationStatus> status;

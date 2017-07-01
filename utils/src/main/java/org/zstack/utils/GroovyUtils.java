@@ -5,11 +5,16 @@ import groovy.lang.GroovyClassLoader;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  */
 public class GroovyUtils {
+    private static Map<String, Class> groovyClasses = new ConcurrentHashMap<>();
+
     public static <T> T newInstance(String scriptPath, ClassLoader parent) {
         try {
             Class clz = getClass(scriptPath, parent);
@@ -48,9 +53,16 @@ public class GroovyUtils {
     }
 
     public static Class getClass(String scriptPath, ClassLoader parent) {
+        Class clz = groovyClasses.get(scriptPath);
+        if (clz != null) {
+            return clz;
+        }
+
         GroovyClassLoader loader = new GroovyClassLoader(parent);
         InputStream in =  parent.getResourceAsStream(scriptPath);
         String script = StringDSL.inputStreamToString(in);
-        return loader.parseClass(script);
+        clz = loader.parseClass(script);
+        groovyClasses.put(scriptPath, clz);
+        return clz;
     }
 }

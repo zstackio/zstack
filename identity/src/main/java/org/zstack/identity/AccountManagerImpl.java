@@ -707,6 +707,10 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                 resourceTypeForAccountRef.addAll(list);
             }
         }
+
+        Platform.getReflections().getTypesAnnotatedWith(HasAccountResourceRef.class)
+                .stream().filter(clz -> clz.isAnnotationPresent(HasAccountResourceRef.class))
+                .forEach(clz -> resourceTypeForAccountRef.add(clz.getName()));
     }
 
     @Override

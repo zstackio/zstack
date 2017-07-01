@@ -121,6 +121,12 @@ public class SourceClassMap {
 			put("org.zstack.ldap.LdapServerInventory", "org.zstack.sdk.LdapServerInventory");
 			put("org.zstack.license.LicenseInventory", "org.zstack.sdk.LicenseInventory");
 			put("org.zstack.mevoco.ShareableVolumeVmInstanceRefInventory", "org.zstack.sdk.ShareableVolumeVmInstanceRefInventory");
+			put("org.zstack.monitoring.AlertInventory", "org.zstack.sdk.AlertInventory");
+			put("org.zstack.monitoring.MonitorTriggerInventory", "org.zstack.sdk.MonitorTriggerInventory");
+			put("org.zstack.monitoring.actions.MonitorTriggerActionInventory", "org.zstack.sdk.MonitorTriggerActionInventory");
+			put("org.zstack.monitoring.items.ItemInventory", "org.zstack.sdk.ItemInventory");
+			put("org.zstack.monitoring.media.EmailMediaInventory", "org.zstack.sdk.EmailMediaInventory");
+			put("org.zstack.monitoring.media.MediaInventory", "org.zstack.sdk.MediaInventory");
 			put("org.zstack.network.l2.vxlan.vtep.VtepInventory", "org.zstack.sdk.VtepInventory");
 			put("org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory", "org.zstack.sdk.L2VxlanNetworkInventory");
 			put("org.zstack.network.l2.vxlan.vxlanNetworkPool.L2VxlanNetworkPoolInventory", "org.zstack.sdk.L2VxlanNetworkPoolInventory");
@@ -183,6 +189,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.", "org.zstack.vrouterRoute.APIGetVRouterRouteTableReply$8");
 			put("org.zstack.sdk.AccountInventory", "org.zstack.header.identity.AccountInventory");
 			put("org.zstack.sdk.AccountResourceRefInventory", "org.zstack.header.identity.AccountResourceRefInventory");
+			put("org.zstack.sdk.AlertInventory", "org.zstack.monitoring.AlertInventory");
 			put("org.zstack.sdk.AliyunException", "org.zstack.header.aliyun.AliyunException");
 			put("org.zstack.sdk.AliyunOssException", "org.zstack.header.aliyun.AliyunOssException");
 			put("org.zstack.sdk.ApplianceVmInventory", "org.zstack.appliancevm.ApplianceVmInventory");
@@ -219,6 +226,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.EcsVSwitchInventory", "org.zstack.header.aliyun.network.vpc.EcsVSwitchInventory");
 			put("org.zstack.sdk.EcsVpcInventory", "org.zstack.header.aliyun.network.vpc.EcsVpcInventory");
 			put("org.zstack.sdk.EipInventory", "org.zstack.network.service.eip.EipInventory");
+			put("org.zstack.sdk.EmailMediaInventory", "org.zstack.monitoring.media.EmailMediaInventory");
 			put("org.zstack.sdk.ErrorCode", "org.zstack.header.errorcode.ErrorCode");
 			put("org.zstack.sdk.ErrorCodeList", "org.zstack.header.errorcode.ErrorCodeList");
 			put("org.zstack.sdk.FreeIpInventory", "org.zstack.header.network.l3.FreeIpInventory");
@@ -243,6 +251,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ImageStoreBackupStorageInventory", "org.zstack.storage.backup.imagestore.ImageStoreBackupStorageInventory");
 			put("org.zstack.sdk.InstanceOfferingInventory", "org.zstack.header.configuration.InstanceOfferingInventory");
 			put("org.zstack.sdk.IpRangeInventory", "org.zstack.header.network.l3.IpRangeInventory");
+			put("org.zstack.sdk.ItemInventory", "org.zstack.monitoring.items.ItemInventory");
 			put("org.zstack.sdk.KVMHostInventory", "org.zstack.kvm.KVMHostInventory");
 			put("org.zstack.sdk.KVMIsoTO", "org.zstack.kvm.KVMIsoTO");
 			put("org.zstack.sdk.L2NetworkInventory", "org.zstack.header.network.l2.L2NetworkInventory");
@@ -258,6 +267,9 @@ public class SourceClassMap {
 			put("org.zstack.sdk.LoadBalancerListenerVmNicRefInventory", "org.zstack.network.service.lb.LoadBalancerListenerVmNicRefInventory");
 			put("org.zstack.sdk.LocalStorageResourceRefInventory", "org.zstack.storage.primary.local.LocalStorageResourceRefInventory");
 			put("org.zstack.sdk.ManagementNodeInventory", "org.zstack.header.managementnode.ManagementNodeInventory");
+			put("org.zstack.sdk.MediaInventory", "org.zstack.monitoring.media.MediaInventory");
+			put("org.zstack.sdk.MonitorTriggerActionInventory", "org.zstack.monitoring.actions.MonitorTriggerActionInventory");
+			put("org.zstack.sdk.MonitorTriggerInventory", "org.zstack.monitoring.MonitorTriggerInventory");
 			put("org.zstack.sdk.NetworkServiceL3NetworkRefInventory", "org.zstack.header.network.service.NetworkServiceL3NetworkRefInventory");
 			put("org.zstack.sdk.NetworkServiceProviderInventory", "org.zstack.header.network.service.NetworkServiceProviderInventory");
 			put("org.zstack.sdk.NotificationInventory", "org.zstack.core.notification.NotificationInventory");
