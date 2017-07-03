@@ -98,12 +98,12 @@ public class EcsInstanceInventory  {
         return this.ecsRootVolumeSize;
     }
 
-    public java.lang.String privateIpAddresse;
-    public void setPrivateIpAddresse(java.lang.String privateIpAddresse) {
-        this.privateIpAddresse = privateIpAddresse;
+    public java.lang.String privateIpAddress;
+    public void setPrivateIpAddress(java.lang.String privateIpAddress) {
+        this.privateIpAddress = privateIpAddress;
     }
-    public java.lang.String getPrivateIpAddresse() {
-        return this.privateIpAddresse;
+    public java.lang.String getPrivateIpAddress() {
+        return this.privateIpAddress;
     }
 
     public java.lang.String ecsEipUuid;
