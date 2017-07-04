@@ -11,7 +11,6 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.errorcode.schema.Error;
 import org.zstack.core.notification.N;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.Completion;
@@ -117,7 +116,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         cmd.setMountPath(inv.getMountPath());
         cmd.setOptions(NfsSystemTags.MOUNT_OPTIONS.getTokenByResourceUuid(inv.getUuid(), NfsSystemTags.MOUNT_OPTIONS_TOKEN));
 
-        httpCall(MOUNT_PRIMARY_STORAGE_PATH, hostUuid, cmd, true, MountAgentResponse.class, inv, new ReturnValueCompletion<MountAgentResponse>(completion) {
+        syncHttpCall(MOUNT_PRIMARY_STORAGE_PATH, hostUuid, cmd, true, MountAgentResponse.class, inv, new ReturnValueCompletion<MountAgentResponse>(completion) {
             @Override
             public void success(MountAgentResponse returnValue) {
                 logger.debug(String.format(
@@ -1082,7 +1081,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
             cmd.mountPath = pinv.getMountPath();
             cmd.options = NfsSystemTags.MOUNT_OPTIONS.getTokenByResourceUuid(pinv.getUuid(), NfsSystemTags.MOUNT_OPTIONS_TOKEN);
 
-            httpCall(REMOUNT_PATH, hostUuid, cmd, NfsPrimaryStorageAgentResponse.class, pinv, new ReturnValueCompletion<NfsPrimaryStorageAgentResponse>(compl) {
+            asyncHttpCall(REMOUNT_PATH, hostUuid, cmd, NfsPrimaryStorageAgentResponse.class, pinv, new ReturnValueCompletion<NfsPrimaryStorageAgentResponse>(compl) {
                 @Override
                 public void success(NfsPrimaryStorageAgentResponse rsp) {
                     logger.warn(String.format("remount NFS primary storage[uuid:%s, name:%s] on the KVM host[uuid:%s],", pinv.getUuid(), pinv.getName(), hostUuid));
@@ -1148,7 +1147,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                         cmd.oldMountPoint = oldMountPoint;
                         cmd.options = options;
 
-                        httpCall(UPDATE_MOUNT_POINT_PATH, hostUuid, cmd, UpdateMountPointRsp.class, pinv, new ReturnValueCompletion<UpdateMountPointRsp>(completion) {
+                        asyncHttpCall(UPDATE_MOUNT_POINT_PATH, hostUuid, cmd, UpdateMountPointRsp.class, pinv, new ReturnValueCompletion<UpdateMountPointRsp>(completion) {
                             @Override
                             public void success(UpdateMountPointRsp rsp) {
                                 completion.done();
@@ -1209,7 +1208,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                     cmd.url = inv.getUrl();
                     cmd.options = NfsSystemTags.MOUNT_OPTIONS.getTokenByResourceUuid(inv.getUuid(), NfsSystemTags.MOUNT_OPTIONS_TOKEN);
 
-                    httpCall(REMOUNT_PATH, huuid, cmd, true, NfsPrimaryStorageAgentResponse.class, inv, new ReturnValueCompletion<NfsPrimaryStorageAgentResponse>(completion) {
+                    asyncHttpCall(REMOUNT_PATH, huuid, cmd, true, NfsPrimaryStorageAgentResponse.class, inv, new ReturnValueCompletion<NfsPrimaryStorageAgentResponse>(completion) {
 
                         @Override
                         public void success(NfsPrimaryStorageAgentResponse rsp) {
@@ -1256,11 +1255,11 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         };
     }
 
-    protected <T extends NfsPrimaryStorageAgentResponse> void httpCall(String path, final String hostUuid, NfsPrimaryStorageAgentCommand cmd, final Class<T> rspType, PrimaryStorageInventory inv, final ReturnValueCompletion<T> completion) {
-        httpCall(path, hostUuid, cmd, false, rspType, inv, completion);
+    protected <T extends NfsPrimaryStorageAgentResponse> void asyncHttpCall(String path, final String hostUuid, NfsPrimaryStorageAgentCommand cmd, final Class<T> rspType, PrimaryStorageInventory inv, final ReturnValueCompletion<T> completion) {
+        asyncHttpCall(path, hostUuid, cmd, false, rspType, inv, completion);
     }
 
-    private <T extends NfsPrimaryStorageAgentResponse> void httpCall(String path, final String hostUuid, NfsPrimaryStorageAgentCommand cmd, boolean noCheckStatus, final Class<T> rspType,  PrimaryStorageInventory inv, final ReturnValueCompletion<T> completion) {
+    private <T extends NfsPrimaryStorageAgentResponse> void asyncHttpCall(String path, final String hostUuid, NfsPrimaryStorageAgentCommand cmd, boolean noCheckStatus, final Class<T> rspType, PrimaryStorageInventory inv, final ReturnValueCompletion<T> completion) {
         cmd.setUuid(inv.getUuid());
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
@@ -1285,21 +1284,57 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                     return;
                 }
 
-                if (rsp.getTotalCapacity() != null && rsp.getAvailableCapacity() != null) {
-                    new PrimaryStorageCapacityUpdater(inv.getUuid()).run(new PrimaryStorageCapacityUpdaterRunnable() {
-                                                                             @Override
-                                                                             public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
-                                                                                 cap.setTotalPhysicalCapacity(rsp.getTotalCapacity());
-                                                                                 cap.setAvailablePhysicalCapacity(rsp.getAvailableCapacity());
-                                                                                 cap.setTotalCapacity(rsp.getTotalCapacity());
-                                                                                 cap.setSystemUsedCapacity(null);
-                                                                                 return cap;
-                                                                             }
-                                                                         });
-                }
+                updatePrimaryStorageCapacity(inv.getUuid(), rsp);
 
                 completion.success(rsp);
             }
         });
     }
+
+    private <T extends NfsPrimaryStorageAgentResponse> void syncHttpCall(String path, final String hostUuid, NfsPrimaryStorageAgentCommand cmd, boolean noCheckStatus, final Class<T> rspType, PrimaryStorageInventory inv, final ReturnValueCompletion<T> completion) {
+        cmd.setUuid(inv.getUuid());
+
+        KVMHostSyncHttpCallMsg msg = new KVMHostSyncHttpCallMsg();
+        msg.setHostUuid(hostUuid);
+        msg.setPath(path);
+        msg.setNoStatusCheck(noCheckStatus);
+        msg.setCommand(cmd);
+        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
+        bus.send(msg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
+
+                KVMHostSyncHttpCallReply r = reply.castReply();
+                final T rsp = r.toResponse(rspType);
+                if (!rsp.isSuccess()) {
+                    completion.fail(operr(rsp.getError()));
+                    return;
+                }
+
+                updatePrimaryStorageCapacity(inv.getUuid(), rsp);
+
+                completion.success(rsp);
+            }
+        });
+    }
+
+    private void updatePrimaryStorageCapacity(String psUuid, NfsPrimaryStorageAgentResponse rsp){
+        if (rsp.getTotalCapacity() != null && rsp.getAvailableCapacity() != null) {
+            new PrimaryStorageCapacityUpdater(psUuid).run(new PrimaryStorageCapacityUpdaterRunnable() {
+                @Override
+                public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
+                    cap.setTotalPhysicalCapacity(rsp.getTotalCapacity());
+                    cap.setAvailablePhysicalCapacity(rsp.getAvailableCapacity());
+                    cap.setTotalCapacity(rsp.getTotalCapacity());
+                    cap.setSystemUsedCapacity(null);
+                    return cap;
+                }
+            });
+        }
+    }
+
 }
