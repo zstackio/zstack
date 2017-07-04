@@ -3884,6 +3884,9 @@ public class VmInstanceBase extends AbstractVmInstance {
         FlowChain chain = getStartVmWorkFlowChain(inv);
         setFlowMarshaller(chain);
 
+        String recentHostUuid = self.getHostUuid() == null ? self.getLastHostUuid() : self.getHostUuid();
+        String vmHostUuid = self.getHostUuid();
+        String vmLastHostUuid = self.getLastHostUuid();
         chain.setName(String.format("start-vm-%s", self.getUuid()));
         chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
         chain.done(new FlowDoneHandler(completion) {
@@ -3893,7 +3896,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 // reload self because some nics may have been deleted in start phase because a former L3Network deletion.
                 // reload to avoid JPA EntityNotFoundException
                 self = dbf.reload(self);
-                self.setLastHostUuid(self.getLastHostUuid() != null ? self.getLastHostUuid():self.getHostUuid());
+                self.setLastHostUuid(recentHostUuid);
                 self.setHostUuid(spec.getDestHost().getUuid());
                 self.setClusterUuid(spec.getDestHost().getClusterUuid());
                 self.setZoneUuid(spec.getDestHost().getZoneUuid());
@@ -3910,7 +3913,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 // reload to avoid JPA EntityNotFoundException
                 self = dbf.reload(self);
                 extEmitter.failedToStartVm(VmInstanceInventory.valueOf(self), errCode);
-                VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
+                VmInstanceSpec spec = (VmInstanceSpec) data.get(Params.VmInstanceSpec.toString());
                 if (HostErrors.FAILED_TO_START_VM_ON_HYPERVISOR.isEqual(errCode.getCode())) {
                     checkState(spec.getDestHost().getUuid(), new NoErrorCompletion(completion) {
                         @Override
@@ -3920,6 +3923,8 @@ public class VmInstanceBase extends AbstractVmInstance {
                     });
                 } else {
                     self.setState(originState);
+                    self.setHostUuid(vmHostUuid);
+                    self.setLastHostUuid(vmLastHostUuid);
                     self = dbf.updateAndRefresh(self);
                     completion.fail(errCode);
                 }

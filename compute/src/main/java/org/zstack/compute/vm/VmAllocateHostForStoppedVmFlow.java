@@ -76,10 +76,12 @@ public class VmAllocateHostForStoppedVmFlow implements Flow {
                 if (reply.isSuccess()) {
                     AllocateHostReply areply = (AllocateHostReply) reply;
                     spec.setDestHost(areply.getHost());
+                    String oldHostUuid = spec.getVmInventory().getHostUuid() == null ?
+                            spec.getVmInventory().getLastHostUuid() : spec.getVmInventory().getHostUuid();
 
                     UpdateQuery q = UpdateQuery.New(VmInstanceVO.class);
                     q.condAnd(VmInstanceVO_.uuid, SimpleQuery.Op.EQ, spec.getVmInventory().getUuid());
-                    q.set(VmInstanceVO_.lastHostUuid, spec.getVmInventory().getHostUuid());
+                    q.set(VmInstanceVO_.lastHostUuid, oldHostUuid);
                     q.set(VmInstanceVO_.hostUuid, areply.getHost().getUuid());
                     q.set(VmInstanceVO_.clusterUuid, areply.getHost().getClusterUuid());
                     q.update();
