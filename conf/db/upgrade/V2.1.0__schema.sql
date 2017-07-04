@@ -392,3 +392,29 @@ ALTER TABLE MonitorTriggerActionRefVO ADD CONSTRAINT fkMonitorTriggerActionRefVO
 
 ALTER TABLE MonitorTriggerVO ADD CONSTRAINT fkMonitorTriggerVOResourceVO FOREIGN KEY (targetResourceUuid) REFERENCES ResourceVO (uuid) ON DELETE CASCADE;
 ALTER TABLE EcsSecurityGroupRuleVO DROP COLUMN externalGroupId;
+
+
+SET FOREIGN_KEY_CHECKS = 0;
+alter table EcsInstanceVO drop foreign key fkEcsInstanceVOEcsVpcVO;
+alter table EcsInstanceVO drop key fkEcsInstanceVOEcsVpcVO;
+alter table EcsInstanceVO drop column ecsVpcUuid;
+
+alter table EcsInstanceVO modify column ecsVSwitchUuid varchar(32) NOT NULL;
+alter table EcsInstanceVO modify column ecsSecurityGroupUuid varchar(32) NOT NULL;
+
+alter table EcsInstanceVO drop foreign key fkEcsInstanceVOEcsVSwitchVO;
+alter table EcsInstanceVO drop foreign key fkEcsInstanceVOIdentityZoneVO;
+alter table EcsInstanceVO drop foreign key fkEcsInstanceVOEcsSecurityGroupVO;
+alter table EcsInstanceVO drop foreign key fkEcsInstanceVOEcsImageVO;
+
+alter table EcsInstanceVO add CONSTRAINT fkEcsInstanceVOEcsVSwitchVO foreign key (ecsVSwitchUuid) references EcsVSwitchVO (uuid) on delete restrict;
+alter table EcsInstanceVO add CONSTRAINT fkEcsInstanceVOEcsSecurityGroupVO foreign key (ecsSecurityGroupUuid) references EcsSecurityGroupVO (uuid) on delete restrict;
+alter table EcsInstanceVO add CONSTRAINT fkEcsInstanceVOIdentityZoneVO foreign key (identityZoneUuid) references IdentityZoneVO (uuid) on delete restrict;
+alter table EcsInstanceVO add CONSTRAINT fkEcsInstanceVOEcsImageVO foreign key (ecsImageUuid) references EcsImageVO (uuid) on delete restrict;
+
+alter table EcsInstanceVO modify column ecsImageUuid varchar(32) NOT NULL;
+alter table HybridEipAddressVO add column dataCenterUuid varchar(32) not null;
+alter table HybridEipAddressVO add column chargeType varchar(32) not null default "PayByTraffic";
+alter table HybridEipAddressVO add column allocateTime timestamp DEFAULT '0000-00-00 00:00:00';
+alter table HybridEipAddressVO add CONSTRAINT fkHybridEipAddressVODataCenterVO foreign key (dataCenterUuid) references DataCenterVO (uuid) on delete restrict;
+SET FOREIGN_KEY_CHECKS = 1;

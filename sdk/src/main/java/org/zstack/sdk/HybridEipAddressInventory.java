@@ -26,6 +26,14 @@ public class HybridEipAddressInventory  {
         return this.bandWidth;
     }
 
+    public java.lang.String dataCenterUuid;
+    public void setDataCenterUuid(java.lang.String dataCenterUuid) {
+        this.dataCenterUuid = dataCenterUuid;
+    }
+    public java.lang.String getDataCenterUuid() {
+        return this.dataCenterUuid;
+    }
+
     public java.lang.String allocateResourceUuid;
     public void setAllocateResourceUuid(java.lang.String allocateResourceUuid) {
         this.allocateResourceUuid = allocateResourceUuid;
@@ -42,11 +50,11 @@ public class HybridEipAddressInventory  {
         return this.allocateResourceType;
     }
 
-    public java.lang.String status;
-    public void setStatus(java.lang.String status) {
+    public HybridEipStatus status;
+    public void setStatus(HybridEipStatus status) {
         this.status = status;
     }
-    public java.lang.String getStatus() {
+    public HybridEipStatus getStatus() {
         return this.status;
     }
 
@@ -74,12 +82,28 @@ public class HybridEipAddressInventory  {
         return this.name;
     }
 
+    public java.lang.String chargeType;
+    public void setChargeType(java.lang.String chargeType) {
+        this.chargeType = chargeType;
+    }
+    public java.lang.String getChargeType() {
+        return this.chargeType;
+    }
+
     public java.lang.String description;
     public void setDescription(java.lang.String description) {
         this.description = description;
     }
     public java.lang.String getDescription() {
         return this.description;
+    }
+
+    public java.sql.Timestamp allocateTime;
+    public void setAllocateTime(java.sql.Timestamp allocateTime) {
+        this.allocateTime = allocateTime;
+    }
+    public java.sql.Timestamp getAllocateTime() {
+        return this.allocateTime;
     }
 
     public java.sql.Timestamp createDate;

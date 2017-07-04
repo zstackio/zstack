@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class DeleteEcsInstanceAction extends AbstractAction {
+public class DeleteEcsInstanceLocalAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public DeleteEcsInstanceResult value;
+        public DeleteEcsInstanceLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -49,8 +49,8 @@ public class DeleteEcsInstanceAction extends AbstractAction {
             return ret;
         }
         
-        DeleteEcsInstanceResult value = res.getResult(DeleteEcsInstanceResult.class);
-        ret.value = value == null ? new DeleteEcsInstanceResult() : value; 
+        DeleteEcsInstanceLocalResult value = res.getResult(DeleteEcsInstanceLocalResult.class);
+        ret.value = value == null ? new DeleteEcsInstanceLocalResult() : value; 
 
         return ret;
     }
@@ -76,7 +76,7 @@ public class DeleteEcsInstanceAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
-        info.path = "/hybrid/aliyun/ecs/{uuid}/remote";
+        info.path = "/hybrid/aliyun/ecs/{uuid}";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "";

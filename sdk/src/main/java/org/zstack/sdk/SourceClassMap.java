@@ -61,6 +61,7 @@ public class SourceClassMap {
 			put("org.zstack.header.errorcode.ErrorCodeList", "org.zstack.sdk.ErrorCodeList");
 			put("org.zstack.header.host.HostInventory", "org.zstack.sdk.HostInventory");
 			put("org.zstack.header.hybrid.network.eip.HybridEipAddressInventory", "org.zstack.sdk.HybridEipAddressInventory");
+			put("org.zstack.header.hybrid.network.eip.HybridEipStatus", "org.zstack.sdk.HybridEipStatus");
 			put("org.zstack.header.hybrid.network.vpn.VpcUserVpnGatewayInventory", "org.zstack.sdk.VpcUserVpnGatewayInventory");
 			put("org.zstack.header.hybrid.network.vpn.VpcVpnConnectionInventory", "org.zstack.sdk.VpcVpnConnectionInventory");
 			put("org.zstack.header.hybrid.network.vpn.VpcVpnGatewayInventory", "org.zstack.sdk.VpcVpnGatewayInventory");
@@ -241,6 +242,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.HybridAccountInventory", "org.zstack.hybrid.account.HybridAccountInventory");
 			put("org.zstack.sdk.HybridConnectionType", "org.zstack.header.aliyun.network.HybridConnectionType");
 			put("org.zstack.sdk.HybridEipAddressInventory", "org.zstack.header.hybrid.network.eip.HybridEipAddressInventory");
+			put("org.zstack.sdk.HybridEipStatus", "org.zstack.header.hybrid.network.eip.HybridEipStatus");
 			put("org.zstack.sdk.HybridType", "org.zstack.hybrid.core.HybridType");
 			put("org.zstack.sdk.IPsecConnectionInventory", "org.zstack.ipsec.IPsecConnectionInventory");
 			put("org.zstack.sdk.IPsecPeerCidrInventory", "org.zstack.ipsec.IPsecPeerCidrInventory");

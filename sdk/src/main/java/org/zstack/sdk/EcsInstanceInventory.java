@@ -114,14 +114,6 @@ public class EcsInstanceInventory  {
         return this.ecsEipUuid;
     }
 
-    public java.lang.String ecsVpcUuid;
-    public void setEcsVpcUuid(java.lang.String ecsVpcUuid) {
-        this.ecsVpcUuid = ecsVpcUuid;
-    }
-    public java.lang.String getEcsVpcUuid() {
-        return this.ecsVpcUuid;
-    }
-
     public java.lang.String ecsVSwitchUuid;
     public void setEcsVSwitchUuid(java.lang.String ecsVSwitchUuid) {
         this.ecsVSwitchUuid = ecsVSwitchUuid;
