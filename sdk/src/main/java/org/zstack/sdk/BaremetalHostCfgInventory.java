@@ -58,12 +58,20 @@ public class BaremetalHostCfgInventory  {
         return this.lastOpDate;
     }
 
-    public java.util.List<BaremetalHostNicCfgStruct> nicCfgs;
-    public void setNicCfgs(java.util.List<BaremetalHostNicCfgStruct> nicCfgs) {
+    public java.util.List<BaremetalHostNicCfgInventory> nicCfgs;
+    public void setNicCfgs(java.util.List<BaremetalHostNicCfgInventory> nicCfgs) {
         this.nicCfgs = nicCfgs;
     }
-    public java.util.List<BaremetalHostNicCfgStruct> getNicCfgs() {
+    public java.util.List<BaremetalHostNicCfgInventory> getNicCfgs() {
         return this.nicCfgs;
+    }
+
+    public java.util.List<BaremetalHostBondingInventory> bondings;
+    public void setBondings(java.util.List<BaremetalHostBondingInventory> bondings) {
+        this.bondings = bondings;
+    }
+    public java.util.List<BaremetalHostBondingInventory> getBondings() {
+        return this.bondings;
     }
 
 }

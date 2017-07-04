@@ -446,4 +446,27 @@ CREATE TABLE `BaremetalHardwareInfoVO` (
   CONSTRAINT `fkBaremetalHardwareInfoVOBaremetalChassisVO` FOREIGN KEY (`ipmiAddress`) REFERENCES `BaremetalChassisVO` (`ipmiAddress`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-INSERT INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "BaremetalHardwareInfoVO" FROM BaremetalHardwareInfoVO t;
+-- ----------------------------
+--  Table structure for `BaremetalHostBondingVO`
+-- ----------------------------
+CREATE TABLE `BaremetalHostBondingVO` (
+  `uuid` varchar(32) NOT NULL UNIQUE COMMENT 'uuid',
+  `hostCfgUuid` varchar(32) NOT NULL COMMENT 'baremetal hostcfg uuid',
+  `name` varchar(255) NOT NULL COMMENT 'bond name',
+  `slaves` varchar(1024) NOT NULL COMMENT 'bond slaves',
+  `mode` varchar(32)  DEFAULT '4' COMMENT 'bond slaves',
+  `ip` varchar(32) DEFAULT NULL COMMENT 'bond ip',
+  `netmask` varchar(32) DEFAULT NULL COMMENT 'bond netmask',
+  `gateway` varchar(32) DEFAULT NULL COMMENT 'bond gateway',
+  `dns` varchar(32) DEFAULT NULL COMMENT 'bond dns',
+  `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+  `createDate` timestamp,
+  PRIMARY KEY  (`uuid`),
+  CONSTRAINT `fkBaremetalHostBondingVOBaremetalHostCfgVO` FOREIGN KEY (`hostCfgUuid`) REFERENCES `BaremetalHostCfgVO` (`uuid`) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DELETE FROM ResourceVO WHERE resourceType="BaremetalHostNicCfgVO";
+DELETE FROM ResourceVO WHERE resourceType="BaremetalHostCfgVO";
+ALTER TABLE BaremetalHostNicCfgVO DROP INDEX ip;
+ALTER TABLE BaremetalHostNicCfgVO MODIFY ip varchar(32) DEFAULT NULL;
+ALTER TABLE BaremetalHostNicCfgVO MODIFY netmask varchar(32) DEFAULT NULL;
