@@ -10,6 +10,7 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.message.MessageReply;
@@ -21,6 +22,8 @@ import org.zstack.utils.DebugUtils;
 import org.zstack.utils.gson.JSONObjectUtil;
 
 import java.util.Map;
+
+import static org.zstack.core.Platform.operr;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmAllocatePrimaryStorageForAttachingDiskFlow implements Flow {
@@ -36,9 +39,12 @@ public class VmAllocatePrimaryStorageForAttachingDiskFlow implements Flow {
         final VolumeInventory volume = (VolumeInventory) data.get(VmInstanceConstant.Params.AttachingVolumeInventory.toString());
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
         String hostUuid = spec.getVmInventory().getHostUuid() == null ? spec.getVmInventory().getLastHostUuid() : spec.getVmInventory().getHostUuid();
-        DebugUtils.Assert(hostUuid != null, String.format(
-                "hostUuid from VmInventory should not be null, the vmInventory is [%s]",
-                JSONObjectUtil.toJsonString(spec.getVmInventory())));
+
+        if(hostUuid == null){
+            ErrorCode errorCode = operr(" Can not find the vm's host, please start the vm[%s], then mount the disk", spec.getVmInventory().getUuid());
+            chain.fail(errorCode);
+            return;
+        }
         HostVO hvo = dbf.findByUuid(hostUuid, HostVO.class);
         HostInventory hinv = HostInventory.valueOf(hvo);
         spec.setDestHost(hinv);
