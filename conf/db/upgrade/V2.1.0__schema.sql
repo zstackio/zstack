@@ -391,3 +391,4 @@ ALTER TABLE MonitorTriggerActionRefVO ADD CONSTRAINT fkMonitorTriggerActionRefVO
 # Foreign keys for table MonitorTriggerVO
 
 ALTER TABLE MonitorTriggerVO ADD CONSTRAINT fkMonitorTriggerVOResourceVO FOREIGN KEY (targetResourceUuid) REFERENCES ResourceVO (uuid) ON DELETE CASCADE;
+ALTER TABLE EcsSecurityGroupRuleVO DROP COLUMN externalGroupId;
