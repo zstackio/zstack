@@ -63,7 +63,7 @@ public class APICreateVipEvent extends APIEvent {
         inventory.setIp("192.168.0.1");
         inventory.setIpRangeUuid(uuid());
         inventory.setPeerL3NetworkUuid(uuid());
-        inventory.setState("enable");
+        inventory.setState(VipState.Enabled.toString());
 
         event.setInventory(inventory);
         return event;

@@ -1,6 +1,7 @@
 package org.zstack.network.securitygroup;
 
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.network.l3.L3NetworkState;
 import org.zstack.header.rest.RestResponse;
 
 import java.sql.Timestamp;
@@ -85,7 +86,7 @@ public class APIDetachSecurityGroupFromL3NetworkEvent extends APIEvent {
         sec.setUuid(uuid());
         sec.setName("web");
         sec.setDescription("for test");
-        sec.setState("Enabled");
+        sec.setState(SecurityGroupState.Enabled.toString());
         sec.setCreateDate(new Timestamp(System.currentTimeMillis()));
         sec.setLastOpDate(new Timestamp(System.currentTimeMillis()));
         event.setInventory(sec);

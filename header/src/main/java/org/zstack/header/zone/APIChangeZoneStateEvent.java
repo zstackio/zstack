@@ -55,7 +55,7 @@ public class APIChangeZoneStateEvent extends APIEvent {
         zone.setName("TestZone");
         zone.setUuid(uuid());
         zone.setDescription("Test");
-        zone.setState("Enabled");
+        zone.setState(ZoneState.Enabled.toString());
         zone.setType("zstack");
         zone.setCreateDate(new Timestamp(System.currentTimeMillis()));
         zone.setLastOpDate(new Timestamp(System.currentTimeMillis()));

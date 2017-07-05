@@ -9,6 +9,7 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.zone.ZoneState;
+import org.zstack.header.zone.ZoneStateEvent;
 import org.zstack.rest.RestConstants;
 import org.zstack.sdk.*;
 import org.zstack.test.Api;
@@ -81,7 +82,7 @@ public class TestCreateZoneRest1 {
         ChangeZoneStateAction ca = new ChangeZoneStateAction();
         ca.uuid = zone.uuid;
         ca.sessionId = api.getAdminSession().getUuid();
-        ca.stateEvent = "disable";
+        ca.stateEvent = ZoneStateEvent.disable.toString();
         ChangeZoneStateAction.Result z = ca.call();
         Assert.assertNull(z.error);
         Assert.assertEquals(ZoneState.Disabled.toString(), z.value.inventory.getState());

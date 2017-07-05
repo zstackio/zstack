@@ -54,7 +54,7 @@ public class APICreateClusterEvent extends APIEvent {
         cluster.setHypervisorType("KVM");
         cluster.setName("cluster1");
         cluster.setDescription("test");
-        cluster.setState("Enabled");
+        cluster.setState(ClusterState.Enabled.toString());
         cluster.setZoneUuid(uuid());
         cluster.setUuid(uuid());
         cluster.setType("zstack");

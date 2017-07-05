@@ -51,7 +51,7 @@ public class APIChangeDiskOfferingStateMsg extends APIMessage implements DiskOff
     public static APIChangeDiskOfferingStateMsg __example__() {
         APIChangeDiskOfferingStateMsg msg = new APIChangeDiskOfferingStateMsg();
         msg.setUuid(uuid());
-        msg.setStateEvent("enable");
+        msg.setStateEvent(InstanceOfferingStateEvent.enable.toString());
 
         return msg;
     }

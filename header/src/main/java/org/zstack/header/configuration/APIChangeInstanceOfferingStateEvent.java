@@ -42,7 +42,7 @@ public class APIChangeInstanceOfferingStateEvent extends APIEvent {
         inventory.setUuid(uuid());
         inventory.setAllocatorStrategy("Mevoco");
         inventory.setType(USER_VM_INSTANCE_OFFERING_TYPE);
-        inventory.setState("Enabled");
+        inventory.setState(InstanceOfferingState.Enabled.toString());
         inventory.setCreateDate(new Timestamp(System.currentTimeMillis()));
         inventory.setLastOpDate(new Timestamp(System.currentTimeMillis()));
 

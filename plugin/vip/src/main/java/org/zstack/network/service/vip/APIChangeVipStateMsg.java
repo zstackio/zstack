@@ -45,7 +45,7 @@ public class APIChangeVipStateMsg extends APIMessage implements VipMessage {
     public static APIChangeVipStateMsg __example__() {
         APIChangeVipStateMsg msg = new APIChangeVipStateMsg();
         msg.setUuid(uuid());
-        msg.setStateEvent("enable");
+        msg.setStateEvent(VipStateEvent.enable.toString());
 
         return msg;
     }

@@ -30,6 +30,7 @@ public class APIQueryEipReply extends APIQueryReply {
         eip.setName("Test-EIP");
         eip.setVipUuid(uuid());
         eip.setVmNicUuid(uuid());
+        eip.setState(EipState.Enabled.toString());
 
         reply.setInventories(asList(eip));
         return reply;

@@ -79,7 +79,7 @@ public class APIChangeVolumeStateMsg extends APIMessage implements VolumeMessage
     public static APIChangeVolumeStateMsg __example__() {
         APIChangeVolumeStateMsg msg = new APIChangeVolumeStateMsg();
         msg.setUuid(uuid());
-        msg.setStateEvent("enable");
+        msg.setStateEvent(VolumeStateEvent.enable.toString());
 
         return msg;
     }

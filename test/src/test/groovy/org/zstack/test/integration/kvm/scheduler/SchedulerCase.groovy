@@ -8,6 +8,7 @@ import org.quartz.impl.matchers.GroupMatcher
 import org.springframework.http.HttpEntity
 import org.zstack.compute.host.HostGlobalConfig
 import org.zstack.core.db.Q
+import org.zstack.header.core.scheduler.SchedulerStateEvent
 import org.zstack.kvm.KVMSecurityGroupBackend
 import org.zstack.network.securitygroup.SecurityGroupConstant
 import org.zstack.scheduler.SchedulerConstant
@@ -794,7 +795,7 @@ class SchedulerCase extends SubCase {
 
         changeSchedulerState {
             uuid = job.getUuid()
-            stateEvent = "enable"
+            stateEvent = SchedulerStateEvent.enable.toString()
         }
         state = scheduler.getScheduler().getTriggerState(TriggerKey.triggerKey(trigger.getUuid(), trigger.getUuid() + "." + job.getUuid()))
         assert state == Trigger.TriggerState.NORMAL

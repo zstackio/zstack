@@ -69,7 +69,7 @@ public class APICreateVolumeSnapshotEvent extends APIEvent {
         inv.setLastOpDate(new Timestamp(System.currentTimeMillis()));
         inv.setParentUuid(uuid());
         inv.setDescription("create-snapshot-from-volume");
-        inv.setState("Enabled");
+        inv.setState(VolumeState.Enabled.toString());
         inv.setType("Hypervisor");
         inv.setVolumeUuid(volumeUuid);
         inv.setFormat("qcow2");

@@ -55,8 +55,8 @@ public class APIChangeHostStateEvent extends APIEvent {
         hi.setClusterUuid(uuid());
         hi.setManagementIp("192.168.0.1");
         hi.setName("example");
-        hi.setState("Enabled");
-        hi.setStatus("Connected");
+        hi.setState(HostState.Enabled.toString());
+        hi.setStatus(HostStatus.Connected.toString());
         hi.setClusterUuid(uuid());
         hi.setZoneUuid(uuid());
         hi.setUuid(uuid());
