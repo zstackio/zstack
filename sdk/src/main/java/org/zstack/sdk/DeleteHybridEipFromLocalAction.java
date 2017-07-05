@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class DeleteEcsInstanceAction extends AbstractAction {
+public class DeleteHybridEipFromLocalAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public DeleteEcsInstanceResult value;
+        public DeleteHybridEipFromLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -21,6 +21,9 @@ public class DeleteEcsInstanceAction extends AbstractAction {
             return this;
         }
     }
+
+    @Param(required = true, validValues = {"aliyun"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String type;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
@@ -49,8 +52,8 @@ public class DeleteEcsInstanceAction extends AbstractAction {
             return ret;
         }
         
-        DeleteEcsInstanceResult value = res.getResult(DeleteEcsInstanceResult.class);
-        ret.value = value == null ? new DeleteEcsInstanceResult() : value; 
+        DeleteHybridEipFromLocalResult value = res.getResult(DeleteHybridEipFromLocalResult.class);
+        ret.value = value == null ? new DeleteHybridEipFromLocalResult() : value; 
 
         return ret;
     }
@@ -76,7 +79,7 @@ public class DeleteEcsInstanceAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
-        info.path = "/hybrid/aliyun/ecs/{uuid}/remote";
+        info.path = "/hybrid/eip/{uuid}";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "";
