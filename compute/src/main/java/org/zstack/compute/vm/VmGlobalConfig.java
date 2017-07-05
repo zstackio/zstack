@@ -24,6 +24,4 @@ public class VmGlobalConfig {
     public static GlobalConfig VM_VIDEO_TYPE = new GlobalConfig(CATEGORY, "videoType");
     @GlobalConfigValidation
     public static GlobalConfig NUMA = new GlobalConfig(CATEGORY, "numa");
-    @GlobalConfigValidation
-    public static GlobalConfig VM_AUDIO = new GlobalConfig(CATEGORY, "audio");
 }
