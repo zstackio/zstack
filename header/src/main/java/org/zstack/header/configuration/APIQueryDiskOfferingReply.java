@@ -28,7 +28,7 @@ public class APIQueryDiskOfferingReply extends APIQueryReply {
         inventory.setUuid(uuid());
         inventory.setAllocatorStrategy(PrimaryStorageConstant.DEFAULT_PRIMARY_STORAGE_ALLOCATION_STRATEGY_TYPE);
         inventory.setType("DefaultDiskOfferingType");
-        inventory.setState("Enabled");
+        inventory.setState(DiskOfferingState.Enabled.toString());
 
         reply.setInventories(list(inventory));
         return reply;

@@ -32,7 +32,7 @@ public class APIChangeEipStateEvent extends APIEvent {
         eip.setName("Test-EIP");
         eip.setVipUuid(uuid());
         eip.setVmNicUuid(uuid());
-        eip.setState("enable");
+        eip.setState(EipState.Enabled.toString());
 
         event.setInventory(eip);
         return event;

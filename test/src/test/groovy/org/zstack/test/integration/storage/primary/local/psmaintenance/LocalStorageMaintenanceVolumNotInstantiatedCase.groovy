@@ -1,5 +1,6 @@
 package org.zstack.test.integration.storage.primary.local.psmaintenance
 
+import org.zstack.header.storage.primary.PrimaryStorageStateEvent
 import org.zstack.sdk.DiskOfferingInventory
 import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.sdk.VmInstanceInventory
@@ -79,7 +80,7 @@ class LocalStorageMaintenanceVolumNotInstantiatedCase extends SubCase{
 
         primaryStorage = changePrimaryStorageState {
             uuid=primaryStorage.uuid
-            stateEvent = "disable"
+            stateEvent = PrimaryStorageStateEvent.disable.toString()
         }
         list = getDataVolumeAttachableVm {
             volumeUuid = volumeInventory.uuid

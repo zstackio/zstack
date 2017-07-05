@@ -84,7 +84,7 @@ public class APIChangeL3NetworkStateMsg extends APIMessage implements L3NetworkM
     public static APIChangeL3NetworkStateMsg __example__() {
         APIChangeL3NetworkStateMsg msg = new APIChangeL3NetworkStateMsg();
         msg.setUuid(uuid());
-        msg.setStateEvent("enable");
+        msg.setStateEvent(L3NetworkStateEvent.enable.toString());
         return msg;
     }
 

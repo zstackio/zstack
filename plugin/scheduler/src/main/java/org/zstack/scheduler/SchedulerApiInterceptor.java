@@ -132,10 +132,10 @@ public class SchedulerApiInterceptor implements ApiMessageInterceptor {
 //        q.select(SchedulerJobVO.state);
 //        q.add(SchedulerJobVO.uuid, SimpleQuery.Op.EQ, msg.getUuid());
 //        String state = q.findValue();
-//        if (msg.getStateEvent().equals("enable") && state.equals(SchedulerState.Enabled.toString())) {
+//        if (msg.getStateEvent().equals(SchedulerStateEvent.enable.toString()) && state.equals(SchedulerState.Enabled.toString())) {
 //            throw new ApiMessageInterceptionException(operr("can not enable a Enabled scheduler" ));
 //        }
-//        if (msg.getStateEvent().equals("disable") && state.equals(SchedulerState.Disabled.toString())) {
+//        if (msg.getStateEvent().equals(SchedulerStateEvent.disable.toString()) && state.equals(SchedulerState.Disabled.toString())) {
 //            throw new ApiMessageInterceptionException(operr("can not disable a Disabled scheduler"));
 //        }
     }

@@ -1,6 +1,8 @@
 package org.zstack.header.vm;
 
 import org.zstack.header.host.HostInventory;
+import org.zstack.header.host.HostState;
+import org.zstack.header.host.HostStatus;
 import org.zstack.header.message.APIReply;
 import org.zstack.header.rest.RestResponse;
 
@@ -32,8 +34,8 @@ public class APIGetVmMigrationCandidateHostsReply extends APIReply {
         hi.setClusterUuid(uuid());
         hi.setManagementIp("192.168.0.1");
         hi.setName("example");
-        hi.setState("Enabled");
-        hi.setStatus("Connected");
+        hi.setState(HostState.Enabled.toString());
+        hi.setStatus(HostStatus.Connected.toString());
         hi.setClusterUuid(uuid());
         hi.setZoneUuid(uuid());
         hi.setUuid(uuid());

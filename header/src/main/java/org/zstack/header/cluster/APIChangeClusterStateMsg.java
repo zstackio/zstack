@@ -94,7 +94,7 @@ public class APIChangeClusterStateMsg extends APIMessage implements ClusterMessa
     public static APIChangeClusterStateMsg __example__() {
         APIChangeClusterStateMsg msg = new APIChangeClusterStateMsg();
         msg.setUuid(uuid());
-        msg.setStateEvent("disable");
+        msg.setStateEvent(ClusterStateEvent.disable.toString());
         return msg;
     }
 

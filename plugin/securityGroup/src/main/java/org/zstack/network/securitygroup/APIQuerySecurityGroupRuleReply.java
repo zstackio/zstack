@@ -31,7 +31,7 @@ public class APIQuerySecurityGroupRuleReply extends APIQueryReply {
         rule.setStartPort(22);
         rule.setProtocol("TCP");
         rule.setSecurityGroupUuid(uuid());
-        rule.setState("Enabled");
+        rule.setState(SecurityGroupRuleState.Enabled.toString());
         rule.setType("Ingress");
         rule.setCreateDate(new Timestamp(System.currentTimeMillis()));
         rule.setLastOpDate(new Timestamp(System.currentTimeMillis()));

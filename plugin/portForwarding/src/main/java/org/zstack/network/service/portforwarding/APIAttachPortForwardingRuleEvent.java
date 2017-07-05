@@ -68,7 +68,7 @@ public class APIAttachPortForwardingRuleEvent extends APIEvent {
         rule.setPrivatePortStart(33);
         rule.setPrivatePortEnd(33);
         rule.setProtocolType("TCP");
-        rule.setState("Enabled");
+        rule.setState(PortForwardingRuleState.Enabled.toString());
         rule.setVipPortStart(33);
         rule.setVipPortEnd(33);
         rule.setVipIp("192.168.0.187");

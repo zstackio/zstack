@@ -3,6 +3,7 @@ package org.zstack.scheduler;
 import org.springframework.http.HttpMethod;
 import org.zstack.header.core.scheduler.SchedulerJobSchedulerTriggerRefVO;
 import org.zstack.header.core.scheduler.SchedulerJobVO;
+import org.zstack.header.core.scheduler.SchedulerStateEvent;
 import org.zstack.header.core.scheduler.SchedulerVO;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
@@ -57,7 +58,7 @@ public class APIChangeSchedulerStateMsg  extends APIMessage implements Scheduler
     public static APIChangeSchedulerStateMsg __example__() {
         APIChangeSchedulerStateMsg msg = new APIChangeSchedulerStateMsg();
         msg.setUuid(uuid());
-        msg.setStateEvent("disable");
+        msg.setStateEvent(SchedulerStateEvent.disable.toString());
         return msg;
     }
 

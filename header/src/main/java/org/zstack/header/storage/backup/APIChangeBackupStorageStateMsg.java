@@ -89,7 +89,7 @@ public class APIChangeBackupStorageStateMsg extends APIMessage implements Backup
         APIChangeBackupStorageStateMsg msg = new APIChangeBackupStorageStateMsg();
 
         msg.setUuid(uuid());
-        msg.setStateEvent(BackupStorageState.Disabled.toString());
+        msg.setStateEvent(BackupStorageStateEvent.disable.toString());
 
         return msg;
     }

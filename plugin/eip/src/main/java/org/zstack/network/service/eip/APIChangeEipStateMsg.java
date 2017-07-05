@@ -47,7 +47,7 @@ public class APIChangeEipStateMsg extends APIMessage implements EipMessage {
     public static APIChangeEipStateMsg __example__() {
         APIChangeEipStateMsg msg = new APIChangeEipStateMsg();
         msg.setUuid(uuid());
-        msg.setStateEvent("enable");
+        msg.setStateEvent(EipStateEvent.enable.toString());
 
         return msg;
     }

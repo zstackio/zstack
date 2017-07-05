@@ -42,7 +42,7 @@ public class APIChangePortForwardingRuleStateMsg extends APIMessage {
     public static APIChangePortForwardingRuleStateMsg __example__() {
         APIChangePortForwardingRuleStateMsg msg = new APIChangePortForwardingRuleStateMsg();
         msg.setUuid(uuid());
-        msg.setStateEvent("disable");
+        msg.setStateEvent(PortForwardingRuleStateEvent.disable.toString());
         return msg;
     }
 

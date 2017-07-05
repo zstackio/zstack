@@ -1,6 +1,7 @@
 package org.zstack.header.host;
 
 import org.springframework.http.HttpMethod;
+import org.zstack.header.configuration.InstanceOfferingStateEvent;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
@@ -91,7 +92,7 @@ public class APIChangeHostStateMsg extends APIMessage implements HostMessage {
     public static APIChangeHostStateMsg __example__() {
         APIChangeHostStateMsg msg = new APIChangeHostStateMsg();
         msg.setUuid(uuid());
-        msg.setStateEvent("enabled");
+        msg.setStateEvent(HostStateEvent.enable.toString());
         return msg;
     }
 

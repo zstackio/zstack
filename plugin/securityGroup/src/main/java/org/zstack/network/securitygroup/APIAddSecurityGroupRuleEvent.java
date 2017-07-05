@@ -83,7 +83,7 @@ public class APIAddSecurityGroupRuleEvent extends APIEvent {
         sec.setUuid(uuid());
         sec.setName("web");
         sec.setDescription("for test");
-        sec.setState("Enabled");
+        sec.setState(SecurityGroupRuleState.Enabled.toString());
         sec.setCreateDate(new Timestamp(System.currentTimeMillis()));
         sec.setLastOpDate(new Timestamp(System.currentTimeMillis()));
         event.setInventory(sec);
