@@ -76,7 +76,7 @@ public class SyncVpcUserVpnGatewayFromRemoteAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/hybrid/user-vpn/sync";
+        info.path = "/hybrid/user-vpn/{dataCenterUuid}/sync";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "";
