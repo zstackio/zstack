@@ -58,7 +58,7 @@ public class QueryVRouterRouteTableAction extends QueryAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/vrouter-route-tables/";
+        info.path = "/vrouter-route-tables";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";
