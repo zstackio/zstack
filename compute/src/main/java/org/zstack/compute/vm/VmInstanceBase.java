@@ -377,6 +377,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((HaStartVmInstanceMsg) msg);
         } else if (msg instanceof OverlayMessage) {
             handle((OverlayMessage) msg);
+        } else if (msg instanceof ReimageVmInstanceMsg){
+            handle((ReimageVmInstanceMsg) msg);
         } else {
             VmInstanceBaseExtensionFactory ext = vmMgr.getVmInstanceBaseExtensionFactory(msg);
             if (ext != null) {
@@ -4707,6 +4709,39 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     private void reimageVmInstance(final APIReimageVmInstanceMsg msg, NoErrorCompletion completion) {
         final APIReimageVmInstanceEvent evt = new APIReimageVmInstanceEvent(msg.getId());
+        String rootVolumeUuid = Q.New(VmInstanceVO.class).select(VmInstanceVO_.rootVolumeUuid)
+                .eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid())
+                .findValue();
+
+        ReimageVmInstanceMsg rmsg = new ReimageVmInstanceMsg();
+        rmsg.setVmInstanceUuid(msg.getVmInstanceUuid());
+        rmsg.setAccountUuid(msg.getSession().getAccountUuid());
+        bus.makeTargetServiceIdByResourceUuid(rmsg, VmInstanceConstant.SERVICE_ID, msg.getVmInstanceUuid());
+
+        ReimageVolumeOverlayMsg omsg = new ReimageVolumeOverlayMsg();
+        omsg.setMessage(rmsg);
+        omsg.setVolumeUuid(rootVolumeUuid);
+        bus.makeTargetServiceIdByResourceUuid(omsg, VolumeConstant.SERVICE_ID, rootVolumeUuid);
+
+        bus.send(omsg, new CloudBusCallBack(completion, evt) {
+            @Override
+            public void run(MessageReply reply) {
+                if (reply.isSuccess()){
+                    self = refreshVO();
+                    VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
+                    evt.setInventory(inv);
+                    bus.publish(evt);
+                } else {
+                    evt.setError(reply.getError());
+                    bus.publish(evt);
+                }
+                completion.done();
+            }
+        });
+    }
+
+    private void handle(ReimageVmInstanceMsg msg){
+        ReimageVmInstanceReply reply = new ReimageVmInstanceReply();
 
         self = refreshVO();
         VolumeVO rootVolume = dbf.findByUuid(self.getRootVolumeUuid(), VolumeVO.class);
@@ -4768,7 +4803,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                         rootVolumeInventory.setDescription(String.format("save snapshot for reimage vm [uuid:%s]", msg.getVmInstanceUuid()));
                         rootVolumeInventory.setName("reimage-vm-point");
                         gmsg.setVolume(rootVolumeInventory);
-                        gmsg.setAccountUuid(msg.getSession().getAccountUuid());
+                        gmsg.setAccountUuid(msg.getAccountUuid());
                         bus.makeLocalServiceId(gmsg, VolumeSnapshotConstant.SERVICE_ID);
                         bus.send(gmsg, new CloudBusCallBack(trigger) {
                             @Override
@@ -4806,7 +4841,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     }
                 });
 
-                done(new FlowDoneHandler(msg, completion) {
+                done(new FlowDoneHandler(msg) {
                     @Override
                     public void handle(Map data) {
                         rootVolume.setInstallPath(newVolumeInstallPath);
@@ -4819,20 +4854,17 @@ public class VmInstanceBase extends AbstractVmInstance {
                         }
 
                         self = dbf.reload(self);
-                        evt.setInventory(VmInstanceInventory.valueOf(self));
-                        bus.publish(evt);
-                        completion.done();
+                        bus.reply(msg, reply);
                     }
                 });
 
-                error(new FlowErrorHandler(msg, completion) {
+                error(new FlowErrorHandler(msg) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
                         logger.warn(String.format("failed to restore volume[uuid:%s] to image[uuid:%s], %s",
                                 rootVolumeInventory.getUuid(), rootVolumeInventory.getRootImageUuid(), errCode));
-                        evt.setError(errCode);
-                        bus.publish(evt);
-                        completion.done();
+                        reply.setError(errCode);
+                        bus.reply(msg, reply);
                     }
                 });
             }
