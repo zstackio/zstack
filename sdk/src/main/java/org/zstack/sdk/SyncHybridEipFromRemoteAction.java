@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SyncVpcUserVpnGatewayFromRemoteAction extends AbstractAction {
+public class SyncHybridEipFromRemoteAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public SyncVpcUserVpnGatewayFromRemoteResult value;
+        public SyncHybridEipFromRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -21,6 +21,9 @@ public class SyncVpcUserVpnGatewayFromRemoteAction extends AbstractAction {
             return this;
         }
     }
+
+    @Param(required = true, validValues = {"aliyun"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String type;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String dataCenterUuid;
@@ -49,8 +52,8 @@ public class SyncVpcUserVpnGatewayFromRemoteAction extends AbstractAction {
             return ret;
         }
         
-        SyncVpcUserVpnGatewayFromRemoteResult value = res.getResult(SyncVpcUserVpnGatewayFromRemoteResult.class);
-        ret.value = value == null ? new SyncVpcUserVpnGatewayFromRemoteResult() : value; 
+        SyncHybridEipFromRemoteResult value = res.getResult(SyncHybridEipFromRemoteResult.class);
+        ret.value = value == null ? new SyncHybridEipFromRemoteResult() : value; 
 
         return ret;
     }
@@ -76,7 +79,7 @@ public class SyncVpcUserVpnGatewayFromRemoteAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/hybrid/user-vpn/{dataCenterUuid}/sync";
+        info.path = "/hybrid/eip/{dataCenterUuid}/sync";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "";
