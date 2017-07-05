@@ -74,14 +74,6 @@ public class EcsSecurityGroupRuleInventory  {
         return this.policy;
     }
 
-    public java.lang.String externalGroupId;
-    public void setExternalGroupId(java.lang.String externalGroupId) {
-        this.externalGroupId = externalGroupId;
-    }
-    public java.lang.String getExternalGroupId() {
-        return this.externalGroupId;
-    }
-
     public java.lang.String description;
     public void setDescription(java.lang.String description) {
         this.description = description;

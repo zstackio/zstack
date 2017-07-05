@@ -8,16 +8,16 @@
     "fileName": "src/main/java/org/zstack/aliyun/core/AliyunClient.java"
   },
   {
-    "raw": "DestGroupId or DestCidrIp must be set!",
-    "en_US": "DestGroupId or DestCidrIp must be set!",
+    "raw": "DestCidrIp must be set!",
+    "en_US": "DestCidrIp must be set!",
     "zh_CN": "",
     "arguments": [],
     "line": 751,
     "fileName": "src/main/java/org/zstack/aliyun/core/AliyunSdkImpl.java"
   },
   {
-    "raw": "SourceGroupId or SourceCidrIp must be set!",
-    "en_US": "SourceGroupId or SourceCidrIp must be set!",
+    "raw": "SourceCidrIp must be set!",
+    "en_US": "SourceCidrIp must be set!",
     "zh_CN": "",
     "arguments": [],
     "line": 726,

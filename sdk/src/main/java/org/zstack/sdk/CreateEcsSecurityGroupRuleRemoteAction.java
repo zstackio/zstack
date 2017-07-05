@@ -34,10 +34,7 @@ public class CreateEcsSecurityGroupRuleRemoteAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String portRange;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String externalGroupId;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String cidr;
 
     @Param(required = false, validValues = {"accept","drop"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
