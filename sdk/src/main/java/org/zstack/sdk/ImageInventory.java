@@ -34,6 +34,14 @@ public class ImageInventory  {
         return this.exportUrl;
     }
 
+    public java.lang.String exportMd5Sum;
+    public void setExportMd5Sum(java.lang.String exportMd5Sum) {
+        this.exportMd5Sum = exportMd5Sum;
+    }
+    public java.lang.String getExportMd5Sum() {
+        return this.exportMd5Sum;
+    }
+
     public java.lang.String state;
     public void setState(java.lang.String state) {
         this.state = state;

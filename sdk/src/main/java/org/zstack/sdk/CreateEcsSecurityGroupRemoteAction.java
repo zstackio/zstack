@@ -31,8 +31,8 @@ public class CreateEcsSecurityGroupRemoteAction extends AbstractAction {
     @Param(required = true, maxLength = 64, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
 
-    @Param(required = false, validValues = {"security","all"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String strategy = "security";
+    @Param(required = false, validValues = {"all","security"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String strategy;
 
     @Param(required = false)
     public java.lang.String resourceUuid;
