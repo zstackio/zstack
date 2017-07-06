@@ -1,4 +1,4 @@
-package org.zstack.test.integration.kvm.host
+package org.zstack.test.integration.kvm.host.capacity
 
 import org.springframework.http.HttpEntity
 import org.zstack.compute.host.HostGlobalConfig

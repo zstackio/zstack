@@ -422,3 +422,5 @@ SET FOREIGN_KEY_CHECKS = 1;
 
 ALTER TABLE `zstack`.`ImageEO` ADD COLUMN exportMd5Sum varchar(255) DEFAULT NULL;
 ALTER VIEW `zstack`.`ImageVO` AS SELECT uuid, name, description, status, state, size, actualSize, md5Sum, exportMd5Sum, platform, type, format, url, system, mediaType, createDate, lastOpDate, guestOsType, exportUrl FROM `zstack`.`ImageEO` WHERE deleted IS NULL;
+
+ALTER TABLE HostCapacityVO MODIFY availableCpu bigint(20) NOT NULL COMMENT 'used cpu of host in HZ';
