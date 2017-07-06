@@ -4,6 +4,7 @@ import org.zstack.header.storage.primary.PrimaryStorageStateEvent
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.sdk.CreateVmInstanceAction
 import org.zstack.sdk.PrimaryStorageInventory
+import org.zstack.sdk.StartVmInstanceAction
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.*
@@ -165,6 +166,12 @@ class MaintenancePSCase extends SubCase{
                 sessionId: currentEnvSpec.session.uuid
         )
         assert a.call().error.details.indexOf("no LocalStorage primary storage") > 0
+
+        StartVmInstanceAction startVmInstanceAction = new StartVmInstanceAction(
+                uuid: vm1.uuid,
+                sessionId: Test.currentEnvSpec.session.uuid
+        )
+        startVmInstanceAction.call().error.details.indexOf("volume stored location primary storage is in a state of maintenance") > 0
     }
 
     @Override
