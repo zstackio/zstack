@@ -54,10 +54,12 @@ class NfsPrimaryStorageSpec extends PrimaryStorageSpec {
         }
 
         simulator(NfsPrimaryStorageKVMBackend.UNMOUNT_PRIMARY_STORAGE_PATH) { HttpEntity<String> e ->
+            checkHttpCallType(e, true)
             return new KVMAgentCommands.AgentResponse()
         }
 
         simulator(NfsPrimaryStorageKVMBackend.MOUNT_PRIMARY_STORAGE_PATH) { HttpEntity<String> e, EnvSpec espec ->
+            checkHttpCallType(e, true)
             def cmd = JSONObjectUtil.toObject(e.getBody(), NfsPrimaryStorageKVMBackendCommands.MountCmd.class)
             NfsPrimaryStorageSpec spec = espec.specByUuid(cmd.uuid) as NfsPrimaryStorageSpec
             def rsp = new NfsPrimaryStorageKVMBackendCommands.MountAgentResponse()
