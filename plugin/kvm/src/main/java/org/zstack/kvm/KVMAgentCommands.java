@@ -718,6 +718,15 @@ public class KVMAgentCommands {
         private String clock;
         private String videoType;
         private boolean useNuma;
+        private String usbRedirect;
+
+        public String getUsbRedirect() {
+            return usbRedirect;
+        }
+
+        public void setUsbRedirect(String usbRedirect) {
+            this.usbRedirect = usbRedirect;
+        }
 
         public boolean isUseNuma() {
             return useNuma;
@@ -1260,7 +1269,7 @@ public class KVMAgentCommands {
         private String storageMigrationPolicy;
         private String srcHostIp;
         private boolean useNuma;
-        
+
         public boolean isUseNuma() {
             return useNuma;
         }
