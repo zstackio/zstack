@@ -1,7 +1,12 @@
 package org.zstack.sdk;
 
 import java.lang.reflect.Field;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -112,8 +117,11 @@ public abstract class AbstractAction {
                 }
 
                 if (value != null && at.validValues().length > 0) {
-                    List vals = Arrays.asList(at.validValues());
-                    if (!vals.contains(value.toString())) {
+                    List<String> vals = new ArrayList<>();
+                    for (String val: at.validValues()) {
+                        vals.add(val.toLowerCase());
+                    }
+                    if (!vals.contains(value.toString().toLowerCase())) {
                         throw new ApiException(String.format("invalid value of the field[%s], valid values are %s",
                                 p.field.getName(), vals));
                     }

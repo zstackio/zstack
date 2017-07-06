@@ -22,7 +22,6 @@ import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.*;
 import org.zstack.header.rest.RestRequest;
-import org.zstack.header.vo.EO;
 import org.zstack.portal.apimediator.schema.Service;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.FieldUtils;
@@ -31,8 +30,6 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.FunctionNoArg;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
-
-import static org.zstack.core.Platform.argerr;
 
 import javax.persistence.TypedQuery;
 import javax.xml.bind.JAXBContext;
@@ -43,6 +40,8 @@ import java.lang.reflect.Field;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static org.zstack.core.Platform.argerr;
 
 /**
  * Created with IntelliJ IDEA.
@@ -291,11 +290,13 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
                 }
 
                 if (value != null && at.validValues().length > 0) {
-                    List vals = Arrays.asList(at.validValues());
-
-                    if (!vals.contains(value.toString())) {
+                    List<String> vals = new ArrayList<>();
+                    for (String val: at.validValues()) {
+                        vals.add(val.toLowerCase());
+                    }
+                    if (!vals.contains(value.toString().toLowerCase())) {
                         throw new ApiMessageInterceptionException(argerr("valid value for field[%s] of message[%s] are %s, but %s found", f.getName(),
-                                        msg.getClass().getName(), vals, value));
+                                msg.getClass().getName(), vals, value));
                     }
                 }
 
