@@ -182,8 +182,18 @@ public class VmInstanceSpec implements Serializable {
     private String userdata;
     private List<String> bootOrders;
     private boolean gcOnStopFailure;
+    // usbRedirect only for http call, need string type
+    private String usbRedirect = "false";
     private String consolePassword;
     private VmAccountPreference accountPerference;
+
+    public String getUsbRedirect() {
+        return usbRedirect;
+    }
+
+    public void setUsbRedirect(String usbRedirect) {
+        this.usbRedirect = usbRedirect;
+    }
 
     public VmAccountPreference getAccountPerference() {
         return accountPerference;
