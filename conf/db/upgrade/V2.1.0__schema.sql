@@ -204,6 +204,7 @@ CREATE TABLE  `zstack`.`SchedulerJobSchedulerTriggerRefVO` (
     CONSTRAINT `fkSchedulerJobSchedulerTriggerRefVOSchedulerTriggerVO` FOREIGN KEY (`schedulerTriggerUuid`) REFERENCES `SchedulerTriggerVO` (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+
 CREATE TABLE `VRouterRouteTableVO` (
   `uuid` varchar(32) NOT NULL UNIQUE COMMENT 'uuid',
   `type` varchar(32) NOT NULL,
@@ -418,3 +419,6 @@ alter table HybridEipAddressVO add column chargeType varchar(32) not null defaul
 alter table HybridEipAddressVO add column allocateTime timestamp DEFAULT '0000-00-00 00:00:00';
 alter table HybridEipAddressVO add CONSTRAINT fkHybridEipAddressVODataCenterVO foreign key (dataCenterUuid) references DataCenterVO (uuid) on delete restrict;
 SET FOREIGN_KEY_CHECKS = 1;
+
+ALTER TABLE `zstack`.`ImageEO` ADD COLUMN exportMd5Sum varchar(255) DEFAULT NULL;
+ALTER VIEW `zstack`.`ImageVO` AS SELECT uuid, name, description, status, state, size, actualSize, md5Sum, exportMd5Sum, platform, type, format, url, system, mediaType, createDate, lastOpDate, guestOsType, exportUrl FROM `zstack`.`ImageEO` WHERE deleted IS NULL;

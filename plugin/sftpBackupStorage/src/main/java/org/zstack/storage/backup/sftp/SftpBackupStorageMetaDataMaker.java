@@ -110,6 +110,7 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
                 imageVO.setDescription(imageInventory.getDescription());
                 imageVO.setStatus(ImageStatus.valueOf(imageInventory.getStatus()));
                 imageVO.setExportUrl(imageInventory.getExportUrl());
+                imageVO.setExportMd5Sum(imageInventory.getExportMd5Sum());
                 imageVO.setFormat(imageInventory.getFormat());
                 imageVO.setGuestOsType(imageInventory.getGuestOsType());
                 imageVO.setMd5Sum(imageInventory.getMd5Sum());
