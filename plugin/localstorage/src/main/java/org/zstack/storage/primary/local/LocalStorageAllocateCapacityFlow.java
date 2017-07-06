@@ -9,9 +9,9 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.header.allocator.HostAllocatorError;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
@@ -184,7 +184,12 @@ public class LocalStorageAllocateCapacityFlow implements Flow {
                     amsg.setRequiredPrimaryStorageUuid(spec.getRequiredPrimaryStorageUuidForDataVolume());
                 } else if (hasOtherNonLocalStoragePrimaryStorage) {
                     amsg.setAllocationStrategy(dinv.getAllocatorStrategy());
-                    amsg.addExcludePrimaryStorageUuid(localStorageUuid);
+
+                    List<String> localStorageUuids = getLocalStorageInCluster(spec.getDestHost().getClusterUuid());
+                    for (String lsuuid : localStorageUuids) {
+                        amsg.addExcludePrimaryStorageUuid(lsuuid);
+                    }
+
                     amsg.addExcludeAllocatorStrategy(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY);
                     logger.debug("there are non-local primary storage in the cluster, use it for data volumes");
                 } else {
@@ -229,6 +234,17 @@ public class LocalStorageAllocateCapacityFlow implements Flow {
                 trigger.next();
             }
         });
+    }
+
+    private List<String> getLocalStorageInCluster(String clusterUuid) {
+        return SQL.New("select pri.uuid" +
+                " from PrimaryStorageVO pri, PrimaryStorageClusterRefVO ref" +
+                " where pri.uuid = ref.primaryStorageUuid" +
+                " and ref.clusterUuid = :cuuid" +
+                " and pri.type = :ptype", String.class)
+                .param("cuuid", clusterUuid)
+                .param("ptype", LocalStorageConstants.LOCAL_STORAGE_TYPE)
+                .list();
     }
 
     @Override
