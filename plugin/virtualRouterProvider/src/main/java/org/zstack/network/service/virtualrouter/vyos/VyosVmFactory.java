@@ -215,6 +215,7 @@ public class VyosVmFactory extends VirtualRouterApplianceVmFactory implements Co
         //hard code for the premium plugin
         vo.getNetworkServiceTypes().add("IPsec");
         vo.getNetworkServiceTypes().add("VRouterRoute");
+        vo.getNetworkServiceTypes().add("VipQos");
         vo.setType(VyosConstants.VYOS_ROUTER_PROVIDER_TYPE);
         providerVO = dbf.persistAndRefresh(vo);
     }

@@ -7,6 +7,7 @@ import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ChainTask;
@@ -55,6 +56,8 @@ public class VipBase {
     protected ErrorFacade errf;
     @Autowired
     protected VipManager vipMgr;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     protected String getThreadSyncSignature() {
         return String.format("vip-%s-%s", self.getName(), self.getUuid());
@@ -435,6 +438,33 @@ public class VipBase {
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "pre-release-services-on-vip";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        List<PreVipReleaseExtensionPoint> exts = pluginRgty.getExtensionList(PreVipReleaseExtensionPoint.class);
+                        if(exts.isEmpty()){
+                            trigger.next();
+                        }
+                        
+                        for (PreVipReleaseExtensionPoint ext : exts){
+                            ext.preReleaseServicesOnVip(getSelfInventory(), new Completion(trigger) {
+                                @Override
+                                public void success() {
+                                    trigger.next();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    trigger.fail(errorCode);
+                                }
+                            });
+                        }
+
+                    }
+                });
+
                 flow(new NoRollbackFlow() {
                     String __name__ = "release-services-on-vip";
 
