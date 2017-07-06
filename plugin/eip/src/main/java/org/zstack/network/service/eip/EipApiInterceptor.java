@@ -147,7 +147,7 @@ public class EipApiInterceptor implements ApiMessageInterceptor {
         SubnetUtils sub = new SubnetUtils(gw, netmask);
         if (sub.getInfo().isInRange(eipIp)) {
             throw new ApiMessageInterceptionException(operr("overlap public and private subnets. The subnet of EIP[%s] is an overlap with the subnet[%s/%s]" +
-                            " of the VM nic[uuid:%s].", eipIp, gw, netmask, vmNicUuid));
+                            " of the VM nic[uuid: %s].", eipIp, gw, netmask, vmNicUuid));
         }
     }
 
