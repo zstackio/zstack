@@ -26,6 +26,10 @@ import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
+import org.zstack.header.identity.AccountResourceRefVO;
+import org.zstack.header.identity.AccountResourceRefVO_;
+import org.zstack.header.identity.SharedResourceVO;
+import org.zstack.header.identity.SharedResourceVO_;
 import org.zstack.header.image.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageDeletionPolicyManager.ImageDeletionPolicy;
@@ -241,15 +245,8 @@ public class ImageBase implements Image {
 
                         if (count == 0) {
                             // the image is expunged on all backup storage
-                            //
-                            // Our trigger for ImageEO in AccoutResourceRefVO is triggered
-                            // by the 'UPDATE' action.  We can not directly use a 'DELETE'
-                            // expression here.
-                            sql("update ImageEO set status = :status, deleted = :deleted where uuid = :uuid")
-                                    .param("status", ImageStatus.Deleted)
-                                    .param("deleted", new Timestamp(new Date().getTime()).toString())
-                                    .param("uuid", msg.getImageUuid())
-                                    .execute();
+                            sql(ImageVO.class).eq(ImageVO_.uuid, msg.getImageUuid()).hardDelete();
+                            sql(SharedResourceVO.class).eq(SharedResourceVO_.resourceUuid, msg.getImageUuid()).delete();
 
                             logger.debug(String.format("the image[uuid:%s, name:%s] has been expunged on all backup storage, remove it from database",
                                     self.getUuid(), self.getName()));
