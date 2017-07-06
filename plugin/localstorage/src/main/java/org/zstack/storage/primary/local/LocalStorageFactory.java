@@ -10,6 +10,7 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -872,6 +873,12 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
             throw new OperationFailureException(argerr("the host[uuid:%s] doesn't belong to the local primary storage[uuid:%s]", hostUuid, msg.getPrimaryStorageUuid()));
         }
 
+        if (!(msg instanceof InstantiateRootVolumeMsg) && isThereOtherNonLocalStoragePrimaryStorageForTheHost(hostUuid, msg.getPrimaryStorageUuid())) {
+            throw new OperationFailureException(argerr("The cluster mounts multiple primary storage[%s(%s), other non-LocalStorage primary storage], primaryStorageUuidForDataVolume cannot be specified %s",
+                    volume.getUuid(), volume.getType(),
+                    LocalStorageConstants.LOCAL_STORAGE_TYPE));
+        }
+
         InstantiateVolumeOnPrimaryStorageMsg imsg;
         if (msg instanceof InstantiateRootVolumeMsg) {
             InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg irmsg = new InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg();
@@ -895,6 +902,20 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
                 }
             }
         });
+    }
+
+    private boolean isThereOtherNonLocalStoragePrimaryStorageForTheHost(String hostUuid, String localStorageUuid) {
+        long count = SQL.New( "select count(pri)" +
+                " from PrimaryStorageVO pri, PrimaryStorageClusterRefVO ref, HostVO host" +
+                " where pri.uuid = ref.primaryStorageUuid" +
+                " and ref.clusterUuid = host.clusterUuid" +
+                " and host.uuid = :huuid" +
+                " and pri.uuid != :puuid" +
+                " and pri.type != :pstype", Long.class)
+                .param("huuid", hostUuid)
+                .param("puuid", localStorageUuid)
+                .param("pstype", LocalStorageConstants.LOCAL_STORAGE_TYPE).find();
+        return count > 0;
     }
 
     @Override
