@@ -158,7 +158,7 @@ CREATE TABLE  `zstack`.`SchedulerJobVO` (
     `name` varchar(255) NOT NULL,
     `description` varchar(2048) DEFAULT NULL,
     `jobClassName` varchar(255),
-    `jobData` varchar(65535),
+    `jobData` varchar(2048),
     `state` varchar(255),
     `managementNodeUuid` varchar(32) DEFAULT NULL,
     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
@@ -195,7 +195,7 @@ CREATE TABLE  `zstack`.`SchedulerJobSchedulerTriggerRefVO` (
     `schedulerTriggerUuid` varchar(32) NOT NULL,
     `jobGroup` varchar(255),
     `triggerGroup` varchar(255),
-    `taskData` varchar(65535),
+    `taskData` varchar(2048),
     `taskClassName` varchar(255),
     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp,
@@ -421,7 +421,8 @@ alter table HybridEipAddressVO add CONSTRAINT fkHybridEipAddressVODataCenterVO f
 SET FOREIGN_KEY_CHECKS = 1;
 
 ALTER TABLE `zstack`.`ImageEO` ADD COLUMN exportMd5Sum varchar(255) DEFAULT NULL;
-ALTER VIEW `zstack`.`ImageVO` AS SELECT uuid, name, description, status, state, size, actualSize, md5Sum, exportMd5Sum, platform, type, format, url, system, mediaType, createDate, lastOpDate, guestOsType, exportUrl FROM `zstack`.`ImageEO` WHERE deleted IS NULL;
+DROP VIEW IF EXISTS `zstack`.`ImageVO`;
+CREATE VIEW `zstack`.`ImageVO` AS SELECT uuid, name, description, status, state, size, actualSize, md5Sum, exportMd5Sum, platform, type, format, url, system, mediaType, createDate, lastOpDate, guestOsType, exportUrl FROM `zstack`.`ImageEO` WHERE deleted IS NULL;
 
 ALTER TABLE HostCapacityVO MODIFY availableCpu bigint(20) NOT NULL COMMENT 'used cpu of host in HZ';
 
