@@ -7,4 +7,5 @@ public enum SecurityGroupRuleProtocolType {
     TCP,
     UDP,
     ICMP,
+    ALL
 }

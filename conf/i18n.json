@@ -3666,7 +3666,7 @@
   {
     "raw": "VM nics[uuids:%s] are not on L3 networks that have been attached to the security group[uuid:%s]",
     "en_US": "VM nics[uuids:{0}] are not on L3 networks that have been attached to the security group[uuid:{1}]",
-    "zh_CN": "云主机网卡[uuids:{0}]不能在L3网络上，这个已经挂载到安全组[uuid:{1}]了",
+    "zh_CN": "云主机网卡[uuids:{0}]不在已经挂载到安全组[uuid:{1}]的L3网络上",
     "arguments": [
       "wrongUuids",
       "securityGroupUuid"

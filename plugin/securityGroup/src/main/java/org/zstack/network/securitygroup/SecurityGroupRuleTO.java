@@ -1,6 +1,7 @@
 package org.zstack.network.securitygroup;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class SecurityGroupRuleTO {
@@ -14,6 +15,7 @@ public class SecurityGroupRuleTO {
     private String vmNicUuid;
     private String vmNicMac;
     private String vmNicIp;
+    private List<RuleTO> securityGroupBaseRules;
     private String actionCode = ACTION_CODE_APPLY_RULE;
 
     public String getVmNicMac() {
@@ -79,6 +81,14 @@ public class SecurityGroupRuleTO {
 
     public void setRules(List<RuleTO> rules) {
         this.rules = rules;
+    }
+
+    public void setSecurityGroupBaseRules(List<RuleTO> securityGroupBaseRules) {
+        this.securityGroupBaseRules = securityGroupBaseRules;
+    }
+
+    public List<RuleTO> getSecurityGroupBaseRules() {
+        return securityGroupBaseRules;
     }
 
     @Override

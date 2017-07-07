@@ -194,11 +194,18 @@ public class APIAddSecurityGroupRuleMsg extends APIMessage {
      */
     @APIParam(resourceType = SecurityGroupVO.class, checkAccount = true, operationTarget = true)
     private String securityGroupUuid;
+
     /**
      * @desc a list of :ref:`SecurityGroupRuleAO` that describe rules
      */
     @APIParam(nonempty = true)
     private List<SecurityGroupRuleAO> rules;
+
+    /**
+     * @desc remote security group uuids for rules between groups
+     */
+    @APIParam(resourceType = SecurityGroupVO.class, required = false, nonempty = true)
+    private List<String> remoteSecurityGroupUuids;
 
     public String getSecurityGroupUuid() {
         return securityGroupUuid;
@@ -215,11 +222,19 @@ public class APIAddSecurityGroupRuleMsg extends APIMessage {
     public void setSecurityGroupUuid(String securityGroupUuid) {
         this.securityGroupUuid = securityGroupUuid;
     }
-    
- 
+
+    public void setRemoteSecurityGroupUuids(List<String> remoteSecurityGroupUuids) {
+        this.remoteSecurityGroupUuids = remoteSecurityGroupUuids;
+    }
+
+    public List<String> getRemoteSecurityGroupUuids() {
+        return remoteSecurityGroupUuids;
+    }
+
     public static APIAddSecurityGroupRuleMsg __example__() {
         APIAddSecurityGroupRuleMsg msg = new APIAddSecurityGroupRuleMsg();
         msg.setSecurityGroupUuid(uuid());
+        msg.setRemoteSecurityGroupUuids(asList(uuid()));
         SecurityGroupRuleAO rule = new SecurityGroupRuleAO();
         rule.setType("Ingress");
         rule.setAllowedCidr("0.0.0.0/0");

@@ -19,7 +19,7 @@ doc {
             clz APIAddSecurityGroupRuleMsg.class
 
             desc """用户可以使用AddSecurityGroupRule添加规则到安全组"""
-            
+
 			params {
 
 				column {
@@ -30,7 +30,7 @@ doc {
 					type "String"
 					optional false
 					since "0.6"
-					
+
 				}
 				column {
 					name "rules"
@@ -40,7 +40,17 @@ doc {
 					type "List"
 					optional false
 					since "0.6"
-					
+
+				}
+				column {
+					name "remoteSecurityGroupUuids"
+					enclosedIn "params"
+					desc "应用组间策略的远端安全组UUID"
+					location "body"
+					type "List"
+					optional true
+					since "2.1"
+
 				}
 				column {
 					name "systemTags"
@@ -50,7 +60,7 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
+
 				}
 				column {
 					name "userTags"
@@ -60,7 +70,7 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
+
 				}
 			}
         }

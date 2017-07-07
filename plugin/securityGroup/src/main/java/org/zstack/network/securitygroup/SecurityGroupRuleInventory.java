@@ -87,6 +87,10 @@ public class SecurityGroupRuleInventory {
      */
     private String allowedCidr;
     /**
+     * @desc remote security group uuids for rules between groups
+     */
+    private String remoteSecurityGroupUuid;
+    /**
      * @desc the time this resource gets created
      */
     private Timestamp createDate;
@@ -107,6 +111,7 @@ public class SecurityGroupRuleInventory {
         this.setEndPort(vo.getEndPort());
         this.setProtocol(vo.getProtocol().toString());
         this.setAllowedCidr(vo.getAllowedCidr());
+        this.setRemoteSecurityGroupUuid(vo.getRemoteSecurityGroupUuid());
         this.setCreateDate(vo.getCreateDate());
         this.setLastOpDate(vo.getLastOpDate());
     }
@@ -186,6 +191,14 @@ public class SecurityGroupRuleInventory {
 
     public void setAllowedCidr(String allowedCidr) {
         this.allowedCidr = allowedCidr;
+    }
+
+    public void setRemoteSecurityGroupUuid(String remoteSecurityGroupUuid) {
+        this.remoteSecurityGroupUuid = remoteSecurityGroupUuid;
+    }
+
+    public String getRemoteSecurityGroupUuid() {
+        return remoteSecurityGroupUuid;
     }
 
     public Timestamp getCreateDate() {

@@ -48,11 +48,6 @@ public class SecurityGroupTestValidator {
         sb.append("\n*************************************************************************");
         logger.debug(sb.toString());
 
-        for (RuleTO r : actual.getRules()) {
-            rules.add(r.toString());
-            Assert.assertTrue(r.getAllowedInternalIpRange().contains(internalIp));
-        }
-
         Assert.assertEquals(expected.size(), rules.size());
 
         for (SecurityGroupRuleInventory r : expected) {
@@ -69,11 +64,6 @@ public class SecurityGroupTestValidator {
         sb.append(String.format("\nexclusive internal ip: %s", internalIp));
         sb.append("\n*************************************************************************");
         logger.debug(sb.toString());
-
-        for (RuleTO r : actual.getRules()) {
-            rules.add(r.toString());
-            Assert.assertFalse(r.getAllowedInternalIpRange().contains(internalIp));
-        }
 
         Assert.assertEquals(expected.size(), rules.size());
 

@@ -484,11 +484,25 @@ public class NetworkUtils {
         SubnetUtils.SubnetInfo sub = new SubnetUtils(subCidr).getInfo();
         return range.isInRange(sub.getLowAddress()) && range.isInRange(sub.getHighAddress());
     }
-
+    
     public static String getNetworkAddressFromCidr(String cidr) {
         DebugUtils.Assert(isCidr(cidr), String.format("%s is not a cidr", cidr));
         SubnetUtils n = new SubnetUtils(cidr);
         return String.format("%s/%s", n.getInfo().getNetworkAddress(), cidr.split("\\/")[1]);
+    }
+
+
+    public static List<String> getIpRangeFromIps(List<String> ips){
+        List<Pair<String, String>> ipRanges = findConsecutiveIpRange(ips);
+        List<String> internalIpRanges = new ArrayList<String>(ipRanges.size());
+        for (Pair<String, String> p : ipRanges) {
+            if (p.first().equals(p.second())) {
+                internalIpRanges.add(p.first());
+            } else {
+                internalIpRanges.add(String.format("%s-%s", p.first(), p.second()));
+            }
+        }
+        return internalIpRanges;
     }
 }
 

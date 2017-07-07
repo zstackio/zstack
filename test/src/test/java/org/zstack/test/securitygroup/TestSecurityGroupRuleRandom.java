@@ -89,33 +89,6 @@ public class TestSecurityGroupRuleRandom {
         latch.countDown();
     }
 
-    private void validate(List<String> internalAllowedIps) {
-        List<HostVO> hosts = dbf.listAll(HostVO.class);
-        for (HostVO h : hosts) {
-            logger.debug(String.format("checking security group rules on host[uuid:%s]", h.getUuid()));
-            Set<SecurityGroupRuleTO> tos = sbkd.getRulesOnHost(h.getUuid());
-            SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
-            q.add(VmInstanceVO_.state, Op.EQ, VmInstanceState.Running);
-            q.add(VmInstanceVO_.hostUuid, Op.EQ, h.getUuid());
-            long count = q.count();
-
-            if (count == 0) {
-                List<RuleTO> rules = new ArrayList<RuleTO>();
-                for (SecurityGroupRuleTO to : tos) {
-                    rules.addAll(to.getRules());
-                }
-                Assert.assertEquals(0, rules.size());
-            } else {
-                for (SecurityGroupRuleTO to : tos) {
-                    for (RuleTO r : to.getRules()) {
-                        logger.debug(String.format("expected: %s, real: %s", internalAllowedIps, r.getAllowedInternalIpRange()));
-                        Assert.assertTrue(r.getAllowedInternalIpRange().containsAll(internalAllowedIps));
-                    }
-                }
-            }
-        }
-    }
-
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         SecurityGroupInventory scinv = deployer.securityGroups.get("test");
@@ -142,6 +115,5 @@ public class TestSecurityGroupRuleRandom {
             internalAllowedIps.add(vmvo.getVmNics().iterator().next().getIp());
         }
 
-        validate(internalAllowedIps);
     }
 }
