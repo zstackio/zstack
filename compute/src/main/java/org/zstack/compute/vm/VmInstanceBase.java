@@ -32,8 +32,6 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
-import org.zstack.header.core.*;
-import org.zstack.header.core.scheduler.SchedulerVO;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -3126,6 +3124,8 @@ public class VmInstanceBase extends AbstractVmInstance {
                 changeOffering(msg, new Completion(msg, chain) {
                     @Override
                     public void success() {
+                        self.setInstanceOfferingUuid(msg.getInstanceOfferingUuid());
+                        dbf.updateAndRefresh(self);
                         refreshVO();
                         evt.setInventory(getSelfInventory());
                         bus.publish(evt);
