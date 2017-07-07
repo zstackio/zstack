@@ -107,6 +107,12 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="VyosCentralizedDnsBackend" class="org.zstack.network.service.virtualrouter.vyos.VyosCentralizedDnsBackend">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.network.service.NetworkServiceCentralizedDnsBackend" />
+        </zstack:plugin>
+    </bean>
+
     <bean id="VyosEipBackend" class="org.zstack.network.service.virtualrouter.vyos.VyosEipBackend">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.network.service.eip.EipBackend" />

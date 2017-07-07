@@ -35,6 +35,13 @@
 		</zstack:plugin>
     </bean>
 
+	<bean id="CentralizedDnsExtension" class="org.zstack.network.service.CentralizedDnsExtension">
+		<zstack:plugin>
+			<zstack:extension interface="org.zstack.header.Component" />
+			<zstack:extension interface="org.zstack.header.network.service.NetworkServiceExtensionPoint" />
+		</zstack:plugin>
+	</bean>
+
 	<bean id="NetworkServiceApiInterceptor" class="org.zstack.network.service.NetworkServiceApiInterceptor">
 		<zstack:plugin>
 			<zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor" />

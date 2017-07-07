@@ -18,6 +18,7 @@ import org.zstack.header.network.service.NetworkServiceDnsBackend;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceState;
+import org.zstack.kvm.KVMSystemTags;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.*;
 import org.zstack.utils.CollectionUtils;

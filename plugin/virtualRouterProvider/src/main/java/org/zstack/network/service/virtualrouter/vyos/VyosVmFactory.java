@@ -210,6 +210,7 @@ public class VyosVmFactory extends VirtualRouterApplianceVmFactory implements Co
         vo.getNetworkServiceTypes().add(NetworkServiceType.DNS.toString());
         vo.getNetworkServiceTypes().add(NetworkServiceType.SNAT.toString());
         vo.getNetworkServiceTypes().add(NetworkServiceType.PortForwarding.toString());
+        vo.getNetworkServiceTypes().add(NetworkServiceType.Centralized_DNS.toString());
         vo.getNetworkServiceTypes().add(EipConstant.EIP_NETWORK_SERVICE_TYPE);
         vo.getNetworkServiceTypes().add(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
         //hard code for the premium plugin

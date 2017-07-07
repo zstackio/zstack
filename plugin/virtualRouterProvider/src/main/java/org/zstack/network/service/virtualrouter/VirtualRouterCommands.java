@@ -406,6 +406,91 @@ public class VirtualRouterCommands {
 	public static class SetDnsRsp extends AgentResponse {
 	}
 
+	public static class SetForwardDnsCmd extends AgentCommand {
+		private String dns;
+        private String mac;
+        private String bridgeName;
+        private String nameSpace;
+        private List<String> wrongDns;
+
+        public String getNameSpace() {
+            return nameSpace;
+        }
+
+        public void setNameSpace(String nameSpace) {
+            this.nameSpace = nameSpace;
+        }
+
+        public String getBridgeName() {
+            return bridgeName;
+        }
+
+        public void setBridgeName(String bridgeName) {
+            this.bridgeName = bridgeName;
+        }
+
+        public String getDns() {
+			return dns;
+		}
+
+		public void setDns(String dns) {
+			this.dns = dns;
+		}
+
+        public String getMac() {
+            return mac;
+        }
+
+        public void setMac(String mac) {
+            this.mac = mac;
+        }
+
+        public List<String> getWrongDns() {
+            return wrongDns;
+        }
+
+        public void setWrongDns(List<String> wrongDns) {
+            this.wrongDns = wrongDns;
+        }
+    }
+
+	public static class SetForwardDnsRsp extends AgentResponse {
+	}
+
+	public static class RemoveForwardDnsCmd extends AgentCommand {
+		private String mac;
+		private String bridgeName;
+		private String nameSpace;
+
+		public String getNameSpace() {
+			return nameSpace;
+		}
+
+		public void setNameSpace(String nameSpace) {
+			this.nameSpace = nameSpace;
+		}
+
+		public String getBridgeName() {
+			return bridgeName;
+		}
+
+		public void setBridgeName(String bridgeName) {
+			this.bridgeName = bridgeName;
+		}
+
+		public String getMac() {
+			return mac;
+		}
+
+		public void setMac(String mac) {
+			this.mac = mac;
+		}
+	}
+
+	public static class RemoveForwardDnsRsp extends AgentResponse {
+
+	}
+
     public static class RemoveDnsCmd extends AgentCommand {
         private List<DnsInfo> dns;
 

@@ -6,6 +6,7 @@ import org.zstack.appliancevm.ApplianceVmConstant
 import org.zstack.appliancevm.ApplianceVmKvmCommands
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant
+import org.zstack.network.service.virtualrouter.dns.VirtualRouterCentralizedDnsBackend
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend
 import org.zstack.utils.gson.JSONObjectUtil
 
@@ -172,6 +173,14 @@ class VirtualRouterOfferingSpec extends InstanceOfferingSpec {
 
         simulator(VirtualRouterConstant.VR_SET_SNAT_PATH) {
             return new VirtualRouterCommands.SetSNATRsp()
+        }
+
+        simulator(VirtualRouterCentralizedDnsBackend.SET_DNS_FORWARD_PATH) {
+            return new VirtualRouterCommands.SetForwardDnsRsp()
+        }
+
+        simulator(VirtualRouterCentralizedDnsBackend.REMOVE_DNS_FORWARD_PATH) {
+            return new VirtualRouterCommands.RemoveForwardDnsRsp()
         }
 
         simulator(VirtualRouterConstant.VR_REMOVE_DNS_PATH) {
