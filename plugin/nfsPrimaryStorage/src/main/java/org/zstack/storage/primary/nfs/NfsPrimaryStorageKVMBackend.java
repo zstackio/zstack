@@ -417,11 +417,11 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                         nfsFactory.updateNfsHostStatus(psUuid, huuid, PrimaryStorageHostStatus.Disconnected);
                         logger.warn(err.toString());
                         errs.add(err);
+                        compl.done();
                     } else {
+                        compl.allDone();
                         nfsFactory.updateNfsHostStatus(psUuid, huuid, PrimaryStorageHostStatus.Connected);
                     }
-
-                    compl.done();
                 }
             });
         }).run(new NoErrorCompletion(completion) {
