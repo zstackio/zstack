@@ -539,7 +539,7 @@ mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
                 return ret
             }
             TimeUnit.SECONDS.sleep(interval)
-            count += interval
+            count ++
         }
 
         return false
