@@ -27,6 +27,8 @@ import org.zstack.header.rest.SyncHttpCallHandler;
 import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.CreateTemplateFromVolumeSnapshotExtensionPoint;
+import org.zstack.header.storage.snapshot.MarkRootVolumeAsSnapshotMsg;
+import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.volume.VolumeFormat;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.volume.VolumeVO_;
@@ -35,6 +37,7 @@ import org.zstack.kvm.KVMConstant;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.primary.PrimaryStorageSystemTags;
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackendCommands.NfsPrimaryStorageAgentResponse;
+import org.zstack.storage.snapshot.PostMarkRootVolumeAsSnapshotExtension;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.Utils;
@@ -56,7 +59,7 @@ import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
 public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, PrimaryStorageFactory, Component, CreateTemplateFromVolumeSnapshotExtensionPoint, RecalculatePrimaryStorageCapacityExtensionPoint,
-        PrimaryStorageDetachExtensionPoint, PrimaryStorageAttachExtensionPoint, HostDeleteExtensionPoint{
+        PrimaryStorageDetachExtensionPoint, PrimaryStorageAttachExtensionPoint, HostDeleteExtensionPoint, PostMarkRootVolumeAsSnapshotExtension{
     private static CLogger logger = Utils.getLogger(NfsPrimaryStorageFactory.class);
 
     @Autowired
@@ -593,5 +596,10 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
             }
         }.execute();
         logger.debug("succeed add PrimaryStorageHostRef record");
+    }
+
+    @Override
+    public void afterMarkRootVolumeAsSnapshot(VolumeSnapshotInventory snapshot) {
+
     }
 }

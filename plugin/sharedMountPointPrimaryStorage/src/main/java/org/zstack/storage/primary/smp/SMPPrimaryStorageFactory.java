@@ -22,10 +22,12 @@ import org.zstack.header.storage.backup.BackupStorageConstant;
 import org.zstack.header.storage.backup.DeleteBitsOnBackupStorageMsg;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.CreateTemplateFromVolumeSnapshotExtensionPoint;
+import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.volume.VolumeFormat;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.volume.VolumeVO_;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
+import org.zstack.storage.snapshot.PostMarkRootVolumeAsSnapshotExtension;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -37,7 +39,8 @@ import static org.zstack.core.Platform.operr;
 /**
  * Created by xing5 on 2016/3/26.
  */
-public class SMPPrimaryStorageFactory implements PrimaryStorageFactory, CreateTemplateFromVolumeSnapshotExtensionPoint, HostDeleteExtensionPoint, PrimaryStorageDetachExtensionPoint {
+public class SMPPrimaryStorageFactory implements PrimaryStorageFactory, CreateTemplateFromVolumeSnapshotExtensionPoint, HostDeleteExtensionPoint, PrimaryStorageDetachExtensionPoint,
+        PostMarkRootVolumeAsSnapshotExtension{
     private static final CLogger logger = Utils.getLogger(SMPPrimaryStorageFactory.class);
 
     public static final PrimaryStorageType type = new PrimaryStorageType(SMPConstants.SMP_TYPE);
@@ -317,5 +320,10 @@ public class SMPPrimaryStorageFactory implements PrimaryStorageFactory, CreateTe
             //base.resetDefaultCapacityWhenUnmounted();
             releasePrimaryStorageCapacity(inventory.getUuid());
         }
+    }
+
+    @Override
+    public void afterMarkRootVolumeAsSnapshot(VolumeSnapshotInventory snapshot) {
+
     }
 }
