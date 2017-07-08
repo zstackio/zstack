@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class CreateVpnIpsecAction extends AbstractAction {
+public class UpdateEmailMediaAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public CreateVpnIpsecResult value;
+        public UpdateEmailMediaResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -22,26 +22,26 @@ public class CreateVpnIpsecAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, maxLength = 64, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String uuid;
+
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
 
-    @Param(required = false, validValues = {"disabled","group1","group2","group5","group14","group24"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String pfs = "group1";
-
-    @Param(required = false, validValues = {"3des","aes-128","aes-192","aes-256","des"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String encAlg = "3des";
-
-    @Param(required = false, validValues = {"md5","sha1"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String authAlg = "sha1";
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {60L,86400L}, noTrim = false)
-    public java.lang.Integer lifetime = 86400;
-
-    @Param(required = false, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
-    @Param(required = false)
-    public java.lang.String resourceUuid;
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String smtpServer;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,65535L}, noTrim = false)
+    public java.lang.Integer smtpPort;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String username;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String password;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -64,8 +64,8 @@ public class CreateVpnIpsecAction extends AbstractAction {
             return ret;
         }
         
-        CreateVpnIpsecResult value = res.getResult(CreateVpnIpsecResult.class);
-        ret.value = value == null ? new CreateVpnIpsecResult() : value; 
+        UpdateEmailMediaResult value = res.getResult(UpdateEmailMediaResult.class);
+        ret.value = value == null ? new UpdateEmailMediaResult() : value; 
 
         return ret;
     }
@@ -90,11 +90,11 @@ public class CreateVpnIpsecAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/hybrid/vpn-connection/ipsec";
+        info.httpMethod = "PUT";
+        info.path = "/media/emails/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "updateEmailMedia";
         return info;
     }
 

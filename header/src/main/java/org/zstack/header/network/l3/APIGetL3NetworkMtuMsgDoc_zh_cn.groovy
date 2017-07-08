@@ -13,8 +13,8 @@ doc {
         request {
 			url "GET /v1/l3-networks/{l3NetworkUuid}/mtu"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header(Authorization: 'OAuth the-session-uuid')
 
             clz APIGetL3NetworkMtuMsg.class
 

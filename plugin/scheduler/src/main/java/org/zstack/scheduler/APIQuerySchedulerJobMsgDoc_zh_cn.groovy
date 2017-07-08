@@ -2,6 +2,7 @@ package org.zstack.scheduler
 
 import org.zstack.scheduler.APIQuerySchedulerJobReply
 import org.zstack.header.query.APIQueryMessage
+import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "QuerySchedulerJob"
@@ -13,11 +14,10 @@ doc {
     rest {
         request {
 			url "GET /v1/scheduler/jobs"
-
 			url "GET /v1/scheduler/jobs/{uuid}"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header(Authorization: 'OAuth the-session-uuid')
 
             clz APIQuerySchedulerJobMsg.class
 

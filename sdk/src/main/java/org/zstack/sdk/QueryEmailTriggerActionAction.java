@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class CreateNotificationMediaAction extends AbstractAction {
+public class QueryEmailTriggerActionAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public CreateMediaResult value;
+        public QueryMonitorTriggerActionResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -22,27 +22,6 @@ public class CreateNotificationMediaAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false)
-    public java.util.List systemTags;
-
-    @Param(required = false)
-    public java.util.List userTags;
-
-    @Param(required = true)
-    public String sessionId;
-
-    public long timeout;
-    
-    public long pollingInterval;
 
 
     private Result makeResult(ApiResult res) {
@@ -52,8 +31,8 @@ public class CreateNotificationMediaAction extends AbstractAction {
             return ret;
         }
         
-        CreateMediaResult value = res.getResult(CreateMediaResult.class);
-        ret.value = value == null ? new CreateMediaResult() : value; 
+        QueryMonitorTriggerActionResult value = res.getResult(QueryMonitorTriggerActionResult.class);
+        ret.value = value == null ? new QueryMonitorTriggerActionResult() : value; 
 
         return ret;
     }
@@ -78,10 +57,10 @@ public class CreateNotificationMediaAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/monitoring/notifications";
+        info.httpMethod = "GET";
+        info.path = "/monitoring/trigger-actions/emails";
         info.needSession = true;
-        info.needPoll = true;
+        info.needPoll = false;
         info.parameterName = "";
         return info;
     }

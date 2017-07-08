@@ -3,7 +3,7 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class CreateMonitorTriggerActionAction extends AbstractAction {
+public class CreateEmailMonitorTriggerActionAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -22,17 +22,17 @@ public class CreateMonitorTriggerActionAction extends AbstractAction {
         }
     }
 
+    @Param(required = true, maxLength = 512, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String email;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String mediaUuid;
+
     @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
 
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String postScript;
-
-    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List mediaUuids;
 
     @Param(required = false, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List triggerUuids;
@@ -88,7 +88,7 @@ public class CreateMonitorTriggerActionAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/monitoring/trigger-actions";
+        info.path = "/monitoring/trigger-actions/emails";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "";

@@ -11,10 +11,10 @@ doc {
 
     rest {
         request {
-			url "PUT /v1/load-balancers/{uuid}/listeners"
+			url "PUT /v1/load-balancers/listeners/{uuid}"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header(Authorization: 'OAuth the-session-uuid')
 
             clz APIUpdateLoadBalancerListenerMsg.class
 
@@ -24,7 +24,7 @@ doc {
 
 				column {
 					name "uuid"
-					enclosedIn "params"
+					enclosedIn "updateLoadBalancerListener"
 					desc "资源的UUID，唯一标示该资源"
 					location "url"
 					type "String"
@@ -34,17 +34,17 @@ doc {
 				}
 				column {
 					name "name"
-					enclosedIn "params"
+					enclosedIn "updateLoadBalancerListener"
 					desc "资源名称"
 					location "body"
 					type "String"
-					optional false
+					optional true
 					since "0.6"
 					
 				}
 				column {
 					name "description"
-					enclosedIn "params"
+					enclosedIn "updateLoadBalancerListener"
 					desc "资源的详细描述"
 					location "body"
 					type "String"
