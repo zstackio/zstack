@@ -7140,7 +7140,7 @@
   {
     "raw": "data volume[uuid:%s] is not attached to any vm, can\u0027t detach",
     "en_US": "data volume[uuid:{0}] is not attached to any vm, can\u0027t detach",
-    "zh_CN": "数据云盘没有被挂载到云盘，不能卸载",
+    "zh_CN": "数据云盘没有被挂载到任何云主机上，不能卸载",
     "arguments": [
       "msg.getVolumeUuid()"
     ],
