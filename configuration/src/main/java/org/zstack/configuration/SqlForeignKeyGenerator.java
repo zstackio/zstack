@@ -35,6 +35,7 @@ public class SqlForeignKeyGenerator {
     private StringBuilder writer = new StringBuilder();
 
     public SqlForeignKeyGenerator() {
+        outputPath = PathUtil.join(System.getProperty("user.home"), "zstack-sql", "foreignKeys.sql");
         basePkgs = Collections.singletonList("org.zstack");
     }
 
