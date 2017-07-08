@@ -11,6 +11,7 @@ import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.notification.N;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.SyncThread;
 import org.zstack.header.AbstractService;
@@ -355,7 +356,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
     }
 
     public void pauseSchedulerJob(String uuid) {
-        logger.debug(String.format("Scheduler %s will change status to Disabled", uuid));
+        logger.debug(String.format("Scheduler [uuid:%s] will change state to Disabled", uuid));
         List<String> triggerUuids = Q.New(SchedulerJobSchedulerTriggerRefVO.class)
                 .select(SchedulerJobSchedulerTriggerRefVO_.schedulerTriggerUuid)
                 .eq(SchedulerJobSchedulerTriggerRefVO_.schedulerJobUuid, uuid)
@@ -366,7 +367,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
                 scheduler.pauseJob(jobKey(uuid, triggerUuid));
                 updateSchedulerState(uuid, SchedulerState.Disabled.toString());
             } catch (SchedulerException e) {
-                logger.warn(String.format("Pause Scheduler %s failed!", uuid));
+                logger.warn(String.format("Pause Scheduler [uuid:%s] failed!", uuid));
                 throw new RuntimeException(e);
             }
         }
@@ -374,9 +375,9 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
 
     public void resumeSchedulerJob(String uuid) {
         if (!destinationMaker.isManagedByUs(uuid)) {
-            logger.debug(String.format("Scheduler %s not managed by us, will not be resume", uuid));
+            logger.debug(String.format("Scheduler [uuid:%s] not managed by us, will not be resume", uuid));
         } else {
-            logger.debug(String.format("Scheduler %s will change state to Enabled", uuid));
+            logger.debug(String.format("Scheduler [uuid:%s] will change state to Enabled", uuid));
             List<String> triggerUuids = Q.New(SchedulerJobSchedulerTriggerRefVO.class)
                     .select(SchedulerJobSchedulerTriggerRefVO_.schedulerTriggerUuid)
                     .eq(SchedulerJobSchedulerTriggerRefVO_.schedulerJobUuid, uuid)
@@ -387,7 +388,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
                     scheduler.resumeJob(jobKey(uuid, triggerUuid));
                     updateSchedulerState(uuid, SchedulerState.Enabled.toString());
                 } catch (SchedulerException e) {
-                    logger.warn(String.format("Resume Scheduler %s failed!", uuid));
+                    logger.warn(String.format("Resume Scheduler [uuid:%s] failed!", uuid));
                     throw new RuntimeException(e);
                 }
             }
@@ -680,16 +681,22 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
             @Override
             protected void scripts() {
                 List<String> uuids = getSchedulerUuidsByResourceUuid(vm.getUuid());
-                if (!uuids.isEmpty()) {
+                if (!uuids.isEmpty() && oldState == VmInstanceState.Running && newState == VmInstanceState.Unknown) {
+                    N.New(VmInstanceVO.class, vm.getUuid()).info_(
+                            "vm[uuid:%s] changed state to Unknown from Running, pause all its scheduler job",
+                            vm.getUuid());
                     for (String uuid : uuids) {
-                        if (oldState.toString().equals("Running") && newState.toString().equals("Unknown")) {
-                            pauseSchedulerJob(uuid);
-                        } else if (oldState.toString().equals("Unknown") && newState.toString().equals("Running")) {
-                            resumeSchedulerJob(uuid);
-                        }
+                        pauseSchedulerJob(uuid);
+                    }
+                }else if (!uuids.isEmpty() && oldState == VmInstanceState.Unknown && newState == VmInstanceState.Running) {
+                    N.New(VmInstanceVO.class, vm.getUuid()).info_(
+                            "vm[uuid:%s] changed state to Running from Unknown, resume all its scheduler job",
+                            vm.getUuid());
+                    for (String uuid : uuids) {
+                        resumeSchedulerJob(uuid);
                     }
                 } else {
-                    logger.debug(String.format("vm %s not set any scheduler", vm.getUuid()));
+                    logger.debug(String.format("vm [uuid:%s] not set any scheduler", vm.getUuid()));
                 }
             }
         }.execute();
