@@ -13,8 +13,8 @@ doc {
         request {
 			url "GET /v1/resources/accounts"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header(Authorization: 'OAuth the-session-uuid')
 
             clz APIGetResourceAccountMsg.class
 

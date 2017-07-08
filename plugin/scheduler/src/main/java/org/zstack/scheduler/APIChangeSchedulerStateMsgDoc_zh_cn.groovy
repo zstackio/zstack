@@ -1,5 +1,7 @@
 package org.zstack.scheduler
 
+import org.zstack.scheduler.APIChangeSchedulerStateEvent
+
 doc {
     title "ChangeSchedulerState"
 

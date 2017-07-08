@@ -13,8 +13,8 @@ doc {
         request {
 			url "POST /v1/scheduler/jobs/{schedulerJobUuid}/scheduler/triggers/{schedulerTriggerUuid}"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header(Authorization: 'OAuth the-session-uuid')
 
             clz APIAddSchedulerJobToSchedulerTriggerMsg.class
 

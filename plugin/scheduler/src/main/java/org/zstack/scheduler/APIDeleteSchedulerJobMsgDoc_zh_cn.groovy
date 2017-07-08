@@ -13,8 +13,8 @@ doc {
         request {
 			url "DELETE /v1/scheduler/jobs/{uuid}"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header(Authorization: 'OAuth the-session-uuid')
 
             clz APIDeleteSchedulerJobMsg.class
 

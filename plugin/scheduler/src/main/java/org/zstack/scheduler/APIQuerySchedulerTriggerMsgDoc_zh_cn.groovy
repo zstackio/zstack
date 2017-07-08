@@ -2,6 +2,7 @@ package org.zstack.scheduler
 
 import org.zstack.scheduler.APIQuerySchedulerTriggerReply
 import org.zstack.header.query.APIQueryMessage
+import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "QuerySchedulerTrigger"
@@ -13,11 +14,10 @@ doc {
     rest {
         request {
 			url "GET /v1/scheduler/triggers"
-
 			url "GET /v1/scheduler/triggers/{uuid}"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header(Authorization: 'OAuth the-session-uuid')
 
             clz APIQuerySchedulerTriggerMsg.class
 
