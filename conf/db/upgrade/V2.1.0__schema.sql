@@ -372,6 +372,10 @@ CREATE TABLE `AlertVO` (
   PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+# Foreign keys for table EmailTriggerActionVO
+
+ALTER TABLE EmailTriggerActionVO ADD CONSTRAINT fkEmailTriggerActionVOMonitorTriggerActionVO FOREIGN KEY (uuid) REFERENCES MonitorTriggerActionVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE;
+
 # Foreign keys for table EmailMediaVO
 
 ALTER TABLE EmailMediaVO ADD CONSTRAINT fkEmailMediaVOMediaVO FOREIGN KEY (uuid) REFERENCES MediaVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE;
