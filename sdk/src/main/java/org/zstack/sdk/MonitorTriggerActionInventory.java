@@ -26,14 +26,6 @@ public class MonitorTriggerActionInventory  {
         return this.description;
     }
 
-    public java.lang.String postScript;
-    public void setPostScript(java.lang.String postScript) {
-        this.postScript = postScript;
-    }
-    public java.lang.String getPostScript() {
-        return this.postScript;
-    }
-
     public java.lang.String state;
     public void setState(java.lang.String state) {
         this.state = state;

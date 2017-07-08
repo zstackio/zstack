@@ -34,12 +34,4 @@ public class EmailMediaInventory extends MediaInventory {
         return this.password;
     }
 
-    public java.lang.String emailAddress;
-    public void setEmailAddress(java.lang.String emailAddress) {
-        this.emailAddress = emailAddress;
-    }
-    public java.lang.String getEmailAddress() {
-        return this.emailAddress;
-    }
-
 }

@@ -324,7 +324,7 @@ CREATE TABLE `MonitorTriggerActionVO` (
 
 CREATE TABLE `EmailTriggerActionVO` (
   `uuid` varchar(32) NOT NULL UNIQUE,
-  `emailAddresses` text NOT NULL,
+  `email` varchar(512) NOT NULL,
   `mediaUuid` varchar(32) NOT NULL,
   PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

@@ -124,6 +124,7 @@ public class SourceClassMap {
 			put("org.zstack.mevoco.ShareableVolumeVmInstanceRefInventory", "org.zstack.sdk.ShareableVolumeVmInstanceRefInventory");
 			put("org.zstack.monitoring.AlertInventory", "org.zstack.sdk.AlertInventory");
 			put("org.zstack.monitoring.MonitorTriggerInventory", "org.zstack.sdk.MonitorTriggerInventory");
+			put("org.zstack.monitoring.actions.EmailTriggerActionInventory", "org.zstack.sdk.EmailTriggerActionInventory");
 			put("org.zstack.monitoring.actions.MonitorTriggerActionInventory", "org.zstack.sdk.MonitorTriggerActionInventory");
 			put("org.zstack.monitoring.items.ItemInventory", "org.zstack.sdk.ItemInventory");
 			put("org.zstack.monitoring.media.EmailMediaInventory", "org.zstack.sdk.EmailMediaInventory");
@@ -228,6 +229,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.EcsVpcInventory", "org.zstack.header.aliyun.network.vpc.EcsVpcInventory");
 			put("org.zstack.sdk.EipInventory", "org.zstack.network.service.eip.EipInventory");
 			put("org.zstack.sdk.EmailMediaInventory", "org.zstack.monitoring.media.EmailMediaInventory");
+			put("org.zstack.sdk.EmailTriggerActionInventory", "org.zstack.monitoring.actions.EmailTriggerActionInventory");
 			put("org.zstack.sdk.ErrorCode", "org.zstack.header.errorcode.ErrorCode");
 			put("org.zstack.sdk.ErrorCodeList", "org.zstack.header.errorcode.ErrorCodeList");
 			put("org.zstack.sdk.FreeIpInventory", "org.zstack.header.network.l3.FreeIpInventory");
