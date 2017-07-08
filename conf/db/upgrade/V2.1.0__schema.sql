@@ -483,3 +483,55 @@ alter table EcsImageVO modify ossMd5Sum varchar(128) DEFAULT NULL;
 alter table EcsImageVO modify ecsImageId varchar(128) NOT NULL;
 SET FOREIGN_KEY_CHECKS = 1;
 
+CREATE TABLE `PciDeviceOfferingVO` (
+  `uuid` varchar(32) NOT NULL UNIQUE COMMENT 'uuid',
+  `type` varchar(32) NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `vendorId` varchar(64) NOT NULL,
+  `deviceId` varchar(64) NOT NULL,
+  `subvendorId` varchar(64) DEFAULT NULL,
+  `subdeviceId` varchar(64) DEFAULT NULL,
+  `description` varchar(2048) DEFAULT NULL,
+  `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  PRIMARY KEY (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `PciDeviceVO` (
+  `uuid` varchar(32) NOT NULL UNIQUE COMMENT 'uuid',
+  `description` varchar(2048) DEFAULT NULL,
+  `hostUuid` varchar(32) NOT NULL,
+  `vmInstanceUuid` varchar(32) DEFAULT NULL,
+  `type` varchar(32) NOT NULL,
+  `status` varchar(32) NOT NULL,
+  `pciDeviceAddress` varchar(32) NOT NULL,
+  `vendorId` varchar(64) NOT NULL,
+  `deviceId` varchar(64) NOT NULL,
+  `subvendorId` varchar(64) DEFAULT NULL,
+  `subdeviceId` varchar(64) DEFAULT NULL,
+  `metadata` varchar(4096) DEFAULT NULL,
+  `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  PRIMARY KEY (`uuid`),
+  CONSTRAINT fkPciDeviceVOHostEO FOREIGN KEY (`hostUuid`) REFERENCES `zstack`.`HostEO` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `PciDeviceOfferingInstanceOfferingRefVO` (
+  `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+  `pciDeviceOfferingUuid` varchar(32) NOT NULL,
+  `instanceOfferingUuid` varchar(32) NOT NULL,
+  `metadata` varchar(4096) DEFAULT NULL,
+  `pciDeviceCount` int DEFAULT 1,
+  CONSTRAINT `PciDeviceOfferingInstanceOfferingRefVOPciDeviceOfferingVO` FOREIGN KEY (`pciDeviceOfferingUuid`) REFERENCES `zstack`.`PciDeviceOfferingVO` (`uuid`) ON DELETE CASCADE,
+  CONSTRAINT `PciDeviceOfferingInstanceOfferingRefVOInstanceOfferingEO` FOREIGN KEY (`instanceOfferingUuid`) REFERENCES `zstack`.`InstanceOfferingEO` (`uuid`) ON DELETE CASCADE,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `PciDevicePciDeviceOfferingRefVO` (
+  `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+  `pciDeviceUuid` varchar(32) NOT NULL,
+  `pciDeviceOfferingUuid` varchar(32) NOT NULL,
+  CONSTRAINT `PciDeviceUsageVOPciDeviceVO` FOREIGN KEY (`pciDeviceUuid`) REFERENCES `zstack`.`PciDeviceVO` (`uuid`) ON DELETE CASCADE,
+  CONSTRAINT `PciDevicePciDeviceOfferingVO` FOREIGN KEY (`pciDeviceOfferingUuid`) REFERENCES `zstack`.`PciDeviceOfferingVO` (`uuid`) ON DELETE CASCADE,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
