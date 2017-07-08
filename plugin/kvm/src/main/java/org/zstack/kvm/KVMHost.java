@@ -1941,6 +1941,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setBootDev(toKvmBootDev(spec.getBootOrders()));
         cmd.setHostManagementIp(self.getManagementIp());
         cmd.setConsolePassword(spec.getConsolePassword());
+        cmd.setUsbRedirect(spec.getUsbRedirect());
         cmd.setUseNuma(VmGlobalConfig.NUMA.value(Boolean.class));
         addons(spec, cmd);
         KVMHostInventory khinv = KVMHostInventory.valueOf(getSelf());

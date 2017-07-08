@@ -32,8 +32,6 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
-import org.zstack.header.core.*;
-import org.zstack.header.core.scheduler.SchedulerVO;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -63,7 +61,10 @@ import org.zstack.header.vm.VmInstanceSpec.IsoSpec;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.tag.SystemTagCreator;
-import org.zstack.utils.*;
+import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.DebugUtils;
+import org.zstack.utils.ObjectUtils;
+import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.function.Function;
@@ -4022,6 +4023,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         selectBootOrder(spec);
         spec.setConsolePassword(VmSystemTags.CONSOLE_PASSWORD.
                 getTokenByResourceUuid(self.getUuid(), VmSystemTags.CONSOLE_PASSWORD_TOKEN));
+        spec.setUsbRedirect(VmSystemTags.USB_REDIRECT.getTokenByResourceUuid(self.getUuid(), VmSystemTags.USB_REDIRECT_TOKEN));
 
         changeVmStateInDb(VmInstanceStateEvent.starting);
 

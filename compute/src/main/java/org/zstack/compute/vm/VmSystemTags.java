@@ -35,6 +35,10 @@ public class VmSystemTags {
     public static String CONSOLE_PASSWORD_TOKEN = "consolePassword";
     public static PatternedSystemTag CONSOLE_PASSWORD = new PatternedSystemTag(String.format("consolePassword::{%s}",CONSOLE_PASSWORD_TOKEN),VmInstanceVO.class);
 
+    // set usbRedirect::true to enable usb redirect
+    public static String USB_REDIRECT_TOKEN = "usbRedirect";
+    public static PatternedSystemTag USB_REDIRECT = new PatternedSystemTag(String.format("usbRedirect::{%s}",USB_REDIRECT_TOKEN),VmInstanceVO.class);
+
     public static String INSTANCEOFFERING_ONLINECHANGE_TOKEN = "instanceOfferingOnliechange";
     public static PatternedSystemTag INSTANCEOFFERING_ONLIECHANGE = new PatternedSystemTag(String.format("instanceOfferingOnlinechange::{%s}",INSTANCEOFFERING_ONLINECHANGE_TOKEN),VmInstanceVO.class);
 
