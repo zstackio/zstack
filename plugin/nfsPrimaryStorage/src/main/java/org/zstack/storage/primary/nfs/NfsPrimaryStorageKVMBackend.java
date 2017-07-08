@@ -1147,7 +1147,8 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                         cmd.oldMountPoint = oldMountPoint;
                         cmd.options = options;
 
-                        asyncHttpCall(UPDATE_MOUNT_POINT_PATH, hostUuid, cmd, UpdateMountPointRsp.class, pinv, new ReturnValueCompletion<UpdateMountPointRsp>(completion) {
+                        asyncHttpCall(UPDATE_MOUNT_POINT_PATH, hostUuid, cmd, UpdateMountPointRsp.class, pinv,
+                                new ReturnValueCompletion<UpdateMountPointRsp>(completion) {
                             @Override
                             public void success(UpdateMountPointRsp rsp) {
                                 completion.done();
@@ -1158,11 +1159,9 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                                 errors.add(errorCode);
 
                                 N.New(HostVO.class, hostUuid).warn_("unable to update the nfs[uuid:%s, name:%s] mount point" +
-                                                " from %s to %s on the host[uuid:%s], %s. Put the host-nfs into Disconnected state",
-                                        pinv.getUuid(), pinv.getName(), oldMountPoint, newMountPoint, errorCode, hostUuid);
+                                                " from %s to %s on the host[uuid:%s], %s. Put the host-nfs into Disconnected status",
+                                        pinv.getUuid(), pinv.getName(), oldMountPoint, newMountPoint, hostUuid, errorCode);
 
-
-                                //TODO: need notification to UI
                                 nfsFactory.updateNfsHostStatus(pinv.getUuid(), hostUuid, PrimaryStorageHostStatus.Disconnected);
                                 completion.done();
                             }
@@ -1237,11 +1236,9 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
 
                         @Override
                         public void fail(ErrorCode errorCode) {
-                            //TODO: need notification to UI
+                            N.New(HostVO.class, huuid).warn_("fail to mount nfs[uuid:%s] from host[uuid:%s], because:%s"
+                                    , inv.getUuid(), huuid, errorCode.toString());
                             nfsFactory.updateNfsHostStatus(inv.getUuid(), huuid, PrimaryStorageHostStatus.Disconnected);
-                            logger.warn(String.format("fail to mount nfs[uuid:%s] from host[uuid:%s], because:%s"
-                                    , inv.getUuid(), huuid, errorCode.toString()));
-
                             completion.done();
                         }
                     });
