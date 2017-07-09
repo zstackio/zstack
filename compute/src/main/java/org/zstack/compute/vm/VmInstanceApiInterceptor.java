@@ -365,11 +365,16 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(APICreateVmInstanceMsg msg) {
         SimpleQuery<InstanceOfferingVO> iq = dbf.createQuery(InstanceOfferingVO.class);
-        iq.select(InstanceOfferingVO_.state);
+        iq.select(InstanceOfferingVO_.state, InstanceOfferingVO_.type);
         iq.add(InstanceOfferingVO_.uuid, Op.EQ, msg.getInstanceOfferingUuid());
-        InstanceOfferingState istate = iq.findValue();
+        Tuple inst = iq.findTuple();
+        InstanceOfferingState istate = inst.get(0, InstanceOfferingState.class);
+        String itype = inst.get(1, String.class);
         if (istate == InstanceOfferingState.Disabled) {
             throw new ApiMessageInterceptionException(operr("instance offering[uuid:%s] is Disabled, can't create vm from it", msg.getInstanceOfferingUuid()));
+        }
+        if (!itype.equals(VmInstanceConstant.USER_VM_TYPE)){
+            throw new ApiMessageInterceptionException(operr("instance offering[uuid:%s, type:%s] is not UserVm type, can't create vm from it", msg.getInstanceOfferingUuid(), itype));
         }
 
         SimpleQuery<ImageVO> imgq = dbf.createQuery(ImageVO.class);
