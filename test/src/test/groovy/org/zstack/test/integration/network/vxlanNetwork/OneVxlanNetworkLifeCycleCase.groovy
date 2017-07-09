@@ -1,9 +1,13 @@
 package org.zstack.test.integration.network.vxlanNetwork
 
 import org.springframework.http.HttpEntity
+import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanKvmAgentCommands
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolConstant
+import org.zstack.network.securitygroup.SecurityGroupConstant
 import org.zstack.network.service.flat.FlatDhcpBackend
+import org.zstack.network.service.flat.FlatNetworkServiceConstant
+import org.zstack.network.service.virtualrouter.VirtualRouterConstant
 import org.zstack.sdk.*
 import org.zstack.test.integration.network.NetworkTest
 import org.zstack.testlib.*
@@ -68,7 +72,7 @@ class OneVxlanNetworkLifeCycleCase extends SubCase {
                     }
 
                     attachPrimaryStorage("nfs-ps")
-
+                    attachL2Network("l2-novlan")
                 }
 
                 cluster {
@@ -83,7 +87,7 @@ class OneVxlanNetworkLifeCycleCase extends SubCase {
                     }
 
                     attachPrimaryStorage("nfs-ps")
-
+                    attachL2Network("l2-novlan")
                 }
 
                 localPrimaryStorage {
@@ -94,6 +98,32 @@ class OneVxlanNetworkLifeCycleCase extends SubCase {
                 nfsPrimaryStorage {
                     name = "nfs-ps"
                     url = "127.0.0.1:/nfs_root"
+                }
+
+                l2NoVlanNetwork {
+                    name = "l2-novlan"
+                    physicalInterface = "eth0"
+
+                    l3Network {
+                        name = "l3-novlan"
+
+                        service {
+                            provider = FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE
+                            types = [NetworkServiceType.DHCP.toString()]
+                        }
+
+                        service {
+                            provider = SecurityGroupConstant.SECURITY_GROUP_PROVIDER_TYPE
+                            types = [SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE]
+                        }
+
+                        ip {
+                            startIp = "192.168.99.10"
+                            endIp = "192.168.99.249"
+                            netmask = "255.255.255.0"
+                            gateway = "192.168.99.1"
+                        }
+                    }
                 }
 
                 attachBackupStorage("sftp")
@@ -198,14 +228,6 @@ class OneVxlanNetworkLifeCycleCase extends SubCase {
             delegate.networkServices = netServices
         }
 
-        env.simulator(VxlanNetworkPoolConstant.VXLAN_KVM_REALIZE_L2VXLAN_NETWORK_PATH) { HttpEntity<String> entity, EnvSpec spec ->
-            return new VxlanKvmAgentCommands.CreateVxlanBridgeResponse()
-        }
-
-        env.simulator(VxlanNetworkPoolConstant.VXLAN_KVM_POPULATE_FDB_L2VXLAN_NETWORK_PATH) { HttpEntity<String> entity, EnvSpec spec ->
-            return new VxlanKvmAgentCommands.PopulateVxlanFdbResponse()
-        }
-
         L2NetworkInventory netinv2 = createL2VxlanNetwork {
             delegate.poolUuid = poolinv.getUuid()
             delegate.name = "TestVxlan1"
@@ -231,6 +253,33 @@ class OneVxlanNetworkLifeCycleCase extends SubCase {
             delegate.networkServices = netServices
         }
 
+
+        List<String> record = new ArrayList<>()
+
+        env.simulator(VxlanNetworkPoolConstant.VXLAN_KVM_REALIZE_L2VXLAN_NETWORK_PATH) { HttpEntity<String> entity, EnvSpec spec ->
+            record.add(entity.body)
+            return new VxlanKvmAgentCommands.CreateVxlanBridgeResponse()
+        }
+
+        env.simulator(VxlanNetworkPoolConstant.VXLAN_KVM_POPULATE_FDB_L2VXLAN_NETWORK_PATH) { HttpEntity<String> entity, EnvSpec spec ->
+            return new VxlanKvmAgentCommands.PopulateVxlanFdbResponse()
+        }
+
+        VmInstanceInventory vm0 = createVmInstance {
+            delegate.name = "TestVm0"
+            delegate.instanceOfferingUuid = (env.specByName("instanceOffering") as InstanceOfferingSpec).inventory.uuid
+            delegate.imageUuid = (env.specByName("image1") as ImageSpec).inventory.uuid
+            delegate.l3NetworkUuids = [(env.specByName("l3-novlan") as L3NetworkSpec).inventory.uuid]
+            delegate.hostUuid = (env.specByName("kvm1") as HostSpec).inventory.uuid
+        }
+
+        attachL3NetworkToVm {
+            delegate.l3NetworkUuid = l3_1.uuid
+            delegate.vmInstanceUuid = vm0.uuid
+        }
+
+        assert record.get(0).contains("vtep")
+
         createVmInstance {
             delegate.name = "TestVm3"
             delegate.instanceOfferingUuid = (env.specByName("instanceOffering") as InstanceOfferingSpec).inventory.uuid
@@ -248,7 +297,8 @@ class OneVxlanNetworkLifeCycleCase extends SubCase {
             delegate.hostUuid = (env.specByName("kvm1") as HostSpec).inventory.uuid
         }
 
-        List<String> record = new ArrayList<>()
+
+        record.clear()
 
         env.simulator(VxlanNetworkPoolConstant.VXLAN_KVM_REALIZE_L2VXLAN_NETWORK_PATH) { HttpEntity<String> entity, EnvSpec spec ->
             record.add(VxlanNetworkPoolConstant.VXLAN_KVM_REALIZE_L2VXLAN_NETWORK_PATH)
@@ -332,8 +382,8 @@ class OneVxlanNetworkLifeCycleCase extends SubCase {
             delegate.conditions = ["resourceUuid=${poolinv.getUuid()}".toString()]
         }
 
-        assert nets.isEmpty()
-        assert l3Nets.isEmpty()
+        assert nets.size() == 1
+        assert l3Nets.size() == 1
         assert tags.isEmpty()
     }
 
