@@ -248,6 +248,26 @@ class OneVxlanNetworkLifeCycleCase extends SubCase {
             delegate.hostUuid = (env.specByName("kvm1") as HostSpec).inventory.uuid
         }
 
+        List<String> record = new ArrayList<>()
+
+        env.simulator(VxlanNetworkPoolConstant.VXLAN_KVM_REALIZE_L2VXLAN_NETWORK_PATH) { HttpEntity<String> entity, EnvSpec spec ->
+            record.add(VxlanNetworkPoolConstant.VXLAN_KVM_REALIZE_L2VXLAN_NETWORK_PATH)
+            return new VxlanKvmAgentCommands.CreateVxlanBridgeResponse()
+        }
+
+
+        env.simulator(FlatDhcpBackend.PREPARE_DHCP_PATH) { HttpEntity<String> entity, EnvSpec spec ->
+            record.add(FlatDhcpBackend.PREPARE_DHCP_PATH)
+            return new FlatDhcpBackend.PrepareDhcpRsp()
+        }
+
+        attachL3NetworkToVm {
+            delegate.l3NetworkUuid = l3_2.uuid
+            delegate.vmInstanceUuid = vm1.uuid
+        }
+
+        assert record.size() == 2
+
         createVmInstance {
             delegate.name = "TestVm2"
             delegate.instanceOfferingUuid = (env.specByName("instanceOffering") as InstanceOfferingSpec).inventory.uuid
@@ -260,25 +280,14 @@ class OneVxlanNetworkLifeCycleCase extends SubCase {
             delegate.uuid = (env.specByName("kvm1") as KVMHostSpec).inventory.uuid
         }
 
-        List<String> record = new ArrayList<>()
-
-        env.simulator(VxlanNetworkPoolConstant.VXLAN_KVM_REALIZE_L2VXLAN_NETWORK_PATH) { HttpEntity<String> entity, EnvSpec spec ->
-            record.add(VxlanNetworkPoolConstant.VXLAN_KVM_REALIZE_L2VXLAN_NETWORK_PATH)
-            return new VxlanKvmAgentCommands.CreateVxlanBridgeResponse()
-        }
-
-        env.simulator(FlatDhcpBackend.PREPARE_DHCP_PATH) { HttpEntity<String> entity, EnvSpec spec ->
-            record.add(FlatDhcpBackend.PREPARE_DHCP_PATH)
-            return new FlatDhcpBackend.PrepareDhcpRsp()
-        }
 
         migrateVm {
             delegate.vmInstanceUuid = vm1.getUuid()
             delegate.hostUuid = (env.specByName("kvm2") as HostSpec).inventory.uuid
         }
 
-        assert record.get(0).equals(VxlanNetworkPoolConstant.VXLAN_KVM_REALIZE_L2VXLAN_NETWORK_PATH)
-        assert record.get(1).equals(FlatDhcpBackend.PREPARE_DHCP_PATH)
+        assert record.get(2).equals(VxlanNetworkPoolConstant.VXLAN_KVM_REALIZE_L2VXLAN_NETWORK_PATH)
+        assert record.get(3).equals(FlatDhcpBackend.PREPARE_DHCP_PATH)
 
         poolinv = queryL2VxlanNetworkPool{}[0]
 

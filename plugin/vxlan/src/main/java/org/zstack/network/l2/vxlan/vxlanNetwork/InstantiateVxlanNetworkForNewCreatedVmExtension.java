@@ -23,7 +23,9 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Created by weiwang on 19/04/2017.
@@ -42,7 +44,7 @@ public class InstantiateVxlanNetworkForNewCreatedVmExtension implements PreVmIns
 
     @Override
     public void preInstantiateVmResource(VmInstanceSpec spec, Completion completion) {
-        List<String> vxlanUuids = new ArrayList<>();
+        Set<String> vxlanUuids = new HashSet<>();
         for (L3NetworkInventory l3 : spec.getL3Networks()) {
             String type = Q.New(L2NetworkVO.class).select(L2NetworkVO_.type).eq(L2NetworkVO_.uuid, l3.getL2NetworkUuid()).findValue();
             if (type.equals(VxlanNetworkConstant.VXLAN_NETWORK_TYPE)) {
