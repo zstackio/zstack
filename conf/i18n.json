@@ -1,5 +1,13 @@
 [
   {
+    "raw": "no bucket found for backup",
+    "en_US": "no bucket found for backup",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 452,
+    "fileName": "src/main/java/org/zstack/aliyun/backup/BackupToAliyunBase.java"
+  },
+  {
     "raw": "regionId, accessKey and keySecret must be set",
     "en_US": "regionId, accessKey and keySecret must be set",
     "zh_CN": "",
@@ -8,19 +16,11 @@
     "fileName": "src/main/java/org/zstack/aliyun/core/AliyunClient.java"
   },
   {
-    "raw": "DestCidrIp must be set!",
-    "en_US": "DestCidrIp must be set!",
+    "raw": "the izone chosen by user doesn\u0027t support vpc",
+    "en_US": "the izone chosen by user doesn\u0027t support vpc",
     "zh_CN": "",
     "arguments": [],
-    "line": 751,
-    "fileName": "src/main/java/org/zstack/aliyun/core/AliyunSdkImpl.java"
-  },
-  {
-    "raw": "SourceCidrIp must be set!",
-    "en_US": "SourceCidrIp must be set!",
-    "zh_CN": "",
-    "arguments": [],
-    "line": 726,
+    "line": 2323,
     "fileName": "src/main/java/org/zstack/aliyun/core/AliyunSdkImpl.java"
   },
   {
@@ -98,6 +98,22 @@
     "fileName": "src/main/java/org/zstack/aliyun/ecs/CheckEcsImageExistPublicFlow.java"
   },
   {
+    "raw": "No Available instance types now.",
+    "en_US": "No Available instance types now.",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 119,
+    "fileName": "src/main/java/org/zstack/aliyun/ecs/CreateEcsInstancePublicFlow.java"
+  },
+  {
+    "raw": "Only admin can set parameter [onlyZstack] \u003d false",
+    "en_US": "Only admin can set parameter [onlyZstack] \u003d false",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 68,
+    "fileName": "src/main/java/org/zstack/aliyun/ecs/EcsApiInterceptor.java"
+  },
+  {
     "raw": "valid OSType:[%s] for aliyun image import, valid value are: [linux, windows]",
     "en_US": "valid OSType:[{0}] for aliyun image import, valid value are: [linux, windows]",
     "zh_CN": "",
@@ -116,6 +132,36 @@
       "EcsImageConstant.ECS_IMAGE_PLATFORM.getValid()"
     ],
     "line": 66,
+    "fileName": "src/main/java/org/zstack/aliyun/ecs/EcsApiInterceptor.java"
+  },
+  {
+    "raw": "image [%s] is not enable now",
+    "en_US": "image [{0}] is not enable now",
+    "zh_CN": "",
+    "arguments": [
+      "ivo.getUuid()"
+    ],
+    "line": 90,
+    "fileName": "src/main/java/org/zstack/aliyun/ecs/EcsApiInterceptor.java"
+  },
+  {
+    "raw": "no backup storage found for imageUuid: %s",
+    "en_US": "no backup storage found for imageUuid: {0}",
+    "zh_CN": "",
+    "arguments": [
+      "imageUuid"
+    ],
+    "line": 110,
+    "fileName": "src/main/java/org/zstack/aliyun/ecs/EcsApiInterceptor.java"
+  },
+  {
+    "raw": "exceeded backup storage found for the imageUuid: %s, please indicate it manually",
+    "en_US": "exceeded backup storage found for the imageUuid: {0}, please indicate it manually",
+    "zh_CN": "",
+    "arguments": [
+      "imageUuid"
+    ],
+    "line": 114,
     "fileName": "src/main/java/org/zstack/aliyun/ecs/EcsApiInterceptor.java"
   },
   {
@@ -140,6 +186,17 @@
     "fileName": "src/main/java/org/zstack/aliyun/ecs/EcsApiInterceptor.java"
   },
   {
+    "raw": "private ip is existed in vswitch: %s, allocated to ecs: %s",
+    "en_US": "private ip is existed in vswitch: {0}, allocated to ecs: {1}",
+    "zh_CN": "",
+    "arguments": [
+      "vSwitchUuid",
+      "ecs.getUuid()"
+    ],
+    "line": 134,
+    "fileName": "src/main/java/org/zstack/aliyun/ecs/EcsApiInterceptor.java"
+  },
+  {
     "raw": "password: [%s] is not valid",
     "en_US": "password: [{0}] is not valid",
     "zh_CN": "",
@@ -147,16 +204,6 @@
       "password"
     ],
     "line": 125,
-    "fileName": "src/main/java/org/zstack/aliyun/ecs/EcsApiInterceptor.java"
-  },
-  {
-    "raw": "not valid izone:[%s] in aliyun",
-    "en_US": "not valid izone:[{0}] in aliyun",
-    "zh_CN": "",
-    "arguments": [
-      "msg.getIdentityZoneUuid()"
-    ],
-    "line": 106,
     "fileName": "src/main/java/org/zstack/aliyun/ecs/EcsApiInterceptor.java"
   },
   {
@@ -170,6 +217,51 @@
     "fileName": "src/main/java/org/zstack/aliyun/ecs/EcsInstanceManagerImpl.java"
   },
   {
+    "raw": "ecs [%s] start failed, skip modify vnc password",
+    "en_US": "ecs [{0}] start failed, skip modify vnc password",
+    "zh_CN": "",
+    "arguments": [
+      "ecs.getUuid()"
+    ],
+    "line": 83,
+    "fileName": "src/main/java/org/zstack/aliyun/ecs/StartEcsInstancePublicFlow.java"
+  },
+  {
+    "raw": "modify-ecs-[%s]-console-vnc-password-failed, due to [code: %s, details: %s]",
+    "en_US": "modify-ecs-[{0}]-console-vnc-password-failed, due to [code: {1}, details: {2}]",
+    "zh_CN": "",
+    "arguments": [
+      "ecs.getUuid()",
+      "reply.getError().getCode()",
+      "reply.getError().getDetails()"
+    ],
+    "line": 99,
+    "fileName": "src/main/java/org/zstack/aliyun/ecs/StartEcsInstancePublicFlow.java"
+  },
+  {
+    "raw": "ecs instance [%s] start isn\u0027t finish, status is still [%s]",
+    "en_US": "ecs instance [{0}] start isn\u0027t finish, status is still [{1}]",
+    "zh_CN": "",
+    "arguments": [
+      "ecs.getUuid()",
+      "rpl.getStatus()"
+    ],
+    "line": 64,
+    "fileName": "src/main/java/org/zstack/aliyun/ecs/StartEcsInstancePublicFlow.java"
+  },
+  {
+    "raw": "ecs instance [%s] start failed, due to: [code: %s, details: %s]",
+    "en_US": "ecs instance [{0}] start failed, due to: [code: {1}, details: {2}]",
+    "zh_CN": "",
+    "arguments": [
+      "ecs.getUuid()",
+      "reply.getError().getCode()",
+      "reply.getError().getDetails()"
+    ],
+    "line": 58,
+    "fileName": "src/main/java/org/zstack/aliyun/ecs/StartEcsInstancePublicFlow.java"
+  },
+  {
     "raw": "not supported next hop type: %s",
     "en_US": "not supported next hop type: {0}",
     "zh_CN": "",
@@ -180,24 +272,196 @@
     "fileName": "src/main/java/org/zstack/aliyun/network/AliyunNetworkServiceBase.java"
   },
   {
-    "raw": "dataCenterUuid [%s] couldn\u0027t be found",
-    "en_US": "dataCenterUuid [{0}] couldn\u0027t be found",
+    "raw": "no such virtual router vm found for: %s",
+    "en_US": "no such virtual router vm found for: {0}",
     "zh_CN": "",
     "arguments": [
-      "dcUuid"
+      "vRouterVmUuid"
     ],
-    "line": 98,
-    "fileName": "src/main/java/org/zstack/aliyun/network/DescribeVSwitchFlow.java"
+    "line": 178,
+    "fileName": "src/main/java/org/zstack/aliyun/network/connection/ConnectionBetweenL3NetworkAndAliyunVSwitchCascadeExtension.java"
   },
   {
-    "raw": "couldn\u0027t find any VPCs in dataCenterUuid: %s",
-    "en_US": "couldn\u0027t find any VPCs in dataCenterUuid: {0}",
+    "raw": "custom cidr [%s] is already existed in vbr [%s], it is overlapped with target cidr [%s], please check and delete it first.",
+    "en_US": "custom cidr [{0}] is already existed in vbr [{1}], it is overlapped with target cidr [{2}], please check and delete it first.",
     "zh_CN": "",
     "arguments": [
-      "dcUuid"
+      "tuple.get(0, String.class)",
+      "msg.getVbrUuid()",
+      "vpcCidr"
     ],
-    "line": 40,
-    "fileName": "src/main/java/org/zstack/aliyun/network/DescribeVSwitchFlow.java"
+    "line": 67,
+    "fileName": "src/main/java/org/zstack/aliyun/network/connection/CreateVbrRouteEntryFlow.java"
+  },
+  {
+    "raw": "local cidr and entry is already existed in vbr [%s], skip create entry",
+    "en_US": "local cidr and entry is already existed in vbr [{0}], skip create entry",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getVbrUuid()"
+    ],
+    "line": 131,
+    "fileName": "src/main/java/org/zstack/aliyun/network/connection/CreateVbrRouteEntryFlow.java"
+  },
+  {
+    "raw": "vpc cidr and entry is already existed in vbr [%s], skip create entry",
+    "en_US": "vpc cidr and entry is already existed in vbr [{0}], skip create entry",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getVbrUuid()"
+    ],
+    "line": 64,
+    "fileName": "src/main/java/org/zstack/aliyun/network/connection/CreateVbrRouteEntryFlow.java"
+  },
+  {
+    "raw": "custom cidr [%s] is already existed in vrouter [%s], it is overlapped with target cidr [%s], please check and delete it first.",
+    "en_US": "custom cidr [{0}] is already existed in vrouter [{1}], it is overlapped with target cidr [{2}], please check and delete it first.",
+    "zh_CN": "",
+    "arguments": [
+      "tuple.get(0, String.class)",
+      "vRouterUuid",
+      "localCidrs.get(0)"
+    ],
+    "line": 61,
+    "fileName": "src/main/java/org/zstack/aliyun/network/connection/CreateVpcRouteEntryFlow.java"
+  },
+  {
+    "raw": "local cidr and entry is already existed in vrouter [%s], skip create entry",
+    "en_US": "local cidr and entry is already existed in vrouter [{0}], skip create entry",
+    "zh_CN": "",
+    "arguments": [
+      "vRouterUuid"
+    ],
+    "line": 58,
+    "fileName": "src/main/java/org/zstack/aliyun/network/connection/CreateVpcRouteEntryFlow.java"
+  },
+  {
+    "raw": "No Such Cidr found for l3network: %s",
+    "en_US": "No Such Cidr found for l3network: {0}",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getL3networkUuid()"
+    ],
+    "line": 45,
+    "fileName": "src/main/java/org/zstack/aliyun/network/connection/GetCidrsFlow.java"
+  },
+  {
+    "raw": "No Such VRouter nic found for l3network: %s",
+    "en_US": "No Such VRouter nic found for l3network: {0}",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getL3networkUuid()"
+    ],
+    "line": 37,
+    "fileName": "src/main/java/org/zstack/aliyun/network/connection/GetCidrsFlow.java"
+  },
+  {
+    "raw": "No Such Ecs VSwitch found for vswitch: %s",
+    "en_US": "No Such Ecs VSwitch found for vswitch: {0}",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getvSwitchUuid()"
+    ],
+    "line": 54,
+    "fileName": "src/main/java/org/zstack/aliyun/network/connection/GetCidrsFlow.java"
+  },
+  {
+    "raw": "no such vswitch found for: %s",
+    "en_US": "no such vswitch found for: {0}",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getUuid()"
+    ],
+    "line": 44,
+    "fileName": "src/main/java/org/zstack/aliyun/network/connection/VpcConnectionApiInterceptor.java"
+  },
+  {
+    "raw": "no such vpc found for: %s",
+    "en_US": "no such vpc found for: {0}",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getUuid()"
+    ],
+    "line": 50,
+    "fileName": "src/main/java/org/zstack/aliyun/network/connection/VpcConnectionApiInterceptor.java"
+  },
+  {
+    "raw": "no such vm found for: %s",
+    "en_US": "no such vm found for: {0}",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getUuid()"
+    ],
+    "line": 56,
+    "fileName": "src/main/java/org/zstack/aliyun/network/connection/VpcConnectionApiInterceptor.java"
+  },
+  {
+    "raw": "no such vbr found for: %s",
+    "en_US": "no such vbr found for: {0}",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getUuid()"
+    ],
+    "line": 62,
+    "fileName": "src/main/java/org/zstack/aliyun/network/connection/VpcConnectionApiInterceptor.java"
+  },
+  {
+    "raw": "no such l3network found for: %s",
+    "en_US": "no such l3network found for: {0}",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getUuid()"
+    ],
+    "line": 68,
+    "fileName": "src/main/java/org/zstack/aliyun/network/connection/VpcConnectionApiInterceptor.java"
+  },
+  {
+    "raw": "not a supported resource type: %s",
+    "en_US": "not a supported resource type: {0}",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getResourceType()"
+    ],
+    "line": 73,
+    "fileName": "src/main/java/org/zstack/aliyun/network/connection/VpcConnectionApiInterceptor.java"
+  },
+  {
+    "raw": "Only admin can create connections",
+    "en_US": "Only admin can create connections",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 79,
+    "fileName": "src/main/java/org/zstack/aliyun/network/connection/VpcConnectionApiInterceptor.java"
+  },
+  {
+    "raw": "CpeIp must be ipv4 address, but now is %s",
+    "en_US": "CpeIp must be ipv4 address, but now is {0}",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getCpeIp()"
+    ],
+    "line": 83,
+    "fileName": "src/main/java/org/zstack/aliyun/network/connection/VpcConnectionApiInterceptor.java"
+  },
+  {
+    "raw": "l3network %s is already connected, please check it",
+    "en_US": "l3network {0} is already connected, please check it",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getL3networkUuid()"
+    ],
+    "line": 87,
+    "fileName": "src/main/java/org/zstack/aliyun/network/connection/VpcConnectionApiInterceptor.java"
+  },
+  {
+    "raw": "vswitch %s is already connected, please check it",
+    "en_US": "vswitch {0} is already connected, please check it",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getvSwitchUuid()"
+    ],
+    "line": 93,
+    "fileName": "src/main/java/org/zstack/aliyun/network/connection/VpcConnectionApiInterceptor.java"
   },
   {
     "raw": "oss bucket is not empty!",
@@ -205,6 +469,16 @@
     "zh_CN": "",
     "arguments": [],
     "line": 144,
+    "fileName": "src/main/java/org/zstack/aliyun/oss/EcsOssManagerImpl.java"
+  },
+  {
+    "raw": "No Such regionId: %s now",
+    "en_US": "No Such regionId: {0} now",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getRegionId()"
+    ],
+    "line": 453,
     "fileName": "src/main/java/org/zstack/aliyun/oss/EcsOssManagerImpl.java"
   },
   {
@@ -306,6 +580,32 @@
     "arguments": [],
     "line": 239,
     "fileName": "src/main/java/org/zstack/baremetal/host/BaremetalHostApiInterceptor.java"
+  },
+  {
+    "raw": "failed to set provisioned \u003d true after baremetal host provisioning",
+    "en_US": "failed to set provisioned \u003d true after baremetal host provisioning",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 70,
+    "fileName": "src/main/java/org/zstack/baremetal/host/BaremetalHostImpl.java"
+  },
+  {
+    "raw": "failed to clean up baremetal hostcfg after baremetal host provisioning",
+    "en_US": "failed to clean up baremetal hostcfg after baremetal host provisioning",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 89,
+    "fileName": "src/main/java/org/zstack/baremetal/host/BaremetalHostImpl.java"
+  },
+  {
+    "raw": "successfully provisioned baremetal host whose IPMI address is %s",
+    "en_US": "successfully provisioned baremetal host whose IPMI address is {0}",
+    "zh_CN": "",
+    "arguments": [
+      "msg1.getIpmiAddress()"
+    ],
+    "line": 84,
+    "fileName": "src/main/java/org/zstack/baremetal/host/BaremetalHostImpl.java"
   },
   {
     "raw": "Set Range Start \u0026 End, or set Range Start \u0026 End \u0026 Netmask!",
@@ -570,6 +870,16 @@
     "fileName": "src/main/java/org/zstack/compute/vm/MevocoVmInstanceBase.java"
   },
   {
+    "raw": " Can not find the vm\u0027s host, please start the vm[%s], then mount the disk",
+    "en_US": " Can not find the vm\u0027s host, please start the vm[{0}], then mount the disk",
+    "zh_CN": "",
+    "arguments": [
+      "spec.getVmInventory().getUuid()"
+    ],
+    "line": 44,
+    "fileName": "src/main/java/org/zstack/compute/vm/VmAllocatePrimaryStorageForAttachingDiskFlow.java"
+  },
+  {
     "raw": "unable to detach a nic[uuid:%s] from the vm[uuid:%s], %s",
     "en_US": "unable to detach a nic[uuid:{0}] from the vm[uuid:{1}], {2}",
     "zh_CN": "无法从云主机[uuid:{1}]卸载一个网卡[uuid:{0}]，错误细节：{2}",
@@ -700,13 +1010,13 @@
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
-    "raw": "vm[uuid:%s] can only create scheduler when state is not Destroyed",
-    "en_US": "vm[uuid:{0}] can only create scheduler when state is not Destroyed",
-    "zh_CN": "云主机[uuid:{0}]只能在不是删除状态下创建定时计划",
+    "raw": "the VM[uuid:%s] volume stored location primary storage is in a state of maintenance",
+    "en_US": "the VM[uuid:{0}] volume stored location primary storage is in a state of maintenance",
+    "zh_CN": "",
     "arguments": [
       "msg.getVmInstanceUuid()"
     ],
-    "line": 180,
+    "line": 218,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -1657,59 +1967,27 @@
     "fileName": "src/main/java/org/zstack/core/salt/SaltRunner.java"
   },
   {
-    "raw": "can not enable a Enabled scheduler",
-    "en_US": "can not enable a Enabled scheduler",
-    "zh_CN": "无法启用一个已经启用的定时任务",
+    "raw": "cron must be set when use cron scheduler",
+    "en_US": "cron must be set when use cron scheduler",
+    "zh_CN": "当使用定时器任务时，必须设置cron",
     "arguments": [],
-    "line": 79,
+    "line": 118,
     "fileName": "src/main/java/org/zstack/core/scheduler/SchedulerApiInterceptor.java"
   },
   {
-    "raw": "can not disable a Disabled scheduler",
-    "en_US": "can not disable a Disabled scheduler",
-    "zh_CN": "不能够停用一个已经停用的定时任务",
+    "raw": "cron task must follow format like this : \\\"0 0/3 17-23 * * ?\\\" ",
+    "en_US": "cron task must follow format like this : \\\"0 0/3 17-23 * * ?\\\" ",
+    "zh_CN": "定时器任务必须符合以下格式：\\\"0 0/3 17-23 * * ?\\\" ",
     "arguments": [],
-    "line": 82,
+    "line": 121,
     "fileName": "src/main/java/org/zstack/core/scheduler/SchedulerApiInterceptor.java"
   },
   {
-    "raw": "stopTime out of mysql timestamp range",
-    "en_US": "stopTime out of mysql timestamp range",
-    "zh_CN": "定时任务停止时间超出mysql的timestamp的范围",
+    "raw": "cron scheduler only need to specify cron task",
+    "en_US": "cron scheduler only need to specify cron task",
+    "zh_CN": "定时调度器（Cron Scheduler）仅需要指定定时任务（Cron Task）。",
     "arguments": [],
-    "line": 120,
-    "fileName": "src/main/java/org/zstack/core/scheduler/SchedulerApiInterceptor.java"
-  },
-  {
-    "raw": "duration time out of range",
-    "en_US": "duration time out of range",
-    "zh_CN": "任务需要的时间超出范围",
-    "arguments": [],
-    "line": 116,
-    "fileName": "src/main/java/org/zstack/core/scheduler/SchedulerApiInterceptor.java"
-  },
-  {
-    "raw": "interval must be positive integer",
-    "en_US": "interval must be positive integer",
-    "zh_CN": "间隔时间必须是正整数",
-    "arguments": [],
-    "line": 98,
-    "fileName": "src/main/java/org/zstack/core/scheduler/SchedulerApiInterceptor.java"
-  },
-  {
-    "raw": "interval must be set when use simple scheduler when repeat forever",
-    "en_US": "interval must be set when use simple scheduler when repeat forever",
-    "zh_CN": "当简单定时任务永远重复的时，必须设置间隔时间",
-    "arguments": [],
-    "line": 95,
-    "fileName": "src/main/java/org/zstack/core/scheduler/SchedulerApiInterceptor.java"
-  },
-  {
-    "raw": "interval must be set when use simple scheduler when repeat more than once",
-    "en_US": "interval must be set when use simple scheduler when repeat more than once",
-    "zh_CN": "当简单定时任务执行超过一次时，必须设置间隔时间",
-    "arguments": [],
-    "line": 92,
+    "line": 124,
     "fileName": "src/main/java/org/zstack/core/scheduler/SchedulerApiInterceptor.java"
   },
   {
@@ -1737,35 +2015,43 @@
     "fileName": "src/main/java/org/zstack/core/scheduler/SchedulerApiInterceptor.java"
   },
   {
-    "raw": "repeatCount must be positive integer",
-    "en_US": "repeatCount must be positive integer",
-    "zh_CN": "重复次数必须为正整数",
+    "raw": "stopTime out of mysql timestamp range",
+    "en_US": "stopTime out of mysql timestamp range",
+    "zh_CN": "定时任务停止时间超出mysql的timestamp的范围",
     "arguments": [],
-    "line": 112,
+    "line": 120,
     "fileName": "src/main/java/org/zstack/core/scheduler/SchedulerApiInterceptor.java"
   },
   {
-    "raw": "cron must be set when use cron scheduler",
-    "en_US": "cron must be set when use cron scheduler",
-    "zh_CN": "当使用定时器任务时，必须设置cron",
+    "raw": "duration time out of range",
+    "en_US": "duration time out of range",
+    "zh_CN": "任务需要的时间超出范围",
     "arguments": [],
-    "line": 118,
+    "line": 116,
     "fileName": "src/main/java/org/zstack/core/scheduler/SchedulerApiInterceptor.java"
   },
   {
-    "raw": "cron task must follow format like this : \\\"0 0/3 17-23 * * ?\\\" ",
-    "en_US": "cron task must follow format like this : \\\"0 0/3 17-23 * * ?\\\" ",
-    "zh_CN": "定时器任务必须符合以下格式：\\\"0 0/3 17-23 * * ?\\\" ",
+    "raw": "interval must be positive integer",
+    "en_US": "interval must be positive integer",
+    "zh_CN": "间隔时间必须是正整数",
     "arguments": [],
-    "line": 121,
+    "line": 98,
     "fileName": "src/main/java/org/zstack/core/scheduler/SchedulerApiInterceptor.java"
   },
   {
-    "raw": "cron scheduler only need to specify cron task",
-    "en_US": "cron scheduler only need to specify cron task",
-    "zh_CN": "定时调度器（Cron Scheduler）仅需要指定定时任务（Cron Task）。",
+    "raw": "interval must be set when use simple scheduler when repeat more than once",
+    "en_US": "interval must be set when use simple scheduler when repeat more than once",
+    "zh_CN": "当简单定时任务执行超过一次时，必须设置间隔时间",
     "arguments": [],
-    "line": 124,
+    "line": 92,
+    "fileName": "src/main/java/org/zstack/core/scheduler/SchedulerApiInterceptor.java"
+  },
+  {
+    "raw": "interval must be set when use simple scheduler when repeat forever",
+    "en_US": "interval must be set when use simple scheduler when repeat forever",
+    "zh_CN": "当简单定时任务永远重复的时，必须设置间隔时间",
+    "arguments": [],
+    "line": 95,
     "fileName": "src/main/java/org/zstack/core/scheduler/SchedulerApiInterceptor.java"
   },
   {
@@ -1863,7 +2149,7 @@
     "fileName": "src/main/java/org/zstack/ha/HaManagerImpl.java"
   },
   {
-    "raw": "failed to HA start the VM[uuid:%s, name:%s], %s.A GC job will retry it in interval of % seconds",
+    "raw": "failed to HA start the VM[uuid:%s, name:%s], %s.A GC job will retry it in interval of %s seconds",
     "en_US": "failed to HA start the VM[uuid:{0}, name:{1}], {2}.A GC job will retry it in interval of {3} seconds",
     "zh_CN": "通过HA机制启动VM[uuid:{0}, name:{1}]失败, 错误原因：{2}。一个定时任务（GC job）将会以{3}秒的间隔重试。",
     "arguments": [
@@ -1872,7 +2158,7 @@
       "errorCode",
       "HaGlobalConfig.NEVER_STOP_VM_FAILURE_RETRY_DELAY.value(Long.class)"
     ],
-    "line": 561,
+    "line": 563,
     "fileName": "src/main/java/org/zstack/ha/HaManagerImpl.java"
   },
   {
@@ -1922,6 +2208,17 @@
     "fileName": "src/main/java/org/zstack/ha/HaManagerImpl.java"
   },
   {
+    "raw": "Never stop vm GC[uuid:%s] executed over %s times, you can use DeleteGCJob to cancel it",
+    "en_US": "Never stop vm GC[uuid:{0}] executed over {1} times, you can use DeleteGCJob to cancel it",
+    "zh_CN": "",
+    "arguments": [
+      "this.getUuid()",
+      "HaGlobalConfig.NEVER_STOP_VM_NOTIFICATION_RETRY_TIMES.value(Integer.class).toString()"
+    ],
+    "line": 37,
+    "fileName": "src/main/java/org/zstack/ha/NeverStopVmGC.java"
+  },
+  {
     "raw": "There is a current key for aliyun already existed, please detach it first.",
     "en_US": "There is a current key for aliyun already existed, please detach it first.",
     "zh_CN": "",
@@ -1949,14 +2246,14 @@
     "fileName": "src/main/java/org/zstack/hybrid/account/HybridAccountApiInterceptor.java"
   },
   {
-    "raw": "strategy not in : %s",
-    "en_US": "strategy not in : {0}",
+    "raw": "%s can only be called by admin account",
+    "en_US": "{0} can only be called by admin account",
     "zh_CN": "",
     "arguments": [
-      "valid"
+      "msg.getClass().getSimpleName()"
     ],
-    "line": 75,
-    "fileName": "src/main/java/org/zstack/hybrid/network/HybridNetworkApiInterceptor.java"
+    "line": 27,
+    "fileName": "src/main/java/org/zstack/hybrid/backup/HybridBackupApiInterceptor.java"
   },
   {
     "raw": "destination Cidr [%s] is existed, please check or delete it first",
@@ -2443,6 +2740,14 @@
       "BackupStorageState.Enabled"
     ],
     "line": 154,
+    "fileName": "src/main/java/org/zstack/image/ImageApiInterceptor.java"
+  },
+  {
+    "raw": "url must starts with \u0027file:///\u0027, \u0027http://\u0027, \u0027https://\u0027 or \u0027/\u0027",
+    "en_US": "url must starts with \u0027file:///\u0027, \u0027http://\u0027, \u0027https://\u0027 or \u0027/\u0027",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 149,
     "fileName": "src/main/java/org/zstack/image/ImageApiInterceptor.java"
   },
   {
@@ -3303,6 +3608,204 @@
     "fileName": "src/main/java/org/zstack/mevoco/MevocoVolumeBase.java"
   },
   {
+    "raw": "cannot find monitor trigger[uuid:%s], it may have been deleted",
+    "en_US": "cannot find monitor trigger[uuid:{0}], it may have been deleted",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getMonitorTriggerUuid()"
+    ],
+    "line": 174,
+    "fileName": "src/main/java/org/zstack/monitoring/MonitorManagerImpl.java"
+  },
+  {
+    "raw": "cannot find monitor trigger action[uuid:%s], it may have been deleted",
+    "en_US": "cannot find monitor trigger action[uuid:{0}], it may have been deleted",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getMonitorTriggerActionUuid()"
+    ],
+    "line": 183,
+    "fileName": "src/main/java/org/zstack/monitoring/MonitorManagerImpl.java"
+  },
+  {
+    "raw": "the resource[type:%s] doesn\u0027t have any monitoring items",
+    "en_US": "the resource[type:{0}] doesn\u0027t have any monitoring items",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getResourceType()"
+    ],
+    "line": 225,
+    "fileName": "src/main/java/org/zstack/monitoring/MonitorManagerImpl.java"
+  },
+  {
+    "raw": "the resource[uuid:%s] doesn\u0027t belong to the account[uuid:%s]",
+    "en_US": "the resource[uuid:{0}] doesn\u0027t belong to the account[uuid:{1}]",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getTargetResourceUuid()",
+      "msg.getSession().getAccountUuid()"
+    ],
+    "line": 292,
+    "fileName": "src/main/java/org/zstack/monitoring/MonitorManagerImpl.java"
+  },
+  {
+    "raw": "cannot find type for the resource[uuid:%s]",
+    "en_US": "cannot find type for the resource[uuid:{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "resourceUuid"
+    ],
+    "line": 335,
+    "fileName": "src/main/java/org/zstack/monitoring/MonitorManagerImpl.java"
+  },
+  {
+    "raw": "no monitoring item found for the resourceType[%s] and item[%s]",
+    "en_US": "no monitoring item found for the resourceType[{0}] and item[{1}]",
+    "zh_CN": "",
+    "arguments": [
+      "resourceType",
+      "triggerExpression.getItem()"
+    ],
+    "line": 340,
+    "fileName": "src/main/java/org/zstack/monitoring/MonitorManagerImpl.java"
+  },
+  {
+    "raw": "failed to delete monitoring stuff for the host[name:%s, uuid:%s], %s",
+    "en_US": "failed to delete monitoring stuff for the host[name:{0}, uuid:{1}], {2}",
+    "zh_CN": "",
+    "arguments": [
+      "host.getName()",
+      "host.getUuid()",
+      "errorCode"
+    ],
+    "line": 445,
+    "fileName": "src/main/java/org/zstack/monitoring/MonitorManagerImpl.java"
+  },
+  {
+    "raw": "failed to delete monitoring stuff for the vm[name:%s, uuid:%s], %s",
+    "en_US": "failed to delete monitoring stuff for the vm[name:{0}, uuid:{1}], {2}",
+    "zh_CN": "",
+    "arguments": [
+      "vm.getName()",
+      "vm.getUuid()",
+      "errorCode"
+    ],
+    "line": 508,
+    "fileName": "src/main/java/org/zstack/monitoring/MonitorManagerImpl.java"
+  },
+  {
+    "raw": "unable to fire an action[uuid:%s, trigger uuid:%s, media uuid: %s] because of",
+    "en_US": "unable to fire an action[uuid:{0}, trigger uuid:{1}, media uuid: {2}] because of",
+    "zh_CN": "",
+    "arguments": [
+      "event.getAction().getUuid()",
+      "event.getTrigger().getUuid()",
+      "event.getMedia().getUuid()",
+      "errorCode"
+    ],
+    "line": 190,
+    "fileName": "src/main/java/org/zstack/monitoring/MonitorTriggerBase.java"
+  },
+  {
+    "raw": "failed to update the monitor trigger[uuid:%s] because of %s. The trigger will be set in the error status, you can try updating again to recover it",
+    "en_US": "failed to update the monitor trigger[uuid:{0}] because of {1}. The trigger will be set in the error status, you can try updating again to recover it",
+    "zh_CN": "",
+    "arguments": [
+      "self.getUuid()",
+      "errCode"
+    ],
+    "line": 362,
+    "fileName": "src/main/java/org/zstack/monitoring/MonitorTriggerBase.java"
+  },
+  {
+    "raw": "Host CPU utilization",
+    "en_US": "Host CPU utilization",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 31,
+    "fileName": "src/main/java/org/zstack/monitoring/items/host/HostCpuUtilItem.java"
+  },
+  {
+    "raw": "VM CPU utilization",
+    "en_US": "VM CPU utilization",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 29,
+    "fileName": "src/main/java/org/zstack/monitoring/items/vm/VmCpuUtilItem.java"
+  },
+  {
+    "raw": "invalid expression: %s, %s",
+    "en_US": "invalid expression: {0}, {1}",
+    "zh_CN": "",
+    "arguments": [
+      "expr",
+      "e.getMessage()"
+    ],
+    "line": 106,
+    "fileName": "src/main/java/org/zstack/monitoring/trigger/expression/TriggerExpression.java"
+  },
+  {
+    "raw": "invalid expression: %s, no expression found",
+    "en_US": "invalid expression: {0}, no expression found",
+    "zh_CN": "",
+    "arguments": [
+      "expr"
+    ],
+    "line": 110,
+    "fileName": "src/main/java/org/zstack/monitoring/trigger/expression/TriggerExpression.java"
+  },
+  {
+    "raw": "missing parameter \u0027%s\u0027 in the expression",
+    "en_US": "missing parameter \u0027{0}\u0027 in the expression",
+    "zh_CN": "",
+    "arguments": [
+      "key"
+    ],
+    "line": 127,
+    "fileName": "src/main/java/org/zstack/monitoring/trigger/expression/TriggerExpression.java"
+  },
+  {
+    "raw": "wrong type of parameter \u0027%s\u0027 in the expression, it must be type of %s, but got %s",
+    "en_US": "wrong type of parameter \u0027{0}\u0027 in the expression, it must be type of {1}, but got {2}",
+    "zh_CN": "",
+    "arguments": [
+      "key",
+      "clz",
+      "value.getClass()"
+    ],
+    "line": 131,
+    "fileName": "src/main/java/org/zstack/monitoring/trigger/expression/TriggerExpression.java"
+  },
+  {
+    "raw": "There has been a L2VlanNetwork[uuid:%s, name:%s] attached to cluster[uuid:%s] that has physical interface[%s], vlan[%s]. Failed to attach L2VlanNetwork[uuid:%s]",
+    "en_US": "There has been a L2VlanNetwork[uuid:{0}, name:{1}] attached to cluster[uuid:{2}] that has physical interface[{3}], vlan[{4}]. Failed to attach L2VlanNetwork[uuid:{5}]",
+    "zh_CN": "L2网络挂载失败[uuid:{5}]：L2网络[uuid:{0}, name:{1}]的物理接口[{3}], vlan[{4}]已经挂载到集群[uuid:{2}]上",
+    "arguments": [
+      "vl2.getUuid()",
+      "vl2.getName()",
+      "msg.getClusterUuid()",
+      "vl2.getPhysicalInterface()",
+      "vl2.getVlan()",
+      "tl2.getUuid()"
+    ],
+    "line": 113,
+    "fileName": "src/main/java/org/zstack/network/l2/L2NetworkApiInterceptor.java"
+  },
+  {
+    "raw": "There has been a l2Network[uuid:%s, name:%s] attached to cluster[uuid:%s] that has physical interface[%s]. Failed to attach l2Network[uuid:%s]",
+    "en_US": "There has been a l2Network[uuid:{0}, name:{1}] attached to cluster[uuid:{2}] that has physical interface[{3}]. Failed to attach l2Network[uuid:{4}]",
+    "zh_CN": "L2网络挂载失败[uuid:{4}]：L2网络[uuid:{0}, name:{1}]的物理接口[{3}]]已经挂载到集群[uuid:{2}]上",
+    "arguments": [
+      "l2.getUuid()",
+      "l2.getName()",
+      "msg.getClusterUuid()",
+      "l2.getPhysicalInterface()",
+      "tl2.getUuid()"
+    ],
+    "line": 90,
+    "fileName": "src/main/java/org/zstack/network/l2/L2NetworkApiInterceptor.java"
+  },
+  {
     "raw": "l2Network[uuid:%s] has attached to cluster[uuid:%s], can\u0027t attach again",
     "en_US": "l2Network[uuid:{0}] has attached to cluster[uuid:{1}], can\u0027t attach again",
     "zh_CN": "不能再次挂载l2网络[uuid:{0}]，因为已经挂载到集群[uuid:{1}]上了",
@@ -3332,35 +3835,6 @@
       "msg.getType()"
     ],
     "line": 141,
-    "fileName": "src/main/java/org/zstack/network/l2/L2NetworkApiInterceptor.java"
-  },
-  {
-    "raw": "There has been a L2VlanNetwork[uuid:%s, name:%s] attached to cluster[uuid:%s] that has physical interface[%s], vlan[%s]. Failed to attach L2VlanNetwork[uuid:%s]",
-    "en_US": "There has been a L2VlanNetwork[uuid:{0}, name:{1}] attached to cluster[uuid:{2}] that has physical interface[{3}], vlan[{4}]. Failed to attach L2VlanNetwork[uuid:{5}]",
-    "zh_CN": "L2网络挂载失败[uuid:{5}]：L2网络[uuid:{0}, name:{1}]的物理接口[{3}], vlan[{4}]已经挂载到集群[uuid:{2}]上",
-    "arguments": [
-      "vl2.getUuid()",
-      "vl2.getName()",
-      "msg.getClusterUuid()",
-      "vl2.getPhysicalInterface()",
-      "vl2.getVlan()",
-      "tl2.getUuid()"
-    ],
-    "line": 113,
-    "fileName": "src/main/java/org/zstack/network/l2/L2NetworkApiInterceptor.java"
-  },
-  {
-    "raw": "There has been a l2Network[uuid:%s, name:%s] attached to cluster[uuid:%s] that has physical interface[%s]. Failed to attach l2Network[uuid:%s]",
-    "en_US": "There has been a l2Network[uuid:{0}, name:{1}] attached to cluster[uuid:{2}] that has physical interface[{3}]. Failed to attach l2Network[uuid:{4}]",
-    "zh_CN": "L2网络挂载失败[uuid:{4}]：L2网络[uuid:{0}, name:{1}]的物理接口[{3}]]已经挂载到集群[uuid:{2}]上",
-    "arguments": [
-      "l2.getUuid()",
-      "l2.getName()",
-      "msg.getClusterUuid()",
-      "l2.getPhysicalInterface()",
-      "tl2.getUuid()"
-    ],
-    "line": 90,
     "fileName": "src/main/java/org/zstack/network/l2/L2NetworkApiInterceptor.java"
   },
   {
@@ -3633,7 +4107,7 @@
   {
     "raw": "security group[uuid:%s] has not attached to l3Network[uuid:%s], can\u0027t detach",
     "en_US": "security group[uuid:{0}] has not attached to l3Network[uuid:{1}], can\u0027t detach",
-    "zh_CN": "不能卸载安全组[uuid:{0}]到L3[uuid:{1}]网络上，因为已经挂载了",
+    "zh_CN": "不能卸载安全组[uuid:{0}]到L3[uuid:{1}]网络上，因为还未挂载",
     "arguments": [
       "msg.getSecurityGroupUuid()",
       "msg.getL3NetworkUuid()"
@@ -3666,7 +4140,7 @@
   {
     "raw": "VM nics[uuids:%s] are not on L3 networks that have been attached to the security group[uuid:%s]",
     "en_US": "VM nics[uuids:{0}] are not on L3 networks that have been attached to the security group[uuid:{1}]",
-    "zh_CN": "云主机网卡[uuids:{0}]不在已经挂载到安全组[uuid:{1}]的L3网络上",
+    "zh_CN": "云主机网卡[uuids:{0}]不在安全组[uuid:{1}]挂载的L3网络上",
     "arguments": [
       "wrongUuids",
       "securityGroupUuid"
@@ -3706,14 +4180,24 @@
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
-    "raw": "invalid protocol[%s]. Valid protocols are [TCP, UDP, ICMP]. rule dump: %s",
-    "en_US": "invalid protocol[{0}]. Valid protocols are [TCP, UDP, ICMP]. rule dump: {1}",
-    "zh_CN": "无效的协议(protocol)[{0}]。有效的协议类型为[TCP,UDP,ICMP]。规则内容为：{1}。",
+    "raw": "invalid protocol[%s]. Valid protocols are [TCP, UDP, ICMP, ALL]. rule dump: %s",
+    "en_US": "invalid protocol[{0}]. Valid protocols are [TCP, UDP, ICMP, ALL]. rule dump: {1}",
+    "zh_CN": "无效的协议(protocol)[{0}]。有效的协议类型为[TCP,UDP,ICMP,ALL]。规则内容为：{1}。",
     "arguments": [
       "ao.getProtocol()",
       "JSONObjectUtil.toJsonString(ao)"
     ],
-    "line": 218,
+    "line": 222,
+    "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
+  },
+  {
+    "raw": "can not set port for protocol [type:ALL]. rule dump: %s",
+    "en_US": "can not set port for protocol [type:ALL]. rule dump: {0}",
+    "zh_CN": "不能为协议类型为 ALL 的规则指定端口号，规则为:{0}",
+    "arguments": [
+      "JSONObjectUtil.toJsonString(ao)"
+    ],
+    "line": 229,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -3792,13 +4276,14 @@
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
-    "raw": "rule exist. rule dump: %s",
-    "en_US": "rule exist. rule dump: {0}",
-    "zh_CN": "规则已经存在。规则内容为：{0}。",
+    "raw": "rule exist. rule dump: %s, remoteSecurityGroupUuid:[%s]",
+    "en_US": "rule exist. rule dump: {0}, remoteSecurityGroupUuid:[{1}]",
+    "zh_CN": "规则已存在，规则内容为:{0}，源安全组[uuid:{1}]",
     "arguments": [
-      "JSONObjectUtil.toJsonString(sao)"
+      "JSONObjectUtil.toJsonString(sao)",
+      "svo.getRemoteSecurityGroupUuid()"
     ],
-    "line": 285,
+    "line": 303,
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
   },
   {
@@ -3948,8 +4433,8 @@
     "fileName": "src/main/java/org/zstack/network/service/eip/EipApiInterceptor.java"
   },
   {
-    "raw": "overlap public and private subnets. The subnet of EIP[%s] is an overlap with the subnet[%s/%s] of the VM nic[uuid:%s].",
-    "en_US": "overlap public and private subnets. The subnet of EIP[{0}] is an overlap with the subnet[{1}/{2}] of the VM nic[uuid:{3}].",
+    "raw": "overlap public and private subnets. The subnet of EIP[%s] is an overlap with the subnet[%s/%s] of the VM nic[uuid: %s].",
+    "en_US": "overlap public and private subnets. The subnet of EIP[{0}] is an overlap with the subnet[{1}/{2}] of the VM nic[uuid: {3}].",
     "zh_CN": "公共网络和私有网络的子网重叠。EIP[{0}]的子网与虚拟机网卡[{uuid:3}]的子网[{1}/{2}]重叠。",
     "arguments": [
       "eipIp",
@@ -3957,7 +4442,7 @@
       "netmask",
       "vmNicUuid"
     ],
-    "line": 165,
+    "line": 149,
     "fileName": "src/main/java/org/zstack/network/service/eip/EipApiInterceptor.java"
   },
   {
@@ -4537,6 +5022,16 @@
     ],
     "line": 199,
     "fileName": "src/main/java/org/zstack/network/service/vip/VipBase.java"
+  },
+  {
+    "raw": "no qos about [vip:%s]is setting",
+    "en_US": "no qos about [vip:{0}]is setting",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getVipUuid()"
+    ],
+    "line": 31,
+    "fileName": "src/main/java/org/zstack/network/service/vip/VipQosApiInterceptor.java"
   },
   {
     "raw": "the virtual router[name:%s, uuid:%s, current state:%s] is not running,and cannot perform required operation. Please retry your operation later once it is running",
@@ -5204,6 +5699,340 @@
     "fileName": "src/main/java/org/zstack/prometheus/PrometheusManagerImpl.java"
   },
   {
+    "raw": "prometheus query error: %s",
+    "en_US": "prometheus query error: {0}",
+    "zh_CN": "",
+    "arguments": [
+      "ret.get(\"error\")"
+    ],
+    "line": 450,
+    "fileName": "src/main/java/org/zstack/prometheus/PrometheusManagerImpl.java"
+  },
+  {
+    "raw": "conflict alert rule[%s], there has been a rule[%s] with the same name",
+    "en_US": "conflict alert rule[{0}], there has been a rule[{1}] with the same name",
+    "zh_CN": "",
+    "arguments": [
+      "rb.name",
+      "r"
+    ],
+    "line": 115,
+    "fileName": "src/main/java/org/zstack/prometheus/monitoring/AlertRuleWriter.java"
+  },
+  {
+    "raw": "ALERT:\n resource[name: %s, uuid: %s, type: %s]\nevent: %s %s %s\ncurrent value: %s\nduration: %s seconds\n",
+    "en_US": "ALERT:\n resource[name: {0}, uuid: {1}, type: {2}]\nevent: {3} {4} {5}\ncurrent value: {6}\nduration: {7} seconds\n",
+    "zh_CN": "",
+    "arguments": [
+      "resourceName",
+      "resourceUuid",
+      "toI18nString(resourceType)",
+      "itemName",
+      "toI18nString(expression.getOperator())",
+      "expression.getConstant()",
+      "value",
+      "tvo.getDuration()"
+    ],
+    "line": 61,
+    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusAlert.java"
+  },
+  {
+    "raw": "A host[name: {name}, uuid: {hostUuid}]\u0027s CPU utilization reaches the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}]. Current CPU utilization is {value}, please handle it as soon as possible.",
+    "en_US": "A host[name: {name}, uuid: {hostUuid}]\u0027s CPU utilization reaches the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}]. Current CPU utilization is {value}, please handle it as soon as possible.",
+    "zh_CN": "",
+    "arguments": [
+      "args"
+    ],
+    "line": 42,
+    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusHostCpuUtilAlertWriter.java"
+  },
+  {
+    "raw": "A host[name: {name}, uuid: {hostUuid}]\u0027s CPU utilization recovers from a previous alert,current CPU utilization is {value} that doesn\u0027t reach the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}].",
+    "en_US": "A host[name: {name}, uuid: {hostUuid}]\u0027s CPU utilization recovers from a previous alert,current CPU utilization is {value} that doesn\u0027t reach the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}].",
+    "zh_CN": "",
+    "arguments": [
+      "args"
+    ],
+    "line": 71,
+    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusHostCpuUtilAlertWriter.java"
+  },
+  {
+    "raw": "invalid cpu[%s], the host[uuid:%s] doesn\u0027t have a CPU numbered by %s",
+    "en_US": "invalid cpu[{0}], the host[uuid:{1}] doesn\u0027t have a CPU numbered by {2}",
+    "zh_CN": "",
+    "arguments": [
+      "cpu",
+      "trigger.getTargetResourceUuid()",
+      "cpuNum"
+    ],
+    "line": 58,
+    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusHostCpuUtilItem.java"
+  },
+  {
+    "raw": "host.disk.io.direction",
+    "en_US": "host.disk.io.direction",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 50,
+    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusHostDiskIOAlertWriter.java"
+  },
+  {
+    "raw": "A host[name: {name}, uuid: {hostUuid}]\u0027s disk {host.disk.io.direction} bandwidth reaches the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}]. Current disk bandwidth is {value}, please handle it as soon as possible.",
+    "en_US": "A host[name: {name}, uuid: {hostUuid}]\u0027s disk {host.disk.io.direction} bandwidth reaches the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}]. Current disk bandwidth is {value}, please handle it as soon as possible.",
+    "zh_CN": "",
+    "arguments": [
+      "args"
+    ],
+    "line": 57,
+    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusHostDiskIOAlertWriter.java"
+  },
+  {
+    "raw": "A host[name: {name}, uuid: {hostUuid}]\u0027s disk {host.disk.io.direction} IOPS reaches the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}]. Current disk IOPS is {value}, please handle it as soon as possible.",
+    "en_US": "A host[name: {name}, uuid: {hostUuid}]\u0027s disk {host.disk.io.direction} IOPS reaches the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}]. Current disk IOPS is {value}, please handle it as soon as possible.",
+    "zh_CN": "",
+    "arguments": [
+      "args"
+    ],
+    "line": 53,
+    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusHostDiskIOAlertWriter.java"
+  },
+  {
+    "raw": "A host[name: {name}, uuid: {hostUuid}]\u0027s {host.disk.io.direction} bandwidth recovers from a previous alert,current disk bandwidth is {value} that doesn\u0027t reach the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}].",
+    "en_US": "A host[name: {name}, uuid: {hostUuid}]\u0027s {host.disk.io.direction} bandwidth recovers from a previous alert,current disk bandwidth is {value} that doesn\u0027t reach the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}].",
+    "zh_CN": "",
+    "arguments": [
+      "args"
+    ],
+    "line": 100,
+    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusHostDiskIOAlertWriter.java"
+  },
+  {
+    "raw": "A host[name: {name}, uuid: {hostUuid}]\u0027s {host.disk.io.direction} IOPS recovers from a previous alert,current disk IOPS is {value} that doesn\u0027t reach the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}].",
+    "en_US": "A host[name: {name}, uuid: {hostUuid}]\u0027s {host.disk.io.direction} IOPS recovers from a previous alert,current disk IOPS is {value} that doesn\u0027t reach the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}].",
+    "zh_CN": "",
+    "arguments": [
+      "args"
+    ],
+    "line": 96,
+    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusHostDiskIOAlertWriter.java"
+  },
+  {
+    "raw": "A host[name: {name}, uuid: {hostUuid}]\u0027s memory utilization reaches the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}]. Current memory utilization is {value}, please handle it as soon as possible.",
+    "en_US": "A host[name: {name}, uuid: {hostUuid}]\u0027s memory utilization reaches the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}]. Current memory utilization is {value}, please handle it as soon as possible.",
+    "zh_CN": "",
+    "arguments": [
+      "args"
+    ],
+    "line": 42,
+    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusHostMemUtilAlertWriter.java"
+  },
+  {
+    "raw": "A host[name: {name}, uuid: {hostUuid}]\u0027s memory utilization recovers from a previous alert,current CPU utilization is {value} that doesn\u0027t reach the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}].",
+    "en_US": "A host[name: {name}, uuid: {hostUuid}]\u0027s memory utilization recovers from a previous alert,current CPU utilization is {value} that doesn\u0027t reach the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}].",
+    "zh_CN": "",
+    "arguments": [
+      "args"
+    ],
+    "line": 71,
+    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusHostMemUtilAlertWriter.java"
+  },
+  {
+    "raw": "host.network.io.direction",
+    "en_US": "host.network.io.direction",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 49,
+    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusHostNetworkIOAlertWriter.java"
+  },
+  {
+    "raw": "A host[name: {name}, uuid: {hostUuid}]\u0027s network {host.network.io.direction} bandwidth reaches the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}]. Current network bandwidth is {value}, please handle it as soon as possible.",
+    "en_US": "A host[name: {name}, uuid: {hostUuid}]\u0027s network {host.network.io.direction} bandwidth reaches the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}]. Current network bandwidth is {value}, please handle it as soon as possible.",
+    "zh_CN": "",
+    "arguments": [
+      "args"
+    ],
+    "line": 51,
+    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusHostNetworkIOAlertWriter.java"
+  },
+  {
+    "raw": "A host[name: {name}, uuid: {hostUuid}]\u0027s {host.network.io.direction} bandwidth recovers from a previous alert,current network bandwidth utilization is {value} that doesn\u0027t reach the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}].",
+    "en_US": "A host[name: {name}, uuid: {hostUuid}]\u0027s {host.network.io.direction} bandwidth recovers from a previous alert,current network bandwidth utilization is {value} that doesn\u0027t reach the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}].",
+    "zh_CN": "",
+    "arguments": [
+      "args"
+    ],
+    "line": 85,
+    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusHostNetworkIOAlertWriter.java"
+  },
+  {
+    "raw": "A virtual machine[name: {name}, uuid: {vmUuid}]\u0027s CPU utilization reaches the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}]. Current CPU utilization is {value}, please handle it as soon as possible.",
+    "en_US": "A virtual machine[name: {name}, uuid: {vmUuid}]\u0027s CPU utilization reaches the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}]. Current CPU utilization is {value}, please handle it as soon as possible.",
+    "zh_CN": "",
+    "arguments": [
+      "args"
+    ],
+    "line": 42,
+    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusVmCpuUtilAlertWriter.java"
+  },
+  {
+    "raw": "A virtual machine[name: {name}, uuid: {vmUuid}]\u0027s CPU utilization recovers from a previous alert,current CPU utilization is {value} that doesn\u0027t reach the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}].",
+    "en_US": "A virtual machine[name: {name}, uuid: {vmUuid}]\u0027s CPU utilization recovers from a previous alert,current CPU utilization is {value} that doesn\u0027t reach the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}].",
+    "zh_CN": "",
+    "arguments": [
+      "args"
+    ],
+    "line": 71,
+    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusVmCpuUtilAlertWriter.java"
+  },
+  {
+    "raw": "vm.disk.io.direction",
+    "en_US": "vm.disk.io.direction",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 50,
+    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusVmDiskIOAlertWriter.java"
+  },
+  {
+    "raw": "A virtual machine[name: {name}, uuid: {vmUuid}]\u0027s disk {vm.disk.io.direction} bandwidth reaches the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}]. Current disk bandwidth is {value}, please handle it as soon as possible.",
+    "en_US": "A virtual machine[name: {name}, uuid: {vmUuid}]\u0027s disk {vm.disk.io.direction} bandwidth reaches the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}]. Current disk bandwidth is {value}, please handle it as soon as possible.",
+    "zh_CN": "",
+    "arguments": [
+      "args"
+    ],
+    "line": 57,
+    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusVmDiskIOAlertWriter.java"
+  },
+  {
+    "raw": "A virtual machine[name: {name}, uuid: {vmUuid}]\u0027s disk {vm.disk.io.direction} IOPS reaches the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}]. Current disk IOPS is {value}, please handle it as soon as possible.",
+    "en_US": "A virtual machine[name: {name}, uuid: {vmUuid}]\u0027s disk {vm.disk.io.direction} IOPS reaches the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}]. Current disk IOPS is {value}, please handle it as soon as possible.",
+    "zh_CN": "",
+    "arguments": [
+      "args"
+    ],
+    "line": 53,
+    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusVmDiskIOAlertWriter.java"
+  },
+  {
+    "raw": "A virtual machine[name: {name}, uuid: {vmUuid}]\u0027s {vm.disk.io.direction} bandwidth recovers from a previous alert,current disk bandwidth is {value} that doesn\u0027t reach the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}].",
+    "en_US": "A virtual machine[name: {name}, uuid: {vmUuid}]\u0027s {vm.disk.io.direction} bandwidth recovers from a previous alert,current disk bandwidth is {value} that doesn\u0027t reach the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}].",
+    "zh_CN": "",
+    "arguments": [
+      "args"
+    ],
+    "line": 100,
+    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusVmDiskIOAlertWriter.java"
+  },
+  {
+    "raw": "A virtual machine[name: {name}, uuid: {vmUuid}]\u0027s {vm.disk.io.direction} IOPS recovers from a previous alert,current disk IOPS is {value} that doesn\u0027t reach the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}].",
+    "en_US": "A virtual machine[name: {name}, uuid: {vmUuid}]\u0027s {vm.disk.io.direction} IOPS recovers from a previous alert,current disk IOPS is {value} that doesn\u0027t reach the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}].",
+    "zh_CN": "",
+    "arguments": [
+      "args"
+    ],
+    "line": 96,
+    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusVmDiskIOAlertWriter.java"
+  },
+  {
+    "raw": "invalid type[%s], only %s are allowed",
+    "en_US": "invalid type[{0}], only {1} are allowed",
+    "zh_CN": "",
+    "arguments": [
+      "type",
+      "ALLOWED_TYPES"
+    ],
+    "line": 21,
+    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusVmDiskIOItem.java"
+  },
+  {
+    "raw": "A virtual machine[name: {name}, uuid: {vmUuid}]\u0027s memory utilization reaches the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}]. Current CPU utilization is {value}, please handle it as soon as possible.",
+    "en_US": "A virtual machine[name: {name}, uuid: {vmUuid}]\u0027s memory utilization reaches the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}]. Current CPU utilization is {value}, please handle it as soon as possible.",
+    "zh_CN": "",
+    "arguments": [
+      "args"
+    ],
+    "line": 42,
+    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusVmMemUtilAlertWriter.java"
+  },
+  {
+    "raw": "A virtual machine[name: {name}, uuid: {vmUuid}]\u0027s memory utilization recovers from a previous alert,current CPU utilization is {value} that doesn\u0027t reach the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}].",
+    "en_US": "A virtual machine[name: {name}, uuid: {vmUuid}]\u0027s memory utilization recovers from a previous alert,current CPU utilization is {value} that doesn\u0027t reach the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}].",
+    "zh_CN": "",
+    "arguments": [
+      "args"
+    ],
+    "line": 71,
+    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusVmMemUtilAlertWriter.java"
+  },
+  {
+    "raw": "invalid right value[%s], it must be a float or double number",
+    "en_US": "invalid right value[{0}], it must be a float or double number",
+    "zh_CN": "",
+    "arguments": [
+      "expression.getConstant()"
+    ],
+    "line": 53,
+    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusVmMemUtilItem.java"
+  },
+  {
+    "raw": "invalid right value[%s], it must be float or double number greater than zero and lesser than one",
+    "en_US": "invalid right value[{0}], it must be float or double number greater than zero and lesser than one",
+    "zh_CN": "",
+    "arguments": [
+      "expression.getConstant()"
+    ],
+    "line": 49,
+    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusVmMemUtilItem.java"
+  },
+  {
+    "raw": "vm.network.io.direction",
+    "en_US": "vm.network.io.direction",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 49,
+    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusVmNetworkIOAlertWriter.java"
+  },
+  {
+    "raw": "A virtual machine[name: {name}, uuid: {vmUuid}]\u0027s network {vm.network.io.direction} bandwidth reaches the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}]. Current network bandwidth is {value}, please handle it as soon as possible.",
+    "en_US": "A virtual machine[name: {name}, uuid: {vmUuid}]\u0027s network {vm.network.io.direction} bandwidth reaches the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}]. Current network bandwidth is {value}, please handle it as soon as possible.",
+    "zh_CN": "",
+    "arguments": [
+      "args"
+    ],
+    "line": 51,
+    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusVmNetworkIOAlertWriter.java"
+  },
+  {
+    "raw": "A virtual machine[name: {name}, uuid: {vmUuid}]\u0027s {vm.network.io.direction} bandwidth recovers from a previous alert,current network bandwidth utilization is {value} that doesn\u0027t reach the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}].",
+    "en_US": "A virtual machine[name: {name}, uuid: {vmUuid}]\u0027s {vm.network.io.direction} bandwidth recovers from a previous alert,current network bandwidth utilization is {value} that doesn\u0027t reach the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}].",
+    "zh_CN": "",
+    "arguments": [
+      "args"
+    ],
+    "line": 85,
+    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusVmNetworkIOAlertWriter.java"
+  },
+  {
+    "raw": "invalid right value[%s], it must be a number(int, long, float, double)",
+    "en_US": "invalid right value[{0}], it must be a number(int, long, float, double)",
+    "zh_CN": "",
+    "arguments": [
+      "expression.getConstant()"
+    ],
+    "line": 24,
+    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusVmNetworkIOItem.java"
+  },
+  {
+    "raw": "invalid direction[%s], only %s are allowed",
+    "en_US": "invalid direction[{0}], only {1} are allowed",
+    "zh_CN": "",
+    "arguments": [
+      "dir",
+      "ALLOWED_DIRECTION"
+    ],
+    "line": 20,
+    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusVmNetworkIOItem.java"
+  },
+  {
     "raw": "condition name[%s] is invalid, no such field on inventory class[%s]",
     "en_US": "condition name[{0}] is invalid, no such field on inventory class[{1}]",
     "zh_CN": "条件名[{0}]非法，在清单类里面没有这个阈",
@@ -5258,6 +6087,143 @@
     ],
     "line": 257,
     "fileName": "src/main/java/org/zstack/query/QueryFacadeImpl.java"
+  },
+  {
+    "raw": "This trigger[uuid:%s] is added to some job, please remove it first",
+    "en_US": "This trigger[uuid:{0}] is added to some job, please remove it first",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getUuid()"
+    ],
+    "line": 58,
+    "fileName": "src/main/java/org/zstack/scheduler/SchedulerApiInterceptor.java"
+  },
+  {
+    "raw": "Can not add job[uuid:%s] twice to the same trigger[uuid:%s]",
+    "en_US": "Can not add job[uuid:{0}] twice to the same trigger[uuid:{1}]",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getSchedulerJobUuid()",
+      "msg.getSchedulerTriggerUuid()"
+    ],
+    "line": 69,
+    "fileName": "src/main/java/org/zstack/scheduler/SchedulerApiInterceptor.java"
+  },
+  {
+    "raw": "repeat count must be positive integer",
+    "en_US": "repeat count must be positive integer",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 93,
+    "fileName": "src/main/java/org/zstack/scheduler/SchedulerApiInterceptor.java"
+  },
+  {
+    "raw": "vm[uuid:%s] changed state to Running from Unknown, resume all its scheduler job",
+    "en_US": "vm[uuid:{0}] changed state to Running from Unknown, resume all its scheduler job",
+    "zh_CN": "",
+    "arguments": [
+      "vm.getUuid()"
+    ],
+    "line": 692,
+    "fileName": "src/main/java/org/zstack/scheduler/SchedulerFacadeImpl.java"
+  },
+  {
+    "raw": "vm[uuid:%s] changed state to Unknown from Running, pause all its scheduler job",
+    "en_US": "vm[uuid:{0}] changed state to Unknown from Running, pause all its scheduler job",
+    "zh_CN": "",
+    "arguments": [
+      "vm.getUuid()"
+    ],
+    "line": 685,
+    "fileName": "src/main/java/org/zstack/scheduler/SchedulerFacadeImpl.java"
+  },
+  {
+    "raw": "Create snap shot of volume[uuid:%s] failed [executed time:%s]",
+    "en_US": "Create snap shot of volume[uuid:{0}] failed [executed time:{1}]",
+    "zh_CN": "",
+    "arguments": [
+      "volumeUuid",
+      "new Date().toString()"
+    ],
+    "line": 62,
+    "fileName": "src/main/java/org/zstack/scheduler/storage/volume/snapshot/CreateVolumeSnapshotJob.java"
+  },
+  {
+    "raw": "Create snap shot of volume[uuid:%s] succeed [executed time:%s]",
+    "en_US": "Create snap shot of volume[uuid:{0}] succeed [executed time:{1}]",
+    "zh_CN": "",
+    "arguments": [
+      "volumeUuid",
+      "new Date().toString()"
+    ],
+    "line": 59,
+    "fileName": "src/main/java/org/zstack/scheduler/storage/volume/snapshot/CreateVolumeSnapshotJob.java"
+  },
+  {
+    "raw": "Reboot vm instance job for vm[uuid:%s] failed [executed time:%s]",
+    "en_US": "Reboot vm instance job for vm[uuid:{0}] failed [executed time:{1}]",
+    "zh_CN": "",
+    "arguments": [
+      "vmUuid",
+      "new Date().toString()"
+    ],
+    "line": 51,
+    "fileName": "src/main/java/org/zstack/scheduler/vm/RebootVmInstanceJob.java"
+  },
+  {
+    "raw": "Reboot vm instance job for vm[uuid:%s] succeed [executed time:%s]",
+    "en_US": "Reboot vm instance job for vm[uuid:{0}] succeed [executed time:{1}]",
+    "zh_CN": "",
+    "arguments": [
+      "vmUuid",
+      "new Date().toString()"
+    ],
+    "line": 48,
+    "fileName": "src/main/java/org/zstack/scheduler/vm/RebootVmInstanceJob.java"
+  },
+  {
+    "raw": "Start vm instance job for vm[uuid:%s] failed [executed time:%s]",
+    "en_US": "Start vm instance job for vm[uuid:{0}] failed [executed time:{1}]",
+    "zh_CN": "",
+    "arguments": [
+      "vmUuid",
+      "new Date().toString()"
+    ],
+    "line": 52,
+    "fileName": "src/main/java/org/zstack/scheduler/vm/StartVmInstanceJob.java"
+  },
+  {
+    "raw": "Start vm instance job for vm[uuid:%s] succeed [executed time:%s]",
+    "en_US": "Start vm instance job for vm[uuid:{0}] succeed [executed time:{1}]",
+    "zh_CN": "",
+    "arguments": [
+      "vmUuid",
+      "new Date().toString()"
+    ],
+    "line": 49,
+    "fileName": "src/main/java/org/zstack/scheduler/vm/StartVmInstanceJob.java"
+  },
+  {
+    "raw": "Stop vm instance job for vm[uuid:%s] failed [executed time:%s]",
+    "en_US": "Stop vm instance job for vm[uuid:{0}] failed [executed time:{1}]",
+    "zh_CN": "",
+    "arguments": [
+      "vmUuid",
+      "new Date().toString()"
+    ],
+    "line": 55,
+    "fileName": "src/main/java/org/zstack/scheduler/vm/StopVmInstanceJob.java"
+  },
+  {
+    "raw": "Stop vm instance job for vm[uuid:%s] succeed [executed time:%s]",
+    "en_US": "Stop vm instance job for vm[uuid:{0}] succeed [executed time:{1}]",
+    "zh_CN": "",
+    "arguments": [
+      "vmUuid",
+      "new Date().toString()"
+    ],
+    "line": 52,
+    "fileName": "src/main/java/org/zstack/scheduler/vm/StopVmInstanceJob.java"
   },
   {
     "raw": "%s should not be null",
@@ -5949,6 +6915,16 @@
     "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageApiInterceptor.java"
   },
   {
+    "raw": "url[%s] has been occupied, it cannot be duplicate in same cluster",
+    "en_US": "url[{0}] has been occupied, it cannot be duplicate in same cluster",
+    "zh_CN": "",
+    "arguments": [
+      "url"
+    ],
+    "line": 155,
+    "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageApiInterceptor.java"
+  },
+  {
     "raw": "primary storage[uuid:%s] cannot be deleted for still being attached to cluster[uuid:%s].",
     "en_US": "primary storage[uuid:{0}] cannot be deleted for still being attached to cluster[uuid:{1}].",
     "zh_CN": "不能删除主存储[uuid:{0}]，因为它还被加载在集群[uuid:{1}]上",
@@ -6153,6 +7129,30 @@
     ],
     "line": 67,
     "fileName": "src/main/java/org/zstack/storage/primary/imagestore/smp/KvmAgentCommandDispatcher.java"
+  },
+  {
+    "raw": "The cluster mounts multiple primary storage[%s(%s), other non-LocalStorage primary storage], primaryStorageUuidForDataVolume cannot be specified %s",
+    "en_US": "The cluster mounts multiple primary storage[{0}({1}), other non-LocalStorage primary storage], primaryStorageUuidForDataVolume cannot be specified {2}",
+    "zh_CN": "",
+    "arguments": [
+      "requiredPrimaryStorageUuidForDataVolume.getUuid()",
+      "requiredPrimaryStorageUuidForDataVolume.getType()",
+      "LocalStorageConstants.LOCAL_STORAGE_TYPE"
+    ],
+    "line": 175,
+    "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageAllocateCapacityFlow.java"
+  },
+  {
+    "raw": "There is no LocalStorage primary storage[state\u003d%s,status\u003d%s] on the cluster[%s]. Check the state/status of primary storage and make sure they have been attached to clusters",
+    "en_US": "There is no LocalStorage primary storage[state\u003d{0},status\u003d{1}] on the cluster[{2}]. Check the state/status of primary storage and make sure they have been attached to clusters",
+    "zh_CN": "",
+    "arguments": [
+      "PrimaryStorageState.Enabled",
+      "PrimaryStorageStatus.Connected",
+      "clusterUuid"
+    ],
+    "line": 95,
+    "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageAllocateCapacityFlow.java"
   },
   {
     "raw": "the type of primary storage[uuid:%s] chosen is not local storage, check if the resource can be created on other storage when cluster has attached local primary storage",
@@ -6506,17 +7506,6 @@
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsApiParamChecker.java"
   },
   {
-    "raw": "there are %s running VMs on the NFS primary storage, please stop them and try again:\n%s\n",
-    "en_US": "there are {0} running VMs on the NFS primary storage, please stop them and try again:\n{1}\n",
-    "zh_CN": "在NFS主存储上有{0}个运行中的VM，请先手动关闭再尝试：\n{1}\n。",
-    "arguments": [
-      "vms.size()",
-      "StringUtils.join(vms, \"\\n\")"
-    ],
-    "line": 232,
-    "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorage.java"
-  },
-  {
     "raw": "cannot find usable backend",
     "en_US": "cannot find usable backend",
     "zh_CN": "无法找到可用的NFS主存储后端。",
@@ -6638,6 +7627,17 @@
       "self.getName()"
     ],
     "line": 1209,
+    "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorage.java"
+  },
+  {
+    "raw": "there are %s running VMs on the NFS primary storage, please stop them and try again:\n%s\n",
+    "en_US": "there are {0} running VMs on the NFS primary storage, please stop them and try again:\n{1}\n",
+    "zh_CN": "在NFS主存储上有{0}个运行中的VM，请先手动关闭再尝试：\n{1}\n。",
+    "arguments": [
+      "vms.size()",
+      "StringUtils.join(vms, \"\\n\")"
+    ],
+    "line": 232,
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorage.java"
   },
   {
@@ -6802,18 +7802,30 @@
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorageKVMBackend.java"
   },
   {
-    "raw": "unable to update the nfs[uuid:%s, name:%s] mount point from %s to %s on the host[uuid:%s], %s. Put the host-nfs into Disconnected state",
-    "en_US": "unable to update the nfs[uuid:{0}, name:{1}] mount point from {2} to {3} on the host[uuid:{4}], {5}. Put the host-nfs into Disconnected state",
-    "zh_CN": "无法在物理机[uuid:{4}]上将NFS主存储[uuid:{0}, name:{1}]的挂载点从{2}更新为{3}，错误细节：{5}。将该 物理机-主存储 连接置为Disconnected状态。",
+    "raw": "unable to update the nfs[uuid:%s, name:%s] mount point from %s to %s on the host[uuid:%s], %s. Put the host-nfs into Disconnected status",
+    "en_US": "unable to update the nfs[uuid:{0}, name:{1}] mount point from {2} to {3} on the host[uuid:{4}], {5}. Put the host-nfs into Disconnected status",
+    "zh_CN": "",
     "arguments": [
       "pinv.getUuid()",
       "pinv.getName()",
       "oldMountPoint",
       "newMountPoint",
-      "errorCode",
-      "hostUuid"
+      "hostUuid",
+      "errorCode"
     ],
-    "line": 1229,
+    "line": 1161,
+    "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorageKVMBackend.java"
+  },
+  {
+    "raw": "fail to mount nfs[uuid:%s] from host[uuid:%s], because:%s",
+    "en_US": "fail to mount nfs[uuid:{0}] from host[uuid:{1}], because:{2}",
+    "zh_CN": "",
+    "arguments": [
+      "inv.getUuid()",
+      "huuid",
+      "errorCode.toString()"
+    ],
+    "line": 1239,
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorageKVMBackend.java"
   },
   {
@@ -6897,6 +7909,16 @@
     "fileName": "src/main/java/org/zstack/storage/primary/smp/KvmBackend.java"
   },
   {
+    "raw": "hosts[uuid:%s] have the same mount path, but actually mount different storage.",
+    "en_US": "hosts[uuid:{0}] have the same mount path, but actually mount different storage.",
+    "zh_CN": "",
+    "arguments": [
+      "ret.firstAccessHostUuids"
+    ],
+    "line": 1376,
+    "fileName": "src/main/java/org/zstack/storage/primary/smp/KvmBackend.java"
+  },
+  {
     "raw": "the shared mount point primary storage[uuid:%s, name:%s] cannot find any available host in attached clusters for instantiating the volume",
     "en_US": "the shared mount point primary storage[uuid:{0}, name:{1}] cannot find any available host in attached clusters for instantiating the volume",
     "zh_CN": "共享挂载点主存储[uuid:{0}, name:{1}]在挂载的集群中找不到任何可用的物理机来实例化云盘",
@@ -6926,6 +7948,58 @@
     ],
     "line": 101,
     "fileName": "src/main/java/org/zstack/storage/primary/smp/SMPPrimaryStorageFactory.java"
+  },
+  {
+    "raw": "KVM host[uuid: %s] fails to be added to zses primary storage[uuid: %s], %s",
+    "en_US": "KVM host[uuid: {0}] fails to be added to zses primary storage[uuid: {1}], {2}",
+    "zh_CN": "",
+    "arguments": [
+      "context.getInventory().getUuid()",
+      "priUuid",
+      "reply.getError()"
+    ],
+    "line": 94,
+    "fileName": "src/main/java/org/zstack/storage/primary/zses/ZsesKvmFactory.java"
+  },
+  {
+    "raw": "destination host is null",
+    "en_US": "destination host is null",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 499,
+    "fileName": "src/main/java/org/zstack/storage/primary/zses/ZsesPrimaryStorageBase.java"
+  },
+  {
+    "raw": "unable to create the data volume[uuid: %s] on a zses primary storage[uuid:%s], because the hostUuid is not specified.",
+    "en_US": "unable to create the data volume[uuid: {0}] on a zses primary storage[uuid:{1}], because the hostUuid is not specified.",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getVolumeUuid()",
+      "self.getUuid()"
+    ],
+    "line": 621,
+    "fileName": "src/main/java/org/zstack/storage/primary/zses/ZsesPrimaryStorageBase.java"
+  },
+  {
+    "raw": "To create data volume on the zses primary storage, you must specify the host that the data volume is going to be created using the system tag [%s]",
+    "en_US": "To create data volume on the zses primary storage, you must specify the host that the data volume is going to be created using the system tag [{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME.getTagFormat()"
+    ],
+    "line": 158,
+    "fileName": "src/main/java/org/zstack/storage/primary/zses/ZsesPrimaryStorageFactory.java"
+  },
+  {
+    "raw": "the host[uuid:%s] doesn\u0027t belong to the zses primary storage[uuid:%s]",
+    "en_US": "the host[uuid:{0}] doesn\u0027t belong to the zses primary storage[uuid:{1}]",
+    "zh_CN": "",
+    "arguments": [
+      "hostUuid",
+      "msg.getPrimaryStorageUuid()"
+    ],
+    "line": 168,
+    "fileName": "src/main/java/org/zstack/storage/primary/zses/ZsesPrimaryStorageFactory.java"
   },
   {
     "raw": "volume snapshot[uuid:%s] is not on primary storage, cannot be backed up",

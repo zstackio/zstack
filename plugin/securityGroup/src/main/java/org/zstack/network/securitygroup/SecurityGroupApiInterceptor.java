@@ -195,10 +195,6 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APIAddSecurityGroupRuleMsg msg) {
-        if(msg.getRemoteSecurityGroupUuids() != null && msg.getRemoteSecurityGroupUuids().contains(msg.getSecurityGroupUuid())){
-            throw new ApiMessageInterceptionException(argerr("remote security group cannot be itself"));
-        }
-
         // Basic check
         for (SecurityGroupRuleAO ao : msg.getRules()) {
             if (ao.getType() == null) {
