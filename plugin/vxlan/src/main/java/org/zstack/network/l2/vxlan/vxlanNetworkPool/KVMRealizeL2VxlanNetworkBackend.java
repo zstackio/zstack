@@ -18,16 +18,17 @@ import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.host.HypervisorType;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.l2.L2NetworkConstant;
-import org.zstack.header.network.l2.L2NetworkInventory;
-import org.zstack.header.network.l2.L2NetworkRealizationExtensionPoint;
-import org.zstack.header.network.l2.L2NetworkType;
+import org.zstack.header.network.l2.*;
+import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.vm.InstantiateResourceOnAttachingNicExtensionPoint;
+import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.kvm.*;
 import org.zstack.network.l2.vxlan.vtep.*;
 import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkConstant;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
+import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO_;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -42,7 +43,7 @@ import static org.zstack.utils.CollectionDSL.map;
 /**
  * Created by weiwang on 17/04/2017.
  */
-public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExtensionPoint, KVMCompleteNicInformationExtensionPoint {
+public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExtensionPoint, KVMCompleteNicInformationExtensionPoint, InstantiateResourceOnAttachingNicExtensionPoint {
     private static CLogger logger = Utils.getLogger(KVMRealizeL2VxlanNetworkBackend.class);
 
     @Autowired
@@ -319,5 +320,21 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
                     tokens.get(VxlanSystemTags.VTEP_CIDR_TOKEN).split("[{}]")[1]);
         }
         return attachedClusters;
+    }
+
+    @Override
+    public void instantiateResourceOnAttachingNic(VmInstanceSpec spec, L3NetworkInventory l3, Completion completion) {
+        L2NetworkVO vo = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.uuid, l3.getL2NetworkUuid()).find();
+        if (vo.getType().equals(VxlanNetworkConstant.VXLAN_NETWORK_TYPE)) {
+            L2VxlanNetworkInventory l2 = L2VxlanNetworkInventory.valueOf((VxlanNetworkVO) Q.New(VxlanNetworkVO.class).eq(VxlanNetworkVO_.uuid, vo.getUuid()).find());
+            realize(l2, spec.getDestHost().getUuid(), completion);
+        } else {
+            completion.success();
+        }
+    }
+
+    @Override
+    public void releaseResourceOnAttachingNic(VmInstanceSpec spec, L3NetworkInventory l3, NoErrorCompletion completion) {
+
     }
 }
