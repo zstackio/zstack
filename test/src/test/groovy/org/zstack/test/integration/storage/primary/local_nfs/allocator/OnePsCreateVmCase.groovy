@@ -71,13 +71,13 @@ class OnePsCreateVmCase extends SubCase {
                         totalMem = SizeUnit.GIGABYTE.toByte(100)
                     }
 
-                    attachPrimaryStorage("nfs")
+                    attachPrimaryStorage("local")
                     attachL2Network("l2")
                 }
 
-                nfsPrimaryStorage {
-                    name = "nfs"
-                    url = "172.20.0.1:/nfs_root"
+                localPrimaryStorage {
+                    name = "local"
+                    url = "/local_ps"
                     totalCapacity = SizeUnit.GIGABYTE.toByte(101)
                     availableCapacity = SizeUnit.GIGABYTE.toByte(101)
                 }
