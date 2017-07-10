@@ -94,7 +94,7 @@ public class CreateMonitorTriggerAction extends AbstractAction {
         info.path = "/monitoring/triggers";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 
