@@ -34,8 +34,10 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
     private final HashMap<String, ChainTaskQueueWrapper> chainTasks = new HashMap<String, ChainTaskQueueWrapper>();
     private static final CLogger _logger = CLoggerImpl.getLogger(DispatchQueueImpl.class);
 
+    public static final String DUMP_TASK_DEBUG_SINGAL = "DumpTaskQueue";
+
     @Override
-    public void handleDebugSignal(DebugSignal sig) {
+    public void handleDebugSignal() {
         StringBuilder sb = new StringBuilder();
         sb.append("\n================= BEGIN TASK QUEUE DUMP ================");
         sb.append("\nASYNC TASK QUEUE DUMP:");
@@ -88,7 +90,7 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
     }
 
     public DispatchQueueImpl() {
-        DebugManager.registerDebugSignalHandler(DebugSignal.DumpTaskQueue, this);
+        DebugManager.registerDebugSignalHandler(DUMP_TASK_DEBUG_SINGAL, this);
     }
 
     private class SyncTaskFuture<T> extends AbstractFuture<T> {

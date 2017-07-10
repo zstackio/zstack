@@ -48,22 +48,23 @@ public class TestDebugManager {
     public void testCustomHandler() {
         Assert.assertTrue(DebugManagerImpl.sigHandlers.isEmpty());
 
+        String TEST_SIGNAL = "test";
+
         class MyDebugHandler implements DebugSignalHandler {
             private int count = 0;
-
-            @Override
-            public void handleDebugSignal(DebugSignal sig) {
-                ++count;
-            }
 
             private int getCounter() {
                 return count;
             }
+
+            @Override
+            public void handleDebugSignal() {
+                ++count;
+            }
         }
 
         MyDebugHandler handler = new MyDebugHandler();
-        DebugManagerImpl.sigHandlers.put(DebugSignal.DumpTaskQueue,
-                Collections.singletonList(handler));
+        DebugManager.registerDebugSignalHandler(TEST_SIGNAL, handler);
 
         APIDebugSignalMsg debugSignalMsg = new APIDebugSignalMsg();
         debugSignalMsg.setSignals(Collections.singletonList(DebugSignal.DumpTaskQueue.toString()));
