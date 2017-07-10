@@ -325,11 +325,56 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
     @Override
     public void instantiateResourceOnAttachingNic(VmInstanceSpec spec, L3NetworkInventory l3, Completion completion) {
         L2NetworkVO vo = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.uuid, l3.getL2NetworkUuid()).find();
-        if (vo.getType().equals(VxlanNetworkConstant.VXLAN_NETWORK_TYPE)) {
-            L2VxlanNetworkInventory l2 = L2VxlanNetworkInventory.valueOf((VxlanNetworkVO) Q.New(VxlanNetworkVO.class).eq(VxlanNetworkVO_.uuid, vo.getUuid()).find());
-            realize(l2, spec.getDestHost().getUuid(), completion);
-        } else {
+        if (!vo.getType().equals(VxlanNetworkConstant.VXLAN_NETWORK_TYPE)) {
             completion.success();
+            return;
+        } else {
+            FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+            L2VxlanNetworkInventory l2 = L2VxlanNetworkInventory.valueOf((VxlanNetworkVO) Q.New(VxlanNetworkVO.class).eq(VxlanNetworkVO_.uuid, vo.getUuid()).find());
+            chain.setName(String.format("attach-l2-vxlan-%s-on-host-%s", l2.getUuid(), spec.getDestHost().getUuid()));
+            chain.then(new NoRollbackFlow() {
+                           @Override
+                           public void run(FlowTrigger trigger, Map data) {
+                               check(l2, spec.getDestHost().getUuid(), new Completion(trigger) {
+                                   @Override
+                                   public void success() {
+                                       trigger.next();
+                                   }
+
+                                   @Override
+                                   public void fail(ErrorCode errorCode) {
+                                       logger.debug(String.format("check l2 vxlan failed for %s", errorCode.toString()));
+                                       trigger.fail(errorCode);
+                                   }
+                               });
+                           }
+                       }).then(new NoRollbackFlow() {
+                @Override
+                public void run(FlowTrigger trigger, Map data) {
+                    realize(l2, spec.getDestHost().getUuid(), new Completion(trigger) {
+                        @Override
+                        public void success() {
+                            trigger.next();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            logger.debug(String.format("realize l2 vxlan failed for %s", errorCode.toString()));
+                            trigger.fail(errorCode);
+                        }
+                    });
+                }
+            }).done(new FlowDoneHandler(completion) {
+                @Override
+                public void handle(Map data) {
+                    completion.success();
+                }
+            }).error(new FlowErrorHandler(completion) {
+                @Override
+                public void handle(ErrorCode errCode, Map data) {
+                    completion.fail(errCode);
+                }
+            }).start();
         }
     }
 
