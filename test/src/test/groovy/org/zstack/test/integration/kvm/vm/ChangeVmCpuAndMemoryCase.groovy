@@ -219,6 +219,7 @@ class ChangeVmCpuAndMemoryCase extends SubCase {
             assert cmd2 != null
             assert result.cpuNum == 2
             assert result.memorySize == SizeUnit.GIGABYTE.toByte(4)
+            assert result.instanceOfferingUuid == instanceOffering.uuid
         }
 
         env.cleanAfterSimulatorHandlers()

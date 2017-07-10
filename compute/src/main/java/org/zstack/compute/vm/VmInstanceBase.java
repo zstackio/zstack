@@ -3131,6 +3131,8 @@ public class VmInstanceBase extends AbstractVmInstance {
                 changeOffering(msg, new Completion(msg, chain) {
                     @Override
                     public void success() {
+                        self.setInstanceOfferingUuid(msg.getInstanceOfferingUuid());
+                        dbf.updateAndRefresh(self);
                         refreshVO();
                         evt.setInventory(getSelfInventory());
                         bus.publish(evt);
