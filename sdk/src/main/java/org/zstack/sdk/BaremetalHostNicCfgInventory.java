@@ -1,6 +1,22 @@
 package org.zstack.sdk;
 
-public class BaremetalHostNicCfgStruct  {
+public class BaremetalHostNicCfgInventory  {
+
+    public java.lang.String uuid;
+    public void setUuid(java.lang.String uuid) {
+        this.uuid = uuid;
+    }
+    public java.lang.String getUuid() {
+        return this.uuid;
+    }
+
+    public java.lang.String hostCfgUuid;
+    public void setHostCfgUuid(java.lang.String hostCfgUuid) {
+        this.hostCfgUuid = hostCfgUuid;
+    }
+    public java.lang.String getHostCfgUuid() {
+        return this.hostCfgUuid;
+    }
 
     public java.lang.String mac;
     public void setMac(java.lang.String mac) {
@@ -48,6 +64,22 @@ public class BaremetalHostNicCfgStruct  {
     }
     public java.lang.Boolean getPxe() {
         return this.pxe;
+    }
+
+    public java.sql.Timestamp createDate;
+    public void setCreateDate(java.sql.Timestamp createDate) {
+        this.createDate = createDate;
+    }
+    public java.sql.Timestamp getCreateDate() {
+        return this.createDate;
+    }
+
+    public java.sql.Timestamp lastOpDate;
+    public void setLastOpDate(java.sql.Timestamp lastOpDate) {
+        this.lastOpDate = lastOpDate;
+    }
+    public java.sql.Timestamp getLastOpDate() {
+        return this.lastOpDate;
     }
 
 }

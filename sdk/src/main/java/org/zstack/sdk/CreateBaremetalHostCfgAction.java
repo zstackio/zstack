@@ -35,7 +35,7 @@ public class CreateBaremetalHostCfgAction extends AbstractAction {
     public java.lang.String unattended;
 
     @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List nicCfgs;
+    public java.util.Map cfgItems;
 
     @Param(required = false)
     public java.lang.String resourceUuid;

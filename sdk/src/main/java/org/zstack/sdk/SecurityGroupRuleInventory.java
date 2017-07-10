@@ -66,6 +66,14 @@ public class SecurityGroupRuleInventory  {
         return this.allowedCidr;
     }
 
+    public java.lang.String remoteSecurityGroupUuid;
+    public void setRemoteSecurityGroupUuid(java.lang.String remoteSecurityGroupUuid) {
+        this.remoteSecurityGroupUuid = remoteSecurityGroupUuid;
+    }
+    public java.lang.String getRemoteSecurityGroupUuid() {
+        return this.remoteSecurityGroupUuid;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;

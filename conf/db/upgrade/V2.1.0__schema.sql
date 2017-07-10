@@ -431,3 +431,42 @@ ALTER TABLE HostCapacityVO MODIFY availableCpu bigint(20) NOT NULL COMMENT 'used
 
 ALTER TABLE SecurityGroupRuleVO ADD COLUMN `remoteSecurityGroupUuid` varchar(255) DEFAULT NULL;
 ALTER TABLE SecurityGroupRuleVO ADD CONSTRAINT fkSecurityGroupRuleVORemoteSecurityGroupVO FOREIGN KEY (remoteSecurityGroupUuid) REFERENCES SecurityGroupVO (uuid) ON DELETE CASCADE ;
+
+-- ----------------------------
+--  Table structure for `BaremetalHardwareInfoVO`
+-- ----------------------------
+CREATE TABLE `BaremetalHardwareInfoVO` (
+  `uuid` varchar(32) NOT NULL UNIQUE COMMENT 'uuid',
+  `ipmiAddress` varchar(32) NOT NULL COMMENT 'baremetal chassis ipmi address',
+  `type` varchar(255) DEFAULT NULL,
+  `content` varchar(2048) DEFAULT NULL,
+  `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+  `createDate` timestamp,
+  PRIMARY KEY  (`uuid`),
+  CONSTRAINT `fkBaremetalHardwareInfoVOBaremetalChassisVO` FOREIGN KEY (`ipmiAddress`) REFERENCES `BaremetalChassisVO` (`ipmiAddress`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- ----------------------------
+--  Table structure for `BaremetalHostBondingVO`
+-- ----------------------------
+CREATE TABLE `BaremetalHostBondingVO` (
+  `uuid` varchar(32) NOT NULL UNIQUE COMMENT 'uuid',
+  `hostCfgUuid` varchar(32) NOT NULL COMMENT 'baremetal hostcfg uuid',
+  `name` varchar(255) NOT NULL COMMENT 'bond name',
+  `slaves` varchar(1024) NOT NULL COMMENT 'bond slaves',
+  `mode` varchar(32)  DEFAULT '4' COMMENT 'bond slaves',
+  `ip` varchar(32) DEFAULT NULL COMMENT 'bond ip',
+  `netmask` varchar(32) DEFAULT NULL COMMENT 'bond netmask',
+  `gateway` varchar(32) DEFAULT NULL COMMENT 'bond gateway',
+  `dns` varchar(32) DEFAULT NULL COMMENT 'bond dns',
+  `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+  `createDate` timestamp,
+  PRIMARY KEY  (`uuid`),
+  CONSTRAINT `fkBaremetalHostBondingVOBaremetalHostCfgVO` FOREIGN KEY (`hostCfgUuid`) REFERENCES `BaremetalHostCfgVO` (`uuid`) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DELETE FROM ResourceVO WHERE resourceType="BaremetalHostNicCfgVO";
+DELETE FROM ResourceVO WHERE resourceType="BaremetalHostCfgVO";
+ALTER TABLE BaremetalHostNicCfgVO DROP INDEX ip;
+ALTER TABLE BaremetalHostNicCfgVO MODIFY ip varchar(32) DEFAULT NULL;
+ALTER TABLE BaremetalHostNicCfgVO MODIFY netmask varchar(32) DEFAULT NULL;
