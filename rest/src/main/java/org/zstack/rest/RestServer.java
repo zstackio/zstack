@@ -229,11 +229,11 @@ public class RestServer implements Component, CloudBusEventListener {
                         requestLogger.trace(sb.toString());
                     }
 
-                    Response r = http.newCall(request).execute();
-
-                    if (r.code() < 200 || r.code() >= 300) {
-                        throw new WebHookRetryException(String.format("failed to post to the webhook[%s], %s",
-                                d.webHook, r.toString()));
+                    try (Response r = http.newCall(request).execute()) {
+                        if (r.code() < 200 || r.code() >= 300) {
+                            throw new WebHookRetryException(String.format("failed to post to the webhook[%s], %s",
+                                    d.webHook, r.toString()));
+                        }
                     }
 
                 } catch (IOException e) {
