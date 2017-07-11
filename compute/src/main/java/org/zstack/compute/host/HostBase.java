@@ -592,6 +592,8 @@ public abstract class HostBase extends AbstractHost {
 
                 if(!Q.New(HostVO.class).eq(HostVO_.uuid, msg.getHostUuid()).isExists()){
                     reply.setNoReconnect(true);
+                    bus.reply(msg, reply);
+                    return;
                 }
 
                 changeConnectionState(HostStatusEvent.disconnected);
