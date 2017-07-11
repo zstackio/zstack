@@ -3,6 +3,7 @@ package org.zstack.core.debug;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.header.AbstractService;
 import org.zstack.header.message.Message;
 
@@ -36,14 +37,13 @@ public class DebugManagerImpl extends AbstractService implements DebugManager {
     private void handle(APIDebugSignalMsg msg) {
         APIDebugSignalEvent evt = new APIDebugSignalEvent(msg.getId());
         for (String sig : msg.getSignals()) {
-            DebugSignal dsig = DebugSignal.valueOf(sig);
-            List<DebugSignalHandler> hs = sigHandlers.get(dsig);
+            List<DebugSignalHandler> hs = sigHandlers.get(sig);
             if (hs == null) {
                 continue;
             }
 
             for (DebugSignalHandler h : hs) {
-                h.handleDebugSignal(dsig);
+                h.handleDebugSignal();
             }
         }
 
