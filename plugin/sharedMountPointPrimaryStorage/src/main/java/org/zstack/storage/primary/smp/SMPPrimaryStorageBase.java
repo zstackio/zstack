@@ -72,7 +72,7 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
         return getHypervisorFactoryByHypervisorType(hvType);
     }
 
-    private HypervisorFactory getHypervisorFactoryByClusterUuid(String cuuid) {
+    protected HypervisorFactory getHypervisorFactoryByClusterUuid(String cuuid) {
         SimpleQuery<ClusterVO> q = dbf.createQuery(ClusterVO.class);
         q.select(ClusterVO_.hypervisorType);
         q.add(ClusterVO_.uuid, Op.EQ, cuuid);
@@ -552,7 +552,7 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
         return hostUuids.get(0);
     }
 
-    private HypervisorBackend getHypervisorBackendByVolumeUuid(String volUuid) {
+    protected HypervisorBackend getHypervisorBackendByVolumeUuid(String volUuid) {
         SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
         q.select(VolumeVO_.format);
         q.add(VolumeVO_.uuid, Op.EQ, volUuid);

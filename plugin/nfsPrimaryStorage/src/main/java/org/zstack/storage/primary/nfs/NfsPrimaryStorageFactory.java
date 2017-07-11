@@ -240,7 +240,9 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
 
         List<HostVO> ret = q.getResultList();
         if (ret.isEmpty() && startPage == 0) { //check is first page
-            throw new OperationFailureException(operr("cannot find a Connected host-NFS connection to execute command for nfs primary storage[uuid:%s]", pri.getUuid()));
+            throw new OperationFailureException(
+                    operr("cannot find a host which has Connected host-NFS connection to execute command " +
+                            "for nfs primary storage[uuid:%s]", pri.getUuid()));
         } else {
             Collections.shuffle(ret);
             return HostInventory.valueOf(ret);

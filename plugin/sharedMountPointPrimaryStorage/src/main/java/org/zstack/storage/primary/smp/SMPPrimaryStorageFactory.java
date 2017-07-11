@@ -1,6 +1,7 @@
 package org.zstack.storage.primary.smp;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.vm.VmExpungeRootVolumeValidator;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
@@ -31,6 +32,8 @@ import org.zstack.storage.snapshot.PostMarkRootVolumeAsSnapshotExtension;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import javax.persistence.TypedQuery;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -289,6 +292,42 @@ public class SMPPrimaryStorageFactory implements PrimaryStorageFactory, CreateTe
                 .param("cuuid", clusterUuid)
                 .param("ptype", SMPConstants.SMP_TYPE)
                 .list();
+    }
+
+    @Transactional
+    public List<HostInventory> getConnectedHostForOperation(PrimaryStorageInventory pri, int startPage, int pageLimit) {
+        if (pri.getAttachedClusterUuids().isEmpty()) {
+            throw new OperationFailureException(operr("cannot find a Connected host to execute command for smp primary storage[uuid:%s]", pri.getUuid()));
+        }
+
+        String sql = "select h from HostVO h " +
+                "where h.status = :connectionState and h.clusterUuid in (:clusterUuids) " +
+                "and h.uuid not in (select ref.hostUuid from PrimaryStorageHostRefVO ref " +
+                "where ref.primaryStorageUuid = :psUuid and ref.hostUuid = h.uuid and ref.status = :status)";
+        TypedQuery<HostVO> q = dbf.getEntityManager().createQuery(sql, HostVO.class);
+        q.setParameter("connectionState", HostStatus.Connected);
+        q.setParameter("clusterUuids", pri.getAttachedClusterUuids());
+        q.setParameter("psUuid", pri.getUuid());
+        q.setParameter("status", PrimaryStorageHostStatus.Disconnected);
+
+        q.setFirstResult(startPage * pageLimit);
+        if (pageLimit > 0){
+            q.setMaxResults(pageLimit);
+        }
+
+        List<HostVO> ret = q.getResultList();
+        if (ret.isEmpty() && startPage == 0) { //check is first page
+            throw new OperationFailureException(operr(
+                    "cannot find a host which has Connected host-SMP connection to execute command for smp primary storage[uuid:%s]",
+                    pri.getUuid()));
+        } else {
+            Collections.shuffle(ret);
+            return HostInventory.valueOf(ret);
+        }
+    }
+
+    public List<HostInventory> getConnectedHostForOperation(PrimaryStorageInventory pri) {
+        return getConnectedHostForOperation(pri, 0, 0);
     }
 
     @Override
