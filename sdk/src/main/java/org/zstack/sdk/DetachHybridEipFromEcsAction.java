@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class AttachEipToEcsAction extends AbstractAction {
+public class DetachHybridEipFromEcsAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public AttachEipToEcsResult value;
+        public DetachHybridEipFromEcsResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -52,8 +52,8 @@ public class AttachEipToEcsAction extends AbstractAction {
             return ret;
         }
         
-        AttachEipToEcsResult value = res.getResult(AttachEipToEcsResult.class);
-        ret.value = value == null ? new AttachEipToEcsResult() : value; 
+        DetachHybridEipFromEcsResult value = res.getResult(DetachHybridEipFromEcsResult.class);
+        ret.value = value == null ? new DetachHybridEipFromEcsResult() : value; 
 
         return ret;
     }
@@ -79,10 +79,10 @@ public class AttachEipToEcsAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/hybrid/eip/{eipUuid}/attach";
+        info.path = "/hybrid/eip/{eipUuid}/detach";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "attachEipToEcs";
+        info.parameterName = "detachHybridEipFromEcs";
         return info;
     }
 

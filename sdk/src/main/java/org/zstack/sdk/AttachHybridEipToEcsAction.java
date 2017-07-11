@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class DetachOssBucketToEcsDataCenterAction extends AbstractAction {
+public class AttachHybridEipToEcsAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public DetachOssBucketToEcsDataCenterResult value;
+        public AttachHybridEipToEcsResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -23,10 +23,13 @@ public class DetachOssBucketToEcsDataCenterAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String ossBucketUuid;
+    public java.lang.String eipUuid;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String dataCenterUuid;
+    public java.lang.String ecsUuid;
+
+    @Param(required = true, validValues = {"aliyun"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String type;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -49,8 +52,8 @@ public class DetachOssBucketToEcsDataCenterAction extends AbstractAction {
             return ret;
         }
         
-        DetachOssBucketToEcsDataCenterResult value = res.getResult(DetachOssBucketToEcsDataCenterResult.class);
-        ret.value = value == null ? new DetachOssBucketToEcsDataCenterResult() : value; 
+        AttachHybridEipToEcsResult value = res.getResult(AttachHybridEipToEcsResult.class);
+        ret.value = value == null ? new AttachHybridEipToEcsResult() : value; 
 
         return ret;
     }
@@ -75,11 +78,11 @@ public class DetachOssBucketToEcsDataCenterAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "DELETE";
-        info.path = "/hybrid/aliyun/{dataCenterUuid}/oss-bucket/{ossBucketUuid}";
+        info.httpMethod = "PUT";
+        info.path = "/hybrid/eip/{eipUuid}/attach";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "attachHybridEipToEcs";
         return info;
     }
 
