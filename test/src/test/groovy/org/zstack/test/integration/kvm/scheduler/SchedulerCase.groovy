@@ -255,7 +255,7 @@ class SchedulerCase extends SubCase {
             description = "this is a trigger"
             schedulerInterval = 12222
             repeatCount = 22222
-            startTime = (new Date(0)).getTime()
+            startTime = new Timestamp(System.currentTimeMillis()).getTime() / 1000 + 1000000
             schedulerType = SchedulerConstant.SIMPLE_TYPE_STRING.toString()
         }
         SchedulerTriggerVO vo = dbFindByUuid(inv.uuid, SchedulerTriggerVO.class)
@@ -285,7 +285,7 @@ class SchedulerCase extends SubCase {
         action.schedulerInterval = Integer.MAX_VALUE
         action.repeatCount = 1000
         action.sessionId = adminSession()
-        action.startTime = 3600
+        action.startTime = new Timestamp(System.currentTimeMillis()).getTime() / 1000 + 1000000
         action.schedulerType = SchedulerConstant.SIMPLE_TYPE_STRING.toString()
         CreateSchedulerTriggerAction.Result ret = action.call()
         assert ret.error != null
@@ -307,7 +307,7 @@ class SchedulerCase extends SubCase {
         action3.name = "trigger"
         action3.description = "this is a trigger"
         action3.sessionId = adminSession()
-        action3.startTime = 3600
+        action3.startTime = new Timestamp(System.currentTimeMillis()).getTime() / 1000 + 1000000
         action3.schedulerType = SchedulerConstant.SIMPLE_TYPE_STRING.toString()
         CreateSchedulerTriggerAction.Result ret3 = action3.call()
         assert ret3.error != null
@@ -330,7 +330,7 @@ class SchedulerCase extends SubCase {
         action5.sessionId = adminSession()
         action5.schedulerInterval = -1
         action5.repeatCount = 2
-        action5.startTime = 3600
+        action5.startTime = new Timestamp(System.currentTimeMillis()).getTime() / 1000 + 1000000
         action5.schedulerType = SchedulerConstant.SIMPLE_TYPE_STRING.toString()
         CreateSchedulerTriggerAction.Result ret5 = action5.call()
         assert ret5.error != null
@@ -341,7 +341,7 @@ class SchedulerCase extends SubCase {
         action6.sessionId = adminSession()
         action6.schedulerInterval = 2
         action6.repeatCount = -1
-        action6.startTime = 3600
+        action6.startTime = new Timestamp(System.currentTimeMillis()).getTime() / 1000 + 1000000
         action6.schedulerType = SchedulerConstant.SIMPLE_TYPE_STRING.toString()
         CreateSchedulerTriggerAction.Result ret6 = action6.call()
         assert ret6.error != null
@@ -406,7 +406,7 @@ class SchedulerCase extends SubCase {
             name = "trigger"
             description = "this is a trigger"
             repeatCount = 1
-            startTime = 0
+            startTime = new Timestamp(System.currentTimeMillis()).getTime() / 1000 + 1000000
             schedulerType = SchedulerConstant.SIMPLE_TYPE_STRING.toString()
         } as SchedulerTriggerInventory
 
@@ -455,7 +455,7 @@ class SchedulerCase extends SubCase {
             name = "trigger"
             description = "this is a trigger"
             repeatCount = 1
-            startTime = 0
+            startTime = new Timestamp(System.currentTimeMillis()).getTime() / 1000 + 2
             schedulerType = SchedulerConstant.SIMPLE_TYPE_STRING.toString()
         } as SchedulerTriggerInventory
 
@@ -481,7 +481,7 @@ class SchedulerCase extends SubCase {
             description = "this is a trigger"
             repeatCount = 2222
             schedulerInterval = 222222
-            startTime = (new Date(0)).getTime()
+            startTime = new Timestamp(System.currentTimeMillis()).getTime() / 1000 + 1000000
             schedulerType = SchedulerConstant.SIMPLE_TYPE_STRING.toString()
         } as SchedulerTriggerInventory
 
@@ -538,7 +538,7 @@ class SchedulerCase extends SubCase {
             name = "trigger"
             description = "this is a trigger"
             repeatCount = 1
-            startTime = (new Date(0)).getTime()
+            startTime = new Timestamp(System.currentTimeMillis()).getTime() / 1000 + 2
             schedulerType = SchedulerConstant.SIMPLE_TYPE_STRING.toString()
         } as SchedulerTriggerInventory
 
@@ -582,7 +582,7 @@ class SchedulerCase extends SubCase {
             name = "trigger"
             description = "this is a trigger"
             repeatCount = 1
-            startTime = (new Date(0)).getTime()
+            startTime = new Timestamp(System.currentTimeMillis()).getTime() / 1000 + 2
             schedulerType = SchedulerConstant.SIMPLE_TYPE_STRING.toString()
         } as SchedulerTriggerInventory
 
@@ -622,7 +622,7 @@ class SchedulerCase extends SubCase {
             name = "trigger"
             description = "this is a trigger"
             repeatCount = 1
-            startTime = (new Date(0)).getTime()
+            startTime = new Timestamp(System.currentTimeMillis()).getTime() / 1000 + 2
             schedulerType = SchedulerConstant.SIMPLE_TYPE_STRING.toString()
         } as SchedulerTriggerInventory
 
@@ -654,7 +654,7 @@ class SchedulerCase extends SubCase {
             description = "this is a trigger"
             repeatCount = 2222
             schedulerInterval = 222222
-            startTime = (new Date(0)).getTime()
+            startTime = new Timestamp(System.currentTimeMillis()).getTime() / 1000 + 2
             schedulerType = SchedulerConstant.SIMPLE_TYPE_STRING.toString()
         } as SchedulerTriggerInventory
 
@@ -678,22 +678,23 @@ class SchedulerCase extends SubCase {
     }
 
     void testTriggerStopTimeCalculation() {
+        long time = new Timestamp(System.currentTimeMillis()).getTime() / 1000 + 1000000L
         SchedulerTriggerInventory trigger = createSchedulerTrigger {
             name = "trigger"
             description = "this is a trigger"
             repeatCount = 2222
-            schedulerInterval = 222222
-            startTime = (new Date(0)).getTime() + 1
+            schedulerInterval = 2222
+            startTime = time
             schedulerType = SchedulerConstant.SIMPLE_TYPE_STRING.toString()
         } as SchedulerTriggerInventory
 
-        assert trigger.stopTime.getTime() == new Timestamp(1000L * 2222L * 222222L).getTime() + 1L * 1000L
+        assert trigger.stopTime.getTime() == new Timestamp(1000L * (2222L - 1) * 2222L + time * 1000L).getTime()
 
         SchedulerTriggerInventory trigger1 = createSchedulerTrigger {
             name = "trigger"
             description = "this is a trigger"
-            schedulerInterval = 222222
-            startTime = (new Date(0)).getTime() + 1
+            schedulerInterval = 2222
+            startTime = time
             schedulerType = SchedulerConstant.SIMPLE_TYPE_STRING.toString()
         } as SchedulerTriggerInventory
 
@@ -702,13 +703,13 @@ class SchedulerCase extends SubCase {
         SchedulerTriggerInventory trigger2 = createSchedulerTrigger {
             name = "trigger"
             description = "this is a trigger"
-            startTime = 0
+            startTime = time
             repeatCount = 2222
-            schedulerInterval = 222222
+            schedulerInterval = 2222
             schedulerType = SchedulerConstant.SIMPLE_TYPE_STRING.toString()
         } as SchedulerTriggerInventory
 
-        assert trigger2.getStartTime() == null
+        assert trigger2.getStartTime() != null
     }
 
     void testVmStateChangeCauseSchedulerPause() {
@@ -731,8 +732,8 @@ class SchedulerCase extends SubCase {
             name = "trigger"
             description = "this is a trigger"
             repeatCount = 2222
-            schedulerInterval = 222222
-            startTime = (new Date(0)).getTime()
+            schedulerInterval = 2222
+            startTime = new Timestamp(System.currentTimeMillis()).getTime() / 1000 + 1000000
             schedulerType = SchedulerConstant.SIMPLE_TYPE_STRING.toString()
         } as SchedulerTriggerInventory
 
@@ -830,8 +831,8 @@ class SchedulerCase extends SubCase {
             name = "trigger"
             description = "this is a trigger"
             repeatCount = 2222
-            schedulerInterval = 222222
-            startTime = (new Date(0)).getTime()
+            schedulerInterval = 2222
+            startTime = new Timestamp(System.currentTimeMillis()).getTime() / 1000 + 2
             schedulerType = SchedulerConstant.SIMPLE_TYPE_STRING.toString()
         } as SchedulerTriggerInventory
 
