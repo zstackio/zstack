@@ -470,3 +470,5 @@ DELETE FROM ResourceVO WHERE resourceType="BaremetalHostCfgVO";
 ALTER TABLE BaremetalHostNicCfgVO DROP INDEX ip;
 ALTER TABLE BaremetalHostNicCfgVO MODIFY ip varchar(32) DEFAULT NULL;
 ALTER TABLE BaremetalHostNicCfgVO MODIFY netmask varchar(32) DEFAULT NULL;
+ALTER TABLE EcsInstanceVO DROP COLUMN ecsEipUuid;
+DROP TRIGGER IF EXISTS trigger_attach_eip_for_ecsinstance;
