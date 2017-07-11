@@ -34,11 +34,11 @@ public class EcsInstanceInventory  {
         return this.name;
     }
 
-    public java.lang.String ecsStatus;
-    public void setEcsStatus(java.lang.String ecsStatus) {
+    public EcsStatus ecsStatus;
+    public void setEcsStatus(EcsStatus ecsStatus) {
         this.ecsStatus = ecsStatus;
     }
-    public java.lang.String getEcsStatus() {
+    public EcsStatus getEcsStatus() {
         return this.ecsStatus;
     }
 
@@ -104,14 +104,6 @@ public class EcsInstanceInventory  {
     }
     public java.lang.String getPrivateIpAddress() {
         return this.privateIpAddress;
-    }
-
-    public java.lang.String ecsEipUuid;
-    public void setEcsEipUuid(java.lang.String ecsEipUuid) {
-        this.ecsEipUuid = ecsEipUuid;
-    }
-    public java.lang.String getEcsEipUuid() {
-        return this.ecsEipUuid;
     }
 
     public java.lang.String ecsVSwitchUuid;
