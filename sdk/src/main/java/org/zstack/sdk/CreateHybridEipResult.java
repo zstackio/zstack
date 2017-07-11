@@ -1,6 +1,6 @@
 package org.zstack.sdk;
 
-public class CreateEcsEipResult {
+public class CreateHybridEipResult {
     public HybridEipAddressInventory inventory;
     public void setInventory(HybridEipAddressInventory inventory) {
         this.inventory = inventory;

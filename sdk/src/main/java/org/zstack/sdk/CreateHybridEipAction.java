@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class DetachEipFromEcsAction extends AbstractAction {
+public class CreateHybridEipAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public DetachEipFromEcsResult value;
+        public CreateHybridEipResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -22,14 +22,26 @@ public class DetachEipFromEcsAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String eipUuid;
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String name;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String ecsUuid;
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String description;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,200L}, noTrim = false)
+    public long bandWidthMb = 0;
 
     @Param(required = true, validValues = {"aliyun"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String type;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String dataCenterUuid;
+
+    @Param(required = true, validValues = {"PayByTraffic"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String chargeType;
+
+    @Param(required = false)
+    public java.lang.String resourceUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -52,8 +64,8 @@ public class DetachEipFromEcsAction extends AbstractAction {
             return ret;
         }
         
-        DetachEipFromEcsResult value = res.getResult(DetachEipFromEcsResult.class);
-        ret.value = value == null ? new DetachEipFromEcsResult() : value; 
+        CreateHybridEipResult value = res.getResult(CreateHybridEipResult.class);
+        ret.value = value == null ? new CreateHybridEipResult() : value; 
 
         return ret;
     }
@@ -78,11 +90,11 @@ public class DetachEipFromEcsAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/hybrid/eip/{eipUuid}/detach";
+        info.httpMethod = "POST";
+        info.path = "/hybrid/eip";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "detachEipFromEcs";
+        info.parameterName = "params";
         return info;
     }
 
