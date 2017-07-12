@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class GetOssBucketNameFromRemoteAction extends AbstractAction {
+public class SetVmUsbRedirectAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public GetOssBucketNameFromRemoteResult value;
+        public SetVmUsbRedirectResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -23,7 +23,10 @@ public class GetOssBucketNameFromRemoteAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String dataCenterUuid;
+    public java.lang.String uuid;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public boolean enable = false;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -34,6 +37,10 @@ public class GetOssBucketNameFromRemoteAction extends AbstractAction {
     @Param(required = true)
     public String sessionId;
 
+    public long timeout;
+    
+    public long pollingInterval;
+
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -42,8 +49,8 @@ public class GetOssBucketNameFromRemoteAction extends AbstractAction {
             return ret;
         }
         
-        GetOssBucketNameFromRemoteResult value = res.getResult(GetOssBucketNameFromRemoteResult.class);
-        ret.value = value == null ? new GetOssBucketNameFromRemoteResult() : value; 
+        SetVmUsbRedirectResult value = res.getResult(SetVmUsbRedirectResult.class);
+        ret.value = value == null ? new SetVmUsbRedirectResult() : value; 
 
         return ret;
     }
@@ -68,11 +75,11 @@ public class GetOssBucketNameFromRemoteAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
-        info.path = "/hybrid/oss/{dataCenterUuid}/remote";
+        info.httpMethod = "PUT";
+        info.path = "/vm-instances/{uuid}/actions";
         info.needSession = true;
-        info.needPoll = false;
-        info.parameterName = "";
+        info.needPoll = true;
+        info.parameterName = "setVmUsbRedirect";
         return info;
     }
 

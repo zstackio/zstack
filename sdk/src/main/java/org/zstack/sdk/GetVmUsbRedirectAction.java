@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class GetOssBucketNameFromRemoteAction extends AbstractAction {
+public class GetVmUsbRedirectAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public GetOssBucketNameFromRemoteResult value;
+        public GetVmUsbRedirectResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -23,7 +23,7 @@ public class GetOssBucketNameFromRemoteAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String dataCenterUuid;
+    public java.lang.String uuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -42,8 +42,8 @@ public class GetOssBucketNameFromRemoteAction extends AbstractAction {
             return ret;
         }
         
-        GetOssBucketNameFromRemoteResult value = res.getResult(GetOssBucketNameFromRemoteResult.class);
-        ret.value = value == null ? new GetOssBucketNameFromRemoteResult() : value; 
+        GetVmUsbRedirectResult value = res.getResult(GetVmUsbRedirectResult.class);
+        ret.value = value == null ? new GetVmUsbRedirectResult() : value; 
 
         return ret;
     }
@@ -69,7 +69,7 @@ public class GetOssBucketNameFromRemoteAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/hybrid/oss/{dataCenterUuid}/remote";
+        info.path = "/vm-instances/{uuid}/usbredirect";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";
