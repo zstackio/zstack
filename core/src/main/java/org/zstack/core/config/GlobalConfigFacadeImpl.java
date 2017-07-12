@@ -440,10 +440,13 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
             }
 
             private void link(Field field, final GlobalConfig old) throws IllegalAccessException {
-                final GlobalConfig config = configsFromXml.get(old.getIdentity());
-                DebugUtils.Assert(config != null, String.format("unable to find GlobalConfig[category:%s, name:%s] for linking to %s.%s",
+                GlobalConfig xmlConfig = configsFromXml.get(old.getIdentity());
+                DebugUtils.Assert(xmlConfig != null, String.format("unable to find GlobalConfig[category:%s, name:%s] for linking to %s.%s",
                         old.getCategory(), old.getName(), field.getDeclaringClass().getName(), field.getName()));
+                final GlobalConfig config = old.copy(xmlConfig);
                 field.set(null, config);
+                // all global config base on Field allConfigs which is origin from configsFromXml, so update its value
+                configsFromXml.put(old.getIdentity(), config);
 
                 final GlobalConfigValidation at = field.getAnnotation(GlobalConfigValidation.class);
                 if (at != null) {

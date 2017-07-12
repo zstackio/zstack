@@ -1,8 +1,11 @@
 package org.zstack.utils.data;
 
+import java.io.IOException;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.*;
+
+import static org.zstack.utils.ObjectUtils.serializableCopy;
 
 public class ArrayHelper {
     public static <T, K> T[] arrayFromField(Collection<K> c, String fieldName, Class<T> returnClassType) {
@@ -36,5 +39,16 @@ public class ArrayHelper {
             throw new RuntimeException(String.format("Unable to extract field[%s] from array[%s] to array of type[%s]", fieldName, c.toString(),
                     returnClassType.getName()));
         }
+    }
+
+    public static <T> List<T> serializableCopyList(List<T> sourceList) throws IOException, ClassNotFoundException {
+        if(sourceList == null){
+            return null;
+        }
+        List<T> copyList = new ArrayList<>();
+        for(T o : sourceList){
+            copyList.add(serializableCopy(o));
+        }
+        return copyList;
     }
 }

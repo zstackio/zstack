@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static java.util.Arrays.asList;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 import static org.zstack.utils.StringDSL.s;
@@ -68,6 +69,27 @@ public class GlobalConfig {
     }
 
     GlobalConfig() {
+    }
+
+    GlobalConfig copy(GlobalConfig g){
+        setName(g.getName());
+        setCategory(g.getCategory());
+        setDescription(g.getDescription());
+        setType(g.getType());
+        setValidatorRegularExpression(g.getValidatorRegularExpression());
+        setDefaultValue(g.getDefaultValue());
+        setValue(g.value());
+        setLinked(g.isLinked());
+
+        validators = new ArrayList<>();
+        updateExtensions = new ArrayList<>();
+        localUpdateExtensions = new ArrayList<>();
+
+        updateExtensions.addAll(g.getUpdateExtensions());
+        localUpdateExtensions.addAll(g.getLocalUpdateExtensions());
+        validators.addAll(g.getValidators());
+        configDef = g.getConfigDef();
+        return this;
     }
 
     private String makeUpdateEventPath() {
@@ -311,5 +333,29 @@ public class GlobalConfig {
 
     public String getCanonicalName() {
         return String.format("Global config[category: %s, name: %s]", category, name);
+    }
+
+    void setValidators(List<GlobalConfigValidatorExtensionPoint> validators) {
+        this.validators = validators;
+    }
+
+    void setUpdateExtensions(List<GlobalConfigUpdateExtensionPoint> updateExtensions) {
+        this.updateExtensions = updateExtensions;
+    }
+
+    void setLocalUpdateExtensions(List<GlobalConfigUpdateExtensionPoint> localUpdateExtensions) {
+        this.localUpdateExtensions = localUpdateExtensions;
+    }
+
+    public List<GlobalConfigValidatorExtensionPoint> getValidators() {
+        return validators;
+    }
+
+    public List<GlobalConfigUpdateExtensionPoint> getUpdateExtensions() {
+        return updateExtensions;
+    }
+
+    public List<GlobalConfigUpdateExtensionPoint> getLocalUpdateExtensions() {
+        return localUpdateExtensions;
     }
 }
