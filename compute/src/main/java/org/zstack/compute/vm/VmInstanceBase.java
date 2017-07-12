@@ -2115,6 +2115,10 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APIResumeVmInstanceMsg) msg);
         } else if (msg instanceof APIReimageVmInstanceMsg) {
             handle((APIReimageVmInstanceMsg) msg);
+        } else if (msg instanceof APISetVmUsbRedirectMsg) {
+            handle((APISetVmUsbRedirectMsg) msg);
+        } else if (msg instanceof APIGetVmUsbRedirectMsg) {
+            handle((APIGetVmUsbRedirectMsg) msg);
         } else {
             VmInstanceBaseExtensionFactory ext = vmMgr.getVmInstanceBaseExtensionFactory(msg);
             if (ext != null) {
@@ -2405,6 +2409,23 @@ public class VmInstanceBase extends AbstractVmInstance {
         VmSystemTags.CONSOLE_PASSWORD.delete(self.getUuid());
         evt.setInventory(getSelfInventory());
         bus.publish(evt);
+    }
+
+    private void handle(APISetVmUsbRedirectMsg msg) {
+        APISetVmUsbRedirectEvent evt = new APISetVmUsbRedirectEvent(msg.getId());
+        SystemTagCreator creator = VmSystemTags.USB_REDIRECT.newSystemTagCreator(self.getUuid());
+        creator.setTagByTokens(map(e(VmSystemTags.USB_REDIRECT_TOKEN, String.valueOf(msg.isEnable()))));
+        creator.recreate = true;
+        creator.create();
+        bus.publish(evt);
+    }
+
+    private void handle(APIGetVmUsbRedirectMsg msg) {
+        APIGetVmUsbRedirectReply reply = new APIGetVmUsbRedirectReply();
+        String usbRedirect = VmSystemTags.USB_REDIRECT.getTokenByResourceUuid(self.getUuid(),
+                VmSystemTags.USB_REDIRECT_TOKEN);
+        reply.setEnable(Boolean.parseBoolean(usbRedirect));
+        bus.reply(msg, reply);
     }
 
     private void handle(APISetVmSshKeyMsg msg) {
@@ -3876,6 +3897,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             APIStartVmInstanceMsg amsg = (APIStartVmInstanceMsg) msg;
             spec.setRequiredClusterUuid(amsg.getClusterUuid());
             spec.setRequiredHostUuid(amsg.getHostUuid());
+            spec.setUsbRedirect(VmSystemTags.USB_REDIRECT.getTokenByResourceUuid(self.getUuid(), VmSystemTags.USB_REDIRECT_TOKEN));
         }
 
         if (spec.getDestNics().isEmpty()) {
