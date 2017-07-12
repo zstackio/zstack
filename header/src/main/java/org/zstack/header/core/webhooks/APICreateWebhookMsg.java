@@ -11,6 +11,7 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/web-hooks",
         method = HttpMethod.POST,
+        parameterName = "params",
         responseClass = APICreateWebhookEvent.class
 )
 public class APICreateWebhookMsg extends APICreateMessage {

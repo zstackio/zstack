@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class CreateEmailMonitorTriggerActionAction extends AbstractAction {
+public class AddXSkyPrimaryStorageAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public CreateMonitorTriggerActionResult value;
+        public AddPrimaryStorageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -22,11 +22,20 @@ public class CreateEmailMonitorTriggerActionAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, maxLength = 512, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String email;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    public java.util.List monUrls;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String mediaUuid;
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String rootVolumePoolName;
+
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String dataVolumePoolName;
+
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String imageCachePoolName;
+
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String url;
 
     @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
@@ -34,8 +43,11 @@ public class CreateEmailMonitorTriggerActionAction extends AbstractAction {
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
-    @Param(required = false, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List triggerUuids;
+    @Param(required = false)
+    public java.lang.String type;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String zoneUuid;
 
     @Param(required = false)
     public java.lang.String resourceUuid;
@@ -61,8 +73,8 @@ public class CreateEmailMonitorTriggerActionAction extends AbstractAction {
             return ret;
         }
         
-        CreateMonitorTriggerActionResult value = res.getResult(CreateMonitorTriggerActionResult.class);
-        ret.value = value == null ? new CreateMonitorTriggerActionResult() : value; 
+        AddPrimaryStorageResult value = res.getResult(AddPrimaryStorageResult.class);
+        ret.value = value == null ? new AddPrimaryStorageResult() : value; 
 
         return ret;
     }
@@ -88,7 +100,7 @@ public class CreateEmailMonitorTriggerActionAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/monitoring/trigger-actions/emails";
+        info.path = "/primary-storage/xsky";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";

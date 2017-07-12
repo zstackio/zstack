@@ -91,7 +91,7 @@ public class CreateWebhookAction extends AbstractAction {
         info.path = "/web-hooks";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 

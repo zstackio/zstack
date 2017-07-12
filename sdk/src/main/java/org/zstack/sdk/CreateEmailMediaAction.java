@@ -94,7 +94,7 @@ public class CreateEmailMediaAction extends AbstractAction {
         info.path = "/media/emails";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 
