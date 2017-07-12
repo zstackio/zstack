@@ -25,4 +25,39 @@ public class CompositePrimaryKeyForPrimaryStorageHostRefVO implements Serializab
         this.primaryStorageUuid = primaryStorageUuid;
     }
 
+    @Override
+    public int hashCode() {
+        return (hostUuid + primaryStorageUuid).hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+
+        CompositePrimaryKeyForPrimaryStorageHostRefVO other = (CompositePrimaryKeyForPrimaryStorageHostRefVO) obj;
+        if (hostUuid == null) {
+            if (other.hostUuid != null) {
+                return false;
+            }
+        } else if (!hostUuid.equals(other.hostUuid)) {
+            return false;
+        }
+        if (primaryStorageUuid == null) {
+            if (other.primaryStorageUuid != null) {
+                return false;
+            }
+        } else if (!primaryStorageUuid.equals(other.primaryStorageUuid)) {
+            return false;
+        }
+
+        return true;
+    }
 }

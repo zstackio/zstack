@@ -40,7 +40,10 @@ public abstract class NeedReplyMessage extends Message {
     }
 
     public String toErrorString() {
-        return String.format("Message[%s] timeout after %s seconds", this.getClass().getName(), TimeUnit.MILLISECONDS.toSeconds(getTimeout()));
+        return String.format("Message[name: %s, id: %s] timeout after %s seconds",
+                this.getClass().getName(),
+                this.getId(),
+                TimeUnit.MILLISECONDS.toSeconds(getTimeout()));
     }
 
     public boolean hasSystemTag(String tag) {

@@ -104,6 +104,7 @@ trait Node {
         Collections.reverse(reversedNodes)
         reversedNodes.each { Node n ->
             if (n instanceof DeleteAction) {
+                logger.debug("destroy on " + n.toString())
                 n.delete(sessionId)
             }
         }
