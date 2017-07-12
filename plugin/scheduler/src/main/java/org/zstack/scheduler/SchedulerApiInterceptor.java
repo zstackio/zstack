@@ -11,6 +11,8 @@ import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.core.scheduler.*;
 import org.zstack.header.message.APIMessage;
 
+import java.sql.Timestamp;
+
 import static org.zstack.core.Platform.argerr;
 
 /**
@@ -80,6 +82,8 @@ public class SchedulerApiInterceptor implements ApiMessageInterceptor {
                 //  mysql timestamp range is '1970-01-01 00:00:01' UTC to '2038-01-19 03:14:07' UTC.
                 //  we accept 0 as startDate means start from current time
                 throw new ApiMessageInterceptionException(argerr("startTime out of range"));
+            } else if (msg.getStartTime() != null && msg.getStartTime() * 1000L < new Timestamp(System.currentTimeMillis()).getTime()) {
+                throw new ApiMessageInterceptionException(argerr("startTime can not before current time"));
             }
 
             if (msg.getSchedulerInterval() == null && msg.getRepeatCount() == null) {

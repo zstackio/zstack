@@ -230,11 +230,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
         }
         vo.setName(msg.getName());
         vo.setDescription(msg.getDescription());
-        if (msg.getStartTime() == 0) {
-            vo.setStartTime(null);
-        } else {
-            vo.setStartTime(new Timestamp(msg.getStartTime() * 1000L));
-        }
+        vo.setStartTime(new Timestamp(msg.getStartTime() * 1000L));
 
         if (msg.getSchedulerType().equals(SchedulerConstant.SIMPLE_TYPE_STRING)) {
             // if execute once
@@ -242,7 +238,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
                 if (msg.getRepeatCount() == 1) {
                     vo.setStopTime(start);
                 } else {
-                    vo.setStopTime(new Timestamp(start.getTime() * 1000L + (long) msg.getRepeatCount() * (long) msg.getSchedulerInterval() * 1000L));
+                    vo.setStopTime(new Timestamp(start.getTime() * 1000L + (long) (msg.getRepeatCount() - 1) * (long) msg.getSchedulerInterval() * 1000L));
                 }
             } else {
                 vo.setStopTime(null);
