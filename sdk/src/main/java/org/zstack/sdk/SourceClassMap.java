@@ -177,6 +177,7 @@ public class SourceClassMap {
 			put("org.zstack.vrouterRoute.APIGetVRouterRouteTableReply$8", "org.zstack.sdk.");
 			put("org.zstack.vrouterRoute.VRouterRouteEntryAO", "org.zstack.sdk.VRouterRouteEntryAO");
 			put("org.zstack.vrouterRoute.VRouterRouteEntryInventory", "org.zstack.sdk.VRouterRouteEntryInventory");
+			put("org.zstack.vrouterRoute.VRouterRouteEntryType", "org.zstack.sdk.VRouterRouteEntryType");
 			put("org.zstack.vrouterRoute.VRouterRouteTableInventory", "org.zstack.sdk.VRouterRouteTableInventory");
 			put("org.zstack.vrouterRoute.VirtualRouterVRouterRouteTableRefInventory", "org.zstack.sdk.VirtualRouterVRouterRouteTableRefInventory");
         }
@@ -327,6 +328,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.VCenterPrimaryStorageInventory", "org.zstack.vmware.VCenterPrimaryStorageInventory");
 			put("org.zstack.sdk.VRouterRouteEntryAO", "org.zstack.vrouterRoute.VRouterRouteEntryAO");
 			put("org.zstack.sdk.VRouterRouteEntryInventory", "org.zstack.vrouterRoute.VRouterRouteEntryInventory");
+			put("org.zstack.sdk.VRouterRouteEntryType", "org.zstack.vrouterRoute.VRouterRouteEntryType");
 			put("org.zstack.sdk.VRouterRouteTableInventory", "org.zstack.vrouterRoute.VRouterRouteTableInventory");
 			put("org.zstack.sdk.VRouterType", "org.zstack.header.aliyun.network.vrouter.VRouterType");
 			put("org.zstack.sdk.VipInventory", "org.zstack.network.service.vip.VipInventory");

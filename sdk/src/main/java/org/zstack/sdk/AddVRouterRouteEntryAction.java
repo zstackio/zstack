@@ -25,8 +25,8 @@ public class AddVRouterRouteEntryAction extends AbstractAction {
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
-    @Param(required = false, validValues = {"UserStatic","UserBlackHole"}, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String type;
+    @Param(required = false, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public VRouterRouteEntryType type;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String routeTableUuid;

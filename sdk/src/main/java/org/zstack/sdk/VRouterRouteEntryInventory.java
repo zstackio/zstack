@@ -18,11 +18,11 @@ public class VRouterRouteEntryInventory  {
         return this.description;
     }
 
-    public java.lang.String type;
-    public void setType(java.lang.String type) {
+    public VRouterRouteEntryType type;
+    public void setType(VRouterRouteEntryType type) {
         this.type = type;
     }
-    public java.lang.String getType() {
+    public VRouterRouteEntryType getType() {
         return this.type;
     }
 

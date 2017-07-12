@@ -409,7 +409,6 @@ alter table EcsInstanceVO add CONSTRAINT fkEcsInstanceVOEcsSecurityGroupVO forei
 alter table EcsInstanceVO add CONSTRAINT fkEcsInstanceVOIdentityZoneVO foreign key (identityZoneUuid) references IdentityZoneVO (uuid) on delete restrict;
 alter table EcsInstanceVO add CONSTRAINT fkEcsInstanceVOEcsImageVO foreign key (ecsImageUuid) references EcsImageVO (uuid) on delete restrict;
 
-alter table EcsInstanceVO modify column ecsImageUuid varchar(32) NOT NULL;
 alter table HybridEipAddressVO add column dataCenterUuid varchar(32) not null;
 alter table HybridEipAddressVO add column chargeType varchar(32) not null default "PayByTraffic";
 alter table HybridEipAddressVO add column allocateTime timestamp DEFAULT '0000-00-00 00:00:00';
@@ -472,3 +471,4 @@ ALTER TABLE BaremetalHostNicCfgVO MODIFY ip varchar(32) DEFAULT NULL;
 ALTER TABLE BaremetalHostNicCfgVO MODIFY netmask varchar(32) DEFAULT NULL;
 ALTER TABLE EcsInstanceVO DROP COLUMN ecsEipUuid;
 DROP TRIGGER IF EXISTS trigger_attach_eip_for_ecsinstance;
+

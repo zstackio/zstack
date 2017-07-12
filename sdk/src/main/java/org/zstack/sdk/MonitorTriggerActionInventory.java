@@ -34,14 +34,6 @@ public class MonitorTriggerActionInventory  {
         return this.state;
     }
 
-    public java.util.List<String> mediaUuids;
-    public void setMediaUuids(java.util.List<String> mediaUuids) {
-        this.mediaUuids = mediaUuids;
-    }
-    public java.util.List<String> getMediaUuids() {
-        return this.mediaUuids;
-    }
-
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
@@ -56,6 +48,14 @@ public class MonitorTriggerActionInventory  {
     }
     public java.sql.Timestamp getLastOpDate() {
         return this.lastOpDate;
+    }
+
+    public java.lang.String type;
+    public void setType(java.lang.String type) {
+        this.type = type;
+    }
+    public java.lang.String getType() {
+        return this.type;
     }
 
 }
