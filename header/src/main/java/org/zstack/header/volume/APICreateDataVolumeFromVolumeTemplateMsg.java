@@ -8,10 +8,12 @@ import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
+import org.zstack.header.tag.TagResourceType;
 
 /**
  */
 @Action(category = VolumeConstant.ACTION_CATEGORY)
+@TagResourceType(VolumeVO.class)
 @RestRequest(
         path = "/volumes/data/from/data-volume-templates/{imageUuid}",
         responseClass = APICreateDataVolumeFromVolumeTemplateEvent.class,
