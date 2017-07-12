@@ -91,7 +91,7 @@ public class CreateEmailMonitorTriggerActionAction extends AbstractAction {
         info.path = "/monitoring/trigger-actions/emails";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 

@@ -16,6 +16,7 @@ import org.zstack.header.storage.primary.PrimaryStorageVO;
 @RestRequest(
         path = "/primary-storage/ceph/{primaryStorageUuid}/pools",
         method = HttpMethod.POST,
+        parameterName = "params",
         responseClass = APIAddCephPrimaryStoragePoolEvent.class
 )
 public class APIAddCephPrimaryStoragePoolMsg extends APICreateMessage implements PrimaryStorageMessage {

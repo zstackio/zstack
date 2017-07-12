@@ -88,7 +88,7 @@ public class AddCephPrimaryStoragePoolAction extends AbstractAction {
         info.path = "/primary-storage/ceph/{primaryStorageUuid}/pools";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 
