@@ -26,16 +26,16 @@ import org.zstack.utils.*;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
-import static org.zstack.core.Platform.argerr;
-import static org.zstack.core.Platform.operr;
-
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import javax.persistence.metamodel.EntityType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.*;
+import java.util.stream.Collectors;
 
+import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
 import static org.zstack.utils.CollectionUtils.removeDuplicateFromList;
 
@@ -611,15 +611,19 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     @Override
     public void validateSystemTag(String resourceUuid, String resourceType, String tag) {
         boolean checked = false;
-        for (SystemTag stag : systemTags) {
-            if (stag.isMatch(tag)) {
-                checked = true;
-                stag.validate(resourceUuid, resourceTypeClassMap.get(resourceType), tag);
+        List<SystemTag> tags = resourceTypeSystemTagMap.get(resourceType);
+        if (tags != null) {
+            for (SystemTag stag : tags) {
+                if (stag.isMatch(tag)) {
+                    checked = true;
+                    stag.validate(resourceUuid, resourceTypeClassMap.get(resourceType), tag);
+                }
             }
         }
 
         if (!checked) {
-            throw new ApiMessageInterceptionException(argerr("no system tag matches %s", tag));
+            throw new ApiMessageInterceptionException(
+                    argerr("no system tag matches[%s] for resourceType[%s]", tag, resourceType));
         }
 
     }
