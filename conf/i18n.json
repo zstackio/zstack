@@ -526,11 +526,115 @@
     "fileName": "src/main/java/org/zstack/appliancevm/ApplianceVmBase.java"
   },
   {
-    "raw": "Mac/Ip/Netmask cannot be empty.",
-    "en_US": "Mac/Ip/Netmask cannot be empty.",
+    "raw": "the sended hardware info does not belong to any baremetal chassis",
+    "en_US": "the sended hardware info does not belong to any baremetal chassis",
     "zh_CN": "",
     "arguments": [],
-    "line": 38,
+    "line": 75,
+    "fileName": "src/main/java/org/zstack/baremetal/hardwareinfo/BaremetalHardwareInfoImpl.java"
+  },
+  {
+    "raw": "failed to create HardwareInfo using the sended hardware info",
+    "en_US": "failed to create HardwareInfo using the sended hardware info",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 89,
+    "fileName": "src/main/java/org/zstack/baremetal/hardwareinfo/BaremetalHardwareInfoImpl.java"
+  },
+  {
+    "raw": "successfully created HardwareInfo using the sended hardware info",
+    "en_US": "successfully created HardwareInfo using the sended hardware info",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 85,
+    "fileName": "src/main/java/org/zstack/baremetal/hardwareinfo/BaremetalHardwareInfoImpl.java"
+  },
+  {
+    "raw": "IP/Netmask should be all empty or all exists.",
+    "en_US": "IP/Netmask should be all empty or all exists.",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 45,
+    "fileName": "src/main/java/org/zstack/baremetal/host/BaremetalHostApiInterceptor.java"
+  },
+  {
+    "raw": "Ip address %s is not valid.",
+    "en_US": "Ip address {0} is not valid.",
+    "zh_CN": "",
+    "arguments": [
+      "ip"
+    ],
+    "line": 50,
+    "fileName": "src/main/java/org/zstack/baremetal/host/BaremetalHostApiInterceptor.java"
+  },
+  {
+    "raw": "Ip address %s is same as IPMI address of chassis %s.",
+    "en_US": "Ip address {0} is same as IPMI address of chassis {1}.",
+    "zh_CN": "",
+    "arguments": [
+      "ip",
+      "chassis.getUuid()"
+    ],
+    "line": 57,
+    "fileName": "src/main/java/org/zstack/baremetal/host/BaremetalHostApiInterceptor.java"
+  },
+  {
+    "raw": "Netmask %s is not valid.",
+    "en_US": "Netmask {0} is not valid.",
+    "zh_CN": "",
+    "arguments": [
+      "netmask"
+    ],
+    "line": 64,
+    "fileName": "src/main/java/org/zstack/baremetal/host/BaremetalHostApiInterceptor.java"
+  },
+  {
+    "raw": "Gateway %s is not valid.",
+    "en_US": "Gateway {0} is not valid.",
+    "zh_CN": "",
+    "arguments": [
+      "gateway"
+    ],
+    "line": 70,
+    "fileName": "src/main/java/org/zstack/baremetal/host/BaremetalHostApiInterceptor.java"
+  },
+  {
+    "raw": "Name Server %s is not valid.",
+    "en_US": "Name Server {0} is not valid.",
+    "zh_CN": "",
+    "arguments": [
+      "netmask"
+    ],
+    "line": 76,
+    "fileName": "src/main/java/org/zstack/baremetal/host/BaremetalHostApiInterceptor.java"
+  },
+  {
+    "raw": "IP address %s and Gateway %s do not belong to one subnet!",
+    "en_US": "IP address {0} and Gateway {1} do not belong to one subnet!",
+    "zh_CN": "",
+    "arguments": [
+      "ip",
+      "gateway"
+    ],
+    "line": 82,
+    "fileName": "src/main/java/org/zstack/baremetal/host/BaremetalHostApiInterceptor.java"
+  },
+  {
+    "raw": "Mac cannot be empty.",
+    "en_US": "Mac cannot be empty.",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 94,
+    "fileName": "src/main/java/org/zstack/baremetal/host/BaremetalHostApiInterceptor.java"
+  },
+  {
+    "raw": "Mac address %s is not valid. It should be like 11:11:11:11:11:11",
+    "en_US": "Mac address {0} is not valid. It should be like 11:11:11:11:11:11",
+    "zh_CN": "",
+    "arguments": [
+      "nicCfg.getMac()"
+    ],
+    "line": 98,
     "fileName": "src/main/java/org/zstack/baremetal/host/BaremetalHostApiInterceptor.java"
   },
   {
@@ -550,6 +654,26 @@
     "fileName": "src/main/java/org/zstack/baremetal/host/BaremetalHostApiInterceptor.java"
   },
   {
+    "raw": "MAC %s has been taken, please choose another one.",
+    "en_US": "MAC {0} has been taken, please choose another one.",
+    "zh_CN": "",
+    "arguments": [
+      "nicCfg.getMac()"
+    ],
+    "line": 122,
+    "fileName": "src/main/java/org/zstack/baremetal/host/BaremetalHostApiInterceptor.java"
+  },
+  {
+    "raw": "IP %s has been taken, please choose another one.",
+    "en_US": "IP {0} has been taken, please choose another one.",
+    "zh_CN": "",
+    "arguments": [
+      "nicCfg.getIp()"
+    ],
+    "line": 132,
+    "fileName": "src/main/java/org/zstack/baremetal/host/BaremetalHostApiInterceptor.java"
+  },
+  {
     "raw": "There must be one and only one pxe\u003dtrue.",
     "en_US": "There must be one and only one pxe\u003dtrue.",
     "zh_CN": "",
@@ -558,27 +682,67 @@
     "fileName": "src/main/java/org/zstack/baremetal/host/BaremetalHostApiInterceptor.java"
   },
   {
-    "raw": "Mac cannot be emtpy in nicCfg.",
-    "en_US": "Mac cannot be emtpy in nicCfg.",
+    "raw": "Bonding name %s is too long ( \u003e 255 ).",
+    "en_US": "Bonding name {0} is too long ( \u003e 255 ).",
     "zh_CN": "",
-    "arguments": [],
-    "line": 216,
+    "arguments": [
+      "name"
+    ],
+    "line": 155,
     "fileName": "src/main/java/org/zstack/baremetal/host/BaremetalHostApiInterceptor.java"
   },
   {
-    "raw": "Cannot set pxe when update nicCfgs.",
-    "en_US": "Cannot set pxe when update nicCfgs.",
+    "raw": "Bonding slaves is empty.",
+    "en_US": "Bonding slaves is empty.",
     "zh_CN": "",
     "arguments": [],
-    "line": 220,
+    "line": 162,
     "fileName": "src/main/java/org/zstack/baremetal/host/BaremetalHostApiInterceptor.java"
   },
   {
-    "raw": "Can not delete nicCfg with pxe\u003dtrue.",
-    "en_US": "Can not delete nicCfg with pxe\u003dtrue.",
+    "raw": "Bonding mode is empty.",
+    "en_US": "Bonding mode is empty.",
     "zh_CN": "",
     "arguments": [],
-    "line": 239,
+    "line": 169,
+    "fileName": "src/main/java/org/zstack/baremetal/host/BaremetalHostApiInterceptor.java"
+  },
+  {
+    "raw": "Mac address %s is not valid. It should be like 11:11:11:11:11:11. Slaves should be seperated by comma.",
+    "en_US": "Mac address {0} is not valid. It should be like 11:11:11:11:11:11. Slaves should be seperated by comma.",
+    "zh_CN": "",
+    "arguments": [
+      "slave"
+    ],
+    "line": 177,
+    "fileName": "src/main/java/org/zstack/baremetal/host/BaremetalHostApiInterceptor.java"
+  },
+  {
+    "raw": "Baremetal Chassis uuid %s does not exist.",
+    "en_US": "Baremetal Chassis uuid {0} does not exist.",
+    "zh_CN": "",
+    "arguments": [
+      "chassisUuid"
+    ],
+    "line": 190,
+    "fileName": "src/main/java/org/zstack/baremetal/host/BaremetalHostApiInterceptor.java"
+  },
+  {
+    "raw": "Baremetal HostCfg with chassis uuid %s already exists.",
+    "en_US": "Baremetal HostCfg with chassis uuid {0} already exists.",
+    "zh_CN": "",
+    "arguments": [
+      "chassisUuid"
+    ],
+    "line": 197,
+    "fileName": "src/main/java/org/zstack/baremetal/host/BaremetalHostApiInterceptor.java"
+  },
+  {
+    "raw": "nicCfgs is missing.",
+    "en_US": "nicCfgs is missing.",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 203,
     "fileName": "src/main/java/org/zstack/baremetal/host/BaremetalHostApiInterceptor.java"
   },
   {
@@ -608,6 +772,77 @@
     "fileName": "src/main/java/org/zstack/baremetal/host/BaremetalHostImpl.java"
   },
   {
+    "raw": "IPMI Address %s is not valid",
+    "en_US": "IPMI Address {0} is not valid",
+    "zh_CN": "",
+    "arguments": [
+      "address"
+    ],
+    "line": 40,
+    "fileName": "src/main/java/org/zstack/baremetal/power/BaremetalChassisApiInterceptor.java"
+  },
+  {
+    "raw": "The input IPMI address %s is same as IP address of host nicCfg %s.",
+    "en_US": "The input IPMI address {0} is same as IP address of host nicCfg {1}.",
+    "zh_CN": "",
+    "arguments": [
+      "address",
+      "nicCfg.getUuid()"
+    ],
+    "line": 48,
+    "fileName": "src/main/java/org/zstack/baremetal/power/BaremetalChassisApiInterceptor.java"
+  },
+  {
+    "raw": "Cannot reach remote server with IPMI address %s, IPMI username %s, IPMI password %s",
+    "en_US": "Cannot reach remote server with IPMI address {0}, IPMI username {1}, IPMI password {2}",
+    "zh_CN": "",
+    "arguments": [
+      "address",
+      "username",
+      "password"
+    ],
+    "line": 55,
+    "fileName": "src/main/java/org/zstack/baremetal/power/BaremetalChassisApiInterceptor.java"
+  },
+  {
+    "raw": "Baremetal Chassis of IPMI address %s has already been created.",
+    "en_US": "Baremetal Chassis of IPMI address {0} has already been created.",
+    "zh_CN": "",
+    "arguments": [
+      "address"
+    ],
+    "line": 66,
+    "fileName": "src/main/java/org/zstack/baremetal/power/BaremetalChassisApiInterceptor.java"
+  },
+  {
+    "raw": "The query condition of provisioned must be \u0027true\u0027 or \u0027false\u0027.",
+    "en_US": "The query condition of provisioned must be \u0027true\u0027 or \u0027false\u0027.",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 90,
+    "fileName": "src/main/java/org/zstack/baremetal/power/BaremetalChassisApiInterceptor.java"
+  },
+  {
+    "raw": "Chassis %s has already been provisioned. Update provisioned\u003dfalse before re-provision.",
+    "en_US": "Chassis {0} has already been provisioned. Update provisioned\u003dfalse before re-provision.",
+    "zh_CN": "",
+    "arguments": [
+      "uuid"
+    ],
+    "line": 102,
+    "fileName": "src/main/java/org/zstack/baremetal/power/BaremetalChassisApiInterceptor.java"
+  },
+  {
+    "raw": "PXE Server DHCP Interface %s is not valid.",
+    "en_US": "PXE Server DHCP Interface {0} is not valid.",
+    "zh_CN": "",
+    "arguments": [
+      "dhcpNic"
+    ],
+    "line": 43,
+    "fileName": "src/main/java/org/zstack/baremetal/pxeserver/BaremetalPxeServerApiInterceptor.java"
+  },
+  {
     "raw": "Set Range Start \u0026 End, or set Range Start \u0026 End \u0026 Netmask!",
     "en_US": "Set Range Start \u0026 End, or set Range Start \u0026 End \u0026 Netmask!",
     "zh_CN": "",
@@ -616,9 +851,82 @@
     "fileName": "src/main/java/org/zstack/baremetal/pxeserver/BaremetalPxeServerApiInterceptor.java"
   },
   {
+    "raw": "PXE Server DHCP Range Start %s is not valid.",
+    "en_US": "PXE Server DHCP Range Start {0} is not valid.",
+    "zh_CN": "",
+    "arguments": [
+      "begin"
+    ],
+    "line": 52,
+    "fileName": "src/main/java/org/zstack/baremetal/pxeserver/BaremetalPxeServerApiInterceptor.java"
+  },
+  {
+    "raw": "PXE Server DHCP Range Stop %s is not valid.",
+    "en_US": "PXE Server DHCP Range Stop {0} is not valid.",
+    "zh_CN": "",
+    "arguments": [
+      "end"
+    ],
+    "line": 57,
+    "fileName": "src/main/java/org/zstack/baremetal/pxeserver/BaremetalPxeServerApiInterceptor.java"
+  },
+  {
+    "raw": "PXE Server DHCP Range Netmask %s is not valid.",
+    "en_US": "PXE Server DHCP Range Netmask {0} is not valid.",
+    "zh_CN": "",
+    "arguments": [
+      "netmask"
+    ],
+    "line": 62,
+    "fileName": "src/main/java/org/zstack/baremetal/pxeserver/BaremetalPxeServerApiInterceptor.java"
+  },
+  {
+    "raw": "PXE Server DHCP Range Start %s is larger than Range Stop %s.",
+    "en_US": "PXE Server DHCP Range Start {0} is larger than Range Stop {1}.",
+    "zh_CN": "",
+    "arguments": [
+      "begin",
+      "end"
+    ],
+    "line": 67,
+    "fileName": "src/main/java/org/zstack/baremetal/pxeserver/BaremetalPxeServerApiInterceptor.java"
+  },
+  {
+    "raw": "PXE Server DHCP Range Start %s and Range Stop %s do not belong to the same subnet.",
+    "en_US": "PXE Server DHCP Range Start {0} and Range Stop {1} do not belong to the same subnet.",
+    "zh_CN": "",
+    "arguments": [
+      "begin",
+      "end"
+    ],
+    "line": 72,
+    "fileName": "src/main/java/org/zstack/baremetal/pxeserver/BaremetalPxeServerApiInterceptor.java"
+  },
+  {
+    "raw": "IP/NM of DHCP Range [%s ~ %s : %s] cannot be connected to DHCP Interface %s.",
+    "en_US": "IP/NM of DHCP Range [{0} ~ {1} : {2}] cannot be connected to DHCP Interface {3}.",
+    "zh_CN": "",
+    "arguments": [
+      "begin",
+      "end",
+      "netmask !\u003d null ? netmask : dhcpNm",
+      "dhcpNic"
+    ],
+    "line": 81,
+    "fileName": "src/main/java/org/zstack/baremetal/pxeserver/BaremetalPxeServerApiInterceptor.java"
+  },
+  {
+    "raw": "PXE Server already created.",
+    "en_US": "PXE Server already created.",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 96,
+    "fileName": "src/main/java/org/zstack/baremetal/pxeserver/BaremetalPxeServerApiInterceptor.java"
+  },
+  {
     "raw": "the start date must be greater than the end date",
     "en_US": "the start date must be greater than the end date",
-    "zh_CN": "开始时间必须大于结束时间",
+    "zh_CN": "开始时间必须早于结束时间",
     "arguments": [],
     "line": 40,
     "fileName": "src/main/java/org/zstack/billing/BillingApiInterceptor.java"
@@ -626,7 +934,7 @@
   {
     "raw": "the minimal resource unit is megabyte, cannot be byte",
     "en_US": "the minimal resource unit is megabyte, cannot be byte",
-    "zh_CN": "资源的最小单位必须为mb，而不是kb",
+    "zh_CN": "资源的最小单位必须为MB，而不是B",
     "arguments": [],
     "line": 88,
     "fileName": "src/main/java/org/zstack/billing/BillingApiInterceptor.java"
@@ -707,7 +1015,7 @@
   {
     "raw": "there has been a host having managementIp[%s]",
     "en_US": "there has been a host having managementIp[{0}]",
-    "zh_CN": "该物理机已经存在在管理节点[{0}]中",
+    "zh_CN": "已经存在一个管理IP是[{0}]的物理机",
     "arguments": [
       "msg.getManagementIp()"
     ],
@@ -727,7 +1035,7 @@
   {
     "raw": "managementIp[%s] is neither an IPv4 address nor a valid hostname",
     "en_US": "managementIp[{0}] is neither an IPv4 address nor a valid hostname",
-    "zh_CN": "管理节点[{0}]既不是有效的IPv4地址也不是有效的物理机名",
+    "zh_CN": "管理IP[{0}]既不是有效的IPv4地址也不是有效的物理机名",
     "arguments": [
       "msg.getManagementIp()"
     ],
@@ -1166,6 +1474,17 @@
       "msg.getInstanceOfferingUuid()"
     ],
     "line": 349,
+    "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
+  },
+  {
+    "raw": "instance offering[uuid:%s, type:%s] is not UserVm type, can\u0027t create vm from it",
+    "en_US": "instance offering[uuid:{0}, type:{1}] is not UserVm type, can\u0027t create vm from it",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getInstanceOfferingUuid()",
+      "itype"
+    ],
+    "line": 377,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
@@ -3694,16 +4013,15 @@
     "fileName": "src/main/java/org/zstack/monitoring/MonitorManagerImpl.java"
   },
   {
-    "raw": "unable to fire an action[uuid:%s, trigger uuid:%s, media uuid: %s] because of",
-    "en_US": "unable to fire an action[uuid:{0}, trigger uuid:{1}, media uuid: {2}] because of",
+    "raw": "unable to fire an action[uuid:%s, trigger uuid:%s] because of",
+    "en_US": "unable to fire an action[uuid:{0}, trigger uuid:{1}] because of",
     "zh_CN": "",
     "arguments": [
       "event.getAction().getUuid()",
       "event.getTrigger().getUuid()",
-      "event.getMedia().getUuid()",
       "errorCode"
     ],
-    "line": 190,
+    "line": 175,
     "fileName": "src/main/java/org/zstack/monitoring/MonitorTriggerBase.java"
   },
   {
@@ -7318,6 +7636,25 @@
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageBase.java"
   },
   {
+    "raw": "Resource[uuid:%s] can only be operated on host[uuid:%s], but the host has been deleted",
+    "en_US": "Resource[uuid:{0}] can only be operated on host[uuid:{1}], but the host has been deleted",
+    "zh_CN": "资源[uuid:{0}]只能在物理机[uuid:{0}]上对其操作，但是该物理机已经被删除了",
+    "arguments": [
+      "resUuid",
+      "huuid"
+    ],
+    "line": 1106,
+    "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageBase.java"
+  },
+  {
+    "raw": "cannot find any host which has resource[uuid:%s]",
+    "en_US": "cannot find any host which has resource[uuid:{0}]",
+    "zh_CN": "找不到任何拥有资源[uuid:{0}]的物理机",
+    "arguments": [],
+    "line": 1099,
+    "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageBase.java"
+  },
+  {
     "raw": "host[uuid: %s] of local primary storage[uuid: %s] doesn\u0027t have enough capacity[current: %s bytes, needed: %s]",
     "en_US": "host[uuid: {0}] of local primary storage[uuid: {1}] doesn\u0027t have enough capacity[current: {2} bytes, needed: {3}]",
     "zh_CN": "主存储[uuid:{1}]上的物理机[uuid:{0}]没有足够的容量[现在: {2} bytes, 需要: {3}]",
@@ -7506,6 +7843,17 @@
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsApiParamChecker.java"
   },
   {
+    "raw": "there are %s running VMs on the NFS primary storage, please stop them and try again:\n%s\n",
+    "en_US": "there are {0} running VMs on the NFS primary storage, please stop them and try again:\n{1}\n",
+    "zh_CN": "在NFS主存储上有{0}个运行中的VM，请先手动关闭再尝试：\n{1}\n。",
+    "arguments": [
+      "vms.size()",
+      "StringUtils.join(vms, \"\\n\")"
+    ],
+    "line": 232,
+    "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorage.java"
+  },
+  {
     "raw": "cannot find usable backend",
     "en_US": "cannot find usable backend",
     "zh_CN": "无法找到可用的NFS主存储后端。",
@@ -7562,14 +7910,14 @@
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorage.java"
   },
   {
-    "raw": "vm[uuid:%s] is not Running or Stopped, current state is %s",
-    "en_US": "vm[uuid:{0}] is not Running or Stopped, current state is {1}",
-    "zh_CN": "VM[uuid:{0}]当前状态既不是Running也不是Stopped，当前状态为{1}。",
+    "raw": "vm[uuid:%s] is not Running, Paused or Stopped, current state is %s",
+    "en_US": "vm[uuid:{0}] is not Running, Paused or Stopped, current state is {1}",
+    "zh_CN": "云主机[uuid:{0}]不是运行中、已暂停或者已停止状态，现在的状态是{1}",
     "arguments": [
       "vol.getVmInstanceUuid()",
-      "vmState"
+      "state"
     ],
-    "line": 513,
+    "line": 485,
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorage.java"
   },
   {
@@ -7630,17 +7978,6 @@
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorage.java"
   },
   {
-    "raw": "there are %s running VMs on the NFS primary storage, please stop them and try again:\n%s\n",
-    "en_US": "there are {0} running VMs on the NFS primary storage, please stop them and try again:\n{1}\n",
-    "zh_CN": "在NFS主存储上有{0}个运行中的VM，请先手动关闭再尝试：\n{1}\n。",
-    "arguments": [
-      "vms.size()",
-      "StringUtils.join(vms, \"\\n\")"
-    ],
-    "line": 232,
-    "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorage.java"
-  },
-  {
     "raw": "the NFS primary storage[uuid:%s] is not attached to any clusters, and cannot expunge the root volume[uuid:%s] of the VM[uuid:%s]",
     "en_US": "the NFS primary storage[uuid:{0}] is not attached to any clusters, and cannot expunge the root volume[uuid:{1}] of the VM[uuid:{2}]",
     "zh_CN": "NFS主存储[uuid:{0}]没有挂载到任何集群，无法彻底删除VM[uuid:{2}]的根云盘[uuid:{1}]。",
@@ -7663,13 +8000,13 @@
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorageFactory.java"
   },
   {
-    "raw": "cannot find a Connected host-NFS connection to execute command for nfs primary storage[uuid:%s]",
-    "en_US": "cannot find a Connected host-NFS connection to execute command for nfs primary storage[uuid:{0}]",
-    "zh_CN": "无法找到一个连接上的Host-NFS连接用于为NFS主存储[uuid:{0}]执行命令。",
+    "raw": "cannot find a host which has Connected host-NFS connection to execute command for nfs primary storage[uuid:%s]",
+    "en_US": "cannot find a host which has Connected host-NFS connection to execute command for nfs primary storage[uuid:{0}]",
+    "zh_CN": "找不到一个和NFS主存储[uuid:{0}]处于已连接状态的物理机为其执行命令",
     "arguments": [
       "pri.getUuid()"
     ],
-    "line": 240,
+    "line": 244,
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorageFactory.java"
   },
   {
@@ -7879,11 +8216,14 @@
     "fileName": "src/main/java/org/zstack/storage/primary/smp/KvmBackend.java"
   },
   {
-    "raw": "cannot find any connected host to perform the operation",
-    "en_US": "cannot find any connected host to perform the operation",
-    "zh_CN": "找不到处于Connected状态的物理机来执行操作",
-    "arguments": [],
-    "line": 641,
+    "raw": "vm[uuid:%s] is not Running, Paused or Stopped, current state[%s]",
+    "en_US": "vm[uuid:{0}] is not Running, Paused or Stopped, current state[{1}]",
+    "zh_CN": "云主机[uuid:{0}]不是运行中、已暂停或者已停止状态，现在的状态是[{1}]",
+    "arguments": [
+      "vol.getVmInstanceUuid()",
+      "state"
+    ],
+    "line": 800,
     "fileName": "src/main/java/org/zstack/storage/primary/smp/KvmBackend.java"
   },
   {
@@ -7950,6 +8290,26 @@
     "fileName": "src/main/java/org/zstack/storage/primary/smp/SMPPrimaryStorageFactory.java"
   },
   {
+    "raw": "cannot find a Connected host to execute command for smp primary storage[uuid:%s]",
+    "en_US": "cannot find a Connected host to execute command for smp primary storage[uuid:{0}]",
+    "zh_CN": "找不到一个已连接状态的物理机为SMP主存储[uuid:{0}]执行命令",
+    "arguments": [
+      "pri.getUuid()"
+    ],
+    "line": 300,
+    "fileName": "src/main/java/org/zstack/storage/primary/smp/SMPPrimaryStorageFactory.java"
+  },
+  {
+    "raw": "cannot find a host which has Connected host-SMP connection to execute command for smp primary storage[uuid:%s]",
+    "en_US": "cannot find a host which has Connected host-SMP connection to execute command for smp primary storage[uuid:{0}]",
+    "zh_CN": "找不到一个和SMP主存储[uuid:{0}]处于已连接状态的物理机为其执行命令",
+    "arguments": [
+      "pri.getUuid()"
+    ],
+    "line": 324,
+    "fileName": "src/main/java/org/zstack/storage/primary/smp/SMPPrimaryStorageFactory.java"
+  },
+  {
     "raw": "KVM host[uuid: %s] fails to be added to zses primary storage[uuid: %s], %s",
     "en_US": "KVM host[uuid: {0}] fails to be added to zses primary storage[uuid: {1}], {2}",
     "zh_CN": "",
@@ -7960,6 +8320,16 @@
     ],
     "line": 94,
     "fileName": "src/main/java/org/zstack/storage/primary/zses/ZsesKvmFactory.java"
+  },
+  {
+    "raw": "cannot find an available host for volume[uuid:%s]",
+    "en_US": "cannot find an available host for volume[uuid:{0}]",
+    "zh_CN": "找不到一个可用的物理机操作云盘[uuid:{0}]",
+    "arguments": [
+      "volumeUuid"
+    ],
+    "line": 87,
+    "fileName": "src/main/java/org/zstack/storage/primary/zses/ZsesPrimaryStorageBase.java"
   },
   {
     "raw": "destination host is null",

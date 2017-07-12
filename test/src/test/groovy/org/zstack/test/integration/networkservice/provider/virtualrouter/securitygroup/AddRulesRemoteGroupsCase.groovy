@@ -62,16 +62,29 @@ class AddRulesRemoteGroupsCase extends SubCase{
                  sg3's vm in host3, ipset in host2, host3
                  */
 
+            // after action, sg3's ipset is in host2 and host3, should update its ipset member on host2 and host3
             testRemoveVmNicFromSecurityGroup([vm3.vmNics.get(0).uuid], sg3.uuid, [host2.uuid, host3.uuid])
             sgVmIp.get(sg3.uuid).remove(vm3.vmNics.get(0).ip)
+
+            // after action, sg3's ipset is in host2 and host3, should update its ipset member on host2 and host3
             testAddVmNicToSecurityGroup([vm3.vmNics.get(0).uuid], sg3.uuid, [host2.uuid, host3.uuid])
             sgVmIp.get(sg3.uuid).add(vm3.vmNics.get(0).ip)
+
+            // after action, sg1's ipset is in host2 and host3, should update its ipset member on host2 and host3
             testRemoveVmNicFromSecurityGroup([vm1.vmNics.get(0).uuid], sg1.uuid, [host2.uuid, host3.uuid])
             sgVmIp.get(sg1.uuid).remove(vm1.vmNics.get(0).ip)
+
+            // after action, sg1's ipset is in host1, host2 and host3, should update its ipset member on host1, host2 and host3
             testAddVmNicToSecurityGroup([vm1.vmNics.get(0).uuid], sg1.uuid, [host1.uuid, host2.uuid, host3.uuid])
             sgVmIp.get(sg1.uuid).add(vm1.vmNics.get(0).ip)
-            addRule(sg1.uuid, 1, [sg3.uuid], 4)
+
+            addRule(sg1.uuid, 1, [sg3.uuid], 4) //[sg3.uuid] is remoteSecurityGroup 4 is existed rule count on sg1
+
+            // after action, sg3's ipset is in host1, host2 and host3, should update its ipset member on host1, host2 and host3
             testRemoveVmNicFromSecurityGroup([vm4.vmNics.get(0).uuid], sg3.uuid, [host1.uuid, host2.uuid, host3.uuid])
+            sgVmIp.get(sg1.uuid).remove(vm4.vmNics.get(0).ip)
+
+            //sg3's ipset is in host1, host2 and host3, should delete its ipset on host1, host2 and host3
             testDeleteSecurityGroup(sg3.uuid, [host1.uuid, host2.uuid, host3.uuid])
         }
     }

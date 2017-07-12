@@ -467,27 +467,30 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         String volumeUuid = msg.getStruct().getCurrent().getVolumeUuid();
         VolumeVO vol = dbf.findByUuid(volumeUuid, VolumeVO.class);
 
-        String huuid = null;
-        if (vol.getVmInstanceUuid() != null) {
-            SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
-            q.select(VmInstanceVO_.state, VmInstanceVO_.hostUuid, VmInstanceVO_.lastHostUuid);
-            q.add(VmInstanceVO_.uuid, Op.EQ, vol.getVmInstanceUuid());
-            Tuple t = q.findTuple();
-            VmInstanceState vmState = t.get(0, VmInstanceState.class);
-            String hostUuid = t.get(1, String.class);
-            String lastHostUuid = t.get(2, String.class);
-            if (vmState != VmInstanceState.Running && vmState != VmInstanceState.Stopped) {
-                ErrorCode err = operr("vm[uuid:%s] is not Running or Stopped, current state is %s",
-                        vol.getVmInstanceUuid(), vmState);
-                reply.setError(err);
+        String huuid;
+        String connectedHostUuid = factory.getConnectedHostForOperation(getSelfInventory()).get(0).getUuid();
+        if (vol.getVmInstanceUuid() != null){
+            Tuple t = Q.New(VmInstanceVO.class)
+                    .select(VmInstanceVO_.state, VmInstanceVO_.hostUuid)
+                    .eq(VmInstanceVO_.uuid, vol.getVmInstanceUuid())
+                    .findTuple();
+            VmInstanceState state = t.get(0, VmInstanceState.class);
+            String vmHostUuid = t.get(1, String.class);
+
+            if (state == VmInstanceState.Running || state == VmInstanceState.Paused){
+                DebugUtils.Assert(vmHostUuid != null,
+                        String.format("vm[uuid:%s] is Running or Paused, but has no hostUuid", vol.getVmInstanceUuid()));
+                huuid = vmHostUuid;
+            } else if (state == VmInstanceState.Stopped){
+                huuid = connectedHostUuid;
+            } else {
+                reply.setError(operr("vm[uuid:%s] is not Running, Paused or Stopped, current state is %s",
+                        vol.getVmInstanceUuid(), state));
                 bus.reply(msg, reply);
                 return;
             }
-
-            huuid = VmInstanceState.Running == vmState ? hostUuid : lastHostUuid;
         } else {
-            HostInventory host = factory.getConnectedHostForOperation(getSelfInventory()).get(0);
-            huuid = host.getUuid();
+            huuid = connectedHostUuid;
         }
 
         VolumeInventory volInv = VolumeInventory.valueOf(vol);

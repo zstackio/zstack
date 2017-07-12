@@ -1089,11 +1089,20 @@ public class LocalStorageBase extends PrimaryStorageBase {
         });
     }
 
+    @Transactional(readOnly = true)
     protected String getHostUuidByResourceUuid(String resUuid) {
-        SimpleQuery<LocalStorageResourceRefVO> q = dbf.createQuery(LocalStorageResourceRefVO.class);
-        q.select(LocalStorageResourceRefVO_.hostUuid);
-        q.add(LocalStorageResourceRefVO_.resourceUuid, Op.EQ, resUuid);
-        return q.findValue();
+        String huuid = Q.New(LocalStorageResourceRefVO.class)
+                .select(LocalStorageResourceRefVO_.hostUuid)
+                .eq(LocalStorageResourceRefVO_.resourceUuid, resUuid)
+                .findValue();
+        if (huuid == null){
+            throw new OperationFailureException(operr("cannot find any host which has resource[uuid:%s]"));
+        } else if (!Q.New(HostVO.class).eq(HostVO_.uuid, huuid).isExists()){
+            throw new OperationFailureException(
+                    operr("Resource[uuid:%s] can only be operated on host[uuid:%s], but the host has been deleted",
+                            resUuid, huuid));
+        }
+        return huuid;
     }
 
     @Override
