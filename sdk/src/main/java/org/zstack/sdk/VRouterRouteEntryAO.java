@@ -18,11 +18,11 @@ public class VRouterRouteEntryAO  {
         return this.target;
     }
 
-    public java.lang.String type;
-    public void setType(java.lang.String type) {
+    public VRouterRouteEntryType type;
+    public void setType(VRouterRouteEntryType type) {
         this.type = type;
     }
-    public java.lang.String getType() {
+    public VRouterRouteEntryType getType() {
         return this.type;
     }
 
