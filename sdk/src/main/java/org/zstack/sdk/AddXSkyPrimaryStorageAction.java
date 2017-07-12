@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class AddVRouterRouteEntryAction extends AbstractAction {
+public class AddXSkyPrimaryStorageAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public AddVRouterRouteEntryResult value;
+        public AddPrimaryStorageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -22,23 +22,32 @@ public class AddVRouterRouteEntryAction extends AbstractAction {
         }
     }
 
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    public java.util.List monUrls;
+
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String rootVolumePoolName;
+
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String dataVolumePoolName;
+
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String imageCachePoolName;
+
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String url;
+
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String name;
+
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
-    @Param(required = false, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false)
     public java.lang.String type;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String routeTableUuid;
-
-    @Param(required = true, maxLength = 64, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String destination;
-
-    @Param(required = false, maxLength = 64, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String target;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,254L}, noTrim = false)
-    public java.lang.Integer distance;
+    public java.lang.String zoneUuid;
 
     @Param(required = false)
     public java.lang.String resourceUuid;
@@ -64,8 +73,8 @@ public class AddVRouterRouteEntryAction extends AbstractAction {
             return ret;
         }
         
-        AddVRouterRouteEntryResult value = res.getResult(AddVRouterRouteEntryResult.class);
-        ret.value = value == null ? new AddVRouterRouteEntryResult() : value; 
+        AddPrimaryStorageResult value = res.getResult(AddPrimaryStorageResult.class);
+        ret.value = value == null ? new AddPrimaryStorageResult() : value; 
 
         return ret;
     }
@@ -91,7 +100,7 @@ public class AddVRouterRouteEntryAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/vrouter-route-tables/{routeTableUuid}/route-entries";
+        info.path = "/primary-storage/xsky";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";
