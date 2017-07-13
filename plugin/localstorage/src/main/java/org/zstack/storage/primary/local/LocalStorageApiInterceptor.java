@@ -102,10 +102,11 @@ public class LocalStorageApiInterceptor implements ApiMessageInterceptor {
                 }
 
                 //3.confirm the dest host belong to the local storage where the volume locates
-                List<LocalStorageHostRefVO> refs = Q.New(LocalStorageHostRefVO.class)
+                boolean hasRefs = Q.New(LocalStorageHostRefVO.class)
                         .eq(LocalStorageHostRefVO_.hostUuid,msg.getDestHostUuid())
-                        .eq(LocalStorageHostRefVO_.primaryStorageUuid,ref.getPrimaryStorageUuid()).list();
-                if (refs.size() == 0) {
+                        .eq(LocalStorageHostRefVO_.primaryStorageUuid,ref.getPrimaryStorageUuid())
+                        .isExists();
+                if (!hasRefs) {
                     throw new ApiMessageInterceptionException(argerr("the dest host[uuid:%s] doesn't belong to the local primary storage[uuid:%s] where the" +
                             " volume[uuid:%s] locates", msg.getDestHostUuid(), ref.getPrimaryStorageUuid(), msg.getVolumeUuid()));
                 }

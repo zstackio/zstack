@@ -7,20 +7,14 @@ import org.zstack.header.vm.VmInstanceVO_
 import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.flat.FlatNetworkServiceConstant
 import org.zstack.network.service.userdata.UserdataConstant
-import org.zstack.sdk.DiskOfferingInventory
-import org.zstack.sdk.ImageInventory
-import org.zstack.sdk.InstanceOfferingInventory
-import org.zstack.sdk.L3NetworkInventory
-import org.zstack.sdk.PrimaryStorageInventory
+import org.zstack.sdk.*
 import org.zstack.test.integration.kvm.KvmTest
-import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
 
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
-
 /**
  * Created by AlanJager on 2017/5/13.
  */
@@ -197,6 +191,6 @@ class BatchCreateVmOnLocalStorageCase extends SubCase{
         }
 
         latch.await(2, TimeUnit.MINUTES);
-        assert Q.New(VmInstanceVO.class).notNull(VmInstanceVO_.uuid).list().size() == 10
+        assert Q.New(VmInstanceVO.class).notNull(VmInstanceVO_.uuid).count() == 10L
     }
 }
