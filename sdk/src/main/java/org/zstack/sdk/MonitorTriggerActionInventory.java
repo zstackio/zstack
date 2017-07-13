@@ -58,4 +58,11 @@ public class MonitorTriggerActionInventory  {
         return this.type;
     }
 
+    public java.util.List<String> triggerUuids;
+    public void setTriggerUuids(java.util.List<String> triggerUuids) {
+        this.triggerUuids = triggerUuids;
+    }
+    public java.util.List<String> getTriggerUuids() {
+        return this.triggerUuids;
+    }
 }
