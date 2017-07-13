@@ -82,7 +82,7 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
-import static org.zstack.core.Platform.*;
+
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.sql.Timestamp;
@@ -92,6 +92,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
+import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
 
 public class VmInstanceManagerImpl extends AbstractService implements
@@ -876,7 +878,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         });
     }
 
-    private void installSystemTagValidator() {
+    private void installHostnameValidator() {
         class HostNameValidator implements SystemTagCreateMessageValidator, SystemTagValidator {
             private void validateHostname(String tag, String hostname) {
                 DomainValidator domainValidator = DomainValidator.getInstance(true);
@@ -911,13 +913,13 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 String l3Uuid = token.get(VmSystemTags.STATIC_IP_L3_UUID_TOKEN);
                 if (!dbf.isExist(l3Uuid, L3NetworkVO.class)) {
                     throw new ApiMessageInterceptionException(argerr("L3 network[uuid:%s] not found. Please correct your system tag[%s] of static IP",
-                                    l3Uuid, sysTag));
+                            l3Uuid, sysTag));
                 }
 
                 String ip = token.get(VmSystemTags.STATIC_IP_TOKEN);
                 if (!NetworkUtils.isIpv4Address(ip)) {
                     throw new ApiMessageInterceptionException(argerr("%s is not a valid IPv4 address. Please correct your system tag[%s] of static IP",
-                                    ip, sysTag));
+                            ip, sysTag));
                 }
 
                 CheckIpAvailabilityMsg cmsg = new CheckIpAvailabilityMsg();
@@ -951,8 +953,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 if (!vos.isEmpty()) {
                     SystemTagVO sameTag = vos.get(0);
                     throw new ApiMessageInterceptionException(argerr("conflict hostname in system tag[%s];" +
-                                            " there has been a VM[uuid:%s] having hostname[%s] on L3 network[uuid:%s]",
-                                    tag, sameTag.getResourceUuid(), hostname, l3Uuid));
+                                    " there has been a VM[uuid:%s] having hostname[%s] on L3 network[uuid:%s]",
+                            tag, sameTag.getResourceUuid(), hostname, l3Uuid));
                 }
             }
 
@@ -990,6 +992,54 @@ public class VmInstanceManagerImpl extends AbstractService implements
         HostNameValidator hostnameValidator = new HostNameValidator();
         tagMgr.installCreateMessageValidator(VmInstanceVO.class.getSimpleName(), hostnameValidator);
         VmSystemTags.HOSTNAME.installValidator(hostnameValidator);
+
+    }
+
+    private void installUserdataValidator() {
+        class UserDataValidator implements SystemTagCreateMessageValidator, SystemTagValidator {
+
+            private void check(String resourceUuid, Class resourceType) {
+                int existUserdataTagCount = VmSystemTags.USERDATA.getTags(resourceUuid, resourceType).size();
+                if (existUserdataTagCount > 0) {
+                    throw new OperationFailureException(argerr(
+                            "Already have one userdata systemTag for vm[uuid: %s].",
+                            resourceUuid));
+                }
+            }
+
+            @Override
+            public void validateSystemTag(String resourceUuid, Class resourceType, String systemTag) {
+                if (!VmSystemTags.USERDATA.isMatch(systemTag)) {
+                    return;
+                }
+                check(resourceUuid, resourceType);
+            }
+
+            @Override
+            public void validateSystemTagInCreateMessage(APICreateMessage msg) {
+                int userdataTagCount = 0;
+                for (String sysTag : msg.getSystemTags()) {
+                    if (VmSystemTags.USERDATA.isMatch(sysTag)) {
+                        if (userdataTagCount > 0) {
+                            throw new OperationFailureException(argerr(
+                                    "Shouldn't be more than one userdata systemTag for one vm."));
+                        }
+                        userdataTagCount++;
+
+                        check(msg.getResourceUuid(), VmInstanceVO.class);
+                    }
+                }
+            }
+        }
+
+        UserDataValidator userDataValidator = new UserDataValidator();
+        tagMgr.installCreateMessageValidator(VmInstanceVO.class.getSimpleName(), userDataValidator);
+        VmSystemTags.USERDATA.installValidator(userDataValidator);
+    }
+
+    private void installSystemTagValidator() {
+        installHostnameValidator();
+        installUserdataValidator();
     }
 
     @Override
