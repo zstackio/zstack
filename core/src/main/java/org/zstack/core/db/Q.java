@@ -1,25 +1,20 @@
 package org.zstack.core.db;
 
-import org.springframework.beans.factory.annotation.Autowire;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.Tuple;
 import javax.persistence.metamodel.SingularAttribute;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 /**
  * Created by xing5 on 2016/12/31.
  */
-@Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class Q {
-    @Autowired
-    private DatabaseFacade dbf;
-
     private SimpleQueryImpl q;
 
+    @SuppressWarnings("unchecked")
     private Q(Class clz) {
         q = new SimpleQueryImpl(clz);
     }
@@ -49,44 +44,58 @@ public class Q {
         return this;
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public boolean isExists() {
         return q._count() > 0;
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public Long count() {
         return q._count();
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
+    @SuppressWarnings("unchecked")
     public <T> T find() {
         return (T) q._find();
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
+    @SuppressWarnings("unchecked")
     public <T> List<T> list() {
-        return q._list();
+        List<T> res = q._list();
+        if (res != null)
+            return res;
+        return Collections.emptyList();
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
+    @SuppressWarnings("unchecked")
     public <K> K findValue() {
         return (K) q._findValue();
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
+    @SuppressWarnings("unchecked")
     public <K> List<K> listValues() {
-        return q._listValue();
+        List<K> res = q._listValue();
+        if (res != null)
+            return res;
+        return Collections.emptyList();
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public Tuple findTuple() {
         return q._findTuple();
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
+    @SuppressWarnings("unchecked")
     public List<Tuple> listTuple() {
-        return q._listTuple();
+        List<Tuple> res = q._listTuple();
+        if (res != null)
+            return res;
+        return Collections.emptyList();
     }
 
     public Q eq(SingularAttribute attr, Object val) {

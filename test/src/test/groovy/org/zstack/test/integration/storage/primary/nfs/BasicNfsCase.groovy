@@ -3,11 +3,7 @@ package org.zstack.test.integration.storage.primary.nfs
 import org.springframework.http.HttpEntity
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.db.Q
-import org.zstack.header.host.HostStatus
-import org.zstack.header.host.HostVO
-import org.zstack.header.host.HostVO_
-import org.zstack.header.host.ReconnectHostMsg
-import org.zstack.header.host.ReconnectHostReply
+import org.zstack.header.host.*
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.header.storage.primary.PrimaryStorageCapacityVO
 import org.zstack.header.vm.VmInstanceState
@@ -16,11 +12,9 @@ import org.zstack.header.vm.VmInstanceVO_
 import org.zstack.network.securitygroup.SecurityGroupConstant
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant
 import org.zstack.network.service.virtualrouter.VirtualRouterVmVO
-import org.zstack.sdk.GetPrimaryStorageCapacityResult
 import org.zstack.sdk.HostInventory
 import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.sdk.ReconnectPrimaryStorageAction
-import org.zstack.sdk.VirtualRouterVmInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackend
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackendCommands
@@ -31,8 +25,6 @@ import org.zstack.utils.data.SizeUnit
 
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
-
-
 /**
  * Created by AlanJager on 2017/6/27.
  */
@@ -242,8 +234,8 @@ class BasicNfsCase extends SubCase {
 
         retryInSecs {
             assert ret.error != null
-            List<HostVO> hosts = Q.New(HostVO.class).eq(HostVO_.status, HostStatus.Connected).list()
-            assert hosts.size() == 3
+            Long numOfHosts = Q.New(HostVO.class).eq(HostVO_.status, HostStatus.Connected).count()
+            assert numOfHosts == 3L
         }
 
         env.cleanSimulatorAndMessageHandlers()

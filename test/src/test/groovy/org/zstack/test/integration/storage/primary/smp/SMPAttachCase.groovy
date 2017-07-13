@@ -67,8 +67,8 @@ class SMPAttachCase extends SubCase{
             clusterUuid = clusterInventory.uuid
         }
 
-        assert !Q.New(PrimaryStorageClusterRefVO.class).eq(PrimaryStorageClusterRefVO_.clusterUuid, clusterInventory.uuid)
-                .eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, primaryStorageInventory.uuid).list().isEmpty()
+        assert Q.New(PrimaryStorageClusterRefVO.class).eq(PrimaryStorageClusterRefVO_.clusterUuid, clusterInventory.uuid)
+                .eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, primaryStorageInventory.uuid).isExists()
     }
 
     void testAttachingSmpWithoutMountPathOnHost() {

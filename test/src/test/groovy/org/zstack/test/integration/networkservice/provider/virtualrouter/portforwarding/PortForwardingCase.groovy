@@ -1,13 +1,10 @@
 package org.zstack.test.integration.networkservice.provider.virtualrouter.portforwarding
 
 import org.springframework.http.HttpEntity
-import org.zstack.appliancevm.ApplianceVmVO
 import org.zstack.core.db.Q
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
-import org.zstack.kvm.KVMAgentCommands
-import org.zstack.kvm.KVMConstant
 import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.lb.LoadBalancerConstants
 import org.zstack.network.service.portforwarding.PortForwardingConstant
@@ -28,7 +25,6 @@ import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
-
 /**
  * Created by AlanJager on 2017/4/21.
  */
@@ -222,7 +218,7 @@ class PortForwardingCase extends SubCase {
         deleteVip {
             uuid = vip.uuid
         }
-        assert Q.New(VipVO.class).eq(VipVO_.uuid, vip.uuid).list().isEmpty()
+        assert !Q.New(VipVO.class).eq(VipVO_.uuid, vip.uuid).isExists()
     }
 
     void testDeletePortForwardingRuleWhenNotAttachAnyVm() {
@@ -273,12 +269,12 @@ class PortForwardingCase extends SubCase {
             uuid = portForwarding2.getUuid()
         }
         assert Q.New(VirtualRouterVipVO.class).select(VirtualRouterVipVO_.uuid).eq(VirtualRouterVipVO_.uuid, vip.uuid).listValues().size() == 0
-        assert !Q.New(VipVO.class).eq(VipVO_.uuid, vip.uuid).list().isEmpty()
+        assert Q.New(VipVO.class).eq(VipVO_.uuid, vip.uuid).isExists()
 
         deleteVip {
             uuid = vip.uuid
         }
-        assert Q.New(VipVO.class).eq(VipVO_.uuid, vip.uuid).list().isEmpty()
+        assert !Q.New(VipVO.class).eq(VipVO_.uuid, vip.uuid).isExists()
     }
 
     void testCreatePortForwardingRuleWillNotSetVipServiceProviderToNull() {
