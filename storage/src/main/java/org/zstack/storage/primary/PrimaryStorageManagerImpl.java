@@ -27,6 +27,7 @@ import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.tag.SystemTagValidator;
+import org.zstack.header.vm.VmHaExtensionPoint;
 import org.zstack.search.GetQuery;
 import org.zstack.search.SearchQuery;
 import org.zstack.tag.TagManager;
@@ -42,7 +43,7 @@ import java.util.*;
 import java.util.concurrent.Callable;
 
 public class PrimaryStorageManagerImpl extends AbstractService implements PrimaryStorageManager,
-        ManagementNodeChangeListener, ManagementNodeReadyExtensionPoint {
+        ManagementNodeChangeListener, ManagementNodeReadyExtensionPoint, VmHaExtensionPoint{
     private static final CLogger logger = Utils.getLogger(PrimaryStorageManager.class);
 
     @Autowired
@@ -584,5 +585,24 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         logger.debug(String.format("management node[uuid:%s] joins, starts load primary storage ...",
                 Platform.getManagementServerId()));
         loadPrimaryStorage();
+    }
+
+    @Override
+    public void preHaStartVm(String vmUuid) {
+        checkVmAllVolumePrimaryStorageState(vmUuid);
+    }
+
+    private void checkVmAllVolumePrimaryStorageState(String vmUuid) {
+        String sql = "select uuid from PrimaryStorageVO where uuid in (" +
+                " select distinct(primaryStorageUuid) from VolumeVO" +
+                " where vmInstanceUuid = :vmUuid and primaryStorageUuid is not null)" +
+                " and state = :psState";
+        List<String> result = SQL.New(sql, String.class)
+                .param("vmUuid", vmUuid)
+                .param("psState", PrimaryStorageState.Maintenance)
+                .list();
+        if (result != null && !result.isEmpty()) {
+            throw new OperationFailureException(argerr("the VM[uuid:%s] volume stored location primary storage is in a state of maintenance", vmUuid));
+        }
     }
 }
