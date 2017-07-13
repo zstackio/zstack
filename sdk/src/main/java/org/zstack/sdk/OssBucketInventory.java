@@ -18,12 +18,20 @@ public class OssBucketInventory  {
         return this.bucketName;
     }
 
-    public java.lang.String regionId;
-    public void setRegionId(java.lang.String regionId) {
-        this.regionId = regionId;
+    public java.lang.String dataCenterUuid;
+    public void setDataCenterUuid(java.lang.String dataCenterUuid) {
+        this.dataCenterUuid = dataCenterUuid;
     }
-    public java.lang.String getRegionId() {
-        return this.regionId;
+    public java.lang.String getDataCenterUuid() {
+        return this.dataCenterUuid;
+    }
+
+    public java.lang.String current;
+    public void setCurrent(java.lang.String current) {
+        this.current = current;
+    }
+    public java.lang.String getCurrent() {
+        return this.current;
     }
 
     public java.lang.String regionName;

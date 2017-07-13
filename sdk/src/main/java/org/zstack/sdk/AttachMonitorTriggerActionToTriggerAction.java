@@ -79,7 +79,7 @@ public class AttachMonitorTriggerActionToTriggerAction extends AbstractAction {
         info.path = "/monitoring/triggers/{triggerUuid}/trigger-actions/{actionUuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

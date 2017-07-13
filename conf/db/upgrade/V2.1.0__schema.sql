@@ -472,3 +472,12 @@ ALTER TABLE BaremetalHostNicCfgVO MODIFY netmask varchar(32) DEFAULT NULL;
 ALTER TABLE EcsInstanceVO DROP COLUMN ecsEipUuid;
 DROP TRIGGER IF EXISTS trigger_attach_eip_for_ecsinstance;
 
+SET FOREIGN_KEY_CHECKS = 0;
+alter table OssBucketVO add column dataCenterUuid varchar(32) not null;
+ALTER TABLE OssBucketVO ADD CONSTRAINT fkOssBucketVODataCenterVO foreign key (dataCenterUuid) REFERENCES DataCenterVO (uuid) ON DELETE RESTRICT;
+update OssBucketVO set dataCenterUuid =(select b.uuid from DataCenterVO b, (select * from OssBucketVO) a where b.regionId=a.regionId limit 1);
+alter table OssBucketVO drop column regionId;
+alter table OssBucketVO add column `current` varchar(32) DEFAULT "false";
+drop table OssBucketEcsDataCenterRefVO;
+SET FOREIGN_KEY_CHECKS = 1;
+

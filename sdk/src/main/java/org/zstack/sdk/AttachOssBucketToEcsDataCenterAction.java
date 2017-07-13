@@ -25,9 +25,6 @@ public class AttachOssBucketToEcsDataCenterAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String ossBucketUuid;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String dataCenterUuid;
-
     @Param(required = false)
     public java.util.List systemTags;
 
@@ -75,11 +72,11 @@ public class AttachOssBucketToEcsDataCenterAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/hybrid/aliyun/{dataCenterUuid}/oss-bucket/{ossBucketUuid}";
+        info.httpMethod = "PUT";
+        info.path = "/hybrid/aliyun/oss-bucket/{ossBucketUuid}/attach";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "attachOssBucketToEcsDataCenter";
         return info;
     }
 
