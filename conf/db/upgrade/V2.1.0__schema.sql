@@ -479,5 +479,7 @@ update OssBucketVO set dataCenterUuid =(select b.uuid from DataCenterVO b, (sele
 alter table OssBucketVO drop column regionId;
 alter table OssBucketVO add column `current` varchar(32) DEFAULT "false";
 drop table OssBucketEcsDataCenterRefVO;
+alter table EcsImageVO modify ossMd5Sum varchar(128) DEFAULT NULL;
+alter table EcsImageVO modify ecsImageId varchar(128) NOT NULL;
 SET FOREIGN_KEY_CHECKS = 1;
 
