@@ -13,10 +13,10 @@
         <class>org.zstack.core.job.JobQueueVO</class>
         <class>org.zstack.core.job.JobQueueEntryVO</class>
         <class>org.zstack.core.config.GlobalConfigVO</class>
-        <class>org.zstack.header.core.scheduler.SchedulerVO</class>
-        <class>org.zstack.header.core.scheduler.SchedulerJobVO</class>
-        <class>org.zstack.header.core.scheduler.SchedulerTriggerVO</class>
-        <class>org.zstack.header.core.scheduler.SchedulerJobSchedulerTriggerRefVO</class>
+        <class>org.zstack.header.scheduler.SchedulerVO</class>
+        <class>org.zstack.header.scheduler.SchedulerJobVO</class>
+        <class>org.zstack.header.scheduler.SchedulerTriggerVO</class>
+        <class>org.zstack.header.scheduler.SchedulerJobSchedulerTriggerRefVO</class>
         <class>org.zstack.header.managementnode.ManagementNodeVO</class>
         <class>org.zstack.header.managementnode.ManagementNodeContextVO</class>
         <class>org.zstack.header.zone.ZoneVO</class>
