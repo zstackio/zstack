@@ -96,10 +96,6 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             validate((APIChangeInstanceOfferingMsg) msg);
         } else if (msg instanceof APIMigrateVmMsg) {
             validate((APIMigrateVmMsg) msg);
-        } else if (msg instanceof APISetVmUsbRedirectMsg) {
-            validate((APISetVmUsbRedirectMsg) msg);
-        } else if (msg instanceof APIGetVmUsbRedirectMsg) {
-            validate((APIGetVmUsbRedirectMsg) msg);
         }
 
         setServiceId(msg);
@@ -260,14 +256,6 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 }
             }
         }
-    }
-
-    private void validate(APISetVmUsbRedirectMsg msg) {
-
-    }
-
-    private void validate(APIGetVmUsbRedirectMsg msg) {
-
     }
 
     private void validate(APIAttachIsoToVmInstanceMsg msg) {

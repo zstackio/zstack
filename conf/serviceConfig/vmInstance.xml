@@ -143,10 +143,4 @@
     <message>
         <name>org.zstack.header.vm.APIReimageVmInstanceMsg</name>
     </message>
-    <message>
-        <name>org.zstack.header.vm.APIGetVmUsbRedirectMsg</name>
-    </message>
-    <message>
-        <name>org.zstack.header.vm.APISetVmUsbRedirectMsg</name>
-    </message>
 </service>
