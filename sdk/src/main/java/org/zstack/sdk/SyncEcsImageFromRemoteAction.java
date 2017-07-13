@@ -25,6 +25,9 @@ public class SyncEcsImageFromRemoteAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String dataCenterUuid;
 
+    @Param(required = false, validValues = {"system","custom"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String type;
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 

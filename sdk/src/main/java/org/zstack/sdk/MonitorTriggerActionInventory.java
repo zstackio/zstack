@@ -65,4 +65,5 @@ public class MonitorTriggerActionInventory  {
     public java.util.List<String> getTriggerUuids() {
         return this.triggerUuids;
     }
+
 }

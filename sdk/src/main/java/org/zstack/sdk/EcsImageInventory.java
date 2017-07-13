@@ -34,11 +34,11 @@ public class EcsImageInventory  {
         return this.name;
     }
 
-    public long ecsImageSize;
-    public void setEcsImageSize(long ecsImageSize) {
+    public java.lang.Long ecsImageSize;
+    public void setEcsImageSize(java.lang.Long ecsImageSize) {
         this.ecsImageSize = ecsImageSize;
     }
-    public long getEcsImageSize() {
+    public java.lang.Long getEcsImageSize() {
         return this.ecsImageSize;
     }
 
