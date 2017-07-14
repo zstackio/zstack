@@ -209,7 +209,8 @@ public class VmInstanceExtensionPointEmitter implements Component {
                             inv.getUuid(), err);
                 }
             } catch (Exception e) {
-                logger.warn(String.format("Unhandled exception while calling %s", ext.getClass().getName()), e);
+                logger.error(String.format("Unhandled exception while calling %s", ext.getClass().getName()), e);
+                throw e;
             }
         }
         return null;
