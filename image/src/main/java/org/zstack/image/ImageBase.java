@@ -245,7 +245,7 @@ public class ImageBase implements Image {
 
                         if (count == 0) {
                             // the image is expunged on all backup storage
-                            sql(ImageVO.class).eq(ImageVO_.uuid, msg.getImageUuid()).hardDelete();
+                            sql(ImageVO.class).eq(ImageVO_.uuid, msg.getImageUuid()).delete();
                             sql(SharedResourceVO.class).eq(SharedResourceVO_.resourceUuid, msg.getImageUuid()).delete();
 
                             logger.debug(String.format("the image[uuid:%s, name:%s] has been expunged on all backup storage, remove it from database",
