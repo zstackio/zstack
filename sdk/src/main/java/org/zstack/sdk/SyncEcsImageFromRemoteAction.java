@@ -25,7 +25,7 @@ public class SyncEcsImageFromRemoteAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String dataCenterUuid;
 
-    @Param(required = false, validValues = {"system","custom"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, validValues = {"system","self"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String type;
 
     @Param(required = false)
@@ -78,7 +78,7 @@ public class SyncEcsImageFromRemoteAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
+        info.httpMethod = "PUT";
         info.path = "/hybrid/aliyun/image/{dataCenterUuid}/sync";
         info.needSession = true;
         info.needPoll = true;
