@@ -16,6 +16,7 @@ import org.zstack.header.network.service.*;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.VmNicInventory;
 import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
 import org.zstack.kvm.KVMHostAsyncHttpCallReply;
 import org.zstack.kvm.KVMSystemTags;
@@ -104,7 +105,11 @@ public class VirtualRouterCentralizedDnsBackend extends AbstractVirtualRouterBac
                     cmd.getBridgeName(),
                     forwardDnsStruct.getL3Network().getUuid()
             ));
-            cmd.setDns(vr.getVmNics().get(0).getIp());
+            for (VmNicInventory nic : vr.getVmNics()) {
+                if (nic.getL3NetworkUuid().equals(forwardDnsStruct.getL3Network().getUuid())) {
+                    cmd.setDns(nic.getIp());
+                }
+            }
             cmd.setWrongDns(forwardDnsStruct.getL3Network().getDns());
 
             KVMHostAsyncHttpCallMsg kmsg = new KVMHostAsyncHttpCallMsg();
