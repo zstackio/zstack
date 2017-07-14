@@ -720,6 +720,15 @@ public class KVMAgentCommands {
         private String videoType;
         private boolean useNuma;
         private String usbRedirect;
+        private boolean useBootMenu;
+
+        public void setUseBootMenu(boolean useBootMenu) {
+            this.useBootMenu = useBootMenu;
+        }
+
+        public boolean isUseBootMenu() {
+            return useBootMenu;
+        }
 
         public String getUsbRedirect() {
             return usbRedirect;

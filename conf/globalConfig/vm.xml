@@ -62,4 +62,12 @@
 		<type>java.lang.Boolean</type>
 		<defaultValue>false</defaultValue>
 	</config>
+
+	<config>
+		<name>bootMenu</name>
+		<description>whether to enable boot menu</description>
+		<category>vm</category>
+		<defaultValue>true</defaultValue>
+		<type>java.lang.Boolean</type>
+	</config>
 </globalConfig>
