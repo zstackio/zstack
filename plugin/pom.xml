@@ -28,7 +28,6 @@
         <module>sharedMountPointPrimaryStorage</module>
         <module>ldap</module>
         <module>vxlan</module>
-        <module>scheduler</module>
     </modules>
     <dependencies>
         <dependency>

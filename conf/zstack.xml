@@ -77,7 +77,6 @@
     <import resource="springConfigXml/Progress.xml"/>
     <import resource="springConfigXml/QueryFacade.xml"/>
     <import resource="springConfigXml/RESTFacade.xml"/>
-    <import resource="springConfigXml/SchedulerFacade.xml"/>
     <import resource="springConfigXml/SecurityGroupManager.xml"/>
     <import resource="springConfigXml/SftpBackupStorage.xml"/>
     <import resource="springConfigXml/sharedMountPointPrimaryStorage.xml"/>

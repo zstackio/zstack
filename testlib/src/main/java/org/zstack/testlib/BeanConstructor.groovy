@@ -28,7 +28,6 @@ class BeanConstructor {
             "Error.xml",
             "gc.xml",
             "debug.xml",
-            "SchedulerFacade.xml",
             "jsonlabel.xml",
             "encrypt.xml",
             "rest.xml",

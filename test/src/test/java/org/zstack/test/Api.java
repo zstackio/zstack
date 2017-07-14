@@ -22,7 +22,6 @@ import org.zstack.core.debug.APIDebugSignalMsg;
 import org.zstack.core.debug.DebugSignal;
 import org.zstack.network.securitygroup.SecurityGroupInventory;
 import org.zstack.network.securitygroup.VmNicSecurityGroupRefInventory;
-import org.zstack.scheduler.*;
 import org.zstack.header.allocator.APIGetCpuMemoryCapacityReply;
 import org.zstack.header.apimediator.APIIsReadyToGoMsg;
 import org.zstack.header.apimediator.ApiMediatorConstant;
@@ -32,7 +31,6 @@ import org.zstack.header.configuration.*;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.console.ConsoleInventory;
-import org.zstack.header.core.scheduler.SchedulerJobInventory;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
 import org.zstack.header.host.HostInventory;
@@ -4178,49 +4176,6 @@ public class Api implements CloudBusEventListener {
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         sender.send(msg, APIDebugSignalEvent.class);
-    }
-
-    public SchedulerJobInventory updateScheduler(String uuid, String schedulerName, String schedulerDescription, SessionInventory session) throws ApiSenderException {
-        APIUpdateSchedulerJobMsg msg = new APIUpdateSchedulerJobMsg();
-        if (schedulerName != null) {
-            msg.setName(schedulerName);
-        }
-
-        if (schedulerDescription != null) {
-            msg.setDescription(schedulerDescription);
-        }
-
-        msg.setSession(session == null ? adminSession : session);
-        msg.setUuid(uuid);
-        msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
-        ApiSender sender = new ApiSender();
-        sender.setTimeout(timeout);
-        APIUpdateSchedulerJobEvent evt = sender.send(msg, APIUpdateSchedulerJobEvent.class);
-        logger.debug(MessageCommandRecorder.endAndToString());
-        return evt.getInventory();
-    }
-
-    public void deleteScheduler(String uuid, SessionInventory session) throws ApiSenderException {
-        APIDeleteSchedulerJobMsg msg = new APIDeleteSchedulerJobMsg();
-        msg.setSession(session == null ? adminSession : session);
-        msg.setUuid(uuid);
-        msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
-        ApiSender sender = new ApiSender();
-        sender.setTimeout(timeout);
-        APIDeleteSchedulerJobEvent evt = sender.send(msg, APIDeleteSchedulerJobEvent.class);
-        logger.debug(MessageCommandRecorder.endAndToString());
-    }
-
-    public SchedulerJobInventory changeSchedulerState(String uuid, String state, SessionInventory session) throws ApiSenderException {
-        APIChangeSchedulerStateMsg msg = new APIChangeSchedulerStateMsg();
-        msg.setSession(session == null ? adminSession : session);
-        msg.setUuid(uuid);
-        msg.setStateEvent(state);
-        ApiSender sender = new ApiSender();
-        sender.setTimeout(timeout);
-        APIChangeSchedulerStateEvent evt = sender.send(msg, APIChangeSchedulerStateEvent.class);
-        logger.debug(MessageCommandRecorder.endAndToString());
-        return evt.getInventory();
     }
 
     public List<BackupStorageInventory> getCandidateBackupStorageForCreatingImage(String volUuid, String spUuid, SessionInventory session) throws ApiSenderException {

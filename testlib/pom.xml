@@ -154,11 +154,6 @@
         </dependency>
         <dependency>
             <groupId>org.zstack</groupId>
-            <artifactId>scheduler</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.zstack</groupId>
             <artifactId>flatNetworkProvider</artifactId>
             <version>${project.version}</version>
         </dependency>

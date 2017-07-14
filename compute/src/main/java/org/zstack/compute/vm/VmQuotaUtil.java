@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
-import org.zstack.header.core.scheduler.SchedulerVO;
 import org.zstack.header.identity.AccountResourceRefVO;
 import org.zstack.header.identity.AccountResourceRefVO_;
 import org.zstack.header.vm.VmInstanceState;
@@ -120,13 +119,4 @@ public class VmQuotaUtil {
         rootVolumeSize = rootVolumeSize == null ? 0 : rootVolumeSize;
         return rootVolumeSize;
     }
-
-
-    public long getUsedSchedulerNum(String accountUuid) {
-        SimpleQuery<AccountResourceRefVO> querySchedulerNum = dbf.createQuery(AccountResourceRefVO.class);
-        querySchedulerNum.add(AccountResourceRefVO_.accountUuid, SimpleQuery.Op.EQ, accountUuid);
-        querySchedulerNum.add(AccountResourceRefVO_.resourceType, SimpleQuery.Op.EQ, SchedulerVO.class.getSimpleName());
-        return querySchedulerNum.count();
-    }
-
 }
