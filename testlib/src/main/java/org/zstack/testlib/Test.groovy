@@ -354,7 +354,9 @@ abstract class Test implements ApiHelper {
 
         def caseTypes = Platform.reflections.getSubTypesOf(Case.class)
         caseTypes = caseTypes.findAll { it.package.name == this.class.package.name || it.package.name.startsWith("${this.class.package.name}.") }
-        caseTypes = caseTypes.sort()
+        caseTypes = caseTypes.sort{ a, b ->
+            return a.name.compareTo(b.name)
+        }
 
         def cases = new File([dir.absolutePath, "cases"].join("/"))
         cases.write(caseTypes.collect {it.name}.join("\n"))
