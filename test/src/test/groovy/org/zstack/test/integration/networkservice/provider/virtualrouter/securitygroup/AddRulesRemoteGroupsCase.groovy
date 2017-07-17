@@ -13,6 +13,7 @@ import org.zstack.network.securitygroup.SecurityGroupRuleTO
 import org.zstack.network.securitygroup.SecurityGroupRuleType
 import org.zstack.network.securitygroup.VmNicSecurityGroupRefVO
 import org.zstack.network.securitygroup.VmNicSecurityGroupRefVO_
+import org.zstack.sdk.AddSecurityGroupRuleAction
 import org.zstack.sdk.HostInventory
 import org.zstack.sdk.SecurityGroupInventory
 import org.zstack.sdk.VmInstanceInventory
@@ -86,6 +87,8 @@ class AddRulesRemoteGroupsCase extends SubCase{
 
             //sg3's ipset is in host1, host2 and host3, should delete its ipset on host1, host2 and host3
             testDeleteSecurityGroup(sg3.uuid, [host1.uuid, host2.uuid, host3.uuid])
+
+            testAddDuplicateRule(sg1.uuid, sg2.uuid)
         }
     }
 
@@ -169,6 +172,49 @@ class AddRulesRemoteGroupsCase extends SubCase{
         return sg
     }
 
+    void testAddDuplicateRule(String sgUuid, String remoteGroupUuid){
+        APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO rule1 = returnRandomRule()
+
+        addSecurityGroupRule {
+            rules = [rule1]
+            securityGroupUuid = sgUuid
+        }
+
+        AddSecurityGroupRuleAction a1 = new AddSecurityGroupRuleAction()
+        a1.rules = [rule1]
+        a1.securityGroupUuid = sgUuid
+        a1.sessionId = currentEnvSpec.session.uuid
+
+        assert a1.call().error != null
+
+        addSecurityGroupRule {
+            rules = [rule1]
+            securityGroupUuid = sgUuid
+            remoteSecurityGroupUuids = [remoteGroupUuid]
+        }
+
+        APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO rule2 = returnRandomRule()
+
+        addSecurityGroupRule {
+            rules = [rule2]
+            securityGroupUuid = sgUuid
+            remoteSecurityGroupUuids = [remoteGroupUuid]
+        }
+
+        AddSecurityGroupRuleAction a2 = new AddSecurityGroupRuleAction()
+        a2.rules = [rule2]
+        a2.securityGroupUuid = sgUuid
+        a2.remoteSecurityGroupUuids = [remoteGroupUuid]
+        a2.sessionId = currentEnvSpec.session.uuid
+
+        assert a2.call().error != null
+
+        addSecurityGroupRule {
+            rules = [rule2]
+            securityGroupUuid = sgUuid
+        }
+    }
+
     private void addRule(String sgUuid, int ruleCounts, int existedRuleCount){
         addRule(sgUuid, ruleCounts, null, existedRuleCount)
     }
@@ -206,7 +252,7 @@ class AddRulesRemoteGroupsCase extends SubCase{
                     assert it.remoteGroupVmIps.containsAll(sgVmIp.get(it.remoteGroupUuid))
                 }
             }else {
-                assert rule.rules.size() == ruleCounts
+                assert rule.rules.size() == ruleCounts + existedRuleCount
                 rule.rules.forEach{ it ->
                     assert it.remoteGroupUuid == null
                     assert it.remoteGroupVmIps == null
@@ -372,6 +418,5 @@ class AddRulesRemoteGroupsCase extends SubCase{
             assert ucmd.updateGroupTOs.get(0).actionCode == SecurityGroupMembersTO.ACTION_CODE_DELETE_GROUP
             assert ucmd.updateGroupTOs.get(0).securityGroupUuid == sgUuid
         }
-
     }
 }
