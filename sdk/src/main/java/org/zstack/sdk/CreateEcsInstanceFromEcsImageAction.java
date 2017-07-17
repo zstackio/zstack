@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class CreateEcsInstanceFromLocalImageAction extends AbstractAction {
+public class CreateEcsInstanceFromEcsImageAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public CreateEcsInstanceFromLocalImageResult value;
+        public CreateEcsInstanceFromEcsImageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -46,11 +46,8 @@ public class CreateEcsInstanceFromLocalImageAction extends AbstractAction {
     @Param(required = true, maxLength = 128, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String backupStorageUuid;
-
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String imageUuid;
+    public java.lang.String ecsImageUuid;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String instanceOfferingUuid;
@@ -91,8 +88,8 @@ public class CreateEcsInstanceFromLocalImageAction extends AbstractAction {
             return ret;
         }
         
-        CreateEcsInstanceFromLocalImageResult value = res.getResult(CreateEcsInstanceFromLocalImageResult.class);
-        ret.value = value == null ? new CreateEcsInstanceFromLocalImageResult() : value; 
+        CreateEcsInstanceFromEcsImageResult value = res.getResult(CreateEcsInstanceFromEcsImageResult.class);
+        ret.value = value == null ? new CreateEcsInstanceFromEcsImageResult() : value; 
 
         return ret;
     }
@@ -118,7 +115,7 @@ public class CreateEcsInstanceFromLocalImageAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/hybrid/aliyun/ecs-local";
+        info.path = "/hybrid/aliyun/ecs";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";

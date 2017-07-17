@@ -402,12 +402,10 @@ alter table EcsInstanceVO modify column ecsSecurityGroupUuid varchar(32) NOT NUL
 alter table EcsInstanceVO drop foreign key fkEcsInstanceVOEcsVSwitchVO;
 alter table EcsInstanceVO drop foreign key fkEcsInstanceVOIdentityZoneVO;
 alter table EcsInstanceVO drop foreign key fkEcsInstanceVOEcsSecurityGroupVO;
-alter table EcsInstanceVO drop foreign key fkEcsInstanceVOEcsImageVO;
 
 alter table EcsInstanceVO add CONSTRAINT fkEcsInstanceVOEcsVSwitchVO foreign key (ecsVSwitchUuid) references EcsVSwitchVO (uuid) on delete restrict;
 alter table EcsInstanceVO add CONSTRAINT fkEcsInstanceVOEcsSecurityGroupVO foreign key (ecsSecurityGroupUuid) references EcsSecurityGroupVO (uuid) on delete restrict;
 alter table EcsInstanceVO add CONSTRAINT fkEcsInstanceVOIdentityZoneVO foreign key (identityZoneUuid) references IdentityZoneVO (uuid) on delete restrict;
-alter table EcsInstanceVO add CONSTRAINT fkEcsInstanceVOEcsImageVO foreign key (ecsImageUuid) references EcsImageVO (uuid) on delete restrict;
 
 alter table HybridEipAddressVO add column dataCenterUuid varchar(32) not null;
 alter table HybridEipAddressVO add column chargeType varchar(32) not null default "PayByTraffic";
@@ -535,3 +533,5 @@ CREATE TABLE `PciDevicePciDeviceOfferingRefVO` (
   CONSTRAINT `PciDevicePciDeviceOfferingVO` FOREIGN KEY (`pciDeviceOfferingUuid`) REFERENCES `zstack`.`PciDeviceOfferingVO` (`uuid`) ON DELETE CASCADE,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+update EcsImageVO set type = 'custom' where type = 'aliyun';
