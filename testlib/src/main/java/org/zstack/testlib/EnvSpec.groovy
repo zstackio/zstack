@@ -435,6 +435,7 @@ class EnvSpec implements Node {
             sim.registerSimulators(this)
         }
 
+
         deploy()
 
         defaultHttpHandlers = [:]
@@ -703,6 +704,12 @@ class EnvSpec implements Node {
         if (lst == null) {
             lst = []
             messageHandlers[(msgClz)] = lst
+        } else {
+            // deduplication
+            def ele = lst.find { it -> it.get(0) == condition }
+            if (ele != null) {
+                lst.remove(ele)
+            }
         }
 
         lst.add(new Tuple(condition, handler))
