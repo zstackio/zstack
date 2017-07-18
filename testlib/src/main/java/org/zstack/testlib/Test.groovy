@@ -35,7 +35,23 @@ abstract class Test implements ApiHelper {
     static Object deployer
     static Map<String, String> apiPaths = new ConcurrentHashMap<>()
 
-    private final long DEFAULT_MESSAGE_TIMEOUT = TimeUnit.SECONDS.toMillis(25)
+    private final static long DEFAULT_MESSAGE_TIMEOUT_SECS = TimeUnit.SECONDS.toMillis(25)
+
+    static long getMessageTimeoutMillsConfig(){
+        String msgTimeoutStr = System.getProperty("msgTimeoutMins")
+
+        if(System.getProperty("maven.surefire.debug") != null && msgTimeoutStr == null){
+            return TimeUnit.MINUTES.toMillis(30)
+        }
+
+        if(msgTimeoutStr == null || msgTimeoutStr.isEmpty()){
+            return DEFAULT_MESSAGE_TIMEOUT_SECS
+        }
+
+        long msgTimeout = Long.parseLong(msgTimeoutStr)
+        return TimeUnit.MINUTES.toMillis(msgTimeout)
+    }
+
     private final int PHASE_NONE = 0
     private final int PHASE_SETUP = 1
     private final int PHASE_ENV = 2
@@ -48,8 +64,6 @@ abstract class Test implements ApiHelper {
     private int phase = PHASE_NONE
     protected BeanConstructor beanConstructor
     protected SpringSpec _springSpec
-
-
 
     Test() {
         _springSpec = new SpringSpec()
@@ -144,7 +158,8 @@ abstract class Test implements ApiHelper {
     private void hijackService() {
         CloudBus bus = bean(CloudBus.class)
         if(bus instanceof CloudBusImpl2){
-            ((CloudBusImpl2)bus).setDEFAULT_MESSAGE_TIMEOUT(DEFAULT_MESSAGE_TIMEOUT)
+            logger.info(String.format("CloudBus message timeout: %s mills", getMessageTimeoutMillsConfig()))
+            ((CloudBusImpl2)bus).setDEFAULT_MESSAGE_TIMEOUT(getMessageTimeoutMillsConfig())
         }
 
         def serviceId = "test.hijack.service"
