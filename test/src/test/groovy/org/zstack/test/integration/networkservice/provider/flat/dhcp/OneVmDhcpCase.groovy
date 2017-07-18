@@ -21,7 +21,7 @@ import org.zstack.testlib.L3NetworkSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.gson.JSONObjectUtil
 
-class OneVmDhcp extends SubCase {
+class OneVmDhcpCase extends SubCase {
     EnvSpec env
 
     VmInstanceInventory vm

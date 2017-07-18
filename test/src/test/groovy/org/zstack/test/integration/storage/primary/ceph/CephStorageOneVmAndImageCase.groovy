@@ -11,7 +11,7 @@ import org.zstack.testlib.SubCase
 /**
  * Created by heathhose on 17-3-22.
  */
-class CephStorageOneVmAndImage extends SubCase{
+class CephStorageOneVmAndImageCase extends SubCase{
     def description = """
         1. use ceph for primary storage and backup storage
         2. create a vm

@@ -25,7 +25,7 @@ import org.zstack.utils.data.SizeUnit
 /**
  * Created by xing5 on 2017/2/26.
  */
-class OneVmUserdata extends SubCase {
+class OneVmUserdataCase extends SubCase {
     EnvSpec env
 
     VmInstanceInventory vm
