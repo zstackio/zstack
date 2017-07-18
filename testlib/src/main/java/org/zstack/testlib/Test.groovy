@@ -159,10 +159,23 @@ abstract class Test implements ApiHelper {
                     def all = currentEnvSpec.messageHandlers.findAll { k, _ -> k.isAssignableFrom(msg.getClass()) }
 
                     boolean handled = false
+                    boolean conded = false
                     all.values().each { tuples ->
+                        // if there is a closure with condition satisfied, skip the mock without conditions
+                        tuples.each {
+                            Closure cond = it[0]
+                            if (cond != null && cond(msg)) {
+                                conded = true
+                            }
+                        }
                         tuples.each {
                             Closure cond = it[0]
                             Closure handler = it[1]
+
+                            if (cond == null && conded) {
+                                // skip (cond == null)
+                                return
+                            }
 
                             if (cond != null && !cond(msg)) {
                                 return

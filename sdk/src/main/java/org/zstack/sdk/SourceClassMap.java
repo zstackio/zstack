@@ -24,7 +24,6 @@ public class SourceClassMap {
 			put("org.zstack.header.aliyun.AliyunException", "org.zstack.sdk.AliyunException");
 			put("org.zstack.header.aliyun.AliyunOssException", "org.zstack.sdk.AliyunOssException");
 			put("org.zstack.header.aliyun.ecs.EcsInstanceInventory", "org.zstack.sdk.EcsInstanceInventory");
-			put("org.zstack.header.aliyun.ecs.EcsStatus", "org.zstack.sdk.EcsStatus");
 			put("org.zstack.header.aliyun.image.EcsImageInventory", "org.zstack.sdk.EcsImageInventory");
 			put("org.zstack.header.aliyun.network.HybridConnectionType", "org.zstack.sdk.HybridConnectionType");
 			put("org.zstack.header.aliyun.network.connection.ConnectionAccessPointInventory", "org.zstack.sdk.ConnectionAccessPointInventory");
@@ -241,7 +240,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.EcsInstanceInventory", "org.zstack.header.aliyun.ecs.EcsInstanceInventory");
 			put("org.zstack.sdk.EcsSecurityGroupInventory", "org.zstack.header.aliyun.network.group.EcsSecurityGroupInventory");
 			put("org.zstack.sdk.EcsSecurityGroupRuleInventory", "org.zstack.header.aliyun.network.group.EcsSecurityGroupRuleInventory");
-			put("org.zstack.sdk.EcsStatus", "org.zstack.header.aliyun.ecs.EcsStatus");
 			put("org.zstack.sdk.EcsVSwitchInventory", "org.zstack.header.aliyun.network.vpc.EcsVSwitchInventory");
 			put("org.zstack.sdk.EcsVpcInventory", "org.zstack.header.aliyun.network.vpc.EcsVpcInventory");
 			put("org.zstack.sdk.EipInventory", "org.zstack.network.service.eip.EipInventory");

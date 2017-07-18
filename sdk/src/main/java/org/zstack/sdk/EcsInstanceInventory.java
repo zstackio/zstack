@@ -34,27 +34,27 @@ public class EcsInstanceInventory  {
         return this.name;
     }
 
-    public EcsStatus ecsStatus;
-    public void setEcsStatus(EcsStatus ecsStatus) {
+    public java.lang.String ecsStatus;
+    public void setEcsStatus(java.lang.String ecsStatus) {
         this.ecsStatus = ecsStatus;
     }
-    public EcsStatus getEcsStatus() {
+    public java.lang.String getEcsStatus() {
         return this.ecsStatus;
     }
 
-    public long cpuCores;
-    public void setCpuCores(long cpuCores) {
+    public java.lang.Long cpuCores;
+    public void setCpuCores(java.lang.Long cpuCores) {
         this.cpuCores = cpuCores;
     }
-    public long getCpuCores() {
+    public java.lang.Long getCpuCores() {
         return this.cpuCores;
     }
 
-    public long memorySize;
-    public void setMemorySize(long memorySize) {
+    public java.lang.Long memorySize;
+    public void setMemorySize(java.lang.Long memorySize) {
         this.memorySize = memorySize;
     }
-    public long getMemorySize() {
+    public java.lang.Long getMemorySize() {
         return this.memorySize;
     }
 
@@ -66,11 +66,11 @@ public class EcsInstanceInventory  {
         return this.ecsInstanceType;
     }
 
-    public long ecsBandWidth;
-    public void setEcsBandWidth(long ecsBandWidth) {
+    public java.lang.Long ecsBandWidth;
+    public void setEcsBandWidth(java.lang.Long ecsBandWidth) {
         this.ecsBandWidth = ecsBandWidth;
     }
-    public long getEcsBandWidth() {
+    public java.lang.Long getEcsBandWidth() {
         return this.ecsBandWidth;
     }
 
@@ -90,11 +90,11 @@ public class EcsInstanceInventory  {
         return this.ecsRootVolumeCategory;
     }
 
-    public long ecsRootVolumeSize;
-    public void setEcsRootVolumeSize(long ecsRootVolumeSize) {
+    public java.lang.Long ecsRootVolumeSize;
+    public void setEcsRootVolumeSize(java.lang.Long ecsRootVolumeSize) {
         this.ecsRootVolumeSize = ecsRootVolumeSize;
     }
-    public long getEcsRootVolumeSize() {
+    public java.lang.Long getEcsRootVolumeSize() {
         return this.ecsRootVolumeSize;
     }
 
