@@ -18,7 +18,7 @@
             <zstack:extension interface="org.zstack.header.Service"/>
             <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeChangeListener"/>
             <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint"/>
-            <zstack:extension interface="org.zstack.header.vm.VmHaExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.vm.VmInstanceStartExtensionPoint" />
         </zstack:plugin>
     </bean>
 

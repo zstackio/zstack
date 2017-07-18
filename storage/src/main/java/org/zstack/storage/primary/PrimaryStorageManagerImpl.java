@@ -17,6 +17,7 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -28,6 +29,8 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.tag.SystemTagValidator;
 import org.zstack.header.vm.VmHaExtensionPoint;
+import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceStartExtensionPoint;
 import org.zstack.search.GetQuery;
 import org.zstack.search.SearchQuery;
 import org.zstack.tag.TagManager;
@@ -43,7 +46,7 @@ import java.util.*;
 import java.util.concurrent.Callable;
 
 public class PrimaryStorageManagerImpl extends AbstractService implements PrimaryStorageManager,
-        ManagementNodeChangeListener, ManagementNodeReadyExtensionPoint, VmHaExtensionPoint{
+        ManagementNodeChangeListener, ManagementNodeReadyExtensionPoint, VmInstanceStartExtensionPoint {
     private static final CLogger logger = Utils.getLogger(PrimaryStorageManager.class);
 
     @Autowired
@@ -587,11 +590,6 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         loadPrimaryStorage();
     }
 
-    @Override
-    public void preHaStartVm(String vmUuid) {
-        checkVmAllVolumePrimaryStorageState(vmUuid);
-    }
-
     private void checkVmAllVolumePrimaryStorageState(String vmUuid) {
         String sql = "select uuid from PrimaryStorageVO where uuid in (" +
                 " select distinct(primaryStorageUuid) from VolumeVO" +
@@ -604,5 +602,30 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         if (result != null && !result.isEmpty()) {
             throw new OperationFailureException(argerr("the VM[uuid:%s] volume stored location primary storage is in a state of maintenance", vmUuid));
         }
+    }
+
+    @Override
+    public String preStartVm(VmInstanceInventory inv) {
+        try{
+            checkVmAllVolumePrimaryStorageState(inv.getUuid());
+            return null;
+        }catch (Exception e){
+            return e.getMessage();
+        }
+    }
+
+    @Override
+    public void beforeStartVm(VmInstanceInventory inv) {
+        // do nothing
+    }
+
+    @Override
+    public void afterStartVm(VmInstanceInventory inv) {
+        // do nothing
+    }
+
+    @Override
+    public void failedToStartVm(VmInstanceInventory inv, ErrorCode reason) {
+        // do nothing
     }
 }

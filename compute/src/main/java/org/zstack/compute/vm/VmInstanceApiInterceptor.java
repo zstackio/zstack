@@ -207,19 +207,6 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         if (msg.getHostUuid() != null) {
             msg.setClusterUuid(null);
         }
-
-        // validate vm disks primary storage state
-        String sql = "select uuid from PrimaryStorageVO where uuid in (" +
-                " select distinct(primaryStorageUuid) from VolumeVO" +
-                " where vmInstanceUuid = :vmUuid and primaryStorageUuid is not null)" +
-                " and state = :psState";
-        List<String> result = SQL.New(sql, String.class)
-                .param("vmUuid", msg.getUuid())
-                .param("psState", PrimaryStorageState.Maintenance)
-                .list();
-        if(result != null && !result.isEmpty()){
-            throw new ApiMessageInterceptionException(argerr("the VM[uuid:%s] volume stored location primary storage is in a state of maintenance", msg.getVmInstanceUuid()));
-        }
     }
 
     private void validate(APISetVmStaticIpMsg msg) {
