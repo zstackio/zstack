@@ -22,7 +22,7 @@ import static java.util.Arrays.asList
 /**
  * Created by Camile on 2017/5/17.
  */
-class CreateVmWhenPSCapacityLessOrGreaterImageAndRootVolumeSize extends SubCase{
+class CreateVmWhenPSCapacityLessOrGreaterImageAndRootVolumeSizeCase extends SubCase{
     EnvSpec env
 
 

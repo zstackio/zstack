@@ -11,7 +11,7 @@ import org.zstack.utils.network.NetworkUtils
 /**
  * Created by xing5 on 2017/2/22.
  */
-class OneL3OneIpRangeNoIpUsed extends SubCase {
+class OneL3OneIpRangeNoIpUsedCase extends SubCase {
     EnvSpec env
 
     @Override

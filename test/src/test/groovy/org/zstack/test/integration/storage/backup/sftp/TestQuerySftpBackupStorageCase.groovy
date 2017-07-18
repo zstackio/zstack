@@ -10,7 +10,7 @@ import org.zstack.testlib.SubCase
  * Created by lining on 2017/3/27.
  */
 // base on TestQuerySftpBackupStorage
-class TestQuerySftpBackupStorage extends SubCase {
+class TestQuerySftpBackupStorageCase extends SubCase {
 
     EnvSpec env
 
