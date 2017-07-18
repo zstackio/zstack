@@ -1,1 +1,48 @@
 ALTER TABLE VpcVpnConnectionVO ADD COLUMN status varchar(32) NOT NULL DEFAULT 'IPSEC_SUCCESS';
+
+CREATE TABLE `AliyunDiskVO` (
+	  `uuid` VARCHAR(32) UNIQUE NOT NULL,
+	  `diskId` VARCHAR(32) NOT NULL,
+	  `name` VARCHAR(128)  NOT NULL,
+	  `description` VARCHAR(1024) DEFAULT NULL,
+	  `identityZoneUuid` VARCHAR(32) NOT NULL,
+	  `ecsInstanceUuid` VARCHAR(32) DEFAULT NULL,
+	  `diskType` VARCHAR(16) NOT NULL,
+	  `diskCategory` VARCHAR(16)  DEFAULT NULL,
+	  `diskChargeType` VARCHAR(16)  DEFAULT NULL,
+ 	  `status` VARCHAR(16)  DEFAULT NULL,
+ 	  `sizeWithGB` INTEGER UNSIGNED  DEFAULT NULL,
+ 	  `deviceInfo` VARCHAR(32) DEFAULT NULL,
+	  `createDate` TIMESTAMP NOT NULL DEFAULT '0000-00-00 00:00:00' ,
+	  `lastOpDate` TIMESTAMP NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+	  PRIMARY KEY (`uuid`),
+      KEY `fkAliyunDiskVOIdentityZoneVO` (`identityZoneUuid`),
+      CONSTRAINT fkAliyunDiskVOIdentityZoneVO FOREIGN KEY (identityZoneUuid) REFERENCES IdentityZoneVO (uuid)  ON DELETE RESTRICT,
+      KEY `fkAliyunDiskVOEcsInstanceVO` (`ecsInstanceUuid`),
+      CONSTRAINT fkAliyunDiskVOEcsInstanceVO FOREIGN KEY (ecsInstanceUuid) REFERENCES EcsInstanceVO (uuid)  ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `AliyunSnapshotVO` (
+	  `uuid` VARCHAR(32) UNIQUE NOT NULL,
+	  `snapshotId` VARCHAR(32) UNIQUE NOT NULL,
+	  `name` VARCHAR(128)  NOT NULL,
+	  `description` VARCHAR(1024) DEFAULT NULL,
+	  `dataCenterUuid` VARCHAR(32) NOT NULL,
+	  `diskUuid` VARCHAR(32) DEFAULT NULL,
+	  `status` VARCHAR(16) DEFAULT NULL,
+	  `aliyunSnapshotUsage` VARCHAR(16) NOT NULL,
+	  `createDate` TIMESTAMP NOT NULL DEFAULT '0000-00-00 00:00:00' ,
+	  `lastOpDate` TIMESTAMP NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+	  PRIMARY KEY (`uuid`),
+	  KEY `fkAliyunSnapshotVOAliyunDiskVO` (`diskUuid`),
+      CONSTRAINT `fkAliyunSnapshotVOAliyunDiskVO` FOREIGN KEY (diskUuid) REFERENCES AliyunDiskVO (uuid)  ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE  `EcsImageUsageVO` (
+    `id` INT UNSIGNED NOT NULL UNIQUE AUTO_INCREMENT,
+    `ecsImageUuid` VARCHAR(32) NOT NULL,
+    `snapshotUuidOfCreatedImage` VARCHAR(32) NOT NULL,
+	`createDate` TIMESTAMP NOT NULL DEFAULT '0000-00-00 00:00:00' ,
+	`lastOpDate` TIMESTAMP NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY  (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
