@@ -73,7 +73,7 @@ public class PowerOnBaremetalHostAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/baremetal/chassis/{uuid}/actions";
+        info.path = "/baremetal/chassis/{chassisUuid}/actions";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "powerOnBaremetalHost";
