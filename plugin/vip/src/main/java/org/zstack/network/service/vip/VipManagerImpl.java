@@ -29,6 +29,7 @@ import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedQuotaCheckMessage;
 import org.zstack.header.network.l3.*;
+import org.zstack.header.quota.QuotaConstant;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.tag.TagManager;
@@ -361,7 +362,7 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
 
         QuotaPair p = new QuotaPair();
         p.setName(VipConstant.QUOTA_VIP_NUM);
-        p.setValue(20);
+        p.setValue(QuotaConstant.QUOTA_VIP_NUM);
         quota.addPair(p);
 
         return list(quota);

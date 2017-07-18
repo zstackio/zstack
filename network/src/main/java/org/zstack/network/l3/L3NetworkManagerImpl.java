@@ -25,6 +25,7 @@ import org.zstack.header.message.NeedQuotaCheckMessage;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l2.L2NetworkVO_;
 import org.zstack.header.network.l3.*;
+import org.zstack.header.quota.QuotaConstant;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.network.service.MtuGetter;
@@ -481,7 +482,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
 
         QuotaPair p = new QuotaPair();
         p.setName(L3NetworkConstant.QUOTA_L3_NUM);
-        p.setValue(20);
+        p.setValue(QuotaConstant.QUOTA_L3_NUM);
         quota.addPair(p);
 
         return list(quota);

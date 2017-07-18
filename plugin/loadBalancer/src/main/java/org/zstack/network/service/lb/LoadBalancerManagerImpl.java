@@ -30,6 +30,7 @@ import org.zstack.header.message.NeedQuotaCheckMessage;
 import org.zstack.header.query.AddExpandedQueryExtensionPoint;
 import org.zstack.header.query.ExpandedQueryAliasStruct;
 import org.zstack.header.query.ExpandedQueryStruct;
+import org.zstack.header.quota.QuotaConstant;
 import org.zstack.header.tag.AbstractSystemTagOperationJudger;
 import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.tag.SystemTagValidator;
@@ -476,7 +477,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
 
         QuotaPair p = new QuotaPair();
         p.setName(LoadBalancerConstants.QUOTA_LOAD_BALANCER_NUM);
-        p.setValue(20);
+        p.setValue(QuotaConstant.QUOTA_LOAD_BALANCER_NUM);
         quota.addPair(p);
 
         return list(quota);

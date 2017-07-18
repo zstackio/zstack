@@ -30,6 +30,7 @@ import org.zstack.header.message.NeedQuotaCheckMessage;
 import org.zstack.header.query.AddExpandedQueryExtensionPoint;
 import org.zstack.header.query.ExpandedQueryAliasStruct;
 import org.zstack.header.query.ExpandedQueryStruct;
+import org.zstack.header.quota.QuotaConstant;
 import org.zstack.header.vm.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
@@ -138,7 +139,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
         QuotaPair p = new QuotaPair();
         p.setName(SecurityGroupConstant.QUOTA_SG_NUM);
-        p.setValue(20);
+        p.setValue(QuotaConstant.QUOTA_SG_NUM);
         quota.addPair(p);
 
         return list(quota);

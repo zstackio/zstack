@@ -29,6 +29,7 @@ import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.query.AddExpandedQueryExtensionPoint;
 import org.zstack.header.query.ExpandedQueryAliasStruct;
 import org.zstack.header.query.ExpandedQueryStruct;
+import org.zstack.header.quota.QuotaConstant;
 import org.zstack.header.vm.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
@@ -1069,7 +1070,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
 
         QuotaPair p = new QuotaPair();
         p.setName(EipConstant.QUOTA_EIP_NUM);
-        p.setValue(20);
+        p.setValue(QuotaConstant.QUOTA_EIP_NUM);
         quota.addPair(p);
 
         return list(quota);

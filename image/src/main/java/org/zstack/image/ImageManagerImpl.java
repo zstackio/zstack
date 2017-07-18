@@ -41,6 +41,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedQuotaCheckMessage;
+import org.zstack.header.quota.QuotaConstant;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.search.SearchOp;
 import org.zstack.header.storage.backup.*;
@@ -1372,12 +1373,12 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
         Quota.QuotaPair p = new Quota.QuotaPair();
         p.setName(ImageConstant.QUOTA_IMAGE_NUM);
-        p.setValue(20);
+        p.setValue(QuotaConstant.QUOTA_IMAGE_NUM);
         quota.addPair(p);
 
         p = new Quota.QuotaPair();
         p.setName(ImageConstant.QUOTA_IMAGE_SIZE);
-        p.setValue(SizeUnit.TERABYTE.toByte(10));
+        p.setValue(QuotaConstant.QUOTA_IMAGE_SIZE);
         quota.addPair(p);
 
         return list(quota);
