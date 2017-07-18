@@ -278,7 +278,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
         SimpleQuery<SecurityGroupRuleVO> lsquery = dbf.createQuery(SecurityGroupRuleVO.class);
         lsquery.add(SecurityGroupRuleVO_.securityGroupUuid, Op.EQ, msg.getSecurityGroupUuid());
         List<SecurityGroupRuleVO> vos = lsquery.list();
-        boolean hasRemoteGroups = msg.getRemoteSecurityGroupUuids() == null || msg.getRemoteSecurityGroupUuids().isEmpty();
+        boolean hasRemoteGroups = msg.getRemoteSecurityGroupUuids() != null && !msg.getRemoteSecurityGroupUuids().isEmpty();
 
         for (SecurityGroupRuleVO svo : vos) {
             SecurityGroupRuleAO ao = new SecurityGroupRuleAO();
@@ -287,11 +287,12 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
             ao.setProtocol(svo.getProtocol().toString());
             ao.setStartPort(svo.getStartPort());
             ao.setEndPort(svo.getEndPort());
-            
+            String existRuleRemoteGroupUuid = svo.getRemoteSecurityGroupUuid();
             for (SecurityGroupRuleAO sao : msg.getRules()) {
                 if (checkSecurityGroupRuleEqual(ao, sao) && (
-                        !hasRemoteGroups && svo.getRemoteSecurityGroupUuid() == null ||
-                        hasRemoteGroups && msg.getRemoteSecurityGroupUuids().contains(svo.getRemoteSecurityGroupUuid())
+                        !hasRemoteGroups && existRuleRemoteGroupUuid == null ||
+                        hasRemoteGroups && existRuleRemoteGroupUuid != null &&
+                                msg.getRemoteSecurityGroupUuids().contains(existRuleRemoteGroupUuid)
                 )) {
                     throw new ApiMessageInterceptionException(argerr("rule exist. rule dump: %s, remoteSecurityGroupUuid:[%s]",
                                     JSONObjectUtil.toJsonString(sao), svo.getRemoteSecurityGroupUuid()));
