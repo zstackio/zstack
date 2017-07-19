@@ -14,11 +14,12 @@ import org.zstack.header.message.Event
 import org.zstack.header.message.Message
 import org.zstack.sdk.SessionInventory
 import org.zstack.sdk.ZSClient
+import org.zstack.testlib.collectstrategy.SubCaseCollectionStrategyFactory
+import org.zstack.testlib.collectstrategy.SubCaseCollectionStrategy
 import org.zstack.utils.ShellUtils
 import org.zstack.utils.Utils
 import org.zstack.utils.gson.JSONObjectUtil
 import org.zstack.utils.logging.CLogger
-
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
 import java.util.concurrent.ConcurrentHashMap
@@ -361,17 +362,23 @@ abstract class Test implements ApiHelper {
         return resultDir
     }
 
+    private SubCaseCollectionStrategy getSubCaseCollectionStrategy(){
+        String strategyName = System.getProperty("subCaseCollectionStrategy")
+        SubCaseCollectionStrategy strategy = SubCaseCollectionStrategyFactory.getSubCaseCollectionStrategy(strategyName)
+
+        assert null != strategy : "can not find SubCaseCollectionStrategy"
+        logger.info("input subCaseCollectionStrategy = ${strategyName}, subCaseCollectionStrategy is ${strategy.strategyName}")
+        return strategy
+    }
+
     protected void runSubCases() {
         def resultDir = [getResultDirBase(), this.class.name.replace(".", "_")].join("/")
         def dir = new File(resultDir)
         dir.deleteDir()
         dir.mkdirs()
 
-        def caseTypes = Platform.reflections.getSubTypesOf(Case.class)
-        caseTypes = caseTypes.findAll { it.package.name == this.class.package.name || it.package.name.startsWith("${this.class.package.name}.") }
-        caseTypes = caseTypes.sort{ a, b ->
-            return a.name.compareTo(b.name)
-        }
+        SubCaseCollectionStrategy strategy = getSubCaseCollectionStrategy()
+        def caseTypes = strategy.collectSubCases(this)
 
         def cases = new File([dir.absolutePath, "cases"].join("/"))
         cases.write(caseTypes.collect {it.name}.join("\n"))
