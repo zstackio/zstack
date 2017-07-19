@@ -31,7 +31,7 @@ public class CreateAliyunVpcVirtualRouterEntryRemoteAction extends AbstractActio
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String nextHopUuid;
 
-    @Param(required = true, validValues = {"Instance","RouterInterface"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, validValues = {"Instance","RouterInterface","Tunnel"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String nextHopType;
 
     @Param(required = true, validValues = {"vbr","vrouter"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
