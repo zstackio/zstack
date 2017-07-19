@@ -1,6 +1,7 @@
 package org.zstack.network.l2.vxlan.vxlanNetworkPool;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.Component;
@@ -9,6 +10,7 @@ import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.APICreateL3NetworkMsg;
+import org.zstack.identity.AccountManager;
 import org.zstack.query.QueryFacade;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -32,6 +34,8 @@ public class VxlanNetworkPoolFactory implements L2NetworkFactory, Component, Glo
     private QueryFacade qf;
     @Autowired
     private VxlanNetworkChecker vxlanInterceptor;
+    @Autowired
+    private AccountManager acntMgr;
 
     @Override
     public L2NetworkType getType() {
@@ -39,12 +43,15 @@ public class VxlanNetworkPoolFactory implements L2NetworkFactory, Component, Glo
     }
 
     @Override
+    @Transactional
     public L2NetworkInventory createL2Network(L2NetworkVO ovo, APICreateL2NetworkMsg msg) {
         VxlanNetworkPoolVO vo = new VxlanNetworkPoolVO(ovo);
         if (vo.getPhysicalInterface() == null) {
             vo.setPhysicalInterface("");
         }
         vo = dbf.persistAndRefresh(vo);
+        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), VxlanNetworkPoolVO.class);
+
         L2VxlanNetworkPoolInventory inv = L2VxlanNetworkPoolInventory.valueOf(vo);
         String info = String.format("successfully create L2VxlanNetworkPool, %s", JSONObjectUtil.toJsonString(inv));
         logger.debug(info);

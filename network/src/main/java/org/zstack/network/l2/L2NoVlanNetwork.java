@@ -24,6 +24,8 @@ import org.zstack.core.workflow.*;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.*;
+import org.zstack.header.identity.SharedResourceVO;
+import org.zstack.header.identity.SharedResourceVO_;
 import org.zstack.header.message.*;
 import org.zstack.header.network.l2.*;
 import org.zstack.network.service.NetworkServiceGlobalConfig;
@@ -484,6 +486,7 @@ public class L2NoVlanNetwork implements L2Network {
             @Override
             public void handle(Map data) {
                 casf.asyncCascadeFull(CascadeConstant.DELETION_CLEANUP_CODE, issuer, ctx, new NopeCompletion());
+                SQL.New(SharedResourceVO.class).eq(SharedResourceVO_.resourceUuid, msg.getL2NetworkUuid()).delete();
                 bus.publish(evt);
             }
         }).error(new FlowErrorHandler(msg) {
