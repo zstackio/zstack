@@ -78,11 +78,11 @@ public class AttachHybridEipToEcsAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
+        info.httpMethod = "POST";
         info.path = "/hybrid/eip/{eipUuid}/attach";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "attachHybridEipToEcs";
+        info.parameterName = "params";
         return info;
     }
 

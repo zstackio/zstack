@@ -75,11 +75,11 @@ public class DetachHybridEipFromEcsAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
+        info.httpMethod = "POST";
         info.path = "/hybrid/eip/{eipUuid}/detach";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "detachHybridEipFromEcs";
+        info.parameterName = "params";
         return info;
     }
 

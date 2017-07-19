@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class UpdateEcsInstanceVncPasswordAction extends AbstractAction {
+public class SyncConnectionAccessPointFromRemoteAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public UpdateEcsInstanceVncPasswordResult value;
+        public SyncConnectionAccessPointFromRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -23,10 +23,13 @@ public class UpdateEcsInstanceVncPasswordAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
+    public java.lang.String dataCenterUuid;
 
-    @Param(required = true, validRegexValues = "[A-Za-z0-9]{6}", maxLength = 6, minLength = 6, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String password;
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String accessPointId;
+
+    @Param(required = false)
+    public java.lang.String resourceUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -49,8 +52,8 @@ public class UpdateEcsInstanceVncPasswordAction extends AbstractAction {
             return ret;
         }
         
-        UpdateEcsInstanceVncPasswordResult value = res.getResult(UpdateEcsInstanceVncPasswordResult.class);
-        ret.value = value == null ? new UpdateEcsInstanceVncPasswordResult() : value; 
+        SyncConnectionAccessPointFromRemoteResult value = res.getResult(SyncConnectionAccessPointFromRemoteResult.class);
+        ret.value = value == null ? new SyncConnectionAccessPointFromRemoteResult() : value; 
 
         return ret;
     }
@@ -75,11 +78,11 @@ public class UpdateEcsInstanceVncPasswordAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/hybrid/aliyun/{uuid}/ecs-vnc";
+        info.httpMethod = "GET";
+        info.path = "/hybrid/aliyun/access-point/{dataCenterUuid}/sync";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 
