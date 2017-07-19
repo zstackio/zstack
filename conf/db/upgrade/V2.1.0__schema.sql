@@ -535,3 +535,7 @@ CREATE TABLE `PciDevicePciDeviceOfferingRefVO` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 update EcsImageVO set type = 'custom' where type = 'aliyun';
+alter table DataCenterVO drop foreign key fkDataCenterVOEcsVpcVO;
+alter table DataCenterVO drop column defaultVpcUuid;
+alter table IdentityZoneVO drop foreign key fkIdentityZoneVOEcsVSwitchVO;
+alter table IdentityZoneVO drop column defaultVSwitchUuid;

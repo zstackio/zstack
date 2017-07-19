@@ -78,11 +78,11 @@ public class SyncConnectionAccessPointFromRemoteAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
+        info.httpMethod = "PUT";
         info.path = "/hybrid/aliyun/access-point/{dataCenterUuid}/sync";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "syncConnectionAccessPointFromRemote";
         return info;
     }
 

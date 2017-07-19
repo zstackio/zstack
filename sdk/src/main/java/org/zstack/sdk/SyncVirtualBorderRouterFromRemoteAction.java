@@ -75,11 +75,11 @@ public class SyncVirtualBorderRouterFromRemoteAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
+        info.httpMethod = "PUT";
         info.path = "/hybrid/aliyun/border-router/{dataCenterUuid}/sync";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "syncVirtualBorderRouterFromRemote";
         return info;
     }
 

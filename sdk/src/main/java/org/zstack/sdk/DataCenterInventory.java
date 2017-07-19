@@ -42,14 +42,6 @@ public class DataCenterInventory  {
         return this.regionId;
     }
 
-    public java.lang.String defaultVpc;
-    public void setDefaultVpc(java.lang.String defaultVpc) {
-        this.defaultVpc = defaultVpc;
-    }
-    public java.lang.String getDefaultVpc() {
-        return this.defaultVpc;
-    }
-
     public java.lang.String description;
     public void setDescription(java.lang.String description) {
         this.description = description;
