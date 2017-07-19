@@ -34,7 +34,7 @@ public class CreateEcsImageFromLocalImageAction extends AbstractAction {
     @Param(required = false, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
-    @Param(required = true, maxLength = 128, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, validRegexValues = "[A-Za-z\\u4e00-\\u9fa5]{1}[A-Za-z0-9-_\\u4e00-\\u9fa5]{1,127}", maxLength = 128, minLength = 2, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
 
     @Param(required = false)

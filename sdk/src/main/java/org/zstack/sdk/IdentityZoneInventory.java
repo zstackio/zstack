@@ -50,14 +50,6 @@ public class IdentityZoneInventory  {
         return this.zoneName;
     }
 
-    public java.lang.String defaultVSwitch;
-    public void setDefaultVSwitch(java.lang.String defaultVSwitch) {
-        this.defaultVSwitch = defaultVSwitch;
-    }
-    public java.lang.String getDefaultVSwitch() {
-        return this.defaultVSwitch;
-    }
-
     public java.lang.String description;
     public void setDescription(java.lang.String description) {
         this.description = description;

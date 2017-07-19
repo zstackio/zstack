@@ -78,11 +78,11 @@ public class SyncHybridEipFromRemoteAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
+        info.httpMethod = "PUT";
         info.path = "/hybrid/eip/{dataCenterUuid}/sync";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "syncHybridEipFromRemote";
         return info;
     }
 
