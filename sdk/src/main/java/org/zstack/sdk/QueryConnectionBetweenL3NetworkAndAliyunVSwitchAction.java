@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class GetConnectionBetweenL3NetworkAndAliyunVSwitchAction extends AbstractAction {
+public class QueryConnectionBetweenL3NetworkAndAliyunVSwitchAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public GetConnectionBetweenL3NetworkAndAliyunVSwitchResult value;
+        public QueryConnectionBetweenL3NetworkAndAliyunVSwitchResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -22,20 +22,6 @@ public class GetConnectionBetweenL3NetworkAndAliyunVSwitchAction extends Abstrac
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = true, validValues = {"vswitch","l3network","vroutervm","vbr","vpc"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String resourceType;
-
-    @Param(required = false)
-    public java.util.List systemTags;
-
-    @Param(required = false)
-    public java.util.List userTags;
-
-    @Param(required = true)
-    public String sessionId;
 
 
     private Result makeResult(ApiResult res) {
@@ -45,8 +31,8 @@ public class GetConnectionBetweenL3NetworkAndAliyunVSwitchAction extends Abstrac
             return ret;
         }
         
-        GetConnectionBetweenL3NetworkAndAliyunVSwitchResult value = res.getResult(GetConnectionBetweenL3NetworkAndAliyunVSwitchResult.class);
-        ret.value = value == null ? new GetConnectionBetweenL3NetworkAndAliyunVSwitchResult() : value; 
+        QueryConnectionBetweenL3NetworkAndAliyunVSwitchResult value = res.getResult(QueryConnectionBetweenL3NetworkAndAliyunVSwitchResult.class);
+        ret.value = value == null ? new QueryConnectionBetweenL3NetworkAndAliyunVSwitchResult() : value; 
 
         return ret;
     }
@@ -71,11 +57,11 @@ public class GetConnectionBetweenL3NetworkAndAliyunVSwitchAction extends Abstrac
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
+        info.httpMethod = "GET";
         info.path = "/hybrid/aliyun/relationships";
         info.needSession = true;
         info.needPoll = false;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

@@ -539,3 +539,5 @@ alter table DataCenterVO drop foreign key fkDataCenterVOEcsVpcVO;
 alter table DataCenterVO drop column defaultVpcUuid;
 alter table IdentityZoneVO drop foreign key fkIdentityZoneVOEcsVSwitchVO;
 alter table IdentityZoneVO drop column defaultVSwitchUuid;
+alter table ConnectionRelationShipVO modify column relationShips varchar(32768) NOT NULL;
+alter table HybridConnectionRefVO add column resourceUuid varchar(32) NOT NULL;
