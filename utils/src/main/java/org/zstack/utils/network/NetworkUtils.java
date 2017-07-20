@@ -506,6 +506,10 @@ public class NetworkUtils {
     }
 
     public static List<String> getCidrsFromIpRange(String startIp, String endIp) {
+        return getCidrsFromIpRange(startIp, endIp, true);
+    }
+
+    public static List<String> getCidrsFromIpRange(String startIp, String endIp, boolean exact) {
         if (!isIpv4Address(startIp)) {
             throw new IllegalArgumentException(String.format("%s is not a valid ipv4 address", startIp));
         }
@@ -513,8 +517,8 @@ public class NetworkUtils {
             throw new IllegalArgumentException(String.format("%s is not a valid ipv4 address", endIp));
         }
 
-        long start = ipToLong(startIp);
-        long end = ipToLong(endIp);
+        long start = exact ? ipToLong(startIp) : ipToLong(startIp, 0L);
+        long end = exact ? ipToLong(endIp) : ipToLong(endIp, 255L);
 
         ArrayList<String> pairs = new ArrayList<String>();
         while (end >= start) {
@@ -553,13 +557,17 @@ public class NetworkUtils {
             0xFFFFFFFF };
 
     private static long ipToLong(String strIP) {
+        return ipToLong(strIP, null);
+    }
+
+    private static long ipToLong(String strIP, Long last) {
         long[] ip = new long[4];
         String[] ipSec = strIP.split("\\.");
         for (int k = 0; k < 4; k++) {
             ip[k] = Long.valueOf(ipSec[k]);
         }
 
-        return (ip[0] << 24) + (ip[1] << 16) + (ip[2] << 8) + ip[3];
+        return (ip[0] << 24) + (ip[1] << 16) + (ip[2] << 8) + (last == null ? ip[3] : last);
     }
 
     private static String longToIP(long longIP) {
