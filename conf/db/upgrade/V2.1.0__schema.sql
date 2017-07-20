@@ -502,6 +502,7 @@ CREATE TABLE `PciDeviceVO` (
   `vmInstanceUuid` varchar(32) DEFAULT NULL,
   `type` varchar(32) NOT NULL,
   `status` varchar(32) NOT NULL,
+  `state` varchar(32) NOT NULL,
   `pciDeviceAddress` varchar(32) NOT NULL,
   `vendorId` varchar(64) NOT NULL,
   `deviceId` varchar(64) NOT NULL,
