@@ -542,6 +542,35 @@ alter table DataCenterVO drop foreign key fkDataCenterVOEcsVpcVO;
 alter table DataCenterVO drop column defaultVpcUuid;
 alter table IdentityZoneVO drop foreign key fkIdentityZoneVOEcsVSwitchVO;
 alter table IdentityZoneVO drop column defaultVSwitchUuid;
+
 alter table VpcVirtualRouteEntryVO change column nextHopVRiUuid nextHopUuid varchar(32) DEFAULT NULL;
 alter table AvailableInstanceTypesVO modify column instanceType varchar(4096) DEFAULT NULL;
 drop table EcsImageMd5SumMappingVO;
+
+# add default SecurityGroupRule for ZSTAC-5386
+DELIMITER $$
+CREATE PROCEDURE securityGroupRule()
+BEGIN
+    DECLARE sgUuid varchar(32);
+    DECLARE done INT DEFAULT FALSE;
+    DECLARE cur CURSOR FOR SELECT uuid FROM zstack.SecurityGroupVO;
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+    OPEN cur;
+    read_loop: LOOP
+    FETCH cur INTO sgUuid;
+    IF done THEN
+        LEAVE read_loop;
+    END IF;
+    INSERT zstack.SecurityGroupRuleVO(uuid, securityGroupUuid, type, protocol, allowedCidr, startPort, endPort, state, remoteSecurityGroupUuid, lastOpDate, createDate)
+    value (REPLACE(UUID(),'-',''), sgUuid, 'Ingress', 'ALL', '0.0.0.0/0', -1, -1, 'Enabled', sgUuid, NOW(), NOW());
+    INSERT zstack.SecurityGroupRuleVO(uuid, securityGroupUuid, type, protocol, allowedCidr, startPort, endPort, state, remoteSecurityGroupUuid, lastOpDate, createDate)
+    value (REPLACE(UUID(),'-',''), sgUuid, 'Egress', 'ALL', '0.0.0.0/0', -1, -1, 'Enabled', sgUuid, NOW(), NOW());
+    END LOOP;
+    CLOSE cur;
+    # work around a bug of mysql : jira.mariadb.org/browse/MDEV-4602
+    SELECT CURTIME();
+END $$
+DELIMITER ;
+
+CALL securityGroupRule();
+DROP PROCEDURE securityGroupRule;

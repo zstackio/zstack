@@ -16,6 +16,7 @@ public class SecurityGroupRuleVO_ extends ResourceVO_ {
     public static volatile SingularAttribute<SecurityGroupRuleVO, Integer> endPort;
     public static volatile SingularAttribute<SecurityGroupRuleVO, String> protocol;
     public static volatile SingularAttribute<SecurityGroupRuleVO, String> allowedCidr;
+    public static volatile SingularAttribute<SecurityGroupRuleVO, String> remoteSecurityGroupUuid;
     public static volatile SingularAttribute<SecurityGroupRuleVO, Timestamp> createDate;
     public static volatile SingularAttribute<SecurityGroupRuleVO, Timestamp> lastOpDate;
 }
