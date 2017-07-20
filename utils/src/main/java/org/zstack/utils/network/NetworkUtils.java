@@ -451,6 +451,14 @@ public class NetworkUtils {
         return isIpv4RangeOverlap(info1.getLowAddress(), info1.getHighAddress(), info2.getLowAddress(), info2.getHighAddress());
     }
 
+    public static boolean isIpv4InCidr(String ipv4, String cidr) {
+        DebugUtils.Assert(isCidr(cidr), String.format("%s is not a cidr", cidr));
+        validateIp(ipv4);
+
+        SubnetUtils.SubnetInfo info = new SubnetUtils(cidr).getInfo();
+        return isIpv4InRange(ipv4, info.getLowAddress(), info.getHighAddress());
+    }
+
     public static boolean isIpRoutedByDefaultGateway(String ip) {
         ShellResult res = ShellUtils.runAndReturn(String.format("ip route get %s | grep -q \"via $(ip route | awk '/default/ {print $3}')\"", ip));
         return res.isReturnCode(0);

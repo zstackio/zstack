@@ -1,5 +1,6 @@
 package org.zstack.kvm;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.transaction.annotation.Transactional;
@@ -2659,6 +2660,15 @@ public class KVMHost extends HostBase implements Host {
 
                                     if (ret.getLibvirtVersion().compareTo(KVMConstant.MIN_LIBVIRT_VIRTIO_SCSI_VERSION) >= 0) {
                                         creator = KVMSystemTags.VIRTIO_SCSI.newSystemTagCreator(self.getUuid());
+                                        creator.recreate = true;
+                                        creator.create();
+                                    }
+
+                                    creator = HostSystemTags.EXTRA_IPS.newSystemTagCreator(self.getUuid());
+                                    List<String> ips = ret.getIpAddresses();
+                                    if (ips != null) {
+                                        ips.remove(self.getManagementIp());
+                                        creator.setTagByTokens(map(e(HostSystemTags.EXTRA_IPS_TOKEN, StringUtils.join(ips, ","))));
                                         creator.recreate = true;
                                         creator.create();
                                     }
