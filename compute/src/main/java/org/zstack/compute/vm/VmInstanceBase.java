@@ -2039,18 +2039,12 @@ public class VmInstanceBase extends AbstractVmInstance {
     protected void handleApiMessage(APIMessage msg) {
         if (msg instanceof APIStopVmInstanceMsg) {
             handle((APIStopVmInstanceMsg) msg);
-//        } else if (msg instanceof APICreateStopVmInstanceSchedulerJobMsg) {
-//            handle((APICreateStopVmInstanceSchedulerJobMsg) msg);
         } else if (msg instanceof APIRebootVmInstanceMsg) {
             handle((APIRebootVmInstanceMsg) msg);
-//        } else if (msg instanceof APICreateRebootVmInstanceSchedulerJobMsg) {
-//            handle((APICreateRebootVmInstanceSchedulerJobMsg) msg);
         } else if (msg instanceof APIDestroyVmInstanceMsg) {
             handle((APIDestroyVmInstanceMsg) msg);
         } else if (msg instanceof APIStartVmInstanceMsg) {
             handle((APIStartVmInstanceMsg) msg);
-//        } else if (msg instanceof APICreateStartVmInstanceSchedulerJobMsg) {
-//            handle((APICreateStartVmInstanceSchedulerJobMsg) msg);
         } else if (msg instanceof APIMigrateVmMsg) {
             handle((APIMigrateVmMsg) msg);
         } else if (msg instanceof APIAttachL3NetworkToVmMsg) {

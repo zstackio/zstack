@@ -26,6 +26,7 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.identity.*;
 import org.zstack.header.message.*;
+import org.zstack.header.quota.QuotaConstant;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
 import org.zstack.header.storage.snapshot.*;
@@ -851,7 +852,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
 
         p = new Quota.QuotaPair();
         p.setName(VolumeSnapshotConstant.QUOTA_VOLUME_SNAPSHOT_NUM);
-        p.setValue(200);
+        p.setValue(QuotaConstant.QUOTA_VOLUME_SNAPSHOT_NUM);
         quota.addPair(p);
 
         quota.addMessageNeedValidation(APICreateVolumeSnapshotMsg.class);
