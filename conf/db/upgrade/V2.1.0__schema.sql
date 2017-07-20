@@ -264,6 +264,7 @@ ALTER TABLE `BaremetalPxeServerVO` ADD COLUMN `name` varchar(255) DEFAULT NULL C
 ALTER TABLE `BaremetalPxeServerVO` ADD COLUMN `description` varchar(2048) DEFAULT NULL COMMENT 'baremetal pxeserver description';
 ALTER TABLE `BaremetalChassisVO` ADD COLUMN `name` varchar(255) DEFAULT NULL COMMENT 'baremetal chassis name';
 ALTER TABLE `BaremetalChassisVO` ADD COLUMN `description` varchar(2048) DEFAULT NULL COMMENT 'baremetal chassis description';
+ALTER TABLE `BaremetalChassisVO` ADD COLUMN `ipmiPort` varchar(32) DEFAULT NULL COMMENT 'baremetal chassis ipmi port';
 
 CREATE TABLE `ConnectionRelationShipVO` (
   `uuid` varchar(32) NOT NULL UNIQUE,
@@ -451,7 +452,7 @@ CREATE TABLE `BaremetalHostBondingVO` (
   `hostCfgUuid` varchar(32) NOT NULL COMMENT 'baremetal hostcfg uuid',
   `name` varchar(255) NOT NULL COMMENT 'bond name',
   `slaves` varchar(1024) NOT NULL COMMENT 'bond slaves',
-  `mode` varchar(32)  DEFAULT '4' COMMENT 'bond slaves',
+  `mode` varchar(32)  NOT NULL COMMENT 'bond slaves',
   `ip` varchar(32) DEFAULT NULL COMMENT 'bond ip',
   `netmask` varchar(32) DEFAULT NULL COMMENT 'bond netmask',
   `gateway` varchar(32) DEFAULT NULL COMMENT 'bond gateway',
