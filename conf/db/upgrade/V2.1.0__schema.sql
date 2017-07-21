@@ -543,3 +543,4 @@ alter table ConnectionRelationShipVO modify column relationShips varchar(32768) 
 alter table HybridConnectionRefVO add column resourceUuid varchar(32) NOT NULL;
 alter table EcsImageMd5SumMappingVO modify column ossBucketName varchar(128) NOT NULL;
 alter table VpcVirtualRouteEntryVO change column nextHopVRiUuid nextHopUuid varchar(32) DEFAULT NULL;
+alter table AvailableInstanceTypesVO modify column instanceType varchar(4096) DEFAULT NULL;
