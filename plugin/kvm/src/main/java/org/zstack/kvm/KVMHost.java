@@ -848,7 +848,7 @@ public class KVMHost extends HostBase implements Host {
 
         String url = buildUrl(msg.getPath());
         MessageCommandRecorder.record(msg.getCommandClassName());
-        new Http<>(url, msg.getCommand(), LinkedHashMap.class, TimeUnit.SECONDS, msg.getCommandTimeout())
+        new Http<>(url, msg.getCommand(), LinkedHashMap.class, TimeUnit.MILLISECONDS, msg.getCommandTimeout())
                 .call(new ReturnValueCompletion<LinkedHashMap>(msg, completion) {
             @Override
             public void success(LinkedHashMap ret) {
