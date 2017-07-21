@@ -541,3 +541,5 @@ alter table IdentityZoneVO drop foreign key fkIdentityZoneVOEcsVSwitchVO;
 alter table IdentityZoneVO drop column defaultVSwitchUuid;
 alter table ConnectionRelationShipVO modify column relationShips varchar(32768) NOT NULL;
 alter table HybridConnectionRefVO add column resourceUuid varchar(32) NOT NULL;
+alter table EcsImageMd5SumMappingVO modify column ossBucketName varchar(128) NOT NULL;
+alter table VpcVirtualRouteEntryVO change column nextHopVRiUuid nextHopUuid varchar(32) DEFAULT NULL;
