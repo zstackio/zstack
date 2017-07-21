@@ -1,5 +1,8 @@
 package org.zstack.test.integration.networkservice.provider
 
+import org.zstack.appliancevm.ApplianceVmVO
+import org.zstack.appliancevm.ApplianceVmVO_
+import org.zstack.core.db.Q
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.flat.FlatNetworkServiceConstant
@@ -8,6 +11,7 @@ import org.zstack.network.service.portforwarding.PortForwardingConstant
 import org.zstack.network.service.userdata.UserdataConstant
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants
 import org.zstack.sdk.EipInventory
+import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.VmNicInventory
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
 import org.zstack.testlib.EnvSpec
@@ -112,7 +116,7 @@ class GetCandidateVmNicsForEipInVirtualRouterCase extends SubCase{
 
                     l3Network {
                         name = "pubL3"
-
+                        system = true
                         ip {
                             startIp = "11.168.100.10"
                             endIp = "11.168.100.100"
@@ -129,7 +133,7 @@ class GetCandidateVmNicsForEipInVirtualRouterCase extends SubCase{
 
                     l3Network {
                         name = "fakePubL3"
-
+                        system = true
                         ip {
                             startIp = "11.168.200.10"
                             endIp = "11.168.200.100"
@@ -209,6 +213,8 @@ class GetCandidateVmNicsForEipInVirtualRouterCase extends SubCase{
     void testGetCandidateVmNicsForEipInVirtualRouter(){
         def eip = env.inventoryByName("eip1") as EipInventory
         def eip2 = env.inventoryByName("eip2") as EipInventory
+        def pubL3 = env.inventoryByName("pubL3") as L3NetworkInventory
+        def fakePubL3 = env.inventoryByName("fakePubL3") as L3NetworkInventory
 
         //vmInVirtualRouter vmInFlat should be listed.
         def nics = getEipAttachableVmNics {
@@ -221,6 +227,19 @@ class GetCandidateVmNicsForEipInVirtualRouterCase extends SubCase{
             eipUuid = eip2.uuid
         } as List<VmNicInventory>
         assert nics2.size() == 1
+
+        //after vrouter attached fakePublicL3, vmInVR should be listed
+        String vrVmUuid = Q.New(ApplianceVmVO.class).select(ApplianceVmVO_.uuid)
+                .eq(ApplianceVmVO_.managementNetworkUuid, pubL3.uuid).findValue()
+        attachL3NetworkToVm {
+            l3NetworkUuid = fakePubL3.uuid
+            vmInstanceUuid = vrVmUuid
+        }
+
+        def nics3 = getEipAttachableVmNics {
+            eipUuid = eip2.uuid
+        } as List<VmNicInventory>
+        assert nics3.size() == 2
     }
 
     @Override
