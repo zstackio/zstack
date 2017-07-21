@@ -42,6 +42,14 @@ public class PciDeviceInventory  {
         return this.status;
     }
 
+    public PciDeviceState state;
+    public void setState(PciDeviceState state) {
+        this.state = state;
+    }
+    public PciDeviceState getState() {
+        return this.state;
+    }
+
     public PciDeviceType type;
     public void setType(PciDeviceType type) {
         this.type = type;

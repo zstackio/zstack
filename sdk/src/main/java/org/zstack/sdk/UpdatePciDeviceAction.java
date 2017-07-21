@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class QueryPciDevicePciDeviceOfferingAction extends QueryAction {
+public class UpdatePciDeviceAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public QueryPciDevicePciDeviceOfferingResult value;
+        public UpdatePciDeviceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -22,6 +22,30 @@ public class QueryPciDevicePciDeviceOfferingAction extends QueryAction {
         }
     }
 
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String uuid;
+
+    @Param(required = false, validValues = {"Enabled","Disabled"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String state;
+
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String description;
+
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String metaData;
+
+    @Param(required = false)
+    public java.util.List systemTags;
+
+    @Param(required = false)
+    public java.util.List userTags;
+
+    @Param(required = true)
+    public String sessionId;
+
+    public long timeout;
+    
+    public long pollingInterval;
 
 
     private Result makeResult(ApiResult res) {
@@ -31,8 +55,8 @@ public class QueryPciDevicePciDeviceOfferingAction extends QueryAction {
             return ret;
         }
         
-        QueryPciDevicePciDeviceOfferingResult value = res.getResult(QueryPciDevicePciDeviceOfferingResult.class);
-        ret.value = value == null ? new QueryPciDevicePciDeviceOfferingResult() : value; 
+        UpdatePciDeviceResult value = res.getResult(UpdatePciDeviceResult.class);
+        ret.value = value == null ? new UpdatePciDeviceResult() : value; 
 
         return ret;
     }
@@ -57,11 +81,11 @@ public class QueryPciDevicePciDeviceOfferingAction extends QueryAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
-        info.path = "/pci-devices/pci-devices/pci-device-offerings";
+        info.httpMethod = "PUT";
+        info.path = "/pci-device/pci-devices/{uuid}";
         info.needSession = true;
-        info.needPoll = false;
-        info.parameterName = "";
+        info.needPoll = true;
+        info.parameterName = "updatePciDevice";
         return info;
     }
 
