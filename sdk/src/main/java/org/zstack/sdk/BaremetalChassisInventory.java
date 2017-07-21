@@ -34,6 +34,14 @@ public class BaremetalChassisInventory  {
         return this.ipmiAddress;
     }
 
+    public java.lang.String ipmiPort;
+    public void setIpmiPort(java.lang.String ipmiPort) {
+        this.ipmiPort = ipmiPort;
+    }
+    public java.lang.String getIpmiPort() {
+        return this.ipmiPort;
+    }
+
     public java.lang.String ipmiUsername;
     public void setIpmiUsername(java.lang.String ipmiUsername) {
         this.ipmiUsername = ipmiUsername;
