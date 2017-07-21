@@ -11,7 +11,7 @@
                 <pattern>%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{1}] %X{api,} %m%n</pattern>
             </PatternLayout>
             <Policies>
-                <SizeBasedTriggeringPolicy size="2048 MB" />
+                <SizeBasedTriggeringPolicy size="150 MB" />
             </Policies>
             <DefaultRolloverStrategy max="20"/>
         </RollingFile>
