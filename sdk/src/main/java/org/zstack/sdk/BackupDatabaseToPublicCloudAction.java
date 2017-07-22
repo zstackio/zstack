@@ -25,7 +25,7 @@ public class BackupDatabaseToPublicCloudAction extends AbstractAction {
     @Param(required = true, validValues = {"aliyun"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String type;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
     public java.lang.String regionId;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)

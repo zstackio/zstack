@@ -22,10 +22,10 @@ public class CreateVpnIkeConfigAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, maxLength = 64, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, maxLength = 64, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
     public java.lang.String name;
 
-    @Param(required = true, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, maxLength = 32, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
     public java.lang.String psk;
 
     @Param(required = false, validValues = {"disabled","group1","group2","group5","group14","group24"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
@@ -46,10 +46,10 @@ public class CreateVpnIkeConfigAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {60L,86400L}, noTrim = false)
     public java.lang.Integer lifetime = 86400;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
     public java.lang.String localIp;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
     public java.lang.String remoteIp;
 
     @Param(required = false, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)

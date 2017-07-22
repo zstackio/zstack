@@ -28,13 +28,13 @@ public class CreateVpcVpnConnectionRemoteAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String vpnGatewayUuid;
 
-    @Param(required = true, maxLength = 64, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, maxLength = 64, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
     public java.lang.String name;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
     public java.lang.String localCidr;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
     public java.lang.String remoteCidr;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)

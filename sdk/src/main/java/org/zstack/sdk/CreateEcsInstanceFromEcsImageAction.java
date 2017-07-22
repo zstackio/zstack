@@ -43,7 +43,7 @@ public class CreateEcsInstanceFromEcsImageAction extends AbstractAction {
     @Param(required = false, validRegexValues = "[a-zA-Z0-9]{6}", maxLength = 6, minLength = 6, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String ecsConsolePassword;
 
-    @Param(required = true, maxLength = 128, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, maxLength = 128, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
     public java.lang.String name;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
@@ -61,7 +61,7 @@ public class CreateEcsInstanceFromEcsImageAction extends AbstractAction {
     @Param(required = true, validRegexValues = "^[a-zA-Z][\\w\\W]{7,17}$", maxLength = 30, minLength = 8, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String ecsRootPassword;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,200L}, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,200L}, noTrim = false)
     public java.lang.Long ecsBandWidth;
 
     @Param(required = false)

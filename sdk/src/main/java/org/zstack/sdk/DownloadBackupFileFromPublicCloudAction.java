@@ -22,10 +22,10 @@ public class DownloadBackupFileFromPublicCloudAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
     public java.lang.String regionId;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
     public java.lang.String file;
 
     @Param(required = true, validValues = {"aliyun"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
