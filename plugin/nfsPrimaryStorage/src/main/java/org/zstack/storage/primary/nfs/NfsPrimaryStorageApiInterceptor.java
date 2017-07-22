@@ -7,6 +7,10 @@ import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.APIMessage;
+import org.zstack.storage.primary.PrimaryStorageSystemTags;
+import org.zstack.utils.network.NetworkUtils;
+
+import java.util.List;
 
 /**
  */
@@ -29,6 +33,30 @@ public class NfsPrimaryStorageApiInterceptor implements ApiMessageInterceptor {
         ErrorCode err = new NfsApiParamChecker().checkUrl(msg.getZoneUuid(), msg.getUrl());
         if (err != null) {
             throw new ApiMessageInterceptionException(err);
+        }
+
+        List<String> systemTags = msg.getSystemTags();
+        if (systemTags != null) {
+            boolean found = false;
+            for (String sysTag: systemTags) {
+                if (PrimaryStorageSystemTags.PRIMARY_STORAGE_GATEWAY.isMatch(sysTag)) {
+                    if (found) {
+                        throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError("found multiple CIDR"));
+                    }
+
+                    validateCidrTag(sysTag);
+                    found = true;
+                }
+            }
+        }
+    }
+
+    private void validateCidrTag(String sysTag) {
+        String cidr = PrimaryStorageSystemTags.PRIMARY_STORAGE_GATEWAY.getTokenByTag(
+                sysTag, PrimaryStorageSystemTags.PRIMARY_STORAGE_GATEWAY_TOKEN);
+        if (!NetworkUtils.isCidr(cidr)) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("invalid CIDR: %s", cidr)));
         }
     }
 }

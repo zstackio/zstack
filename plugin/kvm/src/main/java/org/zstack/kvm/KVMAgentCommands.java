@@ -243,6 +243,7 @@ public class KVMAgentCommands {
         private String qemuImgVersion;
         private String libvirtVersion;
         private String hvmCpuFlag;
+        private List<String> ipAddresses;
 
         public String getHvmCpuFlag() {
             return hvmCpuFlag;
@@ -266,6 +267,14 @@ public class KVMAgentCommands {
 
         public void setQemuImgVersion(String qemuImgVersion) {
             this.qemuImgVersion = qemuImgVersion;
+        }
+
+        public List<String> getIpAddresses() {
+            return ipAddresses;
+        }
+
+        public void setIpAddresses(List<String> ipAddresses) {
+            this.ipAddresses = ipAddresses;
         }
     }
 
