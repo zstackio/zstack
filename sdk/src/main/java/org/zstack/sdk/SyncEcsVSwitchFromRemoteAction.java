@@ -78,11 +78,11 @@ public class SyncEcsVSwitchFromRemoteAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
+        info.httpMethod = "POST";
         info.path = "/hybrid/aliyun/vswitch/{dataCenterUuid}/sync";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "syncEcsVSwitchFromRemote";
+        info.parameterName = "params";
         return info;
     }
 
