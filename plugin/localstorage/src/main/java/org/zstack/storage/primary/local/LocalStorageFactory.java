@@ -47,10 +47,7 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
@@ -362,13 +359,33 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         q.select(LocalStorageHostRefVO_.primaryStorageUuid);
         q.add(LocalStorageHostRefVO_.hostUuid, Op.EQ, inventory.getUuid());
         List<String> psUuids = q.listValue();
-        if (psUuids == null || psUuids.isEmpty()) {
+        if(psUuids == null){
+            psUuids = new ArrayList<>();
+        }
+
+        // maybe localStorage is detached
+        List<String> psListForLocalStorageResource = Q.New(LocalStorageResourceRefVO.class)
+                .select(LocalStorageResourceRefVO_.primaryStorageUuid)
+                .eq(LocalStorageResourceRefVO_.hostUuid, inventory.getUuid())
+                .listValues();
+        if(psListForLocalStorageResource == null){
+            psListForLocalStorageResource = new ArrayList<>();
+        }
+
+        if (psUuids.isEmpty() && psListForLocalStorageResource.isEmpty()){
             return;
         }
+
+        // merge and duplicate
+        psUuids.addAll(psListForLocalStorageResource);
+        Set<String> psUuidSet = new HashSet<>(psUuids);
+        psUuids.clear();
+        psUuids.addAll(psUuidSet);
 
         logger.debug(String.format("the host[uuid:%s] belongs to the local storage[uuid:%s], starts to delete vms and" +
                 " volumes on the host", inventory.getUuid(), String.join(",", psUuids)));
 
+        List<String> finalPsUuids = psUuids;
         final List<String> vmUuids = new Callable<List<String>>() {
             @Override
             @Transactional(readOnly = true)
@@ -385,7 +402,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
                 q.setParameter("vtype", VolumeType.Root);
                 q.setParameter("rtype", VolumeVO.class.getSimpleName());
                 q.setParameter("huuid", inventory.getUuid());
-                q.setParameter("psUuids", psUuids);
+                q.setParameter("psUuids", finalPsUuids);
                 return q.getResultList();
             }
         }.call();
@@ -432,7 +449,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
                         " and ref.resourceType = :rtype" +
                         " and ref.hostUuid = :huuid";
                 TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
-                q.setParameter("psUuids", psUuids);
+                q.setParameter("psUuids", finalPsUuids);
                 q.setParameter("vtype", VolumeType.Data);
                 q.setParameter("rtype", VolumeVO.class.getSimpleName());
                 q.setParameter("huuid", inventory.getUuid());
@@ -474,13 +491,8 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
             completion.await(TimeUnit.MINUTES.toMillis(15));
         }
 
-        final List<String> priUuids = getLocalStorageInCluster(inventory.getClusterUuid());
-        if (priUuids == null || priUuids.isEmpty()) {
-            return;
-        }
-
         // decrease ps capacity
-        for (String priUuid : priUuids) {
+        for (String priUuid : psUuids) {
             RemoveHostFromLocalStorageMsg msg = new RemoveHostFromLocalStorageMsg();
             msg.setPrimaryStorageUuid(priUuid);
             msg.setHostUuid(inventory.getUuid());
