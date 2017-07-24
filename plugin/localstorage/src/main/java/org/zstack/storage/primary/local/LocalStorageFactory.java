@@ -888,7 +888,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
             throw new OperationFailureException(argerr("the host[uuid:%s] doesn't belong to the local primary storage[uuid:%s]", hostUuid, msg.getPrimaryStorageUuid()));
         }
 
-        if (!(msg instanceof InstantiateRootVolumeMsg) && isThereOtherNonLocalStoragePrimaryStorageForTheHost(hostUuid, msg.getPrimaryStorageUuid())) {
+        if (Q.New(VolumeVO.class).eq(VolumeVO_.type, VolumeType.Data).eq(VolumeVO_.uuid, msg.getVolumeUuid()).isExists() && isThereOtherNonLocalStoragePrimaryStorageForTheHost(hostUuid, msg.getPrimaryStorageUuid())) {
             throw new OperationFailureException(argerr("The cluster mounts multiple primary storage[%s(%s), other non-LocalStorage primary storage], primaryStorageUuidForDataVolume cannot be specified %s",
                     volume.getUuid(), volume.getType(),
                     LocalStorageConstants.LOCAL_STORAGE_TYPE));

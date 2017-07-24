@@ -1,6 +1,7 @@
 package org.zstack.test.integration.storage.primary.local_nfs
 
 import org.zstack.compute.vm.VmSystemTags
+import org.zstack.header.image.ImageConstant
 import org.zstack.header.storage.primary.PrimaryStorageStateEvent
 import org.zstack.sdk.ClusterInventory
 import org.zstack.sdk.CreateVmInstanceAction
@@ -28,7 +29,8 @@ class LocalNfsMultiCombineCase extends SubCase {
     PrimaryStorageInventory nfs2
     InstanceOfferingInventory instanceOffering
     DiskOfferingInventory diskOffering
-    ImageInventory image
+    ImageInventory qcow2
+    ImageInventory iso
     L3NetworkInventory l3
     ClusterInventory cluster
 
@@ -66,6 +68,13 @@ class LocalNfsMultiCombineCase extends SubCase {
                 image {
                     name = "image"
                     url = "http://zstack.org/download/test.qcow2"
+                }
+
+                image {
+                    name = "iso"
+                    mediaType = ImageConstant.ImageMediaType.ISO
+                    format = ImageConstant.ISO_FORMAT_STRING
+                    url = "http://zstack.org/download/test.iso"
                 }
             }
 
@@ -142,21 +151,25 @@ class LocalNfsMultiCombineCase extends SubCase {
             nfs2 = env.inventoryByName("nfs2") as PrimaryStorageInventory
             instanceOffering = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
             diskOffering = env.inventoryByName("diskOffering") as DiskOfferingInventory
-            image = env.inventoryByName("image") as ImageInventory
+            qcow2 = env.inventoryByName("image") as ImageInventory
+            iso = env.inventoryByName("iso") as ImageInventory
             l3 = env.inventoryByName("l3") as L3NetworkInventory
             cluster = env.inventoryByName("cluster") as ClusterInventory
-            test2Local1Nfs()
-            test1Local2Nfs()
-            test2Local2Nfs()
+            test2Local1NfsQcow2()
+            test1Local2NfsQcow2()
+            test2Local2NfsQcow2()
+            test2Local1NfsISO()
+            test1Local2NfsISO()
+            test2Local2NfsISO()
         }
     }
 
-    void test2Local1Nfs() {
+    void test2Local1NfsQcow2() {
         // not assign ps
         VmInstanceInventory vm = createVmInstance {
             name = "vm"
             instanceOfferingUuid = instanceOffering.uuid
-            imageUuid = image.uuid
+            imageUuid = qcow2.uuid
             l3NetworkUuids = [l3.uuid]
             dataDiskOfferingUuids = [diskOffering.uuid]
         }
@@ -165,7 +178,7 @@ class LocalNfsMultiCombineCase extends SubCase {
         vm = createVmInstance {
             name = "vm1"
             instanceOfferingUuid = instanceOffering.uuid
-            imageUuid = image.uuid
+            imageUuid = qcow2.uuid
             l3NetworkUuids = [l3.uuid]
             primaryStorageUuidForRootVolume = local.uuid
             dataDiskOfferingUuids = [diskOffering.uuid]
@@ -176,7 +189,7 @@ class LocalNfsMultiCombineCase extends SubCase {
         CreateVmInstanceAction action = new CreateVmInstanceAction()
         action.name = "vm1"
         action.instanceOfferingUuid = instanceOffering.uuid
-        action.imageUuid = image.uuid
+        action.imageUuid = qcow2.uuid
         action.l3NetworkUuids = [l3.uuid]
         action.primaryStorageUuidForRootVolume = nfs.uuid
         action.dataDiskOfferingUuids = [diskOffering.uuid]
@@ -188,7 +201,7 @@ class LocalNfsMultiCombineCase extends SubCase {
         vm = createVmInstance {
             name = "vm2"
             instanceOfferingUuid = instanceOffering.uuid
-            imageUuid = image.uuid
+            imageUuid = qcow2.uuid
             l3NetworkUuids = [l3.uuid]
             dataDiskOfferingUuids = [diskOffering.uuid]
             systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): nfs.uuid])]
@@ -199,7 +212,7 @@ class LocalNfsMultiCombineCase extends SubCase {
         CreateVmInstanceAction a = new CreateVmInstanceAction()
         a.name = "vm1"
         a.instanceOfferingUuid = instanceOffering.uuid
-        a.imageUuid = image.uuid
+        a.imageUuid = qcow2.uuid
         a.l3NetworkUuids = [l3.uuid]
         a.systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): local.uuid])]
         a.dataDiskOfferingUuids = [diskOffering.uuid]
@@ -211,7 +224,7 @@ class LocalNfsMultiCombineCase extends SubCase {
         vm = createVmInstance {
             name = "vm3"
             instanceOfferingUuid = instanceOffering.uuid
-            imageUuid = image.uuid
+            imageUuid = qcow2.uuid
             l3NetworkUuids = [l3.uuid]
             dataDiskOfferingUuids = [diskOffering.uuid]
             systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): nfs.uuid])]
@@ -224,7 +237,7 @@ class LocalNfsMultiCombineCase extends SubCase {
         CreateVmInstanceAction action2 = new CreateVmInstanceAction()
         action2.name = "vm1"
         action2.instanceOfferingUuid = instanceOffering.uuid
-        action2.imageUuid = image.uuid
+        action2.imageUuid = qcow2.uuid
         action2.l3NetworkUuids = [l3.uuid]
         action2.primaryStorageUuidForRootVolume = local.uuid
         action2.systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): local.uuid])]
@@ -237,7 +250,7 @@ class LocalNfsMultiCombineCase extends SubCase {
         CreateVmInstanceAction action3 = new CreateVmInstanceAction()
         action3.name = "vm1"
         action3.instanceOfferingUuid = instanceOffering.uuid
-        action3.imageUuid = image.uuid
+        action3.imageUuid = qcow2.uuid
         action3.l3NetworkUuids = [l3.uuid]
         action3.primaryStorageUuidForRootVolume = nfs.uuid
         action3.systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): nfs.uuid])]
@@ -250,7 +263,7 @@ class LocalNfsMultiCombineCase extends SubCase {
         CreateVmInstanceAction action4 = new CreateVmInstanceAction()
         action4.name = "vm1"
         action4.instanceOfferingUuid = instanceOffering.uuid
-        action4.imageUuid = image.uuid
+        action4.imageUuid = qcow2.uuid
         action4.l3NetworkUuids = [l3.uuid]
         action4.primaryStorageUuidForRootVolume = nfs.uuid
         action4.systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): local.uuid])]
@@ -260,7 +273,7 @@ class LocalNfsMultiCombineCase extends SubCase {
         assert ret4.error != null
     }
 
-    void test1Local2Nfs() {
+    void test1Local2NfsQcow2() {
         detachPrimaryStorageFromCluster {
             primaryStorageUuid = local2.uuid
             clusterUuid = cluster.uuid
@@ -275,7 +288,7 @@ class LocalNfsMultiCombineCase extends SubCase {
         VmInstanceInventory vm = createVmInstance {
             name = "vm"
             instanceOfferingUuid = instanceOffering.uuid
-            imageUuid = image.uuid
+            imageUuid = qcow2.uuid
             l3NetworkUuids = [l3.uuid]
             dataDiskOfferingUuids = [diskOffering.uuid]
         }
@@ -284,7 +297,7 @@ class LocalNfsMultiCombineCase extends SubCase {
         vm = createVmInstance {
             name = "vm1"
             instanceOfferingUuid = instanceOffering.uuid
-            imageUuid = image.uuid
+            imageUuid = qcow2.uuid
             l3NetworkUuids = [l3.uuid]
             primaryStorageUuidForRootVolume = local.uuid
             dataDiskOfferingUuids = [diskOffering.uuid]
@@ -295,7 +308,7 @@ class LocalNfsMultiCombineCase extends SubCase {
         CreateVmInstanceAction action = new CreateVmInstanceAction()
         action.name = "vm1"
         action.instanceOfferingUuid = instanceOffering.uuid
-        action.imageUuid = image.uuid
+        action.imageUuid = qcow2.uuid
         action.l3NetworkUuids = [l3.uuid]
         action.primaryStorageUuidForRootVolume = nfs.uuid
         action.dataDiskOfferingUuids = [diskOffering.uuid]
@@ -307,7 +320,7 @@ class LocalNfsMultiCombineCase extends SubCase {
         vm = createVmInstance {
             name = "vm2"
             instanceOfferingUuid = instanceOffering.uuid
-            imageUuid = image.uuid
+            imageUuid = qcow2.uuid
             l3NetworkUuids = [l3.uuid]
             dataDiskOfferingUuids = [diskOffering.uuid]
             systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): nfs.uuid])]
@@ -318,7 +331,7 @@ class LocalNfsMultiCombineCase extends SubCase {
         CreateVmInstanceAction a = new CreateVmInstanceAction()
         a.name = "vm1"
         a.instanceOfferingUuid = instanceOffering.uuid
-        a.imageUuid = image.uuid
+        a.imageUuid = qcow2.uuid
         a.l3NetworkUuids = [l3.uuid]
         a.systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): local.uuid])]
         a.dataDiskOfferingUuids = [diskOffering.uuid]
@@ -330,7 +343,7 @@ class LocalNfsMultiCombineCase extends SubCase {
         vm = createVmInstance {
             name = "vm3"
             instanceOfferingUuid = instanceOffering.uuid
-            imageUuid = image.uuid
+            imageUuid = qcow2.uuid
             l3NetworkUuids = [l3.uuid]
             dataDiskOfferingUuids = [diskOffering.uuid]
             systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): nfs.uuid])]
@@ -343,7 +356,7 @@ class LocalNfsMultiCombineCase extends SubCase {
         CreateVmInstanceAction action2 = new CreateVmInstanceAction()
         action2.name = "vm1"
         action2.instanceOfferingUuid = instanceOffering.uuid
-        action2.imageUuid = image.uuid
+        action2.imageUuid = qcow2.uuid
         action2.l3NetworkUuids = [l3.uuid]
         action2.primaryStorageUuidForRootVolume = local.uuid
         action2.systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): local.uuid])]
@@ -356,7 +369,7 @@ class LocalNfsMultiCombineCase extends SubCase {
         CreateVmInstanceAction action3 = new CreateVmInstanceAction()
         action3.name = "vm1"
         action3.instanceOfferingUuid = instanceOffering.uuid
-        action3.imageUuid = image.uuid
+        action3.imageUuid = qcow2.uuid
         action3.l3NetworkUuids = [l3.uuid]
         action3.primaryStorageUuidForRootVolume = nfs.uuid
         action3.systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): nfs.uuid])]
@@ -369,7 +382,7 @@ class LocalNfsMultiCombineCase extends SubCase {
         CreateVmInstanceAction action4 = new CreateVmInstanceAction()
         action4.name = "vm1"
         action4.instanceOfferingUuid = instanceOffering.uuid
-        action4.imageUuid = image.uuid
+        action4.imageUuid = qcow2.uuid
         action4.l3NetworkUuids = [l3.uuid]
         action4.primaryStorageUuidForRootVolume = nfs.uuid
         action4.systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): local.uuid])]
@@ -379,7 +392,7 @@ class LocalNfsMultiCombineCase extends SubCase {
         assert ret4.error != null
     }
 
-    void test2Local2Nfs() {
+    void test2Local2NfsQcow2() {
         attachPrimaryStorageToCluster {
             primaryStorageUuid = local2.uuid
             clusterUuid = cluster.uuid
@@ -394,9 +407,306 @@ class LocalNfsMultiCombineCase extends SubCase {
         VmInstanceInventory vm = createVmInstance {
             name = "vm"
             instanceOfferingUuid = instanceOffering.uuid
-            imageUuid = image.uuid
+            imageUuid = qcow2.uuid
             l3NetworkUuids = [l3.uuid]
             dataDiskOfferingUuids = [diskOffering.uuid]
+        }
+
+        detachPrimaryStorageFromCluster {
+            primaryStorageUuid = local2.uuid
+            clusterUuid = cluster.uuid
+        }
+
+        detachPrimaryStorageFromCluster {
+            primaryStorageUuid = nfs.uuid
+            clusterUuid = cluster.uuid
+        }
+
+        detachPrimaryStorageFromCluster {
+            primaryStorageUuid = nfs2.uuid
+            clusterUuid = cluster.uuid
+        }
+
+        changePrimaryStorageState {
+            uuid = local.uuid
+            stateEvent = PrimaryStorageStateEvent.enable.toString()
+        }
+    }
+
+    void test2Local1NfsISO() {
+        attachPrimaryStorageToCluster {
+            primaryStorageUuid = local2.uuid
+            clusterUuid = cluster.uuid
+        }
+
+        attachPrimaryStorageToCluster {
+            primaryStorageUuid = nfs.uuid
+            clusterUuid = cluster.uuid
+        }
+        // not assign ps
+        VmInstanceInventory vm = createVmInstance {
+            name = "vm"
+            instanceOfferingUuid = instanceOffering.uuid
+            imageUuid = iso.uuid
+            l3NetworkUuids = [l3.uuid]
+            dataDiskOfferingUuids = [diskOffering.uuid]
+            rootDiskOfferingUuid = diskOffering.uuid
+        }
+
+        // assign root volume ls ps
+        vm = createVmInstance {
+            name = "vm1"
+            instanceOfferingUuid = instanceOffering.uuid
+            imageUuid = iso.uuid
+            l3NetworkUuids = [l3.uuid]
+            primaryStorageUuidForRootVolume = local.uuid
+            dataDiskOfferingUuids = [diskOffering.uuid]
+            rootDiskOfferingUuid = diskOffering.uuid
+        }
+        checkVmRootDiskPs(vm, local.uuid)
+
+        // assign root volume nfs ps
+        CreateVmInstanceAction action = new CreateVmInstanceAction()
+        action.name = "vm1"
+        action.instanceOfferingUuid = instanceOffering.uuid
+        action.imageUuid = iso.uuid
+        action.l3NetworkUuids = [l3.uuid]
+        action.primaryStorageUuidForRootVolume = nfs.uuid
+        action.dataDiskOfferingUuids = [diskOffering.uuid]
+        action.rootDiskOfferingUuid = diskOffering.uuid
+        action.sessionId = adminSession()
+        CreateVmInstanceAction.Result ret = action.call()
+        assert ret.error != null
+
+        // assign data volume nfs ps
+        vm = createVmInstance {
+            name = "vm2"
+            instanceOfferingUuid = instanceOffering.uuid
+            imageUuid = iso.uuid
+            l3NetworkUuids = [l3.uuid]
+            dataDiskOfferingUuids = [diskOffering.uuid]
+            rootDiskOfferingUuid = diskOffering.uuid
+            systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): nfs.uuid])]
+        }
+        checkVmDataDiskPs(vm, nfs.uuid)
+
+        // assign data volume ls ps
+        CreateVmInstanceAction a = new CreateVmInstanceAction()
+        a.name = "vm1"
+        a.instanceOfferingUuid = instanceOffering.uuid
+        a.imageUuid = iso.uuid
+        a.l3NetworkUuids = [l3.uuid]
+        a.systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): local.uuid])]
+        a.dataDiskOfferingUuids = [diskOffering.uuid]
+        a.rootDiskOfferingUuid = diskOffering.uuid
+        a.sessionId = adminSession()
+        CreateVmInstanceAction.Result r = a.call()
+        assert r.error != null
+
+        // assign data nfs , root volume ls ps
+        vm = createVmInstance {
+            name = "vm3"
+            instanceOfferingUuid = instanceOffering.uuid
+            imageUuid = iso.uuid
+            l3NetworkUuids = [l3.uuid]
+            dataDiskOfferingUuids = [diskOffering.uuid]
+            rootDiskOfferingUuid = diskOffering.uuid
+            systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): nfs.uuid])]
+            primaryStorageUuidForRootVolume = local.uuid
+        }
+        checkVmDataDiskPs(vm, nfs.uuid)
+        checkVmRootDiskPs(vm, local.uuid)
+
+        // assign data ls , root volume ls ps
+        CreateVmInstanceAction action2 = new CreateVmInstanceAction()
+        action2.name = "vm1"
+        action2.instanceOfferingUuid = instanceOffering.uuid
+        action2.imageUuid = iso.uuid
+        action2.l3NetworkUuids = [l3.uuid]
+        action2.primaryStorageUuidForRootVolume = local.uuid
+        action2.systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): local.uuid])]
+        action2.dataDiskOfferingUuids = [diskOffering.uuid]
+        action2.rootDiskOfferingUuid = diskOffering.uuid
+        action2.sessionId = adminSession()
+        CreateVmInstanceAction.Result ret2 = action2.call()
+        assert ret2.error != null
+
+        // assign data nfs , root volume nfs ps
+        CreateVmInstanceAction action3 = new CreateVmInstanceAction()
+        action3.name = "vm1"
+        action3.instanceOfferingUuid = instanceOffering.uuid
+        action3.imageUuid = iso.uuid
+        action3.l3NetworkUuids = [l3.uuid]
+        action3.primaryStorageUuidForRootVolume = nfs.uuid
+        action3.systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): nfs.uuid])]
+        action3.dataDiskOfferingUuids = [diskOffering.uuid]
+        action3.rootDiskOfferingUuid = diskOffering.uuid
+        action3.sessionId = adminSession()
+        CreateVmInstanceAction.Result ret3 = action3.call()
+        assert ret3.error != null
+
+        // assign data ls , root volume nfs ps
+        CreateVmInstanceAction action4 = new CreateVmInstanceAction()
+        action4.name = "vm1"
+        action4.instanceOfferingUuid = instanceOffering.uuid
+        action4.imageUuid = iso.uuid
+        action4.l3NetworkUuids = [l3.uuid]
+        action4.primaryStorageUuidForRootVolume = nfs.uuid
+        action4.systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): local.uuid])]
+        action4.dataDiskOfferingUuids = [diskOffering.uuid]
+        action4.rootDiskOfferingUuid = diskOffering.uuid
+        action4.sessionId = adminSession()
+        CreateVmInstanceAction.Result ret4 = action4.call()
+        assert ret4.error != null
+    }
+
+    void test1Local2NfsISO() {
+        detachPrimaryStorageFromCluster {
+            primaryStorageUuid = local2.uuid
+            clusterUuid = cluster.uuid
+        }
+
+        attachPrimaryStorageToCluster {
+            primaryStorageUuid = nfs2.uuid
+            clusterUuid = cluster.uuid
+        }
+
+        // not assign ps
+        VmInstanceInventory vm = createVmInstance {
+            name = "vm"
+            instanceOfferingUuid = instanceOffering.uuid
+            imageUuid = iso.uuid
+            l3NetworkUuids = [l3.uuid]
+            dataDiskOfferingUuids = [diskOffering.uuid]
+            rootDiskOfferingUuid = diskOffering.uuid
+        }
+
+        // assign root volume ls ps
+        vm = createVmInstance {
+            name = "vm1"
+            instanceOfferingUuid = instanceOffering.uuid
+            imageUuid = iso.uuid
+            l3NetworkUuids = [l3.uuid]
+            primaryStorageUuidForRootVolume = local.uuid
+            dataDiskOfferingUuids = [diskOffering.uuid]
+            rootDiskOfferingUuid = diskOffering.uuid
+        }
+        checkVmRootDiskPs(vm, local.uuid)
+
+        // assign root volume nfs ps
+        CreateVmInstanceAction action = new CreateVmInstanceAction()
+        action.name = "vm1"
+        action.instanceOfferingUuid = instanceOffering.uuid
+        action.imageUuid = iso.uuid
+        action.l3NetworkUuids = [l3.uuid]
+        action.primaryStorageUuidForRootVolume = nfs.uuid
+        action.dataDiskOfferingUuids = [diskOffering.uuid]
+        action.rootDiskOfferingUuid = diskOffering.uuid
+        action.sessionId = adminSession()
+        CreateVmInstanceAction.Result ret = action.call()
+        assert ret.error != null
+
+        // assign data volume nfs ps
+        vm = createVmInstance {
+            name = "vm2"
+            instanceOfferingUuid = instanceOffering.uuid
+            imageUuid = iso.uuid
+            l3NetworkUuids = [l3.uuid]
+            dataDiskOfferingUuids = [diskOffering.uuid]
+            rootDiskOfferingUuid = diskOffering.uuid
+            systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): nfs.uuid])]
+        }
+        checkVmDataDiskPs(vm, nfs.uuid)
+
+        // assign data volume ls ps
+        CreateVmInstanceAction a = new CreateVmInstanceAction()
+        a.name = "vm1"
+        a.instanceOfferingUuid = instanceOffering.uuid
+        a.imageUuid = iso.uuid
+        a.l3NetworkUuids = [l3.uuid]
+        a.systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): local.uuid])]
+        a.dataDiskOfferingUuids = [diskOffering.uuid]
+        a.rootDiskOfferingUuid = diskOffering.uuid
+        a.sessionId = adminSession()
+        CreateVmInstanceAction.Result r = a.call()
+        assert r.error != null
+
+        // assign data nfs , root volume ls ps
+        vm = createVmInstance {
+            name = "vm3"
+            instanceOfferingUuid = instanceOffering.uuid
+            imageUuid = iso.uuid
+            l3NetworkUuids = [l3.uuid]
+            dataDiskOfferingUuids = [diskOffering.uuid]
+            rootDiskOfferingUuid = diskOffering.uuid
+            systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): nfs.uuid])]
+            primaryStorageUuidForRootVolume = local.uuid
+        }
+        checkVmDataDiskPs(vm, nfs.uuid)
+        checkVmRootDiskPs(vm, local.uuid)
+
+        // assign data ls , root volume ls ps
+        CreateVmInstanceAction action2 = new CreateVmInstanceAction()
+        action2.name = "vm1"
+        action2.instanceOfferingUuid = instanceOffering.uuid
+        action2.imageUuid = iso.uuid
+        action2.l3NetworkUuids = [l3.uuid]
+        action2.primaryStorageUuidForRootVolume = local.uuid
+        action2.systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): local.uuid])]
+        action2.dataDiskOfferingUuids = [diskOffering.uuid]
+        action2.rootDiskOfferingUuid = diskOffering.uuid
+        action2.sessionId = adminSession()
+        CreateVmInstanceAction.Result ret2 = action2.call()
+        assert ret2.error != null
+
+        // assign data nfs , root volume nfs ps
+        CreateVmInstanceAction action3 = new CreateVmInstanceAction()
+        action3.name = "vm1"
+        action3.instanceOfferingUuid = instanceOffering.uuid
+        action3.imageUuid = iso.uuid
+        action3.l3NetworkUuids = [l3.uuid]
+        action3.primaryStorageUuidForRootVolume = nfs.uuid
+        action3.systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): nfs.uuid])]
+        action3.dataDiskOfferingUuids = [diskOffering.uuid]
+        action3.rootDiskOfferingUuid = diskOffering.uuid
+        action3.sessionId = adminSession()
+        CreateVmInstanceAction.Result ret3 = action3.call()
+        assert ret3.error != null
+
+        // assign data ls , root volume nfs ps
+        CreateVmInstanceAction action4 = new CreateVmInstanceAction()
+        action4.name = "vm1"
+        action4.instanceOfferingUuid = instanceOffering.uuid
+        action4.imageUuid = iso.uuid
+        action4.l3NetworkUuids = [l3.uuid]
+        action4.primaryStorageUuidForRootVolume = nfs.uuid
+        action4.systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): local.uuid])]
+        action4.dataDiskOfferingUuids = [diskOffering.uuid]
+        action4.rootDiskOfferingUuid = diskOffering.uuid
+        action4.sessionId = adminSession()
+        CreateVmInstanceAction.Result ret4 = action4.call()
+        assert ret4.error != null
+    }
+
+    void test2Local2NfsISO() {
+        attachPrimaryStorageToCluster {
+            primaryStorageUuid = local2.uuid
+            clusterUuid = cluster.uuid
+        }
+
+        changePrimaryStorageState {
+            uuid = local.uuid
+            stateEvent = PrimaryStorageStateEvent.disable.toString()
+        }
+
+        // not assign ps
+        VmInstanceInventory vm = createVmInstance {
+            name = "vm"
+            instanceOfferingUuid = instanceOffering.uuid
+            imageUuid = iso.uuid
+            l3NetworkUuids = [l3.uuid]
+            dataDiskOfferingUuids = [diskOffering.uuid]
+            rootDiskOfferingUuid = diskOffering.uuid
         }
 
         detachPrimaryStorageFromCluster {
