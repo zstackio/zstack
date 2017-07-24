@@ -2664,13 +2664,15 @@ public class KVMHost extends HostBase implements Host {
                                         creator.create();
                                     }
 
-                                    creator = HostSystemTags.EXTRA_IPS.newSystemTagCreator(self.getUuid());
                                     List<String> ips = ret.getIpAddresses();
                                     if (ips != null) {
                                         ips.remove(self.getManagementIp());
-                                        creator.setTagByTokens(map(e(HostSystemTags.EXTRA_IPS_TOKEN, StringUtils.join(ips, ","))));
-                                        creator.recreate = true;
-                                        creator.create();
+                                        if (!ips.isEmpty()) {
+                                            creator = HostSystemTags.EXTRA_IPS.newSystemTagCreator(self.getUuid());
+                                            creator.setTagByTokens(map(e(HostSystemTags.EXTRA_IPS_TOKEN, StringUtils.join(ips, ","))));
+                                            creator.recreate = true;
+                                            creator.create();
+                                        }
                                     }
 
                                     trigger.next();
