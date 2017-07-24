@@ -1,4 +1,4 @@
-package org.zstack.test.integration.kvm.host
+package org.zstack.test.integration.kvm.host.deletion
 
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.header.network.service.NetworkServiceType
