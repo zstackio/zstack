@@ -1,30 +1,24 @@
 package org.zstack.storage.primary.nfs;
 
-import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
-import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.storage.primary.APIUpdatePrimaryStorageMsg;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.storage.primary.PrimaryStorageVO_;
-import org.zstack.header.vm.VmInstanceState;
+import org.zstack.storage.primary.PrimaryStorageSystemTags;
+import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.Tuple;
-import javax.persistence.TypedQuery;
 import java.util.List;
-import java.util.stream.Collectors;
-
-import static org.zstack.core.Platform.operr;
 
 import static org.zstack.core.Platform.argerr;
+
 
 /**
  */
@@ -76,6 +70,30 @@ public class NfsPrimaryStorageApiInterceptor implements ApiMessageInterceptor {
                     checker.checkRunningVmForUpdateUrl(msg.getUuid());
                 }
             }.execute();
+        }
+
+        List<String> systemTags = msg.getSystemTags();
+        if (systemTags != null) {
+            boolean found = false;
+            for (String sysTag: systemTags) {
+                if (PrimaryStorageSystemTags.PRIMARY_STORAGE_GATEWAY.isMatch(sysTag)) {
+                    if (found) {
+                        throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError("found multiple CIDR"));
+                    }
+
+                    validateCidrTag(sysTag);
+                    found = true;
+                }
+            }
+        }
+    }
+
+    private void validateCidrTag(String sysTag) {
+        String cidr = PrimaryStorageSystemTags.PRIMARY_STORAGE_GATEWAY.getTokenByTag(
+                sysTag, PrimaryStorageSystemTags.PRIMARY_STORAGE_GATEWAY_TOKEN);
+        if (!NetworkUtils.isCidr(cidr)) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("invalid CIDR: %s", cidr)));
         }
     }
 

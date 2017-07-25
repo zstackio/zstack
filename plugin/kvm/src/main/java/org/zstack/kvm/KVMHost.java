@@ -1,5 +1,6 @@
 package org.zstack.kvm;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,8 +18,6 @@ import org.zstack.core.ansible.AnsibleGlobalProperty;
 import org.zstack.core.ansible.AnsibleRunner;
 import org.zstack.core.ansible.SshFileMd5Checker;
 import org.zstack.core.db.Q;
-import org.zstack.core.db.SQL;
-import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -65,9 +64,6 @@ import org.zstack.utils.path.PathUtil;
 import org.zstack.utils.ssh.Ssh;
 import org.zstack.utils.ssh.SshResult;
 import org.zstack.utils.ssh.SshShell;
-
-import static org.zstack.core.Platform.inerr;
-import static org.zstack.core.Platform.operr;
 
 import javax.persistence.TypedQuery;
 import java.util.*;
@@ -2721,6 +2717,17 @@ public class KVMHost extends HostBase implements Host {
                                         creator = KVMSystemTags.VIRTIO_SCSI.newSystemTagCreator(self.getUuid());
                                         creator.recreate = true;
                                         creator.create();
+                                    }
+
+                                    List<String> ips = ret.getIpAddresses();
+                                    if (ips != null) {
+                                        ips.remove(self.getManagementIp());
+                                        if (!ips.isEmpty()) {
+                                            creator = HostSystemTags.EXTRA_IPS.newSystemTagCreator(self.getUuid());
+                                            creator.setTagByTokens(map(e(HostSystemTags.EXTRA_IPS_TOKEN, StringUtils.join(ips, ","))));
+                                            creator.recreate = true;
+                                            creator.create();
+                                        }
                                     }
 
                                     trigger.next();

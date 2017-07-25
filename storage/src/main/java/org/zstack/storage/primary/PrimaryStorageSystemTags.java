@@ -18,4 +18,7 @@ public class PrimaryStorageSystemTags {
 
     public static final String CAPABILITY_HYPERVISOR_SNAPSHOT_TOKEN= "hypervisorType";
     public static PatternedSystemTag CAPABILITY_HYPERVISOR_SNAPSHOT = new PatternedSystemTag(String.format("capability::snapshot::hypervisor::{%s}", CAPABILITY_HYPERVISOR_SNAPSHOT_TOKEN), PrimaryStorageVO.class);
+
+    public static final String PRIMARY_STORAGE_GATEWAY_TOKEN = "storageGateway";
+    public static PatternedSystemTag PRIMARY_STORAGE_GATEWAY = new PatternedSystemTag(String.format("primaryStorage::gateway::cidr::{%s}", PRIMARY_STORAGE_GATEWAY_TOKEN), PrimaryStorageVO.class);
 }
