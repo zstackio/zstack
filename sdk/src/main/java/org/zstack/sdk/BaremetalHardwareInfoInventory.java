@@ -18,6 +18,14 @@ public class BaremetalHardwareInfoInventory  {
         return this.ipmiAddress;
     }
 
+    public java.lang.String ipmiPort;
+    public void setIpmiPort(java.lang.String ipmiPort) {
+        this.ipmiPort = ipmiPort;
+    }
+    public java.lang.String getIpmiPort() {
+        return this.ipmiPort;
+    }
+
     public java.lang.String type;
     public void setType(java.lang.String type) {
         this.type = type;
