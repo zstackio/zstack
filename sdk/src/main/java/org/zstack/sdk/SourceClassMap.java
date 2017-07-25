@@ -147,6 +147,8 @@ public class SourceClassMap {
 			put("org.zstack.network.service.vip.VipInventory", "org.zstack.sdk.VipInventory");
 			put("org.zstack.network.service.virtualrouter.VirtualRouterOfferingInventory", "org.zstack.sdk.VirtualRouterOfferingInventory");
 			put("org.zstack.network.service.virtualrouter.VirtualRouterVmInventory", "org.zstack.sdk.VirtualRouterVmInventory");
+			put("org.zstack.pciDevice.HostIommuStateType", "org.zstack.sdk.HostIommuStateType");
+			put("org.zstack.pciDevice.HostIommuStatusType", "org.zstack.sdk.HostIommuStatusType");
 			put("org.zstack.pciDevice.PciDeviceInventory", "org.zstack.sdk.PciDeviceInventory");
 			put("org.zstack.pciDevice.PciDeviceMetaData", "org.zstack.sdk.PciDeviceMetaData");
 			put("org.zstack.pciDevice.PciDeviceMetaDataEntry", "org.zstack.sdk.PciDeviceMetaDataEntry");
@@ -257,6 +259,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.GlobalConfigInventory", "org.zstack.core.config.GlobalConfigInventory");
 			put("org.zstack.sdk.HostDiskCapacity", "org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply$HostDiskCapacity");
 			put("org.zstack.sdk.HostInventory", "org.zstack.header.host.HostInventory");
+			put("org.zstack.sdk.HostIommuStateType", "org.zstack.pciDevice.HostIommuStateType");
+			put("org.zstack.sdk.HostIommuStatusType", "org.zstack.pciDevice.HostIommuStatusType");
 			put("org.zstack.sdk.HybridAccountInventory", "org.zstack.hybrid.account.HybridAccountInventory");
 			put("org.zstack.sdk.HybridConnectionType", "org.zstack.header.aliyun.network.HybridConnectionType");
 			put("org.zstack.sdk.HybridEipAddressInventory", "org.zstack.header.hybrid.network.eip.HybridEipAddressInventory");
