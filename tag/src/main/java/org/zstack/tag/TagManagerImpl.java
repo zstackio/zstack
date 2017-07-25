@@ -32,7 +32,6 @@ import javax.persistence.metamodel.EntityType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
@@ -229,7 +228,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
 
     @Override
     @Deferred
-    @Transactional
+    @Transactional(noRollbackFor = ApiMessageInterceptionException.class)
     public SystemTagInventory createNonInherentSystemTag(String resourceUuid, String tag, String resourceType) {
         if (isTagExisting(resourceUuid, tag, TagType.System, resourceType)) {
             return null;
@@ -309,7 +308,11 @@ public class TagManagerImpl extends AbstractService implements TagManager,
                     continue;
                 }
 
-                createNonInherentSystemTag(resourceUuid, sysTag, resourceType);
+                // Not all systemTags are for the resources used by APICreateMessage
+                try {
+                    createNonInherentSystemTag(resourceUuid, sysTag, resourceType);
+                } catch (ApiMessageInterceptionException ignored) {
+                }
             }
         }
         if (msg.getUserTags() != null && !msg.getUserTags().isEmpty()) {
