@@ -270,7 +270,7 @@ CREATE TABLE `ConnectionRelationShipVO` (
   `uuid` varchar(32) NOT NULL UNIQUE,
   `name` varchar(128) NOT NULL,
   `description` varchar(1024) DEFAULT NULL,
-  `relationShips` varchar(32) NOT NULL,
+  `relationShips` varchar(32768) NOT NULL,
   `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
   `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
   PRIMARY KEY  (`uuid`)
@@ -278,6 +278,7 @@ CREATE TABLE `ConnectionRelationShipVO` (
 
 CREATE TABLE `HybridConnectionRefVO` (
   `uuid` varchar(32) NOT NULL UNIQUE,
+  `resourceUuid` varchar(32) NOT NULL,
   `resourceType` varchar(32) NOT NULL,
   `accountUuid` varchar(32) NOT NULL,
   `direction` varchar(16) NOT NULL,
@@ -541,8 +542,6 @@ alter table DataCenterVO drop foreign key fkDataCenterVOEcsVpcVO;
 alter table DataCenterVO drop column defaultVpcUuid;
 alter table IdentityZoneVO drop foreign key fkIdentityZoneVOEcsVSwitchVO;
 alter table IdentityZoneVO drop column defaultVSwitchUuid;
-alter table ConnectionRelationShipVO modify column relationShips varchar(32768) NOT NULL;
-alter table HybridConnectionRefVO add column resourceUuid varchar(32) NOT NULL;
-alter table EcsImageMd5SumMappingVO modify column ossBucketName varchar(128) NOT NULL;
 alter table VpcVirtualRouteEntryVO change column nextHopVRiUuid nextHopUuid varchar(32) DEFAULT NULL;
 alter table AvailableInstanceTypesVO modify column instanceType varchar(4096) DEFAULT NULL;
+drop table EcsImageMd5SumMappingVO;

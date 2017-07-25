@@ -33,4 +33,11 @@ public class CollectionDSL {
         Collections.addAll(lst, els);
         return lst;
     }
+
+    public static <T> List<T> lists(List<T> list, T...els) {
+        ArrayList<T> lst = new ArrayList<>(els.length + list.size());
+        lst.addAll(list);
+        Collections.addAll(lst, els);
+        return lst;
+    }
 }
