@@ -265,6 +265,7 @@ ALTER TABLE `BaremetalPxeServerVO` ADD COLUMN `description` varchar(2048) DEFAUL
 ALTER TABLE `BaremetalChassisVO` ADD COLUMN `name` varchar(255) DEFAULT NULL COMMENT 'baremetal chassis name';
 ALTER TABLE `BaremetalChassisVO` ADD COLUMN `description` varchar(2048) DEFAULT NULL COMMENT 'baremetal chassis description';
 ALTER TABLE `BaremetalChassisVO` ADD COLUMN `ipmiPort` varchar(32) DEFAULT NULL COMMENT 'baremetal chassis ipmi port';
+ALTER TABLE `BaremetalChassisVO` DROP INDEX `ipmiAddress`;
 
 CREATE TABLE `ConnectionRelationShipVO` (
   `uuid` varchar(32) NOT NULL UNIQUE,
@@ -437,12 +438,12 @@ ALTER TABLE SecurityGroupRuleVO ADD CONSTRAINT fkSecurityGroupRuleVORemoteSecuri
 CREATE TABLE `BaremetalHardwareInfoVO` (
   `uuid` varchar(32) NOT NULL UNIQUE COMMENT 'uuid',
   `ipmiAddress` varchar(32) NOT NULL COMMENT 'baremetal chassis ipmi address',
+  `ipmiPort` varchar(32) NOT NULL COMMENT 'baremetal chassis ipmi port',
   `type` varchar(255) DEFAULT NULL,
   `content` varchar(2048) DEFAULT NULL,
   `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
   `createDate` timestamp,
-  PRIMARY KEY  (`uuid`),
-  CONSTRAINT `fkBaremetalHardwareInfoVOBaremetalChassisVO` FOREIGN KEY (`ipmiAddress`) REFERENCES `BaremetalChassisVO` (`ipmiAddress`) ON DELETE CASCADE
+  PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- ----------------------------
