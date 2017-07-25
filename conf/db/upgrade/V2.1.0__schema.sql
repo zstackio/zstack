@@ -1,5 +1,4 @@
-alter table `EcsSecurityGroupRuleVO` add `externalGroupId` varchar(128) NOT NULL;
-alter table `EcsSecurityGroupRuleVO` DROP COLUMN `sourceGroupId`;
+ALTER TABLE `EcsSecurityGroupRuleVO` DROP COLUMN `sourceGroupId`;
 
 CREATE TABLE  `zstack`.`PrimaryStorageHostRefVO` (
      `primaryStorageUuid` varchar(32) NOT NULL,
@@ -11,8 +10,6 @@ CREATE TABLE  `zstack`.`PrimaryStorageHostRefVO` (
       CONSTRAINT `fkPrimaryStorageHostRefVOHostEO` FOREIGN KEY (`hostUuid`) REFERENCES `zstack`.`HostEO` (`uuid`) ON DELETE CASCADE,
       PRIMARY KEY (`primaryStorageUuid`, `hostUuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-alter table OssBucketVO add description varchar(1024) DEFAULT NULL;
 
 SET FOREIGN_KEY_CHECKS = 0;
 CREATE TABLE `VpcUserVpnGatewayVO` (
@@ -145,10 +142,6 @@ CREATE TABLE `SnapShotUsageVO` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS EcsInstanceConsoleProxyVO;
-
-ALTER TABLE OssBucketVO MODIFY COLUMN bucketName varchar(64);
-ALTER TABLE OssBucketVO ADD COLUMN regionName varchar(64) DEFAULT NULL;
-ALTER TABLE OssBucketVO modify COLUMN bucketName varchar(64);
 -- ----------------------------
 --  Table structure for `SchedulerJobVO`
 -- ----------------------------
@@ -245,7 +238,8 @@ CREATE TABLE `OssUploadPartsVO` (
   `uploadId` varchar(32) NOT NULL,
   `ossBucketUuid` varchar(32) NOT NULL,
   `fileKey` varchar(128) NOT NULL,
-  `partNumber` varchar(32) NOT NULL,
+  `partNumber` int(16) NOT NULL,
+  `total` int(16) NOT NULL,
   `eTag` varchar(32) NOT NULL,
   `partSize` bigint(32) NOT NULL,
   `partCRC` bigint(32) NOT NULL,
@@ -296,7 +290,6 @@ ALTER TABLE EcsVpcVO CHANGE COLUMN `vpcName` `name` varchar(128) NOT NULL;
 ALTER TABLE EcsVSwitchVO CHANGE COLUMN `vSwitchName` `name` varchar(128) NOT NULL;
 ALTER TABLE EcsSecurityGroupVO CHANGE COLUMN `securityGroupName` `name` varchar(128) NOT NULL;
 ALTER TABLE VpcVirtualRouterVO CHANGE COLUMN `vRouterName` `name` varchar(128) NOT NULL;
-ALTER TABLE HybridEipAddressVO ADD COLUMN `name` varchar(128) NOT NULL DEFAULT 'Unknown';
 
 CREATE TABLE `MonitorTriggerVO` (
   `uuid` varchar(32) NOT NULL UNIQUE,
@@ -312,6 +305,7 @@ CREATE TABLE `MonitorTriggerVO` (
   `lastStatusChangeTime` timestamp DEFAULT '0000-00-00 00:00:00',
   `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
   `createDate` timestamp,
+  CONSTRAINT fkMonitorTriggerVOResourceVO FOREIGN KEY (targetResourceUuid) REFERENCES ResourceVO (uuid) ON DELETE CASCADE,
   PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -330,6 +324,7 @@ CREATE TABLE `EmailTriggerActionVO` (
   `uuid` varchar(32) NOT NULL UNIQUE,
   `email` varchar(512) NOT NULL,
   `mediaUuid` varchar(32) NOT NULL,
+  CONSTRAINT fkEmailTriggerActionVOMonitorTriggerActionVO FOREIGN KEY (uuid) REFERENCES MonitorTriggerActionVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE,
   PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -350,6 +345,7 @@ CREATE TABLE `EmailMediaVO` (
   `smtpPort` int unsigned NOT NULL,
   `username` varchar(512) DEFAULT NULL,
   `password` varchar(512) DEFAULT NULL,
+  CONSTRAINT fkEmailMediaVOMediaVO FOREIGN KEY (uuid) REFERENCES MediaVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE,
   PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -358,6 +354,8 @@ CREATE TABLE `MonitorTriggerActionRefVO` (
   `triggerUuid` varchar(32) NOT NULL,
   `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
   `createDate` timestamp,
+  CONSTRAINT fkMonitorTriggerActionRefVOMonitorTriggerActionVO FOREIGN KEY (actionUuid) REFERENCES MonitorTriggerActionVO (uuid) ON DELETE CASCADE,
+  CONSTRAINT fkMonitorTriggerActionRefVOMonitorTriggerVO FOREIGN KEY (triggerUuid) REFERENCES MonitorTriggerVO (uuid) ON DELETE CASCADE,
   PRIMARY KEY  (`actionUuid`, `triggerUuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -375,45 +373,28 @@ CREATE TABLE `AlertVO` (
   PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-# Foreign keys for table EmailTriggerActionVO
-
-ALTER TABLE EmailTriggerActionVO ADD CONSTRAINT fkEmailTriggerActionVOMonitorTriggerActionVO FOREIGN KEY (uuid) REFERENCES MonitorTriggerActionVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE;
-
-# Foreign keys for table EmailMediaVO
-
-ALTER TABLE EmailMediaVO ADD CONSTRAINT fkEmailMediaVOMediaVO FOREIGN KEY (uuid) REFERENCES MediaVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE;
-
-# Foreign keys for table MonitorTriggerActionRefVO
-
-ALTER TABLE MonitorTriggerActionRefVO ADD CONSTRAINT fkMonitorTriggerActionRefVOMonitorTriggerActionVO FOREIGN KEY (actionUuid) REFERENCES MonitorTriggerActionVO (uuid) ON DELETE CASCADE;
-ALTER TABLE MonitorTriggerActionRefVO ADD CONSTRAINT fkMonitorTriggerActionRefVOMonitorTriggerVO FOREIGN KEY (triggerUuid) REFERENCES MonitorTriggerVO (uuid) ON DELETE CASCADE;
-
-# Foreign keys for table MonitorTriggerVO
-
-ALTER TABLE MonitorTriggerVO ADD CONSTRAINT fkMonitorTriggerVOResourceVO FOREIGN KEY (targetResourceUuid) REFERENCES ResourceVO (uuid) ON DELETE CASCADE;
-ALTER TABLE EcsSecurityGroupRuleVO DROP COLUMN externalGroupId;
-
-
 SET FOREIGN_KEY_CHECKS = 0;
-alter table EcsInstanceVO drop foreign key fkEcsInstanceVOEcsVpcVO;
-alter table EcsInstanceVO drop key fkEcsInstanceVOEcsVpcVO;
-alter table EcsInstanceVO drop column ecsVpcUuid;
+ALTER TABLE EcsInstanceVO DROP FOREIGN KEY fkEcsInstanceVOEcsVpcVO;
+ALTER TABLE EcsInstanceVO DROP KEY fkEcsInstanceVOEcsVpcVO;
+ALTER TABLE EcsInstanceVO DROP COLUMN ecsVpcUuid;
+ALTER TABLE EcsInstanceVO DROP COLUMN ecsEipUuid;
 
-alter table EcsInstanceVO modify column ecsVSwitchUuid varchar(32) NOT NULL;
-alter table EcsInstanceVO modify column ecsSecurityGroupUuid varchar(32) NOT NULL;
+ALTER TABLE EcsInstanceVO MODIFY COLUMN ecsVSwitchUuid varchar(32) NOT NULL;
+ALTER TABLE EcsInstanceVO MODIFY COLUMN ecsSecurityGroupUuid varchar(32) NOT NULL;
 
-alter table EcsInstanceVO drop foreign key fkEcsInstanceVOEcsVSwitchVO;
-alter table EcsInstanceVO drop foreign key fkEcsInstanceVOIdentityZoneVO;
-alter table EcsInstanceVO drop foreign key fkEcsInstanceVOEcsSecurityGroupVO;
+ALTER TABLE EcsInstanceVO DROP FOREIGN KEY fkEcsInstanceVOEcsVSwitchVO;
+ALTER TABLE EcsInstanceVO DROP FOREIGN KEY fkEcsInstanceVOIdentityZoneVO;
+ALTER TABLE EcsInstanceVO DROP FOREIGN KEY fkEcsInstanceVOEcsSecurityGroupVO;
 
-alter table EcsInstanceVO add CONSTRAINT fkEcsInstanceVOEcsVSwitchVO foreign key (ecsVSwitchUuid) references EcsVSwitchVO (uuid) on delete restrict;
-alter table EcsInstanceVO add CONSTRAINT fkEcsInstanceVOEcsSecurityGroupVO foreign key (ecsSecurityGroupUuid) references EcsSecurityGroupVO (uuid) on delete restrict;
-alter table EcsInstanceVO add CONSTRAINT fkEcsInstanceVOIdentityZoneVO foreign key (identityZoneUuid) references IdentityZoneVO (uuid) on delete restrict;
+ALTER TABLE EcsInstanceVO ADD CONSTRAINT fkEcsInstanceVOEcsVSwitchVO FOREIGN KEY (ecsVSwitchUuid) REFERENCES EcsVSwitchVO (uuid) ON DELETE RESTRICT;
+ALTER TABLE EcsInstanceVO ADD CONSTRAINT fkEcsInstanceVOEcsSecurityGroupVO FOREIGN KEY (ecsSecurityGroupUuid) REFERENCES EcsSecurityGroupVO (uuid) ON DELETE RESTRICT;
+ALTER TABLE EcsInstanceVO ADD CONSTRAINT fkEcsInstanceVOIdentityZoneVO FOREIGN KEY (identityZoneUuid) REFERENCES IdentityZoneVO (uuid) ON DELETE RESTRICT;
 
-alter table HybridEipAddressVO add column dataCenterUuid varchar(32) not null;
-alter table HybridEipAddressVO add column chargeType varchar(32) not null default "PayByTraffic";
-alter table HybridEipAddressVO add column allocateTime timestamp DEFAULT '0000-00-00 00:00:00';
-alter table HybridEipAddressVO add CONSTRAINT fkHybridEipAddressVODataCenterVO foreign key (dataCenterUuid) references DataCenterVO (uuid) on delete restrict;
+ALTER TABLE HybridEipAddressVO ADD COLUMN `name` varchar(128) NOT NULL DEFAULT 'Unknown';
+ALTER TABLE HybridEipAddressVO ADD COLUMN dataCenterUuid varchar(32) NOT NULL;
+ALTER TABLE HybridEipAddressVO ADD COLUMN chargeType varchar(32) NOT NULL default "PayByTraffic";
+ALTER TABLE HybridEipAddressVO ADD COLUMN allocateTime timestamp DEFAULT '0000-00-00 00:00:00';
+ALTER TABLE HybridEipAddressVO ADD CONSTRAINT fkHybridEipAddressVODataCenterVO FOREIGN KEY (dataCenterUuid) REFERENCES DataCenterVO (uuid) ON DELETE RESTRICT;
 SET FOREIGN_KEY_CHECKS = 1;
 
 ALTER TABLE `zstack`.`ImageEO` ADD COLUMN exportMd5Sum varchar(255) DEFAULT NULL;
@@ -426,8 +407,6 @@ UPDATE PrimaryStorageCapacityVO t0,
 (SELECT SUM(systemUsedCapacity) ps_systemUsedCapacity , primaryStorageUuid FROM LocalStorageHostRefVO GROUP BY primaryStorageUuid) t1
 SET t0.systemUsedCapacity = t1.ps_systemUsedCapacity
 WHERE t0.uuid = t1.primaryStorageUuid;
-
-ALTER TABLE HostCapacityVO MODIFY availableCpu bigint(20) NOT NULL COMMENT 'used cpu of host in HZ';
 
 ALTER TABLE SecurityGroupRuleVO ADD COLUMN `remoteSecurityGroupUuid` varchar(255) DEFAULT NULL;
 ALTER TABLE SecurityGroupRuleVO ADD CONSTRAINT fkSecurityGroupRuleVORemoteSecurityGroupVO FOREIGN KEY (remoteSecurityGroupUuid) REFERENCES SecurityGroupVO (uuid) ON DELETE CASCADE ;
@@ -465,23 +444,23 @@ CREATE TABLE `BaremetalHostBondingVO` (
   CONSTRAINT `fkBaremetalHostBondingVOBaremetalHostCfgVO` FOREIGN KEY (`hostCfgUuid`) REFERENCES `BaremetalHostCfgVO` (`uuid`) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+SET FOREIGN_KEY_CHECKS = 0;
 DELETE FROM ResourceVO WHERE resourceType="BaremetalHostNicCfgVO";
 DELETE FROM ResourceVO WHERE resourceType="BaremetalHostCfgVO";
 ALTER TABLE BaremetalHostNicCfgVO DROP INDEX ip;
 ALTER TABLE BaremetalHostNicCfgVO MODIFY ip varchar(32) DEFAULT NULL;
 ALTER TABLE BaremetalHostNicCfgVO MODIFY netmask varchar(32) DEFAULT NULL;
-ALTER TABLE EcsInstanceVO DROP COLUMN ecsEipUuid;
 DROP TRIGGER IF EXISTS trigger_attach_eip_for_ecsinstance;
 
-SET FOREIGN_KEY_CHECKS = 0;
-alter table OssBucketVO add column dataCenterUuid varchar(32) not null;
-ALTER TABLE OssBucketVO ADD CONSTRAINT fkOssBucketVODataCenterVO foreign key (dataCenterUuid) REFERENCES DataCenterVO (uuid) ON DELETE RESTRICT;
-update OssBucketVO set dataCenterUuid =(select b.uuid from DataCenterVO b, (select * from OssBucketVO) a where b.regionId=a.regionId limit 1);
-alter table OssBucketVO drop column regionId;
-alter table OssBucketVO add column `current` varchar(32) DEFAULT "false";
-drop table OssBucketEcsDataCenterRefVO;
-alter table EcsImageVO modify ossMd5Sum varchar(128) DEFAULT NULL;
-alter table EcsImageVO modify ecsImageId varchar(128) NOT NULL;
+ALTER TABLE OssBucketVO ADD description varchar(1024) DEFAULT NULL;
+ALTER TABLE OssBucketVO MODIFY COLUMN bucketName varchar(64);
+ALTER TABLE OssBucketVO ADD COLUMN regionName varchar(64) DEFAULT NULL;
+ALTER TABLE OssBucketVO ADD COLUMN dataCenterUuid varchar(32) NOT NULL;
+ALTER TABLE OssBucketVO ADD CONSTRAINT fkOssBucketVODataCenterVO FOREIGN KEY (dataCenterUuid) REFERENCES DataCenterVO (uuid) ON DELETE RESTRICT;
+UPDATE OssBucketVO SET dataCenterUuid =(SELECT b.uuid FROM DataCenterVO b, (SELECT * FROM OssBucketVO) a WHERE b.regionId=a.regionId limit 1);
+ALTER TABLE OssBucketVO DROP COLUMN regionId;
+ALTER TABLE OssBucketVO ADD COLUMN `current` varchar(32) DEFAULT "false";
+DROP TABLE IF EXISTS OssBucketEcsDataCenterRefVO;
 SET FOREIGN_KEY_CHECKS = 1;
 
 CREATE TABLE `PciDeviceOfferingVO` (
@@ -538,15 +517,18 @@ CREATE TABLE `PciDevicePciDeviceOfferingRefVO` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-update EcsImageVO set type = 'custom' where type = 'aliyun';
-alter table DataCenterVO drop foreign key fkDataCenterVOEcsVpcVO;
-alter table DataCenterVO drop column defaultVpcUuid;
-alter table IdentityZoneVO drop foreign key fkIdentityZoneVOEcsVSwitchVO;
-alter table IdentityZoneVO drop column defaultVSwitchUuid;
-
-alter table VpcVirtualRouteEntryVO change column nextHopVRiUuid nextHopUuid varchar(32) DEFAULT NULL;
-alter table AvailableInstanceTypesVO modify column instanceType varchar(4096) DEFAULT NULL;
-drop table EcsImageMd5SumMappingVO;
+SET FOREIGN_KEY_CHECKS = 0;
+ALTER TABLE DataCenterVO DROP FOREIGN KEY fkDataCenterVOEcsVpcVO;
+ALTER TABLE DataCenterVO DROP COLUMN defaultVpcUuid;
+ALTER TABLE IdentityZoneVO DROP FOREIGN KEY fkIdentityZoneVOEcsVSwitchVO;
+ALTER TABLE IdentityZoneVO DROP COLUMN defaultVSwitchUuid;
+ALTER TABLE VpcVirtualRouteEntryVO CHANGE COLUMN nextHopVRiUuid nextHopUuid varchar(32) DEFAULT NULL;
+ALTER TABLE AvailableInstanceTypesVO MODIFY COLUMN instanceType varchar(4096) DEFAULT NULL;
+DROP TABLE IF EXISTS EcsImageMd5SumMappingVO;
+UPDATE EcsImageVO SET type = 'custom' WHERE type = 'aliyun';
+ALTER TABLE EcsImageVO MODIFY ossMd5Sum varchar(128) DEFAULT NULL;
+ALTER TABLE EcsImageVO MODIFY ecsImageId varchar(128) NOT NULL;
+SET FOREIGN_KEY_CHECKS = 1;
 
 # add default SecurityGroupRule for ZSTAC-5386
 DELIMITER $$
@@ -574,4 +556,5 @@ END $$
 DELIMITER ;
 
 CALL securityGroupRule();
-DROP PROCEDURE securityGroupRule;
+DROP PROCEDURE IF EXISTS securityGroupRule;
+
