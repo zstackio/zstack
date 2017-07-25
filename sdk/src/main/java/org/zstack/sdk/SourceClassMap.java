@@ -25,6 +25,7 @@ public class SourceClassMap {
 			put("org.zstack.header.aliyun.AliyunOssException", "org.zstack.sdk.AliyunOssException");
 			put("org.zstack.header.aliyun.ecs.EcsInstanceInventory", "org.zstack.sdk.EcsInstanceInventory");
 			put("org.zstack.header.aliyun.image.EcsImageInventory", "org.zstack.sdk.EcsImageInventory");
+			put("org.zstack.header.aliyun.image.ProgressProperty", "org.zstack.sdk.ProgressProperty");
 			put("org.zstack.header.aliyun.network.HybridConnectionType", "org.zstack.sdk.HybridConnectionType");
 			put("org.zstack.header.aliyun.network.connection.ConnectionAccessPointInventory", "org.zstack.sdk.ConnectionAccessPointInventory");
 			put("org.zstack.header.aliyun.network.connection.ConnectionRelationShipInventory", "org.zstack.sdk.ConnectionRelationShipInventory");
@@ -317,6 +318,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.PortForwardingRuleInventory", "org.zstack.network.service.portforwarding.PortForwardingRuleInventory");
 			put("org.zstack.sdk.PriceInventory", "org.zstack.billing.PriceInventory");
 			put("org.zstack.sdk.PrimaryStorageInventory", "org.zstack.header.storage.primary.PrimaryStorageInventory");
+			put("org.zstack.sdk.ProgressProperty", "org.zstack.header.aliyun.image.ProgressProperty");
 			put("org.zstack.sdk.QuotaInventory", "org.zstack.header.identity.QuotaInventory");
 			put("org.zstack.sdk.QuotaUsage", "org.zstack.header.identity.Quota$QuotaUsage");
 			put("org.zstack.sdk.ResourceInventory", "org.zstack.header.vo.ResourceInventory");
