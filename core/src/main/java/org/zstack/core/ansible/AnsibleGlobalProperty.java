@@ -9,7 +9,7 @@ import org.zstack.core.GlobalPropertyDefinition;
 public class AnsibleGlobalProperty {
     @GlobalProperty(name = "Ansible.executable", defaultValue = "python")
     public static String EXECUTABLE;
-    @GlobalProperty(name = "Ansible.zstacklibPackageName", defaultValue = "zstacklib-2.0.0.tar.gz")
+    @GlobalProperty(name = "Ansible.zstacklibPackageName", defaultValue = "zstacklib-2.1.0.tar.gz")
     public static String ZSTACKLIB_PACKAGE_NAME;
     @GlobalProperty(name = "Ansible.zstackRoot", defaultValue = "/var/lib/zstack")
     public static String ZSTACK_ROOT;
