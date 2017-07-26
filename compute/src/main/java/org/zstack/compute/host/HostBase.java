@@ -27,6 +27,7 @@ import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
+import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
 import org.zstack.header.host.HostCanonicalEvents.HostDeletedData;
 import org.zstack.header.host.HostCanonicalEvents.HostStatusChangedData;
@@ -764,6 +765,11 @@ public abstract class HostBase extends AbstractHost {
     }
 
     protected boolean changeConnectionState(final HostStatusEvent event) {
+
+        if(!Q.New(HostVO.class).eq(HostVO_.uuid, self.getUuid()).isExists()){
+            throw new CloudRuntimeException(String.format("change host connection state fail, can not find the host[%s]", self.getUuid()));
+        }
+
         HostStatus before = self.getStatus();
         HostStatus next = before.nextStatus(event);
         if (before == next) {

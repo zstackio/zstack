@@ -252,7 +252,7 @@ public class FusionstorBackupStorageBase extends BackupStorageBase {
     public static final String GET_IMAGE_SIZE_PATH = "/fusionstor/backupstorage/image/getsize";
     public static final String PING_PATH = "/fusionstor/backupstorage/ping";
     public static final String GET_FACTS = "/fusionstor/backupstorage/facts";
-    public static final String GET_LOCAL_FILE_SIZE = "/ceph/backupstorage/getlocalfilesize";
+    public static final String GET_LOCAL_FILE_SIZE = "/fusionstor/backupstorage/getlocalfilesize";
 
     protected String makeImageInstallPath(String imageUuid) {
         return String.format("fusionstor://%s/%s", getSelf().getPoolName(), imageUuid);
