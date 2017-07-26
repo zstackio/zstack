@@ -7,6 +7,7 @@ import java.io.Serializable;
 public class EipTO implements Serializable {
     private String vipIp;
     private String privateMac;
+    private String publicMac;
     private String guestIp;
     private boolean snatInboundTraffic;
 
@@ -40,5 +41,13 @@ public class EipTO implements Serializable {
 
     public void setPrivateMac(String privateMac) {
         this.privateMac = privateMac;
+    }
+
+    public String getPublicMac() {
+        return publicMac;
+    }
+
+    public void setPublicMac(String publicMac) {
+        this.publicMac = publicMac;
     }
 }

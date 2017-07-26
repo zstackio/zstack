@@ -10,9 +10,11 @@ import org.zstack.header.vm.VmNicVO_
 import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.eip.EipVO
 import org.zstack.network.service.vip.VipVO
+import org.zstack.network.service.virtualrouter.VirtualRouterCommands
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant
 import org.zstack.sdk.EipInventory
 import org.zstack.sdk.L3NetworkInventory
+import org.zstack.sdk.VirtualRouterVmInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.VmNicInventory
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
@@ -32,6 +34,7 @@ class VirtualRouterEipCase extends SubCase {
     VmInstanceInventory vm
     L3NetworkInventory publicL3
     EipInventory eip
+    EipInventory eip1
 
     @Override
     void clean() {
@@ -50,6 +53,24 @@ class VirtualRouterEipCase extends SubCase {
     }
 
     void testDetachEipJustAfterAttachToStoppedVm() {
+        VirtualRouterVmInventory vrvm = queryVirtualRouterVm {}[0]
+        VirtualRouterCommands.CreateEipCmd cmd = new VirtualRouterCommands.CreateEipCmd()
+        env.afterSimulator(VirtualRouterConstant.VR_CREATE_EIP) { rsp, HttpEntity<String> entity ->
+            cmd = json(entity.getBody(), VirtualRouterCommands.CreateEipCmd)
+            return rsp
+        }
+        attachEip {
+            eipUuid = eip1.uuid
+            vmNicUuid = vm.vmNics[0].uuid
+        }
+        assert cmd.eip.publicMac.equals(vrvm.vmNics.stream().filter{ nic ->
+            nic.l3NetworkUuid.equals(publicL3.uuid)
+        }.findFirst().get().mac)
+
+        detachEip {
+            uuid = eip1.uuid
+        }
+
         stopVmInstance {
             uuid = vm.uuid
         }
@@ -118,6 +139,7 @@ class VirtualRouterEipCase extends SubCase {
         }
 
         assert dbIsExists(eip.uuid, EipVO.class)
+        env.cleanAfterSimulatorHandlers()
     }
 
     @Override
@@ -125,6 +147,7 @@ class VirtualRouterEipCase extends SubCase {
         env.create {
             vm = (env.specByName("vm") as VmSpec).inventory
             eip = (env.specByName("eip") as EipSpec).inventory
+            eip1 = (env.specByName("eip1") as EipSpec).inventory
             publicL3 = (env.specByName("pubL3") as L3NetworkSpec).inventory
             testDetachEipJustAfterAttachToStoppedVm()
             testDeleteEipOnRevokeEipFailure()
