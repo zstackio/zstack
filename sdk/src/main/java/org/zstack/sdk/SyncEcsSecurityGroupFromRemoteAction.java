@@ -25,6 +25,9 @@ public class SyncEcsSecurityGroupFromRemoteAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String ecsVpcUuid;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String securityGroupId;
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 
