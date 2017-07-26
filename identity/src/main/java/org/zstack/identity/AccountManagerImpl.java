@@ -1697,6 +1697,11 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                     "unable to delete an account. The account is an admin account"
             ));
         }
+        if(!msg.getSession().getAccountUuid().equals(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID)){
+            throw new ApiMessageInterceptionException(argerr(
+                    "Only admin can delete account."
+            ));
+        }
     }
 
     private void validate(APIUpdateUserMsg msg) {
