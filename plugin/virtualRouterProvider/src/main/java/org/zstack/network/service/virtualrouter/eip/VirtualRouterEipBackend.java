@@ -120,6 +120,8 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
                     }
                 });
                 to.setPrivateMac(priMac);
+                to.setPublicMac(vr.getVmNics().stream().filter(
+                        nic -> nic.getL3NetworkUuid().equals(vr.getPublicNetworkUuid())).findFirst().get().getMac());
                 to.setVipIp(struct.getVip().getIp());
                 to.setGuestIp(struct.getNic().getIp());
                 to.setSnatInboundTraffic(struct.isSnatInboundTraffic());
