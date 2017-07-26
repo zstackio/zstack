@@ -534,6 +534,8 @@ SET FOREIGN_KEY_CHECKS = 1;
 DELIMITER $$
 CREATE PROCEDURE securityGroupRule()
 BEGIN
+    DECLARE in_rule_uuid varchar(32);
+    DECLARE out_rule_uuid varchar(32);
     DECLARE sgUuid varchar(32);
     DECLARE done INT DEFAULT FALSE;
     DECLARE cur CURSOR FOR SELECT uuid FROM zstack.SecurityGroupVO;
@@ -544,10 +546,16 @@ BEGIN
     IF done THEN
         LEAVE read_loop;
     END IF;
+    SET in_rule_uuid = REPLACE(UUID(), '-', '');
+    SET out_rule_uuid = REPLACE(UUID(), '-', '');
+
+    INSERT zstack.ResourceVO(uuid, resourceType) value (in_rule_uuid, 'SecurityGroupRuleVO');
     INSERT zstack.SecurityGroupRuleVO(uuid, securityGroupUuid, type, protocol, allowedCidr, startPort, endPort, state, remoteSecurityGroupUuid, lastOpDate, createDate)
-    value (REPLACE(UUID(),'-',''), sgUuid, 'Ingress', 'ALL', '0.0.0.0/0', -1, -1, 'Enabled', sgUuid, NOW(), NOW());
+    value (in_rule_uuid, sgUuid, 'Ingress', 'ALL', '0.0.0.0/0', -1, -1, 'Enabled', sgUuid, NOW(), NOW());
+
+    INSERT zstack.ResourceVO(uuid, resourceType) value (out_rule_uuid, 'SecurityGroupRuleVO');
     INSERT zstack.SecurityGroupRuleVO(uuid, securityGroupUuid, type, protocol, allowedCidr, startPort, endPort, state, remoteSecurityGroupUuid, lastOpDate, createDate)
-    value (REPLACE(UUID(),'-',''), sgUuid, 'Egress', 'ALL', '0.0.0.0/0', -1, -1, 'Enabled', sgUuid, NOW(), NOW());
+    value (out_rule_uuid, sgUuid, 'Egress', 'ALL', '0.0.0.0/0', -1, -1, 'Enabled', sgUuid, NOW(), NOW());
     END LOOP;
     CLOSE cur;
     # work around a bug of mysql : jira.mariadb.org/browse/MDEV-4602
