@@ -755,6 +755,12 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         evtf.on(IdentityCanonicalEvents.ACCOUNT_DELETED_PATH, new EventCallback() {
             @Override
             public void run(Map tokens, Object data) {
+                // as a foreign key would clean SessionVO after account deleted, just clean memory sessions here
+                removeMemorySessionsAccordingToDB(tokens, data);
+                removeMemorySessionsAccordingToAccountUuid(tokens, data);
+            }
+
+            private void removeMemorySessionsAccordingToDB(Map tokens, Object data) {
                 AccountDeletedData d = (AccountDeletedData) data;
 
                 SimpleQuery<SessionVO> q = dbf.createQuery(SessionVO.class);
@@ -767,7 +773,27 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                 }
 
                 if (!suuids.isEmpty()) {
-                    logger.debug(String.format("successfully removed %s sessions for the deleted account[%s]", suuids.size(),
+                    logger.debug(String.format("successfully removed %s sessions for the deleted account[%s]",
+                            suuids.size(),
+                            d.getAccountUuid()));
+                }
+            }
+
+            private void removeMemorySessionsAccordingToAccountUuid(Map tokens, Object data) {
+                AccountDeletedData d = (AccountDeletedData) data;
+
+                List<String> suuids = sessions.entrySet().stream()
+                        .filter(it -> it.getValue().getAccountUuid().equals(d.getAccountUuid()))
+                        .map(Map.Entry::getKey)
+                        .collect(Collectors.toList());
+
+                for (String uuid : suuids) {
+                    logOutSession(uuid);
+                }
+
+                if (!suuids.isEmpty()) {
+                    logger.debug(String.format("successfully removed %s sessions for the deleted account[%s]",
+                            suuids.size(),
                             d.getAccountUuid()));
                 }
             }
@@ -1848,5 +1874,9 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
     public void setResourceTypeForAccountRef(List<String> resourceTypeForAccountRef) {
         this.resourceTypeForAccountRef = resourceTypeForAccountRef;
+    }
+
+    public Map<String, SessionInventory> getSessionsCopy() {
+        return new HashMap<>(sessions);
     }
 }
