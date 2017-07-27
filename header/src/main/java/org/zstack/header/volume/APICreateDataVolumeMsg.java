@@ -8,6 +8,7 @@ import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.notification.ApiNotification;
+import org.zstack.header.notification.NotificationConstant;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.tag.TagResourceType;
@@ -119,7 +120,7 @@ public class APICreateDataVolumeMsg extends APICreateMessage {
             @Override
             public void after(APIEvent evt) {
                 if (evt.isSuccess()) {
-                    ntfy("Created").resource(((APICreateDataVolumeEvent)evt).getInventory().getUuid(), VolumeVO.class.getSimpleName())
+                    ntfy(NotificationConstant.CREATE_OPERATE_NOTIFICATION_CONTENT).resource(((APICreateDataVolumeEvent) evt).getInventory().getUuid(), VolumeVO.class.getSimpleName())
                             .messageAndEvent(that, evt).done();
                 }
             }

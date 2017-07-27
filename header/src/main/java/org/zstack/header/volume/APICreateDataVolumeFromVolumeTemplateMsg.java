@@ -5,7 +5,11 @@ import org.zstack.header.host.HostVO;
 import org.zstack.header.identity.Action;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APICreateMessage;
+import org.zstack.header.message.APIEvent;
+import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.notification.ApiNotification;
+import org.zstack.header.notification.NotificationConstant;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.tag.TagResourceType;
@@ -83,4 +87,17 @@ public class APICreateDataVolumeFromVolumeTemplateMsg extends APICreateMessage {
         return msg;
     }
 
+    public ApiNotification __notification__() {
+        APIMessage that = this;
+
+        return new ApiNotification() {
+            @Override
+            public void after(APIEvent evt) {
+                if (evt.isSuccess()) {
+                    ntfy(NotificationConstant.Volume.CREATED_FROM_VOLUME_TEMPLATE).resource(((APICreateDataVolumeFromVolumeTemplateEvent) evt).getInventory().getUuid(), VolumeVO.class.getSimpleName())
+                            .messageAndEvent(that, evt).done();
+                }
+            }
+        };
+    }
 }
