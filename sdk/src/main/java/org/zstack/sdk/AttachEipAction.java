@@ -76,7 +76,7 @@ public class AttachEipAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/eips/{eipUuid}/vm-instances/nics/{vmNicUuid";
+        info.path = "/eips/{eipUuid}/vm-instances/nics/{vmNicUuid}";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "";
