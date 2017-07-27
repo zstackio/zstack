@@ -554,3 +554,102 @@ DELIMITER ;
 CALL securityGroupRule();
 DROP PROCEDURE IF EXISTS securityGroupRule;
 
+DELIMITER $$
+
+DROP FUNCTION IF EXISTS `Json_getKeyValue` $$
+
+CREATE FUNCTION `Json_getKeyValue`(
+    in_JsonArray VARCHAR(4096),
+    in_KeyName VARCHAR(64)
+) RETURNS VARCHAR(4096) CHARSET utf8
+
+BEGIN
+    DECLARE vs_return, vs_JsonArray, vs_JsonString, vs_Json, vs_KeyName VARCHAR(4096);
+    DECLARE vi_pos1, vi_pos2 SMALLINT UNSIGNED;
+
+    SET vs_JsonArray = TRIM(in_JsonArray);
+    SET vs_KeyName = TRIM(in_KeyName);
+
+    IF vs_JsonArray = '' OR vs_JsonArray IS NULL
+        OR vs_KeyName = '' OR vs_KeyName IS NULL
+    THEN
+        SET vs_return = NULL;
+    ELSE
+        SET vs_JsonArray = REPLACE(REPLACE(vs_JsonArray, '[', ''), ']', '');
+        SET vs_JsonString = CONCAT("'", vs_JsonArray, "'");
+        SET vs_json = SUBSTRING_INDEX(SUBSTRING_INDEX(vs_JsonString,'}',1), '{', -1);
+
+        IF vs_json = '' OR vs_json IS NULL THEN
+            SET vs_return = NULL;
+        ELSE
+            SET vs_KeyName = CONCAT('"', vs_KeyName, '":');
+            SET vi_pos1 = INSTR(vs_json, vs_KeyName);
+
+            IF vi_pos1 > 0 THEN
+                SET vi_pos1 = vi_pos1 + CHAR_LENGTH(vs_KeyName);
+                SET vi_pos2 = LOCATE('","', vs_json, vi_pos1);
+
+                IF vi_pos2 = 0 THEN
+                    SET vi_pos2 = CHAR_LENGTH(vs_json) + 1;
+                END IF;
+
+            SET vs_return = REPLACE(MID(vs_json, vi_pos1, vi_pos2 - vi_pos1), '"', '');
+            END IF;
+        END IF;
+    END IF;
+
+
+    RETURN(vs_return);
+END$$
+
+DELIMITER  ;
+
+DELIMITER $$
+
+DROP FUNCTION IF EXISTS `Upgrade_Scheduler` $$
+
+CREATE FUNCTION `Upgrade_Scheduler` (
+    uuid varchar(32),
+    targetResourceUuid varchar(32),
+    schedulerName varchar(255),
+    schedulerDescription varchar(2048),
+    schedulerType varchar(255),
+    schedulerInterval int unsigned,
+    repeatCount int unsigned,
+    cronScheduler varchar(255),
+    jobClassName varchar(255),
+    jobData varchar(65535),
+    state varchar(255),
+    managementNodeUuid varchar(32),
+    startTime timestamp,
+    stopTime timestamp,
+    createDate timestamp
+) RETURNS VARCHAR(512) CHARSET utf8
+
+BEGIN
+    DECLARE trigger_uuid, job_uuid varchar(32);
+    DECLARE job_data text;
+    DECLARE job_class_name varchar(255);
+    DECLARE current_time_stamp timestamp;
+
+    SET job_class_name = REPLACE(REPLACE(jobClassName,'compute','scheduler'), 'storage', 'scheduler');
+
+    SET job_data = CONCAT('{"targetResourceUuid":"', Json_getKeyValue(jobData, 'targetResourceUuid'), '",'
+                    ,'"name":"', Json_getKeyValue(jobData, 'schedulerName'),'",'
+                    ,'"createDate":"', Json_getKeyValue(jobData, 'createDate'), '",'
+                    ,'"accountUuid":"', Json_getKeyValue(jobData, 'accountUuid'),'"}');
+
+    SET trigger_uuid = REPLACE(UUID(),'-','');
+    SET job_uuid = REPLACE(UUID(),'-','');
+    SET current_time_stamp = current_timestamp();
+    INSERT INTO SchedulerJobVO (`uuid`, `targetResourceUuid`, `name`, `description`, `jobClassName`, `jobData`, `managementNodeUuid`, `state`, `lastOpDate`, `createDate`) VALUES (job_uuid, targetResourceUuid, schedulerName, schedulerDescription, job_class_name, job_data, managementNodeUuid, state, current_time_stamp, current_time_stamp);
+    INSERT INTO ResourceVO (`uuid`, `resourceName`, `resourceType`) VALUES (job_uuid, schedulerName, 'SchedulerJobVO');
+    INSERT INTO SchedulerTriggerVO (`uuid`, `name`, `description`, `schedulerType`, `schedulerInterval`, `repeatCount`, `managementNodeUuid`, `startTime`, `stopTime`, `lastOpDate`, `createDate`) VALUES (trigger_uuid, schedulerName, schedulerDescription, schedulerType, schedulerInterval, repeatCount, managementNodeUuid, startTime, stopTime, current_time_stamp, current_time_stamp);
+    INSERT INTO ResourceVO (`uuid`, `resourceName`, `resourceType`) VALUES (trigger_uuid, schedulerName, 'SchedulerTriggerVO');
+    INSERT INTO SchedulerJobSchedulerTriggerRefVO (`uuid`, `schedulerJobUuid`, `schedulerTriggerUuid`, `lastOpDate`, `createDate`) VALUES (REPLACE(UUID(),'-',''), job_uuid, trigger_uuid, current_time_stamp, current_time_stamp);
+    RETURN(trigger_uuid);
+END$$
+
+DELIMITER  ;
+
+select Upgrade_Scheduler(uuid, targetResourceUuid, schedulerName, schedulerDescription, schedulerType, schedulerInterval, repeatCount, cronScheduler, jobClassName, jobData, state, managementNodeUuid, startTime, stopTime, createDate) from SchedulerVO;
