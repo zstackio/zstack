@@ -76,10 +76,10 @@ public class UpdateHostIommuStateAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/pci-device/hosts/{uuid}/state";
+        info.path = "/pci-device/hosts/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "updateHostIommuState";
         return info;
     }
 
