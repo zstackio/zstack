@@ -1671,7 +1671,7 @@
   {
     "raw": "the vm has been deleted",
     "en_US": "the vm has been deleted",
-    "zh_CN": "云主机已经被卸载了",
+    "zh_CN": "云主机已经被删除了",
     "arguments": [],
     "line": 877,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceBase.java"
