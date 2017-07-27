@@ -82,7 +82,7 @@ public class UpdatePciDeviceAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/pci-device/pci-devices/{uuid}";
+        info.path = "/pci-device/pci-devices/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "updatePciDevice";
