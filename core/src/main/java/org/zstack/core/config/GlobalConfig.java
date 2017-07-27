@@ -179,6 +179,10 @@ public class GlobalConfig {
         return TypeUtils.stringToValue(value, clz);
     }
 
+    public <T> T defaultValue(Class<T> clz) {
+        return TypeUtils.stringToValue(defaultValue, clz);
+    }
+
     public static GlobalConfig valueOf(GlobalConfigVO vo) {
         GlobalConfig conf = new GlobalConfig();
         conf.setName(vo.getName());
