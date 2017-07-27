@@ -26,22 +26,6 @@ public class SchedulerJobSchedulerTriggerInventory  {
         return this.schedulerTriggerUuid;
     }
 
-    public java.lang.String jobGroup;
-    public void setJobGroup(java.lang.String jobGroup) {
-        this.jobGroup = jobGroup;
-    }
-    public java.lang.String getJobGroup() {
-        return this.jobGroup;
-    }
-
-    public java.lang.String triggerGroup;
-    public void setTriggerGroup(java.lang.String triggerGroup) {
-        this.triggerGroup = triggerGroup;
-    }
-    public java.lang.String getTriggerGroup() {
-        return this.triggerGroup;
-    }
-
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;

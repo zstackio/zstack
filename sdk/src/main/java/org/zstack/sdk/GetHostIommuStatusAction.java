@@ -69,7 +69,7 @@ public class GetHostIommuStatusAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/pci-device/hosts/status/uuid}";
+        info.path = "/pci-device/hosts/{uuid}/status";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";
