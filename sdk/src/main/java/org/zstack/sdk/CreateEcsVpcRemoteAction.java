@@ -34,6 +34,9 @@ public class CreateEcsVpcRemoteAction extends AbstractAction {
     @Param(required = false, maxLength = 256, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
+    @Param(required = true, validRegexValues = "[A-Za-z]{1}[A-Za-z0-9-_]{1,127}", nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String vRouterName;
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 
