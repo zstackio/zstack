@@ -30,8 +30,6 @@ public class KVMGlobalConfig {
     public static GlobalConfig ALLOW_LIVE_SNAPSHOT_ON_REDHAT = new GlobalConfig(CATEGORY, "redhat.liveSnapshotOn");
     @GlobalConfigValidation(validValues = {"none", "writethrough", "writeback"})
     public static GlobalConfig LIBVIRT_CACHE_MODE = new GlobalConfig(CATEGORY, "vm.cacheMode");
-    @GlobalConfigValidation(validValues = {"vnc", "spice"})
-    public static GlobalConfig VM_CONSOLE_MODE = new GlobalConfig(CATEGORY, "vm.consoleMode");
     @GlobalConfigValidation(validValues = {"none", "host-model", "host-passthrough"})
     public static GlobalConfig NESTED_VIRTUALIZATION = new GlobalConfig(CATEGORY, "vm.cpuMode");
     @GlobalConfigValidation

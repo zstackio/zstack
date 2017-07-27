@@ -1893,9 +1893,7 @@ public class KVMHost extends HostBase implements Host {
         rootVolume.setWwn(setVolumeWwn(spec.getDestRootVolume().getUuid()));
         rootVolume.setCacheMode(KVMGlobalConfig.LIBVIRT_CACHE_MODE.value());
 
-        consoleMode = KVMGlobalConfig.VM_CONSOLE_MODE.value(String.class);
         nestedVirtualization = KVMGlobalConfig.NESTED_VIRTUALIZATION.value(String.class);
-        cmd.setConsoleMode(consoleMode);
         cmd.setNestedVirtualization(nestedVirtualization);
         cmd.setRootVolume(rootVolume);
         cmd.setUseBootMenu(VmGlobalConfig.VM_BOOT_MENU.value(Boolean.class));
@@ -1940,6 +1938,8 @@ public class KVMHost extends HostBase implements Host {
         cmd.setConsolePassword(spec.getConsolePassword());
         cmd.setUsbRedirect(spec.getUsbRedirect());
         cmd.setUseNuma(VmGlobalConfig.NUMA.value(Boolean.class));
+        cmd.setConsoleMode("vnc");
+
         addons(spec, cmd);
         KVMHostInventory khinv = KVMHostInventory.valueOf(getSelf());
         try {
