@@ -124,6 +124,11 @@ class OneVmUserdataCase extends SubCase {
             FlatUserdataBackend.UserdataReleseGC.INTERVAL = 1
 
             testSetUserdataWhenCreateVm()
+            testDeleteUserdataWhenStopVm()
+            testSetUserdataWhenStartVm()
+            testSetAndDeleteUserddataWhenRebootVm()
+            testDeleteUserdataWhenDestroyVm()
+            testUserdataForMigratedVm()
 
             FlatUserdataBackend.UserdataReleseGC.INTERVAL = oldValue
         }
@@ -151,7 +156,7 @@ class OneVmUserdataCase extends SubCase {
             imageUuid = env.inventoryByName("image").uuid
             l3NetworkUuids = [l3.uuid]
             instanceOfferingUuid = env.inventoryByName("instanceOffering").uuid
-            systemTags = [VmSystemTags.USERDATA.instantiateTag([(VmSystemTags.USERDATA_TOKEN): userdata])]
+            systemTags = [VmSystemTags.USERDATA.instantiateTag([(VmSystemTags.USERDATA_TOKEN): new String(Base64.getEncoder().encode(userdata.getBytes()))])]
             hostUuid = env.inventoryByName("kvm").uuid
         }
 
@@ -177,7 +182,9 @@ class OneVmUserdataCase extends SubCase {
             }
 
             assert applyCmd != null
-            assert releaseCmd != null
+            retryInSecs(2){
+                assert releaseCmd != null
+            }
         }
 
         def testGCOnUserdataOnVmMigrationSuccessButFailedToReleaseUserdataOnSrcHost = {
