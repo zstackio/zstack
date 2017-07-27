@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class GetHostIommuStateAction extends AbstractAction {
+public class UpdateHostIommuStateAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public GetHostIommuStateResult value;
+        public UpdateHostIommuStateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,6 +25,9 @@ public class GetHostIommuStateAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
+    @Param(required = true, validValues = {"Enabled","Disabled"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String state;
+
     @Param(required = false)
     public java.util.List systemTags;
 
@@ -34,6 +37,10 @@ public class GetHostIommuStateAction extends AbstractAction {
     @Param(required = true)
     public String sessionId;
 
+    public long timeout;
+    
+    public long pollingInterval;
+
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -42,8 +49,8 @@ public class GetHostIommuStateAction extends AbstractAction {
             return ret;
         }
         
-        GetHostIommuStateResult value = res.getResult(GetHostIommuStateResult.class);
-        ret.value = value == null ? new GetHostIommuStateResult() : value; 
+        UpdateHostIommuStateResult value = res.getResult(UpdateHostIommuStateResult.class);
+        ret.value = value == null ? new UpdateHostIommuStateResult() : value; 
 
         return ret;
     }
@@ -68,11 +75,11 @@ public class GetHostIommuStateAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
+        info.httpMethod = "PUT";
         info.path = "/pci-device/hosts/{uuid}/state";
         info.needSession = true;
-        info.needPoll = false;
-        info.parameterName = "";
+        info.needPoll = true;
+        info.parameterName = "params";
         return info;
     }
 
