@@ -59,5 +59,17 @@
         <id>1011</id>
         <description>No such virtual router table</description>
     </code>
+    <code>
+        <id>1012</id>
+        <description>No such router interface</description>
+    </code>
+    <code>
+        <id>1013</id>
+        <description>No such virtual boarder router</description>
+    </code>
+    <code>
+        <id>1014</id>
+        <description>No such virtual router</description>
+    </code>
 </error>
 
