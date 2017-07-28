@@ -661,3 +661,7 @@ END$$
 DELIMITER  ;
 
 select Upgrade_Scheduler(uuid, targetResourceUuid, schedulerName, schedulerDescription, schedulerType, schedulerInterval, repeatCount, cronScheduler, jobClassName, jobData, state, managementNodeUuid, startTime, stopTime, createDate) from SchedulerVO;
+
+insert into NetworkServiceTypeVO (`networkServiceProviderUuid`, `type`) select uuid, 'CentralizedDNS' from NetworkServiceProviderVO where type='vrouter';
+insert into NetworkServiceTypeVO (`networkServiceProviderUuid`, `type`) select uuid, 'VipQos' from NetworkServiceProviderVO where type='vrouter';
+insert into NetworkServiceTypeVO (`networkServiceProviderUuid`, `type`) select uuid, 'VRouterRoute' from NetworkServiceProviderVO where type='vrouter';
