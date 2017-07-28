@@ -76,14 +76,6 @@
 
     <config>
         <category>kvm</category>
-        <name>vm.consoleMode</name>
-        <description>console mode for VM transport protocol. When set to spice, enable the spice protocol connection for VM. Options:[vnc, spice]</description>
-        <type>java.lang.String</type>
-        <defaultValue>vnc</defaultValue>
-    </config>
-
-    <config>
-        <category>kvm</category>
         <name>vm.cpuMode</name>
         <description>the cpu mode option, which could be used to enable nested virtualization, options are [none, host-model, host-passthrough]. none: not use nested virtualization; host-model/host-passthrough will enable nested virtualization. When using host-passthrough, VM will see same CPU model in Host /proc/cpuinfo. When using host-model or host-passthrough, VM migration might be failed, due to mismatched CPU model. To use nested virtualization, user need to do some pre-configuration. Firstly, the /sys/module/kvm_intel/parameters/nested should be set as 'Y'; Secondly, the /usr/libexec/qemu-kvm binary should support nested feature as well. </description>
         <type>java.lang.String</type>
