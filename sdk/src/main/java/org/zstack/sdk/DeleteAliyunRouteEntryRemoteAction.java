@@ -25,9 +25,6 @@ public class DeleteAliyunRouteEntryRemoteAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
-    @Param(required = true, validValues = {"vbr","vrouter"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String type;
-
     @Param(required = false)
     public java.lang.String deleteMode = "Permissive";
 
