@@ -256,6 +256,7 @@ ALTER TABLE `BaremetalChassisVO` ADD COLUMN `name` varchar(255) DEFAULT NULL COM
 ALTER TABLE `BaremetalChassisVO` ADD COLUMN `description` varchar(2048) DEFAULT NULL COMMENT 'baremetal chassis description';
 ALTER TABLE `BaremetalChassisVO` ADD COLUMN `ipmiPort` varchar(32) DEFAULT NULL COMMENT 'baremetal chassis ipmi port';
 ALTER TABLE `BaremetalChassisVO` DROP INDEX `ipmiAddress`;
+ALTER TABLE `BaremetalChassisVO` ADD CONSTRAINT ukBaremetalChassisVO UNIQUE (`ipmiAddress`, `ipmiPort`);
 
 CREATE TABLE `ConnectionRelationShipVO` (
   `uuid` varchar(32) NOT NULL UNIQUE,
