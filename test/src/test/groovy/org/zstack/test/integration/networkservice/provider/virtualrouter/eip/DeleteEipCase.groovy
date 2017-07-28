@@ -1,11 +1,9 @@
 package org.zstack.test.integration.networkservice.provider.virtualrouter.eip
 
+import org.springframework.http.HttpEntity
 import org.zstack.core.cloudbus.CloudBus
-import org.zstack.core.cloudbus.CloudBusCallBack
 import org.zstack.core.db.Q
 import org.zstack.core.db.SQLBatch
-import org.zstack.header.core.ReturnValueCompletion
-import org.zstack.header.message.MessageReply
 import org.zstack.header.network.l3.L3NetworkConstant
 import org.zstack.header.network.l3.ReturnIpMsg
 import org.zstack.header.network.l3.UsedIpVO
@@ -14,13 +12,18 @@ import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.header.vm.VmInstanceVO_
+import org.zstack.header.vm.VmNicVO
 import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.lb.LoadBalancerConstants
 import org.zstack.network.service.portforwarding.PortForwardingConstant
-import org.zstack.network.service.portforwarding.PortForwardingRuleState
 import org.zstack.network.service.portforwarding.PortForwardingRuleVO
 import org.zstack.network.service.portforwarding.PortForwardingRuleVO_
+import org.zstack.network.service.virtualrouter.VirtualRouterCommands
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant
+import org.zstack.network.service.virtualrouter.VirtualRouterVmVO
+import org.zstack.network.service.virtualrouter.VirtualRouterVmVO_
+import org.zstack.network.service.virtualrouter.eip.VirtualRouterEipRefVO
+import org.zstack.network.service.virtualrouter.eip.VirtualRouterEipRefVO_
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants
 import org.zstack.sdk.EipInventory
 import org.zstack.network.service.eip.EipVO
@@ -30,13 +33,12 @@ import org.zstack.sdk.PortForwardingRuleInventory
 import org.zstack.sdk.VipInventory
 import org.zstack.network.service.vip.VipVO
 import org.zstack.network.service.vip.VipVO_
-import org.zstack.sdk.DeleteVipAction
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
-import org.zstack.test.integration.networkservice.provider.virtualrouter.VirtualRouterNetworkServiceEnv
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
+import org.zstack.utils.gson.JSONObjectUtil
 
 /**
  * Created by MaJin on 2017-04-08.
@@ -260,8 +262,27 @@ class DeleteEipCase extends SubCase{
     }
 
     void testDeleteEipAction(){
+        VirtualRouterCommands.RemoveEipCmd cmd = null
+        env.afterSimulator(VirtualRouterConstant.VR_REMOVE_EIP) { rsp, HttpEntity<String> e ->
+            cmd = JSONObjectUtil.toObject(e.body,  VirtualRouterCommands.RemoveEipCmd.class)
+            return rsp
+        }
+
         EipInventory eipInv = env.inventoryByName("eip") as EipInventory
+        L3NetworkInventory l3 = env.inventoryByName("l3")
         VipVO vipVO = dbFindByUuid(eipInv.vipUuid, VipVO.class)
+
+        String pubMac = ""
+        String priMac = ""
+        VirtualRouterEipRefVO vreip = Q.New(VirtualRouterEipRefVO.class).eq(VirtualRouterEipRefVO_.eipUuid, eipInv.getUuid()).find()
+        VirtualRouterVmVO vrvm = Q.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, vreip.getVirtualRouterVmUuid()).find()
+        for (VmNicVO vmnic : vrvm.getVmNics()) {
+            if (vmnic.getL3NetworkUuid() == vipVO.getL3NetworkUuid()) {
+                pubMac = vmnic.getMac()
+            } else if (vmnic.getL3NetworkUuid() == l3.getUuid()) {
+                priMac = vmnic.getMac()
+            }
+        }
 
         deleteEip{
             uuid = "aaa"
@@ -269,6 +290,9 @@ class DeleteEipCase extends SubCase{
         deleteEip {
             uuid = eipInv.uuid
         }
+
+        assert cmd.getEip().getPublicMac().equals(pubMac)
+        assert cmd.getEip().getPrivateMac().equals(priMac)
 
         new SQLBatch(){
             @Override
@@ -278,6 +302,8 @@ class DeleteEipCase extends SubCase{
                 assert q(UsedIpVO.class).eq(UsedIpVO_.uuid, vipVO.usedIpUuid).isExists()
             }
         }.execute()
+
+        env.cleanAfterSimulatorHandlers()
     }
 
     void testOnlyDeleteUsedIp(){

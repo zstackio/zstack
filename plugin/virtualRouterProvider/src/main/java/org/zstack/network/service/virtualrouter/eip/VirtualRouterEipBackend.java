@@ -7,6 +7,7 @@ import org.zstack.appliancevm.ApplianceVmFirewallRuleInventory;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -20,17 +21,15 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
-import org.zstack.header.vm.VmInstanceConstant;
-import org.zstack.header.vm.VmInstanceState;
-import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.vm.*;
 import org.zstack.network.service.eip.EipBackend;
 import org.zstack.network.service.eip.EipStruct;
+import org.zstack.network.service.vip.VipVO;
+import org.zstack.network.service.vip.VipVO_;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.CreateEipRsp;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.RemoveEipRsp;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.Arrays;
@@ -110,18 +109,11 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
             @Override
             public void run(final FlowTrigger trigger, Map data) {
                 EipTO to = new EipTO();
-                String priMac = CollectionUtils.find(vr.getVmNics(), new Function<String, VmNicInventory>() {
-                    @Override
-                    public String call(VmNicInventory arg) {
-                        if (arg.getL3NetworkUuid().equals(struct.getNic().getL3NetworkUuid())) {
-                            return arg.getMac();
-                        }
-                        return null;
-                    }
-                });
-                to.setPrivateMac(priMac);
+                to.setPrivateMac(vr.getVmNics().stream().filter(
+                        nic -> nic.getL3NetworkUuid().equals(struct.getNic().getL3NetworkUuid())).findFirst().get().getMac());
+                String vipUuid = Q.New(VipVO.class).select(VipVO_.l3NetworkUuid).eq(VipVO_.uuid, struct.getVip().getUuid()).findValue();
                 to.setPublicMac(vr.getVmNics().stream().filter(
-                        nic -> nic.getL3NetworkUuid().equals(vr.getPublicNetworkUuid())).findFirst().get().getMac());
+                        nic -> nic.getL3NetworkUuid().equals(vipUuid)).findFirst().get().getMac());
                 to.setVipIp(struct.getVip().getIp());
                 to.setGuestIp(struct.getNic().getIp());
                 to.setSnatInboundTraffic(struct.isSnatInboundTraffic());
@@ -254,17 +246,12 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
             public void run(final FlowTrigger trigger, Map data) {
                 VirtualRouterCommands.RemoveEipCmd cmd = new VirtualRouterCommands.RemoveEipCmd();
                 EipTO to = new EipTO();
-                String priMac = CollectionUtils.find(vr.getVmNics(), new Function<String, VmNicInventory>() {
-                    @Override
-                    public String call(VmNicInventory arg) {
-                        if (arg.getL3NetworkUuid().equals(struct.getNic().getL3NetworkUuid())) {
-                            return arg.getMac();
-                        }
-                        return null;
-                    }
-                });
 
-                to.setPrivateMac(priMac);
+                to.setPrivateMac(vr.getVmNics().stream().filter(
+                        nic -> nic.getL3NetworkUuid().equals(struct.getNic().getL3NetworkUuid())).findFirst().get().getMac());
+                String vipUuid = Q.New(VipVO.class).select(VipVO_.l3NetworkUuid).eq(VipVO_.uuid, struct.getVip().getUuid()).findValue();
+                to.setPublicMac(vr.getVmNics().stream().filter(
+                        nic -> nic.getL3NetworkUuid().equals(vipUuid)).findFirst().get().getMac());
                 to.setSnatInboundTraffic(struct.isSnatInboundTraffic());
                 to.setVipIp(struct.getVip().getIp());
                 to.setGuestIp(struct.getNic().getIp());
