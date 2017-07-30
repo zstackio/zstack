@@ -257,6 +257,10 @@ ALTER TABLE `BaremetalChassisVO` ADD COLUMN `description` varchar(2048) DEFAULT 
 ALTER TABLE `BaremetalChassisVO` ADD COLUMN `ipmiPort` varchar(32) DEFAULT NULL COMMENT 'baremetal chassis ipmi port';
 ALTER TABLE `BaremetalChassisVO` DROP INDEX `ipmiAddress`;
 ALTER TABLE `BaremetalChassisVO` ADD CONSTRAINT ukBaremetalChassisVO UNIQUE (`ipmiAddress`, `ipmiPort`);
+ALTER TABLE `BaremetalChassisVO` ADD COLUMN `status` varchar(32) DEFAULT NULL COMMENT 'baremetal chassis status';
+UPDATE `BaremetalChassisVO` SET `status` = "Unprovisioned" WHERE `provisioned` = 0;
+UPDATE `BaremetalChassisVO` SET `status` = "Provisioned" WHERE `provisioned` = 1;
+ALTER TABLE `BaremetalChassisVO` DROP COLUMN `provisioned`;
 
 CREATE TABLE `ConnectionRelationShipVO` (
   `uuid` varchar(32) NOT NULL UNIQUE,
@@ -416,7 +420,7 @@ CREATE TABLE `BaremetalHardwareInfoVO` (
   `ipmiAddress` varchar(32) NOT NULL COMMENT 'baremetal chassis ipmi address',
   `ipmiPort` varchar(32) NOT NULL COMMENT 'baremetal chassis ipmi port',
   `type` varchar(255) DEFAULT NULL,
-  `content` varchar(2048) DEFAULT NULL,
+  `content` text DEFAULT NULL,
   `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
   `createDate` timestamp,
   PRIMARY KEY  (`uuid`)
