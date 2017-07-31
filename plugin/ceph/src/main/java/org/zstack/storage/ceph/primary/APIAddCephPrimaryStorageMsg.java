@@ -7,6 +7,7 @@ import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.primary.APIAddPrimaryStorageEvent;
 import org.zstack.header.storage.primary.APIAddPrimaryStorageMsg;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
+import org.zstack.header.tag.TagResourceType;
 import org.zstack.storage.ceph.CephConstants;
 
 import java.util.Collections;
@@ -18,6 +19,7 @@ import java.util.List;
 @OverriddenApiParams({
         @OverriddenApiParam(field = "url", param = @APIParam(maxLength = 2048, required = false))
 })
+@TagResourceType(PrimaryStorageVO.class)
 @RestRequest(
         path = "/primary-storage/ceph",
         method = HttpMethod.POST,
