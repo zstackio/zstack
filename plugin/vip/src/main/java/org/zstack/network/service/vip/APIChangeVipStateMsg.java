@@ -2,8 +2,10 @@ package org.zstack.network.service.vip;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
+import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
 
 /**
@@ -48,6 +50,19 @@ public class APIChangeVipStateMsg extends APIMessage implements VipMessage {
         msg.setStateEvent(VipStateEvent.enable.toString());
 
         return msg;
+    }
+
+    public ApiNotification __notification__() {
+        APIMessage that = this;
+
+        return new ApiNotification() {
+            @Override
+            public void after(APIEvent evt) {
+                ntfy("Changed state to %s", ((APIChangeVipStateEvent)evt).getInventory().getState())
+                        .resource(uuid, VipVO.class.getSimpleName())
+                        .messageAndEvent(that, evt).done();
+            }
+        };
     }
 
 }
