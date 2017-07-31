@@ -1,6 +1,7 @@
 package org.zstack.ldap;
 
 import org.zstack.header.configuration.PythonClassInventory;
+import org.zstack.header.rest.APINoSee;
 import org.zstack.header.search.Inventory;
 
 import java.sql.Timestamp;
@@ -17,6 +18,8 @@ public class LdapServerInventory {
     private String url;
     private String base;
     private String username;
+
+    @APINoSee
     private String password;
     private String encryption;
     private Timestamp createDate;

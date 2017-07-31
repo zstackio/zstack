@@ -9,6 +9,7 @@ import org.zstack.header.query.QueryOp
 import org.zstack.header.query.Unqueryable
 import org.zstack.header.rest.APINoSee
 import org.zstack.sdk.QueryAction
+import org.zstack.sdk.SDKNoSee
 import org.zstack.testlib.Test
 import org.zstack.utils.FieldUtils
 import org.zstack.utils.Utils
@@ -33,10 +34,10 @@ class SDKQueryTestValidator {
             }
 
             if (f.isAnnotationPresent(Unqueryable.class)) {
-                continue 
+                continue
             }
-
-            if (f.isAnnotationPresent(APINoSee.class)) {
+            
+            if (f.isAnnotationPresent(SDKNoSee.class)) {
                 continue 
             }
 
