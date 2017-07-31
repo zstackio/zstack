@@ -629,7 +629,6 @@ CREATE FUNCTION `Upgrade_Scheduler` (
     jobClassName varchar(255),
     jobData varchar(65535),
     state varchar(255),
-    managementNodeUuid varchar(32),
     startTime timestamp,
     stopTime timestamp,
     createDate timestamp
@@ -651,9 +650,9 @@ BEGIN
     SET trigger_uuid = REPLACE(UUID(),'-','');
     SET job_uuid = REPLACE(UUID(),'-','');
     SET current_time_stamp = current_timestamp();
-    INSERT INTO SchedulerJobVO (`uuid`, `targetResourceUuid`, `name`, `description`, `jobClassName`, `jobData`, `managementNodeUuid`, `state`, `lastOpDate`, `createDate`) VALUES (job_uuid, targetResourceUuid, schedulerName, schedulerDescription, job_class_name, job_data, managementNodeUuid, state, current_time_stamp, current_time_stamp);
+    INSERT INTO SchedulerJobVO (`uuid`, `targetResourceUuid`, `name`, `description`, `jobClassName`, `jobData`, `managementNodeUuid`, `state`, `lastOpDate`, `createDate`) VALUES (job_uuid, targetResourceUuid, schedulerName, schedulerDescription, job_class_name, job_data, NULL, state, current_time_stamp, current_time_stamp);
     INSERT INTO ResourceVO (`uuid`, `resourceName`, `resourceType`) VALUES (job_uuid, schedulerName, 'SchedulerJobVO');
-    INSERT INTO SchedulerTriggerVO (`uuid`, `name`, `description`, `schedulerType`, `schedulerInterval`, `repeatCount`, `managementNodeUuid`, `startTime`, `stopTime`, `lastOpDate`, `createDate`) VALUES (trigger_uuid, schedulerName, schedulerDescription, schedulerType, schedulerInterval, repeatCount, managementNodeUuid, startTime, stopTime, current_time_stamp, current_time_stamp);
+    INSERT INTO SchedulerTriggerVO (`uuid`, `name`, `description`, `schedulerType`, `schedulerInterval`, `repeatCount`, `managementNodeUuid`, `startTime`, `stopTime`, `lastOpDate`, `createDate`) VALUES (trigger_uuid, schedulerName, schedulerDescription, schedulerType, schedulerInterval, repeatCount, NULL, startTime, stopTime, current_time_stamp, current_time_stamp);
     INSERT INTO ResourceVO (`uuid`, `resourceName`, `resourceType`) VALUES (trigger_uuid, schedulerName, 'SchedulerTriggerVO');
     INSERT INTO SchedulerJobSchedulerTriggerRefVO (`uuid`, `schedulerJobUuid`, `schedulerTriggerUuid`, `lastOpDate`, `createDate`) VALUES (REPLACE(UUID(),'-',''), job_uuid, trigger_uuid, current_time_stamp, current_time_stamp);
     RETURN(trigger_uuid);
@@ -661,7 +660,7 @@ END$$
 
 DELIMITER  ;
 
-select Upgrade_Scheduler(uuid, targetResourceUuid, schedulerName, schedulerDescription, schedulerType, schedulerInterval, repeatCount, cronScheduler, jobClassName, jobData, state, managementNodeUuid, startTime, stopTime, createDate) from SchedulerVO;
+select Upgrade_Scheduler(uuid, targetResourceUuid, schedulerName, schedulerDescription, schedulerType, schedulerInterval, repeatCount, cronScheduler, jobClassName, jobData, state, startTime, stopTime, createDate) from SchedulerVO;
 
 insert into NetworkServiceTypeVO (`networkServiceProviderUuid`, `type`) select uuid, 'CentralizedDNS' from NetworkServiceProviderVO where type='vrouter';
 insert into NetworkServiceTypeVO (`networkServiceProviderUuid`, `type`) select uuid, 'VipQos' from NetworkServiceProviderVO where type='vrouter';
