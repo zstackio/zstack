@@ -10,6 +10,7 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
 import org.zstack.header.core.Completion;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.MessageReply;
 import org.zstack.utils.ShellUtils;
@@ -17,6 +18,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 import org.zstack.utils.path.PathUtil;
+import org.zstack.utils.ssh.SshException;
 import org.zstack.utils.ssh.SshResult;
 import org.zstack.utils.ssh.SshShell;
 
@@ -28,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 import static org.zstack.utils.StringDSL.ln;
@@ -364,6 +367,8 @@ public class AnsibleRunner {
             new PrepareAnsible().setTargetIp(targetIp).prepare();
             setupPublicKey();
             callAnsible(completion);
+        } catch (SshException e) {
+            throw new OperationFailureException(operr("User name or password or port number may be problematic"));
         } catch (Exception e) {
             throw new CloudRuntimeException(e);
         }
