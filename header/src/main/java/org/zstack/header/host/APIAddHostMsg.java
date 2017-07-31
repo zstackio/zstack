@@ -2,7 +2,10 @@ package org.zstack.header.host;
 
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.message.APICreateMessage;
+import org.zstack.header.message.APIEvent;
+import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.notification.ApiNotification;
 
 public abstract class APIAddHostMsg extends APICreateMessage implements AddHostMessage {
     /**
@@ -61,4 +64,17 @@ public abstract class APIAddHostMsg extends APICreateMessage implements AddHostM
         this.clusterUuid = clusterUuid;
     }
 
+    public ApiNotification __notification__() {
+        APIMessage that = this;
+
+        return new ApiNotification() {
+            @Override
+            public void after(APIEvent evt) {
+                if (evt.isSuccess()) {
+                    ntfy("Added").resource(((APIAddHostEvent)evt).getInventory().getUuid(), HostVO.class.getSimpleName())
+                            .messageAndEvent(that, evt).done();
+                }
+            }
+        };
+    }
 }
