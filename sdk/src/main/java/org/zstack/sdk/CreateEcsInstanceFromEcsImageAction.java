@@ -22,7 +22,7 @@ public class CreateEcsInstanceFromEcsImageAction extends AbstractAction {
         }
     }
 
-    @Param(required = false, validValues = {"cloud","cloud_efficiency","cloud_ssd","ephemeral_ssd"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String ecsRootVolumeType;
 
     @Param(required = false, maxLength = 256, minLength = 2, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
@@ -49,8 +49,11 @@ public class CreateEcsInstanceFromEcsImageAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String ecsImageUuid;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String instanceOfferingUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String instanceType;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String ecsVSwitchUuid;
