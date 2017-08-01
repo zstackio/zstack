@@ -665,3 +665,5 @@ select Upgrade_Scheduler(uuid, targetResourceUuid, schedulerName, schedulerDescr
 insert into NetworkServiceTypeVO (`networkServiceProviderUuid`, `type`) select uuid, 'CentralizedDNS' from NetworkServiceProviderVO where type='vrouter';
 insert into NetworkServiceTypeVO (`networkServiceProviderUuid`, `type`) select uuid, 'VipQos' from NetworkServiceProviderVO where type='vrouter';
 insert into NetworkServiceTypeVO (`networkServiceProviderUuid`, `type`) select uuid, 'VRouterRoute' from NetworkServiceProviderVO where type='vrouter';
+
+alter table `CephPrimaryStorageMonVO` ADD UNIQUE KEY (`hostname`, `primaryStorageUuid`);
