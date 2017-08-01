@@ -25,7 +25,7 @@ public class GetConnectionBetweenL3NetworkAndAliyunVSwitchAction extends Abstrac
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
-    @Param(required = true, validValues = {"vswitch","l3network","vroutervm","vbr","vpc"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, validValues = {"l3network","vroutervm","vbr","vpc"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String resourceType;
 
     @Param(required = false)
