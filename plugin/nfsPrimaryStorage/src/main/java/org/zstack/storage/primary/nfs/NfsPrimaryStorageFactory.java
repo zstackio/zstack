@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.vm.VmExpungeRootVolumeValidator;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfigException;
 import org.zstack.core.config.GlobalConfigValidatorExtensionPoint;
@@ -13,6 +14,7 @@ import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SQL;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.notification.N;
 import org.zstack.header.Component;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
@@ -76,6 +78,8 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
     private CloudBus bus;
     @Autowired
     private RESTFacade restf;
+    @Autowired
+    protected EventFacade evtf;
 
     private Map<String, NfsPrimaryStorageBackend> backends = new HashMap<String, NfsPrimaryStorageBackend>();
     private Map<String, Map<String, NfsPrimaryToBackupStorageMediator>> mediators =
@@ -253,15 +257,42 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
         return getConnectedHostForOperation(pri, 0, 0);
     }
 
-    @Transactional
-    public final void updateNfsHostStatus(String psUuid, String huuid, PrimaryStorageHostStatus status){
-        PrimaryStorageHostRefVO ref = new PrimaryStorageHostRefVO();
-        ref.setPrimaryStorageUuid(psUuid);
-        ref.setHostUuid(huuid);
-        ref.setStatus(status);
-        dbf.getEntityManager().merge(ref);
-        logger.debug(String.format("change status between primary storage[uuid:%s] and host[uuid:%s] to %s in db",
-                psUuid, huuid, status.toString()));
+    public final void updateNfsHostStatus(String psUuid, String huuid, PrimaryStorageHostStatus newStatus){
+        PrimaryStorageCanonicalEvent.PrimaryStorageHostStatusChangeData data =
+                new PrimaryStorageCanonicalEvent.PrimaryStorageHostStatusChangeData();
+        new SQLBatch(){
+
+            @Override
+            protected void scripts() {
+                PrimaryStorageHostStatus oldStatus = Q.New(PrimaryStorageHostRefVO.class)
+                        .eq(PrimaryStorageHostRefVO_.hostUuid, huuid)
+                        .eq(PrimaryStorageHostRefVO_.primaryStorageUuid, psUuid)
+                        .select(PrimaryStorageHostRefVO_.status)
+                        .findValue();
+
+                if(newStatus != oldStatus) {
+                    PrimaryStorageHostRefVO ref = new PrimaryStorageHostRefVO();
+                    ref.setPrimaryStorageUuid(psUuid);
+                    ref.setHostUuid(huuid);
+                    ref.setStatus(newStatus);
+                    dbf.getEntityManager().merge(ref);
+
+                    N.New(HostVO.class, huuid).info_("change status between primary storage[uuid:%s] and host[uuid:%s]" +
+                                    " from %s to %s in db",
+                            psUuid, huuid, oldStatus == null ? "unknown" : oldStatus.toString(), newStatus.toString());
+
+
+                    data.setHostUuid(huuid);
+                    data.setPrimaryStorageUuid(psUuid);
+                    data.setNewStatus(newStatus);
+                    data.setOldStatus(oldStatus);
+
+                }
+            }
+        }.execute();
+        if (data.getHostUuid() != null){
+            evtf.fire(PrimaryStorageCanonicalEvent.PRIMARY_STORAGE_HOST_STATUS_CHANGED_PATH, data);
+        }
     }
 
     @Override
@@ -498,6 +529,10 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
 
     @Override
     public void afterDetachPrimaryStorage(PrimaryStorageInventory inventory, String clusterUuid) {
+        if (!inventory.getType().equals(NfsPrimaryStorageConstant.NFS_PRIMARY_STORAGE_TYPE)){
+            return;
+        }
+
         new SQLBatch(){
             @Override
             protected void scripts() {
@@ -579,25 +614,17 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
     }
 
     @Override
+    @Transactional
     public void afterAttachPrimaryStorage(PrimaryStorageInventory inventory, String clusterUuid) {
-        new SQLBatch(){
-            @Override
-            protected void scripts() {
-                if(Q.New(PrimaryStorageVO.class)
-                        .eq(PrimaryStorageVO_.uuid, inventory.getUuid())
-                        .eq(PrimaryStorageVO_.type, NfsPrimaryStorageConstant.NFS_PRIMARY_STORAGE_TYPE)
-                        .isExists()){
-
-                    Q.New(HostVO.class)
-                            .select(HostVO_.uuid)
-                            .eq(HostVO_.clusterUuid, clusterUuid)
-                            .listValues()
-                            .forEach(huuid ->
+        if(inventory.getType().equals(NfsPrimaryStorageConstant.NFS_PRIMARY_STORAGE_TYPE)){
+            Q.New(HostVO.class)
+                    .select(HostVO_.uuid)
+                    .eq(HostVO_.clusterUuid, clusterUuid)
+                    .listValues()
+                    .forEach(huuid ->
                             updateNfsHostStatus(inventory.getUuid(), (String)huuid, PrimaryStorageHostStatus.Connected));
-                }
-            }
-        }.execute();
-        logger.debug("succeed add PrimaryStorageHostRef record");
+            logger.debug("succeed add PrimaryStorageHostRef record");
+        }
     }
 
     @Override

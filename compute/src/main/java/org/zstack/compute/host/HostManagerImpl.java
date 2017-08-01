@@ -1,15 +1,14 @@
 package org.zstack.compute.host;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.DbEntityLister;
-import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.defer.Deferred;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -32,6 +31,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedReplyMessage;
+import org.zstack.header.storage.primary.*;
 import org.zstack.search.GetQuery;
 import org.zstack.search.SearchQuery;
 import org.zstack.tag.TagManager;
@@ -71,6 +71,8 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
     private TagManager tagMgr;
     @Autowired
     private HostCpuOverProvisioningManager cpuRatioMgr;
+    @Autowired
+    private EventFacade evtf;
 
     private Map<Class, HostBaseExtensionFactory> hostBaseExtensionFactories = new HashMap<>();
 
@@ -440,7 +442,47 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
     public boolean start() {
         setupGlobalConfig();
         populateExtensions();
+        setupCanonicalEvents();
         return true;
+    }
+
+    private void setupCanonicalEvents(){
+        evtf.on(PrimaryStorageCanonicalEvent.PRIMARY_STORAGE_HOST_STATUS_CHANGED_PATH, new EventCallback() {
+            @Override
+            protected void run(Map tokens, Object data) {
+                PrimaryStorageCanonicalEvent.PrimaryStorageHostStatusChangeData d =
+                        (PrimaryStorageCanonicalEvent.PrimaryStorageHostStatusChangeData)data;
+                if (d.getNewStatus() == PrimaryStorageHostStatus.Disconnected &&
+                        d.getOldStatus() != PrimaryStorageHostStatus.Disconnected &&
+                        noStorageAccessible(d.getHostUuid())){
+                    ChangeHostConnectionStateMsg msg = new ChangeHostConnectionStateMsg();
+                    msg.setHostUuid(d.getHostUuid());
+                    msg.setConnectionStateEvent(HostStatusEvent.disconnected.toString());
+                    bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, d.getHostUuid());
+                    bus.send(msg);
+                }
+            }
+        });
+    }
+
+    @Transactional(readOnly = true)
+    private boolean noStorageAccessible(String hostUuid){
+        // detach ps will delete PrimaryStorageClusterRefVO first.
+        List<String> attachedPsUuids = SQL.New("select distinct ref.primaryStorageUuid" +
+                " from PrimaryStorageClusterRefVO ref, HostVO h" +
+                " where h.uuid =:hostUuid" +
+                " and ref.clusterUuid = h.clusterUuid", String.class)
+                .param("hostUuid", hostUuid)
+                .list();
+
+        long attachedPsCount = attachedPsUuids.size();
+        long inaccessiblePsCount = attachedPsCount == 0 ? 0 : Q.New(PrimaryStorageHostRefVO.class)
+                .eq(PrimaryStorageHostRefVO_.hostUuid, hostUuid)
+                .eq(PrimaryStorageHostRefVO_.status, PrimaryStorageHostStatus.Disconnected)
+                .in(PrimaryStorageHostRefVO_.primaryStorageUuid, attachedPsUuids)
+                .count();
+
+        return inaccessiblePsCount == attachedPsCount && attachedPsCount > 0;
     }
 
     private void setupGlobalConfig() {
