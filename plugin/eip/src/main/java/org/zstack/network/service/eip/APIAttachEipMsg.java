@@ -55,7 +55,7 @@ import javax.persistence.Tuple;
  */
 @Action(category = EipConstant.ACTION_CATEGORY)
 @RestRequest(
-        path = "/eips/{eipUuid}/vm-instances/nics/{vmNicUuid",
+        path = "/eips/{eipUuid}/vm-instances/nics/{vmNicUuid}",
         method = HttpMethod.POST,
         responseClass = APIAttachEipEvent.class
 )

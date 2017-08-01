@@ -108,6 +108,11 @@ class VirtualRouterNetworkServiceEnv {
                     useVip("pubL3")
                 }
 
+                eip {
+                    name = "eip1"
+                    useVip("pubL3")
+                }
+
                 virtualRouterOffering {
                     name = "vro"
                     memory = SizeUnit.MEGABYTE.toByte(512)
