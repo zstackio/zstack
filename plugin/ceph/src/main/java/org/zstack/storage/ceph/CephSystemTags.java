@@ -21,4 +21,7 @@ public class CephSystemTags {
 
     public static final String KVM_SECRET_UUID_TOKEN = "uuid";
     public static PatternedSystemTag KVM_SECRET_UUID = new PatternedSystemTag(String.format("ceph::kvm::secret::{%s}", KVM_SECRET_UUID_TOKEN), PrimaryStorageVO.class);
+
+    public static final String NO_CEPHX_TOKEN = "ceph::nocephx";
+    public static PatternedSystemTag NO_CEPHX = new PatternedSystemTag(NO_CEPHX_TOKEN, PrimaryStorageVO.class);
 }
