@@ -200,6 +200,19 @@ class BasicNfsCase extends SubCase {
         }
     }
 
+    private recoverEnvironment(){
+        env.cleanSimulatorAndMessageHandlers()
+        reconnectHost {
+            uuid = host1.uuid
+        }
+        reconnectHost {
+            uuid = host2.uuid
+        }
+        reconnectHost {
+            uuid = host3.uuid
+        }
+    }
+
     void testReconnectPrimaryStorageWillCmdToAllHost() {
         final CountDownLatch cmdLatch = new CountDownLatch(3)
         env.afterSimulator(NfsPrimaryStorageKVMBackend.REMOUNT_PATH){ rsp, HttpEntity<String> e ->
@@ -235,10 +248,10 @@ class BasicNfsCase extends SubCase {
         retryInSecs {
             assert ret.error != null
             Long numOfHosts = Q.New(HostVO.class).eq(HostVO_.status, HostStatus.Connected).count()
-            assert numOfHosts == 3L
+            assert numOfHosts == 0L // due to ping task, with 0.2% failure probability
         }
 
-        env.cleanSimulatorAndMessageHandlers()
+        recoverEnvironment()
     }
 
     void testUpdatePrimaryStorageMountPoint() {
@@ -258,7 +271,7 @@ class BasicNfsCase extends SubCase {
             uuid = vr.uuid
         }
 
-        assert Q.New(VmInstanceVO.class).eq(VmInstanceVO_.state, VmInstanceState.Stopped).count() == 2
+        assert Q.New(VmInstanceVO.class).eq(VmInstanceVO_.state, VmInstanceState.Stopped).count() == 2L
 
         String newMountPoint = "test:/tmp"
         updatePrimaryStorage {
