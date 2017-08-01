@@ -50,6 +50,7 @@ public class LdapServerInventory  {
         return this.username;
     }
 
+    @SDKNoSee
     public java.lang.String password;
     public void setPassword(java.lang.String password) {
         this.password = password;

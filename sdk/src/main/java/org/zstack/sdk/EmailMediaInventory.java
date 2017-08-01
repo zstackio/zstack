@@ -26,6 +26,7 @@ public class EmailMediaInventory extends MediaInventory {
         return this.username;
     }
 
+    @SDKNoSee
     public java.lang.String password;
     public void setPassword(java.lang.String password) {
         this.password = password;
