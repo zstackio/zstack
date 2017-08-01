@@ -26,13 +26,7 @@ public class CreateConnectionBetweenL3NetworkAndAliyunVSwitchAction extends Abst
     public java.lang.String l3networkUuid;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vSwitchUuid;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vpcRiuuid;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vbrRiUuid;
+    public java.lang.String vpcUuid;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String vbrUuid;

@@ -71,5 +71,13 @@
         <id>1014</id>
         <description>No such virtual router</description>
     </code>
+    <code>
+        <id>1015</id>
+        <description>No such ecs vpc</description>
+    </code>
+    <code>
+        <id>1016</id>
+        <description>Router interface not matched</description>
+    </code>
 </error>
 
