@@ -56,7 +56,7 @@ public class APIChangeInstanceOfferingMsg extends APIMessage implements VmInstan
             @Override
             public void after(APIEvent evt) {
                 if (evt.isSuccess()) {
-                    ntfy("Instance offering was changed").resource(instanceOfferingUuid, InstanceOfferingVO.class.getSimpleName())
+                    ntfy("Instance offering was changed").resource(vmInstanceUuid, VmInstanceVO.class.getSimpleName())
                         .messageAndEvent(that, evt).done();
                 }
             }
