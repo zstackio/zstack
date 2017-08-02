@@ -2,7 +2,6 @@ package org.zstack.storage.ceph.primary;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
-import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.Q;
@@ -18,7 +17,6 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
-import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.core.*;
@@ -71,7 +69,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.zstack.core.Platform.i18n;
-import static org.zstack.core.Platform.inerr;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -192,6 +189,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     public static class InitCmd extends AgentCommand {
         List<Pool> pools;
+        Boolean nocephx = false;
 
         public List<Pool> getPools() {
             return pools;
@@ -199,6 +197,14 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
         public void setPools(List<Pool> pools) {
             this.pools = pools;
+        }
+
+        public Boolean getNocephx() {
+            return nocephx;
+        }
+
+        public void setNocephx(Boolean nocephx) {
+            this.nocephx = nocephx;
         }
     }
 
@@ -2006,6 +2012,9 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                         pools.add(p);
 
                         InitCmd cmd = new InitCmd();
+                        if (CephSystemTags.NO_CEPHX.hasTag(getSelf().getUuid())) {
+                            cmd.nocephx = true;
+                        }
                         cmd.pools = pools;
                         httpCall(INIT_PATH, cmd, InitRsp.class, new ReturnValueCompletion<InitRsp>(trigger) {
                             @Override

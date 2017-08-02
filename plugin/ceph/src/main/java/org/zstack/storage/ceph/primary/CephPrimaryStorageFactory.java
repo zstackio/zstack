@@ -44,7 +44,7 @@ import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
-import static org.zstack.core.Platform.operr;
+
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
@@ -54,6 +54,7 @@ import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 
+import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
