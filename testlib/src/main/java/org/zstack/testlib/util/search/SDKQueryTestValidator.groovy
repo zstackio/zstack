@@ -2,14 +2,9 @@ package org.zstack.testlib.util.search
 
 import junit.framework.Assert
 import org.zstack.header.exception.CloudRuntimeException
-import org.zstack.header.identity.SessionInventory
-import org.zstack.header.query.APIQueryMessage
-import org.zstack.header.query.QueryCondition
 import org.zstack.header.query.QueryOp
 import org.zstack.header.query.Unqueryable
-import org.zstack.header.rest.APINoSee
 import org.zstack.sdk.QueryAction
-import org.zstack.sdk.SDKNoSee
 import org.zstack.testlib.Test
 import org.zstack.utils.FieldUtils
 import org.zstack.utils.Utils
@@ -35,9 +30,6 @@ class SDKQueryTestValidator {
 
             if (f.isAnnotationPresent(Unqueryable.class)) {
                 continue
-            }
-            if (f.isAnnotationPresent(SDKNoSee.class)) {
-                continue 
             }
 
             ret.add(f) 
