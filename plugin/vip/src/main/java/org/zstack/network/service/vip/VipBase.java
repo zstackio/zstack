@@ -26,7 +26,10 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.network.l3.L3NetworkConstant;
 import org.zstack.header.network.l3.ReturnIpMsg;
+import org.zstack.header.vm.BeforeStartNewCreatedVmExtensionPoint;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 
 import static org.zstack.core.Platform.operr;
@@ -293,6 +296,15 @@ public class VipBase {
             return;
         }
 
+        CollectionUtils.safeForEach(pluginRgty.getExtensionList(BeforeReleaseVipExtensionPoint.class),
+                new ForEachFunction<BeforeReleaseVipExtensionPoint>() {
+                    @Override
+                    public void run(BeforeReleaseVipExtensionPoint ext) {
+                        logger.debug(String.format("execute before release vip extension point %s", ext));
+                        ext.beforeReleaseVip(VipInventory.valueOf(getSelf()));
+                    }
+                });
+
         VipFactory f = vipMgr.getVipFactory(self.getServiceProvider());
         VipBaseBackend vip = f.getVip(getSelf());
         vip.releaseVipOnBackend(new Completion(completion) {
@@ -367,6 +379,14 @@ public class VipBase {
         vip.acquireVipOnBackend(new Completion(completion) {
             @Override
             public void success() {
+                CollectionUtils.safeForEach(pluginRgty.getExtensionList(AfterAcquireVipExtensionPoint.class),
+                        new ForEachFunction<AfterAcquireVipExtensionPoint>() {
+                            @Override
+                            public void run(AfterAcquireVipExtensionPoint ext) {
+                                logger.debug(String.format("execute after acquire vip extension point %s", ext));
+                                ext.afterAcquireVip(VipInventory.valueOf(getSelf()));
+                            }
+                        });
                 logger.debug(String.format("successfully acquired vip[uuid:%s, name:%s, ip:%s] on service[%s]",
                         self.getUuid(), self.getName(), self.getIp(), s.getServiceProvider()));
                 completion.success();
