@@ -18,15 +18,6 @@ public class BaremetalHostCfgInventory  {
         return this.chassisUuid;
     }
 
-    @SDKNoSee
-    public java.lang.String password;
-    public void setPassword(java.lang.String password) {
-        this.password = password;
-    }
-    public java.lang.String getPassword() {
-        return this.password;
-    }
-
     public java.lang.Boolean vnc;
     public void setVnc(java.lang.Boolean vnc) {
         this.vnc = vnc;
