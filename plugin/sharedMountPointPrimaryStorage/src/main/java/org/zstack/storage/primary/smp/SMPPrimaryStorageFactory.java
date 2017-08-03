@@ -347,6 +347,9 @@ public class SMPPrimaryStorageFactory implements PrimaryStorageFactory, CreateTe
 
     @Override
     public void afterDetachPrimaryStorage(PrimaryStorageInventory inventory, String clusterUuid) {
+        if(!inventory.getType().equals(SMPConstants.SMP_TYPE)){
+            return;
+        }
 
         PrimaryStorageVO vo = dbf.findByUuid(inventory.getUuid(), PrimaryStorageVO.class);
         if(null == vo){
