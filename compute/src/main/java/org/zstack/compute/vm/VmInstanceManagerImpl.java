@@ -1947,7 +1947,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     future.success();
                 }
             });
-            future.await();
+            future.await(30);
         }
     }
 }
