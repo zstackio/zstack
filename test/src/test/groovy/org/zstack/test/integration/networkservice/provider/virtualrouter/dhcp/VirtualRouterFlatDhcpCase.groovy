@@ -16,6 +16,9 @@ import org.zstack.network.service.flat.FlatNetworkServiceConstant
 import org.zstack.network.service.lb.LoadBalancerConstants
 import org.zstack.network.service.portforwarding.PortForwardingConstant
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands
+import org.zstack.network.service.virtualrouter.VirtualRouterConstant
+import org.zstack.network.service.virtualrouter.VirtualRouterVmVO
+import org.zstack.network.service.virtualrouter.VirtualRouterVmVO_
 import org.zstack.network.service.virtualrouter.dns.VirtualRouterCentralizedDnsBackend
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants
 import org.zstack.sdk.CreateVmInstanceAction
@@ -28,6 +31,7 @@ import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.TagUtils
 import org.zstack.utils.data.SizeUnit
+import org.zstack.utils.gson.JSONObjectUtil
 
 /**
  * Created by AlanJager on 2017/7/8.
@@ -141,7 +145,7 @@ class VirtualRouterFlatDhcpCase extends SubCase {
 
                 l2VlanNetwork {
                     name = "l22"
-                    physicalInterface = "eth0"
+                    physicalInterface = "eth1"
                     vlan = 222
 
                     l3Network {
@@ -195,7 +199,7 @@ class VirtualRouterFlatDhcpCase extends SubCase {
                 }
 
                 virtualRouterOffering {
-                    name = "vro"
+                    name = "vro2"
                     memory = SizeUnit.MEGABYTE.toByte(512)
                     cpu = 2
                     useManagementL3Network("pubL32")

@@ -71,7 +71,6 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 
-import static org.codehaus.groovy.runtime.DefaultGroovyMethods.collect;
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 
@@ -86,6 +85,7 @@ import java.util.stream.Collectors;
 import static org.zstack.core.progress.ProgressReportService.createSubTaskProgress;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
+import static java.util.Arrays.asList;
 
 public class VirtualRouterManagerImpl extends AbstractService implements VirtualRouterManager,
         PrepareDbInitialValueExtensionPoint, L2NetworkCreateExtensionPoint,
@@ -621,13 +621,15 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         if (candidate.isEmpty()) {
             return new ArrayList<>(0);
         }
-        
-        SimpleQuery<NetworkServiceL3NetworkRefVO> q = dbf.createQuery(NetworkServiceL3NetworkRefVO.class);
-        q.select(NetworkServiceL3NetworkRefVO_.l3NetworkUuid);
-        q.add(NetworkServiceL3NetworkRefVO_.l3NetworkUuid, Op.IN, candidate);
-        q.add(NetworkServiceL3NetworkRefVO_.networkServiceType, Op.EQ, nsType.toString());
-        // no need to specify provider type, L3 networks identified by candidates are served by virtual router or vyos
-        return q.listValue();
+
+        // need to specify provider type due to that the provider might be Flat
+        return SQL.New("select ref.l3NetworkUuid from NetworkServiceL3NetworkRefVO ref, NetworkServiceProviderVO nspv" +
+                " where ref.l3NetworkUuid in (:candidate) and ref.networkServiceType = :stype" +
+                " and nspv.uuid = ref.networkServiceProviderUuid and nspv.type in (:ntype)")
+                .param("candidate", candidate)
+                .param("stype", nsType.toString())
+                .param("ntype", asList(VirtualRouterConstant.VIRTUAL_ROUTER_PROVIDER_TYPE, VyosConstants.VYOS_ROUTER_PROVIDER_TYPE))
+                .list();
     }
 
     @Override
