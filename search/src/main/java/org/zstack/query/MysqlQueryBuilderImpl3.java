@@ -376,7 +376,7 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
                     return TypeUtils.stringToValue(value, entityType);
                 }
             } catch (Exception e) {
-                throw new CloudRuntimeException(String.format("failed to parse value[%s]", value), e);
+                throw new CloudRuntimeException(String.format("failed to parse value[%s], error: [%s]", value, e.getMessage()), e);
             }
         }
 
