@@ -6,6 +6,7 @@ import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.notification.ApiNotification;
+import org.zstack.header.notification.NotificationConstant;
 import org.zstack.header.rest.RestRequest;
 
 /**
@@ -70,7 +71,7 @@ public class APIUpdateVolumeMsg extends APIMessage implements VolumeMessage {
         return new ApiNotification() {
             @Override
             public void after(APIEvent evt) {
-                ntfy("Updated").resource(uuid, VolumeVO.class.getSimpleName())
+                ntfy(NotificationConstant.UPDATE_OPERATE_NOTIFICATION_CONTENT).resource(uuid, VolumeVO.class.getSimpleName())
                         .messageAndEvent(that, evt).done();
             }
         };
