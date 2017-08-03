@@ -72,7 +72,7 @@ public class GetCreateEcsImageProgressAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/hybrid/aliyun/image/{dataCenterUuid}/{uuid}/progress";
+        info.path = "/hybrid/aliyun/image/{dataCenterUuid}/{imageUuid}/progress";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";
