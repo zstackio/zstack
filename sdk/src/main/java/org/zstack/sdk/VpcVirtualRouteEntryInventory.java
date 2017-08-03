@@ -42,12 +42,12 @@ public class VpcVirtualRouteEntryInventory  {
         return this.destinationCidrBlock;
     }
 
-    public java.lang.String nextHopUuid;
-    public void setNextHopUuid(java.lang.String nextHopUuid) {
-        this.nextHopUuid = nextHopUuid;
+    public java.lang.String nextHopId;
+    public void setNextHopId(java.lang.String nextHopId) {
+        this.nextHopId = nextHopId;
     }
-    public java.lang.String getNextHopUuid() {
-        return this.nextHopUuid;
+    public java.lang.String getNextHopId() {
+        return this.nextHopId;
     }
 
     public java.lang.String virtualRouterUuid;
