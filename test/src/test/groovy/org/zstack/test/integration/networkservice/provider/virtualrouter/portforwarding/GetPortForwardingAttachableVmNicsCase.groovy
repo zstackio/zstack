@@ -5,7 +5,6 @@ import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.lb.LoadBalancerConstants
 import org.zstack.network.service.portforwarding.PortForwardingConstant
-import org.zstack.network.service.portforwarding.PortForwardingRuleVO
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants
@@ -183,6 +182,13 @@ class GetPortForwardingAttachableVmNicsCase extends SubCase{
                 useL3Networks("pubL3-1")
                 useInstanceOffering("instanceOffering")
             }
+
+            vm {
+                name = "vm2"
+                useImage("image")
+                useL3Networks("pubL3")
+                useInstanceOffering("instanceOffering")
+            }
         }
     }
 
@@ -206,7 +212,7 @@ class GetPortForwardingAttachableVmNicsCase extends SubCase{
 
         def cmd = null
         env.afterSimulator(VirtualRouterConstant.VR_CREATE_PORT_FORWARDING){rsp, HttpEntity<String> entity ->
-            cmd = json(entity.body,VirtualRouterCommands.CreatePortForwardingRuleCmd.class);
+            cmd = json(entity.body,VirtualRouterCommands.CreatePortForwardingRuleCmd.class)
             return rsp
         }
         attachPortForwardingRule {
