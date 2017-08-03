@@ -7,6 +7,7 @@ import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.notification.ApiNotification;
+import org.zstack.header.notification.NotificationConstant;
 import org.zstack.header.rest.RestRequest;
 
 /**
@@ -77,7 +78,7 @@ public class APIDeleteDataVolumeMsg extends APIDeleteMessage implements VolumeMe
         return new ApiNotification() {
             @Override
             public void after(APIEvent evt) {
-                ntfy("Deleted").resource(uuid, VolumeVO.class.getSimpleName())
+                ntfy(NotificationConstant.DELETE_OPERATE_NOTIFICATION_CONTENT).resource(uuid, VolumeVO.class.getSimpleName())
                         .messageAndEvent(that, evt).done();
             }
         };
