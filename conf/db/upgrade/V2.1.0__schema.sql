@@ -523,7 +523,7 @@ ALTER TABLE DataCenterVO DROP FOREIGN KEY fkDataCenterVOEcsVpcVO;
 ALTER TABLE DataCenterVO DROP COLUMN defaultVpcUuid;
 ALTER TABLE IdentityZoneVO DROP FOREIGN KEY fkIdentityZoneVOEcsVSwitchVO;
 ALTER TABLE IdentityZoneVO DROP COLUMN defaultVSwitchUuid;
-ALTER TABLE VpcVirtualRouteEntryVO CHANGE COLUMN nextHopVRiUuid nextHopUuid varchar(32) DEFAULT NULL;
+ALTER TABLE VpcVirtualRouteEntryVO CHANGE COLUMN nextHopVRiUuid nextHopId varchar(128) DEFAULT NULL;
 ALTER TABLE AvailableInstanceTypesVO MODIFY COLUMN instanceType varchar(4096) DEFAULT NULL;
 DROP TABLE IF EXISTS EcsImageMd5SumMappingVO;
 UPDATE EcsImageVO SET type = 'custom' WHERE type = 'aliyun';
