@@ -21,7 +21,7 @@ import org.zstack.utils.Utils
 import org.zstack.utils.logging.CLogger
 
 /**
- * Created by Administrator on 2017-05-01.
+ * Created by MaJin on 2017-05-01.
  */
 class ReconnectHostCase extends SubCase{
     EnvSpec env

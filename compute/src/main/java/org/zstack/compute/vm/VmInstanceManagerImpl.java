@@ -1947,7 +1947,11 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     future.success();
                 }
             });
-            future.await(30);
+            future.await(TimeUnit.SECONDS.toMillis(30));
+            if (future.getErrorCode() != null){
+                logger.debug(String.format("%s when put vm into unknown during reconnect host, ignore it and continue.",
+                        future.getErrorCode().getDetails()));
+            }
         }
     }
 }
