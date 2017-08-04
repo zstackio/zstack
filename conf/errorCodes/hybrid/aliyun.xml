@@ -79,5 +79,9 @@
         <id>1016</id>
         <description>Router interface not matched</description>
     </code>
+    <code>
+        <id>1017</id>
+        <description>No such oss bucket found</description>
+    </code>
 </error>
 
