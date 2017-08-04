@@ -3,6 +3,7 @@ package org.zstack.storage.primary;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
@@ -10,14 +11,12 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.cloudbus.EventFacade;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
-import org.zstack.core.db.SQL;
-import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.inventory.InventoryFacade;
 import org.zstack.core.job.JobQueueFacade;
+import org.zstack.core.notification.N;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
@@ -309,19 +308,47 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
     protected void handle(UpdatePrimaryStorageHostStatusMsg msg){
         updatePrimaryStorageHostStatus(msg.getPrimaryStorageUuids(), msg.getHostUuid(), msg.getStatus());
+
     }
 
     @Transactional
-    private void updatePrimaryStorageHostStatus(List<String> psUuids, String hostUuid, PrimaryStorageHostStatus status){
-        for(String psUuid : psUuids){
-            PrimaryStorageHostRefVO ref = new PrimaryStorageHostRefVO();
-            ref.setHostUuid(hostUuid);
-            ref.setPrimaryStorageUuid(psUuid);
-            ref.setStatus(status);
-            dbf.getEntityManager().merge(ref);
-            logger.debug(String.format("From agent report: change status between primary storage[uuid:%s] and host[uuid:%s] to %s in db",
-                    psUuid, hostUuid, status));
-        }
+    private void updatePrimaryStorageHostStatus(List<String> psUuids, String hostUuid, PrimaryStorageHostStatus newStatus){
+        List<PrimaryStorageCanonicalEvent.PrimaryStorageHostStatusChangeData> datas = new ArrayList<>();
+
+        new SQLBatch(){
+            @Override
+            protected void scripts() {
+                for(String psUuid : psUuids){
+                    PrimaryStorageHostStatus oldStatus = Q.New(PrimaryStorageHostRefVO.class)
+                            .eq(PrimaryStorageHostRefVO_.hostUuid, hostUuid)
+                            .eq(PrimaryStorageHostRefVO_.primaryStorageUuid, psUuid)
+                            .select(PrimaryStorageHostRefVO_.status)
+                            .findValue();
+
+                    if(newStatus != oldStatus){
+                        PrimaryStorageHostRefVO ref = new PrimaryStorageHostRefVO();
+                        ref.setHostUuid(hostUuid);
+                        ref.setPrimaryStorageUuid(psUuid);
+                        ref.setStatus(newStatus);
+                        dbf.getEntityManager().merge(ref);
+
+                        N.New().info_("From agent report: change status between primary storage[uuid:%s]" +
+                                        " and host[uuid:%s] from %s to %s in db",
+                                psUuid, hostUuid, oldStatus == null ? "unknown" : oldStatus.toString(), newStatus);
+
+                        PrimaryStorageCanonicalEvent.PrimaryStorageHostStatusChangeData data =
+                                new PrimaryStorageCanonicalEvent.PrimaryStorageHostStatusChangeData();
+                        data.setHostUuid(hostUuid);
+                        data.setPrimaryStorageUuid(psUuid);
+                        data.setNewStatus(newStatus);
+                        data.setOldStatus(oldStatus);
+                        datas.add(data);
+                    }
+                }
+            }
+        }.execute();
+
+        datas.forEach(it -> evtf.fire(PrimaryStorageCanonicalEvent.PRIMARY_STORAGE_HOST_STATUS_CHANGED_PATH, it));
     }
 
     protected void handle(RecalculatePrimaryStorageCapacityMsg msg) {

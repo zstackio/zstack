@@ -18,6 +18,7 @@ import org.zstack.core.ansible.AnsibleGlobalProperty;
 import org.zstack.core.ansible.AnsibleRunner;
 import org.zstack.core.ansible.SshFileMd5Checker;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -2440,9 +2441,9 @@ public class KVMHost extends HostBase implements Host {
         chain.done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
-                if(noAccessedStorage()){
+                if (noStorageAccessible()){
                     completion.fail(operr("host can not access any primary storage, please check network"));
-                }else {
+                } else {
                     completion.success();
                 }
             }
@@ -2456,17 +2457,22 @@ public class KVMHost extends HostBase implements Host {
         }).start();
     }
 
-    @Transactional
-    public boolean noAccessedStorage(){
-        long noAccessed = Q.New(PrimaryStorageHostRefVO.class)
+    @Transactional(readOnly = true)
+    private boolean noStorageAccessible(){
+        // detach ps will delete PrimaryStorageClusterRefVO first.
+        List<String> attachedPsUuids = Q.New(PrimaryStorageClusterRefVO.class)
+                .select(PrimaryStorageClusterRefVO_.primaryStorageUuid)
+                .eq(PrimaryStorageClusterRefVO_.clusterUuid, self.getClusterUuid())
+                .listValues();
+
+        long attachedPsCount = attachedPsUuids.size();
+        long inaccessiblePsCount = attachedPsCount == 0 ? 0 : Q.New(PrimaryStorageHostRefVO.class)
                 .eq(PrimaryStorageHostRefVO_.hostUuid, self.getUuid())
                 .eq(PrimaryStorageHostRefVO_.status, PrimaryStorageHostStatus.Disconnected)
+                .in(PrimaryStorageHostRefVO_.primaryStorageUuid, attachedPsUuids)
                 .count();
-        long all = Q.New(PrimaryStorageClusterRefVO.class)
-                .eq(PrimaryStorageClusterRefVO_.clusterUuid, self.getClusterUuid())
-                .count();
-        
-        return noAccessed == all && all > 0;
+
+        return inaccessiblePsCount == attachedPsCount && attachedPsCount > 0;
     }
 
     private void createHostVersionSystemTags(String distro, String release, String version) {

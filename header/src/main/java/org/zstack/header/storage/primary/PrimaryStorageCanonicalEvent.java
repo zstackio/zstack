@@ -9,6 +9,7 @@ public class PrimaryStorageCanonicalEvent {
     public static final String PRIMARY_STORAGE_DELETED_PATH = "/primaryStorage/delete";
     public static final String PRIMARY_STORAGE_STATUS_CHANGED_PATH = "/primaryStorage/status/change";
     public static final String PRIMARY_STORAGE_STATE_CHANGED_PATH = "/primaryStorage/state/change";
+    public static final String PRIMARY_STORAGE_HOST_STATUS_CHANGED_PATH = "/primaryStorage/host/status/change";
     @NeedJsonSchema
     public static class PrimaryStorageDeletedData {
         private String primaryStorageUuid;
@@ -108,6 +109,46 @@ public class PrimaryStorageCanonicalEvent {
 
         public void setInventory(PrimaryStorageInventory inventory) {
             this.inventory = inventory;
+        }
+    }
+
+    @NeedJsonSchema
+    public static class PrimaryStorageHostStatusChangeData{
+        private String primaryStorageUuid;
+        private String hostUuid;
+        private PrimaryStorageHostStatus oldStatus;
+        private PrimaryStorageHostStatus newStatus;
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setNewStatus(PrimaryStorageHostStatus newStatus) {
+            this.newStatus = newStatus;
+        }
+
+        public PrimaryStorageHostStatus getNewStatus() {
+            return newStatus;
+        }
+
+        public void setOldStatus(PrimaryStorageHostStatus oldStatus) {
+            this.oldStatus = oldStatus;
+        }
+
+        public PrimaryStorageHostStatus getOldStatus() {
+            return oldStatus;
+        }
+
+        public void setPrimaryStorageUuid(String primaryStorageUuid) {
+            this.primaryStorageUuid = primaryStorageUuid;
+        }
+
+        public String getPrimaryStorageUuid() {
+            return primaryStorageUuid;
         }
     }
 }
