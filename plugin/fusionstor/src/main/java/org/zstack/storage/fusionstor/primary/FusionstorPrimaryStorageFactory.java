@@ -178,12 +178,12 @@ public class FusionstorPrimaryStorageFactory implements PrimaryStorageFactory, F
         updater.run(new PrimaryStorageCapacityUpdaterRunnable() {
             @Override
             public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
-                if (cap.getTotalCapacity() == 0 && cap.getAvailableCapacity() == 0) {
-                    // init
-                    cap.setTotalCapacity(total);
-                    cap.setAvailableCapacity(avail);
-                }
-
+                if(total < avail || avail < 0) {
+            		throw new OperationFailureException(errf.stringToOperationError(
+                            String.format("the total cannot be less than avail and the avail cannot be less than zero,fsid[%s]",fsid)));
+            	}
+                cap.setTotalCapacity(total);
+                cap.setAvailableCapacity(avail);
                 cap.setTotalPhysicalCapacity(total);
                 cap.setAvailablePhysicalCapacity(avail);
 
