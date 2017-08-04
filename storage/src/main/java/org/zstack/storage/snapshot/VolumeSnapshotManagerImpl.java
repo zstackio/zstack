@@ -59,7 +59,8 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         ReplyMessagePreSendingExtensionPoint,
         VolumeBeforeExpungeExtensionPoint,
         ResourceOwnerAfterChangeExtensionPoint,
-        ReportQuotaExtensionPoint {
+        ReportQuotaExtensionPoint,
+        AfterReimageVmInstanceExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VolumeSnapshotManagerImpl.class);
     private String syncSignature;
     @Autowired
@@ -860,5 +861,27 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         quota.setOperator(checker);
 
         return list(quota);
+    }
+
+    @Transactional
+    @Override
+    public void afterReimageVmInstance(VolumeInventory inventory) {
+        String rootVolumeUuid = inventory.getUuid();
+
+        String sql = "update VolumeSnapshotVO s" +
+                " set s.latest = false" +
+                " where s.latest = true" +
+                " and s.volumeUuid = :volumeUuid";
+        Query q = dbf.getEntityManager().createQuery(sql);
+        q.setParameter("volumeUuid", rootVolumeUuid);
+        q.executeUpdate();
+
+        sql = "update VolumeSnapshotTreeVO tree" +
+                " set tree.current = false" +
+                " where tree.current = true" +
+                " and tree.volumeUuid = :volUuid";
+        q = dbf.getEntityManager().createQuery(sql);
+        q.setParameter("volUuid", rootVolumeUuid);
+        q.executeUpdate();
     }
 }
