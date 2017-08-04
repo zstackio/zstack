@@ -15,6 +15,7 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.PeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
+import org.zstack.core.notification.N;
 import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.workflow.*;
@@ -178,12 +179,11 @@ public class FusionstorPrimaryStorageFactory implements PrimaryStorageFactory, F
         updater.run(new PrimaryStorageCapacityUpdaterRunnable() {
             @Override
             public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
-                if (cap.getTotalCapacity() == 0 && cap.getAvailableCapacity() == 0) {
-                    // init
-                    cap.setTotalCapacity(total);
-                    cap.setAvailableCapacity(avail);
-                }
-
+                if(total < avail || avail < 0) {
+            		N.New(PrimaryStorageCapacityVO.class, cap.getUuid()).error_("the total capacity of the fusionstor primary is wrong, uuid[%s]",cap.getUuid());
+            	}
+                cap.setTotalCapacity(total);
+                cap.setAvailableCapacity(avail);
                 cap.setTotalPhysicalCapacity(total);
                 cap.setAvailablePhysicalCapacity(avail);
 
