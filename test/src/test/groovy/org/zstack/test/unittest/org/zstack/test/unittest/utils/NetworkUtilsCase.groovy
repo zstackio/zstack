@@ -19,4 +19,14 @@ class NetworkUtilsCase {
         assert cidrs.size() == dstCidr.size()
         assert cidrs.sort().toString() == dstCidr.toString()
     }
+
+    @Test
+    void testFmtCidr() {
+        assert "192.168.0.0/24" == NetworkUtils.fmtCidr("192.168.0.1/24")
+        assert "192.168.0.0/24" == NetworkUtils.fmtCidr("192.168.0.11/24")
+        assert "192.168.0.0/24" == NetworkUtils.fmtCidr("192.168.0.123/24")
+        assert "192.168.0.0/16" == NetworkUtils.fmtCidr("192.168.0.1/16")
+        assert "10.0.0.0/8" == NetworkUtils.fmtCidr("10.0.0.1/8")
+        assert "192.168.10.0/16" == NetworkUtils.fmtCidr("192.168.10.1/16")
+    }
 }

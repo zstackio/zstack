@@ -505,6 +505,12 @@ public class NetworkUtils {
         return internalIpRanges;
     }
 
+    public static String fmtCidr(final String origin) {
+        // format "*.*.*.1/24" to "*.*.*.0/24"
+        DebugUtils.Assert(isCidr(origin), String.format("%s is not a cidr", origin));
+        return origin.replaceFirst(".[0-9]{1,3}/", ".0/");
+    }
+
     public static List<String> getCidrsFromIpRange(String startIp, String endIp) {
         return getCidrsFromIpRange(startIp, endIp, true);
     }
