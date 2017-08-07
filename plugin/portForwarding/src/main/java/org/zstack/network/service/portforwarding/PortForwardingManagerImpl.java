@@ -246,7 +246,9 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
                     return new ArrayList<>();
                 }
 
-                l3Uuids.stream().filter(l3 -> !privateL3Uuids.contains(l3));
+                l3Uuids = l3Uuids.stream()
+                        .filter(l3 -> privateL3Uuids.contains(l3))
+                        .collect(Collectors.toList());
                 if (l3Uuids.isEmpty()) {
                     return new ArrayList<>();
                 }
