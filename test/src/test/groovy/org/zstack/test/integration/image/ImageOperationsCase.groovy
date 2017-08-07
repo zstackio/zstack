@@ -106,6 +106,7 @@ class ImageOperationsCase extends SubCase {
             testDeleteImage()
             testDeleteImageWhichUsedInVm()
             testDeleteDownloadingImage()
+            testImageBackupStorageRefVOHasInfoWhenImageDownloading()
         }
     }
 
@@ -173,8 +174,7 @@ class ImageOperationsCase extends SubCase {
 
         TimeUnit.SECONDS.sleep(1)
 
-        // use '.eq(ImageVO_.name, ...)' will result to 'ImageVO_.getName()'
-        def image = Q.New(ImageVO.class).list().find { it.name == imageName }
+        ImageVO image = Q.New(ImageVO.class).eq(ImageVO_.name, imageName).find()
         assert image != null
 
         deleteImage {
@@ -191,5 +191,34 @@ class ImageOperationsCase extends SubCase {
         .count()
 
         assert cnt == 0L
+    }
+
+    void testImageBackupStorageRefVOHasInfoWhenImageDownloading() {
+        def bs = env.inventoryByName("sftp")
+
+        env.afterSimulator(SftpBackupStorageConstant.DOWNLOAD_IMAGE_PATH) {
+            rsp, HttpEntity<String> e ->
+                TimeUnit.SECONDS.sleep(3)
+                return rsp
+        }
+
+        def imageName = "large-image"
+        def thread = Thread.start {
+            addImage {
+                name = imageName
+                url = "http://my-site/foo.iso"
+                backupStorageUuids = [bs.uuid]
+                format = ImageConstant.ISO_FORMAT_STRING
+            }
+        }
+
+        TimeUnit.SECONDS.sleep(1)
+        ImageVO image = Q.New(ImageVO.class).eq(ImageVO_.name, imageName).find()
+        assert image != null
+
+        env.cleanSimulatorHandlers()
+        ImageBackupStorageRefVO vo = Q.New(ImageBackupStorageRefVO.class).eq(ImageBackupStorageRefVO_.imageUuid,image.uuid).eq(ImageBackupStorageRefVO_.backupStorageUuid,bs.uuid).find()
+        assert vo != null
+        assert vo.status == ImageStatus.Downloading
     }
 }
