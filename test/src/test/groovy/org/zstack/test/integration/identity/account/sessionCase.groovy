@@ -54,6 +54,8 @@ class sessionCase extends SubCase {
             uuid = accountInventory.uuid
         }
 
-        assert acntMgr.getSessionsCopy().get(sessionInventory.uuid) == null
+        retryInSecs(2){
+            assert acntMgr.getSessionsCopy().get(sessionInventory.uuid) == null
+        }
     }
 }
