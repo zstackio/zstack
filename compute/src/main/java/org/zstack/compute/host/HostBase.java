@@ -330,6 +330,7 @@ public abstract class HostBase extends AbstractHost {
                     evt.setError(errf.instantiateErrorCode(HostErrors.UNABLE_TO_RECONNECT_HOST, reply.getError()));
                     logger.debug(String.format("failed to reconnect host[uuid:%s] because %s", self.getUuid(), reply.getError()));
                 }else{
+                    self = dbf.reload(self);
                     evt.setInventory((getSelfInventory()));
                 }
                 bus.publish(evt);
