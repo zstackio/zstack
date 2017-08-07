@@ -43,6 +43,7 @@ public class SourceClassMap {
 			put("org.zstack.header.aliyun.oss.OssBucketInventory", "org.zstack.sdk.OssBucketInventory");
 			put("org.zstack.header.aliyun.oss.OssBucketProperty", "org.zstack.sdk.OssBucketProperty");
 			put("org.zstack.header.baremetal.BaremetalException", "org.zstack.sdk.BaremetalException");
+			put("org.zstack.header.baremetal.console.BaremetalConsoleProxyInventory", "org.zstack.sdk.BaremetalConsoleProxyInventory");
 			put("org.zstack.header.baremetal.hardwareinfo.BaremetalHardwareInfoInventory", "org.zstack.sdk.BaremetalHardwareInfoInventory");
 			put("org.zstack.header.baremetal.host.BaremetalHostCfgInventory", "org.zstack.sdk.BaremetalHostCfgInventory");
 			put("org.zstack.header.baremetal.host.bonding.BaremetalHostBondingInventory", "org.zstack.sdk.BaremetalHostBondingInventory");
@@ -215,6 +216,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ApplianceVmInventory", "org.zstack.appliancevm.ApplianceVmInventory");
 			put("org.zstack.sdk.BackupStorageInventory", "org.zstack.header.storage.backup.BackupStorageInventory");
 			put("org.zstack.sdk.BaremetalChassisInventory", "org.zstack.header.baremetal.power.BaremetalChassisInventory");
+			put("org.zstack.sdk.BaremetalConsoleProxyInventory", "org.zstack.header.baremetal.console.BaremetalConsoleProxyInventory");
 			put("org.zstack.sdk.BaremetalException", "org.zstack.header.baremetal.BaremetalException");
 			put("org.zstack.sdk.BaremetalHardwareInfoInventory", "org.zstack.header.baremetal.hardwareinfo.BaremetalHardwareInfoInventory");
 			put("org.zstack.sdk.BaremetalHostBondingInventory", "org.zstack.header.baremetal.host.bonding.BaremetalHostBondingInventory");

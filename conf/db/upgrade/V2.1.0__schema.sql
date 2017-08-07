@@ -417,13 +417,24 @@ ALTER TABLE SecurityGroupRuleVO ADD CONSTRAINT fkSecurityGroupRuleVORemoteSecuri
 -- ----------------------------
 CREATE TABLE `BaremetalHardwareInfoVO` (
   `uuid` varchar(32) NOT NULL UNIQUE COMMENT 'uuid',
-  `ipmiAddress` varchar(32) NOT NULL COMMENT 'baremetal chassis ipmi address',
-  `ipmiPort` varchar(32) NOT NULL COMMENT 'baremetal chassis ipmi port',
+  `chassisUuid` varchar(32) NOT NULL COMMENT 'baremetal chassis uuid',
   `type` varchar(255) DEFAULT NULL,
   `content` text DEFAULT NULL,
   `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
   `createDate` timestamp,
-  PRIMARY KEY  (`uuid`)
+  PRIMARY KEY  (`uuid`),
+  CONSTRAINT `fkBaremetalHardwareInfoVOBaremetalChassisVO` FOREIGN KEY (`chassisUuid`) REFERENCES `BaremetalChassisVO` (`uuid`) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- ----------------------------
+--  Table structure for `BaremetalConsoleProxyVO`
+-- ----------------------------
+CREATE TABLE `BaremetalConsoleProxyVO` (
+  `uuid` varchar(32) NOT NULL UNIQUE COMMENT 'uuid',
+  `chassisUuid` varchar(32) NOT NULL COMMENT 'baremetal chassis uuid',
+  `token` varchar(255) NOT NULL COMMENT 'baremetal console proxy token',
+  PRIMARY KEY  (`uuid`),
+  CONSTRAINT `fkBaremetalConsoleProxyVOBaremetalChassisVO` FOREIGN KEY (`chassisUuid`) REFERENCES `BaremetalChassisVO` (`uuid`) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- ----------------------------

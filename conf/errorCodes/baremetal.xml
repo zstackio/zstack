@@ -101,4 +101,8 @@
         <id>1401</id>
         <description>pxe server is not running</description>
     </code>
+    <code>
+        <id>1500</id>
+        <description>failed to create novnc token file</description>
+    </code>
 </error>
