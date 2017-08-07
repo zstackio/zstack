@@ -1,12 +1,16 @@
 package org.zstack.network.service.portforwarding;
 
 import org.springframework.http.HttpMethod;
+import org.zstack.core.db.SQL;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
+import org.zstack.header.vm.VmInstanceVO;
+
+import javax.persistence.Tuple;
 
 /**
  * @api
@@ -74,12 +78,35 @@ public class APIDetachPortForwardingRuleMsg extends APIMessage {
         APIMessage that = this;
 
         return new ApiNotification() {
+            String ip;
+            String vmUuid;
+            String vmNicUuid;
+
+            @Override
+            public void before() {
+                Tuple tuple = SQL.New("select nic.ip, nic.vmInstanceUuid, nic.uuid from VmNicVO nic, PortForwardingRuleVO pfr" +
+                        " where pfr.vmNicUuid = nic.uuid and pfr.uuid = :uuid", Tuple.class)
+                        .param("uuid", getUuid()).find();
+                ip = tuple.get(0, String.class);
+                vmUuid = tuple.get(1, String.class);
+                vmNicUuid = tuple.get(2, String.class);
+            }
+
             @Override
             public void after(APIEvent evt) {
-                if (evt.isSuccess()) {
-                    ntfy("Detached").resource(uuid,PortForwardingRuleVO.class.getSimpleName())
-                            .messageAndEvent(that, evt).done();
-                }
+                ntfy("Detached from a nic[ip:%s] of the VM[uuid:%s]", ip, vmUuid)
+                        .resource(getUuid(), PortForwardingRuleVO.class.getSimpleName())
+                        .context("vmUuid", vmUuid)
+                        .context("vmNicUuid", vmNicUuid)
+                        .messageAndEvent(that, evt)
+                        .done();
+
+                ntfy("Detached a port forwarding rule[%s] from the nic[ip:%s]", getUuid(), ip)
+                        .resource(vmUuid, VmInstanceVO.class.getSimpleName())
+                        .context("portforwardingRuleUuid", getUuid())
+                        .context("vmNicUuid", vmNicUuid)
+                        .messageAndEvent(that, evt)
+                        .done();
             }
         };
     }
