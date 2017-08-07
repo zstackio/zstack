@@ -730,6 +730,15 @@ public class KVMAgentCommands {
         private boolean useNuma;
         private String usbRedirect;
         private boolean useBootMenu;
+        private boolean kvmHiddenState;
+
+        public boolean isKvmHiddenState() {
+            return kvmHiddenState;
+        }
+
+        public void setKvmHiddenState(boolean kvmHiddenState) {
+            this.kvmHiddenState = kvmHiddenState;
+        }
 
         public void setUseBootMenu(boolean useBootMenu) {
             this.useBootMenu = useBootMenu;
