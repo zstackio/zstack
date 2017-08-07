@@ -311,7 +311,6 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
     }
 
-    @Transactional
     private void updatePrimaryStorageHostStatus(List<String> psUuids, String hostUuid, PrimaryStorageHostStatus newStatus){
         List<PrimaryStorageCanonicalEvent.PrimaryStorageHostStatusChangeData> datas = new ArrayList<>();
 
