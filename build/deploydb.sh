@@ -8,6 +8,7 @@ password="$2"
 base=`dirname $0`
 
 mysql --user=${user} --password=${password} << EOF
+set global log_bin_trust_function_creators=1;
 DROP DATABASE IF EXISTS zstack;
 CREATE DATABASE zstack;
 DROP DATABASE IF EXISTS zstack_rest;
