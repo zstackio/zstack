@@ -1,6 +1,7 @@
 package org.zstack.network.service.lb;
 
 import org.springframework.http.HttpMethod;
+import org.zstack.core.db.Q;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
@@ -8,8 +9,12 @@ import org.zstack.header.message.APIParam;
 import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.vm.VmNicVO;
+import org.zstack.header.vm.VmNicVO_;
 
+import javax.persistence.Tuple;
 import java.util.Arrays;
 import java.util.List;
 
@@ -71,8 +76,19 @@ public class APIRemoveVmNicFromLoadBalancerMsg extends APIMessage implements Loa
             @Override
             public void after(APIEvent evt) {
                 if (evt.isSuccess()) {
-                    ntfy("Removed vm nics[uuid:%s]",vmNicUuids).resource(loadBalancerUuid,LoadBalancerVO.class.getSimpleName())
+                    ntfy("Removed vm nics[uuid:%s]", vmNicUuids).resource(loadBalancerUuid,LoadBalancerVO.class.getSimpleName())
+                            .context("nicUuids", vmNicUuids)
                             .messageAndEvent(that, evt).done();
+
+
+                    for (String vmNicUuid : vmNicUuids) {
+                        String vmInstanceUuid = Q.New(VmNicVO.class)
+                                .select(VmNicVO_.vmInstanceUuid)
+                                .eq(VmNicVO_.uuid, vmNicUuid).findValue();
+                        ntfy("Removed load balancer[uuid:%s]", loadBalancerUuid).resource(vmInstanceUuid, VmInstanceVO.class.getSimpleName())
+                                .context("loadBalancerUuid", loadBalancerUuid)
+                                .messageAndEvent(that, evt).done();
+                    }
                 }
             }
         };
