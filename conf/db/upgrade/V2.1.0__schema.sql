@@ -93,7 +93,6 @@ CREATE TABLE `VpcVpnIkeConfigVO` (
 	  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
 	  `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
 	  PRIMARY KEY (`uuid`),
-	  UNIQUE KEY `ukVpcVpnIkeConfigVO` (`name`,`accountName`) USING BTREE,
 	  CONSTRAINT fkVpcVpnIkeConfigVOAccountVO FOREIGN KEY (accountName) REFERENCES AccountVO (name) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -109,7 +108,6 @@ CREATE TABLE `VpcVpnIpSecConfigVO` (
 	  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
 	  `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
 	  PRIMARY KEY (`uuid`),
-	  UNIQUE KEY `ukVpcVpnIpSecConfigVO` (`name`,`accountName`) USING BTREE,
 	  CONSTRAINT fkVpcVpnIpSecConfigVOAccountVO FOREIGN KEY (accountName) REFERENCES AccountVO (name) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 SET FOREIGN_KEY_CHECKS = 1;
