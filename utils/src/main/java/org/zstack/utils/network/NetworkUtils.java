@@ -450,6 +450,10 @@ public class NetworkUtils {
         }
     }
 
+    public static boolean isFullCidr(String cidr) {
+        return cidr.equals("0.0.0.0/0");
+    }
+
     public static boolean isCidrOverlap(String cidr1, String cidr2) {
         DebugUtils.Assert(isCidr(cidr1), String.format("%s is not a cidr", cidr1));
         DebugUtils.Assert(isCidr(cidr2), String.format("%s is not a cidr", cidr2));
