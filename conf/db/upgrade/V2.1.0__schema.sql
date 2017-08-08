@@ -264,7 +264,7 @@ CREATE TABLE `ConnectionRelationShipVO` (
   `uuid` varchar(32) NOT NULL UNIQUE,
   `name` varchar(128) NOT NULL,
   `description` varchar(1024) DEFAULT NULL,
-  `relationShips` varchar(32768) NOT NULL,
+  `relationShips` text NOT NULL,
   `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
   `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
   PRIMARY KEY  (`uuid`)
