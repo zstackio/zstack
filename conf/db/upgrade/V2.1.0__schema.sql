@@ -304,7 +304,6 @@ CREATE TABLE `MonitorTriggerVO` (
   `lastStatusChangeTime` timestamp DEFAULT '0000-00-00 00:00:00',
   `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
   `createDate` timestamp,
-  CONSTRAINT fkMonitorTriggerVOResourceVO FOREIGN KEY (targetResourceUuid) REFERENCES ResourceVO (uuid) ON DELETE CASCADE,
   PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
