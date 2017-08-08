@@ -70,4 +70,12 @@
 		<defaultValue>true</defaultValue>
 		<type>java.lang.Boolean</type>
 	</config>
+
+	<config>
+		<name>kvmHiddenState</name>
+		<description>hide KVM hypervisor signature to guest</description>
+		<category>vm</category>
+		<defaultValue>false</defaultValue>
+		<type>java.lang.Boolean</type>
+	</config>
 </globalConfig>

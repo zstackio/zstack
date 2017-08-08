@@ -26,4 +26,6 @@ public class VmGlobalConfig {
     public static GlobalConfig NUMA = new GlobalConfig(CATEGORY, "numa");
     @GlobalConfigValidation
     public static GlobalConfig VM_BOOT_MENU = new GlobalConfig(CATEGORY, "bootMenu");
+    @GlobalConfigValidation(validValues = {"true", "false"})
+    public static GlobalConfig KVM_HIDDEN_STATE = new GlobalConfig(CATEGORY, "kvmHiddenState");
 }

@@ -317,6 +317,7 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
         }).done(new FlowDoneHandler(msg) {
             @Override
             public void handle(Map data) {
+                self = dbf.findByUuid(self.getUuid(), L2NetworkVO.class);
                 evt.setInventory((L2NetworkInventory) inventoryMgr.valueOf(self));
                 bus.publish(evt);
             }
