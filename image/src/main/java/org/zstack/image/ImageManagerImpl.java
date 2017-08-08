@@ -10,10 +10,7 @@ import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SQL;
-import org.zstack.core.db.SQLBatchWithReturn;
-import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
@@ -922,6 +919,17 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
             }
         }.execute();
 
+        List<ImageBackupStorageRefVO> refs = new ArrayList<>();
+        for (String uuid : msg.getBackupStorageUuids()) {
+            ImageBackupStorageRefVO ref = new ImageBackupStorageRefVO();
+            ref.setInstallPath("");
+            ref.setBackupStorageUuid(uuid);
+            ref.setStatus(ImageStatus.Downloading);
+            ref.setImageUuid(ivo.getUuid());
+            ref = dbf.persistAndRefresh(ref);
+            refs.add(ref);
+        }
+
         Defer.guard(() -> dbf.remove(ivo));
 
         final ImageInventory inv = ImageInventory.valueOf(ivo);
@@ -941,12 +949,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
             }
         });
 
-        CollectionUtils.safeForEach(pluginRgty.getExtensionList(AddImageExtensionPoint.class), new ForEachFunction<AddImageExtensionPoint>() {
-            @Override
-            public void run(AddImageExtensionPoint ext) {
-                ext.beforeAddImage(inv);
-            }
-        });
+        CollectionUtils.safeForEach(pluginRgty.getExtensionList(AddImageExtensionPoint.class), ext -> ext.beforeAddImage(inv));
 
         new LoopAsyncBatch<DownloadImageMsg>(msg) {
             AtomicBoolean success = new AtomicBoolean(false);
@@ -961,13 +964,10 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                 return new AsyncBatchRunner() {
                     @Override
                     public void run(NoErrorCompletion completion) {
-                        ImageBackupStorageRefVO ref = new ImageBackupStorageRefVO();
-                        ref.setImageUuid(ivo.getUuid());
-                        ref.setInstallPath("");
-                        ref.setBackupStorageUuid(dmsg.getBackupStorageUuid());
-                        ref.setStatus(ImageStatus.Downloading);
-                        dbf.persist(ref);
-
+                        ImageBackupStorageRefVO ref = Q.New(ImageBackupStorageRefVO.class)
+                                .eq(ImageBackupStorageRefVO_.imageUuid, ivo.getUuid())
+                                .eq(ImageBackupStorageRefVO_.backupStorageUuid, dmsg.getBackupStorageUuid())
+                                .find();
                         bus.send(dmsg, new CloudBusCallBack(completion) {
                             @Override
                             public void run(MessageReply reply) {
