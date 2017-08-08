@@ -97,6 +97,11 @@ public class APIAddVmNicToLoadBalancerMsg extends APIMessage implements LoadBala
                                 .context("loadBalancerUuid", loadBalancerUuid)
                                 .resource(vmUuid, VmInstanceVO.class.getSimpleName())
                                 .messageAndEvent(that, evt).done();
+
+                        ntfy("Added to the nic[ip:%s]", vmUuid, ip)
+                                .resource(listenerUuid, LoadBalancerListenerVO.class.getSimpleName())
+                                .context("vmUuid", vmUuid)
+                                .messageAndEvent(that, evt).done();
                     }
 
 
