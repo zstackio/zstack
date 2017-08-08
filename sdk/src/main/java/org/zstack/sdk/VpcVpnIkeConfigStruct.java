@@ -2,76 +2,76 @@ package org.zstack.sdk;
 
 public class VpcVpnIkeConfigStruct  {
 
-    public java.lang.String psk;
-    public void setPsk(java.lang.String psk) {
-        this.psk = psk;
+    public java.lang.String Psk;
+    public void setPsk(java.lang.String Psk) {
+        this.Psk = Psk;
     }
     public java.lang.String getPsk() {
-        return this.psk;
+        return this.Psk;
     }
 
-    public java.lang.String version;
-    public void setVersion(java.lang.String version) {
-        this.version = version;
+    public java.lang.String IkeVersion;
+    public void setIkeVersion(java.lang.String IkeVersion) {
+        this.IkeVersion = IkeVersion;
     }
-    public java.lang.String getVersion() {
-        return this.version;
-    }
-
-    public java.lang.String mode;
-    public void setMode(java.lang.String mode) {
-        this.mode = mode;
-    }
-    public java.lang.String getMode() {
-        return this.mode;
+    public java.lang.String getIkeVersion() {
+        return this.IkeVersion;
     }
 
-    public java.lang.String encodeAlgorithm;
-    public void setEncodeAlgorithm(java.lang.String encodeAlgorithm) {
-        this.encodeAlgorithm = encodeAlgorithm;
+    public java.lang.String IkeMode;
+    public void setIkeMode(java.lang.String IkeMode) {
+        this.IkeMode = IkeMode;
     }
-    public java.lang.String getEncodeAlgorithm() {
-        return this.encodeAlgorithm;
-    }
-
-    public java.lang.String authAlgorithm;
-    public void setAuthAlgorithm(java.lang.String authAlgorithm) {
-        this.authAlgorithm = authAlgorithm;
-    }
-    public java.lang.String getAuthAlgorithm() {
-        return this.authAlgorithm;
+    public java.lang.String getIkeMode() {
+        return this.IkeMode;
     }
 
-    public java.lang.String pfs;
-    public void setPfs(java.lang.String pfs) {
-        this.pfs = pfs;
+    public java.lang.String IkeEncAlg;
+    public void setIkeEncAlg(java.lang.String IkeEncAlg) {
+        this.IkeEncAlg = IkeEncAlg;
     }
-    public java.lang.String getPfs() {
-        return this.pfs;
-    }
-
-    public java.lang.Integer lifetime;
-    public void setLifetime(java.lang.Integer lifetime) {
-        this.lifetime = lifetime;
-    }
-    public java.lang.Integer getLifetime() {
-        return this.lifetime;
+    public java.lang.String getIkeEncAlg() {
+        return this.IkeEncAlg;
     }
 
-    public java.lang.String localIp;
-    public void setLocalIp(java.lang.String localIp) {
-        this.localIp = localIp;
+    public java.lang.String IkeAuthAlg;
+    public void setIkeAuthAlg(java.lang.String IkeAuthAlg) {
+        this.IkeAuthAlg = IkeAuthAlg;
     }
-    public java.lang.String getLocalIp() {
-        return this.localIp;
+    public java.lang.String getIkeAuthAlg() {
+        return this.IkeAuthAlg;
     }
 
-    public java.lang.String remoteIp;
-    public void setRemoteIp(java.lang.String remoteIp) {
-        this.remoteIp = remoteIp;
+    public java.lang.String IkePfs;
+    public void setIkePfs(java.lang.String IkePfs) {
+        this.IkePfs = IkePfs;
     }
-    public java.lang.String getRemoteIp() {
-        return this.remoteIp;
+    public java.lang.String getIkePfs() {
+        return this.IkePfs;
+    }
+
+    public java.lang.Integer IkeLifetime;
+    public void setIkeLifetime(java.lang.Integer IkeLifetime) {
+        this.IkeLifetime = IkeLifetime;
+    }
+    public java.lang.Integer getIkeLifetime() {
+        return this.IkeLifetime;
+    }
+
+    public java.lang.String LocalId;
+    public void setLocalId(java.lang.String LocalId) {
+        this.LocalId = LocalId;
+    }
+    public java.lang.String getLocalId() {
+        return this.LocalId;
+    }
+
+    public java.lang.String RemoteId;
+    public void setRemoteId(java.lang.String RemoteId) {
+        this.RemoteId = RemoteId;
+    }
+    public java.lang.String getRemoteId() {
+        return this.RemoteId;
     }
 
 }
