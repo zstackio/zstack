@@ -88,6 +88,12 @@ public class APIRemoveVmNicFromLoadBalancerMsg extends APIMessage implements Loa
                         ntfy("Removed load balancer[uuid:%s]", loadBalancerUuid).resource(vmInstanceUuid, VmInstanceVO.class.getSimpleName())
                                 .context("loadBalancerUuid", loadBalancerUuid)
                                 .messageAndEvent(that, evt).done();
+
+
+                        ntfy("Removed from the nic[uuid:%s]", vmNicUuid)
+                                .resource(listenerUuid, LoadBalancerListenerVO.class.getSimpleName())
+                                .context("vmNicUuid", vmNicUuid)
+                                .messageAndEvent(that, evt).done();
                     }
                 }
             }
