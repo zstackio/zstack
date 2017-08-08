@@ -2,36 +2,36 @@ package org.zstack.sdk;
 
 public class VpcVpnIpSecConfigStruct  {
 
-    public java.lang.String encodeAlgorithm;
-    public void setEncodeAlgorithm(java.lang.String encodeAlgorithm) {
-        this.encodeAlgorithm = encodeAlgorithm;
+    public java.lang.String IpsecEncAlg;
+    public void setIpsecEncAlg(java.lang.String IpsecEncAlg) {
+        this.IpsecEncAlg = IpsecEncAlg;
     }
-    public java.lang.String getEncodeAlgorithm() {
-        return this.encodeAlgorithm;
-    }
-
-    public java.lang.String authAlgorithm;
-    public void setAuthAlgorithm(java.lang.String authAlgorithm) {
-        this.authAlgorithm = authAlgorithm;
-    }
-    public java.lang.String getAuthAlgorithm() {
-        return this.authAlgorithm;
+    public java.lang.String getIpsecEncAlg() {
+        return this.IpsecEncAlg;
     }
 
-    public java.lang.String pfs;
-    public void setPfs(java.lang.String pfs) {
-        this.pfs = pfs;
+    public java.lang.String IpsecAuthAlg;
+    public void setIpsecAuthAlg(java.lang.String IpsecAuthAlg) {
+        this.IpsecAuthAlg = IpsecAuthAlg;
     }
-    public java.lang.String getPfs() {
-        return this.pfs;
+    public java.lang.String getIpsecAuthAlg() {
+        return this.IpsecAuthAlg;
     }
 
-    public java.lang.Integer lifetime;
-    public void setLifetime(java.lang.Integer lifetime) {
-        this.lifetime = lifetime;
+    public java.lang.String IpsecPfs;
+    public void setIpsecPfs(java.lang.String IpsecPfs) {
+        this.IpsecPfs = IpsecPfs;
     }
-    public java.lang.Integer getLifetime() {
-        return this.lifetime;
+    public java.lang.String getIpsecPfs() {
+        return this.IpsecPfs;
+    }
+
+    public java.lang.Integer IpsecLifetime;
+    public void setIpsecLifetime(java.lang.Integer IpsecLifetime) {
+        this.IpsecLifetime = IpsecLifetime;
+    }
+    public java.lang.Integer getIpsecLifetime() {
+        return this.IpsecLifetime;
     }
 
 }
