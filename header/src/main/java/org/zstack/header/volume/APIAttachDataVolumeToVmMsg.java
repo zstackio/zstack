@@ -97,6 +97,9 @@ public class APIAttachDataVolumeToVmMsg extends APIMessage implements VolumeMess
                 if (evt.isSuccess()) {
                     ntfy(NotificationConstant.Volume.ATTACH_DATA_VOLUME_TO_VM, vmInstanceUuid).resource(volumeUuid, VolumeVO.class.getSimpleName())
                             .messageAndEvent(that, evt).done();
+
+                    ntfy(NotificationConstant.VmInstance.ATTACH_VOLUME, volumeUuid).resource(vmInstanceUuid, VmInstanceVO.class.getSimpleName())
+                            .messageAndEvent(that, evt).done();
                 }
             }
         };
