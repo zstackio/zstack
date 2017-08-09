@@ -80,6 +80,7 @@ public class APICreateVipMsg extends APICreateMessage implements L3NetworkMessag
      */
     private String allocatorStrategy;
 
+    @APIParam(required = false)
     private String requiredIp;
 
     public String getRequiredIp() {
