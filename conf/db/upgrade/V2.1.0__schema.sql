@@ -74,13 +74,11 @@ CREATE TABLE `VpcVpnGatewayVO` (
 	  CONSTRAINT fkVpcVpnGatewayVOAccountVO FOREIGN KEY (accountName) REFERENCES AccountVO (name) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-
-
 CREATE TABLE `VpcVpnIkeConfigVO` (
 	  `uuid` varchar(32) UNIQUE NOT NULL,
 	  `accountName` varchar(128) NOT NULL,
 	  `name` varchar(128) NOT NULL,
-	  `psk` varchar(32) NOT NULL,
+	  `psk` varchar(100) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
 	  `version` varchar(32) NOT NULL,
 	  `mode` varchar(32) NOT NULL,
 	  `encodeAlgorithm` varchar(32) NOT NULL,
