@@ -98,6 +98,7 @@ public abstract class AbstractAction {
 
                 if (value != null && (value instanceof String) && !at.noTrim()) {
                     value = ((String) value).trim();
+                    p.field.set(this, value);
                 }
 
                 if (value != null && at.maxLength() != Integer.MIN_VALUE && (value instanceof String)) {
