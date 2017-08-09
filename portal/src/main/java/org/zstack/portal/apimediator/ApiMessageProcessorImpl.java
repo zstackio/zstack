@@ -265,6 +265,7 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
 
                 if (value != null && (value instanceof String) && !at.noTrim()) {
                     value = ((String) value).trim();
+                    f.set(msg, value);
                 }
 
                 if (value != null && at.maxLength() != Integer.MIN_VALUE && (value instanceof String)) {
