@@ -81,13 +81,15 @@ abstract class StabilityTest extends Test implements Case{
                 index ++
 
                 logger.info("stability test, a sub case [${subCase.class}] start running, current execution times is ${index}")
+                long startTime = new Date().getTime()
                 try{
                     subCase.run()
                 }catch (Throwable t){
                     logger.error("stability test fails, a sub case [${subCase.class}] fails, current execution times is ${index}, ${t.message}" ,t)
                     throw t
                 }
-                logger.info("stability test, a sub case [${subCase.class}] test pass, current execution times is ${index}")
+                long spendTime = (new Date().getTime() - startTime) / 1000
+                logger.info("stability test, a sub case [${subCase.class}] test pass, current execution times is ${index}, spend time is ${spendTime} secs")
 
 
                 assert index > 0 && index <= times
