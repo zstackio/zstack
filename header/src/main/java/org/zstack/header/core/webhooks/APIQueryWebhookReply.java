@@ -19,4 +19,8 @@ public class APIQueryWebhookReply extends APIQueryReply {
     public void setInventories(List<WebhookInventory> inventories) {
         this.inventories = inventories;
     }
+
+    public static APIQueryWebhookReply __example__() {
+        return new APIQueryWebhookReply();
+    }
 }

@@ -64,4 +64,12 @@ public class APICreateWebhookMsg extends APICreateMessage {
     public void setOpaque(String opaque) {
         this.opaque = opaque;
     }
+
+    public static APICreateWebhookMsg __example__() {
+        APICreateWebhookMsg msg = new APICreateWebhookMsg();
+        msg.setName("test");
+        msg.setUrl("http://localhost/web-hooks");
+        msg.setType("CanonicalEvent");
+        return msg;
+    }
 }

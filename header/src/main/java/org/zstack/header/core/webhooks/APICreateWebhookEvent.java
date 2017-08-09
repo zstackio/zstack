@@ -24,4 +24,8 @@ public class APICreateWebhookEvent extends APIEvent {
     public void setInventory(WebhookInventory inventory) {
         this.inventory = inventory;
     }
+
+    public static APICreateWebhookEvent __example__() {
+        return new APICreateWebhookEvent();
+    }
 }

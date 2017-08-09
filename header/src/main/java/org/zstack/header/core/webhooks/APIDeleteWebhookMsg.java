@@ -24,4 +24,10 @@ public class APIDeleteWebhookMsg extends APIDeleteMessage {
     public void setUuid(String uuid) {
         this.uuid = uuid;
     }
+
+    public static APIDeleteWebhookMsg __example__() {
+        APIDeleteWebhookMsg msg = new APIDeleteWebhookMsg();
+        msg.setUuid(uuid());
+        return msg;
+    }
 }
