@@ -17,4 +17,7 @@ import org.zstack.header.rest.RestRequest;
 )
 @SuppressCredentialCheck
 public class APIIsOpensourceVersionMsg extends APISyncCallMessage {
+    public static APIIsOpensourceVersionMsg __example__() {
+        return new APIIsOpensourceVersionMsg();
+    }
 }

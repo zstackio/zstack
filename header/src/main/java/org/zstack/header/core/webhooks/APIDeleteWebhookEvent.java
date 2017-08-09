@@ -14,4 +14,8 @@ public class APIDeleteWebhookEvent extends APIEvent {
     public APIDeleteWebhookEvent(String apiId) {
         super(apiId);
     }
+
+    public static APIDeleteWebhookEvent __example__() {
+        return new APIDeleteWebhookEvent();
+    }
 }

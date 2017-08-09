@@ -74,4 +74,11 @@ public class APIUpdateWebhookMsg extends APIMessage {
     public void setOpaque(String opaque) {
         this.opaque = opaque;
     }
+
+    public static APIUpdateWebhookMsg __example__() {
+        APIUpdateWebhookMsg msg = new APIUpdateWebhookMsg();
+        msg.setUuid(uuid());
+        msg.setName("test");
+        return msg;
+    }
 }
