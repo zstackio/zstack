@@ -40,7 +40,7 @@ public class CreateEcsInstanceFromEcsImageAction extends AbstractAction {
     @Param(required = false, validValues = {"true","false"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String allocatePublicIp;
 
-    @Param(required = false, validRegexValues = "[a-zA-Z0-9]{6}", maxLength = 6, minLength = 6, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, validRegexValues = "[A-Za-z0-9]{6}", maxLength = 6, minLength = 6, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String ecsConsolePassword;
 
     @Param(required = true, maxLength = 128, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
@@ -61,7 +61,7 @@ public class CreateEcsInstanceFromEcsImageAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String ecsSecurityGroupUuid;
 
-    @Param(required = true, validRegexValues = "^[a-zA-Z][\\w\\W]{7,17}$", maxLength = 30, minLength = 8, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, maxLength = 30, minLength = 8, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String ecsRootPassword;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,200L}, noTrim = false)
