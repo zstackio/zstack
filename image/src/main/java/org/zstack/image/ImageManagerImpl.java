@@ -6,6 +6,7 @@ import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.AsyncBatchRunner;
 import org.zstack.core.asyncbatch.LoopAsyncBatch;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfig;
@@ -818,6 +819,32 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
                         trigger.rollback();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = String.format("sync-image-size");
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+
+                        new While<>(targetBackupStorages).all((arg, completion) -> {
+                            SyncImageSizeMsg smsg = new SyncImageSizeMsg();
+                            smsg.setBackupStorageUuid(arg.getUuid());
+                            smsg.setImageUuid(imageVO.getUuid());
+                            bus.makeTargetServiceIdByResourceUuid(smsg, ImageConstant.SERVICE_ID, imageVO.getUuid());
+                            bus.send(smsg, new CloudBusCallBack(completion) {
+                                @Override
+                                public void run(MessageReply reply) {
+                                    completion.done();
+                                }
+                            });
+                         }).run(new NoErrorCompletion(trigger) {
+                            @Override
+                            public void done() {
+                                trigger.next();
+                            }
+                        });
                     }
                 });
 
