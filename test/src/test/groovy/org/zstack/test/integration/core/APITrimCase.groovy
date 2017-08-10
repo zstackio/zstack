@@ -1,6 +1,7 @@
-package org.zstack.test.integration.networkservice.provider
+package org.zstack.test.integration.core
 
 import org.zstack.sdk.L3NetworkInventory
+import org.zstack.sdk.ZoneInventory
 import org.zstack.test.integration.kvm.Env
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
@@ -10,31 +11,36 @@ import org.zstack.testlib.SubCase
  */
 class APITrimCase extends SubCase{
     EnvSpec env
+    ZoneInventory zone
 
     @Override
     void clean() {
+        deleteZone {
+            uuid = zone.uuid
+        }
+
         env.delete()
     }
 
     @Override
     void setup() {
-        useSpring(NetworkServiceProviderTest.springSpec)
+        spring{
+            include("ZoneManager.xml")
+        }
     }
 
     @Override
     void environment() {
-        env = Env.noVmEnv()
+        env = makeEnv{}
     }
 
     @Override
     void test() {
         env.create {
-            L3NetworkInventory pubL3 = env.inventoryByName("pubL3") as L3NetworkInventory
-            createVip {
-                name = "testVip"
-                l3NetworkUuid = pubL3.uuid
-                requiredIp = " 12.16.10.11"
-            }
+            zone = createZone {
+                name = " test"
+            } as ZoneInventory
+            assert zone.name == "test"
         }
     }
 }
