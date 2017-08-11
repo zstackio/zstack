@@ -4,17 +4,16 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.message.APIMessage;
+import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
-import org.zstack.network.service.eip.APIAttachEipMsg;
-import org.zstack.network.service.eip.APICreateEipMsg;
-import org.zstack.network.service.eip.EipVO;
-import org.zstack.network.service.eip.EipVO_;
+import org.zstack.network.service.eip.*;
 import org.zstack.network.service.portforwarding.APIAttachPortForwardingRuleMsg;
 import org.zstack.network.service.portforwarding.APICreatePortForwardingRuleMsg;
 import org.zstack.network.service.portforwarding.PortForwardingRuleVO;
@@ -116,7 +115,6 @@ public class ApiValidator implements GlobalApiMessageInterceptor {
                             StringUtils.join(eipStr, ",")));
         }
     }
-
 
     private void validate(APIAttachEipMsg msg) {
         isVmNicUsedByPortForwarding(msg.getVmNicUuid());

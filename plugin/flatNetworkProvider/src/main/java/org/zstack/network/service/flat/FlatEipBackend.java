@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.notification.N;
 import org.zstack.core.timeout.ApiTimeoutManager;
@@ -584,6 +585,16 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
 
     @Override
     public void revokeEip(EipStruct struct, final Completion completion) {
+        VmInstanceState state = Q.New(VmInstanceVO.class)
+                .eq(VmInstanceVO_.uuid, struct.getNic().getVmInstanceUuid())
+                .select(VmInstanceVO_.state)
+                .findValue();
+        if (EipConstant.noNeedApplyOnBackendVmStates.contains(state)) {
+            // eip netns has been revoke when vm is stopped,
+            completion.success();
+            return;
+        }
+
         final DeleteEipCmd cmd = new DeleteEipCmd();
         cmd.eip = eipStructToEipTO(struct);
 

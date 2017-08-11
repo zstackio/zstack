@@ -1,6 +1,12 @@
 package org.zstack.network.service.eip;
 
 import org.zstack.header.network.service.NetworkServiceType;
+import org.zstack.header.vm.VmInstance;
+import org.zstack.header.vm.VmInstanceState;
+
+import java.util.List;
+
+import static java.util.Arrays.asList;
 
 /**
  */
@@ -20,4 +26,20 @@ public interface EipConstant {
         NEED_LOCK_VIP,
         NEED_UNLOCK_VIP
     }
+
+    public final List<VmInstanceState> noNeedApplyOnBackendVmStates = asList(
+            VmInstanceState.Stopped,
+            VmInstanceState.VolumeMigrating
+    );
+
+    public final List<VmInstanceState> attachableVmStates = asList(
+            VmInstanceState.Running,
+            VmInstanceState.Paused,
+            VmInstanceState.Pausing,
+            VmInstanceState.Resuming,
+            VmInstanceState.Stopped,
+            VmInstanceState.VolumeMigrating
+    );
+
+
 }

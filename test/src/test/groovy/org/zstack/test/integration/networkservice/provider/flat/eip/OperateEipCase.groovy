@@ -26,7 +26,9 @@ import org.zstack.utils.data.SizeUnit
  * Created by heathhose on 17-5-15.
  */
 class OperateEipCase extends SubCase {
-
+    EipInventory eip
+    VmInstanceInventory vm
+    L3NetworkInventory pub_l3
     EnvSpec env
 
     @Override
@@ -133,16 +135,18 @@ class OperateEipCase extends SubCase {
     @Override
     void test() {
         env.create {
+            eip = env.inventoryByName("eip") as EipInventory
+            vm = env.inventoryByName("vm") as VmInstanceInventory
+            pub_l3 = env.inventoryByName("pubL3") as L3NetworkInventory
+
             testAttachVmNicToEip()
+            testDetachEipWhenVmStopped()
             testReconnectHostBatchApplyEips()
             testDeleteEip()
         }
     }
 
     void testAttachVmNicToEip() {
-        def eip = env.inventoryByName("eip") as EipInventory
-        def vm = env.inventoryByName("vm") as VmInstanceInventory
-        def pub_l3 = env.inventoryByName("pubL3") as L3NetworkInventory
         FlatEipBackend.ApplyEipCmd cmd = new FlatEipBackend.ApplyEipCmd()
         env.afterSimulator(FlatEipBackend.APPLY_EIP_PATH) { rsp, HttpEntity<String> entity ->
             cmd = json(entity.getBody(), FlatEipBackend.ApplyEipCmd.class)
@@ -169,9 +173,27 @@ class OperateEipCase extends SubCase {
         assert res.value.inventories.size() == 0
     }
 
+    void testDetachEipWhenVmStopped(){
+        stopVmInstance {
+            uuid = vm.uuid
+        }
+
+        detachEip {
+            uuid = eip.uuid
+        }
+
+        startVmInstance {
+            uuid = vm.uuid
+        }
+
+        attachEip {
+            eipUuid = eip.uuid
+            vmNicUuid = vm.getVmNics().get(0).getUuid()
+        }
+    }
+
 
     void testDeleteEip() {
-        def eip = env.inventoryByName("eip") as EipInventory
         FlatEipBackend.DeleteEipCmd cmd = new FlatEipBackend.DeleteEipCmd()
         env.afterSimulator(FlatEipBackend.DELETE_EIP_PATH) { rsp, HttpEntity<String> entity ->
             cmd = json(entity.getBody(), FlatEipBackend.DeleteEipCmd.class)
@@ -188,7 +210,6 @@ class OperateEipCase extends SubCase {
 
     void testReconnectHostBatchApplyEips() {
         def host = env.inventoryByName("kvm") as HostInventory
-        def eip = env.inventoryByName("eip") as EipInventory
         FlatEipBackend.BatchApplyEipCmd cmd = new FlatEipBackend.BatchApplyEipCmd()
 
         env.afterSimulator(FlatEipBackend.BATCH_APPLY_EIP_PATH) { rsp, HttpEntity<String> entity ->

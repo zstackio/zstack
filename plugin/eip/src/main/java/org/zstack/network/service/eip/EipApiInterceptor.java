@@ -6,14 +6,15 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.message.APIMessage;
+import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
 import org.zstack.network.service.vip.VipState;
@@ -117,6 +118,7 @@ public class EipApiInterceptor implements ApiMessageInterceptor {
 
         // check if the vm already has a network where the vip comes
         checkIfVmAlreadyHasVipNetwork(nic.getVmInstanceUuid(), vip);
+        checkVmState(msg.getVmNicUuid());
     }
 
     private void validate(APIDetachEipMsg msg) {
@@ -187,6 +189,21 @@ public class EipApiInterceptor implements ApiMessageInterceptor {
 
             // check if the vm already has a network where the vip comes
             checkIfVmAlreadyHasVipNetwork(nic.getVmInstanceUuid(), vip);
+        }
+    }
+
+    @Transactional(readOnly = true)
+    private void checkVmState(String vmNicUuid){
+        VmInstanceState state = SQL.New(
+                "select vm.state from VmInstanceVO vm, VmNicVO nic" +
+                        " where nic.uuid =:vmNicUuid" +
+                        " and vm.uuid = nic.vmInstanceUuid",
+                VmInstanceState.class)
+                .param("vmNicUuid", vmNicUuid).find();
+        if (!EipConstant.attachableVmStates.contains(state)){
+            throw new ApiMessageInterceptionException(operr(
+                    "vm state[%s] is not allowed to operate eip, maybe you should wait the vm process complete",
+                    state.toString()));
         }
     }
 }

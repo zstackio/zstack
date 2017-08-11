@@ -189,7 +189,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                 " and nic.ip is not null")
                 .param("l3Uuids", l3Uuids)
                 .param("vmType", VmInstanceConstant.USER_VM_TYPE)
-                .param("vmStates", Arrays.asList(VmInstanceState.Running, VmInstanceState.Stopped))
+                .param("vmStates", EipConstant.attachableVmStates)
                 .list();
         return VmNicInventory.valueOf(nics);
     }
@@ -282,7 +282,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         q.select(VmInstanceVO_.state);
         q.add(VmInstanceVO_.uuid, SimpleQuery.Op.EQ, nicvo.getVmInstanceUuid());
         VmInstanceState state = q.findValue();
-        if (VmInstanceState.Running != state) {
+        if (EipConstant.noNeedApplyOnBackendVmStates.contains(state)) {
             vo.setVmNicUuid(nicInventory.getUuid());
             vo.setGuestIp(nicvo.getIp());
             EipVO evo = dbf.updateAndRefresh(vo);
@@ -361,16 +361,6 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        boolean callBackend = Q.New(VmInstanceVO.class).select(VmInstanceVO_.state)
-                                .eq(VmInstanceVO_.uuid, nicvo.getVmInstanceUuid()).findValue() == VmInstanceState.Running;
-
-                        if (!callBackend) {
-                            logger.warn(String.format("the vm[uuid:%s] is not running, no need to delete the EIP[uuid:%s] from the backend",
-                                    nicvo.getVmInstanceUuid(), struct.getEip().getUuid()));
-                            trigger.next();
-                            return;
-                        }
-
                         EipBackend bkd = getEipBackend(providerType.toString());
                         bkd.revokeEip(struct, new Completion(trigger) {
                             @Override
