@@ -178,6 +178,12 @@ public class VipBase {
 
     protected Recover modifyAttributes(ModifyVipAttributesStruct s) {
         VipVO origin = dbf.findByUuid(self.getUuid(), VipVO.class);
+        if (origin == null) {
+            logger.debug(String.format("can not modify vip[%s] attributes, it has been deleted", self.getUuid()));
+            return () -> {
+                throw new OperationFailureException(operr("can not modify vip[%s] attributes, it has been deleted", self.getUuid()));
+            };
+        }
 
         if (s.isServiceProvider()) {
             if (self.getServiceProvider() != null && s.getServiceProvider() != null
