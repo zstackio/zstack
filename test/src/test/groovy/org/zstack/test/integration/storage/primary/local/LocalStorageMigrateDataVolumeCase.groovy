@@ -1,7 +1,9 @@
 package org.zstack.test.integration.storage.primary.local
 
+import org.zstack.kvm.KVMConstant
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.VolumeInventory
+import org.zstack.sdk.VolumeSnapshotInventory
 import org.zstack.storage.primary.local.LocalStorageKvmBackend
 import org.zstack.storage.primary.local.LocalStorageKvmMigrateVmFlow
 import org.zstack.test.integration.storage.Env
@@ -9,6 +11,8 @@ import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.HostSpec
 import org.zstack.testlib.SubCase
+
+import java.util.concurrent.CountDownLatch
 
 class LocalStorageMigrateDataVolumeCase extends SubCase {
     EnvSpec env
@@ -51,10 +55,32 @@ class LocalStorageMigrateDataVolumeCase extends SubCase {
             return rsp
         }
 
+        CountDownLatch latch = new CountDownLatch(1)
 
+        // pretend that taking snapshot is slow (1.5 second)
+        env.afterSimulator(KVMConstant.KVM_TAKE_VOLUME_SNAPSHOT_PATH) { rsp ->
+            latch.countDown()
+            Thread.sleep(1000)
+            return rsp
+        }
+
+        VolumeSnapshotInventory inv = null
+        Thread.start {
+            inv = createVolumeSnapshot {
+                volumeUuid = dataVolume.getUuid()
+                name = "volume-snapshot"
+            }
+        }
+
+        // wait snapshot message being handled
+        latch.await()
         localStorageMigrateVolume {
             volumeUuid = dataVolume.getUuid()
             destHostUuid = hostSpec1.inventory.uuid
+        }
+
+        deleteVolumeSnapshot {
+            uuid = inv.volumeUuid
         }
 
         retryInSecs(6) {

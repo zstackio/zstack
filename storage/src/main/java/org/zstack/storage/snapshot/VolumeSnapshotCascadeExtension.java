@@ -7,6 +7,7 @@ import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.core.Completion;
@@ -53,6 +54,7 @@ public class VolumeSnapshotCascadeExtension extends AbstractAsyncCascadeExtensio
 
     private void handleDeletionCleanup(CascadeAction action, Completion completion) {
         dbf.eoCleanup(VolumeSnapshotVO.class);
+        SQL.New("delete from VolumeSnapshotTreeVO where volumeUuid is null").execute();
         completion.success();
     }
 
