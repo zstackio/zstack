@@ -10,12 +10,12 @@ public class IdentityZoneInventory  {
         return this.uuid;
     }
 
-    public java.lang.String deleted;
-    public void setDeleted(java.lang.String deleted) {
-        this.deleted = deleted;
+    public java.lang.String closed;
+    public void setClosed(java.lang.String closed) {
+        this.closed = closed;
     }
-    public java.lang.String getDeleted() {
-        return this.deleted;
+    public java.lang.String getClosed() {
+        return this.closed;
     }
 
     public java.lang.String dataCenterUuid;
