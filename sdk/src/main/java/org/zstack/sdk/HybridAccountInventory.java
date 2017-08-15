@@ -50,6 +50,22 @@ public class HybridAccountInventory  {
         return this.akey;
     }
 
+    public java.lang.String aliyunAccountId;
+    public void setAliyunAccountId(java.lang.String aliyunAccountId) {
+        this.aliyunAccountId = aliyunAccountId;
+    }
+    public java.lang.String getAliyunAccountId() {
+        return this.aliyunAccountId;
+    }
+
+    public java.lang.String aliyunUserId;
+    public void setAliyunUserId(java.lang.String aliyunUserId) {
+        this.aliyunUserId = aliyunUserId;
+    }
+    public java.lang.String getAliyunUserId() {
+        return this.aliyunUserId;
+    }
+
     public java.lang.String current;
     public void setCurrent(java.lang.String current) {
         this.current = current;
