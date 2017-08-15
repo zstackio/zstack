@@ -85,7 +85,27 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
     }
 
     private void handleLocalMessage(Message msg) {
-        bus.dealWithUnknownMessage(msg);
+        if (msg instanceof EipDeletionMsg) {
+            handle((EipDeletionMsg) msg);
+        } else {
+            bus.dealWithUnknownMessage(msg);
+        }
+    }
+
+    private void handle(EipDeletionMsg msg) {
+        EipDeletionReply reply = new EipDeletionReply();
+        deleteEip(msg.getEipUuid(), new Completion(msg) {
+            @Override
+            public void success() {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     private void handleApiMessage(APIMessage msg) {
@@ -316,24 +336,22 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         });
     }
 
-    private void handle(APIDeleteEipMsg msg) {
-        final APIDeleteEipEvent evt = new APIDeleteEipEvent(msg.getId());
-        final EipVO vo = dbf.findByUuid(msg.getUuid(), EipVO.class);
+    private void deleteEip(String eipUuid, Completion completion) {
+        final EipVO vo = dbf.findByUuid(eipUuid, EipVO.class);
         VipVO vipvo = dbf.findByUuid(vo.getVipUuid(), VipVO.class);
         VipInventory vipInventory = VipInventory.valueOf(vipvo);
 
         if (vo.getVmNicUuid() == null) {
-            new Vip(vipvo.getUuid()).release(new Completion(msg) {
+            new Vip(vipvo.getUuid()).release(new Completion(completion) {
                 @Override
                 public void success() {
                     dbf.remove(vo);
-                    bus.publish(evt);
+                    completion.success();
                 }
 
                 @Override
                 public void fail(ErrorCode errorCode) {
-                    evt.setError(errorCode);
-                    bus.publish(evt);
+                    completion.fail(errorCode);
                 }
             });
 
@@ -398,23 +416,40 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                     }
                 });
 
-                done(new FlowDoneHandler(msg) {
+                done(new FlowDoneHandler(completion) {
                     @Override
                     public void handle(Map data) {
                         dbf.remove(vo);
-                        bus.publish(evt);
+                        completion.success();
                     }
                 });
 
-                error(new FlowErrorHandler(msg) {
+                error(new FlowErrorHandler(completion) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
-                        evt.setError(errCode);
-                        bus.publish(evt);
+                        completion.fail(errCode);
                     }
                 });
             }
         }).start();
+    }
+
+    private void handle(APIDeleteEipMsg msg) {
+        final APIDeleteEipEvent evt = new APIDeleteEipEvent(msg.getId());
+
+        deleteEip(msg.getEipUuid(), new Completion(msg) {
+            @Override
+            public void success() {
+                bus.publish(evt);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                evt.setError(errorCode);
+                bus.publish(evt);
+            }
+        });
+
     }
 
     private void handle(APICreateEipMsg msg) {

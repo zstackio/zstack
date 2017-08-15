@@ -1,8 +1,12 @@
 package org.zstack.test.integration.networkservice.provider.flat.eip
 
+import org.zstack.core.db.Q
+import org.zstack.header.identity.AccountResourceRefVO
+import org.zstack.header.identity.AccountResourceRefVO_
+import org.zstack.network.service.eip.EipVO
+import org.zstack.network.service.vip.VipVO
 import org.zstack.sdk.EipInventory
 import org.zstack.sdk.L3NetworkInventory
-import org.zstack.sdk.QueryVipResult
 import org.zstack.sdk.VipInventory
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
 import org.zstack.testlib.EnvSpec
@@ -113,8 +117,13 @@ class DeleteEipAndVipCase extends SubCase {
 
         [thread1, thread2].each {it.join()}
 
-        retryInSecs(3, 1) {
-            assert ( queryVip {} as List<QueryVipResult> ).size() == 0
+        retryInSecs() {
+            assert dbFindByUuid(eip.uuid, EipVO) == null
+            assert dbFindByUuid(vip.uuid, VipVO) == null
+        }
+
+        retryInSecs() {
+            assert !Optional.ofNullable(Q.New(AccountResourceRefVO.class).eq(AccountResourceRefVO_.resourceUuid, eip.uuid).find()).present
         }
     }
 

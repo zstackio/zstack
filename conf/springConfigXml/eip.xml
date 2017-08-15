@@ -38,4 +38,10 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="EipCascadeExtension" class="org.zstack.network.service.eip.EipCascadeExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
 </beans>
