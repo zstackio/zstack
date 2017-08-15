@@ -15,6 +15,7 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.notification.N;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
@@ -438,21 +439,41 @@ public class AccountBase extends AbstractAccount {
             q.executeUpdate();
         }
 
+        Map<String, String> uuidType = getUuidTypeMapByResourceUuids(msg.getResourceUuids());
+        for (String ruuid : msg.getResourceUuids()) {
+            String resourceType = uuidType.get(ruuid);
+
+            if (msg.getAccountUuids() != null) {
+                for (String auuid : msg.getAccountUuids()) {
+                    N.New(resourceType, ruuid).info_("Revoke Shared resource[uuid:%s type:%s] of account[uuid:%s] from account[uuid:%s]", ruuid, resourceType, vo.getUuid(), auuid);
+                }
+            } else {
+                N.New(resourceType, ruuid).info_("Revoke Shared resource[uuid:%s type:%s] of account[uuid:%s]", ruuid, resourceType, vo.getUuid());
+            }
+
+        }
+
         APIRevokeResourceSharingEvent evt = new APIRevokeResourceSharingEvent(msg.getId());
         bus.publish(evt);
     }
 
-    private void handle(APIShareResourceMsg msg) {
-        SimpleQuery<AccountResourceRefVO> q = dbf.createQuery(AccountResourceRefVO.class);
-        q.select(AccountResourceRefVO_.resourceUuid, AccountResourceRefVO_.resourceType);
-        q.add(AccountResourceRefVO_.resourceUuid, Op.IN, msg.getResourceUuids());
-        List<Tuple> ts = q.listTuple();
+    private Map<String, String> getUuidTypeMapByResourceUuids(List<String> resourceUuids) {
+        List<Tuple> ts = Q.New(AccountResourceRefVO.class)
+                .select(AccountResourceRefVO_.resourceUuid, AccountResourceRefVO_.resourceType)
+                .in(AccountResourceRefVO_.resourceUuid, resourceUuids)
+                .listTuple();
         Map<String, String> uuidType = new HashMap<String, String>();
         for (Tuple t : ts) {
             String resUuid = t.get(0, String.class);
             String resType = t.get(1, String.class);
             uuidType.put(resUuid, resType);
         }
+
+        return uuidType;
+    }
+
+    private void handle(APIShareResourceMsg msg) {
+        Map<String, String> uuidType = getUuidTypeMapByResourceUuids(msg.getResourceUuids());
 
         for (String ruuid : msg.getResourceUuids()) {
             if (!uuidType.containsKey(ruuid)) {
@@ -472,22 +493,29 @@ public class AccountBase extends AbstractAccount {
                                 .isExists()){
                             continue;
                         }
+                        String resourceType = uuidType.get(ruuid);
+
                         SharedResourceVO svo = new SharedResourceVO();
                         svo.setOwnerAccountUuid(msg.getAccountUuid());
-                        svo.setResourceType(uuidType.get(ruuid));
+                        svo.setResourceType(resourceType);
                         svo.setResourceUuid(ruuid);
                         svo.setToPublic(true);
                         dbf.getEntityManager().persist(svo);
+                        N.New(resourceType, ruuid).info_("Shared resource[uuid:%s type:%s] to public", ruuid, resourceType);
                     }
                 } else {
                     for (String ruuid : msg.getResourceUuids()) {
+                        String resourceType = uuidType.get(ruuid);
+
                         for (String auuid : msg.getAccountUuids()) {
                             SharedResourceVO svo = new SharedResourceVO();
                             svo.setOwnerAccountUuid(msg.getAccountUuid());
-                            svo.setResourceType(uuidType.get(ruuid));
+                            svo.setResourceType(resourceType);
                             svo.setResourceUuid(ruuid);
                             svo.setReceiverAccountUuid(auuid);
                             dbf.getEntityManager().persist(svo);
+
+                            N.New(resourceType, ruuid).info_("Shared resource[uuid:%s type:%s] to account[uuid:%s]", ruuid, resourceType, auuid);
                         }
                     }
                 }
