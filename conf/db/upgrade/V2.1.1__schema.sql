@@ -1,0 +1,1 @@
+ALTER TABLE IdentityZoneVO CHANGE deleted closed varchar(1) DEFAULT NULL;
