@@ -46,6 +46,8 @@ public class NfsPrimaryStorageApiInterceptor implements ApiMessageInterceptor {
                 results[1].startsWith("/dev") || results[1].startsWith("/proc") || results[1].startsWith("/sys"))) {
             throw new ApiMessageInterceptionException(argerr(" the url contains an invalid folder[/dev or /proc or /sys]"));
         }
+
+        validateUrl(msg.getSystemTags(), results[0]);
     }
 
     private void validate(APIUpdatePrimaryStorageMsg msg){
@@ -72,31 +74,33 @@ public class NfsPrimaryStorageApiInterceptor implements ApiMessageInterceptor {
             }.execute();
         }
 
-        List<String> systemTags = msg.getSystemTags();
+        validateUrl(msg.getSystemTags(), msg.getUrl().split(":")[0]);
+    }
+
+    private void validateUrl(List<String> systemTags, String ipAddr) {
         if (systemTags != null) {
             boolean found = false;
             for (String sysTag: systemTags) {
                 if (PrimaryStorageSystemTags.PRIMARY_STORAGE_GATEWAY.isMatch(sysTag)) {
                     if (found) {
-                        throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError("found multiple CIDR"));
+                        throw new ApiMessageInterceptionException(argerr("found multiple CIDR"));
                     }
 
-                    validateCidrTag(sysTag);
+                    validateCidrTag(sysTag, ipAddr);
                     found = true;
                 }
             }
         }
     }
-
-    private void validateCidrTag(String sysTag) {
+    private void validateCidrTag(String sysTag, String ipAddr) {
         String cidr = PrimaryStorageSystemTags.PRIMARY_STORAGE_GATEWAY.getTokenByTag(
                 sysTag, PrimaryStorageSystemTags.PRIMARY_STORAGE_GATEWAY_TOKEN);
         if (!NetworkUtils.isCidr(cidr)) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("invalid CIDR: %s", cidr)));
+            throw new ApiMessageInterceptionException(argerr("invalid CIDR: %s", cidr));
+        }
+
+        if (!NetworkUtils.isIpv4InCidr(ipAddr, cidr)) {
+            throw new ApiMessageInterceptionException(argerr("IP address[%s] is not in CIDR[%s]", ipAddr, cidr));
         }
     }
-
-
-
 }
