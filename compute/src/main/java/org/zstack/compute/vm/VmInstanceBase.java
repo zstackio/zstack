@@ -3872,6 +3872,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             spec.setRequiredClusterUuid(amsg.getClusterUuid());
             spec.setRequiredHostUuid(amsg.getHostUuid());
             spec.setUsbRedirect(VmSystemTags.USB_REDIRECT.getTokenByResourceUuid(self.getUuid(), VmSystemTags.USB_REDIRECT_TOKEN));
+            spec.setEnableRDP(VmSystemTags.RDP_ENABLE.getTokenByResourceUuid(self.getUuid(), VmSystemTags.RDP_ENABLE_TOKEN));
         }
 
         if (spec.getDestNics().isEmpty()) {

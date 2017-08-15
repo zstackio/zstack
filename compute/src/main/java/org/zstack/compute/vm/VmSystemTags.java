@@ -39,6 +39,10 @@ public class VmSystemTags {
     public static String USB_REDIRECT_TOKEN = "usbRedirect";
     public static PatternedSystemTag USB_REDIRECT = new PatternedSystemTag(String.format("usbRedirect::{%s}",USB_REDIRECT_TOKEN),VmInstanceVO.class);
 
+    // set rdpEnable::true to enable RDP tag
+    public static String RDP_ENABLE_TOKEN = "RDPEnable";
+    public static PatternedSystemTag RDP_ENABLE = new PatternedSystemTag(String.format("RDPEnable::{%s}",RDP_ENABLE_TOKEN),VmInstanceVO.class);
+
     public static String INSTANCEOFFERING_ONLINECHANGE_TOKEN = "instanceOfferingOnliechange";
     public static PatternedSystemTag INSTANCEOFFERING_ONLIECHANGE = new PatternedSystemTag(String.format("instanceOfferingOnlinechange::{%s}",INSTANCEOFFERING_ONLINECHANGE_TOKEN),VmInstanceVO.class);
 
