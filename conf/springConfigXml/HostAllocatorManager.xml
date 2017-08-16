@@ -39,6 +39,7 @@
 
     <util:list id="CephMetric">
         <value>Ceph</value>
+        <value>XSky</value>
     </util:list>
 
     <util:list id="FusionstorMetric">
