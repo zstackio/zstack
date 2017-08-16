@@ -138,6 +138,22 @@ public class EcsInstanceInventory  {
         return this.identityZoneUuid;
     }
 
+    public java.lang.String chargeType;
+    public void setChargeType(java.lang.String chargeType) {
+        this.chargeType = chargeType;
+    }
+    public java.lang.String getChargeType() {
+        return this.chargeType;
+    }
+
+    public java.sql.Timestamp expireDate;
+    public void setExpireDate(java.sql.Timestamp expireDate) {
+        this.expireDate = expireDate;
+    }
+    public java.sql.Timestamp getExpireDate() {
+        return this.expireDate;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
