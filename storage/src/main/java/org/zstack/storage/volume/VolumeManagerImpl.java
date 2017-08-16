@@ -465,6 +465,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
                         evt.setError(errCode);
+                        dbf.removeByPrimaryKey(vol.getUuid(), vol.getClass());
                         bus.publish(evt);
                     }
                 });
