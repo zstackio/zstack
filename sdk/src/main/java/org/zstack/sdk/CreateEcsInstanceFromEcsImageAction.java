@@ -25,7 +25,7 @@ public class CreateEcsInstanceFromEcsImageAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String ecsRootVolumeType;
 
-    @Param(required = false, maxLength = 256, minLength = 2, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, maxLength = 1024, minLength = 2, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {40L,500L}, noTrim = false)
