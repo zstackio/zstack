@@ -4,5 +4,5 @@ DELETE FROM `zstack`.`AccountResourceRefVO` where resourceType='VolumeVO' and re
 ALTER TABLE HybridAccountVO ADD COLUMN aliyunAccountId varchar(32) DEFAULT NULL;
 ALTER TABLE HybridAccountVO ADD COLUMN aliyunUserId varchar(32) DEFAULT NULL;
 
-ALTER TABLE EcsInstanceVO ADD COLUMN expireDate datetime NOT NULL DEFAULT '2999-01-01 00:00:00';
-ALTER TABLE EcsInstanceVO ADD COLUMN chargeType varchar(16) NOT NULL DEFAULT 'postpaid';
+ALTER TABLE EcsInstanceVO ADD COLUMN expireDate datetime DEFAULT '2999-01-01 00:00:00';
+ALTER TABLE EcsInstanceVO ADD COLUMN chargeType varchar(16) DEFAULT 'postpaid';
