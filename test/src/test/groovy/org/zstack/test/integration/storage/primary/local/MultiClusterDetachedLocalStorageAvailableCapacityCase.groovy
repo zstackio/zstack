@@ -203,7 +203,7 @@ class MultiClusterDetachedLocalStorageAvailableCapacityCase extends SubCase{
         }
 
         // check PrimaryStorageCapacityVO capacity != 0
-        boolean retryResult = retryInMillis(2, 500) {
+        boolean retryResult = retryInSecs(2) {
             ps = queryPrimaryStorage {
                 conditions=["uuid=${ps.uuid}".toString()]
             }[0]
