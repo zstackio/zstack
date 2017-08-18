@@ -184,8 +184,17 @@ public class VmInstanceSpec implements Serializable {
     private boolean gcOnStopFailure;
     // usbRedirect only for http call, need string type
     private String usbRedirect = "false";
+    private String enableRDP = "false";
     private String consolePassword;
     private VmAccountPreference accountPerference;
+
+    public String getEnableRDP() {
+        return enableRDP;
+    }
+
+    public void setEnableRDP(String enableRDP) {
+        this.enableRDP = enableRDP;
+    }
 
     public String getUsbRedirect() {
         return usbRedirect;
