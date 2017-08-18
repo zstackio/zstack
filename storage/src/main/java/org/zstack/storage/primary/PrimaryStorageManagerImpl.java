@@ -398,7 +398,14 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         spec.setAllocationMessage(msg);
         spec.setAvoidPrimaryStorageUuids(msg.getExcludePrimaryStorageUuids());
         List<PrimaryStorageInventory> ret = strategy.allocateAllCandidates(spec);
-        //
+
+        if (msg.isDryRun()){
+            // check capacity has been done before
+            AllocatePrimaryStorageDryRunReply r = new AllocatePrimaryStorageDryRunReply();
+            r.setPrimaryStorageInventories(ret);
+            bus.reply(msg, r);
+            return;
+        }
         Iterator<PrimaryStorageInventory> it = ret.iterator();
         List<String> errs = new ArrayList<>();
         PrimaryStorageInventory target = null;
