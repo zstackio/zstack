@@ -19,6 +19,7 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import static org.zstack.core.Platform.argerr;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -35,7 +36,7 @@ public class EventFacadeImpl implements EventFacade, CloudBusEventListener, Comp
     private CloudBus bus;
 
     private final Map<String, CallbackWrapper> global = Collections.synchronizedMap(new HashMap<>());
-    private final Map<String, CallbackWrapper> local =  Collections.synchronizedMap(new HashMap<>());
+    private final Map<String, CallbackWrapper> local =  new ConcurrentHashMap<>();
 
     private EventSubscriberReceipt unsubscriber;
 

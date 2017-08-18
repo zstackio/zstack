@@ -41,16 +41,12 @@ abstract class StabilityTest extends Test implements Case{
         try {
             environment()
             test()
+
+            logger.info("start cleanup for case ${this.class}")
+            clean()
         } catch (Throwable t) {
             logger.warn("a sub case [${this.class}] fails, ${t.message}", t)
             throw t
-        } finally {
-            logger.info("start cleanup for case ${this.class}")
-            try{
-                clean()
-            }catch (Throwable t){
-                throw t
-            }
         }
     }
 
