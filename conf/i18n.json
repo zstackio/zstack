@@ -5342,7 +5342,7 @@
   {
     "raw": "overlap public and private subnets. The subnet of EIP[%s] is an overlap with the subnet[%s/%s] of the VM nic[uuid: %s].",
     "en_US": "overlap public and private subnets. The subnet of EIP[{0}] is an overlap with the subnet[{1}/{2}] of the VM nic[uuid: {3}].",
-    "zh_CN": "公共网络和私有网络的子网重叠。EIP[{0}]的子网与虚拟机网卡[{uuid:3}]的子网[{1}/{2}]重叠。",
+    "zh_CN": "公共网络和私有网络的子网重叠。EIP[{0}]的子网与虚拟机网卡[uuid:{3}]的子网[{1}/{2}]重叠。",
     "arguments": [
       "eipIp",
       "gw",
