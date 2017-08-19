@@ -48,16 +48,15 @@ class DetachPSFromClusterCase extends SubCase{
         }
 
         // check PrimaryStorageCapacityVO capacity = 0
-        boolean retryResult = retryInMillis(2, 500) {
+        retryInSecs(2) {
             ps = queryPrimaryStorage {
                 conditions=["uuid=${ps.uuid}".toString()]
             }[0]
-            return  0 == ps.availableCapacity
+            assert 0 == ps.availableCapacity
+            assert 0 == ps.availablePhysicalCapacity
+            assert 0 == ps.totalCapacity
+            assert 0 == ps.totalPhysicalCapacity
         }
-        assert retryResult
-        assert 0 == ps.availableCapacity
-        assert 0 == ps.availablePhysicalCapacity
-        assert 0 == ps.totalCapacity
-        assert 0 == ps.totalPhysicalCapacity
+
     }
 }
