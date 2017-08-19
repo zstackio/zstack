@@ -93,11 +93,11 @@ public class UpdateVirtualBorderRouterRemoteAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
+        info.httpMethod = "POST";
         info.path = "/hybrid/aliyun/border-router/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "updateVirtualBorderRouterRemote";
+        info.parameterName = "params";
         return info;
     }
 
