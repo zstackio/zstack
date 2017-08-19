@@ -199,6 +199,16 @@
     "fileName": "src/main/java/org/zstack/aliyun/ecs/EcsApiInterceptor.java"
   },
   {
+    "raw": "password: [%s] is not valid",
+    "en_US": "password: [{0}] is not valid",
+    "zh_CN": "",
+    "arguments": [
+      "password"
+    ],
+    "line": 108,
+    "fileName": "src/main/java/org/zstack/aliyun/ecs/EcsApiInterceptor.java"
+  },
+  {
     "raw": "bandwidth must be set while allocate publicIp",
     "en_US": "bandwidth must be set while allocate publicIp",
     "zh_CN": "",
@@ -340,11 +350,13 @@
     "fileName": "src/main/java/org/zstack/aliyun/image/EcsImageApiInterceptor.java"
   },
   {
-    "raw": "Only support ImageStoreBackupStorage",
-    "en_US": "Only support ImageStoreBackupStorage",
+    "raw": "valid OSType:[%s] for aliyun image import, valid value are: [linux, windows]",
+    "en_US": "valid OSType:[{0}] for aliyun image import, valid value are: [linux, windows]",
     "zh_CN": "",
-    "arguments": [],
-    "line": 115,
+    "arguments": [
+      "osType"
+    ],
+    "line": 140,
     "fileName": "src/main/java/org/zstack/aliyun/image/EcsImageApiInterceptor.java"
   },
   {
@@ -358,14 +370,11 @@
     "fileName": "src/main/java/org/zstack/aliyun/image/EcsImageManagerImpl.java"
   },
   {
-    "raw": "the indicated image [%s] is importing to datacenter [%s] now...",
-    "en_US": "the indicated image [{0}] is importing to datacenter [{1}] now...",
+    "raw": "no such create ecs image progress now",
+    "en_US": "no such create ecs image progress now",
     "zh_CN": "",
-    "arguments": [
-      "msg.getImageUuid()",
-      "msg.getDataCenterUuid()"
-    ],
-    "line": 274,
+    "arguments": [],
+    "line": 165,
     "fileName": "src/main/java/org/zstack/aliyun/image/EcsImageManagerImpl.java"
   },
   {
@@ -390,24 +399,13 @@
     "fileName": "src/main/java/org/zstack/aliyun/network/AliyunNetworkServiceBase.java"
   },
   {
-    "raw": "router: [%s] is in create connection progress, please wait...",
-    "en_US": "router: [{0}] is in create connection progress, please wait...",
+    "raw": "not supported next hop type: %s",
+    "en_US": "not supported next hop type: {0}",
     "zh_CN": "",
     "arguments": [
-      "msg.getvRouterUuid()"
+      "msg.getNextHopType()"
     ],
-    "line": 2956,
-    "fileName": "src/main/java/org/zstack/aliyun/network/AliyunNetworkServiceBase.java"
-  },
-  {
-    "raw": "destination cidr [%s] is existed and point to another instance-id [%s], please check or delete it first",
-    "en_US": "destination cidr [{0}] is existed and point to another instance-id [{1}], please check or delete it first",
-    "zh_CN": "",
-    "arguments": [
-      "tupleCidr",
-      "msg.getNextHopUuid()"
-    ],
-    "line": 2979,
+    "line": 929,
     "fileName": "src/main/java/org/zstack/aliyun/network/AliyunNetworkServiceBase.java"
   },
   {
@@ -422,14 +420,34 @@
     "fileName": "src/main/java/org/zstack/aliyun/network/AliyunNetworkServiceBase.java"
   },
   {
-    "raw": "Vbr: [%s] is in create connection progress, please wait...",
-    "en_US": "Vbr: [{0}] is in create connection progress, please wait...",
+    "raw": "not support NextHopType: %s",
+    "en_US": "not support NextHopType: {0}",
     "zh_CN": "",
     "arguments": [
-      "msg.getVbrUuid()"
+      "inventory.getNextHopType()"
     ],
-    "line": 551,
-    "fileName": "src/main/java/org/zstack/aliyun/network/connection/AliyunConnectionManagerImpl.java"
+    "line": 105,
+    "fileName": "src/main/java/org/zstack/aliyun/network/AliyunRouteEntryCascadeExtension.java"
+  },
+  {
+    "raw": "EcsInstance %s has been deleted",
+    "en_US": "EcsInstance {0} has been deleted",
+    "zh_CN": "",
+    "arguments": [
+      "inventory.getNextHopUuid()"
+    ],
+    "line": 101,
+    "fileName": "src/main/java/org/zstack/aliyun/network/AliyunRouteEntryCascadeExtension.java"
+  },
+  {
+    "raw": "VpcVpnGateway %s has been deleted",
+    "en_US": "VpcVpnGateway {0} has been deleted",
+    "zh_CN": "",
+    "arguments": [
+      "inventory.getNextHopUuid()"
+    ],
+    "line": 95,
+    "fileName": "src/main/java/org/zstack/aliyun/network/AliyunRouteEntryCascadeExtension.java"
   },
   {
     "raw": "custom cidr [%s] is already existed in vbr [%s], it is overlapped with target cidr [%s], please check and delete it first.",
@@ -604,6 +622,17 @@
     "fileName": "src/main/java/org/zstack/aliyun/oss/EcsOssApiInterceptor.java"
   },
   {
+    "raw": "There is a current ossbucket[%s] for dataCenter[%s] already attached, please detach it first.",
+    "en_US": "There is a current ossbucket[{0}] for dataCenter[{1}] already attached, please detach it first.",
+    "zh_CN": "",
+    "arguments": [
+      "old.getUuid()",
+      "old.getDataCenterUuid()"
+    ],
+    "line": 45,
+    "fileName": "src/main/java/org/zstack/aliyun/oss/EcsOssApiInterceptor.java"
+  },
+  {
     "raw": "OssBucket[%s] is not attached.",
     "en_US": "OssBucket[{0}] is not attached.",
     "zh_CN": "",
@@ -622,20 +651,19 @@
     "fileName": "src/main/java/org/zstack/aliyun/oss/EcsOssManagerImpl.java"
   },
   {
-    "raw": "There is a current ossbucket[%s] for dataCenter[%s] already attached, update to an other.",
-    "en_US": "There is a current ossbucket[{0}] for dataCenter[{1}] already attached, update to an other.",
+    "raw": "No Such regionId: %s now",
+    "en_US": "No Such regionId: {0} now",
     "zh_CN": "",
     "arguments": [
-      "old.getUuid()",
-      "old.getDataCenterUuid()"
+      "regionId"
     ],
-    "line": 343,
+    "line": 443,
     "fileName": "src/main/java/org/zstack/aliyun/oss/EcsOssManagerImpl.java"
   },
   {
     "raw": "More than one BackupStorage on the same host identified by hostname. There has been a SftpBackupStorage [hostname:%s] existing. The BackupStorage type to be added is %s. ",
     "en_US": "More than one BackupStorage on the same host identified by hostname. There has been a SftpBackupStorage [hostname:{0}] existing. The BackupStorage type to be added is {1}. ",
-    "zh_CN": "超过一个相同的备份存储类型在认证的物理机上，这事发生在Sftp存储上 [机器名:{0}] 已存在. 这个类型的备份存储已经被添加{1}",
+    "zh_CN": "超过一个相同的镜像服务器类型在认证的物理机上，这事发生在Sftp存储上 [机器名:{0}] 已存在. 这个类型的镜像服务器已经被添加{1}",
     "arguments": [
       "hostname",
       "newBS"
@@ -646,7 +674,7 @@
   {
     "raw": "More than one BackupStorage on the same host identified by hostname. There has been an ImageStoreBackupStorage [hostname:%s] existing. The BackupStorage type to be added is %s. ",
     "en_US": "More than one BackupStorage on the same host identified by hostname. There has been an ImageStoreBackupStorage [hostname:{0}] existing. The BackupStorage type to be added is {1}. ",
-    "zh_CN": "超过一个相同的备份存储类型在认证的物理机上，这事发生在镜像仓库上 [机器名:{0}] 已存在. 这个类型的备份存储已经被添加{1}",
+    "zh_CN": "超过一个相同的镜像服务器类型在认证的物理机上，这事发生在镜像仓库上 [机器名:{0}] 已存在. 这个类型的镜像服务器已经被添加{1}",
     "arguments": [
       "hostname",
       "newBS"
@@ -667,72 +695,36 @@
     "fileName": "src/main/java/org/zstack/appliancevm/ApplianceVmBase.java"
   },
   {
-    "raw": "Only admin can get baremetal console proxy",
-    "en_US": "Only admin can get baremetal console proxy",
+    "raw": "failed to deleted %s hardwareInfo of chassis %s:%s",
+    "en_US": "failed to deleted {0} hardwareInfo of chassis {1}:{2}",
+    "zh_CN": "",
+    "arguments": [
+      "dMsg.getType()",
+      "dMsg.getIpmiAddress()",
+      "dMsg.getIpmiPort()"
+    ],
+    "line": 54,
+    "fileName": "src/main/java/org/zstack/baremetal/hardwareinfo/BaremetalHardwareInfoImpl.java"
+  },
+  {
+    "raw": "successfully deleted %s hardwareInfo of chassis %s:%s",
+    "en_US": "successfully deleted {0} hardwareInfo of chassis {1}:{2}",
+    "zh_CN": "",
+    "arguments": [
+      "dMsg.getType()",
+      "dMsg.getIpmiAddress()",
+      "dMsg.getIpmiPort()"
+    ],
+    "line": 50,
+    "fileName": "src/main/java/org/zstack/baremetal/hardwareinfo/BaremetalHardwareInfoImpl.java"
+  },
+  {
+    "raw": "the sended hardware info does not belong to any baremetal chassis",
+    "en_US": "the sended hardware info does not belong to any baremetal chassis",
     "zh_CN": "",
     "arguments": [],
-    "line": 37,
-    "fileName": "src/main/java/org/zstack/baremetal/console/BaremetalConsoleProxyApiInterceptor.java"
-  },
-  {
-    "raw": "Cannot find baremetal chassis of uuid %s",
-    "en_US": "Cannot find baremetal chassis of uuid {0}",
-    "zh_CN": "",
-    "arguments": [
-      "msg.getChassisUuid()"
-    ],
-    "line": 46,
-    "fileName": "src/main/java/org/zstack/baremetal/console/BaremetalConsoleProxyApiInterceptor.java"
-  },
-  {
-    "raw": "Cannot find baremetal console proxy for chassis %s",
-    "en_US": "Cannot find baremetal console proxy for chassis {0}",
-    "zh_CN": "",
-    "arguments": [
-      "msg.getChassisUuid()"
-    ],
-    "line": 56,
-    "fileName": "src/main/java/org/zstack/baremetal/console/BaremetalConsoleProxyApiInterceptor.java"
-  },
-  {
-    "raw": "failed to create Console Proxy for Baremetal chassis %s",
-    "en_US": "failed to create Console Proxy for Baremetal chassis {0}",
-    "zh_CN": "",
-    "arguments": [
-      "chassis.getUuid()"
-    ],
-    "line": 76,
-    "fileName": "src/main/java/org/zstack/baremetal/console/BaremetalConsoleProxyImpl.java"
-  },
-  {
-    "raw": "successfully created Console Proxy for Baremetal chassis %s",
-    "en_US": "successfully created Console Proxy for Baremetal chassis {0}",
-    "zh_CN": "",
-    "arguments": [
-      "chassis.getUuid()"
-    ],
-    "line": 70,
-    "fileName": "src/main/java/org/zstack/baremetal/console/BaremetalConsoleProxyImpl.java"
-  },
-  {
-    "raw": "failed to delete Console Proxy for Baremetal chassis %s",
-    "en_US": "failed to delete Console Proxy for Baremetal chassis {0}",
-    "zh_CN": "",
-    "arguments": [
-      "chassis.getUuid()"
-    ],
-    "line": 112,
-    "fileName": "src/main/java/org/zstack/baremetal/console/BaremetalConsoleProxyImpl.java"
-  },
-  {
-    "raw": "successfully deleted Console Proxy for Baremetal chassis %s",
-    "en_US": "successfully deleted Console Proxy for Baremetal chassis {0}",
-    "zh_CN": "",
-    "arguments": [
-      "chassis.getUuid()"
-    ],
-    "line": 106,
-    "fileName": "src/main/java/org/zstack/baremetal/console/BaremetalConsoleProxyImpl.java"
+    "line": 73,
+    "fileName": "src/main/java/org/zstack/baremetal/hardwareinfo/BaremetalHardwareInfoImpl.java"
   },
   {
     "raw": "failed to create HardwareInfo using the sended hardware info",
@@ -748,28 +740,6 @@
     "zh_CN": "",
     "arguments": [],
     "line": 85,
-    "fileName": "src/main/java/org/zstack/baremetal/hardwareinfo/BaremetalHardwareInfoImpl.java"
-  },
-  {
-    "raw": "failed to deleted %s hardwareInfo of chassis %s",
-    "en_US": "failed to deleted {0} hardwareInfo of chassis {1}",
-    "zh_CN": "",
-    "arguments": [
-      "dMsg.getType()",
-      "chassis.getUuid()"
-    ],
-    "line": 73,
-    "fileName": "src/main/java/org/zstack/baremetal/hardwareinfo/BaremetalHardwareInfoImpl.java"
-  },
-  {
-    "raw": "successfully deleted %s hardwareInfo of chassis %s",
-    "en_US": "successfully deleted {0} hardwareInfo of chassis {1}",
-    "zh_CN": "",
-    "arguments": [
-      "dMsg.getType()",
-      "chassis.getUuid()"
-    ],
-    "line": 68,
     "fileName": "src/main/java/org/zstack/baremetal/hardwareinfo/BaremetalHardwareInfoImpl.java"
   },
   {
@@ -1049,11 +1019,12 @@
     "fileName": "src/main/java/org/zstack/baremetal/host/BaremetalHostImpl.java"
   },
   {
-    "raw": "successfully provisioned baremetal host %s",
-    "en_US": "successfully provisioned baremetal host {0}",
+    "raw": "successfully provisioned baremetal host [%s:%s]",
+    "en_US": "successfully provisioned baremetal host [{0}:{1}]",
     "zh_CN": "",
     "arguments": [
-      "cmd.chassisUuid"
+      "msg1.getIpmiAddress()",
+      "msg1.getIpmiPort()"
     ],
     "line": 102,
     "fileName": "src/main/java/org/zstack/baremetal/host/BaremetalHostImpl.java"
@@ -1134,6 +1105,24 @@
     ],
     "line": 127,
     "fileName": "src/main/java/org/zstack/baremetal/power/BaremetalChassisApiInterceptor.java"
+  },
+  {
+    "raw": "PXE Server DHCP Interface %s is not valid.",
+    "en_US": "PXE Server DHCP Interface {0} is not valid.",
+    "zh_CN": "",
+    "arguments": [
+      "dhcpNic"
+    ],
+    "line": 43,
+    "fileName": "src/main/java/org/zstack/baremetal/pxeserver/BaremetalPxeServerApiInterceptor.java"
+  },
+  {
+    "raw": "PXE Server DHCP Interface %s does not have an IP address.",
+    "en_US": "PXE Server DHCP Interface {0} does not have an IP address.",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 112,
+    "fileName": "src/main/java/org/zstack/baremetal/pxeserver/BaremetalPxeServerApiInterceptor.java"
   },
   {
     "raw": "Set Range Start \u0026 End, or set Range Start \u0026 End \u0026 Netmask!",
@@ -1217,24 +1206,6 @@
     "fileName": "src/main/java/org/zstack/baremetal/pxeserver/BaremetalPxeServerApiInterceptor.java"
   },
   {
-    "raw": "PXE Server DHCP Interface %s is not valid.",
-    "en_US": "PXE Server DHCP Interface {0} is not valid.",
-    "zh_CN": "",
-    "arguments": [
-      "dhcpNic"
-    ],
-    "line": 43,
-    "fileName": "src/main/java/org/zstack/baremetal/pxeserver/BaremetalPxeServerApiInterceptor.java"
-  },
-  {
-    "raw": "PXE Server DHCP Interface %s does not have an IP address.",
-    "en_US": "PXE Server DHCP Interface {0} does not have an IP address.",
-    "zh_CN": "",
-    "arguments": [],
-    "line": 112,
-    "fileName": "src/main/java/org/zstack/baremetal/pxeserver/BaremetalPxeServerApiInterceptor.java"
-  },
-  {
     "raw": "DHCP Netmask should be the same as netmask of DHCP Interface.",
     "en_US": "DHCP Netmask should be the same as netmask of DHCP Interface.",
     "zh_CN": "",
@@ -1269,7 +1240,7 @@
   {
     "raw": "the backup storage[uuid:%s, type:%s] requires bound primary storage, however, the primary storage has not been added",
     "en_US": "the backup storage[uuid:{0}, type:{1}] requires bound primary storage, however, the primary storage has not been added",
-    "zh_CN": "无法找到跟备份存储[uuid:{0}, type:{1}]配对的主存储。一些备份存储必须跟配对的主存储共同使用，例如Ceph备份存储只能搭配Ceph主存储使用。请检查你主存储的设置。",
+    "zh_CN": "无法找到跟镜像服务器[uuid:{0}, type:{1}]配对的主存储。一些镜像服务器必须跟配对的主存储共同使用，例如Ceph镜像服务器只能搭配Ceph主存储使用。请检查你主存储的设置。",
     "arguments": [
       "spec.getRequiredBackupStorageUuid()",
       "bsType"
@@ -1280,7 +1251,7 @@
   {
     "raw": "The image[uuid:%s] is on the backup storage[uuid:%s, type:%s] that requires to work with primary storage[uuids:%s],however, no host found suitable to work with those primary storage",
     "en_US": "The image[uuid:{0}] is on the backup storage[uuid:{1}, type:{2}] that requires to work with primary storage[uuids:{3}],however, no host found suitable to work with those primary storage",
-    "zh_CN": "镜像[uuid:{0}]所在的备份存储[uuid:{1}, type:{2}]必须跟主存储[uuid:{3}]配对使用，但无法找到可以跟满足条件并可以访问该主存储的物理机",
+    "zh_CN": "镜像[uuid:{0}]所在的镜像服务器[uuid:{1}, type:{2}]必须跟主存储[uuid:{3}]配对使用，但无法找到可以跟满足条件并可以访问该主存储的物理机",
     "arguments": [
       "spec.getImage().getUuid()",
       "spec.getRequiredBackupStorageUuid()",
@@ -1293,7 +1264,7 @@
   {
     "raw": "The image[uuid:%s, name:%s] is on the backup storage[uuid:%s, type:%s] that requires to work with primary storage[types:%s],however, no host found suitable to work with those primary storage",
     "en_US": "The image[uuid:{0}, name:{1}] is on the backup storage[uuid:{2}, type:{3}] that requires to work with primary storage[types:{4}],however, no host found suitable to work with those primary storage",
-    "zh_CN": "镜像[uuid:{0},name:{1}]所在的备份存储[uuid:{2}, type:{3}]必须跟主存储[uuid:{4}]一起使用，但无法找到可以跟满足条件并可以访问该主存储的物理机",
+    "zh_CN": "镜像[uuid:{0},name:{1}]所在的镜像服务器[uuid:{2}, type:{3}]必须跟主存储[uuid:{4}]一起使用，但无法找到可以跟满足条件并可以访问该主存储的物理机",
     "arguments": [
       "spec.getImage().getUuid()",
       "spec.getImage().getType()",
@@ -1323,7 +1294,7 @@
   {
     "raw": "the image[uuid:%s, name:%s] is deleted on all backup storage",
     "en_US": "the image[uuid:{0}, name:{1}] is deleted on all backup storage",
-    "zh_CN": "镜像[uuid:{0}, name:{1}]已经从所有备份存储上删除，无法执行相应操作",
+    "zh_CN": "镜像[uuid:{0}, name:{1}]已经从所有镜像服务器上删除，无法执行相应操作",
     "arguments": [
       "spec.getImage().getUuid()",
       "spec.getImage().getName()"
@@ -1521,7 +1492,7 @@
   {
     "raw": "cannot find the iso[uuid:%s] in any connected backup storage attached to the zone[uuid:%s]. check below:\n1. if the backup storage is attached to the zone where the VM[name: %s, uuid:%s] is running\n2. if the backup storage is in connected status, if not, try reconnecting it",
     "en_US": "cannot find the iso[uuid:{0}] in any connected backup storage attached to the zone[uuid:{1}]. check below:\n1. if the backup storage is attached to the zone where the VM[name: {2}, uuid:{3}] is running\n2. if the backup storage is in connected status, if not, try reconnecting it",
-    "zh_CN": "不能发现iso[uuid:{0}]在任何已经挂载到集群[uuid:{1}]上的并且处于Connected状态备份的备份存储。可以进行对以下选项的检查：1. 备份存储是否已经挂载到区域中的任何运行状态的云主机[name: {2}, uuid:{3}]上；2. 如果备份存储不是处于连接状态，请尝试重连",
+    "zh_CN": "不能发现iso[uuid:{0}]在任何已经挂载到集群[uuid:{1}]上的并且处于Connected状态备份的镜像服务器。可以进行对以下选项的检查：1. 镜像服务器是否已经挂载到区域中的任何运行状态的云主机[name: {2}, uuid:{3}]上；2. 如果镜像服务器不是处于连接状态，请尝试重连",
     "arguments": [
       "iso.getUuid()",
       "host.getZoneUuid()",
@@ -1534,7 +1505,7 @@
   {
     "raw": "cannot find the image[uuid:%s] in any connected backup storage. check below:\n1. if the backup storage is attached to the zone where the VM[name: %s, uuid:%s] is in\n2. if the backup storage is in connected status, if not, try reconnecting it",
     "en_US": "cannot find the image[uuid:{0}] in any connected backup storage. check below:\n1. if the backup storage is attached to the zone where the VM[name: {1}, uuid:{2}] is in\n2. if the backup storage is in connected status, if not, try reconnecting it",
-    "zh_CN": "不能发现镜像[uuid:{0}]在任何处于Connected状态备份的备份存储。可以进行对以下选项的检查：1. 备份存储是否已经过载到区域中的云主机[name: {1}, uuid:{2}]中；2. 如果备份存储不是处于连接状态，请尝试重连",
+    "zh_CN": "不能发现镜像[uuid:{0}]在任何处于Connected状态备份的镜像服务器。可以进行对以下选项的检查：1. 镜像服务器是否已经过载到区域中的云主机[name: {1}, uuid:{2}]中；2. 如果镜像服务器不是处于连接状态，请尝试重连",
     "arguments": [
       "imageUuid",
       "spec.getVmInventory().getName()",
@@ -1546,7 +1517,7 @@
   {
     "raw": "cannot find the image[uuid:%s] in any connected backup storage attached to the zone[uuid:%s]. check below:\n1. if the backup storage is attached to the zone where the VM[name: %s, uuid:%s] is in\n2. if the backup storage is in connected status, if not, try reconnecting it",
     "en_US": "cannot find the image[uuid:{0}] in any connected backup storage attached to the zone[uuid:{1}]. check below:\n1. if the backup storage is attached to the zone where the VM[name: {2}, uuid:{3}] is in\n2. if the backup storage is in connected status, if not, try reconnecting it",
-    "zh_CN": "不能发现镜像[uuid:{0}]在任何已经挂载到集群[uuid:{1}]上的并且处于Connected状态备份的备份存储。可以进行对以下选项的检查：1. 备份存储是否已经过载到区域中的云主机[name: {2}, uuid:{3}]中；2. 如果备份存储不是处于Connected状态，请尝试重连",
+    "zh_CN": "不能发现镜像[uuid:{0}]在任何已经挂载到集群[uuid:{1}]上的并且处于Connected状态备份的镜像服务器。可以进行对以下选项的检查：1. 镜像服务器是否已经过载到区域中的云主机[name: {2}, uuid:{3}]中；2. 如果镜像服务器不是处于Connected状态，请尝试重连",
     "arguments": [
       "imageUuid",
       "spec.getVmInventory().getZoneUuid()",
@@ -1559,7 +1530,7 @@
   {
     "raw": "no backup storage attached to the zone[uuid:%s] contains the ISO[uuid:%s]",
     "en_US": "no backup storage attached to the zone[uuid:{0}] contains the ISO[uuid:{1}]",
-    "zh_CN": "没有备份存储挂载到区域[uuid:{0}]包含着ISO[uuid:{1}]",
+    "zh_CN": "没有镜像服务器挂载到区域[uuid:{0}]包含着ISO[uuid:{1}]",
     "arguments": [
       "zoneUuid",
       "isoImageUuid"
@@ -2021,7 +1992,7 @@
   {
     "raw": "the ISO[uuid:%s] is on backup storage that is not compatible of the primary storage[uuid:%s] where the VM[name:%s, uuid:%s] is on",
     "en_US": "the ISO[uuid:{0}] is on backup storage that is not compatible of the primary storage[uuid:{1}] where the VM[name:{2}, uuid:{3}] is on",
-    "zh_CN": "ISO[uuid:{0}]在备份存储上，这个ISO不能兼容主存储[uuid:{1}]在云主机[name:{2}, uuid:{3}]上",
+    "zh_CN": "ISO[uuid:{0}]在镜像服务器上，这个ISO不能兼容主存储[uuid:{1}]在云主机[name:{2}, uuid:{3}]上",
     "arguments": [
       "isoUuid",
       "psUuid",
@@ -2138,7 +2109,7 @@
   {
     "raw": "the image[uuid:%s] is not on any backup storage that has been attached to the zone[uuid:%s]",
     "en_US": "the image[uuid:{0}] is not on any backup storage that has been attached to the zone[uuid:{1}]",
-    "zh_CN": "镜像[uuid:{0}]不在任何加载到区域[uuid:{1}]的备份存储上",
+    "zh_CN": "镜像[uuid:{0}]不在任何加载到区域[uuid:{1}]的镜像服务器上",
     "arguments": [
       "msg.getImageUuid()",
       "msg.getZoneUuid()"
@@ -2160,7 +2131,7 @@
   {
     "raw": "zoneUuid must be set because the image[name:%s, uuid:%s] is on multiple backup storage",
     "en_US": "zoneUuid must be set because the image[name:{0}, uuid:{1}] is on multiple backup storage",
-    "zh_CN": "zoneUuid必须被设置，因为image[name:{0}, uuid:{1}]在多个备份存储上",
+    "zh_CN": "zoneUuid必须被设置，因为image[name:{0}, uuid:{1}]在多个镜像服务器上",
     "arguments": [
       "image.getName()",
       "image.getUuid()"
@@ -2926,16 +2897,6 @@
     "fileName": "src/main/java/org/zstack/hybrid/datacenter/DataCenterApiInterceptor.java"
   },
   {
-    "raw": "DataCenter [%s] is still in sync progress, please wait.",
-    "en_US": "DataCenter [{0}] is still in sync progress, please wait.",
-    "zh_CN": "",
-    "arguments": [
-      "msg.getUuid()"
-    ],
-    "line": 108,
-    "fileName": "src/main/java/org/zstack/hybrid/datacenter/DataCenterManagerImpl.java"
-  },
-  {
     "raw": "IdentityZone [%s] existed in dataCenter [%s]",
     "en_US": "IdentityZone [{0}] existed in dataCenter [{1}]",
     "zh_CN": "",
@@ -2945,16 +2906,6 @@
     ],
     "line": 45,
     "fileName": "src/main/java/org/zstack/hybrid/identityzone/IdentityZoneApiInterceptor.java"
-  },
-  {
-    "raw": "IdentityZone [%s] is still in sync progress, please wait.",
-    "en_US": "IdentityZone [{0}] is still in sync progress, please wait.",
-    "zh_CN": "",
-    "arguments": [
-      "msg.getUuid()"
-    ],
-    "line": 108,
-    "fileName": "src/main/java/org/zstack/hybrid/identityzone/IdentityZoneManagerImpl.java"
   },
   {
     "raw": "EcsInstance must be running or stopped while deleting eip ",
@@ -2984,14 +2935,6 @@
     "fileName": "src/main/java/org/zstack/hybrid/network/HybridNetworkApiInterceptor.java"
   },
   {
-    "raw": "only support intranet rule in vpc",
-    "en_US": "only support intranet rule in vpc",
-    "zh_CN": "",
-    "arguments": [],
-    "line": 136,
-    "fileName": "src/main/java/org/zstack/hybrid/network/HybridNetworkApiInterceptor.java"
-  },
-  {
     "raw": "%s is not a valid cidr",
     "en_US": "{0} is not a valid cidr",
     "zh_CN": "",
@@ -3002,11 +2945,13 @@
     "fileName": "src/main/java/org/zstack/hybrid/network/HybridNetworkApiInterceptor.java"
   },
   {
-    "raw": "security group rule already existed",
-    "en_US": "security group rule already existed",
+    "raw": "destination Cidr [%s] is existed, please check or delete it first",
+    "en_US": "destination Cidr [{0}] is existed, please check or delete it first",
     "zh_CN": "",
-    "arguments": [],
-    "line": 151,
+    "arguments": [
+      "msg.getDstCidrBlock()"
+    ],
+    "line": 143,
     "fileName": "src/main/java/org/zstack/hybrid/network/HybridNetworkApiInterceptor.java"
   },
   {
@@ -3492,7 +3437,7 @@
   {
     "raw": "the backup storage[uuid:%s] is not in status of Connected, current status is %s",
     "en_US": "the backup storage[uuid:{0}] is not in status of Connected, current status is {1}",
-    "zh_CN": "镜像存储[uuid:{0}]不是Connected状态，当前状态为{1}",
+    "zh_CN": "镜像服务器[uuid:{0}]不是Connected状态，当前状态为{1}",
     "arguments": [
       "backupStorageUuid",
       "bsStatus"
@@ -3565,7 +3510,7 @@
   {
     "raw": "no backup storage specified in uuids%s is available for adding this image; they are not in status %s or not in state %s, or the uuid is invalid backup storage uuid",
     "en_US": "no backup storage specified in uuids{0} is available for adding this image; they are not in status {1} or not in state {2}, or the uuid is invalid backup storage uuid",
-    "zh_CN": "镜像存储uuids{0}不满足添加镜像的条件；它们的状态不同时满足{1}和{2},亦或者是无效的uuid",
+    "zh_CN": "镜像服务器uuids{0}不满足添加镜像的条件；它们的状态不同时满足{1}和{2},亦或者是无效的uuid",
     "arguments": [
       "msg.getBackupStorageUuids()",
       "BackupStorageStatus.Connected",
@@ -3585,7 +3530,7 @@
   {
     "raw": "the image[uuid:%s, name:%s] is not on any backup storage",
     "en_US": "the image[uuid:{0}, name:{1}] is not on any backup storage",
-    "zh_CN": "镜像[uuid:{0}, 名称:{1}]不在任一镜像存储上",
+    "zh_CN": "镜像[uuid:{0}, 名称:{1}]不在任一镜像服务器上",
     "arguments": [
       "self.getUuid()",
       "self.getName()"
@@ -3596,7 +3541,7 @@
   {
     "raw": "No connected backup storage found for image[uuid:%s, name:%s]",
     "en_US": "No connected backup storage found for image[uuid:{0}, name:{1}]",
-    "zh_CN": "没有Connected状态的镜像存储来搜索镜像[uuid:{0}, name:{1}]",
+    "zh_CN": "没有Connected状态的镜像服务器来搜索镜像[uuid:{0}, name:{1}]",
     "arguments": [
       "self.getUuid()",
       "self.getName()"
@@ -3607,7 +3552,7 @@
   {
     "raw": "failed to return capacity[%s] to the backup storage[uuid:%s], %s",
     "en_US": "failed to return capacity[{0}] to the backup storage[uuid:{1}], {2}",
-    "zh_CN": "向镜像存储[uuid:{1}]归还容量[{0}]失败，错误细节：{2}",
+    "zh_CN": "向镜像服务器[uuid:{1}]归还容量[{0}]失败，错误细节：{2}",
     "arguments": [
       "size",
       "bsUuid",
@@ -3619,7 +3564,7 @@
   {
     "raw": "the image[uuid:%s, name:%s] is not on the backup storage[uuid:%s]",
     "en_US": "the image[uuid:{0}, name:{1}] is not on the backup storage[uuid:{2}]",
-    "zh_CN": "镜像[uuid:{0}, 名称:{1}]不在镜像存储[uuid:{2}]上",
+    "zh_CN": "镜像[uuid:{0}, 名称:{1}]不在镜像服务器[uuid:{2}]上",
     "arguments": [
       "self.getUuid()",
       "self.getName()",
@@ -3631,7 +3576,7 @@
   {
     "raw": "the image[uuid:%s, name:%s]\u0027s status[%s] is not Deleted on the backup storage[uuid:%s]",
     "en_US": "the image[uuid:{0}, name:{1}]\u0027s status[{2}] is not Deleted on the backup storage[uuid:{3}]",
-    "zh_CN": "镜像[uuid:{0}, 名称:{1}]的状态[{2}]在镜像存储[uuid:{3}]上不是Deleled",
+    "zh_CN": "镜像[uuid:{0}, 名称:{1}]的状态[{2}]在镜像服务器[uuid:{3}]上不是Deleled",
     "arguments": [
       "self.getUuid()",
       "self.getName()",
@@ -3644,7 +3589,7 @@
   {
     "raw": "the image[uuid:%s, name:%s] is not deleted on any backup storage",
     "en_US": "the image[uuid:{0}, name:{1}] is not deleted on any backup storage",
-    "zh_CN": "镜像[uuid:{0}, 名称:{1}]未在任一镜像存储上被删除",
+    "zh_CN": "镜像[uuid:{0}, 名称:{1}]未在任一镜像服务器上被删除",
     "arguments": [
       "self.getUuid()",
       "self.getName()"
@@ -3655,7 +3600,7 @@
   {
     "raw": "the image[uuid:%s, name:%s] is not deleted on the backup storage[uuid:%s]",
     "en_US": "the image[uuid:{0}, name:{1}] is not deleted on the backup storage[uuid:{2}]",
-    "zh_CN": "镜像[uuid:{0}, 名称:{1}]未在镜像存储[uuid:{}]上被删除",
+    "zh_CN": "镜像[uuid:{0}, 名称:{1}]未在镜像服务器[uuid:{}]上被删除",
     "arguments": [
       "self.getUuid()",
       "self.getName()",
@@ -3667,7 +3612,7 @@
   {
     "raw": "failed to allocate all backup storage[uuid:%s], a list of error: %s",
     "en_US": "failed to allocate all backup storage[uuid:{0}], a list of error: {1}",
-    "zh_CN": "镜像存储[uuid:{0}]分配失败，错误清单:{1}",
+    "zh_CN": "镜像服务器[uuid:{0}]分配失败，错误清单:{1}",
     "arguments": [
       "msg.getBackupStorageUuids()",
       "JSONObjectUtil.toJsonString(errs)"
@@ -3678,7 +3623,7 @@
   {
     "raw": "failed to create data volume template from volume[uuid:%s] on all backup storage%s. See cause for one of errors",
     "en_US": "failed to create data volume template from volume[uuid:{0}] on all backup storage[uuid:{1}]. See cause for one of errors",
-    "zh_CN": "在所有镜像存储[uuid:{1}]上创建云盘[uuid:{0}]的云盘模版失败，查看错误原因",
+    "zh_CN": "在所有镜像服务器[uuid:{1}]上创建云盘[uuid:{0}]的云盘模版失败，查看错误原因",
     "arguments": [
       "msg.getVolumeUuid()",
       "msg.getBackupStorageUuids()"
@@ -3689,7 +3634,7 @@
   {
     "raw": "unable to allocate backup storage specified by uuids%s, list errors are: %s",
     "en_US": "unable to allocate backup storage specified by uuids{0}, list errors are: {1}",
-    "zh_CN": "不能根据[uuids:{0}]分配镜像存储，错误清单为：{1}",
+    "zh_CN": "不能根据[uuids:{0}]分配镜像服务器，错误清单为：{1}",
     "arguments": [
       "msg.getBackupStorageUuids()",
       "JSONObjectUtil.toJsonString(errs)"
@@ -3700,7 +3645,7 @@
   {
     "raw": "failed to create image from root volume[uuid:%s] on all backup storage, see cause for one of errors",
     "en_US": "failed to create image from root volume[uuid:{0}] on all backup storage, see cause for one of errors",
-    "zh_CN": "在所有镜像存储上从根云盘[uuid:{0}]创建镜像失败，查看错误原因",
+    "zh_CN": "在所有镜像服务器上从根云盘[uuid:{0}]创建镜像失败，查看错误原因",
     "arguments": [
       "msg.getRootVolumeUuid()"
     ],
@@ -3720,7 +3665,7 @@
   {
     "raw": "failed to expunge the image[uuid:%s] on the backup storage[uuid:%s], will try it later. %s",
     "en_US": "failed to expunge the image[uuid:{0}] on the backup storage[uuid:{1}], will try it later. {2}",
-    "zh_CN": "无法在镜像存储[uuid:{1}]上彻底删除镜像[uuid:{0}]，稍后将会重试。错误细节：{2}",
+    "zh_CN": "无法在镜像服务器[uuid:{1}]上彻底删除镜像[uuid:{0}]，稍后将会重试。错误细节：{2}",
     "arguments": [
       "imageUuid",
       "bsUuid",
@@ -4280,7 +4225,7 @@
   {
     "raw": "for shareable volume, the only supported primary storage type is ceph, current is %s",
     "en_US": "for shareable volume, the only supported primary storage type is ceph, current is {0}",
-    "zh_CN": "共享数据盘只支持ceph类型的主存储{0}",
+    "zh_CN": "共享数据盘只支持ceph类型的主存储，当前主存储类型为{0}",
     "arguments": [
       "psType"
     ],
@@ -4567,62 +4512,6 @@
     ],
     "line": 362,
     "fileName": "src/main/java/org/zstack/monitoring/MonitorTriggerBase.java"
-  },
-  {
-    "raw": "failed to delete the trigger because of the error: %s",
-    "en_US": "failed to delete the trigger because of the error: {0}",
-    "zh_CN": "",
-    "arguments": [
-      "reply.getError()"
-    ],
-    "line": 79,
-    "fileName": "src/main/java/org/zstack/monitoring/MonitorTriggerCascadeExtension.java"
-  },
-  {
-    "raw": "A resource[name:{resourceName}, uuid:{resourceUuid}, type:{resourceType}]\u0027s monitoring trigger[uuid:{triggerUuid}] changes status to {triggerStatus}",
-    "en_US": "A resource[name:{resourceName}, uuid:{resourceUuid}, type:{resourceType}]\u0027s monitoring trigger[uuid:{triggerUuid}] changes status to {triggerStatus}",
-    "zh_CN": "",
-    "arguments": [
-      "args"
-    ],
-    "line": 50,
-    "fileName": "src/main/java/org/zstack/monitoring/items/AlertText.java"
-  },
-  {
-    "raw": "\\n\u003d\u003d\u003d BELOW ARE DETAILS OF THE PREVIOUS ALERT \u003d\u003d\u003d",
-    "en_US": "\\n\u003d\u003d\u003d BELOW ARE DETAILS OF THE PREVIOUS ALERT \u003d\u003d\u003d",
-    "zh_CN": "",
-    "arguments": [],
-    "line": 55,
-    "fileName": "src/main/java/org/zstack/monitoring/items/AlertText.java"
-  },
-  {
-    "raw": "\\nalert details:",
-    "en_US": "\\nalert details:",
-    "zh_CN": "",
-    "arguments": [],
-    "line": 58,
-    "fileName": "src/main/java/org/zstack/monitoring/items/AlertText.java"
-  },
-  {
-    "raw": "\\ncondition: {itemName} {operator} {threshold}",
-    "en_US": "\\ncondition: {itemName} {operator} {threshold}",
-    "zh_CN": "",
-    "arguments": [
-      "args"
-    ],
-    "line": 59,
-    "fileName": "src/main/java/org/zstack/monitoring/items/AlertText.java"
-  },
-  {
-    "raw": "\\ncurrent value: {value}",
-    "en_US": "\\ncurrent value: {value}",
-    "zh_CN": "",
-    "arguments": [
-      "args"
-    ],
-    "line": 60,
-    "fileName": "src/main/java/org/zstack/monitoring/items/AlertText.java"
   },
   {
     "raw": "Host CPU utilization",
@@ -6684,11 +6573,23 @@
     "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusAlert.java"
   },
   {
-    "raw": "CPU number",
-    "en_US": "CPU number",
+    "raw": "A host[name: {name}, uuid: {hostUuid}]\u0027s CPU utilization reaches the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}]. Current CPU utilization is {value}, please handle it as soon as possible.",
+    "en_US": "A host[name: {name}, uuid: {hostUuid}]\u0027s CPU utilization reaches the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}]. Current CPU utilization is {value}, please handle it as soon as possible.",
     "zh_CN": "",
-    "arguments": [],
-    "line": 96,
+    "arguments": [
+      "args"
+    ],
+    "line": 42,
+    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusHostCpuUtilAlertWriter.java"
+  },
+  {
+    "raw": "A host[name: {name}, uuid: {hostUuid}]\u0027s CPU utilization recovers from a previous alert,current CPU utilization is {value} that doesn\u0027t reach the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}].",
+    "en_US": "A host[name: {name}, uuid: {hostUuid}]\u0027s CPU utilization recovers from a previous alert,current CPU utilization is {value} that doesn\u0027t reach the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}].",
+    "zh_CN": "",
+    "arguments": [
+      "args"
+    ],
+    "line": 71,
     "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusHostCpuUtilAlertWriter.java"
   },
   {
@@ -6704,51 +6605,167 @@
     "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusHostCpuUtilItem.java"
   },
   {
-    "raw": "Host",
-    "en_US": "Host",
+    "raw": "host.disk.io.direction",
+    "en_US": "host.disk.io.direction",
     "zh_CN": "",
     "arguments": [],
-    "line": 79,
+    "line": 50,
+    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusHostDiskIOAlertWriter.java"
+  },
+  {
+    "raw": "A host[name: {name}, uuid: {hostUuid}]\u0027s disk {host.disk.io.direction} bandwidth reaches the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}]. Current disk bandwidth is {value}, please handle it as soon as possible.",
+    "en_US": "A host[name: {name}, uuid: {hostUuid}]\u0027s disk {host.disk.io.direction} bandwidth reaches the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}]. Current disk bandwidth is {value}, please handle it as soon as possible.",
+    "zh_CN": "",
+    "arguments": [
+      "args"
+    ],
+    "line": 57,
+    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusHostDiskIOAlertWriter.java"
+  },
+  {
+    "raw": "A host[name: {name}, uuid: {hostUuid}]\u0027s disk {host.disk.io.direction} IOPS reaches the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}]. Current disk IOPS is {value}, please handle it as soon as possible.",
+    "en_US": "A host[name: {name}, uuid: {hostUuid}]\u0027s disk {host.disk.io.direction} IOPS reaches the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}]. Current disk IOPS is {value}, please handle it as soon as possible.",
+    "zh_CN": "",
+    "arguments": [
+      "args"
+    ],
+    "line": 53,
+    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusHostDiskIOAlertWriter.java"
+  },
+  {
+    "raw": "A host[name: {name}, uuid: {hostUuid}]\u0027s {host.disk.io.direction} bandwidth recovers from a previous alert,current disk bandwidth is {value} that doesn\u0027t reach the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}].",
+    "en_US": "A host[name: {name}, uuid: {hostUuid}]\u0027s {host.disk.io.direction} bandwidth recovers from a previous alert,current disk bandwidth is {value} that doesn\u0027t reach the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}].",
+    "zh_CN": "",
+    "arguments": [
+      "args"
+    ],
+    "line": 100,
+    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusHostDiskIOAlertWriter.java"
+  },
+  {
+    "raw": "A host[name: {name}, uuid: {hostUuid}]\u0027s {host.disk.io.direction} IOPS recovers from a previous alert,current disk IOPS is {value} that doesn\u0027t reach the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}].",
+    "en_US": "A host[name: {name}, uuid: {hostUuid}]\u0027s {host.disk.io.direction} IOPS recovers from a previous alert,current disk IOPS is {value} that doesn\u0027t reach the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}].",
+    "zh_CN": "",
+    "arguments": [
+      "args"
+    ],
+    "line": 96,
+    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusHostDiskIOAlertWriter.java"
+  },
+  {
+    "raw": "A host[name: {name}, uuid: {hostUuid}]\u0027s memory utilization reaches the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}]. Current memory utilization is {value}, please handle it as soon as possible.",
+    "en_US": "A host[name: {name}, uuid: {hostUuid}]\u0027s memory utilization reaches the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}]. Current memory utilization is {value}, please handle it as soon as possible.",
+    "zh_CN": "",
+    "arguments": [
+      "args"
+    ],
+    "line": 42,
+    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusHostMemUtilAlertWriter.java"
+  },
+  {
+    "raw": "A host[name: {name}, uuid: {hostUuid}]\u0027s memory utilization recovers from a previous alert,current CPU utilization is {value} that doesn\u0027t reach the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}].",
+    "en_US": "A host[name: {name}, uuid: {hostUuid}]\u0027s memory utilization recovers from a previous alert,current CPU utilization is {value} that doesn\u0027t reach the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}].",
+    "zh_CN": "",
+    "arguments": [
+      "args"
+    ],
+    "line": 71,
+    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusHostMemUtilAlertWriter.java"
+  },
+  {
+    "raw": "host.network.io.direction",
+    "en_US": "host.network.io.direction",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 49,
     "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusHostNetworkIOAlertWriter.java"
   },
   {
-    "raw": "CPU Utilization",
-    "en_US": "CPU Utilization",
+    "raw": "A host[name: {name}, uuid: {hostUuid}]\u0027s network {host.network.io.direction} bandwidth reaches the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}]. Current network bandwidth is {value}, please handle it as soon as possible.",
+    "en_US": "A host[name: {name}, uuid: {hostUuid}]\u0027s network {host.network.io.direction} bandwidth reaches the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}]. Current network bandwidth is {value}, please handle it as soon as possible.",
     "zh_CN": "",
-    "arguments": [],
-    "line": 81,
+    "arguments": [
+      "args"
+    ],
+    "line": 51,
+    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusHostNetworkIOAlertWriter.java"
+  },
+  {
+    "raw": "A host[name: {name}, uuid: {hostUuid}]\u0027s {host.network.io.direction} bandwidth recovers from a previous alert,current network bandwidth utilization is {value} that doesn\u0027t reach the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}].",
+    "en_US": "A host[name: {name}, uuid: {hostUuid}]\u0027s {host.network.io.direction} bandwidth recovers from a previous alert,current network bandwidth utilization is {value} that doesn\u0027t reach the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}].",
+    "zh_CN": "",
+    "arguments": [
+      "args"
+    ],
+    "line": 85,
+    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusHostNetworkIOAlertWriter.java"
+  },
+  {
+    "raw": "A virtual machine[name: {name}, uuid: {vmUuid}]\u0027s CPU utilization reaches the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}]. Current CPU utilization is {value}, please handle it as soon as possible.",
+    "en_US": "A virtual machine[name: {name}, uuid: {vmUuid}]\u0027s CPU utilization reaches the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}]. Current CPU utilization is {value}, please handle it as soon as possible.",
+    "zh_CN": "",
+    "arguments": [
+      "args"
+    ],
+    "line": 42,
     "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusVmCpuUtilAlertWriter.java"
   },
   {
-    "raw": "CPU utilization type",
-    "en_US": "CPU utilization type",
+    "raw": "A virtual machine[name: {name}, uuid: {vmUuid}]\u0027s CPU utilization recovers from a previous alert,current CPU utilization is {value} that doesn\u0027t reach the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}].",
+    "en_US": "A virtual machine[name: {name}, uuid: {vmUuid}]\u0027s CPU utilization recovers from a previous alert,current CPU utilization is {value} that doesn\u0027t reach the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}].",
     "zh_CN": "",
-    "arguments": [],
-    "line": 84,
+    "arguments": [
+      "args"
+    ],
+    "line": 71,
     "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusVmCpuUtilAlertWriter.java"
   },
   {
-    "raw": "Disk IO",
-    "en_US": "Disk IO",
+    "raw": "vm.disk.io.direction",
+    "en_US": "vm.disk.io.direction",
     "zh_CN": "",
     "arguments": [],
-    "line": 88,
+    "line": 50,
     "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusVmDiskIOAlertWriter.java"
   },
   {
-    "raw": "Disk IO direction",
-    "en_US": "Disk IO direction",
+    "raw": "A virtual machine[name: {name}, uuid: {vmUuid}]\u0027s disk {vm.disk.io.direction} bandwidth reaches the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}]. Current disk bandwidth is {value}, please handle it as soon as possible.",
+    "en_US": "A virtual machine[name: {name}, uuid: {vmUuid}]\u0027s disk {vm.disk.io.direction} bandwidth reaches the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}]. Current disk bandwidth is {value}, please handle it as soon as possible.",
     "zh_CN": "",
-    "arguments": [],
-    "line": 94,
+    "arguments": [
+      "args"
+    ],
+    "line": 57,
     "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusVmDiskIOAlertWriter.java"
   },
   {
-    "raw": "Disk IO type",
-    "en_US": "Disk IO type",
+    "raw": "A virtual machine[name: {name}, uuid: {vmUuid}]\u0027s disk {vm.disk.io.direction} IOPS reaches the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}]. Current disk IOPS is {value}, please handle it as soon as possible.",
+    "en_US": "A virtual machine[name: {name}, uuid: {vmUuid}]\u0027s disk {vm.disk.io.direction} IOPS reaches the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}]. Current disk IOPS is {value}, please handle it as soon as possible.",
     "zh_CN": "",
-    "arguments": [],
-    "line": 95,
+    "arguments": [
+      "args"
+    ],
+    "line": 53,
+    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusVmDiskIOAlertWriter.java"
+  },
+  {
+    "raw": "A virtual machine[name: {name}, uuid: {vmUuid}]\u0027s {vm.disk.io.direction} bandwidth recovers from a previous alert,current disk bandwidth is {value} that doesn\u0027t reach the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}].",
+    "en_US": "A virtual machine[name: {name}, uuid: {vmUuid}]\u0027s {vm.disk.io.direction} bandwidth recovers from a previous alert,current disk bandwidth is {value} that doesn\u0027t reach the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}].",
+    "zh_CN": "",
+    "arguments": [
+      "args"
+    ],
+    "line": 100,
+    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusVmDiskIOAlertWriter.java"
+  },
+  {
+    "raw": "A virtual machine[name: {name}, uuid: {vmUuid}]\u0027s {vm.disk.io.direction} IOPS recovers from a previous alert,current disk IOPS is {value} that doesn\u0027t reach the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}].",
+    "en_US": "A virtual machine[name: {name}, uuid: {vmUuid}]\u0027s {vm.disk.io.direction} IOPS recovers from a previous alert,current disk IOPS is {value} that doesn\u0027t reach the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}].",
+    "zh_CN": "",
+    "arguments": [
+      "args"
+    ],
+    "line": 96,
     "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusVmDiskIOAlertWriter.java"
   },
   {
@@ -6763,11 +6780,23 @@
     "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusVmDiskIOItem.java"
   },
   {
-    "raw": "Memory Utilization",
-    "en_US": "Memory Utilization",
+    "raw": "A virtual machine[name: {name}, uuid: {vmUuid}]\u0027s memory utilization reaches the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}]. Current CPU utilization is {value}, please handle it as soon as possible.",
+    "en_US": "A virtual machine[name: {name}, uuid: {vmUuid}]\u0027s memory utilization reaches the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}]. Current CPU utilization is {value}, please handle it as soon as possible.",
     "zh_CN": "",
-    "arguments": [],
-    "line": 78,
+    "arguments": [
+      "args"
+    ],
+    "line": 42,
+    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusVmMemUtilAlertWriter.java"
+  },
+  {
+    "raw": "A virtual machine[name: {name}, uuid: {vmUuid}]\u0027s memory utilization recovers from a previous alert,current CPU utilization is {value} that doesn\u0027t reach the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}].",
+    "en_US": "A virtual machine[name: {name}, uuid: {vmUuid}]\u0027s memory utilization recovers from a previous alert,current CPU utilization is {value} that doesn\u0027t reach the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}].",
+    "zh_CN": "",
+    "arguments": [
+      "args"
+    ],
+    "line": 71,
     "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusVmMemUtilAlertWriter.java"
   },
   {
@@ -6801,27 +6830,31 @@
     "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusVmMemUtilItem.java"
   },
   {
-    "raw": "Network IO",
-    "en_US": "Network IO",
+    "raw": "vm.network.io.direction",
+    "en_US": "vm.network.io.direction",
     "zh_CN": "",
     "arguments": [],
-    "line": 86,
+    "line": 49,
     "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusVmNetworkIOAlertWriter.java"
   },
   {
-    "raw": "Network IO direction",
-    "en_US": "Network IO direction",
+    "raw": "A virtual machine[name: {name}, uuid: {vmUuid}]\u0027s network {vm.network.io.direction} bandwidth reaches the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}]. Current network bandwidth is {value}, please handle it as soon as possible.",
+    "en_US": "A virtual machine[name: {name}, uuid: {vmUuid}]\u0027s network {vm.network.io.direction} bandwidth reaches the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}]. Current network bandwidth is {value}, please handle it as soon as possible.",
     "zh_CN": "",
-    "arguments": [],
-    "line": 91,
+    "arguments": [
+      "args"
+    ],
+    "line": 51,
     "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusVmNetworkIOAlertWriter.java"
   },
   {
-    "raw": "Virtual Machine",
-    "en_US": "Virtual Machine",
+    "raw": "A virtual machine[name: {name}, uuid: {vmUuid}]\u0027s {vm.network.io.direction} bandwidth recovers from a previous alert,current network bandwidth utilization is {value} that doesn\u0027t reach the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}].",
+    "en_US": "A virtual machine[name: {name}, uuid: {vmUuid}]\u0027s {vm.network.io.direction} bandwidth recovers from a previous alert,current network bandwidth utilization is {value} that doesn\u0027t reach the threshold({threshold}) you set in the trigger[uuid: {triggerUuid}].",
     "zh_CN": "",
-    "arguments": [],
-    "line": 79,
+    "arguments": [
+      "args"
+    ],
+    "line": 85,
     "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusVmNetworkIOAlertWriter.java"
   },
   {
@@ -6900,6 +6933,16 @@
     ],
     "line": 257,
     "fileName": "src/main/java/org/zstack/query/QueryFacadeImpl.java"
+  },
+  {
+    "raw": "This trigger[uuid:%s] is added to some job, please remove it first",
+    "en_US": "This trigger[uuid:{0}] is added to some job, please remove it first",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getUuid()"
+    ],
+    "line": 57,
+    "fileName": "src/main/java/org/zstack/scheduler/SchedulerApiInterceptor.java"
   },
   {
     "raw": "Can not add job[uuid:%s] twice to the same trigger[uuid:%s]",
@@ -7060,7 +7103,7 @@
   {
     "raw": "backup storage[uuid:%s] has not been attached to zone[uuid:%s]",
     "en_US": "backup storage[uuid:{0}] has not been attached to zone[uuid:{1}]",
-    "zh_CN": "备份存储[uuid:{0}]没有被加载到zone[uuid:{1}]",
+    "zh_CN": "镜像服务器[uuid:{0}]没有被加载到zone[uuid:{1}]",
     "arguments": [
       "msg.getBackupStorageUuid()",
       "msg.getZoneUuid()"
@@ -7071,7 +7114,7 @@
   {
     "raw": "backup storage[uuid:%s] has been attached to zone[uuid:%s]",
     "en_US": "backup storage[uuid:{0}] has been attached to zone[uuid:{1}]",
-    "zh_CN": "备份存储[uuid:{0}]已经被加载到zone[uuid:{1}]",
+    "zh_CN": "镜像服务器[uuid:{0}]已经被加载到zone[uuid:{1}]",
     "arguments": [
       "msg.getBackupStorageUuid()",
       "msg.getZoneUuid()"
@@ -7093,7 +7136,7 @@
   {
     "raw": "the backup storage[uuid:%s, name:%s] has not enough capacity to download the image[%s].Required size:%s, available size:%s",
     "en_US": "the backup storage[uuid:{0}, name:{1}] has not enough capacity to download the image[{2}].Required size:{3}, available size:{4}",
-    "zh_CN": "备份存储[uuid:{0}, name:{1}]没有足够的容量可供下载镜像[{2}]。需要的大小：{3}，可用的大小：{4}",
+    "zh_CN": "镜像服务器[uuid:{0}, name:{1}]没有足够的容量可供下载镜像[{2}]。需要的大小：{3}，可用的大小：{4}",
     "arguments": [
       "self.getUuid()",
       "self.getName()",
@@ -7107,7 +7150,7 @@
   {
     "raw": "backup storage cannot proceed message[%s] because its status is %s",
     "en_US": "backup storage cannot proceed message[{0}] because its status is {1}",
-    "zh_CN": "备份存储无法处理消息[{0}]因为它的状态为{1}",
+    "zh_CN": "镜像服务器无法处理消息[{0}]因为它的状态为{1}",
     "arguments": [
       "msg.getClass().getName()",
       "self.getStatus()"
@@ -7118,7 +7161,7 @@
   {
     "raw": "backup storage cannot proceed message[%s] because its state is %s",
     "en_US": "backup storage cannot proceed message[{0}] because its state is {1}",
-    "zh_CN": "备份存储无法处理消息[{0}]因为它的状态为{1}",
+    "zh_CN": "镜像服务器无法处理消息[{0}]因为它的状态为{1}",
     "arguments": [
       "msg.getClass().getName()",
       "self.getState()"
@@ -7129,7 +7172,7 @@
   {
     "raw": "cannot reserve %s on the backup storage[uuid:%s], it only has %s available",
     "en_US": "cannot reserve {0} on the backup storage[uuid:{1}], it only has {2} available",
-    "zh_CN": "无法在备份存储{1}保留{0}，它仅有{2}可用容量",
+    "zh_CN": "无法在镜像服务器{1}保留{0}，它仅有{2}可用容量",
     "arguments": [
       "size",
       "backupStorageUuid",
@@ -7141,7 +7184,7 @@
   {
     "raw": "capacity reservation on all backup storage failed",
     "en_US": "capacity reservation on all backup storage failed",
-    "zh_CN": "在所有备份存储上保留容量失败",
+    "zh_CN": "在所有镜像服务器上保留容量失败",
     "arguments": [],
     "line": 302,
     "fileName": "src/main/java/org/zstack/storage/backup/BackupStorageManagerImpl.java"
@@ -7149,7 +7192,7 @@
   {
     "raw": "after subtracting reserved capacity[%s], no backup storage has required capacity[%s bytes]",
     "en_US": "after subtracting reserved capacity[{0}], no backup storage has required capacity[{1} bytes]",
-    "zh_CN": "在减去保留容量[{0}]，没有备份存储有容量[{1}] bytes",
+    "zh_CN": "在减去保留容量[{0}]，没有镜像服务器有容量[{1}] bytes",
     "arguments": [
       "BackupStorageGlobalConfig.RESERVED_CAPACITY.value()",
       "spec.getSize()"
@@ -7160,7 +7203,7 @@
   {
     "raw": "unable to commit backup storage specified by uuids: %s, becasue: %s",
     "en_US": "unable to commit backup storage specified by uuids: {0}, becasue: {1}",
-    "zh_CN": "无法通过uuids：{0}提交备份存储，因为：{1}",
+    "zh_CN": "无法向镜像服务器[uuids:{0}]提交数据，因为：{1}",
     "arguments": [
       "String.join(\",\", msg.getBackupStorageUuids())",
       "errorCodes.get(0).getCause().getDetails()"
@@ -7182,7 +7225,7 @@
   {
     "raw": "the uuid of imagestoreBackupStorage agent changed[expected:%s, actual:%s], it\u0027s most likely the agent was manually restarted. Issue a reconnect to sync the status",
     "en_US": "the uuid of imagestoreBackupStorage agent changed[expected:{0}, actual:{1}], it\u0027s most likely the agent was manually restarted. Issue a reconnect to sync the status",
-    "zh_CN": "镜像备份存储的代理的uuid发生了改变[期望：{0}，实际：{1}]，很\u0027有可能代理被手动重启了，需要重连同步状态",
+    "zh_CN": "镜像镜像服务器的代理的uuid发生了改变[期望：{0}，实际：{1}]，很有可能代理被手动重启了，需要重连同步状态",
     "arguments": [
       "self.getUuid()",
       "ret.getUuid()"
@@ -7203,7 +7246,7 @@
   {
     "raw": "duplicate backup storage. There has been an image store backup storage[hostname:%s]",
     "en_US": "duplicate backup storage. There has been an image store backup storage[hostname:{0}]",
-    "zh_CN": "重复的备份存储。已经存在一个备份存储[主机名：{0}]",
+    "zh_CN": "重复的镜像服务器。已经存在一个镜像服务器[主机名：{0}]",
     "arguments": [
       "msg.getHostname()"
     ],
@@ -7259,7 +7302,7 @@
   {
     "raw": "existing SimpleHttpBackupStorage with hostname[%s] found",
     "en_US": "existing SimpleHttpBackupStorage with hostname[{0}] found",
-    "zh_CN": "存在主机名为[{0}]的简单http备份存储",
+    "zh_CN": "存在主机名为[{0}]的简单http镜像服务器",
     "arguments": [
       "hostname"
     ],
@@ -7309,7 +7352,7 @@
   {
     "raw": "SftpBackupStorage doesn\u0027t support scheme[%s] in url[%s]",
     "en_US": "SftpBackupStorage doesn\u0027t support scheme[{0}] in url[{1}]",
-    "zh_CN": "Sftp备份存储不支持在url[{1}]里包含scheme[{0}]",
+    "zh_CN": "Sftp镜像服务器不支持在url[{1}]里包含scheme[{0}]",
     "arguments": [
       "scheme",
       "url"
@@ -7320,7 +7363,7 @@
   {
     "raw": "the uuid of sftpBackupStorage agent changed[expected:%s, actual:%s], it\u0027s most likely the agent was manually restarted. Issue a reconnect to sync the status",
     "en_US": "the uuid of sftpBackupStorage agent changed[expected:{0}, actual:{1}], it\u0027s most likely the agent was manually restarted. Issue a reconnect to sync the status",
-    "zh_CN": "Sftp镜像备份存储的代理的uuid发生了改变[期望：{0}，实际：{1}]，很\u0027有可能代理被手动重启了，需要重连同步状态",
+    "zh_CN": "Sftp镜像镜像服务器的代理的uuid发生了改变[期望：{0}，实际：{1}]，很有可能代理被手动重启了，需要重连同步状态",
     "arguments": [
       "self.getUuid()",
       "ret.getUuid()"
@@ -7339,7 +7382,7 @@
   {
     "raw": "duplicate backup storage. There has been a sftp backup storage[hostname:%s] existing",
     "en_US": "duplicate backup storage. There has been a sftp backup storage[hostname:{0}] existing",
-    "zh_CN": "重复的备份存储。已经存在一个备份存储[主机名：{0}]",
+    "zh_CN": "重复的镜像服务器。已经存在一个镜像服务器[主机名：{0}]",
     "arguments": [
       "msg.getHostname()"
     ],
@@ -7434,7 +7477,7 @@
   {
     "raw": "cannot add ceph backup storage, there has been some ceph backup storage using mon[hostnames:%s]",
     "en_US": "cannot add ceph backup storage, there has been some ceph backup storage using mon[hostnames:{0}]",
-    "zh_CN": "无法添加ceph备份存储，已经有某个ceph备份存储使用mon[主机名：{0}]",
+    "zh_CN": "无法添加ceph镜像服务器，已经有某个ceph镜像服务器使用mon[主机名：{0}]",
     "arguments": [
       "existing"
     ],
@@ -7460,7 +7503,7 @@
   {
     "raw": "all ceph mons are Disconnected in ceph backup storage[uuid:%s]",
     "en_US": "all ceph mons are Disconnected in ceph backup storage[uuid:{0}]",
-    "zh_CN": "所有在ceph备份存储[uuid:{0}]中的ceph的mons都处于失联状态",
+    "zh_CN": "所有在ceph镜像服务器[uuid:{0}]中的ceph的mons都处于失联状态",
     "arguments": [
       "self.getUuid()"
     ],
@@ -7470,7 +7513,7 @@
   {
     "raw": "unable to connect to the ceph backup storage[uuid:%s]. Failed to connect all ceph mons. Errors are %s",
     "en_US": "unable to connect to the ceph backup storage[uuid:{0}]. Failed to connect all ceph mons. Errors are {1}",
-    "zh_CN": "无法连接到ceph备份存储[uuid:{0}]。无法与所有的ceph mons连接。错误是{1}",
+    "zh_CN": "无法连接到ceph镜像服务器[uuid:{0}]。无法与所有的ceph mons连接。错误是{1}",
     "arguments": [
       "self.getUuid()",
       "JSONObjectUtil.toJsonString(errorCodes)"
@@ -7481,7 +7524,7 @@
   {
     "raw": "there is another CEPH backup storage[name:%s, uuid:%s] with the same FSID[%s], you cannot add the same CEPH setup as two different backup storage",
     "en_US": "there is another CEPH backup storage[name:{0}, uuid:{1}] with the same FSID[{2}], you cannot add the same CEPH setup as two different backup storage",
-    "zh_CN": "有另外一个CEPH备份存储[name:{0}, uuid:{1}]有相同的FSIO[{2}]，你不能添加同样的CEPH为两个不同的备份存储",
+    "zh_CN": "有另外一个CEPH镜像服务器[name:{0}, uuid:{1}]有相同的FSIO[{2}]，你不能添加同样的CEPH为两个不同的镜像服务器",
     "arguments": [
       "otherCeph.getName()",
       "otherCeph.getUuid()",
@@ -7493,7 +7536,7 @@
   {
     "raw": "unable to add mon to ceph backup storage",
     "en_US": "unable to add mon to ceph backup storage",
-    "zh_CN": "无法添加mon到ceph备份存储",
+    "zh_CN": "无法添加mon到ceph镜像服务器",
     "arguments": [],
     "line": 1330,
     "fileName": "src/main/java/org/zstack/storage/ceph/backup/CephBackupStorageBase.java"
@@ -7501,7 +7544,7 @@
   {
     "raw": "cannot update status of the ceph backup storage mon[uuid:%s], it has been deleted.This error can be ignored",
     "en_US": "cannot update status of the ceph backup storage mon[uuid:{0}], it has been deleted.This error can be ignored",
-    "zh_CN": "无法更新ceph备份存储mon[uuid:{0}]，他已经被删除。这个错误可以被忽略",
+    "zh_CN": "无法更新ceph镜像服务器mon[uuid:{0}]，他已经被删除。这个错误可以被忽略",
     "arguments": [
       "uuid"
     ],
@@ -7542,7 +7585,7 @@
   {
     "raw": "the backup storage[uuid:%s, name:%s, fsid:%s] is not in the same ceph cluster with the primary storage[uuid:%s, name:%s, fsid:%s]",
     "en_US": "the backup storage[uuid:{0}, name:{1}, fsid:{2}] is not in the same ceph cluster with the primary storage[uuid:{3}, name:{4}, fsid:{5}]",
-    "zh_CN": "备份存储[uuid:{0}, name:{1}, fsid:{2}]和主存储[uuid:{3}, name:{4}, fsid:{5}]不在同一个ceph集群中",
+    "zh_CN": "镜像服务器[uuid:{0}, name:{1}, fsid:{2}]和主存储[uuid:{3}, name:{4}, fsid:{5}]不在同一个ceph集群中",
     "arguments": [
       "backupStorage.getUuid()",
       "backupStorage.getName()",
@@ -7642,7 +7685,7 @@
   {
     "raw": "unable to upload bits to the backup storage[type:%s], we only support CEPH",
     "en_US": "unable to upload bits to the backup storage[type:{0}], we only support CEPH",
-    "zh_CN": "无法上传bits到备份存储[type:{0}]，仅支持CEPH",
+    "zh_CN": "无法上传bits到镜像服务器[type:{0}]，仅支持CEPH",
     "arguments": [
       "bsType"
     ],
@@ -7652,7 +7695,7 @@
   {
     "raw": "backing up snapshots to backup storage is a depreciated feature, which will be removed in future version",
     "en_US": "backing up snapshots to backup storage is a depreciated feature, which will be removed in future version",
-    "zh_CN": "备份快照到备份存储是一个弃用的功能，将会在未来版本中被移除",
+    "zh_CN": "备份快照到镜像服务器是一个弃用的功能，将会在未来版本中被移除",
     "arguments": [],
     "line": 2541,
     "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageBase.java"
@@ -7785,7 +7828,7 @@
   {
     "raw": "backup storage[uuid:%s] is not attached to zone[uuid:%s] the primary storage[uuid:%s] belongs to",
     "en_US": "backup storage[uuid:{0}] is not attached to zone[uuid:{1}] the primary storage[uuid:{2}] belongs to",
-    "zh_CN": "镜像存储[uuid:{0}]没有加载到主存储[uuid:{2}]所在的区域[uuid:{1}]",
+    "zh_CN": "镜像服务器[uuid:{0}]没有加载到主存储[uuid:{2}]所在的区域[uuid:{1}]",
     "arguments": [
       "bsUuid",
       "self.getZoneUuid()",
@@ -7868,7 +7911,7 @@
   {
     "raw": "cannot find primary storage[uuid:%s], the uuid is specified in instance offering or disk offering",
     "en_US": "cannot find primary storage[uuid:{0}], the uuid is specified in instance offering or disk offering",
-    "zh_CN": "找不到由实例规格或云盘规格指定的主存储[uuid:{0}]",
+    "zh_CN": "找不到由计算规格或云盘规格指定的主存储[uuid:{0}]",
     "arguments": [
       "uuid"
     ],
@@ -7878,7 +7921,7 @@
   {
     "raw": "cannot find primary storage having user tag[%s]. The user tag is specified in instance offering or disk offering",
     "en_US": "cannot find primary storage having user tag[{0}]. The user tag is specified in instance offering or disk offering",
-    "zh_CN": "找不到由实例规格或云盘规格指定的拥有指定用户标签的主存储[uuid:{0}]",
+    "zh_CN": "找不到由计算规格或云盘规格指定的拥有指定用户标签的主存储[uuid:{0}]",
     "arguments": [
       "tag"
     ],
@@ -7898,7 +7941,7 @@
   {
     "raw": "System can\u0027t find imagestore backup Storage. Please do not set imagestore backup Storage server IP to localhost(127.*.*.*),",
     "en_US": "System can\u0027t find imagestore backup Storage. Please do not set imagestore backup Storage server IP to localhost(127.*.*.*),",
-    "zh_CN": "系统找不到镜像仓库镜像存储。请不要设置镜像存储服务IP为localhost(127.*.*.*)",
+    "zh_CN": "系统找不到镜像仓库镜像服务器。请不要设置镜像服务器IP为localhost(127.*.*.*)",
     "arguments": [],
     "line": 198,
     "fileName": "src/main/java/org/zstack/storage/primary/imagestore/local/LocalStorageKvmImageStoreBackupStorageMediatorImpl.java"
@@ -7906,7 +7949,7 @@
   {
     "raw": "%s failed to download bits from the imagestore backup storage[hostname:%s, path: %s] to the local primary storage[uuid:%s, path: %s], %s",
     "en_US": "{0} failed to download bits from the imagestore backup storage[hostname:{1}, path: {2}] to the local primary storage[uuid:{3}, path: {4}], {5}",
-    "zh_CN": "{0}从镜像仓库镜像存储[hostname:{1}, path: {2}]到本地主存储[uuid:{3}, path: {4}]下载失败，{5}",
+    "zh_CN": "{0}从镜像仓库镜像服务器[hostname:{1}, path: {2}]到本地主存储[uuid:{3}, path: {4}]下载失败，{5}",
     "arguments": [
       "operationSuggestion",
       "greply.getHostname()",
@@ -7933,7 +7976,7 @@
   {
     "raw": "failed to upload bits from the local storage[uuid:%s, path:%s] to image store [hostname:%s], %s",
     "en_US": "failed to upload bits from the local storage[uuid:{0}, path:{1}] to image store [hostname:{2}], {3}",
-    "zh_CN": "{0}从本地主存储[uuid:{0}, path: {1}]到镜像仓库镜像存储[hostname:{2}上传失败，{3}",
+    "zh_CN": "无法从本地存储[uuid:{0}, path:{1}]上传数据到镜像仓库[主机名:{2}]，因为{3}",
     "arguments": [
       "pinv.getUuid()",
       "primaryStorageInstallPath",
@@ -7946,7 +7989,7 @@
   {
     "raw": "failed to download bits from the imagestore backup storage[hostname:%s, path: %s] to the nfs primary storage[uuid:%s, path: %s], %s",
     "en_US": "failed to download bits from the imagestore backup storage[hostname:{0}, path: {1}] to the nfs primary storage[uuid:{2}, path: {3}], {4}",
-    "zh_CN": "无法从ImageStore镜像存储[hostname:{0}, path: {1}]下载数据到NFS主存储[uuid:{2}, path: {3}]，错误细节：{4}。",
+    "zh_CN": "无法从ImageStore镜像服务器[hostname:{0}, path: {1}]下载数据到NFS主存储[uuid:{2}, path: {3}]，错误细节：{4}。",
     "arguments": [
       "greply.getHostname()",
       "backupStorageInstallPath",
@@ -7955,6 +7998,19 @@
       "rsp.getError()"
     ],
     "line": 230,
+    "fileName": "src/main/java/org/zstack/storage/primary/imagestore/nfs/NfsPrimaryToImageStoreBackupKVMBackend.java"
+  },
+  {
+    "raw": "failed to upload bits from the NFS[uuid:%s, path:%s] to image store [hostname:%s], %s",
+    "en_US": "failed to upload bits from the NFS[uuid:{0}, path:{1}] to image store [hostname:{2}], {3}",
+    "zh_CN": "无法从NFS主存储[uuid:{0}, path:{1}]上传数据到镜像仓库[主机名:{2}]，因为{3}",
+    "arguments": [
+      "pinv.getUuid()",
+      "primaryStorageInstallPath",
+      "r.getHostname()",
+      "rsp.getError()"
+    ],
+    "line": 283,
     "fileName": "src/main/java/org/zstack/storage/primary/imagestore/nfs/NfsPrimaryToImageStoreBackupKVMBackend.java"
   },
   {
@@ -8325,7 +8381,7 @@
   {
     "raw": "failed to download bits from the SFTP backup storage[hostname:%s, path: %s] to the local primary storage[uuid:%s, path: %s], %s",
     "en_US": "failed to download bits from the SFTP backup storage[hostname:{0}, path: {1}] to the local primary storage[uuid:{2}, path: {3}], {4}",
-    "zh_CN": "从SFTP镜像存储[hostname:{0}, path: {1}] 下载到本地存储[uuid:{2}, path: {3}]失败，{4}",
+    "zh_CN": "从SFTP镜像服务器[hostname:{0}, path: {1}] 下载到本地存储[uuid:{2}, path: {3}]失败，{4}",
     "arguments": [
       "greply.getHostname()",
       "backupStorageInstallPath",
@@ -8339,7 +8395,7 @@
   {
     "raw": "failed to upload bits from the local storage[uuid:%s, path:%s] to the SFTP backup storage[hostname:%s, path:%s], %s",
     "en_US": "failed to upload bits from the local storage[uuid:{0}, path:{1}] to the SFTP backup storage[hostname:{2}, path:{3}], {4}",
-    "zh_CN": "从本地存储[uuid:{0}, path: {1}]上传到SFTP镜像存储[hostname:{2}, path:{3}]失败, {4}",
+    "zh_CN": "从本地存储[uuid:{0}, path: {1}]上传到SFTP镜像服务器[hostname:{2}, path:{3}]失败, {4}",
     "arguments": [
       "pinv.getUuid()",
       "primaryStorageInstallPath",
@@ -8495,6 +8551,35 @@
     ],
     "line": 1209,
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorage.java"
+  },
+  {
+    "raw": "found multiple CIDR",
+    "en_US": "found multiple CIDR",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 86,
+    "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorageApiInterceptor.java"
+  },
+  {
+    "raw": "invalid CIDR: %s",
+    "en_US": "invalid CIDR: {0}",
+    "zh_CN": "",
+    "arguments": [
+      "cidr"
+    ],
+    "line": 99,
+    "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorageApiInterceptor.java"
+  },
+  {
+    "raw": "IP address[%s] is not in CIDR[%s]",
+    "en_US": "IP address[{0}] is not in CIDR[{1}]",
+    "zh_CN": "",
+    "arguments": [
+      "ipAddr",
+      "cidr"
+    ],
+    "line": 103,
+    "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorageApiInterceptor.java"
   },
   {
     "raw": "the NFS primary storage[uuid:%s] is not attached to any clusters, and cannot expunge the root volume[uuid:%s] of the VM[uuid:%s]",
@@ -8700,7 +8785,7 @@
   {
     "raw": "failed to download[%s] from SftpBackupStorage[hostname:%s] to nfs primary storage[uuid:%s, path:%s], %s",
     "en_US": "failed to download[{0}] from SftpBackupStorage[hostname:{1}] to nfs primary storage[uuid:{2}, path:{3}], {4}",
-    "zh_CN": "从Sftp镜像存储[hostname:{1}] 下载[{0}]到nfs主存储[uuid:{2}, path:{3}]失败，{4}",
+    "zh_CN": "从Sftp镜像服务器[hostname:{1}] 下载[{0}]到nfs主存储[uuid:{2}, path:{3}]失败，{4}",
     "arguments": [
       "backupStorageInstallPath",
       "greply.getHostname()",
@@ -8714,7 +8799,7 @@
   {
     "raw": "failed to upload bits from nfs primary storage[uuid:%s, path:%s] to SFTP backup storage[hostname:%s, path: %s], %s",
     "en_US": "failed to upload bits from nfs primary storage[uuid:{0}, path:{1}] to SFTP backup storage[hostname:{2}, path: {3}], {4}",
-    "zh_CN": "从nfs主存储[uuid:{0}, path:{1}]上传比特到STFP镜像存储[hostname:{2}, path: {3}]失败，{4}",
+    "zh_CN": "从nfs主存储[uuid:{0}, path:{1}]上传比特到STFP镜像服务器[hostname:{2}, path: {3}]失败，{4}",
     "arguments": [
       "pinv.getUuid()",
       "primaryStorageInstallPath",
@@ -8728,7 +8813,7 @@
   {
     "raw": "the image[uuid:%s, name: %s] is not available to download on any backup storage:\n1. check if image is in status of Deleted\n2. check if the backup storage on which the image is shown as Ready is attached to the zone[uuid:%s]",
     "en_US": "the image[uuid:{0}, name: {1}] is not available to download on any backup storage:\n1. check if image is in status of Deleted\n2. check if the backup storage on which the image is shown as Ready is attached to the zone[uuid:{2}]",
-    "zh_CN": "不能从镜像存储中下载镜像[uuid:%s, name: %s]\n1.检查镜像是否处于被删除状态\n2.检查镜像处于就绪状态的镜像存储是否挂载到区域[uuid:{2}]",
+    "zh_CN": "不能从镜像服务器中下载镜像[uuid:%s, name: %s]\n1.检查镜像是否处于被删除状态\n2.检查镜像处于就绪状态的镜像服务器是否挂载到区域[uuid:{2}]",
     "arguments": [
       "img.getUuid()",
       "img.getName()",
@@ -8773,7 +8858,7 @@
   {
     "raw": "cannot find backup storage[uuid:%s]",
     "en_US": "cannot find backup storage[uuid:{0}]",
-    "zh_CN": "找不到镜像存储[uuid:{0}]",
+    "zh_CN": "找不到镜像服务器[uuid:{0}]",
     "arguments": [
       "backupStorageUuid"
     ],
@@ -8904,6 +8989,19 @@
     "fileName": "src/main/java/org/zstack/storage/primary/zses/ZsesPrimaryStorageFactory.java"
   },
   {
+    "raw": "failed to upload bits from the Zses storage[uuid:%s, path:%s] to image store [hostname:%s], %s",
+    "en_US": "failed to upload bits from the Zses storage[uuid:{0}, path:{1}] to image store [hostname:{2}], {3}",
+    "zh_CN": "无法从Zses主存储[uuid:{0}, path:{1}]上传数据到镜像仓库[主机名:{2}]，因为{3}",
+    "arguments": [
+      "pinv.getUuid()",
+      "primaryStorageInstallPath",
+      "r.getHostname()",
+      "rsp.getError()"
+    ],
+    "line": 451,
+    "fileName": "src/main/java/org/zstack/storage/primary/zses/ZsesPrimarytoImageStoreKVMBackend.java"
+  },
+  {
     "raw": "volume snapshot[uuid:%s] is not on primary storage, cannot be backed up",
     "en_US": "volume snapshot[uuid:{0}] is not on primary storage, cannot be backed up",
     "zh_CN": "云盘快照[uuid:{0}]不在主存储上，不能备份",
@@ -8916,7 +9014,7 @@
   {
     "raw": "volume snapshot[uuid:%s] is already on backup storage[uuid: %s]",
     "en_US": "volume snapshot[uuid:{0}] is already on backup storage[uuid: {1}]",
-    "zh_CN": "云盘快照[uuid:{0}]已经在备份存储[uuid: {1}]上",
+    "zh_CN": "云盘快照[uuid:{0}]已经在镜像服务器[uuid: {1}]上",
     "arguments": [
       "msg.getUuid()",
       "msg.getBackupStorageUuid()"
@@ -8927,7 +9025,7 @@
   {
     "raw": "volume snapshot[uuid:%s] is on primary storage[uuid:%s] which is in zone[uuid:%s] that backup storage[uuid:%s] is not attached to",
     "en_US": "volume snapshot[uuid:{0}] is on primary storage[uuid:{1}] which is in zone[uuid:{2}] that backup storage[uuid:{3}] is not attached to",
-    "zh_CN": "云盘快照存放在主存储[uuid:{1}]，而主存储[uuid:{1}]挂载在未挂载备份存储[uuid:{3}]的区域[uuid:{2}]",
+    "zh_CN": "云盘快照存放在主存储[uuid:{1}]，而主存储[uuid:{1}]在未挂载镜像服务器[uuid:{3}]的区域[uuid:{2}]",
     "arguments": [
       "msg.getUuid()",
       "priUuid",
@@ -9280,7 +9378,7 @@
   {
     "raw": "the image[uuid:%s, name:%s] has been deleted on all backup storage",
     "en_US": "the image[uuid:{0}, name:{1}] has been deleted on all backup storage",
-    "zh_CN": "镜像[uuid:{0}, name:{1}]已经从所有的镜像存储中删除",
+    "zh_CN": "镜像[uuid:{0}, name:{1}]已经从所有的镜像服务器中删除",
     "arguments": [
       "template.getUuid()",
       "template.getName()"
@@ -9291,7 +9389,7 @@
   {
     "raw": "cannot find a backup storage on which the image[uuid:%s] is that satisfies all conditions of: 1. has state Enabled 2. has status Connected. 3 has attached to zone in which primary storage[uuid:%s] is",
     "en_US": "cannot find a backup storage on which the image[uuid:{0}] is that satisfies all conditions of: 1. has state Enabled 2. has status Connected. 3 has attached to zone in which primary storage[uuid:{1}] is",
-    "zh_CN": "无法找到一个镜像[uuid:%s]所在的镜像存储符合全部的下列条件：状态启动[state:Enabled]，已连接[status:Connected]，被挂载到主存储[uuid:{1}]所在的区域中。",
+    "zh_CN": "无法找到一个镜像[uuid:%s]所在的镜像服务器符合全部的下列条件：状态启动[state:Enabled]，已连接[status:Connected]，被挂载到主存储[uuid:{1}]所在的区域中。",
     "arguments": [
       "template.getUuid()",
       "msg.getPrimaryStorageUuid()"
