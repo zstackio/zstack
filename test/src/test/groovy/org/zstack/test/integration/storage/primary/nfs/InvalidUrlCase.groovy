@@ -124,9 +124,6 @@ class InvalidUrlCase extends SubCase {
             clusterUuid = cluInv.uuid
             sessionId = currentEnvSpec.session.uuid
         }
-
-
-
     }
 
     void testAttachNfsToClusterWithInvalidUrl() {
@@ -142,9 +139,7 @@ class InvalidUrlCase extends SubCase {
         a.primaryStorageUuid = psInv.uuid
         a.sessionId = currentEnvSpec.session.uuid
 
-
         assert a.call().error != null
-
     }
 
     void testUpdateInvalidUrl(){
@@ -172,7 +167,6 @@ class InvalidUrlCase extends SubCase {
                 .select(PrimaryStorageVO_.url)
                 .eq(PrimaryStorageVO_.uuid, psInv.uuid)
                 .findValue() == psInv.url
-
     }
 
     void testUpdateValidUrl(){
@@ -247,7 +241,6 @@ class InvalidUrlCase extends SubCase {
         a.sessionId = currentEnvSpec.session.uuid
 
         assert a.call().error != null
-
     }
 
     void testReconnectHost(){
@@ -305,11 +298,9 @@ class InvalidUrlCase extends SubCase {
             }
         })
 
-
         ReconnectPrimaryStorageAction a = new ReconnectPrimaryStorageAction()
         a.uuid = psInv.uuid
         a.sessionId = currentEnvSpec.session.uuid
-
         assert a.call().error != null
 
         retryInSecs(){
