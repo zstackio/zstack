@@ -43,6 +43,10 @@ public class VmSystemTags {
     public static String RDP_ENABLE_TOKEN = "RDPEnable";
     public static PatternedSystemTag RDP_ENABLE = new PatternedSystemTag(String.format("RDPEnable::{%s}",RDP_ENABLE_TOKEN),VmInstanceVO.class);
 
+    // set VDIMonitorNumber::Integer to set how many monitor will be support for VDI
+    public static String VDI_MONITOR_NUMBER_TOKEN = "VDIMonitorNumber";
+    public static PatternedSystemTag VDI_MONITOR_NUMBER = new PatternedSystemTag(String.format("VDIMonitorNumber::{%s}",VDI_MONITOR_NUMBER_TOKEN),VmInstanceVO.class);
+
     public static String INSTANCEOFFERING_ONLINECHANGE_TOKEN = "instanceOfferingOnliechange";
     public static PatternedSystemTag INSTANCEOFFERING_ONLIECHANGE = new PatternedSystemTag(String.format("instanceOfferingOnlinechange::{%s}",INSTANCEOFFERING_ONLINECHANGE_TOKEN),VmInstanceVO.class);
 

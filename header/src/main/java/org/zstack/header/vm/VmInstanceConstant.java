@@ -8,6 +8,7 @@ public interface VmInstanceConstant {
     String ACTION_CATEGORY = "instance";
     @PythonClass
     String USER_VM_TYPE = "UserVm";
+    Integer VM_MONITOR_NUMBER = 1;
 
     enum Params {
         VmInstanceSpec,

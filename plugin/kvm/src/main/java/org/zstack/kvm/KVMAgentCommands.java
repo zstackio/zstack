@@ -729,8 +729,17 @@ public class KVMAgentCommands {
         private String videoType;
         private boolean useNuma;
         private String usbRedirect;
+        private Integer VDIMonitorNumber;
         private boolean useBootMenu;
         private boolean kvmHiddenState;
+
+        public Integer getVDIMonitorNumber() {
+            return VDIMonitorNumber;
+        }
+
+        public void setVDIMonitorNumber(Integer VDIMonitorNumber) {
+            this.VDIMonitorNumber = VDIMonitorNumber;
+        }
 
         public boolean isKvmHiddenState() {
             return kvmHiddenState;
