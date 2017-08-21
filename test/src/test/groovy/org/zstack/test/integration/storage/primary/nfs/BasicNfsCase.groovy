@@ -195,6 +195,7 @@ class BasicNfsCase extends SubCase {
 
             testReconnectPrimaryStorageWillCmdToAllHost()
             testUpdatePrimaryStorageMountPoint()
+            testUpdateNfsName()
             testReconnectHostWillRemountNfsPsOnTheHost()
             testConfirmSystemUsedCapacityEqualToNull()
         }
@@ -283,6 +284,13 @@ class BasicNfsCase extends SubCase {
         assert cmd.newMountPoint == newMountPoint
 
         env.cleanSimulatorAndMessageHandlers()
+    }
+
+    void testUpdateNfsName(){
+        updatePrimaryStorage {
+            uuid = ps.uuid
+            name = "nfs_test"
+        }
     }
 
     void testReconnectHostWillRemountNfsPsOnTheHost() {
