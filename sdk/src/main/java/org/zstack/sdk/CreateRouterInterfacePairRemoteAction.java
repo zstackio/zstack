@@ -9,7 +9,7 @@ public class CreateRouterInterfacePairRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteConnectionAccessPointLocalResult value;
+        public CreateRouterInterfacePairRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -29,7 +29,7 @@ public class CreateRouterInterfacePairRemoteAction extends AbstractAction {
     public java.lang.String accessPointUuid;
 
     @Param(required = true, validValues = {"Small.1","Small.2","Small.5","Middle.1","Middle.2","Middle.5","Large.1","Large.2"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String Spec;
+    public java.lang.String spec;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String vRouterUuid;
@@ -48,9 +48,6 @@ public class CreateRouterInterfacePairRemoteAction extends AbstractAction {
 
     @Param(required = true, maxLength = 64, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
     public java.lang.String bName;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
-    public java.lang.String ownerName;
 
     @Param(required = false)
     public java.lang.String resourceUuid;
@@ -76,8 +73,8 @@ public class CreateRouterInterfacePairRemoteAction extends AbstractAction {
             return ret;
         }
         
-        DeleteConnectionAccessPointLocalResult value = res.getResult(DeleteConnectionAccessPointLocalResult.class);
-        ret.value = value == null ? new DeleteConnectionAccessPointLocalResult() : value; 
+        CreateRouterInterfacePairRemoteResult value = res.getResult(CreateRouterInterfacePairRemoteResult.class);
+        ret.value = value == null ? new CreateRouterInterfacePairRemoteResult() : value; 
 
         return ret;
     }
