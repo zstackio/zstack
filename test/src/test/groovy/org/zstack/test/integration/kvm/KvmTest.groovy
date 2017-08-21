@@ -11,6 +11,7 @@ class KvmTest extends Test {
         sftpBackupStorage()
         localStorage()
         nfsPrimaryStorage()
+        smp()
         virtualRouter()
         flatNetwork()
         securityGroup()

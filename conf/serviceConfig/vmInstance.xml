@@ -126,6 +126,9 @@
         <name>org.zstack.header.vm.APIGetCandidateZonesClustersHostsForCreatingVmMsg</name>
     </message>
     <message>
+        <name>org.zstack.header.vm.APIGetCandidatePrimaryStoragesForCreatingVmMsg</name>
+    </message>
+    <message>
         <name>org.zstack.header.vm.APIGetInterdependentL3NetworksImagesMsg</name>
     </message>
     <message>
