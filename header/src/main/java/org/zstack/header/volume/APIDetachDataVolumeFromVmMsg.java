@@ -88,7 +88,7 @@ public class APIDetachDataVolumeFromVmMsg extends APIMessage implements VolumeMe
                 ntfy(NotificationConstant.Volume.DETACH_DATA_VOLUME_FROM_VM, vmUuid).resource(uuid, VolumeVO.class.getSimpleName())
                         .messageAndEvent(that, evt).done();
 
-                ntfy(NotificationConstant.VmInstance.ATTACH_VOLUME, getVolumeUuid()).resource(vmUuid, VmInstanceVO.class.getSimpleName())
+                ntfy(NotificationConstant.VmInstance.DETACH_VOLUME, getVolumeUuid()).resource(vmUuid, VmInstanceVO.class.getSimpleName())
                         .messageAndEvent(that, evt).done();
             }
         };

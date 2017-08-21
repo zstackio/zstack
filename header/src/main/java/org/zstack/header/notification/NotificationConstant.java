@@ -24,5 +24,6 @@ public interface NotificationConstant {
 
     interface VmInstance {
         String ATTACH_VOLUME = "Attached volume[%s]";
+        String DETACH_VOLUME = "Detached volume[%s]";
     }
 }
