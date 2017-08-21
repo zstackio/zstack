@@ -6,6 +6,7 @@ import org.apache.commons.validator.routines.DomainValidator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -73,11 +74,33 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
             validate((APIGetFreeIpMsg) msg);
         } else if (msg instanceof APICheckIpAvailabilityMsg) {
             validate((APICheckIpAvailabilityMsg) msg);
+        } else if (msg instanceof APISetL3NetworkRouterInterfaceIpMsg) {
+            validate((APISetL3NetworkRouterInterfaceIpMsg) msg);
         }
 
         setServiceId(msg);
 
         return msg;
+    }
+
+    private void validate(APISetL3NetworkRouterInterfaceIpMsg msg) {
+        if (!NetworkUtils.isIpv4Address(msg.getRouterInterfaceIp())) {
+            throw new ApiMessageInterceptionException(argerr("invalid IP[%s]", msg.getRouterInterfaceIp()));
+        }
+        List<IpRangeVO> ipRangeVOS = Q.New(IpRangeVO.class).eq(IpRangeVO_.l3NetworkUuid, msg.getL3NetworkUuid()).list();
+        if (ipRangeVOS == null || ipRangeVOS.isEmpty()) {
+            throw new ApiMessageInterceptionException(argerr("no ip range in l3[%s]", msg.getL3NetworkUuid()));
+        }
+        for (IpRangeVO ipRangeVO : ipRangeVOS) {
+            if (!NetworkUtils.isIpv4InCidr(msg.getRouterInterfaceIp(), ipRangeVO.getNetworkCidr())) {
+                throw new ApiMessageInterceptionException(argerr("ip[%s] is not in the cidr of ip range[uuid:%s, cidr:%s] which l3 network[%s] attached",
+                        msg.getRouterInterfaceIp(), ipRangeVO.getUuid(), ipRangeVO.getNetworkCidr(), msg.getL3NetworkUuid()));
+            }
+            if (NetworkUtils.isIpv4InRange(msg.getRouterInterfaceIp(), ipRangeVO.getStartIp(), ipRangeVO.getEndIp())) {
+                throw new ApiMessageInterceptionException(argerr("ip[%s] in ip range[uuid:%s, startIp:%s, endIp:%s] which l3 network[%s] attached, this is not allowed",
+                        msg.getRouterInterfaceIp(), ipRangeVO.getUuid(), ipRangeVO.getStartIp(), ipRangeVO.getEndIp(), msg.getL3NetworkUuid()));
+            }
+        }
     }
 
     private void validate(APICheckIpAvailabilityMsg msg) {

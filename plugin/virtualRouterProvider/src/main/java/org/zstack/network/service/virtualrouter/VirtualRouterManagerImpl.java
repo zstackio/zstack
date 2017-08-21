@@ -53,6 +53,7 @@ import org.zstack.header.tag.SystemTagLifeCycleListener;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.identity.AccountManager;
+import org.zstack.network.l3.L3NetworkSystemTags;
 import org.zstack.network.service.eip.EipConstant;
 import org.zstack.network.service.eip.FilterVmNicsForEipInVirtualRouterExtensionPoint;
 import org.zstack.network.service.vip.VipInventory;
@@ -323,21 +324,21 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
 
                 if (!l3Network.getUuid().equals(mgmtNwUuid) && !l3Network.getUuid().equals(pnwUuid)) {
+                    ApplianceVmNicSpec nicSpec = new ApplianceVmNicSpec();
+                    nicSpec.setL3NetworkUuid(l3Network.getUuid());
                     if (neededService.contains(NetworkServiceType.SNAT.toString()) && !msg.isNotGatewayForGuestL3Network()) {
                         DebugUtils.Assert(!l3Network.getIpRanges().isEmpty(), String.format("how can l3Network[uuid:%s] doesn't have ip range", l3Network.getUuid()));
                         IpRangeInventory ipr = l3Network.getIpRanges().get(0);
-                        ApplianceVmNicSpec nicSpec = new ApplianceVmNicSpec();
                         nicSpec.setL3NetworkUuid(l3Network.getUuid());
                         nicSpec.setAcquireOnNetwork(false);
                         nicSpec.setNetmask(ipr.getNetmask());
                         nicSpec.setIp(ipr.getGateway());
                         nicSpec.setGateway(ipr.getGateway());
-                        aspec.getAdditionalNics().add(nicSpec);
-                    } else {
-                        ApplianceVmNicSpec nicSpec = new ApplianceVmNicSpec();
-                        nicSpec.setL3NetworkUuid(l3Network.getUuid());
-                        aspec.getAdditionalNics().add(nicSpec);
                     }
+                    if (L3NetworkSystemTags.ROUTER_INTERFACE_IP.hasTag(l3Network.getUuid())) {
+                        nicSpec.setIp(L3NetworkSystemTags.ROUTER_INTERFACE_IP.getTokenByResourceUuid(l3Network.getUuid(), L3NetworkSystemTags.ROUTER_INTERFACE_IP_TOKEN));
+                    }
+                    aspec.getAdditionalNics().add(nicSpec);
                 }
 
                 ApplianceVmNicSpec guestNicSpec = mgmtNicSpec.getL3NetworkUuid().equals(l3Network.getUuid()) ? mgmtNicSpec : CollectionUtils.find(aspec.getAdditionalNics(), new Function<ApplianceVmNicSpec, ApplianceVmNicSpec>() {

@@ -90,7 +90,35 @@ class Env {
                         }
                     }
 
+                    l3Network {
+                        name = "l3-1"
 
+                        service {
+                            provider = VirtualRouterConstant.PROVIDER_TYPE
+                            types = [NetworkServiceType.DHCP.toString(), NetworkServiceType.DNS.toString()]
+                        }
+                    }
+
+                    l3Network {
+                        name = "pubL3"
+
+                        ip {
+                            startIp = "12.16.10.10"
+                            endIp = "12.16.10.100"
+                            netmask = "255.255.255.0"
+                            gateway = "12.16.10.1"
+                        }
+                    }
+
+                }
+
+                virtualRouterOffering {
+                    name = "vr"
+                    memory = SizeUnit.MEGABYTE.toByte(512)
+                    cpu = 2
+                    useManagementL3Network("pubL3")
+                    usePublicL3Network("pubL3")
+                    useImage("vr")
                 }
 
                 attachBackupStorage("sftp")

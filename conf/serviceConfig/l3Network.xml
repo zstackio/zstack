@@ -109,4 +109,12 @@
     <message>
         <name>org.zstack.header.network.l3.APIGetL3NetworkMtuMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.header.network.l3.APISetL3NetworkRouterInterfaceIpMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.network.l3.APIGetL3NetworkRouterInterfaceIpMsg</name>
+    </message>
 </service>

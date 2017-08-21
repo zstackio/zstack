@@ -9,6 +9,7 @@ import org.zstack.header.message.APIParam;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
+import org.zstack.header.tag.TagResourceType;
 
 /**
  * @api create l3Network
@@ -42,6 +43,7 @@ import org.zstack.header.rest.RestRequest;
  * @result see :ref:`APICreateL3NetworkEvent`
  * @since 0.1.0
  */
+@TagResourceType(L3NetworkVO.class)
 @Action(category = L3NetworkConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/l3-networks",

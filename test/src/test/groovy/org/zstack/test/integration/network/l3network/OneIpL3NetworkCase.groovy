@@ -1,6 +1,10 @@
 package org.zstack.test.integration.network.l3network
 
+import org.zstack.sdk.ApplianceVmInventory
 import org.zstack.sdk.CreateVmInstanceAction
+import org.zstack.sdk.GetL3NetworkRouterInterfaceIpResult
+import org.zstack.sdk.L2NetworkInventory
+import org.zstack.sdk.L3NetworkInventory
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.test.integration.network.NetworkTest
 import org.zstack.testlib.EnvSpec
@@ -38,6 +42,7 @@ class OneIpL3NetworkCase extends SubCase {
         env.create {
             createVmSuccessOnOneIpL3Network()
             add3IpRangeToL3Andcreate3VmSuccessButCreateOneMoreVmFailure()
+            testSpecifyL3RouterInterfaceIp()
         }
     }
 
@@ -107,6 +112,48 @@ class OneIpL3NetworkCase extends SubCase {
         CreateVmInstanceAction.Result res = createVmInstanceAction.call()
         res.error != null
     }
-}
 
+    void testSpecifyL3RouterInterfaceIp(){
+        InstanceOfferingSpec  ioSpec= env.specByName("instanceOffering")
+        ImageSpec iSpec = env.specByName("image1")
+        L2NetworkInventory l2Inv = env.inventoryByName("l2")
+        L3NetworkInventory l3Inv = env.inventoryByName("l3-1")
+        assert (getL3NetworkRouterInterfaceIp {
+            l3NetworkUuid = l3Inv.uuid
+        } as GetL3NetworkRouterInterfaceIpResult).routerInterfaceIp == null
+        expect(AssertionError) {
+            setL3NetworkRouterInterfaceIp {
+                l3NetworkUuid = l3Inv.uuid
+                routerInterfaceIp = "192.168.0.1"
+            }
+        }
+
+        addIpRange {
+            l3NetworkUuid = l3Inv.uuid
+            name = "test-ip-range"
+            startIp = "192.168.0.3"
+            endIp = "192.168.0.254"
+            netmask = "255.255.255.0"
+            gateway = "192.168.0.1"
+        }
+        expect(AssertionError) {
+            setL3NetworkRouterInterfaceIp {
+                l3NetworkUuid = l3Inv.uuid
+                routerInterfaceIp = "192.168.0.3"
+            }
+        }
+        setL3NetworkRouterInterfaceIp {
+            l3NetworkUuid = l3Inv.uuid
+            routerInterfaceIp = "192.168.0.2"
+        }
+        createVmInstance {
+            name = "vm"
+            instanceOfferingUuid = ioSpec.inventory.uuid
+            imageUuid = iSpec.inventory.uuid
+            l3NetworkUuids = asList((l3Inv.uuid))
+        }
+        ApplianceVmInventory vrouterInv = queryApplianceVm {}[0]
+        assert vrouterInv.vmNics.stream().filter{vmnic -> vmnic.ip.equals("192.168.0.2")}.findAny().isPresent()
+    }
+}
 
