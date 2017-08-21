@@ -37,7 +37,6 @@ public class SourceClassMap {
 			put("org.zstack.header.aliyun.network.group.EcsSecurityGroupRuleInventory", "org.zstack.sdk.EcsSecurityGroupRuleInventory");
 			put("org.zstack.header.aliyun.network.vpc.EcsVSwitchInventory", "org.zstack.sdk.EcsVSwitchInventory");
 			put("org.zstack.header.aliyun.network.vpc.EcsVpcInventory", "org.zstack.sdk.EcsVpcInventory");
-			put("org.zstack.header.aliyun.network.vrouter.VRouterType", "org.zstack.sdk.VRouterType");
 			put("org.zstack.header.aliyun.network.vrouter.VpcVirtualRouteEntryInventory", "org.zstack.sdk.VpcVirtualRouteEntryInventory");
 			put("org.zstack.header.aliyun.network.vrouter.VpcVirtualRouterInventory", "org.zstack.sdk.VpcVirtualRouterInventory");
 			put("org.zstack.header.aliyun.oss.OssBucketInventory", "org.zstack.sdk.OssBucketInventory");
@@ -360,7 +359,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.VRouterRouteEntryInventory", "org.zstack.vrouterRoute.VRouterRouteEntryInventory");
 			put("org.zstack.sdk.VRouterRouteEntryType", "org.zstack.vrouterRoute.VRouterRouteEntryType");
 			put("org.zstack.sdk.VRouterRouteTableInventory", "org.zstack.vrouterRoute.VRouterRouteTableInventory");
-			put("org.zstack.sdk.VRouterType", "org.zstack.header.aliyun.network.vrouter.VRouterType");
 			put("org.zstack.sdk.VipInventory", "org.zstack.network.service.vip.VipInventory");
 			put("org.zstack.sdk.VirtualBorderRouterInventory", "org.zstack.header.aliyun.network.connection.VirtualBorderRouterInventory");
 			put("org.zstack.sdk.VirtualRouterInterfaceInventory", "org.zstack.header.aliyun.network.connection.VirtualRouterInterfaceInventory");

@@ -50,11 +50,11 @@ public class VirtualRouterInterfaceInventory  {
         return this.role;
     }
 
-    public VRouterType vRouterType;
-    public void setVRouterType(VRouterType vRouterType) {
+    public java.lang.String vRouterType;
+    public void setVRouterType(java.lang.String vRouterType) {
         this.vRouterType = vRouterType;
     }
-    public VRouterType getVRouterType() {
+    public java.lang.String getVRouterType() {
         return this.vRouterType;
     }
 
