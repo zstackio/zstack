@@ -4892,7 +4892,7 @@
   {
     "raw": "there has been a DNS[%s] on L3 network[uuid:%s]",
     "en_US": "there has been a DNS[{0}] on L3 network[uuid:{1}]",
-    "zh_CN": "这个发生在L3网络[uuid:{1}]的DNS[{0}]上",
+    "zh_CN": "在L3网络[uuid:{1}]上已经存在一个DNS[{0}]",
     "arguments": [
       "msg.getDns()",
       "msg.getL3NetworkUuid()"
