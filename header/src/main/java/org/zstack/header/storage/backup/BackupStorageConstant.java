@@ -17,4 +17,16 @@ public interface BackupStorageConstant {
     }
 
     public static final String ACTION_CATEGORY = "backupStorage";
+
+    public static final String COMMIT_VOLUME_IMAGE_CREATE_SNAPSHOT_STAGE = "0-15";
+    public static final String COMMIT_VOLUME_IMAGE_COMMIT_SNAPSHOT_STAGE = "15-30";
+    public static final String COMMIT_VOLUME_IMAGE_UPLOAD_TEMPLATE_STAGE = "30-90";
+    public static final String COMMIT_VOLUME_IMAGE_SYNC_SIZE_STAGE = "90-100";
+
+    public static final String CREATE_ROOT_VOLUME_TEMPLATE_PREPARATION_STAGE = "0-10";
+    public static final String CREATE_ROOT_VOLUME_TEMPLATE_CREATE_TEMPORARY_TEMPLATE_STAGE = "10-30";
+    public static final String CREATE_ROOT_VOLUME_TEMPLATE_UPLOAD_STAGE = "30-90";
+    public static final String CREATE_ROOT_VOLUME_TEMPLATE_SUBSEQUENT_EVENT_STAGE = "85-100";
+
+
 }
