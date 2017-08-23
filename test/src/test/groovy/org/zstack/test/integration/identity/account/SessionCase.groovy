@@ -9,7 +9,7 @@ import org.zstack.test.integration.identity.IdentityTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 
-class sessionCase extends SubCase {
+class SessionCase extends SubCase {
     EnvSpec env
     AccountInventory accountInventory
     AccountManagerImpl acntMgr

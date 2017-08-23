@@ -13,7 +13,7 @@ import org.zstack.testlib.SubCase
 /**
  * Created by AlanJager on 2017/3/23.
  */
-class accountCase extends SubCase {
+class AccountCase extends SubCase {
     EnvSpec env
     AccountInventory accountInventory
     AccountInventory accountInventory1

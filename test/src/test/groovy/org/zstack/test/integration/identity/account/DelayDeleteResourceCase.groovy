@@ -2,7 +2,6 @@ package org.zstack.test.integration.identity.account
 
 import org.zstack.compute.vm.VmGlobalConfig
 import org.zstack.core.db.Q
-import org.zstack.core.db.SQL
 import org.zstack.header.identity.AccountConstant
 import org.zstack.header.identity.AccountResourceRefVO
 import org.zstack.header.identity.AccountResourceRefVO_
@@ -21,16 +20,9 @@ import org.zstack.utils.data.SizeUnit
 /**
  * Created by miao on 17-6-7.
  */
-class deleteNormalAccountCase extends SubCase {
+class DelayDeleteResourceCase extends SubCase {
     EnvSpec env
     AccountInventory accountInventory
-
-    def DOC = """
-1. create an environment with admin account and normal account and other resources
-2. delete all AccountResourceRefVO purposely
-3. delete normal account to trigger admin adopting all orphaned resources
-4. check
-"""
 
     @Override
     void clean() {
@@ -176,33 +168,34 @@ class deleteNormalAccountCase extends SubCase {
         VmInstanceInventory vm = env.inventoryByName("vm") as VmInstanceInventory
         VolumeInventory vol = vm.getAllVolumes().find { i -> i.getUuid() != vm.getRootVolumeUuid() }
 
-        // gather resources which should be referenced in AccountResourceRefVO and belong to admin
-        // these should later belong to admin again
-        List<String> resourceUuids = Q.New(AccountResourceRefVO.class)
-                .select(AccountResourceRefVO_.resourceUuid)
-                .eq(AccountResourceRefVO_.accountUuid, AccountConstant.INITIAL_SYSTEM_ADMIN_UUID)
-                .listValues()
+        List<String> resourceUuids = new ArrayList<>()
+        resourceUuids.add(vm.getUuid())
+        resourceUuids.add(vol.getUuid())
+        resourceUuids.add(vm.getRootVolumeUuid())
 
-        // change one vm's owner to normal account, leave an appliance vm to admin
+        // check initial owner
+        retryInSecs {
+            def size = Q.New(AccountResourceRefVO.class)
+                    .in(AccountResourceRefVO_.resourceUuid, resourceUuids)
+                    .eq(AccountResourceRefVO_.accountUuid, AccountConstant.INITIAL_SYSTEM_ADMIN_UUID)
+                    .count()
+            assert size == resourceUuids.size() as Long
+        }
+
         changeResourceOwner {
             accountUuid = accountInventory.getUuid()
             resourceUuid = vm.getUuid()
         }
 
-        // remove all AccountResourceRefVO records purposely
-        Q.New(AccountResourceRefVO.class)
-                .eq(AccountResourceRefVO_.accountUuid, AccountConstant.INITIAL_SYSTEM_ADMIN_UUID)
-                .list()
-                .stream()
-                .forEach { it ->
-            logger.debug(String.format("resourceUuid:%s, resourceType:%s",
-                    (it as AccountResourceRefVO).getResourceUuid(),
-                    (it as AccountResourceRefVO).getResourceType()))
+        // make sure change owner success
+        retryInSecs {
+            def size = Q.New(AccountResourceRefVO.class)
+                    .in(AccountResourceRefVO_.resourceUuid, resourceUuids)
+                    .eq(AccountResourceRefVO_.accountUuid, accountInventory.getUuid())
+                    .count()
+            assert size == resourceUuids.size() as Long
         }
 
-        SQL.New(AccountResourceRefVO.class).hardDelete()
-
-        // delete normal account to trigger adoption
         deleteAccount {
             uuid = accountInventory.getUuid()
         }
