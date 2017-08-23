@@ -326,7 +326,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                 if (!l3Network.getUuid().equals(mgmtNwUuid) && !l3Network.getUuid().equals(pnwUuid)) {
                     ApplianceVmNicSpec nicSpec = new ApplianceVmNicSpec();
                     nicSpec.setL3NetworkUuid(l3Network.getUuid());
-                    if (neededService.contains(NetworkServiceType.SNAT.toString()) && !msg.isNotGatewayForGuestL3Network()) {
+                    if ((L3NetworkSystemTags.ROUTER_INTERFACE_IP.hasTag(l3Network.getUuid()) || neededService.contains(NetworkServiceType.SNAT.toString())) && !msg.isNotGatewayForGuestL3Network()) {
                         DebugUtils.Assert(!l3Network.getIpRanges().isEmpty(), String.format("how can l3Network[uuid:%s] doesn't have ip range", l3Network.getUuid()));
                         IpRangeInventory ipr = l3Network.getIpRanges().get(0);
                         nicSpec.setL3NetworkUuid(l3Network.getUuid());
