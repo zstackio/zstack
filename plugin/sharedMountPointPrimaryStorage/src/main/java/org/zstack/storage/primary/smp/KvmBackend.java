@@ -1,7 +1,6 @@
 package org.zstack.storage.primary.smp;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.vm.ImageBackupStorageSelector;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -51,14 +50,14 @@ import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
 import static java.util.Arrays.asList;
-import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.core.progress.ProgressReportService.reportProgress;
+import static org.zstack.header.storage.backup.BackupStorageConstant.*;
+import static org.zstack.utils.ProgressUtils.getEndFromStage;
 
 import javax.persistence.Tuple;
-import javax.persistence.TypedQuery;
 import java.io.File;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by xing5 on 2016/3/26.
@@ -1072,6 +1071,7 @@ public class KvmBackend extends HypervisorBackend {
                         new Do().go(CREATE_TEMPLATE_FROM_VOLUME_PATH, cmd, new ReturnValueCompletion<AgentRsp>(trigger) {
                             @Override
                             public void success(AgentRsp returnValue) {
+                                reportProgress(getEndFromStage(CREATE_ROOT_VOLUME_TEMPLATE_CREATE_TEMPORARY_TEMPLATE_STAGE));
                                 success = true;
                                 trigger.next();
                             }
@@ -1126,6 +1126,7 @@ public class KvmBackend extends HypervisorBackend {
                         uploader.uploadBits(msg.getImageInventory().getUuid(), backupStorageInstallPath, temporaryTemplatePath, new ReturnValueCompletion<String>(trigger) {
                             @Override
                             public void success(String bsPath) {
+                                reportProgress(getEndFromStage(CREATE_ROOT_VOLUME_TEMPLATE_UPLOAD_STAGE));
                                 backupStorageInstallPath = bsPath;
                                 trigger.next();
                             }
@@ -1146,7 +1147,7 @@ public class KvmBackend extends HypervisorBackend {
                         deleteBits(temporaryTemplatePath, new Completion(trigger) {
                             @Override
                             public void success() {
-                                // pass
+                                reportProgress(getEndFromStage(CREATE_ROOT_VOLUME_TEMPLATE_SUBSEQUENT_EVENT_STAGE));
                             }
 
                             @Override
