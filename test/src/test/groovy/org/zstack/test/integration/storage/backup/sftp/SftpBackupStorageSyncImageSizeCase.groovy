@@ -1,6 +1,8 @@
 package org.zstack.test.integration.storage.backup.sftp
 
 import org.zstack.core.cloudbus.CloudBus
+import org.zstack.core.db.Q
+import org.zstack.header.core.progress.TaskProgressVO
 import org.zstack.header.image.SyncImageSizeMsg
 import org.zstack.header.image.SyncImageSizeReply
 import org.zstack.header.network.service.NetworkServiceType
@@ -178,12 +180,14 @@ class SftpBackupStorageSyncImageSizeCase extends SubCase {
             sessionId = loginAsAdmin().uuid
         }
 
+        long count = Q.New(TaskProgressVO.class).count()
         ImageInventory img = createRootVolumeTemplateFromRootVolume {
             name = "template"
             rootVolumeUuid = vm.getRootVolumeUuid()
             sessionId = loginAsAdmin().uuid
         }
         assert called
+        assert count < Q.New(TaskProgressVO.class).count()
         assert IMAGE_ACUTUALSIZE== img.actualSize
         assert IMAGE_SIZE==img.size
     }

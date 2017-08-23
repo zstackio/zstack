@@ -70,7 +70,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.zstack.core.Platform.i18n;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.core.progress.ProgressReportService.reportProgress;
+import static org.zstack.header.storage.backup.BackupStorageConstant.*;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.ProgressUtils.*;
 
 /**
  * Created by frank on 7/28/2015.
@@ -897,6 +900,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                         trigger.fail(reply.getError());
                                     } else {
                                         backupStorageInstallPath = ((BackupStorageAskInstallPathReply) reply).getInstallPath();
+                                        reportProgress(getEndFromStage(CREATE_ROOT_VOLUME_TEMPLATE_PREPARATION_STAGE));
                                         trigger.next();
                                     }
                                 }
@@ -920,6 +924,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                             httpCall(SFTP_UPLOAD_PATH, cmd, SftpUploadRsp.class, new ReturnValueCompletion<SftpUploadRsp>(trigger) {
                                 @Override
                                 public void success(SftpUploadRsp returnValue) {
+                                    reportProgress(getEndFromStage(CREATE_ROOT_VOLUME_TEMPLATE_UPLOAD_STAGE));
                                     trigger.next();
                                 }
 
@@ -1026,6 +1031,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                         trigger.fail(reply.getError());
                                     } else {
                                         backupStorageInstallPath = ((BackupStorageAskInstallPathReply) reply).getInstallPath();
+                                        reportProgress(getEndFromStage(CREATE_ROOT_VOLUME_TEMPLATE_PREPARATION_STAGE));
                                         trigger.next();
                                     }
                                 }
@@ -1044,6 +1050,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                             httpCall(CP_PATH, cmd, CpRsp.class, new ReturnValueCompletion<CpRsp>(trigger) {
                                 @Override
                                 public void success(CpRsp returnValue) {
+                                    reportProgress(getEndFromStage(CREATE_ROOT_VOLUME_TEMPLATE_UPLOAD_STAGE));
                                     trigger.next();
                                 }
 

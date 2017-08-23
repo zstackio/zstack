@@ -1,6 +1,8 @@
 package org.zstack.test.integration.storage.primary.ceph
 
 import org.springframework.http.HttpEntity
+import org.zstack.core.db.Q
+import org.zstack.header.core.progress.TaskProgressVO
 import org.zstack.header.volume.VolumeConstant
 import org.zstack.sdk.AddCephPrimaryStorageAction
 import org.zstack.sdk.ImageInventory
@@ -50,12 +52,14 @@ class CephStorageOneVmAndImageCase extends SubCase{
             sessionId = loginAsAdmin().uuid
         }
 
+        long count = Q.New(TaskProgressVO.class).count()
         ImageInventory img = createRootVolumeTemplateFromRootVolume {
             name = "template"
             rootVolumeUuid = vm.getRootVolumeUuid()
             sessionId = loginAsAdmin().uuid
         }
 
+        assert count < Q.New(TaskProgressVO.class).count()
         assert VolumeConstant.VOLUME_FORMAT_RAW == img.getFormat()
     }
 

@@ -63,8 +63,11 @@ import java.util.List;
 import java.util.Map;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.core.progress.ProgressReportService.reportProgress;
 import static org.zstack.core.progress.ProgressReportService.taskProgress;
+import static org.zstack.header.storage.backup.BackupStorageConstant.*;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.ProgressUtils.getEndFromStage;
 
 /**
  * Created by frank on 6/30/2015.
@@ -2419,6 +2422,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         reserveCapacityOnHost(ref.getHostUuid(), requiredSize, ref.getPrimaryStorageUuid());
+                        reportProgress(getEndFromStage(CREATE_ROOT_VOLUME_TEMPLATE_PREPARATION_STAGE));
                         trigger.next();
                     }
 
@@ -2443,6 +2447,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                 new ReturnValueCompletion<CreateTemplateFromVolumeRsp>(trigger) {
                                     @Override
                                     public void success(CreateTemplateFromVolumeRsp rsp) {
+                                        reportProgress(getEndFromStage(CREATE_ROOT_VOLUME_TEMPLATE_CREATE_TEMPORARY_TEMPLATE_STAGE));
                                         trigger.next();
                                     }
 
@@ -2494,6 +2499,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                             @Override
                             public void success(String installPath) {
                                 backupStorageInstallPath = installPath;
+                                reportProgress(getEndFromStage(CREATE_ROOT_VOLUME_TEMPLATE_UPLOAD_STAGE));
                                 trigger.next();
                             }
 
@@ -2532,6 +2538,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         returnStorageCapacityToHost(ref.getHostUuid(), msg.getVolumeInventory().getSize());
+                        reportProgress(getEndFromStage(CREATE_ROOT_VOLUME_TEMPLATE_SUBSEQUENT_EVENT_STAGE));
                         trigger.next();
                     }
                 });
