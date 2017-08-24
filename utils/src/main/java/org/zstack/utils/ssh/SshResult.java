@@ -22,6 +22,7 @@ public class SshResult {
         sb.append(String.format("\nstdout: %s", stdout));
         sb.append(String.format("\nstderr: %s", stderr));
         sb.append(String.format("\nexitErrorMessage: %s", exitErrorMessage));
+		sb.append("\nThe problem may be caused by an incorrect user name or password or SSH port");
         return sb.toString();
     }
 
