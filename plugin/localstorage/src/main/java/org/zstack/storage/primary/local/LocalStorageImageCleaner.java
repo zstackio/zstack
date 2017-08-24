@@ -78,10 +78,11 @@ public class LocalStorageImageCleaner extends ImageCacheCleaner implements Manag
             });
 
             sql = "select c from ImageCacheVO c where c.imageUuid not in (select vol.rootImageUuid from VolumeVO vol, LocalStorageResourceRefVO ref" +
-                    " where vol.uuid = ref.resourceUuid and ref.resourceType = :rtype and ref.hostUuid = :huuid and vol.rootImageUuid is not null) and c.id in (:ids)";
+                    " where vol.uuid = ref.resourceUuid and ref.resourceType = :rtype and ref.hostUuid = :huuid and ref.primaryStorageUuid = :psUuid and vol.rootImageUuid is not null) and c.id in (:ids)";
             cq = dbf.getEntityManager().createQuery(sql, ImageCacheVO.class);
             cq.setParameter("rtype", VolumeVO.class.getSimpleName());
             cq.setParameter("huuid", hostUuid);
+            cq.setParameter("psUuid", psUUid);
             cq.setParameter("ids", cacheIds);
             stale.addAll(cq.getResultList());
         }
