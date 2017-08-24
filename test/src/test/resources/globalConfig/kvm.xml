@@ -27,7 +27,7 @@
         <name>dataVolume.maxNum</name>
         <description>Max number of data volumes allowed to attach to single KVM instance</description>
         <type>java.lang.Integer</type>
-        <defaultValue>1024</defaultValue>
+        <defaultValue>24</defaultValue>
     </config>
 
     <config>
