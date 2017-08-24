@@ -229,7 +229,11 @@ public class L3BasicNetwork implements L3Network {
         AllocateIpReply reply = new AllocateIpReply();
         UsedIpInventory ip = ias.allocateIp(msg);
         if (ip == null) {
-            reply.setError(errf.instantiateErrorCode(L3Errors.ALLOCATE_IP_ERROR, String.format("IP allocator strategy[%s] returns nothing, because no ip is available in this l3Network[name:%s, uuid:%s]. maybe some vm already has this IP [ip:%s]", strategyType, self.getName(), self.getUuid(),msg.getRequiredIp())));
+            String reason = msg.getRequiredIp() == null ?
+                    String.format("no ip is available in this l3Network[name:%s, uuid:%s]", self.getName(), self.getUuid()) :
+                    String.format("IP[%s] is not available", msg.getRequiredIp());
+            reply.setError(errf.instantiateErrorCode(L3Errors.ALLOCATE_IP_ERROR,
+                    String.format("IP allocator strategy[%s] failed, because %s", strategyType, reason)));
         } else {
             logger.debug(String.format("Ip allocator strategy[%s] successfully allocates an ip[%s]", strategyType, printer.print(ip)));
             reply.setIpInventory(ip);
