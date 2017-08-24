@@ -16,7 +16,7 @@ import org.zstack.header.rest.RestRequest;
         isAction = true
 )
 public class APIUpdateKVMHostMsg extends APIUpdateHostMsg {
-    @APIParam(maxLength = 255, required = false)
+    @APIParam(maxLength = 255, required = false, emptyString = false)
     private String username;
     @APIParam(maxLength = 255, required = false)
     private String password;

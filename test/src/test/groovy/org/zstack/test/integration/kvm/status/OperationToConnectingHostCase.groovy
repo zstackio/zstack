@@ -13,6 +13,7 @@ import org.zstack.network.service.virtualrouter.VirtualRouterConstant
 import org.zstack.sdk.ChangeHostStateAction
 import org.zstack.sdk.ReconnectHostAction
 import org.zstack.sdk.UpdateHostAction
+import org.zstack.sdk.UpdateKVMHostAction
 import org.zstack.test.compute.host.ChangeHostStateExtension
 import org.zstack.test.integration.kvm.Env
 import org.zstack.test.kvm.KVMStartVmExtension
@@ -22,7 +23,7 @@ import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
 
 /**
- * Created by Administrator on 2017-03-03.
+ * Created by MaJin on 2017-03-03.
  */
 class OperationToConnectingHostCase extends SubCase {
     EnvSpec env
@@ -84,13 +85,16 @@ class OperationToConnectingHostCase extends SubCase {
 
         assert a1.call().error != null
 
+        hvo = dbf.findByUuid(hostUuid, HostVO.class)
+        hvo.status = HostStatus.Connected
 
-        ReconnectHostAction a2 = new ReconnectHostAction()
+        dbf.updateAndRefresh(hvo)
+
+        UpdateKVMHostAction a2 = new UpdateKVMHostAction()
+        a2.username = ""
         a2.uuid = hostUuid
         a2.sessionId = currentEnvSpec.session.uuid
 
-        assert action.call().error != null
-
-
+        assert a2.call().error != null
     }
 }
