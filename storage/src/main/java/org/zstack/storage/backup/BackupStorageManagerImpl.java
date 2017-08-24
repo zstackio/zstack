@@ -34,13 +34,13 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 
-import static org.zstack.core.Platform.operr;
-
 import javax.persistence.LockModeType;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
+
+import static org.zstack.core.Platform.operr;
 
 public class BackupStorageManagerImpl extends AbstractService implements BackupStorageManager,
         ManagementNodeChangeListener, ManagementNodeReadyExtensionPoint {
@@ -189,7 +189,7 @@ public class BackupStorageManagerImpl extends AbstractService implements BackupS
         vo.setUrl(msg.getUrl());
         vo.setType(type.toString());
         vo.setName(msg.getName());
-        vo.setDescription(vo.getDescription());
+        vo.setDescription(msg.getDescription());
         vo.setState(BackupStorageState.Enabled);
         vo.setStatus(BackupStorageStatus.Connecting);
 
