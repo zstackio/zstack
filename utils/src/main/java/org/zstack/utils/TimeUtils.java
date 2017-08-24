@@ -8,6 +8,10 @@ import java.util.concurrent.TimeUnit;
 /**
  */
 public class TimeUtils {
+
+    public static String TIME_UNIT_WEEKS = "WEEKS";
+    public static String TIME_UNIT_MONTHS = "MONTHS";
+
     private static CLogger logger = Utils.getLogger(TimeUtils.class);
 
     public static boolean loopExecuteUntilTimeoutIgnoreExceptionAndReturn(long period, long interval, TimeUnit unit, Callable<Boolean> runnable) {
@@ -78,5 +82,15 @@ public class TimeUtils {
                 throw new NumberFormatException();
             }
         }
+    }
+
+    public static long parseTimeToSeconds(String time){
+        if (time.equals(TimeUtils.TIME_UNIT_WEEKS)) {
+            return TimeUnit.DAYS.toSeconds(7);
+        }
+        if (time.equals(TimeUtils.TIME_UNIT_MONTHS)) {
+            return TimeUnit.DAYS.toSeconds(30);
+        }
+        return TimeUnit.valueOf(time).toSeconds((long) 1);
     }
 }
