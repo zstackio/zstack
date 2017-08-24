@@ -18,10 +18,11 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 
-import static org.zstack.core.Platform.argerr;
-
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+
+import static org.zstack.core.Platform.argerr;
 
 /**
  * Created by frank on 7/29/2015.
@@ -95,6 +96,14 @@ public class CephApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(APIAddMonToCephPrimaryStorageMsg msg) {
         checkMonUrls(msg.getMonUrls());
+        List<String> hostnames = msg.getMonUrls().stream()
+                .map(MonUri::new)
+                .map(MonUri::getHostname)
+                .collect(Collectors.toList());
+
+        if (Q.New(CephPrimaryStorageMonVO.class).in(CephPrimaryStorageMonVO_.hostname, hostnames).isExists()){
+            throw new ApiMessageInterceptionException(argerr("Adding the same Mon node is not allowed"));
+        }
     }
 
     private void validate(APIAddMonToCephBackupStorageMsg msg) {
