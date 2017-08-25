@@ -33,6 +33,7 @@ import org.zstack.utils.gson.JSONObjectUtil
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
@@ -107,7 +108,7 @@ class EnvSpec implements Node {
 
     static Closure GLOBAL_DELETE_HOOK
 
-    protected List resourcesNeedDeletion = []
+    protected ConcurrentLinkedQueue resourcesNeedDeletion = new ConcurrentLinkedQueue()
 
     private void installDeletionMethods() {
         deletionMethods.each { it ->
