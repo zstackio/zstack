@@ -29,8 +29,8 @@ public class SshShell {
     private int port = 22;
 
     private void checkParams() {
-        DebugUtils.Assert(hostname != null, "hostname cannot be null");
-        DebugUtils.Assert(username != null, "username cannot be null");
+        DebugUtils.Assert(hostname != null && !hostname.trim().equals(""), "hostname cannot be null");
+        DebugUtils.Assert(username != null && !username.trim().equals(""), "username cannot be null");
         DebugUtils.Assert(password != null || privateKeyFile != null, "password and privateKeyFile must have at least one set");
     }
 
