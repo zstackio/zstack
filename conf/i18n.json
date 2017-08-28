@@ -5884,7 +5884,7 @@
   {
     "raw": "virtual router[uuid:%s] is in status of %s that cannot make http call to %s",
     "en_US": "virtual router[uuid:{0}] is in status of {1} that cannot make http call to {2}",
-    "zh_CN": "云路由[uuid:{0}]不处于状态{1}中，无法向{2}发送http调用。",
+    "zh_CN": "云路由[uuid:{0}]处于状态{1}中，无法向{2}发送http调用。",
     "arguments": [
       "self.getUuid()",
       "getSelf().getStatus()",
