@@ -83,7 +83,7 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
                 VmNicInventory privateNic = CollectionUtils.find(vr.getVmNics(), new Function<VmNicInventory, VmNicInventory>() {
                     @Override
                     public VmNicInventory call(VmNicInventory arg) {
-                        if (arg.getIp().equals(struct.getGuestGateway())) {
+                        if (arg.getL3NetworkUuid().equals(struct.getL3Network().getUuid())) {
                             return arg;
                         }
                         return null;
@@ -160,7 +160,7 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
         VmNicInventory privateNic = CollectionUtils.find(vr.getVmNics(), new Function<VmNicInventory, VmNicInventory>() {
             @Override
             public VmNicInventory call(VmNicInventory arg) {
-                if (arg.getIp().equals(struct.getGuestGateway())) {
+                if (arg.getL3NetworkUuid().equals(struct.getL3Network().getUuid())) {
                     return arg;
                 }
                 return null;
