@@ -1,4 +1,4 @@
-package org.zstack.test.integration.networkservice.provider.virtualrouter
+package org.zstack.test.integration.networkservice.provider
 
 import org.zstack.sdk.CreatePortForwardingRuleAction
 import org.zstack.sdk.GetPortForwardingAttachableVmNicsAction
@@ -6,7 +6,7 @@ import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.PortForwardingRuleInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.VmNicInventory
-import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
+import org.zstack.test.integration.networkservice.provider.virtualrouter.VirtualRouterNetworkServiceEnv
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 

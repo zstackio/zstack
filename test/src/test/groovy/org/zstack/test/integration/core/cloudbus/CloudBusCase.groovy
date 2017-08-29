@@ -1,11 +1,10 @@
-package org.zstack.test.integration.core.CloudBus
+package org.zstack.test.integration.core.cloudbus
 
 import org.zstack.core.Platform
 import org.zstack.core.cloudbus.CloudBusIN
 import org.zstack.core.thread.AsyncThread
 import org.zstack.header.AbstractService
 import org.zstack.header.message.Message
-import org.zstack.test.integration.core.cloudbus.HelloWorldMsgForCloudBusCase
 import org.zstack.testlib.SubCase
 
 import java.util.concurrent.CountDownLatch
@@ -14,7 +13,7 @@ import java.util.concurrent.TimeUnit
 /**
  * Created by heathhose on 17-3-22.
  */
-public class CloudBusCase extends SubCase{
+class CloudBusCase extends SubCase{
 
     CloudBusIN bus
     CountDownLatch latch = new CountDownLatch(1)

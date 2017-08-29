@@ -41,8 +41,15 @@ class AsyncCascadeCase extends SubCase{
         method.setAccessible(true) 
         method.invoke(casf) 
     }
+
     @Override
     void test() {
+        success1 = false
+        success2 = false
+        success3 = false
+        success4 = false
+        success5 = false
+
         casf = bean(CascadeFacade.class)
         asyncCascade()
     }

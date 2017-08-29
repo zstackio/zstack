@@ -131,7 +131,7 @@ class RetryInSecsCase extends SubCase {
             return false
         }
         endTime = System.currentTimeMillis()
-        assert endTime - startTime > 1000 * (retryTimes)
+        assert endTime - startTime >= 1000 * (retryTimes)
         // Invalid assert, The maximum length of time cannot be determined
         // assert endTime - startTime < 1000 * (retryTimes + 1)
         assert retryTimes == actualExecutionTimes
