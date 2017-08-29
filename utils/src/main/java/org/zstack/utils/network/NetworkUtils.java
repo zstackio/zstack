@@ -566,6 +566,38 @@ public class NetworkUtils {
             0xFFFFFFE0, 0xFFFFFFF0, 0xFFFFFFF8, 0xFFFFFFFC, 0xFFFFFFFE,
             0xFFFFFFFF };
 
+    public static String getCidrFromIpMask(String ip, String mask) {
+        try {
+            InetAddress netmask = InetAddress.getByName(mask);
+            return getNetworkAddressFromCidr(String.format("%s/%s", ip, convertNetmaskToCIDR(netmask)));
+        } catch (UnknownHostException e) {
+            throw new IllegalArgumentException(String.format("%s is not a valid ipv4 netmask", ip));
+        }
+    }
+
+    public static int convertNetmaskToCIDR(InetAddress netmask){
+
+        byte[] netmaskBytes = netmask.getAddress();
+        int cidr = 0;
+        boolean zero = false;
+        for (byte b : netmaskBytes) {
+            int mask = 0x80;
+
+            for (int i = 0; i < 8; i++) {
+                int result = b & mask;
+                if (result == 0) {
+                    zero = true;
+                } else if (zero) {
+                    throw new IllegalArgumentException("invalid netmask");
+                } else {
+                    cidr++;
+                }
+                mask >>>= 1;
+            }
+        }
+        return cidr;
+    }
+
     private static long ipToLong(String strIP) {
         return ipToLong(strIP, null);
     }

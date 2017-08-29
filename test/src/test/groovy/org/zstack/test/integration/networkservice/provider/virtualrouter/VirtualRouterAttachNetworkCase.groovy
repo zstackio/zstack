@@ -44,7 +44,7 @@ class VirtualRouterAttachNetworkCase extends SubCase {
     void testAttachOneSystemNetwork() {
         def l2 = env.inventoryByName("l2") as L2NetworkInventory
 
-        L3NetworkInventory l3 = createL3Network {
+        L3NetworkInventory l3_1 = createL3Network {
             delegate.system = true
             delegate.l2NetworkUuid = l2.uuid
             delegate.name = "pubL3-2"
@@ -52,9 +52,24 @@ class VirtualRouterAttachNetworkCase extends SubCase {
 
         addIpRange {
             delegate.name = "TestIpRange"
-            delegate.l3NetworkUuid = l3.uuid
+            delegate.l3NetworkUuid = l3_1.uuid
             delegate.startIp = "11.168.200.10"
             delegate.endIp = "11.168.200.253"
+            delegate.gateway = "11.168.200.1"
+            delegate.netmask = "255.255.255.0"
+        }
+
+        L3NetworkInventory l3_2 = createL3Network {
+            delegate.system = true
+            delegate.l2NetworkUuid = l2.uuid
+            delegate.name = "pubL3-3"
+        }
+
+        addIpRange {
+            delegate.name = "TestIpRange"
+            delegate.l3NetworkUuid = l3_2.uuid
+            delegate.startIp = "11.168.200.50"
+            delegate.endIp = "11.168.200.60"
             delegate.gateway = "11.168.200.1"
             delegate.netmask = "255.255.255.0"
         }
@@ -68,7 +83,7 @@ class VirtualRouterAttachNetworkCase extends SubCase {
         }
 
         VmInstanceInventory inv = attachL3NetworkToVm {
-            delegate.l3NetworkUuid = l3.getUuid()
+            delegate.l3NetworkUuid = l3_1.getUuid()
             delegate.vmInstanceUuid = vr.uuid
         }
 
@@ -80,9 +95,16 @@ class VirtualRouterAttachNetworkCase extends SubCase {
             return rsp
         }
 
+        expect(AssertionError.class) {
+            attachL3NetworkToVm {
+                delegate.l3NetworkUuid = l3_2.getUuid()
+                delegate.vmInstanceUuid = vr.uuid
+            }
+        }
+
         detachL3NetworkFromVm {
             delegate.vmNicUuid = (inv.vmNics.stream()
-                    .filter{nic -> l3.getUuid().equals(nic.l3NetworkUuid)}.find() as org.zstack.sdk.VmNicInventory).uuid
+                    .filter{nic -> l3_1.getUuid().equals(nic.l3NetworkUuid)}.find() as org.zstack.sdk.VmNicInventory).uuid
         }
 
         assert rcmd != null

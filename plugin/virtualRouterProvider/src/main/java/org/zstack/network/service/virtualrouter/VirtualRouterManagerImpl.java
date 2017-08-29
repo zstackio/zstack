@@ -52,6 +52,8 @@ import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.tag.SystemTagLifeCycleListener;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.vm.VmNicVO;
+import org.zstack.header.vm.VmNicVO_;
 import org.zstack.identity.AccountManager;
 import org.zstack.network.l3.L3NetworkSystemTags;
 import org.zstack.network.service.eip.EipConstant;
@@ -397,9 +399,42 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
             handle((APIGetVirtualRouterOfferingMsg) msg);
         } else if (msg instanceof APIUpdateVirtualRouterOfferingMsg) {
             handle((APIUpdateVirtualRouterOfferingMsg) msg);
+        } else if (msg instanceof APIGetAttachablePublicL3ForVRouterMsg) {
+            handle((APIGetAttachablePublicL3ForVRouterMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIGetAttachablePublicL3ForVRouterMsg msg) {
+	    APIGetAttachablePublicL3ForVRouterReply reply = new APIGetAttachablePublicL3ForVRouterReply();
+	    List<L3NetworkVO> l3NetworkVOS = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.system, true).list();
+	    List<VmNicVO> vmNicVOS = Q.New(VmNicVO.class).eq(VmNicVO_.vmInstanceUuid, msg.getVmInstanceUuid()).list();
+
+	    if (l3NetworkVOS == null || l3NetworkVOS.isEmpty()) {
+	        reply.setInventories(new ArrayList<L3NetworkInventory>());
+	        bus.reply(msg, reply);
+	        return;
+        }
+
+        Set<L3NetworkVO> attachableL3NetworkVOS = new HashSet<>(l3NetworkVOS);
+
+        for (L3NetworkVO l3NetworkVO : l3NetworkVOS) {
+	        for (VmNicVO vmNicVO : vmNicVOS) {
+	            if (l3NetworkVO.getIpRanges() == null || l3NetworkVO.getIpRanges().isEmpty()) {
+                    attachableL3NetworkVOS.remove(l3NetworkVO);
+                }
+                String vmNicCidr = NetworkUtils.getCidrFromIpMask(vmNicVO.getIp(), vmNicVO.getNetmask());
+                if (NetworkUtils.isCidrOverlap(l3NetworkVO.getIpRanges().stream().findFirst().get().getNetworkCidr(), vmNicCidr)) {
+                    attachableL3NetworkVOS.remove(l3NetworkVO);
+                }
+                attachableL3NetworkVOS.removeAll(attachableL3NetworkVOS.stream()
+                        .filter(vo -> vo.getUuid().equals(vmNicVO.getL3NetworkUuid()))
+                        .collect(Collectors.toSet()));
+            }
+        }
+        reply.setInventories(L3NetworkInventory.valueOf(attachableL3NetworkVOS));
+        bus.reply(msg, reply);
     }
 
     private void handle(APIUpdateVirtualRouterOfferingMsg msg) {

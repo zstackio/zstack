@@ -19,6 +19,8 @@ import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
 import org.zstack.network.service.vip.VipState;
 import org.zstack.network.service.vip.VipVO;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
@@ -30,6 +32,8 @@ import java.util.concurrent.Callable;
 /**
  */
 public class EipApiInterceptor implements ApiMessageInterceptor {
+    private static final CLogger logger = Utils.getLogger(EipApiInterceptor.class);
+
     @Autowired
     private DatabaseFacade dbf;
     @Autowired
@@ -148,7 +152,7 @@ public class EipApiInterceptor implements ApiMessageInterceptor {
         String netmask = t.get(1, String.class);
         SubnetUtils sub = new SubnetUtils(gw, netmask);
         if (sub.getInfo().isInRange(eipIp)) {
-            throw new ApiMessageInterceptionException(operr("overlap public and private subnets. The subnet of EIP[%s] is an overlap with the subnet[%s/%s]" +
+            throw new ApiMessageInterceptionException(operr("overlap public and private subnets. The subnet of EIP[%s] is an overlap with the subnet[%s, %s]" +
                             " of the VM nic[uuid: %s].", eipIp, gw, netmask, vmNicUuid));
         }
     }

@@ -19,6 +19,7 @@ class NetworkServiceProviderTest extends Test {
         vyos()
         nfsPrimaryStorage()
         kvm()
+        include("mediateApiValidator.xml")
     }
 
     @Override
