@@ -952,9 +952,9 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
             ref.setBackupStorageUuid(uuid);
             ref.setStatus(ImageStatus.Downloading);
             ref.setImageUuid(ivo.getUuid());
-            ref = dbf.persistAndRefresh(ref);
             refs.add(ref);
         }
+        dbf.updateCollection(refs);
 
         Defer.guard(() -> dbf.remove(ivo));
 
