@@ -10,6 +10,7 @@ import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.kvm.KVMConstant
 import org.zstack.network.securitygroup.SecurityGroupConstant
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant
+import org.zstack.sdk.ApiException
 import org.zstack.sdk.ChangeHostStateAction
 import org.zstack.sdk.ReconnectHostAction
 import org.zstack.sdk.UpdateHostAction
@@ -95,6 +96,10 @@ class OperationToConnectingHostCase extends SubCase {
         a2.uuid = hostUuid
         a2.sessionId = currentEnvSpec.session.uuid
 
-        assert a2.call().error != null
+        try {
+            a2.call()
+        }catch (ApiException e){
+            assert -1 < e.message.indexOf("username")
+        }
     }
 }
