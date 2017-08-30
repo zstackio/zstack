@@ -83,5 +83,9 @@
         <id>1017</id>
         <description>No such oss bucket found</description>
     </code>
+    <code>
+        <id>1018</id>
+        <description>not supported identity zone</description>
+    </code>
 </error>
 
