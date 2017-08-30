@@ -13,7 +13,6 @@ import org.zstack.sdk.GetCpuMemoryCapacityAction
 import org.zstack.sdk.HostInventory
 import org.zstack.sdk.ReconnectHostAction
 import org.zstack.test.integration.kvm.KvmTest
-import org.zstack.test.integration.kvm.hostallocator.AllocatorTest
 import org.zstack.test.integration.kvm.hostallocator.Env
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.HostSpec
@@ -34,7 +33,6 @@ class CpuMemoryCapacityCase extends SubCase {
 
     @Override
     void setup() {
-        useSpring(AllocatorTest.springSpec)
         useSpring(KvmTest.springSpec)
     }
 

@@ -6,6 +6,7 @@ import org.zstack.header.identity.AccountResourceRefVO_
 import org.zstack.header.identity.SharedResourceVO
 import org.zstack.header.identity.SharedResourceVO_
 import org.zstack.sdk.ImageInventory
+import org.zstack.test.integration.ZStackTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 
@@ -19,7 +20,7 @@ class DeleteImageResourceVOCase extends SubCase{
 
     @Override
     void setup() {
-        useSpring(ImageTest.springSpec)
+        useSpring(ZStackTest.springSpec)
     }
 
     @Override

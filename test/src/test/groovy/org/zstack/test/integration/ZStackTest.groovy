@@ -1,4 +1,4 @@
-package org.zstack.test.integration.ldap
+package org.zstack.test.integration
 
 import org.junit.Rule
 import org.zapodot.junit.ldap.EmbeddedLdapRule
@@ -7,20 +7,27 @@ import org.zstack.testlib.SpringSpec
 import org.zstack.testlib.Test
 
 /**
- * Created by Administrator on 2017-03-22.
+ * Created by lining on 2017/2/27.
  */
-
-
-class LdapTest  extends Test {
+class ZStackTest extends Test {
     static SpringSpec springSpec = makeSpring {
-        virtualRouter()
-        vyos()
-        kvm()
-        localStorage()
         sftpBackupStorage()
+        localStorage()
+        virtualRouter()
+        securityGroup()
+        kvm()
+        vyos()
+        flatNetwork()
+        ceph()
         include("LdapManagerImpl.xml")
+        include("CloudBusAopProxy.xml")
+        include("ZoneManager.xml")
+        include("webhook.xml")
+        include("Progress.xml")
     }
+
     public static final String DOMAIN_DSN = "dc=example,dc=com"
+
     @Rule
     public static EmbeddedLdapRule embeddedLdapRule = EmbeddedLdapRuleBuilder.newInstance().bindingToPort(1888).
             usingDomainDsn(DOMAIN_DSN).importingLdifs("users-import.ldif").build()
@@ -39,4 +46,5 @@ class LdapTest  extends Test {
     void test() {
         runSubCases()
     }
+
 }

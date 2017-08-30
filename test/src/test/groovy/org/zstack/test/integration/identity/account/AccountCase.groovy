@@ -5,8 +5,8 @@ import org.zstack.header.identity.AccountConstant
 import org.zstack.header.identity.AccountVO
 import org.zstack.sdk.AccountInventory
 import org.zstack.sdk.SessionInventory
+import org.zstack.test.integration.ZStackTest
 import org.zstack.test.integration.identity.Env
-import org.zstack.test.integration.identity.IdentityTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 
@@ -25,7 +25,7 @@ class AccountCase extends SubCase {
 
     @Override
     void setup() {
-        useSpring(IdentityTest.springSpec)
+        useSpring(ZStackTest.springSpec)
     }
 
     @Override
