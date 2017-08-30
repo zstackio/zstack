@@ -26,9 +26,13 @@ public interface RESTFacade {
 
     <T> T syncJsonPost(String url, Object body, Class<T> returnClass);
 
+    <T> T syncJsonPost(String url, Object body, Class<T> returnClass, TimeUnit unit, long timeout);
+
     <T> T syncJsonPost(String url, String body, Class<T> returnClass);
 
     <T> T syncJsonPost(String url, String body, Map<String, String> headers, Class<T> returnClass);
+
+    <T> T syncJsonPost(String url, String body, Map<String, String> headers, Class<T> returnClass, TimeUnit unit, long timeout);
 
     HttpEntity<String> httpServletRequestToHttpEntity(HttpServletRequest req);
 

@@ -32,8 +32,6 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
-import static org.zstack.core.Platform.operr;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -44,6 +42,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static org.zstack.core.Platform.operr;
 
 public class RESTFacadeImpl implements RESTFacade {
     private static final CLogger logger = Utils.getLogger(RESTFacadeImpl.class);
@@ -420,12 +420,26 @@ public class RESTFacadeImpl implements RESTFacade {
     }
 
     @Override
+    public <T> T syncJsonPost(String url, Object body, Class<T> returnClass, TimeUnit unit, long timeout) {
+        // for unit test finding invocation chain
+        if (body != null) {
+            MessageCommandRecorder.record(body.getClass());
+        }
+
+        return syncJsonPost(url, body == null ? null : JSONObjectUtil.toJsonString(body),null, returnClass, unit, timeout);
+    }
+
+    @Override
     public <T> T syncJsonPost(String url, String body, Class<T> returnClass) {
-        return syncJsonPost(url, body, null, returnClass);
+        return syncJsonPost(url, body, null, returnClass, null, -1);
     }
 
     @Override
     public <T> T syncJsonPost(String url, String body, Map<String, String> headers, Class<T> returnClass) {
+        return syncJsonPost(url, body, headers, returnClass, null, -1);
+    }
+    @Override
+    public <T> T syncJsonPost(String url, String body, Map<String, String> headers, Class<T> returnClass, TimeUnit unit, long timeout) {
         body = body == null ? "" : body;
 
         HttpHeaders requestHeaders = new HttpHeaders();
@@ -444,7 +458,11 @@ public class RESTFacadeImpl implements RESTFacade {
             @Override
             @RetryCondition(onExceptions = {IOException.class, RestClientException.class})
             protected ResponseEntity<String> call() {
-                return template.exchange(url, HttpMethod.POST, req, String.class);
+                if (unit == null) {
+                    return template.exchange(url, HttpMethod.POST, req, String.class);
+                } else {
+                    return template.exchange(url, HttpMethod.POST, req, String.class, Platform.getUuid(), unit.toMillis(timeout), unit.toMillis(timeout));
+                }
             }
         }.run();
 

@@ -35,6 +35,13 @@ public abstract class APIAddBackupStorageMsg extends APICreateMessage {
 	@APIParam(required = false)
 	private boolean importImages;
 
+    /**
+     * @desc deploy to public cloud
+     * @optional
+     */
+	@APIParam(required = false)
+	private boolean outside = false;
+
 	public boolean isImportImages() {
 		return importImages;
 	}
@@ -76,6 +83,14 @@ public abstract class APIAddBackupStorageMsg extends APICreateMessage {
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    public boolean isOutside() {
+        return outside;
+    }
+
+    public void setOutside(boolean outside) {
+        this.outside = outside;
     }
 
     public ApiNotification __notification__() {
