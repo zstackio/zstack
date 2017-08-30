@@ -110,6 +110,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         }
 
         public void setError(String error) {
+            this.success = false;
             this.error = error;
         }
 
@@ -810,7 +811,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             @Override
             public void fail(ErrorCode errorCode) {
                 completion.fail(operr("unable to create an empty volume[uuid:%s, name:%s] on the kvm host[uuid:%s]",
-                                volume.getUuid(), volume.getName(), hostUuid).causedBy(errorCode));
+                        volume.getUuid(), volume.getName(), hostUuid).causedBy(errorCode));
             }
         });
     }
@@ -1196,7 +1197,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         httpCall(deletePath, hostUuid, cmd, DeleteBitsRsp.class, new ReturnValueCompletion<DeleteBitsRsp>(completion) {
             @Override
             public void success(DeleteBitsRsp returnValue) {
-                if(returnValue.getAvailableCapacity() == null || returnValue.getTotalCapacity() == null){
+                if (returnValue.getAvailableCapacity() == null || returnValue.getTotalCapacity() == null) {
                     logger.warn("Deleting bits is successful, " +
                             "but getting capacity is failed, " +
                             "Please check if the storage has been detach from cluster");
@@ -2170,7 +2171,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 cmd.dstPassword = password;
                 cmd.dstPort = port;
                 cmd.sendCommandUrl = restf.getSendCommandUrl();
-                if(context.hasbackingfile) {
+                if (context.hasbackingfile) {
                     cmd.stage = PrimaryStorageConstant.MIGRATE_VOLUME_AFTER_BACKING_FILE_COPY_STAGE;
                 } else {
                     cmd.stage = PrimaryStorageConstant.MIGRATE_VOLUME_COPY_STAGE;
@@ -2319,7 +2320,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             completion.success();
             return;
         }
-        
+
         // make init msg for each host
         List<KVMHostAsyncHttpCallMsg> msgs = CollectionUtils.transformToList(hostUuids,
                 new Function<KVMHostAsyncHttpCallMsg, String>() {

@@ -147,11 +147,11 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
     private void handle(final APICreateDataVolumeTemplateFromVolumeMsg msg) {
         final APICreateDataVolumeTemplateFromVolumeEvent evt = new APICreateDataVolumeTemplateFromVolumeEvent(msg.getId());
-
+        List<ImageBackupStorageRefVO> refs = new ArrayList<>();
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("create-data-volume-template-from-volume-%s", msg.getVolumeUuid()));
         chain.then(new ShareFlow() {
-            List<BackupStorageInventory> backupStorage = new ArrayList<>();
+            List<BackupStorageInventory> backupStorages = new ArrayList<>();
             ImageVO image;
             long actualSize;
 
@@ -207,7 +207,6 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                         vo.setFormat(format);
                         vo.setUrl(String.format("volume://%s", msg.getVolumeUuid()));
                         image = dbf.persistAndRefresh(vo);
-
                         acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), ImageVO.class);
                         tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), ImageVO.class.getSimpleName());
                         trigger.next();
@@ -251,7 +250,8 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                 @Override
                                 public void run(MessageReply reply) {
                                     if (reply.isSuccess()) {
-                                        backupStorage.add(((AllocateBackupStorageReply) reply).getInventory());
+                                        backupStorages.add(((AllocateBackupStorageReply) reply).getInventory());
+                                        saveRefVOByBsInventorys(backupStorages, image.getUuid());
                                         trigger.next();
                                     } else {
                                         trigger.fail(errf.stringToOperationError("cannot find proper backup storage", reply.getError()));
@@ -277,16 +277,17 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                     List<ErrorCode> errs = new ArrayList<>();
                                     for (MessageReply r : replies) {
                                         if (r.isSuccess()) {
-                                            backupStorage.add(((AllocateBackupStorageReply) r).getInventory());
+                                            backupStorages.add(((AllocateBackupStorageReply) r).getInventory());
                                         } else {
                                             errs.add(r.getError());
                                         }
                                     }
 
-                                    if (backupStorage.isEmpty()) {
+                                    if (backupStorages.isEmpty()) {
                                         trigger.fail(operr("failed to allocate all backup storage[uuid:%s], a list of error: %s",
                                                 msg.getBackupStorageUuids(), JSONObjectUtil.toJsonString(errs)));
                                     } else {
+                                        saveRefVOByBsInventorys(backupStorages, image.getUuid());
                                         trigger.next();
                                     }
                                 }
@@ -296,8 +297,8 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
-                        if (!backupStorage.isEmpty()) {
-                            List<ReturnBackupStorageMsg> rmsgs = CollectionUtils.transformToList(backupStorage, new Function<ReturnBackupStorageMsg, BackupStorageInventory>() {
+                        if (!backupStorages.isEmpty()) {
+                            List<ReturnBackupStorageMsg> rmsgs = CollectionUtils.transformToList(backupStorages, new Function<ReturnBackupStorageMsg, BackupStorageInventory>() {
                                 @Override
                                 public ReturnBackupStorageMsg call(BackupStorageInventory arg) {
                                     ReturnBackupStorageMsg rmsg = new ReturnBackupStorageMsg();
@@ -312,7 +313,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                 @Override
                                 public void run(List<MessageReply> replies) {
                                     for (MessageReply r : replies) {
-                                        BackupStorageInventory bs = backupStorage.get(replies.indexOf(r));
+                                        BackupStorageInventory bs = backupStorages.get(replies.indexOf(r));
                                         logger.warn(String.format("failed to return %s bytes to backup storage[uuid:%s]", acntMgr, bs.getUuid()));
                                     }
                                 }
@@ -328,7 +329,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        List<CreateDataVolumeTemplateFromDataVolumeMsg> cmsgs = CollectionUtils.transformToList(backupStorage, new Function<CreateDataVolumeTemplateFromDataVolumeMsg, BackupStorageInventory>() {
+                        List<CreateDataVolumeTemplateFromDataVolumeMsg> cmsgs = CollectionUtils.transformToList(backupStorages, new Function<CreateDataVolumeTemplateFromDataVolumeMsg, BackupStorageInventory>() {
                             @Override
                             public CreateDataVolumeTemplateFromDataVolumeMsg call(BackupStorageInventory bs) {
                                 CreateDataVolumeTemplateFromDataVolumeMsg cmsg = new CreateDataVolumeTemplateFromDataVolumeMsg();
@@ -348,7 +349,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                 ErrorCode err = null;
                                 String format = null;
                                 for (MessageReply r : replies) {
-                                    BackupStorageInventory bs = backupStorage.get(replies.indexOf(r));
+                                    BackupStorageInventory bs = backupStorages.get(replies.indexOf(r));
                                     if (!r.isSuccess()) {
                                         logger.warn(String.format("failed to create data volume template from volume[uuid:%s] on backup storage[uuid:%s], %s",
                                                 msg.getVolumeUuid(), bs.getUuid(), r.getError()));
@@ -358,12 +359,13 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                     }
 
                                     CreateDataVolumeTemplateFromDataVolumeReply reply = r.castReply();
-                                    ImageBackupStorageRefVO ref = new ImageBackupStorageRefVO();
-                                    ref.setBackupStorageUuid(bs.getUuid());
-                                    ref.setStatus(ImageStatus.Ready);
-                                    ref.setImageUuid(image.getUuid());
-                                    ref.setInstallPath(reply.getInstallPath());
-                                    dbf.persist(ref);
+                                    ImageBackupStorageRefVO vo = Q.New(ImageBackupStorageRefVO.class)
+                                            .eq(ImageBackupStorageRefVO_.backupStorageUuid, bs.getUuid())
+                                            .eq(ImageBackupStorageRefVO_.imageUuid, image.getUuid())
+                                            .find();
+                                    vo.setStatus(ImageStatus.Ready);
+                                    vo.setInstallPath(reply.getInstallPath());
+                                    dbf.update(vo);
 
                                     if (mdsum == null) {
                                         mdsum = reply.getMd5sum();
@@ -377,7 +379,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
                                 if (fail == backupStorageNum) {
                                     ErrorCode errCode = operr("failed to create data volume template from volume[uuid:%s] on all backup storage%s. See cause for one of errors",
-                                                    msg.getVolumeUuid(), msg.getBackupStorageUuids()).causedBy(err);
+                                            msg.getVolumeUuid(), msg.getBackupStorageUuids()).causedBy(err);
 
                                     trigger.fail(errCode);
                                 } else {
@@ -623,9 +625,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                         imvo.setUrl(String.format("volume://%s", msg.getRootVolumeUuid()));
                         imvo.setSize(volvo.getSize());
                         imvo.setActualSize(imageActualSize);
-
                         dbf.persist(imvo);
-
                         acntMgr.createAccountResourceRef(accountUuid, imvo.getUuid(), ImageVO.class);
                         tagMgr.createTagsFromAPICreateMessage(msg, imvo.getUuid(), ImageVO.class.getSimpleName());
 
@@ -648,6 +648,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
+                        List<ImageBackupStorageRefVO> refs = new ArrayList<>();
                         if (msg.getBackupStorageUuids() == null) {
                             AllocateBackupStorageMsg abmsg = new AllocateBackupStorageMsg();
                             abmsg.setRequiredZoneUuid(zoneUuid);
@@ -659,6 +660,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                 public void run(MessageReply reply) {
                                     if (reply.isSuccess()) {
                                         targetBackupStorages.add(((AllocateBackupStorageReply) reply).getInventory());
+                                        saveRefVOByBsInventorys(targetBackupStorages, imageVO.getUuid());
                                         trigger.next();
                                     } else {
                                         trigger.fail(reply.getError());
@@ -693,6 +695,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                         trigger.fail(operr("unable to allocate backup storage specified by uuids%s, list errors are: %s",
                                                 msg.getBackupStorageUuids(), JSONObjectUtil.toJsonString(errs)));
                                     } else {
+                                        saveRefVOByBsInventorys(targetBackupStorages, imageVO.getUuid());
                                         trigger.next();
                                     }
                                 }
@@ -760,28 +763,38 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
                                 for (MessageReply r : replies) {
                                     BackupStorageInventory bs = targetBackupStorages.get(replies.indexOf(r));
+                                    ImageBackupStorageRefVO ref = Q.New(ImageBackupStorageRefVO.class)
+                                            .eq(ImageBackupStorageRefVO_.backupStorageUuid, bs.getUuid())
+                                            .eq(ImageBackupStorageRefVO_.imageUuid, imageVO.getUuid())
+                                            .find();
+
+                                    if (dbf.reload(imageVO) == null) {
+                                        SQL.New("delete from ImageBackupStorageRefVO where imageUuid = :uuid")
+                                                .param("uuid", imageVO.getUuid())
+                                                .execute();
+                                        trigger.fail(operr("image [uuid:%s] has been deleted", imageVO.getUuid()));
+                                        return;
+                                    }
+
 
                                     if (!r.isSuccess()) {
                                         logger.warn(String.format("failed to create image from root volume[uuid:%s] on backup storage[uuid:%s], because %s",
                                                 msg.getRootVolumeUuid(), bs.getUuid(), r.getError()));
                                         err = r.getError();
+                                        dbf.remove(ref);
                                         continue;
                                     }
 
                                     CreateTemplateFromVmRootVolumeReply reply = (CreateTemplateFromVmRootVolumeReply) r;
-                                    ImageBackupStorageRefVO ref = new ImageBackupStorageRefVO();
-                                    ref.setBackupStorageUuid(bs.getUuid());
                                     ref.setStatus(ImageStatus.Ready);
-                                    ref.setImageUuid(imageVO.getUuid());
                                     ref.setInstallPath(reply.getInstallPath());
-                                    dbf.persist(ref);
+                                    dbf.update(ref);
 
                                     imageVO.setStatus(ImageStatus.Ready);
                                     if (reply.getFormat() != null) {
                                         imageVO.setFormat(reply.getFormat());
                                     }
-                                    dbf.update(imageVO);
-                                    imageVO = dbf.reload(imageVO);
+                                    imageVO = dbf.updateAndRefresh(imageVO);
                                     success = true;
                                     logger.debug(String.format("successfully created image[uuid:%s] from root volume[uuid:%s] on backup storage[uuid:%s]",
                                             imageVO.getUuid(), msg.getRootVolumeUuid(), bs.getUuid()));
@@ -838,7 +851,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                     completion.done();
                                 }
                             });
-                         }).run(new NoErrorCompletion(trigger) {
+                        }).run(new NoErrorCompletion(trigger) {
                             @Override
                             public void done() {
                                 trigger.next();
@@ -954,8 +967,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
             ref.setImageUuid(ivo.getUuid());
             refs.add(ref);
         }
-        dbf.updateCollection(refs);
-
+        dbf.persistCollection(refs);
         Defer.guard(() -> dbf.remove(ivo));
 
         final ImageInventory inv = ImageInventory.valueOf(ivo);
@@ -1415,4 +1427,18 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
     public void resourceOwnerPreChange(AccountResourceRefInventory ref, String newOwnerUuid) {
 
     }
+
+    private void saveRefVOByBsInventorys(List<BackupStorageInventory> inventorys, String imageUuid) {
+        List<ImageBackupStorageRefVO> refs = new ArrayList<>();
+        for (BackupStorageInventory backupStorageInventory : inventorys) {
+            ImageBackupStorageRefVO ref = new ImageBackupStorageRefVO();
+            ref.setBackupStorageUuid(backupStorageInventory.getUuid());
+            ref.setStatus(ImageStatus.Creating);
+            ref.setImageUuid(imageUuid);
+            ref.setInstallPath("");
+            refs.add(ref);
+        }
+        dbf.persistCollection(refs);
+    }
+
 }
