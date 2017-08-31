@@ -3,5 +3,7 @@ package org.zstack.ldap;
 /**
  */
 public interface LdapConstant {
-    String SERVICE_ID = "ldap";
+    public static final String SERVICE_ID = "ldap";
+
+    public static final String LDAP_UID_KEY = "uid";
 }
