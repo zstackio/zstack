@@ -1451,7 +1451,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
         final String installPath = ((BackupStorageAskInstallPathReply) br).getInstallPath();
 
-        m.uploadBits(null, getSelfInventory(), msg.getBackupStorage(), installPath, sp.getPrimaryStorageInstallPath(), hostUuid, new ReturnValueCompletion<String>(completion) {
+        m.uploadBits(sp.getUuid(), getSelfInventory(), msg.getBackupStorage(), installPath, sp.getPrimaryStorageInstallPath(), hostUuid, new ReturnValueCompletion<String>(completion) {
             @Override
             public void success(String installPath) {
                 BackupVolumeSnapshotFromPrimaryStorageToBackupStorageReply reply = new BackupVolumeSnapshotFromPrimaryStorageToBackupStorageReply();

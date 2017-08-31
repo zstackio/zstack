@@ -3,6 +3,7 @@ package org.zstack.storage.primary.local;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.HasThreadContext;
@@ -24,10 +25,9 @@ import org.zstack.storage.backup.sftp.GetSftpBackupStorageDownloadCredentialMsg;
 import org.zstack.storage.backup.sftp.GetSftpBackupStorageDownloadCredentialReply;
 import org.zstack.storage.backup.sftp.SftpBackupStorageConstant;
 
-import static org.zstack.core.Platform.operr;
-
 import java.util.List;
 
+import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
@@ -41,6 +41,8 @@ public class LocalStorageKvmSftpBackupStorageMediatorImpl implements LocalStorag
     private ErrorFacade errf;
     @Autowired
     private ApiTimeoutManager timeoutMgr;
+    @Autowired
+    private DatabaseFacade dbf;
 
     public static final String UPLOAD_BIT_PATH = "/localstorage/sftp/upload";
     public static final String DOWNLOAD_BIT_PATH = "/localstorage/sftp/download";
@@ -112,6 +114,7 @@ public class LocalStorageKvmSftpBackupStorageMediatorImpl implements LocalStorag
         private String hostname;
         private String sshKey;
         private String username;
+        private String imageName;
         private int sshPort;
         public String getUsername() {
             return username;
@@ -155,6 +158,14 @@ public class LocalStorageKvmSftpBackupStorageMediatorImpl implements LocalStorag
 
         public void setSshKey(String sshKey) {
             this.sshKey = sshKey;
+        }
+
+        public String getImageName() {
+            return imageName;
+        }
+
+        public void setImageName(String imageName) {
+            this.imageName = imageName;
         }
     }
 
@@ -213,7 +224,6 @@ public class LocalStorageKvmSftpBackupStorageMediatorImpl implements LocalStorag
         });
     }
 
-    @Override
     public void uploadBits(final String imageUuid, final PrimaryStorageInventory pinv, BackupStorageInventory bsinv, final String backupStorageInstallPath, final String primaryStorageInstallPath, final String hostUuid, final ReturnValueCompletion<String> completion) {
         GetSftpBackupStorageDownloadCredentialMsg gmsg = new GetSftpBackupStorageDownloadCredentialMsg();
         gmsg.setBackupStorageUuid(bsinv.getUuid());
