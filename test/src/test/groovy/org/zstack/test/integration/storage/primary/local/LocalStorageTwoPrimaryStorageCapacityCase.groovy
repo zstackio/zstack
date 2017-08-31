@@ -1,23 +1,14 @@
 package org.zstack.test.integration.storage.primary.local
 
-import org.springframework.http.HttpEntity
 import org.zstack.sdk.ClusterInventory
-import org.zstack.sdk.DiskOfferingInventory
 import org.zstack.sdk.GetPrimaryStorageCapacityResult
-import org.zstack.sdk.ImageInventory
-import org.zstack.sdk.InstanceOfferingInventory
-import org.zstack.sdk.L3NetworkInventory
 import org.zstack.header.host.HostVO
 import org.zstack.sdk.HostInventory
 import org.zstack.sdk.PrimaryStorageInventory
-import org.zstack.storage.primary.local.LocalStorageKvmBackend
 import org.zstack.test.integration.storage.Env
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
-import org.zstack.testlib.LocalStorageSpec
-import org.zstack.testlib.PrimaryStorageSpec
 import org.zstack.testlib.SubCase
-import org.zstack.utils.gson.JSONObjectUtil
 
 /**
  * Created by Quarkonics on 2017/4/20.
@@ -92,7 +83,9 @@ class LocalStorageTwoPrimaryStorageCapacityCase extends SubCase {
             primaryStorageUuids = [ps2.uuid]
         }
 
-        assert beforeCapacityResult1.availableCapacity == afterCapacityResult1.availableCapacity
-        assert beforeCapacityResult2.availableCapacity == afterCapacityResult2.availableCapacity
+        retryInSecs(3){
+            assert beforeCapacityResult1.availableCapacity == afterCapacityResult1.availableCapacity
+            assert beforeCapacityResult2.availableCapacity == afterCapacityResult2.availableCapacity
+        }
     }
 }
