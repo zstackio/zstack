@@ -5,8 +5,8 @@ import org.zstack.header.query.ExpandedQuery;
 import org.zstack.header.search.Inventory;
 import org.zstack.header.search.Parent;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
+import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.storage.ceph.CephConstants;
-import org.zstack.storage.ceph.backup.CephBackupStorageMonInventory;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -19,7 +19,9 @@ import java.util.List;
         parent = {@Parent(inventoryClass = PrimaryStorageInventory.class, type = CephConstants.CEPH_PRIMARY_STORAGE_TYPE)})
 @ExpandedQueries({
         @ExpandedQuery(expandedField = "mons", inventoryClass = CephPrimaryStorageMonInventory.class,
-                foreignKey = "uuid", expandedInventoryKey = "primaryStorageUuid")
+                foreignKey = "uuid", expandedInventoryKey = "primaryStorageUuid"),
+        @ExpandedQuery(expandedField = "tags", inventoryClass = SystemTagInventory.class,
+                foreignKey = "uuid", expandedInventoryKey = "resourceUuid")
 })
 public class CephPrimaryStorageInventory extends PrimaryStorageInventory {
     private List<CephPrimaryStorageMonInventory> mons;
@@ -27,6 +29,7 @@ public class CephPrimaryStorageInventory extends PrimaryStorageInventory {
     private String rootVolumePoolName;
     private String dataVolumePoolName;
     private String imageCachePoolName;
+    private List<SystemTagInventory> tags;
 
     public List<CephPrimaryStorageMonInventory> getMons() {
         return mons;
@@ -34,6 +37,14 @@ public class CephPrimaryStorageInventory extends PrimaryStorageInventory {
 
     public void setMons(List<CephPrimaryStorageMonInventory> mons) {
         this.mons = mons;
+    }
+
+    public List<SystemTagInventory> getTags() {
+        return tags;
+    }
+
+    public void setTags(List<SystemTagInventory> tags) {
+        this.tags = tags;
     }
 
     public String getRootVolumePoolName() {
@@ -66,6 +77,7 @@ public class CephPrimaryStorageInventory extends PrimaryStorageInventory {
     public CephPrimaryStorageInventory(CephPrimaryStorageVO vo) {
         super(vo);
         setMons(CephPrimaryStorageMonInventory.valueOf(vo.getMons()));
+        setTags(SystemTagInventory.valueOf(vo.getTags()));
         setFsid(vo.getFsid());
         rootVolumePoolName = vo.getRootVolumePoolName();
         dataVolumePoolName = vo.getDataVolumePoolName();

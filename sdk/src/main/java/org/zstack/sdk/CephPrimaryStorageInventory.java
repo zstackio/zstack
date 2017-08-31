@@ -42,4 +42,12 @@ public class CephPrimaryStorageInventory extends PrimaryStorageInventory {
         return this.imageCachePoolName;
     }
 
+    public java.util.List<SystemTagInventory> tags;
+    public void setTags(java.util.List<SystemTagInventory> tags) {
+        this.tags = tags;
+    }
+    public java.util.List<SystemTagInventory> getTags() {
+        return this.tags;
+    }
+
 }
