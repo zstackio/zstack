@@ -3,7 +3,10 @@ package org.zstack.header.storage.snapshot;
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIDeleteMessage;
+import org.zstack.header.message.APIEvent;
+import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 
@@ -97,6 +100,18 @@ public class APIDeleteVolumeSnapshotMsg extends APIDeleteMessage implements Volu
         msg.setUuid(uuid());
 
         return msg;
+    }
+
+    public ApiNotification __notification__() {
+        APIMessage that = this;
+
+        return new ApiNotification() {
+            @Override
+            public void after(APIEvent evt) {
+                ntfy("Deleted").resource(uuid, VolumeSnapshotVO.class.getSimpleName())
+                        .messageAndEvent(that, evt).done();
+            }
+        };
     }
 
 }
