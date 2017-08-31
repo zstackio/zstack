@@ -3717,7 +3717,7 @@
   {
     "raw": "the image[uuid:%s, name:%s] is not deleted on the backup storage[uuid:%s]",
     "en_US": "the image[uuid:{0}, name:{1}] is not deleted on the backup storage[uuid:{2}]",
-    "zh_CN": "镜像[uuid:{0}, 名称:{1}]未在镜像服务器[uuid:{}]上被删除",
+    "zh_CN": "镜像[uuid:{0}, 名称:{1}]未在镜像服务器[uuid:{2}]上被删除",
     "arguments": [
       "self.getUuid()",
       "self.getName()",
