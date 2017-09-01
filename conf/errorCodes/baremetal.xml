@@ -22,6 +22,10 @@
         <description>failed to find chassis by uuid</description>
     </code>
     <code>
+        <id>1011</id>
+        <description>failed to create baremetal chassis</description>
+    </code>
+    <code>
         <id>1100</id>
         <description>failed to create dnsmasq.conf</description>
     </code>
@@ -100,6 +104,10 @@
     <code>
         <id>1401</id>
         <description>pxe server is not running</description>
+    </code>
+    <code>
+        <id>1402</id>
+        <description>pxe server already created</description>
     </code>
     <code>
         <id>1500</id>
