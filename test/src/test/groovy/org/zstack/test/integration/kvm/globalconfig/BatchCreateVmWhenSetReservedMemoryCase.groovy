@@ -7,7 +7,7 @@ import org.zstack.header.vm.VmInstanceVO_
 import org.zstack.network.securitygroup.SecurityGroupConstant
 import org.zstack.sdk.CreateVmInstanceAction
 import org.zstack.sdk.GetCpuMemoryCapacityAction
-import org.zstack.test.integration.kvm.hostallocator.AllocatorTest
+import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.*
 import org.zstack.utils.data.SizeUnit
 
@@ -25,7 +25,7 @@ class BatchCreateVmWhenSetReservedMemoryCase extends SubCase {
 
     @Override
     void setup() {
-        useSpring(AllocatorTest.springSpec)
+        useSpring(KvmTest.springSpec)
     }
 
     @Override

@@ -5,10 +5,10 @@ import com.unboundid.ldap.sdk.SearchResult
 import com.unboundid.ldap.sdk.SearchScope
 import org.zstack.sdk.AddLdapServerAction
 import org.zstack.sdk.LdapServerInventory
+import org.zstack.test.integration.ZStackTest
 import org.zstack.test.integration.ldap.Env
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
-import org.zstack.test.integration.ldap.LdapTest
 import org.zstack.testlib.Test
 
 /**
@@ -49,15 +49,15 @@ class LdapConnCase extends SubCase {
     }
 
     void testLdapConn(){
-        final LDAPInterface ldapConnection = LdapTest.embeddedLdapRule.ldapConnection()
-        final SearchResult searchResult = ldapConnection.search(LdapTest.DOMAIN_DSN, SearchScope.SUB, "(objectClass=person)")
+        final LDAPInterface ldapConnection = ZStackTest.embeddedLdapRule.ldapConnection()
+        final SearchResult searchResult = ldapConnection.search(ZStackTest.DOMAIN_DSN, SearchScope.SUB, "(objectClass=person)")
         assert searchResult.getEntryCount() == 3
 
 
         def result = addLdapServer {
             name = "ldap0"
             description = "test-ldap0"
-            base = LdapTest.DOMAIN_DSN
+            base = ZStackTest.DOMAIN_DSN
             url = "ldap://localhost:1888"
             username = ""
             password = ""
@@ -69,7 +69,7 @@ class LdapConnCase extends SubCase {
         AddLdapServerAction addLdapServerAction = new AddLdapServerAction(
                 name : "ldap0",
                 description : "test-ldap0",
-                base : LdapTest.DOMAIN_DSN,
+                base : ZStackTest.DOMAIN_DSN,
                 url : "ldap://localhost:1888",
                 username : "",
                 password : "",

@@ -5,8 +5,8 @@ import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.sdk.AccountInventory
 import org.zstack.sdk.VmInstanceInventory
+import org.zstack.test.integration.ZStackTest
 import org.zstack.test.integration.identity.Env
-import org.zstack.test.integration.identity.IdentityTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 
@@ -23,7 +23,7 @@ class ChangeVmWhenStartringCase extends SubCase {
 
     @Override
     void setup() {
-        useSpring(IdentityTest.springSpec)
+        useSpring(ZStackTest.springSpec)
     }
 
     @Override

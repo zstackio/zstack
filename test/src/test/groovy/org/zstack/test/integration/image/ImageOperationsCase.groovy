@@ -4,6 +4,7 @@ import org.springframework.http.HttpEntity
 import org.zstack.core.db.Q
 import org.zstack.header.image.*
 import org.zstack.storage.backup.sftp.SftpBackupStorageConstant
+import org.zstack.test.integration.ZStackTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.ImageSpec
 import org.zstack.testlib.SubCase
@@ -18,7 +19,7 @@ class ImageOperationsCase extends SubCase {
 
     @Override
     void setup() {
-        useSpring(ImageTest.springSpec)
+        useSpring(ZStackTest.springSpec)
     }
 
     @Override

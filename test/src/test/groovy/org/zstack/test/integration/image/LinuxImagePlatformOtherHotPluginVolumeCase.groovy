@@ -5,7 +5,6 @@ import org.zstack.header.image.ImagePlatform
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
-import org.zstack.header.volume.VolumeConstant
 import org.zstack.header.volume.VolumeStatus
 import org.zstack.header.volume.VolumeVO
 import org.zstack.kvm.KVMAgentCommands
@@ -16,6 +15,7 @@ import org.zstack.network.service.userdata.UserdataConstant
 import org.zstack.sdk.DiskOfferingInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.VolumeInventory
+import org.zstack.test.integration.ZStackTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
@@ -32,7 +32,7 @@ The vm doesn't support to attach vm, which use image-1 that platform type is oth
     VolumeInventory volume
     @Override
     void setup() {
-        useSpring(ImageTest.springSpec)
+        useSpring(ZStackTest.springSpec)
     }
 
     @Override

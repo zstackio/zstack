@@ -1,11 +1,9 @@
 package org.zstack.test.integration.identity.account
 
-import org.zstack.core.db.SQL
-import org.zstack.header.identity.SessionVO
 import org.zstack.identity.AccountManagerImpl
 import org.zstack.sdk.AccountInventory
 import org.zstack.sdk.SessionInventory
-import org.zstack.test.integration.identity.IdentityTest
+import org.zstack.test.integration.ZStackTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 
@@ -21,7 +19,7 @@ class SessionCase extends SubCase {
 
     @Override
     void setup() {
-        useSpring(IdentityTest.springSpec)
+        useSpring(ZStackTest.springSpec)
     }
 
     @Override

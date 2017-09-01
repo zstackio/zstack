@@ -8,6 +8,7 @@ import org.zstack.sdk.GarbageCollectorInventory
 import org.zstack.sdk.ImageInventory
 import org.zstack.storage.backup.sftp.SftpBackupStorageCommands
 import org.zstack.storage.backup.sftp.SftpBackupStorageConstant
+import org.zstack.test.integration.ZStackTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.HttpError
 import org.zstack.testlib.SubCase
@@ -27,7 +28,7 @@ class ImageGCCase extends SubCase {
 
     @Override
     void setup() {
-        useSpring(ImageTest.springSpec)
+        useSpring(ZStackTest.springSpec)
     }
 
     @Override

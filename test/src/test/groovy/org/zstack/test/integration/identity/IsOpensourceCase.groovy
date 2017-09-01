@@ -1,5 +1,6 @@
 package org.zstack.test.integration.identity
 
+import org.zstack.test.integration.ZStackTest
 import org.zstack.testlib.SubCase
 
 /**
@@ -13,7 +14,7 @@ class IsOpensourceCase extends SubCase {
 
     @Override
     void setup() {
-        useSpring(IdentityTest.springSpec)
+        useSpring(ZStackTest.springSpec)
     }
 
     @Override

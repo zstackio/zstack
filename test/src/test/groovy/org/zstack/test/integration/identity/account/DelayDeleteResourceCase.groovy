@@ -12,7 +12,7 @@ import org.zstack.network.service.virtualrouter.VirtualRouterConstant
 import org.zstack.sdk.AccountInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.VolumeInventory
-import org.zstack.test.integration.identity.IdentityTest
+import org.zstack.test.integration.ZStackTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
@@ -31,7 +31,7 @@ class DelayDeleteResourceCase extends SubCase {
 
     @Override
     void setup() {
-        useSpring(IdentityTest.springSpec)
+        useSpring(ZStackTest.springSpec)
     }
 
     @Override

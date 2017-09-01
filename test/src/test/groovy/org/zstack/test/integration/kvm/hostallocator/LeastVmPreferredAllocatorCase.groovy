@@ -1,6 +1,7 @@
 package org.zstack.test.integration.kvm.hostallocator
 
 import org.zstack.kvm.KVMGlobalConfig
+import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.*
 /**
  * Created by david on 3/6/17.
@@ -15,7 +16,7 @@ class LeastVmPreferredAllocatorCase extends SubCase {
 
     @Override
     void setup() {
-        useSpring(AllocatorTest.springSpec)
+        useSpring(KvmTest.springSpec)
     }
 
     @Override
