@@ -3,6 +3,7 @@ package org.zstack.storage.ceph.primary;
 import org.zstack.header.storage.primary.PrimaryStorageEO;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.tag.AutoDeleteTag;
+import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.vo.EO;
 import org.zstack.header.vo.NoView;
 
@@ -23,6 +24,12 @@ public class CephPrimaryStorageVO extends PrimaryStorageVO {
     @JoinColumn(name="primaryStorageUuid", insertable=false, updatable=false)
     @NoView
     private Set<CephPrimaryStorageMonVO> mons = new HashSet<CephPrimaryStorageMonVO>();
+
+    @OneToMany(fetch= FetchType.EAGER)
+    @JoinColumn(name="resourceUuid", insertable=false, updatable=false)
+    @NoView
+    private Set<SystemTagVO> tags = new HashSet<SystemTagVO>();
+
     @Column
     private String fsid;
 
@@ -94,5 +101,13 @@ public class CephPrimaryStorageVO extends PrimaryStorageVO {
 
     public void setFsid(String fsid) {
         this.fsid = fsid;
+    }
+
+    public Set<SystemTagVO> getTags() {
+        return tags;
+    }
+
+    public void setTags(Set<SystemTagVO> tags) {
+        this.tags = tags;
     }
 }

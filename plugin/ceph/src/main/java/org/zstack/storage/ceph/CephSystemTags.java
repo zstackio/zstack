@@ -16,6 +16,16 @@ public class CephSystemTags {
     public static PatternedSystemTag PREDEFINED_PRIMARY_STORAGE_ROOT_VOLUME_POOL = new PatternedSystemTag("ceph::predefinedRootVolumePool", PrimaryStorageVO.class);
     public static PatternedSystemTag PREDEFINED_PRIMARY_STORAGE_DATA_VOLUME_POOL = new PatternedSystemTag("ceph::predefinedDataVolumePool", PrimaryStorageVO.class);
 
+    public static final String ALIAS_PRIMARY_STORAGE_IMAGE_CACHE_POOL_TOKEN = "imageCachePoolName";
+    public static PatternedSystemTag ALIAS_PRIMARY_STORAGE_IMAGE_CACHE_POOL = new PatternedSystemTag(String.format("ceph::alias::imageCachePoolName::{%s}", ALIAS_PRIMARY_STORAGE_IMAGE_CACHE_POOL_TOKEN), PrimaryStorageVO.class);
+
+    public static final String ALIAS_PRIMARY_STORAGE_ROOT_VOLUME_POOL_TOKEN = "primaryStorageRootVolumePoolName";
+    public static PatternedSystemTag ALIAS_PRIMARY_STORAGE_ROOT_VOLUME_POOL = new PatternedSystemTag(String.format("ceph::alias::rootVolumePoolName::{%s}", ALIAS_PRIMARY_STORAGE_ROOT_VOLUME_POOL_TOKEN), PrimaryStorageVO.class);
+
+    public static final String ALIAS_PRIMARY_STORAGE_DATA_VOLUME_POOL_TOKEN = "primaryStorageDataVolumePoolName";
+    public static PatternedSystemTag ALIAS_PRIMARY_STORAGE_DATA_VOLUME_POOL = new PatternedSystemTag(String.format("ceph::alias::dataVolumePoolName::{%s}", ALIAS_PRIMARY_STORAGE_DATA_VOLUME_POOL_TOKEN), PrimaryStorageVO.class);
+
+
     public static final String USE_CEPH_PRIMARY_STORAGE_POOL_TOKEN = "poolName";
     public static PatternedSystemTag USE_CEPH_PRIMARY_STORAGE_POOL = new PatternedSystemTag(String.format("ceph::pool::{%s}", USE_CEPH_PRIMARY_STORAGE_POOL_TOKEN), VolumeVO.class);
 
