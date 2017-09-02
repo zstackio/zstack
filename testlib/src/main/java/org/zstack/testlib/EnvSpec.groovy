@@ -104,6 +104,7 @@ class EnvSpec implements Node {
             [CreateMonitorTriggerAction.metaClass, CreateMonitorTriggerAction.Result.metaClass, DeleteMonitorTriggerAction.class],
             [CreateEmailMonitorTriggerActionAction.metaClass, CreateEmailMonitorTriggerActionAction.Result.metaClass, DeleteMonitorTriggerActionAction.class],
             [CreateEmailMediaAction.metaClass, CreateEmailMediaAction.Result.metaClass, DeleteMediaAction.class],
+            [AddLdapServerAction.metaClass, AddLdapServerAction.Result.metaClass, DeleteLdapServerAction.class],
     ]
 
     static Closure GLOBAL_DELETE_HOOK
