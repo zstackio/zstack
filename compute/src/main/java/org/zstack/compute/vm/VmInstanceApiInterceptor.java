@@ -30,14 +30,12 @@ import org.zstack.header.vm.*;
 import org.zstack.header.zone.ZoneState;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.header.zone.ZoneVO_;
+import org.zstack.utils.DebugUtils;
 import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
@@ -282,9 +280,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         if (l3state == L3NetworkState.Disabled) {
             throw new ApiMessageInterceptionException(operr("unable to attach a L3 network. The L3 network[uuid:%s] is disabled", msg.getL3NetworkUuid()));
         }
-        if (VmInstanceConstant.USER_VM_TYPE.equals(type) && system) {
-            throw new ApiMessageInterceptionException(operr("unable to attach a L3 network. The L3 network[uuid:%s] is a system network", msg.getL3NetworkUuid()));
-        } else if (!VmInstanceConstant.USER_VM_TYPE.equals(type) && !system) {
+        if (!VmInstanceConstant.USER_VM_TYPE.equals(type) && !system) {
             throw new ApiMessageInterceptionException(operr("unable to attach a L3 network. The vm[uuid: %s] is not a user vm", type));
         }
 
@@ -313,6 +309,8 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             }
         }
     }
+
+
 
     @Transactional(readOnly = true)
     private void validate(APIDetachL3NetworkFromVmMsg msg) {

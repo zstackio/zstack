@@ -27,6 +27,10 @@
     </message>
 
     <message>
+        <name>org.zstack.network.service.virtualrouter.APIGetAttachablePublicL3ForVRouterMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.network.service.virtualrouter.APIQueryVirtualRouterOfferingMsg</name>
         <serviceId>query</serviceId>
     </message>

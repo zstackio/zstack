@@ -12,6 +12,7 @@ public class VirtualRouterNicMetaData {
     public static final Integer PUBLIC_NIC_MASK = 1;
     public static final Integer MANAGEMENT_NIC_MASK = 1 << 1;
     public static final Integer GUEST_NIC_MASK = 1 << 2;
+    public static final Integer ADDITIONAL_PUBLIC_NIC_MASK = 1 << 3;
     public static final Integer PUBLIC_AND_MANAGEMENT_NIC_MASK = PUBLIC_NIC_MASK | MANAGEMENT_NIC_MASK;
     public static final Integer PUBLIC_MANAGEMENT_GUEST_NIC_MASK = PUBLIC_NIC_MASK | MANAGEMENT_NIC_MASK | GUEST_NIC_MASK;
     public static final Integer PUBLIC_AND_GUEST_NIC_MASK = PUBLIC_NIC_MASK | GUEST_NIC_MASK;
@@ -44,6 +45,8 @@ public class VirtualRouterNicMetaData {
     public static final String VR_MANAGEMENT_NIC_META = String.valueOf(MANAGEMENT_NIC_MASK);
     @PythonClass
     public static final String VR_MANAGEMENT_AND_PUBLIC_NIC_META = String.valueOf(PUBLIC_AND_MANAGEMENT_NIC_MASK);
+    @PythonClass
+    public static final String VR_ADDITIONAL_PUBLIC_NIC_META = String.valueOf(ADDITIONAL_PUBLIC_NIC_MASK);
 
     public static boolean isPublicNic(VmNicVO nic) {
         String meta = nic.getMetaData();

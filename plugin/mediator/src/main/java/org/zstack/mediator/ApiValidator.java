@@ -3,28 +3,32 @@ package org.zstack.mediator;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.appliancevm.ApplianceVmConstant;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SQL;
-import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.db.Q;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.message.APIMessage;
-import org.zstack.header.vm.VmInstanceState;
-import org.zstack.header.vm.VmInstanceVO;
-import org.zstack.network.service.eip.*;
+import org.zstack.header.network.l3.APIAddIpRangeMsg;
+import org.zstack.header.network.l3.IpRangeVO;
+import org.zstack.header.network.l3.IpRangeVO_;
+import org.zstack.header.vm.*;
+import org.zstack.network.service.eip.APIAttachEipMsg;
+import org.zstack.network.service.eip.APICreateEipMsg;
+import org.zstack.network.service.eip.EipVO;
 import org.zstack.network.service.portforwarding.APIAttachPortForwardingRuleMsg;
 import org.zstack.network.service.portforwarding.APICreatePortForwardingRuleMsg;
 import org.zstack.network.service.portforwarding.PortForwardingRuleVO;
-import org.zstack.network.service.portforwarding.PortForwardingRuleVO_;
-
-import static org.zstack.core.Platform.operr;
+import org.zstack.utils.DebugUtils;
+import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static org.zstack.core.Platform.operr;
 
 /**
  */
@@ -41,6 +45,7 @@ public class ApiValidator implements GlobalApiMessageInterceptor {
         ret.add(APIAttachEipMsg.class);
         ret.add(APICreatePortForwardingRuleMsg.class);
         ret.add(APIAttachPortForwardingRuleMsg.class);
+        ret.add(APIAttachL3NetworkToVmMsg.class);
         return ret;
     }
 
@@ -59,9 +64,33 @@ public class ApiValidator implements GlobalApiMessageInterceptor {
             validate((APICreatePortForwardingRuleMsg) msg);
         } else if (msg instanceof APIAttachPortForwardingRuleMsg) {
             validate((APIAttachPortForwardingRuleMsg) msg);
+        } else if (msg instanceof APIAttachL3NetworkToVmMsg) {
+            validate((APIAttachL3NetworkToVmMsg) msg);
         }
 
         return msg;
+    }
+
+    private void validate(APIAttachL3NetworkToVmMsg msg) {
+        VmInstanceVO vmInstanceVO = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid()).find();
+        if (vmInstanceVO.getType().equals(ApplianceVmConstant.APPLIANCE_VM_TYPE)){
+            validateIpRangeOverlapWithVm(msg.getL3NetworkUuid(), msg.getVmInstanceUuid());
+        }
+    }
+
+    private void validateIpRangeOverlapWithVm(String l3NetworkUuid, String vmInstanceUuid) {
+        List<VmNicVO> vmNicVOS = Q.New(VmNicVO.class).eq(VmNicVO_.vmInstanceUuid, vmInstanceUuid).list();
+        List<IpRangeVO> newIpRangeVOS = Q.New(IpRangeVO.class).eq(IpRangeVO_.l3NetworkUuid, l3NetworkUuid).list();
+        DebugUtils.Assert(newIpRangeVOS != null && !newIpRangeVOS.isEmpty(), String.format("the l3 network[%s] to attach must has ip range", l3NetworkUuid));
+
+        for (VmNicVO vmNicVO: vmNicVOS) {
+            List<IpRangeVO> ipRangeVOS = Q.New(IpRangeVO.class).eq(IpRangeVO_.l3NetworkUuid, vmNicVO.getL3NetworkUuid()).limit(1).list();
+            if (ipRangeVOS != null && !ipRangeVOS.isEmpty()) {
+                if (NetworkUtils.isCidrOverlap(ipRangeVOS.get(0).getNetworkCidr(), newIpRangeVOS.get(0).getNetworkCidr())) {
+                    throw new ApiMessageInterceptionException(operr("unable to attach a L3 network. The cidr of l3[%s] to attach overlapped with l3[%s] already attached to vm", l3NetworkUuid, vmNicVO.getL3NetworkUuid()));
+                }
+            }
+        }
     }
 
     private void validate(APIAttachPortForwardingRuleMsg msg) {

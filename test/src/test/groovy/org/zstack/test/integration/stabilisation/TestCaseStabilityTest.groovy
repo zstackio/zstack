@@ -30,6 +30,7 @@ class TestCaseStabilityTest extends Test {
         include("vip.xml")
         include("vxlan.xml")
         include("LdapManagerImpl.xml")
+        include("mediateApiValidator.xml")
     }
 
     @Override

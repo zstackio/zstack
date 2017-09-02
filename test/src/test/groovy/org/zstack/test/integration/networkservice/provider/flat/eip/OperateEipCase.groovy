@@ -9,9 +9,12 @@ import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.eip.EipVO
 import org.zstack.network.service.flat.FlatEipBackend
 import org.zstack.network.service.flat.FlatNetworkServiceConstant
+import org.zstack.network.service.lb.LoadBalancerConstants
+import org.zstack.network.service.portforwarding.PortForwardingConstant
 import org.zstack.network.service.userdata.UserdataConstant
 import org.zstack.network.service.vip.VipVO
 import org.zstack.network.service.vip.VipVO_
+import org.zstack.network.service.virtualrouter.vyos.VyosConstants
 import org.zstack.sdk.EipInventory
 import org.zstack.sdk.GetEipAttachableVmNicsAction
 import org.zstack.sdk.L3NetworkInventory
@@ -55,6 +58,11 @@ class OperateEipCase extends SubCase {
                 image {
                     name = "image"
                     url = "http://zstack.org/download/test.qcow2"
+                }
+
+                image {
+                    name = "vr"
+                    url = "http://zstack.org/download/vr.qcow2"
                 }
             }
 
@@ -103,6 +111,22 @@ class OperateEipCase extends SubCase {
                     }
 
                     l3Network {
+                        name = "l3-2"
+
+                        service {
+                            provider = FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING
+                            types = [NetworkServiceType.DHCP.toString(), EipConstant.EIP_NETWORK_SERVICE_TYPE, UserdataConstant.USERDATA_TYPE_STRING]
+                        }
+
+                        ip {
+                            startIp = "11.168.0.3"
+                            endIp = "11.168.1.200"
+                            netmask = "255.255.0.0"
+                            gateway = "11.168.0.1"
+                        }
+                    }
+
+                    l3Network {
                         name = "pubL3"
 
                         ip {
@@ -121,12 +145,34 @@ class OperateEipCase extends SubCase {
 
                     useVip("pubL3")
                 }
+
+                eip {
+                    name = "eip-2"
+
+                    useVip("pubL3")
+                }
+
+                virtualRouterOffering {
+                    name = "vro"
+                    memory = SizeUnit.MEGABYTE.toByte(512)
+                    cpu = 2
+                    useManagementL3Network("pubL3")
+                    usePublicL3Network("pubL3")
+                    useImage("vr")
+                }
             }
 
             vm {
                 name = "vm"
                 useImage("image")
                 useL3Networks("l3")
+                useInstanceOffering("instanceOffering")
+            }
+
+            vm {
+                name = "vm-2"
+                useImage("image")
+                useL3Networks("l3-2")
                 useInstanceOffering("instanceOffering")
             }
         }
@@ -143,6 +189,19 @@ class OperateEipCase extends SubCase {
             testDetachEipWhenVmStopped()
             testReconnectHostBatchApplyEips()
             testDeleteEip()
+            testAttachEipToOverlapCidrVmNic()
+        }
+    }
+
+    void testAttachEipToOverlapCidrVmNic() {
+        def eip_2 = env.inventoryByName("eip-2") as EipInventory
+        def vm_2 = env.inventoryByName("vm-2") as VmInstanceInventory
+
+        expect(AssertionError) {
+            attachEip {
+                eipUuid = eip_2.uuid
+                vmNicUuid = vm_2.getVmNics().get(0).getUuid()
+            }
         }
     }
 
@@ -162,7 +221,7 @@ class OperateEipCase extends SubCase {
         assert dbFindByUuid(eip.uuid, EipVO.class).guestIp == vm.getVmNics().get(0).getIp()
 
 
-        String vipUuid = Q.New(VipVO.class).select(VipVO_.uuid).eq(VipVO_.l3NetworkUuid, pub_l3.uuid).findValue()
+        String vipUuid = eip.vipUuid
         GetEipAttachableVmNicsAction getEipAttachableVmNicsAction = new GetEipAttachableVmNicsAction()
         getEipAttachableVmNicsAction.eipUuid = eip.uuid
         getEipAttachableVmNicsAction.vipUuid = vipUuid

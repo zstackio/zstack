@@ -29,4 +29,11 @@ class NetworkUtilsCase {
         assert "10.0.0.0/8" == NetworkUtils.fmtCidr("10.0.0.1/8")
         assert "192.168.10.0/16" == NetworkUtils.fmtCidr("192.168.10.1/16")
     }
+
+    @Test
+    void testGetCidrFromIpMask() {
+        assert "192.168.0.0/24" == NetworkUtils.getCidrFromIpMask("192.168.0.0", "255.255.255.0")
+        assert "192.168.0.0/24" == NetworkUtils.getCidrFromIpMask("192.168.0.1", "255.255.255.0")
+        assert "192.168.0.128/29" == NetworkUtils.getCidrFromIpMask("192.168.0.130", "255.255.255.248")
+    }
 }

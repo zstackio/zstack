@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.appliancevm.*;
 import org.zstack.appliancevm.ApplianceVmConstant.Params;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -22,15 +23,14 @@ import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
-import org.zstack.header.vm.VmInstanceConstant;
-import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.vm.VmInstanceState;
-import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.vm.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.PingCmd;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.PingRsp;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant.Param;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.network.service.virtualrouter.VirtualRouterNicMetaData.ADDITIONAL_PUBLIC_NIC_MASK;
+import static org.zstack.network.service.virtualrouter.VirtualRouterNicMetaData.GUEST_NIC_MASK;
 
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -422,6 +422,9 @@ public class VirtualRouter extends ApplianceVmBase {
                 VirtualRouterAsyncHttpCallReply re = reply.castReply();
                 VirtualRouterCommands.ConfigureNicRsp rsp = re.toResponse(VirtualRouterCommands.ConfigureNicRsp.class);
                 if (rsp.isSuccess()) {
+                    VmNicVO vo = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, nicInventory.getUuid()).find();
+                    vo.setMetaData(ADDITIONAL_PUBLIC_NIC_MASK.toString());
+                    dbf.updateAndRefresh(vo);
                     logger.debug(String.format("successfully add nic[%s] to virtual router vm[uuid:%s, ip:%s]",info, vr.getUuid(), vr.getManagementNic()
                             .getIp()));
                     completion.success();
