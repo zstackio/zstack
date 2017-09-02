@@ -11,7 +11,9 @@ public class AgentResponse {
     }
 
     public void setError(String error) {
+        success = false;
         this.error = error;
+
     }
 
     public boolean isSuccess() {

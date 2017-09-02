@@ -1,8 +1,27 @@
 package org.zstack.test.integration.image
 
 import org.springframework.http.HttpEntity
+import org.zstack.core.cloudbus.CloudBus
+import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.Q
+import org.zstack.header.errorcode.ErrorCode
 import org.zstack.header.image.*
+import org.zstack.header.storage.backup.AllocateBackupStorageMsg
+import org.zstack.header.storage.backup.AllocateBackupStorageReply
+import org.zstack.header.storage.backup.BackupStorageInventory
+import org.zstack.header.storage.backup.BackupStorageVO
+import org.zstack.header.storage.backup.ReturnBackupStorageMsg
+import org.zstack.header.storage.backup.ReturnBackupStorageReply
+import org.zstack.header.vm.CreateTemplateFromVmRootVolumeMsg
+import org.zstack.header.vm.CreateTemplateFromVmRootVolumeReply
+import org.zstack.header.volume.CreateDataVolumeTemplateFromDataVolumeMsg
+import org.zstack.header.volume.CreateDataVolumeTemplateFromDataVolumeReply
+import org.zstack.header.volume.SyncVolumeSizeMsg
+import org.zstack.header.volume.SyncVolumeSizeReply
+import org.zstack.sdk.CreateRootVolumeTemplateFromRootVolumeAction
+import org.zstack.sdk.DiskOfferingInventory
+import org.zstack.sdk.VmInstanceInventory
+import org.zstack.sdk.VolumeInventory
 import org.zstack.storage.backup.sftp.SftpBackupStorageConstant
 import org.zstack.test.integration.ZStackTest
 import org.zstack.testlib.EnvSpec
@@ -16,6 +35,10 @@ import java.util.concurrent.TimeUnit
  */
 class ImageOperationsCase extends SubCase {
     EnvSpec env
+    DatabaseFacade dbf
+    VmInstanceInventory vm
+    org.zstack.sdk.BackupStorageInventory bs
+    DiskOfferingInventory disk
 
     @Override
     void setup() {
@@ -24,13 +47,16 @@ class ImageOperationsCase extends SubCase {
 
     @Override
     void environment() {
-       env = env{
+        env = env {
             instanceOffering {
                 name = "instanceOffering"
                 memory = SizeUnit.GIGABYTE.toByte(8)
                 cpu = 4
             }
-
+            diskOffering {
+                name = "diskOffering"
+                diskSize = SizeUnit.GIGABYTE.toByte(20)
+            }
             sftpBackupStorage {
                 name = "sftp"
                 url = "/sftp"
@@ -108,6 +134,11 @@ class ImageOperationsCase extends SubCase {
             testDeleteImageWhichUsedInVm()
             testDeleteDownloadingImage()
             testImageBackupStorageRefVOHasInfoWhenImageDownloading()
+            testCreateImageFromDataVolumeAssertHasRefVOWhenImageDownloadingDB()
+            testCreateImageFromDataVolumeAssertHasRefVOWhenImageDownloadingDB2()
+            testCreateImageHasImageBsRef()
+            testCreateImageFailDbRollBack()
+            testDeleteImageWhileCreateIt()
         }
     }
 
@@ -144,7 +175,7 @@ class ImageOperationsCase extends SubCase {
         }
     }
 
-    void testDeleteImageWhichUsedInVm(){
+    void testDeleteImageWhichUsedInVm() {
         org.zstack.sdk.ImageInventory usedImage = env.inventoryByName("image1")
         deleteImage {
             uuid = usedImage.uuid
@@ -188,8 +219,8 @@ class ImageOperationsCase extends SubCase {
         thread.join()
 
         Long cnt = Q.New(ImageBackupStorageRefVO.class)
-        .eq(ImageBackupStorageRefVO_.imageUuid, image.uuid)
-        .count()
+                .eq(ImageBackupStorageRefVO_.imageUuid, image.uuid)
+                .count()
 
         assert cnt == 0L
     }
@@ -204,7 +235,7 @@ class ImageOperationsCase extends SubCase {
         }
 
         def imageName = "large-image"
-        def thread = Thread.start {
+        Thread.start {
             addImage {
                 name = imageName
                 url = "http://my-site/foo.iso"
@@ -218,8 +249,204 @@ class ImageOperationsCase extends SubCase {
         assert image != null
 
         env.cleanSimulatorHandlers()
-        ImageBackupStorageRefVO vo = Q.New(ImageBackupStorageRefVO.class).eq(ImageBackupStorageRefVO_.imageUuid,image.uuid).eq(ImageBackupStorageRefVO_.backupStorageUuid,bs.uuid).find()
+        ImageBackupStorageRefVO vo = Q.New(ImageBackupStorageRefVO.class).eq(ImageBackupStorageRefVO_.imageUuid, image.uuid).eq(ImageBackupStorageRefVO_.backupStorageUuid, bs.uuid).find()
         assert vo != null
         assert vo.status == ImageStatus.Downloading
     }
+
+    void testCreateImageFromDataVolumeAssertHasRefVOWhenImageDownloadingDB() {
+        dbf = bean(DatabaseFacade.class)
+        bs = env.inventoryByName("sftp")
+        vm = env.inventoryByName("vm")
+        String imageName = "test-image"
+
+        stopVmInstance {
+            uuid = vm.uuid
+        }
+
+        env.message(SyncVolumeSizeMsg.class) { SyncVolumeSizeMsg msg, CloudBus bus ->
+            def reply = new SyncVolumeSizeReply()
+            reply.size = 1L
+            bus.reply(msg, reply)
+        }
+
+        env.message(AllocateBackupStorageMsg.class) { AllocateBackupStorageMsg msg, CloudBus bus ->
+            def reply = new AllocateBackupStorageReply()
+            reply.inventory = BackupStorageInventory.valueOf(dbf.findByUuid(bs.uuid, BackupStorageVO))
+            bus.reply(msg, reply)
+        }
+
+        env.message(CreateDataVolumeTemplateFromDataVolumeMsg.class) { CreateDataVolumeTemplateFromDataVolumeMsg msg, CloudBus bus ->
+            def reply = new CreateDataVolumeTemplateFromDataVolumeReply()
+            reply.backupStorageUuid = bs.uuid
+            reply.installPath = "/root/hello/data-volume/path"
+            ImageVO image = Q.New(ImageVO.class).eq(ImageVO_.name, imageName).find()
+            assert image != null
+            ImageBackupStorageRefVO vo = Q.New(ImageBackupStorageRefVO.class)
+                    .eq(ImageBackupStorageRefVO_.imageUuid, image.uuid)
+                    .eq(ImageBackupStorageRefVO_.backupStorageUuid, bs.uuid)
+                    .eq(ImageBackupStorageRefVO_.status, ImageStatus.Creating)
+                    .find()
+            assert vo != null
+            bus.reply(msg, reply)
+        }
+
+        env.message(CreateTemplateFromVmRootVolumeMsg.class) { CreateTemplateFromVmRootVolumeMsg msg, CloudBus bus ->
+            def reply = new CreateTemplateFromVmRootVolumeReply()
+            reply.installPath = "/root/hello/root-volume/path"
+            bus.reply(msg, reply)
+        }
+
+        env.message(SyncImageSizeMsg.class) { SyncImageSizeMsg msg, CloudBus bus ->
+            def reply = new SyncImageSizeReply()
+            reply.size = 2L
+            reply.actualSize = 1L
+            bus.reply(msg, reply)
+        }
+
+        env.afterSimulator(SftpBackupStorageConstant.DOWNLOAD_IMAGE_PATH) {
+            rsp, HttpEntity<String> e ->
+                return rsp
+        }
+
+        disk = env.inventoryByName("diskOffering") as DiskOfferingInventory
+
+        VolumeInventory volume = createDataVolume {
+            name = "test-data-volume"
+            diskOfferingUuid = disk.uuid
+        }
+
+        attachDataVolumeToVm {
+            vmInstanceUuid = vm.uuid
+            volumeUuid = volume.uuid
+        }
+
+        createDataVolumeTemplateFromVolume {
+            name = imageName
+            volumeUuid = volume.uuid
+            backupStorageUuids = [bs.uuid]
+        }
+    }
+
+    void testCreateImageFromDataVolumeAssertHasRefVOWhenImageDownloadingDB2() {
+        String imageName = "test-image23"
+        env.message(CreateDataVolumeTemplateFromDataVolumeMsg.class) { CreateDataVolumeTemplateFromDataVolumeMsg msg, CloudBus bus ->
+            def reply = new CreateDataVolumeTemplateFromDataVolumeReply()
+            reply.backupStorageUuid = bs.uuid
+            reply.installPath = "/root/hello/data-volume/path"
+            ImageVO image = Q.New(ImageVO.class).eq(ImageVO_.name, imageName).find()
+            assert image != null
+            ImageBackupStorageRefVO vo = Q.New(ImageBackupStorageRefVO.class)
+                    .eq(ImageBackupStorageRefVO_.imageUuid, image.uuid)
+                    .eq(ImageBackupStorageRefVO_.backupStorageUuid, bs.uuid)
+                    .eq(ImageBackupStorageRefVO_.status, ImageStatus.Creating)
+                    .find()
+            assert vo != null
+            bus.reply(msg, reply)
+        }
+
+        VolumeInventory volume = createDataVolume {
+            name = "test-data-volume2"
+            diskOfferingUuid = disk.uuid
+        }
+
+        attachDataVolumeToVm {
+            vmInstanceUuid = vm.uuid
+            volumeUuid = volume.uuid
+        }
+
+        createDataVolumeTemplateFromVolume {
+            name = imageName
+            volumeUuid = volume.uuid
+            // not choice bs
+        }
+
+    }
+
+    void testCreateImageHasImageBsRef() {
+        String imageName = "test"
+        env.message(AllocateBackupStorageMsg.class) { AllocateBackupStorageMsg msg, CloudBus bus ->
+            def reply = new AllocateBackupStorageReply()
+            reply.inventory = BackupStorageInventory.valueOf(dbf.findByUuid(bs.uuid, BackupStorageVO))
+            ImageVO image = Q.New(ImageVO.class).eq(ImageVO_.name, imageName).find()
+            assert image != null
+            bus.reply(msg, reply)
+        }
+
+        env.message(CreateTemplateFromVmRootVolumeMsg.class) { CreateTemplateFromVmRootVolumeMsg msg, CloudBus bus ->
+            def reply = new CreateTemplateFromVmRootVolumeReply()
+            reply.installPath = "/root/hello/root-volume/path"
+            ImageVO image = Q.New(ImageVO.class).eq(ImageVO_.name, imageName).find()
+            assert image != null
+            ImageBackupStorageRefVO vo = Q.New(ImageBackupStorageRefVO.class)
+                    .eq(ImageBackupStorageRefVO_.imageUuid, image.uuid)
+                    .eq(ImageBackupStorageRefVO_.backupStorageUuid, bs.uuid)
+                    .eq(ImageBackupStorageRefVO_.status, ImageStatus.Creating)
+                    .find()
+            assert vo != null
+            bus.reply(msg, reply)
+        }
+        org.zstack.sdk.ImageInventory image = createRootVolumeTemplateFromRootVolume {
+            name = imageName
+            rootVolumeUuid = vm.rootVolumeUuid
+        } as org.zstack.sdk.ImageInventory
+        ImageBackupStorageRefVO vo =  Q.New(ImageBackupStorageRefVO.class)
+                .eq(ImageBackupStorageRefVO_.imageUuid, image.uuid)
+                .find()
+        assert vo.status == ImageStatus.Ready
+    }
+
+    void testCreateImageFailDbRollBack() {
+        String imageName3 = "test3"
+        long beforeRefCount = Q.New(ImageBackupStorageRefVO.class).count()
+        long beforeImageCount = Q.New(ImageVO.class).count()
+
+        env.message(CreateTemplateFromVmRootVolumeMsg.class) { CreateTemplateFromVmRootVolumeMsg msg, CloudBus bus ->
+            def reply = new CreateTemplateFromVmRootVolumeReply()
+            reply.setError(new ErrorCode("10000", "on purpose"))
+            bus.reply(msg, reply)
+        }
+
+        def a = new CreateRootVolumeTemplateFromRootVolumeAction()
+        a.name = imageName3
+        a.rootVolumeUuid = vm.rootVolumeUuid
+        a.sessionId = currentEnvSpec.session.uuid
+        assert a.call().error != null
+
+        assert Q.New(ImageBackupStorageRefVO.class).count() == beforeRefCount
+        assert Q.New(ImageVO.class).count() == beforeImageCount
+    }
+
+    void testDeleteImageWhileCreateIt(){
+        long beforeRefCount = Q.New(ImageBackupStorageRefVO.class).count()
+        long beforeImageCount = Q.New(ImageVO.class).count()
+
+        env.message(CreateTemplateFromVmRootVolumeMsg.class) { CreateTemplateFromVmRootVolumeMsg msg, CloudBus bus ->
+            def reply = new CreateTemplateFromVmRootVolumeReply()
+            reply.installPath = "/root/hello/root-volume/path"
+            ImageVO image = Q.New(ImageVO.class).eq(ImageVO_.name, imageName).find()
+            assert image != null
+            ImageBackupStorageRefVO vo = Q.New(ImageBackupStorageRefVO.class)
+                    .eq(ImageBackupStorageRefVO_.imageUuid, image.uuid)
+                    .eq(ImageBackupStorageRefVO_.backupStorageUuid, bs.uuid)
+                    .eq(ImageBackupStorageRefVO_.status, ImageStatus.Downloading)
+                    .find()
+            assert vo != null
+            deleteImage(){
+                uuid = Q.New(ImageVO.class).select(ImageVO_.uuid).eq(ImageVO_.status, ImageStatus.Downloading).findValue()
+            }
+            bus.reply(msg, reply)
+        }
+
+        def a = new CreateRootVolumeTemplateFromRootVolumeAction()
+        a.name = "test"
+        a.rootVolumeUuid = vm.rootVolumeUuid
+        a.sessionId = currentEnvSpec.session.uuid
+        assert a.call().error != null
+
+        assert Q.New(ImageBackupStorageRefVO.class).count() == beforeRefCount
+        assert Q.New(ImageVO.class).count() == beforeImageCount
+        env.cleanSimulatorHandlers()
+    }
+
 }
