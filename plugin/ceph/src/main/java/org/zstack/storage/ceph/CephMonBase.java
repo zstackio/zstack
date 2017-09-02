@@ -6,9 +6,13 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.utils.ssh.Ssh;
+import org.zstack.utils.ssh.SshException;
+
+import static org.zstack.core.Platform.operr;
 
 /**
  * Created by frank on 7/27/2015.
@@ -38,8 +42,12 @@ public abstract class CephMonBase {
 
     protected void checkTools() {
         Ssh ssh = new Ssh();
-        ssh.setHostname(self.getHostname()).setUsername(self.getSshUsername()).setPassword(self.getSshPassword()).setPort(self.getSshPort())
-                .checkTool("ceph", "rbd").runErrorByExceptionAndClose();
+        try {
+            ssh.setHostname(self.getHostname()).setUsername(self.getSshUsername()).setPassword(self.getSshPassword()).setPort(self.getSshPort())
+                    .checkTool("ceph", "rbd").runErrorByException();
+        } catch (SshException e) {
+            throw new OperationFailureException(operr("The problem may be caused by an incorrect user name or password or SSH port"));
+        }
     }
 
     protected String makeHttpPath(String ip, String path) {
