@@ -582,6 +582,16 @@ mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
         return false
     }
 
+    protected long costMillis(Closure c){
+        long startTime = new Date().getTime()
+        c()
+        long endTime = new Date().getTime()
+        long cost =  endTime - startTime
+
+        logger.info("cost millis is ${cost}")
+        return cost
+    }
+
     @Deprecated
     protected static boolean retryInMillis(int total, int interval = 500, Closure c) {
         int count = 0

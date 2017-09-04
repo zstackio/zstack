@@ -174,6 +174,14 @@ class PingWhenOnlyOneHostAccessNfsUrlCase extends SubCase{
         boolean hostCheck1 = false
         boolean checked2 = false
         boolean hostCheck2 = false
+
+        env.afterSimulator(NfsPrimaryStorageKVMBackend.REMOUNT_PATH){ rsp, HttpEntity<String> e ->
+            rsp = new NfsPrimaryStorageKVMBackendCommands.NfsPrimaryStorageAgentResponse()
+            rsp.error = "on purpose"
+            rsp.success = false
+            return rsp
+        }
+
         env.simulator(NfsPrimaryStorageKVMBackend.PING_PATH) { HttpEntity<String> e, EnvSpec espec ->
             def cmd = JSONObjectUtil.toObject(e.getBody(), NfsPrimaryStorageKVMBackendCommands.PingCmd.class)
             if (cmd.uuid == ps1.uuid){
@@ -196,6 +204,7 @@ class PingWhenOnlyOneHostAccessNfsUrlCase extends SubCase{
         }
 
         for (int i = 0; i < retryTimes; i++) {
+            checked1 = false
             PingPrimaryStorageMsg msg = new PingPrimaryStorageMsg()
             msg.setPrimaryStorageUuid(ps1.getUuid())
             bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, ps1.uuid)
@@ -210,8 +219,10 @@ class PingWhenOnlyOneHostAccessNfsUrlCase extends SubCase{
                 return
             }
         }
+        assert hostCheck1
 
         for (int i = 0; i < retryTimes; i++) {
+            checked2 = false
             PingPrimaryStorageMsg msg = new PingPrimaryStorageMsg()
             msg.setPrimaryStorageUuid(ps2.getUuid())
             bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, ps2.uuid)
@@ -226,6 +237,7 @@ class PingWhenOnlyOneHostAccessNfsUrlCase extends SubCase{
                 return
             }
         }
+        assert hostCheck2
 
         retryInSecs{
             assert Q.New(HostVO.class).eq(HostVO_.uuid, host.uuid).select(HostVO_.status).findValue() == HostStatus.Disconnected
