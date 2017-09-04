@@ -6,7 +6,6 @@ import org.zstack.header.vo.ResourceVO;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.Id;
 import javax.persistence.Table;
 import java.sql.Timestamp;
 
@@ -22,11 +21,15 @@ public class CephPrimaryStoragePoolVO extends ResourceVO {
     @Column
     private String poolName;
     @Column
+    private String aliasName;
+    @Column
     private String description;
     @Column
     private Timestamp createDate;
     @Column
     private Timestamp lastOpDate;
+    @Column
+    private String type;
 
     public String getPrimaryStorageUuid() {
         return primaryStorageUuid;
@@ -66,5 +69,22 @@ public class CephPrimaryStoragePoolVO extends ResourceVO {
 
     public void setLastOpDate(Timestamp lastOpDate) {
         this.lastOpDate = lastOpDate;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+
+    public String getAliasName() {
+        return aliasName;
+    }
+
+    public void setAliasName(String aliasName) {
+        this.aliasName = aliasName;
     }
 }

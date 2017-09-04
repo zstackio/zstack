@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class GetAttachablePublicL3ForVRouterAction extends AbstractAction {
+public class UpdateCephPrimaryStoragePoolAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public GetAttachablePublicL3ForVRouterResult value;
+        public UpdateCephPrimaryStoragePoolResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -23,7 +23,13 @@ public class GetAttachablePublicL3ForVRouterAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vmInstanceUuid;
+    public java.lang.String uuid;
+
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String aliasName;
+
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String description;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -34,6 +40,10 @@ public class GetAttachablePublicL3ForVRouterAction extends AbstractAction {
     @Param(required = true)
     public String sessionId;
 
+    public long timeout;
+    
+    public long pollingInterval;
+
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -42,8 +52,8 @@ public class GetAttachablePublicL3ForVRouterAction extends AbstractAction {
             return ret;
         }
         
-        GetAttachablePublicL3ForVRouterResult value = res.getResult(GetAttachablePublicL3ForVRouterResult.class);
-        ret.value = value == null ? new GetAttachablePublicL3ForVRouterResult() : value; 
+        UpdateCephPrimaryStoragePoolResult value = res.getResult(UpdateCephPrimaryStoragePoolResult.class);
+        ret.value = value == null ? new UpdateCephPrimaryStoragePoolResult() : value; 
 
         return ret;
     }
@@ -68,11 +78,11 @@ public class GetAttachablePublicL3ForVRouterAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
-        info.path = "/vm-instances/appliances/virtual-routers/{vmInstanceUuid}/attachable-public-l3s";
+        info.httpMethod = "PUT";
+        info.path = "/primary-storage/ceph/{uuid}/pools/actions";
         info.needSession = true;
-        info.needPoll = false;
-        info.parameterName = "";
+        info.needPoll = true;
+        info.parameterName = "updateCephPrimaryStoragePool";
         return info;
     }
 

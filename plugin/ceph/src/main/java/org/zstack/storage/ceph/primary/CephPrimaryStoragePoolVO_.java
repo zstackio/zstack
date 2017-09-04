@@ -13,7 +13,9 @@ import java.sql.Timestamp;
 public class CephPrimaryStoragePoolVO_ extends ResourceVO_ {
     public static volatile SingularAttribute<CephPrimaryStoragePoolVO, String> primaryStorageUuid;
     public static volatile SingularAttribute<CephPrimaryStoragePoolVO, String> poolName;
+    public static volatile SingularAttribute<CephPrimaryStoragePoolVO, String> aliasName;
     public static volatile SingularAttribute<CephPrimaryStoragePoolVO, String> description;
     public static volatile SingularAttribute<CephPrimaryStoragePoolVO, Timestamp> createDate;
     public static volatile SingularAttribute<CephPrimaryStoragePoolVO, Timestamp> lastOpDate;
+    public static volatile SingularAttribute<CephPrimaryStoragePoolVO, String> type;
 }

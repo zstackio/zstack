@@ -26,20 +26,13 @@ public class CephPrimaryStorageVO extends PrimaryStorageVO {
     private Set<CephPrimaryStorageMonVO> mons = new HashSet<CephPrimaryStorageMonVO>();
 
     @OneToMany(fetch= FetchType.EAGER)
-    @JoinColumn(name="resourceUuid", insertable=false, updatable=false)
+    @JoinColumn(name="primaryStorageUuid", insertable=false, updatable=false)
     @NoView
-    private Set<SystemTagVO> tags = new HashSet<SystemTagVO>();
+    private Set<CephPrimaryStoragePoolVO> pools = new HashSet<CephPrimaryStoragePoolVO>();
 
     @Column
     private String fsid;
 
-    @Column
-    private String rootVolumePoolName;
-    @Column
-    private String dataVolumePoolName;
-    @Column
-    private String imageCachePoolName;
-    @Column
     private String userKey;
 
     public String getUserKey() {
@@ -48,30 +41,6 @@ public class CephPrimaryStorageVO extends PrimaryStorageVO {
 
     public void setUserKey(String userKey) {
         this.userKey = userKey;
-    }
-
-    public String getRootVolumePoolName() {
-        return rootVolumePoolName;
-    }
-
-    public void setRootVolumePoolName(String rootVolumePoolName) {
-        this.rootVolumePoolName = rootVolumePoolName;
-    }
-
-    public String getDataVolumePoolName() {
-        return dataVolumePoolName;
-    }
-
-    public void setDataVolumePoolName(String dataVolumePoolName) {
-        this.dataVolumePoolName = dataVolumePoolName;
-    }
-
-    public String getImageCachePoolName() {
-        return imageCachePoolName;
-    }
-
-    public void setImageCachePoolName(String imageCachePoolName) {
-        this.imageCachePoolName = imageCachePoolName;
     }
 
     public CephPrimaryStorageVO() {
@@ -85,6 +54,7 @@ public class CephPrimaryStorageVO extends PrimaryStorageVO {
         super(other);
         this.mons = other.mons;
         this.fsid = other.fsid;
+        this.pools = other.pools;
     }
 
     public Set<CephPrimaryStorageMonVO> getMons() {
@@ -103,11 +73,11 @@ public class CephPrimaryStorageVO extends PrimaryStorageVO {
         this.fsid = fsid;
     }
 
-    public Set<SystemTagVO> getTags() {
-        return tags;
+    public Set<CephPrimaryStoragePoolVO> getPools() {
+        return pools;
     }
 
-    public void setTags(Set<SystemTagVO> tags) {
-        this.tags = tags;
+    public void setPools(Set<CephPrimaryStoragePoolVO> pools) {
+        this.pools = pools;
     }
 }

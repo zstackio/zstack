@@ -55,9 +55,20 @@ public class CephApiInterceptor implements ApiMessageInterceptor {
             validate((APIDeleteCephPrimaryStoragePoolMsg) msg);
         } else if (msg instanceof APIAddCephPrimaryStoragePoolMsg) {
             validate((APIAddCephPrimaryStoragePoolMsg) msg);
+        } else if (msg instanceof APIUpdateCephPrimaryStoragePoolMsg) {
+            validate((APIUpdateCephPrimaryStoragePoolMsg) msg);
         }
         
         return msg;
+    }
+
+    private void validate(APIUpdateCephPrimaryStoragePoolMsg msg) {
+        String psUuid = Q.New(CephPrimaryStoragePoolVO.class)
+                .select(CephPrimaryStoragePoolVO_.primaryStorageUuid)
+                .eq(CephPrimaryStoragePoolVO_.uuid, msg.getUuid())
+                .findValue();
+
+        msg.setPrimaryStorageUuid(psUuid);
     }
 
     private void validate(APIAddCephPrimaryStoragePoolMsg msg) {

@@ -145,15 +145,17 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
             diskOfferingUuid = diskOffering.uuid
         }
 
+        String dataVolumePoolName = CephSystemTags.DEFAULT_CEPH_PRIMARY_STORAGE_DATA_VOLUME_POOL.getTokenByResourceUuid(primaryStorage.uuid, CephSystemTags.DEFAULT_CEPH_PRIMARY_STORAGE_DATA_VOLUME_POOL_TOKEN)
         assert cmd != null
         assert cmd.installPath == vol.installPath
-        assert cmd.installPath.contains(primaryStorage.dataVolumePoolName)
+        assert cmd.installPath.contains(dataVolumePoolName)
     }
 
     void testVmRootVolumeUseDefaultPool() {
+        String rootVolumePoolName = CephSystemTags.DEFAULT_CEPH_PRIMARY_STORAGE_ROOT_VOLUME_POOL.getTokenByResourceUuid(primaryStorage.uuid, CephSystemTags.DEFAULT_CEPH_PRIMARY_STORAGE_ROOT_VOLUME_POOL_TOKEN)
         VolumeInventory rootVolume = vm.allVolumes.find { it.uuid == vm.rootVolumeUuid }
 
-        assert rootVolume.installPath.contains(primaryStorage.rootVolumePoolName)
+        assert rootVolume.installPath.contains(rootVolumePoolName)
     }
 
     void testAddAndDeletePool() {

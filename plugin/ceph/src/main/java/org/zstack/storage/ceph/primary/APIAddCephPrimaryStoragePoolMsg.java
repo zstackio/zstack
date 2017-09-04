@@ -24,6 +24,8 @@ public class APIAddCephPrimaryStoragePoolMsg extends APICreateMessage implements
     private String primaryStorageUuid;
     @APIParam(maxLength = 255)
     private String poolName;
+    @APIParam(maxLength = 255, required = false)
+    private String aliasName;
     @APIParam(maxLength = 2048, required = false)
     private String description;
     private boolean errorIfNotExist;
@@ -61,9 +63,19 @@ public class APIAddCephPrimaryStoragePoolMsg extends APICreateMessage implements
         this.poolName = poolName;
     }
 
+
+    public String getAliasName() {
+        return aliasName;
+    }
+
+    public void setAliasName(String aliasName) {
+        this.aliasName = aliasName;
+    }
+
     public static APIAddCephPrimaryStoragePoolMsg __example__() {
         APIAddCephPrimaryStoragePoolMsg msg = new APIAddCephPrimaryStoragePoolMsg();
         msg.setPoolName("highPerformance");
+        msg.setAliasName("alias pool name");
         msg.setDescription("for high performance data volumes");
         msg.setPrimaryStorageUuid(uuid());
         return msg;

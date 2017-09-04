@@ -15,9 +15,11 @@ public class CephPrimaryStoragePoolInventory {
     private String uuid;
     private String primaryStorageUuid;
     private String poolName;
+    private String aliasName;
     private String description;
     private Timestamp createDate;
     private Timestamp lastOpDate;
+    private String type;
 
     public static CephPrimaryStoragePoolInventory valueOf(CephPrimaryStoragePoolVO vo) {
         CephPrimaryStoragePoolInventory inv = new CephPrimaryStoragePoolInventory();
@@ -27,6 +29,8 @@ public class CephPrimaryStoragePoolInventory {
         inv.description = vo.getDescription();
         inv.createDate = vo.getCreateDate();
         inv.lastOpDate = vo.getLastOpDate();
+        inv.aliasName = vo.getAliasName();
+        inv.type = vo.getType();
         return inv;
     }
 
@@ -84,5 +88,21 @@ public class CephPrimaryStoragePoolInventory {
 
     public void setLastOpDate(Timestamp lastOpDate) {
         this.lastOpDate = lastOpDate;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getAliasName() {
+        return aliasName;
+    }
+
+    public void setAliasName(String aliasName) {
+        this.aliasName = aliasName;
     }
 }

@@ -26,6 +26,14 @@ public class CephPrimaryStoragePoolInventory  {
         return this.poolName;
     }
 
+    public java.lang.String aliasName;
+    public void setAliasName(java.lang.String aliasName) {
+        this.aliasName = aliasName;
+    }
+    public java.lang.String getAliasName() {
+        return this.aliasName;
+    }
+
     public java.lang.String description;
     public void setDescription(java.lang.String description) {
         this.description = description;
@@ -48,6 +56,14 @@ public class CephPrimaryStoragePoolInventory  {
     }
     public java.sql.Timestamp getLastOpDate() {
         return this.lastOpDate;
+    }
+
+    public java.lang.String type;
+    public void setType(java.lang.String type) {
+        this.type = type;
+    }
+    public java.lang.String getType() {
+        return this.type;
     }
 
 }

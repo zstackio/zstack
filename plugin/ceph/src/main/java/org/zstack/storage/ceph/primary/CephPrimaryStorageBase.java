@@ -4,10 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
-import org.zstack.core.db.Q;
-import org.zstack.core.db.SQL;
-import org.zstack.core.db.SQLBatch;
-import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.notification.N;
 import org.zstack.core.thread.AsyncThread;
@@ -1097,11 +1094,15 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     private String makeRootVolumeInstallPath(String volUuid) {
-        return String.format("ceph://%s/%s", getSelf().getRootVolumePoolName(), volUuid);
+        return String.format("ceph://%s/%s",
+                getDefaultRootVolumePoolName(),
+                volUuid);
     }
 
     private String makeResetImageRootVolumeInstallPath(String volUuid) {
-        return String.format("ceph://%s/reset-image-%s-%s", getSelf().getRootVolumePoolName(), volUuid,
+        return String.format("ceph://%s/reset-image-%s-%s",
+                getDefaultRootVolumePoolName(),
+                volUuid,
                 System.currentTimeMillis());
     }
 
@@ -1110,11 +1111,15 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     private String makeDataVolumeInstallPath(String volUuid) {
-        return makeDataVolumeInstallPath(volUuid, getSelf().getDataVolumePoolName());
+        return makeDataVolumeInstallPath(volUuid,
+                getDefaultDataVolumePoolName()
+        );
     }
 
     private String makeCacheInstallPath(String uuid) {
-        return String.format("ceph://%s/%s", getSelf().getImageCachePoolName(), uuid);
+        return String.format("ceph://%s/%s",
+                getDefaultImageCachePoolName(),
+                uuid);
     }
 
     public CephPrimaryStorageBase(PrimaryStorageVO self) {
@@ -1123,6 +1128,18 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     protected CephPrimaryStorageVO getSelf() {
         return (CephPrimaryStorageVO) self;
+    }
+
+    private String getDefaultImageCachePoolName() {
+        return CephSystemTags.DEFAULT_CEPH_PRIMARY_STORAGE_IMAGE_CACHE_POOL.getTokenByResourceUuid(self.getUuid(), CephSystemTags.DEFAULT_CEPH_PRIMARY_STORAGE_IMAGE_CACHE_POOL_TOKEN);
+    }
+
+    private String getDefaultDataVolumePoolName() {
+        return CephSystemTags.DEFAULT_CEPH_PRIMARY_STORAGE_DATA_VOLUME_POOL.getTokenByResourceUuid(self.getUuid(), CephSystemTags.DEFAULT_CEPH_PRIMARY_STORAGE_DATA_VOLUME_POOL_TOKEN);
+    }
+
+    private String getDefaultRootVolumePoolName() {
+        return CephSystemTags.DEFAULT_CEPH_PRIMARY_STORAGE_ROOT_VOLUME_POOL.getTokenByResourceUuid(self.getUuid(), CephSystemTags.DEFAULT_CEPH_PRIMARY_STORAGE_ROOT_VOLUME_POOL_TOKEN);
     }
 
     protected CephPrimaryStorageInventory getSelfInventory() {
@@ -1960,20 +1977,21 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         List<Pool> pools = new ArrayList<Pool>();
+                        String primaryStorageUuid = self.getUuid();
 
                         Pool p = new Pool();
-                        p.name = getSelf().getImageCachePoolName();
-                        p.predefined = CephSystemTags.PREDEFINED_PRIMARY_STORAGE_IMAGE_CACHE_POOL.hasTag(self.getUuid());
+                        p.name = getDefaultImageCachePoolName();
+                        p.predefined = CephSystemTags.PREDEFINED_PRIMARY_STORAGE_IMAGE_CACHE_POOL.hasTag(primaryStorageUuid);
                         pools.add(p);
 
                         p = new Pool();
-                        p.name = getSelf().getRootVolumePoolName();
-                        p.predefined = CephSystemTags.PREDEFINED_PRIMARY_STORAGE_ROOT_VOLUME_POOL.hasTag(self.getUuid());
+                        p.name = getDefaultRootVolumePoolName();
+                        p.predefined = CephSystemTags.PREDEFINED_PRIMARY_STORAGE_ROOT_VOLUME_POOL.hasTag(primaryStorageUuid);
                         pools.add(p);
 
                         p = new Pool();
-                        p.name = getSelf().getDataVolumePoolName();
-                        p.predefined = CephSystemTags.PREDEFINED_PRIMARY_STORAGE_DATA_VOLUME_POOL.hasTag(self.getUuid());
+                        p.name = getDefaultDataVolumePoolName();
+                        p.predefined = CephSystemTags.PREDEFINED_PRIMARY_STORAGE_DATA_VOLUME_POOL.hasTag(primaryStorageUuid);
                         pools.add(p);
 
                         if(!newAdded){
@@ -2000,26 +2018,26 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-
                         List<Pool> pools = new ArrayList<Pool>();
+                        String primaryStorageUuid = self.getUuid();
 
                         Pool p = new Pool();
-                        p.name = getSelf().getImageCachePoolName();
-                        p.predefined = CephSystemTags.PREDEFINED_PRIMARY_STORAGE_IMAGE_CACHE_POOL.hasTag(self.getUuid());
+                        p.name = getDefaultImageCachePoolName();
+                        p.predefined = CephSystemTags.PREDEFINED_PRIMARY_STORAGE_IMAGE_CACHE_POOL.hasTag(primaryStorageUuid);
                         pools.add(p);
 
                         p = new Pool();
-                        p.name = getSelf().getRootVolumePoolName();
-                        p.predefined = CephSystemTags.PREDEFINED_PRIMARY_STORAGE_ROOT_VOLUME_POOL.hasTag(self.getUuid());
+                        p.name = getDefaultRootVolumePoolName();
+                        p.predefined = CephSystemTags.PREDEFINED_PRIMARY_STORAGE_ROOT_VOLUME_POOL.hasTag(primaryStorageUuid);
                         pools.add(p);
 
                         p = new Pool();
-                        p.name = getSelf().getDataVolumePoolName();
-                        p.predefined = CephSystemTags.PREDEFINED_PRIMARY_STORAGE_DATA_VOLUME_POOL.hasTag(self.getUuid());
+                        p.name = getDefaultDataVolumePoolName();
+                        p.predefined = CephSystemTags.PREDEFINED_PRIMARY_STORAGE_DATA_VOLUME_POOL.hasTag(primaryStorageUuid);
                         pools.add(p);
 
                         InitCmd cmd = new InitCmd();
-                        if (CephSystemTags.NO_CEPHX.hasTag(getSelf().getUuid())) {
+                        if (CephSystemTags.NO_CEPHX.hasTag(primaryStorageUuid)) {
                             cmd.nocephx = true;
                         }
                         cmd.pools = pools;
@@ -2063,6 +2081,10 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                             }
                             if (!getSelf().getMons().isEmpty()) {
                                 dbf.removeCollection(getSelf().getMons(), CephPrimaryStorageMonVO.class);
+                            }
+
+                            if (!getSelf().getPools().isEmpty()) {
+                                dbf.removeCollection(getSelf().getPools(), CephPrimaryStoragePoolVO.class);
                             }
                         }
 
@@ -2279,9 +2301,28 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             handle((APIAddCephPrimaryStoragePoolMsg) msg);
         } else if (msg instanceof APIDeleteCephPrimaryStoragePoolMsg) {
             handle((APIDeleteCephPrimaryStoragePoolMsg) msg);
+        } else if (msg instanceof APIUpdateCephPrimaryStoragePoolMsg) {
+            handle((APIUpdateCephPrimaryStoragePoolMsg) msg);
         } else {
             super.handleApiMessage(msg);
         }
+    }
+
+    private void handle(APIUpdateCephPrimaryStoragePoolMsg msg) {
+        APIUpdateCephPrimaryStoragePoolEvent evt = new APIUpdateCephPrimaryStoragePoolEvent(msg.getId());
+
+        CephPrimaryStoragePoolVO vo = dbf.findByUuid(msg.getUuid(), CephPrimaryStoragePoolVO.class);
+        if (msg.getAliasName() != null) {
+            vo.setAliasName(msg.getAliasName());
+        }
+
+        if (msg.getDescription() != null) {
+            vo.setDescription(msg.getDescription());
+        }
+
+        dbf.update(vo);
+        evt.setInventory(CephPrimaryStoragePoolInventory.valueOf(vo));
+        bus.publish(evt);
     }
 
     private void handle(APIDeleteCephPrimaryStoragePoolMsg msg) {
@@ -2297,7 +2338,13 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         vo.setUuid(msg.getResourceUuid() == null ? Platform.getUuid() : msg.getResourceUuid());
         vo.setDescription(msg.getDescription());
         vo.setPoolName(msg.getPoolName());
-        vo.setDescription(msg.getDescription());
+        if (msg.getAliasName() != null) {
+            vo.setAliasName(msg.getAliasName());
+        }
+        if (msg.getDescription() != null) {
+            vo.setDescription(msg.getDescription());
+        }
+        vo.setType(CephPrimaryStoragePoolType.Data.toString());
         vo.setPrimaryStorageUuid(self.getUuid());
         vo = dbf.persistAndRefresh(vo);
 
@@ -2626,7 +2673,9 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         cmd.maxAttempts = param.getMaxAttempts();
         cmd.storageCheckerTimeout = param.getStorageCheckerTimeout();
         cmd.userKey = getSelf().getUserKey();
-        cmd.heartbeatImagePath = String.format("%s/ceph-primary-storage-%s-heartbeat-file", getSelf().getRootVolumePoolName(), self.getUuid());
+        cmd.heartbeatImagePath = String.format("%s/ceph-primary-storage-%s-heartbeat-file",
+                getDefaultRootVolumePoolName(),
+                self.getUuid());
         cmd.monUrls = CollectionUtils.transformToList(getSelf().getMons(), new Function<String, CephPrimaryStorageMonVO>() {
             @Override
             public String call(CephPrimaryStorageMonVO arg) {
@@ -3043,9 +3092,20 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     @Override
     public void deleteHook() {
+        List<String> poolNameLists = list(
+                getDefaultRootVolumePoolName(),
+                getDefaultDataVolumePoolName(),
+                getDefaultImageCachePoolName()
+        );
+
+        SQL.New(CephPrimaryStoragePoolVO.class)
+                .in(CephPrimaryStoragePoolVO_.poolName, poolNameLists).delete();
+
         if (CephGlobalConfig.PRIMARY_STORAGE_DELETE_POOL.value(Boolean.class)) {
+
+
             DeletePoolCmd cmd = new DeletePoolCmd();
-            cmd.poolNames = list(getSelf().getImageCachePoolName(), getSelf().getDataVolumePoolName(), getSelf().getRootVolumePoolName());
+            cmd.poolNames = poolNameLists;
             FutureReturnValueCompletion completion = new FutureReturnValueCompletion(null);
             httpCall(DELETE_POOL_PATH, cmd, DeletePoolRsp.class, completion);
             completion.await(TimeUnit.MINUTES.toMillis(30));
