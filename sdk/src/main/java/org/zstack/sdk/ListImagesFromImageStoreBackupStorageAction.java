@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class GetAttachablePublicL3ForVRouterAction extends AbstractAction {
+public class ListImagesFromImageStoreBackupStorageAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public GetAttachablePublicL3ForVRouterResult value;
+        public ListImagesFromImageStoreBackupStorageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -23,7 +23,7 @@ public class GetAttachablePublicL3ForVRouterAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vmInstanceUuid;
+    public java.lang.String uuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -42,8 +42,8 @@ public class GetAttachablePublicL3ForVRouterAction extends AbstractAction {
             return ret;
         }
         
-        GetAttachablePublicL3ForVRouterResult value = res.getResult(GetAttachablePublicL3ForVRouterResult.class);
-        ret.value = value == null ? new GetAttachablePublicL3ForVRouterResult() : value; 
+        ListImagesFromImageStoreBackupStorageResult value = res.getResult(ListImagesFromImageStoreBackupStorageResult.class);
+        ret.value = value == null ? new ListImagesFromImageStoreBackupStorageResult() : value; 
 
         return ret;
     }
@@ -68,11 +68,11 @@ public class GetAttachablePublicL3ForVRouterAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
-        info.path = "/vm-instances/appliances/virtual-routers/{vmInstanceUuid}/attachable-public-l3s";
+        info.httpMethod = "PUT";
+        info.path = "/backup-storage/{uuid}/image-store";
         info.needSession = true;
         info.needPoll = false;
-        info.parameterName = "";
+        info.parameterName = "listImagesFromImageStoreBackupStorage";
         return info;
     }
 
