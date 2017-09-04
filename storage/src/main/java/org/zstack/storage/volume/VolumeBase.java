@@ -1153,11 +1153,9 @@ public class VolumeBase implements Volume {
                 for (VolumeGetAttachableVmExtensionPoint ext : pluginRgty.getExtensionList(VolumeGetAttachableVmExtensionPoint.class)) {
                     ret = ext.returnAttachableVms(vol, ret);
                 }
-
                 return ret;
             }
         }.execute();
-
     }
 
     private boolean volumeIsAttached(final String volumeUuid) {

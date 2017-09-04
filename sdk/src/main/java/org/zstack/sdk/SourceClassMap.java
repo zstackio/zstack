@@ -41,6 +41,8 @@ public class SourceClassMap {
 			put("org.zstack.header.aliyun.network.vrouter.VpcVirtualRouterInventory", "org.zstack.sdk.VpcVirtualRouterInventory");
 			put("org.zstack.header.aliyun.oss.OssBucketInventory", "org.zstack.sdk.OssBucketInventory");
 			put("org.zstack.header.aliyun.oss.OssBucketProperty", "org.zstack.sdk.OssBucketProperty");
+			put("org.zstack.header.aliyun.storage.disk.AliyunDiskInventory", "org.zstack.sdk.AliyunDiskInventory");
+			put("org.zstack.header.aliyun.storage.snapshot.AliyunSnapshotInventory", "org.zstack.sdk.AliyunSnapshotInventory");
 			put("org.zstack.header.baremetal.BaremetalException", "org.zstack.sdk.BaremetalException");
 			put("org.zstack.header.baremetal.console.BaremetalConsoleProxyInventory", "org.zstack.sdk.BaremetalConsoleProxyInventory");
 			put("org.zstack.header.baremetal.hardwareinfo.BaremetalHardwareInfoInventory", "org.zstack.sdk.BaremetalHardwareInfoInventory");
@@ -210,8 +212,10 @@ public class SourceClassMap {
 			put("org.zstack.sdk.AccountInventory", "org.zstack.header.identity.AccountInventory");
 			put("org.zstack.sdk.AccountResourceRefInventory", "org.zstack.header.identity.AccountResourceRefInventory");
 			put("org.zstack.sdk.AlertInventory", "org.zstack.monitoring.AlertInventory");
+			put("org.zstack.sdk.AliyunDiskInventory", "org.zstack.header.aliyun.storage.disk.AliyunDiskInventory");
 			put("org.zstack.sdk.AliyunException", "org.zstack.header.aliyun.AliyunException");
 			put("org.zstack.sdk.AliyunOssException", "org.zstack.header.aliyun.AliyunOssException");
+			put("org.zstack.sdk.AliyunSnapshotInventory", "org.zstack.header.aliyun.storage.snapshot.AliyunSnapshotInventory");
 			put("org.zstack.sdk.ApplianceVmInventory", "org.zstack.appliancevm.ApplianceVmInventory");
 			put("org.zstack.sdk.BackupStorageInventory", "org.zstack.header.storage.backup.BackupStorageInventory");
 			put("org.zstack.sdk.BaremetalChassisInventory", "org.zstack.header.baremetal.power.BaremetalChassisInventory");

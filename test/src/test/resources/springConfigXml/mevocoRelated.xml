@@ -11,6 +11,8 @@
     <import resource="hybrid/identityzone.xml"/>
     <import resource="hybrid/ecs.xml"/>
     <import resource="hybrid/ecsimage.xml"/>
+    <import resource="hybrid/disk.xml"/>
+    <import resource="hybrid/snapshot.xml"/>
     <import resource="hybrid/vpn.xml"/>
     <import resource="hybrid/connection.xml"/>
     <import resource="hybrid/hybridaccount.xml"/>
