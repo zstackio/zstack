@@ -41,6 +41,8 @@ class TestCaseStabilityTest extends Test {
         include("vxlan.xml")
         include("LdapManagerImpl.xml")
         include("mediateApiValidator.xml")
+        include("webhook.xml")
+        include("CloudBusAopProxy.xml")
     }
 
     @Override
