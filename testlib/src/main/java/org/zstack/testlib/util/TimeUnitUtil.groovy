@@ -2,14 +2,13 @@ package org.zstack.testlib.util
 
 import org.zstack.utils.Utils
 import org.zstack.utils.logging.CLogger
-
 import java.util.concurrent.TimeUnit
 
 /**
  * Created by lining on 2017/8/27.
  */
 class TimeUnitUtil {
-    static CLogger logger = Utils.getLogger(getClass())
+    static CLogger logger = Utils.getLogger(TimeUnitUtil.class)
 
     static int sleepSeconds(int sec){
         int sleepTime = sleepMilliseconds(sec * 1000) / 1000

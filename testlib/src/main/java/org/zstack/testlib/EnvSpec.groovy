@@ -104,6 +104,7 @@ class EnvSpec implements Node {
             [CreateMonitorTriggerAction.metaClass, CreateMonitorTriggerAction.Result.metaClass, DeleteMonitorTriggerAction.class],
             [CreateEmailMonitorTriggerActionAction.metaClass, CreateEmailMonitorTriggerActionAction.Result.metaClass, DeleteMonitorTriggerActionAction.class],
             [CreateEmailMediaAction.metaClass, CreateEmailMediaAction.Result.metaClass, DeleteMediaAction.class],
+            [AddLdapServerAction.metaClass, AddLdapServerAction.Result.metaClass, DeleteLdapServerAction.class],
     ]
 
     static Closure GLOBAL_DELETE_HOOK
@@ -602,7 +603,7 @@ class EnvSpec implements Node {
         } catch (Throwable t) {
             logger.fatal("an error happened when running EnvSpec.delete() for" +
                     " the case ${Test.CURRENT_SUB_CASE?.class}, we must stop the test suite, ${t.getMessage()}")
-            throw new StopTestSuiteException()
+            throw new StopTestSuiteException(t)
         } finally {
             // set the currentEnvSpec to null anyway
             // because the current sub case may fail but

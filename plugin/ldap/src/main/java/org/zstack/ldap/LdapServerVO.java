@@ -1,11 +1,11 @@
 package org.zstack.ldap;
 
+import org.zstack.header.tag.AutoDeleteTag;
 import org.zstack.header.vo.Index;
 import org.zstack.header.vo.ResourceVO;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.Id;
 import javax.persistence.Table;
 import java.sql.Timestamp;
 
@@ -13,6 +13,7 @@ import java.sql.Timestamp;
  */
 @Entity
 @Table
+@AutoDeleteTag
 public class LdapServerVO extends ResourceVO {
     @Column
     @Index

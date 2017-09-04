@@ -1,6 +1,7 @@
 package org.zstack.ldap;
 
 import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.ldap.NamingException;
 import org.springframework.ldap.core.DirContextOperations;
@@ -8,6 +9,7 @@ import org.springframework.ldap.core.LdapTemplate;
 import org.springframework.ldap.core.support.AbstractContextMapper;
 import org.springframework.ldap.filter.AndFilter;
 import org.springframework.ldap.filter.EqualsFilter;
+import org.springframework.ldap.filter.HardcodedFilter;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,15 +27,19 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.IdentityGlobalConfig;
+import org.zstack.tag.SystemTagCreator;
+import org.zstack.tag.SystemTagUtils;
 import org.zstack.tag.TagManager;
+import org.zstack.utils.CollectionDSL;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
-
 import javax.persistence.Query;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
+import static org.zstack.utils.CollectionDSL.map;
 
 /**
  * Created by miao on 16-9-6.
@@ -154,11 +160,26 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
                 replace("," + ldapTemplateContextSource.getLdapContextSource().getBaseLdapPathAsString(), "");
     }
 
+    //filter format like : (uidNumber=3)
+    private String getPartialUserDnByUidAndFilter(LdapTemplateContextSource ldapTemplateContextSource, String uid, String filter) {
+        EqualsFilter uidFilter = new EqualsFilter(LdapConstant.LDAP_UID_KEY, uid);
+        HardcodedFilter paramFilter = new HardcodedFilter(filter);
+        String filters = new AndFilter().and(uidFilter).and(paramFilter).encode();
+
+        String result = getFullUserDn(ldapTemplateContextSource.getLdapTemplate(), filters);
+
+        return result.replace("," + ldapTemplateContextSource.getLdapContextSource().getBaseLdapPathAsString(), "");
+    }
+
     private String getFullUserDn(LdapTemplate ldapTemplate, String key, String val) {
+        EqualsFilter f = new EqualsFilter(key, val);
+        return getFullUserDn(ldapTemplate, f.toString());
+    }
+
+    private String getFullUserDn(LdapTemplate ldapTemplate, String filter) {
         String dn;
         try {
-            EqualsFilter f = new EqualsFilter(key, val);
-            List<Object> result = ldapTemplate.search("", f.toString(), new AbstractContextMapper<Object>() {
+            List<Object> result = ldapTemplate.search("", filter, new AbstractContextMapper<Object>() {
                 @Override
                 protected Object doMapFromContext(DirContextOperations ctx) {
                     return ctx.getNameInNamespace();
@@ -172,19 +193,20 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
             } else {
                 return "";
             }
-            logger.info(String.format("getDn success key:%s, val:%s, dn:%s", key, val, dn));
+            logger.info(String.format("getDn success filter:%s, dn:%s", filter, dn));
         } catch (NamingException e) {
             LdapServerVO ldapServerVO = getLdapServer();
             String errString = String.format(
                     "You'd better check the ldap server[url:%s, baseDN:%s, encryption:%s, username:%s, password:******]" +
-                            " configuration and test connection first.getDn error key:%s, val:%s",
+                            " configuration and test connection first.getDn error filter:%s",
                     ldapServerVO.getUrl(), ldapServerVO.getBase(),
-                    ldapServerVO.getEncryption(), ldapServerVO.getUsername(), key, val);
+                    ldapServerVO.getEncryption(), ldapServerVO.getUsername(), filter);
             throw new OperationFailureException(errf.instantiateErrorCode(
                     LdapErrors.UNABLE_TO_GET_SPECIFIED_LDAP_UID, errString));
         }
         return dn;
     }
+
 
     public String getId() {
         return bus.makeLocalServiceId(LdapConstant.SERVICE_ID);
@@ -261,28 +283,47 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
 
         SimpleQuery<LdapServerVO> sq = dbf.createQuery(LdapServerVO.class);
         List<LdapServerVO> ldapServers = sq.list();
-        if (ldapServers.isEmpty()) {
-            LdapServerVO ldapServerVO = new LdapServerVO();
-            ldapServerVO.setUuid(Platform.getUuid());
-            ldapServerVO.setName(msg.getName());
-            ldapServerVO.setDescription(msg.getDescription());
-            ldapServerVO.setUrl(msg.getUrl());
-            ldapServerVO.setBase(msg.getBase());
-            ldapServerVO.setUsername(msg.getUsername());
-            ldapServerVO.setPassword(msg.getPassword());
-            ldapServerVO.setEncryption(msg.getEncryption());
-
-            ldapServerVO = dbf.persistAndRefresh(ldapServerVO);
-            LdapServerInventory inv = LdapServerInventory.valueOf(ldapServerVO);
-            evt.setInventory(inv);
-        } else {
+        if (!ldapServers.isEmpty()) {
             evt.setError(errf.instantiateErrorCode(LdapErrors.MORE_THAN_ONE_LDAP_SERVER,
                     "There has been a ldap server record. " +
                             "You'd better remove it before adding a new one!"));
+            bus.publish(evt);
+            return;
         }
 
+        LdapServerVO ldapServerVO = new LdapServerVO();
+        ldapServerVO.setUuid(Platform.getUuid());
+        ldapServerVO.setName(msg.getName());
+        ldapServerVO.setDescription(msg.getDescription());
+        ldapServerVO.setUrl(msg.getUrl());
+        ldapServerVO.setBase(msg.getBase());
+        ldapServerVO.setUsername(msg.getUsername());
+        ldapServerVO.setPassword(msg.getPassword());
+        ldapServerVO.setEncryption(msg.getEncryption());
+
+        ldapServerVO = dbf.persistAndRefresh(ldapServerVO);
+        LdapServerInventory inv = LdapServerInventory.valueOf(ldapServerVO);
+        evt.setInventory(inv);
+
+        this.saveLdapCleanBindingFilterTag(msg.getSystemTags(), ldapServerVO.getUuid());
 
         bus.publish(evt);
+    }
+
+    private void saveLdapCleanBindingFilterTag(List<String> systemTags, String uuid) {
+        if(systemTags == null || systemTags.isEmpty()) {
+            return;
+        }
+
+        String filter = SystemTagUtils.findTagValue(systemTags, LdapSystemTags.LDAP_CLEAN_BINDING_FILTER, LdapSystemTags.LDAP_CLEAN_BINDING_FILTER_TOKEN);
+        if(StringUtils.isEmpty(filter)){
+            return;
+        }
+
+        SystemTagCreator creator = LdapSystemTags.LDAP_CLEAN_BINDING_FILTER.newSystemTagCreator(uuid);
+        creator.recreate = true;
+        creator.setTagByTokens(map(CollectionDSL.e(LdapSystemTags.LDAP_CLEAN_BINDING_FILTER_TOKEN, filter)));
+        creator.create();
     }
 
     private void handle(APIDeleteLdapServerMsg msg) {
@@ -347,19 +388,39 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
     private void handle(APICleanInvalidLdapBindingMsg msg) {
         APICleanInvalidLdapBindingEvent evt = new APICleanInvalidLdapBindingEvent(msg.getId());
 
-        ArrayList<String> accountUuidList = new ArrayList<>();
-        ArrayList<String> ldapAccountRefUuidList = new ArrayList<>();
         SimpleQuery<LdapAccountRefVO> sq = dbf.createQuery(LdapAccountRefVO.class);
         List<LdapAccountRefVO> refList = sq.list();
-        if (refList != null && !refList.isEmpty()) {
-            LdapTemplateContextSource ldapTemplateContextSource = readLdapServerConfiguration();
-            for (LdapAccountRefVO ldapAccRefVO : refList) {
-                if (getPartialUserDnByUid(ldapTemplateContextSource, ldapAccRefVO.getLdapUid()).equals("")) {
-                    accountUuidList.add(ldapAccRefVO.getAccountUuid());
-                    ldapAccountRefUuidList.add(ldapAccRefVO.getUuid());
-                }
+        if(refList == null || refList.isEmpty()){
+            bus.publish(evt);
+            return;
+        }
+
+        ArrayList<String> accountUuidList = new ArrayList<>();
+        ArrayList<String> ldapAccountRefUuidList = new ArrayList<>();
+        LdapTemplateContextSource ldapTemplateContextSource = readLdapServerConfiguration();
+
+        for (LdapAccountRefVO ldapAccRefVO : refList) {
+            // no data in ldap
+            String result = getPartialUserDnByUid(ldapTemplateContextSource, ldapAccRefVO.getLdapUid());
+            if(StringUtils.isEmpty(result)){
+                accountUuidList.add(ldapAccRefVO.getAccountUuid());
+                ldapAccountRefUuidList.add(ldapAccRefVO.getUuid());
+                continue;
+            }
+
+            // filter
+            String filter = LdapSystemTags.LDAP_CLEAN_BINDING_FILTER.getTokenByResourceUuid(ldapAccRefVO.getLdapServerUuid(), LdapSystemTags.LDAP_CLEAN_BINDING_FILTER_TOKEN);
+            if(StringUtils.isEmpty(filter)){
+                continue;
+            }
+
+            result = getPartialUserDnByUidAndFilter(ldapTemplateContextSource, ldapAccRefVO.getLdapUid(), filter);
+            if(StringUtils.isNotEmpty(result)){
+                accountUuidList.add(ldapAccRefVO.getAccountUuid());
+                ldapAccountRefUuidList.add(ldapAccRefVO.getUuid());
             }
         }
+
         if (!accountUuidList.isEmpty()) {
             // remove ldap bindings
             dbf.removeByPrimaryKeys(ldapAccountRefUuidList, LdapAccountRefVO.class);
@@ -410,6 +471,8 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
 
         ldapServerVO = dbf.updateAndRefresh(ldapServerVO);
         evt.setInventory(LdapServerInventory.valueOf(ldapServerVO));
+
+        this.saveLdapCleanBindingFilterTag(msg.getSystemTags(), ldapServerVO.getUuid());
 
         bus.publish(evt);
     }

@@ -3,10 +3,18 @@ package org.zstack.test.integration.ldap.forcase
 import com.unboundid.ldap.sdk.LDAPInterface
 import com.unboundid.ldap.sdk.SearchResult
 import com.unboundid.ldap.sdk.SearchScope
+import org.junit.Rule
+import org.zapodot.junit.ldap.EmbeddedLdapRule
+import org.zapodot.junit.ldap.EmbeddedLdapRuleBuilder
 import org.zstack.sdk.AddLdapServerAction
+import org.zstack.sdk.AddLdapServerResult
+import org.zstack.sdk.ApiResult
 import org.zstack.sdk.LdapServerInventory
+import org.zstack.sdk.ZSClient
 import org.zstack.test.integration.ZStackTest
 import org.zstack.test.integration.ldap.Env
+import org.zstack.test.integration.stabilisation.StabilityTestCase
+import org.zstack.test.integration.stabilisation.TestCaseStabilityTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.testlib.Test
@@ -15,10 +23,15 @@ import org.zstack.testlib.Test
  * Created by Administrator on 2017-03-22.
  */
 
-
 //base on TestLdapConn
 class LdapConnCase extends SubCase {
     EnvSpec env
+
+    public static String DOMAIN_DSN = "dc=example,dc=com"
+
+    @Rule
+    public static EmbeddedLdapRule embeddedLdapRule = EmbeddedLdapRuleBuilder.newInstance().bindingToPort(1888).
+            usingDomainDsn(DOMAIN_DSN).importingLdifs("users-import.ldif").build()
 
 
     @Override
@@ -48,11 +61,32 @@ class LdapConnCase extends SubCase {
         env.delete()
     }
 
+    LDAPInterface getLdapConn(){
+        try{
+            return embeddedLdapRule.ldapConnection()
+        }catch (Exception e){
+        }
+
+        try {
+            return ZStackTest.embeddedLdapRule.ldapConnection()
+        }catch (Exception e){
+        }
+
+        try {
+            return StabilityTestCase.embeddedLdapRule.ldapConnection()
+        }catch (Exception e){
+        }
+
+        try {
+            return TestCaseStabilityTest.embeddedLdapRule.ldapConnection()
+        }catch (Exception e){
+        }
+    }
+
     void testLdapConn(){
-        final LDAPInterface ldapConnection = ZStackTest.embeddedLdapRule.ldapConnection()
+        LDAPInterface ldapConnection = this.getLdapConn()
         final SearchResult searchResult = ldapConnection.search(ZStackTest.DOMAIN_DSN, SearchScope.SUB, "(objectClass=person)")
         assert searchResult.getEntryCount() == 3
-
 
         def result = addLdapServer {
             name = "ldap0"
@@ -77,9 +111,14 @@ class LdapConnCase extends SubCase {
                 systemTags : ["ephemeral::validationOnly"],
                 sessionId : Test.currentEnvSpec.session.uuid
         )
+        ApiResult res = ZSClient.call(addLdapServerAction)
+        assert res.error == null
+        assert null == res.getResult(AddLdapServerResult.class).inventory
+        /*
         AddLdapServerAction.Result addLdapResult = addLdapServerAction.call()
         assert null == addLdapResult.error
         assert null == addLdapResult.value.inventory
+        */
 
         deleteLdapServer {
             uuid = LdapUuid
