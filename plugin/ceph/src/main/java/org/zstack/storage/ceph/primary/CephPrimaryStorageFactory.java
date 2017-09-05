@@ -110,31 +110,70 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
     @Transactional
     public PrimaryStorageInventory createPrimaryStorage(PrimaryStorageVO vo, APIAddPrimaryStorageMsg msg) {
         APIAddCephPrimaryStorageMsg cmsg = (APIAddCephPrimaryStorageMsg) msg;
+        SystemTagCreator creator;
 
         CephPrimaryStorageVO cvo = new CephPrimaryStorageVO(vo);
         cvo.setType(CephConstants.CEPH_PRIMARY_STORAGE_TYPE);
         cvo.setMountPath(CephConstants.CEPH_PRIMARY_STORAGE_TYPE);
-        cvo.setRootVolumePoolName(cmsg.getRootVolumePoolName() == null ? String.format("pri-v-r-%s", vo.getUuid()) : cmsg.getRootVolumePoolName());
-        cvo.setDataVolumePoolName(cmsg.getDataVolumePoolName() == null ? String.format("pri-v-d-%s", vo.getUuid()) : cmsg.getDataVolumePoolName());
-        cvo.setImageCachePoolName(cmsg.getImageCachePoolName() == null ? String.format("pri-c-%s", vo.getUuid()) : cmsg.getImageCachePoolName());
 
         dbf.getEntityManager().persist(cvo);
 
+        String rootVolumePoolName = cmsg.getRootVolumePoolName() == null ? String.format("pri-v-r-%s", vo.getUuid()) : cmsg.getRootVolumePoolName();
+        CephPrimaryStoragePoolVO rootVolumePoolVO = new CephPrimaryStoragePoolVO();
+        rootVolumePoolVO.setUuid(Platform.getUuid());
+        rootVolumePoolVO.setPrimaryStorageUuid(cvo.getUuid());
+        rootVolumePoolVO.setPoolName(rootVolumePoolName);
+        rootVolumePoolVO.setType(CephPrimaryStoragePoolType.Root.toString());
+        dbf.getEntityManager().persist(rootVolumePoolVO);
+        creator = CephSystemTags.DEFAULT_CEPH_PRIMARY_STORAGE_ROOT_VOLUME_POOL.newSystemTagCreator(cvo.getUuid());
+        creator.setTagByTokens(map(e(CephSystemTags.DEFAULT_CEPH_PRIMARY_STORAGE_ROOT_VOLUME_POOL_TOKEN, rootVolumePoolName)));
+        creator.inherent = true;
+        creator.recreate = true;
+        creator.create();
+
+        String dataVolumePoolName = cmsg.getDataVolumePoolName() == null ? String.format("pri-v-d-%s", vo.getUuid()) : cmsg.getDataVolumePoolName();
+        CephPrimaryStoragePoolVO dataVolumePoolVO = new CephPrimaryStoragePoolVO();
+        dataVolumePoolVO.setUuid(Platform.getUuid());
+        dataVolumePoolVO.setPrimaryStorageUuid(cvo.getUuid());
+        dataVolumePoolVO.setPoolName(dataVolumePoolName);
+        dataVolumePoolVO.setType(CephPrimaryStoragePoolType.Data.toString());
+        dbf.getEntityManager().persist(dataVolumePoolVO);
+        creator = CephSystemTags.DEFAULT_CEPH_PRIMARY_STORAGE_DATA_VOLUME_POOL.newSystemTagCreator(cvo.getUuid());
+        creator.setTagByTokens(map(e(CephSystemTags.DEFAULT_CEPH_PRIMARY_STORAGE_DATA_VOLUME_POOL_TOKEN, dataVolumePoolName)));
+        creator.inherent = true;
+        creator.recreate = true;
+        creator.create();
+
+        String imageCachePoolName = cmsg.getImageCachePoolName() == null ? String.format("pri-c-%s", vo.getUuid()) : cmsg.getImageCachePoolName();
+        CephPrimaryStoragePoolVO imageCachePoolVO = new CephPrimaryStoragePoolVO();
+        imageCachePoolVO.setUuid(Platform.getUuid());
+        imageCachePoolVO.setPrimaryStorageUuid(cvo.getUuid());
+        imageCachePoolVO.setPoolName(imageCachePoolName);
+        imageCachePoolVO.setType(CephPrimaryStoragePoolType.ImageCache.toString());
+        dbf.getEntityManager().persist(imageCachePoolVO);
+        creator = CephSystemTags.DEFAULT_CEPH_PRIMARY_STORAGE_IMAGE_CACHE_POOL.newSystemTagCreator(cvo.getUuid());
+        creator.setTagByTokens(map(e(CephSystemTags.DEFAULT_CEPH_PRIMARY_STORAGE_IMAGE_CACHE_POOL_TOKEN, imageCachePoolName)));
+        creator.inherent = true;
+        creator.recreate = true;
+        creator.create();
+
         if (cmsg.getImageCachePoolName() != null) {
-            SystemTagCreator creator = CephSystemTags.PREDEFINED_PRIMARY_STORAGE_IMAGE_CACHE_POOL.newSystemTagCreator(cvo.getUuid());
+            creator = CephSystemTags.PREDEFINED_PRIMARY_STORAGE_IMAGE_CACHE_POOL.newSystemTagCreator(cvo.getUuid());
             creator.ignoreIfExisting = true;
             creator.create();
         }
         if (cmsg.getRootVolumePoolName() != null) {
-            SystemTagCreator creator = CephSystemTags.PREDEFINED_PRIMARY_STORAGE_ROOT_VOLUME_POOL.newSystemTagCreator(cvo.getUuid());
+            creator = CephSystemTags.PREDEFINED_PRIMARY_STORAGE_ROOT_VOLUME_POOL.newSystemTagCreator(cvo.getUuid());
             creator.ignoreIfExisting = true;
             creator.create();
         }
         if (cmsg.getDataVolumePoolName() != null) {
-            SystemTagCreator creator = CephSystemTags.PREDEFINED_PRIMARY_STORAGE_DATA_VOLUME_POOL.newSystemTagCreator(cvo.getUuid());
+            creator = CephSystemTags.PREDEFINED_PRIMARY_STORAGE_DATA_VOLUME_POOL.newSystemTagCreator(cvo.getUuid());
             creator.ignoreIfExisting = true;
             creator.create();
         }
+
+
 
         for (String url : cmsg.getMonUrls()) {
             CephPrimaryStorageMonVO mvo = new CephPrimaryStorageMonVO();
@@ -151,7 +190,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
             dbf.getEntityManager().persist(mvo);
         }
 
-        SystemTagCreator creator = CephSystemTags.KVM_SECRET_UUID.newSystemTagCreator(vo.getUuid());
+        creator = CephSystemTags.KVM_SECRET_UUID.newSystemTagCreator(vo.getUuid());
         creator.setTagByTokens(map(e(CephSystemTags.KVM_SECRET_UUID_TOKEN, UUID.randomUUID().toString())));
         creator.inherent = true;
         creator.recreate = true;

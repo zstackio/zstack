@@ -20,8 +20,14 @@ doc {
 		since "0.6"
 	}
 	field {
-		name "name"
-		desc "资源名称"
+		name "poolName"
+		desc ""
+		type "String"
+		since "0.6"
+	}
+	field {
+		name "aliasName"
+		desc ""
 		type "String"
 		since "0.6"
 	}
@@ -41,6 +47,12 @@ doc {
 		name "lastOpDate"
 		desc "最后一次修改时间"
 		type "Timestamp"
+		since "0.6"
+	}
+	field {
+		name "type"
+		desc ""
+		type "String"
 		since "0.6"
 	}
 }

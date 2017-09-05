@@ -10,44 +10,20 @@ public class CephPrimaryStorageInventory extends PrimaryStorageInventory {
         return this.mons;
     }
 
+    public java.util.List<CephPrimaryStoragePoolInventory> pools;
+    public void setPools(java.util.List<CephPrimaryStoragePoolInventory> pools) {
+        this.pools = pools;
+    }
+    public java.util.List<CephPrimaryStoragePoolInventory> getPools() {
+        return this.pools;
+    }
+
     public java.lang.String fsid;
     public void setFsid(java.lang.String fsid) {
         this.fsid = fsid;
     }
     public java.lang.String getFsid() {
         return this.fsid;
-    }
-
-    public java.lang.String rootVolumePoolName;
-    public void setRootVolumePoolName(java.lang.String rootVolumePoolName) {
-        this.rootVolumePoolName = rootVolumePoolName;
-    }
-    public java.lang.String getRootVolumePoolName() {
-        return this.rootVolumePoolName;
-    }
-
-    public java.lang.String dataVolumePoolName;
-    public void setDataVolumePoolName(java.lang.String dataVolumePoolName) {
-        this.dataVolumePoolName = dataVolumePoolName;
-    }
-    public java.lang.String getDataVolumePoolName() {
-        return this.dataVolumePoolName;
-    }
-
-    public java.lang.String imageCachePoolName;
-    public void setImageCachePoolName(java.lang.String imageCachePoolName) {
-        this.imageCachePoolName = imageCachePoolName;
-    }
-    public java.lang.String getImageCachePoolName() {
-        return this.imageCachePoolName;
-    }
-
-    public java.util.List<SystemTagInventory> tags;
-    public void setTags(java.util.List<SystemTagInventory> tags) {
-        this.tags = tags;
-    }
-    public java.util.List<SystemTagInventory> getTags() {
-        return this.tags;
     }
 
 }

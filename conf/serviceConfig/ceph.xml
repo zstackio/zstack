@@ -58,6 +58,11 @@
     </message>
 
     <message>
+        <name>org.zstack.storage.ceph.primary.APIUpdateCephPrimaryStoragePoolMsg</name>
+        <serviceId>storage.primary</serviceId>
+    </message>
+
+    <message>
         <name>org.zstack.storage.ceph.primary.APIDeleteCephPrimaryStoragePoolMsg</name>
         <serviceId>storage.primary</serviceId>
     </message>

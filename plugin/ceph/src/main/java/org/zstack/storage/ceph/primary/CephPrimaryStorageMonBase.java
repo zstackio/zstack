@@ -6,6 +6,7 @@ import org.zstack.core.ansible.AnsibleGlobalProperty;
 import org.zstack.core.ansible.AnsibleRunner;
 import org.zstack.core.ansible.SshFileMd5Checker;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -289,10 +290,11 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
     }
 
     private void doPing(final ReturnValueCompletion<PingResult> completion) {
-        SimpleQuery<CephPrimaryStorageVO> q = dbf.createQuery(CephPrimaryStorageVO.class);
-        q.select(CephPrimaryStorageVO_.rootVolumePoolName);
-        q.add(CephPrimaryStorageVO_.uuid, Op.EQ, getSelf().getPrimaryStorageUuid());
-        String poolName = q.findValue();
+        String poolName = Q.New(CephPrimaryStoragePoolVO.class)
+                .select(CephPrimaryStoragePoolVO_.poolName)
+                .eq(CephPrimaryStoragePoolVO_.primaryStorageUuid, self.getUuid())
+                .eq(CephPrimaryStoragePoolVO_.type, CephPrimaryStoragePoolType.Root.toString())
+                .findValue();
 
         PingCmd cmd = new PingCmd();
         cmd.testImagePath = String.format("%s/%s-this-is-a-test-image-with-long-name", poolName, self.getUuid());

@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class AddCephPrimaryStoragePoolAction extends AbstractAction {
+public class UpdateCephPrimaryStoragePoolAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public AddCephPrimaryStoragePoolResult value;
+        public UpdateCephPrimaryStoragePoolResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -23,22 +23,13 @@ public class AddCephPrimaryStoragePoolAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String primaryStorageUuid;
-
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String poolName;
+    public java.lang.String uuid;
 
     @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String aliasName;
 
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
-
-    @Param(required = false)
-    public boolean errorIfNotExist = false;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -61,8 +52,8 @@ public class AddCephPrimaryStoragePoolAction extends AbstractAction {
             return ret;
         }
         
-        AddCephPrimaryStoragePoolResult value = res.getResult(AddCephPrimaryStoragePoolResult.class);
-        ret.value = value == null ? new AddCephPrimaryStoragePoolResult() : value; 
+        UpdateCephPrimaryStoragePoolResult value = res.getResult(UpdateCephPrimaryStoragePoolResult.class);
+        ret.value = value == null ? new UpdateCephPrimaryStoragePoolResult() : value; 
 
         return ret;
     }
@@ -87,11 +78,11 @@ public class AddCephPrimaryStoragePoolAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/primary-storage/ceph/{primaryStorageUuid}/pools";
+        info.httpMethod = "PUT";
+        info.path = "/primary-storage/ceph/{uuid}/pools/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "updateCephPrimaryStoragePool";
         return info;
     }
 

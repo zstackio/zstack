@@ -29,6 +29,8 @@ public class APIQueryCephPrimaryStoragePoolReply extends APIQueryReply {
         cephPrimaryStoragePool.setDescription("high performance");
         cephPrimaryStoragePool.setPoolName("test pool");
         cephPrimaryStoragePool.setPrimaryStorageUuid(uuid());
+        cephPrimaryStoragePool.setAliasName("alias test pool");
+        cephPrimaryStoragePool.setType(CephPrimaryStoragePoolType.Data.toString());
         cephPrimaryStoragePool.setCreateDate(new Timestamp(System.currentTimeMillis()));
         cephPrimaryStoragePool.setLastOpDate(new Timestamp(System.currentTimeMillis()));
         reply.setInventories(asList(cephPrimaryStoragePool));

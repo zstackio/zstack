@@ -2,11 +2,15 @@ package org.zstack.test.integration.storage.ceph
 
 import org.springframework.http.HttpEntity
 import org.zstack.core.db.Q
+import org.zstack.core.db.SQL
 import org.zstack.header.tag.SystemTagVO
 import org.zstack.header.tag.SystemTagVO_
 import org.zstack.sdk.AddCephPrimaryStorageAction
+import org.zstack.storage.ceph.CephSystemTags
 import org.zstack.storage.ceph.primary.CephPrimaryStorageBase
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonBase
+import org.zstack.storage.ceph.primary.CephPrimaryStoragePoolVO
+import org.zstack.storage.ceph.primary.CephPrimaryStoragePoolVO_
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
@@ -73,9 +77,6 @@ class AddCephWithAliasNameCase extends SubCase {
     }
 
     void testAddCephWithAliasPoolName() {
-        String imageCachePoolName = "ceph::alias::imageCachePoolName::imageCachePool"
-        String rootVolumePoolName = "ceph::alias::rootVolumePoolName::rootVolumePool"
-        String dataVolumePoolName = "ceph::alias::dataVolumePoolName::dataVolumePool"
         String fsid = "7ff218d9-f525-435f-8a40-3618d1772a64"
 
         env.simulator(CephPrimaryStorageMonBase.ECHO_PATH) { HttpEntity<String> entity, EnvSpec spec ->
@@ -98,32 +99,36 @@ class AddCephWithAliasNameCase extends SubCase {
         AddCephPrimaryStorageAction action = new AddCephPrimaryStorageAction()
         action.name = "ceph-primary-new"
         action.monUrls = ["root:password@localhost"]
-        action.rootVolumePoolName = "pool-xxxx"
-        action.dataVolumePoolName = "pool-xxxx"
-        action.imageCachePoolName = "pool-xxxx"
+        action.rootVolumePoolName = "pool-root"
+        action.dataVolumePoolName = "pool-data"
+        action.imageCachePoolName = "pool-image_cache"
         action.zoneUuid = env.inventoryByName("zone1").uuid
-        action.systemTags = [imageCachePoolName, rootVolumePoolName, dataVolumePoolName]
         action.sessionId = adminSession()
         AddCephPrimaryStorageAction.Result ret = action.call()
 
         assert ret.error == null
-        String tag = Q.New(SystemTagVO.class)
-                .select(SystemTagVO_.tag)
-                .eq(SystemTagVO_.resourceUuid, ret.value.inventory.getUuid())
-                .like(SystemTagVO_.tag, "%alias::imageCache%").findValue()
-        assert tag == imageCachePoolName
+        String aliasDataPool = "data_volume_pool_alias"
+        String poolName = CephSystemTags.DEFAULT_CEPH_PRIMARY_STORAGE_DATA_VOLUME_POOL.getTokenByResourceUuid(ret.value.inventory.uuid, CephSystemTags.DEFAULT_CEPH_PRIMARY_STORAGE_DATA_VOLUME_POOL_TOKEN)
+        String poolUuid = Q.New(CephPrimaryStoragePoolVO.class)
+                .select(CephPrimaryStoragePoolVO_.uuid)
+                .eq(CephPrimaryStoragePoolVO_.poolName, poolName)
+                .eq(CephPrimaryStoragePoolVO_.primaryStorageUuid, ret.value.inventory.uuid)
+                .findValue()
 
-        tag = Q.New(SystemTagVO.class)
-                .select(SystemTagVO_.tag)
-                .eq(SystemTagVO_.resourceUuid, ret.value.inventory.getUuid())
-                .like(SystemTagVO_.tag, "%alias::rootVolumePoolName%").findValue()
-        assert tag == rootVolumePoolName
+        updateCephPrimaryStoragePool {
+            uuid = poolUuid
+            aliasName = aliasDataPool
+        }
 
-        tag = Q.New(SystemTagVO.class)
-                .select(SystemTagVO_.tag)
-                .eq(SystemTagVO_.resourceUuid, ret.value.inventory.getUuid())
-                .like(SystemTagVO_.tag, "%alias::dataVolumePoolName%").findValue()
-        assert tag == dataVolumePoolName
+        String aliasName = Q.New(CephPrimaryStoragePoolVO.class)
+                .select(CephPrimaryStoragePoolVO_.aliasName)
+                .eq(CephPrimaryStoragePoolVO_.uuid, poolUuid)
+                .eq(CephPrimaryStoragePoolVO_.primaryStorageUuid, ret.value.inventory.uuid)
+                .findValue()
+
+        assert aliasName == aliasDataPool
+
+        SQL.New(CephPrimaryStoragePoolVO.class).delete()
     }
 
     @Override

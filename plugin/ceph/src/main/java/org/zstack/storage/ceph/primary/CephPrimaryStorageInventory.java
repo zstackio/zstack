@@ -20,16 +20,13 @@ import java.util.List;
 @ExpandedQueries({
         @ExpandedQuery(expandedField = "mons", inventoryClass = CephPrimaryStorageMonInventory.class,
                 foreignKey = "uuid", expandedInventoryKey = "primaryStorageUuid"),
-        @ExpandedQuery(expandedField = "tags", inventoryClass = SystemTagInventory.class,
-                foreignKey = "uuid", expandedInventoryKey = "resourceUuid")
+        @ExpandedQuery(expandedField = "pools", inventoryClass = CephPrimaryStoragePoolInventory.class,
+                foreignKey = "uuid", expandedInventoryKey = "primaryStorageUuid")
 })
 public class CephPrimaryStorageInventory extends PrimaryStorageInventory {
     private List<CephPrimaryStorageMonInventory> mons;
+    private List<CephPrimaryStoragePoolInventory> pools;
     private String fsid;
-    private String rootVolumePoolName;
-    private String dataVolumePoolName;
-    private String imageCachePoolName;
-    private List<SystemTagInventory> tags;
 
     public List<CephPrimaryStorageMonInventory> getMons() {
         return mons;
@@ -39,36 +36,12 @@ public class CephPrimaryStorageInventory extends PrimaryStorageInventory {
         this.mons = mons;
     }
 
-    public List<SystemTagInventory> getTags() {
-        return tags;
+    public List<CephPrimaryStoragePoolInventory> getPools() {
+        return pools;
     }
 
-    public void setTags(List<SystemTagInventory> tags) {
-        this.tags = tags;
-    }
-
-    public String getRootVolumePoolName() {
-        return rootVolumePoolName;
-    }
-
-    public void setRootVolumePoolName(String rootVolumePoolName) {
-        this.rootVolumePoolName = rootVolumePoolName;
-    }
-
-    public String getDataVolumePoolName() {
-        return dataVolumePoolName;
-    }
-
-    public void setDataVolumePoolName(String dataVolumePoolName) {
-        this.dataVolumePoolName = dataVolumePoolName;
-    }
-
-    public String getImageCachePoolName() {
-        return imageCachePoolName;
-    }
-
-    public void setImageCachePoolName(String imageCachePoolName) {
-        this.imageCachePoolName = imageCachePoolName;
+    public void setPools(List<CephPrimaryStoragePoolInventory> pools) {
+        this.pools = pools;
     }
 
     public CephPrimaryStorageInventory() {
@@ -77,11 +50,8 @@ public class CephPrimaryStorageInventory extends PrimaryStorageInventory {
     public CephPrimaryStorageInventory(CephPrimaryStorageVO vo) {
         super(vo);
         setMons(CephPrimaryStorageMonInventory.valueOf(vo.getMons()));
-        setTags(SystemTagInventory.valueOf(vo.getTags()));
+        setPools(CephPrimaryStoragePoolInventory.valueOf(vo.getPools()));
         setFsid(vo.getFsid());
-        rootVolumePoolName = vo.getRootVolumePoolName();
-        dataVolumePoolName = vo.getDataVolumePoolName();
-        imageCachePoolName = vo.getImageCachePoolName();
     }
 
     public static CephPrimaryStorageInventory valueOf(CephPrimaryStorageVO vo) {
