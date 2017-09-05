@@ -35,7 +35,7 @@ public class AddCephPrimaryStoragePoolAction extends AbstractAction {
     public java.lang.String description;
 
     @Param(required = false)
-    public boolean errorIfNotExist = false;
+    public boolean isCreate = false;
 
     @Param(required = false)
     public java.lang.String resourceUuid;

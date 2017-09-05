@@ -163,7 +163,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     public static class AddPoolCmd extends AgentCommand {
         public String poolName;
-        public boolean errorIfNotExist;
+        public boolean isCreate;
     }
 
     public static class AddPoolRsp extends AgentResponse {
@@ -2349,7 +2349,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         vo = dbf.persistAndRefresh(vo);
 
         AddPoolCmd cmd = new AddPoolCmd();
-        cmd.errorIfNotExist = msg.isErrorIfNotExist();
+        cmd.isCreate = msg.isCreate();
         cmd.poolName = EncodingConversion.encodingToUnicode(msg.getPoolName());
 
         APIAddCephPrimaryStoragePoolEvent evt = new APIAddCephPrimaryStoragePoolEvent(msg.getId());

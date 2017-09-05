@@ -28,14 +28,15 @@ public class APIAddCephPrimaryStoragePoolMsg extends APICreateMessage implements
     private String aliasName;
     @APIParam(maxLength = 2048, required = false)
     private String description;
-    private boolean errorIfNotExist;
 
-    public boolean isErrorIfNotExist() {
-        return errorIfNotExist;
+    private boolean isCreate;
+
+    public boolean isCreate() {
+        return isCreate;
     }
 
-    public void setErrorIfNotExist(boolean errorIfNotExist) {
-        this.errorIfNotExist = errorIfNotExist;
+    public void setCreate(boolean create) {
+        isCreate = create;
     }
 
     public String getDescription() {
@@ -78,6 +79,7 @@ public class APIAddCephPrimaryStoragePoolMsg extends APICreateMessage implements
         msg.setAliasName("alias pool name");
         msg.setDescription("for high performance data volumes");
         msg.setPrimaryStorageUuid(uuid());
+        msg.setCreate(true);
         return msg;
     }
 
