@@ -75,6 +75,12 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="LocalStorageChangeStatusExtension" class="org.zstack.storage.primary.local.LocalStorageChangeStatusExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.storage.primary.PrimaryStorageChangeStateExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
     <bean id="LocalStorageApiInterceptor" class="org.zstack.storage.primary.local.LocalStorageApiInterceptor">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor"/>

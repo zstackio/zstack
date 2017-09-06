@@ -1,5 +1,6 @@
 package org.zstack.test.integration.storage.primary.local.datavolume
 
+import org.zstack.sdk.GetVolumeCapabilitiesAction
 import org.zstack.sdk.LocalStorageMigrateVolumeAction
 import org.zstack.sdk.VolumeInventory
 import org.zstack.test.integration.storage.Env
@@ -47,6 +48,32 @@ class MigrateVolumeCase extends SubCase {
             uuid = psUuid
             stateEvent = "maintain"
         }
+        GetVolumeCapabilitiesAction getVolumeCapabilitiesAction = new GetVolumeCapabilitiesAction()
+        getVolumeCapabilitiesAction.uuid = dataVolume.uuid
+        getVolumeCapabilitiesAction.sessionId = adminSession()
+        assert getVolumeCapabilitiesAction.call().error == null
+        GetVolumeCapabilitiesAction.Result result = getVolumeCapabilitiesAction.call()
+        assert result.value.capabilities.get("MigrationInCurrentPrimaryStorage") == false
+        assert result.value.capabilities.get("MigrationToOtherPrimaryStorage") == false
+
+        changePrimaryStorageState {
+            uuid = psUuid
+            stateEvent = "enable"
+        }
+        assert getVolumeCapabilitiesAction.call().error == null
+        result = getVolumeCapabilitiesAction.call()
+        assert result.value.capabilities.get("MigrationInCurrentPrimaryStorage") == true
+        assert result.value.capabilities.get("MigrationToOtherPrimaryStorage") == false
+
+        changePrimaryStorageState {
+            uuid = psUuid
+            stateEvent = "maintain"
+        }
+        assert getVolumeCapabilitiesAction.call().error == null
+        result = getVolumeCapabilitiesAction.call()
+        assert result.value.capabilities.get("MigrationInCurrentPrimaryStorage") == false
+        assert result.value.capabilities.get("MigrationToOtherPrimaryStorage") == false
+
         LocalStorageMigrateVolumeAction localStorageMigrateVolumeAction = new LocalStorageMigrateVolumeAction()
         localStorageMigrateVolumeAction.volumeUuid = dataVolume.uuid
         localStorageMigrateVolumeAction.destHostUuid = kvm1.inventory.uuid
