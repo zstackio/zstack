@@ -378,8 +378,10 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((HaStartVmInstanceMsg) msg);
         } else if (msg instanceof OverlayMessage) {
             handle((OverlayMessage) msg);
-        } else if (msg instanceof ReimageVmInstanceMsg){
+        } else if (msg instanceof ReimageVmInstanceMsg) {
             handle((ReimageVmInstanceMsg) msg);
+        } else if (msg instanceof GetVmStartingCandidateClustersHostsMsg) {
+            handle((GetVmStartingCandidateClustersHostsMsg) msg);
         } else {
             VmInstanceBaseExtensionFactory ext = vmMgr.getVmInstanceBaseExtensionFactory(msg);
             if (ext != null) {
@@ -392,6 +394,31 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     private void handle(final APIGetVmStartingCandidateClustersHostsMsg msg) {
+        APIGetVmStartingCandidateClustersHostsReply reply = new APIGetVmStartingCandidateClustersHostsReply();
+        final GetVmStartingCandidateClustersHostsMsg gmsg = new GetVmStartingCandidateClustersHostsMsg();
+        gmsg.setUuid(msg.getUuid());
+        bus.makeLocalServiceId(gmsg, VmInstanceConstant.SERVICE_ID);
+        bus.send(gmsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply re) {
+                GetVmStartingCandidateClustersHostsReply greply = (GetVmStartingCandidateClustersHostsReply) re;
+                if (!re.isSuccess()) {
+                    reply.setSuccess(false);
+                    reply.setError(re.getError());
+                    if (greply.getHostInventories() != null) {
+                        reply.setHostInventories(greply.getHostInventories());
+                        reply.setClusterInventories(greply.getClusterInventories());
+                    }
+                } else {
+                    reply.setHostInventories(greply.getHostInventories());
+                    reply.setClusterInventories(greply.getClusterInventories());
+                }
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(final GetVmStartingCandidateClustersHostsMsg msg) {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
@@ -400,9 +427,43 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             @Override
             public void run(final SyncTaskChain chain) {
-                getStartingCandidateHosts(msg, new NoErrorCompletion(chain) {
+                GetVmStartingCandidateClustersHostsReply reply = new GetVmStartingCandidateClustersHostsReply();
+                getStartingCandidateHosts(msg, new ReturnValueCompletion<AllocateHostDryRunReply>(chain) {
                     @Override
-                    public void done() {
+                    public void success(AllocateHostDryRunReply returnValue) {
+                        List<HostInventory> hosts = ((AllocateHostDryRunReply) returnValue).getHosts();
+                        if (!hosts.isEmpty()) {
+                            List<String> cuuids = CollectionUtils.transformToList(hosts, new Function<String, HostInventory>() {
+                                @Override
+                                public String call(HostInventory arg) {
+                                    return arg.getClusterUuid();
+                                }
+                            });
+
+                            SimpleQuery<ClusterVO> cq = dbf.createQuery(ClusterVO.class);
+                            cq.add(ClusterVO_.uuid, Op.IN, cuuids);
+                            List<ClusterVO> cvos = cq.list();
+
+                            reply.setClusterInventories(ClusterInventory.valueOf(cvos));
+                            reply.setHostInventories(hosts);
+                        } else {
+                            reply.setHostInventories(hosts);
+                            reply.setClusterInventories(new ArrayList<>());
+                        }
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        if (HostAllocatorError.NO_AVAILABLE_HOST.toString().equals(errorCode.getCode())) {
+                            reply.setHostInventories(new ArrayList<>());
+                            reply.setClusterInventories(new ArrayList<>());
+                        } else {
+                            reply.setError(errorCode);
+                        }
+                        reply.setSuccess(false);
+                        bus.reply(msg, reply);
                         chain.next();
                     }
                 });
@@ -415,7 +476,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 
-    private void getStartingCandidateHosts(final APIGetVmStartingCandidateClustersHostsMsg msg, final NoErrorCompletion completion) {
+    private void getStartingCandidateHosts(final NeedReplyMessage msg, final ReturnValueCompletion completion) {
         refreshVO();
         ErrorCode err = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
         if (err != null) {
@@ -438,41 +499,14 @@ public class VmInstanceBase extends AbstractVmInstance {
         amsg.setDryRun(true);
         amsg.setListAllHosts(true);
 
-        final APIGetVmStartingCandidateClustersHostsReply reply = new APIGetVmStartingCandidateClustersHostsReply();
         bus.send(amsg, new CloudBusCallBack(completion) {
             @Override
             public void run(MessageReply re) {
                 if (!re.isSuccess()) {
-                    if (HostAllocatorError.NO_AVAILABLE_HOST.toString().equals(re.getError().getCode())) {
-                        reply.setHostInventories(new ArrayList<>());
-                        reply.setClusterInventories(new ArrayList<>());
-                    } else {
-                        reply.setError(re.getError());
-                    }
+                    completion.fail(re.getError());
                 } else {
-                    List<HostInventory> hosts = ((AllocateHostDryRunReply) re).getHosts();
-                    if (!hosts.isEmpty()) {
-                        List<String> cuuids = CollectionUtils.transformToList(hosts, new Function<String, HostInventory>() {
-                            @Override
-                            public String call(HostInventory arg) {
-                                return arg.getClusterUuid();
-                            }
-                        });
-
-                        SimpleQuery<ClusterVO> cq = dbf.createQuery(ClusterVO.class);
-                        cq.add(ClusterVO_.uuid, Op.IN, cuuids);
-                        List<ClusterVO> cvos = cq.list();
-
-                        reply.setClusterInventories(ClusterInventory.valueOf(cvos));
-                        reply.setHostInventories(hosts);
-                    } else {
-                        reply.setHostInventories(hosts);
-                        reply.setClusterInventories(new ArrayList<>());
-                    }
+                    completion.success(re);
                 }
-
-                bus.reply(msg, reply);
-                completion.done();
             }
         });
     }
