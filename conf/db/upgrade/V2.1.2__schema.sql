@@ -41,10 +41,14 @@ CREATE TABLE `AliyunSnapshotVO` (
 CREATE TABLE  `EcsImageUsageVO` (
     `id` INT UNSIGNED NOT NULL UNIQUE AUTO_INCREMENT,
     `ecsImageUuid` VARCHAR(32) NOT NULL,
-    `snapshotUuidOfCreatedImage` VARCHAR(32) NOT NULL,
+    `snapshotUuidOfCreatedImage` VARCHAR(32) DEFAULT NULL,
 	`createDate` TIMESTAMP NOT NULL DEFAULT '0000-00-00 00:00:00' ,
 	`lastOpDate` TIMESTAMP NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY  (`id`)
+    PRIMARY KEY  (`id`),
+    KEY `fkEcsImageUsageVOEcsImageVO` (`ecsImageUuid`),
+    CONSTRAINT `fkEcsImageUsageVOEcsImageVO` FOREIGN KEY (ecsImageUuid) REFERENCES EcsImageVO (uuid)  ON DELETE CASCADE,
+    KEY `fkEcsImageUsageVOAliyunSnapshotVO` (`snapshotUuidOfCreatedImage`),
+    CONSTRAINT `fkEcsImageUsageVOAliyunSnapshotVO` FOREIGN KEY (snapshotUuidOfCreatedImage) REFERENCES AliyunSnapshotVO (uuid)  ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE `CephPrimaryStoragePoolVO` ADD COLUMN `type` varchar(32) NOT NULL DEFAULT 'Data';
