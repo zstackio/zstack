@@ -72,17 +72,17 @@ BEGIN
     SET image_cache_pool_tag_uuid = REPLACE(UUID(),'-','');
     SET result_string = 'success';
 
-    INSERT INTO CephPrimaryStoragePoolVO (`uuid`, `primaryStorageUuid`, `poolName`, `aliasName`, `description`, `type`) VALUES (root_volume_pool_uuid, uuid, rootVolumePoolName, NULL, NULL, 'Root');
+    INSERT INTO CephPrimaryStoragePoolVO (`uuid`, `primaryStorageUuid`, `poolName`, `aliasName`, `description`, `type`, `createDate`, `lastOpDate`) VALUES (root_volume_pool_uuid, uuid, rootVolumePoolName, NULL, NULL, 'Root', CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
     INSERT INTO ResourceVO (`uuid`, `resourceName`, `resourceType`) VALUES (root_volume_pool_uuid, rootVolumePoolName, 'CephPrimaryStoragePoolVO');
-    INSERT INTO SystemTagVO (`uuid`, `resourceUuid`, `resourceType`, `inherent`, `type`, `tag`) VALUES (root_volume_pool_tag_uuid, root_volume_pool_uuid, 'CephPrimaryStoragePoolVO', 1, 'System', CONCAT('ceph::default::rootVolumePoolName::', rootVolumePoolName));
+    INSERT INTO SystemTagVO (`uuid`, `resourceUuid`, `resourceType`, `inherent`, `type`, `tag`, `createDate`, `lastOpDate`) VALUES (root_volume_pool_tag_uuid, uuid, 'PrimaryStorageVO', 1, 'System', CONCAT('ceph::default::rootVolumePoolName::', rootVolumePoolName), CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
 
-    INSERT INTO CephPrimaryStoragePoolVO (`uuid`, `primaryStorageUuid`, `poolName`, `aliasName`, `description`, `type`) VALUES (data_volume_pool_uuid, uuid, dataVolumePoolName, NULL, NULL, 'Data');
+    INSERT INTO CephPrimaryStoragePoolVO (`uuid`, `primaryStorageUuid`, `poolName`, `aliasName`, `description`, `type`, `createDate`, `lastOpDate`) VALUES (data_volume_pool_uuid, uuid, dataVolumePoolName, NULL, NULL, 'Data', CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
     INSERT INTO ResourceVO (`uuid`, `resourceName`, `resourceType`) VALUES (data_volume_pool_uuid, dataVolumePoolName, 'CephPrimaryStoragePoolVO');
-    INSERT INTO SystemTagVO (`uuid`, `resourceUuid`, `resourceType`, `inherent`, `type`, `tag`) VALUES (data_volume_pool_tag_uuid, data_volume_pool_uuid, 'CephPrimaryStoragePoolVO', 1, 'System', CONCAT('ceph::default::dataVolumePoolName::', dataVolumePoolName));
+    INSERT INTO SystemTagVO (`uuid`, `resourceUuid`, `resourceType`, `inherent`, `type`, `tag`, `createDate`, `lastOpDate`) VALUES (data_volume_pool_tag_uuid, uuid, 'PrimaryStorageVO', 1, 'System', CONCAT('ceph::default::dataVolumePoolName::', dataVolumePoolName), CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
 
-    INSERT INTO CephPrimaryStoragePoolVO (`uuid`, `primaryStorageUuid`, `poolName`, `aliasName`, `description`, `type`) VALUES (image_cache_pool_uuid, uuid, imageCachePoolName, NULL, NULL, 'ImageCache');
+    INSERT INTO CephPrimaryStoragePoolVO (`uuid`, `primaryStorageUuid`, `poolName`, `aliasName`, `description`, `type`, `createDate`, `lastOpDate`) VALUES (image_cache_pool_uuid, uuid, imageCachePoolName, NULL, NULL, 'ImageCache', CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
     INSERT INTO ResourceVO (`uuid`, `resourceName`, `resourceType`) VALUES (image_cache_pool_uuid, imageCachePoolName, 'CephPrimaryStoragePoolVO');
-    INSERT INTO SystemTagVO (`uuid`, `resourceUuid`, `resourceType`, `inherent`, `type`, `tag`) VALUES (image_cache_pool_tag_uuid, image_cache_pool_uuid, 'CephPrimaryStoragePoolVO', 1, 'System', CONCAT('ceph::default::imageCachePoolName::', imageCachePoolName));
+    INSERT INTO SystemTagVO (`uuid`, `resourceUuid`, `resourceType`, `inherent`, `type`, `tag`, `createDate`, `lastOpDate`) VALUES (image_cache_pool_tag_uuid, uuid, 'PrimaryStorageVO', 1, 'System', CONCAT('ceph::default::imageCachePoolName::', imageCachePoolName), CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
 
     RETURN(result_string);
 END$$
