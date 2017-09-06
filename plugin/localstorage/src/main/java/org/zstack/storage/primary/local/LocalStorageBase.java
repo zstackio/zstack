@@ -38,6 +38,7 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO_;
 import org.zstack.header.vm.*;
 import org.zstack.header.volume.*;
+import org.zstack.compute.host.VolumeMigrationTargetHostFilter;
 import org.zstack.storage.primary.PrimaryStorageBase;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManager;
@@ -54,7 +55,6 @@ import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 
 import javax.persistence.LockModeType;
-import javax.persistence.Query;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
@@ -192,7 +192,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     return;
                 }
 
-                LinkedList<HostVO> hosts = new LinkedList<>(SQL.New("select h from HostVO h " +
+                List<HostVO> hosts = new LinkedList<>(SQL.New("select h from HostVO h " +
                         " where h.uuid in (:uuids)" +
                         " and h.status = :hstatus")
                         .param("uuids", hostUuids)
@@ -234,9 +234,12 @@ public class LocalStorageBase extends PrimaryStorageBase {
                         }
                     }
                 }
+                List<VolumeMigrationTargetHostFilter> exts = pluginRgty.getExtensionList(VolumeMigrationTargetHostFilter.class);
+                for (VolumeMigrationTargetHostFilter hostFilter : exts){
+                    hosts = hostFilter.filter(hosts);
+                }
                 reply.setInventories(HostInventory.valueOf(hosts));
             }
-
         }.execute();
 
         bus.reply(msg, reply);

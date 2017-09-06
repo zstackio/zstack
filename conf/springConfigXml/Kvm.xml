@@ -92,4 +92,10 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="UsernameKVMHostFilter" class="org.zstack.kvm.UsernameKVMHostFilter">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.compute.host.VolumeMigrationTargetHostFilter"/>
+        </zstack:plugin>
+    </bean>
+
 </beans>
