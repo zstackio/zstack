@@ -4,23 +4,17 @@ import org.springframework.http.HttpEntity
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.Q
-import org.zstack.header.message.AbstractBeforeSendMessageInterceptor
-import org.zstack.header.message.Message
-import org.zstack.header.storage.primary.ConnectPrimaryStorageMsg
-import org.zstack.header.storage.primary.ConnectPrimaryStorageReply
 import org.zstack.sdk.AddCephPrimaryStorageAction
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonBase
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonVO
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
+import org.zstack.testlib.HttpError
 import org.zstack.testlib.SubCase
 import org.zstack.testlib.Test
 import org.zstack.utils.Utils
 import org.zstack.utils.logging.CLogger
 
-import static org.zstack.core.Platform.operr
-
-// maybe unstable case
 class AddCephPrimaryStorageCase extends SubCase {
     private final static CLogger logger = Utils.getLogger(AddCephPrimaryStorageCase.class)
 
@@ -91,26 +85,9 @@ use:
     }
 
     void testAfterAddCephPrimaryStorageTimeoutStillConnect() {
-        Message msgbak
-        bus.installBeforeSendMessageInterceptor(new AbstractBeforeSendMessageInterceptor() {
-            @Override
-            void intercept(Message msg) {
-                msgbak = msg
-            }
-        }, ConnectPrimaryStorageMsg.class)
-        env.cleanSimulatorAndMessageHandlers()
         env.simulator(CephPrimaryStorageMonBase.ECHO_PATH) { HttpEntity<String> entity, EnvSpec spec ->
-            if (msgbak != null) {
-                ConnectPrimaryStorageReply reply = new ConnectPrimaryStorageReply()
-                reply.success = false
-                reply.connected = false
-                reply.error = operr("purposely")
-                bus.reply(msgbak, reply)
-            }
-
-            return [:]
+            throw new HttpError(404, "on purpose")
         }
-
 
         AddCephPrimaryStorageAction action = new AddCephPrimaryStorageAction()
         action.name = "ceph-primary-new"
@@ -123,12 +100,8 @@ use:
         action.call()
 
         // wait echo finished
-        // todo; unstable assert
         retryInSecs{
-            logger.error("unstable assert count")
-            return {
-                assert Q.New(CephPrimaryStorageMonVO.class).count() == 0l: "after failed to add cephPS, all monVO should be removed, but some left"
-            }
+            assert Q.New(CephPrimaryStorageMonVO.class).count() == 0l: "after failed to add cephPS, all monVO should be removed, but some left"
         }
     }
 
