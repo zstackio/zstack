@@ -173,7 +173,7 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
 
         assert inv.poolName == LOW_POOL_NAME
         assert acmd != null
-        assert !acmd.errorIfNotExist
+        assert !acmd.isCreate
         assert acmd.poolName == EncodingConversion.encodingToUnicode(LOW_POOL_NAME)
 
         CephPrimaryStorageBase.DeletePoolCmd dcmd = null
@@ -204,7 +204,7 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
         }
 
         AddCephPrimaryStoragePoolAction a = new AddCephPrimaryStoragePoolAction()
-        a.errorIfNotExist = true
+        a.isCreate = true
         a.poolName = LOW_POOL_NAME
         a.primaryStorageUuid = primaryStorage.uuid
         a.sessionId = adminSession()
@@ -213,7 +213,7 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
         assert res.error != null
         assert !Q.New(CephPrimaryStoragePoolVO.class).eq(CephPrimaryStoragePoolVO_.poolName, LOW_POOL_NAME).isExists()
         assert acmd != null
-        assert acmd.errorIfNotExist
+        assert acmd.isCreate
     }
 
     void testQueryPool() {
