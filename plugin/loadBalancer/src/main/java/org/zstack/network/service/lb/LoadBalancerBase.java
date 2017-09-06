@@ -41,6 +41,7 @@ import static org.zstack.core.Platform.operr;
 
 import javax.persistence.TypedQuery;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 
@@ -127,7 +128,8 @@ public class LoadBalancerBase {
             public void run(SyncTaskChain chain) {
                 if (self.getProviderType() == null) {
                     // not initialized yet
-                    dbf.remove(self);
+                    deleteListenersForLoadBalancer(msg.getLoadBalancerUuid());
+                    dbf.remove(Q.New(LoadBalancerVO.class).eq(LoadBalancerVO_.uuid, msg.getLoadBalancerUuid()).find());
                     bus.reply(msg, reply);
                     chain.next();
                     return;
@@ -137,7 +139,8 @@ public class LoadBalancerBase {
                 bkd.destroyLoadBalancer(makeStruct(), new Completion(msg, chain) {
                     @Override
                     public void success() {
-                        dbf.remove(self);
+                        deleteListenersForLoadBalancer(msg.getLoadBalancerUuid());
+                        dbf.remove(Q.New(LoadBalancerVO.class).eq(LoadBalancerVO_.uuid, msg.getLoadBalancerUuid()).find());
                         bus.reply(msg, reply);
                         chain.next();
                     }
@@ -156,6 +159,17 @@ public class LoadBalancerBase {
                 return "delete-load-balancer-only";
             }
         });
+    }
+
+    private void deleteListenersForLoadBalancer(String lbUuid) {
+        List<LoadBalancerListenerVO> listenerVOS = Q.New(LoadBalancerListenerVO.class)
+                .eq(LoadBalancerListenerVO_.loadBalancerUuid, lbUuid)
+                .list();
+        if (listenerVOS != null && !listenerVOS.isEmpty()) {
+            logger.debug(String.format("delete loadBalancerListeners[%s] for loadBalancer[uuid:%s]",
+                    listenerVOS.stream().map(vo -> vo.getUuid()).collect(Collectors.toList()), lbUuid));
+            listenerVOS.forEach(vo -> dbf.remove(vo));
+        }
     }
 
     private void handle(final DeleteLoadBalancerMsg msg) {
