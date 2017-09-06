@@ -11,7 +11,7 @@ doc {
 
     rest {
         request {
-			url "PUT /v1/primary-storage/ceph/{uuid}/pools/actions"
+			url "PUT /v1/primary-storage/ceph/pools/{uuid}/actions"
 
 
             header(Authorization: 'OAuth the-session-uuid')

@@ -79,7 +79,7 @@ public class UpdateCephPrimaryStoragePoolAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/primary-storage/ceph/{uuid}/pools/actions";
+        info.path = "/primary-storage/ceph/pools/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "updateCephPrimaryStoragePool";

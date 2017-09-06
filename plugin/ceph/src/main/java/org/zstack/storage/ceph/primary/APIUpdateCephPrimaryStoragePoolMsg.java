@@ -13,7 +13,7 @@ import org.zstack.header.storage.primary.PrimaryStorageMessage;
  * Created by AlanJager on 2017/9/4.
  */
 @RestRequest(
-        path = "/primary-storage/ceph/{uuid}/pools/actions",
+        path = "/primary-storage/ceph/pools/{uuid}/actions",
         isAction = true,
         method = HttpMethod.PUT,
         responseClass = APIUpdateCephPrimaryStoragePoolEvent.class
