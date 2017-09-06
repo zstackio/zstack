@@ -290,9 +290,13 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
     }
 
     private void doPing(final ReturnValueCompletion<PingResult> completion) {
+        String primaryStorageUuid = Q.New(CephPrimaryStorageMonVO.class)
+                .select(CephPrimaryStorageMonVO_.primaryStorageUuid)
+                .eq(CephPrimaryStorageMonVO_.uuid, self.getUuid())
+                .findValue();
         String poolName = Q.New(CephPrimaryStoragePoolVO.class)
                 .select(CephPrimaryStoragePoolVO_.poolName)
-                .eq(CephPrimaryStoragePoolVO_.primaryStorageUuid, self.getUuid())
+                .eq(CephPrimaryStoragePoolVO_.primaryStorageUuid, primaryStorageUuid)
                 .eq(CephPrimaryStoragePoolVO_.type, CephPrimaryStoragePoolType.Root.toString())
                 .findValue();
 
