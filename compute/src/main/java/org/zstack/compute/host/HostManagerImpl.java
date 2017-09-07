@@ -12,8 +12,7 @@ import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.defer.Deferred;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.thread.AsyncThread;
-import org.zstack.core.thread.SyncThread;
+import org.zstack.core.thread.*;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.AbstractService;
 import org.zstack.header.allocator.HostCpuOverProvisioningManager;
@@ -31,7 +30,10 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedReplyMessage;
-import org.zstack.header.storage.primary.*;
+import org.zstack.header.storage.primary.PrimaryStorageCanonicalEvent;
+import org.zstack.header.storage.primary.PrimaryStorageHostRefVO;
+import org.zstack.header.storage.primary.PrimaryStorageHostRefVO_;
+import org.zstack.header.storage.primary.PrimaryStorageHostStatus;
 import org.zstack.search.GetQuery;
 import org.zstack.search.SearchQuery;
 import org.zstack.tag.TagManager;
@@ -45,6 +47,7 @@ import org.zstack.utils.logging.CLogger;
 import javax.persistence.Tuple;
 import java.util.*;
 
+import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 
 public class HostManagerImpl extends AbstractService implements HostManager, ManagementNodeChangeListener,
@@ -55,6 +58,8 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
     private CloudBus bus;
     @Autowired
     private DatabaseFacade dbf;
+    @Autowired
+    private ThreadFacade thdf;
     @Autowired
     private PluginRegistry pluginRgty;
     @Autowired
@@ -183,7 +188,43 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         throw new CloudRuntimeException("unexpected addHost message: " + msg);
     }
 
+    private void doAddHostInQueue(final AddHostMessage msg, ReturnValueCompletion<HostInventory> completion) {
+        thdf.chainSubmit(new ChainTask(completion) {
+            @Override
+            public String getSyncSignature() {
+                return String.format("add-host-%s", msg.getManagementIp());
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                doAddHost(msg, new ReturnValueCompletion<HostInventory>(completion, chain) {
+                    @Override
+                    public void success(HostInventory returnValue) {
+                        completion.success(returnValue);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        completion.fail(errorCode);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return getSyncSignature();
+            }
+        });
+    }
+
     private void doAddHost(final AddHostMessage msg, ReturnValueCompletion<HostInventory > completion) {
+        if (Q.New(HostVO.class).eq(HostVO_.managementIp, msg.getManagementIp()).isExists()) {
+            completion.fail(argerr("there has been a host having managementIp[%s]", msg.getManagementIp()));
+            return;
+        }
+
         final ClusterVO cluster = findClusterByUuid(msg.getClusterUuid());
         final HostVO hvo = new HostVO();
         if (msg.getResourceUuid() != null) {
@@ -370,7 +411,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
     private void handle(final AddHostMsg msg) {
         final AddHostReply reply = new AddHostReply();
 
-        doAddHost(msg, new ReturnValueCompletion<HostInventory>(msg) {
+        doAddHostInQueue(msg, new ReturnValueCompletion<HostInventory>(msg) {
             @Override
             public void success(HostInventory returnValue) {
                 reply.setInventory(returnValue);
@@ -389,7 +430,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
     private void handle(final APIAddHostMsg msg) {
         final APIAddHostEvent evt = new APIAddHostEvent(msg.getId());
 
-        doAddHost(msg, new ReturnValueCompletion<HostInventory>(msg) {
+        doAddHostInQueue(msg, new ReturnValueCompletion<HostInventory>(msg) {
             @Override
             public void success(HostInventory inventory) {
                 evt.setInventory(inventory);
