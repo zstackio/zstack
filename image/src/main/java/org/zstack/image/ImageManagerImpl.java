@@ -204,6 +204,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                         vo.setActualSize(actualSize);
                         vo.setState(ImageState.Enabled);
                         vo.setStatus(ImageStatus.Creating);
+                        vo.setSystem(false);
                         vo.setFormat(format);
                         vo.setUrl(String.format("volume://%s", msg.getVolumeUuid()));
                         image = dbf.persistAndRefresh(vo);
