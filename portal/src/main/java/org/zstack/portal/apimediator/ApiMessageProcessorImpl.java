@@ -37,6 +37,7 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import java.io.File;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -254,101 +255,9 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
     }
 
 
-    private void apiParamValidation(Message msg, ApiMessageDescriptor desc) {
+    private void apiParamValidation(APIMessage msg) {
         try {
-            for (Map.Entry<Field, APIParam> fp : desc.getFieldApiParams().entrySet()) {
-                Field f = fp.getKey();
-                final APIParam at = fp.getValue();
-
-                f.setAccessible(true);
-                Object value = f.get(msg);
-
-                if (value != null && (value instanceof String) && !at.noTrim()) {
-                    value = ((String) value).trim();
-                    f.set(msg, value);
-                }
-
-                if (value != null && at.maxLength() != Integer.MIN_VALUE && (value instanceof String)) {
-                    String str = (String) value;
-                    if (str.length() > at.maxLength()) {
-                        throw new ApiMessageInterceptionException(argerr("field[%s] of message[%s] exceeds max length of string. expected was <= %s, actual was %s",
-                                        f.getName(), msg.getClass().getName(), at.maxLength(), str.length()));
-                    }
-                }
-
-                if (value != null && at.minLength() != 0 && (value instanceof String)) {
-                    String str = (String) value;
-                    if (str.length() < at.minLength()) {
-                        throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                                String.format("field[%s] of message[%s] less than the min length of string. expected was >= %s, actual was %s",
-                                        f.getName(), msg.getClass().getName(), at.minLength(), str.length())
-                        ));
-                    }
-                }
-
-                if (at.required() && value == null) {
-                    throw new ApiMessageInterceptionException(argerr("field[%s] of message[%s] is mandatory, can not be null", f.getName(), msg.getClass().getName()));
-                }
-
-                if (value != null && at.validValues().length > 0) {
-                    List<String> vals = new ArrayList<>();
-                    for (String val: at.validValues()) {
-                        vals.add(val.toLowerCase());
-                    }
-                    if (!vals.contains(value.toString().toLowerCase())) {
-                        throw new ApiMessageInterceptionException(argerr("valid value for field[%s] of message[%s] are %s, but %s found", f.getName(),
-                                msg.getClass().getName(), vals, value));
-                    }
-                }
-
-                if (value != null && at.validRegexValues() != null && at.validRegexValues().trim().equals("") == false) {
-                    String regex = at.validRegexValues().trim();
-                    Pattern p = Pattern.compile(regex);
-                    Matcher mt = p.matcher(value.toString());
-                    if (!mt.matches()){
-                        throw new ApiMessageInterceptionException(argerr("valid regex value for field[%s] of message[%s] are %s, but %s found", f.getName(),
-                                        msg.getClass().getName(), regex, value));
-                    }
-                }
-
-                if (value !=null && at.nonempty() && value instanceof Collection) {
-                    Collection col = (Collection) value;
-                    if (col.isEmpty()) {
-                        throw new  ApiMessageInterceptionException(argerr("field[%s] must be a nonempty list", f.getName()));
-                    }
-                }
-
-                if (value !=null && !at.nullElements() && value instanceof Collection) {
-                    Collection col = (Collection) value;
-                    for (Object o : col) {
-                        if (o == null) {
-                            throw new  ApiMessageInterceptionException(argerr("field[%s] cannot contain a NULL element", f.getName()));
-                        }
-                    }
-                }
-
-                if (value != null &&!at.emptyString()) {
-                    if (value instanceof String && StringUtils.isEmpty((String) value)) {
-                        throw new ApiMessageInterceptionException(argerr("field[%s] cannot be an empty string", f.getName()));
-                    } else if (value instanceof Collection) {
-                        for (Object v : (Collection)value) {
-                            if (v instanceof String && StringUtils.isEmpty((String)v)) {
-                                throw new ApiMessageInterceptionException(argerr("field[%s] cannot contain any empty string", f.getName()));
-                            }
-                        }
-                    }
-                }
-
-                if (value != null && at.numberRange().length > 0 && TypeUtils.isTypeOf(value, Integer.TYPE, Integer.class, Long.TYPE, Long.class)) {
-                    DebugUtils.Assert(at.numberRange().length == 2, String.format("invalid field[%s], APIParam.numberRange must have and only have 2 items", f.getName()));
-                    long low = at.numberRange()[0];
-                    long high = at.numberRange()[1];
-                    long val = Long.valueOf(((Number) value).longValue());
-                    if (val < low || val > high) {
-                        throw new ApiMessageInterceptionException(argerr("field[%s] must be in range of [%s, %s]", f.getName(), low, high));
-                    }
-                }
-
+            msg.validate((msg1, f, value, at) -> {
                 if (value != null && at.resourceType() != Object.class) {
                     if (value instanceof Collection) {
                         final Collection col = (Collection) value;
@@ -365,9 +274,9 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
                             }.call();
 
                             if (uuids.size() != col.size()) {
-                                List<String> invalids = new ArrayList<String>();
-                                for (Object o : col)  {
-                                    String uuid = (String)o;
+                                List<String> invalids = new ArrayList<>();
+                                for (Object o : col) {
+                                    String uuid = (String) o;
                                     if (!uuids.contains(uuid)) {
                                         invalids.add(uuid);
                                     }
@@ -392,7 +301,12 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
                                     throw new CloudRuntimeException(String.format("the API class[%s] does not have @RestRequest but it uses a successIfResourceNotExisting helper", msg.getClass()));
                                 }
 
-                                APIEvent evt = (APIEvent) rat.responseClass().getConstructor(String.class).newInstance(msg.getId());
+                                APIEvent evt;
+                                try {
+                                    evt = (APIEvent) rat.responseClass().getConstructor(String.class).newInstance(msg.getId());
+                                } catch (Exception e) {
+                                    throw new CloudRuntimeException(e);
+                                }
 
                                 bus.publish(evt);
                                 throw new StopRoutingException();
@@ -404,9 +318,11 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
                         }
                     }
                 }
-            }
+            });
         } catch (ApiMessageInterceptionException | StopRoutingException ae) {
             throw ae;
+        } catch (APIMessage.InvalidApiMessageException ie) {
+            throw new ApiMessageInterceptionException(argerr(ie.getMessage(), ie.getArguments()));
         } catch (Exception e) {
             logger.warn(e.getMessage(), e);
             throw new ApiMessageInterceptionException(errf.throwableToInternalError(e));
@@ -417,7 +333,7 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
     public APIMessage process(APIMessage msg) throws ApiMessageInterceptionException {
         ApiMessageDescriptor desc = descriptors.get(msg.getClass());
 
-        apiParamValidation(msg, desc);
+        apiParamValidation(msg);
         if (desc == null) {
             throw new CloudRuntimeException(String.format("Message[%s] has no ApiMessageDescriptor", msg.getClass().getName()));
         }
