@@ -160,10 +160,12 @@ class AttachNfsWhenNoConnectedHostCase extends SubCase {
         capacity = getPrimaryStorageCapacity {
             primaryStorageUuids = [ps.uuid]
         }
-        assert 0 != capacity.availableCapacity
-        assert 0 == capacity.availablePhysicalCapacity
-        assert 0 == capacity.totalPhysicalCapacity
-        assert 0 == capacity.totalCapacity
+        retryInSecs{
+            assert 0 != capacity.availableCapacity
+            assert 0 == capacity.availablePhysicalCapacity
+            assert 0 == capacity.totalPhysicalCapacity
+            assert 0 == capacity.totalCapacity
+        }
 
         env.afterSimulator(KVMConstant.KVM_CONNECT_PATH) { rsp, HttpEntity<String> e ->
             rsp.success = true
