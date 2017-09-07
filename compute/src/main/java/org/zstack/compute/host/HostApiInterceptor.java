@@ -7,13 +7,13 @@ import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.header.apimediator.StopRoutingException;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
+import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.host.*;
 import org.zstack.header.message.APIMessage;
 import org.zstack.utils.network.NetworkUtils;
+
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 
@@ -85,12 +85,6 @@ public class HostApiInterceptor implements ApiMessageInterceptor {
     private void validate(APIAddHostMsg msg) {
         if (!NetworkUtils.isIpv4Address(msg.getManagementIp()) && !NetworkUtils.isHostname(msg.getManagementIp())) {
             throw new ApiMessageInterceptionException(argerr("managementIp[%s] is neither an IPv4 address nor a valid hostname", msg.getManagementIp()));
-        }
-
-        SimpleQuery<HostVO> q = dbf.createQuery(HostVO.class);
-        q.add(HostVO_.managementIp, Op.EQ, msg.getManagementIp());
-        if (q.isExists()) {
-            throw new ApiMessageInterceptionException(argerr("there has been a host having managementIp[%s]", msg.getManagementIp()));
         }
     }
 
