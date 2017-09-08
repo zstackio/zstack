@@ -4,20 +4,13 @@ import org.apache.commons.lang.StringUtils;
 import org.reflections.Reflections;
 import org.reflections.scanners.*;
 import org.reflections.util.ClasspathHelper;
-import org.springframework.transaction.annotation.Transactional;
-import org.zstack.header.apimediator.ApiMessageInterceptionException;
-import org.zstack.header.apimediator.StopRoutingException;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.rest.APINoSee;
-import org.zstack.header.rest.RestRequest;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.FieldUtils;
 import org.zstack.utils.TypeUtils;
-import org.zstack.utils.function.FunctionNoArg;
 
-import javax.persistence.TypedQuery;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.*;
@@ -46,6 +39,9 @@ public abstract class APIMessage extends NeedReplyMessage {
         APIParam param;
     }
 
+    @GsonTransient
+    @NoJsonSchema
+    @APINoSee
     private static Map<Class, Collection<FieldParam>> apiParams = new HashMap<>();
 
     static {
