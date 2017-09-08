@@ -174,5 +174,11 @@ class CreateSystemTagForAPICreateDataVolumeFromVolumeTemplateMsgCase extends Sub
         // exclude ephemeral tag, so it's 2-1=1
         assert tags.size() == 1
         assert tags.get(0).getTag() == "capability::virtio-scsi".toString()
+
+        VolumeSnapshotInventory snapshotInventory = queryVolumeSnapshot {
+        }[0]
+        deleteVolumeSnapshot {
+            uuid = snapshotInventory.uuid
+        }
     }
 }
