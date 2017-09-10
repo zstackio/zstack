@@ -1,8 +1,11 @@
 package org.zstack.testlib
 
 import org.springframework.http.HttpEntity
+import org.zstack.core.cloudbus.CloudBus
 import org.zstack.header.Constants
+import org.zstack.header.message.MessageReply
 import org.zstack.header.rest.RESTConstant
+import org.zstack.header.storage.primary.PingPrimaryStorageMsg
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.storage.primary.local.LocalStorageKvmBackend
@@ -22,6 +25,15 @@ class NfsPrimaryStorageSpec extends PrimaryStorageSpec {
 
         preCreate {
             setupSimulator()
+
+            envSpec.message(PingPrimaryStorageMsg.class) { PingPrimaryStorageMsg msg, CloudBus bus ->
+                def reply = new MessageReply()
+                bus.reply(msg, reply)
+            }
+        }
+
+        postCreate {
+            envSpec.revokeMessage(PingPrimaryStorageMsg.class, null)
         }
     }
 

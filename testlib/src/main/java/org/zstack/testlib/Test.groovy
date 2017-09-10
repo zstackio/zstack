@@ -240,8 +240,8 @@ abstract class Test implements ApiHelper {
                     return
                 }
 
-                def has = currentEnvSpec.messageHandlers.find { k, _ -> k.isAssignableFrom(msg.getClass()) } != null
-                if (has) {
+                def handler = currentEnvSpec.messageHandlers.find { k, _ -> k.isAssignableFrom(msg.getClass()) }
+                if(handler != null && !handler.getValue().isEmpty()){
                     bus.makeLocalServiceId(msg, serviceId)
                 }
             }

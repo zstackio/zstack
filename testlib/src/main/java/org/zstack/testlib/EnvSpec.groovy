@@ -722,4 +722,16 @@ class EnvSpec implements Node {
     void message(Class<? extends Message> msgClz, Closure handler) {
         message(msgClz, null, handler)
     }
+
+    void revokeMessage(Class<? extends Message> msgClz, Closure condition){
+        def lst = messageHandlers[(msgClz)]
+        if (lst == null) {
+            return
+        }
+
+        def ele = lst.find { it -> it.get(0) == condition }
+        if (ele != null) {
+            lst.remove(ele)
+        }
+    }
 }
