@@ -10,8 +10,6 @@ import org.zstack.core.Platform
 import org.zstack.header.errorcode.ErrorCode
 import org.zstack.header.exception.CloudRuntimeException
 import org.zstack.header.identity.SuppressCredentialCheck
-import org.zstack.header.message.APIMessage
-import org.zstack.header.message.APIMessage.InvalidApiMessageException
 import org.zstack.header.message.APIParam
 import org.zstack.header.message.OverriddenApiParams
 import org.zstack.header.query.APIQueryMessage
@@ -807,13 +805,30 @@ ${table.join("\n")}
 
                 def example = m.invoke(null)
 
-                if (example instanceof APIMessage) {
-                    example.validate()
-                }
-
                 LinkedHashMap map = JSONObjectUtil.rehashObject(example, LinkedHashMap.class)
 
                 List<Field> apiFields = getApiFieldsOfClass(clz)
+
+                def overridenApiParams = [:]
+                OverriddenApiParams oat = clz.getAnnotation(OverriddenApiParams.class)
+                if (oat != null) {
+                    oat.value().each {
+                        overridenApiParams[it.field()] = it.param()
+                    }
+                }
+
+                List<String> missingField = apiFields.findAll {
+                    APIParam at = overridenApiParams.containsKey(it.name) ? overridenApiParams[it.name] : it.getAnnotation(APIParam.class)
+                    if (at != null && at.required() && !map.containsKey(it.name)) {
+                        return it
+                    } else {
+                        return null
+                    }
+                }.collect { it.name }
+
+                if (!missingField.isEmpty()) {
+                    throw new CloudRuntimeException("required fields $missingField of ${clz.name} missing in the return value of __example__()")
+                }
 
                 def apiFieldNames = apiFields.collect {
                     return it.name
@@ -827,8 +842,6 @@ ${table.join("\n")}
                 }
 
                 return paramMap
-            } catch (InvalidApiMessageException ie) {
-                throw new CloudRuntimeException("cannot generate the markdown document for the class[${clz.name}], the __example__() method has an error: ${String.format(ie.getMessage(), ie.getArguments())}")
             } catch (NoSuchMethodException e) {
                 throw new CloudRuntimeException("class[${clz.name}] doesn't have static __example__ method", e)
             }
