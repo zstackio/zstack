@@ -5,6 +5,7 @@ import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefInventory;
 import org.zstack.header.query.*;
 import org.zstack.header.search.Inventory;
+import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.header.zone.ZoneInventory;
 
@@ -65,7 +66,9 @@ import java.util.List;
         @ExpandedQuery(expandedField = "vmNic", inventoryClass = VmNicInventory.class,
                 foreignKey = "uuid", expandedInventoryKey = "l3NetworkUuid"),
         @ExpandedQuery(expandedField = "serviceProviderRef", inventoryClass = NetworkServiceL3NetworkRefInventory.class,
-                foreignKey = "uuid", expandedInventoryKey = "l3NetworkUuid", hidden = true)
+                foreignKey = "uuid", expandedInventoryKey = "l3NetworkUuid", hidden = true),
+        @ExpandedQuery(expandedField = "tags", inventoryClass = SystemTagInventory.class,
+                foreignKey = "uuid", expandedInventoryKey = "resourceUuid")
 })
 @ExpandedQueryAliases({
         @ExpandedQueryAlias(alias = "serviceProvider", expandedField = "serviceProviderRef.serviceProvider")
@@ -134,6 +137,10 @@ public class L3NetworkInventory implements Serializable {
             joinColumn = @JoinColumn(name = "l3NetworkUuid"))
     private List<NetworkServiceL3NetworkRefInventory> networkServices;
 
+    @Queryable(mappingClass = SystemTagInventory.class,
+            joinColumn = @JoinColumn(name = "tags"))
+    private List<SystemTagInventory> tags;
+
     public static L3NetworkInventory valueOf(L3NetworkVO vo) {
         L3NetworkInventory inv = new L3NetworkInventory();
         inv.setUuid(vo.getUuid());
@@ -152,6 +159,7 @@ public class L3NetworkInventory implements Serializable {
         inv.setIpRanges(IpRangeInventory.valueOf(vo.getIpRanges()));
         inv.setLastOpDate(vo.getLastOpDate());
         inv.setNetworkServices(NetworkServiceL3NetworkRefInventory.valueOf(vo.getNetworkServices()));
+        inv.setTags(SystemTagInventory.valueOf(vo.getTags()));
         return inv;
     }
 
@@ -301,5 +309,13 @@ public class L3NetworkInventory implements Serializable {
 
     public void setState(String state) {
         this.state = state;
+    }
+
+    public List<SystemTagInventory> getTags() {
+        return tags;
+    }
+
+    public void setTags(List<SystemTagInventory> tags) {
+        this.tags = tags;
     }
 }
