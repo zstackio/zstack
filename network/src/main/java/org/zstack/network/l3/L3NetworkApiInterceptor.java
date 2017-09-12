@@ -16,6 +16,7 @@ import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l3.*;
+import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.header.zone.ZoneVO_;
 import org.zstack.utils.network.NetworkUtils;

@@ -2,6 +2,7 @@ package org.zstack.header.network.l3;
 
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
 import org.zstack.header.tag.AutoDeleteTag;
+import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.EO;
 import org.zstack.header.vo.NoView;
@@ -30,6 +31,11 @@ public class L3NetworkVO extends L3NetworkAO {
     @NoView
     private Set<NetworkServiceL3NetworkRefVO> networkServices = new HashSet<NetworkServiceL3NetworkRefVO>();
 
+    @OneToMany(fetch = FetchType.EAGER)
+    @JoinColumn(name = "resourceUuid", insertable = false, updatable = false)
+    @NoView
+    private Set<SystemTagVO> tags = new HashSet<SystemTagVO>();
+
     public Set<L3NetworkDnsVO> getDns() {
         return dns;
     }
@@ -52,5 +58,13 @@ public class L3NetworkVO extends L3NetworkAO {
 
     public void setNetworkServices(Set<NetworkServiceL3NetworkRefVO> networkServices) {
         this.networkServices = networkServices;
+    }
+
+    public Set<SystemTagVO> getTags() {
+        return tags;
+    }
+
+    public void setTags(Set<SystemTagVO> tags) {
+        this.tags = tags;
     }
 }

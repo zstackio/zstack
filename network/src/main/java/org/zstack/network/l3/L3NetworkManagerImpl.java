@@ -14,6 +14,7 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.*;
@@ -26,6 +27,7 @@ import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l2.L2NetworkVO_;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.quota.QuotaConstant;
+import org.zstack.header.tag.SystemTagValidator;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.network.service.MtuGetter;
@@ -44,6 +46,8 @@ import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
 
+import static java.util.Arrays.asList;
+import static org.zstack.core.Platform.argerr;
 import static org.zstack.utils.CollectionDSL.list;
 import static org.zstack.utils.CollectionDSL.map;
 import static org.zstack.utils.CollectionDSL.e;
@@ -306,7 +310,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
         vo.setState(L3NetworkState.Enabled);
 
         L3NetworkFactory factory = getL3NetworkFactory(L3NetworkType.valueOf(msg.getType()));
-        L3NetworkInventory inv = new SQLBatchWithReturn<L3NetworkInventory>() {
+        new SQLBatchWithReturn<L3NetworkInventory>() {
             @Override
             protected L3NetworkInventory scripts() {
                 L3NetworkInventory inv = factory.createL3Network(vo, msg);
@@ -316,6 +320,8 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
             }
         }.execute();
 
+        L3NetworkInventory inv = L3NetworkInventory.valueOf((L3NetworkVO)
+                Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, vo.getUuid()).find());
 
         APICreateL3NetworkEvent evt = new APICreateL3NetworkEvent(msg.getId());
         evt.setInventory(inv);
@@ -331,6 +337,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
     @Override
     public boolean start() {
         populateExtensions();
+        prepareSystemTags();
         return true;
     }
 
@@ -352,6 +359,21 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
             }
             ipAllocatorStrategies.put(f.getType().toString(), f);
         }
+    }
+
+    private void prepareSystemTags() {
+        List<String> validNetworkCategories = asList("Public", "System", "Private");
+        L3NetworkSystemTags.NETWORK_CATEGORY.installValidator(new SystemTagValidator() {
+            @Override
+            public void validateSystemTag(String resourceUuid, Class resourceType, String systemTag) {
+                String category = L3NetworkSystemTags.NETWORK_CATEGORY.getTokenByTag(systemTag,
+                        L3NetworkSystemTags.NETWORK_CATEGORY_TOKEN);
+                if (!validNetworkCategories.contains(category)) {
+                    throw new OperationFailureException(argerr("invalid network category[%s], only[%s] are valid network categories",
+                            category, validNetworkCategories));
+                }
+            }
+        });
     }
 
     @Override
