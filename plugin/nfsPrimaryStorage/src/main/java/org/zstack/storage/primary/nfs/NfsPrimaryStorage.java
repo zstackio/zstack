@@ -383,10 +383,11 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         }
 
         NfsPrimaryStorageBackend bkd = getBackend(nfsMgr.findHypervisorTypeByImageFormatAndPrimaryStorageUuid(msg.getSnapshot().getFormat(), self.getUuid()));
-        bkd.revertVolumeFromSnapshot(msg.getSnapshot(), msg.getVolume(), destHost, new ReturnValueCompletion<String>(msg) {
+        bkd.revertVolumeFromSnapshot(msg.getSnapshot(), msg.getVolume(), destHost, new ReturnValueCompletion<RevertVolumeFromSnapshotOnPrimaryStorageReply>(msg) {
             @Override
-            public void success(String returnValue) {
-                reply.setNewVolumeInstallPath(returnValue);
+            public void success(RevertVolumeFromSnapshotOnPrimaryStorageReply returnValue) {
+                reply.setNewVolumeInstallPath(returnValue.getNewVolumeInstallPath());
+                reply.setSize(returnValue.getSize());
                 bus.reply(msg, reply);
             }
 

@@ -360,12 +360,23 @@ public class NfsPrimaryStorageKVMBackendCommands {
         @Validation
         private String newVolumeInstallPath;
 
+        @Validation
+        private long size;
+
         public String getNewVolumeInstallPath() {
             return newVolumeInstallPath;
         }
 
         public void setNewVolumeInstallPath(String newVolumeInstallPath) {
             this.newVolumeInstallPath = newVolumeInstallPath;
+        }
+
+        public long getSize() {
+            return size;
+        }
+
+        public void setSize(long size) {
+            this.size = size;
         }
     }
 

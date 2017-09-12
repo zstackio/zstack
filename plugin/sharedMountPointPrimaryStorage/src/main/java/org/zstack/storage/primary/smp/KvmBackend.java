@@ -142,6 +142,9 @@ public class KvmBackend extends HypervisorBackend {
     public static class RevertVolumeFromSnapshotRsp extends AgentRsp {
         @Validation
         public String newVolumeInstallPath;
+
+        @Validation
+        protected long size;
     }
 
     @ApiTimeout(apiClasses = {APICreateDataVolumeFromVolumeSnapshotMsg.class})
@@ -868,6 +871,7 @@ public class KvmBackend extends HypervisorBackend {
                 RevertVolumeFromSnapshotRsp rsp = (RevertVolumeFromSnapshotRsp) returnValue;
                 RevertVolumeFromSnapshotOnPrimaryStorageReply reply = new RevertVolumeFromSnapshotOnPrimaryStorageReply();
                 reply.setNewVolumeInstallPath(rsp.newVolumeInstallPath);
+                reply.setSize(rsp.size);
                 completion.success(reply);
             }
 

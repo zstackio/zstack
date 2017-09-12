@@ -1061,6 +1061,14 @@ public class LocalStorageBase extends PrimaryStorageBase {
         bkd.handle(msg, hostUuid, new ReturnValueCompletion<RevertVolumeFromSnapshotOnPrimaryStorageReply>(msg) {
             @Override
             public void success(RevertVolumeFromSnapshotOnPrimaryStorageReply returnValue) {
+                long increment = returnValue.getSize() - msg.getVolume().getSize();
+                long size = ratioMgr.calculateByRatio(self.getUuid(), increment);
+                if (size > 0) {
+                    reserveCapacityOnHost(hostUuid, size, msg.getPrimaryStorageUuid());
+                } else if (size < 0) {
+                    returnStorageCapacityToHost(hostUuid, Math.abs(size));
+                }
+
                 bus.reply(msg, returnValue);
             }
 

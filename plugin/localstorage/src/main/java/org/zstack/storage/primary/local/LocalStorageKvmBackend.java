@@ -343,12 +343,23 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         @Validation
         private String newVolumeInstallPath;
 
+        @Validation
+        private long size;
+
         public String getNewVolumeInstallPath() {
             return newVolumeInstallPath;
         }
 
         public void setNewVolumeInstallPath(String newVolumeInstallPath) {
             this.newVolumeInstallPath = newVolumeInstallPath;
+        }
+
+        public long getSize() {
+            return size;
+        }
+
+        public void setSize(long size) {
+            this.size = size;
         }
     }
 
@@ -1404,6 +1415,8 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             public void success(RevertVolumeFromSnapshotRsp rsp) {
                 RevertVolumeFromSnapshotOnPrimaryStorageReply ret = new RevertVolumeFromSnapshotOnPrimaryStorageReply();
                 ret.setNewVolumeInstallPath(rsp.getNewVolumeInstallPath());
+                ret.setSize(rsp.getSize());
+
                 completion.success(ret);
             }
 

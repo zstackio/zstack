@@ -6,6 +6,7 @@ import org.zstack.header.message.MessageReply;
  */
 public class RevertVolumeFromSnapshotOnPrimaryStorageReply extends MessageReply {
     private String newVolumeInstallPath;
+    private long size;
 
     public String getNewVolumeInstallPath() {
         return newVolumeInstallPath;
@@ -13,5 +14,13 @@ public class RevertVolumeFromSnapshotOnPrimaryStorageReply extends MessageReply 
 
     public void setNewVolumeInstallPath(String newVolumeInstallPath) {
         this.newVolumeInstallPath = newVolumeInstallPath;
+    }
+
+    public long getSize() {
+        return size;
+    }
+
+    public void setSize(long size) {
+        this.size = size;
     }
 }
