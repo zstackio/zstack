@@ -240,8 +240,8 @@ abstract class Test implements ApiHelper {
                     return
                 }
 
-                def has = currentEnvSpec.messageHandlers.find { k, _ -> k.isAssignableFrom(msg.getClass()) } != null
-                if (has) {
+                def handler = currentEnvSpec.messageHandlers.find { k, _ -> k.isAssignableFrom(msg.getClass()) }
+                if(handler != null && !handler.getValue().isEmpty()){
                     bus.makeLocalServiceId(msg, serviceId)
                 }
             }
@@ -580,6 +580,16 @@ mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
         }
 
         return false
+    }
+
+    protected long costMillis(Closure c){
+        long startTime = new Date().getTime()
+        c()
+        long endTime = new Date().getTime()
+        long cost =  endTime - startTime
+
+        logger.info("cost millis is ${cost}")
+        return cost
     }
 
     @Deprecated
