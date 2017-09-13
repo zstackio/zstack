@@ -453,18 +453,23 @@ public class RESTFacadeImpl implements RESTFacade {
             logger.trace(String.format("json post[%s], %s", url, req.toString()));
         }
 
-
-        ResponseEntity<String> rsp = new Retry<ResponseEntity<String>>() {
-            @Override
-            @RetryCondition(onExceptions = {IOException.class, RestClientException.class})
-            protected ResponseEntity<String> call() {
-                if (unit == null) {
-                    return template.exchange(url, HttpMethod.POST, req, String.class);
-                } else {
-                    return template.exchange(url, HttpMethod.POST, req, String.class, Platform.getUuid(), unit.toMillis(timeout), unit.toMillis(timeout));
+        ResponseEntity<String> rsp;
+        if (CoreGlobalProperty.UNIT_TEST_ON) {
+            rsp = template.exchange(url, HttpMethod.POST, req, String.class);
+        } else {
+            rsp = new Retry<ResponseEntity<String>>() {
+                @Override
+                @RetryCondition(onExceptions = {IOException.class, RestClientException.class})
+                protected ResponseEntity<String> call() {
+                    if (unit == null) {
+                        return template.exchange(url, HttpMethod.POST, req, String.class);
+                    } else {
+                        return template.exchange(url, HttpMethod.POST, req, String.class, Platform.getUuid(), unit.toMillis(timeout), unit.toMillis(timeout));
+                    }
                 }
-            }
-        }.run();
+            }.run();
+        }
+
 
         if (rsp.getStatusCode() != org.springframework.http.HttpStatus.OK) {
             throw new OperationFailureException(operr("failed to post to %s, status code: %s, response body: %s", url, rsp.getStatusCode(), rsp.getBody()));
@@ -493,7 +498,12 @@ public class RESTFacadeImpl implements RESTFacade {
             private long count;
 
             Echo() {
-                this.count = timeout / interval;
+                if (CoreGlobalProperty.UNIT_TEST_ON) {
+                    this.count = 1;
+                } else {
+                    this.count = timeout / interval;
+                }
+
                 DebugUtils.Assert(count!=0, String.format("invalid timeout[%s], interval[%s]", timeout, interval));
             }
 
