@@ -555,7 +555,7 @@ public class VolumeBase implements Volume {
 
             @Override
             public String getName() {
-                return CreateDataVolumeTemplateFromDataVolumeMsg.class.getName();
+                return String.format("create-data-volume-template-from-data-volume-%s", msg.getVolumeUuid());
             }
         });
     }
