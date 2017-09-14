@@ -15,6 +15,7 @@ public class ConsoleProxyAgentInventory {
     private String uuid;
     private String description;
     private String managementIp;
+    private String consoleProxyOverriddenIp;
     private String type;
     private String status;
     private String state;
@@ -27,6 +28,7 @@ public class ConsoleProxyAgentInventory {
         inv.setType(vo.getType());
         inv.setDescription(vo.getDescription());
         inv.setManagementIp(vo.getManagementIp());
+        inv.setConsoleProxyOverriddenIp(vo.getConsoleProxyOverriddenIp());
         inv.setCreateDate(vo.getCreateDate());
         inv.setLastOpDate(vo.getLastOpDate());
         inv.setState(vo.getState().toString());
@@ -104,5 +106,13 @@ public class ConsoleProxyAgentInventory {
 
     public void setLastOpDate(Timestamp lastOpDate) {
         this.lastOpDate = lastOpDate;
+    }
+
+    public String getConsoleProxyOverriddenIp() {
+        return consoleProxyOverriddenIp;
+    }
+
+    public void setConsoleProxyOverriddenIp(String consoleProxyOverriddenIp) {
+        this.consoleProxyOverriddenIp = consoleProxyOverriddenIp;
     }
 }

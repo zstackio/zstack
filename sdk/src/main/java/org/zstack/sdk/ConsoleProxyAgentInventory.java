@@ -26,6 +26,14 @@ public class ConsoleProxyAgentInventory  {
         return this.managementIp;
     }
 
+    public java.lang.String consoleProxyOverriddenIp;
+    public void setConsoleProxyOverriddenIp(java.lang.String consoleProxyOverriddenIp) {
+        this.consoleProxyOverriddenIp = consoleProxyOverriddenIp;
+    }
+    public java.lang.String getConsoleProxyOverriddenIp() {
+        return this.consoleProxyOverriddenIp;
+    }
+
     public java.lang.String type;
     public void setType(java.lang.String type) {
         this.type = type;
