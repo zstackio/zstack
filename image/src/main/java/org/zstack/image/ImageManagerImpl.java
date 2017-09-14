@@ -374,6 +374,9 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                     if (reply.getFormat() != null) {
                                         format = reply.getFormat();
                                     }
+                                    for (CreateImageExtensionPoint ext : pluginRgty.getExtensionList(CreateImageExtensionPoint.class)) {
+                                        ext.afterCreateImage(ImageInventory.valueOf(image), bs.getUuid());
+                                    }
                                 }
 
                                 int backupStorageNum = msg.getBackupStorageUuids() == null ? 1 : msg.getBackupStorageUuids().size();
