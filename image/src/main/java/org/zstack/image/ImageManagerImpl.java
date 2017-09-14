@@ -210,6 +210,11 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                         image = dbf.persistAndRefresh(vo);
                         acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), ImageVO.class);
                         tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), ImageVO.class.getSimpleName());
+                        for (String bsUuid: msg.getBackupStorageUuids()) {
+                            for (CreateImageExtensionPoint ext : pluginRgty.getExtensionList(CreateImageExtensionPoint.class)) {
+                                ext.beforeCreateImage(ImageInventory.valueOf(image), bsUuid);
+                            }
+                        }
                         trigger.next();
                     }
 
@@ -373,9 +378,6 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                     }
                                     if (reply.getFormat() != null) {
                                         format = reply.getFormat();
-                                    }
-                                    for (CreateImageExtensionPoint ext : pluginRgty.getExtensionList(CreateImageExtensionPoint.class)) {
-                                        ext.afterCreateImage(ImageInventory.valueOf(image), bs.getUuid());
                                     }
                                 }
 
