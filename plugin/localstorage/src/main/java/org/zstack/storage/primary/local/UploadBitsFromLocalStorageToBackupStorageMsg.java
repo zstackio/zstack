@@ -8,6 +8,7 @@ import org.zstack.header.storage.primary.PrimaryStorageMessage;
  */
 public class UploadBitsFromLocalStorageToBackupStorageMsg extends NeedReplyMessage implements PrimaryStorageMessage {
     private String hostUuid;
+    private String imageUuid;
     private String primaryStorageUuid;
     private String backupStorageUuid;
     private String backupStorageInstallPath;
@@ -19,6 +20,14 @@ public class UploadBitsFromLocalStorageToBackupStorageMsg extends NeedReplyMessa
 
     public void setHostUuid(String hostUuid) {
         this.hostUuid = hostUuid;
+    }
+
+    public String getImageUuid() {
+        return imageUuid;
+    }
+
+    public void setImageUuid(String imageUuid) {
+        this.imageUuid = imageUuid;
     }
 
     @Override

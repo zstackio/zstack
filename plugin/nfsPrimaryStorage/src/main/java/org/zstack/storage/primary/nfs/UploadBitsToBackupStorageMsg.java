@@ -12,6 +12,15 @@ public class UploadBitsToBackupStorageMsg extends NeedReplyMessage implements Pr
     private String backupStorageInstallPath;
     private String primaryStorageInstallPath;
     private String hypervisorType;
+    private String imageUuid;
+
+    public String getImageUuid() {
+        return imageUuid;
+    }
+
+    public void setImageUuid(String imageUuid) {
+        this.imageUuid = imageUuid;
+    }
 
     public String getBackupStorageUuid() {
         return backupStorageUuid;
