@@ -8,7 +8,9 @@ import org.zstack.core.asyncbatch.LoopAsyncBatch;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.db.*;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.notification.N;
@@ -50,19 +52,16 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
-import static java.lang.Integer.min;
-import static org.zstack.core.Platform.operr;
-
 import javax.persistence.Query;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.io.File;
 import java.util.*;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
+
+import static java.lang.Integer.min;
+import static org.zstack.core.Platform.operr;
 
 public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         KVMHostConnectExtensionPoint, HostConnectionReestablishExtensionPoint {
@@ -513,7 +512,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         BackupStorageVO bs = dbf.findByUuid(msg.getBackupStorageUuid(), BackupStorageVO.class);
 
         NfsPrimaryToBackupStorageMediator m = nfsFactory.getPrimaryToBackupStorageMediator(BackupStorageType.valueOf(bs.getType()), HypervisorType.valueOf(msg.getHypervisorType()));
-        m.uploadBits(null, inv, BackupStorageInventory.valueOf(bs), msg.getBackupStorageInstallPath(), msg.getPrimaryStorageInstallPath(), new ReturnValueCompletion<String>(completion) {
+        m.uploadBits(msg.getImageUuid(), inv, BackupStorageInventory.valueOf(bs), msg.getBackupStorageInstallPath(), msg.getPrimaryStorageInstallPath(), new ReturnValueCompletion<String>(completion) {
             @Override
             public void success(String installPath) {
                 UploadBitsToBackupStorageReply reply = new UploadBitsToBackupStorageReply();

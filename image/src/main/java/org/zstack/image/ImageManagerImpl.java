@@ -253,6 +253,12 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                     if (reply.isSuccess()) {
                                         backupStorages.add(((AllocateBackupStorageReply) reply).getInventory());
                                         saveRefVOByBsInventorys(backupStorages, image.getUuid());
+
+                                        for (BackupStorageInventory bs: backupStorages) {
+                                            for (CreateImageExtensionPoint ext : pluginRgty.getExtensionList(CreateImageExtensionPoint.class)) {
+                                                ext.beforeCreateImage(ImageInventory.valueOf(image), bs.getUuid());
+                                            }
+                                        }
                                         trigger.next();
                                     } else {
                                         trigger.fail(errf.stringToOperationError("cannot find proper backup storage", reply.getError()));
@@ -289,6 +295,11 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                                 msg.getBackupStorageUuids(), JSONObjectUtil.toJsonString(errs)));
                                     } else {
                                         saveRefVOByBsInventorys(backupStorages, image.getUuid());
+                                        for (BackupStorageInventory bs: backupStorages) {
+                                            for (CreateImageExtensionPoint ext : pluginRgty.getExtensionList(CreateImageExtensionPoint.class)) {
+                                                ext.beforeCreateImage(ImageInventory.valueOf(image), bs.getUuid());
+                                            }
+                                        }
                                         trigger.next();
                                     }
                                 }
@@ -373,9 +384,6 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                     }
                                     if (reply.getFormat() != null) {
                                         format = reply.getFormat();
-                                    }
-                                    for (CreateImageExtensionPoint ext : pluginRgty.getExtensionList(CreateImageExtensionPoint.class)) {
-                                        ext.afterCreateImage(ImageInventory.valueOf(image), bs.getUuid());
                                     }
                                 }
 

@@ -167,6 +167,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
                 msg.setPrimaryStorageUuid(paramIn.getPrimaryStorageUuid());
                 msg.setBackupStorageUuid(paramIn.getBackupStorageUuid());
                 msg.setBackupStorageInstallPath(bsInstallPath);
+                msg.setImageUuid(paramIn.getImage().getUuid());
                 bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, paramIn.getPrimaryStorageUuid());
 
                 bus.send(msg, new CloudBusCallBack(trigger) {
