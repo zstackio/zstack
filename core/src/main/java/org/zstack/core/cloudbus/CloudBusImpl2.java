@@ -36,7 +36,6 @@ import org.zstack.utils.gson.GsonTypeCoder;
 import org.zstack.utils.gson.GsonUtil;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
-import static org.zstack.core.Platform.*;
 
 import javax.management.MXBean;
 import java.io.IOException;
@@ -48,6 +47,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.zstack.core.Platform.argerr;
 import static org.zstack.utils.BeanUtils.getProperty;
 import static org.zstack.utils.BeanUtils.setProperty;
 import static org.zstack.utils.CollectionDSL.e;
@@ -1668,11 +1668,11 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
         wire.send(msg);
     }
 
-    private void callReplyPreSendingExtensions(Message msg) {
+    private void callReplyPreSendingExtensions(Message msg, NeedReplyMessage msgReq) {
         List<ReplyMessagePreSendingExtensionPoint> exts = replyMessageMarshaller.get(msg.getClass());
         if (exts != null) {
             for (ReplyMessagePreSendingExtensionPoint ext : exts) {
-                ext.marshalReplyMessageBeforeSending(msg);
+                ext.marshalReplyMessageBeforeSending(msg, msgReq);
             }
         }
     }
@@ -1709,7 +1709,9 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
         reply.setServiceId((String) request.getHeaderEntry(REPLY_TO));
 
         buildResponseMessageMetaData(reply);
-        callReplyPreSendingExtensions(reply);
+        if (request instanceof NeedReplyMessage) {
+            callReplyPreSendingExtensions(reply, (NeedReplyMessage) request);
+        }
         wire.send(reply, false);
     }
 
@@ -1729,7 +1731,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
 
         eventProperty(event);
         buildResponseMessageMetaData(event);
-        callReplyPreSendingExtensions(event);
+        callReplyPreSendingExtensions(event, null);
 
         BeforePublishEventInterceptor c = null;
         try {

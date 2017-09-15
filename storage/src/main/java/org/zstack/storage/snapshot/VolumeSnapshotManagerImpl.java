@@ -13,13 +13,10 @@ import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.thread.ChainTask;
-import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
-import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -43,13 +40,15 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
-import static org.zstack.core.Platform.operr;
-
 import javax.persistence.Query;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
+import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
@@ -647,9 +646,9 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
     }
 
     @Override
-    public void marshalReplyMessageBeforeSending(Message msg) {
-        if (msg instanceof APIQueryVolumeSnapshotTreeReply) {
-            marshal((APIQueryVolumeSnapshotTreeReply) msg);
+    public void marshalReplyMessageBeforeSending(Message replyOrEvent, NeedReplyMessage msg) {
+        if (replyOrEvent instanceof APIQueryVolumeSnapshotTreeReply) {
+            marshal((APIQueryVolumeSnapshotTreeReply) replyOrEvent);
         }
     }
 
