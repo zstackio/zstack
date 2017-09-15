@@ -5,13 +5,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.db.Q;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
-import org.zstack.header.volume.ExpungeVolumeMsg;
-import org.zstack.header.volume.VolumeConstant;
+import org.zstack.header.volume.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -32,6 +32,12 @@ public class VmExpungeRootVolumeFlow extends NoRollbackFlow {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
         if (spec.getVmInventory().getRootVolumeUuid() == null) {
             // the vm is in an intermediate state that has no root volume
+            trigger.next();
+            return;
+        }
+
+        //  http://dev.zstack.io/browse/ZSTAC-2640 if root volume deleted skip
+        if (!Q.New(VolumeVO.class).eq(VolumeVO_.uuid, spec.getVmInventory().getRootVolumeUuid()).isExists()) {
             trigger.next();
             return;
         }
