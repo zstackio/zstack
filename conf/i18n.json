@@ -1620,8 +1620,8 @@
   },
   {
     "raw": "can\u0027t decrease capacity when vm[uuid:%s] is running",
-    "en_US": "can\u0027t decrease capacity when vm[uuid:{1}] is running",
-    "zh_CN": "无法在云主机[uuid:{1}]运行时减少容量。",
+    "en_US": "can\u0027t decrease capacity when vm[uuid:{0}] is running",
+    "zh_CN": "无法在云主机[uuid:{0}]运行时减少容量。",
     "arguments": [
       "vo.getUuid()"
     ],
@@ -1630,8 +1630,8 @@
   },
   {
     "raw": "can\u0027t decrease cpu of vm[uuid:%s] when it is running",
-    "en_US": "can\u0027t decrease cpu of vm[uuid:{1}] when it is running",
-    "zh_CN": "无法在云主机[uuid:{1}]运行时减少CPU数目。",
+    "en_US": "can\u0027t decrease cpu of vm[uuid:{0}] when it is running",
+    "zh_CN": "无法在云主机[uuid:{0}]运行时减少CPU数目。",
     "arguments": [
       "vo.getUuid()"
     ],
@@ -1640,8 +1640,8 @@
   },
   {
     "raw": "can\u0027t decrease memory size of vm[uuid:%s] when it is running",
-    "en_US": "can\u0027t decrease memory size of vm[uuid:{1}] when it is running",
-    "zh_CN": "无法在云主机[uuid:{1}]运行时减少容量。",
+    "en_US": "can\u0027t decrease memory size of vm[uuid:{0}] when it is running",
+    "zh_CN": "无法在云主机[uuid:{0}]运行时减少容量。",
     "arguments": [
       "vo.getUuid()"
     ],

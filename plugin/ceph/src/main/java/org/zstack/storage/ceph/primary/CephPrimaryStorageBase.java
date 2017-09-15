@@ -41,6 +41,7 @@ import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.vm.APICreateVmInstanceMsg;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
 import org.zstack.header.volume.*;
+import org.zstack.identity.AccountManager;
 import org.zstack.kvm.*;
 import org.zstack.kvm.KvmSetupSelfFencerExtensionPoint.KvmCancelSelfFencerParam;
 import org.zstack.kvm.KvmSetupSelfFencerExtensionPoint.KvmSetupSelfFencerParam;
@@ -86,6 +87,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     private ApiTimeoutManager timeoutMgr;
     @Autowired
     private CephImageCacheCleaner imageCacheCleaner;
+    @Autowired
+    private AccountManager acntMgr;
 
     class ReconnectMonLock {
         AtomicBoolean hold = new AtomicBoolean(false);
@@ -1611,26 +1614,108 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     @Override
     protected void handle(final CreateTemplateFromVolumeOnPrimaryStorageMsg msg) {
         final CreateTemplateFromVolumeOnPrimaryStorageReply reply = new CreateTemplateFromVolumeOnPrimaryStorageReply();
-        BackupStorageMediator mediator = getBackupStorageMediator(msg.getBackupStorageUuid());
 
-        UploadParam param = new UploadParam();
-        param.image = msg.getImageInventory();
-        param.primaryStorageInstallPath = msg.getVolumeInventory().getInstallPath();
-        mediator.param = param;
-        mediator.upload(new ReturnValueCompletion<String>(msg) {
-            @Override
-            public void success(String returnValue) {
-                reply.setTemplateBackupStorageInstallPath(returnValue);
-                reply.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
-                bus.reply(msg, reply);
-            }
+        String volumeUuid = msg.getVolumeInventory().getUuid();
+        String imageUuid = msg.getImageInventory().getUuid();
+
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("create-snapshot-and-image-from-volume-%s", volumeUuid));
+        chain.then(new ShareFlow() {
+
+            VolumeSnapshotInventory snapshot;
+            CreateTemplateFromVolumeSnapshotReply imageReply;
 
             @Override
-            public void fail(ErrorCode errorCode) {
-                reply.setError(errorCode);
-                bus.reply(msg, reply);
+            public void setup() {
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = String.format("create-volume-snapshot");
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        String volumeAccountUuid = acntMgr.getOwnerAccountUuidOfResource(volumeUuid);
+
+                        // 1. create snapshot
+                        CreateVolumeSnapshotMsg cmsg = new CreateVolumeSnapshotMsg();
+                        cmsg.setName("Snapshot-" + volumeUuid);
+                        cmsg.setDescription("Take snapshot for " + volumeUuid);
+                        cmsg.setVolumeUuid(volumeUuid);
+                        cmsg.setAccountUuid(volumeAccountUuid);
+
+                        bus.makeLocalServiceId(cmsg, VolumeSnapshotConstant.SERVICE_ID);
+                        bus.send(cmsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply r) {
+                                if (!r.isSuccess()) {
+                                    trigger.fail(r.getError());
+                                    return;
+                                }
+
+                                CreateVolumeSnapshotReply createVolumeSnapshotReply = (CreateVolumeSnapshotReply)r;
+                                snapshot = createVolumeSnapshotReply.getInventory();
+                                reportProgress(getEndFromStage(CREATE_ROOT_VOLUME_TEMPLATE_PREPARATION_STAGE));
+                                trigger.next();
+                            }
+                        });
+
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = String.format("create-template-from-volume-snapshot");
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        // 2.create image
+
+                        VolumeSnapshotVO vo = dbf.findByUuid(snapshot.getUuid(), VolumeSnapshotVO.class);
+                        String treeUuid = vo.getTreeUuid();
+
+                        CreateTemplateFromVolumeSnapshotMsg cmsg = new CreateTemplateFromVolumeSnapshotMsg();
+                        cmsg.setSnapshotUuid(snapshot.getUuid());
+                        cmsg.setImageUuid(imageUuid);
+                        cmsg.setVolumeUuid(snapshot.getVolumeUuid());
+                        cmsg.setTreeUuid(treeUuid);
+                        cmsg.setBackupStorageUuid(msg.getBackupStorageUuid());
+
+                        String resourceUuid = volumeUuid != null ? volumeUuid : treeUuid;
+                        bus.makeTargetServiceIdByResourceUuid(cmsg, VolumeSnapshotConstant.SERVICE_ID, resourceUuid);
+                        bus.send(cmsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply r) {
+                                if (!r.isSuccess()) {
+                                    trigger.fail(r.getError());
+                                    return;
+                                }
+
+                                imageReply = (CreateTemplateFromVolumeSnapshotReply)r;
+                                reportProgress(getEndFromStage(CREATE_ROOT_VOLUME_TEMPLATE_PREPARATION_STAGE));
+                                trigger.next();
+                            }
+                        });
+                    }
+                });
+
+                done(new FlowDoneHandler(msg) {
+                    @Override
+                    public void handle(Map data) {
+                        logger.warn(String.format("successfully create template[uuid:%s] from volume[uuid:%s]", imageUuid, volumeUuid));
+                        reply.setTemplateBackupStorageInstallPath(imageReply.getBackupStorageInstallPath());
+                        reply.setFormat(snapshot.getFormat());
+                        bus.reply(msg, reply);
+                    }
+                });
+
+                error(new FlowErrorHandler(msg) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        logger.warn(String.format("failed to create template from volume[uuid:%s], because %s", volumeUuid, errCode));
+                        reply.setError(errCode);
+                        bus.reply(msg, reply);
+                    }
+                });
             }
-        });
+        }).start();
     }
 
     @Override
