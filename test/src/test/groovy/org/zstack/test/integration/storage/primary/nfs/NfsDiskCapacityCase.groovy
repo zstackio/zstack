@@ -130,14 +130,17 @@ class NfsDiskCapacityCase extends SubCase {
             uuid = volumeInventory1.uuid
         }
 
-        getPrimaryStorageCapacityResult = getPrimaryStorageCapacity {
-            primaryStorageUuids = [primaryStorageInventory.uuid]
+        retryInSecs {
+            psRatioMgr.setGlobalRatio(1.5)
+            getPrimaryStorageCapacityResult = getPrimaryStorageCapacity {
+                primaryStorageUuids = [primaryStorageInventory.uuid]
+            }
+            psRatioMgr.setGlobalRatio(2.5)
+            GetPrimaryStorageCapacityResult ratio252 = getPrimaryStorageCapacity {
+                primaryStorageUuids = [primaryStorageInventory.uuid]
+            }
+            assert getPrimaryStorageCapacityResult.availableCapacity == ratio252.availableCapacity
         }
-        psRatioMgr.setGlobalRatio(2.5)
-        GetPrimaryStorageCapacityResult ratio252 = getPrimaryStorageCapacity {
-            primaryStorageUuids = [primaryStorageInventory.uuid]
-        }
-        assert getPrimaryStorageCapacityResult.availableCapacity == ratio252.availableCapacity
 
         deleteDataVolume {
             uuid = volumeInventory2.uuid
@@ -146,14 +149,19 @@ class NfsDiskCapacityCase extends SubCase {
             uuid = volumeInventory2.uuid
         }
 
-        getPrimaryStorageCapacityResult = getPrimaryStorageCapacity {
-            primaryStorageUuids = [primaryStorageInventory.uuid]
+        retryInSecs {
+            psRatioMgr.setGlobalRatio(2.5)
+            getPrimaryStorageCapacityResult = getPrimaryStorageCapacity {
+                primaryStorageUuids = [primaryStorageInventory.uuid]
+            }
+            psRatioMgr.setGlobalRatio(1.0)
+            GetPrimaryStorageCapacityResult ratio1 = getPrimaryStorageCapacity {
+                primaryStorageUuids = [primaryStorageInventory.uuid]
+            }
+            assert getPrimaryStorageCapacityResult.availableCapacity == ratio1.availableCapacity
         }
-        psRatioMgr.setGlobalRatio(1.0)
-        GetPrimaryStorageCapacityResult ratio1 = getPrimaryStorageCapacity {
-            primaryStorageUuids = [primaryStorageInventory.uuid]
-        }
-        assert getPrimaryStorageCapacityResult.availableCapacity == ratio1.availableCapacity
+
+
 
         GetPrimaryStorageCapacityResult getPrimaryStorageCapacityResult1 = getPrimaryStorageCapacity {
             primaryStorageUuids = [primaryStorageInventory.uuid]
