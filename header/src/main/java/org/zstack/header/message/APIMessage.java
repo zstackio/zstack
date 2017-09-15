@@ -37,6 +37,9 @@ public abstract class APIMessage extends NeedReplyMessage {
         APIParam param;
     }
 
+    @NoJsonSchema
+    @APINoSee
+    @GsonTransient
     private static Map<Class, Collection<FieldParam>> apiParams = new HashMap<>();
 
     static {
