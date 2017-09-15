@@ -69,7 +69,7 @@ public class Platform {
 
     public static volatile boolean IS_RUNNING = true;
 
-    private static Reflections reflections;
+    private static Reflections reflections = BeanUtils.reflections;
 
     public static Reflections getReflections() {
         return reflections;
@@ -336,10 +336,12 @@ public class Platform {
         try {
             msId = getUuid();
 
+            /*
             reflections = new Reflections(ClasspathHelper.forPackage("org.zstack"),
                     new SubTypesScanner(), new MethodAnnotationsScanner(), new FieldAnnotationsScanner(),
                     new MemberUsageScanner(), new MethodParameterNamesScanner(), new ResourcesScanner(),
                     new TypeAnnotationsScanner(), new TypeElementsScanner(), new MethodParameterScanner());
+                    */
 
             // TODO: get code version from MANIFEST file
             codeVersion = "0.1.0";

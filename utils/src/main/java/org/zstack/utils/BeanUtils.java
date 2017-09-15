@@ -2,14 +2,19 @@ package org.zstack.utils;
 
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.lang.StringUtils;
+import org.reflections.Reflections;
+import org.reflections.scanners.*;
+import org.reflections.util.ClasspathHelper;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.core.type.filter.AssignableTypeFilter;
 import org.zstack.utils.function.Function;
+import org.zstack.utils.logging.CLogger;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -18,6 +23,10 @@ import static java.util.Arrays.asList;
 /**
  */
 public class BeanUtils {
+    static CLogger logger = Utils.getLogger(BeanUtils.class);
+    public static Reflections reflections = new Reflections(ClasspathHelper.forPackage("org.zstack"),
+            new SubTypesScanner(), new MethodAnnotationsScanner(), new FieldAnnotationsScanner(),
+            new TypeAnnotationsScanner(), new MethodParameterScanner());
 
     private enum FilterType {
         CLASS,
