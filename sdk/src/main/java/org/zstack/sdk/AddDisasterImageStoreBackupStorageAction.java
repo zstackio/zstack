@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class AddSftpBackupStorageAction extends AbstractAction {
+public class AddDisasterImageStoreBackupStorageAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public AddSftpBackupStorageResult value;
+        public AddImageStoreBackupStorageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -21,6 +21,12 @@ public class AddSftpBackupStorageAction extends AbstractAction {
             return this;
         }
     }
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String attachPoint;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String endPoint;
 
     @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
     public java.lang.String hostname;
@@ -73,8 +79,8 @@ public class AddSftpBackupStorageAction extends AbstractAction {
             return ret;
         }
         
-        AddSftpBackupStorageResult value = res.getResult(AddSftpBackupStorageResult.class);
-        ret.value = value == null ? new AddSftpBackupStorageResult() : value; 
+        AddImageStoreBackupStorageResult value = res.getResult(AddImageStoreBackupStorageResult.class);
+        ret.value = value == null ? new AddImageStoreBackupStorageResult() : value; 
 
         return ret;
     }
@@ -100,7 +106,7 @@ public class AddSftpBackupStorageAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/backup-storage/sftp";
+        info.path = "/backup-storage/image-store/disaster";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";
