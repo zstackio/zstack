@@ -9,6 +9,7 @@ import org.springframework.transaction.TransactionSystemException;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -370,6 +371,17 @@ public class SystemTag {
     }
 
     public SystemTagInventory updateByTagUuid(String tagUuid, String newTag) {
+        return tagMgr.updateSystemTag(tagUuid, newTag);
+    }
+
+    public SystemTagInventory updateUnique(String resourceUuid, String oldTag, String newTag) {
+        String tagUuid = Q.New(SystemTagVO.class).eq(SystemTagVO_.resourceUuid, resourceUuid).
+                eq(SystemTagVO_.resourceType, resourceClass.getSimpleName()).like(SystemTagVO_.tag, oldTag).
+                select(SystemTagVO_.uuid).findValue();
+        if (tagUuid == null) {
+            return null;
+        }
+
         return tagMgr.updateSystemTag(tagUuid, newTag);
     }
 
