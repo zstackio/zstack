@@ -1,9 +1,11 @@
 package org.zstack.header.apimediator;
 
 import org.springframework.http.HttpMethod;
+import org.zstack.header.identity.SuppressCredentialCheck;
 import org.zstack.header.message.APISyncCallMessage;
 import org.zstack.header.rest.RestRequest;
 
+@SuppressCredentialCheck
 @RestRequest(
         path = "/management-nodes/ready",
         method = HttpMethod.GET,
