@@ -17,6 +17,7 @@ import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.core.*;
+import org.zstack.header.core.validation.Validation;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -603,6 +604,16 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     public static class RollbackSnapshotRsp extends AgentResponse {
+        @Validation
+        long size;
+
+        public long getSize() {
+            return size;
+        }
+
+        public void setSize(long size) {
+            this.size = size;
+        }
     }
 
     public static class CheckIsBitsExistingCmd extends AgentCommand {
@@ -2894,6 +2905,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                         httpCall(ROLLBACK_SNAPSHOT_PATH, cmd, RollbackSnapshotRsp.class, new ReturnValueCompletion<RollbackSnapshotRsp>(msg) {
                             @Override
                             public void success(RollbackSnapshotRsp returnValue) {
+                                reply.setSize(returnValue.getSize());
                                 trigger.next();
                             }
 

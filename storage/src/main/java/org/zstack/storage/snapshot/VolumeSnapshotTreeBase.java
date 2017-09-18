@@ -1188,6 +1188,7 @@ public class VolumeSnapshotTreeBase {
         chain.setName(String.format("revert-volume-%s-from-snapshot-%s", currentRoot.getVolumeUuid(), currentRoot.getUuid()));
         chain.then(new ShareFlow() {
             String newVolumeInstallPath;
+            long newSize;
             VolumeVO volume = dbf.findByUuid(currentRoot.getVolumeUuid(), VolumeVO.class);
             VolumeInventory volumeInventory = VolumeInventory.valueOf(volume);
 
@@ -1224,6 +1225,7 @@ public class VolumeSnapshotTreeBase {
                                 if (reply.isSuccess()) {
                                     RevertVolumeFromSnapshotOnPrimaryStorageReply re = (RevertVolumeFromSnapshotOnPrimaryStorageReply) reply;
                                     newVolumeInstallPath = re.getNewVolumeInstallPath();
+                                    newSize = re.getSize();
                                     trigger.next();
                                 } else {
                                     trigger.fail(reply.getError());
@@ -1263,9 +1265,32 @@ public class VolumeSnapshotTreeBase {
                         q.executeUpdate();
                     }
 
+                    private void updateCapacity(long increment) {
+                        if (increment > 0) {
+                            DecreasePrimaryStorageCapacityMsg dmsg = new DecreasePrimaryStorageCapacityMsg();
+                            dmsg.setPrimaryStorageUuid(volume.getPrimaryStorageUuid());
+                            dmsg.setDiskSize(increment);
+                            bus.makeTargetServiceIdByResourceUuid(dmsg, PrimaryStorageConstant.SERVICE_ID, volume.getPrimaryStorageUuid());
+                            bus.send(dmsg);
+                        } else if (increment < 0) {
+                            IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
+                            imsg.setPrimaryStorageUuid(volume.getPrimaryStorageUuid());
+                            imsg.setDiskSize(Math.abs(increment));
+                            bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, volume.getPrimaryStorageUuid());
+                            bus.send(imsg);
+                        }
+                    }
+
                     @Override
                     public void handle(Map data) {
                         volume.setInstallPath(newVolumeInstallPath);
+
+                        // if resized capacity should be updated
+                        if (newSize != 0) {
+                            updateCapacity(newSize - volume.getSize());
+                            volume.setSize(newSize);
+                        }
+
                         dbf.update(volume);
                         updateLatest();
                         bus.publish(evt);

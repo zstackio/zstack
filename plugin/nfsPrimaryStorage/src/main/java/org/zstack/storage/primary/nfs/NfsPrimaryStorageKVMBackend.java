@@ -880,7 +880,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     }
 
     @Override
-    public void revertVolumeFromSnapshot(final VolumeSnapshotInventory sinv, final VolumeInventory vol, final HostInventory host, final ReturnValueCompletion<String> completion) {
+    public void revertVolumeFromSnapshot(VolumeSnapshotInventory sinv, VolumeInventory vol, HostInventory host, ReturnValueCompletion<RevertVolumeFromSnapshotOnPrimaryStorageReply> completion) {
         RevertVolumeFromSnapshotCmd cmd = new RevertVolumeFromSnapshotCmd();
         cmd.setSnapshotInstallPath(sinv.getPrimaryStorageInstallPath());
         cmd.setUuid(sinv.getPrimaryStorageUuid());
@@ -902,14 +902,18 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                 RevertVolumeFromSnapshotResponse rsp = ((KVMHostAsyncHttpCallReply) reply).toResponse(RevertVolumeFromSnapshotResponse.class);
                 if (!rsp.isSuccess()) {
                     completion.fail(operr("failed to revert volume[uuid:%s] to snapshot[uuid:%s] on kvm host[uuid:%s, ip:%s], %s",
-                                    vol.getUuid(), sinv.getUuid(), host.getUuid(), host.getManagementIp(), rsp.getError()));
+                            vol.getUuid(), sinv.getUuid(), host.getUuid(), host.getManagementIp(), rsp.getError()));
                     return;
                 }
 
-                completion.success(rsp.getNewVolumeInstallPath());
+                RevertVolumeFromSnapshotOnPrimaryStorageReply r = new RevertVolumeFromSnapshotOnPrimaryStorageReply();
+                r.setNewVolumeInstallPath(rsp.getNewVolumeInstallPath());
+                r.setSize(rsp.getSize());
+                completion.success(r);
             }
         });
     }
+
 
     @Override
     public void resetRootVolumeFromImage(final VolumeInventory vol, final HostInventory host, final ReturnValueCompletion<String> completion) {
