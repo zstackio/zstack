@@ -34,6 +34,14 @@ public class BaremetalHostCfgInventory  {
         return this.unattended;
     }
 
+    public java.lang.Boolean cloneIso;
+    public void setCloneIso(java.lang.Boolean cloneIso) {
+        this.cloneIso = cloneIso;
+    }
+    public java.lang.Boolean getCloneIso() {
+        return this.cloneIso;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
