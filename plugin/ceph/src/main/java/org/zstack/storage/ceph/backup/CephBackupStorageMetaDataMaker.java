@@ -197,6 +197,11 @@ public class CephBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
     }
 
     @Override
+    public void validateAddImage(List<String> bsUuids) {
+
+    }
+
+    @Override
     public void preAddImage(ImageInventory img) {
 
     }

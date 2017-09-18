@@ -14,7 +14,6 @@ import org.zstack.header.core.workflow.FlowDoneHandler;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.image.*;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
@@ -26,12 +25,12 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
-import static org.zstack.core.Platform.operr;
-
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import static org.zstack.core.Platform.operr;
 
 /**
  * Created by Mei Lei <meilei007@gmail.com> on 11/3/16.
@@ -237,6 +236,11 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
                         return SftpBackupStorageCommands.DumpImageInfoToMetaDataFileRsp.class;
                     }
                 });
+    }
+
+    @Override
+    public void validateAddImage(List<String> bsUuids) {
+
     }
 
     @Override

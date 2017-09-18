@@ -2,6 +2,7 @@ package org.zstack.image;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -41,6 +42,8 @@ public class ImageApiInterceptor implements ApiMessageInterceptor {
     private ErrorFacade errf;
     @Autowired
     private DatabaseFacade dbf;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     private void setServiceId(APIMessage msg) {
         if (msg instanceof ImageMessage) {
@@ -139,6 +142,7 @@ public class ImageApiInterceptor implements ApiMessageInterceptor {
                 throw new ApiMessageInterceptionException(operr("no backup storage specified in uuids%s is available for adding this image; they are not in status %s or not in state %s, or the uuid is invalid backup storage uuid",
                                 msg.getBackupStorageUuids(), BackupStorageStatus.Connected, BackupStorageState.Enabled));
             }
+            isValidBS(bsUuids);
             msg.setBackupStorageUuids(bsUuids);
         }
 
@@ -147,6 +151,12 @@ public class ImageApiInterceptor implements ApiMessageInterceptor {
             msg.setUrl(String.format("file://%s", msg.getUrl()));
         } else if (!msg.getUrl().startsWith("file:///") && !msg.getUrl().startsWith("http://") && !msg.getUrl().startsWith("https://")) {
             throw new ApiMessageInterceptionException(argerr("url must starts with 'file:///', 'http://', 'https://' or '/'"));
+        }
+    }
+
+    private void isValidBS(List<String> bsUuids) {
+        for (AddImageExtensionPoint ext : pluginRgty.getExtensionList(AddImageExtensionPoint.class)) {
+            ext.validateAddImage(bsUuids);
         }
     }
 }
