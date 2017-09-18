@@ -32,6 +32,7 @@ import static org.zstack.core.Platform.operr;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VirtualRouterSyncPortForwardingRulesOnStartFlow implements Flow {
@@ -58,11 +59,14 @@ public class VirtualRouterSyncPortForwardingRulesOnStartFlow implements Flow {
             return q.getResultList();
         } else {
             VmNicInventory publicNic = vr.getPublicNic();
-            VmNicInventory guestNic = vr.getGuestNic();
-            String sql = "select rule from PortForwardingRuleVO rule, VipVO vip, VmNicVO nic, VmInstanceVO vm where vm.uuid = nic.vmInstanceUuid and vm.state = :vmState and rule.vipUuid = vip.uuid and rule.vmNicUuid = nic.uuid and vip.l3NetworkUuid = :vipL3Uuid and nic.l3NetworkUuid = :guestL3Uuid";
+            List<VmNicInventory> guestNics = vr.getGuestNics();
+            if (guestNics == null || guestNics.isEmpty()) {
+                return new ArrayList<PortForwardingRuleVO>(0);
+            }
+            String sql = "select rule from PortForwardingRuleVO rule, VipVO vip, VmNicVO nic, VmInstanceVO vm where vm.uuid = nic.vmInstanceUuid and vm.state = :vmState and rule.vipUuid = vip.uuid and rule.vmNicUuid = nic.uuid and vip.l3NetworkUuid = :vipL3Uuid and nic.l3NetworkUuid in (:guestL3Uuid)";
             TypedQuery<PortForwardingRuleVO> q = dbf.getEntityManager().createQuery(sql, PortForwardingRuleVO.class);
             q.setParameter("vipL3Uuid", publicNic.getL3NetworkUuid());
-            q.setParameter("guestL3Uuid", guestNic.getL3NetworkUuid());
+            q.setParameter("guestL3Uuid", guestNics.stream().map(n -> n.getL3NetworkUuid()).collect(Collectors.toList()));
             q.setParameter("vmState", VmInstanceState.Running);
 
             List<PortForwardingRuleVO> rules =  q.getResultList();
@@ -129,8 +133,13 @@ public class VirtualRouterSyncPortForwardingRulesOnStartFlow implements Flow {
     @Override
     public void run(final FlowTrigger chain, Map data) {
         final VirtualRouterVmInventory vr = (VirtualRouterVmInventory) data.get(VirtualRouterConstant.Param.VR.toString());
-        VmNicInventory guestNic = vr.getGuestNic();
-        if (!vrMgr.isL3NetworkNeedingNetworkServiceByVirtualRouter(guestNic.getL3NetworkUuid(), PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE)) {
+        List<VmNicInventory> guestNics = vr.getGuestNics();
+        if (guestNics == null || guestNics.isEmpty()) {
+            chain.next();
+            return;
+        }
+        List<String> l3Uuids = guestNics.stream().map(n -> n.getL3NetworkUuid()).collect(Collectors.toList());
+        if (!vrMgr.isL3NetworksNeedingNetworkServiceByVirtualRouter(l3Uuids, PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE)) {
             chain.next();
             return;
         }

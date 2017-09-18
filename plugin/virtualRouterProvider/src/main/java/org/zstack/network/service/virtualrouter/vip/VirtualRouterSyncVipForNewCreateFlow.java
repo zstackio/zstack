@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VirtualRouterSyncVipForNewCreateFlow implements Flow {
@@ -41,34 +42,35 @@ public class VirtualRouterSyncVipForNewCreateFlow implements Flow {
     @Override
     public void run(final FlowTrigger chain, Map data) {
         final VirtualRouterVmInventory vr = (VirtualRouterVmInventory) data.get(VirtualRouterConstant.Param.VR.toString());
-        final VmNicInventory guestNic = vr.getGuestNic();
+        final List<VmNicInventory> guestNics = vr.getGuestNics();
         final VmNicInventory publicNic = vr.getPublicNic();
+        List<String> l3Uuids = guestNics.stream().map(n -> n.getL3NetworkUuid()).collect(Collectors.toList());
         List<String> vipUuids = new ArrayList<String>();
-        if (vrMgr.isL3NetworkNeedingNetworkServiceByVirtualRouter(guestNic.getL3NetworkUuid(), EipConstant.EIP_NETWORK_SERVICE_TYPE) &&
+        if (vrMgr.isL3NetworksNeedingNetworkServiceByVirtualRouter(l3Uuids, EipConstant.EIP_NETWORK_SERVICE_TYPE) &&
                 !(VirtualRouterSystemTags.DEDICATED_ROLE_VR.hasTag(vr.getUuid()) && !VirtualRouterSystemTags.VR_EIP_ROLE.hasTag(vr.getUuid()))) {
             vipUuids.addAll(new Callable<List<String>>() {
                 @Override
                 @Transactional(readOnly = true)
                 public List<String> call() {
-                    String sql = "select vip.uuid from EipVO eip, VmNicVO nic, VipVO vip, VmInstanceVO vm where vm.uuid = nic.vmInstanceUuid and vm.state = :vmState and eip.vipUuid = vip.uuid and eip.vmNicUuid = nic.uuid and vip.l3NetworkUuid = :vipL3Uuid and nic.l3NetworkUuid = :guestL3Uuid";
+                    String sql = "select vip.uuid from EipVO eip, VmNicVO nic, VipVO vip, VmInstanceVO vm where vm.uuid = nic.vmInstanceUuid and vm.state = :vmState and eip.vipUuid = vip.uuid and eip.vmNicUuid = nic.uuid and vip.l3NetworkUuid = :vipL3Uuid and nic.l3NetworkUuid in (:guestL3Uuid)";
                     TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
                     q.setParameter("vipL3Uuid", publicNic.getL3NetworkUuid());
-                    q.setParameter("guestL3Uuid", guestNic.getL3NetworkUuid());
+                    q.setParameter("guestL3Uuid", l3Uuids);
                     q.setParameter("vmState", VmInstanceState.Running);
                     return q.getResultList();
                 }
             }.call());
         }
-        if (vrMgr.isL3NetworkNeedingNetworkServiceByVirtualRouter(guestNic.getL3NetworkUuid(), PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE) &&
+        if (vrMgr.isL3NetworksNeedingNetworkServiceByVirtualRouter(l3Uuids, PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE) &&
                 !(VirtualRouterSystemTags.DEDICATED_ROLE_VR.hasTag(vr.getUuid()) && !VirtualRouterSystemTags.VR_PORT_FORWARDING_ROLE.hasTag(vr.getUuid()))) {
             vipUuids.addAll(new Callable<List<String>>() {
                 @Override
                 @Transactional(readOnly = true)
                 public List<String> call() {
-                    String sql = "select vip.uuid from PortForwardingRuleVO rule, VmNicVO nic, VipVO vip, VmInstanceVO vm where vm.uuid = nic.vmInstanceUuid and vm.state = :vmState and rule.vipUuid = vip.uuid and rule.vmNicUuid = nic.uuid and vip.l3NetworkUuid = :vipL3Uuid and nic.l3NetworkUuid = :guestL3Uuid";
+                    String sql = "select vip.uuid from PortForwardingRuleVO rule, VmNicVO nic, VipVO vip, VmInstanceVO vm where vm.uuid = nic.vmInstanceUuid and vm.state = :vmState and rule.vipUuid = vip.uuid and rule.vmNicUuid = nic.uuid and vip.l3NetworkUuid = :vipL3Uuid and nic.l3NetworkUuid in (:guestL3Uuid)";
                     TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
                     q.setParameter("vipL3Uuid", publicNic.getL3NetworkUuid());
-                    q.setParameter("guestL3Uuid", guestNic.getL3NetworkUuid());
+                    q.setParameter("guestL3Uuid", l3Uuids);
                     q.setParameter("vmState", VmInstanceState.Running);
                     return q.getResultList();
                 }

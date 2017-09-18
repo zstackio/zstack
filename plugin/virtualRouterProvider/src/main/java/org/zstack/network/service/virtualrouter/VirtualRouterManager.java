@@ -21,6 +21,8 @@ public interface VirtualRouterManager {
 
     boolean isL3NetworkNeedingNetworkServiceByVirtualRouter(String l3Uuid, String nsType);
 
+    boolean isL3NetworksNeedingNetworkServiceByVirtualRouter(List<String> l3Uuids, String nsType);
+
     void acquireVirtualRouterVm(VirtualRouterStruct struct, ReturnValueCompletion<VirtualRouterVmInventory> completion);
 
     VirtualRouterVmInventory getVirtualRouterVm(L3NetworkInventory l3Nw);

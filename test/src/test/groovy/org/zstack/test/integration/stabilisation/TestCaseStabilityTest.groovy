@@ -43,6 +43,7 @@ class TestCaseStabilityTest extends Test {
         include("mediateApiValidator.xml")
         include("webhook.xml")
         include("CloudBusAopProxy.xml")
+        include("vpc.xml")
     }
 
     @Override

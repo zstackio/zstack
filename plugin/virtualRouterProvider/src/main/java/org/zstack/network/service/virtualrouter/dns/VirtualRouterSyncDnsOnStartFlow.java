@@ -50,6 +50,10 @@ public class VirtualRouterSyncDnsOnStartFlow extends NoRollbackFlow {
         final VirtualRouterVmInventory vr = (VirtualRouterVmInventory) data.get(VirtualRouterConstant.Param.VR.toString());
 
         List<String> nwServed = vr.getGuestL3Networks();
+        if (nwServed == null || nwServed.isEmpty()) {
+            chain.next();
+            return;
+        }
         List<String> l3Uuids = vrMgr.selectL3NetworksNeedingSpecificNetworkService(nwServed, NetworkServiceType.DNS);
         if (l3Uuids.isEmpty()) {
             chain.next();
@@ -79,7 +83,7 @@ public class VirtualRouterSyncDnsOnStartFlow extends NoRollbackFlow {
         for (String d : dnsAddresses) {
             DnsInfo dinfo = new DnsInfo();
             dinfo.setDnsAddress(d);
-            dinfo.setNicMac(vr.getGuestNic().getMac());
+            dinfo.setNicMac(vr.getGuestNics().get(0).getMac());
             dns.add(dinfo);
         }
 
