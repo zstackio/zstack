@@ -45,6 +45,13 @@ public class ImageApiInterceptor implements ApiMessageInterceptor {
     @Autowired
     private PluginRegistry pluginRgty;
 
+    private static final String[] allowedProtocols = new String[]{
+            "http://",
+            "https://",
+            "file:///",
+            "upload://"
+    };
+
     private void setServiceId(APIMessage msg) {
         if (msg instanceof ImageMessage) {
             ImageMessage imsg = (ImageMessage)msg;
@@ -149,14 +156,25 @@ public class ImageApiInterceptor implements ApiMessageInterceptor {
         // compatible with file:/// and /
         if (msg.getUrl().startsWith("/")) {
             msg.setUrl(String.format("file://%s", msg.getUrl()));
-        } else if (!msg.getUrl().startsWith("file:///") && !msg.getUrl().startsWith("http://") && !msg.getUrl().startsWith("https://")) {
+        } else if (!isValidProtocol(msg.getUrl())) {
             throw new ApiMessageInterceptionException(argerr("url must starts with 'file:///', 'http://', 'https://' or '/'"));
         }
     }
+
 
     private void isValidBS(List<String> bsUuids) {
         for (AddImageExtensionPoint ext : pluginRgty.getExtensionList(AddImageExtensionPoint.class)) {
             ext.validateAddImage(bsUuids);
         }
+    }
+
+    private static boolean isValidProtocol(String url) {
+        for (String p : allowedProtocols) {
+            if (url.startsWith(p)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
