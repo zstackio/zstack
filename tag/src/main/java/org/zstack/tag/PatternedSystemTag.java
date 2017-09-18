@@ -1,5 +1,6 @@
 package org.zstack.tag;
 
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.tag.SystemTagInventory;
@@ -126,5 +127,10 @@ public class PatternedSystemTag extends SystemTag {
         q.add(SystemTagVO_.tag, Op.LIKE, useTagFormat());
         SystemTagVO vo = q.find();
         return  vo == null ? null : SystemTagInventory.valueOf(vo);
+    }
+
+    public List<SystemTagInventory> getTagInventories(String resourceUuid) {
+        return SystemTagInventory.valueOf(Q.New(SystemTagVO.class).eq(SystemTagVO_.resourceType, getResourceClass().getSimpleName()).
+                eq(SystemTagVO_.resourceUuid, resourceUuid).like(SystemTagVO_.tag, useTagFormat()).list());
     }
 }
