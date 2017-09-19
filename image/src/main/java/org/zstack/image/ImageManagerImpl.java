@@ -938,10 +938,6 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         } else {
             vo.setUuid(Platform.getUuid());
         }
-        if (!CoreGlobalProperty.UNIT_TEST_ON) {
-            long imageSizeAsked = new ImageQuotaUtil().getLocalImageSizeOnBackupStorage(msg);
-            vo.setActualSize(imageSizeAsked);
-        }
         vo.setName(msg.getName());
         vo.setDescription(msg.getDescription());
         if (msg.getFormat().equals(ImageConstant.ISO_FORMAT_STRING)) {
