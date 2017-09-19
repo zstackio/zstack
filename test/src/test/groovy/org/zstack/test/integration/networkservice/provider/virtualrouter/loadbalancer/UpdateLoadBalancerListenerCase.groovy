@@ -6,9 +6,15 @@ import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.header.vm.VmInstanceVO_
 import org.zstack.network.service.eip.EipConstant
+import org.zstack.network.service.eip.EipVO
+import org.zstack.network.service.eip.EipVO_
 import org.zstack.network.service.lb.LoadBalancerConstants
+import org.zstack.network.service.lb.LoadBalancerVO
+import org.zstack.network.service.lb.LoadBalancerVO_
 import org.zstack.network.service.lb.LoadBalancerListenerVO
 import org.zstack.network.service.lb.LoadBalancerListenerVO_
+import org.zstack.network.service.vip.VipVO
+import org.zstack.network.service.vip.VipVO_
 import org.zstack.network.service.portforwarding.PortForwardingConstant
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants
 import org.zstack.sdk.*
@@ -153,6 +159,8 @@ class UpdateLoadBalancerListenerCase extends SubCase {
     void test() {
         env.create {
             testUpdateLoadBalancerListener()
+            testUpdateLBListenerwithSamePort()
+            testDeleteLBListener()
             cleanEnvironment()
         }
     }
@@ -226,6 +234,202 @@ class UpdateLoadBalancerListenerCase extends SubCase {
         assert ubllRes.value.inventory.uuid == lblVo.uuid
         assert ubllRes.value.inventory.name == lblVo.name
         assert ubllRes.value.inventory.description == lblVo.description
+    }
+
+    void testUpdateLBListenerwithSamePort() {
+        L3NetworkInventory publicL3 = env.inventoryByName("PUBLIC-MANAGEMENT-L3") as L3NetworkInventory
+
+        CreateVipAction createVipAction1 = new CreateVipAction()
+        createVipAction1.name = "vip-1"
+        createVipAction1.l3NetworkUuid = publicL3.uuid
+        createVipAction1.sessionId = adminSession()
+        CreateVipAction.Result creVipres1 = createVipAction1.call()
+        assert creVipres1.error == null
+        VipInventory vipInventory1 = creVipres1.value.inventory
+
+        CreateLoadBalancerAction createLoadBalancerAction1 = new CreateLoadBalancerAction()
+        createLoadBalancerAction1.name = "lb-1"
+        createLoadBalancerAction1.vipUuid = vipInventory1.uuid
+        createLoadBalancerAction1.systemTags = asList("separateVirtualRouterVm")
+        createLoadBalancerAction1.sessionId = adminSession()
+        CreateLoadBalancerAction.Result lbRes1 = createLoadBalancerAction1.call()
+        assert lbRes1.error == null
+        LoadBalancerInventory loadBalancerInventory1 = lbRes1.value.inventory
+
+        CreateLoadBalancerListenerAction createLoadBalancerListenerAction1 = new CreateLoadBalancerListenerAction()
+        createLoadBalancerListenerAction1.loadBalancerUuid = loadBalancerInventory1.uuid
+        createLoadBalancerListenerAction1.loadBalancerPort = 22
+        createLoadBalancerListenerAction1.instancePort = 22
+        createLoadBalancerListenerAction1.name = "ssh"
+        createLoadBalancerListenerAction1.protocol = "tcp"
+        createLoadBalancerListenerAction1.sessionId = adminSession()
+        CreateLoadBalancerListenerAction.Result lblRes1 = createLoadBalancerListenerAction1.call()
+        assert lblRes1.error == null
+        LoadBalancerListenerInventory loadBalancerListenerInventory1 = lblRes1.value.inventory
+        
+        /*create lb-2 with same vip as lb-1, then attach loadBalancerPort woth same port number 22
+         * it return an exception */
+        CreateLoadBalancerAction createLoadBalancerAction2 = new CreateLoadBalancerAction()
+        createLoadBalancerAction2.name = "lb-2"
+        createLoadBalancerAction2.vipUuid = vipInventory1.uuid
+        createLoadBalancerAction2.systemTags = asList("separateVirtualRouterVm")
+        createLoadBalancerAction2.sessionId = adminSession()
+        CreateLoadBalancerAction.Result lbRes2 = createLoadBalancerAction2.call()
+        assert lbRes2.error == null
+        LoadBalancerInventory loadBalancerInventory2 = lbRes2.value.inventory
+
+        CreateLoadBalancerListenerAction createLoadBalancerListenerAction2 = new CreateLoadBalancerListenerAction()
+        createLoadBalancerListenerAction2.loadBalancerUuid = loadBalancerInventory2.uuid
+        createLoadBalancerListenerAction2.loadBalancerPort = 22
+        createLoadBalancerListenerAction2.instancePort = 22
+        createLoadBalancerListenerAction2.name = "ssh"
+        createLoadBalancerListenerAction2.protocol = "tcp"
+        createLoadBalancerListenerAction2.sessionId = adminSession()
+        CreateLoadBalancerListenerAction.Result lblRes2 = createLoadBalancerListenerAction2.call()
+        assert lblRes2.error != null
+
+        /* delete lb-1, then create again, it will success */
+        deleteLoadBalancer {
+            uuid = loadBalancerInventory1.uuid
+        }
+        createLoadBalancerListenerAction2 = new CreateLoadBalancerListenerAction()
+        createLoadBalancerListenerAction2.loadBalancerUuid = loadBalancerInventory2.uuid
+        createLoadBalancerListenerAction2.loadBalancerPort = 22
+        createLoadBalancerListenerAction2.instancePort = 22
+        createLoadBalancerListenerAction2.name = "ssh"
+        createLoadBalancerListenerAction2.protocol = "tcp"
+        createLoadBalancerListenerAction2.sessionId = adminSession()
+        lblRes2 = createLoadBalancerListenerAction2.call()
+        assert lblRes2.error == null
+
+        /* create lb-3 with different vip, then attach loadBalancerPort woth same port number 22
+          * it will return success */
+        CreateVipAction createVipAction3 = new CreateVipAction()
+        createVipAction3.name = "vip-3"
+        createVipAction3.l3NetworkUuid = publicL3.uuid
+        createVipAction3.sessionId = adminSession()
+        CreateVipAction.Result creVipres3 = createVipAction3.call()
+        assert creVipres3.error == null
+        VipInventory vipInventory3 = creVipres3.value.inventory
+        
+        CreateLoadBalancerAction createLoadBalancerAction3 = new CreateLoadBalancerAction()
+        createLoadBalancerAction3.name = "lb-3"
+        createLoadBalancerAction3.vipUuid = vipInventory3.uuid
+        createLoadBalancerAction3.systemTags = asList("separateVirtualRouterVm")
+        createLoadBalancerAction3.sessionId = adminSession()
+        CreateLoadBalancerAction.Result lbRes3 = createLoadBalancerAction3.call()
+        assert lbRes3.error == null
+        LoadBalancerInventory loadBalancerInventory3 = lbRes3.value.inventory
+
+        CreateLoadBalancerListenerAction createLoadBalancerListenerAction3 = new CreateLoadBalancerListenerAction()
+        createLoadBalancerListenerAction3.loadBalancerUuid = loadBalancerInventory3.uuid
+        createLoadBalancerListenerAction3.loadBalancerPort = 22
+        createLoadBalancerListenerAction3.instancePort = 22
+        createLoadBalancerListenerAction3.name = "ssh"
+        createLoadBalancerListenerAction3.protocol = "tcp"
+        createLoadBalancerListenerAction3.sessionId = adminSession()
+        CreateLoadBalancerListenerAction.Result lblRes3 = createLoadBalancerListenerAction3.call()
+        assert lblRes3.error == null
+        LoadBalancerListenerInventory lblInv3 = lblRes3.value.inventory
+
+        /* create loadbalancer with different port but same vip */
+        CreateLoadBalancerListenerAction createLoadBalancerListenerAction4 = new CreateLoadBalancerListenerAction()
+        createLoadBalancerListenerAction4.loadBalancerUuid = loadBalancerInventory3.uuid
+        createLoadBalancerListenerAction4.loadBalancerPort = 23
+        createLoadBalancerListenerAction4.instancePort = 23
+        createLoadBalancerListenerAction4.name = "ssh"
+        createLoadBalancerListenerAction4.protocol = "tcp"
+        createLoadBalancerListenerAction4.sessionId = adminSession()
+        CreateLoadBalancerListenerAction.Result lblRes4 = createLoadBalancerListenerAction4.call()
+        assert lblRes4.error == null
+    }
+
+    void testDeleteLBListener() {
+        L3NetworkInventory publicL3 = env.inventoryByName("PUBLIC-MANAGEMENT-L3") as L3NetworkInventory
+
+        CreateVipAction createVipAction1 = new CreateVipAction()
+        createVipAction1.name = "vip-1"
+        createVipAction1.l3NetworkUuid = publicL3.uuid
+        createVipAction1.sessionId = adminSession()
+        CreateVipAction.Result creVipres1 = createVipAction1.call()
+        assert creVipres1.error == null
+        VipInventory vipInventory1 = creVipres1.value.inventory
+
+        CreateLoadBalancerAction createLoadBalancerAction1 = new CreateLoadBalancerAction()
+        createLoadBalancerAction1.name = "lb-1"
+        createLoadBalancerAction1.vipUuid = vipInventory1.uuid
+        createLoadBalancerAction1.systemTags = asList("separateVirtualRouterVm")
+        createLoadBalancerAction1.sessionId = adminSession()
+        CreateLoadBalancerAction.Result lbRes1 = createLoadBalancerAction1.call()
+        assert lbRes1.error == null
+        LoadBalancerInventory loadBalancerInventory1 = lbRes1.value.inventory
+
+        CreateLoadBalancerListenerAction createLoadBalancerListenerAction1 = new CreateLoadBalancerListenerAction()
+        createLoadBalancerListenerAction1.loadBalancerUuid = loadBalancerInventory1.uuid
+        createLoadBalancerListenerAction1.loadBalancerPort = 22
+        createLoadBalancerListenerAction1.instancePort = 22
+        createLoadBalancerListenerAction1.name = "ssh"
+        createLoadBalancerListenerAction1.protocol = "tcp"
+        createLoadBalancerListenerAction1.sessionId = adminSession()
+        CreateLoadBalancerListenerAction.Result lblRes1 = createLoadBalancerListenerAction1.call()
+        assert lblRes1.error == null
+        LoadBalancerListenerInventory loadBalancerListenerInventory1 = lblRes1.value.inventory
+
+        CreateLoadBalancerAction createLoadBalancerAction2 = new CreateLoadBalancerAction()
+        createLoadBalancerAction2.name = "lb-2"
+        createLoadBalancerAction2.vipUuid = vipInventory1.uuid
+        createLoadBalancerAction2.systemTags = asList("separateVirtualRouterVm")
+        createLoadBalancerAction2.sessionId = adminSession()
+        CreateLoadBalancerAction.Result lbRes2 = createLoadBalancerAction2.call()
+        assert lbRes2.error == null
+        LoadBalancerInventory loadBalancerInventory2 = lbRes2.value.inventory
+
+        CreateLoadBalancerListenerAction createLoadBalancerListenerAction2 = new CreateLoadBalancerListenerAction()
+        createLoadBalancerListenerAction2.loadBalancerUuid = loadBalancerInventory2.uuid
+        createLoadBalancerListenerAction2.loadBalancerPort = 24
+        createLoadBalancerListenerAction2.instancePort = 24
+        createLoadBalancerListenerAction2.name = "ssh"
+        createLoadBalancerListenerAction2.protocol = "tcp"
+        createLoadBalancerListenerAction2.sessionId = adminSession()
+        CreateLoadBalancerListenerAction.Result lblRes2 = createLoadBalancerListenerAction2.call()
+        assert lblRes2.error == null
+
+        CreateLoadBalancerListenerAction createLoadBalancerListenerAction3 = new CreateLoadBalancerListenerAction()
+        createLoadBalancerListenerAction3.loadBalancerUuid = loadBalancerInventory2.uuid
+        createLoadBalancerListenerAction3.loadBalancerPort = 23
+        createLoadBalancerListenerAction3.instancePort = 23
+        createLoadBalancerListenerAction3.name = "ssh"
+        createLoadBalancerListenerAction3.protocol = "tcp"
+        createLoadBalancerListenerAction3.sessionId = adminSession()
+        CreateLoadBalancerListenerAction.Result lblRes3 = createLoadBalancerListenerAction3.call()
+        assert lblRes3.error == null
+
+        /* delete lb-2 , check lb listener attached to lb is deleted cascaded */
+        deleteLoadBalancer {
+            uuid = loadBalancerInventory2.uuid
+        }
+        long count = Q.New(LoadBalancerListenerVO.class).select()
+                .eq(LoadBalancerListenerVO_.loadBalancerUuid, loadBalancerInventory2.uuid).count()
+        assert count == 0
+        VipVO vo =  Q.New(VipVO.class).eq(VipVO_.uuid, vipInventory1.uuid).find()
+        assert vo.getUseFor() == LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING :
+                "different pfs[${vo.getUseFor()}, ${LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING}]"
+
+        CreateLoadBalancerAction createLoadBalancerAction3 = new CreateLoadBalancerAction()
+        createLoadBalancerAction3.name = "lb-2"
+        createLoadBalancerAction3.vipUuid = vipInventory1.uuid
+        createLoadBalancerAction3.systemTags = asList("separateVirtualRouterVm")
+        createLoadBalancerAction3.sessionId = adminSession()
+        CreateLoadBalancerAction.Result lbRes3 = createLoadBalancerAction3.call()
+        assert lbRes3.error == null
+
+        /* delete vip-1, check lb attached to vip-1 is deleted cascaded */
+        deleteVip {
+            uuid = vipInventory1.uuid
+        }
+        count = Q.New(LoadBalancerVO.class).select()
+                .eq(LoadBalancerVO_.vipUuid, vipInventory1.uuid).count()
+        assert count == 0
     }
 
     void cleanEnvironment(){

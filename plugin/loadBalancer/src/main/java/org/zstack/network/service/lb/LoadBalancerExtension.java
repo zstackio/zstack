@@ -29,10 +29,7 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
 
 /**
@@ -223,17 +220,13 @@ public class LoadBalancerExtension extends AbstractNetworkServiceExtension imple
         return LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING;
     }
 
-    @Override
-    public void releaseServicesOnVip(VipInventory vip, final Completion completion) {
-        SimpleQuery<LoadBalancerVO> q = dbf.createQuery(LoadBalancerVO.class);
-        q.select(LoadBalancerVO_.uuid);
-        q.add(LoadBalancerVO_.vipUuid, Op.EQ, vip.getUuid());
-        String lbUuid = q.findValue();
-        if (lbUuid == null) {
+    private void releaseServicesOnVip(final Iterator<LoadBalancerVO> it, final Completion completion){
+        if (!it.hasNext()) {
             completion.success();
             return;
         }
 
+        String lbUuid = it.next().getUuid();
         DeleteLoadBalancerOnlyMsg msg = new DeleteLoadBalancerOnlyMsg();
         msg.setLoadBalancerUuid(lbUuid);
         bus.makeTargetServiceIdByResourceUuid(msg, LoadBalancerConstants.SERVICE_ID, lbUuid);
@@ -241,11 +234,19 @@ public class LoadBalancerExtension extends AbstractNetworkServiceExtension imple
             @Override
             public void run(MessageReply reply) {
                 if (reply.isSuccess()) {
-                    completion.success();
+                    releaseServicesOnVip(it, completion);
                 } else {
                     completion.fail(reply.getError());
                 }
             }
         });
+    }
+
+    @Override
+    public void releaseServicesOnVip(VipInventory vip, final Completion completion) {
+        SimpleQuery<LoadBalancerVO> q = dbf.createQuery(LoadBalancerVO.class);
+        q.add(LoadBalancerVO_.vipUuid, Op.EQ, vip.getUuid());
+        List<LoadBalancerVO> rules = q.list();
+        releaseServicesOnVip(rules.iterator(), completion);
     }
 }
