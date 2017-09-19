@@ -17,7 +17,4 @@ public class ImageSystemTags {
             String.format("imageName::{%s}::primaryStorageUuid::{%s}", IMAGE_NAME_TOKEN, PRIMARY_STORAGE_UUID_TOKEN),
             ImageVO.class
     );
-
-    public static String BACKUP_IMAGE_TOKEN = "backup.image";
-    public static PatternedSystemTag  BACKUP_IMAGE = new PatternedSystemTag(String.format("srcUuid::{%s}", BACKUP_IMAGE_TOKEN), ImageVO.class);
 }
