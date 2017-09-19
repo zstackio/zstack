@@ -24,7 +24,7 @@ doc {
 
 				column {
 					name "primaryStorageUuid"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "主存储UUID"
 					location "url"
 					type "String"
@@ -44,7 +44,7 @@ doc {
 				}
 				column {
 					name "description"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "资源的详细描述"
 					location "body"
 					type "String"
@@ -64,7 +64,7 @@ doc {
 				}
 				column {
 					name "resourceUuid"
-					enclosedIn ""
+					enclosedIn "params"
 					desc ""
 					location "body"
 					type "String"

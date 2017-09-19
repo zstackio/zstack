@@ -13,8 +13,8 @@ doc {
         request {
 			url "GET /v1/vm-instances/candidate-storages"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header(Authorization: 'OAuth the-session-uuid')
 
             clz APIGetCandidatePrimaryStoragesForCreatingVmMsg.class
 

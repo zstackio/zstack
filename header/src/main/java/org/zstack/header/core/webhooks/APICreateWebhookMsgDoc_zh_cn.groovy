@@ -24,7 +24,7 @@ doc {
 
 				column {
 					name "name"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "资源名称"
 					location "body"
 					type "String"
@@ -34,7 +34,7 @@ doc {
 				}
 				column {
 					name "description"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "资源的详细描述"
 					location "body"
 					type "String"
@@ -44,7 +44,7 @@ doc {
 				}
 				column {
 					name "url"
-					enclosedIn ""
+					enclosedIn "params"
 					desc ""
 					location "body"
 					type "String"
@@ -54,7 +54,7 @@ doc {
 				}
 				column {
 					name "type"
-					enclosedIn ""
+					enclosedIn "params"
 					desc ""
 					location "body"
 					type "String"
@@ -64,7 +64,7 @@ doc {
 				}
 				column {
 					name "opaque"
-					enclosedIn ""
+					enclosedIn "params"
 					desc ""
 					location "body"
 					type "String"
@@ -74,7 +74,7 @@ doc {
 				}
 				column {
 					name "resourceUuid"
-					enclosedIn ""
+					enclosedIn "params"
 					desc ""
 					location "body"
 					type "String"

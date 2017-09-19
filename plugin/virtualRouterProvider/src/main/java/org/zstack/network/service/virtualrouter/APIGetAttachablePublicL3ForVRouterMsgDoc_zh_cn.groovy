@@ -13,8 +13,8 @@ doc {
         request {
 			url "GET /v1/vm-instances/appliances/virtual-routers/{vmInstanceUuid}/attachable-public-l3s"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header(Authorization: 'OAuth the-session-uuid')
 
             clz APIGetAttachablePublicL3ForVRouterMsg.class
 

@@ -11,7 +11,7 @@ doc {
 
     rest {
         request {
-			url "POST /v1/eips/{eipUuid}/vm-instances/nics/{vmNicUuid"
+			url "POST /v1/eips/{eipUuid}/vm-instances/nics/{vmNicUuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
@@ -36,7 +36,7 @@ doc {
 					name "vmNicUuid"
 					enclosedIn ""
 					desc "云主机网卡UUID"
-					location "body"
+					location "url"
 					type "String"
 					optional false
 					since "0.6"
