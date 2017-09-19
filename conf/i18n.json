@@ -58,58 +58,6 @@
     "fileName": "src/main/java/org/zstack/aliyun/core/AliyunSdkImpl.java"
   },
   {
-    "raw": "vbrvo couldn\u0027t find connection access point: [%s] in db",
-    "en_US": "vbrvo couldn\u0027t find connection access point: [{0}] in db",
-    "zh_CN": "",
-    "arguments": [
-      "vbrvo.getAccessPointUuid()"
-    ],
-    "line": 109,
-    "fileName": "src/main/java/org/zstack/aliyun/datacenter/CreateDataCenterInDBFlow.java"
-  },
-  {
-    "raw": "vrivo couldn\u0027t find connection access point: [%s] in db",
-    "en_US": "vrivo couldn\u0027t find connection access point: [{0}] in db",
-    "zh_CN": "",
-    "arguments": [
-      "vrivo.getAccessPointUuid()"
-    ],
-    "line": 131,
-    "fileName": "src/main/java/org/zstack/aliyun/datacenter/CreateDataCenterInDBFlow.java"
-  },
-  {
-    "raw": "non support VRouterType: %s",
-    "en_US": "non support VRouterType: {0}",
-    "zh_CN": "",
-    "arguments": [
-      "vrivo.getvRouterType().toString()"
-    ],
-    "line": 189,
-    "fileName": "src/main/java/org/zstack/aliyun/datacenter/CreateDataCenterInDBFlow.java"
-  },
-  {
-    "raw": "vrivo couldn\u0027t find virtual border router: [%s] in datacenter: [%s]",
-    "en_US": "vrivo couldn\u0027t find virtual border router: [{0}] in datacenter: [{1}]",
-    "zh_CN": "",
-    "arguments": [
-      "vrivo.getVirtualRouterUuid()",
-      "vo.getUuid()"
-    ],
-    "line": 182,
-    "fileName": "src/main/java/org/zstack/aliyun/datacenter/CreateDataCenterInDBFlow.java"
-  },
-  {
-    "raw": "vrivo couldn\u0027t find virtual router: [%s] in datacenter: [%s]",
-    "en_US": "vrivo couldn\u0027t find virtual router: [{0}] in datacenter: [{1}]",
-    "zh_CN": "",
-    "arguments": [
-      "vrivo.getVirtualRouterUuid()",
-      "vo.getUuid()"
-    ],
-    "line": 171,
-    "fileName": "src/main/java/org/zstack/aliyun/datacenter/CreateDataCenterInDBFlow.java"
-  },
-  {
     "raw": "ecs image existed remote and local, ecs image uuid: %s, name: %s, created time: %s",
     "en_US": "ecs image existed remote and local, ecs image uuid: {0}, name: {1}, created time: {2}",
     "zh_CN": "",
