@@ -4308,9 +4308,9 @@
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
-    "raw": "invalid network bandwidth[%s], it must be greater than 0",
-    "en_US": "invalid network bandwidth[{0}], it must be greater than 0",
-    "zh_CN": "错误的网络带宽[{0}]，这个数字必须超过0",
+    "raw": "invalid network bandwidth[%s], it must be greater than 8192",
+    "en_US": "invalid network bandwidth[{0}], it must be greater than 8192",
+    "zh_CN": "错误的网络带宽[{0}]，这个数字必须超过8192",
     "arguments": [
       "bandwidth"
     ],
@@ -4328,9 +4328,9 @@
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
-    "raw": "invalid volume bandwidth[%s], it must be greater than 0",
-    "en_US": "invalid volume bandwidth[{0}], it must be greater than 0",
-    "zh_CN": "错误的磁盘带宽 ，[{0}] 这个数字必须超过0",
+    "raw": "invalid volume bandwidth[%s], it must be greater than 1024",
+    "en_US": "invalid volume bandwidth[{0}], it must be greater than 1024",
+    "zh_CN": "错误的磁盘带宽 ，[{0}] 这个数字必须超过1024",
     "arguments": [
       "bandwidth"
     ],

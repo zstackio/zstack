@@ -26,6 +26,7 @@ class DiskOfferingSpec extends Spec implements HasSession {
             delegate.name = name
             delegate.description = description
             delegate.diskSize = diskSize
+            delegate.systemTags = systemTags
             delegate.allocationStrategy = allocatorStrategy
         }
 
