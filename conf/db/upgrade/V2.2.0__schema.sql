@@ -74,3 +74,4 @@ select update_policy(uuid, 'SCHEDULER.ADD', '[{\"name\":\"scheduler.add\",\"effe
 select update_policy(uuid, 'SCHEDULER.REMOVE', '[{\"name\":\"scheduler.remove\",\"effect\":\"Allow\",\"actions\":[\"scheduler:APIRemoveSchedulerJobFromSchedulerTriggerMsg\"]}]') from AccountVO where type<>'SystemAdmin';
 
 CREATE INDEX notification_resource_uuid_idx ON NotificationVO (resourceUuid);
+ALTER TABLE `BaremetalHostCfgVO` ADD COLUMN `cloneIso` tinyint(1) unsigned NOT NULL DEFAULT 0;
