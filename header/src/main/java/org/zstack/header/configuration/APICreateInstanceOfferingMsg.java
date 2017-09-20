@@ -30,7 +30,7 @@ public class APICreateInstanceOfferingMsg extends APICreateMessage {
     private int cpuNum;
     @APINoSee
     private int cpuSpeed;
-    @APIParam(numberRange = {1, Long.MAX_VALUE})
+    @APIParam(numberRange = {1, Long.MAX_VALUE}, numberRangeUnit = {"byte", "bytes"})
     private long memorySize;
     private String allocatorStrategy;
     private int sortKey;

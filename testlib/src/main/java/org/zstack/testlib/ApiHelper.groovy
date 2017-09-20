@@ -9521,7 +9521,7 @@ trait ApiHelper {
 
     def isReadyToGo(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.IsReadyToGoAction.class) Closure c) {
         def a = new org.zstack.sdk.IsReadyToGoAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
         c()

@@ -172,7 +172,14 @@ public abstract class AbstractAction {
                     long high = at.numberRange()[1];
                     long val = Long.valueOf(((Number) value).longValue());
                     if (val < low || val > high) {
-                        throw new ApiException(String.format("the value of the field[%s] out of range[%s, %s]", p.field.getName(), low, high));
+                        if (at.numberRangeUnit().length > 0) {
+                            String lowUnit = at.numberRangeUnit()[0];
+                            String highUnit = at.numberRangeUnit()[1];
+                            throw new ApiException(String.format("the value of the field[%s] out of range[%s %s, %s %s]", p.field.getName(), low, lowUnit, high, highUnit));
+                        } else {
+                            throw new ApiException(String.format("the value of the field[%s] out of range[%s, %s]", p.field.getName(), low, high));
+                        }
+
                     }
                 }
             }

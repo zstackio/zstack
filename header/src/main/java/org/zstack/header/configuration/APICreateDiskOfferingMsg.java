@@ -21,7 +21,7 @@ public class APICreateDiskOfferingMsg extends APICreateMessage {
     private String name;
     @APIParam(required = false, maxLength = 2048)
     private String description;
-    @APIParam(numberRange = {1, Long.MAX_VALUE})
+    @APIParam(numberRange = {1, Long.MAX_VALUE}, numberRangeUnit = {"byte", "bytes"})
     private long diskSize;
     private int sortKey;
     private String allocationStrategy;

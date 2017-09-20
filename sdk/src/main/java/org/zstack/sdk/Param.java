@@ -27,5 +27,7 @@ public @interface Param {
 
     long[] numberRange() default {};
 
+    String[] numberRangeUnit() default {};
+
     boolean noTrim() default false;
 }

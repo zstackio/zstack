@@ -31,9 +31,6 @@ public class IsReadyToGoAction extends AbstractAction {
     @Param(required = false)
     public java.util.List userTags;
 
-    @Param(required = true)
-    public String sessionId;
-
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -70,7 +67,7 @@ public class IsReadyToGoAction extends AbstractAction {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/management-nodes/ready";
-        info.needSession = true;
+        info.needSession = false;
         info.needPoll = false;
         info.parameterName = "";
         return info;
