@@ -7,7 +7,10 @@ import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
-import org.zstack.core.db.*;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.DbEntityLister;
+import org.zstack.core.db.SQLBatchWithReturn;
+import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.CancelablePeriodicTask;
@@ -45,8 +48,6 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
-import static org.zstack.core.Platform.operr;
-
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.sql.Timestamp;
@@ -55,6 +56,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+
+import static org.zstack.core.Platform.operr;
 
 public class VolumeManagerImpl extends AbstractService implements VolumeManager, ManagementNodeReadyExtensionPoint,
         VolumeDeletionExtensionPoint, VolumeBeforeExpungeExtensionPoint, RecoverDataVolumeExtensionPoint,
@@ -167,6 +170,11 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                 return finalVo;
             }
         }.execute();
+
+        List<CreateDataVolumeExtensionPoint> exts = pluginRgty.getExtensionList(CreateDataVolumeExtensionPoint.class);
+        for (CreateDataVolumeExtensionPoint ext : exts) {
+            ext.afterCreateVolume(VolumeInventory.valueOf(dbf.findByUuid(vo.getUuid(), VolumeVO.class)));
+        }
 
         new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(null, VolumeInventory.valueOf(vo));
 
@@ -537,6 +545,11 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                 return finalVo1;
             }
         }.execute();
+
+        List<CreateDataVolumeExtensionPoint> exts = pluginRgty.getExtensionList(CreateDataVolumeExtensionPoint.class);
+        for (CreateDataVolumeExtensionPoint ext : exts) {
+            ext.afterCreateVolume(VolumeInventory.valueOf(dbf.findByUuid(vo.getUuid(), VolumeVO.class)));
+        }
 
         if (msg.getPrimaryStorageUuid() == null) {
             new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(null, VolumeInventory.valueOf(vo));
