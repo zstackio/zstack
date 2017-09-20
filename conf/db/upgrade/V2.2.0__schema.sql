@@ -73,3 +73,4 @@ select update_policy(uuid, 'SCHEDULER.TRIGGER.UPDATE', '[{\"name\":\"scheduler.t
 select update_policy(uuid, 'SCHEDULER.ADD', '[{\"name\":\"scheduler.add\",\"effect\":\"Allow\",\"actions\":[\"scheduler:APIAddSchedulerJobToSchedulerTriggerMsg\"]}]') from AccountVO where type<>'SystemAdmin';
 select update_policy(uuid, 'SCHEDULER.REMOVE', '[{\"name\":\"scheduler.remove\",\"effect\":\"Allow\",\"actions\":[\"scheduler:APIRemoveSchedulerJobFromSchedulerTriggerMsg\"]}]') from AccountVO where type<>'SystemAdmin';
 
+CREATE INDEX notification_resource_uuid_idx ON NotificationVO (resourceUuid);
