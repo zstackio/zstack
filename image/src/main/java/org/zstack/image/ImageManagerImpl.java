@@ -1022,7 +1022,11 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                     dbf.remove(ref);
                                 } else {
                                     DownloadImageReply re = reply.castReply();
-                                    ref.setStatus(ImageStatus.Ready);
+                                    if (msg.getUrl().startsWith("upload://")) {
+                                        trackUpload(ivo.getName(), ivo.getUuid(), ref.getBackupStorageUuid());
+                                    } else {
+                                        ref.setStatus(ImageStatus.Ready);
+                                    }
                                     ref.setInstallPath(re.getInstallPath());
 
                                     if (dbf.reload(ref) == null) {
@@ -1039,7 +1043,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                         vo.setMd5Sum(re.getMd5sum());
                                         vo.setSize(re.getSize());
                                         vo.setActualSize(re.getActualSize());
-                                        vo.setStatus(ImageStatus.Ready);
+                                        vo.setStatus(ref.getStatus());
                                         dbf.update(vo);
                                     }
 
@@ -1449,4 +1453,94 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         dbf.persistCollection(refs);
     }
 
+    private void trackUpload(String name, String imageUuid, String bsUuid) {
+        thdf.submitCancelablePeriodicTask(new CancelablePeriodicTask() {
+            private long numError = 0;
+
+            private void markCompletion(final GetImageDownloadProgressReply dr) {
+                new SQLBatch() {
+                    @Override
+                    protected void scripts() {
+                        sql(ImageVO.class)
+                                .eq(ImageVO_.uuid, imageUuid)
+                                .set(ImageVO_.status, ImageStatus.Ready)
+                                .set(ImageVO_.size, dr.getSize())
+                                .set(ImageVO_.actualSize, dr.getActualSize())
+                                .update();
+                        sql(ImageBackupStorageRefVO.class)
+                                .eq(ImageBackupStorageRefVO_.backupStorageUuid, bsUuid)
+                                .eq(ImageBackupStorageRefVO_.imageUuid, imageUuid)
+                                .set(ImageBackupStorageRefVO_.status, ImageStatus.Ready)
+                                .set(ImageBackupStorageRefVO_.installPath, dr.getInstallPath())
+                                .update();
+                    }
+                }.execute();
+
+                N.New(ImageVO.class, imageUuid).info_("added image [name: %s, uuid: %s]", name, imageUuid);
+            }
+
+            private void markFailure() {
+                N.New(ImageVO.class, imageUuid).error_("upload image [name: %s, uuid: %s] failed", name, imageUuid);
+                ImageDeletionMsg msg = new ImageDeletionMsg();
+                msg.setImageUuid(imageUuid);
+                msg.setBackupStorageUuids(Collections.singletonList(bsUuid));
+                msg.setDeletionPolicy(ImageDeletionPolicy.Direct.toString());
+                msg.setForceDelete(true);
+                bus.makeTargetServiceIdByResourceUuid(msg, ImageConstant.SERVICE_ID, imageUuid);
+                bus.send(msg);
+            }
+
+            @Override
+            public boolean run() {
+                final ImageVO ivo = dbf.findByUuid(imageUuid, ImageVO.class);
+                if (ivo == null) {
+                    // If image VO not existed, stop tracking.
+                    return true;
+                }
+
+                GetImageDownloadProgressMsg dmsg = new GetImageDownloadProgressMsg();
+                dmsg.setBackupStorageUuid(bsUuid);
+                dmsg.setImageUuid(imageUuid);
+                bus.makeTargetServiceIdByResourceUuid(dmsg, BackupStorageConstant.SERVICE_ID, bsUuid);
+
+                MessageReply reply = bus.call(dmsg);
+                if (reply.isSuccess()) {
+                    // reset the error counter
+                    numError = 0;
+
+                    GetImageDownloadProgressReply dr = reply.castReply();
+                    if (dr.isCompleted()) {
+                        markCompletion(dr);
+                        return true;
+                    }
+
+                    // TODO update progress
+                    return false;
+                }
+
+                numError++;
+                if (numError <= 3) {
+                    return false;
+                }
+
+                markFailure();
+                return true;
+            }
+
+            @Override
+            public TimeUnit getTimeUnit() {
+                return TimeUnit.SECONDS;
+            }
+
+            @Override
+            public long getInterval() {
+                return 15;
+            }
+
+            @Override
+            public String getName() {
+                return String.format("tracking upload image [name: %s, uuid: %s]", name, imageUuid);
+            }
+        });
+    }
 }
