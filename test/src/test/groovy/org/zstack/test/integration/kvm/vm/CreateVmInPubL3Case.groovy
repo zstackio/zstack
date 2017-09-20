@@ -95,7 +95,7 @@ class CreateVmInPubL3Case extends SubCase {
 
                     l3Network {
                         name = "pubL3"
-                        system =true
+                        category = "Public"
 
                         ip {
                             startIp = "12.16.10.10"
@@ -127,6 +127,9 @@ class CreateVmInPubL3Case extends SubCase {
         }
     }
 
+    /* We do not allow create vm in network which system = true,
+     * but in network which system = false, category = Public is allowed
+     */
     void createVmWithAL3NetworkWhichNotAttachedToTheCluster() {
         InstanceOfferingInventory instanceOffering = env.inventoryByName("instanceOffering")
         ImageInventory image = env.inventoryByName("image1")

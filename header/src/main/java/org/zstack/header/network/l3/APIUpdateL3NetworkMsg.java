@@ -25,6 +25,8 @@ public class APIUpdateL3NetworkMsg extends APIMessage implements L3NetworkMessag
     private String name;
     @APIParam(maxLength = 2048, required = false)
     private String description;
+    @APIParam(required = false, validValues = {"Public", "Private", "System"})
+    private String category;
     private Boolean system;
 
     public Boolean getSystem() {
@@ -63,7 +65,15 @@ public class APIUpdateL3NetworkMsg extends APIMessage implements L3NetworkMessag
     public String getL3NetworkUuid() {
         return uuid;
     }
- 
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
+
     public static APIUpdateL3NetworkMsg __example__() {
         APIUpdateL3NetworkMsg msg = new APIUpdateL3NetworkMsg();
 

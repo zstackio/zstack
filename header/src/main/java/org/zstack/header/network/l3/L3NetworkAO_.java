@@ -12,6 +12,7 @@ public class L3NetworkAO_ extends ResourceVO_ {
     public static volatile SingularAttribute<L3NetworkAO, String> type;
     public static volatile SingularAttribute<L3NetworkAO, Boolean> system;
     public static volatile SingularAttribute<L3NetworkAO, L3NetworkState> state;
+    public static volatile SingularAttribute<L3NetworkAO, L3NetworkCategory> category;
     public static volatile SingularAttribute<L3NetworkAO, String> description;
     public static volatile SingularAttribute<L3NetworkAO, String> dnsDomain;
     public static volatile SingularAttribute<L3NetworkAO, String> zoneUuid;

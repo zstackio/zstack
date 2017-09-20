@@ -34,6 +34,9 @@ public class CreateL3NetworkAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String l2NetworkUuid;
 
+    @Param(required = false, validValues = {"Public","Private","System"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String category = "Private";
+
     @Param(required = false)
     public boolean system = false;
 

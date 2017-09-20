@@ -46,6 +46,10 @@ public class L3NetworkAO extends ResourceVO {
     @Column
     private Timestamp lastOpDate;
 
+    @Column
+    @Enumerated(EnumType.STRING)
+    private L3NetworkCategory category;
+
     @PreUpdate
     private void preUpdate() {
         lastOpDate = null;
@@ -129,5 +133,13 @@ public class L3NetworkAO extends ResourceVO {
 
     public void setState(L3NetworkState state) {
         this.state = state;
+    }
+
+    public L3NetworkCategory getCategory() {
+        return category;
+    }
+
+    public void setCategory(L3NetworkCategory category) {
+        this.category = category;
     }
 }

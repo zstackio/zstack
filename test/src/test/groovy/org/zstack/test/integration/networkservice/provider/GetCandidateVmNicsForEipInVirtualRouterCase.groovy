@@ -116,7 +116,7 @@ class GetCandidateVmNicsForEipInVirtualRouterCase extends SubCase{
 
                     l3Network {
                         name = "pubL3"
-                        system = true
+                        category = "Public"
                         ip {
                             startIp = "11.168.100.10"
                             endIp = "11.168.100.100"
@@ -133,7 +133,7 @@ class GetCandidateVmNicsForEipInVirtualRouterCase extends SubCase{
 
                     l3Network {
                         name = "fakePubL3"
-                        system = true
+                        category = "Public"
                         ip {
                             startIp = "11.168.200.10"
                             endIp = "11.168.200.100"

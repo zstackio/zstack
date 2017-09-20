@@ -3,7 +3,6 @@ package org.zstack.test.integration.networkservice.provider.virtualrouter
 import org.springframework.http.HttpEntity
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.Q
-import org.zstack.header.vm.VmNicInventory
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant
 import org.zstack.network.service.virtualrouter.VirtualRouterVmVO
@@ -12,7 +11,6 @@ import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
 import org.zstack.testlib.EnvSpec
-import org.zstack.testlib.L2NetworkSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.gson.JSONObjectUtil
 
@@ -45,7 +43,7 @@ class VirtualRouterAttachNetworkCase extends SubCase {
         def l2 = env.inventoryByName("l2") as L2NetworkInventory
 
         L3NetworkInventory l3_1 = createL3Network {
-            delegate.system = true
+            delegate.category = "Public"
             delegate.l2NetworkUuid = l2.uuid
             delegate.name = "pubL3-2"
         }
@@ -60,7 +58,7 @@ class VirtualRouterAttachNetworkCase extends SubCase {
         }
 
         L3NetworkInventory l3_2 = createL3Network {
-            delegate.system = true
+            delegate.category = "Public"
             delegate.l2NetworkUuid = l2.uuid
             delegate.name = "pubL3-3"
         }

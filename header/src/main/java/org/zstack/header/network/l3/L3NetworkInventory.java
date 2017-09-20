@@ -107,6 +107,8 @@ public class L3NetworkInventory implements Serializable {
 
     private Boolean system;
 
+    private String category;
+
     /**
      * @desc the time this resource gets created
      */
@@ -152,6 +154,7 @@ public class L3NetworkInventory implements Serializable {
         inv.setIpRanges(IpRangeInventory.valueOf(vo.getIpRanges()));
         inv.setLastOpDate(vo.getLastOpDate());
         inv.setNetworkServices(NetworkServiceL3NetworkRefInventory.valueOf(vo.getNetworkServices()));
+        inv.setCategory(vo.getCategory().toString());
         return inv;
     }
 
@@ -301,5 +304,13 @@ public class L3NetworkInventory implements Serializable {
 
     public void setState(String state) {
         this.state = state;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
     }
 }

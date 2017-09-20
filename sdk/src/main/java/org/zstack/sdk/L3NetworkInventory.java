@@ -74,6 +74,14 @@ public class L3NetworkInventory  {
         return this.system;
     }
 
+    public java.lang.String category;
+    public void setCategory(java.lang.String category) {
+        this.category = category;
+    }
+    public java.lang.String getCategory() {
+        return this.category;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;

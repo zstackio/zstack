@@ -72,6 +72,9 @@ public class APICreateL3NetworkMsg extends APICreateMessage {
     @APIParam(resourceType = L2NetworkVO.class)
     private String l2NetworkUuid;
 
+    @APIParam(required = false, validValues = {"Public", "Private", "System"})
+    private String category = L3NetworkCategory.Private.toString();
+
     private boolean system;
 
     private String dnsDomain;
@@ -123,12 +126,21 @@ public class APICreateL3NetworkMsg extends APICreateMessage {
     public void setL2NetworkUuid(String l2NetworkUuid) {
         this.l2NetworkUuid = l2NetworkUuid;
     }
- 
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
+
     public static APICreateL3NetworkMsg __example__() {
         APICreateL3NetworkMsg msg = new APICreateL3NetworkMsg();
 
         msg.setName("Test-L3Network");
         msg.setL2NetworkUuid(uuid());
+        msg.setCategory(L3NetworkCategory.Private.toString());
 
         return msg;
     }

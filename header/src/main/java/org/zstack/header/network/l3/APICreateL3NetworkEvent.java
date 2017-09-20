@@ -57,6 +57,7 @@ public class APICreateL3NetworkEvent extends APIEvent {
 
         l3.setName("Test-L3Network");
         l3.setL2NetworkUuid(uuid());
+        l3.setCategory(L3NetworkCategory.Private.toString());
 
         event.setInventory(l3);
         return event;

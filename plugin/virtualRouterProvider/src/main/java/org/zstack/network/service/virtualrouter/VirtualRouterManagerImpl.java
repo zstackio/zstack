@@ -408,7 +408,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
     private void handle(APIGetAttachablePublicL3ForVRouterMsg msg) {
 	    APIGetAttachablePublicL3ForVRouterReply reply = new APIGetAttachablePublicL3ForVRouterReply();
-	    List<L3NetworkVO> l3NetworkVOS = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.system, true).list();
+	    List<L3NetworkVO> l3NetworkVOS = Q.New(L3NetworkVO.class).notEq(L3NetworkVO_.category, L3NetworkCategory.Private).list();
 	    List<VmNicVO> vmNicVOS = Q.New(VmNicVO.class).eq(VmNicVO_.vmInstanceUuid, msg.getVmInstanceUuid()).list();
 
 	    if (l3NetworkVOS == null || l3NetworkVOS.isEmpty()) {

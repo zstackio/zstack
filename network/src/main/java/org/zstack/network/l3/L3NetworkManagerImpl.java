@@ -304,6 +304,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
         vo.setSystem(msg.isSystem());
         vo.setZoneUuid(zoneUuid);
         vo.setState(L3NetworkState.Enabled);
+        vo.setCategory(L3NetworkCategory.valueOf(msg.getCategory()));
 
         L3NetworkFactory factory = getL3NetworkFactory(L3NetworkType.valueOf(msg.getType()));
         L3NetworkInventory inv = new SQLBatchWithReturn<L3NetworkInventory>() {

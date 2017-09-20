@@ -454,9 +454,10 @@ public class L3BasicNetwork implements L3Network {
             self.setDescription(msg.getDescription());
             update = true;
         }
-        if (msg.getSystem() != null) {
-            self.setSystem(msg.getSystem());
-            update = true;
+        if (msg.getSystem() != null && msg.getCategory() != null) {
+                self.setSystem(msg.getSystem());
+                self.setCategory(L3NetworkCategory.valueOf(msg.getCategory()));
+                update = true;
         }
         if (update) {
             self = dbf.updateAndRefresh(self);
@@ -466,6 +467,7 @@ public class L3BasicNetwork implements L3Network {
         evt.setInventory(getSelfInventory());
         bus.publish(evt);
     }
+
 
     private void handle(APIAddIpRangeByNetworkCidrMsg msg) {
         IpRangeInventory ipr = IpRangeInventory.fromMessage(msg);
