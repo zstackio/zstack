@@ -2,7 +2,6 @@ package org.zstack.test.integration.kvm.vm
 
 import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.InstanceOfferingInventory
-import org.zstack.sdk.L2NetworkInventory
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.test.integration.kvm.KvmTest
@@ -10,7 +9,7 @@ import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
 
-class TestCreateVmInVariousNetworkTypesCase extends SubCase {
+class CreateVmInPubL3Case extends SubCase {
     EnvSpec env
 
     @Override
@@ -124,68 +123,23 @@ class TestCreateVmInVariousNetworkTypesCase extends SubCase {
     @Override
     void test() {
         env.create {
-            createVmWithNetworkSystemIsTrue()
-            createVmInNetworkWithOutService()
+            createVmWithAL3NetworkWhichNotAttachedToTheCluster()
         }
     }
 
-    void createVmWithNetworkSystemIsTrue() {
+    void createVmWithAL3NetworkWhichNotAttachedToTheCluster() {
         InstanceOfferingInventory instanceOffering = env.inventoryByName("instanceOffering")
         ImageInventory image = env.inventoryByName("image1")
         L3NetworkInventory pubL3 = env.inventoryByName("pubL3")
 
-        expect(AssertionError) {
-            VmInstanceInventory vm = createVmInstance {
-                name = "test"
-                instanceOfferingUuid = instanceOffering.uuid
-                imageUuid = image.uuid
-                l3NetworkUuids = [pubL3.uuid]
-            }
-        }
-    }
-
-    void createVmInNetworkWithOutService() {
-        InstanceOfferingInventory instanceOffering = env.inventoryByName("instanceOffering")
-        ImageInventory image = env.inventoryByName("image1")
-        L3NetworkInventory pubL3 = env.inventoryByName("pubL3")
-        L2NetworkInventory l2 = env.inventoryByName("l2")
-
-        L3NetworkInventory l3 = createL3Network {
-            delegate.name = "testL3"
-            delegate.l2NetworkUuid = l2.uuid
-            delegate.systemTags = ["networkCategory::Private"]
-        }
-        assert l3.tags != null
-        assert l3.tags.size() == 1
-        assert l3.tags[0].tag == "networkCategory::Private"
-
-        addIpRangeByNetworkCidr {
-            delegate.name = "test-range"
-            delegate.l3NetworkUuid = l3.uuid
-            delegate.networkCidr = "192.168.101.0/24"
-        }
-
-        createVmInstance {
+        VmInstanceInventory vm = createVmInstance {
             name = "test"
             instanceOfferingUuid = instanceOffering.uuid
             imageUuid = image.uuid
-            l3NetworkUuids = [l3.uuid]
+            l3NetworkUuids = [pubL3.uuid]
         }
-
-        expect(AssertionError) {
-            createL3Network {
-                delegate.name = "testL3"
-                delegate.l2NetworkUuid = l2.uuid
-                delegate.systemTags = ["networkCategory::Test"]
-            }
-        }
-
-        expect(AssertionError) {
-            createL3Network {
-                delegate.name = "testL3"
-                delegate.l2NetworkUuid = l2.uuid
-                delegate.systemTags = ["networkCategory::private"]
-            }
+        destroyVmInstance {
+            uuid = vm.uuid
         }
     }
 }

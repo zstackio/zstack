@@ -426,10 +426,6 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             if (state != L3NetworkState.Enabled) {
                 throw new ApiMessageInterceptionException(operr("l3Network[uuid:%s] is Disabled, can not create vm on it", l3Uuid));
             }
-
-            if (system && (msg.getType() == null || VmInstanceConstant.USER_VM_TYPE.equals(msg.getType()))) {
-                throw new ApiMessageInterceptionException(operr("l3Network[uuid:%s] is system network, can not create user vm on it", l3Uuid));
-            }
         }
 
         // smaller taking precedence

@@ -114,12 +114,4 @@ public class L3NetworkInventory  {
         return this.networkServices;
     }
 
-    public java.util.List<SystemTagInventory> tags;
-    public void setTags(java.util.List<SystemTagInventory> tags) {
-        this.tags = tags;
-    }
-    public java.util.List<SystemTagInventory> getTags() {
-        return this.tags;
-    }
-
 }
