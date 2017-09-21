@@ -11,7 +11,6 @@ public class PrimaryStorageType {
     private final String typeName;
     private boolean exposed = true;
     private boolean supportHeartbeatFile;
-    private boolean supportPingStorageGateway;
     protected boolean supportVmLiveMigration = true;
     private boolean supportVolumeMigration;
     private boolean supportVolumeMigrationInCurrentPrimaryStorage;
@@ -102,14 +101,6 @@ public class PrimaryStorageType {
 
     public void setSupportHeartbeatFile(boolean supportHeartbeatFile) {
         this.supportHeartbeatFile = supportHeartbeatFile;
-    }
-
-    public boolean isSupportPingStorageGateway() {
-        return supportPingStorageGateway;
-    }
-
-    public void setSupportPingStorageGateway(boolean supportPingStorageGateway) {
-        this.supportPingStorageGateway = supportPingStorageGateway;
     }
 
     public boolean isSupportVmLiveMigration() {

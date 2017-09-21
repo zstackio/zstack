@@ -27,7 +27,6 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.volume.VolumeFormat;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.volume.VolumeVO_;
-import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.snapshot.PostMarkRootVolumeAsSnapshotExtension;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -49,7 +48,6 @@ public class SMPPrimaryStorageFactory implements PrimaryStorageFactory, CreateTe
     public static final PrimaryStorageType type = new PrimaryStorageType(SMPConstants.SMP_TYPE);
 
     static {
-        type.setSupportPingStorageGateway(true);
         type.setSupportHeartbeatFile(true);
         type.setOrder(699);
     }
