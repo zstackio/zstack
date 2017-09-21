@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -18,6 +19,8 @@ import org.zstack.header.network.l3.*;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.network.service.vip.VipVO_;
 import org.zstack.tag.PatternedSystemTag;
+import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.logging.CLoggerImpl;
 import org.zstack.utils.DebugUtils;
 
 import static org.zstack.core.Platform.argerr;
@@ -39,6 +42,8 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
     private DatabaseFacade dbf;
     @Autowired
     private ErrorFacade errf;
+
+    private static final CLogger logger = CLoggerImpl.getLogger(LoadBalancerApiInterceptor.class);
 
     @Override
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
@@ -92,16 +97,8 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
         q.select(VipVO_.useFor);
         q.add(VipVO_.uuid, Op.EQ, msg.getVipUuid());
         String useFor = q.findValue();
-        if (LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING.equals(useFor)) {
-            SimpleQuery<LoadBalancerVO> lq = dbf.createQuery(LoadBalancerVO.class);
-            lq.select(LoadBalancerVO_.uuid);
-            lq.add(LoadBalancerVO_.vipUuid, Op.EQ, msg.getVipUuid());
-            String lbuuid = lq.findValue();
 
-            throw new ApiMessageInterceptionException(argerr("the vip[uuid:%s] is occupied by another load balancer[uuid:%s]", msg.getVipUuid(), lbuuid));
-        }
-
-        if (useFor != null) {
+        if ((useFor != null) && !(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING.equals(useFor))) {
             throw new ApiMessageInterceptionException(argerr("the vip[uuid:%s] is occupied by another service[%s]", msg.getVipUuid(), useFor));
         }
     }
@@ -240,6 +237,31 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
         luuid = q.findValue();
         if (luuid != null) {
             throw new ApiMessageInterceptionException(argerr("conflict instancePort[%s], a listener[uuid:%s] has used that port", msg.getInstancePort(), luuid));
+        }
+
+        /* there are 2 queries:
+        * #1. get the vip of current LoadBalancer
+        * #2. get all vips who has listeners use current port
+         * if #1 is in #2, throw a exception */
+        LoadBalancerVO vo = dbf.findByUuid(msg.getLoadBalancerUuid(), LoadBalancerVO.class);
+        String TargetVipUuids = vo.getVipUuid();
+
+        if (TargetVipUuids == null){
+            logger.warn(String.format("conflict loadbalancer %s does NOT has VIP", msg.getLoadBalancerUuid()));
+        }
+
+        if (TargetVipUuids != null) {
+            List<String>  VipUuids = SQL.New("select distinct lb.vipUuid from LoadBalancerVO lb, LoadBalancerListenerVO " +
+                    "lbl where lbl.loadBalancerPort=:port and lbl.loadBalancerUuid=lb.uuid", String.class).param("port", msg.getLoadBalancerPort()).list();
+            if (!VipUuids.isEmpty() && VipUuids.contains(TargetVipUuids)) {
+                throw new ApiMessageInterceptionException(argerr("conflict loadBalancerPort[%s], a vip[uuid:%s] has used that port", msg.getLoadBalancerPort(), TargetVipUuids));
+            }
+
+            VipUuids = SQL.New("select distinct lb.vipUuid from LoadBalancerVO lb, LoadBalancerListenerVO lbl where " +
+                    "lbl.instancePort=:port and lbl.loadBalancerUuid=lb.uuid", String.class).param("port", msg.getInstancePort()).list();
+            if (!VipUuids.isEmpty() && VipUuids.contains(TargetVipUuids)) {
+                throw new ApiMessageInterceptionException(argerr("conflict loadBalancerPort[%s], a vip[uuid:%s] has used that port", msg.getLoadBalancerPort(), TargetVipUuids));
+            }
         }
     }
 

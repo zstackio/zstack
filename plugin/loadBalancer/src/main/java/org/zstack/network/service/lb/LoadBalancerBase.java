@@ -720,6 +720,13 @@ public class LoadBalancerBase {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
+                        /* if there is other lb use this vip, do nothing */
+                        long number = Q.New(LoadBalancerVO.class).eq(LoadBalancerVO_.vipUuid, self.getVipUuid()).count();
+                        if (number > 1){
+                            trigger.next();
+                            return;
+                        }
+
                         new Vip(self.getVipUuid()).release(new Completion(trigger) {
                             @Override
                             public void success() {
