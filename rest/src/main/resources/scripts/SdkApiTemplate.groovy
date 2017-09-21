@@ -114,7 +114,14 @@ class SdkApiTemplate implements SdkTemplate {
                     nr.forEach({ n -> return ns.add("${n}L")})
 
                     annotationFields.add(String.format("numberRange = {%s}", ns.join(",")))
+
+                    if (apiParam.numberRangeUnit().length > 0) {
+                        def nru = apiParam.numberRangeUnit() as List<String>
+
+                        annotationFields.add(String.format("numberRangeUnit = {\"%s\", \"%s\"}", nru.get(0), nru.get(1)))
+                    }
                 }
+
                 annotationFields.add(String.format("noTrim = %s", apiParam.noTrim()))
             } else {
                 annotationFields.add(String.format("required = false"))

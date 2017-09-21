@@ -28,6 +28,8 @@ public @interface APIParam {
 
     long[] numberRange() default {};
 
+    String[] numberRangeUnit() default {};
+
     boolean checkAccount() default false;
 
     boolean noTrim() default false;

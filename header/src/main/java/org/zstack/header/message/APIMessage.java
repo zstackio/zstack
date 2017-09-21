@@ -221,7 +221,14 @@ public abstract class APIMessage extends NeedReplyMessage {
                 long high = at.numberRange()[1];
                 long val = Long.valueOf(((Number) value).longValue());
                 if (val < low || val > high) {
-                    throw new InvalidApiMessageException("field[%s] must be in range of [%s, %s]", f.getName(), low, high);
+                    if (at.numberRangeUnit().length > 0) {
+                        DebugUtils.Assert(at.numberRangeUnit().length == 2, String.format("invalid field[%s], APIParam.numberRangeUnit must have and only have 2 items", f.getName()));
+                        String lowUnit = at.numberRangeUnit()[0];
+                        String highUnit = at.numberRangeUnit()[1];
+                        throw new InvalidApiMessageException("field[%s] must be in range of [%s %s, %s %s]", f.getName(), low, lowUnit, high, highUnit);
+                    } else {
+                        throw new InvalidApiMessageException("field[%s] must be in range of [%s, %s]", f.getName(), low, high);
+                    }
                 }
             }
 
