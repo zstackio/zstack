@@ -127,7 +127,7 @@ class GetAttachablePublicL3ForVRouterCase extends SubCase {
 
                     l3Network {
                         name = "pubL3"
-                        system = true
+                        category = "Public"
 
                         ip {
                             startIp = "11.168.100.10"
@@ -145,7 +145,7 @@ class GetAttachablePublicL3ForVRouterCase extends SubCase {
 
                     l3Network {
                         name = "l32"
-                        system = true
+                        category = "Public"
 
                         service {
                             provider = FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING
@@ -162,7 +162,7 @@ class GetAttachablePublicL3ForVRouterCase extends SubCase {
 
                     l3Network {
                         name = "pubL32"
-                        system = true
+                        category = "Public"
 
                         ip {
                             startIp = "11.168.10.20"

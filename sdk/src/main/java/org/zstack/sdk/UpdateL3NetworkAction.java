@@ -31,6 +31,9 @@ public class UpdateL3NetworkAction extends AbstractAction {
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
+    @Param(required = false, validValues = {"Public","Private","System"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String category;
+
     @Param(required = false)
     public java.lang.Boolean system;
 

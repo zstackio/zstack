@@ -1,40 +1,42 @@
+ALTER TABLE `L3NetworkEO` ADD COLUMN `category` varchar(255) NOT NULL DEFAULT 'Private' COMMENT 'the type network used for';
+
+DROP VIEW IF EXISTS `zstack`.`L3NetworkVO`;
+CREATE VIEW `zstack`.`L3NetworkVO` AS SELECT uuid, name, description, state, type, zoneUuid, l2NetworkUuid, system, dnsDomain, createDate, lastOpDate, category FROM `zstack`.`L3NetworkEO` WHERE deleted IS NULL;
+
 # add network category for ZSTAC-6844
 DELIMITER $$
 CREATE PROCEDURE generateNetworkCategory()
-  BEGIN
-    DECLARE l3Uuid varchar(32);
-    DECLARE l3System tinyint(3) unsigned;
-    DECLARE tagUuid varchar(32);
-    DECLARE done INT DEFAULT FALSE;
-    DECLARE cur CURSOR FOR SELECT uuid, system FROM zstack.L3NetworkEO;
-    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
-    OPEN cur;
-    read_loop: LOOP
-      FETCH cur INTO l3Uuid, l3System;
-      IF done THEN
-        LEAVE read_loop;
-      END IF;
-      SET tagUuid = REPLACE(UUID(), '-', '');
+    BEGIN
+        DECLARE l3Uuid varchar(32);
+        DECLARE l3System tinyint(3) unsigned;
+        DECLARE done INT DEFAULT FALSE;
+        DECLARE cur CURSOR FOR SELECT uuid, system FROM zstack.L3NetworkEO;
+        DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+        OPEN cur;
+        read_loop: LOOP
+            FETCH cur INTO l3Uuid, l3System;
+            IF done THEN
+                LEAVE read_loop;
+            END IF;
 
-      IF l3System = 1
-      THEN
-        UPDATE zstack.L3NetworkEO SET system = 0 WHERE uuid = l3Uuid;
-        INSERT zstack.SystemTagVO(uuid, resourceUuid, resourceType, inherent, type, tag, lastOpDate, createDate)
-          value (tagUuid, l3Uuid, 'L3NetworkVO', 0, 'System', 'networkCategory::Public', NOW(), NOW());
-      ELSE
-        INSERT zstack.SystemTagVO(uuid, resourceUuid, resourceType, inherent, type, tag, lastOpDate, createDate)
-          value (tagUuid, l3Uuid, 'L3NetworkVO', 0, 'System', 'networkCategory::Private', NOW(), NOW());
-      END IF;
+            IF l3System = 1
+            THEN
+                UPDATE zstack.L3NetworkEO SET system = 0 WHERE uuid = l3Uuid;
+                UPDATE zstack.L3NetworkEO SET category = 'Public' WHERE uuid = l3Uuid;
+            ELSE
+                UPDATE zstack.L3NetworkEO SET category = 'Private' WHERE uuid = l3Uuid;
+            END IF;
 
-    END LOOP;
-    CLOSE cur;
-    # work around a bug of mysql : jira.mariadb.org/browse/MDEV-4602
-    SELECT CURTIME();
-  END $$
+        END LOOP;
+        CLOSE cur;
+        # work around a bug of mysql : jira.mariadb.org/browse/MDEV-4602
+        SELECT CURTIME();
+    END $$
 DELIMITER ;
 
 CALL generateNetworkCategory();
 DROP PROCEDURE IF EXISTS generateNetworkCategory;
+
 
 update PolicyVO set name='SCHEDULER.JOB.CREATE', data='[{\"name\":\"scheduler.job.create\",\"effect\":\"Allow\",\"actions\":[\"scheduler:APICreateSchedulerJobMsg\"]}]' where name='SCHEDULER.CREATE';
 update ResourceVO set resourceName='SCHEDULER.JOB.CREATE' where resourceName='SCHEDULER.CREATE';

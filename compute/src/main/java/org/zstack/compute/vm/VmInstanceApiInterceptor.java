@@ -272,16 +272,20 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
 
         SimpleQuery<L3NetworkVO> l3q = dbf.createQuery(L3NetworkVO.class);
-        l3q.select(L3NetworkVO_.state, L3NetworkVO_.system);
+        l3q.select(L3NetworkVO_.state, L3NetworkVO_.system, L3NetworkVO_.category);
         l3q.add(L3NetworkVO_.uuid, Op.EQ, msg.getL3NetworkUuid());
         t = l3q.findTuple();
         L3NetworkState l3state = t.get(0, L3NetworkState.class);
         boolean system = t.get(1, Boolean.class);
+        L3NetworkCategory category = t.get(2, L3NetworkCategory.class);
         if (l3state == L3NetworkState.Disabled) {
             throw new ApiMessageInterceptionException(operr("unable to attach a L3 network. The L3 network[uuid:%s] is disabled", msg.getL3NetworkUuid()));
         }
-        if (!VmInstanceConstant.USER_VM_TYPE.equals(type) && !system) {
-            throw new ApiMessageInterceptionException(operr("unable to attach a L3 network. The vm[uuid: %s] is not a user vm", type));
+        if (VmInstanceConstant.USER_VM_TYPE.equals(type) && system) {
+            throw new ApiMessageInterceptionException(operr("unable to attach a L3 network. The L3 network[uuid:%s] is a system network and vm is a user vm", msg.getL3NetworkUuid()));
+        }
+        if (!VmInstanceConstant.USER_VM_TYPE.equals(type) && !system && category.equals(L3NetworkCategory.Private)) {
+            throw new ApiMessageInterceptionException(operr("unable to attach a L3 network. The vm[uuid: %s] is not a user vm and the L3 network is a private L3", type));
         }
 
         if (msg.getStaticIp() != null) {
@@ -426,7 +430,6 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             if (state != L3NetworkState.Enabled) {
                 throw new ApiMessageInterceptionException(operr("l3Network[uuid:%s] is Disabled, can not create vm on it", l3Uuid));
             }
-
             if (system && (msg.getType() == null || VmInstanceConstant.USER_VM_TYPE.equals(msg.getType()))) {
                 throw new ApiMessageInterceptionException(operr("l3Network[uuid:%s] is system network, can not create user vm on it", l3Uuid));
             }

@@ -1,5 +1,6 @@
 package org.zstack.network.l3;
 
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import org.apache.commons.net.util.SubnetUtils;
 import org.apache.commons.net.util.SubnetUtils.SubnetInfo;
 import org.apache.commons.validator.routines.DomainValidator;
@@ -16,7 +17,6 @@ import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l3.*;
-import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.header.zone.ZoneVO_;
 import org.zstack.utils.network.NetworkUtils;
@@ -24,6 +24,7 @@ import org.zstack.utils.network.NetworkUtils;
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -77,11 +78,46 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
             validate((APICheckIpAvailabilityMsg) msg);
         } else if (msg instanceof APISetL3NetworkRouterInterfaceIpMsg) {
             validate((APISetL3NetworkRouterInterfaceIpMsg) msg);
+        } else if (msg instanceof APIUpdateL3NetworkMsg) {
+            validate((APIUpdateL3NetworkMsg) msg);
         }
 
         setServiceId(msg);
 
         return msg;
+    }
+
+    private void validate(APIUpdateL3NetworkMsg msg) {
+        if (msg.getCategory() == null && msg.getSystem() == null) {
+            return;
+        }
+
+        Boolean currentSystem = Q.New(L3NetworkVO.class)
+                    .select(L3NetworkVO_.system)
+                    .eq(L3NetworkVO_.uuid, msg.getL3NetworkUuid())
+                    .findValue();
+        if (msg.getSystem() != null && msg.getCategory() == null && !msg.getSystem().equals(currentSystem)) {
+            throw new ApiMessageInterceptionException(argerr("you must update system and category both"));
+        }
+
+        List<L3NetworkCategory> validNetworkCategory = Arrays.asList(L3NetworkCategory.values());
+        for (L3NetworkCategory category : validNetworkCategory) {
+            if (category.toString().equalsIgnoreCase(msg.getCategory())) {
+                msg.setCategory(category.toString());
+                break;
+            }
+        }
+        if (msg.getSystem() == null) {
+            msg.setSystem(currentSystem);
+        }
+        if (msg.getCategory() != null) {
+            if (L3NetworkCategory.checkSystemAndCategory(msg.getSystem(), L3NetworkCategory.valueOf(msg.getCategory()))) {
+                return;
+            } else {
+                throw new ApiMessageInterceptionException(argerr("not valid combination of system and category," +
+                        "only %s are valid", L3NetworkCategory.validCombination));
+            }
+        }
     }
 
     private void validate(APISetL3NetworkRouterInterfaceIpMsg msg) {
@@ -189,6 +225,22 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
                 throw new ApiMessageInterceptionException(argerr("%s is not a valid domain name", msg.getDnsDomain()));
             }
         }
+
+        List<L3NetworkCategory> validNetworkCategory = Arrays.asList(L3NetworkCategory.values());
+        for (L3NetworkCategory category : validNetworkCategory) {
+            if (category.toString().equalsIgnoreCase(msg.getCategory())) {
+                msg.setCategory(category.toString());
+                break;
+            }
+        }
+
+        if (L3NetworkCategory.checkSystemAndCategory(msg.isSystem(), L3NetworkCategory.valueOf(msg.getCategory()))) {
+            return;
+        } else {
+            throw new ApiMessageInterceptionException(argerr("not valid combination of system and category," +
+                    "only %s are valid", L3NetworkCategory.validCombination));
+        }
+
     }
 
     private void validate(APIRemoveDnsFromL3NetworkMsg msg) {
