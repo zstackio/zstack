@@ -83,7 +83,6 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
 
     static {
         type.setSupportHeartbeatFile(true);
-        type.setSupportPingStorageGateway(true);
         type.setOrder(899);
     }
 

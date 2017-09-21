@@ -84,7 +84,6 @@ public class FusionstorPrimaryStorageFactory implements PrimaryStorageFactory, F
 
     static {
         type.setSupportHeartbeatFile(true);
-        type.setSupportPingStorageGateway(true);
     }
 
     void init() {
