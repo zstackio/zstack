@@ -281,7 +281,9 @@ class OperateEipCase extends SubCase {
 
         assert cmd.eips.size() == 1
         assert cmd.eips.get(0).eipUuid == eip.uuid
-        assert dbFindByUuid(host.uuid, HostVO.class).getStatus() == HostStatus.Connected
+        retryInSecs() {
+            assert dbFindByUuid(host.uuid, HostVO.class).getStatus() == HostStatus.Connected
+        }
     }
 
     @Override
