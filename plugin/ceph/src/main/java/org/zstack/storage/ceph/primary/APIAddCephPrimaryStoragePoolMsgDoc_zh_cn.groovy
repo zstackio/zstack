@@ -92,6 +92,36 @@ doc {
 					since "0.6"
 					
 				}
+				column {
+					name "poolName"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "String"
+					optional false
+					since "0.6"
+					
+				}
+				column {
+					name "aliasName"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "0.6"
+					
+				}
+				column {
+					name "isCreate"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "boolean"
+					optional true
+					since "0.6"
+					
+				}
 			}
         }
 

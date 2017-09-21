@@ -122,6 +122,26 @@ doc {
 					since "0.6"
 					
 				}
+				column {
+					name "availablePhysicalCapacity"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "long"
+					optional true
+					since "0.6"
+					
+				}
+				column {
+					name "totalPhysicalCapacity"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "long"
+					optional true
+					since "0.6"
+					
+				}
 			}
         }
 
