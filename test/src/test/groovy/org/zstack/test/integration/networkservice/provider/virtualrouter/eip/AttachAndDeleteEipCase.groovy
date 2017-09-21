@@ -375,7 +375,7 @@ class AttachAndDeleteEipCase extends SubCase{
         VipVO vip = dbFindByUuid(vipUuid, VipVO.class)
 
         deleteVip{
-            uuid = "aaa"
+            uuid = UUID.randomUUID().toString().replace("-", "")
         }
 
         deleteVip{
@@ -394,7 +394,7 @@ class AttachAndDeleteEipCase extends SubCase{
         VipVO vipVO = dbFindByUuid(eipInv.vipUuid, VipVO.class)
 
         deleteEip{
-            uuid = "aaa"
+            uuid = UUID.randomUUID().toString().replace("-", "")
         }
         deleteEip {
             uuid = eipInv.uuid

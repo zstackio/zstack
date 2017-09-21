@@ -301,6 +301,13 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
                                     throw new CloudRuntimeException(String.format("the API class[%s] does not have @RestRequest but it uses a successIfResourceNotExisting helper", msg.getClass()));
                                 }
 
+                                Pattern p = Pattern.compile("[0-9a-f]{8}[0-9a-f]{4}[1-5][0-9a-f]{3}[89ab][0-9a-f]{3}[0-9a-f]{12}");
+                                Matcher mt = p.matcher(value.toString());
+                                if (!mt.matches()){
+                                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.RESOURCE_NOT_FOUND,
+                                            String.format("invalid value[%s] of field [%s]", value, f.getName())));
+                                }
+
                                 APIEvent evt;
                                 try {
                                     evt = (APIEvent) rat.responseClass().getConstructor(String.class).newInstance(msg.getId());
