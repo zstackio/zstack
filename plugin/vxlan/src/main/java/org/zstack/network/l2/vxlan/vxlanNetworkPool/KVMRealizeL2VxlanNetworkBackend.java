@@ -13,6 +13,7 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
@@ -55,8 +56,8 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
     @Autowired
     private ApiTimeoutManager timeoutMgr;
 
-    private static String vtepIp = "vtepIp";
-    private static String needPopulate = "needPopulate";
+    private static String VTEP_IP = "vtepIp";
+    private static String NEED_POPULATE = "needPopulate";
 
     private String makeBridgeName(int vxlan) {
         return String.format("br_vx_%s",vxlan);
@@ -69,7 +70,13 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
 
     public void realize(final L2NetworkInventory l2Network, final String hostUuid, boolean noStatusCheck, final Completion completion) {
         final L2VxlanNetworkInventory l2vxlan = (L2VxlanNetworkInventory) l2Network;
-        final String vtepIp = Q.New(VtepVO.class).select(VtepVO_.vtepIp).eq(VtepVO_.hostUuid, hostUuid).eq(VtepVO_.poolUuid, l2vxlan.getPoolUuid()).findValue();
+        final List<String> vtepIps = Q.New(VtepVO.class).select(VtepVO_.vtepIp).eq(VtepVO_.hostUuid, hostUuid).eq(VtepVO_.poolUuid, l2vxlan.getPoolUuid()).listValues();
+        if (vtepIps != null && vtepIps.size() > 1) {
+            throw new OperationFailureException(operr("find multiple vtep ips[%s] for one host[uuid:%s], need to delete host and add again",
+                    vtepIps, hostUuid));
+        }
+        String vtepIp = vtepIps.get(0);
+
         List<String> peers = Q.New(VtepVO.class).select(VtepVO_.vtepIp).eq(VtepVO_.poolUuid, l2vxlan.getPoolUuid()).listValues();
         Set<String> p = new HashSet<String>(peers);
         p.remove(vtepIp);
@@ -175,7 +182,7 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
                         String info = String.format("successfully checked cidr[%s] for l2VxlanNetwork[uuid:%s, name:%s] on kvm host[uuid:%s]",
                                 cmd.getCidr(), l2vxlan.getUuid(), l2vxlan.getName(), hostUuid);
                         logger.debug(info);
-                        data.put(vtepIp, rsp.getVtepIp());
+                        data.put(VTEP_IP, rsp.getVtepIp());
 
                         trigger.next();
                     }
@@ -185,12 +192,12 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 List<String> vtepIps = Q.New(VtepVO.class).select(VtepVO_.vtepIp).eq(VtepVO_.poolUuid, l2vxlan.getPoolUuid()).listValues();
-                if (vtepIps.contains(data.get(vtepIp))) {
-                    data.put(needPopulate, false);
+                if (vtepIps.contains(data.get(VTEP_IP))) {
+                    data.put(NEED_POPULATE, false);
                     trigger.next();
                     return;
                 } else {
-                    data.put(needPopulate, true);
+                    data.put(NEED_POPULATE, true);
                 }
 
                 CreateVtepMsg cmsg = new CreateVtepMsg();
@@ -198,7 +205,7 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
                 cmsg.setClusterUuid(clusterUuid);
                 cmsg.setHostUuid(hostUuid);
                 cmsg.setPort(VXLAN_PORT);
-                cmsg.setVtepIp((String) data.get(vtepIp));
+                cmsg.setVtepIp((String) data.get(VTEP_IP));
                 cmsg.setType(KVM_VXLAN_TYPE);
 
                 bus.makeTargetServiceIdByResourceUuid(cmsg, L2NetworkConstant.SERVICE_ID, l2vxlan.getPoolUuid());
@@ -218,7 +225,7 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
         }).then(new NoRollbackFlow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                if (data.get(needPopulate).equals(false)) {
+                if (data.get(NEED_POPULATE).equals(false)) {
                     trigger.next();
                     return;
                 }
