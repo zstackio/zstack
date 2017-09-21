@@ -454,6 +454,15 @@ class RestDocumentationGenerator implements DocumentGenerator {
                     ocol._type = ncol._type
                     ocol._optional = ncol._optional
                 }
+
+                if(nreq._params._cloumns.size() > oreq._params._cloumns.size()){
+                    nreq._params._cloumns.each { ncol ->
+                        RequestParamColumn ocol = oreq._params._cloumns.find { it._name == ncol._name }
+                        if(ocol == null){
+                            oreq._params._cloumns.add(ncol)
+                        }
+                    }
+                }
             }
 
             Response orsp = _rest._response
