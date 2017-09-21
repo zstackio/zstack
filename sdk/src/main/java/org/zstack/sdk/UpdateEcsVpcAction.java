@@ -32,9 +32,6 @@ public class UpdateEcsVpcAction extends AbstractAction {
     public java.lang.String description;
 
     @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false)
     public java.util.List systemTags;
 
     @Param(required = false)
@@ -82,7 +79,7 @@ public class UpdateEcsVpcAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/hybrid/aliyun/vpc/{uuid}/action";
+        info.path = "/hybrid/aliyun/vpc/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";

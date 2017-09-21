@@ -76,7 +76,7 @@ public class DeleteAliyunSnapshotFromLocalAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
-        info.path = "/hybrid/aliyun/snapshot/{uuid}/local";
+        info.path = "/hybrid/aliyun/snapshot/{uuid}";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "";

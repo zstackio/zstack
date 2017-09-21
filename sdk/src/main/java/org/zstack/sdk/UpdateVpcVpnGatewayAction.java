@@ -32,9 +32,6 @@ public class UpdateVpcVpnGatewayAction extends AbstractAction {
     public java.lang.String description;
 
     @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false)
     public java.util.List systemTags;
 
     @Param(required = false)
@@ -82,7 +79,7 @@ public class UpdateVpcVpnGatewayAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/hybrid/vpc-vpn/{uuid}/action";
+        info.path = "/hybrid/vpc-vpn/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "updateVpcVpnGateway";

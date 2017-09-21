@@ -35,9 +35,6 @@ public class UpdateHybridEipAction extends AbstractAction {
     public java.lang.String type;
 
     @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false)
     public java.util.List systemTags;
 
     @Param(required = false)
@@ -85,7 +82,7 @@ public class UpdateHybridEipAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/hybrid/eip/{uuid}/action";
+        info.path = "/hybrid/eip/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";

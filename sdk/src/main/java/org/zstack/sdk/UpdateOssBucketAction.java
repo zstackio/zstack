@@ -29,9 +29,6 @@ public class UpdateOssBucketAction extends AbstractAction {
     public java.lang.String description;
 
     @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false)
     public java.util.List systemTags;
 
     @Param(required = false)
@@ -79,7 +76,7 @@ public class UpdateOssBucketAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/hybrid/aliyun/oss-bucket/{uuid}/action";
+        info.path = "/hybrid/aliyun/oss-bucket/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";

@@ -32,9 +32,6 @@ public class UpdateEcsSecurityGroupAction extends AbstractAction {
     public java.lang.String name;
 
     @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false)
     public java.util.List systemTags;
 
     @Param(required = false)
@@ -82,7 +79,7 @@ public class UpdateEcsSecurityGroupAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/hybrid/aliyun/security-group/{uuid}/action";
+        info.path = "/hybrid/aliyun/security-group/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";
