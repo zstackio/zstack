@@ -21,6 +21,14 @@
         <param-value>/WEB-INF/classes/zstack-servlet-context.xml</param-value>
     </context-param>
 
+    <!--
+    As it turns out, there is another parameter that you can use to get the desired functionality in a declarative
+    fashion: parentContextKey. Using this, you instruct the ContextLoader to use another class
+    called ContextSingletonBeanFactoryLocator to search for a bean named by the value of parentContextKey,
+    defined in a configuration file whose name matches a certain pattern. By default,
+    this pattern is ‘classpath*:beanRefContext.xml’, meaning all files called beanRefContext on the classpath.
+    (For a plain SingletonBeanFactoryLocator it’s ‘classpath*:beanRefFactory.xml’)
+    -->
     <context-param>
         <param-name>parentContextKey</param-name>
         <param-value>parentContext</param-value>
