@@ -9,6 +9,7 @@ import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.GLock;
+import org.zstack.core.db.Q;
 import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -276,6 +277,10 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         if (ip != null) {
             return ip;
         }
+        L3NetworkVO l3 = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, l3Uuid).find();
+        if (!isProvidedbyMe(L3NetworkInventory.valueOf(l3))) {
+            return null;
+        }
 
         // TODO: static allocate the IP to avoid the lock
         GLock lock = new GLock(String.format("l3-%s-allocate-dhcp-ip", l3Uuid), TimeUnit.MINUTES.toSeconds(30));
@@ -334,9 +339,11 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             private void dealMessage(FlatDhcpAcquireDhcpServerIpMsg msg) {
                 FlatDhcpAcquireDhcpServerIpReply reply = new FlatDhcpAcquireDhcpServerIpReply();
                 UsedIpInventory ip = allocateDhcpIp(msg.getL3NetworkUuid());
-                reply.setIp(ip.getIp());
-                reply.setNetmask(ip.getNetmask());
-                reply.setUsedIpUuid(ip.getUuid());
+                if (ip != null) {
+                    reply.setIp(ip.getIp());
+                    reply.setNetmask(ip.getNetmask());
+                    reply.setUsedIpUuid(ip.getUuid());
+                }
                 bus.reply(msg, reply);
             }
 
