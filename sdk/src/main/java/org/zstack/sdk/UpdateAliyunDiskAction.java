@@ -32,13 +32,13 @@ public class UpdateAliyunDiskAction extends AbstractAction {
     public java.lang.String description;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean deleteWithInstance = false;
+    public java.lang.Boolean deleteWithInstance;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean deleteAutoSnapshot = false;
+    public java.lang.Boolean deleteAutoSnapshot;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean enableAutoSnapshot = false;
+    public java.lang.Boolean enableAutoSnapshot;
 
     @Param(required = false)
     public java.util.List systemTags;
