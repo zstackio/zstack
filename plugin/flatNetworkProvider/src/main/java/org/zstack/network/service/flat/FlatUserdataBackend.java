@@ -28,6 +28,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkDeleteExtensionPoint;
 import org.zstack.header.network.l3.L3NetworkException;
 import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.network.l3.UsedIpInventory;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefInventory;
 import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.network.service.NetworkServiceProviderVO;
@@ -158,7 +159,10 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                 Map<String, String> userdata = new UserdataBuilder().buildByVmUuids(vmUuids);
                 Set<String> l3Uuids = new HashSet<String>();
                 for (VmIpL3Uuid l : vmipl3.values()) {
-                    l.dhcpServerIp = dhcpBackend.allocateDhcpIp(l.l3Uuid).getIp();
+                    UsedIpInventory dhcpIpInv = dhcpBackend.allocateDhcpIp(l.l3Uuid);
+                    if (dhcpIpInv != null) {
+                        l.dhcpServerIp = dhcpIpInv.getIp();
+                    }
                     l3Uuids.add(l.l3Uuid);
                 }
 
