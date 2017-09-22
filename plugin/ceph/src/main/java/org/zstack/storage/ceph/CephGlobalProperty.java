@@ -10,6 +10,10 @@ import org.zstack.core.GlobalPropertyDefinition;
 public class CephGlobalProperty {
     @GlobalProperty(name="Ceph.backupStorageAgent.port", defaultValue = "7761")
     public static int BACKUP_STORAGE_AGENT_PORT;
+    @GlobalProperty(name="Ceph.backupStorageAgent.urlRootPath", defaultValue = "")
+    public static String BACKUP_STORAGE_AGENT_URL_ROOT_PATH;
+    @GlobalProperty(name="Ceph.primaryStorageAgent.urlRootPath", defaultValue = "")
+    public static String PRIMARY_STORAGE_AGENT_URL_ROOT_PATH;
     @GlobalProperty(name="Ceph.primaryStorageAgent.port", defaultValue = "7762")
     public static int PRIMARY_STORAGE_AGENT_PORT;
     @GlobalProperty(name="Ceph.backupStorage.agentPackageName", defaultValue = "cephbackupstorage-2.2.0.tar.gz")
