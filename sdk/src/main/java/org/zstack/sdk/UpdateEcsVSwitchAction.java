@@ -78,11 +78,11 @@ public class UpdateEcsVSwitchAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
+        info.httpMethod = "PUT";
         info.path = "/hybrid/aliyun/vswitch/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "updateEcsVSwitch";
         return info;
     }
 
