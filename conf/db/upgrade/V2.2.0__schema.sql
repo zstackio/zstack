@@ -37,6 +37,41 @@ DELIMITER ;
 CALL generateNetworkCategory();
 DROP PROCEDURE IF EXISTS generateNetworkCategory;
 
+DELIMITER $$
+CREATE PROCEDURE addServiceToPublicNetwork()
+    BEGIN
+        DECLARE l3Uuid VARCHAR(32);
+        DECLARE flatUuid VARCHAR(32);
+        DECLARE sgUuid VARCHAR(32);
+        DECLARE done INT DEFAULT FALSE;
+        DECLARE cur CURSOR FOR SELECT uuid FROM zstack.L3NetworkEO WHERE category = 'Public';
+        DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+        OPEN cur;
+        read_loop: LOOP
+            FETCH cur INTO l3Uuid;
+            IF done THEN
+                LEAVE read_loop;
+            END IF;
+
+            SELECT uuid INTO flatUuid FROM zstack.NetworkServiceProviderVO WHERE type = 'Flat';
+            SELECT uuid INTO sgUuid FROM zstack.NetworkServiceProviderVO WHERE type = 'SecurityGroup';
+
+            INSERT INTO NetworkServiceL3NetworkRefVO (`l3NetworkUuid`, `networkServiceProviderUuid`, `networkServiceType`)
+              VALUES (l3Uuid, flatUuid, 'Userdata');
+            INSERT INTO NetworkServiceL3NetworkRefVO (`l3NetworkUuid`, `networkServiceProviderUuid`, `networkServiceType`)
+              VALUES (l3Uuid, flatUuid, 'Eip');
+            INSERT INTO NetworkServiceL3NetworkRefVO (`l3NetworkUuid`, `networkServiceProviderUuid`, `networkServiceType`)
+              VALUES (l3Uuid, sgUuid, 'SecurityGroup');
+
+        END LOOP;
+        CLOSE cur;
+        # work around a bug of mysql : jira.mariadb.org/browse/MDEV-4602
+        SELECT CURTIME();
+    END $$
+DELIMITER ;
+
+CALL addServiceToPublicNetwork();
+DROP PROCEDURE IF EXISTS addServiceToPublicNetwork;
 
 update PolicyVO set name='SCHEDULER.JOB.CREATE', data='[{\"name\":\"scheduler.job.create\",\"effect\":\"Allow\",\"actions\":[\"scheduler:APICreateSchedulerJobMsg\"]}]' where name='SCHEDULER.CREATE';
 update ResourceVO set resourceName='SCHEDULER.JOB.CREATE' where resourceName='SCHEDULER.CREATE';
