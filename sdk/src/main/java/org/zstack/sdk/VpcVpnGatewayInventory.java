@@ -26,12 +26,12 @@ public class VpcVpnGatewayInventory  {
         return this.type;
     }
 
-    public java.lang.String vpnGatewayId;
-    public void setVpnGatewayId(java.lang.String vpnGatewayId) {
-        this.vpnGatewayId = vpnGatewayId;
+    public java.lang.String gatewayId;
+    public void setGatewayId(java.lang.String gatewayId) {
+        this.gatewayId = gatewayId;
     }
-    public java.lang.String getVpnGatewayId() {
-        return this.vpnGatewayId;
+    public java.lang.String getGatewayId() {
+        return this.gatewayId;
     }
 
     public java.lang.String vSwitchUuid;
