@@ -34,30 +34,6 @@
                             </packagingExcludes>
                             <webResources>
                                 <resource>
-                                    <directory>../test/src/test/resources/springConfigXml/</directory>
-                                    <targetPath>WEB-INF/classes/simulator/springConfigXml/</targetPath>
-                                    <includes>
-                                        <include>**/*</include>
-                                    </includes>
-                                </resource>
-
-                                <resource>
-                                    <directory>../premium/conf/springConfigXml/</directory>
-                                    <targetPath>WEB-INF/classes/simulator/springConfigXml/</targetPath>
-                                    <includes>
-                                        <include>**/*</include>
-                                    </includes>
-                                </resource>
-
-                                <resource>
-                                    <directory>../conf/springConfigXml/</directory>
-                                    <targetPath>WEB-INF/classes/simulator/springConfigXml/</targetPath>
-                                    <includes>
-                                        <include>**/*</include>
-                                    </includes>
-                                </resource>
-
-                                <resource>
                                     <directory>../conf</directory>
                                     <targetPath>WEB-INF/classes</targetPath>
                                     <includes>
@@ -154,17 +130,7 @@
                     <artifactId>search</artifactId>
                     <version>${project.version}</version>
                 </dependency>
-                <dependency>
-                    <groupId>org.zstack</groupId>
-                    <artifactId>simulatorHeader</artifactId>
-                    <version>${project.version}</version>
-                </dependency>
-                <dependency>
-                    <groupId>org.zstack</groupId>
-                    <artifactId>simulatorImpl</artifactId>
-                    <version>${project.version}</version>
-                </dependency>
-
+               
                 <dependency>
                     <groupId>org.zstack</groupId>
                     <artifactId>applianceVm</artifactId>
@@ -391,16 +357,6 @@
         <dependency>
             <groupId>org.zstack</groupId>
             <artifactId>search</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.zstack</groupId>
-            <artifactId>simulatorHeader</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.zstack</groupId>
-            <artifactId>simulatorImpl</artifactId>
             <version>${project.version}</version>
         </dependency>
 

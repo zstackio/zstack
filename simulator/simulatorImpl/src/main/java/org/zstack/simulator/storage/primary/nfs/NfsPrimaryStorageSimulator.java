@@ -24,7 +24,6 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.Map;
 
-@Controller
 public class NfsPrimaryStorageSimulator {
     CLogger logger = Utils.getLogger(NfsPrimaryStorageSimulator.class);
     

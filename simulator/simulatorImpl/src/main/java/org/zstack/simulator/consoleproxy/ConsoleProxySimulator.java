@@ -20,7 +20,6 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.servlet.http.HttpServletRequest;
 
-@Controller
 public class ConsoleProxySimulator {
     CLogger logger = Utils.getLogger(ConsoleProxySimulator.class);
     

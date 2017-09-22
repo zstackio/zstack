@@ -80,7 +80,6 @@
     <import resource="springConfigXml/SecurityGroupManager.xml"/>
     <import resource="springConfigXml/SftpBackupStorage.xml"/>
     <import resource="springConfigXml/sharedMountPointPrimaryStorage.xml"/>
-    <import resource="springConfigXml/Simulator.xml"/>
     <import resource="springConfigXml/tag.xml"/>
     <import resource="springConfigXml/ThreadFacade.xml"/>
     <import resource="springConfigXml/validation.xml"/>

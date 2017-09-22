@@ -34,7 +34,6 @@ import java.util.concurrent.TimeUnit;
 /**
  * Created by frank on 7/28/2015.
  */
-@Controller
 public class CephPrimaryStorageSimulator {
     CLogger logger = Utils.getLogger(CephPrimaryStorageSimulator.class);
     @Autowired

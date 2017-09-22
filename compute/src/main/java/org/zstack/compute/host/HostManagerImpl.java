@@ -401,7 +401,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
                     }
                 });
 
-                completion.fail(errf.instantiateErrorCode(HostErrors.UNABLE_TO_ADD_HOST, errCode));
+                completion.fail(errCode);
             }
         }).start();
 

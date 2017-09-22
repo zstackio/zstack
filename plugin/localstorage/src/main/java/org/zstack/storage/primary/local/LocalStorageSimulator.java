@@ -37,7 +37,6 @@ import org.zstack.utils.logging.CLogger;
 /**
  * Created by frank on 7/1/2015.
  */
-@Controller
 public class LocalStorageSimulator {
     private CLogger logger = Utils.getLogger(LocalStorageSimulator.class);
 
