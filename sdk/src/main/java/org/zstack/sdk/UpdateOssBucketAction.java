@@ -75,11 +75,11 @@ public class UpdateOssBucketAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
+        info.httpMethod = "PUT";
         info.path = "/hybrid/aliyun/oss-bucket/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "updateOssBucket";
         return info;
     }
 
