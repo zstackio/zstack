@@ -17,4 +17,8 @@ public class ImageSystemTags {
             String.format("imageName::{%s}::primaryStorageUuid::{%s}", IMAGE_NAME_TOKEN, PRIMARY_STORAGE_UUID_TOKEN),
             ImageVO.class
     );
+
+    public static String IMAGE_DEPLOY_REMOTE_TOKEN = "remote";
+    public static PatternedSystemTag IMAGE_DEPLOY_REMOTE = new PatternedSystemTag(String.format("%s", IMAGE_DEPLOY_REMOTE_TOKEN), ImageVO.class);
+
 }
