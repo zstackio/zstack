@@ -1,6 +1,6 @@
 package org.zstack.sdk;
 
-public class ListImagesFromImageStoreBackupStorageResult {
+public class GetImagesFromImageStoreBackupStorageResult {
     public java.util.List<ImageStoreImageStruct> infos;
     public void setInfos(java.util.List<ImageStoreImageStruct> infos) {
         this.infos = infos;
