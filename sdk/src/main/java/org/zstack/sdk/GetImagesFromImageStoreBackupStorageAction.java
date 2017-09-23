@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ListImagesFromImageStoreBackupStorageAction extends AbstractAction {
+public class GetImagesFromImageStoreBackupStorageAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public ListImagesFromImageStoreBackupStorageResult value;
+        public GetImagesFromImageStoreBackupStorageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -42,8 +42,8 @@ public class ListImagesFromImageStoreBackupStorageAction extends AbstractAction 
             return ret;
         }
         
-        ListImagesFromImageStoreBackupStorageResult value = res.getResult(ListImagesFromImageStoreBackupStorageResult.class);
-        ret.value = value == null ? new ListImagesFromImageStoreBackupStorageResult() : value; 
+        GetImagesFromImageStoreBackupStorageResult value = res.getResult(GetImagesFromImageStoreBackupStorageResult.class);
+        ret.value = value == null ? new GetImagesFromImageStoreBackupStorageResult() : value; 
 
         return ret;
     }
@@ -72,7 +72,7 @@ public class ListImagesFromImageStoreBackupStorageAction extends AbstractAction 
         info.path = "/backup-storage/{uuid}/image-store";
         info.needSession = true;
         info.needPoll = false;
-        info.parameterName = "listImagesFromImageStoreBackupStorage";
+        info.parameterName = "getImagesFromImageStoreBackupStorage";
         return info;
     }
 
