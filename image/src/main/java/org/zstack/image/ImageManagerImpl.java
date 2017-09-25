@@ -1,8 +1,8 @@
 package org.zstack.image;
 
+import org.apache.logging.log4j.ThreadContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
-import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.AsyncBatchRunner;
 import org.zstack.core.asyncbatch.LoopAsyncBatch;
@@ -74,7 +74,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.header.Constants.THREAD_CONTEXT_API;
+import static org.zstack.header.Constants.THREAD_CONTEXT_TASK_NAME;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.core.progress.ProgressReportService.reportProgress;
 
 public class ImageManagerImpl extends AbstractService implements ImageManager, ManagementNodeReadyExtensionPoint,
         ReportQuotaExtensionPoint, ResourceOwnerPreChangeExtensionPoint {
@@ -1514,7 +1517,10 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                         return true;
                     }
 
-                    // TODO update progress
+                    ThreadContext.put(THREAD_CONTEXT_API, imageUuid);
+                    ThreadContext.put(THREAD_CONTEXT_TASK_NAME, "uploading image");
+                    reportProgress(String.format("uploaded %d of %d bytes", dr.getDownloaded(), dr.getActualSize()));
+
                     return false;
                 }
 
@@ -1534,7 +1540,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
             @Override
             public long getInterval() {
-                return 15;
+                return 3;
             }
 
             @Override
