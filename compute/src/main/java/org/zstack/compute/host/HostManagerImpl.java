@@ -377,12 +377,10 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         }).done(new FlowDoneHandler(amsg) {
             @Override
             public void handle(Map data) {
-                HostVO nvo = dbf.reload(vo);
-                HostInventory inv = factory.getHostInventory(nvo.getUuid());
-                inv.setStatus(HostStatus.Connected.toString());
+                HostInventory inv = factory.getHostInventory(vo.getUuid());
+                logger.debug(String.format("successfully added host[name:%s, hypervisor:%s, uuid:%s]", vo.getName(), vo.getHypervisorType(), vo.getUuid()));
                 completion.success(inv);
 
-                logger.debug(String.format("successfully added host[name:%s, hypervisor:%s, uuid:%s]", vo.getName(), vo.getHypervisorType(), vo.getUuid()));
             }
         }).error(new FlowErrorHandler(amsg) {
             @Override
@@ -401,7 +399,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
                     }
                 });
 
-                completion.fail(errf.instantiateErrorCode(HostErrors.UNABLE_TO_ADD_HOST, errCode));
+                completion.fail(errCode);
             }
         }).start();
 

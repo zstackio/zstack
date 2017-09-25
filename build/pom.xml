@@ -130,17 +130,7 @@
                     <artifactId>search</artifactId>
                     <version>${project.version}</version>
                 </dependency>
-                <dependency>
-                    <groupId>org.zstack</groupId>
-                    <artifactId>simulatorHeader</artifactId>
-                    <version>${project.version}</version>
-                </dependency>
-                <dependency>
-                    <groupId>org.zstack</groupId>
-                    <artifactId>simulatorImpl</artifactId>
-                    <version>${project.version}</version>
-                </dependency>
-
+               
                 <dependency>
                     <groupId>org.zstack</groupId>
                     <artifactId>applianceVm</artifactId>
@@ -240,6 +230,11 @@
                 <dependency>
                     <groupId>org.zstack</groupId>
                     <artifactId>mevoco</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
+                    <artifactId>simulator2</artifactId>
                     <version>${project.version}</version>
                 </dependency>
                 <dependency>
@@ -362,16 +357,6 @@
         <dependency>
             <groupId>org.zstack</groupId>
             <artifactId>search</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.zstack</groupId>
-            <artifactId>simulatorHeader</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.zstack</groupId>
-            <artifactId>simulatorImpl</artifactId>
             <version>${project.version}</version>
         </dependency>
 

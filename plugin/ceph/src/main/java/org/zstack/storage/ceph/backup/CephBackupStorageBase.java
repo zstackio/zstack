@@ -657,7 +657,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
             @Override
             public void success(DumpImageInfoToMetaDataFileRsp ret) {
-                logger.error("dump ceph images metadata successfully");
+                logger.debug("dump ceph images metadata successfully");
                 bus.reply(msg, reply);
                 chain.next();
             }

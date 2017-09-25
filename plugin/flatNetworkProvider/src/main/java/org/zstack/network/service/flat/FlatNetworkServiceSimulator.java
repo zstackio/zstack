@@ -26,7 +26,6 @@ import org.zstack.utils.gson.JSONObjectUtil;
 /**
  * Created by frank on 9/19/2015.
  */
-@Controller
 public class FlatNetworkServiceSimulator {
     @Autowired
     private RESTFacade restf;

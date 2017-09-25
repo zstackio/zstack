@@ -24,7 +24,6 @@ import org.zstack.utils.logging.CLogger;
 import javax.servlet.http.HttpServletRequest;
 import java.util.concurrent.TimeUnit;
 
-@Controller
 public class SftpBackupStorageSimulator {
     CLogger logger = Utils.getLogger(SftpBackupStorageSimulator.class);
 

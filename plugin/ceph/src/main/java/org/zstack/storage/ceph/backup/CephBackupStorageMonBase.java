@@ -20,10 +20,7 @@ import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
-import org.zstack.storage.ceph.CephGlobalProperty;
-import org.zstack.storage.ceph.CephMonAO;
-import org.zstack.storage.ceph.CephMonBase;
-import org.zstack.storage.ceph.MonStatus;
+import org.zstack.storage.ceph.*;
 import org.zstack.storage.ceph.backup.CephBackupStorageBase.PingOperationFailure;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -193,8 +190,7 @@ public class CephBackupStorageMonBase extends CephMonBase {
 
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
-                            restf.echo(String.format("http://%s:%s%s", getSelf().getHostname(),
-                                    CephGlobalProperty.BACKUP_STORAGE_AGENT_PORT, ECHO_PATH), new Completion(trigger) {
+                            restf.echo(CephAgentUrl.backupStorageUrl(getSelf().getHostname(), ECHO_PATH), new Completion(trigger) {
                                 @Override
                                 public void success() {
                                     trigger.next();
@@ -233,7 +229,7 @@ public class CephBackupStorageMonBase extends CephMonBase {
     }
 
     private <T> void httpCall(String path, AgentCmd cmd, final Class<T> rspClass, final ReturnValueCompletion<T> completion) {
-        restf.asyncJsonPost(String.format("http://%s:%s%s", self.getHostname(), CephGlobalProperty.BACKUP_STORAGE_AGENT_PORT, path),
+        restf.asyncJsonPost(CephAgentUrl.backupStorageUrl(self.getHostname(), path),
                 cmd, new JsonAsyncRESTCallback<T>(completion) {
                     @Override
                     public void fail(ErrorCode err) {

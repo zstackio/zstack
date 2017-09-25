@@ -76,6 +76,12 @@ public class RestServer implements Component, CloudBusEventListener {
     @Autowired
     private RESTFacade restf;
 
+    private List<RestServletRequestInterceptor> interceptors = new ArrayList<>();
+
+    public void registerRestServletRequestInterceptor(RestServletRequestInterceptor interceptor) {
+        interceptors.add(interceptor);
+    }
+
     static class RequestInfo {
         // don't save session to database as JSON
         // it's not JSON-dumpable
@@ -518,6 +524,15 @@ public class RestServer implements Component, CloudBusEventListener {
             sb.append(String.format(" Body: %s", entity.getBody().isEmpty() ? null : entity.getBody()));
 
             requestLogger.trace(sb.toString());
+        }
+
+        try {
+            for (RestServletRequestInterceptor ic : interceptors) {
+                ic.intercept(req);
+            }
+        } catch (RestServletRequestInterceptor.RestServletRequestInterceptorException e) {
+            sendResponse(e.statusCode, e.error, rsp);
+            return;
         }
 
         if (matcher.match(ASYNC_JOB_PATH_PATTERN, path)) {

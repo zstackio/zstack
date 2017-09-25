@@ -29,7 +29,6 @@ import org.zstack.utils.logging.CLogger;
 /**
  * Created by frank on 7/28/2015.
  */
-@Controller
 public class CephBackupStorageSimulator {
     CLogger logger = Utils.getLogger(CephBackupStorageSimulator.class);
 

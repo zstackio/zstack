@@ -4,6 +4,7 @@ import org.apache.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -454,20 +455,24 @@ public class RESTFacadeImpl implements RESTFacade {
         }
 
         ResponseEntity<String> rsp;
-        if (CoreGlobalProperty.UNIT_TEST_ON) {
-            rsp = template.exchange(url, HttpMethod.POST, req, String.class);
-        } else {
-            rsp = new Retry<ResponseEntity<String>>() {
-                @Override
-                @RetryCondition(onExceptions = {IOException.class, RestClientException.class})
-                protected ResponseEntity<String> call() {
-                    if (unit == null) {
-                        return template.exchange(url, HttpMethod.POST, req, String.class);
-                    } else {
-                        return template.exchange(url, HttpMethod.POST, req, String.class, Platform.getUuid(), unit.toMillis(timeout), unit.toMillis(timeout));
+        try {
+            if (CoreGlobalProperty.UNIT_TEST_ON) {
+                rsp = template.exchange(url, HttpMethod.POST, req, String.class);
+            } else {
+                rsp = new Retry<ResponseEntity<String>>() {
+                    @Override
+                    @RetryCondition(onExceptions = {IOException.class, HttpStatusCodeException.class})
+                    protected ResponseEntity<String> call() {
+                        if (unit == null) {
+                            return template.exchange(url, HttpMethod.POST, req, String.class);
+                        } else {
+                            return template.exchange(url, HttpMethod.POST, req, String.class, Platform.getUuid(), unit.toMillis(timeout), unit.toMillis(timeout));
+                        }
                     }
-                }
-            }.run();
+                }.run();
+            }
+        } catch (HttpStatusCodeException e) {
+            throw new OperationFailureException(operr("failed to post to %s, status code: %s, response body: %s", url, e.getStatusCode(), e.getResponseBodyAsString()));
         }
 
 
