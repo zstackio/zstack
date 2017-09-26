@@ -57,8 +57,6 @@ CREATE PROCEDURE addServiceToPublicNetwork()
             SELECT uuid INTO sgUuid FROM zstack.NetworkServiceProviderVO WHERE type = 'SecurityGroup';
 
             INSERT INTO NetworkServiceL3NetworkRefVO (`l3NetworkUuid`, `networkServiceProviderUuid`, `networkServiceType`)
-              VALUES (l3Uuid, flatUuid, 'Userdata');
-            INSERT INTO NetworkServiceL3NetworkRefVO (`l3NetworkUuid`, `networkServiceProviderUuid`, `networkServiceType`)
               VALUES (l3Uuid, flatUuid, 'Eip');
             INSERT INTO NetworkServiceL3NetworkRefVO (`l3NetworkUuid`, `networkServiceProviderUuid`, `networkServiceType`)
               VALUES (l3Uuid, sgUuid, 'SecurityGroup');
