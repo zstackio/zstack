@@ -1457,8 +1457,12 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
     }
 
     private void trackUpload(String name, String imageUuid, String bsUuid) {
+        final int maxNumOfFailure = 3;
+        final int maxIdleSecond = 180;
+
         thdf.submitCancelablePeriodicTask(new CancelablePeriodicTask() {
             private long numError = 0;
+            private int numTicks = 0;
 
             private void markCompletion(final GetImageDownloadProgressReply dr) {
                 new SQLBatch() {
@@ -1501,6 +1505,12 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                     return true;
                 }
 
+                numTicks += 1;
+                if (ivo.getActualSize() == 0 && numTicks * getInterval() >= maxIdleSecond) {
+                    markFailure();
+                    return true;
+                }
+
                 GetImageDownloadProgressMsg dmsg = new GetImageDownloadProgressMsg();
                 dmsg.setBackupStorageUuid(bsUuid);
                 dmsg.setImageUuid(imageUuid);
@@ -1519,13 +1529,19 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
                     ThreadContext.put(THREAD_CONTEXT_API, imageUuid);
                     ThreadContext.put(THREAD_CONTEXT_TASK_NAME, "uploading image");
-                    reportProgress(String.format("uploaded %d of %d bytes", dr.getDownloaded(), dr.getActualSize()));
+                    long progress = dr.getActualSize() == 0 ? 0 : dr.getDownloaded() * 100 / dr.getActualSize();
+                    reportProgress(String.valueOf(progress));
+
+                    if (ivo.getActualSize() == 0 && dr.getActualSize() != 0) {
+                        ivo.setActualSize(dr.getActualSize());
+                        dbf.updateAndRefresh(ivo);
+                    }
 
                     return false;
                 }
 
                 numError++;
-                if (numError <= 3) {
+                if (numError <= maxNumOfFailure) {
                     return false;
                 }
 
