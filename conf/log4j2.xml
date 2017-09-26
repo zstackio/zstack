@@ -2,7 +2,7 @@
 <Configuration status="warn">
     <Appenders>
         <RollingFile name="RollingFile" fileName="${sys:catalina.home}/logs/management-server.log"
-                     filePattern="${sys:catalina.home}/logs/management-server-%d{yyyy-MM-dd}-%i.log">
+                     filePattern="${sys:catalina.home}/logs/management-server-%d{yyyy-MM-dd}-%i.log.gz">
             <PatternLayout>
                 <pattern>%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{1}] %X{api,} %m%n</pattern>
             </PatternLayout>
@@ -12,7 +12,7 @@
             <DefaultRolloverStrategy max="20"/>
         </RollingFile>
 
-	    <RollingFile name="ApiRequestLogger" fileName="${sys:catalina.home}/logs/zstack-api.log"
+	    <RollingFile name="ApiRequestLogger" fileName="${sys:catalina.home}/logs/zstack-api.log.gz"
             filePattern="${sys:catalina.home}/logs/zstack-api-%d{yyyy-MM-dd}-%i.log" >
             <PatternLayout>
                 <pattern>%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{1}] (%t) %m%n</pattern>
@@ -23,7 +23,7 @@
             <DefaultRolloverStrategy max="20"/>
         </RollingFile>
 
-        <RollingFile name="DiskCapacityLogger" fileName="${sys:catalina.home}/logs/zstack-disk-capacity.log"
+        <RollingFile name="DiskCapacityLogger" fileName="${sys:catalina.home}/logs/zstack-disk-capacity.log.gz"
                      filePattern="${sys:catalina.home}/logs/zstack-disk-capacity-%d{yyyy-MM-dd}-%i.log">
             <PatternLayout>
                 <pattern>%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{1}] (%t) %m%n</pattern>
@@ -36,7 +36,7 @@
 
         <RollingFile name="DiskCapacityLoggerDetails"
                      fileName="${sys:catalina.home}/logs/zstack-disk-capacity-details.log"
-                     filePattern="${sys:catalina.home}/logs/zstack-disk-capacity-details-%d{yyyy-MM-dd}-%i.log">
+                     filePattern="${sys:catalina.home}/logs/zstack-disk-capacity-details-%d{yyyy-MM-dd}-%i.log.gz">
             <PatternLayout>
                 <pattern>%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{1}] (%t) %m%n</pattern>
             </PatternLayout>
