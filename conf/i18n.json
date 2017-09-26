@@ -7709,9 +7709,9 @@
     "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageBase.java"
   },
   {
-    "raw": "unable to upload bits to the backup storage[type:%s], we only support CEPH",
-    "en_US": "unable to upload bits to the backup storage[type:{0}], we only support CEPH",
-    "zh_CN": "无法上传bits到镜像服务器[type:{0}]，仅支持CEPH",
+    "raw": "unable to upload bits to the backup storage[type:%s], we don't support CEPH",
+    "en_US": "unable to upload bits to the backup storage[type:{0}], we don't support CEPH",
+    "zh_CN": "无法上传bits到镜像服务器[type:{0}]，不支持CEPH",
     "arguments": [
       "bsType"
     ],
