@@ -41,10 +41,12 @@ DELIMITER $$
 CREATE PROCEDURE addServiceToPublicNetwork()
     BEGIN
         DECLARE l3Uuid VARCHAR(32);
-        DECLARE flatUuid VARCHAR(32);
         DECLARE sgUuid VARCHAR(32);
         DECLARE done INT DEFAULT FALSE;
-        DECLARE cur CURSOR FOR SELECT uuid FROM zstack.L3NetworkEO WHERE category = 'Public';
+        DECLARE cur CURSOR FOR SELECT uuid
+                               FROM L3NetworkEO
+                                   LEFT JOIN NetworkServiceL3NetworkRefVO ON l3NetworkUuid = uuid
+                               WHERE category = 'Public' AND (networkServiceType != 'SecurityGroup' OR l3NetworkUuid IS NULL);
         DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
         OPEN cur;
         read_loop: LOOP
@@ -53,11 +55,8 @@ CREATE PROCEDURE addServiceToPublicNetwork()
                 LEAVE read_loop;
             END IF;
 
-            SELECT uuid INTO flatUuid FROM zstack.NetworkServiceProviderVO WHERE type = 'Flat';
             SELECT uuid INTO sgUuid FROM zstack.NetworkServiceProviderVO WHERE type = 'SecurityGroup';
 
-            INSERT INTO NetworkServiceL3NetworkRefVO (`l3NetworkUuid`, `networkServiceProviderUuid`, `networkServiceType`)
-              VALUES (l3Uuid, flatUuid, 'Eip');
             INSERT INTO NetworkServiceL3NetworkRefVO (`l3NetworkUuid`, `networkServiceProviderUuid`, `networkServiceType`)
               VALUES (l3Uuid, sgUuid, 'SecurityGroup');
 
