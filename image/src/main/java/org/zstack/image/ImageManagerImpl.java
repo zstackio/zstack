@@ -1523,6 +1523,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
                     GetImageDownloadProgressReply dr = reply.castReply();
                     if (dr.isCompleted()) {
+                        reportProgress("100");
                         markCompletion(dr);
                         return true;
                     }
@@ -1530,7 +1531,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                     ThreadContext.put(THREAD_CONTEXT_API, imageUuid);
                     ThreadContext.put(THREAD_CONTEXT_TASK_NAME, "uploading image");
                     long progress = dr.getActualSize() == 0 ? 0 : dr.getDownloaded() * 100 / dr.getActualSize();
-                    reportProgress(String.valueOf(progress));
+                    reportProgress(String.valueOf(progress * 8 / 10));
 
                     if (ivo.getActualSize() == 0 && dr.getActualSize() != 0) {
                         ivo.setActualSize(dr.getActualSize());
