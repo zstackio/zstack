@@ -6215,7 +6215,7 @@
   {
     "raw": "cannot create virtual Router vm while virtual router network overlaps with private network in ip ",
     "en_US": "cannot create virtual Router vm while virtual router network overlaps with private network in ip ",
-    "zh_CN": "当云路由网络和私有网络IP范围有重叠时，无法创建云路由设备。",
+    "zh_CN": "当云路由规格的网络和私有网络IP范围有重叠时，无法创建云路由设备。",
     "arguments": [],
     "line": 257,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/VirtualRouterManagerImpl.java"
