@@ -285,6 +285,11 @@ public class CephBackupStorageMonBase extends CephMonBase {
         return CephGlobalProperty.BACKUP_STORAGE_AGENT_PORT;
     }
 
+    @Override
+    protected String makeHttpPath(String ip, String path) {
+        return CephAgentUrl.backupStorageUrl(ip, path);
+    }
+
     public void doPing(final ReturnValueCompletion<PingResult> completion) {
         SimpleQuery<CephBackupStorageVO> q = dbf.createQuery(CephBackupStorageVO.class);
         q.select(CephBackupStorageVO_.poolName);
