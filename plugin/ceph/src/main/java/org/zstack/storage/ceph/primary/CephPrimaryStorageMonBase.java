@@ -285,6 +285,11 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
         return CephGlobalProperty.PRIMARY_STORAGE_AGENT_PORT;
     }
 
+    @Override
+    protected String makeHttpPath(String ip, String path) {
+        return CephAgentUrl.primaryStorageUrl(ip, path);
+    }
+
     private void doPing(final ReturnValueCompletion<PingResult> completion) {
         String primaryStorageUuid = Q.New(CephPrimaryStorageMonVO.class)
                 .select(CephPrimaryStorageMonVO_.primaryStorageUuid)

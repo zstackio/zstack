@@ -36,6 +36,8 @@ public abstract class CephMonBase {
 
     protected abstract int getAgentPort();
 
+    protected abstract String makeHttpPath(String ip, String path);
+
     public CephMonBase(CephMonAO self) {
         this.self = self;
     }
@@ -48,10 +50,6 @@ public abstract class CephMonBase {
         } catch (SshException e) {
             throw new OperationFailureException(operr("The problem may be caused by an incorrect user name or password or SSH port"));
         }
-    }
-
-    protected String makeHttpPath(String ip, String path) {
-        return String.format("http://%s:%s%s", ip, getAgentPort(), path);
     }
 
     public <T> void httpCall(final String path, final Object cmd, final Class<T> retClass, final ReturnValueCompletion<T> completion) {
