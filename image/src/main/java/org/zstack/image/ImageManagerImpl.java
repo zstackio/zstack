@@ -1486,8 +1486,9 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                 N.New(ImageVO.class, imageUuid).info_("added image [name: %s, uuid: %s]", name, imageUuid);
             }
 
-            private void markFailure() {
-                N.New(ImageVO.class, imageUuid).error_("upload image [name: %s, uuid: %s] failed", name, imageUuid);
+            private void markFailure(ErrorCode reason) {
+                N.New(ImageVO.class, imageUuid).error_("upload image [name: %s, uuid: %s] failed: %s",
+                        name, imageUuid, reason.toString());
                 ImageDeletionMsg msg = new ImageDeletionMsg();
                 msg.setImageUuid(imageUuid);
                 msg.setBackupStorageUuids(Collections.singletonList(bsUuid));
@@ -1507,7 +1508,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
                 numTicks += 1;
                 if (ivo.getActualSize() == 0 && numTicks * getInterval() >= maxIdleSecond) {
-                    markFailure();
+                    markFailure(operr("upload session expired"));
                     return true;
                 }
 
@@ -1545,7 +1546,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                     return false;
                 }
 
-                markFailure();
+                markFailure(reply.getError());
                 return true;
             }
 
