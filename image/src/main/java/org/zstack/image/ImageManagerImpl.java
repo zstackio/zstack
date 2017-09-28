@@ -74,10 +74,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.core.progress.ProgressReportService.reportProgress;
 import static org.zstack.header.Constants.THREAD_CONTEXT_API;
 import static org.zstack.header.Constants.THREAD_CONTEXT_TASK_NAME;
 import static org.zstack.utils.CollectionDSL.list;
-import static org.zstack.core.progress.ProgressReportService.reportProgress;
 
 public class ImageManagerImpl extends AbstractService implements ImageManager, ManagementNodeReadyExtensionPoint,
         ReportQuotaExtensionPoint, ResourceOwnerPreChangeExtensionPoint {
@@ -1456,6 +1456,12 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         dbf.persistCollection(refs);
     }
 
+    private void doReportProgress(String apiId, String taskName, long progress) {
+        ThreadContext.put(THREAD_CONTEXT_API, apiId);
+        ThreadContext.put(THREAD_CONTEXT_TASK_NAME, taskName);
+        reportProgress(String.valueOf(progress));
+    }
+
     private void trackUpload(String name, String imageUuid, String bsUuid) {
         final int maxNumOfFailure = 3;
         final int maxIdleSecond = 180;
@@ -1523,16 +1529,15 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                     numError = 0;
 
                     GetImageDownloadProgressReply dr = reply.castReply();
+
                     if (dr.isCompleted()) {
-                        reportProgress("100");
+                        doReportProgress(imageUuid, "adding to image store", 100);
                         markCompletion(dr);
                         return true;
                     }
 
-                    ThreadContext.put(THREAD_CONTEXT_API, imageUuid);
-                    ThreadContext.put(THREAD_CONTEXT_TASK_NAME, "uploading image");
                     long progress = dr.getActualSize() == 0 ? 0 : dr.getDownloaded() * 100 / dr.getActualSize();
-                    reportProgress(String.valueOf(progress * 8 / 10));
+                    doReportProgress(imageUuid, "uploading image", progress * 8 / 10);
 
                     if (ivo.getActualSize() == 0 && dr.getActualSize() != 0) {
                         ivo.setActualSize(dr.getActualSize());
