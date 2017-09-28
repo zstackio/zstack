@@ -111,10 +111,12 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
         sql = "select nic from VmNicVO nic, L3NetworkVO l3, NetworkServiceL3NetworkRefVO ref, NetworkServiceProviderVO provider where nic.l3NetworkUuid = l3.uuid" +
                 " and ref.l3NetworkUuid = l3.uuid and ref.networkServiceProviderUuid = provider.uuid " +
+                " and ref.networkServiceType = :dhcpType " +
                 " and provider.type = :ptype and nic.vmInstanceUuid in (:vmUuids) group by nic.uuid";
 
         TypedQuery<VmNicVO> nq = dbf.getEntityManager().createQuery(sql, VmNicVO.class);
         nq.setParameter("ptype", FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING);
+        nq.setParameter("dhcpType", NetworkServiceType.DHCP.toString());
         nq.setParameter("vmUuids", vmDefaultL3.keySet());
         List<VmNicVO> nics = nq.getResultList();
         if (nics.isEmpty()) {
@@ -460,9 +462,11 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     private List<DhcpInfo> getVmDhcpInfo(VmInstanceInventory vm) {
         String sql = "select nic from VmNicVO nic, L3NetworkVO l3, NetworkServiceL3NetworkRefVO ref, NetworkServiceProviderVO provider where nic.l3NetworkUuid = l3.uuid" +
                 " and ref.l3NetworkUuid = l3.uuid and ref.networkServiceProviderUuid = provider.uuid " +
+                " and ref.networkServiceType = :dhcpType " +
                 " and provider.type = :ptype and nic.vmInstanceUuid = :vmUuid group by nic.uuid";
 
         TypedQuery<VmNicVO> nq = dbf.getEntityManager().createQuery(sql, VmNicVO.class);
+        nq.setParameter("dhcpType", NetworkServiceType.DHCP.toString());
         nq.setParameter("ptype", FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING);
         nq.setParameter("vmUuid", vm.getUuid());
         List<VmNicVO> nics = nq.getResultList();
