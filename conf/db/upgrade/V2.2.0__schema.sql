@@ -46,7 +46,8 @@ CREATE PROCEDURE addServiceToPublicNetwork()
         DECLARE cur CURSOR FOR SELECT uuid
                                FROM L3NetworkEO
                                    LEFT JOIN NetworkServiceL3NetworkRefVO ON l3NetworkUuid = uuid
-                               WHERE category = 'Public' AND (networkServiceType != 'SecurityGroup' OR l3NetworkUuid IS NULL);
+                               WHERE category = 'Public' AND (networkServiceType != 'SecurityGroup' OR l3NetworkUuid IS NULL)
+                               GROUP BY uuid;
         DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
         OPEN cur;
         read_loop: LOOP
