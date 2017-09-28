@@ -3,6 +3,7 @@ package org.zstack.test.integration.networkservice.provider.flat.userdata
 import org.springframework.http.HttpEntity
 import org.zstack.compute.vm.VmSystemTags
 import org.zstack.network.service.eip.EipConstant
+import org.zstack.network.service.flat.FlatDhcpBackend
 import org.zstack.network.service.flat.FlatNetworkServiceConstant
 import org.zstack.network.service.flat.FlatUserdataBackend
 import org.zstack.network.service.userdata.UserdataConstant
@@ -121,8 +122,21 @@ class NoDhcpServiceCase extends SubCase {
     }
 
 
-    private void testSetUserdataSetWhenVmOperations(Closure vmOperation) {
+    private void testSetUserdataSetWhenVmOperations() {
         FlatUserdataBackend.ApplyUserdataCmd cmd = null
+
+        def prepareDhcp = false
+        env.afterSimulator(FlatDhcpBackend.PREPARE_DHCP_PATH) { rsp, HttpEntity<String> e ->
+            prepareDhcp = true
+            return rsp
+        }
+
+        def applyDhcp = false
+        env.afterSimulator(FlatDhcpBackend.APPLY_DHCP_PATH) { rsp, HttpEntity<String> e ->
+            applyDhcp = true
+            return rsp
+        }
+
 
         env.afterSimulator(FlatUserdataBackend.APPLY_USER_DATA) { rsp, HttpEntity<String> e ->
             cmd = json(e.body, FlatUserdataBackend.ApplyUserdataCmd.class)
@@ -139,6 +153,14 @@ class NoDhcpServiceCase extends SubCase {
 
         assert cmd != null
         assert null == cmd.userdata.dhcpServerIp
+
+        migrateVm {
+            delegate.vmInstanceUuid = vm.uuid
+            delegate.hostUuid = env.inventoryByName("kvm1").uuid
+        }
+
+        assert prepareDhcp == false
+        assert applyDhcp == false
 
         destroyVmInstance {
             uuid = vm.uuid
