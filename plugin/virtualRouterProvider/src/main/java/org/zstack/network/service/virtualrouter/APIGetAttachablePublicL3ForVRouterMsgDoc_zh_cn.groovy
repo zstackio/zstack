@@ -3,11 +3,11 @@ package org.zstack.network.service.virtualrouter
 import org.zstack.network.service.virtualrouter.APIGetAttachablePublicL3ForVRouterReply
 
 doc {
-    title "GetAttachablePublicL3ForVRouter"
+    title "获取云路由可加载外部网络(GetAttachablePublicL3ForVRouter)"
 
-    category "virtualRouter"
+    category "云路由"
 
-    desc """在这里填写API描述"""
+    desc """获取云路由可加载的公网和系统网络，将自动排除到地址冲突的网络"""
 
     rest {
         request {
@@ -25,11 +25,11 @@ doc {
 				column {
 					name "vmInstanceUuid"
 					enclosedIn ""
-					desc "云主机UUID"
+					desc "云路由的UUID"
 					location "url"
 					type "String"
 					optional false
-					since "0.6"
+					since "2.2"
 					
 				}
 				column {
@@ -39,7 +39,7 @@ doc {
 					location "query"
 					type "List"
 					optional true
-					since "0.6"
+					since "2.2"
 					
 				}
 				column {
@@ -49,7 +49,7 @@ doc {
 					location "query"
 					type "List"
 					optional true
-					since "0.6"
+					since "2.2"
 					
 				}
 			}
