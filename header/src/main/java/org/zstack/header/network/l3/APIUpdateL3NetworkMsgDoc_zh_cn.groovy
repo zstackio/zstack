@@ -82,6 +82,16 @@ doc {
 					since "0.6"
 					
 				}
+				column {
+					name "category"
+					enclosedIn "updateL3Network"
+					desc "网络类型，需要与system标签搭配使用，system为true时可设置为Public、Private"
+					location "body"
+					type "String"
+					optional true
+					since "2.2"
+					values ("Public","Private","System")
+				}
 			}
         }
 
