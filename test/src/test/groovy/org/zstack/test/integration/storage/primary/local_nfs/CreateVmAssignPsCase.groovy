@@ -132,6 +132,20 @@ class CreateVmAssignPsCase extends SubCase{
         ImageInventory image = env.inventoryByName("image") as ImageInventory
         L3NetworkInventory l3 = env.inventoryByName("l3") as L3NetworkInventory
 
+        GetCandidatePrimaryStoragesForCreatingVmAction getAction = new GetCandidatePrimaryStoragesForCreatingVmAction(
+                l3NetworkUuids : [l3.uuid],
+                imageUuid: image.uuid,
+                dataDiskOfferingUuids: [diskOffering.uuid],
+                sessionId: adminSession()
+        )
+        GetCandidatePrimaryStoragesForCreatingVmResult getResult = getAction.call().value
+        List<PrimaryStorageInventory> rootVolumePrimaryStorages = getResult.rootVolumePrimaryStorages
+        List<PrimaryStorageInventory> dataVolumePrimaryStorages = getResult.dataVolumePrimaryStorages.get(diskOffering.uuid)
+        assert rootVolumePrimaryStorages.size() == 2
+        assert [rootVolumePrimaryStorages[0].uuid, rootVolumePrimaryStorages[1].uuid].containsAll([local.uuid, local2.uuid])
+        assert dataVolumePrimaryStorages.size() == 2
+        assert [dataVolumePrimaryStorages[0].uuid, dataVolumePrimaryStorages[1].uuid].containsAll([local.uuid, local2.uuid])
+
          // not assign ps
          VmInstanceInventory vm = createVmInstance {
                 name = "vm"
@@ -198,6 +212,21 @@ class CreateVmAssignPsCase extends SubCase{
             primaryStorageUuid = nfs.uuid
         }
 
+        GetCandidatePrimaryStoragesForCreatingVmAction getAction = new GetCandidatePrimaryStoragesForCreatingVmAction(
+                l3NetworkUuids : [l3.uuid],
+                imageUuid: image.uuid,
+                dataDiskOfferingUuids: [diskOffering.uuid],
+                sessionId: adminSession()
+        )
+        GetCandidatePrimaryStoragesForCreatingVmResult getResult = getAction.call().value
+        List<PrimaryStorageInventory> rootVolumePrimaryStorages = getResult.rootVolumePrimaryStorages
+        List<PrimaryStorageInventory> dataVolumePrimaryStorages = getResult.dataVolumePrimaryStorages.get(diskOffering.uuid)
+        assert rootVolumePrimaryStorages.size() == 2
+        assert [rootVolumePrimaryStorages[0].uuid, rootVolumePrimaryStorages[1].uuid].containsAll([local.uuid, nfs.uuid])
+        assert dataVolumePrimaryStorages.size() == 2
+        assert [dataVolumePrimaryStorages[0].uuid, dataVolumePrimaryStorages[1].uuid].containsAll([local.uuid, nfs.uuid])
+
+
         // not assign ps
         VmInstanceInventory vm = createVmInstance {
             name = "vm"
@@ -210,16 +239,19 @@ class CreateVmAssignPsCase extends SubCase{
         checkVmDataDiskPs(vm, nfs.uuid)
 
         // assign root volume local ps
-        vm = createVmInstance {
-            name = "vm1"
-            instanceOfferingUuid = instanceOffering.uuid
-            imageUuid = image.uuid
-            l3NetworkUuids = [l3.uuid]
-            primaryStorageUuidForRootVolume = local.uuid
-            dataDiskOfferingUuids = [diskOffering.uuid]
+        try{
+            vm = createVmInstance {
+                name = "vm1"
+                instanceOfferingUuid = instanceOffering.uuid
+                imageUuid = image.uuid
+                l3NetworkUuids = [l3.uuid]
+                primaryStorageUuidForRootVolume = local.uuid
+                dataDiskOfferingUuids = [diskOffering.uuid]
+            }
+            assert false
+        }catch (Throwable t){
+            assert true
         }
-        checkVmRootDiskPs(vm, local.uuid)
-        checkVmDataDiskPs(vm, nfs.uuid)
 
         // assign root volume nfs ps
         CreateVmInstanceAction a = new CreateVmInstanceAction(
@@ -230,7 +262,8 @@ class CreateVmAssignPsCase extends SubCase{
                 primaryStorageUuidForRootVolume: nfs.uuid,
                 sessionId: currentEnvSpec.session.uuid
         )
-        assert a.call().error != null
+        CreateVmInstanceAction.Result result = a.call()
+        checkVmRootDiskPs(result.value.inventory, nfs.uuid)
 
         // assign data volume local ps
         CreateVmInstanceAction a2 = new CreateVmInstanceAction(
@@ -245,16 +278,19 @@ class CreateVmAssignPsCase extends SubCase{
         assert a2.call().error != null
 
         // assign data volume nfs ps
-        vm = createVmInstance {
-            name = "vm3"
-            instanceOfferingUuid = instanceOffering.uuid
-            imageUuid = image.uuid
-            l3NetworkUuids = [l3.uuid]
-            dataDiskOfferingUuids = [diskOffering.uuid]
-            systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): nfs.uuid])]
+        try{
+            vm = createVmInstance {
+                name = "vm3"
+                instanceOfferingUuid = instanceOffering.uuid
+                imageUuid = image.uuid
+                l3NetworkUuids = [l3.uuid]
+                dataDiskOfferingUuids = [diskOffering.uuid]
+                systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): nfs.uuid])]
+            }
+            assert false
+        }catch (Throwable t){
+            assert true
         }
-        checkVmRootDiskPs(vm, local.uuid)
-        checkVmDataDiskPs(vm, nfs.uuid)
 
         // assign root volume local ps, data volume local ps,
         CreateVmInstanceAction a3 = new CreateVmInstanceAction(
@@ -267,7 +303,9 @@ class CreateVmAssignPsCase extends SubCase{
                 systemTags: [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): local.uuid])],
                 sessionId: currentEnvSpec.session.uuid
         )
-        assert a3.call().error != null
+        result = a3.call()
+        checkVmRootDiskPs(result.value.inventory, local.uuid)
+        checkVmDataDiskPs(result.value.inventory, local.uuid)
 
         // assign root volume nfs ps, data volume local ps
         CreateVmInstanceAction a4 = new CreateVmInstanceAction(
@@ -280,7 +318,9 @@ class CreateVmAssignPsCase extends SubCase{
                 systemTags: [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): local.uuid])],
                 sessionId: currentEnvSpec.session.uuid
         )
-        assert a4.call().error != null
+        result = a4.call()
+        checkVmRootDiskPs(result.value.inventory, nfs.uuid)
+        checkVmDataDiskPs(result.value.inventory, local.uuid)
 
         // assign root volume nfs ps, data volume nfs ps
         CreateVmInstanceAction a5 = new CreateVmInstanceAction(
@@ -293,7 +333,9 @@ class CreateVmAssignPsCase extends SubCase{
                 systemTags: [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): nfs.uuid])],
                 sessionId: currentEnvSpec.session.uuid
         )
-        assert a5.call().error != null
+        result = a5.call()
+        checkVmRootDiskPs(result.value.inventory, nfs.uuid)
+        checkVmDataDiskPs(result.value.inventory, nfs.uuid)
 
         // assign root volume local ps, data volume nfs ps
         vm = createVmInstance {
@@ -328,6 +370,20 @@ class CreateVmAssignPsCase extends SubCase{
             clusterUuid = cluster.uuid
             primaryStorageUuid = nfs2.uuid
         }
+
+        GetCandidatePrimaryStoragesForCreatingVmAction getAction = new GetCandidatePrimaryStoragesForCreatingVmAction(
+                l3NetworkUuids : [l3.uuid],
+                imageUuid: image.uuid,
+                dataDiskOfferingUuids: [diskOffering.uuid],
+                sessionId: adminSession()
+        )
+        GetCandidatePrimaryStoragesForCreatingVmResult getResult = getAction.call().value
+        List<PrimaryStorageInventory> rootVolumePrimaryStorages = getResult.rootVolumePrimaryStorages
+        List<PrimaryStorageInventory> dataVolumePrimaryStorages = getResult.dataVolumePrimaryStorages.get(diskOffering.uuid)
+        assert rootVolumePrimaryStorages.size() == 2
+        assert [rootVolumePrimaryStorages[0].uuid, rootVolumePrimaryStorages[1].uuid].containsAll([nfs.uuid, nfs2.uuid])
+        assert dataVolumePrimaryStorages.size() == 2
+        assert [dataVolumePrimaryStorages[0].uuid, dataVolumePrimaryStorages[1].uuid].containsAll([nfs.uuid, nfs2.uuid])
 
         // not assign ps
         VmInstanceInventory vm = createVmInstance {

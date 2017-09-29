@@ -175,15 +175,20 @@ class LocalNfsMultiCombineCase extends SubCase {
         }
 
         // assign root volume ls ps
-        vm = createVmInstance {
-            name = "vm1"
-            instanceOfferingUuid = instanceOffering.uuid
-            imageUuid = qcow2.uuid
-            l3NetworkUuids = [l3.uuid]
-            primaryStorageUuidForRootVolume = local.uuid
-            dataDiskOfferingUuids = [diskOffering.uuid]
+        try{
+            vm = createVmInstance {
+                name = "vm1"
+                instanceOfferingUuid = instanceOffering.uuid
+                imageUuid = qcow2.uuid
+                l3NetworkUuids = [l3.uuid]
+                primaryStorageUuidForRootVolume = local.uuid
+                dataDiskOfferingUuids = [diskOffering.uuid]
+                systemTags: [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): local.uuid])]
+            }
+            assert false
+        }catch (Throwable t){
+            assert true
         }
-        checkVmRootDiskPs(vm, local.uuid)
 
         // assign root volume nfs ps
         CreateVmInstanceAction action = new CreateVmInstanceAction()
@@ -198,27 +203,35 @@ class LocalNfsMultiCombineCase extends SubCase {
         assert ret.error != null
 
         // assign data volume nfs ps
-        vm = createVmInstance {
-            name = "vm2"
-            instanceOfferingUuid = instanceOffering.uuid
-            imageUuid = qcow2.uuid
-            l3NetworkUuids = [l3.uuid]
-            dataDiskOfferingUuids = [diskOffering.uuid]
-            systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): nfs.uuid])]
+        try{
+            vm = createVmInstance {
+                name = "vm2"
+                instanceOfferingUuid = instanceOffering.uuid
+                imageUuid = qcow2.uuid
+                l3NetworkUuids = [l3.uuid]
+                dataDiskOfferingUuids = [diskOffering.uuid]
+                systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): nfs.uuid])]
+            }
+            assert false
+        }catch (Throwable t){
+            assert true
         }
-        checkVmDataDiskPs(vm, nfs.uuid)
 
         // assign data volume ls ps
-        CreateVmInstanceAction a = new CreateVmInstanceAction()
-        a.name = "vm1"
-        a.instanceOfferingUuid = instanceOffering.uuid
-        a.imageUuid = qcow2.uuid
-        a.l3NetworkUuids = [l3.uuid]
-        a.systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): local.uuid])]
-        a.dataDiskOfferingUuids = [diskOffering.uuid]
-        a.sessionId = adminSession()
-        CreateVmInstanceAction.Result r = a.call()
-        assert r.error != null
+        try{
+            CreateVmInstanceAction a = new CreateVmInstanceAction()
+            a.name = "vm1"
+            a.instanceOfferingUuid = instanceOffering.uuid
+            a.imageUuid = qcow2.uuid
+            a.l3NetworkUuids = [l3.uuid]
+            a.systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): local.uuid])]
+            a.dataDiskOfferingUuids = [diskOffering.uuid]
+            a.sessionId = adminSession()
+            CreateVmInstanceAction.Result r = a.call()
+            assert false
+        }catch (Throwable t){
+            assert true
+        }
 
         // assign data nfs , root volume ls ps
         vm = createVmInstance {
@@ -244,7 +257,8 @@ class LocalNfsMultiCombineCase extends SubCase {
         action2.dataDiskOfferingUuids = [diskOffering.uuid]
         action2.sessionId = adminSession()
         CreateVmInstanceAction.Result ret2 = action2.call()
-        assert ret2.error != null
+        checkVmRootDiskPs(ret2.value.inventory, local.uuid)
+        checkVmDataDiskPs(ret2.value.inventory, local.uuid)
 
         // assign data nfs , root volume nfs ps
         CreateVmInstanceAction action3 = new CreateVmInstanceAction()
@@ -257,7 +271,8 @@ class LocalNfsMultiCombineCase extends SubCase {
         action3.dataDiskOfferingUuids = [diskOffering.uuid]
         action3.sessionId = adminSession()
         CreateVmInstanceAction.Result ret3 = action3.call()
-        assert ret3.error != null
+        checkVmRootDiskPs(ret3.value.inventory, nfs.uuid)
+        checkVmDataDiskPs(ret3.value.inventory, nfs.uuid)
 
         // assign data ls , root volume nfs ps
         CreateVmInstanceAction action4 = new CreateVmInstanceAction()
@@ -270,7 +285,8 @@ class LocalNfsMultiCombineCase extends SubCase {
         action4.dataDiskOfferingUuids = [diskOffering.uuid]
         action4.sessionId = adminSession()
         CreateVmInstanceAction.Result ret4 = action4.call()
-        assert ret4.error != null
+        checkVmRootDiskPs(ret4.value.inventory, nfs.uuid)
+        checkVmDataDiskPs(ret4.value.inventory, local.uuid)
     }
 
     void test1Local2NfsQcow2() {
@@ -294,15 +310,20 @@ class LocalNfsMultiCombineCase extends SubCase {
         }
 
         // assign root volume ls ps
-        vm = createVmInstance {
-            name = "vm1"
-            instanceOfferingUuid = instanceOffering.uuid
-            imageUuid = qcow2.uuid
-            l3NetworkUuids = [l3.uuid]
-            primaryStorageUuidForRootVolume = local.uuid
-            dataDiskOfferingUuids = [diskOffering.uuid]
+        try{
+            vm = createVmInstance {
+                name = "vm1"
+                instanceOfferingUuid = instanceOffering.uuid
+                imageUuid = qcow2.uuid
+                l3NetworkUuids = [l3.uuid]
+                primaryStorageUuidForRootVolume = local.uuid
+                dataDiskOfferingUuids = [diskOffering.uuid]
+                systemTags: [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): local.uuid])]
+            }
+            assert false
+        }catch (Throwable t){
+            assert true
         }
-        checkVmRootDiskPs(vm, local.uuid)
 
         // assign root volume nfs ps
         CreateVmInstanceAction action = new CreateVmInstanceAction()
@@ -317,27 +338,35 @@ class LocalNfsMultiCombineCase extends SubCase {
         assert ret.error != null
 
         // assign data volume nfs ps
-        vm = createVmInstance {
-            name = "vm2"
-            instanceOfferingUuid = instanceOffering.uuid
-            imageUuid = qcow2.uuid
-            l3NetworkUuids = [l3.uuid]
-            dataDiskOfferingUuids = [diskOffering.uuid]
-            systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): nfs.uuid])]
+        try{
+            vm = createVmInstance {
+                name = "vm2"
+                instanceOfferingUuid = instanceOffering.uuid
+                imageUuid = qcow2.uuid
+                l3NetworkUuids = [l3.uuid]
+                dataDiskOfferingUuids = [diskOffering.uuid]
+                systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): nfs.uuid])]
+            }
+            assert false
+        }catch (Throwable t){
+            assert true
         }
-        checkVmDataDiskPs(vm, nfs.uuid)
 
         // assign data volume ls ps
-        CreateVmInstanceAction a = new CreateVmInstanceAction()
-        a.name = "vm1"
-        a.instanceOfferingUuid = instanceOffering.uuid
-        a.imageUuid = qcow2.uuid
-        a.l3NetworkUuids = [l3.uuid]
-        a.systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): local.uuid])]
-        a.dataDiskOfferingUuids = [diskOffering.uuid]
-        a.sessionId = adminSession()
-        CreateVmInstanceAction.Result r = a.call()
-        assert r.error != null
+        try{
+            CreateVmInstanceAction a = new CreateVmInstanceAction()
+            a.name = "vm1"
+            a.instanceOfferingUuid = instanceOffering.uuid
+            a.imageUuid = qcow2.uuid
+            a.l3NetworkUuids = [l3.uuid]
+            a.systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): local.uuid])]
+            a.dataDiskOfferingUuids = [diskOffering.uuid]
+            a.sessionId = adminSession()
+            CreateVmInstanceAction.Result r = a.call()
+            assert false
+        }catch (Throwable t){
+            assert true
+        }
 
         // assign data nfs , root volume ls ps
         vm = createVmInstance {
@@ -363,7 +392,8 @@ class LocalNfsMultiCombineCase extends SubCase {
         action2.dataDiskOfferingUuids = [diskOffering.uuid]
         action2.sessionId = adminSession()
         CreateVmInstanceAction.Result ret2 = action2.call()
-        assert ret2.error != null
+        checkVmRootDiskPs(ret2.value.inventory, local.uuid)
+        checkVmDataDiskPs(ret2.value.inventory, local.uuid)
 
         // assign data nfs , root volume nfs ps
         CreateVmInstanceAction action3 = new CreateVmInstanceAction()
@@ -376,7 +406,8 @@ class LocalNfsMultiCombineCase extends SubCase {
         action3.dataDiskOfferingUuids = [diskOffering.uuid]
         action3.sessionId = adminSession()
         CreateVmInstanceAction.Result ret3 = action3.call()
-        assert ret3.error != null
+        checkVmRootDiskPs(ret3.value.inventory, nfs.uuid)
+        checkVmDataDiskPs(ret3.value.inventory, nfs.uuid)
 
         // assign data ls , root volume nfs ps
         CreateVmInstanceAction action4 = new CreateVmInstanceAction()
@@ -389,7 +420,8 @@ class LocalNfsMultiCombineCase extends SubCase {
         action4.dataDiskOfferingUuids = [diskOffering.uuid]
         action4.sessionId = adminSession()
         CreateVmInstanceAction.Result ret4 = action4.call()
-        assert ret4.error != null
+        checkVmRootDiskPs(ret4.value.inventory, nfs.uuid)
+        checkVmDataDiskPs(ret4.value.inventory, local.uuid)
     }
 
     void test2Local2NfsQcow2() {
@@ -454,16 +486,20 @@ class LocalNfsMultiCombineCase extends SubCase {
         }
 
         // assign root volume ls ps
-        vm = createVmInstance {
-            name = "vm1"
-            instanceOfferingUuid = instanceOffering.uuid
-            imageUuid = iso.uuid
-            l3NetworkUuids = [l3.uuid]
-            primaryStorageUuidForRootVolume = local.uuid
-            dataDiskOfferingUuids = [diskOffering.uuid]
-            rootDiskOfferingUuid = diskOffering.uuid
+        try{
+            vm = createVmInstance {
+                name = "vm1"
+                instanceOfferingUuid = instanceOffering.uuid
+                imageUuid = iso.uuid
+                l3NetworkUuids = [l3.uuid]
+                primaryStorageUuidForRootVolume = local.uuid
+                dataDiskOfferingUuids = [diskOffering.uuid]
+                rootDiskOfferingUuid = diskOffering.uuid
+            }
+            assert false
+        }catch (Throwable t){
+            assert true
         }
-        checkVmRootDiskPs(vm, local.uuid)
 
         // assign root volume nfs ps
         CreateVmInstanceAction action = new CreateVmInstanceAction()
@@ -478,30 +514,38 @@ class LocalNfsMultiCombineCase extends SubCase {
         CreateVmInstanceAction.Result ret = action.call()
         assert ret.error != null
 
-        // assign data volume nfs ps
-        vm = createVmInstance {
-            name = "vm2"
-            instanceOfferingUuid = instanceOffering.uuid
-            imageUuid = iso.uuid
-            l3NetworkUuids = [l3.uuid]
-            dataDiskOfferingUuids = [diskOffering.uuid]
-            rootDiskOfferingUuid = diskOffering.uuid
-            systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): nfs.uuid])]
+        try{
+            // assign data volume nfs ps
+            vm = createVmInstance {
+                name = "vm2"
+                instanceOfferingUuid = instanceOffering.uuid
+                imageUuid = iso.uuid
+                l3NetworkUuids = [l3.uuid]
+                dataDiskOfferingUuids = [diskOffering.uuid]
+                rootDiskOfferingUuid = diskOffering.uuid
+                systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): nfs.uuid])]
+            }
+            assert false
+        }catch (Throwable t){
+            assert true
         }
-        checkVmDataDiskPs(vm, nfs.uuid)
 
-        // assign data volume ls ps
-        CreateVmInstanceAction a = new CreateVmInstanceAction()
-        a.name = "vm1"
-        a.instanceOfferingUuid = instanceOffering.uuid
-        a.imageUuid = iso.uuid
-        a.l3NetworkUuids = [l3.uuid]
-        a.systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): local.uuid])]
-        a.dataDiskOfferingUuids = [diskOffering.uuid]
-        a.rootDiskOfferingUuid = diskOffering.uuid
-        a.sessionId = adminSession()
-        CreateVmInstanceAction.Result r = a.call()
-        assert r.error != null
+        try{
+            // assign data volume ls ps
+            CreateVmInstanceAction a = new CreateVmInstanceAction()
+            a.name = "vm1"
+            a.instanceOfferingUuid = instanceOffering.uuid
+            a.imageUuid = iso.uuid
+            a.l3NetworkUuids = [l3.uuid]
+            a.systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): local.uuid])]
+            a.dataDiskOfferingUuids = [diskOffering.uuid]
+            a.rootDiskOfferingUuid = diskOffering.uuid
+            a.sessionId = adminSession()
+            CreateVmInstanceAction.Result r = a.call()
+            assert false
+        }catch (Throwable t){
+            assert true
+        }
 
         // assign data nfs , root volume ls ps
         vm = createVmInstance {
@@ -529,7 +573,8 @@ class LocalNfsMultiCombineCase extends SubCase {
         action2.rootDiskOfferingUuid = diskOffering.uuid
         action2.sessionId = adminSession()
         CreateVmInstanceAction.Result ret2 = action2.call()
-        assert ret2.error != null
+        checkVmDataDiskPs(ret2.value.inventory, local.uuid)
+        checkVmRootDiskPs(ret2.value.inventory, local.uuid)
 
         // assign data nfs , root volume nfs ps
         CreateVmInstanceAction action3 = new CreateVmInstanceAction()
@@ -543,7 +588,8 @@ class LocalNfsMultiCombineCase extends SubCase {
         action3.rootDiskOfferingUuid = diskOffering.uuid
         action3.sessionId = adminSession()
         CreateVmInstanceAction.Result ret3 = action3.call()
-        assert ret3.error != null
+        checkVmDataDiskPs(ret3.value.inventory, nfs.uuid)
+        checkVmRootDiskPs(ret3.value.inventory, nfs.uuid)
 
         // assign data ls , root volume nfs ps
         CreateVmInstanceAction action4 = new CreateVmInstanceAction()
@@ -557,7 +603,8 @@ class LocalNfsMultiCombineCase extends SubCase {
         action4.rootDiskOfferingUuid = diskOffering.uuid
         action4.sessionId = adminSession()
         CreateVmInstanceAction.Result ret4 = action4.call()
-        assert ret4.error != null
+        checkVmRootDiskPs(ret4.value.inventory, nfs.uuid)
+        checkVmDataDiskPs(ret4.value.inventory, local.uuid)
     }
 
     void test1Local2NfsISO() {
@@ -582,16 +629,20 @@ class LocalNfsMultiCombineCase extends SubCase {
         }
 
         // assign root volume ls ps
-        vm = createVmInstance {
-            name = "vm1"
-            instanceOfferingUuid = instanceOffering.uuid
-            imageUuid = iso.uuid
-            l3NetworkUuids = [l3.uuid]
-            primaryStorageUuidForRootVolume = local.uuid
-            dataDiskOfferingUuids = [diskOffering.uuid]
-            rootDiskOfferingUuid = diskOffering.uuid
+        try{
+            vm = createVmInstance {
+                name = "vm1"
+                instanceOfferingUuid = instanceOffering.uuid
+                imageUuid = iso.uuid
+                l3NetworkUuids = [l3.uuid]
+                primaryStorageUuidForRootVolume = local.uuid
+                dataDiskOfferingUuids = [diskOffering.uuid]
+                rootDiskOfferingUuid = diskOffering.uuid
+            }
+            assert false
+        }catch (Throwable t){
+            assert true
         }
-        checkVmRootDiskPs(vm, local.uuid)
 
         // assign root volume nfs ps
         CreateVmInstanceAction action = new CreateVmInstanceAction()
@@ -606,30 +657,38 @@ class LocalNfsMultiCombineCase extends SubCase {
         CreateVmInstanceAction.Result ret = action.call()
         assert ret.error != null
 
-        // assign data volume nfs ps
-        vm = createVmInstance {
-            name = "vm2"
-            instanceOfferingUuid = instanceOffering.uuid
-            imageUuid = iso.uuid
-            l3NetworkUuids = [l3.uuid]
-            dataDiskOfferingUuids = [diskOffering.uuid]
-            rootDiskOfferingUuid = diskOffering.uuid
-            systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): nfs.uuid])]
+        try{
+            // assign data volume nfs ps
+            vm = createVmInstance {
+                name = "vm2"
+                instanceOfferingUuid = instanceOffering.uuid
+                imageUuid = iso.uuid
+                l3NetworkUuids = [l3.uuid]
+                dataDiskOfferingUuids = [diskOffering.uuid]
+                rootDiskOfferingUuid = diskOffering.uuid
+                systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): nfs.uuid])]
+            }
+            assert false
+        }catch (Throwable t){
+            assert true
         }
-        checkVmDataDiskPs(vm, nfs.uuid)
 
-        // assign data volume ls ps
-        CreateVmInstanceAction a = new CreateVmInstanceAction()
-        a.name = "vm1"
-        a.instanceOfferingUuid = instanceOffering.uuid
-        a.imageUuid = iso.uuid
-        a.l3NetworkUuids = [l3.uuid]
-        a.systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): local.uuid])]
-        a.dataDiskOfferingUuids = [diskOffering.uuid]
-        a.rootDiskOfferingUuid = diskOffering.uuid
-        a.sessionId = adminSession()
-        CreateVmInstanceAction.Result r = a.call()
-        assert r.error != null
+        try{
+            // assign data volume ls ps
+            CreateVmInstanceAction a = new CreateVmInstanceAction()
+            a.name = "vm1"
+            a.instanceOfferingUuid = instanceOffering.uuid
+            a.imageUuid = iso.uuid
+            a.l3NetworkUuids = [l3.uuid]
+            a.systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): local.uuid])]
+            a.dataDiskOfferingUuids = [diskOffering.uuid]
+            a.rootDiskOfferingUuid = diskOffering.uuid
+            a.sessionId = adminSession()
+            CreateVmInstanceAction.Result r = a.call()
+            assert false
+        }catch (Throwable t){
+            assert true
+        }
 
         // assign data nfs , root volume ls ps
         vm = createVmInstance {
@@ -657,7 +716,8 @@ class LocalNfsMultiCombineCase extends SubCase {
         action2.rootDiskOfferingUuid = diskOffering.uuid
         action2.sessionId = adminSession()
         CreateVmInstanceAction.Result ret2 = action2.call()
-        assert ret2.error != null
+        checkVmDataDiskPs(ret2.value.inventory, local.uuid)
+        checkVmRootDiskPs(ret2.value.inventory, local.uuid)
 
         // assign data nfs , root volume nfs ps
         CreateVmInstanceAction action3 = new CreateVmInstanceAction()
@@ -671,7 +731,8 @@ class LocalNfsMultiCombineCase extends SubCase {
         action3.rootDiskOfferingUuid = diskOffering.uuid
         action3.sessionId = adminSession()
         CreateVmInstanceAction.Result ret3 = action3.call()
-        assert ret3.error != null
+        checkVmDataDiskPs(ret3.value.inventory, nfs.uuid)
+        checkVmRootDiskPs(ret3.value.inventory, nfs.uuid)
 
         // assign data ls , root volume nfs ps
         CreateVmInstanceAction action4 = new CreateVmInstanceAction()
@@ -685,7 +746,8 @@ class LocalNfsMultiCombineCase extends SubCase {
         action4.rootDiskOfferingUuid = diskOffering.uuid
         action4.sessionId = adminSession()
         CreateVmInstanceAction.Result ret4 = action4.call()
-        assert ret4.error != null
+        checkVmRootDiskPs(ret4.value.inventory, nfs.uuid)
+        checkVmDataDiskPs(ret4.value.inventory, local.uuid)
     }
 
     void test2Local2NfsISO() {
