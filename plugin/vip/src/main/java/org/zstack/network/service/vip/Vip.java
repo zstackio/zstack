@@ -6,11 +6,15 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.message.MessageReply;
 import org.zstack.utils.DebugUtils;
+import org.zstack.utils.Utils;
+import org.zstack.utils.VipUseForList;
+import org.zstack.utils.logging.CLogger;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class Vip {
@@ -22,6 +26,7 @@ public class Vip {
     public Vip(String uuid) {
         this.uuid = uuid;
     }
+    protected static final CLogger logger = Utils.getLogger(VipBase.class);
 
     private String uuid;
     private String serviceProvider;
@@ -40,9 +45,28 @@ public class Vip {
         return useFor;
     }
 
-    public void setUseFor(String useFor) {
-        this.useFor = useFor;
+    public void addUseFor(String useFor) {
+        String oldUseFor = Q.New(VipVO.class).select(VipVO_.useFor).eq(VipVO_.uuid, this.uuid).findValue();
+        if (oldUseFor != null){
+            VipUseForList useForList = new VipUseForList(oldUseFor);
+            this.useFor = useForList.add(useFor);;
+        }
+        else{
+            this.useFor = useFor;
+        }
     }
+
+    public void delUseFor(String useFor) {
+        String oldUseFor = Q.New(VipVO.class).select(VipVO_.useFor).eq(VipVO_.uuid, this.uuid).findValue();
+        if (oldUseFor != null) {
+            VipUseForList useForList = new VipUseForList(oldUseFor);
+            this.useFor = useForList.del(useFor);
+        }
+        else {
+            this.useFor = null;
+        }
+    }
+
 
     public String getPeerL3NetworkUuid() {
         return peerL3NetworkUuid;
@@ -93,7 +117,7 @@ public class Vip {
         ReleaseVipMsg msg = new ReleaseVipMsg();
         msg.setVipUuid(uuid);
         msg.setPeerL3NetworkUuid(null);
-        msg.setUseFor(null);
+        msg.setUseFor(useFor);
         if (!deleteOnBackend) {
             msg.setServiceProvider(null);
         }

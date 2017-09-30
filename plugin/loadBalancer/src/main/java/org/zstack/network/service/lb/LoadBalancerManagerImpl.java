@@ -7,6 +7,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
@@ -113,7 +114,8 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
 
     private void handle(final APICreateLoadBalancerMsg msg) {
         final APICreateLoadBalancerEvent evt = new APICreateLoadBalancerEvent(msg.getId());
-
+        /* if vip_count > 0, there is another lb created on same vip */
+        final long vip_count = Q.New(LoadBalancerVO.class).eq(LoadBalancerVO_.vipUuid, msg.getVipUuid()).count();
         final VipInventory vip = VipInventory.valueOf(dbf.findByUuid(msg.getVipUuid(), VipVO.class));
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("create-lb-%s", msg.getName()));
@@ -129,8 +131,13 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
+                        if(vip_count > 0){
+                            trigger.next();
+                            return;
+                        }
+
                         Vip v = new Vip(vip.getUuid());
-                        v.setUseFor(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
+                        v.addUseFor(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
                         v.acquire(false, new Completion(trigger) {
                             @Override
                             public void success() {
@@ -147,12 +154,14 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
 
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
-                        if (!s) {
+                        if (!s || vip_count > 0) {
                             trigger.rollback();
                             return;
                         }
 
-                        new Vip(vip.getUuid()).release(false, new Completion(trigger) {
+                        Vip v = new Vip(vip.getUuid());
+                        v.delUseFor(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
+                        v.release(false, new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.rollback();

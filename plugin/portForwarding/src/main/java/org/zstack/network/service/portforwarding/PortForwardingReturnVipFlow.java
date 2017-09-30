@@ -23,8 +23,10 @@ public class PortForwardingReturnVipFlow extends NoRollbackFlow {
     @Override
     public void run(final FlowTrigger trigger, Map data) {
         VipInventory v = (VipInventory) data.get(VipConstant.Params.VIP.toString());
+        Vip vip = new Vip(v.getUuid());
+        vip.delUseFor(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
 
-        new Vip(v.getUuid()).release(new Completion(trigger) {
+        vip.release(new Completion(trigger) {
             @Override
             public void success() {
                 trigger.next();

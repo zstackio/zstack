@@ -407,7 +407,18 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         final PortForwardingRuleInventory inv = PortForwardingRuleInventory.valueOf(vo);
 
         if (vo.getVmNicUuid() == null) {
-            new Vip(vo.getVipUuid()).release(false, new Completion(complete) {
+            /* if there is other portforwarding rule bound on this vip, DO NOT release the vip */
+            long count = Q.New(PortForwardingRuleVO.class).eq(PortForwardingRuleVO_.vipUuid, vo.getVipUuid())
+                    .notEq(PortForwardingRuleVO_.uuid, vo.getUuid()).count();
+            if (count > 0){
+                dbf.remove(vo);
+                complete.success();
+                return;
+            }
+
+            Vip v = new Vip(vo.getVipUuid());
+            v.delUseFor(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
+            v.release(false, new Completion(complete) {
                 @Override
                 public void success() {
                     dbf.remove(vo);
@@ -483,7 +494,9 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
                         }
 
                         // no port forwarding rules use this VIP, release it
-                        new Vip(vo.getVipUuid()).release(new Completion(trigger) {
+                        Vip v = new Vip(vo.getVipUuid());
+                        v.delUseFor(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
+                        v.release(new Completion(trigger) {
                             @Override
                             public void success() {
                                 logger.debug(String.format("released VIP[uuid:%s] from port forwarding", vo.getVipUuid()));
@@ -589,7 +602,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
             Vip v = new Vip(vipInventory.getUuid());
             v.setServiceProvider(vipInventory.getServiceProvider());
             v.setPeerL3NetworkUuid(vipInventory.getPeerL3NetworkUuid());
-            v.setUseFor(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
+            v.addUseFor(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
             v.acquire(false, new Completion(msg) {
                 @Override
                 public void success() {
@@ -616,7 +629,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
             Vip v = new Vip(vipInventory.getUuid());
             v.setServiceProvider(vipInventory.getServiceProvider());
             v.setPeerL3NetworkUuid(vipInventory.getPeerL3NetworkUuid());
-            v.setUseFor(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
+            v.addUseFor(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
             v.acquire(false, new Completion(msg) {
                 @Override
                 public void success() {
@@ -791,6 +804,9 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
 
     @Override
     public void attachPortForwardingRule(PortForwardingStruct struct, String providerType, final Completion completion) {
+        /* if there is other portfording rule, DO NOT acquire or release vip */
+        final long count = Q.New(PortForwardingRuleVO.class).eq(PortForwardingRuleVO_.vipUuid, struct.getVip().getUuid())
+                .notEq(PortForwardingRuleVO_.uuid, struct.getRule().getUuid()).notNull(PortForwardingRuleVO_.vmNicUuid).count();
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("attach-portforwarding-%s-vm-nic-%s", struct.getRule().getUuid(), struct.getRule().getVmNicUuid()));
         chain.then(new ShareFlow() {
@@ -803,10 +819,15 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
+                        if (count > 0){
+                            trigger.next();
+                            return;
+                        }
+
                         Vip vip = new Vip(struct.getVip().getUuid());
                         vip.setPeerL3NetworkUuid(struct.getGuestL3Network().getUuid());
                         vip.setServiceProvider(providerType);
-                        vip.setUseFor(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
+                        vip.addUseFor(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
                         vip.acquire(new Completion(trigger) {
                             @Override
                             public void success() {
@@ -823,12 +844,14 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
 
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
-                        if (!s) {
+                        if (!s || count > 0) {
                             trigger.rollback();
                             return;
                         }
 
-                        new Vip(struct.getVip().getUuid()).release(new Completion(trigger) {
+                        Vip v = new Vip(struct.getVip().getUuid());
+                        v.delUseFor(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
+                        v.release(new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.rollback();

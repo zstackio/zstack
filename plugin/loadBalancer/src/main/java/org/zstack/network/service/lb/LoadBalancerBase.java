@@ -721,13 +721,16 @@ public class LoadBalancerBase {
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         /* if there is other lb use this vip, do nothing */
-                        long number = Q.New(LoadBalancerVO.class).eq(LoadBalancerVO_.vipUuid, self.getVipUuid()).count();
-                        if (number > 1){
+                        long number = Q.New(LoadBalancerVO.class).eq(LoadBalancerVO_.vipUuid, self.getVipUuid()).
+                                notEq(LoadBalancerVO_.uuid, self.getUuid()).count();
+                        if (number > 0){
                             trigger.next();
                             return;
                         }
 
-                        new Vip(self.getVipUuid()).release(new Completion(trigger) {
+                        Vip v = new Vip(self.getVipUuid());
+                        v.delUseFor(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
+                        v.release(new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.next();

@@ -40,6 +40,7 @@ import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.VipUseForList;
 
 import static org.zstack.core.Platform.operr;
 
@@ -440,7 +441,8 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
         final L3NetworkInventory l3 = L3NetworkInventory.valueOf(dbf.findByUuid(nic.getL3NetworkUuid(), L3NetworkVO.class));
         final VipInventory vip = VipInventory.valueOf(dbf.findByUuid(struct.getLb().getVipUuid(), VipVO.class));
 
-        DebugUtils.Assert(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING.equals(vip.getUseFor()),
+        VipUseForList useForList = new VipUseForList(vip.getUseFor());
+        DebugUtils.Assert(useForList.isIncluded(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING),
                 String.format("the vip[uuid:%s, name:%s, ip:%s, useFor: %s] is not for load balancer", vip.getUuid(),
                         vip.getName(), vip.getIp(), vip.getUseFor()));
 
