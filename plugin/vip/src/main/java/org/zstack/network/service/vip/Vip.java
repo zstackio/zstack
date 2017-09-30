@@ -67,7 +67,6 @@ public class Vip {
         }
     }
 
-
     public String getPeerL3NetworkUuid() {
         return peerL3NetworkUuid;
     }
@@ -84,8 +83,18 @@ public class Vip {
 
         AcquireVipMsg msg = new AcquireVipMsg();
         msg.setVipUuid(uuid);
-        msg.setServiceProvider(serviceProvider);
-        msg.setPeerL3NetworkUuid(peerL3NetworkUuid);
+        if (createOnBackend){
+            /* for this case, caller MUST set serviceProvider and peerL3NetworkUuid */
+            msg.setServiceProvider(serviceProvider);
+            msg.setPeerL3NetworkUuid(peerL3NetworkUuid);
+        }
+        else {
+            /* restore serviceProvider and peerL3NetworkUuid for db */
+            VipVO vo = Q.New(VipVO.class).eq(VipVO_.uuid, this.uuid).find();
+            msg.setPeerL3NetworkUuid(vo.getPeerL3NetworkUuid());
+            msg.setServiceProvider(vo.getServiceProvider());
+        }
+
         msg.setCreateOnBackend(createOnBackend);
 
         if (useFor != null) {
@@ -116,10 +125,16 @@ public class Vip {
     public void release(boolean deleteOnBackend, Completion completion) {
         ReleaseVipMsg msg = new ReleaseVipMsg();
         msg.setVipUuid(uuid);
-        msg.setPeerL3NetworkUuid(null);
         msg.setUseFor(useFor);
-        if (!deleteOnBackend) {
+        if (deleteOnBackend) {
             msg.setServiceProvider(null);
+            msg.setPeerL3NetworkUuid(null);
+        }
+        else {
+            /* restore serviceProvider and peerL3NetworkUuid for db */
+            VipVO vo = Q.New(VipVO.class).eq(VipVO_.uuid, this.uuid).find();
+            msg.setPeerL3NetworkUuid(vo.getPeerL3NetworkUuid());
+            msg.setServiceProvider(vo.getServiceProvider());
         }
         msg.setDeleteOnBackend(deleteOnBackend);
 

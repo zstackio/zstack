@@ -55,11 +55,11 @@ import org.zstack.identity.AccountManager;
 import org.zstack.network.l3.L3NetworkSystemTags;
 import org.zstack.network.service.eip.EipConstant;
 import org.zstack.network.service.eip.FilterVmNicsForEipInVirtualRouterExtensionPoint;
-import org.zstack.network.service.vip.Vip;
-import org.zstack.network.service.vip.VipInventory;
+import org.zstack.network.service.portforwarding.PortForwardingProtocolType;
+import org.zstack.network.service.portforwarding.PortForwardingRuleVO;
+import org.zstack.network.service.portforwarding.PortForwardingRuleVO_;
+import org.zstack.network.service.vip.*;
 import org.zstack.network.service.lb.*;
-import org.zstack.network.service.vip.VipState;
-import org.zstack.network.service.vip.VipVO;
 import org.zstack.network.service.virtualrouter.eip.VirtualRouterEipRefInventory;
 import org.zstack.network.service.virtualrouter.portforwarding.VirtualRouterPortForwardingRuleRefInventory;
 import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipInventory;
@@ -69,9 +69,7 @@ import org.zstack.search.GetQuery;
 import org.zstack.search.SearchQuery;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.DebugUtils;
-import org.zstack.utils.Utils;
+import org.zstack.utils.*;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
@@ -118,6 +116,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     private List<VirtualRouterPostRebootFlowExtensionPoint> postRebootFlowExtensionPoints;
     private List<VirtualRouterPostReconnectFlowExtensionPoint> postReconnectFlowExtensionPoints;
     private List<VirtualRouterPostDestroyFlowExtensionPoint> postDestroyFlowExtensionPoints;
+    private List<VipGetUsedPortRangeExtensionPoint> vipGetUsedPortRangeExtensionPoints;
 
 	static {
 		supportedL2NetworkTypes.add(L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE);
@@ -458,9 +457,44 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
             handle((APIUpdateVirtualRouterOfferingMsg) msg);
         } else if (msg instanceof APIGetAttachablePublicL3ForVRouterMsg) {
             handle((APIGetAttachablePublicL3ForVRouterMsg) msg);
-        } else {
+        } else if (msg instanceof APIGetVipUsedPortsMsg) {
+            handle((APIGetVipUsedPortsMsg) msg);
+        }else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private List<String> getVipUsedPortList(String vipUuid, String protocol){
+        String useFor = Q.New(VipVO.class).select(VipVO_.useFor).eq(VipVO_.uuid, vipUuid).find();
+        VipUseForList vipUseForList;
+        if (useFor != null){
+            vipUseForList = new VipUseForList(useFor);
+        } else {
+            vipUseForList = new VipUseForList();
+        }
+
+        List<RangeSet.Range> portRangeList = new ArrayList<RangeSet.Range>();
+        for (VipGetUsedPortRangeExtensionPoint ext : vipGetUsedPortRangeExtensionPoints) {
+            RangeSet range = ext.getVipUsePortRange(vipUuid, protocol, vipUseForList);
+            portRangeList.addAll(range.getRanges());
+        }
+
+        RangeSet portRange = new RangeSet();
+        portRange.setRanges(portRangeList);
+        return portRange.sortAndToString();
+    }
+
+    private void handle(APIGetVipUsedPortsMsg msg) {
+        String vipUuid = msg.getUuid();
+        String protocl = msg.getProtocol().toUpperCase();
+
+        APIGetVipUsedPortsReply reply = new APIGetVipUsedPortsReply();
+        APIGetVipUsedPortsReply.VipPortRangeInventory inv = new APIGetVipUsedPortsReply.VipPortRangeInventory();
+        inv.setVipUuid(vipUuid);
+        inv.setProtcol(protocl);
+        inv.setUsedPorts(getVipUsedPortList(vipUuid, protocl));
+        reply.setInventories(Arrays.asList(inv));
+        bus.reply(msg, reply);
     }
 
     private void handle(APIGetAttachablePublicL3ForVRouterMsg msg) {
@@ -621,6 +655,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         postRebootFlowExtensionPoints = pluginRgty.getExtensionList(VirtualRouterPostRebootFlowExtensionPoint.class);
         postReconnectFlowExtensionPoints = pluginRgty.getExtensionList(VirtualRouterPostReconnectFlowExtensionPoint.class);
         postDestroyFlowExtensionPoints = pluginRgty.getExtensionList(VirtualRouterPostDestroyFlowExtensionPoint.class);
+        vipGetUsedPortRangeExtensionPoints = pluginRgty.getExtensionList(VipGetUsedPortRangeExtensionPoint.class);
 	}
 	
 	private NetworkServiceProviderVO getRouterVO() {

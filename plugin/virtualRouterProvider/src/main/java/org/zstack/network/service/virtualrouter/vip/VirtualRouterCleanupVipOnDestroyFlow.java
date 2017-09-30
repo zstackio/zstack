@@ -15,7 +15,9 @@ import org.zstack.network.service.vip.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant.Param;
 import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.Utils;
 import org.zstack.utils.VipUseForList;
+import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -30,13 +32,21 @@ public class VirtualRouterCleanupVipOnDestroyFlow extends NoRollbackFlow {
     private DatabaseFacade dbf;
     @Autowired
     protected CloudBus bus;
+    private static CLogger logger = Utils.getLogger(VirtualRouterCleanupVipOnDestroyFlow.class);
 
-    private void deleteVips(List<VipVO> vos){
+    private void deleteVips(FlowTrigger trigger, List<VipVO> vos){
         for (VipVO vo: vos) {
             VipDeletionMsg msg = new VipDeletionMsg();
             msg.setVipUuid(vo.getUuid());
             bus.makeTargetServiceIdByResourceUuid(msg, VipConstant.SERVICE_ID, msg.getVipUuid());
-            bus.send(msg);
+            bus.send(msg, new CloudBusCallBack(trigger) {
+                @Override
+                public void run(MessageReply reply) {
+                    if(!reply.isSuccess()){
+                        logger.warn(String.format("VirtualRouter remove the vip[uuid %s] on the public interface failed.", vo.getUuid()));
+                    }
+                }
+            });
         }
     }
 
@@ -61,7 +71,7 @@ public class VirtualRouterCleanupVipOnDestroyFlow extends NoRollbackFlow {
             }
             dbf.removeCollection(refs, VirtualRouterVipVO.class);
             if (!vips.isEmpty()) {
-                deleteVips(vips);
+                deleteVips(trigger, vips);
             }
         }
         trigger.next();

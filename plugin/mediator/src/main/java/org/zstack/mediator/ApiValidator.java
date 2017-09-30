@@ -4,27 +4,38 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.appliancevm.ApplianceVmConstant;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.message.APIMessage;
-import org.zstack.header.network.l3.APIAddIpRangeMsg;
 import org.zstack.header.network.l3.IpRangeVO;
 import org.zstack.header.network.l3.IpRangeVO_;
 import org.zstack.header.vm.*;
 import org.zstack.network.service.eip.APIAttachEipMsg;
 import org.zstack.network.service.eip.APICreateEipMsg;
 import org.zstack.network.service.eip.EipVO;
-import org.zstack.network.service.portforwarding.APIAttachPortForwardingRuleMsg;
-import org.zstack.network.service.portforwarding.APICreatePortForwardingRuleMsg;
-import org.zstack.network.service.portforwarding.PortForwardingRuleVO;
+import org.zstack.network.service.lb.APICreateLoadBalancerListenerMsg;
+import org.zstack.network.service.lb.LoadBalancerVO;
+import org.zstack.network.service.lb.LoadBalancerVO_;
+import org.zstack.network.service.portforwarding.*;
+import org.zstack.network.service.vip.VipGetUsedPortRangeExtensionPoint;
+import org.zstack.network.service.vip.VipVO;
+import org.zstack.network.service.vip.VipVO_;
 import org.zstack.utils.DebugUtils;
+import org.zstack.utils.RangeSet;
+import org.zstack.utils.Utils;
+import org.zstack.utils.VipUseForList;
+import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 
+import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -37,6 +48,11 @@ public class ApiValidator implements GlobalApiMessageInterceptor {
     private DatabaseFacade dbf;
     @Autowired
     private ErrorFacade errf;
+    private final static CLogger logger = Utils.getLogger(ApiValidator.class);
+    @Autowired
+    private PluginRegistry pluginRgty;
+
+    private List<VipGetUsedPortRangeExtensionPoint> vipGetUsedPortRangeExtensionPoints;
 
     @Override
     public List<Class> getMessageClassToIntercept() {
@@ -44,6 +60,7 @@ public class ApiValidator implements GlobalApiMessageInterceptor {
         ret.add(APICreateEipMsg.class);
         ret.add(APIAttachEipMsg.class);
         ret.add(APICreatePortForwardingRuleMsg.class);
+        ret.add(APICreateLoadBalancerListenerMsg.class);
         ret.add(APIAttachPortForwardingRuleMsg.class);
         ret.add(APIAttachL3NetworkToVmMsg.class);
         return ret;
@@ -66,6 +83,8 @@ public class ApiValidator implements GlobalApiMessageInterceptor {
             validate((APIAttachPortForwardingRuleMsg) msg);
         } else if (msg instanceof APIAttachL3NetworkToVmMsg) {
             validate((APIAttachL3NetworkToVmMsg) msg);
+        } else if (msg instanceof APICreateLoadBalancerListenerMsg) {
+            validate((APICreateLoadBalancerListenerMsg) msg);
         }
 
         return msg;
@@ -101,6 +120,8 @@ public class ApiValidator implements GlobalApiMessageInterceptor {
         if (msg.getVmNicUuid() != null) {
             isVmNicUsedByEip(msg.getVmNicUuid());
         }
+        RangeSet.Range cur = new RangeSet.Range(msg.getVipPortStart(), msg.getVipPortEnd());
+        checkVipPortConfliction(msg.getVipUuid(), msg.getProtocolType(), cur);
     }
 
     @Transactional(readOnly = true)
@@ -152,6 +173,48 @@ public class ApiValidator implements GlobalApiMessageInterceptor {
     private void validate(APICreateEipMsg msg) {
         if (msg.getVmNicUuid() != null) {
             isVmNicUsedByPortForwarding(msg.getVmNicUuid());
+        }
+    }
+
+    private void validate(APICreateLoadBalancerListenerMsg msg){
+        String vipUuid = Q.New(LoadBalancerVO.class).eq(LoadBalancerVO_.uuid, msg.getLoadBalancerUuid()).select(LoadBalancerVO_.vipUuid).findValue();
+        RangeSet.Range cur = new RangeSet.Range(msg.getLoadBalancerPort(), msg.getLoadBalancerPort());
+        checkVipPortConfliction(vipUuid, msg.getProtocol(), cur);
+    }
+
+    private RangeSet getVipPortRangeList(String vipUuid, String protocol){
+        String useFor = Q.New(VipVO.class).select(VipVO_.useFor).eq(VipVO_.uuid, vipUuid).find();
+        VipUseForList vipUseForList;
+        if (useFor != null){
+            vipUseForList = new VipUseForList(useFor);
+        } else {
+            vipUseForList = new VipUseForList();
+        }
+
+        List<RangeSet.Range> portRangeList = new ArrayList<RangeSet.Range>();
+        for (VipGetUsedPortRangeExtensionPoint ext : pluginRgty.getExtensionList(VipGetUsedPortRangeExtensionPoint.class)){
+            RangeSet range = ext.getVipUsePortRange(vipUuid, protocol, vipUseForList);
+            portRangeList.addAll(range.getRanges());
+        }
+
+        RangeSet portRange = new RangeSet();
+        portRange.setRanges(portRangeList);
+        portRange.sort();
+        return portRange;
+    }
+
+    private void checkVipPortConfliction(String vipUuid, String protocol, RangeSet.Range range){
+
+        RangeSet portRangeList = getVipPortRangeList(vipUuid, protocol);
+        portRangeList.sort();
+
+        Iterator<RangeSet.Range> it = portRangeList.getRanges().iterator();
+        while (it.hasNext()){
+            RangeSet.Range cur = it.next();
+            if (cur.isOverlap(range) || range.isOverlap(cur)){
+                throw new ApiMessageInterceptionException(operr("Current port range[%s, %s] is conflicted with used port range [%s, %s] with vip[uuid: %s] protocol: %s ",
+                        Long.toString(range.getStart()), Long.toString(range.getEnd()), Long.toString(cur.getStart()), Long.toString(cur.getEnd()), vipUuid, protocol));
+            }
         }
     }
 }
