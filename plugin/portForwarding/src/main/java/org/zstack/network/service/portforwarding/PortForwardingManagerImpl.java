@@ -40,9 +40,7 @@ import org.zstack.identity.QuotaUtil;
 import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.vip.*;
 import org.zstack.tag.TagManager;
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.DebugUtils;
-import org.zstack.utils.Utils;
+import org.zstack.utils.*;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -53,10 +51,11 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
+import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.list;
 
 public class PortForwardingManagerImpl extends AbstractService implements PortForwardingManager,
-        VipReleaseExtensionPoint, AddExpandedQueryExtensionPoint, ReportQuotaExtensionPoint {
+        VipReleaseExtensionPoint, AddExpandedQueryExtensionPoint, ReportQuotaExtensionPoint, VipGetUsedPortRangeExtensionPoint {
     private static CLogger logger = Utils.getLogger(PortForwardingManagerImpl.class);
 
     @Autowired
@@ -495,21 +494,38 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
 
                         // no port forwarding rules use this VIP, release it
                         Vip v = new Vip(vo.getVipUuid());
-                        v.delUseFor(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
-                        v.release(new Completion(trigger) {
-                            @Override
-                            public void success() {
-                                logger.debug(String.format("released VIP[uuid:%s] from port forwarding", vo.getVipUuid()));
-                                trigger.next();
-                            }
+                        if (Q.New(PortForwardingRuleVO.class).eq(PortForwardingRuleVO_.vipUuid, inv.getVipUuid()).isExists()){
+                            v.deleteFromBackend(new Completion(trigger) {
+                                @Override
+                                public void success() {
+                                    logger.debug(String.format("delete backend for VIP[uuid:%s] from port forwarding", vo.getVipUuid()));
+                                    trigger.next();
+                                }
 
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                //TODO: GC this VIP
-                                logger.warn(errorCode.toString());
-                                trigger.next();
-                            }
-                        });
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    //TODO: GC this VIP
+                                    logger.warn(errorCode.toString());
+                                    trigger.next();
+                                }
+                            });
+                        } else {
+                            v.delUseFor(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
+                            v.release(new Completion(trigger) {
+                                @Override
+                                public void success() {
+                                    logger.debug(String.format("released VIP[uuid:%s] from port forwarding", vo.getVipUuid()));
+                                    trigger.next();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    //TODO: GC this VIP
+                                    logger.warn(errorCode.toString());
+                                    trigger.next();
+                                }
+                            });
+                        }
                     }
                 });
 
@@ -1072,5 +1088,27 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         p.setValue(QuotaConstant.QUOTA_PF_NUM);
         quota.addPair(p);
         return list(quota);
+    }
+
+    @Override
+    public RangeSet getVipUsePortRange(String vipUuid, String protocol, VipUseForList useForList){
+        List<Tuple> pfPortList = Q.New(PortForwardingRuleVO.class).select(PortForwardingRuleVO_.vipPortStart, PortForwardingRuleVO_.vipPortEnd)
+                .eq(PortForwardingRuleVO_.vipUuid, vipUuid).eq(PortForwardingRuleVO_.protocolType, PortForwardingProtocolType.valueOf(protocol.toUpperCase())).listTuple();
+
+        RangeSet portRangeList = new RangeSet();
+        List<RangeSet.Range> portRanges = new ArrayList<RangeSet.Range>();
+
+        Iterator<Tuple> it = pfPortList.iterator();
+        while (it.hasNext()){
+            Tuple strRange = it.next();
+            int start = strRange.get(0, Integer.class);
+            int end = strRange.get(1, Integer.class);
+
+            RangeSet.Range range = new RangeSet.Range(start, end);
+            portRanges.add(range);
+        }
+        portRangeList.setRanges(portRanges);
+
+        return portRangeList;
     }
 }
