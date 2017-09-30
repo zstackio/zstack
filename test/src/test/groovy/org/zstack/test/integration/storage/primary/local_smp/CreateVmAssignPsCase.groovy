@@ -1,4 +1,4 @@
-package org.zstack.test.integration.storage.primary.local_nfs
+package org.zstack.test.integration.storage.primary.local_smp
 
 import org.zstack.compute.vm.VmSystemTags
 import org.zstack.sdk.*
@@ -8,7 +8,7 @@ import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
 
 /**
- * Created by lining on 2017-06-23.
+ * Created by lining on 2017-09-30.
  */
 class CreateVmAssignPsCase extends SubCase{
     EnvSpec env
@@ -77,14 +77,14 @@ class CreateVmAssignPsCase extends SubCase{
                     url = "/local_ps2"
                 }
 
-                nfsPrimaryStorage {
-                    name = "nfs"
-                    url = "172.20.0.1:/nfs_root"
+                smpPrimaryStorage {
+                    name = "smp"
+                    url = "/smp"
                 }
 
-                nfsPrimaryStorage {
-                    name = "nfs2"
-                    url = "172.20.0.2:/nfs_root"
+                smpPrimaryStorage {
+                    name = "smp2"
+                    url = "/smp2"
                 }
 
                 l2NoVlanNetwork {
@@ -111,9 +111,8 @@ class CreateVmAssignPsCase extends SubCase{
     @Override
     void test() {
         env.create {
-            localAndLocal()
-            localAndNfs()
-            NfsAndNfs()
+            localAndSmp()
+            smpAndSmp()
         }
     }
 
@@ -122,81 +121,10 @@ class CreateVmAssignPsCase extends SubCase{
         env.delete()
     }
 
-    void localAndLocal(){
-        PrimaryStorageInventory nfs = env.inventoryByName("nfs") as PrimaryStorageInventory
-        PrimaryStorageInventory nfs2 = env.inventoryByName("nfs2") as PrimaryStorageInventory
-        PrimaryStorageInventory local = env.inventoryByName("local") as PrimaryStorageInventory
-        PrimaryStorageInventory local2 = env.inventoryByName("local2") as PrimaryStorageInventory
-        InstanceOfferingInventory instanceOffering = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
-        DiskOfferingInventory diskOffering = env.inventoryByName("diskOffering") as DiskOfferingInventory
-        ImageInventory image = env.inventoryByName("image") as ImageInventory
-        L3NetworkInventory l3 = env.inventoryByName("l3") as L3NetworkInventory
-
-        retryInSecs{
-            GetCandidatePrimaryStoragesForCreatingVmAction getAction = new GetCandidatePrimaryStoragesForCreatingVmAction(
-                    l3NetworkUuids : [l3.uuid],
-                    imageUuid: image.uuid,
-                    dataDiskOfferingUuids: [diskOffering.uuid],
-                    sessionId: adminSession()
-            )
-            GetCandidatePrimaryStoragesForCreatingVmResult getResult = getAction.call().value
-            List<PrimaryStorageInventory> rootVolumePrimaryStorages = getResult.rootVolumePrimaryStorages
-            List<PrimaryStorageInventory> dataVolumePrimaryStorages = getResult.dataVolumePrimaryStorages.get(diskOffering.uuid)
-            assert rootVolumePrimaryStorages.size() == 2
-            assert [rootVolumePrimaryStorages[0].uuid, rootVolumePrimaryStorages[1].uuid].containsAll([local.uuid, local2.uuid])
-            assert dataVolumePrimaryStorages.size() == 2
-            assert [dataVolumePrimaryStorages[0].uuid, dataVolumePrimaryStorages[1].uuid].containsAll([local.uuid, local2.uuid])
-        }
-
-        // not assign ps
-        VmInstanceInventory vm = createVmInstance {
-            name = "vm"
-            instanceOfferingUuid = instanceOffering.uuid
-            imageUuid = image.uuid
-            l3NetworkUuids = [l3.uuid]
-            dataDiskOfferingUuids = [diskOffering.uuid]
-        }
-
-        // assign root volume ps
-        vm = createVmInstance {
-            name = "vm1"
-            instanceOfferingUuid = instanceOffering.uuid
-            imageUuid = image.uuid
-            l3NetworkUuids = [l3.uuid]
-            primaryStorageUuidForRootVolume = local.uuid
-            dataDiskOfferingUuids = [diskOffering.uuid]
-        }
-        checkVmRootDiskPs(vm, local.uuid)
-
-        // assign data volume ps
-        vm = createVmInstance {
-            name = "vm2"
-            instanceOfferingUuid = instanceOffering.uuid
-            imageUuid = image.uuid
-            l3NetworkUuids = [l3.uuid]
-            dataDiskOfferingUuids = [diskOffering.uuid]
-            systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): local.uuid])]
-        }
-        checkVmDataDiskPs(vm, local.uuid)
-
-        // assign data , root volume ps
-        vm = createVmInstance {
-            name = "vm3"
-            instanceOfferingUuid = instanceOffering.uuid
-            imageUuid = image.uuid
-            l3NetworkUuids = [l3.uuid]
-            dataDiskOfferingUuids = [diskOffering.uuid]
-            systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): local2.uuid])]
-            primaryStorageUuidForRootVolume = local.uuid
-        }
-        checkVmDataDiskPs(vm, local2.uuid)
-        checkVmRootDiskPs(vm, local.uuid)
-    }
-
-    void localAndNfs(){
+    void localAndSmp(){
         ClusterInventory cluster = env.inventoryByName("cluster") as ClusterInventory
-        PrimaryStorageInventory nfs = env.inventoryByName("nfs") as PrimaryStorageInventory
-        PrimaryStorageInventory nfs2 = env.inventoryByName("nfs2") as PrimaryStorageInventory
+        PrimaryStorageInventory smp = env.inventoryByName("smp") as PrimaryStorageInventory
+        PrimaryStorageInventory smp2 = env.inventoryByName("smp2") as PrimaryStorageInventory
         PrimaryStorageInventory local = env.inventoryByName("local") as PrimaryStorageInventory
         PrimaryStorageInventory local2 = env.inventoryByName("local2") as PrimaryStorageInventory
         InstanceOfferingInventory instanceOffering = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
@@ -211,12 +139,12 @@ class CreateVmAssignPsCase extends SubCase{
 
         attachPrimaryStorageToCluster {
             clusterUuid = cluster.uuid
-            primaryStorageUuid = nfs.uuid
+            primaryStorageUuid = smp.uuid
         }
 
-        retryInSecs{
+        retryInSecs {
             GetCandidatePrimaryStoragesForCreatingVmAction getAction = new GetCandidatePrimaryStoragesForCreatingVmAction(
-                    l3NetworkUuids : [l3.uuid],
+                    l3NetworkUuids: [l3.uuid],
                     imageUuid: image.uuid,
                     dataDiskOfferingUuids: [diskOffering.uuid],
                     sessionId: adminSession()
@@ -225,12 +153,10 @@ class CreateVmAssignPsCase extends SubCase{
             List<PrimaryStorageInventory> rootVolumePrimaryStorages = getResult.rootVolumePrimaryStorages
             List<PrimaryStorageInventory> dataVolumePrimaryStorages = getResult.dataVolumePrimaryStorages.get(diskOffering.uuid)
             assert rootVolumePrimaryStorages.size() == 2
-            assert [rootVolumePrimaryStorages[0].uuid, rootVolumePrimaryStorages[1].uuid].containsAll([local.uuid, nfs.uuid])
+            assert [rootVolumePrimaryStorages[0].uuid, rootVolumePrimaryStorages[1].uuid].containsAll([local.uuid, smp.uuid])
             assert dataVolumePrimaryStorages.size() == 2
-            assert [dataVolumePrimaryStorages[0].uuid, dataVolumePrimaryStorages[1].uuid].containsAll([local.uuid, nfs.uuid])
+            assert [dataVolumePrimaryStorages[0].uuid, dataVolumePrimaryStorages[1].uuid].containsAll([local.uuid, smp.uuid])
         }
-
-
 
         // not assign ps
         VmInstanceInventory vm = createVmInstance {
@@ -241,7 +167,7 @@ class CreateVmAssignPsCase extends SubCase{
             dataDiskOfferingUuids = [diskOffering.uuid]
         }
         checkVmRootDiskPs(vm, local.uuid)
-        checkVmDataDiskPs(vm, nfs.uuid)
+        checkVmDataDiskPs(vm, smp.uuid)
 
         // assign root volume local ps
         try{
@@ -258,17 +184,17 @@ class CreateVmAssignPsCase extends SubCase{
             assert true
         }
 
-        // assign root volume nfs ps
+        // assign root volume smp ps
         CreateVmInstanceAction a = new CreateVmInstanceAction(
                 name: "vm2",
                 instanceOfferingUuid: instanceOffering.uuid,
                 imageUuid: image.uuid,
                 l3NetworkUuids: [l3.uuid],
-                primaryStorageUuidForRootVolume: nfs.uuid,
+                primaryStorageUuidForRootVolume: smp.uuid,
                 sessionId: currentEnvSpec.session.uuid
         )
         CreateVmInstanceAction.Result result = a.call()
-        checkVmRootDiskPs(result.value.inventory, nfs.uuid)
+        checkVmRootDiskPs(result.value.inventory, smp.uuid)
 
         // assign data volume local ps
         CreateVmInstanceAction a2 = new CreateVmInstanceAction(
@@ -282,7 +208,7 @@ class CreateVmAssignPsCase extends SubCase{
         )
         assert a2.call().error != null
 
-        // assign data volume nfs ps
+        // assign data volume smp ps
         try{
             vm = createVmInstance {
                 name = "vm3"
@@ -290,7 +216,7 @@ class CreateVmAssignPsCase extends SubCase{
                 imageUuid = image.uuid
                 l3NetworkUuids = [l3.uuid]
                 dataDiskOfferingUuids = [diskOffering.uuid]
-                systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): nfs.uuid])]
+                systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): smp.uuid])]
             }
             assert false
         }catch (Throwable t){
@@ -312,54 +238,54 @@ class CreateVmAssignPsCase extends SubCase{
         checkVmRootDiskPs(result.value.inventory, local.uuid)
         checkVmDataDiskPs(result.value.inventory, local.uuid)
 
-        // assign root volume nfs ps, data volume local ps
+        // assign root volume smp ps, data volume local ps
         CreateVmInstanceAction a4 = new CreateVmInstanceAction(
                 name: "vm4",
                 instanceOfferingUuid: instanceOffering.uuid,
                 imageUuid: image.uuid,
                 l3NetworkUuids: [l3.uuid],
                 dataDiskOfferingUuids: [diskOffering.uuid],
-                primaryStorageUuidForRootVolume: nfs.uuid,
+                primaryStorageUuidForRootVolume: smp.uuid,
                 systemTags: [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): local.uuid])],
                 sessionId: currentEnvSpec.session.uuid
         )
         result = a4.call()
-        checkVmRootDiskPs(result.value.inventory, nfs.uuid)
+        checkVmRootDiskPs(result.value.inventory, smp.uuid)
         checkVmDataDiskPs(result.value.inventory, local.uuid)
 
-        // assign root volume nfs ps, data volume nfs ps
+        // assign root volume smp ps, data volume smp ps
         CreateVmInstanceAction a5 = new CreateVmInstanceAction(
                 name: "vm4",
                 instanceOfferingUuid: instanceOffering.uuid,
                 imageUuid: image.uuid,
                 l3NetworkUuids: [l3.uuid],
                 dataDiskOfferingUuids: [diskOffering.uuid],
-                primaryStorageUuidForRootVolume: nfs.uuid,
-                systemTags: [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): nfs.uuid])],
+                primaryStorageUuidForRootVolume: smp.uuid,
+                systemTags: [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): smp.uuid])],
                 sessionId: currentEnvSpec.session.uuid
         )
         result = a5.call()
-        checkVmRootDiskPs(result.value.inventory, nfs.uuid)
-        checkVmDataDiskPs(result.value.inventory, nfs.uuid)
+        checkVmRootDiskPs(result.value.inventory, smp.uuid)
+        checkVmDataDiskPs(result.value.inventory, smp.uuid)
 
-        // assign root volume local ps, data volume nfs ps
+        // assign root volume local ps, data volume smp ps
         vm = createVmInstance {
             name = "vm4"
             instanceOfferingUuid = instanceOffering.uuid
             imageUuid = image.uuid
             l3NetworkUuids = [l3.uuid]
             dataDiskOfferingUuids = [diskOffering.uuid]
-            systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): nfs.uuid])]
+            systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): smp.uuid])]
             primaryStorageUuidForRootVolume = local.uuid
         }
         checkVmRootDiskPs(vm, local.uuid)
-        checkVmDataDiskPs(vm, nfs.uuid)
+        checkVmDataDiskPs(vm, smp.uuid)
     }
 
-    void NfsAndNfs(){
+    void smpAndSmp(){
         ClusterInventory cluster = env.inventoryByName("cluster") as ClusterInventory
-        PrimaryStorageInventory nfs = env.inventoryByName("nfs") as PrimaryStorageInventory
-        PrimaryStorageInventory nfs2 = env.inventoryByName("nfs2") as PrimaryStorageInventory
+        PrimaryStorageInventory smp = env.inventoryByName("smp") as PrimaryStorageInventory
+        PrimaryStorageInventory smp2 = env.inventoryByName("smp2") as PrimaryStorageInventory
         PrimaryStorageInventory local = env.inventoryByName("local") as PrimaryStorageInventory
         InstanceOfferingInventory instanceOffering = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
         DiskOfferingInventory diskOffering = env.inventoryByName("diskOffering") as DiskOfferingInventory
@@ -373,12 +299,12 @@ class CreateVmAssignPsCase extends SubCase{
 
         attachPrimaryStorageToCluster {
             clusterUuid = cluster.uuid
-            primaryStorageUuid = nfs2.uuid
+            primaryStorageUuid = smp2.uuid
         }
 
-        retryInSecs{
+        retryInSecs {
             GetCandidatePrimaryStoragesForCreatingVmAction getAction = new GetCandidatePrimaryStoragesForCreatingVmAction(
-                    l3NetworkUuids : [l3.uuid],
+                    l3NetworkUuids: [l3.uuid],
                     imageUuid: image.uuid,
                     dataDiskOfferingUuids: [diskOffering.uuid],
                     sessionId: adminSession()
@@ -387,9 +313,9 @@ class CreateVmAssignPsCase extends SubCase{
             List<PrimaryStorageInventory> rootVolumePrimaryStorages = getResult.rootVolumePrimaryStorages
             List<PrimaryStorageInventory> dataVolumePrimaryStorages = getResult.dataVolumePrimaryStorages.get(diskOffering.uuid)
             assert rootVolumePrimaryStorages.size() == 2
-            assert [rootVolumePrimaryStorages[0].uuid, rootVolumePrimaryStorages[1].uuid].containsAll([nfs.uuid, nfs2.uuid])
+            assert [rootVolumePrimaryStorages[0].uuid, rootVolumePrimaryStorages[1].uuid].containsAll([smp.uuid, smp2.uuid])
             assert dataVolumePrimaryStorages.size() == 2
-            assert [dataVolumePrimaryStorages[0].uuid, dataVolumePrimaryStorages[1].uuid].containsAll([nfs.uuid, nfs2.uuid])
+            assert [dataVolumePrimaryStorages[0].uuid, dataVolumePrimaryStorages[1].uuid].containsAll([smp.uuid, smp2.uuid])
         }
 
         // not assign ps
@@ -401,16 +327,16 @@ class CreateVmAssignPsCase extends SubCase{
             dataDiskOfferingUuids = [diskOffering.uuid]
         }
 
-        // assign root volume nfs ps
+        // assign root volume smp ps
         vm = createVmInstance {
             name = "vm1"
             instanceOfferingUuid = instanceOffering.uuid
             imageUuid = image.uuid
             l3NetworkUuids = [l3.uuid]
-            primaryStorageUuidForRootVolume = nfs.uuid
+            primaryStorageUuidForRootVolume = smp.uuid
             dataDiskOfferingUuids = [diskOffering.uuid]
         }
-        checkVmRootDiskPs(vm, nfs.uuid)
+        checkVmRootDiskPs(vm, smp.uuid)
 
         // assign root volume ps
         vm = createVmInstance {
@@ -418,10 +344,10 @@ class CreateVmAssignPsCase extends SubCase{
             instanceOfferingUuid = instanceOffering.uuid
             imageUuid = image.uuid
             l3NetworkUuids = [l3.uuid]
-            primaryStorageUuidForRootVolume = nfs2.uuid
+            primaryStorageUuidForRootVolume = smp2.uuid
             dataDiskOfferingUuids = [diskOffering.uuid]
         }
-        checkVmRootDiskPs(vm, nfs2.uuid)
+        checkVmRootDiskPs(vm, smp2.uuid)
 
         // assign data volume  ps
         vm = createVmInstance {
@@ -430,9 +356,9 @@ class CreateVmAssignPsCase extends SubCase{
             imageUuid = image.uuid
             l3NetworkUuids = [l3.uuid]
             dataDiskOfferingUuids = [diskOffering.uuid]
-            systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): nfs.uuid])]
+            systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): smp.uuid])]
         }
-        checkVmDataDiskPs(vm, nfs.uuid)
+        checkVmDataDiskPs(vm, smp.uuid)
 
         // assign data , root volume ps
         vm = createVmInstance {
@@ -441,19 +367,19 @@ class CreateVmAssignPsCase extends SubCase{
             imageUuid = image.uuid
             l3NetworkUuids = [l3.uuid]
             dataDiskOfferingUuids = [diskOffering.uuid]
-            systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): nfs2.uuid])]
-            primaryStorageUuidForRootVolume = nfs.uuid
+            systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): smp2.uuid])]
+            primaryStorageUuidForRootVolume = smp.uuid
         }
-        checkVmRootDiskPs(vm, nfs.uuid)
-        checkVmDataDiskPs(vm, nfs2.uuid)
+        checkVmRootDiskPs(vm, smp.uuid)
+        checkVmDataDiskPs(vm, smp2.uuid)
 
         detachPrimaryStorageFromCluster {
             clusterUuid = cluster.uuid
-            primaryStorageUuid = nfs.uuid
+            primaryStorageUuid = smp.uuid
         }
         detachPrimaryStorageFromCluster {
             clusterUuid = cluster.uuid
-            primaryStorageUuid = nfs2.uuid
+            primaryStorageUuid = smp2.uuid
         }
     }
 
