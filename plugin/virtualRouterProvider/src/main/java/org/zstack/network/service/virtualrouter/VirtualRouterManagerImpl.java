@@ -50,23 +50,25 @@ import org.zstack.header.query.ExpandedQueryAliasStruct;
 import org.zstack.header.query.ExpandedQueryStruct;
 import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.tag.SystemTagLifeCycleListener;
-import org.zstack.header.vm.VmInstanceState;
-import org.zstack.header.vm.VmNicInventory;
-import org.zstack.header.vm.VmNicVO;
-import org.zstack.header.vm.VmNicVO_;
+import org.zstack.header.vm.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.network.l3.L3NetworkSystemTags;
 import org.zstack.network.service.eip.EipConstant;
 import org.zstack.network.service.eip.FilterVmNicsForEipInVirtualRouterExtensionPoint;
+import org.zstack.network.service.vip.Vip;
 import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.lb.*;
+import org.zstack.network.service.vip.VipState;
+import org.zstack.network.service.vip.VipVO;
 import org.zstack.network.service.virtualrouter.eip.VirtualRouterEipRefInventory;
 import org.zstack.network.service.virtualrouter.portforwarding.VirtualRouterPortForwardingRuleRefInventory;
 import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipInventory;
+import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipVO;
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants;
 import org.zstack.search.GetQuery;
 import org.zstack.search.SearchQuery;
 import org.zstack.tag.SystemTagCreator;
+import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
@@ -140,6 +142,8 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     private ThreadFacade thdf;
     @Autowired
     private ApplianceVmFacade apvmf;
+    @Autowired
+    private TagManager tagMgr;
     
 
 	@Override
@@ -182,6 +186,55 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                 return getSyncSignature();
             }
         });
+    }
+
+    /* save public ip as vip is db */
+    private void CreateVipForVrPublicIP(VirtualRouterVmInventory vrInv){
+        VmNicInventory nic = vrInv.getPublicNic();
+        IpRangeInventory ips = null;
+        List<IpRangeVO> ipRanges = Q.New(IpRangeVO.class).eq(IpRangeVO_.l3NetworkUuid, nic.getL3NetworkUuid()).list();
+        for (IpRangeVO range : ipRanges){
+            if (NetworkUtils.isIpv4InRange(nic.getIp(), range.getStartIp(), range.getEndIp())){
+                ips = IpRangeInventory.valueOf(range);
+                break;
+            }
+        }
+        if (ips == null) {
+            return;
+        }
+
+        /* vip db */
+        VipVO vipvo = new VipVO();
+        vipvo.setUuid(Platform.getUuid());
+        vipvo.setName(String.format("vip-for-%s", vrInv.getName()));
+        vipvo.setDescription("Vip backend created for virtual router");
+        vipvo.setState(VipState.Enabled);
+        vipvo.setGateway(nic.getGateway());
+        vipvo.setIp(nic.getIp());
+        vipvo.setIpRangeUuid(ips.getUuid());
+        vipvo.setL3NetworkUuid(nic.getL3NetworkUuid());
+        vipvo.setNetmask(nic.getNetmask());
+        vipvo.setUsedIpUuid(nic.getUuid());
+        vipvo.setUseFor(VirtualRouterConstant.SNAT_NETWORK_SERVICE_TYPE);
+
+        VirtualRouterVipVO vrvip = new VirtualRouterVipVO();
+        vrvip.setUuid(vipvo.getUuid());
+        vrvip.setVirtualRouterVmUuid(vrInv.getUuid());
+
+        VipVO finalVipvo = vipvo;
+        String vrAccount = acntMgr.getOwnerAccountUuidOfResource(vrInv.getUuid());
+        vipvo = new SQLBatchWithReturn<VipVO>() {
+            @Override
+            protected VipVO scripts() {
+                persist(finalVipvo);
+                reload(finalVipvo);
+                persist(vrvip);
+                acntMgr.createAccountResourceRef(vrAccount, finalVipvo.getUuid(), VipVO.class);
+                tagMgr.copySystemTag(vrInv.getUuid(), VirtualRouterVmVO.class.getSimpleName(),
+                        finalVipvo.getUuid(), VipVO.class.getSimpleName());
+                return finalVipvo;
+            }
+        }.execute();
     }
 
     private void createVirtualRouter(final CreateVirtualRouterVmMsg msg, final NoErrorCompletion completion) {
@@ -376,7 +429,11 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                             creator.create();
                         }
 
-                        reply.setInventory(VirtualRouterVmInventory.valueOf(dbf.findByUuid(apvm.getUuid(), VirtualRouterVmVO.class)));
+                        /* apply vip for the public nic ip address */
+                        VirtualRouterVmInventory vrInv = VirtualRouterVmInventory.valueOf(dbf.findByUuid(apvm.getUuid(), VirtualRouterVmVO.class));
+                        CreateVipForVrPublicIP(vrInv);
+
+                        reply.setInventory(vrInv);
                         bus.reply(msg, reply);
                         completion.done();
                     }
