@@ -115,3 +115,5 @@ ALTER TABLE AliyunSnapshotVO DROP INDEX snapshotId;
 
 UPDATE AliyunDiskVO SET diskType='data' WHERE diskType='DATA';
 UPDATE AliyunDiskVO SET diskType='system' WHERE diskType='SYSTEM';
+
+ALTER TABLE VolumeEO DROP FOREIGN KEY fkVolumeEOPrimaryStorageEO;
