@@ -45,10 +45,15 @@ import static org.zstack.core.Platform.operr;
 
 /**
  * Created by frank on 7/2/2015.
+ *
+ * Support Scene:
+ *  local
+ *  local + local
+ *  local + nfs(smp)
  */
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
-public class LocalStorageAllocateCapacityFlow implements Flow {
-    private final static CLogger logger = Utils.getLogger(LocalStorageAllocateCapacityFlow.class);
+public class LocalStorageDefaultAllocateCapacityFlow implements Flow {
+    private final static CLogger logger = Utils.getLogger(LocalStorageDefaultAllocateCapacityFlow.class);
 
     @Autowired
     protected DatabaseFacade dbf;

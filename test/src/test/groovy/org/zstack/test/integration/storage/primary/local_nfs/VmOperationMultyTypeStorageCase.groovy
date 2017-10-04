@@ -60,7 +60,7 @@ class VmOperationMultyTypeStorageCase extends SubCase{
         a.primaryStorageUuidForRootVolume = nfs.uuid
         a.sessionId = currentEnvSpec.session.uuid
 
-        assert a.call().error != null
+        assert a.call().error == null
     }
 
     void testDisableNfsPrimaryStorageThenCreateVmInstance(){

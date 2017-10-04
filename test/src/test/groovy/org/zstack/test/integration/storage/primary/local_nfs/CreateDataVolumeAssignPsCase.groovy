@@ -140,7 +140,7 @@ class CreateDataVolumeAssignPsCase extends SubCase {
         action.systemTags = [tag]
         action.sessionId = adminSession()
         CreateDataVolumeAction.Result result = action.call()
-        assert result.error != null
+        assert result.error == null
 
         createDataVolume {
             name = "data volume 2"

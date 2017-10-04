@@ -112,3 +112,5 @@ CREATE INDEX notification_resource_uuid_idx ON NotificationVO (resourceUuid);
 ALTER TABLE `BaremetalHostCfgVO` ADD COLUMN `cloneIso` tinyint(1) unsigned NOT NULL DEFAULT 0;
 
 ALTER TABLE AliyunSnapshotVO DROP INDEX snapshotId;
+
+ALTER TABLE VolumeEO DROP FOREIGN KEY fkVolumeEOPrimaryStorageEO;
