@@ -693,6 +693,14 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         public String snapshotPath;
     }
 
+    public static class PurgeSnapshotCmd extends AgentCommand {
+        public String volumePath;
+    }
+
+    public static class PurgeSnapshotRsp extends AgentResponse {
+
+    }
+
     public static final String INIT_PATH = "/ceph/primarystorage/init";
     public static final String CREATE_VOLUME_PATH = "/ceph/primarystorage/volume/createempty";
     public static final String DELETE_PATH = "/ceph/primarystorage/delete";
@@ -702,6 +710,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static final String SFTP_UPLOAD_PATH = "/ceph/primarystorage/sftpbackupstorage/upload";
     public static final String CREATE_SNAPSHOT_PATH = "/ceph/primarystorage/snapshot/create";
     public static final String DELETE_SNAPSHOT_PATH = "/ceph/primarystorage/snapshot/delete";
+    public static final String PURGE_SNAPSHOT_PATH = "/ceph/primarystorage/volume/purgesnapshots";
     public static final String PROTECT_SNAPSHOT_PATH = "/ceph/primarystorage/snapshot/protect";
     public static final String ROLLBACK_SNAPSHOT_PATH = "/ceph/primarystorage/snapshot/rollback";
     public static final String UNPROTECT_SNAPSHOT_PATH = "/ceph/primarystorage/snapshot/unprotect";
@@ -2678,6 +2687,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             handle((CancelSelfFencerOnKvmHostMsg) msg);
         } else if (msg instanceof DeleteImageCacheOnPrimaryStorageMsg) {
             handle((DeleteImageCacheOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof PurgeSnapshotOnPrimaryStorageMsg) {
+            handle((PurgeSnapshotOnPrimaryStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -3066,6 +3077,24 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         httpCall(DELETE_SNAPSHOT_PATH, cmd, DeleteSnapshotRsp.class, new ReturnValueCompletion<DeleteSnapshotRsp>(msg) {
             @Override
             public void success(DeleteSnapshotRsp returnValue) {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    protected void handle(final PurgeSnapshotOnPrimaryStorageMsg msg) {
+        final PurgeSnapshotOnPrimaryStorageReply reply = new PurgeSnapshotOnPrimaryStorageReply();
+        PurgeSnapshotCmd cmd = new PurgeSnapshotCmd();
+        cmd.volumePath = msg.getVolumePath();
+        httpCall(PURGE_SNAPSHOT_PATH, cmd, PurgeSnapshotRsp.class, new ReturnValueCompletion<PurgeSnapshotRsp>(msg) {
+            @Override
+            public void success(PurgeSnapshotRsp returnValue) {
                 bus.reply(msg, reply);
             }
 
