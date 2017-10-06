@@ -2,11 +2,10 @@
 package org.zstack.test.integration.storage.backup.ceph.imagebackupstoragerefvo
 
 import org.zstack.core.db.Q
-import org.zstack.header.image.ImageBackupStorageRefVO
-import org.zstack.header.image.ImageBackupStorageRefVO_
-import org.zstack.header.image.ImageConstant
+import org.zstack.header.image.*
 import org.zstack.sdk.BackupStorageInventory
 import org.zstack.sdk.ImageInventory
+import org.zstack.storage.ceph.backup.CephBackupStorageBase
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
@@ -75,6 +74,7 @@ class AddImageCase extends SubCase{
     void test() {
         env.create {
             testImageBackupStorageRefVOWhenAddImage()
+            testUploadImage()
         }
     }
 
@@ -122,7 +122,44 @@ class AddImageCase extends SubCase{
                 .eq(ImageBackupStorageRefVO_.imageUuid, newImage3.uuid)
                 .count()
     }
-    
+
+    void testUploadImage(){
+        def originSize = 1024
+        def updatedSize = 2048
+        env.simulator(CephBackupStorageBase.DOWNLOAD_IMAGE_PATH) {
+            def rsp = new CephBackupStorageBase.DownloadRsp()
+            rsp.size = originSize
+            rsp.uploadPath = "http://127.0.0.1:7071/ceph/image/upload"
+            return rsp
+        }
+
+        env.simulator(CephBackupStorageBase.GET_DOWNLOAD_PROGRESS_PATH) {
+            def rsp = new CephBackupStorageBase.GetDownloadProgressRsp()
+            rsp.completed = true
+            rsp.size = updatedSize
+            rsp.installPath = "dummy-pool/dummy-image"
+            return rsp
+        }
+
+        BackupStorageInventory bs = env.inventoryByName("ceph-bk")
+        ImageInventory inv = addImage {
+            name = "test-upload"
+            url = "upload://myimage.iso"
+            backupStorageUuids = [bs.uuid]
+            format = ImageConstant.ISO_FORMAT_STRING
+        }
+
+        assert inv != null
+        assert inv.status == ImageStatus.Downloading.toString()
+        assert inv.size == originSize
+
+        retryInSecs {
+            ImageVO image = dbFindByUuid(inv.uuid, ImageVO.class)
+            assert image != null
+            assert image.size == updatedSize
+        }
+    }
+
     @Override
     void clean() {
         env.delete()

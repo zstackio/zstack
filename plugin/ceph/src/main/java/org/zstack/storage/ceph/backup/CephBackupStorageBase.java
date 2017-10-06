@@ -24,13 +24,11 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.image.*;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
-import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.backup.*;
 import org.zstack.storage.backup.BackupStorageBase;
 import org.zstack.storage.ceph.*;
 import org.zstack.storage.ceph.CephMonBase.PingResult;
-import org.zstack.storage.ceph.primary.CephPrimaryStorageBase;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageVO;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageVO_;
 import org.zstack.utils.CollectionUtils;
@@ -39,7 +37,6 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
-import static org.zstack.core.Platform.*;
 
 import javax.persistence.TypedQuery;
 import java.net.URISyntaxException;
@@ -47,8 +44,8 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
-import static org.zstack.utils.URLBuilder.buildUrl;
 
 /**
  * Created by frank on 7/27/2015.
@@ -178,6 +175,66 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
     }
 
+    public static class GetDownloadProgressCmd extends AgentCommand {
+        private String imageUuid;
+
+        public String getImageUuid() {
+            return imageUuid;
+        }
+
+        public void setImageUuid(String imageUuid) {
+            this.imageUuid = imageUuid;
+        }
+    }
+
+    public static class GetDownloadProgressRsp extends AgentResponse {
+        private boolean completed;
+        private long downloaded;
+        private long size;
+        private long actualSize;
+        private String installPath;
+
+        public boolean isCompleted() {
+            return completed;
+        }
+
+        public void setCompleted(boolean completed) {
+            this.completed = completed;
+        }
+
+        public long getDownloaded() {
+            return downloaded;
+        }
+
+        public void setDownloaded(long downloaded) {
+            this.downloaded = downloaded;
+        }
+
+        public long getSize() {
+            return size;
+        }
+
+        public void setSize(long size) {
+            this.size = size;
+        }
+
+        public long getActualSize() {
+            return actualSize;
+        }
+
+        public void setActualSize(long actualSize) {
+            this.actualSize = actualSize;
+        }
+
+        public String getInstallPath() {
+            return installPath;
+        }
+
+        public void setInstallPath(String installPath) {
+            this.installPath = installPath;
+        }
+    }
+
     @ApiTimeout(apiClasses = {APIAddImageMsg.class})
     public static class DownloadCmd extends AgentCommand implements HasThreadContext {
         String url;
@@ -221,6 +278,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
     public static class DownloadRsp extends AgentResponse {
         long size;
         Long actualSize;
+        String uploadPath;
 
         public Long getActualSize() {
             return actualSize;
@@ -236,6 +294,14 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
         public void setSize(long size) {
             this.size = size;
+        }
+
+        public String getUploadPath() {
+            return uploadPath;
+        }
+
+        public void setUploadPath(String uploadPath) {
+            this.uploadPath = uploadPath;
         }
     }
 
@@ -432,6 +498,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
     public static final String INIT_PATH = "/ceph/backupstorage/init";
     public static final String DOWNLOAD_IMAGE_PATH = "/ceph/backupstorage/image/download";
+    public static final String GET_DOWNLOAD_PROGRESS_PATH = "/ceph/backupstorage/image/progress";
     public static final String DELETE_IMAGE_PATH = "/ceph/backupstorage/image/delete";
     public static final String GET_IMAGE_SIZE_PATH = "/ceph/backupstorage/image/getsize";
     public static final String PING_PATH = "/ceph/backupstorage/ping";
@@ -544,6 +611,30 @@ public class CephBackupStorageBase extends BackupStorageBase {
             public void success(GetImageSizeRsp ret) {
                 reply.setSize(ret.size);
                 bus.reply(msg, reply);
+            }
+        });
+    }
+
+    protected void handle(final GetImageDownloadProgressMsg msg) {
+        GetDownloadProgressCmd cmd = new GetDownloadProgressCmd();
+        cmd.setImageUuid(msg.getImageUuid());
+
+        GetImageDownloadProgressReply r = new GetImageDownloadProgressReply();
+        httpCall(GET_DOWNLOAD_PROGRESS_PATH, cmd, GetDownloadProgressRsp.class, new ReturnValueCompletion<GetDownloadProgressRsp>(msg) {
+            @Override
+            public void success(GetDownloadProgressRsp resp) {
+                r.setCompleted(resp.isCompleted());
+                r.setDownloaded(resp.getDownloaded());
+                r.setActualSize(resp.getActualSize());
+                r.setSize(resp.getSize());
+                r.setInstallPath(resp.getInstallPath());
+                bus.reply(msg, r);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                r.setError(errorCode);
+                bus.reply(msg, r);
             }
         });
     }
@@ -689,7 +780,11 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
             @Override
             public void success(DownloadRsp ret) {
-                reply.setInstallPath(cmd.installPath);
+                if (cmd.getUrl().startsWith("upload://")) {
+                    reply.setInstallPath(ret.getUploadPath());
+                } else {
+                    reply.setInstallPath(cmd.installPath);
+                }
                 reply.setSize(ret.size);
 
                 // current ceph has no way to get the actual size
@@ -1246,6 +1341,8 @@ public class CephBackupStorageBase extends BackupStorageBase {
     protected void handleLocalMessage(Message msg) throws URISyntaxException {
         if (msg instanceof BakeImageMetadataMsg) {
             handle((BakeImageMetadataMsg) msg);
+        } else if (msg instanceof GetImageDownloadProgressMsg) {
+            handle((GetImageDownloadProgressMsg) msg);
         }
         else {
             super.handleLocalMessage(msg);
