@@ -1186,7 +1186,7 @@ public class LoadBalancerBase {
         LoadBalancerListenerVO vo = new LoadBalancerListenerVO();
         vo.setLoadBalancerUuid(self.getUuid());
         vo.setUuid(msg.getResourceUuid() == null ? Platform.getUuid() : msg.getResourceUuid());
-        vo.setDescription(vo.getDescription());
+        vo.setDescription(msg.getDescription());
         vo.setName(msg.getName());
         vo.setInstancePort(msg.getInstancePort());
         vo.setLoadBalancerPort(msg.getLoadBalancerPort());
