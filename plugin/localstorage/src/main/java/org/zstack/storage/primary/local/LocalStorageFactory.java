@@ -324,7 +324,20 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
             if (spec.getCurrentVmOperation() == VmOperation.NewCreate) {
                 List<String> localStorageUuids = getLocalStorageInCluster(spec.getDestHost().getClusterUuid());
                 if (localStorageUuids != null && !localStorageUuids.isEmpty()) {
-                    return new LocalStorageAllocateCapacityFlow();
+                    boolean isOnlyLocalStorage = SQL.New("select pri.uuid" +
+                            " from PrimaryStorageVO pri, PrimaryStorageClusterRefVO ref" +
+                            " where pri.uuid = ref.primaryStorageUuid" +
+                            " and ref.clusterUuid = :cuuid" +
+                            " and pri.type != :ptype", String.class)
+                            .param("cuuid", spec.getDestHost().getClusterUuid())
+                            .param("ptype", LocalStorageConstants.LOCAL_STORAGE_TYPE)
+                            .list().isEmpty();
+
+                    if(!isOnlyLocalStorage && (spec.getRequiredPrimaryStorageUuidForRootVolume() != null || spec.getRequiredPrimaryStorageUuidForDataVolume() != null)){
+                        return new LocalStorageDesignatedAllocateCapacityFlow();
+                    }else{
+                        return new LocalStorageDefaultAllocateCapacityFlow();
+                    }
                 }
             }
         } else if (spec.getCurrentVmOperation() == VmOperation.AttachVolume) {
@@ -887,12 +900,6 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         q.add(LocalStorageHostRefVO_.primaryStorageUuid, Op.EQ, msg.getPrimaryStorageUuid());
         if (!q.isExists()) {
             throw new OperationFailureException(argerr("the host[uuid:%s] doesn't belong to the local primary storage[uuid:%s]", hostUuid, msg.getPrimaryStorageUuid()));
-        }
-
-        if (Q.New(VolumeVO.class).eq(VolumeVO_.type, VolumeType.Data).eq(VolumeVO_.uuid, msg.getVolumeUuid()).isExists() && isThereOtherNonLocalStoragePrimaryStorageForTheHost(hostUuid, msg.getPrimaryStorageUuid())) {
-            throw new OperationFailureException(argerr("The cluster mounts multiple primary storage[%s(%s), other non-LocalStorage primary storage], primaryStorageUuidForDataVolume cannot be specified %s",
-                    volume.getUuid(), volume.getType(),
-                    LocalStorageConstants.LOCAL_STORAGE_TYPE));
         }
 
         InstantiateVolumeOnPrimaryStorageMsg imsg;
