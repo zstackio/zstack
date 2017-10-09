@@ -17,6 +17,7 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
+import org.zstack.header.volume.VolumeInventory;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -133,22 +134,26 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
                 }
             }
         } else if (VmOperation.Start.toString().equals(spec.getVmOperation())) {
-            final LocalStorageResourceRefVO ref = Q.New(LocalStorageResourceRefVO.class)
-                    .eq(LocalStorageResourceRefVO_.resourceUuid, spec.getVmInstance().getRootVolumeUuid())
-                    .find();
-            if (ref != null) {
-                candidates = CollectionUtils.transformToList(candidates, new Function<HostVO, HostVO>() {
-                    @Override
-                    public HostVO call(HostVO arg) {
-                        return arg.getUuid().equals(ref.getHostUuid()) ? arg : null;
-                    }
-                });
 
-                if (candidates.isEmpty()) {
-                    throw new OperationFailureException(errf.instantiateErrorCode(HostAllocatorError.NO_AVAILABLE_HOST,
-                            String.format("the vm[uuid: %s] using local primary storage can only be started on the host[uuid: %s], but the host is either not having enough CPU/memory or in" +
-                                    " the state[Enabled] or status[Connected] to start the vm", spec.getVmInstance().getUuid(), ref.getHostUuid())
-                    ));
+            for(VolumeInventory volume : spec.getVmInstance().getAllVolumes()){
+                final LocalStorageResourceRefVO ref = Q.New(LocalStorageResourceRefVO.class)
+                        .eq(LocalStorageResourceRefVO_.resourceUuid, volume.getUuid())
+                        .find();
+                if (ref != null) {
+                    candidates = CollectionUtils.transformToList(candidates, new Function<HostVO, HostVO>() {
+                        @Override
+                        public HostVO call(HostVO arg) {
+                            return arg.getUuid().equals(ref.getHostUuid()) ? arg : null;
+                        }
+                    });
+
+                    if (candidates.isEmpty()) {
+                        throw new OperationFailureException(errf.instantiateErrorCode(HostAllocatorError.NO_AVAILABLE_HOST,
+                                String.format("the vm[uuid: %s] using local primary storage can only be started on the host[uuid: %s], but the host is either not having enough CPU/memory or in" +
+                                        " the state[Enabled] or status[Connected] to start the vm", spec.getVmInstance().getUuid(), ref.getHostUuid())
+                        ));
+                    }
+                    break;
                 }
             }
         }
