@@ -50,7 +50,7 @@ public class DeleteVmGC extends EventBasedGarbageCollector {
         VmInstanceState vmstate = Q.New(VmInstanceVO.class).select(VmInstanceVO_.state)
                 .eq(VmInstanceVO_.uuid, inventory.getUuid()).findValue();
 
-        if (vmstate != null && vmstate != VmInstanceState.Destroyed) {
+        if (vmstate != null && (vmstate != VmInstanceState.Destroyed && vmstate != VmInstanceState.Destroying)) {
             // the vm has been recovered
             completion.cancel();
             return;
