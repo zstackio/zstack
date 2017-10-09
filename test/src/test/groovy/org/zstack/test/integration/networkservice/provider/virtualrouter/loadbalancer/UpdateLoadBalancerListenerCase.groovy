@@ -211,6 +211,7 @@ class UpdateLoadBalancerListenerCase extends SubCase {
         assert lbRes.error == null
         LoadBalancerInventory loadBalancerInventory = lbRes.value.inventory
 
+        String desc = "desc"
         CreateLoadBalancerListenerAction createLoadBalancerListenerAction = new CreateLoadBalancerListenerAction()
         createLoadBalancerListenerAction.loadBalancerUuid = loadBalancerInventory.uuid
         createLoadBalancerListenerAction.loadBalancerPort = 22
@@ -218,9 +219,11 @@ class UpdateLoadBalancerListenerCase extends SubCase {
         createLoadBalancerListenerAction.name = "ssh"
         createLoadBalancerListenerAction.protocol = "tcp"
         createLoadBalancerListenerAction.sessionId = adminSession()
+        createLoadBalancerListenerAction.description = desc
         CreateLoadBalancerListenerAction.Result lblRes = createLoadBalancerListenerAction.call()
         assert lblRes.error == null
         LoadBalancerListenerInventory loadBalancerListenerInventory = lblRes.value.inventory
+        assert desc == loadBalancerListenerInventory.description
 
         UpdateLoadBalancerListenerAction action = new UpdateLoadBalancerListenerAction()
         action.uuid = loadBalancerListenerInventory.uuid
