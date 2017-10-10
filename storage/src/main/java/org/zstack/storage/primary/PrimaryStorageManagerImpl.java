@@ -447,7 +447,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             @Override
             public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
                 long avail = cap.getAvailableCapacity() - size;
-                if (avail <= 0) {
+                if (avail < 0) {
                     logger.warn(String.format("[Primary Storage Allocation] reserved capacity on primary storage[uuid:%s] failed," +
                             " no available capacity on it", inv.getUuid()));
                     return null;
