@@ -87,6 +87,9 @@ public class VirtualRouterSyncDHCPOnStartFlow implements Flow {
         L3NetworkInventory l3inv = L3NetworkInventory.valueOf(l3vo);
 
 		List<DhcpInfo> infos = new ArrayList<DhcpInfo>(ts.size());
+		if (vr.getGuestNicByL3NetworkUuid(l3NetworkUuid) == null) {
+		    return infos;
+        }
 		for (Tuple t : ts) {
 			String vmUuid = t.get(0, String.class);
             String defaultL3Uuid = t.get(1, String.class);
@@ -98,7 +101,7 @@ public class VirtualRouterSyncDHCPOnStartFlow implements Flow {
 			info.setGateway(nic.getGateway());
 			info.setIp(nic.getIp());
 			info.setMac(nic.getMac());
-            info.setVrNicMac(vr.getGuestNic().getMac());
+            info.setVrNicMac(vr.getGuestNicByL3NetworkUuid(l3NetworkUuid).getMac());
 			info.setNetmask(nic.getNetmask());
             if (l3NetworkUuid.equals(defaultL3Uuid)) {
                 info.setDefaultL3Network(true);
@@ -114,7 +117,7 @@ public class VirtualRouterSyncDHCPOnStartFlow implements Flow {
             }
 
             if (hasSnatService(l3inv)) {
-                info.setDns(Arrays.asList(vr.getGuestNic().getIp()));
+                info.setDns(Arrays.asList(vr.getGuestNicByL3NetworkUuid(l3NetworkUuid).getIp()));
             } else {
                 info.setDns(getDns(l3NetworkUuid));
             }

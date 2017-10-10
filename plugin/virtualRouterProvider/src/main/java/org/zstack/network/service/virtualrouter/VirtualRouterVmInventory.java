@@ -19,6 +19,7 @@ import org.zstack.utils.function.Function;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 @Inventory(mappingVOClass = VirtualRouterVmVO.class, collectionValueOfMethod="valueOf2",
         parent = {@Parent(inventoryClass = ApplianceVmInventory.class, type = VirtualRouterConstant.VIRTUAL_ROUTER_VM_TYPE)})
@@ -87,6 +88,7 @@ public class VirtualRouterVmInventory extends ApplianceVmInventory {
         return null;
     }
 
+    @Deprecated
     public VmNicInventory getGuestNic() {
         if (getVmNics() == null) {
             return null;
@@ -99,6 +101,21 @@ public class VirtualRouterVmInventory extends ApplianceVmInventory {
         }
 
         return null;
+    }
+
+    public List<VmNicInventory> getGuestNics() {
+        if (getVmNics() == null) {
+            return null;
+        }
+        List<VmNicInventory> guestNics = new ArrayList<>();
+
+        for (VmNicInventory n : getVmNics()) {
+            if (VirtualRouterNicMetaData.isGuestNic(n)) {
+                guestNics.add(n);
+            }
+        }
+
+        return guestNics;
     }
 
     public VmNicInventory getGuestNicByL3NetworkUuid(String l3uuid) {

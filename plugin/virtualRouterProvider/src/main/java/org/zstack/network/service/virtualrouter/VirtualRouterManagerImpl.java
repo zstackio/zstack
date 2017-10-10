@@ -711,7 +711,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
     @Override
     public List<String> selectL3NetworksNeedingSpecificNetworkService(List<String> candidate, NetworkServiceType nsType) {
-        if (candidate.isEmpty()) {
+        if (candidate == null || candidate.isEmpty()) {
             return new ArrayList<>(0);
         }
 
@@ -727,8 +727,23 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
     @Override
     public boolean isL3NetworkNeedingNetworkServiceByVirtualRouter(String l3Uuid, String nsType) {
+        if (l3Uuid == null) {
+            return false;
+        }
         SimpleQuery<NetworkServiceL3NetworkRefVO> q = dbf.createQuery(NetworkServiceL3NetworkRefVO.class);
         q.add(NetworkServiceL3NetworkRefVO_.l3NetworkUuid, Op.EQ, l3Uuid);
+        q.add(NetworkServiceL3NetworkRefVO_.networkServiceType, Op.EQ, nsType);
+        // no need to specify provider type, L3 networks identified by candidates are served by virtual router or vyos
+        return q.isExists();
+    }
+
+    @Override
+    public boolean isL3NetworksNeedingNetworkServiceByVirtualRouter(List<String> l3Uuids, String nsType) {
+        if (l3Uuids == null || l3Uuids.isEmpty()) {
+            return false;
+        }
+        SimpleQuery<NetworkServiceL3NetworkRefVO> q = dbf.createQuery(NetworkServiceL3NetworkRefVO.class);
+        q.add(NetworkServiceL3NetworkRefVO_.l3NetworkUuid, Op.IN, l3Uuids);
         q.add(NetworkServiceL3NetworkRefVO_.networkServiceType, Op.EQ, nsType);
         // no need to specify provider type, L3 networks identified by candidates are served by virtual router or vyos
         return q.isExists();

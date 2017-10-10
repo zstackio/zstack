@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 
 /**
  */
@@ -93,17 +94,21 @@ public class VirtualRouterSyncEipOnStartFlow implements Flow {
     private List<EipTO> findEipOnThisRouter(final VirtualRouterVmInventory vr, Map<String, Object> data, boolean isNewCreated) {
         List<String> eipUuids;
         if (isNewCreated) {
-            final VmNicInventory guestNic = vr.getGuestNic();
+            final List<VmNicInventory> guestNics = vr.getGuestNics();
             final VmNicInventory publicNic = vr.getPublicNic();
+
+            if (guestNics == null || guestNics.isEmpty()) {
+                return new ArrayList<>();
+            }
 
             eipUuids = new Callable<List<String>>() {
                 @Override
                 @Transactional(readOnly = true)
                 public List<String> call() {
-                    String sql = "select eip.uuid from EipVO eip, VipVO vip, VmNicVO nic, VmInstanceVO vm where vm.uuid = nic.vmInstanceUuid and vm.state = :vmState and eip.vipUuid = vip.uuid and eip.vmNicUuid = nic.uuid and vip.l3NetworkUuid = :vipL3Uuid and nic.l3NetworkUuid = :guestL3Uuid";
+                    String sql = "select eip.uuid from EipVO eip, VipVO vip, VmNicVO nic, VmInstanceVO vm where vm.uuid = nic.vmInstanceUuid and vm.state = :vmState and eip.vipUuid = vip.uuid and eip.vmNicUuid = nic.uuid and vip.l3NetworkUuid = :vipL3Uuid and nic.l3NetworkUuid in (:guestL3Uuid)";
                     TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
                     q.setParameter("vipL3Uuid", publicNic.getL3NetworkUuid());
-                    q.setParameter("guestL3Uuid", guestNic.getL3NetworkUuid());
+                    q.setParameter("guestL3Uuid", guestNics.stream().map(n -> n.getL3NetworkUuid()).collect(Collectors.toList()));
                     q.setParameter("vmState", VmInstanceState.Running);
                     return q.getResultList();
                 }
@@ -137,8 +142,13 @@ public class VirtualRouterSyncEipOnStartFlow implements Flow {
 
     public void run(final FlowTrigger trigger, Map data) {
         final VirtualRouterVmInventory vr = (VirtualRouterVmInventory) data.get(VirtualRouterConstant.Param.VR.toString());
-        VmNicInventory guestNic = vr.getGuestNic();
-        if (!vrMgr.isL3NetworkNeedingNetworkServiceByVirtualRouter(guestNic.getL3NetworkUuid(), EipConstant.EIP_NETWORK_SERVICE_TYPE)) {
+        List<VmNicInventory> guestNics = vr.getGuestNics();
+        if (guestNics == null || guestNics.isEmpty()) {
+            trigger.next();
+            return;
+        }
+        List<String> l3Uuids = guestNics.stream().map(n -> n.getL3NetworkUuid()).collect(Collectors.toList());
+        if (!vrMgr.isL3NetworksNeedingNetworkServiceByVirtualRouter(l3Uuids, EipConstant.EIP_NETWORK_SERVICE_TYPE)) {
             trigger.next();
             return;
         }

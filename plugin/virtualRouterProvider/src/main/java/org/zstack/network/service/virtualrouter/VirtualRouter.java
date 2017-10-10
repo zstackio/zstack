@@ -21,9 +21,14 @@ import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.network.l3.L3Network;
+import org.zstack.header.network.l3.L3NetworkCategory;
+import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.network.l3.L3NetworkVO_;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.vm.*;
+import org.zstack.network.l3.L3NetworkSystemTags;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.PingCmd;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.PingRsp;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant.Param;
@@ -423,7 +428,13 @@ public class VirtualRouter extends ApplianceVmBase {
                 VirtualRouterCommands.ConfigureNicRsp rsp = re.toResponse(VirtualRouterCommands.ConfigureNicRsp.class);
                 if (rsp.isSuccess()) {
                     VmNicVO vo = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, nicInventory.getUuid()).find();
-                    vo.setMetaData(ADDITIONAL_PUBLIC_NIC_MASK.toString());
+                    L3NetworkVO l3NetworkVO = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, vo.getL3NetworkUuid()).find();
+
+                    if (l3NetworkVO.getCategory().equals(L3NetworkCategory.Private)) {
+                        vo.setMetaData(GUEST_NIC_MASK.toString());
+                    } else {
+                        vo.setMetaData(ADDITIONAL_PUBLIC_NIC_MASK.toString());
+                    }
                     dbf.updateAndRefresh(vo);
                     logger.debug(String.format("successfully add nic[%s] to virtual router vm[uuid:%s, ip:%s]",info, vr.getUuid(), vr.getManagementNic()
                             .getIp()));

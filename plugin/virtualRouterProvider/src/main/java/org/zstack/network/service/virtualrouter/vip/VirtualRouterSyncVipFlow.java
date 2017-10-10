@@ -33,6 +33,10 @@ public class VirtualRouterSyncVipFlow implements Flow {
     @Override
     public void run(final FlowTrigger chain, Map data) {
         final VirtualRouterVmInventory vr = (VirtualRouterVmInventory) data.get(VirtualRouterConstant.Param.VR.toString());
+        if (vr.getGuestL3Networks() == null || vr.getGuestL3Networks().isEmpty()) {
+            chain.next();
+            return;
+        }
         SimpleQuery<VipVO> q = dbf.createQuery(VipVO.class);
         q.add(VipVO_.peerL3NetworkUuid, Op.IN, vr.getGuestL3Networks());
         List<VipVO> vips = q.list();
