@@ -189,7 +189,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
     public static class GetDownloadProgressRsp extends AgentResponse {
         private boolean completed;
-        private long downloaded;
+        private int progress;
         private long size;
         private long actualSize;
         private String installPath;
@@ -202,12 +202,12 @@ public class CephBackupStorageBase extends BackupStorageBase {
             this.completed = completed;
         }
 
-        public long getDownloaded() {
-            return downloaded;
+        public int getProgress() {
+            return progress;
         }
 
-        public void setDownloaded(long downloaded) {
-            this.downloaded = downloaded;
+        public void setProgress(int progress) {
+            this.progress = progress;
         }
 
         public long getSize() {
@@ -624,7 +624,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
             @Override
             public void success(GetDownloadProgressRsp resp) {
                 r.setCompleted(resp.isCompleted());
-                r.setDownloaded(resp.getDownloaded());
+                r.setProgress(resp.getProgress());
                 r.setActualSize(resp.getActualSize());
                 r.setSize(resp.getSize());
                 r.setInstallPath(resp.getInstallPath());
