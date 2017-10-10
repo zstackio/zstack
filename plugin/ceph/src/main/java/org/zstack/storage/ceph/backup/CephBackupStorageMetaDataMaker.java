@@ -203,13 +203,6 @@ public class CephBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
 
     @Override
     public void preAddImage(ImageInventory img) {
-        final String uploadProtocol = "upload://";
-        if (img.getUrl().startsWith(uploadProtocol)) {
-            img.setUrl(String.format("%s%s/%s",
-                    uploadProtocol,
-                    img.getUuid(),
-                    img.getUrl().substring(uploadProtocol.length())));
-        }
     }
 
     @Override
