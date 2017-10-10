@@ -1536,9 +1536,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                         return true;
                     }
 
-                    long progress = dr.getActualSize() == 0 ? 0 : dr.getDownloaded() * 100 / dr.getActualSize();
-                    doReportProgress(imageUuid, "uploading image", progress * 8 / 10);
-
+                    doReportProgress(imageUuid, "uploading image", dr.getProgress());
                     if (ivo.getActualSize() == 0 && dr.getActualSize() != 0) {
                         ivo.setActualSize(dr.getActualSize());
                         dbf.updateAndRefresh(ivo);
