@@ -4,7 +4,7 @@ import org.zstack.header.message.MessageReply;
 
 public class GetImageDownloadProgressReply extends MessageReply {
     private boolean completed;
-    private long downloaded;
+    private int progress;
 
     private long size;
     private long actualSize;
@@ -18,12 +18,12 @@ public class GetImageDownloadProgressReply extends MessageReply {
         this.completed = completed;
     }
 
-    public long getDownloaded() {
-        return downloaded;
+    public int getProgress() {
+        return progress;
     }
 
-    public void setDownloaded(long downloaded) {
-        this.downloaded = downloaded;
+    public void setProgress(int progress) {
+        this.progress = progress;
     }
 
     public long getSize() {
