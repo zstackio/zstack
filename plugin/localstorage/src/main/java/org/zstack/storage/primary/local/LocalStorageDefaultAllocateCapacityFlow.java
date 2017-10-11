@@ -5,7 +5,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.allocator.HostAllocatorManager;
+import org.zstack.core.asyncbatch.AsyncLoop;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
@@ -13,6 +15,7 @@ import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.configuration.DiskOfferingInventory;
+import org.zstack.header.core.Completion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
@@ -37,6 +40,7 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -209,36 +213,52 @@ public class LocalStorageDefaultAllocateCapacityFlow implements Flow {
             }
         }
 
-        bus.send(msgs, new CloudBusListCallBack(trigger) {
+        new AsyncLoop<AllocatePrimaryStorageMsg>(trigger) {
             @Override
-            public void run(List<MessageReply> replies) {
-                for (int i = 0; i < replies.size(); i++) {
-                    MessageReply reply = replies.get(i);
-                    if (!reply.isSuccess()) {
-                        trigger.fail(reply.getError());
-                        return;
+            protected Collection<AllocatePrimaryStorageMsg> collectionForLoop() {
+                return msgs;
+            }
+
+            @Override
+            protected void run(AllocatePrimaryStorageMsg msg, Completion completion) {
+                bus.send(msg, new CloudBusCallBack(completion) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            completion.fail(reply.getError());
+                            return;
+                        }
+
+                        AllocatePrimaryStorageReply ar = reply.castReply();
+                        VolumeSpec vspec = new VolumeSpec();
+
+                        if (msg == rmsg) {
+                            vspec.setSize(ar.getSize());
+                            vspec.setPrimaryStorageInventory(ar.getPrimaryStorageInventory());
+                            vspec.setRoot(true);
+                        } else {
+                            vspec.setSize(ar.getSize());
+                            vspec.setPrimaryStorageInventory(ar.getPrimaryStorageInventory());
+                            vspec.setDiskOfferingUuid(msg.getDiskOfferingUuid());
+                            vspec.setRoot(false);
+                        }
+                        spec.getVolumeSpecs().add(vspec);
+
+                        completion.success();
                     }
+                });
+            }
 
-                    AllocatePrimaryStorageReply ar = reply.castReply();
-                    VolumeSpec vspec = new VolumeSpec();
-
-                    if (i == 0) {
-                        vspec.setSize(ar.getSize());
-                        vspec.setPrimaryStorageInventory(ar.getPrimaryStorageInventory());
-                        vspec.setRoot(true);
-                    } else {
-                        vspec.setSize(ar.getSize());
-                        vspec.setPrimaryStorageInventory(ar.getPrimaryStorageInventory());
-                        vspec.setDiskOfferingUuid(spec.getDataDiskOfferings().get(i - 1).getUuid());
-                        vspec.setRoot(false);
-                    }
-
-                    spec.getVolumeSpecs().add(vspec);
-                }
-
+            @Override
+            protected void done() {
                 trigger.next();
             }
-        });
+
+            @Override
+            protected void error(ErrorCode errorCode) {
+                trigger.fail(errorCode);
+            }
+        }.start();
     }
 
     private List<String> getLocalStorageInCluster(String clusterUuid) {
