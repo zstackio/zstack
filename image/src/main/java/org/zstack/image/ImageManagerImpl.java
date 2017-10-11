@@ -929,6 +929,10 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         bus.reply(msg, reply);
     }
 
+    private static boolean isUpload(final APIAddImageMsg msg) {
+        return msg.getUrl().startsWith("upload://");
+    }
+
     @Deferred
     private void handle(final APIAddImageMsg msg) {
         String imageType = msg.getType();
@@ -1025,7 +1029,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                     dbf.remove(ref);
                                 } else {
                                     DownloadImageReply re = reply.castReply();
-                                    if (msg.getUrl().startsWith("upload://")) {
+                                    if (isUpload(msg)) {
                                         trackUpload(ivo.getName(), ivo.getUuid(), ref.getBackupStorageUuid());
                                     } else {
                                         ref.setStatus(ImageStatus.Ready);
@@ -1050,8 +1054,13 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                         dbf.update(vo);
                                     }
 
-                                    logger.debug(String.format("successfully downloaded image[uuid:%s, name:%s] to backup storage[uuid:%s]",
-                                            inv.getUuid(), inv.getName(), dmsg.getBackupStorageUuid()));
+                                    if (isUpload(msg)) {
+                                        logger.debug(String.format("created upload request, image[uuid:%s, name:%s] to backup storage[uuid:%s]",
+                                                inv.getUuid(), inv.getName(), dmsg.getBackupStorageUuid()));
+                                    } else {
+                                        logger.debug(String.format("successfully downloaded image[uuid:%s, name:%s] to backup storage[uuid:%s]",
+                                                inv.getUuid(), inv.getName(), dmsg.getBackupStorageUuid()));
+                                    }
                                 }
 
                                 completion.done();
