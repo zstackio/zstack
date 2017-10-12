@@ -278,6 +278,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
     public static class DownloadRsp extends AgentResponse {
         long size;
         Long actualSize;
+        String uploadPath;
 
         public Long getActualSize() {
             return actualSize;
@@ -293,6 +294,14 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
         public void setSize(long size) {
             this.size = size;
+        }
+
+        public String getUploadPath() {
+            return uploadPath;
+        }
+
+        public void setUploadPath(String uploadPath) {
+            this.uploadPath = uploadPath;
         }
     }
 
@@ -771,7 +780,11 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
             @Override
             public void success(DownloadRsp ret) {
-                reply.setInstallPath(cmd.installPath);
+                if (cmd.getUrl().startsWith("upload://")) {
+                    reply.setInstallPath(ret.getUploadPath());
+                } else {
+                    reply.setInstallPath(cmd.installPath);
+                }
                 reply.setSize(ret.size);
 
                 // current ceph has no way to get the actual size
@@ -1328,7 +1341,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
     protected void handleLocalMessage(Message msg) throws URISyntaxException {
         if (msg instanceof BakeImageMetadataMsg) {
             handle((BakeImageMetadataMsg) msg);
-        } if (msg instanceof GetImageDownloadProgressMsg) {
+        } else if (msg instanceof GetImageDownloadProgressMsg) {
             handle((GetImageDownloadProgressMsg) msg);
         }
         else {
