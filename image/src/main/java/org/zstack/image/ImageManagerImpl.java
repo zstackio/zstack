@@ -1495,6 +1495,8 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
             private void markFailure(ErrorCode reason) {
                 N.New(ImageVO.class, imageUuid).error_("upload image [name: %s, uuid: %s] failed: %s",
                         name, imageUuid, reason.toString());
+
+                // Note, the handler of ImageDeletionMsg will deal with storage capacity.
                 ImageDeletionMsg msg = new ImageDeletionMsg();
                 msg.setImageUuid(imageUuid);
                 msg.setBackupStorageUuids(Collections.singletonList(bsUuid));
@@ -1518,17 +1520,17 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                     return true;
                 }
 
-                GetImageDownloadProgressMsg dmsg = new GetImageDownloadProgressMsg();
+                final GetImageDownloadProgressMsg dmsg = new GetImageDownloadProgressMsg();
                 dmsg.setBackupStorageUuid(bsUuid);
                 dmsg.setImageUuid(imageUuid);
                 bus.makeTargetServiceIdByResourceUuid(dmsg, BackupStorageConstant.SERVICE_ID, bsUuid);
 
-                MessageReply reply = bus.call(dmsg);
+                final MessageReply reply = bus.call(dmsg);
                 if (reply.isSuccess()) {
                     // reset the error counter
                     numError = 0;
 
-                    GetImageDownloadProgressReply dr = reply.castReply();
+                    final GetImageDownloadProgressReply dr = reply.castReply();
 
                     if (dr.isCompleted()) {
                         doReportProgress(imageUuid, "adding to image store", 100);
@@ -1540,6 +1542,16 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                     if (ivo.getActualSize() == 0 && dr.getActualSize() != 0) {
                         ivo.setActualSize(dr.getActualSize());
                         dbf.updateAndRefresh(ivo);
+
+                        AllocateBackupStorageMsg amsg = new AllocateBackupStorageMsg();
+                        amsg.setBackupStorageUuid(bsUuid);
+                        amsg.setSize(dr.getActualSize());
+                        bus.makeLocalServiceId(amsg, BackupStorageConstant.SERVICE_ID);
+                        MessageReply areply = bus.call(amsg);
+                        if (!areply.isSuccess()) {
+                            markFailure(areply.getError());
+                            return true;
+                        }
                     }
 
                     return false;
