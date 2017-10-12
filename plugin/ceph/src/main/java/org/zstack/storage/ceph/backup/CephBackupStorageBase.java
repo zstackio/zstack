@@ -1328,6 +1328,8 @@ public class CephBackupStorageBase extends BackupStorageBase {
     protected void handleLocalMessage(Message msg) throws URISyntaxException {
         if (msg instanceof BakeImageMetadataMsg) {
             handle((BakeImageMetadataMsg) msg);
+        } if (msg instanceof GetImageDownloadProgressMsg) {
+            handle((GetImageDownloadProgressMsg) msg);
         }
         else {
             super.handleLocalMessage(msg);
