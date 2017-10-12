@@ -2,10 +2,7 @@
 package org.zstack.test.integration.storage.backup.ceph.imagebackupstoragerefvo
 
 import org.zstack.core.db.Q
-import org.zstack.header.image.ImageBackupStorageRefVO
-import org.zstack.header.image.ImageBackupStorageRefVO_
-import org.zstack.header.image.ImageConstant
-import org.zstack.header.image.ImageVO
+import org.zstack.header.image.*
 import org.zstack.sdk.BackupStorageInventory
 import org.zstack.sdk.ImageInventory
 import org.zstack.storage.ceph.backup.CephBackupStorageBase
