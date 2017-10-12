@@ -2190,7 +2190,7 @@
   {
     "raw": "IP[%s] is not available on the L3 network[uuid:%s]",
     "en_US": "IP[{0}] is not available on the L3 network[uuid:{1}]",
-    "zh_CN": "在L3网络[uuid:{1}]中，IP[{0}]不可达",
+    "zh_CN": "在L3网络[uuid:{1}]中，IP[{0}]不可用",
     "arguments": [
       "ip",
       "l3Uuid"
