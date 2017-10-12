@@ -213,9 +213,12 @@ public class LocalStorageBase extends PrimaryStorageBase {
                                 err(SysErrors.INTERNAL,"The clusterUuid of vm cannot be null when migrate the vm"));
                     }
 
-                    for(int i = 0; i < hosts.size(); i++){
+
+                    Iterator<HostVO> it = hosts.iterator();
+                    while(it.hasNext()){
+                        HostVO hostVO = it.next();
                         String destClusterUuid = Q.New(HostVO.class).select(HostVO_.clusterUuid)
-                                .eq(HostVO_.uuid,hosts.get(i).getUuid()).findValue();
+                                .eq(HostVO_.uuid, hostVO.getUuid()).findValue();
                         if(!originClusterUuid.equals(destClusterUuid)){
                             List<String> originL2NetworkList  = sql("select l2NetworkUuid from L3NetworkVO" +
                                     " where uuid in(select l3NetworkUuid from VmNicVO where vmInstanceUuid = :vmUuid)")
@@ -227,8 +230,8 @@ public class LocalStorageBase extends PrimaryStorageBase {
                             for(String l2:originL2NetworkList){
                                 if(!l2NetworkList.contains(l2)){
                                     //remove inappropriate host from list
-                                    hosts.remove(i);
-                                    return;
+                                    it.remove();
+                                    break;
                                 }
                             }
                         }
