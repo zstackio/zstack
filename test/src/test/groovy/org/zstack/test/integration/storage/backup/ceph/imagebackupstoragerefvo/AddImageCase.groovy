@@ -124,7 +124,7 @@ class AddImageCase extends SubCase{
     }
 
     void testUploadImage(){
-        def originSize = 1024
+        def originSize = 0
         def updatedSize = 2048
         env.simulator(CephBackupStorageBase.DOWNLOAD_IMAGE_PATH) {
             def rsp = new CephBackupStorageBase.DownloadRsp()
@@ -157,7 +157,12 @@ class AddImageCase extends SubCase{
             ImageVO image = dbFindByUuid(inv.uuid, ImageVO.class)
             assert image != null
             assert image.size == updatedSize
+            assert image.status == ImageStatus.Ready
         }
+
+        BackupStorageInventory bs_now = env.inventoryByName("ceph-bk")
+        assert bs.totalCapacity == bs_now.totalCapacity
+        assert bs.availableCapacity == bs_now.availableCapacity + inv.actualSize
     }
 
     @Override
