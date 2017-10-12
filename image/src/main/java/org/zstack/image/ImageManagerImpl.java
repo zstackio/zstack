@@ -1473,7 +1473,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
     private void trackUpload(String name, String imageUuid, String bsUuid) {
         final int maxNumOfFailure = 3;
-        final int maxIdleSecond = 600;
+        final int maxIdleSecond = 30;
 
         thdf.submitCancelablePeriodicTask(new CancelablePeriodicTask() {
             private long numError = 0;
