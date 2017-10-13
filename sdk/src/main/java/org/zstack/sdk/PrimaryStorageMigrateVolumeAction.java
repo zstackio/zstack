@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class PrimaryStorageMigrateDataVolumeAction extends AbstractAction {
+public class PrimaryStorageMigrateVolumeAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public PrimaryStorageMigrateDataVolumeResult value;
+        public PrimaryStorageMigrateVolumeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -49,8 +49,8 @@ public class PrimaryStorageMigrateDataVolumeAction extends AbstractAction {
             return ret;
         }
         
-        PrimaryStorageMigrateDataVolumeResult value = res.getResult(PrimaryStorageMigrateDataVolumeResult.class);
-        ret.value = value == null ? new PrimaryStorageMigrateDataVolumeResult() : value; 
+        PrimaryStorageMigrateVolumeResult value = res.getResult(PrimaryStorageMigrateVolumeResult.class);
+        ret.value = value == null ? new PrimaryStorageMigrateVolumeResult() : value; 
 
         return ret;
     }
@@ -76,10 +76,10 @@ public class PrimaryStorageMigrateDataVolumeAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/primary-storage/data-volumes/{volumeUuid}/actions";
+        info.path = "/primary-storage/volumes/{volumeUuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "primaryStorageMigrateDataVolume";
+        info.parameterName = "primaryStorageMigrateVolume";
         return info;
     }
 

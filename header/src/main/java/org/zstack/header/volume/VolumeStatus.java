@@ -10,5 +10,6 @@ public enum VolumeStatus {
     Creating,
     Ready,
     NotInstantiated,
-    Deleted
+    Deleted,
+    Migrating
 }

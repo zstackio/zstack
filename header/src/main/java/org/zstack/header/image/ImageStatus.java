@@ -6,4 +6,5 @@ public enum ImageStatus {
     Ready,
     Error,
     Deleted,
+    Migrating,
 }
