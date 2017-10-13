@@ -714,7 +714,8 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         candidates = CollectionUtils.transformToList(candidates, new Function<VmInstanceVO, VmInstanceVO>() {
             @Override
             public VmInstanceVO call(VmInstanceVO arg) {
-                return (hostUuid.equals(arg.getHostUuid()) || hostUuid.equals(arg.getLastHostUuid())) ? arg : null;
+                String vmHostUuid = arg.getHostUuid() != null ? arg.getHostUuid() : arg.getLastHostUuid();
+                return hostUuid.equals(vmHostUuid) ? arg : null;
             }
         });
 
