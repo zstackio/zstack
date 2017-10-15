@@ -691,21 +691,30 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
             }
         });
 
+        // exclude: vm root volume is local and root volume is not on target host
         sql = "select ref.resourceUuid" +
                 " from LocalStorageResourceRefVO ref" +
-                " where ref.hostUuid = :huuid" +
+                " where ref.hostUuid != :huuid" +
                 " and ref.resourceUuid in (:rootVolumeUuids)" +
                 " and ref.resourceType = :rtype";
         q = dbf.getEntityManager().createQuery(sql, String.class);
         q.setParameter("huuid", hostUuid);
         q.setParameter("rootVolumeUuids", vmRootVolumeUuids);
         q.setParameter("rtype", VolumeVO.class.getSimpleName());
-        final List<String> toInclude = q.getResultList();
+        final List<String> toExclude = q.getResultList();
 
         candidates = CollectionUtils.transformToList(candidates, new Function<VmInstanceVO, VmInstanceVO>() {
             @Override
             public VmInstanceVO call(VmInstanceVO arg) {
-                return toInclude.contains(arg.getRootVolumeUuid()) ? arg : null;
+                return toExclude.contains(arg.getRootVolumeUuid()) ? null : arg;
+            }
+        });
+
+        // exclude: vm hostUuid not equals target volume hostUuid
+        candidates = CollectionUtils.transformToList(candidates, new Function<VmInstanceVO, VmInstanceVO>() {
+            @Override
+            public VmInstanceVO call(VmInstanceVO arg) {
+                return arg.getHostUuid() != null && !hostUuid.equals(arg.getHostUuid()) ? null : arg;
             }
         });
 
