@@ -3,7 +3,6 @@ package org.zstack.image;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
@@ -11,12 +10,14 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SQL;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.notification.N;
+import org.zstack.core.thread.ChainTask;
+import org.zstack.core.thread.SyncTaskChain;
+import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
@@ -26,17 +27,12 @@ import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
-import org.zstack.header.identity.AccountResourceRefVO;
-import org.zstack.header.identity.AccountResourceRefVO_;
 import org.zstack.header.identity.SharedResourceVO;
 import org.zstack.header.identity.SharedResourceVO_;
 import org.zstack.header.image.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageDeletionPolicyManager.ImageDeletionPolicy;
-import org.zstack.header.message.APIDeleteMessage;
-import org.zstack.header.message.APIMessage;
-import org.zstack.header.message.Message;
-import org.zstack.header.message.MessageReply;
+import org.zstack.header.message.*;
 import org.zstack.header.storage.backup.*;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
@@ -44,9 +40,7 @@ import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
-import java.sql.Timestamp;
 import java.util.*;
-import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.argerr;
@@ -62,6 +56,9 @@ import static org.zstack.core.Platform.operr;
 public class ImageBase implements Image {
     private static final CLogger logger = Utils.getLogger(ImageBase.class);
 
+    protected String syncThreadId;
+    @Autowired
+    private ThreadFacade thdf;
     @Autowired
     protected CloudBus bus;
     @Autowired
@@ -79,6 +76,7 @@ public class ImageBase implements Image {
 
     public ImageBase(ImageVO vo) {
         self = vo;
+        syncThreadId = String.format("image-%s", self.getUuid());
     }
 
     @Override
@@ -110,6 +108,8 @@ public class ImageBase implements Image {
             handle((ExpungeImageMsg) msg);
         } else if (msg instanceof SyncImageSizeMsg) {
             handle((SyncImageSizeMsg) msg);
+        } else if (msg instanceof OverlayMessage) {
+            handle((OverlayMessage) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -404,6 +404,41 @@ public class ImageBase implements Image {
                 bus.reply(msg, reply);
             }
         }).start();
+    }
+
+
+    private void handle(OverlayMessage msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadId;
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                doOverlayMessage(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return "overlay-message";
+            }
+        });
+    }
+
+    private void doOverlayMessage(OverlayMessage msg, NoErrorCompletion noErrorCompletion) {
+        bus.send(msg.getMessage(), new CloudBusCallBack(msg, noErrorCompletion) {
+            @Override
+            public void run(MessageReply reply) {
+                bus.reply(msg, reply);
+                noErrorCompletion.done();
+            }
+        });
     }
 
     private void handleApiMessage(APIMessage msg) {
