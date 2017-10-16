@@ -15,9 +15,9 @@ import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import static org.zstack.core.Platform.operr;
-
 import javax.persistence.LockModeType;
+
+import static org.zstack.core.Platform.operr;
 
 /**
  * Created by xing5 on 2016/4/28.
@@ -94,7 +94,7 @@ public class BackupStorageCapacityUpdater {
     }
 
 
-    private void logDeletedPrimaryStorage() {
+    private void logDeletedBackupStorage() {
         logger.warn(String.format("[Backup Storage Capacity] unable to update capacity for the backup storage[uuid:%s]. It may have been deleted, cannot find it in database",
                 backupStorageUuid));
     }
@@ -102,13 +102,13 @@ public class BackupStorageCapacityUpdater {
     @Transactional
     private boolean _increaseAvailableCapacity(long size) {
         if (!lockCapacity()) {
-            logDeletedPrimaryStorage();
+            logDeletedBackupStorage();
             return false;
         }
 
         long n = capacityVO.getAvailableCapacity() + size;
         if (n > capacityVO.getTotalCapacity()) {
-            throw new CloudRuntimeException(String.format("invalid primary storage[uuid:%s] capacity, available capacity[%s] > total capacity[%s]",
+            throw new CloudRuntimeException(String.format("invalid backup storage[uuid:%s] capacity, available capacity[%s] > total capacity[%s]",
                     capacityVO.getUuid(), n, capacityVO.getTotalCapacity()));
         }
 
@@ -128,7 +128,7 @@ public class BackupStorageCapacityUpdater {
     @Transactional
     private boolean _reserveCapacity(long size, boolean exceptionOnFailure) {
         if (!lockCapacity()) {
-            logDeletedPrimaryStorage();
+            logDeletedBackupStorage();
             return false;
         }
 
@@ -153,7 +153,7 @@ public class BackupStorageCapacityUpdater {
     @Transactional
     private boolean _decreaseAvailableCapacity(long size) {
         if (!lockCapacity()) {
-            logDeletedPrimaryStorage();
+            logDeletedBackupStorage();
             return false;
         }
 
@@ -171,7 +171,7 @@ public class BackupStorageCapacityUpdater {
     @Transactional
     private boolean _update(Long total, Long avail) {
         if (!lockCapacity()) {
-            logDeletedPrimaryStorage();
+            logDeletedBackupStorage();
             return false;
         }
 
@@ -195,7 +195,7 @@ public class BackupStorageCapacityUpdater {
     @Transactional
     private boolean _run(BackupStorageCapacityUpdaterRunnable runnable) {
         if (!lockCapacity()) {
-            logDeletedPrimaryStorage();
+            logDeletedBackupStorage();
             return false;
         }
 
