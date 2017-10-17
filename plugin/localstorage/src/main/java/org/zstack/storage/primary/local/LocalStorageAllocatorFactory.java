@@ -22,7 +22,6 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
-
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.HashSet;
@@ -191,6 +190,11 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
                 allocatorType = LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY;
             }
         } else if (msg.getRequiredHostUuid() != null) {
+
+            if(msg.getAllocationStrategy() != null && !LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY.equals(msg.getAllocationStrategy())){
+                return null;
+            }
+
             allocatorType = new Callable<String>() {
                 @Override
                 @Transactional(readOnly = true)
@@ -214,6 +218,11 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
         }
 
         return allocatorType;
+    }
+
+    @Override
+    public String getAllocatorStrategy() {
+        return LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY;
     }
 
     @Override

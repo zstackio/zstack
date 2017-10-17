@@ -7,7 +7,7 @@ import org.zstack.header.storage.primary.*;
 import java.util.List;
 
 public class DefaultPrimaryStorageAllocatorFactory implements PrimaryStorageAllocatorStrategyFactory, Component,
-        PrimaryStorageAllocatorFlowNameSetter {
+        PrimaryStorageAllocatorFlowNameSetter, PrimaryStorageAllocatorStrategyExtensionPoint {
     private static final PrimaryStorageAllocatorStrategyType type = new PrimaryStorageAllocatorStrategyType(
             PrimaryStorageConstant.DEFAULT_PRIMARY_STORAGE_ALLOCATION_STRATEGY_TYPE);
     private DefaultPrimaryStorageAllocatorStrategy strategy;
@@ -43,5 +43,18 @@ public class DefaultPrimaryStorageAllocatorFactory implements PrimaryStorageAllo
     @Override
     public boolean stop() {
         return true;
+    }
+
+    @Override
+    public String getPrimaryStorageAllocatorStrategyName(AllocatePrimaryStorageMsg msg) {
+        if (PrimaryStorageConstant.DEFAULT_PRIMARY_STORAGE_ALLOCATION_STRATEGY_TYPE.equals(msg.getAllocationStrategy())) {
+            return PrimaryStorageConstant.DEFAULT_PRIMARY_STORAGE_ALLOCATION_STRATEGY_TYPE;
+        }
+        return null;
+    }
+
+    @Override
+    public String getAllocatorStrategy() {
+        return PrimaryStorageConstant.DEFAULT_PRIMARY_STORAGE_ALLOCATION_STRATEGY_TYPE;
     }
 }

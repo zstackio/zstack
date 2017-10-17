@@ -355,9 +355,19 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         }
     }
 
+    /**
+     * Supported allocation strategy：
+     *      DefaultPrimaryStorageAllocationStrategy (only work for non-local primary storage)
+     *      LocalPrimaryStorageStrategy (only work for local primary storage)
+     *
+     * Note：
+     *      If the allocation strategy is not specified
+     *          If the cluster is mounted with local storage, the default is LocalPrimaryStorageStrategy。
+     *          Otherwise, it is DefaultPrimaryStorageAllocationStrategy
+     */
     private void handle(AllocatePrimaryStorageMsg msg) {
         AllocatePrimaryStorageReply reply = new AllocatePrimaryStorageReply(null);
-        //
+
         String allocatorStrategyType = null;
         for (PrimaryStorageAllocatorStrategyExtensionPoint ext : pluginRgty.getExtensionList(PrimaryStorageAllocatorStrategyExtensionPoint.class)) {
             allocatorStrategyType = ext.getPrimaryStorageAllocatorStrategyName(msg);
