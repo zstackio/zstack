@@ -9,6 +9,7 @@ import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.cloudbus.ReplyMessagePreSendingExtensionPoint;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -27,8 +28,7 @@ import org.zstack.header.quota.QuotaConstant;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
 import org.zstack.header.storage.snapshot.*;
-import org.zstack.header.vm.AfterReimageVmInstanceExtensionPoint;
-import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.*;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
@@ -230,7 +230,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
             q.setParameter("chainUuid", chain.getUuid());
             VolumeSnapshotVO latest = q.getSingleResult();
 
-            if (VolumeSnapshotGlobalConfig.MAX_INCREMENTAL_SNAPSHOT_NUM.value(Integer.class) == latest.getDistance()) {
+            if (getMaxIncrementalSnapshotNum(vo.getVolumeUuid()) == latest.getDistance()) {
                 chain.setCurrent(false);
                 dbf.getEntityManager().merge(chain);
                 return newChain(vo, true);
@@ -250,6 +250,19 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
             struct.setCurrent(VolumeSnapshotInventory.valueOf(vo));
             return struct;
         }
+    }
+
+    private Integer getMaxIncrementalSnapshotNum(String volumeUuid) {
+        Integer result = null;
+        String vmUuid = Q.New(VolumeVO.class).select(VolumeVO_.vmInstanceUuid).eq(VolumeVO_.uuid, volumeUuid).findValue();
+        if (vmUuid != null) {
+            GetVmSnapshotMaxNumMsg smsg = new GetVmSnapshotMaxNumMsg();
+            smsg.setVmInstanceUuid(vmUuid);
+            bus.makeTargetServiceIdByResourceUuid(smsg, VmInstanceConstant.SERVICE_ID, vmUuid);
+            GetVmSnapshotMaxNumReply r = (GetVmSnapshotMaxNumReply)bus.call(smsg);
+            result = r.getMaxNum();
+        }
+        return result != null ? result : VolumeSnapshotGlobalConfig.MAX_INCREMENTAL_SNAPSHOT_NUM.value(Integer.class);
     }
 
     @Transactional
