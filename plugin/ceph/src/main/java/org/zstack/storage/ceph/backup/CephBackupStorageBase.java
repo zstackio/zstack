@@ -495,6 +495,84 @@ public class CephBackupStorageBase extends BackupStorageBase {
         }
     }
 
+    public static class CephToCephMigrateImageCmd extends AgentCommand {
+        String imageUuid;
+        long imageSize;
+        String srcInstallPath;
+        String dstInstallPath;
+        String dstMonHostname;
+        String dstMonSshUsername;
+        String dstMonSshPassword;
+        int dstMonSshPort;
+
+        public String getImageUuid() {
+            return imageUuid;
+        }
+
+        public void setImageUuid(String imageUuid) {
+            this.imageUuid = imageUuid;
+        }
+
+        public long getImageSize() {
+            return imageSize;
+        }
+
+        public void setImageSize(long imageSize) {
+            this.imageSize = imageSize;
+        }
+
+        public String getSrcInstallPath() {
+            return srcInstallPath;
+        }
+
+        public void setSrcInstallPath(String srcInstallPath) {
+            this.srcInstallPath = srcInstallPath;
+        }
+
+        public String getDstInstallPath() {
+            return dstInstallPath;
+        }
+
+        public void setDstInstallPath(String dstInstallPath) {
+            this.dstInstallPath = dstInstallPath;
+        }
+
+        public String getDstMonHostname() {
+            return dstMonHostname;
+        }
+
+        public void setDstMonHostname(String dstMonHostname) {
+            this.dstMonHostname = dstMonHostname;
+        }
+
+        public String getDstMonSshUsername() {
+            return dstMonSshUsername;
+        }
+
+        public void setDstMonSshUsername(String dstMonSshUsername) {
+            this.dstMonSshUsername = dstMonSshUsername;
+        }
+
+        public String getDstMonSshPassword() {
+            return dstMonSshPassword;
+        }
+
+        public void setDstMonSshPassword(String dstMonSshPassword) {
+            this.dstMonSshPassword = dstMonSshPassword;
+        }
+
+        public int getDstMonSshPort() {
+            return dstMonSshPort;
+        }
+
+        public void setDstMonSshPort(int dstMonSshPort) {
+            this.dstMonSshPort = dstMonSshPort;
+        }
+    }
+
+    // common response of storage migration
+    public static class StorageMigrationRsp extends AgentResponse {
+    }
 
     public static final String INIT_PATH = "/ceph/backupstorage/init";
     public static final String DOWNLOAD_IMAGE_PATH = "/ceph/backupstorage/image/download";
@@ -509,6 +587,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
     public static final String DELETE_IMAGES_METADATA = "/ceph/backupstorage/deleteimagesmetadata";
     public static final String CHECK_POOL_PATH = "/ceph/backupstorage/checkpool";
     public static final String GET_LOCAL_FILE_SIZE = "/ceph/backupstorage/getlocalfilesize";
+    public static final String CEPH_TO_CEPH_MIGRATE_IMAGE_PATH = "/ceph/backupstorage/image/migrate";
 
     protected String makeImageInstallPath(String imageUuid) {
         return String.format("ceph://%s/%s", getSelf().getPoolName(), imageUuid);
@@ -755,6 +834,31 @@ public class CephBackupStorageBase extends BackupStorageBase {
         });
     }
 
+    private void handle(CephToCephMigrateImageMsg msg) {
+        final CephToCephMigrateImageCmd cmd = new CephToCephMigrateImageCmd();
+        cmd.setImageUuid(msg.getImageUuid());
+        cmd.setImageSize(msg.getImageSize());
+        cmd.setSrcInstallPath(msg.getSrcInstallPath());
+        cmd.setDstInstallPath(msg.getDstInstallPath());
+        cmd.setDstMonHostname(msg.getDstMonHostname());
+        cmd.setDstMonSshUsername(msg.getDstMonSshUsername());
+        cmd.setDstMonSshPassword(msg.getDstMonSshPassword());
+        cmd.setDstMonSshPort(msg.getDstMonSshPort());
+
+        final CephToCephMigrateImageReply reply = new CephToCephMigrateImageReply();
+        httpCall(CEPH_TO_CEPH_MIGRATE_IMAGE_PATH, cmd, StorageMigrationRsp.class, new ReturnValueCompletion<StorageMigrationRsp>(msg) {
+            @Override
+            public void success(StorageMigrationRsp returnValue) {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
 
     @Override
     protected void handle(final DownloadImageMsg msg) {
@@ -1343,6 +1447,8 @@ public class CephBackupStorageBase extends BackupStorageBase {
             handle((BakeImageMetadataMsg) msg);
         } else if (msg instanceof GetImageDownloadProgressMsg) {
             handle((GetImageDownloadProgressMsg) msg);
+        } else if (msg instanceof CephToCephMigrateImageMsg) {
+            handle((CephToCephMigrateImageMsg) msg);
         }
         else {
             super.handleLocalMessage(msg);

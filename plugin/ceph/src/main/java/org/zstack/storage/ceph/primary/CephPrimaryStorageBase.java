@@ -701,6 +701,228 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     }
 
+    public static class CephToCephMigrateVolumeCmd extends AgentCommand {
+        String volumeUuid;
+        long volumeSize;
+        String srcInstallPath;
+        String dstInstallPath;
+        String dstMonHostname;
+        String dstMonSshUsername;
+        String dstMonSshPassword;
+        int dstMonSshPort;
+
+        public String getVolumeUuid() {
+            return volumeUuid;
+        }
+
+        public void setVolumeUuid(String volumeUuid) {
+            this.volumeUuid = volumeUuid;
+        }
+
+        public long getVolumeSize() {
+            return volumeSize;
+        }
+
+        public void setVolumeSize(long volumeSize) {
+            this.volumeSize = volumeSize;
+        }
+
+        public String getSrcInstallPath() {
+            return srcInstallPath;
+        }
+
+        public void setSrcInstallPath(String srcInstallPath) {
+            this.srcInstallPath = srcInstallPath;
+        }
+
+        public String getDstInstallPath() {
+            return dstInstallPath;
+        }
+
+        public void setDstInstallPath(String dstInstallPath) {
+            this.dstInstallPath = dstInstallPath;
+        }
+
+        public String getDstMonHostname() {
+            return dstMonHostname;
+        }
+
+        public void setDstMonHostname(String dstMonHostname) {
+            this.dstMonHostname = dstMonHostname;
+        }
+
+        public String getDstMonSshUsername() {
+            return dstMonSshUsername;
+        }
+
+        public void setDstMonSshUsername(String dstMonSshUsername) {
+            this.dstMonSshUsername = dstMonSshUsername;
+        }
+
+        public String getDstMonSshPassword() {
+            return dstMonSshPassword;
+        }
+
+        public void setDstMonSshPassword(String dstMonSshPassword) {
+            this.dstMonSshPassword = dstMonSshPassword;
+        }
+
+        public int getDstMonSshPort() {
+            return dstMonSshPort;
+        }
+
+        public void setDstMonSshPort(int dstMonSshPort) {
+            this.dstMonSshPort = dstMonSshPort;
+        }
+    }
+
+    public static class CephToCephMigrateVolumeSnapshotCmd extends AgentCommand {
+        String parentUuid;
+        String snapshotUuid;
+        long snapshotSize;
+        String srcSnapshotPath;
+        String dstInstallPath;
+        String dstMonHostname;
+        String dstMonSshUsername;
+        String dstMonSshPassword;
+        int dstMonSshPort;
+
+        public String getParentUuid() {
+            return parentUuid;
+        }
+
+        public void setParentUuid(String parentUuid) {
+            this.parentUuid = parentUuid;
+        }
+
+        public String getSnapshotUuid() {
+            return snapshotUuid;
+        }
+
+        public void setSnapshotUuid(String snapshotUuid) {
+            this.snapshotUuid = snapshotUuid;
+        }
+
+        public long getSnapshotSize() {
+            return snapshotSize;
+        }
+
+        public void setSnapshotSize(long snapshotSize) {
+            this.snapshotSize = snapshotSize;
+        }
+
+        public String getSrcSnapshotPath() {
+            return srcSnapshotPath;
+        }
+
+        public void setSrcSnapshotPath(String srcSnapshotPath) {
+            this.srcSnapshotPath = srcSnapshotPath;
+        }
+
+        public String getDstInstallPath() {
+            return dstInstallPath;
+        }
+
+        public void setDstInstallPath(String dstInstallPath) {
+            this.dstInstallPath = dstInstallPath;
+        }
+
+        public String getDstMonHostname() {
+            return dstMonHostname;
+        }
+
+        public void setDstMonHostname(String dstMonHostname) {
+            this.dstMonHostname = dstMonHostname;
+        }
+
+        public String getDstMonSshUsername() {
+            return dstMonSshUsername;
+        }
+
+        public void setDstMonSshUsername(String dstMonSshUsername) {
+            this.dstMonSshUsername = dstMonSshUsername;
+        }
+
+        public String getDstMonSshPassword() {
+            return dstMonSshPassword;
+        }
+
+        public void setDstMonSshPassword(String dstMonSshPassword) {
+            this.dstMonSshPassword = dstMonSshPassword;
+        }
+
+        public int getDstMonSshPort() {
+            return dstMonSshPort;
+        }
+
+        public void setDstMonSshPort(int dstMonSshPort) {
+            this.dstMonSshPort = dstMonSshPort;
+        }
+    }
+
+    // common response of storage migration
+    public static class StorageMigrationRsp extends AgentResponse {
+    }
+
+    public static class GetVolumeSnapInfosCmd extends AgentCommand {
+        private String volumePath;
+
+        public String getVolumePath() {
+            return volumePath;
+        }
+
+        public void setVolumePath(String volumePath) {
+            this.volumePath = volumePath;
+        }
+    }
+
+    public static class GetVolumeSnapInfosRsp extends AgentResponse {
+        private List<SnapInfo> snapInfos;
+
+        public List<SnapInfo> getSnapInfos() {
+            return snapInfos;
+        }
+
+        public void setSnapInfos(List<SnapInfo> snapInfos) {
+            this.snapInfos = snapInfos;
+        }
+    }
+
+    public static class SnapInfo implements Comparable<SnapInfo> {
+        long id;
+        String name;
+        long size;
+
+        public long getId() {
+            return id;
+        }
+
+        public void setId(long id) {
+            this.id = id;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public long getSize() {
+            return size;
+        }
+
+        public void setSize(long size) {
+            this.size = size;
+        }
+
+        @Override
+        public int compareTo(SnapInfo snapInfo) {
+            return Long.valueOf(this.getId()).compareTo(snapInfo.getId());
+        }
+    }
+
     public static final String INIT_PATH = "/ceph/primarystorage/init";
     public static final String CREATE_VOLUME_PATH = "/ceph/primarystorage/volume/createempty";
     public static final String DELETE_PATH = "/ceph/primarystorage/delete";
@@ -725,6 +947,9 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static final String ADD_POOL_PATH = "/ceph/primarystorage/addpool";
     public static final String CHECK_POOL_PATH = "/ceph/primarystorage/checkpool";
     public static final String CHECK_BITS_PATH = "/ceph/primarystorage/snapshot/checkbits";
+    public static final String CEPH_TO_CEPH_MIGRATE_VOLUME_PATH = "/ceph/primarystorage/volume/migrate";
+    public static final String CEPH_TO_CEPH_MIGRATE_VOLUME_SNAPSHOT_PATH = "/ceph/primarystorage/volume/snapshot/migrate";
+    public static final String GET_VOLUME_SNAPINFOS_PATH = "/ceph/primarystorage/volume/getsnapinfos";
 
     private final Map<String, BackupStorageMediator> backupStorageMediators = new HashMap<String, BackupStorageMediator>();
 
@@ -2689,6 +2914,12 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             handle((DeleteImageCacheOnPrimaryStorageMsg) msg);
         } else if (msg instanceof PurgeSnapshotOnPrimaryStorageMsg) {
             handle((PurgeSnapshotOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof CephToCephMigrateVolumeMsg) {
+            handle((CephToCephMigrateVolumeMsg) msg);
+        } else if (msg instanceof CephToCephMigrateVolumeSnapshotMsg) {
+            handle((CephToCephMigrateVolumeSnapshotMsg) msg);
+        } else if (msg instanceof GetVolumeSnapshotInfoMsg) {
+            handle((GetVolumeSnapshotInfoMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -3250,5 +3481,78 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             }
         }.execute();
         dbf.removeCollection(getSelf().getMons(), CephPrimaryStorageMonVO.class);
+    }
+
+    private void handle(CephToCephMigrateVolumeMsg msg) {
+        final CephToCephMigrateVolumeCmd cmd = new CephToCephMigrateVolumeCmd();
+        cmd.setVolumeUuid(msg.getVolumeUuid());
+        cmd.setVolumeSize(msg.getVolumeSize());
+        cmd.setSrcInstallPath(msg.getSrcInstallPath());
+        cmd.setDstInstallPath(msg.getDstInstallPath());
+        cmd.setDstMonHostname(msg.getDstMonHostname());
+        cmd.setDstMonSshUsername(msg.getDstMonSshUsername());
+        cmd.setDstMonSshPassword(msg.getDstMonSshPassword());
+        cmd.setDstMonSshPort(msg.getDstMonSshPort());
+
+        final CephToCephMigrateVolumeReply reply = new CephToCephMigrateVolumeReply();
+        httpCall(CEPH_TO_CEPH_MIGRATE_VOLUME_PATH, cmd, StorageMigrationRsp.class, new ReturnValueCompletion<StorageMigrationRsp>(msg) {
+            @Override
+            public void success(StorageMigrationRsp returnValue) {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(CephToCephMigrateVolumeSnapshotMsg msg) {
+        final CephToCephMigrateVolumeSnapshotCmd cmd = new CephToCephMigrateVolumeSnapshotCmd();
+        cmd.setParentUuid(msg.getParentUuid());
+        cmd.setSnapshotUuid(msg.getSnapshotUuid());
+        cmd.setSnapshotSize(msg.getSnapshotSize());
+        cmd.setSrcSnapshotPath(msg.getSrcSnapshotPath());
+        cmd.setDstInstallPath(msg.getDstInstallPath());
+        cmd.setDstMonHostname(msg.getDstMonHostname());
+        cmd.setDstMonSshUsername(msg.getDstMonSshUsername());
+        cmd.setDstMonSshPassword(msg.getDstMonSshPassword());
+        cmd.setDstMonSshPort(msg.getDstMonSshPort());
+
+        final CephToCephMigrateVolumeSnapshotReply reply = new CephToCephMigrateVolumeSnapshotReply();
+        httpCall(CEPH_TO_CEPH_MIGRATE_VOLUME_SNAPSHOT_PATH, cmd, StorageMigrationRsp.class, new ReturnValueCompletion<StorageMigrationRsp>(msg) {
+            @Override
+            public void success(StorageMigrationRsp returnValue) {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(GetVolumeSnapshotInfoMsg msg) {
+        final GetVolumeSnapInfosCmd cmd = new GetVolumeSnapInfosCmd();
+        cmd.setVolumePath(msg.getVolumePath());
+
+        final GetVolumeSnapshotInfoReply reply = new GetVolumeSnapshotInfoReply();
+        httpCall(GET_VOLUME_SNAPINFOS_PATH, cmd, GetVolumeSnapInfosRsp.class, new ReturnValueCompletion<GetVolumeSnapInfosRsp>(msg) {
+            @Override
+            public void success(GetVolumeSnapInfosRsp returnValue) {
+                reply.setSnapInfos(returnValue.getSnapInfos());
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 }
