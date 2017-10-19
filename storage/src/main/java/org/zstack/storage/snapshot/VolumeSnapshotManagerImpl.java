@@ -194,7 +194,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                 chain.getUuid(), vo.getVolumeUuid(), vo.getUuid()));
 
         vo.setTreeUuid(chain.getUuid());
-        vo.setDistance(0);
+        vo.setDistance(1);
         vo.setParentUuid(null);
         vo.setLatest(true);
         vo.setFullSnapshot(fullsnapshot);
