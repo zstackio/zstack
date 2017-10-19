@@ -375,6 +375,16 @@
                 <artifactId>sqlite-jdbc</artifactId>
                 <version>3.20.0</version>
             </dependency>
+	        <dependency>
+	            <groupId>io.prometheus</groupId>
+	            <artifactId>simpleclient</artifactId>
+	            <version>0.0.26</version>
+            </dependency>
+            <dependency>
+                <groupId>io.prometheus</groupId>
+                <artifactId>simpleclient_httpserver</artifactId>
+                <version>0.0.26</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
