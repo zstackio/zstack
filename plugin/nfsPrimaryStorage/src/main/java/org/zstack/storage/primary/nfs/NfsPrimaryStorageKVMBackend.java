@@ -1127,7 +1127,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         q.add(HostVO_.status, Op.EQ, HostStatus.Connected);
         final List<String> huuids = q.listValue();
         if (huuids.isEmpty()) {
-            completion.success();
+            completion.fail(operr("No connected Host found in PrimaryStorage: [%s]", pinv.getUuid()));
             return;
         }
 
