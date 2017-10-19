@@ -1,9 +1,7 @@
 package org.zstack.header.volume;
 
 import org.zstack.header.configuration.DiskOfferingEO;
-import org.zstack.header.image.ImageEO;
 import org.zstack.header.storage.primary.PrimaryStorageEO;
-import org.zstack.header.vm.VmInstanceEO;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 import org.zstack.header.vo.Index;
@@ -34,7 +32,6 @@ public class VolumeAO extends ResourceVO implements ShadowEntity {
     private String diskOfferingUuid;
 
     @Column
-    @ForeignKey(parentEntityClass = ImageEO.class, onDeleteAction = ReferenceOption.SET_NULL)
     private String rootImageUuid;
 
     @Column
