@@ -34,6 +34,8 @@ public class CoreGlobalProperty {
     public static int REST_FACADE_READ_TIMEOUT;
     @GlobalProperty(name = "RESTFacade.connectTimeout", defaultValue = "15000")
     public static int REST_FACADE_CONNECT_TIMEOUT;
+    @GlobalProperty(name = "RESTFacade.echoTimeout", defaultValue = "60")
+    public static int REST_FACADE_ECHO_TIMEOUT;
     @GlobalProperty(name = "upgradeStartOn", defaultValue = "false")
     public static boolean IS_UPGRADE_START;
     @GlobalProperty(name = "shadowEntityOn", defaultValue = "false")
