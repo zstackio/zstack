@@ -16,9 +16,6 @@ import org.zstack.header.storage.backup.BackupStorageState;
 import org.zstack.header.storage.backup.BackupStorageStatus;
 import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.storage.backup.BackupStorageVO_;
-import org.zstack.header.vm.VmInstanceState;
-import org.zstack.header.vm.VmInstanceVO;
-import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.VolumeFormat;
 import org.zstack.header.volume.VolumeState;
 import org.zstack.header.volume.VolumeStatus;
@@ -84,19 +81,6 @@ public class ImageApiInterceptor implements ApiMessageInterceptor {
         if (VolumeState.Enabled != vol.getState()) {
             throw new ApiMessageInterceptionException(operr("volume[uuid:%s] is not Enabled, it's %s", vol.getUuid(), vol.getState()));
         }
-
-        if (vol.getVmInstanceUuid() != null) {
-            SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
-            q.select(VmInstanceVO_.state);
-            q.add(VmInstanceVO_.uuid, Op.EQ, vol.getVmInstanceUuid());
-            VmInstanceState state = q.findValue();
-            if (VmInstanceState.Stopped != state) {
-                throw new ApiMessageInterceptionException(operr("volume[uuid:%s] is attached to vm[uuid:%s]; the vm is not Stopped, it's %s",
-                                vol.getUuid(), vol.getVmInstanceUuid(), state));
-            }
-        }
-
-
     }
 
     private void validate(APICreateRootVolumeTemplateFromVolumeSnapshotMsg msg) {

@@ -19,11 +19,20 @@ class ZStackTest extends Test {
         vyos()
         flatNetwork()
         ceph()
+        lb()
+        nfsPrimaryStorage()
+        eip()
+        portForwarding()
+        smp()
+
         include("LdapManagerImpl.xml")
         include("CloudBusAopProxy.xml")
         include("ZoneManager.xml")
         include("webhook.xml")
         include("Progress.xml")
+        include("vip.xml")
+        include("vxlan.xml")
+        include("mediateApiValidator.xml")
     }
 
     public static final String DOMAIN_DSN = "dc=example,dc=com"
