@@ -5,13 +5,18 @@ import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.Q
 import org.zstack.header.errorcode.ErrorCode
-import org.zstack.header.image.*
+import org.zstack.header.image.ImageBackupStorageRefVO
+import org.zstack.header.image.ImageBackupStorageRefVO_
+import org.zstack.header.image.ImageConstant
+import org.zstack.header.image.ImageStatus
+import org.zstack.header.image.ImageVO
+import org.zstack.header.image.ImageVO_
+import org.zstack.header.image.SyncImageSizeMsg
+import org.zstack.header.image.SyncImageSizeReply
 import org.zstack.header.storage.backup.AllocateBackupStorageMsg
 import org.zstack.header.storage.backup.AllocateBackupStorageReply
 import org.zstack.header.storage.backup.BackupStorageInventory
 import org.zstack.header.storage.backup.BackupStorageVO
-import org.zstack.header.storage.backup.ReturnBackupStorageMsg
-import org.zstack.header.storage.backup.ReturnBackupStorageReply
 import org.zstack.header.vm.CreateTemplateFromVmRootVolumeMsg
 import org.zstack.header.vm.CreateTemplateFromVmRootVolumeReply
 import org.zstack.header.volume.CreateDataVolumeTemplateFromDataVolumeMsg
@@ -20,6 +25,7 @@ import org.zstack.header.volume.SyncVolumeSizeMsg
 import org.zstack.header.volume.SyncVolumeSizeReply
 import org.zstack.sdk.CreateRootVolumeTemplateFromRootVolumeAction
 import org.zstack.sdk.DiskOfferingInventory
+import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.VolumeInventory
 import org.zstack.storage.backup.sftp.SftpBackupStorageConstant
@@ -28,8 +34,8 @@ import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.ImageSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
-import java.util.concurrent.TimeUnit
 
+import java.util.concurrent.TimeUnit
 /**
  * Created by david on 3/2/17.
  */
@@ -195,31 +201,30 @@ class ImageOperationsCase extends SubCase {
         }
 
         def imageName = "large-image"
-        def thread = Thread.start {
-            addImage {
-                name = imageName
-                url = "http://my-site/foo.iso"
-                backupStorageUuids = [bs.uuid]
-                format = ImageConstant.ISO_FORMAT_STRING
-            }
+        def large = addImage {
+            name = imageName
+            url = "http://my-site/foo.iso"
+            backupStorageUuids = [bs.uuid]
+            format = ImageConstant.ISO_FORMAT_STRING
+        } as ImageInventory
+
+        retryInSecs {
+            assert dbIsExists(large.uuid, ImageVO.class)
         }
 
-        TimeUnit.SECONDS.sleep(1)
-
-        ImageVO image = Q.New(ImageVO.class).eq(ImageVO_.name, imageName).find()
-        assert image != null
-
         deleteImage {
-            uuid = image.uuid
+            uuid = large.uuid
+        }
+
+        expungeImage {
+            imageUuid = large.uuid
         }
 
         env.cleanSimulatorHandlers()
-        assert !dbIsExists(image.uuid, ImageVO.class)
-
-        thread.join()
+        assert !dbIsExists(large.uuid, ImageVO.class)
 
         Long cnt = Q.New(ImageBackupStorageRefVO.class)
-                .eq(ImageBackupStorageRefVO_.imageUuid, image.uuid)
+                .eq(ImageBackupStorageRefVO_.imageUuid, large.uuid)
                 .count()
 
         assert cnt == 0L
@@ -235,23 +240,21 @@ class ImageOperationsCase extends SubCase {
         }
 
         def imageName = "large-image"
-        Thread.start {
-            addImage {
-                name = imageName
-                url = "http://my-site/foo.iso"
-                backupStorageUuids = [bs.uuid]
-                format = ImageConstant.ISO_FORMAT_STRING
-            }
+        def large = addImage {
+            name = imageName
+            url = "http://my-site/foo.iso"
+            backupStorageUuids = [bs.uuid]
+            format = ImageConstant.ISO_FORMAT_STRING
+        } as ImageInventory
+
+        retryInSecs {
+            assert dbIsExists(large.uuid, ImageVO.class)
         }
 
-        TimeUnit.SECONDS.sleep(1)
-        ImageVO image = Q.New(ImageVO.class).eq(ImageVO_.name, imageName).find()
-        assert image != null
-
         env.cleanSimulatorHandlers()
-        ImageBackupStorageRefVO vo = Q.New(ImageBackupStorageRefVO.class).eq(ImageBackupStorageRefVO_.imageUuid, image.uuid).eq(ImageBackupStorageRefVO_.backupStorageUuid, bs.uuid).find()
+        ImageBackupStorageRefVO vo = Q.New(ImageBackupStorageRefVO.class).eq(ImageBackupStorageRefVO_.imageUuid, large.uuid).eq(ImageBackupStorageRefVO_.backupStorageUuid, bs.uuid).find()
         assert vo != null
-        assert vo.status == ImageStatus.Downloading
+        assert vo.status == ImageStatus.Ready
     }
 
     void testCreateImageFromDataVolumeAssertHasRefVOWhenImageDownloadingDB() {
@@ -386,10 +389,10 @@ class ImageOperationsCase extends SubCase {
             assert vo != null
             bus.reply(msg, reply)
         }
-        org.zstack.sdk.ImageInventory image = createRootVolumeTemplateFromRootVolume {
+        def image = createRootVolumeTemplateFromRootVolume {
             name = imageName
             rootVolumeUuid = vm.rootVolumeUuid
-        } as org.zstack.sdk.ImageInventory
+        } as ImageInventory
         ImageBackupStorageRefVO vo =  Q.New(ImageBackupStorageRefVO.class)
                 .eq(ImageBackupStorageRefVO_.imageUuid, image.uuid)
                 .find()
