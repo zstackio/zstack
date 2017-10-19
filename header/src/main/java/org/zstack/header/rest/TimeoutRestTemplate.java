@@ -35,15 +35,15 @@ public class TimeoutRestTemplate extends RestTemplate {
             rsp = this.exchange(url, method, requestEntity, responseType);
         }catch (Throwable t){
             long endTime = System.currentTimeMillis();
-            logger.warn(String.format("MyRestTemplate exchange fail, requestId=%s, connectTimeout=%s, readTimeout=%s, spendTime=%s", requestId, connectTimeout, readTimeout, endTime - startTime), t);
+            logger.warn(String.format("TimeoutRestTemplate exchange fail, requestId=%s, connectTimeout=%s, readTimeout=%s, spendTime=%s", requestId, connectTimeout, readTimeout, endTime - startTime), t);
             throw t;
         }finally {
             // liningTODO
             // clean info log
             long endTime = System.currentTimeMillis();
-            logger.info(String.format("MyRestTemplate timeout info, requestId=%s, connectTimeout=%s, readTimeout=%s, spendTime=%s", requestId, connectTimeout, readTimeout, endTime - startTime));
+            logger.info(String.format("TimeoutRestTemplate timeout info, requestId=%s, connectTimeout=%s, readTimeout=%s, spendTime=%s", requestId, connectTimeout, readTimeout, endTime - startTime));
             if(endTime - startTime > (connectTimeout + 3000) || endTime - startTime > (readTimeout + 3000) ){
-                logger.error(String.format("MyRestTemplate timeout error, requestId=%s, connectTimeout=%s, readTimeout=%s, spendTime=%s", requestId, connectTimeout, readTimeout, endTime - startTime));
+                logger.error(String.format("TimeoutRestTemplate timeout error, requestId=%s, connectTimeout=%s, readTimeout=%s, spendTime=%s", requestId, connectTimeout, readTimeout, endTime - startTime));
             }
         }
 

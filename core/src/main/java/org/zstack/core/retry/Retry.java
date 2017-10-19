@@ -16,6 +16,10 @@ import java.util.concurrent.TimeUnit;
  * Created by xing5 on 2016/6/25.
  */
 public abstract class Retry<T> {
+
+    private int times, count = 5;
+    private int interval = 1;
+
     private static final CLogger logger = Utils.getLogger(Retry.class);
 
     protected abstract T call();
@@ -30,8 +34,7 @@ public abstract class Retry<T> {
             throw new CloudRuntimeException(e);
         }
 
-        int times = 5;
-        int interval = 1;
+
         Class[] onExceptions = {};
 
         RetryCondition cond = m.getAnnotation(RetryCondition.class);
@@ -41,7 +44,7 @@ public abstract class Retry<T> {
             onExceptions = cond.onExceptions();
         }
 
-        int count = times;
+        count = times;
 
         if (__name__ == null) {
             __name__ = getClass().getName();
@@ -67,7 +70,7 @@ public abstract class Retry<T> {
 
                 count --;
 
-                if (count == 0) {
+                if (count <= 0) {
                     ErrorCode errorCode = new ErrorCode();
                     errorCode.setCode(SysErrors.OPERATION_ERROR.toString());
                     errorCode.setDescription(i18n("an operation[%s] fails after retrying %s times with the interval %s seconds",
@@ -79,5 +82,9 @@ public abstract class Retry<T> {
                 }
             }
         } while (true);
+    }
+
+    public void stop(){
+        count = 0;
     }
 }
