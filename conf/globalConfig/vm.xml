@@ -48,6 +48,14 @@
 	</config>
 
 	<config>
+		<name>spiceStreamingMode</name>
+		<description>config vm streaming mode when use spice</description>
+		<category>vm</category>
+		<defaultValue>off</defaultValue>
+		<type>java.lang.String</type>
+	</config>
+
+	<config>
 		<name>videoType</name>
 		<description>video type for VM. "cirrus" supply basic video type, the  resolution is not high. "vga" supply more high resolution for VM. "qxl" supply high performance when use SPICE protocal.  Options:[vga, cirrus, qxl]</description>
 		<category>vm</category>

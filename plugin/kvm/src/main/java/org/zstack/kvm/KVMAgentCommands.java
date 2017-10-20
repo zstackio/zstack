@@ -727,11 +727,20 @@ public class KVMAgentCommands {
         private String hostManagementIp;
         private String clock;
         private String videoType;
+        private String spiceStreamingMode;
         private boolean useNuma;
         private String usbRedirect;
         private Integer VDIMonitorNumber;
         private boolean useBootMenu;
         private boolean kvmHiddenState;
+
+        public String getSpiceStreamingMode() {
+            return spiceStreamingMode;
+        }
+
+        public void setSpiceStreamingMode(String spiceStreamingMode) {
+            this.spiceStreamingMode = spiceStreamingMode;
+        }
 
         public Integer getVDIMonitorNumber() {
             return VDIMonitorNumber;
