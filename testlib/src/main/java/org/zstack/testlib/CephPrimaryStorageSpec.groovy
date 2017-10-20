@@ -132,6 +132,10 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
             return new CephPrimaryStorageBase.DeleteSnapshotRsp()
         }
 
+        simulator(CephPrimaryStorageBase.PURGE_SNAPSHOT_PATH) {
+            return new CephPrimaryStorageBase.PurgeSnapshotRsp()
+        }
+
         simulator(CephPrimaryStorageBase.PROTECT_SNAPSHOT_PATH) {
             return new CephPrimaryStorageBase.ProtectSnapshotRsp()
         }
