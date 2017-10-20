@@ -10059,35 +10059,8 @@ trait ApiHelper {
     }
 
 
-    def primaryStorageMigrateDataVolume(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.PrimaryStorageMigrateDataVolumeAction.class) Closure c) {
-        def a = new org.zstack.sdk.PrimaryStorageMigrateDataVolumeAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
-        c.resolveStrategy = Closure.OWNER_FIRST
-        c.delegate = a
-        c()
-        
-
-        if (System.getProperty("apipath") != null) {
-            if (a.apiId == null) {
-                a.apiId = Platform.uuid
-            }
-    
-            def tracker = new ApiPathTracker(a.apiId)
-            def out = errorOut(a.call())
-            def path = tracker.getApiPath()
-            if (!path.isEmpty()) {
-                Test.apiPaths[a.class.name] = path.join(" --->\n")
-            }
-        
-            return out
-        } else {
-            return errorOut(a.call())
-        }
-    }
-
-
-    def primaryStorageMigrateRootVolume(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.PrimaryStorageMigrateRootVolumeAction.class) Closure c) {
-        def a = new org.zstack.sdk.PrimaryStorageMigrateRootVolumeAction()
+    def primaryStorageMigrateVolume(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.PrimaryStorageMigrateVolumeAction.class) Closure c) {
+        def a = new org.zstack.sdk.PrimaryStorageMigrateVolumeAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
