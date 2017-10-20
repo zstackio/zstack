@@ -342,7 +342,9 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         VipInventory vipInventory = VipInventory.valueOf(vipvo);
 
         if (vo.getVmNicUuid() == null) {
-            new Vip(vipvo.getUuid()).release(new Completion(completion) {
+            Vip vip = new Vip(vipvo.getUuid());
+            vip.delUseFor(EipConstant.EIP_NETWORK_SERVICE_TYPE);
+            vip.release(new Completion(completion) {
                 @Override
                 public void success() {
                     dbf.remove(vo);
@@ -402,7 +404,9 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        new Vip(vipInventory.getUuid()).release(new Completion(trigger) {
+                        Vip vip = new Vip(vipInventory.getUuid());
+                        vip.delUseFor(EipConstant.EIP_NETWORK_SERVICE_TYPE);
+                        vip.release(new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.next();
@@ -491,7 +495,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         if (vo.getVmNicUuid() == null) {
             EipVO finalVo = vo;
             Vip vip = new Vip(vipvo.getUuid());
-            vip.setUseFor(EipConstant.EIP_NETWORK_SERVICE_TYPE);
+            vip.addUseFor(EipConstant.EIP_NETWORK_SERVICE_TYPE);
             vip.acquire(false, new Completion(msg) {
                 @Override
                 public void success() {
@@ -525,7 +529,9 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
 
         if (state != VmInstanceState.Running) {
             EipVO finalVo = vo;
-            new Vip(vipvo.getUuid()).acquire(false, new Completion(msg) {
+            Vip vip = new Vip(vipvo.getUuid());
+            vip.addUseFor(EipConstant.EIP_NETWORK_SERVICE_TYPE);
+            vip.acquire(false, new Completion(msg) {
                 @Override
                 public void success() {
                     evt.setInventory(EipInventory.valueOf(finalVo));
@@ -565,7 +571,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                     public void run(FlowTrigger trigger, Map data) {
                         Vip vip = new Vip(vipInventory.getUuid());
                         vip.setServiceProvider(providerType.toString());
-                        vip.setUseFor(EipConstant.EIP_NETWORK_SERVICE_TYPE);
+                        vip.addUseFor(EipConstant.EIP_NETWORK_SERVICE_TYPE);
                         vip.setPeerL3NetworkUuid(nicInventory.getL3NetworkUuid());
                         vip.acquire(new Completion(trigger) {
                             @Override
@@ -589,6 +595,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                         }
 
                         Vip vip = new Vip(vipInventory.getUuid());
+                        vip.delUseFor(EipConstant.EIP_NETWORK_SERVICE_TYPE);
                         vip.release(new Completion(trigger) {
                             @Override
                             public void success() {
@@ -801,7 +808,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                     public void run(FlowTrigger trigger, Map data) {
                         Vip vip = new Vip(struct.getVip().getUuid());
                         vip.setServiceProvider(providerType);
-                        vip.setUseFor(EipConstant.EIP_NETWORK_SERVICE_TYPE);
+                        vip.addUseFor(EipConstant.EIP_NETWORK_SERVICE_TYPE);
                         vip.setPeerL3NetworkUuid(nic.getL3NetworkUuid());
                         vip.acquire(new Completion(trigger) {
                             @Override

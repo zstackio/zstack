@@ -22,6 +22,7 @@ import org.zstack.tag.PatternedSystemTag;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.logging.CLoggerImpl;
 import org.zstack.utils.DebugUtils;
+import org.zstack.utils.VipUseForList;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
@@ -98,8 +99,11 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
         q.add(VipVO_.uuid, Op.EQ, msg.getVipUuid());
         String useFor = q.findValue();
 
-        if ((useFor != null) && !(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING.equals(useFor))) {
-            throw new ApiMessageInterceptionException(argerr("the vip[uuid:%s] is occupied by another service[%s]", msg.getVipUuid(), useFor));
+        if(useFor != null){
+            VipUseForList useForList = new VipUseForList(useFor);
+            if(!useForList.validateNewAdded(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING)){
+                throw new ApiMessageInterceptionException(argerr("the vip[uuid:%s] has been occupied other network service entity[%s]", msg.getVipUuid(), useForList.toString()));
+            }
         }
     }
 

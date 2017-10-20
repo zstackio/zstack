@@ -9,6 +9,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
@@ -31,12 +32,15 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.VipUseForList;
 
 import static org.zstack.core.Platform.operr;
 
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 /**
  * Created by xing5 on 2016/11/19.
@@ -146,7 +150,10 @@ public class VipBase {
     }
 
     private void deleteFromBackend(Completion completion) {
-        if (self.getServiceProvider() == null) {
+        /* because there are multiple service on same vip, release vip from backaned
+           if and only if there is no service on this vip */
+        VipUseForList useForList = new VipUseForList(self.getUseFor());
+        if (self.getServiceProvider() == null && !useForList.getUseForList().isEmpty()) {
             // this VIP has not bean created on backend yet
             completion.success();
             return;
@@ -196,10 +203,10 @@ public class VipBase {
         }
 
         if (s.isUserFor()) {
-            if (self.getUseFor() != null && s.getUseFor() != null
-                    && !self.getUseFor().equals(s.getUseFor())) {
-                throw new OperationFailureException(operr("the field 'useFor' of the vip[uuid:%s, name:%s, ip: %s] has been set to %s",
-                                self.getUuid(), self.getName(), self.getIp(), self.getUseFor()));
+            VipUseForList newList = new VipUseForList(s.getUseFor());
+
+            if (!newList.validate()){
+                throw new OperationFailureException(operr("the field 'useFor'[%s] in the msg is conflicted", s.getUseFor()));
             }
 
             self.setUseFor(s.getUseFor());
@@ -253,6 +260,17 @@ public class VipBase {
 
     private void handle(ReleaseVipMsg msg) {
         ReleaseVipReply reply = new ReleaseVipReply();
+
+        /* if there is other service on this vip, DO NOT release it */
+        VipUseForList useForList = new VipUseForList(msg.getStruct().getUseFor());
+        if (!useForList.getUseForList().isEmpty()){
+            /* ReleaseVipMsg will setServiceProvider and setPeerL3NetworkUuid to null, recover it it here  */
+            msg.getStruct().setServiceProvider(self.getServiceProvider());
+            msg.getStruct().setPeerL3NetworkUuid(self.getPeerL3NetworkUuid());
+            modifyAttributes(msg.getStruct());
+            bus.reply(msg, reply);
+            return;
+        }
 
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
@@ -447,6 +465,34 @@ public class VipBase {
         bus.send(msg);
     }
 
+    private void releaseServicesOnVip(Iterator<String> it, FlowTrigger trigger){
+        if(!it.hasNext()){
+            trigger.next();
+            return;
+        }
+
+        String useFor = it.next();
+        if (useFor.equals(VipUseForList.SNAT_NETWORK_SERVICE_TYPE)){
+            releaseServicesOnVip(it, trigger);
+        }
+        else {
+            VipReleaseExtensionPoint ext = vipMgr.getVipReleaseExtensionPoint(useFor);
+            ext.releaseServicesOnVip(getSelfInventory(), new Completion(trigger) {
+                @Override
+                public void success() {
+                    releaseServicesOnVip(it, trigger);
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    trigger.fail(errorCode);
+                }
+            });
+        }
+
+        return;
+    }
+
     protected void deleteVip(Completion completion) {
         refresh();
 
@@ -496,18 +542,9 @@ public class VipBase {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        VipReleaseExtensionPoint ext = vipMgr.getVipReleaseExtensionPoint(self.getUseFor());
-                        ext.releaseServicesOnVip(getSelfInventory(), new Completion(trigger) {
-                            @Override
-                            public void success() {
-                                trigger.next();
-                            }
-
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                trigger.fail(errorCode);
-                            }
-                        });
+                        VipUseForList useForList = new VipUseForList(self.getUseFor());
+                        Iterator<String> it = useForList.getUseForList().iterator();
+                        releaseServicesOnVip(it, trigger);
                     }
                 });
 
@@ -586,6 +623,14 @@ public class VipBase {
 
     protected void handle(APIDeleteVipMsg msg) {
         final APIDeleteVipEvent evt = new APIDeleteVipEvent(msg.getId());
+
+        /* virtual router public nic vip can not be deleted */
+        VipUseForList useForList = new VipUseForList(self.getUseFor());
+        if(useForList.isIncluded(VipUseForList.SNAT_NETWORK_SERVICE_TYPE)){
+            evt.setError(operr("Vip [uuid %s, ip %s] of router public interface can not be deleted", self.getUuid(), self.getIp()));
+            bus.publish(evt);
+            return;
+        }
 
         final String issuer = VipVO.class.getSimpleName();
         final List<VipInventory> ctx = Arrays.asList(VipInventory.valueOf(self));
