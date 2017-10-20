@@ -42,6 +42,7 @@
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component"/>
             <zstack:extension interface="org.zstack.header.storage.primary.PrimaryStorageAllocatorStrategyFactory"/>
+            <zstack:extension interface="org.zstack.header.storage.primary.PrimaryStorageAllocatorStrategyExtensionPoint" />
         </zstack:plugin>
     </bean>
 
