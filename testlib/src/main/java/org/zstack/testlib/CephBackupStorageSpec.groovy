@@ -48,7 +48,7 @@ class CephBackupStorageSpec extends BackupStorageSpec {
         return id(name, inventory.uuid)
     }
 
-    private void setupSimulator() {
+    protected void setupSimulator() {
         simulator(CephBackupStorageBase.GET_FACTS) { HttpEntity<String> e, EnvSpec spec ->
             CephBackupStorageBase.GetFactsCmd cmd = JSONObjectUtil.toObject(e.body, CephBackupStorageBase.GetFactsCmd.class)
             CephBackupStorageSpec bspec = spec.specByUuid(cmd.uuid)
@@ -63,7 +63,6 @@ class CephBackupStorageSpec extends BackupStorageSpec {
             rsp.monAddr = bspec.monAddrs[(monAddr)]
             return rsp
         }
-
 
         simulator(CephBackupStorageBase.GET_IMAGE_SIZE_PATH) {
             def rsp = new CephBackupStorageBase.GetImageSizeRsp()
