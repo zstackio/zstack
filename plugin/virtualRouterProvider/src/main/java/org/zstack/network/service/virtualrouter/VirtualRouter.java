@@ -400,6 +400,17 @@ public class VirtualRouter extends ApplianceVmBase {
 
     @Override
     protected void afterAttachNic(VmNicInventory nicInventory, Completion completion) {
+        VmNicVO vo = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, nicInventory.getUuid()).find();
+        L3NetworkVO l3NetworkVO = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, vo.getL3NetworkUuid()).find();
+
+        if (l3NetworkVO.getCategory().equals(L3NetworkCategory.Private)) {
+            vo.setMetaData(GUEST_NIC_MASK.toString());
+        } else {
+            vo.setMetaData(ADDITIONAL_PUBLIC_NIC_MASK.toString());
+        }
+        dbf.updateAndRefresh(vo);
+        logger.debug(String.format("updated metadata of vmnic[uuid: %s]", vo.getUuid()));
+
         VirtualRouterCommands.ConfigureNicCmd cmd = new VirtualRouterCommands.ConfigureNicCmd();
         VirtualRouterCommands.NicInfo info = new VirtualRouterCommands.NicInfo();
         info.setIp(nicInventory.getIp());
@@ -427,15 +438,7 @@ public class VirtualRouter extends ApplianceVmBase {
                 VirtualRouterAsyncHttpCallReply re = reply.castReply();
                 VirtualRouterCommands.ConfigureNicRsp rsp = re.toResponse(VirtualRouterCommands.ConfigureNicRsp.class);
                 if (rsp.isSuccess()) {
-                    VmNicVO vo = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, nicInventory.getUuid()).find();
-                    L3NetworkVO l3NetworkVO = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, vo.getL3NetworkUuid()).find();
 
-                    if (l3NetworkVO.getCategory().equals(L3NetworkCategory.Private)) {
-                        vo.setMetaData(GUEST_NIC_MASK.toString());
-                    } else {
-                        vo.setMetaData(ADDITIONAL_PUBLIC_NIC_MASK.toString());
-                    }
-                    dbf.updateAndRefresh(vo);
                     logger.debug(String.format("successfully add nic[%s] to virtual router vm[uuid:%s, ip:%s]",info, vr.getUuid(), vr.getManagementNic()
                             .getIp()));
                     completion.success();
