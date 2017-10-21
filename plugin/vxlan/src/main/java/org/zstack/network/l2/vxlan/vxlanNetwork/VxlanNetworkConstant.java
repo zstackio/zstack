@@ -9,4 +9,5 @@ import org.zstack.header.configuration.PythonClass;
 public class VxlanNetworkConstant {
     @PythonClass
     public static final String VXLAN_NETWORK_TYPE = "VxlanNetwork";
+    public static final String QUOTA_VXLAN_NUM = "vxlan.num";
 }
