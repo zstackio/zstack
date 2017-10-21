@@ -39,6 +39,7 @@ public class VirtualRouterSyncVipFlow implements Flow {
         }
         SimpleQuery<VipVO> q = dbf.createQuery(VipVO.class);
         q.add(VipVO_.peerL3NetworkUuid, Op.IN, vr.getGuestL3Networks());
+        q.add(VipVO_.ip, Op.NOT_EQ, vr.getPublicNic().getIp());
         List<VipVO> vips = q.list();
         if (vips.isEmpty()) {
             chain.next();
