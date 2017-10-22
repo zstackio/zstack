@@ -12,6 +12,8 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.retry.Retry;
+import org.zstack.core.retry.RetryCondition;
 import org.zstack.core.workflow.*;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NopeCompletion;
@@ -216,7 +218,16 @@ public class L3BasicNetwork implements L3Network {
 
     private void handle(ReturnIpMsg msg) {
         ReturnIpReply reply = new ReturnIpReply();
-        SQL.New(UsedIpVO.class).eq(UsedIpVO_.uuid, msg.getUsedIpUuid()).hardDelete();
+        new Retry<Void>() {
+            String __name__ = String.format("return-ip-%s-for-l3-%s", msg.getUsedIpUuid(), msg.getL3NetworkUuid());
+
+            @Override
+            @RetryCondition(times = 6)
+            protected Void call() {
+                SQL.New(UsedIpVO.class).eq(UsedIpVO_.uuid, msg.getUsedIpUuid()).hardDelete();
+                return null;
+            }
+        }.run();
         logger.debug(String.format("Successfully released used ip[%s]", msg.getUsedIpUuid()));
         bus.reply(msg, reply);
     }

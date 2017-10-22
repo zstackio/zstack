@@ -4,9 +4,11 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
+import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkConstant;
 import org.zstack.header.network.l3.ReturnIpMsg;
 import org.zstack.header.vm.*;
@@ -49,9 +51,17 @@ public class VmDetachNicFlow extends NoRollbackFlow {
         msg.setUsedIpUuid(nic.getUsedIpUuid());
         msg.setL3NetworkUuid(nic.getL3NetworkUuid());
         bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, nic.getL3NetworkUuid());
-        bus.send(msg);
+        bus.send(msg, new CloudBusCallBack(trigger) {
+            @Override
+            public void run(MessageReply reply) {
+                if (reply.isSuccess()) {
+                    dbf.removeByPrimaryKey(nic.getUuid(), VmNicVO.class);
+                    trigger.next();
+                } else {
+                    trigger.fail(reply.getError());
+                }
+            }
+        });
 
-        dbf.removeByPrimaryKey(nic.getUuid(), VmNicVO.class);
-        trigger.next();
     }
 }
