@@ -16,6 +16,7 @@ public interface KVMConstant {
     String KVM_CHECK_PHYSICAL_NETWORK_INTERFACE_PATH = "/network/checkphysicalnetworkinterface";
     String KVM_HOST_CAPACITY_PATH = "/host/capacity";
     String KVM_HOST_FACT_PATH = "/host/fact";
+    String KVM_HOST_REPORT_DEVICE_EVENT_PATH = "/host/reportdeviceevent";
     String KVM_REALIZE_L2NOVLAN_NETWORK_PATH = "/network/l2novlan/createbridge";
     String KVM_CHECK_L2NOVLAN_NETWORK_PATH = "/network/l2novlan/checkbridge";
     String KVM_REALIZE_L2VLAN_NETWORK_PATH = "/network/l2vlan/createbridge";
