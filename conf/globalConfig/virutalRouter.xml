@@ -3,7 +3,7 @@
     <config>
         <name>agent.deployOnStart</name>
         <description>A boolean value. When set to true, management server will deploy virtual router agent every time a virtual router being created/started/reboot, using ansible. The  virtual router image has agent built in by default, so in most of time this value doesn't need setting to true, as it will significantly increase boot time of virtual router; however, in case you have a new agent needed deploying in an existing virtual router, set this value to true and reboot virtual router will do the work.</description>
-        <defaultValue>false</defaultValue>
+        <defaultValue>true</defaultValue>
         <category>virtualRouter</category>
         <type>java.lang.Boolean</type>
     </config>
