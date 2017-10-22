@@ -7,6 +7,7 @@ import org.zstack.core.cascade.CascadeAction;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -53,6 +54,8 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
     private DatabaseFacade dbf;
     @Autowired
     private CloudBus bus;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     private static String NAME = ApplianceVmVO.class.getSimpleName();
 
@@ -600,6 +603,9 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
             q.setParameter("l3Uuids", l3uuids);
             List<ApplianceVmVO> apvms = q.getResultList();
             if (!apvms.isEmpty()) {
+                for (ApvmCascadeFilterExtensionPoint ext : pluginRgty.getExtensionList(ApvmCascadeFilterExtensionPoint.class)) {
+                    apvms = ext.filterApplianceVmCascade(apvms);
+                }
                 ret = ApplianceVmInventory.valueOf1(apvms);
             }
         } else if (IpRangeVO.class.getSimpleName().equals(action.getParentIssuer())) {
@@ -652,6 +658,9 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
                         }
                     }
                 }
+            }
+            for (ApvmCascadeFilterExtensionPoint ext : pluginRgty.getExtensionList(ApvmCascadeFilterExtensionPoint.class)) {
+                vmvos = ext.filterApplianceVmCascade(vmvos);
             }
 
             if (!vmvos.isEmpty()) {
