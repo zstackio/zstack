@@ -23,4 +23,5 @@ public interface QuotaConstant {
     long QUOTA_IMAGE_NUM = 20;
     long QUOTA_IMAGE_SIZE = SizeUnit.TERABYTE.toByte(10);
     long QUOTA_VIP_NUM = 20;
+    long QUOTA_VXLAN_NUM = 8;
 }

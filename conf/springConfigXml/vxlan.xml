@@ -56,6 +56,12 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="VxlanNetwork" class="org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetwork">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.identity.ReportQuotaExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
     <bean id="VxlanNetworkChecker" class="org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkCheckerImpl" />
 
     <bean id="KVMConnectExtensionForVxlanNetwork" class="org.zstack.network.l2.vxlan.vxlanNetworkPool.KVMConnectExtensionForVxlanNetwork">
