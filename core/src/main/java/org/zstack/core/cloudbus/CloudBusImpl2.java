@@ -98,7 +98,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
     private List<BeforePublishEventInterceptor> beforeEventPublishInterceptorsForAll = new ArrayList<BeforePublishEventInterceptor>();
 
     private final String NO_NEED_REPLY_MSG = "noReply";
-    private final String CORRELATION_ID = "correlationId";
+    public static final String CORRELATION_ID = "correlationId";
     private final String REPLY_TO = "replyTo";
     private final String IS_MESSAGE_REPLY = "isReply";
     private final String MESSAGE_META_DATA = "metaData";
@@ -516,7 +516,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
             List<BeforeSendMessageInterceptor> interceptors = beforeSendMessageInterceptors.get(msg.getClass());
             if (interceptors != null) {
                 for (BeforeSendMessageInterceptor interceptor : interceptors) {
-                    interceptor.intercept(msg);
+                    interceptor.beforeSendMessage(msg);
 
                     /*
                     if (logger.isTraceEnabled()) {
@@ -527,7 +527,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
             }
 
             for (BeforeSendMessageInterceptor interceptor : beforeSendMessageInterceptorsForAll) {
-                interceptor.intercept(msg);
+                interceptor.beforeSendMessage(msg);
 
                 /*
                 if (logger.isTraceEnabled()) {
@@ -2015,7 +2015,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
                                         List<BeforeDeliveryMessageInterceptor> is = beforeDeliveryMessageInterceptors.get(msg.getClass());
                                         if (is != null) {
                                             for (BeforeDeliveryMessageInterceptor i : is) {
-                                                i.intercept(msg);
+                                                i.beforeDeliveryMessage(msg);
 
                                                 /*
                                                 if (logger.isTraceEnabled()) {
@@ -2026,7 +2026,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
                                         }
 
                                         for (BeforeDeliveryMessageInterceptor i : beforeDeliveryMessageInterceptorsForAll) {
-                                            i.intercept(msg);
+                                            i.beforeDeliveryMessage(msg);
 
                                             /*
                                             if (logger.isTraceEnabled()) {
@@ -2341,7 +2341,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
         if (classes.length == 0) {
             int order = 0;
             for (BeforeSendMessageInterceptor i : beforeSendMessageInterceptorsForAll) {
-                if (i.order() <= interceptor.order()) {
+                if (i.orderOfBeforeSendMessageInterceptor() <= interceptor.orderOfBeforeSendMessageInterceptor()) {
                     order = beforeSendMessageInterceptorsForAll.indexOf(i);
                     break;
                 }
@@ -2362,7 +2362,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
                 synchronized (is) {
                     int order = 0;
                     for (BeforeSendMessageInterceptor i : is) {
-                        if (i.order() <= interceptor.order()) {
+                        if (i.orderOfBeforeSendMessageInterceptor() <= interceptor.orderOfBeforeSendMessageInterceptor()) {
                             order = is.indexOf(i);
                             break;
                         }

@@ -65,7 +65,7 @@ public class TestSftpBackupStoragePingFailure3 {
             }
 
             @Override
-            public void intercept(Message msg) {
+            public void beforeDeliveryMessage(Message msg) {
                 success = true;
             }
         }, ConnectBackupStorageMsg.class);

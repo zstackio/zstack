@@ -235,7 +235,7 @@ abstract class Test implements ApiHelper {
 
         bus.installBeforeSendMessageInterceptor(new AbstractBeforeSendMessageInterceptor() {
             @Override
-            void intercept(Message msg) {
+            void beforeSendMessage(Message msg) {
                 if (Event.class.isAssignableFrom(msg.class) || currentEnvSpec == null) {
                     return
                 }
