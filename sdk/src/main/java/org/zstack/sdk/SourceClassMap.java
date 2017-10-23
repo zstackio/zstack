@@ -149,7 +149,6 @@ public class SourceClassMap {
 			put("org.zstack.network.service.lb.LoadBalancerListenerVmNicRefInventory", "org.zstack.sdk.LoadBalancerListenerVmNicRefInventory");
 			put("org.zstack.network.service.portforwarding.PortForwardingRuleInventory", "org.zstack.sdk.PortForwardingRuleInventory");
 			put("org.zstack.network.service.vip.VipInventory", "org.zstack.sdk.VipInventory");
-			put("org.zstack.network.service.virtualrouter.APIGetVipUsedPortsReply$VipPortRangeInventory", "org.zstack.sdk.VipPortRangeInventory");
 			put("org.zstack.network.service.virtualrouter.VirtualRouterOfferingInventory", "org.zstack.sdk.VirtualRouterOfferingInventory");
 			put("org.zstack.network.service.virtualrouter.VirtualRouterVmInventory", "org.zstack.sdk.VirtualRouterVmInventory");
 			put("org.zstack.pciDevice.HostIommuStateType", "org.zstack.sdk.HostIommuStateType");
@@ -367,7 +366,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.VRouterRouteEntryType", "org.zstack.vrouterRoute.VRouterRouteEntryType");
 			put("org.zstack.sdk.VRouterRouteTableInventory", "org.zstack.vrouterRoute.VRouterRouteTableInventory");
 			put("org.zstack.sdk.VipInventory", "org.zstack.network.service.vip.VipInventory");
-			put("org.zstack.sdk.VipPortRangeInventory", "org.zstack.network.service.virtualrouter.APIGetVipUsedPortsReply$VipPortRangeInventory");
 			put("org.zstack.sdk.VirtualBorderRouterInventory", "org.zstack.header.aliyun.network.connection.VirtualBorderRouterInventory");
 			put("org.zstack.sdk.VirtualRouterInterfaceInventory", "org.zstack.header.aliyun.network.connection.VirtualRouterInterfaceInventory");
 			put("org.zstack.sdk.VirtualRouterOfferingInventory", "org.zstack.network.service.virtualrouter.VirtualRouterOfferingInventory");

@@ -8,7 +8,6 @@ import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
-import org.zstack.core.db.SQL;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
@@ -40,21 +39,20 @@ import org.zstack.header.vm.VmNicInventory;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.network.service.vip.Vip;
-import org.zstack.network.service.vip.VipGetUsedPortRangeExtensionPoint;
 import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.tag.TagManager;
-import org.zstack.utils.RangeSet;
 import org.zstack.utils.Utils;
-import org.zstack.utils.VipUseForList;
 import org.zstack.utils.logging.CLogger;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 
-import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -62,7 +60,7 @@ import static org.zstack.utils.CollectionDSL.list;
  * Created by frank on 8/8/2015.
  */
 public class LoadBalancerManagerImpl extends AbstractService implements LoadBalancerManager,
-        AddExpandedQueryExtensionPoint, ReportQuotaExtensionPoint, VipGetUsedPortRangeExtensionPoint {
+        AddExpandedQueryExtensionPoint, ReportQuotaExtensionPoint {
     private static final CLogger logger = Utils.getLogger(LoadBalancerManagerImpl.class);
 
     @Autowired
@@ -492,28 +490,5 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
         quota.addPair(p);
 
         return list(quota);
-    }
-
-    @Override
-    public RangeSet getVipUsePortRange(String vipUuid, String protocol, VipUseForList useForList){
-        List<Tuple> lbPortList = SQL.New("select lbl.loadBalancerPort, lbl.loadBalancerPort from LoadBalancerListenerVO lbl, LoadBalancerVO lb "
-                +"where lbl.loadBalancerUuid=lb.uuid and lbl.protocol = :type and lb.vipUuid = :vipUuid", Tuple.class).
-                param("vipUuid", vipUuid).param("type", protocol.toUpperCase()).list();
-
-        RangeSet portRangeList = new RangeSet();
-        List<RangeSet.Range> portRanges = new ArrayList<RangeSet.Range>();
-
-        Iterator<Tuple> it = lbPortList.iterator();
-        while (it.hasNext()){
-            Tuple strRange = it.next();
-            int start = strRange.get(0, Integer.class);
-            int end = strRange.get(1, Integer.class);
-
-            RangeSet.Range range = new RangeSet.Range(start, end);
-            portRanges.add(range);
-        }
-        portRangeList.setRanges(portRanges);
-
-        return portRangeList;
     }
 }

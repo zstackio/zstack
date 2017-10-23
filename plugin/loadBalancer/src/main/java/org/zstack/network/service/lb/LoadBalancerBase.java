@@ -39,7 +39,6 @@ import org.zstack.utils.logging.CLogger;
 
 import static org.zstack.core.Platform.operr;
 
-import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -721,36 +720,15 @@ public class LoadBalancerBase {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        /* if there is other lb use this vip and has vmnics, do nothing */
-                        List<String> vmNics = SQL.New("select ref.vmNicUuid from LoadBalancerListenerVmNicRefVO ref, LoadBalancerListenerVO lbl," +
-                                " LoadBalancerVO lb where ref.listenerUuid=lbl.uuid and lbl.loadBalancerUuid=lb.uuid and lb.uuid != :uuid and lb.vipUuid= :vipUuid", String.class).
-                                param("vipUuid", self.getVipUuid()).param("uuid", self.getUuid()).list();
-                        if(vmNics.size() > 0){
+                        /* if there is other lb use this vip, do nothing */
+                        long number = Q.New(LoadBalancerVO.class).eq(LoadBalancerVO_.vipUuid, self.getVipUuid()).
+                                notEq(LoadBalancerVO_.uuid, self.getUuid()).count();
+                        if (number > 0){
                             trigger.next();
                             return;
                         }
 
-                        /* if there is other lb, but no vmnics */
                         Vip v = new Vip(self.getVipUuid());
-                        long number = Q.New(LoadBalancerVO.class).eq(LoadBalancerVO_.vipUuid, self.getVipUuid()).
-                                notEq(LoadBalancerVO_.uuid, self.getUuid()).count();
-                        if (number > 0){
-                            v.deleteFromBackend(new Completion(trigger) {
-                                @Override
-                                public void success() {
-                                    trigger.next();
-                                }
-
-                                @Override
-                                public void fail(ErrorCode errorCode) {
-                                    trigger.fail(errorCode);
-                                }
-                            });
-
-                            return;
-                        }
-
-                        /* if there is no other lb */
                         v.delUseFor(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
                         v.release(new Completion(trigger) {
                             @Override

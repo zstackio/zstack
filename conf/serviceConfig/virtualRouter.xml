@@ -31,10 +31,6 @@
     </message>
 
     <message>
-        <name>org.zstack.network.service.virtualrouter.APIGetVipUsedPortsMsg</name>
-    </message>
-
-    <message>
         <name>org.zstack.network.service.virtualrouter.APIQueryVirtualRouterOfferingMsg</name>
         <serviceId>query</serviceId>
     </message>

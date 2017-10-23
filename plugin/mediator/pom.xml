@@ -24,11 +24,6 @@
         </dependency>
         <dependency>
             <groupId>org.zstack</groupId>
-            <artifactId>loadBalancer</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.zstack</groupId>
             <artifactId>applianceVm</artifactId>
             <version>${project.version}</version>
         </dependency>

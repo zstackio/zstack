@@ -19,7 +19,6 @@
 			<zstack:extension interface="org.zstack.network.service.vip.VipReleaseExtensionPoint" />
 			<zstack:extension interface="org.zstack.header.query.AddExpandedQueryExtensionPoint" />
 			<zstack:extension interface="org.zstack.header.identity.ReportQuotaExtensionPoint" />
-			<zstack:extension interface="org.zstack.network.service.vip.VipGetUsedPortRangeExtensionPoint" />
 		</zstack:plugin>
 	</bean>
 
