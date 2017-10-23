@@ -183,7 +183,7 @@ public class ApiValidator implements GlobalApiMessageInterceptor {
     }
 
     private RangeSet getVipPortRangeList(String vipUuid, String protocol){
-        String useFor = Q.New(VipVO.class).select(VipVO_.useFor).eq(VipVO_.uuid, vipUuid).find();
+        String useFor = Q.New(VipVO.class).select(VipVO_.useFor).eq(VipVO_.uuid, vipUuid).findValue();
         VipUseForList vipUseForList;
         if (useFor != null){
             vipUseForList = new VipUseForList(useFor);
