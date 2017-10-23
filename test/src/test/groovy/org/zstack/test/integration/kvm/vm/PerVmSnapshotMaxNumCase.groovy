@@ -37,6 +37,8 @@ class PerVmSnapshotMaxNumCase extends SubCase{
             vm1 = env.inventoryByName("vm") as VmInstanceInventory
             testSnapshotGlobalConfig()
             testVmSnapshotMaxNumSystemTag()
+            testNoSystemTagCreateSnapshot()
+            testPerVmSystemTagCreateSnapshot()
         }
     }
 
@@ -63,5 +65,57 @@ class PerVmSnapshotMaxNumCase extends SubCase{
         }
         assert VmSystemTags.VM_MAX_INCREMENTAL_SNAPSHOT_NUM.getTokenByResourceUuid(vm1.uuid,
                 VmSystemTags.VM_MAX_INCREMENTAL_SNAPSHOT_NUM_TOKEN) == "1"
+    }
+
+    void testNoSystemTagCreateSnapshot(){
+        def instanceOfferingInv = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
+        def imageInv = env.inventoryByName("image1") as ImageInventory
+        def l3Inv = env.inventoryByName("l3") as L3NetworkInventory
+
+        vm2 = createVmInstance {
+            name = "vm2"
+            instanceOfferingUuid = instanceOfferingInv.uuid
+            imageUuid = imageInv.uuid
+            l3NetworkUuids = [l3Inv.uuid]
+        } as VmInstanceInventory
+
+        // MaxNum for vm2 is not set, global config is 2
+        assert Q.New(VolumeSnapshotTreeVO.class).count() == 0
+
+        createVolumeSnapshot {
+            volumeUuid = vm2.rootVolumeUuid
+            name = "testVmSnapshot1"
+        }
+
+        createVolumeSnapshot {
+            volumeUuid = vm2.rootVolumeUuid
+            name = "testVmSnapshot2"
+        }
+
+        assert Q.New(VolumeSnapshotTreeVO.class).count() == 1
+
+        createVolumeSnapshot {
+            volumeUuid = vm2.rootVolumeUuid
+            name = "testVmSnapshot2"
+        }
+
+        assert Q.New(VolumeSnapshotTreeVO.class).count() == 2
+    }
+
+    void testPerVmSystemTagCreateSnapshot(){
+        // MaxNum for vm1 is 1, global config is 2
+        int nowCount = Q.New(VolumeSnapshotTreeVO.class).count()
+
+        createVolumeSnapshot {
+            volumeUuid = vm1.rootVolumeUuid
+            name = "testVmSnapshot1"
+        }
+
+        createVolumeSnapshot {
+            volumeUuid = vm1.rootVolumeUuid
+            name = "testVmSnapshot2"
+        }
+
+        assert Q.New(VolumeSnapshotTreeVO.class).count() == nowCount + 2
     }
 }
