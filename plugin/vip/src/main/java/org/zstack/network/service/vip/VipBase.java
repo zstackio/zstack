@@ -27,7 +27,6 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.network.l3.L3NetworkConstant;
 import org.zstack.header.network.l3.ReturnIpMsg;
-import org.zstack.header.vm.BeforeStartNewCreatedVmExtensionPoint;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
@@ -151,9 +150,9 @@ public class VipBase {
 
     private void deleteFromBackend(Completion completion) {
         /* because there are multiple service on same vip, release vip from backaned
-           if and only if there is no service on this vip */
+           if and only if there is no other service on this vip */
         VipUseForList useForList = new VipUseForList(self.getUseFor());
-        if (self.getServiceProvider() == null && !useForList.getUseForList().isEmpty()) {
+        if (self.getServiceProvider() == null || useForList.getUseForList().size() > 1) {
             // this VIP has not bean created on backend yet
             completion.success();
             return;
@@ -264,7 +263,7 @@ public class VipBase {
         /* if there is other service on this vip, DO NOT release it */
         VipUseForList useForList = new VipUseForList(msg.getStruct().getUseFor());
         if (!useForList.getUseForList().isEmpty()){
-            /* ReleaseVipMsg will setServiceProvider and setPeerL3NetworkUuid to null, recover it it here  */
+            /* ReleaseVipMsg will setServiceProvider and setPeerL3NetworkUuid to null, recover it here  */
             msg.getStruct().setServiceProvider(self.getServiceProvider());
             msg.getStruct().setPeerL3NetworkUuid(self.getPeerL3NetworkUuid());
             modifyAttributes(msg.getStruct());
