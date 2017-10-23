@@ -1,9 +1,12 @@
 package org.zstack.test.integration.identity.resource
 
 import org.zstack.core.db.DatabaseFacade
+import org.zstack.header.identity.AccountConstant
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.sdk.AccountInventory
+import org.zstack.sdk.InstanceOfferingInventory
+import org.zstack.sdk.SessionInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.test.integration.ZStackTest
 import org.zstack.test.integration.identity.Env
@@ -13,7 +16,7 @@ import org.zstack.testlib.SubCase
 /**
  * Created by camile on 2017/6/11.
  */
-class ChangeVmWhenStartringCase extends SubCase {
+class OperationResourceCase extends SubCase {
     EnvSpec envSpec
 
     @Override
@@ -47,10 +50,33 @@ class ChangeVmWhenStartringCase extends SubCase {
         }
     }
 
+    void testShareResourceAgain(){
+        SessionInventory sessionInventory = logInByAccount {
+            accountName = AccountConstant.INITIAL_SYSTEM_ADMIN_NAME
+            password = AccountConstant.INITIAL_SYSTEM_ADMIN_PASSWORD
+        } as SessionInventory
+
+        InstanceOfferingInventory instanceOfferingInventory = envSpec.inventoryByName("instanceOffering")
+        shareResource {
+            resourceUuids = [instanceOfferingInventory.uuid]
+            accountUuids = [sessionInventory.accountUuid]
+        }
+
+        shareResource {
+            resourceUuids = [instanceOfferingInventory.uuid]
+            accountUuids = [sessionInventory.accountUuid]
+        }
+        revokeResourceSharing{
+            resourceUuids = [instanceOfferingInventory.uuid]
+            accountUuids = [sessionInventory.accountUuid]
+        }
+    }
+
     @Override
     void test() {
         envSpec.create {
             testChangeOwnerWhenVMStarting()
+            testShareResourceAgain()
         }
     }
 }
