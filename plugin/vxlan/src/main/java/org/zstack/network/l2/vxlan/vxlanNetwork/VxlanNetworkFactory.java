@@ -27,8 +27,10 @@ import org.zstack.header.vm.VmInstanceMigrateExtensionPoint;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.identity.AccountManager;
 import org.zstack.network.l2.L2NetworkDefaultMtu;
+import org.zstack.network.l2.L2VlanNetwork;
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.AllocateVniMsg;
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.AllocateVniReply;
+import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPool;
 import org.zstack.network.service.NetworkServiceGlobalConfig;
 import org.zstack.query.QueryFacade;
 import org.zstack.utils.Utils;
@@ -44,7 +46,7 @@ import static org.zstack.core.Platform.operr;
 /**
  * Created by weiwang on 02/03/2017.
  */
-public class VxlanNetworkFactory implements L2NetworkFactory, Component, VmInstanceMigrateExtensionPoint, L2NetworkDefaultMtu {
+public class VxlanNetworkFactory implements L2NetworkFactory, Component, VmInstanceMigrateExtensionPoint, L2NetworkDefaultMtu, L2NetworkGetVniExtensionPoint {
     private static CLogger logger = Utils.getLogger(VxlanNetworkFactory.class);
     static L2NetworkType type = new L2NetworkType(VxlanNetworkConstant.VXLAN_NETWORK_TYPE);
 
@@ -210,5 +212,16 @@ public class VxlanNetworkFactory implements L2NetworkFactory, Component, VmInsta
     @Override
     public Integer getDefaultMtu() {
         return Integer.valueOf(NetworkServiceGlobalConfig.DHCP_MTU_VXLAN.getDefaultValue());
+    }
+
+    @Override
+    public Integer getL2NetworkVni(String l2NetworkUuid) {
+        VxlanNetworkVO vxlanNetworkVO = Q.New(VxlanNetworkVO.class).eq(VxlanNetworkVO_.uuid, l2NetworkUuid).find();
+        return vxlanNetworkVO.getVni();
+    }
+
+    @Override
+    public String getL2NetworkVniType() {
+        return type.toString();
     }
 }

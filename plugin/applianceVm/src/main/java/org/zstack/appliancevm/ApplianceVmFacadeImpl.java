@@ -13,6 +13,7 @@ import org.zstack.core.componentloader.PluginExtension;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.job.JobQueueFacade;
@@ -28,6 +29,11 @@ import org.zstack.header.host.HypervisorType;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.network.l2.L2NetworkGetVniExtensionPoint;
+import org.zstack.header.network.l2.L2NetworkVO;
+import org.zstack.header.network.l2.L2NetworkVO_;
+import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.network.l3.L3NetworkVO_;
 import org.zstack.header.vm.*;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
@@ -66,6 +72,7 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
     private List<String> createApplianceVmWorkFlow;
     private FlowChainBuilder createApplianceVmWorkFlowBuilder;
     private Map<String, ApplianceVmBootstrapFlowFactory> bootstrapInfoFlowFactories = new HashMap<String, ApplianceVmBootstrapFlowFactory>();
+    private Map<String, L2NetworkGetVniExtensionPoint> l2NetworkGetVniExtensionPointMap = new HashMap<>();
 
     private String OWNER = String.format("ApplianceVm.%s", Platform.getManagementServerId());
 
@@ -193,6 +200,16 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
 
             bootstrapInfoFlowFactories.put(extp.getHypervisorTypeForApplianceVmBootstrapFlow().toString(), extp);
         }
+        exts = pluginRgty.getExtensionByInterfaceName(L2NetworkGetVniExtensionPoint.class.getName());
+        for (PluginExtension ext : exts) {
+            L2NetworkGetVniExtensionPoint extp = (L2NetworkGetVniExtensionPoint) ext.getInstance();
+            L2NetworkGetVniExtensionPoint old = l2NetworkGetVniExtensionPointMap.get(extp.getL2NetworkVniType());
+            if (old != null) {
+                throw new CloudRuntimeException(String.format("two extensions[%s, %s] declare L2NetworkGetVniExtensionPoint for l2 netwoork type[%s]", old.getClass().getName(), extp.getClass().getName(), extp.getL2NetworkVniType()));
+            }
+
+            l2NetworkGetVniExtensionPointMap.put(extp.getL2NetworkVniType(), extp);
+        }
     }
 
     private void deployAnsible() {
@@ -284,6 +301,13 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
             ApplianceVmNicTO t = new ApplianceVmNicTO(defaultRouteNic);
             t.setDeviceName(String.format("eth%s", deviceId));
             t.setDefaultRoute(true);
+
+            L3NetworkVO l3NetworkVO = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, defaultRouteNic.getL3NetworkUuid()).find();
+            L2NetworkVO l2NetworkVO = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.uuid, l3NetworkVO.getL2NetworkUuid()).find();
+
+            t.setCategoryy(l3NetworkVO.getCategory().toString());
+            t.setL2type(l2NetworkVO.getType());
+            t.setVni(l2NetworkGetVniExtensionPointMap.get(l2NetworkVO.getType()).getL2NetworkVni(l2NetworkVO.getUuid()));
             deviceId ++;
             extraTos.add(t);
             additionalNics = reduceNic(additionalNics, defaultRouteNic);
