@@ -2253,7 +2253,7 @@
   {
     "raw": "the host[uuid:%s] becomes Disconnected, change the VM[uuid:%s]\u0027 state to Unknown",
     "en_US": "the host[uuid:{0}] becomes Disconnected, change the VM[uuid:{1}]\u0027 state to Unknown",
-    "zh_CN": "物理机[uuid:{0}]变为Disconnected，云主机[uuid:{1}]将状态改变为Unknown",
+    "zh_CN": "物理机[uuid:{0}]失联，云主机[uuid:{1}]将状态改变为Unknown",
     "arguments": [
       "hostUuid",
       "vmUuid"
@@ -2264,7 +2264,7 @@
   {
     "raw": "the host[uuid:%s] becomes Disconnected, but the vm[uuid:%s] fails to change it\u0027s state to Unknown, %s",
     "en_US": "the host[uuid:{0}] becomes Disconnected, but the vm[uuid:{1}] fails to change it\u0027s state to Unknown, {2}",
-    "zh_CN": "物理机[uuid:{0}]变为Disconnected，但云主机[uuid:{1}]将状态改变为Unknown失败，原因：{2}",
+    "zh_CN": "物理机[uuid:{0}]失联，但云主机[uuid:{1}]将状态改变为Unknown失败，原因：{2}",
     "arguments": [
       "hostUuid",
       "vmUuid",
