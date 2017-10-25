@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.header.AbstractService;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -16,7 +17,7 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.List;
 
-public class L2VlanNetworkFactory extends AbstractService implements L2NetworkFactory, L2NetworkDefaultMtu {
+public class L2VlanNetworkFactory extends AbstractService implements L2NetworkFactory, L2NetworkDefaultMtu, L2NetworkGetVniExtensionPoint {
     private static CLogger logger = Utils.getLogger(L2VlanNetworkFactory.class);
     static L2NetworkType type = new L2NetworkType(L2NetworkConstant.L2_VLAN_NETWORK_TYPE);
     
@@ -103,5 +104,16 @@ public class L2VlanNetworkFactory extends AbstractService implements L2NetworkFa
     @Override
     public Integer getDefaultMtu() {
         return Integer.valueOf(NetworkServiceGlobalConfig.DHCP_MTU_VLAN.getDefaultValue());
+    }
+
+    @Override
+    public Integer getL2NetworkVni(String l2NetworkUuid) {
+        L2VlanNetworkVO l2VlanNetworkVO = Q.New(L2VlanNetwork.class).eq(L2VlanNetworkVO_.uuid, l2NetworkUuid).find();
+        return l2VlanNetworkVO.getVlan();
+    }
+
+    @Override
+    public String getL2NetworkVniType() {
+        return type.toString();
     }
 }
