@@ -108,7 +108,7 @@ public class L2VlanNetworkFactory extends AbstractService implements L2NetworkFa
 
     @Override
     public Integer getL2NetworkVni(String l2NetworkUuid) {
-        L2VlanNetworkVO l2VlanNetworkVO = Q.New(L2VlanNetwork.class).eq(L2VlanNetworkVO_.uuid, l2NetworkUuid).find();
+        L2VlanNetworkVO l2VlanNetworkVO = Q.New(L2VlanNetworkVO.class).eq(L2VlanNetworkVO_.uuid, l2NetworkUuid).find();
         return l2VlanNetworkVO.getVlan();
     }
 

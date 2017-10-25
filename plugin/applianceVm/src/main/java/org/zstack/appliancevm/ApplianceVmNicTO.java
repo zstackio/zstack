@@ -12,7 +12,7 @@ public class ApplianceVmNicTO {
     private String deviceName;
     private String metaData;
     private boolean isDefaultRoute;
-    private String categoryy;
+    private String category;
     private String l2type;
     private Integer vni;
 
@@ -82,12 +82,12 @@ public class ApplianceVmNicTO {
         this.mac = mac;
     }
 
-    public String getCategoryy() {
-        return categoryy;
+    public String getCategory() {
+        return category;
     }
 
-    public void setCategoryy(String categoryy) {
-        this.categoryy = categoryy;
+    public void setCategory(String category) {
+        this.category = category;
     }
 
     public String getL2type() {
