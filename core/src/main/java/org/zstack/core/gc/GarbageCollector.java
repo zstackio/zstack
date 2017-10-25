@@ -135,6 +135,8 @@ public abstract class GarbageCollector {
         vo.setStatus(GCStatus.Idle);
         if (this instanceof EventBasedGarbageCollector) {
             vo.setType(GarbageCollectorType.EventBased.toString());
+        } else if (this instanceof CycleBasedGarbageCollector) {
+            vo.setType(GarbageCollectorType.CycleBased.toString());
         } else {
             vo.setType(GarbageCollectorType.TimeBased.toString());
         }

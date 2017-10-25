@@ -15,6 +15,7 @@ public class GarbageCollectorVO_ extends ResourceVO_ {
     public static volatile SingularAttribute<GarbageCollectorVO, String> runnerClass;
     public static volatile SingularAttribute<GarbageCollectorVO, String> context;
     public static volatile SingularAttribute<GarbageCollectorVO, GCStatus> status;
+    public static volatile SingularAttribute<GarbageCollectorVO, String> type;
     public static volatile SingularAttribute<GarbageCollectorVO, String> managementNodeUuid;
     public static volatile SingularAttribute<GarbageCollectorVO, Timestamp> createDate;
     public static volatile SingularAttribute<GarbageCollectorVO, Timestamp> lastOpDate;

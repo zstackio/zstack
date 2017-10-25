@@ -21,7 +21,7 @@ public abstract class TimeBasedGarbageCollector extends GarbageCollector {
         canceller = () -> {};
     }
 
-    private void setupTimer() {
+    protected void setupTimer() {
         logger.debug(String.format("[GC] schedule a GC job[name:%s, id:%s] to run after %s %s",
                 NAME, uuid, NEXT_TIME, NEXT_TIME_UNIT));
 

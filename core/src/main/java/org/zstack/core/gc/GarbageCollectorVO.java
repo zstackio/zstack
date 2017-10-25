@@ -38,6 +38,11 @@ public class GarbageCollectorVO extends ResourceVO {
     @Column
     private Timestamp lastOpDate;
 
+    @PreUpdate
+    private void preUpdate() {
+        lastOpDate = null;
+    }
+
     public String getName() {
         return name;
     }

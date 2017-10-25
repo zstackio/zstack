@@ -22,13 +22,13 @@ import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import static org.zstack.core.Platform.operr;
-
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+
+import static org.zstack.core.Platform.operr;
 
 /**
  * Created by xing5 on 2017/3/1.
@@ -122,6 +122,10 @@ public class GarbageCollectorManagerImpl extends AbstractService
                 gc.load(vo);
                 ret = gc;
             } else if (vo.getType().equals(GarbageCollectorType.TimeBased.toString())) {
+                TimeBasedGarbageCollector gc = (TimeBasedGarbageCollector) clz.newInstance();
+                gc.load(vo);
+                ret = gc;
+            } else if (vo.getType().equals(GarbageCollectorType.CycleBased.toString())) {
                 TimeBasedGarbageCollector gc = (TimeBasedGarbageCollector) clz.newInstance();
                 gc.load(vo);
                 ret = gc;

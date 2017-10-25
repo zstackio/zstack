@@ -5,5 +5,6 @@ package org.zstack.core.gc;
  */
 public enum GarbageCollectorType {
     EventBased,
+    CycleBased,
     TimeBased
 }
