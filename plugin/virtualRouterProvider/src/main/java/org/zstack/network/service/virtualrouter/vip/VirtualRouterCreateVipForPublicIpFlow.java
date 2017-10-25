@@ -9,11 +9,15 @@ import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.network.l3.IpRangeInventory;
 import org.zstack.header.network.l3.IpRangeVO;
 import org.zstack.header.network.l3.IpRangeVO_;
+import org.zstack.header.network.service.NetworkServiceProviderType;
+import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.identity.AccountManager;
+import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.vip.VipState;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
@@ -37,6 +41,8 @@ public class VirtualRouterCreateVipForPublicIpFlow implements Flow {
     private TagManager tagMgr;
     @Autowired
     private AccountManager acntMgr;
+    @Autowired
+    private NetworkServiceManager nwServiceMgr;
     private final static CLogger logger = Utils.getLogger(VirtualRouterCreateVipForPublicIpFlow.class);
 
     @Override
@@ -71,6 +77,18 @@ public class VirtualRouterCreateVipForPublicIpFlow implements Flow {
         vipvo.setNetmask(nic.getNetmask());
         vipvo.setUsedIpUuid(nic.getUuid());
         vipvo.setUseFor(VirtualRouterConstant.SNAT_NETWORK_SERVICE_TYPE);
+        if(!vr.getGuestL3Networks().isEmpty()){
+            String peerL3network = vr.getGuestL3Networks().get(0);
+            try {
+                NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(peerL3network,
+                        NetworkServiceType.SNAT);
+                vipvo.setPeerL3NetworkUuid(peerL3network);
+                vipvo.setServiceProvider(providerType.toString());
+            } catch (OperationFailureException e){
+                vipvo.setPeerL3NetworkUuid(null);
+                vipvo.setServiceProvider(null);
+            }
+        }
 
         VirtualRouterVipVO vrvip = new VirtualRouterVipVO();
         vrvip.setUuid(vipvo.getUuid());
