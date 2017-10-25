@@ -6,5 +6,5 @@ import java.util.List;
  * Created by weiwang on 22/10/2017
  */
 public interface ApvmCascadeFilterExtensionPoint {
-    List<ApplianceVmVO> filterApplianceVmCascade(List<ApplianceVmVO> applianceVmVOS);
+    List<ApplianceVmVO> filterApplianceVmCascade(List<ApplianceVmVO> applianceVmVOS, String parentIssuer, List<String> parentIssuerUuids);
 }
