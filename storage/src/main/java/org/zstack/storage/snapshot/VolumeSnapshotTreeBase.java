@@ -379,33 +379,27 @@ public class VolumeSnapshotTreeBase {
         chain.done(new FlowDoneHandler(msg, completion) {
             @Override
             public void handle(Map data) {
-                if (msg.isVolumeDeletion()) {
-                    new Runnable() {
-                        @Override
-                        @Transactional
-                        public void run() {
-                            String sql = "update VolumeSnapshotTreeVO tree set tree.volumeUuid = NULL where tree.volumeUuid = :volUuid";
-                            Query q = dbf.getEntityManager().createQuery(sql);
-                            q.setParameter("volUuid", currentRoot.getVolumeUuid());
-                            q.executeUpdate();
+                new SQLBatch() {
+                    @Override
+                    protected void scripts() {
+                        if (msg.isVolumeDeletion()) {
+                            sql("update VolumeSnapshotTreeVO tree set tree.volumeUuid = NULL where tree.volumeUuid = :volUuid")
+                                    .param("volUuid", currentRoot.getVolumeUuid()).execute();
 
-                            sql = "update VolumeSnapshotVO s set s.volumeUuid = NULL where s.volumeUuid = :volUuid";
-                            q = dbf.getEntityManager().createQuery(sql);
-                            q.setParameter("volUuid", currentRoot.getVolumeUuid());
-                            q.executeUpdate();
+                            sql("update VolumeSnapshotVO s set s.volumeUuid = NULL where s.volumeUuid = :volUuid")
+                                    .param("volUuid", currentRoot.getVolumeUuid()).execute();
                         }
-                    }.run();
-                }
 
-                if (!msg.isVolumeDeletion() && finalAncestorOfLatest && currentRoot.getParentUuid() != null) {
-                    // reset latest
-                    VolumeSnapshotVO vo = dbf.findByUuid(currentRoot.getParentUuid(), VolumeSnapshotVO.class);
-                    vo.setLatest(true);
-                    dbf.update(vo);
-                    logger.debug(String.format("reset latest snapshot of tree[uuid:%s] to snapshot[uuid:%s]",
-                            currentRoot.getTreeUuid(), currentRoot.getParentUuid()));
-                }
 
+                        if (!msg.isVolumeDeletion() && finalAncestorOfLatest && currentRoot.getParentUuid() != null) {
+                            // reset latest
+                            sql(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.uuid, currentRoot.getParentUuid())
+                                    .set(VolumeSnapshotVO_.latest, true).update();
+                            logger.debug(String.format("reset latest snapshot of tree[uuid:%s] to snapshot[uuid:%s]",
+                                    currentRoot.getTreeUuid(), currentRoot.getParentUuid()));
+                        }
+                    }
+                }.execute();
 
                 if (!cleanup()) {
                     changeStatusOfSnapshots(StatusEvent.ready, currentLeaf.getDescendants(), new Completion(msg, completion) {
