@@ -81,7 +81,7 @@ public class APIAddVmNicToLoadBalancerMsg extends APIMessage implements LoadBala
                     for (String vmNicUuid : vmNicUuids) {
                         Tuple t = Q.New(VmNicVO.class)
                                 .select(VmNicVO_.vmInstanceUuid, VmNicVO_.ip)
-                                .eq(VmNicVO_.uuid, vmNicUuids).findTuple();
+                                .eq(VmNicVO_.uuid, vmNicUuid).findTuple();
 
 
                         String vmUuid = t.get(0, String.class);
