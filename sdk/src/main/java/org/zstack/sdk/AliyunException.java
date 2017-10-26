@@ -10,12 +10,4 @@ public class AliyunException extends ErrorCode {
         return this.ResourceNotFound;
     }
 
-    public java.lang.String ImageUsingByInstance;
-    public void setImageUsingByInstance(java.lang.String ImageUsingByInstance) {
-        this.ImageUsingByInstance = ImageUsingByInstance;
-    }
-    public java.lang.String getImageUsingByInstance() {
-        return this.ImageUsingByInstance;
-    }
-
 }
