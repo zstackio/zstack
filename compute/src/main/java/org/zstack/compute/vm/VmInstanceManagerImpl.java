@@ -2035,10 +2035,10 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     @Override
                     public void run(MessageReply reply) {
                         if(!reply.isSuccess()){
-                            N.New(VmInstanceVO.class, vmUuid).warn_("the host[uuid:%s] becomes Disconnected, but the vm[uuid:%s] fails to change it's state to Unknown, %s",
+                            N.New(VmInstanceVO.class, vmUuid).warn_("the host[uuid:%s] disconnected, but the vm[uuid:%s] fails to change it's state to Unknown, %s",
                                     hostUuid, vmUuid, reply.getError());
                         } else {
-                            N.New(VmInstanceVO.class, vmUuid).info_("the host[uuid:%s] becomes Disconnected, change the VM[uuid:%s]' state to Unknown", hostUuid, vmUuid);
+                            N.New(VmInstanceVO.class, vmUuid).info_("the host[uuid:%s] disconnected, change the VM[uuid:%s]' state to Unknown", hostUuid, vmUuid);
                         }
                         completion.done();
                     }

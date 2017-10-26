@@ -122,7 +122,7 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
                         q.add(VmInstanceVO_.uuid, Op.EQ, cmd.vmUuid);
                         VmInstanceState stateInDb = q.findValue();
                         if (stateInDb == null) {
-                            N.New(HostVO.class, cmd.hostUuid).warn_("an anonymous VM[uuid:%s, state:%s] is detected on the host[uuid:%s]", cmd.hostUuid, state, cmd.hostUuid);
+                            N.New(HostVO.class, cmd.hostUuid).warn_("an anonymous VM[uuid:%s, state:%s] is detected on the host[uuid:%s]", cmd.vmUuid, state, cmd.hostUuid);
                             chain.next();
                             return;
                         }
