@@ -604,7 +604,7 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
             List<ApplianceVmVO> apvms = q.getResultList();
             if (!apvms.isEmpty()) {
                 for (ApvmCascadeFilterExtensionPoint ext : pluginRgty.getExtensionList(ApvmCascadeFilterExtensionPoint.class)) {
-                    apvms = ext.filterApplianceVmCascade(apvms);
+                    apvms = ext.filterApplianceVmCascade(apvms, action.getParentIssuer(), l3uuids);
                 }
                 ret = ApplianceVmInventory.valueOf1(apvms);
             }
@@ -660,7 +660,7 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
                 }
             }
             for (ApvmCascadeFilterExtensionPoint ext : pluginRgty.getExtensionList(ApvmCascadeFilterExtensionPoint.class)) {
-                vmvos = ext.filterApplianceVmCascade(vmvos);
+                vmvos = ext.filterApplianceVmCascade(vmvos, action.getParentIssuer(), ipruuids);
             }
 
             if (!vmvos.isEmpty()) {
