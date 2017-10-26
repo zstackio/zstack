@@ -200,15 +200,14 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
 
             bootstrapInfoFlowFactories.put(extp.getHypervisorTypeForApplianceVmBootstrapFlow().toString(), extp);
         }
-        exts = pluginRgty.getExtensionByInterfaceName(L2NetworkGetVniExtensionPoint.class.getName());
-        for (PluginExtension ext : exts) {
-            L2NetworkGetVniExtensionPoint extp = (L2NetworkGetVniExtensionPoint) ext.getInstance();
-            L2NetworkGetVniExtensionPoint old = l2NetworkGetVniExtensionPointMap.get(extp.getL2NetworkVniType());
+        for (L2NetworkGetVniExtensionPoint ext : pluginRgty.getExtensionList(L2NetworkGetVniExtensionPoint.class)) {
+            L2NetworkGetVniExtensionPoint old = l2NetworkGetVniExtensionPointMap.get(ext.getL2NetworkVniType());
             if (old != null) {
-                throw new CloudRuntimeException(String.format("two extensions[%s, %s] declare L2NetworkGetVniExtensionPoint for l2 netwoork type[%s]", old.getClass().getName(), extp.getClass().getName(), extp.getL2NetworkVniType()));
+                throw new CloudRuntimeException(String.format("two extensions[%s, %s] declare L2NetworkGetVniExtensionPoint for l2 netwoork type[%s]", old.getClass().getName(), ext.getClass().getName(), ext.getL2NetworkVniType()));
             }
 
-            l2NetworkGetVniExtensionPointMap.put(extp.getL2NetworkVniType(), extp);
+            l2NetworkGetVniExtensionPointMap.put(ext.getL2NetworkVniType(), ext);
+            logger.debug(String.format("add new l2NetworkGetVniExtensionPoint, %s: %s", ext.getL2NetworkVniType(), ext.getClass().getCanonicalName()));
         }
     }
 
@@ -281,6 +280,21 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
         if (mgmtNic.getL3NetworkUuid().equals(defaultL3Uuid)) {
             mto.setDefaultRoute(true);
         }
+
+        L3NetworkVO l3NetworkVO = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, mgmtNic.getL3NetworkUuid()).find();
+        L2NetworkVO l2NetworkVO = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.uuid, l3NetworkVO.getL2NetworkUuid()).find();
+
+        mto.setCategory(l3NetworkVO.getCategory().toString());
+        mto.setL2type(l2NetworkVO.getType());
+        if (l2NetworkGetVniExtensionPointMap == null || l2NetworkGetVniExtensionPointMap.isEmpty() ||
+                l2NetworkGetVniExtensionPointMap.get(l2NetworkVO.getType()) == null) {
+            logger.debug("l2NetworkGetVniExtensionPointMap is null. skip to get vni");
+        } else {
+            mto.setVni(l2NetworkGetVniExtensionPointMap
+                    .get(l2NetworkVO.getType())
+                    .getL2NetworkVni(l2NetworkVO.getUuid()));
+        }
+
         ret.put(ApplianceVmConstant.BootstrapParams.managementNic.toString(), mto);
 
         List<ApplianceVmNicTO> extraTos = new ArrayList<ApplianceVmNicTO>();
@@ -302,10 +316,10 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
             t.setDeviceName(String.format("eth%s", deviceId));
             t.setDefaultRoute(true);
 
-            L3NetworkVO l3NetworkVO = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, defaultRouteNic.getL3NetworkUuid()).find();
-            L2NetworkVO l2NetworkVO = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.uuid, l3NetworkVO.getL2NetworkUuid()).find();
+            l3NetworkVO = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, defaultRouteNic.getL3NetworkUuid()).find();
+            l2NetworkVO = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.uuid, l3NetworkVO.getL2NetworkUuid()).find();
 
-            t.setCategoryy(l3NetworkVO.getCategory().toString());
+            t.setCategory(l3NetworkVO.getCategory().toString());
             t.setL2type(l2NetworkVO.getType());
             t.setVni(l2NetworkGetVniExtensionPointMap.get(l2NetworkVO.getType()).getL2NetworkVni(l2NetworkVO.getUuid()));
             deviceId ++;
@@ -316,6 +330,12 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
         for (VmNicInventory nic : additionalNics) {
             ApplianceVmNicTO nto = new ApplianceVmNicTO(nic);
             nto.setDeviceName(String.format("eth%s", deviceId));
+            l3NetworkVO = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, nic.getL3NetworkUuid()).find();
+            l2NetworkVO = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.uuid, l3NetworkVO.getL2NetworkUuid()).find();
+
+            nto.setCategory(l3NetworkVO.getCategory().toString());
+            nto.setL2type(l2NetworkVO.getType());
+            nto.setVni(l2NetworkGetVniExtensionPointMap.get(l2NetworkVO.getType()).getL2NetworkVni(l2NetworkVO.getUuid()));
             extraTos.add(nto);
             deviceId ++;
         }

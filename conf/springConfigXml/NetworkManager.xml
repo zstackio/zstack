@@ -98,6 +98,7 @@
             <zstack:extension interface="org.zstack.header.Service"/>
             <zstack:extension interface="org.zstack.header.network.l2.L2NetworkFactory"/>
             <zstack:extension interface="org.zstack.network.l2.L2NetworkDefaultMtu"/>
+            <zstack:extension interface="org.zstack.header.network.l2.L2NetworkGetVniExtensionPoint" />
         </zstack:plugin>
     </bean>
 
