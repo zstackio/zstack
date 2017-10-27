@@ -697,9 +697,24 @@ public class CephBackupStorageBase extends BackupStorageBase {
     protected void handle(final GetImageDownloadProgressMsg msg) {
         GetDownloadProgressCmd cmd = new GetDownloadProgressCmd();
         cmd.setImageUuid(msg.getImageUuid());
+        cmd.setFsid(getSelf().getFsid());
+        cmd.setUuid(self.getUuid());
 
         GetImageDownloadProgressReply r = new GetImageDownloadProgressReply();
-        httpCall(GET_DOWNLOAD_PROGRESS_PATH, cmd, GetDownloadProgressRsp.class, new ReturnValueCompletion<GetDownloadProgressRsp>(msg) {
+
+        CephBackupStorageMonVO monvo = Q.New(CephBackupStorageMonVO.class)
+                .eq(CephBackupStorageMonVO_.backupStorageUuid, msg.getBackupStorageUuid())
+                .eq(CephBackupStorageMonVO_.hostname, msg.getHostname())
+                .find();
+        if (monvo == null) {
+            r.setError(errf.stringToOperationError(
+                    String.format("CephMon[hostname:%s] not found on backup storage[uuid:%s]",
+                            msg.getHostname(), msg.getBackupStorageUuid())));
+            bus.reply(msg, r);
+            return;
+        }
+
+        new CephBackupStorageMonBase(monvo).httpCall(GET_DOWNLOAD_PROGRESS_PATH, cmd, GetDownloadProgressRsp.class, new ReturnValueCompletion<GetDownloadProgressRsp>(msg) {
             @Override
             public void success(GetDownloadProgressRsp resp) {
                 r.setCompleted(resp.isCompleted());

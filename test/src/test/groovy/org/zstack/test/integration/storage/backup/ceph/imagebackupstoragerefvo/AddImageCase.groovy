@@ -129,7 +129,7 @@ class AddImageCase extends SubCase{
         env.simulator(CephBackupStorageBase.DOWNLOAD_IMAGE_PATH) {
             def rsp = new CephBackupStorageBase.DownloadRsp()
             rsp.size = originSize
-            rsp.uploadPath = "http://127.0.0.1:7071/ceph/image/upload"
+            rsp.uploadPath = "http://localhost:7071/ceph/image/upload"
             return rsp
         }
 
