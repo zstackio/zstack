@@ -108,11 +108,9 @@ public class APICreateRootVolumeTemplateFromRootVolumeMsg extends APICreateMessa
         return new ApiNotification() {
             @Override
             public void after(APIEvent evt) {
-                if (evt.isSuccess()) {
-                    ntfy("Created from a root volume[uuid:%s]", rootVolumeUuid).resource(((APICreateRootVolumeTemplateFromRootVolumeEvent)evt).getInventory().getUuid(),
-                            ImageVO.class.getSimpleName())
-                            .messageAndEvent(that, evt).done();
-                }
+                ntfy("Created from a root volume[uuid:%s]", rootVolumeUuid).resource(((APICreateRootVolumeTemplateFromRootVolumeEvent)evt).getInventory().getUuid(),
+                        ImageVO.class.getSimpleName())
+                        .messageAndEvent(that, evt).done();
             }
         };
     }
