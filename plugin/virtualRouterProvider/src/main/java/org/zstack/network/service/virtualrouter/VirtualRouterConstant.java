@@ -58,6 +58,7 @@ public interface VirtualRouterConstant {
         VR_UUID,
         IS_NEW_CREATED,
         IS_RECONNECT,
-        VIPS, PUB_VIP_UUID,
+        VIPS,
+        PUB_VIP_UUID,
     }
 }
