@@ -27,6 +27,7 @@ import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.*;
@@ -65,6 +66,8 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.Callable;
@@ -1011,21 +1014,23 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                 String name;
                 String imageUuid;
                 String bsUuid;
+                String hostname;
             }
 
             List<TrackContext> ctxs = new ArrayList<>();
 
-            private void addTrackTask(String name, String imageUuid, String bsUuid) {
+            private void addTrackTask(String name, String imageUuid, String bsUuid, String installPath) throws URISyntaxException {
                 TrackContext ctx = new TrackContext();
                 ctx.name = name;
                 ctx.imageUuid = imageUuid;
                 ctx.bsUuid = bsUuid;
+                ctx.hostname = new URI(installPath).getHost();
                 ctxs.add(ctx);
             }
 
             private void runTrackTask() {
                 for (TrackContext ctx: ctxs) {
-                    trackUpload(ctx.name, ctx.imageUuid, ctx.bsUuid);
+                    trackUpload(ctx.name, ctx.imageUuid, ctx.bsUuid, ctx.hostname);
                 }
             }
 
@@ -1052,7 +1057,11 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                 } else {
                                     DownloadImageReply re = reply.castReply();
                                     if (isUpload(msg)) {
-                                        addTrackTask(ivo.getName(), ivo.getUuid(), ref.getBackupStorageUuid());
+                                        try {
+                                            addTrackTask(ivo.getName(), ivo.getUuid(), ref.getBackupStorageUuid(), re.getInstallPath());
+                                        } catch (URISyntaxException e) {
+                                            throw new OperationFailureException(errf.throwableToOperationError(e));
+                                        }
                                     } else {
                                         ref.setStatus(ImageStatus.Ready);
                                     }
@@ -1494,7 +1503,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         reportProgress(String.valueOf(progress));
     }
 
-    private void trackUpload(String name, String imageUuid, String bsUuid) {
+    private void trackUpload(String name, String imageUuid, String bsUuid, String hostname) {
         final int maxNumOfFailure = 3;
         final int maxIdleSecond = 30;
 
@@ -1555,6 +1564,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                 final GetImageDownloadProgressMsg dmsg = new GetImageDownloadProgressMsg();
                 dmsg.setBackupStorageUuid(bsUuid);
                 dmsg.setImageUuid(imageUuid);
+                dmsg.setHostname(hostname);
                 bus.makeTargetServiceIdByResourceUuid(dmsg, BackupStorageConstant.SERVICE_ID, bsUuid);
 
                 final MessageReply reply = bus.call(dmsg);
