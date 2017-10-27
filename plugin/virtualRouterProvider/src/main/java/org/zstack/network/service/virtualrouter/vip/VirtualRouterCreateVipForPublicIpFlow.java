@@ -70,7 +70,7 @@ public class VirtualRouterCreateVipForPublicIpFlow implements Flow {
         vipvo.setL3NetworkUuid(nic.getL3NetworkUuid());
         vipvo.setNetmask(nic.getNetmask());
         vipvo.setUsedIpUuid(nic.getUuid());
-        //vipvo.setUseFor(VirtualRouterConstant.SNAT_NETWORK_SERVICE_TYPE);
+        vipvo.setUseFor(VirtualRouterConstant.SNAT_NETWORK_SERVICE_TYPE);
 
         VirtualRouterVipVO vrvip = new VirtualRouterVipVO();
         vrvip.setUuid(vipvo.getUuid());

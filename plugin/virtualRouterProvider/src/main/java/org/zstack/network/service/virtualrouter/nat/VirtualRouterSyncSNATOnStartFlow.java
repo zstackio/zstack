@@ -51,7 +51,6 @@ public class VirtualRouterSyncSNATOnStartFlow implements Flow {
 
     @Override
     public void run(final FlowTrigger chain, Map data) {
-        acquireSnatServiceOnVip(chain, data);
         final VirtualRouterVmInventory vr = (VirtualRouterVmInventory) data.get(VirtualRouterConstant.Param.VR.toString());
         List<String> nwServed = vr.getAllL3Networks();
         nwServed = vrMgr.selectL3NetworksNeedingSpecificNetworkService(nwServed, NetworkServiceType.SNAT);
@@ -103,7 +102,22 @@ public class VirtualRouterSyncSNATOnStartFlow implements Flow {
                             vr.getName(), vr.getUuid(), JSONObjectUtil.toJsonString(snatInfo), ret.getError());
                     chain.fail(err);
                 } else {
-                    chain.next();
+                    Vip vip = getVipWithSnatService(data);
+                    if (vip != null){
+                        vip.acquire(false, new Completion(chain) {
+                            @Override
+                            public void success() {
+                                chain.next();
+                                return;
+                            }
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                chain.fail(errorCode);
+                            }
+                        });
+                    } else {
+                        chain.next();
+                    }
                 }
             }
         });
@@ -114,10 +128,10 @@ public class VirtualRouterSyncSNATOnStartFlow implements Flow {
         releaseSnatServiceOnVip(chain, data);
     }
 
-    void acquireSnatServiceOnVip(final FlowTrigger chain, Map data){
+    Vip getVipWithSnatService(Map data){
         String vipUuid = (String)data.get(VirtualRouterConstant.Param.PUB_VIP_UUID.toString());
         if (vipUuid == null){
-            return;
+            return null;
         }
 
         Vip vip = new Vip(vipUuid);
@@ -134,17 +148,7 @@ public class VirtualRouterSyncSNATOnStartFlow implements Flow {
             }
         }
         vip.addUseFor(NetworkServiceType.SNAT.toString());
-        vip.acquire(false, new Completion(chain) {
-            @Override
-            public void success() {
-                return;
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                chain.fail(errorCode);
-            }
-        });
+        return vip;
     }
 
     void releaseSnatServiceOnVip(final FlowRollback chain, Map data){
