@@ -14,16 +14,17 @@ import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.SizeUtils;
 
-import static org.zstack.core.Platform.operr;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import static org.zstack.core.Platform.operr;
 
 /**
  */
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class PrimaryStorageReservedCapacityAllocatorFlow extends NoRollbackFlow {
+
     @Autowired
     protected ErrorFacade errf;
     @Autowired

@@ -88,6 +88,7 @@ public class NfsDownloadImageToCacheJob implements Job {
                         amsg.setSize(image.getInventory().getActualSize());
                         amsg.setPurpose(PrimaryStorageAllocationPurpose.DownloadImage.toString());
                         amsg.setNoOverProvisioning(true);
+                        amsg.setImageUuid(image.getInventory().getUuid());
                         bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
                         bus.send(amsg, new CloudBusCallBack(trigger) {
                             @Override

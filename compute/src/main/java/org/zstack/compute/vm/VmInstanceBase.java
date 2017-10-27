@@ -489,6 +489,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         amsg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
         amsg.setAllocatorStrategy(self.getAllocatorStrategy());
         amsg.setVmOperation(VmOperation.Start.toString());
+        amsg.setImage(ImageInventory.valueOf(dbf.findByUuid(self.getImageUuid(), ImageVO.class)));
         amsg.setL3NetworkUuids(CollectionUtils.transformToList(self.getVmNics(), new Function<String, VmNicVO>() {
             @Override
             public String call(VmNicVO arg) {
@@ -1272,6 +1273,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         amsg.setCpuCapacity(self.getCpuNum());
         amsg.setMemoryCapacity(self.getMemorySize());
         amsg.getAvoidHostUuids().add(self.getHostUuid());
+        amsg.setImage(ImageInventory.valueOf(dbf.findByUuid(self.getImageUuid(), ImageVO.class)));
         if (msg instanceof GetVmMigrationTargetHostMsg) {
             GetVmMigrationTargetHostMsg gmsg = (GetVmMigrationTargetHostMsg) msg;
             if (gmsg.getAvoidHostUuids() != null) {
@@ -3298,6 +3300,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 msg.setMemoryCapacity(struct.alignedMemory - oldMemorySize);
                 msg.setAllocatorStrategy(HostAllocatorConstant.DESIGNATED_HOST_ALLOCATOR_STRATEGY_TYPE);
                 msg.setVmInstance(VmInstanceInventory.valueOf(self));
+                msg.setImage(ImageInventory.valueOf(dbf.findByUuid(self.getImageUuid(), ImageVO.class)));
                 msg.setHostUuid(self.getHostUuid());
                 msg.setL3NetworkUuids(CollectionUtils.transformToList(self.getVmNics(), new Function<String, VmNicVO>() {
                     @Override

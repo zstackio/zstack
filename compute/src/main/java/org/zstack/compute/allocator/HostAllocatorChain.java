@@ -38,15 +38,14 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
 
     private List<HostVO> result = null;
     private boolean isDryRun;
-    private ReturnValueCompletion<HostInventory> completion;
+    private ReturnValueCompletion<List<HostInventory>> completion;
     private ReturnValueCompletion<List<HostInventory>> dryRunCompletion;
+
 
     private AbstractHostAllocatorFlow lastFlow;
     private HostAllocationPaginationInfo paginationInfo;
 
     private Set<String> seriesErrorWhenPagination = new HashSet<String>();
-
-    private MarshalResultFunction marshalResultFunction;
 
     @Autowired
     private ErrorFacade errf;
@@ -106,12 +105,6 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
         });
     }
 
-    protected void marshalResult() {
-        if (marshalResultFunction != null) {
-            marshalResultFunction.marshal(result);
-        }
-    }
-
     private void done() {
         if (result == null) {
             if (isDryRun) {
@@ -125,7 +118,6 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
             }
             return;
         }
-
 
         // in case a wrong flow returns an empty result set
         if (result.isEmpty()) {
@@ -141,38 +133,8 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
 
         if (isDryRun) {
             dryRunCompletion.success(HostInventory.valueOf(result));
-            return;
-        }
-
-        marshalResult();
-
-        try {
-            for (HostVO h : result) {
-                try {
-                    reserveCapacity(h.getUuid(), allocationSpec.getCpuCapacity(), allocationSpec.getMemoryCapacity());
-                    logger.debug(String.format("[Host Allocation]: successfully reserved cpu[%s], memory[%s bytes] on host[uuid:%s] for vm[uuid:%s]",
-                            allocationSpec.getCpuCapacity(), allocationSpec.getMemoryCapacity(), h.getUuid(),
-                            allocationSpec.getVmInstance().getUuid()));
-                    completion.success(HostInventory.valueOf(h));
-                    return;
-                } catch (UnableToReserveHostCapacityException e) {
-                    logger.debug(String.format("[Host Allocation]: %s on host[uuid:%s]. try next one",
-                            e.getMessage(), h.getUuid()), e);
-                }
-            }
-
-            if (paginationInfo != null) {
-                logger.debug("[Host Allocation]: unable to reserve cpu/memory on all candidate hosts; because of pagination is enabled, allocation will start over");
-                seriesErrorWhenPagination.add(String.format("{unable to reserve cpu[%s], memory[%s bytes] on all candidate hosts}",
-                        allocationSpec.getCpuCapacity(), allocationSpec.getMemoryCapacity()));
-                startOver();
-            } else {
-                completion.fail(errf.instantiateErrorCode(HostAllocatorError.NO_AVAILABLE_HOST,
-                        "reservation on cpu/memory failed on all candidates host"));
-            }
-        } catch (Throwable t) {
-            logger.debug(t.getClass().getName(), t);
-            completion.fail(errf.throwableToInternalError(t));
+        } else {
+            completion.success(HostInventory.valueOf(result));
         }
     }
 
@@ -221,7 +183,7 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
         runFlow(it.next());
     }
 
-    private void allocate(ReturnValueCompletion<HostInventory> completion) {
+    private void allocate(ReturnValueCompletion<List<HostInventory>> completion) {
         isDryRun = false;
         this.completion = completion;
         start();
@@ -289,11 +251,12 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
             logger.debug(err);
             this.errorCode = errf.instantiateErrorCode(HostAllocatorError.NO_AVAILABLE_HOST, err);
         }
+
         done();
     }
 
     @Override
-    public void allocate(HostAllocatorSpec spec, ReturnValueCompletion<HostInventory> completion) {
+    public void allocate(HostAllocatorSpec spec, ReturnValueCompletion<List<HostInventory>> completion) {
         this.allocationSpec = spec;
         allocate(completion);
     }
@@ -302,10 +265,5 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
     public void dryRun(HostAllocatorSpec spec, ReturnValueCompletion<List<HostInventory>> completion) {
         this.allocationSpec = spec;
         dryRun(completion);
-    }
-
-    @Override
-    public void setMarshalResultFunction(MarshalResultFunction func) {
-        marshalResultFunction = func;
     }
 }

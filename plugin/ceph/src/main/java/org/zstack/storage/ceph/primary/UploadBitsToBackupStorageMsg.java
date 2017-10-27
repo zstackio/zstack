@@ -11,6 +11,7 @@ public class UploadBitsToBackupStorageMsg extends NeedReplyMessage implements Pr
     private String primaryStorageInstallPath;
     private String backupStorageUuid;
     private String backupStorageInstallPath;
+    private String imageUuid;
 
     @Override
     public String getPrimaryStorageUuid() {
@@ -43,5 +44,13 @@ public class UploadBitsToBackupStorageMsg extends NeedReplyMessage implements Pr
 
     public void setBackupStorageInstallPath(String backupStorageInstallPath) {
         this.backupStorageInstallPath = backupStorageInstallPath;
+    }
+
+    public String getImageUuid() {
+        return imageUuid;
+    }
+
+    public void setImageUuid(String imageUuid) {
+        this.imageUuid = imageUuid;
     }
 }

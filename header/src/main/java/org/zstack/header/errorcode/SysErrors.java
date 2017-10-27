@@ -19,12 +19,11 @@ public enum SysErrors {
     NO_CAPABILITY_ERROR(1013),
     UNIMPLEMENTED_OPERATION_ERROR(1014),
     HTTP_ERROR(1015),
-    IO_ERROR(1016),
-    EXTERNAL_ERROR(1017);
+    IO_ERROR(1016);
 
     private String code;
 
-    private SysErrors(int id) {
+    SysErrors(int id) {
         code = String.format("SYS.%s", id);
     }
 

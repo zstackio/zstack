@@ -8,7 +8,6 @@ import org.zstack.compute.allocator.HostAllocatorManager;
 import org.zstack.core.asyncbatch.AsyncLoop;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
@@ -208,6 +207,7 @@ public class LocalStorageDefaultAllocateCapacityFlow implements Flow {
 
                 amsg.setRequiredPrimaryStorageTypes(primaryStorageTypes);
                 amsg.setDiskOfferingUuid(dinv.getUuid());
+                rmsg.setImageUuid(spec.getImageSpec().getInventory().getUuid());
                 bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
                 msgs.add(amsg);
             }

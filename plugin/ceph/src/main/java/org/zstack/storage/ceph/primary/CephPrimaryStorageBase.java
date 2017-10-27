@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.notification.N;
@@ -26,11 +27,8 @@ import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
-import org.zstack.header.image.APICreateDataVolumeTemplateFromVolumeMsg;
-import org.zstack.header.image.APICreateRootVolumeTemplateFromRootVolumeMsg;
-import org.zstack.header.image.APICreateRootVolumeTemplateFromVolumeSnapshotMsg;
+import org.zstack.header.image.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
-import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
@@ -90,6 +88,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     private CephImageCacheCleaner imageCacheCleaner;
     @Autowired
     private AccountManager acntMgr;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     class ReconnectMonLock {
         AtomicBoolean hold = new AtomicBoolean(false);
@@ -584,11 +584,14 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         String resourceUuid;
         String srcPath;
         String dstPath;
+        String imageUuid;
+        String hostname;
     }
 
     public static class CpRsp extends AgentResponse {
         public Long size;
         public Long actualSize;
+        public String installPath;
     }
 
     public static class RollbackSnapshotCmd extends AgentCommand {
@@ -956,37 +959,20 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     {
         backupStorageMediators.put(SftpBackupStorageConstant.SFTP_BACKUP_STORAGE_TYPE, new SftpBackupStorageMediator());
         backupStorageMediators.put(CephConstants.CEPH_BACKUP_STORAGE_TYPE, new CephBackupStorageMediator());
+        List<PrimaryStorageToBackupStorageMediatorExtensionPoint> exts = pluginRgty.getExtensionList(PrimaryStorageToBackupStorageMediatorExtensionPoint.class);
+        exts.forEach(ext -> backupStorageMediators.putAll(ext.getBackupStorageMediators()));
     }
 
 
-    abstract class MediatorParam {
-    }
-
-    class DownloadParam extends MediatorParam {
+    class DownloadParam implements MediatorParam {
         ImageSpec image;
         String installPath;
     }
 
-    class UploadParam extends MediatorParam {
+    class UploadParam implements MediatorParam {
         ImageInventory image;
         String primaryStorageInstallPath;
         String backupStorageInstallPath;
-    }
-
-    abstract class BackupStorageMediator {
-        BackupStorageInventory backupStorage;
-        MediatorParam param;
-
-        protected void checkParam() {
-            DebugUtils.Assert(backupStorage != null, "backupStorage cannot be null");
-            DebugUtils.Assert(param != null, "param cannot be null");
-        }
-
-        abstract void download(ReturnValueCompletion<String> completion);
-
-        abstract void upload(ReturnValueCompletion<String> completion);
-
-        abstract boolean deleteWhenRollbackDownload();
     }
 
     class SftpBackupStorageMediator extends BackupStorageMediator {
@@ -1007,7 +993,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         }
 
         @Override
-        void download(final ReturnValueCompletion<String> completion) {
+        public void download(final ReturnValueCompletion<String> completion) {
             checkParam();
             final DownloadParam dparam = (DownloadParam) param;
 
@@ -1089,7 +1075,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         }
 
         @Override
-        void upload(final ReturnValueCompletion<String> completion) {
+        public void upload(final ReturnValueCompletion<String> completion) {
             checkParam();
 
             final UploadParam uparam = (UploadParam) param;
@@ -1199,13 +1185,13 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         }
 
         @Override
-        boolean deleteWhenRollbackDownload() {
+        public boolean deleteWhenRollbackDownload() {
             return true;
         }
     }
 
     class CephBackupStorageMediator extends BackupStorageMediator {
-        protected void checkParam() {
+        public void checkParam() {
             super.checkParam();
 
             SimpleQuery<CephBackupStorageVO> q = dbf.createQuery(CephBackupStorageVO.class);
@@ -1222,7 +1208,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         }
 
         @Override
-        void download(final ReturnValueCompletion<String> completion) {
+        public void download(final ReturnValueCompletion<String> completion) {
             checkParam();
 
             final DownloadParam dparam = (DownloadParam) param;
@@ -1247,7 +1233,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         }
 
         @Override
-        void upload(final ReturnValueCompletion<String> completion) {
+        public void upload(final ReturnValueCompletion<String> completion) {
             checkParam();
 
             final UploadParam uparam = (UploadParam) param;
@@ -1325,7 +1311,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         }
 
         @Override
-        boolean deleteWhenRollbackDownload() {
+        public boolean deleteWhenRollbackDownload() {
             return false;
         }
     }
@@ -1482,6 +1468,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                             amsg.setRequiredPrimaryStorageUuid(self.getUuid());
                             amsg.setSize(image.getInventory().getActualSize());
                             amsg.setPurpose(PrimaryStorageAllocationPurpose.DownloadImage.toString());
+                            amsg.setImageUuid(image.getInventory().getUuid());
                             amsg.setNoOverProvisioning(true);
                             bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
                             bus.send(amsg, new CloudBusCallBack(trigger) {
@@ -3049,21 +3036,44 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         q.add(BackupStorageVO_.uuid, Op.EQ, msg.getBackupStorageUuid());
         String bsType = q.findValue();
 
-        if (!CephConstants.CEPH_BACKUP_STORAGE_TYPE.equals(bsType)) {
-            throw new OperationFailureException(operr(
-                    "unable to upload bits to the backup storage[type:%s], we only support CEPH", bsType
-            ));
-        }
+        String path = CP_PATH;
+        String hostname = null;
 
-        final UploadBitsToBackupStorageReply reply = new UploadBitsToBackupStorageReply();
+        if (!CephConstants.CEPH_BACKUP_STORAGE_TYPE.equals(bsType)) {
+            List<PrimaryStorageCommitExtensionPoint> exts = pluginRgty.getExtensionList(PrimaryStorageCommitExtensionPoint.class);
+            DebugUtils.Assert(exts.size() <= 1, "PrimaryStorageCommitExtensionPoint mustn't > 1");
+            if (exts.size() == 0) {
+                throw new OperationFailureException(operr(
+                        "unable to upload bits to the backup storage[type:%s], we only support CEPH", bsType
+                ));
+            } else {
+                path = exts.get(0).getCommitAgentPath(self.getType());
+                hostname = exts.get(0).getCommitAgentPath(msg.getBackupStorageUuid());
+                DebugUtils.Assert(path != null, String.format("found the extension point: [%s], but return null path",
+                        exts.get(0).getClass().getSimpleName()));
+            }
+        }
 
         CpCmd cmd = new CpCmd();
         cmd.fsId = getSelf().getFsid();
         cmd.srcPath = msg.getPrimaryStorageInstallPath();
         cmd.dstPath = msg.getBackupStorageInstallPath();
-        httpCall(CP_PATH, cmd, CpRsp.class, new ReturnValueCompletion<CpRsp>(msg) {
+        if (msg.getImageUuid() != null) {
+            cmd.imageUuid = msg.getImageUuid();
+        }
+        if (hostname != null) {
+            // imagestore hostname
+            cmd.hostname = hostname;
+        }
+
+        final UploadBitsToBackupStorageReply reply = new UploadBitsToBackupStorageReply();
+
+        httpCall(path, cmd, CpRsp.class, new ReturnValueCompletion<CpRsp>(msg) {
             @Override
             public void success(CpRsp rsp) {
+                if (rsp.installPath != null) {
+                    reply.setInstallPath(rsp.installPath);
+                }
                 bus.reply(msg, reply);
             }
 

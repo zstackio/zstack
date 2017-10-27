@@ -908,6 +908,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                     amsg.setSize(image.getActualSize());
                                     amsg.setPurpose(PrimaryStorageAllocationPurpose.DownloadImage.toString());
                                     amsg.setNoOverProvisioning(true);
+                                    amsg.setImageUuid(image.getUuid());
                                     bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
                                     bus.send(amsg, new CloudBusCallBack(trigger) {
                                         @Override
