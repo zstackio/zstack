@@ -544,6 +544,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 startVm(msg, new Completion(msg, chain) {
                     @Override
                     public void success() {
+                        reply.setInventory(getSelfInventory());
                         bus.reply(msg, reply);
                         chain.next();
                     }

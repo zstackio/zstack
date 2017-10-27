@@ -385,6 +385,11 @@
                 <artifactId>simpleclient_httpserver</artifactId>
                 <version>0.0.26</version>
             </dependency>
+            <dependency>
+                <groupId>org.influxdb</groupId>
+                <artifactId>influxdb-java</artifactId>
+                <version>2.7</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
