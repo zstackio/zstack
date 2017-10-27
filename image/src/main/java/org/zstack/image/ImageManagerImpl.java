@@ -1007,6 +1007,28 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         new LoopAsyncBatch<DownloadImageMsg>(msg) {
             AtomicBoolean success = new AtomicBoolean(false);
 
+            class TrackContext {
+                String name;
+                String imageUuid;
+                String bsUuid;
+            }
+
+            List<TrackContext> ctxs = new ArrayList<>();
+
+            private void addTrackTask(String name, String imageUuid, String bsUuid) {
+                TrackContext ctx = new TrackContext();
+                ctx.name = name;
+                ctx.imageUuid = imageUuid;
+                ctx.bsUuid = bsUuid;
+                ctxs.add(ctx);
+            }
+
+            private void runTrackTask() {
+                for (TrackContext ctx: ctxs) {
+                    trackUpload(ctx.name, ctx.imageUuid, ctx.bsUuid);
+                }
+            }
+
             @Override
             protected Collection<DownloadImageMsg> collect() {
                 return dmsgs;
@@ -1030,7 +1052,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                 } else {
                                     DownloadImageReply re = reply.castReply();
                                     if (isUpload(msg)) {
-                                        trackUpload(ivo.getName(), ivo.getUuid(), ref.getBackupStorageUuid());
+                                        addTrackTask(ivo.getName(), ivo.getUuid(), ref.getBackupStorageUuid());
                                     } else {
                                         ref.setStatus(ImageStatus.Ready);
                                     }
@@ -1111,6 +1133,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                     evt.setError(err);
                 }
 
+                runTrackTask();
                 bus.publish(evt);
             }
         }.start();
