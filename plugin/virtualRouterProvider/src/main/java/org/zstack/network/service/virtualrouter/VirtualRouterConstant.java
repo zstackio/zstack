@@ -59,5 +59,6 @@ public interface VirtualRouterConstant {
         IS_NEW_CREATED,
         IS_RECONNECT,
         VIPS,
+        PUB_VIP_UUID,
     }
 }
