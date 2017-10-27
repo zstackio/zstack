@@ -20,5 +20,9 @@
         <id>1003</id>
         <description>Unable to allocate a backup storage</description>
     </code>
+    <code>
+        <id>1500</id>
+        <description>Unable to connect a backup storage</description>
+    </code>
 </error>
 
