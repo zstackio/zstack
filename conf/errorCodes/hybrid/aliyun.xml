@@ -87,5 +87,9 @@
         <id>1018</id>
         <description>not supported identity zone</description>
     </code>
+    <code>
+        <id>1019</id>
+        <description>Current resource status not support the operation</description>
+    </code>
 </error>
 
