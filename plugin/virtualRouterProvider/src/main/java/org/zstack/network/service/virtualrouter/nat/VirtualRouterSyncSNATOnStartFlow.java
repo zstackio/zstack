@@ -13,6 +13,7 @@ import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.network.service.NetworkServiceType;
@@ -127,7 +128,7 @@ public class VirtualRouterSyncSNATOnStartFlow implements Flow {
                 NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(l3NetworkUuuid, NetworkServiceType.SNAT);
                 vip.setPeerL3NetworkUuid(l3NetworkUuuid);
                 vip.setServiceProvider(providerType.toString());
-            } finally {
+            } catch (OperationFailureException e){
                 vip.setPeerL3NetworkUuid(null);
                 vip.setServiceProvider(null);
             }
