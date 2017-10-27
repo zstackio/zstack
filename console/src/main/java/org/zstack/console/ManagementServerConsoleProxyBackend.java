@@ -21,6 +21,7 @@ import org.zstack.header.console.*;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.managementnode.ManagementNodeVO;
@@ -323,6 +324,8 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
         });
 
         bus.send(rmsgs, new CloudBusListCallBack(msg) {
+            ErrorCodeList errorCodes = new ErrorCodeList();
+
             @Override
             public void run(List<MessageReply> replies) {
                 for (MessageReply r : replies) {
@@ -331,11 +334,13 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
                         errors.put(mgmgUuid, true);
                     } else {
                         errors.put(mgmgUuid, r.getError());
+                        errorCodes.getCauses().add(r.getError());
                     }
                 }
-
+                if (!errorCodes.getCauses().isEmpty()) {
+                    evt.setError(errorCodes);
+                }
                 evt.setInventory(errors);
-
                 bus.publish(evt);
             }
         });
