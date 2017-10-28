@@ -3080,6 +3080,16 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     private void detachNic(final String nicUuid, final Completion completion) {
+        VmNicVO vmNicVO = CollectionUtils.find(self.getVmNics(), new Function<VmNicVO, VmNicVO>() {
+            @Override
+            public VmNicVO call(VmNicVO arg) {
+                return arg.getUuid().equals(nicUuid) ? arg : null;
+            }
+        });
+        if (vmNicVO == null) {
+            completion.success();
+            return;
+        }
         final VmNicInventory nic = VmNicInventory.valueOf(
                 CollectionUtils.find(self.getVmNics(), new Function<VmNicVO, VmNicVO>() {
                     @Override
