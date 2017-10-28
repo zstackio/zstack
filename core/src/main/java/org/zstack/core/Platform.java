@@ -79,6 +79,8 @@ public class Platform {
 
     public static Map<String, String> childResourceToBaseResourceMap = new HashMap<>();
 
+    static Map<Class, DynamicObjectMetadata> dynamicObjectMetadata = new HashMap<>();
+
     private static Map<String, String> linkGlobalPropertyMap(String prefix) {
         Map<String, String> ret = new HashMap<String, String>();
         Map<String, String> map = getGlobalPropertiesStartWith(prefix);
@@ -360,6 +362,7 @@ public class Platform {
             FileInputStream in = new FileInputStream(globalPropertiesFile);
             System.getProperties().load(in);
 
+            collectDynamicObjectMetadata();
             linkGlobalProperty();
             prepareDefaultDbProperties();
             callStaticInitMethods();
@@ -375,6 +378,27 @@ public class Platform {
             }
 
         }
+    }
+
+    private static void collectDynamicObjectMetadata() {
+        reflections.getSubTypesOf(DynamicObject.class).forEach(clz -> {
+            DynamicObjectMetadata metadata = new DynamicObjectMetadata();
+            FieldUtils.getAllFields(clz).forEach(f -> {
+                f.setAccessible(true);
+                metadata.fields.put(f.getName(), f);
+            });
+
+            Class p = clz;
+            while (p != Object.class) {
+                for (Method m : p.getDeclaredMethods()) {
+                    m.setAccessible(true);
+                    metadata.methods.put(m.getName(), m);
+                }
+                p = p.getSuperclass();
+            }
+
+            dynamicObjectMetadata.put(clz, metadata);
+        });
     }
 
     public static String getBaseResourceType(String childResourceType) {
