@@ -27,6 +27,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.network.l3.L3NetworkConstant;
 import org.zstack.header.network.l3.ReturnIpMsg;
+import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
@@ -39,7 +40,6 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 
 /**
  * Created by xing5 on 2016/11/19.
@@ -120,157 +120,80 @@ public class VipBase {
             handle((AcquireVipMsg) msg);
         } else if (msg instanceof ReleaseVipMsg) {
             handle((ReleaseVipMsg) msg);
-        } else if (msg instanceof ModifyVipAttributesMsg) {
-            handle((ModifyVipAttributesMsg) msg);
-        } else if (msg instanceof DeleteVipFromBackendMsg) {
-            handle((DeleteVipFromBackendMsg) msg);
-        } else {
+        }  else {
             passToBackend(msg);
         }
     }
 
-    private void handle(DeleteVipFromBackendMsg msg) {
-        // DO NOT put it in the sync queue
-        // DeleteVipMsg may cause DeleteVipFromBackendMsg, putting DeleteVipFromBackendMsg
-        // in the queue will lead to a deadlock
-        DeleteVipFromBackendReply reply = new DeleteVipFromBackendReply();
-        deleteFromBackend(new Completion(msg) {
-            @Override
-            public void success() {
-                bus.reply(msg, reply);
+    protected boolean acquireCheckModifyVipAttributeStruct(ModifyVipAttributesStruct s) {
+        if (s.isUserFor()) {
+             /* snat service is bound the router interface, don't need to bound to backend */
+            if (s.getUseFor().equals(NetworkServiceType.SNAT.toString())) {
+                return false;
             }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                reply.setError(errorCode);
-                bus.reply(msg, reply);
-            }
-        });
-    }
-
-    private void deleteFromBackend(Completion completion) {
-        /* because there are multiple service on same vip, release vip from backaned
-           if and only if there is no other service on this vip */
-        VipUseForList useForList = new VipUseForList(self.getUseFor());
-        if (self.getServiceProvider() == null || useForList.getUseForList().size() > 1) {
-            // this VIP has not bean created on backend yet
-            completion.success();
-            return;
-        }
-
-        VipFactory f = vipMgr.getVipFactory(self.getServiceProvider());
-        VipBaseBackend vip = f.getVip(getSelf());
-        vip.releaseVipOnBackend(new Completion(completion) {
-            @Override
-            public void success() {
-                logger.debug(String.format("successfully released vip[uuid:%s, name:%s, ip:%s] on service[%s]",
-                        self.getUuid(), self.getName(), self.getIp(), self.getServiceProvider()));
-
-                completion.success();
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                logger.warn(String.format("failed to release vip[uuid:%s, name:%s, ip:%s] on service[%s], its garbage collector should" +
-                        " handle this", self.getUuid(), self.getName(), self.getIp(), self.getServiceProvider()));
-                completion.fail(errorCode);
-            }
-        });
-    }
-
-    private interface Recover {
-        void recover();
-    }
-
-    protected Recover modifyAttributes(ModifyVipAttributesStruct s) {
-        VipVO origin = dbf.findByUuid(self.getUuid(), VipVO.class);
-        if (origin == null) {
-            logger.debug(String.format("can not modify vip[%s] attributes, it has been deleted", self.getUuid()));
-            return () -> {
-                throw new OperationFailureException(operr("can not modify vip[%s] attributes, it has been deleted", self.getUuid()));
-            };
         }
 
         if (s.isServiceProvider()) {
             if (self.getServiceProvider() != null && s.getServiceProvider() != null
                     && !s.getServiceProvider().equals(self.getServiceProvider())) {
                 throw new OperationFailureException(operr("service provider of the vip[uuid:%s, name:%s, ip: %s] has been set to %s",
-                                self.getUuid(), self.getName(), self.getIp(), self.getServiceProvider()));
+                        self.getUuid(), self.getName(), self.getIp(), self.getServiceProvider()));
             }
-
-            self.setServiceProvider(s.getServiceProvider());
-        }
-
-        if (s.isUserFor()) {
-            VipUseForList newList = new VipUseForList(s.getUseFor());
-
-            if (!newList.validate()){
-                throw new OperationFailureException(operr("the field 'useFor'[%s] in the msg is conflicted", s.getUseFor()));
-            }
-
-            self.setUseFor(s.getUseFor());
         }
 
         if (s.isPeerL3NetworkUuid()) {
             if (self.getPeerL3NetworkUuid() != null && s.getPeerL3NetworkUuid() != null
                     && !self.getPeerL3NetworkUuid().equals(s.getPeerL3NetworkUuid())) {
                 throw new OperationFailureException(operr("the field 'peerL3NetworkUuid' of the vip[uuid:%s, name:%s, ip: %s] has been set to %s",
-                                self.getUuid(), self.getName(), self.getIp(), self.getPeerL3NetworkUuid()));
+                        self.getUuid(), self.getName(), self.getIp(), self.getPeerL3NetworkUuid()));
             }
-
-            self.setPeerL3NetworkUuid(s.getPeerL3NetworkUuid());
         }
 
-        dbf.update(self);
-
-        return () -> dbf.update(origin);
+        if (s.isPeerL3NetworkUuid() && s.isServiceProvider()){
+            self.setPeerL3NetworkUuid(s.getPeerL3NetworkUuid());
+            self.setServiceProvider(s.getServiceProvider());
+            dbf.update(self);
+            return true;
+        } else {
+            return false;
+        }
     }
 
-    private void handle(ModifyVipAttributesMsg msg) {
-        thdf.chainSubmit(new ChainTask(msg) {
-            @Override
-            public String getSyncSignature() {
-                return getThreadSyncSignature();
+    protected boolean releaseCheckModifyVipAttributeStruct( ModifyVipAttributesStruct s) {
+
+        VipUseForList useForList = new VipUseForList(self.getUseFor());
+        if (s.isUserFor() && s.getUseFor().equals(NetworkServiceType.SNAT.toString())) {
+            useForList.del(s.getUseFor());
+            if (useForList.getUseForList().isEmpty()){
+                /* snat is bound to router public interface, it is created automatically,
+                 * so it should be deleted automatically, but don't need to remove from backend */
+                dbf.remove(self);
+            } else {
+                self.setUseFor(useForList.toString());
+                dbf.update(self);
             }
+            return false;
+        }
 
-            @Override
-            public void run(SyncTaskChain chain) {
-                refresh();
-
-                ModifyVipAttributesStruct current = new ModifyVipAttributesStruct();
-                current.setPeerL3NetworkUuid(self.getPeerL3NetworkUuid());
-                current.setUseFor(self.getUseFor());
-                current.setServiceProvider(self.getServiceProvider());
-
-                ModifyVipAttributesReply reply = new ModifyVipAttributesReply();
-                reply.setStruct(current);
-
-                modifyAttributes(msg.getStruct());
-                bus.reply(msg, reply);
-                chain.next();
+        for (VipGetServiceReferencePoint ext : pluginRgty.getExtensionList(VipGetServiceReferencePoint.class)) {
+            VipGetServiceReferencePoint.ServiceReference service = ext.getServiceReference(self.getUuid());
+            if (service.useFor.equals(s.getUseFor()) && service.count <= 1){
+                useForList.del(s.getUseFor());
+                self.setUseFor(useForList.toString());
+                dbf.update(self);
             }
+        }
 
-            @Override
-            public String getName() {
-                return "modify-vip-attributes";
-            }
-        });
+        if (useForList.getUseForList().isEmpty()){
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private void handle(ReleaseVipMsg msg) {
         ReleaseVipReply reply = new ReleaseVipReply();
 
-        /* if there is other service on this vip, DO NOT release it */
-        VipUseForList useForList = new VipUseForList(msg.getStruct().getUseFor());
-        if (!useForList.getUseForList().isEmpty()){
-            /* ReleaseVipMsg will setServiceProvider and setPeerL3NetworkUuid to null, recover it here  */
-            msg.getStruct().setServiceProvider(self.getServiceProvider());
-            msg.getStruct().setPeerL3NetworkUuid(self.getPeerL3NetworkUuid());
-            modifyAttributes(msg.getStruct());
-            bus.reply(msg, reply);
-            return;
-        }
-
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
@@ -279,16 +202,12 @@ public class VipBase {
 
             @Override
             public void run(SyncTaskChain chain) {
-                if (!msg.isDeleteOnBackend()) {
-                    modifyAttributes(msg.getStruct());
-                    bus.reply(msg, reply);
-                    chain.next();
-                    return;
-                }
 
                 releaseVip(msg.getStruct(), new Completion(msg, chain) {
                     @Override
                     public void success() {
+                        VipInventory vip = VipInventory.valueOf(self);
+                        reply.setInventory(vip);
                         bus.reply(msg, reply);
                         chain.next();
                     }
@@ -310,11 +229,18 @@ public class VipBase {
     }
 
     protected void releaseVip(ModifyVipAttributesStruct s, Completion completion) {
+
+        refresh();
         if (self.getServiceProvider() == null) {
-            // the vip has been released by other descendant network service
             logger.debug(String.format("the serviceProvider field is null, the vip[uuid:%s, name:%s, ip:%s] has been released" +
                     " by other service", self.getUuid(), self.getName(), self.getIp()));
-            modifyAttributes(s);
+            completion.success();
+            return;
+        }
+
+        /* s == null is called from VipDeleteMsg, all service has beed released */
+        if ((s != null) && (!releaseCheckModifyVipAttributeStruct(s))){
+            /* no need to remove vip from backend */
             completion.success();
             return;
         }
@@ -336,7 +262,11 @@ public class VipBase {
                 logger.debug(String.format("successfully released vip[uuid:%s, name:%s, ip:%s] on service[%s]",
                         self.getUuid(), self.getName(), self.getIp(), self.getServiceProvider()));
 
-                modifyAttributes(s);
+                VipUseForList useForList = new VipUseForList(self.getUseFor());
+                self.setUseFor(null);
+                self.setPeerL3NetworkUuid(null);
+                self.setServiceProvider(null);
+                dbf.update(self);
 
                 completion.success();
             }
@@ -361,19 +291,12 @@ public class VipBase {
 
             @Override
             public void run(SyncTaskChain chain) {
-                refresh();
-                if (!msg.isCreateOnBackend()) {
-                    // no need to really create the VIP on network devices,
-                    // just mark it in database
-                    modifyAttributes(msg.getStruct());
-                    bus.reply(msg, reply);
-                    chain.next();
-                    return;
-                }
 
                 acquireVip(msg.getStruct(), new Completion(msg, chain) {
                     @Override
                     public void success() {
+                        VipInventory vip = VipInventory.valueOf(self);
+                        reply.setVip(vip);
                         bus.reply(msg, reply);
                         chain.next();
                     }
@@ -395,7 +318,18 @@ public class VipBase {
     }
 
     protected void acquireVip(ModifyVipAttributesStruct s, Completion completion) {
-        Recover recover = modifyAttributes(s);
+
+        refresh();
+
+        if (!acquireCheckModifyVipAttributeStruct(s)){
+            /* no need to install vip to backend */
+            VipUseForList useForList = new VipUseForList(self.getUseFor());
+            useForList.add(s.getUseFor());
+            self.setUseFor(useForList.toString());
+            dbf.update(self);
+            completion.success();
+            return;
+        }
 
         VipFactory f = vipMgr.getVipFactory(s.getServiceProvider());
         VipBaseBackend vip = f.getVip(getSelf());
@@ -412,12 +346,19 @@ public class VipBase {
                         });
                 logger.debug(String.format("successfully acquired vip[uuid:%s, name:%s, ip:%s] on service[%s]",
                         self.getUuid(), self.getName(), self.getIp(), s.getServiceProvider()));
+
+                VipUseForList useForList = new VipUseForList(self.getUseFor());
+                useForList.add(s.getUseFor());
+                self.setUseFor(useForList.toString());
+                self.setPeerL3NetworkUuid(s.getPeerL3NetworkUuid());
+                self.setServiceProvider(s.getServiceProvider());
+                dbf.update(self);
+
                 completion.success();
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
-                recover.recover();
                 completion.fail(errorCode);
             }
         });
@@ -552,10 +493,7 @@ public class VipBase {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        ModifyVipAttributesStruct s = new ModifyVipAttributesStruct();
-                        s.setPeerL3NetworkUuid(null);
-                        s.setUseFor(null);
-                        releaseVip(s, new Completion(trigger) {
+                        releaseVip(null, new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.next();

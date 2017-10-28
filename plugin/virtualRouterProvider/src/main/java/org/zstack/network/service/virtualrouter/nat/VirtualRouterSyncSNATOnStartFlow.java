@@ -20,7 +20,11 @@ import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.NetworkServiceManager;
+import org.zstack.network.service.portforwarding.PortForwardingConstant;
+import org.zstack.network.service.vip.ModifyVipAttributesStruct;
 import org.zstack.network.service.vip.Vip;
+import org.zstack.network.service.vip.VipConstant;
+import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.SNATInfo;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.SyncSNATRsp;
@@ -104,7 +108,7 @@ public class VirtualRouterSyncSNATOnStartFlow implements Flow {
                 } else {
                     Vip vip = getVipWithSnatService(data);
                     if (vip != null){
-                        vip.acquire(false, new Completion(chain) {
+                        vip.acquire(new Completion(chain) {
                             @Override
                             public void success() {
                                 chain.next();
@@ -134,20 +138,22 @@ public class VirtualRouterSyncSNATOnStartFlow implements Flow {
             return null;
         }
 
+        ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
+        struct.setUseFor(NetworkServiceType.SNAT.toString());
+
         Vip vip = new Vip(vipUuid);
         VirtualRouterVmInventory vr = (VirtualRouterVmInventory) data.get(VirtualRouterConstant.Param.VR.toString());
         if (!vr.getGuestL3Networks().isEmpty()){
             String l3NetworkUuuid = vr.getGuestL3Networks().get(0);
             try {
                 NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(l3NetworkUuuid, NetworkServiceType.SNAT);
-                vip.setPeerL3NetworkUuid(l3NetworkUuuid);
-                vip.setServiceProvider(providerType.toString());
+                struct.setPeerL3NetworkUuid(l3NetworkUuuid);
+                struct.setServiceProvider(providerType.toString());
             } catch (OperationFailureException e){
-                vip.setPeerL3NetworkUuid(null);
-                vip.setServiceProvider(null);
+                logger.debug(String.format("Get providerType exception %s", e.toString()));
             }
         }
-        vip.addUseFor(NetworkServiceType.SNAT.toString());
+        vip.setStruct(struct);
         return vip;
     }
 
@@ -158,9 +164,12 @@ public class VirtualRouterSyncSNATOnStartFlow implements Flow {
             return;
         }
 
-        Vip vip = new Vip(vipUuid);
-        vip.delUseFor(NetworkServiceType.SNAT.toString());
-        vip.release(false, new Completion(chain) {
+        VipInventory v = (VipInventory) data.get(VipConstant.Params.VIP.toString());
+        ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
+        struct.setUseFor(NetworkServiceType.SNAT.toString());
+        Vip vip = new Vip(v.getUuid());
+        vip.setStruct(struct);
+        vip.release(new Completion(chain) {
             @Override
             public void success() {
                 chain.rollback();

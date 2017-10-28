@@ -6,14 +6,10 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.message.MessageReply;
-import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.VipUseForList;
 import org.zstack.utils.logging.CLogger;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
@@ -22,121 +18,27 @@ public class Vip {
     private CloudBus bus;
     @Autowired
     private DatabaseFacade dbf;
+    private String uuid;
 
     public Vip(String uuid) {
         this.uuid = uuid;
     }
     protected static final CLogger logger = Utils.getLogger(VipBase.class);
 
-    private String uuid;
-    private String serviceProvider;
-    private String useFor;
-    private String peerL3NetworkUuid;
+    ModifyVipAttributesStruct struct;
 
-    public String getServiceProvider() {
-        return serviceProvider;
+    public ModifyVipAttributesStruct getStruct() {
+        return struct;
     }
 
-    public void setServiceProvider(String serviceProvider) {
-        this.serviceProvider = serviceProvider;
-    }
-
-    public String getUseFor() {
-        return useFor;
-    }
-
-    public void addUseFor(String useFor) {
-        String oldUseFor = Q.New(VipVO.class).select(VipVO_.useFor).eq(VipVO_.uuid, this.uuid).findValue();
-        if (oldUseFor != null){
-            VipUseForList useForList = new VipUseForList(oldUseFor);
-            this.useFor = useForList.add(useFor);;
-        }
-        else{
-            this.useFor = useFor;
-        }
-    }
-
-    public void delUseFor(String useFor) {
-        String oldUseFor = Q.New(VipVO.class).select(VipVO_.useFor).eq(VipVO_.uuid, this.uuid).findValue();
-        if (oldUseFor != null) {
-            VipUseForList useForList = new VipUseForList(oldUseFor);
-            this.useFor = useForList.del(useFor);
-        }
-        else {
-            this.useFor = null;
-        }
-    }
-
-    public String getPeerL3NetworkUuid() {
-        return peerL3NetworkUuid;
-    }
-
-    public void setPeerL3NetworkUuid(String peerL3NetworkUuid) {
-        this.peerL3NetworkUuid = peerL3NetworkUuid;
-    }
-
-    public void acquire(boolean createOnBackend, Completion completion) {
-        if (createOnBackend) {
-            DebugUtils.Assert(serviceProvider != null, "serviceProvider cannot be null");
-            DebugUtils.Assert(peerL3NetworkUuid != null, "peerL3NetworkUuid cannot be null");
-        }
-
-        AcquireVipMsg msg = new AcquireVipMsg();
-        msg.setVipUuid(uuid);
-        if (createOnBackend){
-            /* for this case, caller MUST set serviceProvider and peerL3NetworkUuid */
-            msg.setServiceProvider(serviceProvider);
-            msg.setPeerL3NetworkUuid(peerL3NetworkUuid);
-        }
-        else {
-            /* restore serviceProvider and peerL3NetworkUuid for db */
-            VipVO vo = Q.New(VipVO.class).eq(VipVO_.uuid, this.uuid).find();
-            msg.setPeerL3NetworkUuid(vo.getPeerL3NetworkUuid());
-            msg.setServiceProvider(vo.getServiceProvider());
-        }
-
-        msg.setCreateOnBackend(createOnBackend);
-
-        if (useFor != null) {
-            msg.setUseFor(useFor);
-        }
-
-        bus.makeTargetServiceIdByResourceUuid(msg, VipConstant.SERVICE_ID, uuid);
-        bus.send(msg, new CloudBusCallBack(completion) {
-            @Override
-            public void run(MessageReply reply) {
-                if (!reply.isSuccess()) {
-                    throw new OperationFailureException(reply.getError());
-                }
-
-                completion.success();
-            }
-        });
+    public void setStruct(ModifyVipAttributesStruct struct) {
+        this.struct = struct;
     }
 
     public void acquire(Completion completion) {
-        acquire(true, completion);
-    }
-
-    public void release(Completion completion) {
-        release(true, completion);
-    }
-
-    public void release(boolean deleteOnBackend, Completion completion) {
-        ReleaseVipMsg msg = new ReleaseVipMsg();
+        AcquireVipMsg msg = new AcquireVipMsg();
         msg.setVipUuid(uuid);
-        msg.setUseFor(useFor);
-        if (deleteOnBackend) {
-            msg.setServiceProvider(null);
-            msg.setPeerL3NetworkUuid(null);
-        }
-        else {
-            /* restore serviceProvider and peerL3NetworkUuid for db */
-            VipVO vo = Q.New(VipVO.class).eq(VipVO_.uuid, this.uuid).find();
-            msg.setPeerL3NetworkUuid(vo.getPeerL3NetworkUuid());
-            msg.setServiceProvider(vo.getServiceProvider());
-        }
-        msg.setDeleteOnBackend(deleteOnBackend);
+        msg.setStruct(struct);
 
         bus.makeTargetServiceIdByResourceUuid(msg, VipConstant.SERVICE_ID, uuid);
         bus.send(msg, new CloudBusCallBack(completion) {
@@ -151,26 +53,11 @@ public class Vip {
         });
     }
 
-    public void deleteFromBackend(Completion completion) {
-        DeleteVipFromBackendMsg msg = new DeleteVipFromBackendMsg();
+    public void release(Completion completion) {
+        ReleaseVipMsg msg = new ReleaseVipMsg();
         msg.setVipUuid(uuid);
-        bus.makeTargetServiceIdByResourceUuid(msg, VipConstant.SERVICE_ID, uuid);
-        bus.send(msg, new CloudBusCallBack(completion) {
-            @Override
-            public void run(MessageReply reply) {
-                if (!reply.isSuccess()) {
-                    completion.fail(reply.getError());
-                } else {
-                    completion.success();
-                }
-            }
-        });
-    }
+        msg.setStruct(struct);
 
-    public void modify(ModifyVipAttributesStruct s, ReturnValueCompletion<UnmodifyVip> completion) {
-        ModifyVipAttributesMsg msg = new ModifyVipAttributesMsg();
-        msg.setStruct(s);
-        msg.setVipUuid(uuid);
         bus.makeTargetServiceIdByResourceUuid(msg, VipConstant.SERVICE_ID, uuid);
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
@@ -179,28 +66,7 @@ public class Vip {
                     throw new OperationFailureException(reply.getError());
                 }
 
-                ModifyVipAttributesReply r = reply.castReply();
-
-                UnmodifyVip ret = c -> {
-                    ModifyVipAttributesMsg  umsg = new ModifyVipAttributesMsg();
-                    umsg.setStruct(r.getStruct());
-                    umsg.setVipUuid(uuid);
-                    bus.makeTargetServiceIdByResourceUuid(umsg, VipConstant.SERVICE_ID, uuid);
-
-                    bus.send(umsg, new CloudBusCallBack(c) {
-                        @Override
-                        public void run(MessageReply reply1) {
-                            if (!reply1.isSuccess()) {
-                                c.fail(reply1.getError());
-                                return;
-                            }
-
-                            c.success();
-                        }
-                    });
-                };
-
-                completion.success(ret);
+                completion.success();
             }
         });
     }
