@@ -1,13 +1,5 @@
 [
   {
-    "raw": "There is a current key for aliyun already existed, update to an other",
-    "en_US": "There is a current key for aliyun already existed, update to an other",
-    "zh_CN": "",
-    "arguments": [],
-    "line": 96,
-    "fileName": "src/main/java/org/zstack/aliyun/account/AliyunAccountManagerImpl.java"
-  },
-  {
     "raw": "no bucket found for backup",
     "en_US": "no bucket found for backup",
     "zh_CN": "",
@@ -6869,6 +6861,19 @@
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/portforwarding/VirtualRouterSyncPortForwardingRulesOnStartFlow.java"
   },
   {
+    "raw": "virtual router[name: %s, uuid: %s] failed to create vip for public ip %s because no ip range for l3NetworkUuid %s",
+    "en_US": "virtual router[name: {0}, uuid: {1}] failed to create vip for public ip {2} because no ip range for l3NetworkUuid {3}",
+    "zh_CN": "",
+    "arguments": [
+      "vr.getName()",
+      "vr.getUuid()",
+      "nic.getIp()",
+      "nic.getL3NetworkUuid()"
+    ],
+    "line": 55,
+    "fileName": "src/main/java/org/zstack/network/service/virtualrouter/vip/VirtualRouterCreateVipForPublicIpFlow.java"
+  },
+  {
     "raw": "virtual router[uuid:%s, state:%s] is not running, current HA has not been supported, please manually start this virtual router",
     "en_US": "virtual router[uuid:{0}, state:{1}] is not running, current HA has not been supported, please manually start this virtual router",
     "zh_CN": "云路由[uuid:{0}, state:{1}]没有运行，当前HA机制尚不支持，请手动启动该云路由。",
@@ -7068,19 +7073,19 @@
     "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusHostCpuUtilAlertWriter.java"
   },
   {
-    "raw": "CPU number",
-    "en_US": "CPU number",
-    "zh_CN": "",
-    "arguments": [],
-    "line": 96,
-    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusHostCpuUtilAlertWriter.java"
-  },
-  {
     "raw": "CPU utilization type",
     "en_US": "CPU utilization type",
     "zh_CN": "",
     "arguments": [],
     "line": 98,
+    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusHostCpuUtilAlertWriter.java"
+  },
+  {
+    "raw": "CPU number",
+    "en_US": "CPU number",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 96,
     "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusHostCpuUtilAlertWriter.java"
   },
   {
@@ -7152,14 +7157,6 @@
     "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusHostMemUtilAlertWriter.java"
   },
   {
-    "raw": "Host",
-    "en_US": "Host",
-    "zh_CN": "",
-    "arguments": [],
-    "line": 79,
-    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusHostNetworkIOAlertWriter.java"
-  },
-  {
     "raw": "Network IO",
     "en_US": "Network IO",
     "zh_CN": "",
@@ -7173,6 +7170,14 @@
     "zh_CN": "",
     "arguments": [],
     "line": 91,
+    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusHostNetworkIOAlertWriter.java"
+  },
+  {
+    "raw": "Host",
+    "en_US": "Host",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 79,
     "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusHostNetworkIOAlertWriter.java"
   },
   {
@@ -7225,16 +7230,6 @@
     "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusVmNetworkIOAlertWriter.java"
   },
   {
-    "raw": "invalid right value[%s], it must be a number(int, long, float, double)",
-    "en_US": "invalid right value[{0}], it must be a number(int, long, float, double)",
-    "zh_CN": "",
-    "arguments": [
-      "expression.getConstant()"
-    ],
-    "line": 24,
-    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusVmNetworkIOItem.java"
-  },
-  {
     "raw": "invalid direction[%s], only %s are allowed",
     "en_US": "invalid direction[{0}], only {1} are allowed",
     "zh_CN": "",
@@ -7243,6 +7238,16 @@
       "ALLOWED_DIRECTION"
     ],
     "line": 20,
+    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusVmNetworkIOItem.java"
+  },
+  {
+    "raw": "invalid right value[%s], it must be a number(int, long, float, double)",
+    "en_US": "invalid right value[{0}], it must be a number(int, long, float, double)",
+    "zh_CN": "",
+    "arguments": [
+      "expression.getConstant()"
+    ],
+    "line": 24,
     "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusVmNetworkIOItem.java"
   },
   {
@@ -7743,6 +7748,14 @@
     "fileName": "src/main/java/org/zstack/storage/backup/imagestore/ImageStoreBackupStorageFactory.java"
   },
   {
+    "raw": "sync status failed.",
+    "en_US": "sync status failed.",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 152,
+    "fileName": "src/main/java/org/zstack/storage/backup/imagestore/ImageStoreBackupStorageManagerImpl.java"
+  },
+  {
     "raw": "create tmp file [%s] failed, due to: %s",
     "en_US": "create tmp file [{0}] failed, due to: {1}",
     "zh_CN": "",
@@ -7751,14 +7764,6 @@
       "result.getStderr()"
     ],
     "line": 313,
-    "fileName": "src/main/java/org/zstack/storage/backup/imagestore/ImageStoreBackupStorageManagerImpl.java"
-  },
-  {
-    "raw": "sync status failed.",
-    "en_US": "sync status failed.",
-    "zh_CN": "",
-    "arguments": [],
-    "line": 152,
     "fileName": "src/main/java/org/zstack/storage/backup/imagestore/ImageStoreBackupStorageManagerImpl.java"
   },
   {
@@ -7902,13 +7907,25 @@
     "fileName": "src/main/java/org/zstack/storage/backup/sftp/SftpBackupStorageMetaDataMaker.java"
   },
   {
-    "raw": "duplicate poolName[%s]. There has been a pool with the same name existing",
-    "en_US": "duplicate poolName[{0}]. There has been a pool with the same name existing",
-    "zh_CN": "重复的Ceph Pool Name[{0}]。已有一个同名的pool存在。",
+    "raw": "Ceph pool[uuid:%s] with this name is already added into ZStack and used elsewhere, cannot reuse the ceph pool.",
+    "en_US": "Ceph pool[uuid:{0}] with this name is already added into ZStack and used elsewhere, cannot reuse the ceph pool.",
+    "zh_CN": "池名称为此的扩展池[uuid:{0}]已经被添加进 ZStack 了，已做它用，不能复用该扩展池。",
     "arguments": [
-      "msg.getPoolName()"
+      "msg.getPoolName()",
+      "duplicatePoolUuid"
     ],
-    "line": 66,
+    "line": 89,
+    "fileName": "src/main/java/org/zstack/storage/ceph/CephApiInterceptor.java"
+  },
+  {
+    "raw": "creation failure, duplicate poolName[%s]. There has been a pool[uuid:%s] with the same name existing.",
+    "en_US": "creation failure, duplicate poolName[{0}]. There has been a pool[uuid:{1}] with the same name existing.",
+    "zh_CN": "创建失败，重复的池名称[{0}]。已经有一个相同名称的扩展池[uuid:{1}]存在",
+    "arguments": [
+      "msg.getPoolName()",
+      "duplicatePoolUuid"
+    ],
+    "line": 80,
     "fileName": "src/main/java/org/zstack/storage/ceph/CephApiInterceptor.java"
   },
   {
@@ -9124,17 +9141,6 @@
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsApiParamChecker.java"
   },
   {
-    "raw": "there are %s running VMs on the NFS primary storage, please stop them and try again:\n%s\n",
-    "en_US": "there are {0} running VMs on the NFS primary storage, please stop them and try again:\n{1}\n",
-    "zh_CN": "在NFS主存储上有{0}个运行中的VM，请先手动关闭再尝试：\n{1}\n。",
-    "arguments": [
-      "vms.size()",
-      "StringUtils.join(vms, \"\\n\")"
-    ],
-    "line": 232,
-    "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorage.java"
-  },
-  {
     "raw": "cannot find usable backend",
     "en_US": "cannot find usable backend",
     "zh_CN": "无法找到可用的NFS主存储后端。",
@@ -9256,6 +9262,17 @@
       "self.getName()"
     ],
     "line": 1209,
+    "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorage.java"
+  },
+  {
+    "raw": "there are %s running VMs on the NFS primary storage, please stop them and try again:\n%s\n",
+    "en_US": "there are {0} running VMs on the NFS primary storage, please stop them and try again:\n{1}\n",
+    "zh_CN": "在NFS主存储上有{0}个运行中的VM，请先手动关闭再尝试：\n{1}\n。",
+    "arguments": [
+      "vms.size()",
+      "StringUtils.join(vms, \"\\n\")"
+    ],
+    "line": 232,
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorage.java"
   },
   {
@@ -10286,6 +10303,136 @@
     "fileName": "src/main/java/org/zstack/tag/TagManagerImpl.java"
   },
   {
+    "raw": "the usb device[uuid:%s] has already been attached to another vm[uuid:%s]",
+    "en_US": "the usb device[uuid:{0}] has already been attached to another vm[uuid:{1}]",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getUsbDeviceUuid()",
+      "usb.getVmInstanceUuid()"
+    ],
+    "line": 50,
+    "fileName": "src/main/java/org/zstack/usbDevice/UsbDeviceApiInterceptor.java"
+  },
+  {
+    "raw": "the usb device[uuid:%s] is not in attachable state of %s",
+    "en_US": "the usb device[uuid:{0}] is not in attachable state of {1}",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getUsbDeviceUuid()",
+      "UsbDeviceState.Enabled"
+    ],
+    "line": 57,
+    "fileName": "src/main/java/org/zstack/usbDevice/UsbDeviceApiInterceptor.java"
+  },
+  {
+    "raw": "the vm instance[uuid:%s] is not in attachable state of %s for usb device",
+    "en_US": "the vm instance[uuid:{0}] is not in attachable state of {1} for usb device",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getVmInstanceUuid()",
+      "allowedVmInstanceAttachableState"
+    ],
+    "line": 65,
+    "fileName": "src/main/java/org/zstack/usbDevice/UsbDeviceApiInterceptor.java"
+  },
+  {
+    "raw": "the host that the usb device[uuid:%s] pluged in is not in valid state[%s] or status[%s]",
+    "en_US": "the host that the usb device[uuid:{0}] pluged in is not in valid state[{1}] or status[{2}]",
+    "zh_CN": "",
+    "arguments": [
+      "usb.getHostUuid()",
+      "msg.getUsbDeviceUuid()",
+      "HostState.Enabled",
+      "HostStatus.Connected"
+    ],
+    "line": 74,
+    "fileName": "src/main/java/org/zstack/usbDevice/UsbDeviceApiInterceptor.java"
+  },
+  {
+    "raw": "the usb device[uuid:%s] has different hostUuid than devices that already attached to the vm instance[uuid:%s]",
+    "en_US": "the usb device[uuid:{0}] has different hostUuid than devices that already attached to the vm instance[uuid:{1}]",
+    "zh_CN": "",
+    "arguments": [
+      "usb.getUuid()",
+      "vm.getUuid()"
+    ],
+    "line": 87,
+    "fileName": "src/main/java/org/zstack/usbDevice/UsbDeviceApiInterceptor.java"
+  },
+  {
+    "raw": "the usb device[uuid:%s] is not attached to any vm instance.",
+    "en_US": "the usb device[uuid:{0}] is not attached to any vm instance.",
+    "zh_CN": "",
+    "arguments": [
+      "usb.getUuid()"
+    ],
+    "line": 99,
+    "fileName": "src/main/java/org/zstack/usbDevice/UsbDeviceApiInterceptor.java"
+  },
+  {
+    "raw": "the vm instance that the usb device[uuid:%s] is attached to is not in detachable state of %s",
+    "en_US": "the vm instance that the usb device[uuid:{0}] is attached to is not in detachable state of {1}",
+    "zh_CN": "",
+    "arguments": [
+      "usb.getUuid()",
+      "allowedVmInstanceDetachableState"
+    ],
+    "line": 107,
+    "fileName": "src/main/java/org/zstack/usbDevice/UsbDeviceApiInterceptor.java"
+  },
+  {
+    "raw": "vm instance[uuid:%s] not in attachable state of %s for usb device",
+    "en_US": "vm instance[uuid:{0}] not in attachable state of {1} for usb device",
+    "zh_CN": "",
+    "arguments": [
+      "vm.getUuid()",
+      "allowedVmInstanceAttachableState"
+    ],
+    "line": 117,
+    "fileName": "src/main/java/org/zstack/usbDevice/UsbDeviceApiInterceptor.java"
+  },
+  {
+    "raw": "cannot disable usb device[uuid:%s] when it\u0027s attached to a vm instance",
+    "en_US": "cannot disable usb device[uuid:{0}] when it\u0027s attached to a vm instance",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getUuid()"
+    ],
+    "line": 128,
+    "fileName": "src/main/java/org/zstack/usbDevice/UsbDeviceApiInterceptor.java"
+  },
+  {
+    "raw": "cannot attach the usb device[uuid:%s] to vm[uuid:%s] due to host allocation",
+    "en_US": "cannot attach the usb device[uuid:{0}] to vm[uuid:{1}] due to host allocation",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getUsbDeviceUuid()",
+      "msg.getVmInstanceUuid()"
+    ],
+    "line": 147,
+    "fileName": "src/main/java/org/zstack/usbDevice/UsbDeviceManager.java"
+  },
+  {
+    "raw": "cannot migrate vm[uuid:%s] because there are usb devices attached",
+    "en_US": "cannot migrate vm[uuid:{0}] because there are usb devices attached",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getVmInstanceUuid()"
+    ],
+    "line": 422,
+    "fileName": "src/main/java/org/zstack/usbDevice/UsbDeviceManager.java"
+  },
+  {
+    "raw": "cannot migrate root volume[uuid:%s] because there are usb devices attached",
+    "en_US": "cannot migrate root volume[uuid:{0}] because there are usb devices attached",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getVolumeUuid()"
+    ],
+    "line": 438,
+    "fileName": "src/main/java/org/zstack/usbDevice/UsbDeviceManager.java"
+  },
+  {
     "raw": "vCenter login name expected, got: %s",
     "en_US": "vCenter login name expected, got: {0}",
     "zh_CN": "vCenter需要登录名字，得到：{0}",
@@ -10385,5 +10532,15 @@
     "arguments": [],
     "line": 240,
     "fileName": "src/main/java/org/zstack/vpc/VpcManagerImpl.java"
+  },
+  {
+    "raw": "can not detach nic from vpc vr[uuid:%s]",
+    "en_US": "can not detach nic from vpc vr[uuid:{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "vpc.getUuid()"
+    ],
+    "line": 144,
+    "fileName": "src/main/java/org/zstack/vpc/VpcVRouterFactory.java"
   }
 ]
