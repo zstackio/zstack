@@ -1200,7 +1200,8 @@ public class VolumeBase implements Volume {
                         if (reply.isSuccess()) {
                             AttachDataVolumeToVmReply ar = reply.castReply();
                             self.setVmInstanceUuid(msg.getVmInstanceUuid());
-                            self.setFormat(VolumeFormat.getVolumeFormatByMasterHypervisorType(ar.getHypervisorType()).toString());
+                            self.setFormat(self.getFormat() != null ? self.getFormat() :
+                                    VolumeFormat.getVolumeFormatByMasterHypervisorType(ar.getHypervisorType()).toString());
                             self = dbf.updateAndRefresh(self);
 
                             evt.setInventory(getSelfInventory());
