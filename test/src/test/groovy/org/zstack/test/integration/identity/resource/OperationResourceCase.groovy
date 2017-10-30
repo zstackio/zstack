@@ -18,6 +18,7 @@ import org.zstack.testlib.SubCase
  */
 class OperationResourceCase extends SubCase {
     EnvSpec envSpec
+    AccountInventory accountInventory
 
     @Override
     void clean() {
@@ -37,7 +38,7 @@ class OperationResourceCase extends SubCase {
     void testChangeOwnerWhenVMStarting() {
         DatabaseFacade dbf = bean(DatabaseFacade.class)
         VmInstanceInventory vm = envSpec.inventoryByName("vm")
-        AccountInventory accountInventory = createAccount {
+        accountInventory = createAccount {
             name = "test"
             password = "password"
         }
@@ -51,24 +52,24 @@ class OperationResourceCase extends SubCase {
     }
 
     void testShareResourceAgain(){
-        SessionInventory sessionInventory = logInByAccount {
+        logInByAccount {
             accountName = AccountConstant.INITIAL_SYSTEM_ADMIN_NAME
             password = AccountConstant.INITIAL_SYSTEM_ADMIN_PASSWORD
-        } as SessionInventory
+        }
 
         InstanceOfferingInventory instanceOfferingInventory = envSpec.inventoryByName("instanceOffering")
         shareResource {
             resourceUuids = [instanceOfferingInventory.uuid]
-            accountUuids = [sessionInventory.accountUuid]
+            accountUuids = [accountInventory.uuid]
         }
 
         shareResource {
             resourceUuids = [instanceOfferingInventory.uuid]
-            accountUuids = [sessionInventory.accountUuid]
+            accountUuids = [accountInventory.uuid]
         }
         revokeResourceSharing{
             resourceUuids = [instanceOfferingInventory.uuid]
-            accountUuids = [sessionInventory.accountUuid]
+            accountUuids = [accountInventory.uuid]
         }
     }
 

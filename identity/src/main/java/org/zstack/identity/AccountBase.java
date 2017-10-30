@@ -508,8 +508,9 @@ public class AccountBase extends AbstractAccount {
                         String resourceType = uuidType.get(ruuid);
                         for (String auuid : msg.getAccountUuids()) {
                             if (! Q.New(SharedResourceVO.class)
-                                    .eq(SharedResourceVO_.ownerAccountUuid, auuid)
+                                    .eq(SharedResourceVO_.ownerAccountUuid, msg.getAccountUuid())
                                     .eq(SharedResourceVO_.resourceUuid, ruuid)
+                                    .eq(SharedResourceVO_.receiverAccountUuid,auuid)
                                     .isExists()){
                                 SharedResourceVO svo = new SharedResourceVO();
                                 svo.setOwnerAccountUuid(msg.getAccountUuid());
