@@ -101,7 +101,7 @@ public class LocalStorageDefaultAllocateCapacityFlow implements Flow {
         if(result.isEmpty()){
             String clusterUuid = Q.New(HostVO.class).select(HostVO_.clusterUuid)
                     .eq(HostVO_.uuid, hostUuid).findValue();
-            throw new OperationFailureException(operr("There is no LocalStorage primary storage[state=%s,status=%s] on the cluster[%s]. Check the state/status of primary storage and make sure they have been attached to clusters"
+            throw new OperationFailureException(operr("There is no LocalStorage primary storage[state=%s,status=%s] on the cluster[%s], when the cluster mounts multiple primary storage, the system uses the local primary storage by default. Check the state/status of primary storage and make sure they have been attached to clusters"
                     , PrimaryStorageState.Enabled, PrimaryStorageStatus.Connected, clusterUuid));
         }
         return result.get(0);
