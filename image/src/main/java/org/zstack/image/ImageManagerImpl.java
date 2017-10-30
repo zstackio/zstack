@@ -1575,8 +1575,12 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                     final GetImageDownloadProgressReply dr = reply.castReply();
 
                     if (dr.isCompleted()) {
-                        doReportProgress(imageUuid, "adding to image store", 100);
-                        markCompletion(dr);
+                        if (!dr.isSuccess()) {
+                            markFailure(dr.getError());
+                        } else {
+                            doReportProgress(imageUuid, "adding to image store", 100);
+                            markCompletion(dr);
+                        }
                         return true;
                     }
 
