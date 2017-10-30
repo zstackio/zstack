@@ -40,4 +40,8 @@ public class LoadBalancerConstants {
         HEALTH_CHECK_TARGET_PROTOCOLS.add(HEALTH_CHECK_TARGET_PROTOCL_TCP);
     }
 
+    public static enum Param {
+        LOAD_BALANCER_VO,
+    }
+
 }

@@ -20,6 +20,8 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.network.service.portforwarding.PortForwardingConstant;
+import org.zstack.network.service.vip.ModifyVipAttributesStruct;
 import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
@@ -301,22 +303,16 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        SimpleQuery<VirtualRouterVipVO> q = dbf.createQuery(VirtualRouterVipVO.class);
-                        q.add(VirtualRouterVipVO_.uuid, Op.EQ, vip.getUuid());
-                        q.add(VirtualRouterVipVO_.virtualRouterVmUuid, Op.EQ, vr.getUuid());
-                        if (q.isExists()) {
-                            trigger.next();
-                            return;
-                        }
 
-                        /* call vip.acquire instead of vip backend */
-                        Vip vipIns = new Vip(vip.getUuid());
-                        vipIns.addUseFor(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
+                        ModifyVipAttributesStruct vipStruct = new ModifyVipAttributesStruct();
+                        vipStruct.setUseFor(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
+                        vipStruct.setPeerL3NetworkUuid(vr.getGuestNic().getL3NetworkUuid());
                         NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(vr.getGuestNic().getL3NetworkUuid(),
                                 LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE);
-                        vipIns.setServiceProvider(providerType.toString());
-                        vipIns.setPeerL3NetworkUuid(vr.getGuestNic().getL3NetworkUuid());
-                        vipIns.acquire(new Completion(trigger) {
+                        vipStruct.setServiceProvider(providerType.toString());
+                        Vip v = new Vip(vip.getUuid());
+                        v.setStruct(vipStruct);
+                        v.acquire(new Completion(trigger) {
                             @Override
                             public void success() {
                                 success = true;
@@ -337,18 +333,11 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                             return;
                         }
 
-                        /* if there is other lb use this vip and has vmnics, do nothing */
-                        List<String> vmNics = SQL.New("select ref.vmNicUuid from LoadBalancerListenerVmNicRefVO ref, LoadBalancerListenerVO lbl," +
-                                " LoadBalancerVO lb where ref.listenerUuid=lbl.uuid and lbl.loadBalancerUuid=lb.uuid and lb.uuid != :uuid and lb.vipUuid= :vipUuid", String.class).
-                                param("vipUuid", vip.getUuid()).param("uuid", struct.getLb().getUuid()).list();
-                        if(vmNics.size() > 0){
-                            trigger.rollback();
-                            return;
-                        }
-
-                        /* if there is other lb, but no vmnics */
-                        Vip vipIns = new Vip(vip.getUuid());
-                        vipIns.deleteFromBackend(new Completion(trigger) {
+                        ModifyVipAttributesStruct vipStruct = new ModifyVipAttributesStruct();
+                        vipStruct.setUseFor(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
+                        Vip v = new Vip(vip.getUuid());
+                        v.setStruct(vipStruct);
+                        v.release(new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.rollback();
@@ -356,58 +345,6 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
                             @Override
                             public void fail(ErrorCode errorCode) {
-                                trigger.rollback();
-                            }
-                        });
-                    }
-                });
-
-                flow(new Flow() {
-                    String __name__ = "lock-vip";
-
-                    UnmodifyVip rollback;
-
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        ModifyVipAttributesStruct s = new ModifyVipAttributesStruct();
-                        s.setPeerL3NetworkUuid(vr.getGuestNic().getL3NetworkUuid());
-                        NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(
-                                vr.getGuestNic().getL3NetworkUuid(), LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE);
-                        s.setServiceProvider(providerType.toString());
-                        VipUseForList vipUseForList = new VipUseForList(vip.getUseFor());
-                        s.setUseFor(vipUseForList.add(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING));
-
-                        new Vip(struct.getLb().getVipUuid()).modify(s, new ReturnValueCompletion<UnmodifyVip>(trigger) {
-                            @Override
-                            public void success(UnmodifyVip ret) {
-                                rollback = ret;
-                                trigger.next();
-                            }
-
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                trigger.fail(errorCode);
-                            }
-                        });
-                    }
-
-                    @Override
-                    public void rollback(FlowRollback trigger, Map data) {
-                        if (rollback == null) {
-                            trigger.rollback();
-                            return;
-                        }
-
-                        rollback.unmodify(new Completion(trigger) {
-                            @Override
-                            public void success() {
-                                trigger.rollback();
-                            }
-
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                //TODO GC
-                                logger.warn(errorCode.toString());
                                 trigger.rollback();
                             }
                         });
@@ -479,24 +416,15 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                 flow(new Flow() {
                     String __name__ = "lock-vip";
 
-                    boolean success = false;
-                    UnmodifyVip rollback;
-
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        ModifyVipAttributesStruct s = new ModifyVipAttributesStruct();
-                        s.setPeerL3NetworkUuid(l3.getUuid());
-                        NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(
-                                l3.getUuid(), LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE);
-                        s.setServiceProvider(providerType.toString());
-                        VipUseForList vipUseForList = new VipUseForList(vip.getUseFor());
-                        s.setUseFor(vipUseForList.add(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING));
-
-                        new Vip(vip.getUuid()).modify(s, new ReturnValueCompletion<UnmodifyVip>(trigger) {
+                        ModifyVipAttributesStruct vipStruct = new ModifyVipAttributesStruct();
+                        vipStruct.setUseFor(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
+                        Vip v = new Vip(vip.getUuid());
+                        v.setStruct(vipStruct);
+                        v.acquire(new Completion(trigger) {
                             @Override
-                            public void success(UnmodifyVip ret) {
-                                success = true;
-                                rollback = ret;
+                            public void success() {
                                 trigger.next();
                             }
 
@@ -509,12 +437,11 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
-                        if (!success) {
-                            trigger.rollback();
-                            return;
-                        }
-
-                        rollback.unmodify(new Completion(trigger) {
+                        ModifyVipAttributesStruct vipStruct = new ModifyVipAttributesStruct();
+                        vipStruct.setUseFor(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
+                        Vip v = new Vip(vip.getUuid());
+                        v.setStruct(vipStruct);
+                        v.release(new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.rollback();
@@ -616,13 +543,15 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        Vip vipIns = new Vip(vip.getUuid());
-                        vipIns.addUseFor(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
+                        ModifyVipAttributesStruct vipStruct = new ModifyVipAttributesStruct();
+                        vipStruct.setUseFor(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
+                        vipStruct.setPeerL3NetworkUuid(vr.getGuestNic().getL3NetworkUuid());
                         NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(vr.getGuestNic().getL3NetworkUuid(),
                                 LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE);
-                        vipIns.setServiceProvider(providerType.toString());
-                        vipIns.setPeerL3NetworkUuid(vr.getGuestNic().getL3NetworkUuid());
-                        vipIns.acquire(new Completion(trigger) {
+                        vipStruct.setServiceProvider(providerType.toString());
+                        Vip v = new Vip(vip.getUuid());
+                        v.setStruct(vipStruct);
+                        v.acquire(new Completion(trigger) {
                             @Override
                             public void success() {
                                 success = true;
@@ -643,18 +572,11 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                             return;
                         }
 
-                        /* if there is other lb use this vip and has vmnics, do nothing */
-                        List<String> vmNics = SQL.New("select ref.vmNicUuid from LoadBalancerListenerVmNicRefVO ref, LoadBalancerListenerVO lbl," +
-                                " LoadBalancerVO lb where ref.listenerUuid=lbl.uuid and lbl.loadBalancerUuid=lb.uuid and lb.uuid != :uuid and lb.vipUuid= :vipUuid", String.class).
-                                param("vipUuid", vip.getUuid()).param("uuid", struct.getLb().getUuid()).list();
-                        if(vmNics.size() > 0){
-                            trigger.rollback();
-                            return;
-                        }
-
-                        /* if there is other lb, but no vmnics */
-                        Vip vipIns = new Vip(vip.getUuid());
-                        vipIns.deleteFromBackend(new Completion(trigger) {
+                        ModifyVipAttributesStruct vipStruct = new ModifyVipAttributesStruct();
+                        vipStruct.setUseFor(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
+                        Vip v = new Vip(vip.getUuid());
+                        v.setStruct(vipStruct);
+                        v.release(new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.rollback();

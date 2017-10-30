@@ -24,9 +24,13 @@ public class ReleaseAndUnlockVipFlow extends NoRollbackFlow {
 
     @Override
     public void run(final FlowTrigger trigger, Map data) {
+        /* this flow will be called after ReleaseNetworkServicesOnVipFlow
+        * for now, there is no need to call this flow
         final VipInventory v = (VipInventory) data.get(VipConstant.Params.VIP.toString());
+        ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
+        struct.setUseFor(VipConstant.NETWORK_SERVICE_TYPE);
         Vip vip = new Vip(v.getUuid());
-        vip.delUseFor(v.getUseFor());
+        vip.setStruct(struct);
         vip.release(new Completion(trigger) {
             @Override
             public void success() {
@@ -37,6 +41,6 @@ public class ReleaseAndUnlockVipFlow extends NoRollbackFlow {
             public void fail(ErrorCode errorCode) {
                 trigger.fail(errorCode);
             }
-        });
+        });*/
     }
 }

@@ -35,10 +35,10 @@ public class PortForwardingPrepareVipFlow implements Flow {
         final L3NetworkInventory peerL3 = (L3NetworkInventory) data.get(VipConstant.Params.GUEST_L3NETWORK_VIP_FOR.toString());
         boolean needLockVip = data.containsKey(Params.NEED_LOCK_VIP.toString());
 
+        ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
+        struct.setUseFor( PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
         Vip vip = new Vip(v.getUuid());
-        vip.setPeerL3NetworkUuid(peerL3.getUuid());
-        vip.setServiceProvider(serviceProviderType);
-        vip.addUseFor(needLockVip ? PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE : null);
+        vip.setStruct(struct);
         vip.acquire(new Completion(trigger) {
             @Override
             public void success() {
@@ -60,8 +60,10 @@ public class PortForwardingPrepareVipFlow implements Flow {
         }
 
         VipInventory v = (VipInventory) data.get(VipConstant.Params.VIP.toString());
+        ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
+        struct.setUseFor( PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
         Vip vip = new Vip(v.getUuid());
-        vip.delUseFor(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
+        vip.setStruct(struct);
         vip.release(new Completion(trigger) {
             @Override
             public void success() {

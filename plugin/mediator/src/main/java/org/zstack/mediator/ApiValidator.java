@@ -17,6 +17,7 @@ import org.zstack.header.network.l3.IpRangeVO_;
 import org.zstack.header.vm.*;
 import org.zstack.network.service.eip.APIAttachEipMsg;
 import org.zstack.network.service.eip.APICreateEipMsg;
+import org.zstack.network.service.eip.EipConstant;
 import org.zstack.network.service.eip.EipVO;
 import org.zstack.network.service.lb.APICreateLoadBalancerListenerMsg;
 import org.zstack.network.service.lb.LoadBalancerVO;
@@ -171,6 +172,17 @@ public class ApiValidator implements GlobalApiMessageInterceptor {
     }
 
     private void validate(APICreateEipMsg msg) {
+        String useFor = Q.New(VipVO.class).select(VipVO_.useFor).eq(VipVO_.uuid, msg.getVipUuid()).findValue();
+        VipUseForList vipUseForList;
+        if (useFor != null){
+            vipUseForList = new VipUseForList(useFor);
+        } else {
+            vipUseForList = new VipUseForList();
+        }
+        if(!vipUseForList.validateNewAdded(EipConstant.EIP_NETWORK_SERVICE_TYPE)){
+            throw new ApiMessageInterceptionException(operr("the vip[uuid:%s] already has bound to other service[%s]", msg.getVipUuid(), vipUseForList.toString()));
+        }
+
         if (msg.getVmNicUuid() != null) {
             isVmNicUsedByPortForwarding(msg.getVmNicUuid());
         }

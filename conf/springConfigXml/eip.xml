@@ -22,6 +22,7 @@
             <zstack:extension interface="org.zstack.header.vm.VmPreAttachL3NetworkExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.vm.VmIpChangedExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.identity.ResourceOwnerAfterChangeExtensionPoint"/>
+            <zstack:extension interface="org.zstack.network.service.vip.VipGetServiceReferencePoint" />
         </zstack:plugin>
     </bean>
 
