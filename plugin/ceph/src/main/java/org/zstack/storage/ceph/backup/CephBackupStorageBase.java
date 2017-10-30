@@ -717,11 +717,15 @@ public class CephBackupStorageBase extends BackupStorageBase {
         new CephBackupStorageMonBase(monvo).httpCall(GET_DOWNLOAD_PROGRESS_PATH, cmd, GetDownloadProgressRsp.class, new ReturnValueCompletion<GetDownloadProgressRsp>(msg) {
             @Override
             public void success(GetDownloadProgressRsp resp) {
-                r.setCompleted(resp.isCompleted());
-                r.setProgress(resp.getProgress());
-                r.setActualSize(resp.getActualSize());
-                r.setSize(resp.getSize());
-                r.setInstallPath(resp.getInstallPath());
+                if (resp.isSuccess()) {
+                    r.setCompleted(resp.isCompleted());
+                    r.setProgress(resp.getProgress());
+                    r.setActualSize(resp.getActualSize());
+                    r.setSize(resp.getSize());
+                    r.setInstallPath(resp.getInstallPath());
+                } else {
+                    r.setError(operr(resp.getError()));
+                }
                 bus.reply(msg, r);
             }
 
