@@ -497,23 +497,28 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
 
     @Override
     public RangeSet getVipUsePortRange(String vipUuid, String protocol, VipUseForList useForList){
-        List<Tuple> lbPortList = SQL.New("select lbl.loadBalancerPort, lbl.loadBalancerPort from LoadBalancerListenerVO lbl, LoadBalancerVO lb "
-                +"where lbl.loadBalancerUuid=lb.uuid and lbl.protocol = :type and lb.vipUuid = :vipUuid", Tuple.class).
-                param("vipUuid", vipUuid).param("type", protocol.toUpperCase()).list();
 
         RangeSet portRangeList = new RangeSet();
         List<RangeSet.Range> portRanges = new ArrayList<RangeSet.Range>();
 
-        Iterator<Tuple> it = lbPortList.iterator();
-        while (it.hasNext()){
-            Tuple strRange = it.next();
-            int start = strRange.get(0, Integer.class);
-            int end = strRange.get(1, Integer.class);
+        /* no matter TCP or HTTP, retrieve all the ports of TCP and HTTP */
+        if (protocol.toLowerCase().equals(LoadBalancerConstants.LB_PROTOCOL_TCP) ||
+                protocol.toLowerCase().equals(LoadBalancerConstants.LB_PROTOCOL_HTTP)) {
+            List<Tuple> lbPortList = SQL.New("select lbl.loadBalancerPort, lbl.loadBalancerPort from LoadBalancerListenerVO lbl, LoadBalancerVO lb "
+                    + "where lbl.loadBalancerUuid=lb.uuid and lb.vipUuid = :vipUuid", Tuple.class).
+                    param("vipUuid", vipUuid).list();
 
-            RangeSet.Range range = new RangeSet.Range(start, end);
-            portRanges.add(range);
+            Iterator<Tuple> it = lbPortList.iterator();
+            while (it.hasNext()) {
+                Tuple strRange = it.next();
+                int start = strRange.get(0, Integer.class);
+                int end = strRange.get(1, Integer.class);
+
+                RangeSet.Range range = new RangeSet.Range(start, end);
+                portRanges.add(range);
+            }
+            portRangeList.setRanges(portRanges);
         }
-        portRangeList.setRanges(portRanges);
 
         return portRangeList;
     }

@@ -1029,23 +1029,24 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
 
     @Override
     public RangeSet getVipUsePortRange(String vipUuid, String protocol, VipUseForList useForList){
-        List<Tuple> pfPortList = Q.New(PortForwardingRuleVO.class).select(PortForwardingRuleVO_.vipPortStart, PortForwardingRuleVO_.vipPortEnd)
-                .eq(PortForwardingRuleVO_.vipUuid, vipUuid).eq(PortForwardingRuleVO_.protocolType, PortForwardingProtocolType.valueOf(protocol.toUpperCase())).listTuple();
-
         RangeSet portRangeList = new RangeSet();
         List<RangeSet.Range> portRanges = new ArrayList<RangeSet.Range>();
 
-        Iterator<Tuple> it = pfPortList.iterator();
-        while (it.hasNext()){
-            Tuple strRange = it.next();
-            int start = strRange.get(0, Integer.class);
-            int end = strRange.get(1, Integer.class);
+        if (protocol.toUpperCase().equals(PortForwardingProtocolType.UDP.toString()) || protocol.toUpperCase().equals(PortForwardingProtocolType.TCP.toString())) {
+            List<Tuple> pfPortList = Q.New(PortForwardingRuleVO.class).select(PortForwardingRuleVO_.vipPortStart, PortForwardingRuleVO_.vipPortEnd)
+                    .eq(PortForwardingRuleVO_.vipUuid, vipUuid).eq(PortForwardingRuleVO_.protocolType, PortForwardingProtocolType.valueOf(protocol.toUpperCase())).listTuple();
+            Iterator<Tuple> it = pfPortList.iterator();
+            while (it.hasNext()){
+                Tuple strRange = it.next();
+                int start = strRange.get(0, Integer.class);
+                int end = strRange.get(1, Integer.class);
 
-            RangeSet.Range range = new RangeSet.Range(start, end);
-            portRanges.add(range);
+                RangeSet.Range range = new RangeSet.Range(start, end);
+                portRanges.add(range);
+            }
         }
-        portRangeList.setRanges(portRanges);
 
+        portRangeList.setRanges(portRanges);
         return portRangeList;
     }
 
