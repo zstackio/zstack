@@ -231,16 +231,17 @@ public class VipBase {
     protected void releaseVip(ModifyVipAttributesStruct s, Completion completion) {
 
         refresh();
-        if (self.getServiceProvider() == null) {
-            logger.debug(String.format("the serviceProvider field is null, the vip[uuid:%s, name:%s, ip:%s] has been released" +
-                    " by other service", self.getUuid(), self.getName(), self.getIp()));
-            completion.success();
-            return;
-        }
 
         /* s == null is called from VipDeleteMsg, all service has beed released */
         if ((s != null) && (!releaseCheckModifyVipAttributeStruct(s))){
             /* no need to remove vip from backend */
+            completion.success();
+            return;
+        }
+
+        if (self.getServiceProvider() == null) {
+            logger.debug(String.format("the serviceProvider field is null, the vip[uuid:%s, name:%s, ip:%s] has been released" +
+                    " by other service", self.getUuid(), self.getName(), self.getIp()));
             completion.success();
             return;
         }

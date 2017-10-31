@@ -9,6 +9,9 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.thread.ChainTask;
+import org.zstack.core.thread.SyncTaskChain;
+import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
@@ -74,6 +77,8 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
     private ErrorFacade errf;
     @Autowired
     private VipManager vipMgr;
+    @Autowired
+    private ThreadFacade thdf;
 
     private Map<String, PortForwardingBackend> backends = new HashMap<String, PortForwardingBackend>();
     private List<AttachPortForwardingRuleExtensionPoint> attachRuleExts = new ArrayList<AttachPortForwardingRuleExtensionPoint>();
@@ -126,12 +131,12 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         final PortForwardingRuleDeletionReply reply = new PortForwardingRuleDeletionReply();
         removePortforwardingRule(msg.getRuleUuids().iterator(), new Completion(msg) {
             @Override
-            public void success() {
+            public void success () {
                 bus.reply(msg, reply);
             }
 
             @Override
-            public void fail(ErrorCode errorCode) {
+            public void fail (ErrorCode errorCode){
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
             }
@@ -537,17 +542,35 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
     }
 
     private void handle(APIDeletePortForwardingRuleMsg msg) {
-        final APIDeletePortForwardingRuleEvent evt = new APIDeletePortForwardingRuleEvent(msg.getId());
-        removePortforwardingRule(msg.getUuid(), new Completion(msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
             @Override
-            public void success() {
-                bus.publish(evt);
+            public String getSyncSignature() {
+                String vipUuid = Q.New(PortForwardingRuleVO.class).eq(PortForwardingRuleVO_.uuid, msg.getUuid()).select(PortForwardingRuleVO_.vipUuid).findValue();
+                return String.format("api-delete-portforwardingrule-vip-%s", vipUuid);
             }
 
             @Override
-            public void fail(ErrorCode errorCode) {
-                evt.setError(errorCode);
-                bus.publish(evt);
+            public void run(SyncTaskChain chain) {
+                final APIDeletePortForwardingRuleEvent evt = new APIDeletePortForwardingRuleEvent(msg.getId());
+                removePortforwardingRule(msg.getUuid(), new Completion(msg) {
+                    @Override
+                    public void success() {
+                        bus.publish(evt);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        evt.setError(errorCode);
+                        bus.publish(evt);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("api-delete-portforwardingrule-%s", msg.getUuid());
             }
         });
     }
