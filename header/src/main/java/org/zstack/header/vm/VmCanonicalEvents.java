@@ -9,6 +9,7 @@ import java.util.Date;
  */
 public class VmCanonicalEvents {
     public static final String VM_FULL_STATE_CHANGED_PATH = "/vm/state/change";
+    public static final String VM_STATE_CHANGED_FOR_HA_PATH = "/vm/state/change/ha";
     public static final String VM_INSTANCE_OFFERING_CHANGED_PATH = "/vm/instanceoffering/change";
 
     @NeedJsonSchema

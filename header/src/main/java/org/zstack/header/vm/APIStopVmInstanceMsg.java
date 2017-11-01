@@ -48,6 +48,8 @@ public class APIStopVmInstanceMsg extends APIMessage implements VmInstanceMessag
     private String uuid;
     @APIParam(required = false, validValues = {"grace", "cold"})
     private String type = "grace";
+    @APIParam(required = false)
+    private Boolean stop;
 
     public String getUuid() {
         return uuid;
@@ -65,12 +67,19 @@ public class APIStopVmInstanceMsg extends APIMessage implements VmInstanceMessag
         this.type = type;
     }
 
+    public Boolean getStop() {
+        return stop;
+    }
+
+    public void setStop(Boolean stop) {
+        this.stop = stop;
+    }
 
     @Override
     public String getVmInstanceUuid() {
         return getUuid();
     }
- 
+
     public static APIStopVmInstanceMsg __example__() {
         APIStopVmInstanceMsg msg = new APIStopVmInstanceMsg();
         msg.setUuid(uuid());

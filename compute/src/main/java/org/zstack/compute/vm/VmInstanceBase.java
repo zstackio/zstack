@@ -1,5 +1,6 @@
 package org.zstack.compute.vm;
 
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
@@ -2946,7 +2947,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
 
         throw new OperationFailureException(operr("the ISO[uuid:%s] is on backup storage that is not compatible of the primary storage[uuid:%s]" +
-                        " where the VM[name:%s, uuid:%s] is on", isoUuid, psUuid, self.getName(), self.getUuid()));
+                " where the VM[name:%s, uuid:%s] is on", isoUuid, psUuid, self.getName(), self.getUuid()));
     }
 
     private void handle(final APIDetachL3NetworkFromVmMsg msg) {
@@ -3761,7 +3762,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         new VmAttachVolumeValidator().validate(msg.getVmInstanceUuid(), volume.getUuid());
         extEmitter.preAttachVolume(getSelfInventory(), volume);
         extEmitter.beforeAttachVolume(getSelfInventory(), volume);
-        
+
         VmInstanceSpec spec = new VmInstanceSpec();
         spec.setMessage(msg);
         spec.setVmInventory(VmInstanceInventory.valueOf(self));
@@ -3932,7 +3933,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         if (spec.getDestNics().isEmpty()) {
             throw new OperationFailureException(operr("unable to start the vm[uuid:%s]." +
-                            " It doesn't have any nic, please attach a nic and try again", self.getUuid()));
+                    " It doesn't have any nic, please attach a nic and try again", self.getUuid()));
         }
 
         final VmInstanceState originState = self.getState();
@@ -4147,12 +4148,20 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     protected void startVm(final APIStartVmInstanceMsg msg, final SyncTaskChain taskChain) {
         startVm(msg, new Completion(taskChain) {
+            private void fireStartEvent(){
+                VmCanonicalEvents.VmStateChangedData data = new VmCanonicalEvents.VmStateChangedData();
+                data.setVmUuid(self.getUuid());
+                data.setNewState(VmInstanceStateEvent.running.toString());
+                evtf.fire(VmCanonicalEvents.VM_STATE_CHANGED_FOR_HA_PATH, data);
+            }
+
             @Override
             public void success() {
                 VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
                 APIStartVmInstanceEvent evt = new APIStartVmInstanceEvent(msg.getId());
                 evt.setInventory(inv);
                 bus.publish(evt);
+                fireStartEvent();
                 taskChain.next();
             }
 
@@ -4499,6 +4508,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 
+
     private void stopVm(final Message msg, final Completion completion) {
         refreshVO();
         ErrorCode allowed = validateOperationByState(msg, self.getState(), null);
@@ -4526,6 +4536,14 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
 
         final VmInstanceState originState = self.getState();
+        logger.warn(String.format("camile : the msg instanceof VmInstanceMessage is [%s]," +
+                " instanceof APIStopVmInstanceMsg is [%s]",msg instanceof VmInstanceMessage, msg instanceof APIStopVmInstanceMsg));
+        if (msg instanceof VmInstanceMessage && msg instanceof APIStopVmInstanceMsg && BooleanUtils.isTrue(((APIStopVmInstanceMsg) msg).getStop())){
+            VmCanonicalEvents.VmStateChangedData data = new VmCanonicalEvents.VmStateChangedData();
+            data.setVmUuid(self.getUuid());
+            data.setNewState(VmInstanceState.Stopped.toString());
+            evtf.fire(VmCanonicalEvents.VM_STATE_CHANGED_FOR_HA_PATH, data);
+        }
         changeVmStateInDb(VmInstanceStateEvent.stopping);
 
         extEmitter.beforeStopVm(VmInstanceInventory.valueOf(self));
