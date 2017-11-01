@@ -2563,7 +2563,7 @@
   {
     "raw": "Console is only available when the VM[uuid:%s] is Running, but the current state is %s",
     "en_US": "Console is only available when the VM[uuid:{0}] is Running, but the current state is {1}",
-    "zh_CN": "控制台仅仅当VM[uuid:{0}]处于运行状态才可用，但是现在的状态为{1}",
+    "zh_CN": "仅当VM[uuid:{0}]处于运行状态时控制台可用，但是现在的状态为{1}",
     "arguments": [
       "msg.getVmInstanceUuid()",
       "state"
@@ -9916,7 +9916,7 @@
   {
     "raw": "the volume[uuid:%s] is in status of deleted, cannot do the operation",
     "en_US": "the volume[uuid:{0}] is in status of deleted, cannot do the operation",
-    "zh_CN": "云盘[uuid:{0}]出于删除操作，不能执行此操作",
+    "zh_CN": "云盘[uuid:{0}]已经被删除，不能执行此操作",
     "arguments": [
       "vol.getUuid()"
     ],
