@@ -21,10 +21,10 @@ public class SourceClassMap {
 			put("org.zstack.core.gc.GarbageCollectorInventory", "org.zstack.sdk.GarbageCollectorInventory");
 			put("org.zstack.core.notification.NotificationInventory", "org.zstack.sdk.NotificationInventory");
 			put("org.zstack.core.notification.NotificationSubscriptionInventory", "org.zstack.sdk.NotificationSubscriptionInventory");
-			put("org.zstack.header.aliyun.AliyunException", "org.zstack.sdk.AliyunException");
 			put("org.zstack.header.aliyun.AliyunOssException", "org.zstack.sdk.AliyunOssException");
 			put("org.zstack.header.aliyun.ecs.EcsInstanceInventory", "org.zstack.sdk.EcsInstanceInventory");
 			put("org.zstack.header.aliyun.ecs.EcsInstanceType", "org.zstack.sdk.EcsInstanceType");
+			put("org.zstack.header.aliyun.errorCode.AliyunErrorCode", "org.zstack.sdk.AliyunErrorCode");
 			put("org.zstack.header.aliyun.image.EcsImageInventory", "org.zstack.sdk.EcsImageInventory");
 			put("org.zstack.header.aliyun.image.ProgressProperty", "org.zstack.sdk.ProgressProperty");
 			put("org.zstack.header.aliyun.network.HybridConnectionType", "org.zstack.sdk.HybridConnectionType");
@@ -217,7 +217,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.AccountResourceRefInventory", "org.zstack.header.identity.AccountResourceRefInventory");
 			put("org.zstack.sdk.AlertInventory", "org.zstack.monitoring.AlertInventory");
 			put("org.zstack.sdk.AliyunDiskInventory", "org.zstack.header.aliyun.storage.disk.AliyunDiskInventory");
-			put("org.zstack.sdk.AliyunException", "org.zstack.header.aliyun.AliyunException");
+			put("org.zstack.sdk.AliyunErrorCode", "org.zstack.header.aliyun.errorCode.AliyunErrorCode");
 			put("org.zstack.sdk.AliyunOssException", "org.zstack.header.aliyun.AliyunOssException");
 			put("org.zstack.sdk.AliyunSnapshotInventory", "org.zstack.header.aliyun.storage.snapshot.AliyunSnapshotInventory");
 			put("org.zstack.sdk.ApplianceVmInventory", "org.zstack.appliancevm.ApplianceVmInventory");

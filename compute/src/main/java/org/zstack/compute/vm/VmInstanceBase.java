@@ -4151,7 +4151,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             private void fireStartEvent(){
                 VmCanonicalEvents.VmStateChangedData data = new VmCanonicalEvents.VmStateChangedData();
                 data.setVmUuid(self.getUuid());
-                data.setNewState(VmInstanceStateEvent.running.toString());
+                data.setNewState(VmInstanceState.Running.toString());
                 evtf.fire(VmCanonicalEvents.VM_STATE_CHANGED_FOR_HA_PATH, data);
             }
 
@@ -4536,9 +4536,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
 
         final VmInstanceState originState = self.getState();
-        logger.warn(String.format("camile : the msg instanceof VmInstanceMessage is [%s]," +
-                " instanceof APIStopVmInstanceMsg is [%s]",msg instanceof VmInstanceMessage, msg instanceof APIStopVmInstanceMsg));
-        if (msg instanceof VmInstanceMessage && msg instanceof APIStopVmInstanceMsg && BooleanUtils.isTrue(((APIStopVmInstanceMsg) msg).getStop())){
+        if (msg instanceof VmInstanceMessage && msg instanceof APIStopVmInstanceMsg && BooleanUtils.isTrue(((APIStopVmInstanceMsg) msg).getStopHA())){
             VmCanonicalEvents.VmStateChangedData data = new VmCanonicalEvents.VmStateChangedData();
             data.setVmUuid(self.getUuid());
             data.setNewState(VmInstanceState.Stopped.toString());

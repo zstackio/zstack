@@ -49,7 +49,7 @@ public class APIStopVmInstanceMsg extends APIMessage implements VmInstanceMessag
     @APIParam(required = false, validValues = {"grace", "cold"})
     private String type = "grace";
     @APIParam(required = false)
-    private Boolean stop;
+    private Boolean stopHA;
 
     public String getUuid() {
         return uuid;
@@ -67,12 +67,12 @@ public class APIStopVmInstanceMsg extends APIMessage implements VmInstanceMessag
         this.type = type;
     }
 
-    public Boolean getStop() {
-        return stop;
+    public Boolean getStopHA() {
+        return stopHA;
     }
 
-    public void setStop(Boolean stop) {
-        this.stop = stop;
+    public void setStopHA(Boolean stopHA) {
+        this.stopHA = stopHA;
     }
 
     @Override
