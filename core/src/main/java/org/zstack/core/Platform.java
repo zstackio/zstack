@@ -81,6 +81,10 @@ public class Platform {
 
     static Map<Class, DynamicObjectMetadata> dynamicObjectMetadata = new HashMap<>();
 
+    public static Locale getLocale() {
+        return locale;
+    }
+
     private static Map<String, String> linkGlobalPropertyMap(String prefix) {
         Map<String, String> ret = new HashMap<String, String>();
         Map<String, String> map = getGlobalPropertiesStartWith(prefix);
