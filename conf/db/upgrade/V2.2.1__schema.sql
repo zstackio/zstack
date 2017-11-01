@@ -136,8 +136,9 @@ CREATE PROCEDURE generateVipForVirtualRouterPubIP()
             SELECT ipRangeUuid;
             CALL getUseIpUuid(ipRangeUuid, ip, usedIpUuid);
             SELECT usedIpUuid;
-            INSERT INTO zstack.VipVO (uuid, name, l3NetworkUuid, peerL3NetworkUuid, state, ip, gateway, netmask, useFor, serviceProvider, ipRangeUuid, usedIpUuid)
-                                     values(uuid, CONCAT('Vip-', name), publicNetworkUuid, peerL3NetworkUuid, 'Enabled', ip, gateway, netmask, 'SNAT', serviceProvider, ipRangeUuid, usedIpUuid);
+            INSERT INTO zstack.VipVO (uuid, name, description, l3NetworkUuid, peerL3NetworkUuid, state, ip, gateway, netmask, useFor, serviceProvider, ipRangeUuid, usedIpUuid, lastOpDate, createDate)
+                                     values(uuid, CONCAT('Vip-', name), name, publicNetworkUuid, peerL3NetworkUuid, 'Enabled', ip, gateway, netmask, 'SNAT', serviceProvider, ipRangeUuid, usedIpUuid, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
+            INSERT INTO zstack.ResourceVO(uuid, resourceName, resourceType) values(uuid, name, 'VipVO');
 
         END LOOP;
         CLOSE cur;
