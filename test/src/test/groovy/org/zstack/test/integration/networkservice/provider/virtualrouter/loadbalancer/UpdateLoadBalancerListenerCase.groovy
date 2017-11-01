@@ -237,6 +237,22 @@ class UpdateLoadBalancerListenerCase extends SubCase {
         assert ubllRes.value.inventory.uuid == lblVo.uuid
         assert ubllRes.value.inventory.name == lblVo.name
         assert ubllRes.value.inventory.description == lblVo.description
+
+        deleteVip {
+            uuid = vipInventory.getUuid()
+        }
+
+        deleteVip {
+            uuid = vipInventory2.getUuid()
+        }
+
+        deleteEip{
+            uuid = eipInventory.getUuid()
+        }
+
+        deleteLoadBalancer {
+            uuid = loadBalancerInventory.getUuid()
+        }
     }
 
     void testUpdateLBListenerwithSamePort() {
@@ -349,6 +365,10 @@ class UpdateLoadBalancerListenerCase extends SubCase {
 
     void testDeleteLBListener() {
         L3NetworkInventory publicL3 = env.inventoryByName("PUBLIC-MANAGEMENT-L3") as L3NetworkInventory
+        VmInstanceInventory vm1 = env.inventoryByName("vm1") as VmInstanceInventory
+        VmInstanceInventory vm2 = env.inventoryByName("vm2") as VmInstanceInventory
+        VmNicInventory vm1Nic1 = vm1.vmNics.get(0)
+        VmNicInventory vm2Nic1 = vm2.vmNics.get(0)
 
         CreateVipAction createVipAction1 = new CreateVipAction()
         createVipAction1.name = "vip-1"
@@ -406,6 +426,26 @@ class UpdateLoadBalancerListenerCase extends SubCase {
         createLoadBalancerListenerAction3.sessionId = adminSession()
         CreateLoadBalancerListenerAction.Result lblRes3 = createLoadBalancerListenerAction3.call()
         assert lblRes3.error == null
+        LoadBalancerListenerInventory lbl3Inv = lblRes3.value.inventory
+
+        AddVmNicToLoadBalancerAction addAction = new AddVmNicToLoadBalancerAction()
+        addAction.listenerUuid = lbl3Inv.uuid
+        addAction.vmNicUuids = asList(vm1Nic1.getUuid())
+        addAction.sessionId = adminSession()
+        AddVmNicToLoadBalancerAction.Result addResult = addAction.call()
+        assert addResult.error == null
+
+        AddVmNicToLoadBalancerAction addAction1 = new AddVmNicToLoadBalancerAction()
+        addAction1.listenerUuid = loadBalancerListenerInventory1.uuid
+        addAction1.vmNicUuids = asList(vm2Nic1.getUuid())
+        addAction1.sessionId = adminSession()
+        AddVmNicToLoadBalancerAction.Result addResult1 = addAction1.call()
+        assert addResult1.error == null
+
+        removeVmNicFromLoadBalancer {
+            listenerUuid = lbl3Inv.uuid
+            vmNicUuids = asList(vm1Nic1.getUuid())
+        }
 
         /* delete lb-2 , check lb listener attached to lb is deleted cascaded */
         deleteLoadBalancer {
