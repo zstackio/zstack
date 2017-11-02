@@ -151,7 +151,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
     @Transactional(readOnly = true)
     private List<VmNicInventory> getAttachableVmNicForEip(VipInventory vip) {
         String providerType = vip.getServiceProvider();
-        String peerL3NetworkUuid = vip.getPeerL3NetworkUuid();
+        List<String> peerL3NetworkUuids = vip.getPeerL3NetworkUuids();
         String zoneUuid = Q.New(L3NetworkVO.class)
                 .select(L3NetworkVO_.zoneUuid)
                 .eq(L3NetworkVO_.uuid, vip.getL3NetworkUuid())
@@ -192,8 +192,8 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                     .list();
         }
 
-        if (peerL3NetworkUuid != null) {
-            l3Uuids = l3Uuids.stream().filter(l -> l.equals(peerL3NetworkUuid)).collect(Collectors.toList());
+        if (peerL3NetworkUuids != null) {
+            l3Uuids = l3Uuids.stream().filter(l -> peerL3NetworkUuids.contains(l)).collect(Collectors.toList());
         }
 
         if (l3Uuids.isEmpty()) {

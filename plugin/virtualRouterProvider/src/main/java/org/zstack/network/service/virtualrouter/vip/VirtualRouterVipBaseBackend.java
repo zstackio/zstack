@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -184,6 +185,8 @@ public class VirtualRouterVipBaseBackend extends VipBaseBackend {
 
     @Override
     protected void acquireVipOnBackend(Completion completion) {
+        refresh();
+
         VirtualRouterVipVO vipvo = dbf.findByUuid(self.getUuid(), VirtualRouterVipVO.class);
 
         if (vipvo != null) {
@@ -207,10 +210,11 @@ public class VirtualRouterVipBaseBackend extends VipBaseBackend {
         chain.then(new NoRollbackFlow() {
             @Override
             public void run(final FlowTrigger trigger, final Map data) {
-                DebugUtils.Assert(self.getPeerL3NetworkUuid() != null, "peerL3NetworkUuid cannot be null");
+                DebugUtils.Assert(self.getPeerL3NetworkUuids() != null, "peerL3NetworkUuid cannot be null");
+                DebugUtils.Assert(self.getPeerL3NetworkUuids().size() == 1, "there must be only one peerL3NetworkUuid");
 
                 VirtualRouterStruct s = new VirtualRouterStruct();
-                s.setL3Network(L3NetworkInventory.valueOf(dbf.findByUuid(self.getPeerL3NetworkUuid(), L3NetworkVO.class)));
+                s.setL3Network(L3NetworkInventory.valueOf(dbf.findByUuid(self.getPeerL3NetworkUuids().iterator().next(), L3NetworkVO.class)));
 
                 String appVmType;
                 if (self.getServiceProvider().equals(VirtualRouterConstant.VIRTUAL_ROUTER_PROVIDER_TYPE)) {

@@ -11,6 +11,8 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
+
 /**
  * @inventory
  * inventory for vip
@@ -37,8 +39,6 @@ import java.util.List;
 @ExpandedQueries({
         @ExpandedQuery(expandedField = "l3Network", inventoryClass = L3NetworkInventory.class,
                 foreignKey = "l3NetworkUuid", expandedInventoryKey = "uuid"),
-        @ExpandedQuery(expandedField = "peerL3Network", inventoryClass = L3NetworkInventory.class,
-                foreignKey = "peerL3NetworkUuid", expandedInventoryKey = "uuid"),
 })
 public class VipInventory implements Serializable {
     /**
@@ -86,7 +86,7 @@ public class VipInventory implements Serializable {
     /**
      * @desc uuid of l3Network this vip used for. For example, when vip is used as Eip, the guest network is the peer network
      */
-    private String peerL3NetworkUuid;
+    private List<String> peerL3NetworkUuids;
     /**
      * @desc service name this vip used for. For example, PortForwarding
      */
@@ -117,9 +117,13 @@ public class VipInventory implements Serializable {
         inv.setNetmask(vo.getNetmask());
         inv.setUseFor(vo.getUseFor());
         inv.setUuid(vo.getUuid());
-        inv.setPeerL3NetworkUuid(vo.getPeerL3NetworkUuid());
         inv.setState(vo.getState().toString());
         inv.setUsedIpUuid(vo.getUsedIpUuid());
+        if (vo.getPeerL3NetworkRefs() != null && !vo.getPeerL3NetworkRefs().isEmpty()) {
+            inv.setPeerL3NetworkUuids(vo.getPeerL3NetworkRefs().stream()
+                    .map(ref -> ref.getL3NetworkUuid())
+                    .collect(Collectors.toList()));
+        }
         return inv;
     }
 
@@ -147,12 +151,12 @@ public class VipInventory implements Serializable {
         this.state = state;
     }
 
-    public String getPeerL3NetworkUuid() {
-        return peerL3NetworkUuid;
+    public List<String> getPeerL3NetworkUuids() {
+        return peerL3NetworkUuids;
     }
 
-    public void setPeerL3NetworkUuid(String peerL3NetworkUuid) {
-        this.peerL3NetworkUuid = peerL3NetworkUuid;
+    public void setPeerL3NetworkUuids(List<String> peerL3NetworkUuids) {
+        this.peerL3NetworkUuids = peerL3NetworkUuids;
     }
 
     public String getUuid() {

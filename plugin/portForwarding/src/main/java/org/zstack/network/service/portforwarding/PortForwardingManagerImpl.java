@@ -191,7 +191,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
 
             @Override
             protected List<VmNicInventory> scripts() {
-                Tuple t = sql("select l3.zoneUuid, vip.uuid, vip.peerL3NetworkUuid" +
+                Tuple t = sql("select l3.zoneUuid, vip.uuid" +
                         " from L3NetworkVO l3, VipVO vip, PortForwardingRuleVO rule" +
                         " where vip.l3NetworkUuid = l3.uuid" +
                         " and vip.uuid = rule.vipUuid" +
@@ -199,11 +199,19 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
                         .param("ruleUuid", ruleUuid).find();
                 String zoneUuid = t.get(0, String.class);
                 String vipUuid = t.get(1, String.class);
-                String vipPeerL3Uuid = t.get(2, String.class);
+                List<VipPeerL3NetworkRefVO> vipPeerL3Refs = Q.New(VipPeerL3NetworkRefVO.class)
+                        .eq(VipPeerL3NetworkRefVO_.vipUuid, vipUuid)
+                        .list();
+                List<String> vipPeerL3Uuids = new ArrayList<>();
+                if (vipPeerL3Refs != null && !vipPeerL3Refs.isEmpty()) {
+                    vipPeerL3Uuids = vipPeerL3Refs.stream()
+                            .map(ref -> ref.getL3NetworkUuid())
+                            .collect(Collectors.toList());
+                }
 
                 //0.check the l3 of vm nic has been attached to port forwarding service
-                List<String> l3Uuids;
-                if (vipPeerL3Uuid == null) {
+                List<String> l3Uuids = new ArrayList<>();
+                if (vipPeerL3Uuids == null || vipPeerL3Uuids.isEmpty()) {
                     l3Uuids = sql("select l3.uuid" +
                             " from L3NetworkVO l3, VipVO vip, NetworkServiceL3NetworkRefVO ref" +
                             " where l3.system = :system" +
@@ -217,7 +225,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
                             .param("zoneUuid", zoneUuid)
                             .param("nsType", PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE).list();
                 } else {
-                    l3Uuids = Collections.singletonList(vipPeerL3Uuid);
+                    l3Uuids.addAll(vipPeerL3Uuids);
                 }
 
                 if (l3Uuids.isEmpty()) {
@@ -357,18 +365,28 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
 
         VmInstanceState vmState = getVmStateFromVmNicUuid(msg.getVmNicUuid());
         if (VmInstanceState.Running != vmState) {
-            //TODO: dirty fix that should be refixed in 1.9 https://github.com/zxwing/premium/issues/1496
-            SimpleQuery<VipVO> q = dbf.createQuery(VipVO.class);
-            q.add(VipVO_.uuid, Op.EQ, vo.getVipUuid());
-            VipVO vip = q.find();
-            if (vip.getPeerL3NetworkUuid() == null) {
-                vip.setPeerL3NetworkUuid(nicvo.getL3NetworkUuid());
-                dbf.update(vip);
-            }
+            Vip vip = new Vip(vo.getVipUuid());
+            ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
+            final NetworkServiceProviderType providerType =
+                    nwServiceMgr.getTypeOfNetworkServiceProviderForService(
+                            nicvo.getL3NetworkUuid(), NetworkServiceType.PortForwarding);
+            struct.setServiceProvider(providerType.toString());
+            struct.setPeerL3NetworkUuid(nicvo.getL3NetworkUuid());
+            vip.setStruct(struct);
+            vip.acquire(new Completion(msg) {
+                @Override
+                public void success() {
+                    evt.setInventory(inv);
+                    bus.publish(evt);
+                    return;
+                }
 
-            evt.setInventory(inv);
-            bus.publish(evt);
-            return;
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    evt.setError(errorCode);
+                    bus.publish(evt);
+                }
+            });
         }
 
         final PortForwardingStruct struct = makePortForwardingStruct(inv);

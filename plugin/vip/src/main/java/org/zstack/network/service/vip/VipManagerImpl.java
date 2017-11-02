@@ -10,12 +10,14 @@ import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginExtension;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -30,6 +32,10 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedQuotaCheckMessage;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.quota.QuotaConstant;
+import org.zstack.header.vm.ReleaseNetworkServiceOnDetachingNicExtensionPoint;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.VmNicInventory;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.tag.TagManager;
@@ -46,7 +52,8 @@ import static org.zstack.utils.CollectionDSL.list;
 
 /**
  */
-public class VipManagerImpl extends AbstractService implements VipManager, ReportQuotaExtensionPoint {
+public class VipManagerImpl extends AbstractService implements VipManager, ReportQuotaExtensionPoint,
+        ReleaseNetworkServiceOnDetachingNicExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VipManagerImpl.class);
 
     @Autowired
@@ -108,7 +115,7 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
     public VipReleaseExtensionPoint getVipReleaseExtensionPoint(String use) {
         VipReleaseExtensionPoint extp = vipReleaseExts.get(use);
         if (extp == null) {
-            throw new CloudRuntimeException(String.format("cannot VipReleaseExtensionPoint for use[%s]", use));
+            throw new CloudRuntimeException(String.format("cannot get VipReleaseExtensionPoint for use[%s]", use));
         }
 
         return extp;
@@ -366,5 +373,26 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
         quota.addPair(p);
 
         return list(quota);
+    }
+
+    @Override
+    public void releaseResourceOnDetachingNic(VmInstanceSpec spec, VmNicInventory nic, NoErrorCompletion completion) {
+        // Todo(WeiW): Need to check router rather than not only user vm
+        if (spec.getVmInventory().getType().equals(VmInstanceConstant.USER_VM_TYPE)) {
+            completion.done();
+            return;
+        }
+
+        VipVO vo = Q.New(VipPeerL3NetworkRefVO.class).eq(VipPeerL3NetworkRefVO_.l3NetworkUuid, nic.getL3NetworkUuid()).find();
+        if (vo == null) {
+            completion.done();
+            return;
+        }
+
+        VipBase v = new VipBase(vo);
+
+        v.deletePeerL3NetworkUuid(nic.getL3NetworkUuid());
+
+        completion.done();
     }
 }

@@ -8,16 +8,17 @@ import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
+import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
-import org.zstack.network.service.vip.VipVO;
-import org.zstack.network.service.vip.VipVO_;
+import org.zstack.network.service.vip.*;
 import org.zstack.utils.VipUseForList;
 import org.zstack.utils.network.NetworkUtils;
 
@@ -119,13 +120,19 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
                             msg.getVmNicUuid(), msg.getRuleUuid()));
         }
 
-        if (vip.getPeerL3NetworkUuid() != null && !vip.getPeerL3NetworkUuid().equals(guestL3Uuid)) {
-            throw new ApiMessageInterceptionException(argerr("the VIP[uuid:%s] is already bound the a guest L3 network[uuid:%s], but the VM nic[uuid:%s]" +
-                            " is on another guest L3 network[uuid:%s]", vip.getUuid(), vip.getPeerL3NetworkUuid(),
-                            msg.getVmNicUuid(), guestL3Uuid));
+        checkIfAnotherVip(vip.getUuid(), msg.getVmNicUuid());
+
+        if (vip.getPeerL3NetworkUuids() != null && vip.getPeerL3NetworkUuids().contains(guestL3Uuid)) {
+            return;
         }
 
-        checkIfAnotherVip(vip.getUuid(), msg.getVmNicUuid());
+        VipBase vipBase = new VipBase(vip);
+
+        try {
+            vipBase.checkPeerL3Additive(guestL3Uuid);
+        } catch (CloudRuntimeException e) {
+            throw new ApiMessageInterceptionException(operr(e.getMessage()));
+        }
     }
 
     private boolean rangeOverlap(int s1, int e1, int s2, int e2) {
@@ -188,12 +195,8 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
         }
 
         if (msg.getVmNicUuid() != null) {
-            SimpleQuery<VipVO> vq = dbf.createQuery(VipVO.class);
-            vq.select(VipVO_.l3NetworkUuid, VipVO_.peerL3NetworkUuid);
-            vq.add(VipVO_.uuid, Op.EQ, msg.getVipUuid());
-            Tuple t = vq.findTuple();
-            String vipL3Uuid = t.get(0, String.class);
-            String peerL3Uuid = t.get(1, String.class);
+            VipVO vipVO = Q.New(VipVO.class).eq(VipVO_.uuid, msg.getVipUuid()).find();
+            String vipL3Uuid = vipVO.getL3NetworkUuid();
 
             SimpleQuery<VmNicVO> nicq = dbf.createQuery(VmNicVO.class);
             nicq.select(VmNicVO_.l3NetworkUuid);
@@ -203,9 +206,14 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
                 throw new ApiMessageInterceptionException(argerr("guest l3Network of vm nic[uuid:%s] and vip l3Network of vip[uuid: %s] are the same network", msg.getVmNicUuid(), msg.getVipUuid()));
             }
 
-            if (peerL3Uuid != null && !peerL3Uuid.equals(nicL3Uuid)) {
-                throw new ApiMessageInterceptionException(argerr("the VIP[uuid:%s] is already bound the a guest L3 network[uuid:%s], but the VM nic[uuid:%s]" +
-                                " is on another guest L3 network[uuid:%s]", msg.getVipUuid(), peerL3Uuid, msg.getVmNicUuid(), nicL3Uuid));
+            if (vipVO.getPeerL3NetworkUuids() != null && !vipVO.getPeerL3NetworkUuids().contains(nicL3Uuid)) {
+                VipBase vipBase = new VipBase(vipVO);
+
+                try {
+                    vipBase.checkPeerL3Additive(nicL3Uuid);
+                } catch (CloudRuntimeException e) {
+                    throw new ApiMessageInterceptionException(operr(e.getMessage()));
+                }
             }
 
             checkIfAnotherVip(msg.getVipUuid(), msg.getVmNicUuid());

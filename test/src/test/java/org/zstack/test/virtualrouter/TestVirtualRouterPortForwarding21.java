@@ -102,6 +102,6 @@ public class TestVirtualRouterPortForwarding21 {
         Assert.assertTrue(dbf.isExist(vip.getUuid(), VirtualRouterVipVO.class));
         Assert.assertTrue(dbf.isExist(rule2.getUuid(), VirtualRouterPortForwardingRuleRefVO.class));
         VipVO vipvo = dbf.findByUuid(vip.getUuid(), VipVO.class);
-        Assert.assertNotNull(vipvo.getPeerL3NetworkUuid());
+        Assert.assertNotNull(vipvo.getPeerL3NetworkUuids());
     }
 }
