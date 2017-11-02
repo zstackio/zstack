@@ -1,6 +1,6 @@
 package org.zstack.sdk;
 
-public class SNSApplicationPlatformInventory  {
+public class SNSTopicInventory  {
 
     public java.lang.String uuid;
     public void setUuid(java.lang.String uuid) {
@@ -24,14 +24,6 @@ public class SNSApplicationPlatformInventory  {
     }
     public java.lang.String getDescription() {
         return this.description;
-    }
-
-    public java.lang.String type;
-    public void setType(java.lang.String type) {
-        this.type = type;
-    }
-    public java.lang.String getType() {
-        return this.type;
     }
 
     public java.sql.Timestamp createDate;
