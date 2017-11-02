@@ -2,13 +2,13 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.compiler.version>2.5.1</project.compiler.version>
+        <project.compiler.version>3.6.1</project.compiler.version>
         <project.java.version>1.8</project.java.version>
         <spring.framework.version>4.0.3.RELEASE</spring.framework.version>
         <spring.security.version>4.0.2.RELEASE</spring.security.version>
         <hibernate.version>5.1.0.Final</hibernate.version>
-        <aspectj.version>1.8.7</aspectj.version>
-        <aspectj.plugin.version>1.8</aspectj.plugin.version>
+        <aspectj.version>1.8.9</aspectj.version>
+        <aspectj.plugin.version>1.10</aspectj.plugin.version>
     </properties>
 
     <modelVersion>4.0.0</modelVersion>
