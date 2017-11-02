@@ -62,6 +62,7 @@
                 <value>org.zstack.network.service.virtualrouter.lifecycle.VirtualRouterAssembleDecoratorFlow</value>
                 <value>org.zstack.network.service.virtualrouter.eip.VirtualRouterCleanupEipOnDestroyFlow</value>
                 <value>org.zstack.network.service.virtualrouter.portforwarding.VirtualRouterCleanupPortforwardingOnDestroyFlow</value>
+                <value>org.zstack.network.service.virtualrouter.lb.VirtualRouterCleanupLoadBalancerOnDestroyFlow</value>
                 <value>org.zstack.network.service.virtualrouter.vip.VirtualRouterCleanupVipOnDestroyFlow</value>
                 <value>org.zstack.network.service.virtualrouter.lifecycle.UntrackVirtualRouterVmFlow</value>
             </list>
