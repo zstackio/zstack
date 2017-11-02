@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
@@ -25,6 +26,7 @@ import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
+import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkConstant;
 import org.zstack.header.network.l3.ReturnIpMsg;
 import org.zstack.header.network.service.NetworkServiceType;
@@ -398,12 +400,17 @@ public class VipBase {
         });
     }
 
-    protected void returnVip() {
+    protected void returnVip(Completion completion) {
         ReturnIpMsg msg = new ReturnIpMsg();
         msg.setL3NetworkUuid(self.getL3NetworkUuid());
         msg.setUsedIpUuid(self.getUsedIpUuid());
         bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, self.getL3NetworkUuid());
-        bus.send(msg);
+        bus.send(msg, new CloudBusCallBack(completion){
+            @Override
+            public void run(MessageReply reply) {
+                completion.success();
+            }
+        });
     }
 
     private void releaseServicesOnVip(Iterator<String> it, FlowTrigger trigger){
@@ -439,10 +446,11 @@ public class VipBase {
 
         if (self.getUseFor() == null) {
             dbf.remove(self);
-            returnVip();
+            returnVip(completion);
+
             logger.debug(String.format("'useFor' is not set, released vip[uuid:%s, ip:%s] on l3Network[uuid:%s]",
                     self.getUuid(), self.getIp(), self.getL3NetworkUuid()));
-            completion.success();
+
             return;
         }
 
@@ -512,8 +520,7 @@ public class VipBase {
                     @Override
                     public void handle(Map data) {
                         dbf.remove(self);
-                        returnVip();
-                        completion.success();
+                        returnVip(completion);
                     }
                 });
 
