@@ -43,7 +43,11 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.zstack.utils.CollectionDSL.e;
@@ -779,5 +783,23 @@ public class Platform {
         }
 
         return methods;
+    }
+
+    public static Function<Supplier, Object> functionForMockTestObject = (Supplier t) -> t.get();
+
+    // This is to make objects created by keyword 'new' mockable
+    // developers call this method as a factory method like:
+    //
+    // JavaMailSenderImpl sender = Platform.New(()-> new JavaMailSenderImpl());
+    //
+    // in unit tests, we can replace functionForMockTestObject with a function which returns a mocked
+    // object, for example:
+    //
+    // Platform.functionForMockTestObject = (Supplier t) -? {
+    //      Object obj = t.get();
+    //      return Mockito.spy(obj);
+    // }
+    public static <T> T New(Supplier supplier) {
+        return (T) functionForMockTestObject.apply(supplier);
     }
 }
