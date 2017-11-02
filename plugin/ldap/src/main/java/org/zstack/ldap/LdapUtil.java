@@ -44,7 +44,8 @@ class LdapUtil {
         }
         ldapContextSource.setCacheEnvironmentProperties(false);
         ldapContextSource.setPooled(false);
-        //
+        ldapContextSource.setReferral("follow");
+
         LdapTemplate ldapTemplate;
         ldapTemplate = new LdapTemplate();
         ldapTemplate.setContextSource(ldapContextSource);
