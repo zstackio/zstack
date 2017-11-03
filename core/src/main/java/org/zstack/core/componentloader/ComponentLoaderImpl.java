@@ -48,6 +48,16 @@ public class ComponentLoaderImpl implements ComponentLoader {
     }
 
     @Override
+    public boolean hasComponent(Class clazz) {
+        try {
+            getComponent(clazz);
+            return true;
+        } catch (NoSuchBeanDefinitionException e) {
+            return false;
+        }
+    }
+
+    @Override
     public <T> T getComponentNoExceptionWhenNotExisting(Class<T> clazz) {
         try {
             return getComponent(clazz);
