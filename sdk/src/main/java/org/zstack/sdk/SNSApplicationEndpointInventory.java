@@ -10,6 +10,14 @@ public class SNSApplicationEndpointInventory  {
         return this.name;
     }
 
+    public java.lang.String uuid;
+    public void setUuid(java.lang.String uuid) {
+        this.uuid = uuid;
+    }
+    public java.lang.String getUuid() {
+        return this.uuid;
+    }
+
     public java.lang.String description;
     public void setDescription(java.lang.String description) {
         this.description = description;

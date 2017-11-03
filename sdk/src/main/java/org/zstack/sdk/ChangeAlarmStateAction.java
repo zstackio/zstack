@@ -79,7 +79,7 @@ public class ChangeAlarmStateAction extends AbstractAction {
         info.path = "/zwatch/alarms/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "changeAlarmState";
         return info;
     }
 

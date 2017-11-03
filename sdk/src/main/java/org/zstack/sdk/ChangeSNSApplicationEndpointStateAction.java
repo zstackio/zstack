@@ -79,7 +79,7 @@ public class ChangeSNSApplicationEndpointStateAction extends AbstractAction {
         info.path = "/sns/endpoints/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "changeSNSApplicationEndpointState";
         return info;
     }
 

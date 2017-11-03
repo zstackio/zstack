@@ -88,7 +88,7 @@ public class UpdateSNSAlarmTextTemplateAction extends AbstractAction {
         info.path = "/zwatch/alarms/sns/text-templates/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "updateSNSAlarmTextTemplate";
         return info;
     }
 

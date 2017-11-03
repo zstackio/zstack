@@ -79,7 +79,7 @@ public class ChangeSNSApplicationPlatformStateAction extends AbstractAction {
         info.path = "/sns/application-platforms/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "changeSNSApplicationPlatformState";
         return info;
     }
 
