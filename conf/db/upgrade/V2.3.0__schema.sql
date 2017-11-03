@@ -93,6 +93,7 @@ CREATE TABLE  `zstack`.`AlarmVO` (
     `comparisonOperator` varchar(128) NOT NULL,
     `period` int unsigned NOT NULL,
     `periodNumber` int unsigned NOT NULL,
+    `repeatInterval` int unsigned NOT NULL,
     `namespace` varchar(255) NOT NULL,
     `metricName` varchar(512) NOT NULL,
     `threshold` double NOT NULL,
