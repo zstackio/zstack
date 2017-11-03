@@ -34,13 +34,14 @@ import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionDSL;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+import javax.naming.directory.Attributes;
+import javax.naming.directory.SearchControls;
 import javax.persistence.Query;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-
+import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.map;
 
 /**
@@ -103,6 +104,8 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
             handle((APIAddLdapServerMsg) msg);
         } else if (msg instanceof APIDeleteLdapServerMsg) {
             handle((APIDeleteLdapServerMsg) msg);
+        } else if (msg instanceof APIGetLdapEntryMsg) {
+            handle((APIGetLdapEntryMsg) msg);
         } else if (msg instanceof APICreateLdapBindingMsg) {
             handle((APICreateLdapBindingMsg) msg);
         } else if (msg instanceof APIDeleteLdapBindingMsg) {
@@ -250,8 +253,8 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         return true;
     }
 
-    public void findLdapUidMemberOfList( LdapTemplate ldapTemplate, String ldapUid, List<String> resultMemberOfList, List<String> invalidMemberOfList){
-        if(invalidMemberOfList.contains(ldapUid)){
+    public void findLdapUidMemberOfList( LdapTemplate ldapTemplate, String ldapUid, List<String> resultUidList, List<String> uidIgnoreList){
+        if(uidIgnoreList.contains(ldapUid)){
             return;
         }
 
@@ -266,7 +269,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         });
 
         if(groupList.isEmpty()){
-            invalidMemberOfList.add(ldapUid);
+            uidIgnoreList.add(ldapUid);
             return;
         }
 
@@ -277,12 +280,12 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
 
             String groupUid = (String)groupObj;
 
-            if(resultMemberOfList.contains(groupUid)){
+            if(resultUidList.contains(groupUid)){
                 continue;
             }
 
-            resultMemberOfList.add(groupUid);
-            findLdapUidMemberOfList(ldapTemplate, groupUid, resultMemberOfList, invalidMemberOfList);
+            resultUidList.add(groupUid);
+            findLdapUidMemberOfList(ldapTemplate, groupUid, resultUidList, uidIgnoreList);
         }
     }
 
@@ -337,21 +340,21 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         LdapTemplate ldapTemplate = ldapTemplateContextSource.getLdapTemplate();
 
         String fullUserDn = getFullUserDn(ldapTemplate, LdapConstant.LDAP_UID_KEY, ldapUid);
-        List<String> resultMemberOfList = new ArrayList();
-        findLdapUidMemberOfList(ldapTemplate, fullUserDn, resultMemberOfList, new ArrayList<>());
+        List<String> resultUidList = new ArrayList();
+        findLdapUidMemberOfList(ldapTemplate, fullUserDn, resultUidList, new ArrayList<>());
 
-        if(resultMemberOfList.isEmpty()){
+        if(resultUidList.isEmpty()){
             return null;
         }
 
-        resultMemberOfList = resultMemberOfList
+        resultUidList = resultUidList
                 .stream()
                 .map(ldapDistinguishedName -> {
                     return getCN(ldapDistinguishedName);
                 })
                 .collect(Collectors.toList());
 
-        ldapUids.retainAll(resultMemberOfList);
+        ldapUids.retainAll(resultUidList);
 
         if(ldapUids.isEmpty()){
             return null;
@@ -366,7 +369,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         }
 
         List<String> accountList = vos.stream().map(LdapAccountRefVO::getAccountUuid).distinct().collect(Collectors.toList());
-        throw new CloudRuntimeException(String.format("The ldapUid[%s] is bound to multiple accounts%s", ldapUid, accountList.toString()));
+        throw new CloudRuntimeException(String.format("The ldapUid[%s] is bound to multiple accounts: %s", ldapUid, accountList.toString()));
     }
 
     private void handle(APILogInByLdapMsg msg) {
@@ -453,6 +456,46 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         dbf.removeByPrimaryKey(msg.getUuid(), LdapServerVO.class);
 
         bus.publish(evt);
+    }
+
+    private void handle(APIGetLdapEntryMsg msg) {
+        APIGetLdapEntryReply reply = new APIGetLdapEntryReply();
+
+        Set<String> returnedAttSet = new HashSet<>();
+
+        String queryLdapEntryReturnAttributes = LdapGlobalConfig.QUERY_LDAP_ENTRY_RETURN_ATTRIBUTES.value();
+        if(StringUtils.isNotEmpty(queryLdapEntryReturnAttributes)){
+            String separator = LdapGlobalConfig.QUERY_LDAP_ENTRY_RETURN_ATTRIBUTE_SEPARATOR.value();
+            separator = separator != null ? separator : LdapConstant.QUERY_LDAP_ENTRY_RETURN_ATTRIBUTE_SEPARATOR;
+            String[] attributes = queryLdapEntryReturnAttributes.split(separator);
+
+            returnedAttSet.addAll(Arrays.asList(attributes));
+        }
+
+        returnedAttSet.addAll(Arrays.asList(LdapConstant.QUERY_LDAP_ENTRY_MUST_RETURN_ATTRIBUTES));
+
+        LdapTemplateContextSource ldapTemplateContextSource = readLdapServerConfiguration();
+        LdapTemplate ldapTemplate = ldapTemplateContextSource.getLdapTemplate();
+
+        SearchControls searchCtls = new SearchControls();
+        searchCtls.setSearchScope(SearchControls.SUBTREE_SCOPE);
+        searchCtls.setReturningAttributes(returnedAttSet.toArray(new String[]{}));
+
+        try {
+            List<Object> result = ldapTemplate.search("", msg.getLdapFilter(), searchCtls, new AbstractContextMapper<Object>() {
+                @Override
+                protected Object doMapFromContext(DirContextOperations ctx) {
+                    Attributes group = ctx.getAttributes();
+                    return group;
+                }
+            });
+            reply.setInventories(result);
+        }catch (Exception e){
+            logger.error("query ldap entry fail", e);
+            reply.setError(operr("query ldap entry fail, %s", e.getMessage()));
+        }
+
+        bus.reply(msg, reply);
     }
 
     private void handle(APICreateLdapBindingMsg msg) {
