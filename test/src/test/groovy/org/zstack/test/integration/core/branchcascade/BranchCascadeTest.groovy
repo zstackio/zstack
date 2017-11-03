@@ -1,4 +1,4 @@
-package org.zstack.test.integration.kvm
+package org.zstack.test.integration.core.branchcascade
 
 import org.zstack.testlib.SpringSpec
 import org.zstack.testlib.Test
@@ -6,7 +6,7 @@ import org.zstack.testlib.Test
 /**
  * Created by xing5 on 2017/2/22.
  */
-class KvmTest extends Test {
+class BranchCascadeTest extends Test {
     static SpringSpec springSpec = makeSpring {
         sftpBackupStorage()
         localStorage()
@@ -17,6 +17,7 @@ class KvmTest extends Test {
         securityGroup()
         kvm()
         ceph()
+        include("KvmTest.xml")
     }
 
     @Override
