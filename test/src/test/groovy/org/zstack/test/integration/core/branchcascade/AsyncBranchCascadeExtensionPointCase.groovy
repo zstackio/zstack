@@ -1,4 +1,4 @@
-package org.zstack.test.integration.kvm.vm
+package org.zstack.test.integration.core.branchcascade
 
 import org.zstack.core.db.Q
 import org.zstack.header.vm.VmNicVO
@@ -20,7 +20,7 @@ class AsyncBranchCascadeExtensionPointCase extends SubCase {
 
     @Override
     void setup() {
-        useSpring(KvmTest.springSpec)
+        useSpring(BranchCascadeTest.springSpec)
     }
 
     @Override

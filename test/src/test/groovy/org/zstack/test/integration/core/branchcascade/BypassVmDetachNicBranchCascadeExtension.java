@@ -1,4 +1,4 @@
-package org.zstack.test.integration.kvm.vm;
+package org.zstack.test.integration.core.branchcascade;
 
 import org.zstack.core.cascade.AsyncBranchCascadeExtensionPoint;
 import org.zstack.core.cascade.CascadeAction;
