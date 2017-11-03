@@ -17,6 +17,7 @@ class KvmTest extends Test {
         securityGroup()
         kvm()
         ceph()
+        include("KvmTest.xml")
     }
 
     @Override

@@ -71,6 +71,7 @@ public class CascadeFacadeImpl implements CascadeFacade, Component {
 
     private Map<String, Node> nodes = new HashMap<>();
     private Map<String, TreeNode> cascadeTree = new HashMap<>();
+    private Map<String, List<AsyncBranchCascadeExtensionPoint>> asyncBranchCascadeExtensionPoints = new HashMap<>();
 
     private void doSyncCascade(TreeNode treeNode, boolean init, CascadeAction action) throws CascadeException {
         CascadeAction currentAction;
@@ -213,7 +214,8 @@ public class CascadeFacadeImpl implements CascadeFacade, Component {
                 public void run(final FlowTrigger trigger, Map data) {
                     logger.debug(String.format("[Async cascade (%s)]: %s --> %s",
                             caction.getActionCode(), caction.getParentIssuer(), node.getName()));
-                    node.getExtension().asyncCascade(caction, new Completion(trigger) {
+
+                    runNode(node, caction, new Completion(trigger) {
                         @Override
                         public void success() {
                             trigger.next();
@@ -239,6 +241,59 @@ public class CascadeFacadeImpl implements CascadeFacade, Component {
                 completion.fail(errCode);
             }
         }).setName(String.format("Cascade: %s", action.getActionCode())).start();
+    }
+
+    private void runNode(Node node, CascadeAction caction, Completion completion) {
+        List<AsyncBranchCascadeExtensionPoint> branches = asyncBranchCascadeExtensionPoints.get(node.getName());
+        boolean skipNode = false;
+        if (branches != null) {
+            for (AsyncBranchCascadeExtensionPoint branch : branches) {
+                skipNode = branch.skipOriginCascadeExtension(caction);
+                if (skipNode) {
+                    logger.debug(String.format("the AsyncCascadeExtension[%s, resourceName:%s] is skipped by %s",
+                            ((CascadeWrapper)node.getExtension()).origin.getClass(), node.getName(), branch.getClass()));
+                }
+            }
+        }
+
+        if (!skipNode) {
+            node.getExtension().asyncCascade(caction, completion);
+            return;
+        }
+
+        // the origin cascade extension is skipped by an AsyncBranchCascadeExtensionPoint
+        // now we execute all AsyncBranchCascadeExtensionPoints
+
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName(String.format("branch-cascade-extension-points-for-%s", node.getName()));
+        branches.forEach(b -> chain.then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                b.asyncCascade(caction, new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+        }));
+
+        chain.done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                completion.success();
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                completion.fail(errCode);
+            }
+        }).start();
     }
 
     @Override
@@ -486,6 +541,11 @@ public class CascadeFacadeImpl implements CascadeFacade, Component {
         }
 
         populateCascadeNodes(exts);
+
+        pluginRgty.getExtensionList(AsyncBranchCascadeExtensionPoint.class).forEach(ab -> {
+            List<AsyncBranchCascadeExtensionPoint> lst = asyncBranchCascadeExtensionPoints.computeIfAbsent(ab.getCascadeResourceName(), k->new ArrayList<>());
+            lst.add(ab);
+        });
     }
 
     private void populateTree() {
