@@ -12,6 +12,10 @@
     </message>
 
     <message>
+        <name>org.zstack.ldap.APIGetLdapEntryMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.ldap.APICreateLdapBindingMsg</name>
     </message>
 
