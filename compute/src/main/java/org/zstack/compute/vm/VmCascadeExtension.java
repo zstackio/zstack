@@ -67,13 +67,13 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
 
     private static final String NAME = VmInstanceVO.class.getSimpleName();
 
-    private static final int OP_NOPE = 0;
-    private static final int OP_STOP = 1;
-    private static final int OP_DELETION = 2;
+    protected static final int OP_NOPE = 0;
+    protected static final int OP_STOP = 1;
+    protected static final int OP_DELETION = 2;
     private static final int OP_REMOVE_INSTANCE_OFFERING = 3;
-    private static final int OP_DETACH_NIC = 4;
+    protected static final int OP_DETACH_NIC = 4;
 
-    private int toDeletionOpCode(CascadeAction action) {
+    protected int toDeletionOpCode(CascadeAction action) {
         if (!CascadeConstant.DELETION_CODES.contains(action.getActionCode())) {
             return OP_NOPE;
         }
@@ -244,7 +244,7 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
         completion.success();
     }
 
-    private void handleDeletion(final CascadeAction action, final Completion completion) {
+    protected void handleDeletion(final CascadeAction action, final Completion completion) {
         int op = toDeletionOpCode(action);
         if (op == OP_NOPE) {
             completion.success();
@@ -463,7 +463,7 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
         return structs;
     }
 
-    private List<VmDeletionStruct> vmFromDeleteAction(CascadeAction action) {
+    protected List<VmDeletionStruct> vmFromDeleteAction(CascadeAction action) {
         List<VmDeletionStruct> ret = null;
         if (HostVO.class.getSimpleName().equals(action.getParentIssuer())) {
             List<HostInventory> hosts = action.getParentIssuerContext();
