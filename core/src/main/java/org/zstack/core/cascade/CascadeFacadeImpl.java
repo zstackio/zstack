@@ -283,6 +283,30 @@ public class CascadeFacadeImpl implements CascadeFacade, Component {
             }
         }));
 
+        CascadeWrapper wrapper = (CascadeWrapper) node.getExtension();
+        CascadeExtensionPoint addon = wrapper.findAddon(caction.getParentIssuer());
+
+        if (addon != null) {
+            chain.then(new NoRollbackFlow() {
+                String __name__ = String.format("call-addon-%s", addon.getClass().getName());
+
+                @Override
+                public void run(FlowTrigger trigger, Map data) {
+                    addon.asyncCascade(caction, new Completion(trigger) {
+                        @Override
+                        public void success() {
+                            trigger.next();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            trigger.fail(errorCode);
+                        }
+                    });
+                }
+            });
+        }
+
         chain.done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
@@ -467,11 +491,16 @@ public class CascadeFacadeImpl implements CascadeFacade, Component {
             if (origin.getCascadeResourceName().equals(parent) || origin.getEdgeNames().contains(parent)) {
                 return origin;
             } else {
-                Optional<CascadeExtensionPoint> o = addons.stream().filter(c->c.getEdgeNames().contains(parent)).findFirst();
-                DebugUtils.Assert(o.isPresent(), String.format("cannot find any cascade extension point has the parent[%s] for the resource[%s]",
+                CascadeExtensionPoint addon = findAddon(parent);
+                DebugUtils.Assert(addon != null, String.format("cannot find any cascade extension point has the parent[%s] for the resource[%s]",
                         parent, origin.getCascadeResourceName()));
-                return o.get();
+                return addon;
             }
+        }
+
+        CascadeExtensionPoint findAddon(String parent) {
+            Optional<CascadeExtensionPoint> o = addons.stream().filter(c->c.getEdgeNames().contains(parent)).findFirst();
+            return o.isPresent() ? o.get() : null;
         }
 
         @Override
