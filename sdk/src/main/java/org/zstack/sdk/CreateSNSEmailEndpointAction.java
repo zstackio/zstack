@@ -31,7 +31,7 @@ public class CreateSNSEmailEndpointAction extends AbstractAction {
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String platformUuid;
 
     @Param(required = false)
@@ -85,7 +85,7 @@ public class CreateSNSEmailEndpointAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/sns/endpoints/email";
+        info.path = "/sns/application-endpoints/email";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "";

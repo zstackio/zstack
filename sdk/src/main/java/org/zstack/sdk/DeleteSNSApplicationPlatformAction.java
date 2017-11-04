@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ChangeSNSApplicationEndpointStateAction extends AbstractAction {
+public class DeleteSNSApplicationPlatformAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public ChangeSNSApplicationEndpointStateResult value;
+        public DeleteSNSApplicationPlatformResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,8 +25,8 @@ public class ChangeSNSApplicationEndpointStateAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
-    @Param(required = true, validValues = {"enable","disable"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String stateEvent;
+    @Param(required = false)
+    public java.lang.String deleteMode = "Permissive";
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -49,8 +49,8 @@ public class ChangeSNSApplicationEndpointStateAction extends AbstractAction {
             return ret;
         }
         
-        ChangeSNSApplicationEndpointStateResult value = res.getResult(ChangeSNSApplicationEndpointStateResult.class);
-        ret.value = value == null ? new ChangeSNSApplicationEndpointStateResult() : value; 
+        DeleteSNSApplicationPlatformResult value = res.getResult(DeleteSNSApplicationPlatformResult.class);
+        ret.value = value == null ? new DeleteSNSApplicationPlatformResult() : value; 
 
         return ret;
     }
@@ -75,11 +75,11 @@ public class ChangeSNSApplicationEndpointStateAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/sns/application-endpoints/{uuid}/actions";
+        info.httpMethod = "DELETE";
+        info.path = "/sns/application-platforms/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "changeSNSApplicationEndpointState";
+        info.parameterName = "";
         return info;
     }
 

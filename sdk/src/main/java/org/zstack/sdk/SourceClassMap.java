@@ -169,6 +169,7 @@ public class SourceClassMap {
 			put("org.zstack.sns.SNSTopicInventory", "org.zstack.sdk.SNSTopicInventory");
 			put("org.zstack.sns.platform.email.SNSEmailEndpointInventory", "org.zstack.sdk.SNSEmailEndpointInventory");
 			put("org.zstack.sns.platform.email.SNSEmailPlatformInventory", "org.zstack.sdk.SNSEmailPlatformInventory");
+			put("org.zstack.sns.platform.http.SNSHttpEndpointInventory", "org.zstack.sdk.SNSHttpEndpointInventory");
 			put("org.zstack.storage.backup.imagestore.ImageStoreBackupStorageInventory", "org.zstack.sdk.ImageStoreBackupStorageInventory");
 			put("org.zstack.storage.backup.imagestore.ImageStoreImageStruct", "org.zstack.sdk.ImageStoreImageStruct");
 			put("org.zstack.storage.backup.sftp.SftpBackupStorageInventory", "org.zstack.sdk.SftpBackupStorageInventory");
@@ -362,6 +363,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.SNSApplicationPlatformInventory", "org.zstack.sns.SNSApplicationPlatformInventory");
 			put("org.zstack.sdk.SNSEmailEndpointInventory", "org.zstack.sns.platform.email.SNSEmailEndpointInventory");
 			put("org.zstack.sdk.SNSEmailPlatformInventory", "org.zstack.sns.platform.email.SNSEmailPlatformInventory");
+			put("org.zstack.sdk.SNSHttpEndpointInventory", "org.zstack.sns.platform.http.SNSHttpEndpointInventory");
 			put("org.zstack.sdk.SNSTopicInventory", "org.zstack.sns.SNSTopicInventory");
 			put("org.zstack.sdk.SchedulerJobInventory", "org.zstack.header.scheduler.SchedulerJobInventory");
 			put("org.zstack.sdk.SchedulerJobSchedulerTriggerInventory", "org.zstack.header.scheduler.SchedulerJobSchedulerTriggerInventory");

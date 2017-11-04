@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ChangeSNSApplicationEndpointStateAction extends AbstractAction {
+public class CreateSNSHttpEndpointAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public ChangeSNSApplicationEndpointStateResult value;
+        public CreateSNSHttpEndpointResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -22,11 +22,26 @@ public class ChangeSNSApplicationEndpointStateAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
+    @Param(required = true, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String url;
 
-    @Param(required = true, validValues = {"enable","disable"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String stateEvent;
+    @Param(required = false, maxLength = 128, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String username;
+
+    @Param(required = false, maxLength = 512, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String password;
+
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String name;
+
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String description;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String platformUuid;
+
+    @Param(required = false)
+    public java.lang.String resourceUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -49,8 +64,8 @@ public class ChangeSNSApplicationEndpointStateAction extends AbstractAction {
             return ret;
         }
         
-        ChangeSNSApplicationEndpointStateResult value = res.getResult(ChangeSNSApplicationEndpointStateResult.class);
-        ret.value = value == null ? new ChangeSNSApplicationEndpointStateResult() : value; 
+        CreateSNSHttpEndpointResult value = res.getResult(CreateSNSHttpEndpointResult.class);
+        ret.value = value == null ? new CreateSNSHttpEndpointResult() : value; 
 
         return ret;
     }
@@ -75,11 +90,11 @@ public class ChangeSNSApplicationEndpointStateAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/sns/application-endpoints/{uuid}/actions";
+        info.httpMethod = "POST";
+        info.path = "/sns/application-endpoints/http";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "changeSNSApplicationEndpointState";
+        info.parameterName = "";
         return info;
     }
 

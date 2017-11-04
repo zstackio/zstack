@@ -74,6 +74,14 @@ public class AlarmInventory  {
         return this.threshold;
     }
 
+    public java.lang.Integer repeatInterval;
+    public void setRepeatInterval(java.lang.Integer repeatInterval) {
+        this.repeatInterval = repeatInterval;
+    }
+    public java.lang.Integer getRepeatInterval() {
+        return this.repeatInterval;
+    }
+
     public AlarmStatus status;
     public void setStatus(AlarmStatus status) {
         this.status = status;
