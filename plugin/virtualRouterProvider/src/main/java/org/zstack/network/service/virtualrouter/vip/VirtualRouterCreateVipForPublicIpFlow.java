@@ -18,6 +18,7 @@ import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.identity.AccountManager;
 import org.zstack.network.service.NetworkServiceManager;
+import org.zstack.network.service.vip.VipPeerL3NetworkRefVO;
 import org.zstack.network.service.vip.VipState;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
@@ -82,10 +83,8 @@ public class VirtualRouterCreateVipForPublicIpFlow implements Flow {
             try {
                 NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(peerL3network,
                         NetworkServiceType.SNAT);
-                vipvo.setPeerL3NetworkUuid(peerL3network);
                 vipvo.setServiceProvider(providerType.toString());
             } catch (OperationFailureException e){
-                vipvo.setPeerL3NetworkUuid(null);
                 vipvo.setServiceProvider(null);
             }
         }
@@ -104,6 +103,13 @@ public class VirtualRouterCreateVipForPublicIpFlow implements Flow {
                         vipvo.getUuid(), VipVO.class.getSimpleName());
             }
         }.execute();
+
+        if(!vr.getGuestL3Networks().isEmpty()){
+            VipPeerL3NetworkRefVO vo = new VipPeerL3NetworkRefVO();
+            vo.setVipUuid(vipvo.getUuid());
+            vo.setL3NetworkUuid(vr.getGuestL3Networks().get(0));
+            dbf.persistAndRefresh(vo);
+        }
 
         /* use for rollback */
         data.put(VirtualRouterConstant.Param.PUB_VIP_UUID.toString(), vipvo.getUuid());

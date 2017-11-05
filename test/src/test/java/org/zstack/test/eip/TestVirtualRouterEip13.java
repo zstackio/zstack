@@ -93,6 +93,6 @@ public class TestVirtualRouterEip13 {
         vto = vconfig.vips.get(0);
         Assert.assertEquals(vipvo.getIp(), vto.getIp());
         vipvo = dbf.findByUuid(eip.getVipUuid(), VipVO.class);
-        Assert.assertNotNull(vipvo.getPeerL3NetworkUuid());
+        Assert.assertNotNull(vipvo.getPeerL3NetworkUuids());
     }
 }

@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.core.Completion;
@@ -12,15 +13,15 @@ import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.network.service.vip.VipInventory;
-import org.zstack.network.service.vip.VipVO;
-import org.zstack.network.service.vip.VipVO_;
+import org.zstack.network.service.vip.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmInventory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VirtualRouterSyncVipFlow implements Flow {
@@ -37,15 +38,20 @@ public class VirtualRouterSyncVipFlow implements Flow {
             chain.next();
             return;
         }
-        SimpleQuery<VipVO> q = dbf.createQuery(VipVO.class);
-        q.add(VipVO_.peerL3NetworkUuid, Op.IN, vr.getGuestL3Networks());
-        q.add(VipVO_.ip, Op.NOT_EQ, vr.getPublicNic().getIp());
-        List<VipVO> vips = q.list();
-        if (vips.isEmpty()) {
+        List<VipPeerL3NetworkRefVO> refs = Q.New(VipPeerL3NetworkRefVO.class)
+                .in(VipPeerL3NetworkRefVO_.l3NetworkUuid, vr.getGuestL3Networks())
+                .list();
+        if (refs == null || refs.isEmpty()) {
             chain.next();
             return;
         }
 
+        List<String> vipUuids = new ArrayList<>(refs.stream()
+                .map(ref -> ref.getVipUuid())
+                .collect(Collectors.toSet()));
+        List<VipVO> vips = vipUuids.stream()
+                .map(uuid -> (VipVO)Q.New(VipVO.class).eq(VipVO_.uuid, uuid).find())
+                .collect(Collectors.toList());
         List<VipInventory> invs = VipInventory.valueOf(vips);
         vipExt.createVipOnVirtualRouterVm(vr, invs, new Completion(chain) {
             @Override

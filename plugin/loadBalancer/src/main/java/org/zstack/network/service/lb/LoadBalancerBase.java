@@ -145,7 +145,7 @@ public class LoadBalancerBase {
                     @Override
                     public void success() {
                         deleteListenersForLoadBalancer(msg.getLoadBalancerUuid());
-                        dbf.remove(Q.New(LoadBalancerVO.class).eq(LoadBalancerVO_.uuid, msg.getLoadBalancerUuid()).find());
+                        dbf.removeByPrimaryKey(msg.getLoadBalancerUuid(), LoadBalancerVO.class);
                         bus.reply(msg, reply);
                         chain.next();
                     }
@@ -543,22 +543,18 @@ public class LoadBalancerBase {
     private void handle(APIGetCandidateVmNicsForLoadBalancerMsg msg) {
         APIGetCandidateVmNicsForLoadBalancerReply reply = new APIGetCandidateVmNicsForLoadBalancerReply();
 
-        List<String> ret = SQL.New("select vip.peerL3NetworkUuid" +
-                " from VipVO vip" +
-                " where vip.uuid = :uuid")
-                .param("uuid", self.getVipUuid()).list();
-        String peerL3Uuid = ret.isEmpty() ? null : ret.get(0);
+        VipVO vipVO = Q.New(VipVO.class).eq(VipVO_.uuid, self.getVipUuid()).find();
 
-        if (peerL3Uuid != null) {
+        if (vipVO.getPeerL3NetworkUuids() != null && !vipVO.getPeerL3NetworkUuids().isEmpty()) {
             // the load balancer has been bound to a private L3 network
             List<VmNicVO> nics = SQL.New("select nic" +
                     " from VmNicVO nic, VmInstanceVO vm" +
-                    " where nic.l3NetworkUuid = :l3Uuid" +
+                    " where nic.l3NetworkUuid in :l3Uuid" +
                     " and nic.uuid not in (select ref.vmNicUuid from LoadBalancerListenerVmNicRefVO ref where ref.listenerUuid = :luuid)" +
                     " and nic.vmInstanceUuid = vm.uuid" +
                     " and vm.type = :vmType" +
                     " and vm.state in (:vmStates)")
-                    .param("l3Uuid", peerL3Uuid)
+                    .param("l3Uuid", vipVO.getPeerL3NetworkUuids())
                     .param("luuid", msg.getListenerUuid())
                     .param("vmType", VmInstanceConstant.USER_VM_TYPE)
                     .param("vmStates", asList(VmInstanceState.Running, VmInstanceState.Stopped)).list();
