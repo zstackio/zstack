@@ -13,7 +13,7 @@
 
     <code>
         <id>1002</id>
-        <description>Cannot find uid on ldap server.</description>
+        <description>Cannot find entry on ldap server.</description>
     </code>
 
     <code>

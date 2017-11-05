@@ -8,10 +8,13 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.APIMessage;
 import org.zstack.portal.apimediator.PortalSystemTags;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+
+import static org.zstack.core.Platform.operr;
 
 /**
  */
@@ -44,26 +47,24 @@ public class LdapApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APIAddLdapServerMsg msg) {
-        if (msg.hasSystemTag(PortalSystemTags.VALIDATION_ONLY.getTagFormat())) {
-            LdapServerInventory inv = new LdapServerInventory();
-            inv.setName(msg.getName());
-            inv.setDescription(msg.getDescription());
-            inv.setUrl(msg.getUrl());
-            inv.setBase(msg.getBase());
-            inv.setUsername(msg.getUsername());
-            inv.setPassword(msg.getPassword());
-            inv.setEncryption(msg.getEncryption());
+        LdapServerInventory inv = new LdapServerInventory();
+        inv.setName(msg.getName());
+        inv.setDescription(msg.getDescription());
+        inv.setUrl(msg.getUrl());
+        inv.setBase(msg.getBase());
+        inv.setUsername(msg.getUsername());
+        inv.setPassword(msg.getPassword());
+        inv.setEncryption(msg.getEncryption());
 
-            boolean success = testAddLdapServerConnection(inv);
-            if (!success) {
-                throw new ApiMessageInterceptionException(
-                        errf.instantiateErrorCode(LdapErrors.TEST_LDAP_CONNECTION_FAILED,
-                                "Test ldap server connection failed. "));
-            }
+        ErrorCode errorCode = testAddLdapServerConnection(inv);
+        if (errorCode != null) {
+            throw new ApiMessageInterceptionException(
+                    errf.instantiateErrorCode(LdapErrors.TEST_LDAP_CONNECTION_FAILED,
+                            errorCode.getDetails()));
         }
     }
 
-    private boolean testAddLdapServerConnection(LdapServerInventory inv) {
+    private ErrorCode testAddLdapServerConnection(LdapServerInventory inv) {
         LdapTemplateContextSource ldapTemplateContextSource = new LdapUtil().loadLdap(inv);
 
         try {
@@ -72,12 +73,11 @@ public class LdapApiInterceptor implements ApiMessageInterceptor {
             ldapTemplateContextSource.getLdapTemplate().authenticate("", filter.toString(), "");
             logger.info("LDAP connection was successful");
         } catch (Exception e) {
-            logger.info("Cannot connect to LDAP server");
-            logger.debug(e.toString());
-            return false;
+            logger.debug("Cannot connect to LDAP server", e);
+            return operr("Cannot connect to LDAP server, %s", e.toString());
         }
 
-        return true;
+        return null;
     }
 
 }
