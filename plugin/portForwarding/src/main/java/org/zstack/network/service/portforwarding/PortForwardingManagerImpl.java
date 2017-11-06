@@ -225,7 +225,19 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
                             .param("zoneUuid", zoneUuid)
                             .param("nsType", PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE).list();
                 } else {
-                    l3Uuids.addAll(vipPeerL3Uuids);
+                    VmNicVO rnic = Q.New(VmNicVO.class).in(VmNicVO_.l3NetworkUuid, vipPeerL3Uuids)
+                            .notNull(VmNicVO_.metaData).limit(1).find();
+                    if (rnic == null) {
+                        l3Uuids.addAll(vipPeerL3Uuids);
+                    } else {
+                        List<String> vrAttachedL3Uuids = Q.New(VmNicVO.class)
+                                .select(VmNicVO_.l3NetworkUuid)
+                                .eq(VmNicVO_.vmInstanceUuid, rnic.getVmInstanceUuid())
+                                .listValues();
+                        Set l3UuidSet = new HashSet<>(vipPeerL3Uuids);
+                        l3UuidSet.addAll(vrAttachedL3Uuids);
+                        l3Uuids.addAll(l3UuidSet);
+                    }
                 }
 
                 if (l3Uuids.isEmpty()) {
