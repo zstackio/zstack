@@ -708,7 +708,7 @@ public class VipBase {
         for (VipPeerL3NetworkRefVO ref : self.getPeerL3NetworkRefs()) {
             VmNicVO enic = Q.New(VmNicVO.class).eq(VmNicVO_.l3NetworkUuid, ref.getL3NetworkUuid())
                     .notNull(VmNicVO_.metaData).limit(1).find();
-            if (enic == null || !enic.getVmInstanceUuid().equals(nnic.getVmInstanceUuid())) {
+            if (enic == null || enic.getVmInstanceUuid().equals(nnic.getVmInstanceUuid())) {
                 continue;
             }
             throw new CloudRuntimeException(String.format("the request to add peer l3[uuid:%s] with vip[uuid:%s] has " +

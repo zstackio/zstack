@@ -1,5 +1,5 @@
 CREATE TABLE `zstack`.VipPeerL3NetworkRefVO (
-  `vipUuid` VARCHAR(32) NOT NULL UNIQUE,
+  `vipUuid` VARCHAR(32) NOT NULL,
   `l3NetworkUuid` VARCHAR(32) NOT NULL,
   `lastOpDate` TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `createDate` TIMESTAMP,
