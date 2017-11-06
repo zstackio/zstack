@@ -38,11 +38,8 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
+import org.zstack.header.image.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
-import org.zstack.header.image.ImageEO;
-import org.zstack.header.image.ImageInventory;
-import org.zstack.header.image.ImageStatus;
-import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.*;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.storage.primary.*;
@@ -2080,6 +2077,54 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 
+    @Transactional(readOnly = true)
+    protected List<ImageInventory> getImageCandidatesForVm(ImageMediaType type) {
+        String psUuid = getSelfInventory().getRootVolume().getPrimaryStorageUuid();
+        PrimaryStorageVO ps = dbf.getEntityManager().find(PrimaryStorageVO.class, psUuid);
+        PrimaryStorageType psType = PrimaryStorageType.valueOf(ps.getType());
+        List<String> bsUuids = psType.findBackupStorage(psUuid);
+
+        if (bsUuids == null) {
+            String sql = "select img" +
+                    " from ImageVO img, ImageBackupStorageRefVO ref, BackupStorageVO bs, BackupStorageZoneRefVO bsRef" +
+                    " where ref.imageUuid = img.uuid" +
+                    " and img.mediaType = :imgType" +
+                    " and img.status = :status" +
+                    " and bs.uuid = ref.backupStorageUuid" +
+                    " and bs.type in (:bsTypes)" +
+                    " and bs.uuid = bsRef.backupStorageUuid" +
+                    " and bsRef.zoneUuid = :zoneUuid";
+            TypedQuery<ImageVO> q = dbf.getEntityManager().createQuery(sql, ImageVO.class);
+            q.setParameter("zoneUuid", getSelfInventory().getZoneUuid());
+            if (type != null) {
+                q.setParameter("imgType", type);
+            }
+            q.setParameter("status", ImageStatus.Ready);
+            q.setParameter("bsTypes", hostAllocatorMgr.getBackupStorageTypesByPrimaryStorageTypeFromMetrics(ps.getType()));
+            return ImageInventory.valueOf(q.getResultList());
+        } else if (!bsUuids.isEmpty()) {
+            String sql = "select img" +
+                    " from ImageVO img, ImageBackupStorageRefVO ref, BackupStorageVO bs, BackupStorageZoneRefVO bsRef" +
+                    " where ref.imageUuid = img.uuid" +
+                    " and img.mediaType = :imgType" +
+                    " and img.status = :status" +
+                    " and bs.uuid = ref.backupStorageUuid" +
+                    " and bs.uuid in (:bsUuids)" +
+                    " and bs.uuid = bsRef.backupStorageUuid" +
+                    " and bsRef.zoneUuid = :zoneUuid";
+            TypedQuery<ImageVO> q = dbf.getEntityManager().createQuery(sql, ImageVO.class);
+            q.setParameter("zoneUuid", getSelfInventory().getZoneUuid());
+            if (type != null) {
+                q.setParameter("imgType", type);
+            }
+            q.setParameter("status", ImageStatus.Ready);
+            q.setParameter("bsUuids", bsUuids);
+            return ImageInventory.valueOf(q.getResultList());
+        } else {
+            return new ArrayList<>();
+        }
+    }
+
     protected void handleApiMessage(APIMessage msg) {
         if (msg instanceof APIStopVmInstanceMsg) {
             handle((APIStopVmInstanceMsg) msg);
@@ -2164,7 +2209,6 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
     }
 
-    @Transactional(readOnly = true)
     private void handle(APIGetCandidateIsoForAttachingVmMsg msg) {
         APIGetCandidateIsoForAttachingVmReply reply = new APIGetCandidateIsoForAttachingVmReply();
         if (self.getState() != VmInstanceState.Running && self.getState() != VmInstanceState.Stopped) {
@@ -2173,47 +2217,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             return;
         }
 
-        String psUuid = getSelfInventory().getRootVolume().getPrimaryStorageUuid();
-        PrimaryStorageVO ps = dbf.getEntityManager().find(PrimaryStorageVO.class, psUuid);
-        PrimaryStorageType psType = PrimaryStorageType.valueOf(ps.getType());
-        List<String> bsUuids = psType.findBackupStorage(psUuid);
-
-        if (bsUuids == null) {
-            String sql = "select img" +
-                    " from ImageVO img, ImageBackupStorageRefVO ref, BackupStorageVO bs, BackupStorageZoneRefVO bsRef" +
-                    " where ref.imageUuid = img.uuid" +
-                    " and img.mediaType = :imgType" +
-                    " and img.status = :status" +
-                    " and bs.uuid = ref.backupStorageUuid" +
-                    " and bs.type in (:bsTypes)" +
-                    " and bs.uuid = bsRef.backupStorageUuid" +
-                    " and bsRef.zoneUuid = :zoneUuid";
-            TypedQuery<ImageVO> q = dbf.getEntityManager().createQuery(sql, ImageVO.class);
-            q.setParameter("zoneUuid", getSelfInventory().getZoneUuid());
-            q.setParameter("imgType", ImageMediaType.ISO);
-            q.setParameter("status", ImageStatus.Ready);
-            q.setParameter("bsTypes", hostAllocatorMgr.getBackupStorageTypesByPrimaryStorageTypeFromMetrics(ps.getType()));
-            reply.setInventories(ImageInventory.valueOf(q.getResultList()));
-        } else if (!bsUuids.isEmpty()) {
-            String sql = "select img" +
-                    " from ImageVO img, ImageBackupStorageRefVO ref, BackupStorageVO bs, BackupStorageZoneRefVO bsRef" +
-                    " where ref.imageUuid = img.uuid" +
-                    " and img.mediaType = :imgType" +
-                    " and img.status = :status" +
-                    " and bs.uuid = ref.backupStorageUuid" +
-                    " and bs.uuid in (:bsUuids)" +
-                    " and bs.uuid = bsRef.backupStorageUuid" +
-                    " and bsRef.zoneUuid = :zoneUuid";
-            TypedQuery<ImageVO> q = dbf.getEntityManager().createQuery(sql, ImageVO.class);
-            q.setParameter("zoneUuid", getSelfInventory().getZoneUuid());
-            q.setParameter("imgType", ImageMediaType.ISO);
-            q.setParameter("status", ImageStatus.Ready);
-            q.setParameter("bsUuids", bsUuids);
-            reply.setInventories(ImageInventory.valueOf(q.getResultList()));
-        } else {
-            reply.setInventories(new ArrayList<>());
-        }
-
+        reply.setInventories(getImageCandidatesForVm(ImageMediaType.ISO));
         bus.reply(msg, reply);
     }
 
@@ -2260,8 +2264,10 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         if (imageMediaType == ImageMediaType.ISO || imageMediaType == null) {
             ret.put(Capability.Reimage.toString(), false);
+            ret.put(Capability.ChangeImage.toString(), false);
         } else {
             ret.put(Capability.Reimage.toString(), true);
+            ret.put(Capability.ChangeImage.toString(), true);
         }
     }
 

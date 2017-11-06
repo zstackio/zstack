@@ -10,11 +10,8 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.core.Completion;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.vm.PreVmInstantiateResourceExtensionPoint;
-import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
-import org.zstack.header.vm.VmInstanceState;
-import org.zstack.header.vm.VmInstantiateResourceException;
 import org.zstack.header.volume.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -94,7 +91,8 @@ public class InstantiateVolumeForNewCreatedVmExtension implements PreVmInstantia
 
     @Override
     public void preInstantiateVmResource(VmInstanceSpec spec, Completion completion) {
-        if (!spec.getVmInventory().getState().equals(VmInstanceState.Created.toString())) {
+        if (!spec.getVmInventory().getState().equals(VmInstanceState.Created.toString())
+                && VmInstanceConstant.VmOperation.ChangeImage != spec.getCurrentVmOperation()) {
             completion.success();
             return;
         }
