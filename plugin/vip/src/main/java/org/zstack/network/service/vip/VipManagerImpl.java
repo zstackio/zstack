@@ -383,13 +383,18 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
             return;
         }
 
-        VipVO vo = Q.New(VipPeerL3NetworkRefVO.class).eq(VipPeerL3NetworkRefVO_.l3NetworkUuid, nic.getL3NetworkUuid()).find();
-        if (vo == null) {
+        logger.debug(String.format("check detaching nic[uuid:%s] in peer l3 of vip", nic.getUuid()));
+        VipPeerL3NetworkRefVO refVO = Q.New(VipPeerL3NetworkRefVO.class).eq(VipPeerL3NetworkRefVO_.l3NetworkUuid,
+                nic.getL3NetworkUuid()).find();
+        if (refVO == null) {
             completion.done();
             return;
         }
 
-        VipBase v = new VipBase(vo);
+        logger.debug(String.format("release peer l3[uuid:%s] from vip[uuid:%s] for detaching nic[uuid:%s]",
+                refVO.getL3NetworkUuid(), refVO.getVipUuid(), nic.getUuid()));
+        VipVO vipVO = Q.New(VipVO.class).eq(VipVO_.uuid, refVO.getVipUuid()).find();
+        VipBase v = new VipBase(vipVO);
 
         v.deletePeerL3NetworkUuid(nic.getL3NetworkUuid());
 
