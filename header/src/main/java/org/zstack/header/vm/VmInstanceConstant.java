@@ -33,7 +33,8 @@ public interface VmInstanceConstant {
         DetachNic,
         AttachIso,
         DetachIso,
-        Expunge
+        Expunge,
+        ChangeImage
     }
 
     String QUOTA_VM_TOTAL_NUM = "vm.totalNum";
@@ -46,6 +47,7 @@ public interface VmInstanceConstant {
     enum Capability {
         LiveMigration,
         VolumeMigration,
-        Reimage
+        Reimage,
+        ChangeImage
     }
 }

@@ -334,10 +334,14 @@ public class VipBase {
 
         if (!acquireCheckModifyVipAttributeStruct(s)){
             /* no need to install vip to backend */
-            VipUseForList useForList = new VipUseForList(self.getUseFor());
-            useForList.add(s.getUseFor());
-            self.setUseFor(useForList.toString());
-            dbf.update(self);
+            if (s.isUserFor()){
+                /* useFor is not changed */
+                VipUseForList useForList = new VipUseForList(self.getUseFor());
+                useForList.add(s.getUseFor());
+                self.setUseFor(useForList.toString());
+                dbf.update(self);
+            }
+
             completion.success();
             return;
         }

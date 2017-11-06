@@ -17,13 +17,12 @@ import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostInventory;
+import org.zstack.header.host.HostVO;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.storage.primary.PrimaryStorageHostRefVO;
-import org.zstack.header.storage.primary.PrimaryStorageHostRefVO_;
-import org.zstack.header.storage.primary.PrimaryStorageHostStatus;
+import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceSpec;
@@ -46,6 +45,8 @@ public class VmAllocateHostFlow implements Flow {
     protected CloudBus bus;
     @Autowired
     protected ErrorFacade errf;
+
+    private static final String CHANGE_VM_IMAGE_ON_LOCAL_STORAGE = "change-vm-image-on-local-storage";
 
     private long getTotalDataDiskSize(VmInstanceSpec spec) {
         long size = 0;
@@ -124,8 +125,27 @@ public class VmAllocateHostFlow implements Flow {
 
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
 
-        if (VmOperation.NewCreate != spec.getCurrentVmOperation()) {
-            throw new CloudRuntimeException("VmAllocateHostFlow is only for creating new VM");
+        if (VmOperation.NewCreate != spec.getCurrentVmOperation()
+                && VmOperation.ChangeImage != spec.getCurrentVmOperation()) {
+            throw new CloudRuntimeException("VmAllocateHostFlow is only for creating new VM or changing image");
+        }
+
+        // when changing vm image, if root volume on LocalStorage, then allocate last host again
+        data.put(CHANGE_VM_IMAGE_ON_LOCAL_STORAGE, false);
+        if (VmOperation.ChangeImage == spec.getCurrentVmOperation()) {
+            String psUuid = spec.getRequiredPrimaryStorageUuidForRootVolume();
+            String psType = Q.New(PrimaryStorageVO.class)
+                    .select(PrimaryStorageVO_.type)
+                    .eq(PrimaryStorageVO_.uuid, psUuid)
+                    .findValue();
+            if (psType.equals("LocalStorage")) {
+                HostVO lastHost = dbf.findByUuid(spec.getVmInventory().getLastHostUuid(), HostVO.class);
+                spec.setDestHost(HostInventory.valueOf(lastHost));
+
+                data.put(CHANGE_VM_IMAGE_ON_LOCAL_STORAGE, true);
+                chain.next();
+                return;
+            }
         }
 
         AllocateHostMsg msg = this.prepareMsg(data);
@@ -156,6 +176,12 @@ public class VmAllocateHostFlow implements Flow {
 
     @Override
     public void rollback(FlowRollback chain, Map data) {
+        // no need to return capacity when change vm image on local storage
+        if ((Boolean) data.get(CHANGE_VM_IMAGE_ON_LOCAL_STORAGE)) {
+            chain.rollback();
+            return;
+        }
+
         VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
         HostInventory host = spec.getDestHost();
         if (host != null) {
