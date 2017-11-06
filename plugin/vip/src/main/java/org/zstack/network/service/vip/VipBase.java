@@ -720,12 +720,14 @@ public class VipBase {
     }
 
     public Boolean checkPeerL3Deleteable(String peerL3NetworkUuid) {
+        refresh();
+
         if (self.getPeerL3NetworkRefs() == null || self.getPeerL3NetworkRefs().isEmpty()) {
             return false;
         }
 
         if (self.getPeerL3NetworkRefs().stream()
-                .allMatch(ref -> ref.getL3NetworkUuid().equals(peerL3NetworkUuid))) {
+                .anyMatch(ref -> ref.getL3NetworkUuid().equals(peerL3NetworkUuid))) {
             return true;
         }
 
@@ -767,6 +769,8 @@ public class VipBase {
         if (vo != null) {
             dbf.remove(vo);
         }
+        logger.debug(String.format("deleted peer l3[uuid:%s] from vip[uuid:%s]",
+                peerL3NetworkUuid, self.getUuid()));
     }
 
     public void clearPeerL3Network() {
