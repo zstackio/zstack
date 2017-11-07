@@ -1,6 +1,6 @@
 package org.zstack.sdk;
 
-public enum Operator {
+public enum ZWatchLabelOperator {
 	EQUAL,
 	REGEX,
 }

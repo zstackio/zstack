@@ -10,6 +10,7 @@ import org.zstack.header.query.APIQueryMessage
 import org.zstack.header.rest.APINoSee
 import org.zstack.header.rest.RestRequest
 import org.zstack.header.rest.SDK
+import org.zstack.header.rest.SDKPackage
 import org.zstack.rest.sdk.SdkTemplate
 import org.zstack.rest.sdk.SdkFile
 import org.zstack.utils.FieldUtils
@@ -31,14 +32,11 @@ class SdkApiTemplate implements SdkTemplate {
     boolean isQueryApi
     String packageName
 
-    private static Map<Package, SDK> packageSDKAnnotations = [:]
+    private static Map<Package, SDKPackage> packageSDKAnnotations = [:]
 
     static {
-        Package.getPackages().each {
-            SDK sdk = it.getAnnotation(SDK.class)
-            if (sdk != null) {
-                packageSDKAnnotations[it] = sdk
-            }
+        Platform.reflections.getTypesAnnotatedWith(SDKPackage.class).each {
+            packageSDKAnnotations[it.package] = it.getAnnotation(SDKPackage.class)
         }
     }
 
@@ -66,13 +64,17 @@ class SdkApiTemplate implements SdkTemplate {
     static String getPackageName(Class clz) {
         String packageName = "org.zstack.sdk"
 
-        for (Map.Entry<Package, SDK> e : packageSDKAnnotations.entrySet()) {
+        for (Map.Entry<Package, SDKPackage> e : packageSDKAnnotations.entrySet()) {
             String parentName = e.key.getName()
             String pname = clz.getPackage().getName()
 
             if (parentName == pname || pname.startsWith(parentName + ".")) {
-                packageName = e.value.sdkPackageName().isEmpty() ? packageName : e.value.sdkPackageName()
-                break
+                if (e.value.packageName().isEmpty()) {
+                    return packageName
+                } else {
+                    String subPackageName = pname.replaceFirst(parentName, "")
+                    return e.value.packageName() + subPackageName
+                }
             }
         }
 
@@ -254,6 +256,7 @@ class SdkApiTemplate implements SdkTemplate {
 
     def generateAction(String clzName, String path) {
         def f = new SdkFile()
+        f.subPath = packageName.replaceAll("\\.", "/")
         f.fileName = "${clzName}.java"
         f.content = """package ${packageName};
 

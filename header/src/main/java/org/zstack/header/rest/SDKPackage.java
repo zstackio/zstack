@@ -10,7 +10,6 @@ import java.lang.annotation.Target;
  */
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface SDK {
-    String sdkClassName() default "";
-    String[] actionsMapping() default {};
+public @interface SDKPackage {
+    String packageName() default "";
 }

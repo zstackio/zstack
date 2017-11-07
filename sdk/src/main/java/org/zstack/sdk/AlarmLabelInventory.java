@@ -10,11 +10,11 @@ public class AlarmLabelInventory  {
         return this.key;
     }
 
-    public Operator operator;
-    public void setOperator(Operator operator) {
+    public ZWatchLabelOperator operator;
+    public void setOperator(ZWatchLabelOperator operator) {
         this.operator = operator;
     }
-    public Operator getOperator() {
+    public ZWatchLabelOperator getOperator() {
         return this.operator;
     }
 

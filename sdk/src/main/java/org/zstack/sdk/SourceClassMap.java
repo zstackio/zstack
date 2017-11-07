@@ -211,7 +211,7 @@ public class SourceClassMap {
 			put("org.zstack.zwatch.datatype.Datapoint", "org.zstack.sdk.Datapoint");
 			put("org.zstack.zwatch.datatype.EventData", "org.zstack.sdk.EventData");
 			put("org.zstack.zwatch.datatype.EventFamily$EmergencyLevel", "org.zstack.sdk.EmergencyLevel");
-			put("org.zstack.zwatch.datatype.Label$Operator", "org.zstack.sdk.Operator");
+			put("org.zstack.zwatch.datatype.Label$Operator", "org.zstack.sdk.ZWatchLabelOperator");
 			put("org.zstack.zwatch.ruleengine.ComparisonOperator", "org.zstack.sdk.ComparisonOperator");
         }
     };
@@ -332,7 +332,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.NetworkServiceProviderInventory", "org.zstack.header.network.service.NetworkServiceProviderInventory");
 			put("org.zstack.sdk.NotificationInventory", "org.zstack.core.notification.NotificationInventory");
 			put("org.zstack.sdk.NotificationSubscriptionInventory", "org.zstack.core.notification.NotificationSubscriptionInventory");
-			put("org.zstack.sdk.Operator", "org.zstack.zwatch.datatype.Label$Operator");
 			put("org.zstack.sdk.OssBucketInventory", "org.zstack.header.aliyun.oss.OssBucketInventory");
 			put("org.zstack.sdk.OssBucketProperty", "org.zstack.header.aliyun.oss.OssBucketProperty");
 			put("org.zstack.sdk.PciDeviceInventory", "org.zstack.pciDevice.PciDeviceInventory");
@@ -425,6 +424,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.VpcVpnIpSecConfigStruct", "org.zstack.header.hybrid.network.vpn.VpcVpnIpSecConfigStruct");
 			put("org.zstack.sdk.VtepInventory", "org.zstack.network.l2.vxlan.vtep.VtepInventory");
 			put("org.zstack.sdk.WebhookInventory", "org.zstack.header.core.webhooks.WebhookInventory");
+			put("org.zstack.sdk.ZWatchLabelOperator", "org.zstack.zwatch.datatype.Label$Operator");
 			put("org.zstack.sdk.ZoneInventory", "org.zstack.header.zone.ZoneInventory");
         }
     };

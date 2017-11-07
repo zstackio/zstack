@@ -146,7 +146,11 @@ public class RestServer implements Component, CloudBusEventListener {
 
             for (SdkFile f : allFiles) {
                 //logger.debug(String.format("\n%s", f.getContent()));
-                String fpath = PathUtil.join(path, f.getFileName());
+                String fpath = PathUtil.join(path, f.getSubPath() == null ? "" : f.getSubPath(), f.getFileName());
+                File dir = new File(fpath).getParentFile();
+                if (!dir.exists()) {
+                    dir.mkdirs();
+                }
                 FileUtils.writeStringToFile(new File(fpath), f.getContent());
             }
         } catch (Exception e) {

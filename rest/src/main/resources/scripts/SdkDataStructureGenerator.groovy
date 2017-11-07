@@ -145,6 +145,7 @@ ${dstToSrc.join("\n")}
         String packageName = SdkApiTemplate.getPackageName(clz)
 
         SdkFile file = new SdkFile()
+        file.subPath = packageName.replaceAll("\\.", "/")
         file.fileName = "${getTargetClassName(clz)}.java"
         if (!Enum.class.isAssignableFrom(clz)) {
             file.content = """package ${packageName};
@@ -249,9 +250,11 @@ ${output.join("\n")}
         className = StringUtils.capitalize(className)
         className = "${className}Result"
 
+        String packageName = SdkApiTemplate.getPackageName(responseClass)
         SdkFile file = new SdkFile()
+        file.subPath = packageName.replaceAll("\\.", "/")
         file.fileName = "${className}.java"
-        file.content = """package ${SdkApiTemplate.getPackageName(responseClass)};
+        file.content = """package ${packageName};
 
 public class ${className} {
 ${output.join("\n")}
