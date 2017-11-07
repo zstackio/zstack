@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class VCenterBackupStorageInventory extends BackupStorageInventory {
 
     public java.lang.String vCenterUuid;

@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class SNSHttpEndpointInventory extends SNSApplicationEndpointInventory {
 
     public java.lang.String url;

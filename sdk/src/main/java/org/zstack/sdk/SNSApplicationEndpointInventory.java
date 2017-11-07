@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class SNSApplicationEndpointInventory  {
 
     public java.lang.String name;

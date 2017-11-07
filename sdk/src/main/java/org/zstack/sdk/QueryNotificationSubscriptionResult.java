@@ -1,11 +1,13 @@
 package org.zstack.sdk;
 
+
+
 public class QueryNotificationSubscriptionResult {
-    public java.util.List<NotificationSubscriptionInventory> inventories;
-    public void setInventories(java.util.List<NotificationSubscriptionInventory> inventories) {
+    public java.util.List inventories;
+    public void setInventories(java.util.List inventories) {
         this.inventories = inventories;
     }
-    public java.util.List<NotificationSubscriptionInventory> getInventories() {
+    public java.util.List getInventories() {
         return this.inventories;
     }
 

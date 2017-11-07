@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class BackupDatabaseToPublicCloudResult {
     public java.lang.String local;
     public void setLocal(java.lang.String local) {

@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class VipInventory  {
 
     public java.lang.String uuid;

@@ -16,14 +16,14 @@ import java.util.regex.Pattern;
 public abstract class AbstractAction {
     public String apiId;
 
-    abstract RestInfo getRestInfo();
+    protected abstract RestInfo getRestInfo();
 
-    static class Parameter {
+    public static class Parameter {
         Field field;
         Param annotation;
     }
 
-    abstract Map<String, Parameter> getParameterMap();
+    protected abstract Map<String, Parameter> getParameterMap();
 
     private void initializeParametersIfNot() {
         synchronized (getParameterMap()) {

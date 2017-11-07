@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class UserGroupInventory  {
 
     public java.lang.String uuid;

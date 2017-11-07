@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class EcsVpcInventory  {
 
     public java.lang.String uuid;

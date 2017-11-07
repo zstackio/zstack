@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class SNSEmailPlatformInventory extends SNSApplicationPlatformInventory {
 
     public java.lang.String smtpServer;

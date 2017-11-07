@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class VirtualRouterOfferingInventory extends InstanceOfferingInventory {
 
     public java.lang.String managementNetworkUuid;

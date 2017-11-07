@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class GetVmSshKeyResult {
     public java.lang.String sshKey;
     public void setSshKey(java.lang.String sshKey) {

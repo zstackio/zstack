@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+import org.zstack.sdk.ConnectionAccessPointInventory;
+
 public class AddConnectionAccessPointFromRemoteResult {
     public ConnectionAccessPointInventory inventory;
     public void setInventory(ConnectionAccessPointInventory inventory) {

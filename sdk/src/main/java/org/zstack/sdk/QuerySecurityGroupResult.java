@@ -1,11 +1,13 @@
 package org.zstack.sdk;
 
+
+
 public class QuerySecurityGroupResult {
-    public java.util.List<SecurityGroupInventory> inventories;
-    public void setInventories(java.util.List<SecurityGroupInventory> inventories) {
+    public java.util.List inventories;
+    public void setInventories(java.util.List inventories) {
         this.inventories = inventories;
     }
-    public java.util.List<SecurityGroupInventory> getInventories() {
+    public java.util.List getInventories() {
         return this.inventories;
     }
 

@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class SimulatorHostInventory extends HostInventory {
 
     public java.lang.Long memoryCapacity;

@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class KVMHostInventory extends HostInventory {
 
     public java.lang.String username;

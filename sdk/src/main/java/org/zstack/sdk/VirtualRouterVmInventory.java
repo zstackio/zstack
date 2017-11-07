@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class VirtualRouterVmInventory extends ApplianceVmInventory {
 
     public java.lang.String publicNetworkUuid;

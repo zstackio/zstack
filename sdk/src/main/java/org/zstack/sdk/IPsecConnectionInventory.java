@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class IPsecConnectionInventory  {
 
     public java.lang.String uuid;
@@ -162,11 +164,11 @@ public class IPsecConnectionInventory  {
         return this.lastOpDate;
     }
 
-    public java.util.List<IPsecPeerCidrInventory> peerCidrs;
-    public void setPeerCidrs(java.util.List<IPsecPeerCidrInventory> peerCidrs) {
+    public java.util.List peerCidrs;
+    public void setPeerCidrs(java.util.List peerCidrs) {
         this.peerCidrs = peerCidrs;
     }
-    public java.util.List<IPsecPeerCidrInventory> getPeerCidrs() {
+    public java.util.List getPeerCidrs() {
         return this.peerCidrs;
     }
 

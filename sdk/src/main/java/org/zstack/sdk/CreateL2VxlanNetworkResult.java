@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+import org.zstack.sdk.L2VxlanNetworkInventory;
+
 public class CreateL2VxlanNetworkResult {
     public L2VxlanNetworkInventory inventory;
     public void setInventory(L2VxlanNetworkInventory inventory) {

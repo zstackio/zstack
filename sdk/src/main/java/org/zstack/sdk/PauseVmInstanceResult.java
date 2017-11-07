@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+import org.zstack.sdk.VmInstanceInventory;
+
 public class PauseVmInstanceResult {
     public VmInstanceInventory inventory;
     public void setInventory(VmInstanceInventory inventory) {

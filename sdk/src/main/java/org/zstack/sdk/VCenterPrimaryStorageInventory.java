@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class VCenterPrimaryStorageInventory extends PrimaryStorageInventory {
 
     public java.lang.String vCenterUuid;

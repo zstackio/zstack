@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class L2VxlanNetworkInventory extends L2NetworkInventory {
 
     public java.lang.Integer vni;

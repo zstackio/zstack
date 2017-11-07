@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class SNSEmailEndpointInventory extends SNSApplicationEndpointInventory {
 
     public java.lang.String email;

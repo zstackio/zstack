@@ -234,13 +234,13 @@ class SdkApiTemplate implements SdkTemplate {
 """)
 
         ms.add("""\
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 """)
 
         ms.add("""\
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "${requestAnnotation.method().name()}";
         info.path = "${path}";
@@ -262,6 +262,7 @@ class SdkApiTemplate implements SdkTemplate {
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class ${clzName} extends ${isQueryApi ? "QueryAction" : "AbstractAction"} {
 

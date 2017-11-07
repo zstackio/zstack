@@ -13,7 +13,7 @@ import static java.util.Arrays.asList;
  * Created by xing5 on 2016/12/9.
  */
 public class ApiResult {
-    ErrorCode error;
+    public ErrorCode error;
     private String resultString;
 
     public ErrorCode getError() {
@@ -84,7 +84,7 @@ public class ApiResult {
         }
     }
 
-    <T> T getResult(Class<T> clz) {
+    public <T> T getResult(Class<T> clz) {
         if (resultString == null || resultString.isEmpty()) {
             return null;
         }
@@ -99,7 +99,7 @@ public class ApiResult {
         try {
             for (String path : schema.keySet()) {
                 String src = schema.get(path);
-                String dst = SourceClassMap.srcToDstMapping.get(src);
+                String dst = org.zstack.sdk.SourceClassMap.srcToDstMapping.get(src);
 
                 if (dst == null) {
                     //TODO: warning
