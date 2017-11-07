@@ -301,6 +301,13 @@ ${output.join("\n")}
 
         // java type
         if (Collection.class.isAssignableFrom(field.type)) {
+            Class genericType = FieldUtils.getGenericType(field)
+            if (genericType != null) {
+                if (isZStackClass(genericType)) {
+                    addToLaterResolvedClassesIfNeed(genericType)
+                }
+            }
+
             return """\
     public ${field.type.name} ${fname};
     public void set${StringUtils.capitalize(fname)}(${field.type.name} ${fname}) {
@@ -311,6 +318,13 @@ ${output.join("\n")}
     }
 """
         } else if (Map.class.isAssignableFrom(field.type)) {
+            Class genericType = FieldUtils.getGenericType(field)
+            if (genericType != null) {
+                if (isZStackClass(genericType)) {
+                    addToLaterResolvedClassesIfNeed(genericType)
+                }
+            }
+
             return """\
     public ${field.type.name} ${fname};
     public void set${StringUtils.capitalize(fname)}(${field.type.name} ${fname}) {
