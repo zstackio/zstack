@@ -47,6 +47,8 @@ import javax.persistence.TypedQuery;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -384,19 +386,21 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
         }
 
         logger.debug(String.format("check detaching nic[uuid:%s] in peer l3 of vip", nic.getUuid()));
-        VipPeerL3NetworkRefVO refVO = Q.New(VipPeerL3NetworkRefVO.class).eq(VipPeerL3NetworkRefVO_.l3NetworkUuid,
-                nic.getL3NetworkUuid()).find();
-        if (refVO == null) {
+        List<VipPeerL3NetworkRefVO> refVOS = Q.New(VipPeerL3NetworkRefVO.class).eq(VipPeerL3NetworkRefVO_.l3NetworkUuid,
+                nic.getL3NetworkUuid()).list();
+        if (refVOS == null || refVOS.isEmpty()) {
             completion.done();
             return;
         }
 
-        logger.debug(String.format("release peer l3[uuid:%s] from vip[uuid:%s] for detaching nic[uuid:%s]",
-                refVO.getL3NetworkUuid(), refVO.getVipUuid(), nic.getUuid()));
-        VipVO vipVO = Q.New(VipVO.class).eq(VipVO_.uuid, refVO.getVipUuid()).find();
-        VipBase v = new VipBase(vipVO);
-
-        v.deletePeerL3NetworkUuid(nic.getL3NetworkUuid());
+        Set<String> refUuids = refVOS.stream().map(r -> r.getVipUuid()).collect(Collectors.toSet());
+        logger.debug(String.format("release peer l3[uuid:%s] from vips[uuid:%s] for detaching nic[uuid:%s]",
+                nic.getL3NetworkUuid(), refUuids, nic.getUuid()));
+        List<VipVO> vipVOS = Q.New(VipVO.class).in(VipVO_.uuid, refUuids).list();
+        for (VipVO vipVO : vipVOS) {
+            VipBase v = new VipBase(vipVO);
+            v.deletePeerL3NetworkUuid(nic.getL3NetworkUuid());
+        }
 
         completion.done();
     }

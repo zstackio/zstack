@@ -1141,6 +1141,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                         VyosConstants.PROVIDER_TYPE.toString(),
                         VirtualRouterConstant.PROVIDER_TYPE.toString()))
                 .list();
+
         List<VmNicInventory> vmNicInVirtualRouter = candidates.stream().filter(nic ->
                 innerl3Uuids.contains(nic.getL3NetworkUuid()))
                 .collect(Collectors.toList());
@@ -1149,7 +1150,8 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
             return candidates;
         }
 
-        // 2.remove vm nic whose l3 don't peer vip's
+
+        // 2. keep vmnics which associated vrouter attached public network of vip
         List<String> peerL3Uuids = SQL.New("select l3.uuid" +
                 " from VmNicVO nic, L3NetworkVO l3"  +
                 " where nic.vmInstanceUuid in " +
@@ -1165,10 +1167,11 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                 .param("isSystem", false)
                 .list();
 
-        List<VmNicInventory> notPeerL3Nics = vmNicInVirtualRouter.stream().filter(nic ->
-                !peerL3Uuids.contains(nic.getL3NetworkUuid()))
-                .collect(Collectors.toList());
-        candidates.removeAll(notPeerL3Nics);
+        candidates.removeAll(vmNicInVirtualRouter);
+        candidates.addAll(vmNicInVirtualRouter.stream()
+            .filter(nic -> peerL3Uuids.contains(nic.getL3NetworkUuid()))
+            .collect(Collectors.toSet()));
+
         return candidates;
     }
 
