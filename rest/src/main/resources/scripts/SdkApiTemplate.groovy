@@ -2,6 +2,7 @@ package scripts
 
 import org.apache.commons.lang.StringEscapeUtils
 import org.apache.commons.lang.StringUtils
+import org.zstack.core.Platform
 import org.zstack.header.exception.CloudRuntimeException
 import org.zstack.header.identity.SuppressCredentialCheck
 import org.zstack.header.message.*
@@ -28,9 +29,23 @@ class SdkApiTemplate implements SdkTemplate {
 
     String resultClassName
     boolean isQueryApi
+    String packageName
+
+    private static Map<Package, SDK> packageSDKAnnotations = [:]
+
+    static {
+        Package.getPackages().each {
+            SDK sdk = it.getAnnotation(SDK.class)
+            if (sdk != null) {
+                packageSDKAnnotations[it] = sdk
+            }
+        }
+    }
 
     SdkApiTemplate(Class apiMessageClass) {
         try {
+            packageName = getPackageName(apiMessageClass)
+
             this.apiMessageClass = apiMessageClass
             this.requestAnnotation = apiMessageClass.getAnnotation(RestRequest.class)
 
@@ -46,6 +61,22 @@ class SdkApiTemplate implements SdkTemplate {
         } catch (Throwable t) {
             throw new CloudRuntimeException(String.format("failed to make SDK for the class[%s]", apiMessageClass), t)
         }
+    }
+
+    static String getPackageName(Class clz) {
+        String packageName = "org.zstack.sdk"
+
+        for (Map.Entry<Package, SDK> e : packageSDKAnnotations.entrySet()) {
+            String parentName = e.key.getName()
+            String pname = clz.getPackage().getName()
+
+            if (parentName == pname || pname.startsWith(parentName + ".")) {
+                packageName = e.value.sdkPackageName().isEmpty() ? packageName : e.value.sdkPackageName()
+                break
+            }
+        }
+
+        return packageName
     }
 
     def normalizeApiName() {
@@ -224,7 +255,7 @@ class SdkApiTemplate implements SdkTemplate {
     def generateAction(String clzName, String path) {
         def f = new SdkFile()
         f.fileName = "${clzName}.java"
-        f.content = """package org.zstack.sdk;
+        f.content = """package ${packageName};
 
 import java.util.HashMap;
 import java.util.Map;

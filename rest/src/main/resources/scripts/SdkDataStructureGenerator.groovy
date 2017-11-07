@@ -142,10 +142,12 @@ ${dstToSrc.join("\n")}
             }
         }
 
+        String packageName = SdkApiTemplate.getPackageName(clz)
+
         SdkFile file = new SdkFile()
         file.fileName = "${getTargetClassName(clz)}.java"
         if (!Enum.class.isAssignableFrom(clz)) {
-            file.content = """package org.zstack.sdk;
+            file.content = """package ${packageName};
 
 public class ${getTargetClassName(clz)} ${Object.class == clz.superclass ? "" : "extends " + clz.superclass.simpleName} {
 
@@ -153,7 +155,7 @@ ${output.join("\n")}
 }
 """
         } else {
-            file.content = """package org.zstack.sdk;
+            file.content = """package ${packageName};
 
 public enum ${getTargetClassName(clz)} {
 ${output.join("\n")}
@@ -161,7 +163,7 @@ ${output.join("\n")}
 """
         }
 
-        sourceClassMap[clz.name] = "org.zstack.sdk.${getTargetClassName(clz)}"
+        sourceClassMap[clz.name] = "${packageName}.${getTargetClassName(clz)}"
         sdkFileMap.put(clz, file)
     }
 
@@ -249,7 +251,7 @@ ${output.join("\n")}
 
         SdkFile file = new SdkFile()
         file.fileName = "${className}.java"
-        file.content = """package org.zstack.sdk;
+        file.content = """package ${SdkApiTemplate.getPackageName(responseClass)};
 
 public class ${className} {
 ${output.join("\n")}

@@ -8,9 +8,10 @@ import java.lang.annotation.Target;
 /**
  * Created by xing5 on 2016/12/9.
  */
-@Target({ElementType.TYPE})
+@Target({ElementType.TYPE, ElementType.PACKAGE})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface SDK {
     String sdkClassName() default "";
     String[] actionsMapping() default {};
+    String sdkPackageName() default "";
 }
