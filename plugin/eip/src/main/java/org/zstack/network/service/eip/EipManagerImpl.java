@@ -248,7 +248,16 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                         .find();
         VipInventory vipInv = VipInventory.valueOf(vipvo);
         List<VmNicInventory> nics = getAttachableVmNicForEip(vipInv);
-        return filterVmNicsForEipInVirtualRouterExtensionPoint(vipInv, nics);
+        if (nics != null && !nics.isEmpty()) {
+            logger.debug(String.format("get eip[uuid:%s] attachable vm nics[%s] before filter extension point",
+                    msg.getEipUuid(), nics.stream().map(n -> n.getUuid()).collect(Collectors.toList())));
+        }
+        nics = filterVmNicsForEipInVirtualRouterExtensionPoint(vipInv, nics);
+        if (nics != null && !nics.isEmpty()) {
+            logger.debug(String.format("get eip[uuid:%s] attachable vm nics[%s] after filter extension point",
+                    msg.getEipUuid(), nics.stream().map(n -> n.getUuid()).collect(Collectors.toList())));
+        }
+        return nics;
     }
 
     private void handle(APIGetEipAttachableVmNicsMsg msg) {
