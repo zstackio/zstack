@@ -379,6 +379,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         if (VmInstanceState.Running != vmState) {
             Vip vip = new Vip(vo.getVipUuid());
             ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
+            struct.setUseFor(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
             final NetworkServiceProviderType providerType =
                     nwServiceMgr.getTypeOfNetworkServiceProviderForService(
                             nicvo.getL3NetworkUuid(), NetworkServiceType.PortForwarding);
