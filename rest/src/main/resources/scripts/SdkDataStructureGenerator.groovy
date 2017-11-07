@@ -142,7 +142,9 @@ ${dstToSrc.join("\n")}
                 }
 
                 if (isZStackClass(f.type)) {
-                    imports.add("${SdkApiTemplate.getPackageName(f.type)}.${f.type.simpleName}")
+                    SDK at = f.type.getAnnotation(SDK.class)
+                    String simpleName = at != null && !at.sdkClassName().isEmpty() ? at.sdkClassName() : f.type.simpleName
+                    imports.add("${SdkApiTemplate.getPackageName(f.type)}.${simpleName}")
                 }
                 output.add(makeFieldText(f.name, f))
             }
@@ -255,7 +257,9 @@ ${output.join("\n")}
         def output = []
         fields.each { String name, Field f ->
             if (isZStackClass(f.type)) {
-                imports.add("${SdkApiTemplate.getPackageName(f.type)}.${f.type.simpleName}")
+                SDK sdkat = f.type.getAnnotation(SDK.class)
+                String simpleName = sdkat != null && !sdkat.sdkClassName().isEmpty() ? sdkat.sdkClassName() : f.type.simpleName
+                imports.add("${SdkApiTemplate.getPackageName(f.type)}.${simpleName}")
             }
 
             output.add(makeFieldText(name, f))

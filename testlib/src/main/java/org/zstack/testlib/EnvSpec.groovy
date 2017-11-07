@@ -25,6 +25,8 @@ import org.zstack.header.vo.EO
 import org.zstack.header.volume.VolumeDeletionPolicyManager
 import org.zstack.image.ImageGlobalConfig
 import org.zstack.sdk.*
+import org.zstack.sdk.zwatch.alarm.CreateAlarmAction
+import org.zstack.sdk.zwatch.alarm.DeleteAlarmAction
 import org.zstack.storage.volume.VolumeGlobalConfig
 import org.zstack.utils.DebugUtils
 import org.zstack.utils.data.Pair
