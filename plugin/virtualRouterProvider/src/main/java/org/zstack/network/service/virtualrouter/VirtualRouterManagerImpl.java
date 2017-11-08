@@ -55,15 +55,11 @@ import org.zstack.identity.AccountManager;
 import org.zstack.network.l3.L3NetworkSystemTags;
 import org.zstack.network.service.eip.EipConstant;
 import org.zstack.network.service.eip.FilterVmNicsForEipInVirtualRouterExtensionPoint;
-import org.zstack.network.service.portforwarding.PortForwardingProtocolType;
-import org.zstack.network.service.portforwarding.PortForwardingRuleVO;
-import org.zstack.network.service.portforwarding.PortForwardingRuleVO_;
 import org.zstack.network.service.vip.*;
 import org.zstack.network.service.lb.*;
 import org.zstack.network.service.virtualrouter.eip.VirtualRouterEipRefInventory;
 import org.zstack.network.service.virtualrouter.portforwarding.VirtualRouterPortForwardingRuleRefInventory;
 import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipInventory;
-import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipVO;
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants;
 import org.zstack.search.GetQuery;
 import org.zstack.search.SearchQuery;
@@ -437,8 +433,8 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
         APIGetVipUsedPortsReply reply = new APIGetVipUsedPortsReply();
         APIGetVipUsedPortsReply.VipPortRangeInventory inv = new APIGetVipUsedPortsReply.VipPortRangeInventory();
-        inv.setVipUuid(vipUuid);
-        inv.setProtcol(protocl);
+        inv.setUuid(vipUuid);
+        inv.setProtocol(protocl);
         inv.setUsedPorts(getVipUsedPortList(vipUuid, protocl));
         reply.setInventories(Arrays.asList(inv));
         bus.reply(msg, reply);

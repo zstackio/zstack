@@ -12,24 +12,24 @@ import java.util.List;
 public class APIGetVipUsedPortsReply extends APIReply {
 
     public static class VipPortRangeInventory {
-        private String vipUuid;
-        private String protcol;
+        private String uuid;
+        private String protocol;
         private List<String> usedPorts;
 
-        public String getVipUuid() {
-            return vipUuid;
+        public String getUuid() {
+            return uuid;
         }
 
-        public void setVipUuid(String vipUuid) {
-            this.vipUuid = vipUuid;
+        public void setUuid(String uuid) {
+            this.uuid = uuid;
         }
 
-        public String getProtcol() {
-            return protcol;
+        public String getProtocol() {
+            return protocol;
         }
 
-        public void setProtcol(String protcol) {
-            this.protcol = protcol;
+        public void setProtocol(String protocol) {
+            this.protocol = protocol;
         }
 
         public List<String> getUsedPorts() {
@@ -54,8 +54,8 @@ public class APIGetVipUsedPortsReply extends APIReply {
     public static APIGetVipUsedPortsReply __example__() {
         APIGetVipUsedPortsReply reply = new APIGetVipUsedPortsReply();
         APIGetVipUsedPortsReply.VipPortRangeInventory inv = new APIGetVipUsedPortsReply.VipPortRangeInventory();
-        inv.setVipUuid(uuid());
-        inv.setProtcol("tcp");
+        inv.setUuid(uuid());
+        inv.setProtocol("tcp");
         String[] array = {"100", "200", "201", "202", "204", "1000"};
         inv.setUsedPorts(Arrays.asList(array));
         reply.setInventories(Arrays.asList(inv));
