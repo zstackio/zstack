@@ -23,7 +23,20 @@ CREATE TABLE IF NOT EXISTS `AffinityGroupUsageVO` (
     CONSTRAINT `fkAffinityGroupUsageVOcreateAffinityGroupVO` FOREIGN KEY (`affinityGroupUuid`) REFERENCES `zstack`.`AffinityGroupVO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-ALTER TABLE VmInstanceEO ADD COLUMN `affinityGroupUuid` VARCHAR(32) DEFAULT NULL;
+DELIMITER $$
+CREATE PROCEDURE insertApplianceVmAffinityGroup()
+    BEGIN
+        DECLARE applianceVmAffinityGroupUuid VARCHAR(32);
+        SET applianceVmAffinityGroupUuid = REPLACE(UUID(), '-', '');
+        INSERT INTO zstack.AffinityGroupVO (uuid, name, description, policy, version, type, lastOpDate, createDate)
+            values(applianceVmAffinityGroupUuid, 'zstack.affinity.group.for.virtual.router', 'zstack.affinity.group.for.virtual.router', 'ANTIAFFINITYSOFT', '1.0', 'HOST', CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
+        INSERT INTO zstack.ResourceVO(uuid, resourceName, resourceType) values(applianceVmAffinityGroupUuid, 'zstack.affinity.group.for.virtual.router', 'AffinityGroupVO');
+    END $$
+DELIMITER ;
+
+call insertApplianceVmAffinityGroup();
+DROP PROCEDURE IF EXISTS insertApplianceVmAffinityGroup;
+
 SET FOREIGN_KEY_CHECKS = 0;
 ALTER TABLE AliyunSnapshotVO DROP FOREIGN KEY fkAliyunSnapshotVOAliyunDiskVO;
 ALTER TABLE AliyunSnapshotVO ADD CONSTRAINT fkAliyunSnapshotVOAliyunDiskVO FOREIGN KEY (diskUuid) REFERENCES AliyunDiskVO (uuid) ON DELETE SET NULL;

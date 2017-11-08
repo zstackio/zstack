@@ -20,9 +20,7 @@ import org.zstack.core.thread.CancelablePeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.AbstractService;
-import org.zstack.header.allocator.AllocateHostDryRunReply;
-import org.zstack.header.allocator.DesignatedAllocateHostMsg;
-import org.zstack.header.allocator.HostAllocatorConstant;
+import org.zstack.header.allocator.*;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.cluster.ClusterInventory;
@@ -71,6 +69,7 @@ import org.zstack.header.zone.ZoneVO;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.search.SearchQuery;
+import org.zstack.tag.PatternedSystemTag;
 import org.zstack.tag.SystemTagUtils;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
@@ -521,6 +520,9 @@ public class VmInstanceManagerImpl extends AbstractService implements
         vm.setDefaultL3NetworkUuid(msg.getDefaultL3NetworkUuid() == null ? msg.getL3NetworkUuids().get(0) : msg.getDefaultL3NetworkUuid());
         vm.setName("for-getting-candidates-zones-clusters-hosts");
         amsg.setVmInstance(vm);
+        if (msg.getSystemTags() != null && !msg.getSystemTags().isEmpty()) {
+            amsg.setSystemTags(new ArrayList<String>(msg.getSystemTags()));
+        }
 
         APIGetCandidateZonesClustersHostsForCreatingVmReply areply = new APIGetCandidateZonesClustersHostsForCreatingVmReply();
         bus.makeLocalServiceId(amsg, HostAllocatorConstant.SERVICE_ID);
@@ -758,6 +760,12 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     ImageVO.class.getSimpleName(),
                     vo.getUuid(),
                     VmInstanceVO.class.getSimpleName());
+        }
+
+        if (msg.getSystemTags() != null && !msg.getSystemTags().isEmpty()) {
+            for (PreCloneVmInstanceSystemTagsExtensionPoint ext : pluginRgty.getExtensionList(PreCloneVmInstanceSystemTagsExtensionPoint.class)){
+                ext.cloneVmInstanceSystemTag(vo.getUuid(), msg.getSystemTags());
+            }
         }
 
         if (VmCreationStrategy.JustCreate == VmCreationStrategy.valueOf(msg.getStrategy())) {
@@ -2054,5 +2062,16 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         future.getErrorCode().getDetails()));
             }
         }
+    }
+
+    public String getVmInstanceSyncSignature(String vmUuid) {
+        for (getVmInstanceSyncSignatureExtensionPoint ext : pluginRgty.getExtensionList(getVmInstanceSyncSignatureExtensionPoint.class)){
+            String signature = ext.getVmInstanceSyncSignature(vmUuid);
+            if (signature != null) {
+                return signature;
+            }
+        }
+
+        return null;
     }
 }

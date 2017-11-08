@@ -20,6 +20,7 @@ import org.zstack.core.job.JobQueueFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.AbstractService;
 import org.zstack.header.Component;
+import org.zstack.header.allocator.SetApplianceVmSystemTags;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.Flow;
@@ -518,5 +519,11 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
     @Override
     public String getId() {
         return bus.makeLocalServiceId(ApplianceVmConstant.SERVICE_ID);
+    }
+
+    public void setApplianceVmSystemTags(String vmUuid, String applianceType) {
+        for (SetApplianceVmSystemTags ext : pluginRgty.getExtensionList(SetApplianceVmSystemTags.class)){
+            ext.setApplianceVmSystemTags(vmUuid, applianceType);
+        }
     }
 }

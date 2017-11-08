@@ -32,6 +32,15 @@ public class HostAllocatorSpec {
     private String requiredPrimaryStorageUuid;
     private Map<String, List<String>> backupStoragePrimaryStorageMetrics;
     private boolean dryRun;
+    private List<String> systemTags;
+
+    public List<String> getSystemTags() {
+        return systemTags;
+    }
+
+    public void setSystemTags(List<String> systemTags) {
+        this.systemTags = systemTags;
+    }
 
     public String getRequiredPrimaryStorageUuid() {
         return requiredPrimaryStorageUuid;
@@ -203,6 +212,10 @@ public class HostAllocatorSpec {
         spec.setAllowNoL3Networks(msg.isAllowNoL3Networks());
         spec.setRequiredBackupStorageUuid(msg.getRequiredBackupStorageUuid());
         spec.setRequiredPrimaryStorageUuid(msg.getRequiredPrimaryStorageUuid());
+        if (msg.getSystemTags() != null && !msg.getSystemTags().isEmpty()){
+            spec.setSystemTags(new ArrayList<String>(msg.getSystemTags()));
+        }
+
         return spec;
     }
 

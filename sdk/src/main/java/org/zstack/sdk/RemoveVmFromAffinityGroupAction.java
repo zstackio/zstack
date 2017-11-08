@@ -76,7 +76,7 @@ public class RemoveVmFromAffinityGroupAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
-        info.path = "/affinity-groups/{uuid}/vm-instances";
+        info.path = "/affinity-groups/{affinityGroupUuid}/vm-instances";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "";

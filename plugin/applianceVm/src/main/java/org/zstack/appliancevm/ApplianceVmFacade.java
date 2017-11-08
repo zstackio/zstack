@@ -38,4 +38,6 @@ public interface ApplianceVmFacade {
     void openFirewall(String applianceVmUuid, String l3uuid, List<ApplianceVmFirewallRuleInventory> rules, Completion completion);
 
     void removeFirewall(String applianceVmUuid, String l3uuid, List<ApplianceVmFirewallRuleInventory> rules, Completion completion);
+
+    void setApplianceVmSystemTags(String vmUuid, String applianceType);
 }

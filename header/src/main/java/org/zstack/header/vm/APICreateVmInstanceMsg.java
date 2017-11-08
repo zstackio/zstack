@@ -148,13 +148,6 @@ public class APICreateVmInstanceMsg extends APICreateMessage {
     private String description;
 
     /**
-     * @desc max length of 32 characters
-     * @optional
-     */
-    @APIParam(required = false, maxLength = 32, checkAccount = true)
-    private String affinityGroupUuid;
-
-    /**
      * @desc user-defined root password
      * @optional
      */
@@ -277,14 +270,6 @@ public class APICreateVmInstanceMsg extends APICreateMessage {
 
     public void setPrimaryStorageUuidForRootVolume(String primaryStorageUuidForRootVolume) {
         this.primaryStorageUuidForRootVolume = primaryStorageUuidForRootVolume;
-    }
-
-    public String getAffinityGroupUuid() {
-        return affinityGroupUuid;
-    }
-
-    public void setAffinityGroupUuid(String affinityGroupUuid) {
-        this.affinityGroupUuid = affinityGroupUuid;
     }
 
     public static APICreateVmInstanceMsg __example__() {
