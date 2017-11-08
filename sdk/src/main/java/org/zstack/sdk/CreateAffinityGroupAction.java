@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class CloneVmInstanceAction extends AbstractAction {
+public class CreateAffinityGroupAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public CloneVmInstanceResult value;
+        public CreateAffinityGroupResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -22,17 +22,23 @@ public class CloneVmInstanceAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vmInstanceUuid;
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String name;
 
-    @Param(required = false, validValues = {"InstantStart","JustCreate"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String strategy = "InstantStart";
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String description;
 
-    @Param(required = false, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String affinityGroupUuid;
+    @Param(required = true, validValues = {"antiAffinitySoft","antiAffinityHard"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String policy;
 
-    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List names;
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String version;
+
+    @Param(required = false, validValues = {"host"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String type;
+
+    @Param(required = false)
+    public java.lang.String resourceUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -55,8 +61,8 @@ public class CloneVmInstanceAction extends AbstractAction {
             return ret;
         }
         
-        CloneVmInstanceResult value = res.getResult(CloneVmInstanceResult.class);
-        ret.value = value == null ? new CloneVmInstanceResult() : value; 
+        CreateAffinityGroupResult value = res.getResult(CreateAffinityGroupResult.class);
+        ret.value = value == null ? new CreateAffinityGroupResult() : value; 
 
         return ret;
     }
@@ -81,11 +87,11 @@ public class CloneVmInstanceAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/vm-instances/{vmInstanceUuid}/actions";
+        info.httpMethod = "POST";
+        info.path = "/affinity-groups";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "cloneVmInstance";
+        info.parameterName = "params";
         return info;
     }
 
