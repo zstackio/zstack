@@ -195,6 +195,7 @@ public class SourceClassMap {
 			put("org.zstack.vrouterRoute.VRouterRouteEntryType", "org.zstack.sdk.VRouterRouteEntryType");
 			put("org.zstack.vrouterRoute.VRouterRouteTableInventory", "org.zstack.sdk.VRouterRouteTableInventory");
 			put("org.zstack.vrouterRoute.VirtualRouterVRouterRouteTableRefInventory", "org.zstack.sdk.VirtualRouterVRouterRouteTableRefInventory");
+			put("org.zstack.zwatch.alarm.APICreateAlarmMsg$ActionParam", "org.zstack.sdk.zwatch.alarm.ActionParam");
 			put("org.zstack.zwatch.alarm.AlarmActionInventory", "org.zstack.sdk.zwatch.alarm.AlarmActionInventory");
 			put("org.zstack.zwatch.alarm.AlarmInventory", "org.zstack.sdk.zwatch.alarm.AlarmInventory");
 			put("org.zstack.zwatch.alarm.AlarmLabelInventory", "org.zstack.sdk.zwatch.alarm.AlarmLabelInventory");
@@ -401,6 +402,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.VtepInventory", "org.zstack.network.l2.vxlan.vtep.VtepInventory");
 			put("org.zstack.sdk.WebhookInventory", "org.zstack.header.core.webhooks.WebhookInventory");
 			put("org.zstack.sdk.ZoneInventory", "org.zstack.header.zone.ZoneInventory");
+			put("org.zstack.sdk.zwatch.alarm.ActionParam", "org.zstack.zwatch.alarm.APICreateAlarmMsg$ActionParam");
 			put("org.zstack.sdk.zwatch.alarm.AlarmActionInventory", "org.zstack.zwatch.alarm.AlarmActionInventory");
 			put("org.zstack.sdk.zwatch.alarm.AlarmInventory", "org.zstack.zwatch.alarm.AlarmInventory");
 			put("org.zstack.sdk.zwatch.alarm.AlarmLabelInventory", "org.zstack.zwatch.alarm.AlarmLabelInventory");
