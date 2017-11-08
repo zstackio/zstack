@@ -21,6 +21,14 @@ CREATE TABLE  `zstack`.`SNSEmailEndpointVO` (
     PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE  `zstack`.`SNSHttpEndpointVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE,
+    `url` varchar(1024) NOT NULL,
+    `username` varchar(512) DEFAULT NULL,
+    `password` varchar(512) DEFAULT NULL,
+    PRIMARY KEY  (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE  `zstack`.`SNSApplicationPlatformVO` (
     `uuid` varchar(32) NOT NULL UNIQUE,
     `name` varchar(255) NOT NULL,
