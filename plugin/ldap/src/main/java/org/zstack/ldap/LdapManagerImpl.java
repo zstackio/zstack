@@ -492,7 +492,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
             reply.setInventories(result);
         }catch (Exception e){
             logger.error("query ldap entry fail", e);
-            reply.setError(operr("query ldap entry fail, %s", e.getMessage()));
+            reply.setError(operr("query ldap entry fail, %s", e.toString()));
         }
 
         bus.reply(msg, reply);
@@ -516,7 +516,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         LdapTemplateContextSource ldapTemplateContextSource = readLdapServerConfiguration();
         if (getPartialUserDnByUid(ldapTemplateContextSource, msg.getLdapUid()).equals("")) {
             throw new OperationFailureException(errf.instantiateErrorCode(LdapErrors.UNABLE_TO_GET_SPECIFIED_LDAP_UID,
-                    String.format("cannot find uid[%s] on ldap server[Address:%s, BaseDN:%s].", msg.getLdapUid(),
+                    String.format("cannot find %s[%s] on ldap server[Address:%s, BaseDN:%s].", LdapConstant.LDAP_UID_KEY, msg.getLdapUid(),
                             String.join(", ", ldapTemplateContextSource.getLdapContextSource().getUrls()),
                             ldapTemplateContextSource.getLdapContextSource().getBaseLdapPathAsString())));
         }

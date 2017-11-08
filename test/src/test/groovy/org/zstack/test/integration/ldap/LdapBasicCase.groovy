@@ -1,4 +1,4 @@
-package org.zstack.test.integration.ldap.forcase
+package org.zstack.test.integration.ldap
 
 import com.unboundid.ldap.sdk.LDAPInterface
 import com.unboundid.ldap.sdk.SearchResult
@@ -12,7 +12,6 @@ import org.zstack.sdk.ApiResult
 import org.zstack.sdk.LdapServerInventory
 import org.zstack.sdk.ZSClient
 import org.zstack.test.integration.ZStackTest
-import org.zstack.test.integration.ldap.Env
 import org.zstack.test.integration.stabilisation.StabilityTestCase
 import org.zstack.test.integration.stabilisation.TestCaseStabilityTest
 import org.zstack.testlib.EnvSpec
@@ -24,7 +23,7 @@ import org.zstack.testlib.Test
  */
 
 //base on TestLdapConn
-class LdapConnCase extends SubCase {
+class LdapBasicCase extends SubCase {
     EnvSpec env
 
     public static String DOMAIN_DSN = "dc=example,dc=com"
@@ -33,6 +32,7 @@ class LdapConnCase extends SubCase {
     public static EmbeddedLdapRule embeddedLdapRule = EmbeddedLdapRuleBuilder.newInstance().bindingToPort(1888).
             usingDomainDsn(DOMAIN_DSN).importingLdifs("users-import.ldif").build()
 
+    String LdapUuid
 
     @Override
     void setup() {
@@ -52,7 +52,14 @@ class LdapConnCase extends SubCase {
     @Override
     void test() {
         env.create {
-            testLdapConn()
+            testAddLdapServer()
+            testRepeatToAddLdapServer()
+
+            testGetLdapEntry()
+
+            testCreateLdapBinding()
+
+            testDeleteLdapServer()
         }
     }
 
@@ -83,7 +90,47 @@ class LdapConnCase extends SubCase {
         }
     }
 
-    void testLdapConn(){
+    void testGetLdapEntry(){
+
+        List result = getLdapEntry {
+            ldapFilter = "(cn=nobody)"
+        }
+        assert 0 == result.size()
+
+        result = getLdapEntry {
+            ldapFilter = "(objectClass=person)"
+        }
+        assert 3 == result.size()
+
+        String cn = "Micha Kops"
+        result = getLdapEntry {
+            ldapFilter = "(cn=${cn})"
+        }
+        assert 1 == result.size()
+        assert 1 == result.get(0).get("attributes").get("cn").get("values").size()
+        assert cn == result.get(0).get("attributes").get("cn").get("values").get(0)
+    }
+
+    void testCreateLdapBinding(){
+        String notExistCn = "nobody"
+        try{
+            createLdapBinding {
+                accountUuid = Test.currentEnvSpec.session.accountUuid
+                ldapUid = notExistCn
+            }
+            assert false
+        }catch (Throwable e){
+            assert true
+        }
+
+        String cn = "Micha Kops"
+        createLdapBinding {
+            accountUuid = Test.currentEnvSpec.session.accountUuid
+            ldapUid = cn
+        }
+    }
+
+    void testAddLdapServer(){
         LDAPInterface ldapConnection = this.getLdapConn()
         final SearchResult searchResult = ldapConnection.search(ZStackTest.DOMAIN_DSN, SearchScope.SUB, "(objectClass=person)")
         assert searchResult.getEntryCount() == 3
@@ -96,9 +143,9 @@ class LdapConnCase extends SubCase {
             username = ""
             password = ""
             encryption = "None"
-            sessionId = currentEnvSpec.session.uuid
+            sessionId = Test.currentEnvSpec.session.uuid
         } as LdapServerInventory
-        String LdapUuid = result.uuid
+        LdapUuid = result.uuid
 
         AddLdapServerAction addLdapServerAction = new AddLdapServerAction(
                 name : "ldap0",
@@ -114,79 +161,52 @@ class LdapConnCase extends SubCase {
         ApiResult res = ZSClient.call(addLdapServerAction)
         assert res.error == null
         assert null == res.getResult(AddLdapServerResult.class).inventory
-        /*
-        AddLdapServerAction.Result addLdapResult = addLdapServerAction.call()
-        assert null == addLdapResult.error
-        assert null == addLdapResult.value.inventory
-        */
+    }
 
+    void testRepeatToAddLdapServer(){
+
+        AddLdapServerAction addLdapServerAction = new AddLdapServerAction(
+                name : "ldap0",
+                description : "test-ldap0",
+                base : ZStackTest.DOMAIN_DSN,
+                url : "ldap://localhost:1888",
+                username : "",
+                password : "",
+                encryption : "None",
+                sessionId : Test.currentEnvSpec.session.uuid
+        )
+        assert null != addLdapServerAction.call().error
+
+        addLdapServerAction = new AddLdapServerAction(
+                name : "ldap0",
+                description : "test-ldap1",
+                base : ZStackTest.DOMAIN_DSN,
+                url : "ldap://172.20.11.200:1888",
+                username : "uid=admin,cn=users,cn=accounts,dc=mevoco,dc=com",
+                password : "password",
+                encryption : "TLS",
+                systemTags : ["ephemeral::validationOnly"],
+                sessionId : Test.currentEnvSpec.session.uuid
+        )
+        assert null != addLdapServerAction.call().error
+
+        addLdapServerAction = new AddLdapServerAction(
+                name : "ldap0",
+                description : "test-ldap1",
+                base : ZStackTest.DOMAIN_DSN,
+                url : "ldap://172.20.11.200:1888",
+                username : "uid=admin,cn=users,cn=accounts,dc=mevoco,dc=com",
+                password : "password",
+                encryption : "TLS",
+                sessionId : Test.currentEnvSpec.session.uuid
+        )
+        assert null != addLdapServerAction.call().error
+    }
+
+    void testDeleteLdapServer(){
         deleteLdapServer {
             uuid = LdapUuid
-            sessionId = currentEnvSpec.session.uuid
-        }
-        result = addLdapServer {
-            name = "ldap1"
-            description = "test-ldap1"
-            base = "dc=mevoco,dc=com"
-            url = "ldap://172.20.11.200:389"
-            username = "uid=admin,cn=users,cn=accounts,dc=mevoco,dc=com"
-            password = "password"
-            encryption = "TLS"
-            sessionId = currentEnvSpec.session.uuid
-        } as LdapServerInventory
-        LdapUuid = result.uuid
-        deleteLdapServer {
-            uuid = LdapUuid
-            sessionId = currentEnvSpec.session.uuid
-        }
-
-        result = addLdapServer {
-            name = "ldap2"
-            description = "test-ldap2"
-            base = "dc=mevoco,dc=com"
-            url = "ldap://172.20.11.200:389"
-            username = "uid=admin,cn=users,cn=accounts,dc=mevoco,dc=com"
-            password = "password"
-            encryption = "None"
-            sessionId = currentEnvSpec.session.uuid
-        } as LdapServerInventory
-        LdapUuid = result.uuid
-        deleteLdapServer {
-            uuid = LdapUuid
-            sessionId = currentEnvSpec.session.uuid
-        }
-
-        result = addLdapServer {
-            name = "ldap3"
-            description = "test-ldap3"
-            base = "dc=learnitguide,dc=net"
-            url = "ldap://172.20.12.176:389"
-            username = "cn=Manager,dc=learnitguide,dc=net"
-            password = "password"
-            encryption = "None"
-            sessionId = currentEnvSpec.session.uuid
-        } as LdapServerInventory
-        LdapUuid = result.uuid
-        deleteLdapServer {
-            uuid = LdapUuid
-            sessionId = currentEnvSpec.session.uuid
-        }
-
-
-        result = addLdapServer {
-            name = "ldap4"
-            description = "test-ldap4"
-            base = "dc=mevoco,dc=com"
-            url = "ldap://172.20.11.200:389"
-            username = "uid=admin,cn=users,cn=accounts,dc=mevoco,dc=com"
-            password = "password"
-            encryption = "None"
-            sessionId = currentEnvSpec.session.uuid
-        } as LdapServerInventory
-        LdapUuid = result.uuid
-        deleteLdapServer {
-            uuid = LdapUuid
-            sessionId = currentEnvSpec.session.uuid
+            sessionId = Test.currentEnvSpec.session.uuid
         }
     }
 }
