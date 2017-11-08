@@ -7,13 +7,13 @@ doc {
 	title "在这里输入结构的名称"
 
 	field {
-		name "vipUuid"
+		name "uuid"
 		desc "VIP UUID"
 		type "String"
 		since "0.6"
 	}
 	field {
-		name "protcol"
+		name "protocol"
 		desc ""
 		type "String"
 		since "0.6"

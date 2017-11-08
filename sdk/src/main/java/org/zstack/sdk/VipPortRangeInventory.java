@@ -2,20 +2,20 @@ package org.zstack.sdk;
 
 public class VipPortRangeInventory  {
 
-    public java.lang.String vipUuid;
-    public void setVipUuid(java.lang.String vipUuid) {
-        this.vipUuid = vipUuid;
+    public java.lang.String uuid;
+    public void setUuid(java.lang.String uuid) {
+        this.uuid = uuid;
     }
-    public java.lang.String getVipUuid() {
-        return this.vipUuid;
+    public java.lang.String getUuid() {
+        return this.uuid;
     }
 
-    public java.lang.String protcol;
-    public void setProtcol(java.lang.String protcol) {
-        this.protcol = protcol;
+    public java.lang.String protocol;
+    public void setProtocol(java.lang.String protocol) {
+        this.protocol = protocol;
     }
-    public java.lang.String getProtcol() {
-        return this.protcol;
+    public java.lang.String getProtocol() {
+        return this.protocol;
     }
 
     public java.util.List<String> usedPorts;

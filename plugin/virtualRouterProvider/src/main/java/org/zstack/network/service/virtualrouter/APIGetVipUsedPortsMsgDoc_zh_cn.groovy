@@ -13,8 +13,8 @@ doc {
         request {
 			url "GET /v1/vips/{uuid}/usedports"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header(Authorization: 'OAuth the-session-uuid')
 
             clz APIGetVipUsedPortsMsg.class
 
