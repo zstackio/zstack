@@ -4,6 +4,7 @@ import org.apache.commons.lang.StringUtils
 import org.reflections.Reflections
 import org.zstack.core.Platform
 import org.zstack.header.exception.CloudRuntimeException
+import org.zstack.header.message.Message
 import org.zstack.header.query.APIQueryReply
 import org.zstack.header.rest.APINoSee
 import org.zstack.header.rest.RestResponse
@@ -34,6 +35,8 @@ class SdkDataStructureGenerator implements SdkTemplate {
     SdkDataStructureGenerator() {
         Reflections reflections = Platform.getReflections()
         responseClasses = reflections.getTypesAnnotatedWith(RestResponse.class)
+        laterResolvedClasses.addAll(reflections.getTypesAnnotatedWith(SDK.class)
+                .findAll() { !Message.class.isAssignableFrom(it) })
     }
 
     @Override
@@ -102,7 +105,7 @@ ${dstToSrc.join("\n")}
                 resolveClass(clz)
                 laterResolvedClasses.remove(clz)
             } catch (Throwable t) {
-                throw new CloudRuntimeException("failed to generate SDK for the class[${clz.name}]", t)
+                throw new CloudRuntimeException("failed to generate SDK for the class[${clz.getName()}]", t)
             }
         }
 
@@ -112,7 +115,7 @@ ${dstToSrc.join("\n")}
     def getTargetClassName(Class clz) {
         SDK at = clz.getAnnotation(SDK.class)
         if (at == null || at.sdkClassName().isEmpty()) {
-            return clz.simpleName
+            return clz.getSimpleName()
         }
 
         return at.sdkClassName()
@@ -143,7 +146,7 @@ ${dstToSrc.join("\n")}
 
                 if (isZStackClass(f.type)) {
                     SDK at = f.type.getAnnotation(SDK.class)
-                    String simpleName = at != null && !at.sdkClassName().isEmpty() ? at.sdkClassName() : f.type.simpleName
+                    String simpleName = at != null && !at.sdkClassName().isEmpty() ? at.sdkClassName() : f.type.getSimpleName()
                     imports.add("${SdkApiTemplate.getPackageName(f.type)}.${simpleName}")
                 }
                 output.add(makeFieldText(f.name, f))
@@ -183,14 +186,14 @@ ${output.join("\n")}
     }
 
     def isZStackClass(Class clz) {
-        if (clz.name.startsWith("java.") || int.class == clz || long.class == clz
+        if (clz.getName().startsWith("java.") || int.class == clz || long.class == clz
                 || short.class == clz || char.class == clz || boolean.class == clz || float.class == clz
                 || double.class == clz) {
             return false
-        } else if (clz.canonicalName.startsWith("org.zstack")) {
+        } else if (clz.getCanonicalName().startsWith("org.zstack")) {
             return true
         } else {
-            throw new CloudRuntimeException("${clz.name} is neither JRE class nor ZStack class")
+            throw new CloudRuntimeException("${clz.getName()} is neither JRE class nor ZStack class")
         }
     }
 
@@ -258,7 +261,7 @@ ${output.join("\n")}
         fields.each { String name, Field f ->
             if (isZStackClass(f.type)) {
                 SDK sdkat = f.type.getAnnotation(SDK.class)
-                String simpleName = sdkat != null && !sdkat.sdkClassName().isEmpty() ? sdkat.sdkClassName() : f.type.simpleName
+                String simpleName = sdkat != null && !sdkat.sdkClassName().isEmpty() ? sdkat.sdkClassName() : f.type.getSimpleName()
                 imports.add("${SdkApiTemplate.getPackageName(f.type)}.${simpleName}")
             }
 

@@ -64,6 +64,10 @@ class SdkApiTemplate implements SdkTemplate {
     static String getPackageName(Class clz) {
         String packageName = "org.zstack.sdk"
 
+        if (clz.getPackage() == null) {
+            return packageName
+        }
+
         for (Map.Entry<Package, SDKPackage> e : packageSDKAnnotations.entrySet()) {
             String parentName = e.key.getName()
             String pname = clz.getPackage().getName()
