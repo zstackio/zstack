@@ -36,7 +36,7 @@ public class APIQueryVipReply extends APIQueryReply {
         inventory.setNetmask("255.255.0.0");
         inventory.setIp("192.168.0.1");
         inventory.setIpRangeUuid(uuid());
-        inventory.setPeerL3NetworkUuids(Arrays.asList());
+        inventory.setPeerL3NetworkUuids(Arrays.asList(uuid()));
         inventory.setState(VipState.Enabled.toString());
 
         reply.setInventories(list(inventory));
