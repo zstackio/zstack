@@ -48,6 +48,7 @@ class LdapUtil {
 
         LdapTemplate ldapTemplate;
         ldapTemplate = new LdapTemplate();
+        ldapTemplate.setIgnorePartialResultException(true);
         ldapTemplate.setContextSource(ldapContextSource);
 
         try {

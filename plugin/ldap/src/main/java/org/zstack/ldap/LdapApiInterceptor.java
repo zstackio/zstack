@@ -6,6 +6,7 @@ import org.springframework.ldap.filter.AndFilter;
 import org.springframework.ldap.filter.EqualsFilter;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
@@ -43,6 +44,8 @@ public class LdapApiInterceptor implements ApiMessageInterceptor {
             validate((APIAddLdapServerMsg) msg);
         } else if(msg instanceof APIUpdateLdapServerMsg){
             validate((APIUpdateLdapServerMsg) msg);
+        } else if(msg instanceof APICreateLdapBindingMsg){
+            validate((APICreateLdapBindingMsg) msg);
         }
 
         setServiceId(msg);
@@ -72,6 +75,12 @@ public class LdapApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(APIUpdateLdapServerMsg msg){
         validateLdapType(msg.getSystemTags());
+    }
+
+    private void validate(APICreateLdapBindingMsg msg){
+        if(!Q.New(LdapServerVO.class).isExists()){
+            throw new ApiMessageInterceptionException(argerr("There is no ldap server in the system, Please add a ldap server first."));
+        }
     }
 
     private void validateLdapType(List<String> systemTags){
