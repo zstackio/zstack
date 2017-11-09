@@ -343,6 +343,15 @@ public class KVMAgentCommands {
     public static class CreateBridgeCmd extends AgentCommand {
         private String physicalInterfaceName;
         private String bridgeName;
+        private String l2NetworkUuid;
+
+        public String getL2NetworkUuid() {
+            return l2NetworkUuid;
+        }
+
+        public void setL2NetworkUuid(String l2NetworkUuid) {
+            this.l2NetworkUuid = l2NetworkUuid;
+        }
 
         public String getPhysicalInterfaceName() {
             return physicalInterfaceName;

@@ -92,6 +92,7 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
         cmd.setVtepIp(vtepIp);
         cmd.setBridgeName(makeBridgeName(l2vxlan.getVni()));
         cmd.setVni(l2vxlan.getVni());
+        cmd.setL2NetworkUuid(l2Network.getUuid());
         cmd.setPeers(peers);
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
