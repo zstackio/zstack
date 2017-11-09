@@ -45,7 +45,16 @@ public class VxlanKvmAgentCommands {
         private String bridgeName;
         private String vtepIp;
         private Integer vni;
+        private String l2NetworkUuid;
         private List<String> peers;
+
+        public String getL2NetworkUuid() {
+            return l2NetworkUuid;
+        }
+
+        public void setL2NetworkUuid(String l2NetworkUuid) {
+            this.l2NetworkUuid = l2NetworkUuid;
+        }
 
         public String getBridgeName() {
             return bridgeName;

@@ -47,6 +47,7 @@ public class KVMRealizeL2NoVlanNetworkBackend implements L2NetworkRealizationExt
         final CreateBridgeCmd cmd = new CreateBridgeCmd();
         cmd.setPhysicalInterfaceName(l2Network.getPhysicalInterface());
         cmd.setBridgeName(makeBridgeName(l2Network.getPhysicalInterface()));
+        cmd.setL2NetworkUuid(l2Network.getUuid());
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setCommand(cmd);

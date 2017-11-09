@@ -50,6 +50,7 @@ public class KVMRealizeL2VlanNetworkBackend implements L2NetworkRealizationExten
         cmd.setPhysicalInterfaceName(l2Network.getPhysicalInterface());
         cmd.setBridgeName(makeBridgeName(l2vlan.getPhysicalInterface(), l2vlan.getVlan()));
         cmd.setVlan(l2vlan.getVlan());
+        cmd.setL2NetworkUuid(l2Network.getUuid());
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setHostUuid(hostUuid);
