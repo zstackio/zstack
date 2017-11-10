@@ -66,7 +66,7 @@ CREATE TABLE  `zstack`.`SNSTopicVO` (
     PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE  `zstack`.`SNSAlarmTextTemplateVO` (
+CREATE TABLE  `zstack`.`SNSTextTemplateVO` (
     `uuid` varchar(32) NOT NULL UNIQUE,
     `name` varchar(255) NOT NULL,
     `description` varchar(2048) DEFAULT NULL,
