@@ -126,7 +126,7 @@ CREATE TABLE  `zstack`.`EventSubscriptionActionVO` (
     `subscriptionUuid` varchar(32) NOT NULL,
     `actionUuid` varchar(32) NOT NULL,
     `actionType` varchar(128) NOT NULL,
-    PRIMARY KEY  (`alarmUuid`, `actionUuid`)
+    PRIMARY KEY  (`subscriptionUuid`, `actionUuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE  `zstack`.`EventSubscriptionLabelVO` (
