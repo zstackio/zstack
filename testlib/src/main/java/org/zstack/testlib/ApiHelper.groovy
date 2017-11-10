@@ -17758,8 +17758,8 @@ trait ApiHelper {
     }
 
 
-    def createSNSAlarmTextTemplate(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.zwatch.alarm.sns.CreateSNSAlarmTextTemplateAction.class) Closure c) {
-        def a = new org.zstack.sdk.zwatch.alarm.sns.CreateSNSAlarmTextTemplateAction()
+    def subscribeEvent(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.zwatch.alarm.SubscribeEventAction.class) Closure c) {
+        def a = new org.zstack.sdk.zwatch.alarm.SubscribeEventAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -17785,8 +17785,8 @@ trait ApiHelper {
     }
 
 
-    def deleteSNSAlarmTextTemplate(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.zwatch.alarm.sns.DeleteSNSAlarmTextTemplateAction.class) Closure c) {
-        def a = new org.zstack.sdk.zwatch.alarm.sns.DeleteSNSAlarmTextTemplateAction()
+    def unsubscribeEvent(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.zwatch.alarm.UnsubscribeEventAction.class) Closure c) {
+        def a = new org.zstack.sdk.zwatch.alarm.UnsubscribeEventAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -17812,8 +17812,62 @@ trait ApiHelper {
     }
 
 
-    def updateSNSAlarmTextTemplate(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.zwatch.alarm.sns.UpdateSNSAlarmTextTemplateAction.class) Closure c) {
-        def a = new org.zstack.sdk.zwatch.alarm.sns.UpdateSNSAlarmTextTemplateAction()
+    def createSNSTextTemplate(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.zwatch.alarm.sns.CreateSNSTextTemplateAction.class) Closure c) {
+        def a = new org.zstack.sdk.zwatch.alarm.sns.CreateSNSTextTemplateAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def deleteSNSTextTemplate(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.zwatch.alarm.sns.DeleteSNSTextTemplateAction.class) Closure c) {
+        def a = new org.zstack.sdk.zwatch.alarm.sns.DeleteSNSTextTemplateAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def updateSNSTextTemplate(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.zwatch.alarm.sns.UpdateSNSTextTemplateAction.class) Closure c) {
+        def a = new org.zstack.sdk.zwatch.alarm.sns.UpdateSNSTextTemplateAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a

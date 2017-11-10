@@ -4,13 +4,13 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateSNSAlarmTextTemplateAction extends AbstractAction {
+public class UpdateSNSTextTemplateAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public CreateSNSAlarmTextTemplateResult value;
+        public UpdateSNSTextTemplateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -23,23 +23,20 @@ public class CreateSNSAlarmTextTemplateAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String uuid;
+
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
 
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String applicationPlatformType;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String template;
 
-    @Param(required = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.Boolean defaultTemplate;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -62,8 +59,8 @@ public class CreateSNSAlarmTextTemplateAction extends AbstractAction {
             return ret;
         }
         
-        CreateSNSAlarmTextTemplateResult value = res.getResult(CreateSNSAlarmTextTemplateResult.class);
-        ret.value = value == null ? new CreateSNSAlarmTextTemplateResult() : value; 
+        UpdateSNSTextTemplateResult value = res.getResult(UpdateSNSTextTemplateResult.class);
+        ret.value = value == null ? new UpdateSNSTextTemplateResult() : value; 
 
         return ret;
     }
@@ -88,11 +85,11 @@ public class CreateSNSAlarmTextTemplateAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/zwatch/alarms/sns/text-templates";
+        info.httpMethod = "PUT";
+        info.path = "/zwatch/alarms/sns/text-templates/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "updateSNSTextTemplate";
         return info;
     }
 

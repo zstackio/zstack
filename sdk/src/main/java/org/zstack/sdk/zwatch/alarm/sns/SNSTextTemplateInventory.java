@@ -2,7 +2,7 @@ package org.zstack.sdk.zwatch.alarm.sns;
 
 
 
-public class SNSAlarmTextTemplateInventory  {
+public class SNSTextTemplateInventory  {
 
     public java.lang.String uuid;
     public void setUuid(java.lang.String uuid) {

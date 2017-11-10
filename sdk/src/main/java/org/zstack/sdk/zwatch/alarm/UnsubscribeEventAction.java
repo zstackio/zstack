@@ -1,16 +1,16 @@
-package org.zstack.sdk.zwatch.alarm.sns;
+package org.zstack.sdk.zwatch.alarm;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class UpdateSNSAlarmTextTemplateAction extends AbstractAction {
+public class UnsubscribeEventAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public UpdateSNSAlarmTextTemplateResult value;
+        public UnsubscribeEventResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,17 +26,8 @@ public class UpdateSNSAlarmTextTemplateAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String template;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Boolean defaultTemplate;
+    @Param(required = false)
+    public java.lang.String deleteMode = "Permissive";
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -59,8 +50,8 @@ public class UpdateSNSAlarmTextTemplateAction extends AbstractAction {
             return ret;
         }
         
-        UpdateSNSAlarmTextTemplateResult value = res.getResult(UpdateSNSAlarmTextTemplateResult.class);
-        ret.value = value == null ? new UpdateSNSAlarmTextTemplateResult() : value; 
+        UnsubscribeEventResult value = res.getResult(UnsubscribeEventResult.class);
+        ret.value = value == null ? new UnsubscribeEventResult() : value; 
 
         return ret;
     }
@@ -85,11 +76,11 @@ public class UpdateSNSAlarmTextTemplateAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/zwatch/alarms/sns/text-templates/{uuid}/actions";
+        info.httpMethod = "DELETE";
+        info.path = "/zwatch/events/subscriptions/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "updateSNSAlarmTextTemplate";
+        info.parameterName = "";
         return info;
     }
 

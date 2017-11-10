@@ -200,7 +200,7 @@ public class SourceClassMap {
 			put("org.zstack.zwatch.alarm.AlarmInventory", "org.zstack.sdk.zwatch.alarm.AlarmInventory");
 			put("org.zstack.zwatch.alarm.AlarmLabelInventory", "org.zstack.sdk.zwatch.alarm.AlarmLabelInventory");
 			put("org.zstack.zwatch.alarm.AlarmStatus", "org.zstack.sdk.zwatch.alarm.AlarmStatus");
-			put("org.zstack.zwatch.alarm.sns.SNSAlarmTextTemplateInventory", "org.zstack.sdk.zwatch.alarm.sns.SNSAlarmTextTemplateInventory");
+			put("org.zstack.zwatch.alarm.sns.SNSTextTemplateInventory", "org.zstack.sdk.zwatch.alarm.sns.SNSTextTemplateInventory");
 			put("org.zstack.zwatch.datatype.Datapoint", "org.zstack.sdk.zwatch.datatype.Datapoint");
 			put("org.zstack.zwatch.datatype.EventData", "org.zstack.sdk.zwatch.datatype.EventData");
 			put("org.zstack.zwatch.datatype.EventFamily$EmergencyLevel", "org.zstack.sdk.zwatch.datatype.EmergencyLevel");
@@ -407,7 +407,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.zwatch.alarm.AlarmInventory", "org.zstack.zwatch.alarm.AlarmInventory");
 			put("org.zstack.sdk.zwatch.alarm.AlarmLabelInventory", "org.zstack.zwatch.alarm.AlarmLabelInventory");
 			put("org.zstack.sdk.zwatch.alarm.AlarmStatus", "org.zstack.zwatch.alarm.AlarmStatus");
-			put("org.zstack.sdk.zwatch.alarm.sns.SNSAlarmTextTemplateInventory", "org.zstack.zwatch.alarm.sns.SNSAlarmTextTemplateInventory");
+			put("org.zstack.sdk.zwatch.alarm.sns.SNSTextTemplateInventory", "org.zstack.zwatch.alarm.sns.SNSTextTemplateInventory");
 			put("org.zstack.sdk.zwatch.datatype.Datapoint", "org.zstack.zwatch.datatype.Datapoint");
 			put("org.zstack.sdk.zwatch.datatype.EmergencyLevel", "org.zstack.zwatch.datatype.EventFamily$EmergencyLevel");
 			put("org.zstack.sdk.zwatch.datatype.EventData", "org.zstack.zwatch.datatype.EventData");

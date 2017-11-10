@@ -4,13 +4,13 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class DeleteSNSAlarmTextTemplateAction extends AbstractAction {
+public class DeleteSNSTextTemplateAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public DeleteSNSAlarmTextTemplateResult value;
+        public DeleteSNSTextTemplateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeleteSNSAlarmTextTemplateAction extends AbstractAction {
             return ret;
         }
         
-        DeleteSNSAlarmTextTemplateResult value = res.getResult(DeleteSNSAlarmTextTemplateResult.class);
-        ret.value = value == null ? new DeleteSNSAlarmTextTemplateResult() : value; 
+        DeleteSNSTextTemplateResult value = res.getResult(DeleteSNSTextTemplateResult.class);
+        ret.value = value == null ? new DeleteSNSTextTemplateResult() : value; 
 
         return ret;
     }
