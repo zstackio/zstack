@@ -4,6 +4,30 @@ import org.zstack.sdk.zwatch.datatype.EmergencyLevel;
 
 public class EventData  {
 
+    public java.lang.String LABEL_RESOURCE_ID;
+    public void setLABEL_RESOURCE_ID(java.lang.String LABEL_RESOURCE_ID) {
+        this.LABEL_RESOURCE_ID = LABEL_RESOURCE_ID;
+    }
+    public java.lang.String getLABEL_RESOURCE_ID() {
+        return this.LABEL_RESOURCE_ID;
+    }
+
+    public java.lang.String LABEL_EMERGENCY_LEVEL;
+    public void setLABEL_EMERGENCY_LEVEL(java.lang.String LABEL_EMERGENCY_LEVEL) {
+        this.LABEL_EMERGENCY_LEVEL = LABEL_EMERGENCY_LEVEL;
+    }
+    public java.lang.String getLABEL_EMERGENCY_LEVEL() {
+        return this.LABEL_EMERGENCY_LEVEL;
+    }
+
+    public java.lang.String LABEL_IS_API;
+    public void setLABEL_IS_API(java.lang.String LABEL_IS_API) {
+        this.LABEL_IS_API = LABEL_IS_API;
+    }
+    public java.lang.String getLABEL_IS_API() {
+        return this.LABEL_IS_API;
+    }
+
     public java.lang.String namespace;
     public void setNamespace(java.lang.String namespace) {
         this.namespace = namespace;
