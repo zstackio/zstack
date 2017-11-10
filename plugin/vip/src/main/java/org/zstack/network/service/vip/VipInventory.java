@@ -39,6 +39,8 @@ import java.util.stream.Collectors;
 @ExpandedQueries({
         @ExpandedQuery(expandedField = "l3Network", inventoryClass = L3NetworkInventory.class,
                 foreignKey = "l3NetworkUuid", expandedInventoryKey = "uuid"),
+        @ExpandedQuery(expandedField = "peerL3Network", inventoryClass = VipPeerL3NetworkRefInventory.class,
+                foreignKey = "uuid", expandedInventoryKey = "vipUuid"),
 })
 public class VipInventory implements Serializable {
     /**
