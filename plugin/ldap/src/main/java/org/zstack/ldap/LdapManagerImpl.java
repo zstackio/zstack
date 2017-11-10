@@ -259,7 +259,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         }
 
         AndFilter filter = new AndFilter();
-        filter.and(new EqualsFilter(LdapConstant.MEMBER_KEY, ldapUid));
+        filter.and(new EqualsFilter(LdapUtil.getMemberKey(), ldapUid));
 
         List<Object> groupList = ldapTemplate.search("", filter.toString(), new AbstractContextMapper<Object>() {
             @Override
@@ -430,6 +430,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         evt.setInventory(inv);
 
         this.saveLdapCleanBindingFilterTag(msg.getSystemTags(), ldapServerVO.getUuid());
+        this.saveLdapServerTypeTag(msg.getSystemTags(), ldapServerVO.getUuid());
 
         bus.publish(evt);
     }
@@ -447,6 +448,22 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         SystemTagCreator creator = LdapSystemTags.LDAP_CLEAN_BINDING_FILTER.newSystemTagCreator(uuid);
         creator.recreate = true;
         creator.setTagByTokens(map(CollectionDSL.e(LdapSystemTags.LDAP_CLEAN_BINDING_FILTER_TOKEN, filter)));
+        creator.create();
+    }
+
+    private void saveLdapServerTypeTag(List<String> systemTags, String uuid) {
+        if(systemTags == null || systemTags.isEmpty()) {
+            return;
+        }
+
+        String tagValue = SystemTagUtils.findTagValue(systemTags, LdapSystemTags.LDAP_SERVER_TYPE, LdapSystemTags.LDAP_SERVER_TYPE_TOKEN);
+        if(StringUtils.isEmpty(tagValue)){
+            return;
+        }
+
+        SystemTagCreator creator = LdapSystemTags.LDAP_SERVER_TYPE.newSystemTagCreator(uuid);
+        creator.recreate = true;
+        creator.setTagByTokens(map(CollectionDSL.e(LdapSystemTags.LDAP_SERVER_TYPE_TOKEN, tagValue)));
         creator.create();
     }
 
@@ -631,6 +648,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         evt.setInventory(LdapServerInventory.valueOf(ldapServerVO));
 
         this.saveLdapCleanBindingFilterTag(msg.getSystemTags(), ldapServerVO.getUuid());
+        this.saveLdapServerTypeTag(msg.getSystemTags(), ldapServerVO.getUuid());
 
         bus.publish(evt);
     }

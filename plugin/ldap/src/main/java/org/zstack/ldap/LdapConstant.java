@@ -1,15 +1,23 @@
 package org.zstack.ldap;
 
-/**
- */
 public interface LdapConstant {
-    public static final String SERVICE_ID = "ldap";
+    String SERVICE_ID = "ldap";
 
-    public static final String LDAP_UID_KEY = "cn";
+    String LDAP_UID_KEY = "cn";
 
-    public static final String MEMBER_KEY = "member";
+    // Empty default
+    interface WindowsAD{
+        String TYPE = "WindowsAD";
+        String MEMBER_KEY = "member";
+    }
 
-    public static final String[] QUERY_LDAP_ENTRY_MUST_RETURN_ATTRIBUTES = {"cn","name","displayname","userprincipalname","objectclass"};
+    interface OpenLdap{
+        String TYPE = "OpenLdap";
+		String MEMBER_KEY = "uniqueMember";
+    }
 
-    public static final String QUERY_LDAP_ENTRY_RETURN_ATTRIBUTE_SEPARATOR = ",";
+    String[] QUERY_LDAP_ENTRY_MUST_RETURN_ATTRIBUTES = {"cn","name","distinguishedname","displayname","userprincipalname","objectclass"};
+
+    String QUERY_LDAP_ENTRY_RETURN_ATTRIBUTE_SEPARATOR = ",";
+
 }
