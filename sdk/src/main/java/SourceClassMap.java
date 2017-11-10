@@ -200,6 +200,10 @@ public class SourceClassMap {
 			put("org.zstack.zwatch.alarm.AlarmInventory", "org.zstack.sdk.zwatch.alarm.AlarmInventory");
 			put("org.zstack.zwatch.alarm.AlarmLabelInventory", "org.zstack.sdk.zwatch.alarm.AlarmLabelInventory");
 			put("org.zstack.zwatch.alarm.AlarmStatus", "org.zstack.sdk.zwatch.alarm.AlarmStatus");
+			put("org.zstack.zwatch.alarm.EventSubscriptionActionInventory", "org.zstack.sdk.zwatch.alarm.EventSubscriptionActionInventory");
+			put("org.zstack.zwatch.alarm.EventSubscriptionInventory", "org.zstack.sdk.zwatch.alarm.EventSubscriptionInventory");
+			put("org.zstack.zwatch.alarm.EventSubscriptionLabelInventory", "org.zstack.sdk.zwatch.alarm.EventSubscriptionLabelInventory");
+			put("org.zstack.zwatch.alarm.EventSubscriptionState", "org.zstack.sdk.zwatch.alarm.EventSubscriptionState");
 			put("org.zstack.zwatch.alarm.sns.SNSTextTemplateInventory", "org.zstack.sdk.zwatch.alarm.sns.SNSTextTemplateInventory");
 			put("org.zstack.zwatch.datatype.Datapoint", "org.zstack.sdk.zwatch.datatype.Datapoint");
 			put("org.zstack.zwatch.datatype.EventData", "org.zstack.sdk.zwatch.datatype.EventData");
@@ -407,6 +411,10 @@ public class SourceClassMap {
 			put("org.zstack.sdk.zwatch.alarm.AlarmInventory", "org.zstack.zwatch.alarm.AlarmInventory");
 			put("org.zstack.sdk.zwatch.alarm.AlarmLabelInventory", "org.zstack.zwatch.alarm.AlarmLabelInventory");
 			put("org.zstack.sdk.zwatch.alarm.AlarmStatus", "org.zstack.zwatch.alarm.AlarmStatus");
+			put("org.zstack.sdk.zwatch.alarm.EventSubscriptionActionInventory", "org.zstack.zwatch.alarm.EventSubscriptionActionInventory");
+			put("org.zstack.sdk.zwatch.alarm.EventSubscriptionInventory", "org.zstack.zwatch.alarm.EventSubscriptionInventory");
+			put("org.zstack.sdk.zwatch.alarm.EventSubscriptionLabelInventory", "org.zstack.zwatch.alarm.EventSubscriptionLabelInventory");
+			put("org.zstack.sdk.zwatch.alarm.EventSubscriptionState", "org.zstack.zwatch.alarm.EventSubscriptionState");
 			put("org.zstack.sdk.zwatch.alarm.sns.SNSTextTemplateInventory", "org.zstack.zwatch.alarm.sns.SNSTextTemplateInventory");
 			put("org.zstack.sdk.zwatch.datatype.Datapoint", "org.zstack.zwatch.datatype.Datapoint");
 			put("org.zstack.sdk.zwatch.datatype.EmergencyLevel", "org.zstack.zwatch.datatype.EventFamily$EmergencyLevel");

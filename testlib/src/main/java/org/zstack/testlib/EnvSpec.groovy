@@ -27,6 +27,8 @@ import org.zstack.image.ImageGlobalConfig
 import org.zstack.sdk.*
 import org.zstack.sdk.zwatch.alarm.CreateAlarmAction
 import org.zstack.sdk.zwatch.alarm.DeleteAlarmAction
+import org.zstack.sdk.zwatch.alarm.SubscribeEventAction
+import org.zstack.sdk.zwatch.alarm.UnsubscribeEventAction
 import org.zstack.storage.volume.VolumeGlobalConfig
 import org.zstack.utils.DebugUtils
 import org.zstack.utils.data.Pair
@@ -111,6 +113,7 @@ class EnvSpec implements Node {
             [CreateSNSEmailEndpointAction.metaClass, CreateSNSEmailEndpointAction.Result.metaClass, DeleteSNSApplicationEndpointAction.class],
             [CreateSNSTopicAction.metaClass, CreateSNSTopicAction.Result.metaClass, DeleteSNSTopicAction.class],
             [CreateAlarmAction.metaClass, CreateAlarmAction.Result.metaClass, DeleteAlarmAction.class],
+            [SubscribeEventAction.metaClass, SubscribeEventAction.Result.metaClass, UnsubscribeEventAction.class],
     ]
 
     static Closure GLOBAL_DELETE_HOOK
