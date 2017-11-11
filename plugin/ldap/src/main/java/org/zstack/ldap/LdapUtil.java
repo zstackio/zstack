@@ -6,6 +6,7 @@ import org.springframework.ldap.core.support.DefaultTlsDirContextAuthenticationS
 import org.springframework.ldap.core.support.LdapContextSource;
 import org.zstack.core.db.Q;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.tag.PatternedSystemTag;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import javax.net.ssl.HostnameVerifier;
@@ -76,5 +77,16 @@ class LdapUtil {
 
         // default WindowsAD
         return LdapConstant.WindowsAD.MEMBER_KEY;
+    }
+
+    public static String getLdapUseAsLoginName(){
+        String ldapServerUuid = Q.New(LdapServerVO.class).select(LdapServerVO_.uuid).findValue();
+
+        PatternedSystemTag tag = LdapSystemTags.LDAP_USE_AS_LOGIN_NAME;
+        if(!tag.hasTag(ldapServerUuid)){
+            return LdapConstant.LDAP_UID_KEY;
+        }
+
+        return tag.getTokenByResourceUuid(ldapServerUuid, LdapSystemTags.LDAP_USE_AS_LOGIN_NAME_TOKEN);
     }
 }

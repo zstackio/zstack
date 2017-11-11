@@ -46,6 +46,8 @@ public class LdapApiInterceptor implements ApiMessageInterceptor {
             validate((APIUpdateLdapServerMsg) msg);
         } else if(msg instanceof APICreateLdapBindingMsg){
             validate((APICreateLdapBindingMsg) msg);
+        } else if(msg instanceof APIGetLdapEntryMsg){
+            validate((APIGetLdapEntryMsg) msg);
         }
 
         setServiceId(msg);
@@ -78,9 +80,11 @@ public class LdapApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APICreateLdapBindingMsg msg){
-        if(!Q.New(LdapServerVO.class).isExists()){
-            throw new ApiMessageInterceptionException(argerr("There is no ldap server in the system, Please add a ldap server first."));
-        }
+        validateLdapServerExist();
+    }
+
+    private void validate(APIGetLdapEntryMsg msg){
+        validateLdapServerExist();
     }
 
     private void validateLdapType(List<String> systemTags){
@@ -97,6 +101,12 @@ public class LdapApiInterceptor implements ApiMessageInterceptor {
             throw new ApiMessageInterceptionException(
                     argerr("Wrong LdapServerType[%s], valid values: [%,%s]", type, LdapConstant.OpenLdap.TYPE, LdapConstant.WindowsAD.TYPE)
             );
+        }
+    }
+
+    private void validateLdapServerExist(){
+        if(!Q.New(LdapServerVO.class).isExists()){
+            throw new ApiMessageInterceptionException(argerr("There is no ldap server in the system, Please add a ldap server first."));
         }
     }
 

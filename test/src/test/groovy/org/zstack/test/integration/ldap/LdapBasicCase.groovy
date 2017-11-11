@@ -10,6 +10,7 @@ import org.zstack.sdk.AddLdapServerAction
 import org.zstack.sdk.AddLdapServerResult
 import org.zstack.sdk.ApiResult
 import org.zstack.sdk.LdapServerInventory
+import org.zstack.sdk.LogInByLdapAction
 import org.zstack.sdk.ZSClient
 import org.zstack.test.integration.ZStackTest
 import org.zstack.test.integration.stabilisation.StabilityTestCase
@@ -59,6 +60,8 @@ class LdapBasicCase extends SubCase {
 
             testCreateLdapBinding()
 
+            testLoginByLdap()
+
             testDeleteLdapServer()
         }
     }
@@ -90,6 +93,32 @@ class LdapBasicCase extends SubCase {
         }
     }
 
+    void testLoginByLdap(){
+
+        String notExistCn = "nobody"
+        String cn = "Micha Kops"
+        String wrongPassword = "error"
+        String rightPassword = "password"
+
+        LogInByLdapAction action = new LogInByLdapAction(
+                uid: notExistCn,
+                password: rightPassword
+        )
+        assert null != action.call().error
+
+        action = new LogInByLdapAction(
+                uid: cn,
+                password: wrongPassword
+        )
+        assert null != action.call().error
+
+
+        logInByLdap {
+            uid = cn
+            password = rightPassword
+        }
+    }
+
     void testGetLdapEntry(){
 
         List result = getLdapEntry {
@@ -107,8 +136,15 @@ class LdapBasicCase extends SubCase {
             ldapFilter = "(cn=${cn})"
         }
         assert 1 == result.size()
-        assert 1 == result.get(0).get("attributes").get("cn").get("values").size()
-        assert cn == result.get(0).get("attributes").get("cn").get("values").get(0)
+
+        List<Map> attributes =  result.get(0).get("attributes")
+        for(Map map : attributes){
+            if(map.get("cn") == null){
+                continue
+            }
+            assert 1 == map.get("values").size()
+            assert cn == map.get("values").get(0)
+        }
     }
 
     void testCreateLdapBinding(){

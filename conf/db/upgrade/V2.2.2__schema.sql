@@ -38,3 +38,10 @@ DROP PROCEDURE IF EXISTS migrateVipPeerL3Network;
 
 ALTER TABLE zstack.VipVO DROP FOREIGN KEY fkVipVOL3NetworkEO1;
 ALTER TABLE zstack.VipVO DROP COLUMN peerL3NetworkUuid;
+
+
+INSERT IGNORE INTO SystemTagVO (`uuid`, `resourceUuid`, `resourceType`, `inherent`, `type`, `tag`, `createDate`, `lastOpDate`)
+SELECT REPLACE(UUID(),'-',''), t.uuid, 'LdapServerVO', 0, 'System', "ldapUseAsLoginName::uid", CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP() FROM LdapServerVO t;
+
+INSERT IGNORE INTO SystemTagVO (`uuid`, `resourceUuid`, `resourceType`, `inherent`, `type`, `tag`, `createDate`, `lastOpDate`)
+SELECT REPLACE(UUID(),'-',''), t.uuid, 'LdapServerVO', 0, 'System', "ldapServerType::OpenLdap", CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP() FROM LdapServerVO t;

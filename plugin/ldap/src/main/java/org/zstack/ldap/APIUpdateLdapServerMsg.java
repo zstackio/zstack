@@ -12,7 +12,7 @@ import org.zstack.header.rest.RestRequest;
         isAction = true
 )
 public class APIUpdateLdapServerMsg extends APIMessage {
-    @APIParam(maxLength = 32)
+    @APIParam(maxLength = 32, resourceType = LdapServerVO.class)
     private String ldapServerUuid;
 
     @APIParam(maxLength = 255, required = false)
