@@ -79,6 +79,21 @@ public abstract class HostBase extends AbstractHost {
     @Autowired
     protected EventFacade evtf;
 
+    public static class HostDisconnectedCanonicalEvent extends CanonicalEventEmitter {
+        HostCanonicalEvents.HostDisconnectedData data;
+
+        public HostDisconnectedCanonicalEvent(String hostUuid, ErrorCode reason) {
+            data = new HostCanonicalEvents.HostDisconnectedData();
+            data.hostUuid = hostUuid;
+            data.reason = reason;
+        }
+
+        void fire() {
+            fire(HostCanonicalEvents.HOST_DISCONNECTED_PATH, data);
+        }
+    }
+
+
     protected final String id;
 
     protected abstract void pingHook(Completion completion);
@@ -598,6 +613,8 @@ public abstract class HostBase extends AbstractHost {
                     return;
                 }
 
+                new HostDisconnectedCanonicalEvent(self.getUuid(), errorCode).fire();
+
                 changeConnectionState(HostStatusEvent.disconnected);
                 
                 bus.reply(msg, reply);
@@ -721,16 +738,12 @@ public abstract class HostBase extends AbstractHost {
                 return "change-host-connection-state-" + self.getUuid();
             }
 
-            private boolean reestablishConnection() {
+            private void reestablishConnection() {
                 try {
                     extpEmitter.connectionReestablished(HypervisorType.valueOf(self.getHypervisorType()), getSelfInventory());
                 } catch (HostException e) {
-                    logger.warn(String.format("unable to reestablish connection to kvm host[uuid:%s, ip:%s], %s",
-                            self.getUuid(), self.getManagementIp(), e.getMessage()), e);
-                    return false;
+                    throw new OperationFailureException(operr(e.getMessage()));
                 }
-
-                return true;
             }
 
             @Override
@@ -743,8 +756,11 @@ public abstract class HostBase extends AbstractHost {
                 HostStatusEvent cevt = HostStatusEvent.valueOf(msg.getConnectionStateEvent());
                 HostStatus next = self.getStatus().nextStatus(cevt);
                 if (self.getStatus() == HostStatus.Disconnected && next == HostStatus.Connected) {
-                    if (!reestablishConnection()) {
+                    try {
+                        reestablishConnection();
+                    } catch (OperationFailureException e) {
                         cevt = HostStatusEvent.disconnected;
+                        new HostDisconnectedCanonicalEvent(self.getUuid(), e.getErrorCode()).fire();
                     }
                 }
 
@@ -885,12 +901,7 @@ public abstract class HostBase extends AbstractHost {
                                 tracker.trackHost(self.getUuid());
 
                                 CollectionUtils.safeForEach(pluginRgty.getExtensionList(HostAfterConnectedExtensionPoint.class),
-                                        new ForEachFunction<HostAfterConnectedExtensionPoint>() {
-                                            @Override
-                                            public void run(HostAfterConnectedExtensionPoint ext) {
-                                                ext.afterHostConnected(getSelfInventory());
-                                            }
-                                        });
+                                        ext -> ext.afterHostConnected(getSelfInventory()));
 
                                 bus.reply(msg, reply);
                             }
@@ -903,6 +914,8 @@ public abstract class HostBase extends AbstractHost {
                                 if (!msg.isNewAdd()) {
                                     tracker.trackHost(self.getUuid());
                                 }
+
+                                new HostDisconnectedCanonicalEvent(self.getUuid(), errCode).fire();
 
                                 reply.setError(errCode);
                                 bus.reply(msg, reply);
