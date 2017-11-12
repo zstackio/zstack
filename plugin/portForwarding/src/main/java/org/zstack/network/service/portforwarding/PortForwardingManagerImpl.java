@@ -56,6 +56,7 @@ import java.util.stream.Collectors;
 import static java.util.Arrays.asList;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.VipUseForList.SNAT_NETWORK_SERVICE_TYPE;
 
 public class PortForwardingManagerImpl extends AbstractService implements PortForwardingManager,
         VipReleaseExtensionPoint, AddExpandedQueryExtensionPoint, ReportQuotaExtensionPoint, VipGetUsedPortRangeExtensionPoint, VipGetServiceReferencePoint {
@@ -208,22 +209,40 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
                             .map(ref -> ref.getL3NetworkUuid())
                             .collect(Collectors.toList());
                 }
+                VipVO vipVO = Q.New(VipVO.class).eq(VipVO_.uuid, vipUuid).find();
 
                 //0.check the l3 of vm nic has been attached to port forwarding service
                 List<String> l3Uuids = new ArrayList<>();
                 if (vipPeerL3Uuids == null || vipPeerL3Uuids.isEmpty()) {
-                    l3Uuids = sql("select l3.uuid" +
-                            " from L3NetworkVO l3, VipVO vip, NetworkServiceL3NetworkRefVO ref" +
-                            " where l3.system = :system" +
-                            " and l3.uuid != vip.l3NetworkUuid" +
-                            " and l3.uuid = ref.l3NetworkUuid" +
-                            " and ref.networkServiceType = :nsType" +
-                            " and l3.zoneUuid = :zoneUuid" +
-                            " and vip.uuid = :vipUuid")
-                            .param("vipUuid", vipUuid)
-                            .param("system", false)
-                            .param("zoneUuid", zoneUuid)
-                            .param("nsType", PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE).list();
+                    if (vipVO.getUseFor().contains(SNAT_NETWORK_SERVICE_TYPE)) {
+                        l3Uuids = sql("select l3.uuid" +
+                                " from L3NetworkVO l3, VipVO vip, NetworkServiceL3NetworkRefVO ref, " +
+                                " VmNicVO vmnic, VirtualRouterVipVO vrVip" +
+                                " where vip.uuid = :vipUuid" +
+                                " and vrVip.uuid = vip.uuid" +
+                                " and vmnic.vmInstanceUuid = vrVip.virtualRouterVmUuid" +
+                                " and vmnic.l3NetworkUuid = l3.uuid" +
+                                " and l3.uuid != vip.l3NetworkUuid" +
+                                " and l3.uuid = ref.l3NetworkUuid" +
+                                " and ref.networkServiceType = :nsType" +
+                                " and l3.zoneUuid = :zoneUuid")
+                                .param("vipUuid", vipUuid)
+                                .param("zoneUuid", zoneUuid)
+                                .param("nsType", PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE).list();
+                    } else {
+                        l3Uuids = sql("select l3.uuid" +
+                                " from L3NetworkVO l3, VipVO vip, NetworkServiceL3NetworkRefVO ref" +
+                                " where l3.system = :system" +
+                                " and l3.uuid != vip.l3NetworkUuid" +
+                                " and l3.uuid = ref.l3NetworkUuid" +
+                                " and ref.networkServiceType = :nsType" +
+                                " and l3.zoneUuid = :zoneUuid" +
+                                " and vip.uuid = :vipUuid")
+                                .param("vipUuid", vipUuid)
+                                .param("system", false)
+                                .param("zoneUuid", zoneUuid)
+                                .param("nsType", PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE).list();
+                    }
                 } else {
                     VmNicVO rnic = Q.New(VmNicVO.class).in(VmNicVO_.l3NetworkUuid, vipPeerL3Uuids)
                             .notNull(VmNicVO_.metaData).limit(1).find();
@@ -242,6 +261,8 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
 
                 if (l3Uuids.isEmpty()) {
                     return new ArrayList<>();
+                } else {
+                    logger.debug(String.format("selected l3s for portforwarding[uuid:%s] attach: %s", ruleUuid, l3Uuids));
                 }
 
 
