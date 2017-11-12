@@ -87,7 +87,7 @@ CREATE TABLE  `zstack`.`AlarmActionVO` (
 
 CREATE TABLE  `zstack`.`AlarmLabelVO` (
     `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
-    `name` varchar(1024) NOT NULL,
+    `key` varchar(1024) NOT NULL,
     `value` text NOT NULL,
     `operator` varchar(128) NOT NULL,
     `alarmUuid` varchar(32) NOT NULL,
@@ -100,7 +100,6 @@ CREATE TABLE  `zstack`.`AlarmVO` (
     `description` varchar(2048) DEFAULT NULL,
     `comparisonOperator` varchar(128) NOT NULL,
     `period` int unsigned NOT NULL,
-    `periodNumber` int unsigned NOT NULL,
     `repeatInterval` int unsigned NOT NULL,
     `namespace` varchar(255) NOT NULL,
     `metricName` varchar(512) NOT NULL,
@@ -131,7 +130,7 @@ CREATE TABLE  `zstack`.`EventSubscriptionActionVO` (
 
 CREATE TABLE  `zstack`.`EventSubscriptionLabelVO` (
     `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
-    `name` varchar(1024) NOT NULL,
+    `key` varchar(1024) NOT NULL,
     `value` text NOT NULL,
     `operator` varchar(128) NOT NULL,
     `subscriptionUuid` varchar(32) NOT NULL,
