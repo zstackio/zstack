@@ -6,12 +6,17 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.asyncbatch.AsyncBatchRunner;
 import org.zstack.core.asyncbatch.LoopAsyncBatch;
+import org.zstack.core.cloudbus.AutoOffEventCallback;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.notification.N;
+import org.zstack.header.cluster.ClusterConnectionStatus;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
@@ -25,8 +30,8 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.volume.VolumeFormat;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.volume.VolumeVO_;
+import org.zstack.kvm.KVMConstant;
 import org.zstack.storage.primary.PrimaryStorageBase;
-import org.zstack.storage.primary.PrimaryStorageCapacityRecalculator;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -34,11 +39,9 @@ import org.zstack.utils.logging.CLogger;
 import static org.zstack.core.Platform.operr;
 
 import javax.persistence.TypedQuery;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * Created by xing5 on 2016/3/26.
@@ -277,23 +280,90 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
         });
     }
 
+    protected void hookToKVMHostConnectedEventToChangeStatusToConnected(){
+        // hook on host connected event to reconnect the primary storage once there is
+        // a host connected in attached clusters
+        evtf.onLocal(HostCanonicalEvents.HOST_STATUS_CHANGED_PATH, new AutoOffEventCallback() {
+            {
+                uniqueIdentity = String.format("connect-smp-%s-when-host-connected", self.getUuid());
+            }
+
+            @Override
+            protected boolean run(Map tokens, Object data) {
+                HostCanonicalEvents.HostStatusChangedData d = (HostCanonicalEvents.HostStatusChangedData) data;
+                if (!HostStatus.Connected.toString().equals(d.getNewStatus())) {
+                    return false;
+                }
+
+                if (!KVMConstant.KVM_HYPERVISOR_TYPE.equals(d.getInventory().getHypervisorType())) {
+                    return false;
+                }
+
+                self = dbf.reload(self);
+                if (self.getStatus() == PrimaryStorageStatus.Connected) {
+                    return true;
+                }
+
+                if (!self.getAttachedClusterRefs().stream()
+                        .anyMatch(ref -> ref.getClusterUuid().equals(d.getInventory().getClusterUuid()))) {
+                    return false;
+                }
+
+                FutureCompletion future = new FutureCompletion(null);
+
+                ConnectParam p = new ConnectParam();
+                p.setNewAdded(false);
+                connectHook(p, future);
+
+                future.await();
+
+                if (!future.isSuccess()) {
+                    N.New(PrimaryStorageVO.class, self.getUuid()).warn_("unable to reconnect the primary storage[uuid:%s, name:%s], %s",
+                            self.getUuid(), self.getName(), future.getErrorCode());
+                } else {
+                    changeStatus(PrimaryStorageStatus.Connected);
+                }
+
+                return future.isSuccess();
+            }
+        });
+    }
+
     @Override
     protected void connectHook(ConnectParam param, final Completion completion) {
-        SimpleQuery<PrimaryStorageClusterRefVO> q = dbf.createQuery(PrimaryStorageClusterRefVO.class);
-        q.select(PrimaryStorageClusterRefVO_.clusterUuid);
-        q.add(PrimaryStorageClusterRefVO_.primaryStorageUuid, Op.EQ, self.getUuid());
-        final List<String> clusterUuids = q.listValue();
+        List<String> clusterUuids = self.getAttachedClusterRefs().stream()
+                .map(PrimaryStorageClusterRefVO::getClusterUuid)
+                .collect(Collectors.toList());
 
-        if (clusterUuids.isEmpty()) {
-            completion.success();
+        if (!clusterUuids.isEmpty()) {
+            clusterUuids = SQL.New("select cluster.uuid from ClusterVO cluster, HostVO host" +
+                    " where cluster.uuid = host.clusterUuid" +
+                    " and host.status = :hostStatus" +
+                    " and cluster.uuid in (:cuuids)", String.class)
+                    .param("hostStatus", HostStatus.Connected)
+                    .param("cuuids", clusterUuids)
+                    .list();
+        }
+
+        if (clusterUuids.isEmpty()){
+            if (!param.isNewAdded()){
+                hookToKVMHostConnectedEventToChangeStatusToConnected();
+            }
+
+            completion.fail(errf.instantiateErrorCode(PrimaryStorageErrors.DISCONNECTED,
+                    String.format("the SMP primary storage[uuid:%s, name:%s] has not attached to any clusters, " +
+                            "or no hosts in the attached clusters are connected", self.getUuid(), self.getName())
+            ));
             return;
         }
+
+        final List<String> finalClusterUuids = clusterUuids;
         new LoopAsyncBatch<String>(completion) {
             boolean success;
 
             @Override
             protected Collection<String> collect() {
-                return clusterUuids;
+                return finalClusterUuids;
             }
 
             @Override
@@ -302,9 +372,10 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
                     @Override
                     public void run(NoErrorCompletion completion) {
                         HypervisorBackend bkd = getHypervisorFactoryByClusterUuid(item).getHypervisorBackend(self);
-                        bkd.connectByClusterUuid(item, new Completion(completion) {
+                        bkd.connectByClusterUuid(item, new ReturnValueCompletion<ClusterConnectionStatus>(completion) {
                             @Override
-                            public void success() {
+                            public void success(ClusterConnectionStatus clusterStatus) {
+                                // isConnectedHostInCluster has been checked before
                                 success = true;
                                 completion.done();
                             }
@@ -325,7 +396,7 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
                     completion.success();
                 } else {
                     completion.fail(errf.stringToOperationError(
-                            String.format("failed to connect to all clusters%s", clusterUuids), errors
+                            String.format("failed to connect to all clusters%s", finalClusterUuids), errors
                     ));
                 }
             }
