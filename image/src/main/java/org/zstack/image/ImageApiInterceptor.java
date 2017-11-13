@@ -49,7 +49,8 @@ public class ImageApiInterceptor implements ApiMessageInterceptor {
             "http://",
             "https://",
             "file:///",
-            "upload://"
+            "upload://",
+            "zstore://"
     };
 
     private void setServiceId(APIMessage msg) {
