@@ -5,6 +5,8 @@ public interface LdapConstant {
 
     String LDAP_UID_KEY = "cn";
 
+    String LDAP_DN_KEY = "dn";
+
     // Empty default
     interface WindowsAD{
         String TYPE = "WindowsAD";
