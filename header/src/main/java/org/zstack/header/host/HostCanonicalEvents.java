@@ -14,6 +14,22 @@ public class HostCanonicalEvents {
     public static class HostDisconnectedData {
         public String hostUuid;
         public ErrorCode reason;
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
+
+        public ErrorCode getReason() {
+            return reason;
+        }
+
+        public void setReason(ErrorCode reason) {
+            this.reason = reason;
+        }
     }
 
     @NeedJsonSchema
