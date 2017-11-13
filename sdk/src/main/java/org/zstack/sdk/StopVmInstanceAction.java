@@ -28,6 +28,9 @@ public class StopVmInstanceAction extends AbstractAction {
     @Param(required = false, validValues = {"grace","cold"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String type = "grace";
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Boolean stopHA;
+
     @Param(required = false)
     public java.util.List systemTags;
 

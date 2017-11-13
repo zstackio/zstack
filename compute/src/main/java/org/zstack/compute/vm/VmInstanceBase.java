@@ -3767,7 +3767,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         new VmAttachVolumeValidator().validate(msg.getVmInstanceUuid(), volume.getUuid());
         extEmitter.preAttachVolume(getSelfInventory(), volume);
         extEmitter.beforeAttachVolume(getSelfInventory(), volume);
-        
+
         VmInstanceSpec spec = new VmInstanceSpec();
         spec.setMessage(msg);
         spec.setVmInventory(VmInstanceInventory.valueOf(self));
