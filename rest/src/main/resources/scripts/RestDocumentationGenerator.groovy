@@ -1056,7 +1056,7 @@ ${dmd.generate()}
             })
 
             if (!clz.isAnnotationPresent(SuppressCredentialCheck.class)) {
-                cols.add("""action.sessionUuid = "${Platform.getUuid()}\"""")
+                cols.add("""action.sessionUuid = "b86c9016b4f24953a9edefb53ca0678c\"""")
             }
 
             cols.add("${actionName}.Result res = action.call()")
@@ -1111,7 +1111,7 @@ ${cols.join("\n")}
             })
 
             if (!clz.isAnnotationPresent(SuppressCredentialCheck.class)) {
-                cols.add("""action.sessionUuid = "${Platform.getUuid()}";""")
+                cols.add("""action.sessionUuid = "b86c9016b4f24953a9edefb53ca0678c";""")
             }
 
             cols.add("${actionName}.Result res = action.call();")

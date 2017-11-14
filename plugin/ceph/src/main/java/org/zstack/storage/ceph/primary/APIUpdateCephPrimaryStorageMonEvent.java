@@ -36,8 +36,8 @@ public class APIUpdateCephPrimaryStorageMonEvent extends APIEvent {
         CephPrimaryStorageInventory ps = new CephPrimaryStorageInventory();
         ps.setName("My Ceph Primary Storage");
         ps.setDescription("Public Ceph Primary Storage");
-        ps.setCreateDate(new Timestamp(System.currentTimeMillis()));
-        ps.setLastOpDate(new Timestamp(System.currentTimeMillis()));
+        ps.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
+        ps.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));
         ps.setType("Ceph");
         CephPrimaryStorageMonInventory mon = new CephPrimaryStorageMonInventory();
         mon.setMonUuid(uuid());

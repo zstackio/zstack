@@ -31,8 +31,8 @@ public class APIQueryInstanceOfferingReply extends APIQueryReply {
         inventory.setAllocatorStrategy("Mevoco");
         inventory.setType(USER_VM_INSTANCE_OFFERING_TYPE);
         inventory.setState(InstanceOfferingState.Enabled.toString());
-        inventory.setCreateDate(new Timestamp(System.currentTimeMillis()));
-        inventory.setLastOpDate(new Timestamp(System.currentTimeMillis()));
+        inventory.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
+        inventory.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));
 
         reply.setInventories(list(inventory));
         return reply;

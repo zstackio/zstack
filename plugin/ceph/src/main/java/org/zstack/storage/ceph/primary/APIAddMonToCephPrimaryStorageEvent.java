@@ -36,8 +36,8 @@ public class APIAddMonToCephPrimaryStorageEvent extends APIEvent {
         CephPrimaryStorageInventory ps = new CephPrimaryStorageInventory();
         ps.setName("My Ceph Backup Storage");
         ps.setDescription("Public Ceph Backup Storage");
-        ps.setCreateDate(new Timestamp(System.currentTimeMillis()));
-        ps.setLastOpDate(new Timestamp(System.currentTimeMillis()));
+        ps.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
+        ps.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));
         ps.setType("Ceph");
         CephPrimaryStorageMonInventory mon = new CephPrimaryStorageMonInventory();
         mon.setMonUuid(uuid());

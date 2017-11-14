@@ -27,8 +27,8 @@ public class APIQueryManagementNodeReply extends APIQueryReply {
         ManagementNodeInventory inventory = new ManagementNodeInventory();
         inventory.setUuid(uuid());
         inventory.setHostName("127.0.0.1");
-        inventory.setJoinDate(new Timestamp(System.currentTimeMillis()));
-        inventory.setHeartBeat(new Timestamp(System.currentTimeMillis()));
+        inventory.setJoinDate(new Timestamp(org.zstack.header.message.DocUtils.date));
+        inventory.setHeartBeat(new Timestamp(org.zstack.header.message.DocUtils.date));
 
         reply.setInventories(list(inventory));
         return reply;

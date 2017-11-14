@@ -31,8 +31,8 @@ public class APIQueryCephPrimaryStoragePoolReply extends APIQueryReply {
         cephPrimaryStoragePool.setPrimaryStorageUuid(uuid());
         cephPrimaryStoragePool.setAliasName("alias test pool");
         cephPrimaryStoragePool.setType(CephPrimaryStoragePoolType.Data.toString());
-        cephPrimaryStoragePool.setCreateDate(new Timestamp(System.currentTimeMillis()));
-        cephPrimaryStoragePool.setLastOpDate(new Timestamp(System.currentTimeMillis()));
+        cephPrimaryStoragePool.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
+        cephPrimaryStoragePool.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));
         reply.setInventories(asList(cephPrimaryStoragePool));
         reply.setSuccess(true);
         return reply;

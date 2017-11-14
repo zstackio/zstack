@@ -41,8 +41,8 @@ public class APIGetVmAttachableDataVolumeReply extends APIReply {
         vol.setDiskOfferingUuid(uuid());
         vol.setType(VolumeType.Data.toString());
         vol.setShareable(false);
-        vol.setCreateDate(new Timestamp(System.currentTimeMillis()));
-        vol.setLastOpDate(new Timestamp(System.currentTimeMillis()));
+        vol.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
+        vol.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));
         return reply;
     }
 

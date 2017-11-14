@@ -26,8 +26,8 @@ public class APIGetZoneReply extends APIReply {
         zone.setDescription("Test");
         zone.setState(ZoneState.Enabled.toString());
         zone.setType("zstack");
-        zone.setCreateDate(new Timestamp(System.currentTimeMillis()));
-        zone.setLastOpDate(new Timestamp(System.currentTimeMillis()));
+        zone.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
+        zone.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));
         reply.setInventories(asList(zone));
         reply.setSuccess(true);
         return reply;
