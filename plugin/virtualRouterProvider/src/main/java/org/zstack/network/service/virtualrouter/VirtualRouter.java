@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.appliancevm.*;
 import org.zstack.appliancevm.ApplianceVmConstant.Params;
 import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.componentloader.PluginExtension;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -22,18 +21,15 @@ import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.l2.L2Network;
 import org.zstack.header.network.l2.L2NetworkGetVniExtensionPoint;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l2.L2NetworkVO_;
-import org.zstack.header.network.l3.L3Network;
 import org.zstack.header.network.l3.L3NetworkCategory;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.l3.L3NetworkVO_;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.vm.*;
-import org.zstack.network.l3.L3NetworkSystemTags;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.PingCmd;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.PingRsp;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant.Param;
@@ -425,8 +421,9 @@ public class VirtualRouter extends ApplianceVmBase {
         info.setNetmask(nicInventory.getNetmask());
 
         L2NetworkVO l2NetworkVO = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.uuid, l3NetworkVO.getL2NetworkUuid()).find();
-        info.setCategoryy(l3NetworkVO.getCategory().toString());
+        info.setCategory(l3NetworkVO.getCategory().toString());
         info.setL2type(l2NetworkVO.getType());
+        info.setPhysicalInterface(l2NetworkVO.getPhysicalInterface());
         for (L2NetworkGetVniExtensionPoint ext : pluginRgty.getExtensionList(L2NetworkGetVniExtensionPoint.class)) {
             if (ext.getL2NetworkVniType().equals(l2NetworkVO.getType())) {
                 info.setVni(ext.getL2NetworkVni(l2NetworkVO.getUuid()));

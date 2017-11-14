@@ -15,6 +15,7 @@ public class ApplianceVmNicTO {
     private String category;
     private String l2type;
     private Integer vni;
+    private String physicalInterface;
 
     public ApplianceVmNicTO(VmNicInventory inv) {
         ip = inv.getIp();
@@ -104,5 +105,13 @@ public class ApplianceVmNicTO {
 
     public void setVni(Integer vni) {
         this.vni = vni;
+    }
+
+    public String getPhysicalInterface() {
+        return physicalInterface;
+    }
+
+    public void setPhysicalInterface(String physicalInterface) {
+        this.physicalInterface = physicalInterface;
     }
 }
