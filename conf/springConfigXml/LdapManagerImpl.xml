@@ -25,4 +25,10 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="LdapUpgradeExtension" class="org.zstack.ldap.LdapUpgradeExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component"/>
+        </zstack:plugin>
+    </bean>
+
 </beans>
