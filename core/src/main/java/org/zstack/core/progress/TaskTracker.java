@@ -11,6 +11,7 @@ public abstract class TaskTracker {
     private Map<String, Object> params = new HashMap<>();
 
     public static class Task {
+        public String taskName;
         public String resourceType;
         public String resourceUuid;
         public String info;
@@ -23,8 +24,8 @@ public abstract class TaskTracker {
 
     private static Map<String, List<Consumer>> taskConsumers = new HashMap<>();
 
-    public static void registerConsumer(String resourceType, Consumer consumer) {
-        List<Consumer> lst = taskConsumers.computeIfAbsent(resourceType, k->new ArrayList<>());
+    public static void registerConsumer(String taskName, Consumer<Task> consumer) {
+        List<Consumer> lst = taskConsumers.computeIfAbsent(taskName, k->new ArrayList<>());
         lst.add(consumer);
     }
 
@@ -39,6 +40,8 @@ public abstract class TaskTracker {
 
     protected abstract String getResourceType();
 
+    protected abstract String getTaskName();
+
     public void track(String info, Map<String, Object> params) {
         List<Consumer> consumers = taskConsumers.get(getResourceType());
         if (consumers == null || consumers.isEmpty()) {
@@ -47,6 +50,7 @@ public abstract class TaskTracker {
 
         Task task = new Task();
         task.resourceType = getResourceType();
+        task.taskName = getTaskName();
         task.resourceUuid = resourceUuid;
         task.info = info;
         if (params != null) {
