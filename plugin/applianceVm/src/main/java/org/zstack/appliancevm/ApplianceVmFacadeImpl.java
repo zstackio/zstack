@@ -286,6 +286,7 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
 
         mto.setCategory(l3NetworkVO.getCategory().toString());
         mto.setL2type(l2NetworkVO.getType());
+        mto.setPhysicalInterface(l2NetworkVO.getPhysicalInterface());
         if (l2NetworkGetVniExtensionPointMap == null || l2NetworkGetVniExtensionPointMap.isEmpty() ||
                 l2NetworkGetVniExtensionPointMap.get(l2NetworkVO.getType()) == null) {
             logger.debug("l2NetworkGetVniExtensionPointMap is null. skip to get vni");
@@ -322,6 +323,7 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
             t.setCategory(l3NetworkVO.getCategory().toString());
             t.setL2type(l2NetworkVO.getType());
             t.setVni(l2NetworkGetVniExtensionPointMap.get(l2NetworkVO.getType()).getL2NetworkVni(l2NetworkVO.getUuid()));
+            t.setPhysicalInterface(l2NetworkVO.getPhysicalInterface());
             deviceId ++;
             extraTos.add(t);
             additionalNics = reduceNic(additionalNics, defaultRouteNic);
@@ -336,6 +338,7 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
             nto.setCategory(l3NetworkVO.getCategory().toString());
             nto.setL2type(l2NetworkVO.getType());
             nto.setVni(l2NetworkGetVniExtensionPointMap.get(l2NetworkVO.getType()).getL2NetworkVni(l2NetworkVO.getUuid()));
+            nto.setPhysicalInterface(l2NetworkVO.getPhysicalInterface());
             extraTos.add(nto);
             deviceId ++;
         }
@@ -343,6 +346,7 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
         String publicKey = asf.getPublicKey();
         ret.put(ApplianceVmConstant.BootstrapParams.publicKey.toString(), publicKey);
         ret.put(BootstrapParams.sshPort.toString(), sshPort);
+        ret.put(BootstrapParams.uuid.toString(), spec.getVmInventory().getUuid());
 
         for (ApplianceVmPrepareBootstrapInfoExtensionPoint ext : pluginRgty.getExtensionList(ApplianceVmPrepareBootstrapInfoExtensionPoint.class)) {
             ext.applianceVmPrepareBootstrapInfo(spec, ret);
