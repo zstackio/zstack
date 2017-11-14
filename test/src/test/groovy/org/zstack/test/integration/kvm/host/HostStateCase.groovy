@@ -1,10 +1,14 @@
 package org.zstack.test.integration.kvm.host
 
+import org.springframework.http.HttpEntity
+import org.zstack.compute.host.HostGlobalConfig
+import org.zstack.core.cloudbus.EventCallback
+import org.zstack.core.cloudbus.EventFacade
+import org.zstack.core.cloudbus.EventFacadeImpl
 import org.zstack.core.db.Q
-import org.zstack.header.host.HostStateEvent
-import org.zstack.header.host.HostStatus
-import org.zstack.header.host.HostVO
-import org.zstack.header.host.HostVO_
+import org.zstack.header.host.*
+import org.zstack.kvm.KVMAgentCommands
+import org.zstack.kvm.KVMConstant
 import org.zstack.sdk.ClusterInventory
 import org.zstack.sdk.HostInventory
 import org.zstack.test.integration.kvm.Env
@@ -12,6 +16,10 @@ import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.HostSpec
 import org.zstack.testlib.SubCase
 import org.zstack.testlib.Test
+import org.zstack.utils.gson.JSONObjectUtil
+
+import java.util.concurrent.TimeUnit
+
 /**
  * Created by lining on 02/03/2017.
  */
@@ -40,6 +48,7 @@ class HostStateCase extends SubCase{
     void test() {
         env.create {
             testChangeHostStateByRealizeHost()
+            testPingMaximumFailure()
             testAddMultipleHostConcurrently()
         }
     }
@@ -55,6 +64,48 @@ class HostStateCase extends SubCase{
 
         assert inventory.uuid == spec.inventory.uuid
         assert inventory.status == HostStatus.Connected.name()
+    }
+
+    void testPingMaximumFailure() {
+        HostInventory hinv = env.inventoryByName("kvm")
+        def maxFailure = HostGlobalConfig.MAXIMUM_PING_FAILURE.value(Integer.class)
+        def count = 1
+
+        env.simulator(KVMConstant.KVM_PING_PATH) { HttpEntity<String> e, EnvSpec espec ->
+            KVMAgentCommands.PingCmd cmd = JSONObjectUtil.toObject(e.getBody(), KVMAgentCommands.PingCmd.class)
+            def rsp = new KVMAgentCommands.PingResponse()
+            if (hinv.uuid == cmd.hostUuid && count < maxFailure) {
+                count += 1
+                throw new Exception("on purpose")
+            }
+            rsp.hostUuid = cmd.hostUuid
+            return rsp
+        }
+
+        HostGlobalConfig.PING_HOST_INTERVAL.updateValue(1)
+
+        1.upto(5) {
+            TimeUnit.SECONDS.sleep(1)
+            def hvo = dbFindByUuid(hinv.uuid, HostVO.class)
+            assert hvo.status == HostStatus.Connected
+        }
+
+        def caughtDisconnected = false
+        EventFacade evtf = bean(EventFacadeImpl.class)
+        evtf.on(HostCanonicalEvents.HOST_STATUS_CHANGED_PATH, new EventCallback() {
+            @Override
+            protected void run(Map tokens, Object data) {
+                HostCanonicalEvents.HostStatusChangedData d = (HostCanonicalEvents.HostStatusChangedData) data
+                if (d.hostUuid == hinv.uuid && d.newStatus == HostStatus.Disconnected.toString()) {
+                    caughtDisconnected = true
+                }
+            }
+        })
+
+        maxFailure = 10
+        retryInSecs(10) {
+            assert caughtDisconnected
+        }
     }
 
     void testAddMultipleHostConcurrently() {
